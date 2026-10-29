@@ -332,3 +332,63 @@ maximum one program, change not allowed. 146 points in all
 9. **`GSK_CONNECT_CIPHER_SPEC` for TLS 1.3 and ECDHE suites.** The old
    two-digit form cannot express `0x13nn` or `0xC0nn` codes; QS/400
    returns the low byte. IBM may return blanks or an error.
+
+## Printers
+
+1. **Writer messages for network failures.** A writer that cannot
+   reach its printer or LPD sends `TCP370A` (no such host), `TCP3427`
+   (refused), `TCP3436` (timed out), `TCP3409` (other connect failure),
+   `TCP3430` (connection dropped) or `TCP3701` (refused or protocol
+   error) to `QSYSOPR` and shows `MSGW`, then tries again after 30
+   seconds without waiting for a reply. IBM's writers send `CPA33xx`
+   inquiries and `PQT` messages for LAN printers; neither family was
+   captured (`messages-cpf.txt` has no `CPx33xx`), and `TCP3701`'s
+   reason code (`&2`) values are unknown. Settle by starting a remote
+   writer on pub400 to an unreachable host (needs a writable outq in
+   `{user}B`) and reading `QSYSOPR` and the writer's job log.
+2. **`SYSDRVPGM` value for IPP.** V7R5's `CRTDEVPRT` lists
+   `*IBMIPPDRV`, not the spec's `*IPPDRV`; both are accepted and
+   `*IBMIPPDRV` is stored. Where the IPP resource goes (a URI in
+   `RMTLOCNAME`, or `/ipp/print` by default) is ours; IBM's
+   documentation of the IPP driver should say.
+3. **`CRTDEVPRT` prompt order.** pub400 shows only `LANATTACH` after
+   `F10` with `DEVCLS(*LAN)`, and only `PORT`, `ONLINE`, `FONT`,
+   `FORMFEED`, `SEPDRAWER`, `SEPPGM` once `LANATTACH(*IP)` is given:
+   IBM's prompt-control program reveals the parameters step by step.
+   Ours follows `PMTCTL`: `LANATTACH` on `DEVCLS(*LAN)`, those six on
+   `LANATTACH(*IP)`, the rest (`RMTLOCNAME`, `SYSDRVPGM`, `TRANSFORM`
+   ...) once `PORT` has a value. The display after `PORT` was not
+   captured; capture `CRTDEVPRT DEVCLS(*LAN) TYPE(3812) MODEL(1)
+   LANATTACH(*IP) PORT(9100)` with F10 (F12 out, nothing created).
+   `TYPE(*SCS)` from the spec is not a V7R5 value (the list ends at
+   `*IPDS`); `MODEL` is free text here, IBM restricts it.
+4. **Remote `CRTOUTQ` prompt.** pub400 shows `MSGQ` ("Queue for writer
+   messages") after `AUTOSTRWTR` and `DESTTYPE` defaulting to `*OS400`
+   under `CNNTYPE(*SNA)`; our `CRTOUTQ` keeps its Phase 5 order with
+   `MSGQ`, `SEPPAGE` and `USRDRVPGM` added behind `F10`, `DESTTYPE`
+   defaulting to `*OTHER`. `CNNTYPE` unspecified is stored as `*IP`
+   (IBM's default is `*SNA`; SNA is not done). Capture the rest of the
+   remote prompt (`*IP`, `*OTHER`) to order ours.
+5. **`DESTOPT` words.** `XAIX` (copies as repeated print commands) and
+   `XAUTOQ` are IBM's documented words as remembered, not traced;
+   `*NOWAIT` is taken to skip the last acknowledgement and `*USRDFNTXT`
+   does nothing. Other words are kept and not sent. A trace of
+   `SNDTCPSPLF ... DESTOPT(XAIX)` to a harness LPD would settle the
+   control file IBM sends, including the order of data and control
+   files (ours: data first) and the `H`, `P`, `J`, `L`, `N` contents.
+6. **IBM-to-IBM transfer.** `DESTTYPE(*OS400)` sends the SCS
+   untransformed with our `Y` control lines (`docs/PRINT.md`). IBM's
+   own `*OS400` LPR transfer keeps attributes by means that were not
+   traced; a QS/400 receiving from a real IBM i gets only what the
+   standard lines say.
+7. **`RMTPRTQ(*SYSTEM)` and `*USER`.** `*USER` sends the file owner's
+   name as the queue, `*SYSTEM` sends `QPRINT`. Unconfirmed.
+8. **Host print transform output.** The PCL is written from the PCL5
+   reference (`work/print/tests/golden/`) and not compared with IBM's
+   `TRANSFORM(*YES)`: Cody's box has no remote outq aimed at a harness
+   LPD and network settings there are read-only. The model capability
+   table (PCL4 or 5, trays, duplex) is ours; IBM's `*WSCST` objects
+   for each model (`RTVWSCST`) would settle it.
+9. **`*WSCST` object type code.** `*WSCST` is type 0x0028 here, chosen
+   clear of the codes other Phase 10 work may take; the coordinator
+   should confirm no collision at merge.

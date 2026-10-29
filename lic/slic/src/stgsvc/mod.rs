@@ -26,6 +26,7 @@ mod jobs;
 pub(crate) mod jobscd;
 pub(crate) mod msgs;
 pub(crate) mod prtf;
+pub(crate) mod prtdev;
 pub(crate) mod sbs;
 pub(crate) mod security;
 pub(crate) mod splcmd;

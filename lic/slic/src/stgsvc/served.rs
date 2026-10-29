@@ -757,17 +757,7 @@ impl Service for Served<'_> {
             .writers
             .iter()
             .map(|(name, w)| {
-                let status = if w.ending {
-                    "END"
-                } else if w.held {
-                    "HLD"
-                } else if w.current.is_some() {
-                    "WTR"
-                } else if self.system.jobs.get(w.job).is_some() {
-                    "STR"
-                } else {
-                    "JOBQ"
-                };
+                let status = super::wtr::status(self.system, w);
                 (
                     name.clone(),
                     w.dev.clone(),
@@ -845,6 +835,21 @@ impl Service for Served<'_> {
 
     fn wtr_next(&mut self, name: String) -> wm::wtr::WtrStep {
         super::wtr::next(self.system, &name)
+    }
+
+    fn wtr_target(&mut self, name: String) -> Result<wm::wtr::WtrDest, String> {
+        super::wtr::target(self.system, &name)
+    }
+
+    fn wtr_failed(
+        &mut self,
+        name: String,
+        id: u32,
+        msgid: String,
+        text: String,
+        hold: bool,
+    ) -> Result<(), String> {
+        super::wtr::failed(self.system, &name, id, &msgid, &text, hold)
     }
 
     fn wtr_printed(

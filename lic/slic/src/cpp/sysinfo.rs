@@ -179,6 +179,8 @@ fn dspdevd(system: &mut System, parms: &Parms) -> Result<String, String> {
         let (_, d) = device(txn, qsys, &name)?;
         Ok(if d.is_display() {
             describe_display(&name, &d)
+        } else if let Some(l) = &d.printer {
+            describe(&name, &d) + &l.describe()
         } else {
             describe(&name, &d)
         })

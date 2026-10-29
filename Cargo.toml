@@ -36,6 +36,7 @@ members = [
     "work/spool",
     "work/ipc",
     "work/stg",
+    "work/print",
     # Security: profiles, passwords, authority, auditing.
     "security/sec",
     "security/pwdsub",

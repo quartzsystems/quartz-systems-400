@@ -1,0 +1,11 @@
+<CR><LF>
+QS/400 PAYROLL REGISTER                     PAGE 1<CR><LF>
+<CR><LF>
+EMPLOYEE    NAME              AMOUNT<CR><LF>
+000101      Ren? Dupr?       1,234.50<CR><LF>
+000102      J?rgen M?ller     987.00<CR><LF>
+********************************************************************************<CR><LF>
+<FF>
+<CR><LF>
+TOTAL                         2,221.50<CR><LF>
+<FF>

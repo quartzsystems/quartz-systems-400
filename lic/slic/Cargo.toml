@@ -38,6 +38,7 @@ ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 qsyslib = { path = "../../ifs/qsyslib", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }
+print = { path = "../../work/print", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }

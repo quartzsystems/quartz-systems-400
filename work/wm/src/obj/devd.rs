@@ -7,8 +7,10 @@
 //! renders spooled files to text and PDF kept in the store. Phase 8
 //! adds the virtual displays of TN5250E sessions (`QPADEVnnnn` on the
 //! controller `QPACTL01`) and the console `QSCONSOLE`.
-//! `MIGRATE(phase10)`: real printers, `CRTDEVPRT`.
+//! Phase 10 adds LAN printers (`CRTDEVPRT DEVCLS(*LAN)`), whose
+//! printer section ([`super::devprt`]) follows the 192 bytes.
 
+use super::devprt::LanPrinter;
 use crate::rec::{Layout, Rec, field};
 use crate::{Error, Result};
 
@@ -33,7 +35,8 @@ pub const LAYOUT: Layout = Layout {
         field("MsgqLib", 142, 10),
         field("Virtual", 152, 1),
         field("AlwBln", 153, 1),
-        field("Reserved2", 154, 38),
+        field("PrtLen", 154, 2),
+        field("Reserved2", 156, 36),
     ],
 };
 
@@ -57,7 +60,7 @@ const LAYOUT_V1: Layout = Layout {
 };
 
 const MAGIC: &[u8; 8] = b"QSWMDEVD";
-const VERSION: u64 = 2;
+const VERSION: u64 = 3;
 
 /// The console display's name.
 pub const CONSOLE: &str = "QSCONSOLE";
@@ -139,6 +142,8 @@ pub struct Devd {
     pub virtual_: bool,
     /// `ALWBLN(*YES)`.
     pub alwbln: bool,
+    /// The LAN printer section (`CRTDEVPRT DEVCLS(*LAN)`).
+    pub printer: Option<LanPrinter>,
 }
 
 impl Devd {
@@ -158,6 +163,7 @@ impl Devd {
             msgq: String::new(),
             virtual_: false,
             alwbln: true,
+            printer: None,
         }
     }
 
@@ -177,6 +183,7 @@ impl Devd {
             msgq: "QSYS/QSYSOPR".into(),
             virtual_: false,
             alwbln: true,
+            printer: None,
         }
     }
 
@@ -200,6 +207,7 @@ impl Devd {
             msgq: "QSYS/QSYSOPR".into(),
             virtual_: auto,
             alwbln: true,
+            printer: None,
         }
     }
 
@@ -213,7 +221,7 @@ impl Devd {
     /// printer session's device).
     #[must_use]
     pub fn is_printer(&self) -> bool {
-        self.devcls == "*PRT" || is_printer_type(&self.devtype)
+        self.devcls == "*PRT" || self.printer.is_some() || is_printer_type(&self.devtype)
     }
 
     /// A virtual printer a TN5250E printer session asked for; its
@@ -233,6 +241,28 @@ impl Devd {
             msgq: "QSYS/QSYSOPR".into(),
             virtual_: false,
             alwbln: false,
+            printer: None,
+        }
+    }
+
+    /// A LAN printer (`CRTDEVPRT DEVCLS(*LAN)`): its queue is
+    /// `QUSRSYS/<name>`, its messages go to `QSYSOPR`.
+    #[must_use]
+    pub fn lan_printer(name: &str, devtype: &str, model: &str, printer: LanPrinter) -> Self {
+        Self {
+            online: true,
+            status: DevStatus::VariedOn,
+            devcls: "*LAN".into(),
+            devtype: devtype.into(),
+            model: model.into(),
+            outq: format!("QUSRSYS/{name}"),
+            text: String::new(),
+            ctl: String::new(),
+            kbdtype: String::new(),
+            msgq: "QSYS/QSYSOPR".into(),
+            virtual_: false,
+            alwbln: false,
+            printer: Some(printer),
         }
     }
 
@@ -258,14 +288,20 @@ impl Devd {
         r.set_text("MsgqLib", l);
         r.set_flag("Virtual", self.virtual_);
         r.set_flag("AlwBln", self.alwbln);
-        r.buf
+        let mut out = r.buf;
+        if let Some(p) = &self.printer {
+            let b = p.encode();
+            out[154..156].copy_from_slice(&u16::try_from(b.len()).unwrap_or(0).to_le_bytes());
+            out.extend_from_slice(&b);
+        }
+        out
     }
 
     /// Read a payload back, of either version.
     pub fn decode(b: &[u8]) -> Result<Self> {
         let v1 = b.len() == LAYOUT_V1.size.unwrap_or(0);
         let r = Rec::read(if v1 { &LAYOUT_V1 } else { &LAYOUT }, b)?;
-        if r.bytes("Magic") != MAGIC || (r.uint("Version") != VERSION && !v1) {
+        if r.bytes("Magic") != MAGIC || (!matches!(r.uint("Version"), 2 | VERSION) && !v1) {
             return Err(Error::Corrupt("not a device description".into()));
         }
         let outq = |lib: String, name: String| {
@@ -288,6 +324,7 @@ impl Devd {
             msgq: String::new(),
             virtual_: false,
             alwbln: true,
+            printer: None,
         };
         if v1 {
             d.status = if d.online {
@@ -302,6 +339,12 @@ impl Devd {
             d.msgq = outq(r.text("MsgqLib"), r.text("MsgqName"));
             d.virtual_ = r.flag("Virtual");
             d.alwbln = r.flag("AlwBln");
+            let n = usize::try_from(r.uint("PrtLen")).unwrap_or(0);
+            if n > 0 {
+                let tail = r.tail();
+                let sec = tail.get(..n).ok_or_else(|| Error::Corrupt("printer section truncated".into()))?;
+                d.printer = Some(LanPrinter::decode(sec)?);
+            }
         }
         Ok(d)
     }
@@ -334,6 +377,16 @@ mod tests {
         let mut v = Devd::virtual_display("3179", "2", "USB", true);
         v.status = DevStatus::Active;
         assert_eq!(Devd::decode(&v.encode()).unwrap(), v);
+        let p = super::super::devprt::LanPrinter {
+            lanattach: 1,
+            port: 9100,
+            rmtlocname: "lj4.example.com".into(),
+            ..Default::default()
+        };
+        let l = Devd::lan_printer("LJ4", "3812", "1", p);
+        assert!(l.is_printer() && !l.is_display());
+        assert_eq!(Devd::decode(&l.encode()).unwrap(), l);
+        assert_eq!(l.encode().len(), 192 + 512);
     }
 
     #[test]

@@ -500,14 +500,16 @@ The payload of a `*DEVD`. Phase 5 has the capture device
 `QSYS/QSCAPTURE`, type `QSCP`, whose writer renders spooled files to
 text and PDF in the store; Phase 8 adds the virtual displays of
 TN5250E sessions (`QPADEVnnnn`, class `*VRT`, on the controller
-`QPACTL01`) and the console `QSCONSOLE` (`*DSP`); real printers are
-`MIGRATE(phase10)`. Version 1 (128 bytes, ending at `Text` and a
-16-byte reserve) is still read.
+`QPACTL01`) and the console `QSCONSOLE` (`*DSP`); Phase 10 adds LAN
+printers (`CRTDEVPRT DEVCLS(*LAN)`, class `*LAN`), whose
+`PrinterDevice` section follows the 192 bytes when `PrtLen` is not
+zero. Version 3; version 2 (no `PrtLen`, zero there) and version 1
+(128 bytes, ending at `Text` and a 16-byte reserve) are still read.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSWMDEVD` in ASCII |
-| 8 | 2 | Version | 2 |
+| 8 | 2 | Version | 3 |
 | 10 | 1 | Online | varied on |
 | 11 | 1 | Status | 0 varied off, 1 varied on, 2 sign-on display, 3 active, 4 recovery pending |
 | 12 | 10 | DevCls | `*PRT`, `*DSP`, `*VRT` |
@@ -522,7 +524,49 @@ TN5250E sessions (`QPADEVnnnn`, class `*VRT`, on the controller
 | 142 | 10 | MsgqLib | |
 | 152 | 1 | Virtual | created by `QAUTOVRT` |
 | 153 | 1 | AlwBln | `ALWBLN(*YES)` |
-| 154 | 38 | Reserved2 | zero |
+| 154 | 2 | PrtLen | bytes of the `PrinterDevice` section that follows; 0 none |
+| 156 | 36 | Reserved2 | zero |
+
+### `PrinterDevice` (512 bytes)
+
+The LAN printer section of a `*DEVD`, after its 192 bytes. Qualified
+names are two 10-byte fields, name then library; blank is `*NONE`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | LanAttach | 0 `*LEXLINK`, 1 `*IP`, 2 `*USRDFN` |
+| 1 | 1 | Transform | `TRANSFORM(*YES)` |
+| 2 | 1 | SecureCnn | `SECURECNN(*YES)` |
+| 3 | 1 | PrtQlty | 0 `*STD`, 1 `*DRAFT`, 2 `*NLQ` |
+| 4 | 4 | Port | `PORT`; 0 the driver's (9100, IPP 631) |
+| 8 | 2 | ChridCs | `CHRID` graphic character set; 0 `*SYSVAL` |
+| 10 | 2 | ChridCp | `CHRID` code page |
+| 12 | 10 | FontId | `FONT` identifier |
+| 22 | 2 | FontPt | `FONT` point size, tenths; 0 `*NONE` |
+| 24 | 1 | FormFeed | 0 `*TYPE`, 1 `*CONT`, 2 `*CUT`, 3 `*AUTOCUT`, 4 `*CONT2` |
+| 25 | 1 | SepDrawer | 0 `*FILE` |
+| 26 | 1 | PprSrc1 | IBM's paper code: 0 `*MFRTYPMDL`, 1 `*LETTER`, 2 `*LEGAL`, 4 `*A4` ... |
+| 27 | 1 | PprSrc2 | the same |
+| 28 | 1 | Envelope | the same; 0xFF `*NONE` |
+| 29 | 1 | PrtErrMsg | 1 `*INFO`, 0 `*INQ` |
+| 30 | 1 | MaxPndRqs |  |
+| 31 | 1 | Reserved | zero |
+| 32 | 2 | PrtRqsTmr | 0 `*NOMAX` |
+| 34 | 6 | Reserved2 | zero |
+| 40 | 10 | SysDrvPgm | `*HPPJLDRV`, `*IBMPJLDRV`, `*IBMSNMPDRV`, `*NETSTNDRV`, `*IBMIPPDRV` |
+| 50 | 17 | MfrTypMdl |  |
+| 67 | 1 | Reserved3 | zero |
+| 68 | 10 | SepPgmName |  |
+| 78 | 10 | SepPgmLib |  |
+| 88 | 10 | WscstName |  |
+| 98 | 10 | WscstLib |  |
+| 108 | 10 | UsrDtaTfmName |  |
+| 118 | 10 | UsrDtaTfmLib |  |
+| 128 | 10 | UsrDrvPgmName |  |
+| 138 | 10 | UsrDrvPgmLib |  |
+| 148 | 4 | Reserved4 | zero |
+| 152 | 255 | RmtLocName | host name, address, or an IPP printer URI |
+| 407 | 105 | Reserved5 | zero |
 
 ### `ControllerDescription` (96 bytes)
 
@@ -543,13 +587,15 @@ session asks for a display; lines and real controllers are
 
 ### `OutputQueue` (256 bytes)
 
-The payload of an `*OUTQ`. `Count` spool identifiers follow, in queue
-order; `SEQ(*JOBNBR)` keeps them sorted by job number.
+The payload of an `*OUTQ`. Version 2: the `RemoteOutputQueue` section
+follows the 256 bytes, then `Count` spool identifiers, in queue order;
+`SEQ(*JOBNBR)` keeps them sorted by job number. Version 1 (no
+section) is still read.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSWMOUTQ` in ASCII |
-| 8 | 2 | Version | 1 |
+| 8 | 2 | Version | 2 |
 | 10 | 1 | Held | `HLDOUTQ` |
 | 11 | 1 | Seq | 0 `*FIFO`, 1 `*JOBNBR` |
 | 12 | 4 | Count | spool identifiers that follow, `u32` each |
@@ -559,12 +605,42 @@ order; `SEQ(*JOBNBR)` keeps them sorted by job number.
 | 23 | 1 | OprCtl |  |
 | 24 | 10 | AutChk |  |
 | 34 | 10 | Writer | the writer started to it |
-| 44 | 1 | CnnType | 0 `*IP`; `MIGRATE(phase10)` |
+| 44 | 1 | CnnType | 0 `*IP`, 1 `*SNA`, 2 `*USRDFN` |
 | 45 | 3 | Reserved | zero |
 | 48 | 50 | Text |  |
 | 98 | 30 | Reserved2 | zero |
-| 128 | 64 | RmtSys | `MIGRATE(phase10)` |
-| 192 | 64 | RmtPrtQ | `MIGRATE(phase10)` |
+| 128 | 64 | RmtSys | blank `*NONE`; `*INTNETADR` takes the section's address |
+| 192 | 64 | RmtPrtQ | blank `*USER` |
+
+### `RemoteOutputQueue` (512 bytes)
+
+How a remote writer sends the queue's files (`docs/PRINT.md`).
+Qualified names are name then library; blank is `*NONE`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | DestType | 0 `*OTHER`, 1 `*OS400`, 2 `*OS400V2`, 3 `*PSF2`, 4 `*S390`, 5 `*NDS` |
+| 1 | 1 | Transform | `TRANSFORM(*YES)` |
+| 2 | 1 | SepPage | `SEPPAGE(*YES)` |
+| 3 | 1 | Reserved | zero |
+| 4 | 10 | MsgqName | the writer's messages, `QSYSOPR` by default |
+| 14 | 10 | MsgqLib |  |
+| 24 | 17 | MfrTypMdl |  |
+| 41 | 1 | Class | `CLASS` |
+| 42 | 2 | Reserved2 | zero |
+| 44 | 10 | WscstName |  |
+| 54 | 10 | WscstLib |  |
+| 64 | 10 | UsrDtaTfmName |  |
+| 74 | 10 | UsrDtaTfmLib |  |
+| 84 | 10 | UsrDrvPgmName |  |
+| 94 | 10 | UsrDrvPgmLib |  |
+| 104 | 45 | IntNetAdr |  |
+| 149 | 1 | Reserved3 | zero |
+| 150 | 8 | Fcb |  |
+| 158 | 2 | Reserved4 | zero |
+| 160 | 128 | DestOpt | as given |
+| 288 | 40 | UsrDfnOpt | blank separated |
+| 328 | 184 | Reserved5 | zero |
 
 ### `SpooledFile` (512 bytes)
 
@@ -760,7 +836,9 @@ separated by form feeds) and a PDF of it. The PDF is our own: version
 1.4, text only, Courier, one PDF page per page sized from the page
 length, width, lines and characters per inch, a quarter-inch margin.
 `prtcapture get` shows the text, or the PDF in base64.
-`MIGRATE(phase10)`: printers that are devices, remote writers.
+Phase 10 adds LAN printer devices and remote writers (`STRRMTWTR`):
+the writer sends through the `print` crate and a failed send leaves the
+writer in `MSGW` (`docs/PRINT.md`).
 
 ### The SCS subset
 

@@ -4,13 +4,16 @@
 
 //! `*OUTQ`: spooled files waiting to print, in queue order, and the
 //! queue's attributes. The files themselves are `*SPLF` objects in
-//! `QSPL`; the queue holds their spool identifiers. The remote
-//! attributes are kept for `MIGRATE(phase10)` and do nothing yet.
+//! `QSPL`; the queue holds their spool identifiers. A remote queue
+//! (`RMTSYS`) is printed by a remote writer (`STRRMTWTR`) over LPR; its
+//! attributes beyond the system and printer queue are the version-2
+//! section [`super::outqrmt`].
 
 use std::fmt::Write as _;
 
 use ipc::{wire_enum, wire_struct};
 
+use super::outqrmt::RemoteQ;
 use crate::cmd::Params;
 use crate::rec::{Layout, Rec, field};
 use crate::{Error, Result};
@@ -41,7 +44,7 @@ pub const LAYOUT: Layout = Layout {
 };
 
 const MAGIC: &[u8; 8] = b"QSWMOUTQ";
-const VERSION: u64 = 1;
+const VERSION: u64 = 2;
 
 /// `SEQ`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -77,7 +80,7 @@ pub struct OutQ {
     pub autchk: String,
     /// The writer started to it, blank for none.
     pub writer: String,
-    /// `CNNTYPE`: 0 `*IP`.
+    /// `CNNTYPE`: 0 `*IP`, 1 `*SNA`, 2 `*USRDFN`.
     pub cnntype: u8,
     /// `TEXT`.
     pub text: String,
@@ -85,6 +88,8 @@ pub struct OutQ {
     pub rmtsys: String,
     /// `RMTPRTQ`.
     pub rmtprtq: String,
+    /// The remote section.
+    pub remote: RemoteQ,
     /// The spooled files on it, by spool identifier, in queue order.
     pub files: Vec<u32>,
 }
@@ -102,6 +107,7 @@ wire_struct!(OutQ {
     text,
     rmtsys,
     rmtprtq,
+    remote,
     files
 });
 
@@ -120,6 +126,7 @@ impl Default for OutQ {
             text: String::new(),
             rmtsys: String::new(),
             rmtprtq: String::new(),
+            remote: RemoteQ::default(),
             files: Vec::new(),
         }
     }
@@ -163,6 +170,7 @@ impl OutQ {
         r.set_text("RmtSys", &self.rmtsys);
         r.set_text("RmtPrtQ", &self.rmtprtq);
         let mut out = r.buf;
+        out.extend_from_slice(&self.remote.encode());
         for f in &self.files {
             out.extend_from_slice(&f.to_le_bytes());
         }
@@ -172,11 +180,21 @@ impl OutQ {
     /// Read a payload back.
     pub fn decode(b: &[u8]) -> Result<Self> {
         let r = Rec::read(&LAYOUT, b)?;
-        if r.bytes("Magic") != MAGIC || r.uint("Version") != VERSION {
+        let version = r.uint("Version");
+        if r.bytes("Magic") != MAGIC || !matches!(version, 1 | VERSION) {
             return Err(Error::Corrupt("not an output queue".into()));
         }
         let n = usize::try_from(r.uint("Count")).unwrap_or(usize::MAX);
-        let tail = r.tail();
+        let mut tail = r.tail();
+        let mut remote = RemoteQ::default();
+        if version == VERSION {
+            let size = super::outqrmt::LAYOUT.size.unwrap_or(0);
+            let sec = tail
+                .get(..size)
+                .ok_or_else(|| Error::Corrupt("output queue remote section truncated".into()))?;
+            remote = RemoteQ::decode(sec)?;
+            tail = &tail[size..];
+        }
         if tail.len() < n.saturating_mul(4) {
             return Err(Error::Corrupt("output queue entries truncated".into()));
         }
@@ -202,6 +220,7 @@ impl OutQ {
             text: r.text("Text"),
             rmtsys: r.text("RmtSys"),
             rmtprtq: r.text("RmtPrtQ"),
+            remote,
             files: tail[..n * 4]
                 .as_chunks::<4>()
                 .0
@@ -217,8 +236,10 @@ impl OutQ {
         for (k, raw) in &p.kw {
             let v = raw.trim();
             let up = v.to_ascii_uppercase();
+            if up == "*SAME" {
+                continue;
+            }
             match k.as_str() {
-                "OUTQ" => {}
                 "SEQ" => {
                     self.seq = match up.as_str() {
                         "*FIFO" => Seq::Fifo,
@@ -260,13 +281,38 @@ impl OutQ {
                     self.autchk = up;
                 }
                 "TEXT" => self.text = v.trim_matches('\'').replace("''", "'"),
-                "RMTSYS" => self.rmtsys = if up == "*NONE" { String::new() } else { up },
-                "RMTPRTQ" => self.rmtprtq = v.trim_matches('\'').to_string(),
-                "CNNTYPE" => {
-                    if up != "*IP" {
+                "RMTSYS" => {
+                    let s = v.trim_matches('\'').trim().to_string();
+                    if s.len() > 64 {
                         return Err(bad(k, v));
                     }
+                    self.rmtsys = if up == "*NONE" {
+                        String::new()
+                    } else if s.starts_with('*') {
+                        s.to_ascii_uppercase()
+                    } else {
+                        s
+                    };
                 }
+                "RMTPRTQ" => {
+                    let s = v.trim_matches('\'').to_string();
+                    if s.len() > 64 {
+                        return Err(bad(k, v));
+                    }
+                    self.rmtprtq = s;
+                }
+                "CNNTYPE" => {
+                    self.cnntype = match up.as_str() {
+                        "*IP" => 0,
+                        "*SNA" => 1,
+                        "*USRDFN" => 2,
+                        _ => return Err(bad(k, v)),
+                    };
+                }
+                // Accepted, not kept.
+                "OUTQ" | "JOBSEP" | "DTAQ" | "AUT" | "USRDFNOBJ" | "USRDFNDTA" | "SPLFASP" | "ASPDEV"
+                | "IMGCFG" => {}
+                k if self.remote.apply_one(k, v)? => {}
                 _ => {
                     return Err(Error::value(
                         "CPD0043",
@@ -319,7 +365,38 @@ impl OutQ {
             }
         );
         let _ = writeln!(out, "Text . . . . . . . . : {}", self.text);
+        if self.is_remote() {
+            let _ = writeln!(out, "Remote system  . . . : {}", self.rmtsys);
+            let _ = writeln!(
+                out,
+                "Remote printer queue : {}",
+                if self.rmtprtq.is_empty() { "*USER" } else { &self.rmtprtq }
+            );
+            let _ = writeln!(
+                out,
+                "Connection type  . . : {}",
+                ["*IP", "*SNA", "*USRDFN"].get(usize::from(self.cnntype)).unwrap_or(&"*IP")
+            );
+            out.push_str(&self.remote.describe());
+        }
         out
+    }
+
+    /// Whether a remote writer prints it (`RMTSYS` is not `*NONE`).
+    #[must_use]
+    pub fn is_remote(&self) -> bool {
+        !self.rmtsys.is_empty()
+    }
+
+    /// The host the remote writer connects to: `INTNETADR` for
+    /// `RMTSYS(*INTNETADR)`, else the remote system name.
+    #[must_use]
+    pub fn remote_host(&self) -> String {
+        if self.rmtsys == "*INTNETADR" {
+            self.remote.intnetadr.clone()
+        } else {
+            self.rmtsys.clone()
+        }
     }
 }
 
@@ -340,5 +417,14 @@ mod tests {
         assert_eq!(back.text, "It's");
         assert!(q.apply(&Params::parse("x SEQ(*LIFO)")).is_err());
         assert!(q.describe().contains("*JOBNBR"));
+        q.apply(&Params::parse(
+            "x RMTSYS(*INTNETADR) INTNETADR('10.0.0.9') RMTPRTQ('lp0') CNNTYPE(*IP) DESTTYPE(*OTHER) MFRTYPMDL(*HP4) DESTOPT(XAIX) JOBSEP(1)",
+        ))
+        .unwrap();
+        assert!(q.is_remote());
+        assert_eq!(q.remote_host(), "10.0.0.9");
+        let back = OutQ::decode(&q.encode()).unwrap();
+        assert_eq!(back, q);
+        assert!(back.describe().contains("Remote printer queue : lp0"));
     }
 }

@@ -19,13 +19,14 @@ use wm::cmd::Params;
 use wm::obj::devd::Devd;
 use wm::obj::jobq::SbmJob;
 use wm::obj::splf::{SplfAttrs, Status};
-use wm::wtr::WtrStep;
+use wm::wtr::{WtrDest, WtrStep};
 
 use super::spool::{self, with_outq, with_store};
 use crate::ipl::system::{System, now_unix};
 
 /// A started writer.
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Writer {
     /// The device.
     pub dev: String,
@@ -47,6 +48,10 @@ pub struct Writer {
     pub current: Option<u32>,
     /// Files printed.
     pub printed: u32,
+    /// A remote writer (`STRRMTWTR`): it prints a remote output queue.
+    pub remote: bool,
+    /// The message it waits on after a failed send.
+    pub msgw: Option<String>,
 }
 
 /// Every started writer, by name.
@@ -62,21 +67,108 @@ fn device(system: &mut System, dev: &str) -> Result<Devd, String> {
 pub fn strprtwtr(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let dev = p.pos_or(0, "DEV")?.to_ascii_uppercase();
     let d = device(system, &dev)?;
-    if d.devcls != "*PRT" {
+    if !d.is_printer() || d.is_display() {
         return Err(format!("CPF3310 device {dev} is not a printer"));
+    }
+    if d.printer.as_ref().is_some_and(|l| !l.is_ip()) {
+        return Err(format!(
+            "CPF3310 device {dev}: only LANATTACH(*IP) LAN printers print here"
+        ));
     }
     let name = match p.upper("WTR").as_deref() {
         None | Some("*DEV") => dev.clone(),
         Some(w) => w.to_string(),
     };
-    if system.writers.contains_key(&name) {
-        return Err(format!("CPF3313 writer {name} is already started"));
-    }
     let q = match p.upper("OUTQ").as_deref() {
         None | Some("*DEV") => d.outq.clone(),
         Some(q) => q.to_string(),
     };
-    let (real, busy) = with_outq(system, &q, |oq, real| {
+    start(system, me, &name, &dev, &q, p, false)
+}
+
+/// `STRRMTWTR OUTQ(lib/q|*ALL) [WTR(*OUTQ|name)] [FORMTYPE()] [AUTOEND()]`:
+/// a writer that sends a remote output queue's files over LPR.
+pub fn strrmtwtr(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
+    let q = p.pos_or(0, "OUTQ")?.to_ascii_uppercase();
+    if q == "*ALL" {
+        let mut out = String::new();
+        for real in remote_queues(system)? {
+            let name = real.rsplit('/').next().unwrap_or(&real).to_string();
+            if system.writers.contains_key(&name) {
+                continue;
+            }
+            match start(system, me, &name, "", &real, p, true) {
+                Ok(s) => out.push_str(&s),
+                Err(e) => {
+                    let _ = writeln!(out, "{e}");
+                }
+            }
+        }
+        if out.is_empty() {
+            out.push_str("No remote output queue is without a writer.\n");
+        }
+        return Ok(out);
+    }
+    let (real, remote) = with_outq(system, &q, |oq, real| Ok(((real.to_string(), oq.is_remote()), false)))?;
+    if !remote {
+        return Err(format!(
+            "CPF3310 output queue {real} has no remote system (RMTSYS)"
+        ));
+    }
+    let name = match p.upper("WTR").as_deref() {
+        None | Some("*OUTQ" | "*SYSGEN") => real.rsplit('/').next().unwrap_or(&real).to_string(),
+        Some(w) => w.to_string(),
+    };
+    start(system, me, &name, "", &real, p, true)
+}
+
+/// Every output queue with a remote system, `lib/name`.
+fn remote_queues(system: &mut System) -> Result<Vec<String>, String> {
+    with_store(system, |txn, qsys| {
+        let mut libs = vec![("QSYS".to_string(), qsys)];
+        for (k, id) in ops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())? {
+            libs.push((k.name.to_string(), id));
+        }
+        let mut out = Vec::new();
+        for (lname, lib) in libs {
+            for (k, id) in ops::list(txn, lib, Some(types::OUTQ)).map_err(|e| e.to_string())? {
+                let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+                if wm::obj::outq::OutQ::decode(&b).is_ok_and(|q| q.is_remote()) {
+                    out.push(format!("{lname}/{}", k.name));
+                }
+            }
+        }
+        Ok(out)
+    })
+}
+
+/// The first word of `FORMTYPE(type msgopt)`.
+fn formtype(p: &Params) -> String {
+    p.upper("FORMTYPE")
+        .and_then(|f| {
+            f.trim_matches(['(', ')'])
+                .split_whitespace()
+                .next()
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "*ALL".into())
+}
+
+/// Submit writer `name` for queue `q`: the job, the queue's writer,
+/// the table entry.
+fn start(
+    system: &mut System,
+    me: u32,
+    name: &str,
+    dev: &str,
+    q: &str,
+    p: &Params,
+    remote: bool,
+) -> Result<String, String> {
+    if system.writers.contains_key(name) {
+        return Err(format!("CPF3313 writer {name} is already started"));
+    }
+    let (real, busy) = with_outq(system, q, |oq, real| {
         Ok(((real.to_string(), oq.writer.clone()), false))
     })?;
     if !busy.is_empty() {
@@ -85,8 +177,8 @@ pub fn strprtwtr(system: &mut System, me: u32, p: &Params) -> Result<String, Str
         ));
     }
     let r = SbmJob {
-        cmd: name.clone(),
-        job: name.clone(),
+        cmd: name.to_string(),
+        job: name.to_string(),
         jobd: "QSYS/QSPLJOBD".into(),
         jobq: "QSYS/QSPL".into(),
         user: "QSPLJOB".into(),
@@ -99,27 +191,144 @@ pub fn strprtwtr(system: &mut System, me: u32, p: &Params) -> Result<String, Str
     // The system starts the writer as QSPLJOB, not the user asking.
     let (job, _) = sec::guard::as_system(|| super::jobqs::sbmjob(system, me, &r))?;
     with_outq(system, &real, |oq, _| {
-        oq.writer.clone_from(&name);
+        oq.writer = name.to_string();
         Ok(((), true))
     })?;
     system.writers.insert(
-        name.clone(),
+        name.to_string(),
         Writer {
-            dev,
+            dev: dev.to_string(),
             outq: real.clone(),
             job,
             held: false,
             ending: false,
-            formtype: p.upper("FORMTYPE").unwrap_or_else(|| "*ALL".into()),
+            formtype: formtype(p),
             filesep: p.upper("FILESEP").and_then(|n| n.parse().ok()).unwrap_or(0),
-            autoend: p.upper("AUTOEND").is_some_and(|a| a.starts_with("*YES")),
+            autoend: p.upper("AUTOEND").is_some_and(|a| a.trim_start_matches('(').starts_with("*YES")),
             current: None,
             printed: 0,
+            remote,
+            msgw: None,
         },
     );
     Ok(format!(
         "Writer {name} submitted as job {job:06}/QSPLJOB/{name} to print output queue {real}.\n"
     ))
+}
+
+/// A writer's status as `WRKWTR` shows it.
+#[must_use]
+pub fn status(system: &System, w: &Writer) -> &'static str {
+    if w.ending {
+        "END"
+    } else if w.held {
+        "HLD"
+    } else if w.msgw.is_some() {
+        "MSGW"
+    } else if w.current.is_some() {
+        "WTR"
+    } else if system.jobs.get(w.job).is_some() {
+        "STR"
+    } else {
+        "JOBQ"
+    }
+}
+
+/// The `*WSCST` payload `lib/name` names; empty when blank or missing.
+fn wscst_payload(system: &mut System, q: &str) -> Vec<u8> {
+    if q.is_empty() {
+        return Vec::new();
+    }
+    super::sbs::wm_object(system, q, "*WSCST").unwrap_or_default()
+}
+
+/// Where writer `name` prints.
+pub fn target(system: &mut System, name: &str) -> Result<WtrDest, String> {
+    let w = system
+        .writers
+        .get(name)
+        .cloned()
+        .ok_or_else(|| format!("CPF3313 writer {name} is not started"))?;
+    if w.remote {
+        let (_, oq, _) = spool::on_queue(system, &w.outq)?;
+        let wscst = wscst_payload(system, &oq.remote.wscst);
+        return Ok(WtrDest::Remote {
+            host: oq.remote_host(),
+            queue: oq.rmtprtq.clone(),
+            desttype: oq.remote.desttype,
+            destopt: oq.remote.destopt.clone(),
+            seppage: oq.remote.seppage,
+            transform: oq.remote.transform,
+            mfrtypmdl: oq.remote.mfrtypmdl.clone(),
+            wscst,
+            local_host: system.system_name(),
+        });
+    }
+    let d = device(system, &w.dev)?;
+    let Some(l) = d.printer.filter(lan_ip) else {
+        return Ok(WtrDest::Capture);
+    };
+    let wscst = wscst_payload(system, &l.wscst);
+    Ok(WtrDest::Lan {
+        host: l.rmtlocname.clone(),
+        port: u16::try_from(l.port).unwrap_or(0),
+        driver: l.sysdrvpgm.clone(),
+        secure: l.securecnn,
+        transform: l.transform,
+        mfrtypmdl: l.mfrtypmdl.clone(),
+        wscst,
+        chrid: l.chrid_text(),
+    })
+}
+
+/// Whether a printer section is a LAN printer over TCP/IP.
+#[must_use]
+pub fn lan_ip(l: &wm::obj::devprt::LanPrinter) -> bool {
+    l.is_ip()
+}
+
+/// Writer `name` could not print `id`: the file is ready again (held
+/// when the far end refused it), the writer waits with a message, and
+/// the message goes to the system operator.
+pub fn failed(
+    system: &mut System,
+    name: &str,
+    id: u32,
+    msgid: &str,
+    text: &str,
+    hold: bool,
+) -> Result<(), String> {
+    let Some(w) = system.writers.get_mut(name) else {
+        return Err(format!("CPF3313 writer {name} is not started"));
+    };
+    w.current = None;
+    w.msgw = Some(msgid.to_string());
+    let job = w.job;
+    spool::update(system, id, |a: &mut SplfAttrs| {
+        a.status = if hold { Status::Hld } else { Status::Rdy };
+        if hold {
+            a.held_from = Status::Rdy;
+        }
+        a.writer.clear();
+        Ok(())
+    })?;
+    let file = system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| e.attrs.name.clone())
+        .unwrap_or_default();
+    let m = wm::obj::msgq::QMsg {
+        msgid: msgid.into(),
+        msgf: ("QTCPMSGF".into(), "QTCP".into()),
+        severity: 40,
+        text: format!("Writer {name} could not send spooled file {file}: {text}"),
+        job: (name.to_string(), "QSPLJOB".into(), job),
+        from_pgm: "QSPWTR".into(),
+        ..wm::obj::msgq::QMsg::default()
+    };
+    let _ = super::msgs::send(system, "QSYS", "QSYSOPR", m);
+    Ok(())
 }
 
 /// `ENDWTR`, `HLDWTR`, `RLSWTR`, `CHGWTR`.
@@ -191,23 +400,17 @@ pub fn wrkwtr(system: &System) -> String {
         "Opt  Writer      Type  Device      Sts   Form Type   Output Queue  Library     Printed\n",
     );
     for (name, w) in &system.writers {
-        let status = if w.ending {
-            "END"
-        } else if w.held {
-            "HLD"
-        } else if w.current.is_some() {
-            "WTR"
-        } else if system.jobs.get(w.job).is_some() {
-            "STR"
-        } else {
-            "JOBQ"
-        };
+        let status = status(system, w);
+        let kind = if w.remote { "RMT" } else { "PRT" };
         let (lib, q) = w.outq.split_once('/').unwrap_or(("", &w.outq));
         let _ = writeln!(
             out,
-            "     {name:<10}  PRT   {:<10}  {status:<4}  {:<10}  {q:<12}  {lib:<10}  {:>7}",
+            "     {name:<10}  {kind}   {:<10}  {status:<4}  {:<10}  {q:<12}  {lib:<10}  {:>7}",
             w.dev, w.formtype, w.printed
         );
+        if let Some(m) = &w.msgw {
+            let _ = writeln!(out, "       waiting after {m}; the writer tries again");
+        }
     }
     if system.writers.is_empty() {
         out.push_str("  (No writers started)\n");
@@ -281,6 +484,18 @@ pub fn printed(
         .get(&id)
         .map(|e| e.attrs.clone())
         .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
+    if let Some(w) = system.writers.get_mut(name) {
+        w.msgw = None;
+    }
+    // A network printer leaves no capture.
+    if !text.is_empty() || !pdf.is_empty() {
+        capture(system, id, &attrs, text, pdf)?;
+    }
+    finish(system, name, id, &attrs)
+}
+
+/// Keep what the capture device printed: text and PDF in a user space.
+fn capture(system: &mut System, id: u32, attrs: &SplfAttrs, text: &str, pdf: &[u8]) -> Result<(), String> {
     let meta = format!("{} {} {}", attrs.name, attrs.job_text(), attrs.number);
     let mut body = Vec::with_capacity(8 + text.len() + pdf.len());
     body.extend_from_slice(&u32::try_from(text.len()).unwrap_or(0).to_le_bytes());
@@ -304,7 +519,11 @@ pub fn printed(
         let sp =
             usrspc::create(txn, &params, body.len() as u64, true, 0).map_err(|e| e.to_string())?;
         usrspc::write(txn, sp, 0, &body).map_err(|e| e.to_string())
-    })?;
+    })
+}
+
+/// The file is printed: counted, then saved or deleted.
+fn finish(system: &mut System, name: &str, id: u32, attrs: &SplfAttrs) -> Result<(), String> {
     if let Some(w) = system.writers.get_mut(name) {
         w.current = None;
         w.printed += 1;

@@ -100,6 +100,8 @@ pub const JOBSCD: u16 = 0x0021;
 pub const DEVD: u16 = 0x001B;
 /// Code of `*SPLF`: a spooled file, kept in `QSPL`.
 pub const SPLF: u16 = 0x0022;
+/// Code of `*WSCST`: a workstation customizing object (`docs/PRINT.md`).
+pub const WSCST: u16 = 0x0028;
 /// Code of `*USRPRF`.
 pub const USRPRF: u16 = 0x000E;
 /// Code of `*AUTL`.
@@ -180,6 +182,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(0x0020, "*IMGCLG", true, false, false, false, Module::Opaque),
     t(JOBSCD, "*JOBSCD", true, false, false, false, Module::Opaque),
     t(0x0023, "*SCHIDX", true, true, false, false, Module::Opaque),
+    t(WSCST, "*WSCST", true, true, false, false, Module::Opaque),
     t(SPLF, "*SPLF", false, false, false, false, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
@@ -207,7 +210,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 37);
+        assert_eq!(TYPES.len(), 38);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);

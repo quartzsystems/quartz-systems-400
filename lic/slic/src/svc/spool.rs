@@ -5,7 +5,7 @@
 //! Output queue and spooled file commands of the service console.
 
 use crate::ipl::system::System;
-use crate::stgsvc::{splcmd, wtr};
+use crate::stgsvc::{prtdev, splcmd, wtr};
 
 /// Help for these commands.
 pub const HELP: &str = "\
@@ -17,6 +17,9 @@ cpysplf FILE TOFILE(LIB/F) [JOB() SPLNBR() TOMBR() MBROPT(*REPLACE|*ADD) CTLCHAR
 chgsplfa FILE [JOB() SPLNBR()] [OUTQ() COPIES() OUTPTY() FORMTYPE() USRDTA() SAVE() ...]
 hldsplf FILE [JOB() SPLNBR()] | rlssplf FILE ... | dltsplf FILE ...
 strprtwtr DEV(QSCAPTURE) [OUTQ(*DEV|LIB/Q) WTR() FORMTYPE(*ALL) FILESEP(n) AUTOEND(*NO|*YES)]
+strrmtwtr OUTQ(LIB/Q|*ALL) [WTR(*OUTQ|name) FORMTYPE(*ALL) AUTOEND(*NO|*YES)]
+crtdevprt DEVD() DEVCLS(*LAN) TYPE(3812) MODEL(1) LANATTACH(*IP) PORT(9100) RMTLOCNAME(host) [SYSDRVPGM() TRANSFORM() MFRTYPMDL()] | chgdevprt DEVD() ...
+crtwscst WSCST(LIB/N) [SRCFILE(LIB/QTXTSRC) SRCMBR()] | rtvwscst DEVTYPE(*TRANSFORM) MFRTYPMDL(*HP4) SRCMBR() [SRCFILE()]
 endwtr WTR [OPTION(*CNTRLD|*IMMED)] | hldwtr WTR | rlswtr WTR | chgwtr WTR [OUTQ() FORMTYPE()] | wrkwtr
 prtcapture list | prtcapture get FILE [JOB() SPLNBR() FORMAT(*TEXT|*PDF)] | prtcapture clear
 ";
@@ -30,9 +33,10 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
         "endwtr" | "hldwtr" | "rlswtr" | "chgwtr" => Some(wtr::control(system, me, cmd, &p)),
         "wrkwtr" => Some(Ok(wtr::wrkwtr(system))),
         "prtcapture" => Some(wtr::prtcapture(system, line)),
-        "strrmtwtr" => Some(Err(
-            "CPF3310 remote writers come with communications (Phase 10)".into(),
-        )),
+        "strrmtwtr" => Some(wtr::strrmtwtr(system, me, &p)),
+        "crtdevprt" | "chgdevprt" => Some(prtdev::crt_chg(system, me, cmd, &p)),
+        "crtwscst" => Some(prtdev::crtwscst(system, me, &p)),
+        "rtvwscst" => Some(prtdev::rtvwscst(system, &p)),
         _ => splcmd::command(system, me, cmd, line),
     };
     r.map(|r| match r {

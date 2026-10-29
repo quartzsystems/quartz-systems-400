@@ -1,0 +1,12 @@
+<ESC>E<ESC>&l3A<ESC>&l0O<ESC>&l2X<ESC>&l4H<ESC>&l2S<ESC>&l6D<ESC>&l0E<ESC>&l84F<ESC>&a0L<ESC>&s1C<ESC>(10U<ESC>(s0p10h12v0s0b4099T<CR><LF>
+QS/400 PAYROLL REGISTER                     PAGE 1<CR><LF>
+<CR><LF>
+EMPLOYEE    NAME              AMOUNT<CR><LF>
+000101      Ren<x82> Dupr<x82>       1,234.50<CR><LF>
+000102      J<x81>rgen M<x81>ller     987.00<CR><LF>
+********************************************************************************<CR><LF>
+<FF>
+<CR><LF>
+TOTAL                         2,221.50<CR><LF>
+<FF>
+<ESC>E

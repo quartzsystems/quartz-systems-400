@@ -83,6 +83,15 @@
              PARM       KWD(USRDTATFM) TYPE(Q2) DFT(*SAME) +
                           SNGVAL((*SAME) (*NONE)) PMTCTL(*PMTRQS) +
                           PROMPT('User data transform')
+             PARM       KWD(MSGQ) TYPE(Q2) DFT(*SAME) SNGVAL((*SAME)) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('Queue for writer messages')
+             PARM       KWD(SEPPAGE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
+                          DFT(*SAME) VALUES(*SAME *YES *NO) +
+                          PMTCTL(*PMTRQS) PROMPT('Print separator page')
+             PARM       KWD(USRDRVPGM) TYPE(Q2) DFT(*SAME) +
+                          SNGVAL((*SAME) (*NONE)) PMTCTL(*PMTRQS) +
+                          PROMPT('User driver program')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

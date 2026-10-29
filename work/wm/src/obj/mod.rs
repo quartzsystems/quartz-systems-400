@@ -8,11 +8,13 @@
 pub mod cls;
 pub mod ctld;
 pub mod devd;
+pub mod devprt;
 pub mod jobd;
 pub mod jobq;
 pub mod jobscd;
 pub mod msgq;
 pub mod outq;
+pub mod outqrmt;
 pub mod params;
 pub mod prtf;
 pub mod rpyl;

@@ -21,7 +21,7 @@ use wm::obj::prtf::Prtf;
 use wm::obj::splf::SplfAttrs;
 use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::table::JobInfo;
-use wm::wtr::WtrStep;
+use wm::wtr::{WtrDest, WtrStep};
 
 /// What a command run in the service answered.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -364,6 +364,9 @@ ipc::rpc! {
     137 => fn menu_open / MenuOpen (name: String, lib: String) -> Result<(Vec<u8>, String), String>;
     /// A panel group's payload and its real library.
     138 => fn pnlgrp_open / PnlgrpOpen (name: String, lib: String) -> Result<(Vec<u8>, String), String>;
+    /// Where writer `name` prints: the capture device, a LAN printer or
+    /// a remote output queue.
+    139 => fn wtr_target / WtrTarget (name: String) -> Result<WtrDest, String>;
     // --- panel data: work management (140-159)
     /// `WRKACTJOB`'s figures: the jobs and the machine's CPU since the
     /// display's last look, which moves to now when `advance`.
@@ -379,6 +382,10 @@ ipc::rpc! {
     /// The writers: name, device, status (`STR`, `WTR`, `HLD`, `END`,
     /// `JOBQ`), form type, output queue `lib/name`, files printed.
     144 => fn wtr_list / WtrList () -> Vec<(String, String, String, String, String, u32)>;
+    /// Writer `name` could not print spooled file `id`: the message it
+    /// sends (`msgid`, a line of text), and whether the file is held
+    /// (the far end refused it) or waits to be tried again.
+    145 => fn wtr_failed / WtrFailed (name: String, id: u32, msgid: String, text: String, hold: bool) -> Result<(), String>;
     // --- panel data: messages and objects (160-179)
     /// What `DSPOBJD DETAIL(*FULL)` shows beyond `object`: `(field,
     /// value)` pairs (`CREATOR`, `SYSTEM`, `RELEASE`, `SIZE` in bytes,

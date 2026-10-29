@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 spool = { path = "../../work/spool", version = "0.1.0" }
+print = { path = "../../work/print", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 stg = { path = "../../work/stg", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }

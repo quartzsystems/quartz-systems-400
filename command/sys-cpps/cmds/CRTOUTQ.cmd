@@ -86,10 +86,21 @@
              PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*OUTQASP) +
                           SPCVAL((*OUTQASP) (*SYSTEM)) PMTCTL(*PMTRQS) +
                           PROMPT('Spooled file ASP device')
+             PARM       KWD(MSGQ) TYPE(Q3) PMTCTL(*PMTRQS) +
+                          PROMPT('Queue for writer messages')
+             PARM       KWD(SEPPAGE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+                          DFT(*YES) VALUES(*YES *NO) PMTCTL(*PMTRQS) +
+                          PROMPT('Print separator page')
+             PARM       KWD(USRDRVPGM) TYPE(Q2) DFT(*NONE) +
+                          SNGVAL((*NONE)) PMTCTL(*PMTRQS) +
+                          PROMPT('User driver program')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*CURLIB) +
                           SPCVAL((*CURLIB)) PROMPT('Library')
              Q2:        QUAL       TYPE(*NAME) LEN(10)
+                        QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
+                          SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
+             Q3:        QUAL       TYPE(*NAME) LEN(10) DFT(QSYSOPR)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              E1:        ELEM       TYPE(*INT4) RANGE(1 999999) MIN(1) +

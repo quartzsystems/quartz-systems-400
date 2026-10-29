@@ -201,6 +201,10 @@ work/         work management: jobs, spooling, process messages
   spool/        spooling without the store: src/scs/ SCS encode and decode, printer.rs the line
                 printer (spacing, skipping, overflow, FCFC), ddsprt.rs DDS printer formats,
                 view.rs text, FCFC, *PRTCTL and hex views, pdf.rs the PDF writer
+  print/        network printing: src/transform/ the host print transform (ascii, pcl and
+                page for the LaserJet models, custom for *WSCST), wscst.rs the customizing
+                object, pjl.rs, src/sink/ (raw 9100, ipp, lpr with control.rs, the IBM-to-IBM
+                control lines), deliver.rs; tests/ fake servers and PCL goldens
   ipc/          process messages: src/wire/ the Wire codec and wire_struct!/wire_enum!,
                 frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
   stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
@@ -260,7 +264,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
-              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, images/
+              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, images/
 ```
 
 ## Commands
@@ -305,6 +309,7 @@ cargo test -p uim -p dspf -p menus        # panel, display-file and menu goldens
 cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst   # the developer tools' screens
 cargo test -p ifs                         # the IFS over MemBackend
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
+cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
 ```
 

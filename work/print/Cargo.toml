@@ -1,0 +1,15 @@
+[package]
+name = "print"
+description = "QS/400 printing over the network: the host print transform (SCS to ASCII, PCL5, PDF, workstation customizing objects) and the sinks a writer sends to (raw port 9100 with PJL, IPP, LPR with the IBM-to-IBM control file)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+spool = { path = "../../work/spool", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true
