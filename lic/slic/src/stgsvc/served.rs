@@ -257,6 +257,7 @@ pub fn vanished(system: &mut System, conn: Conn) {
 /// `QTEMP`, its table entry. `vanished` says what a job that reported
 /// no end code did: vanish (abnormal) or end with the system.
 fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
+    super::ifs::release(system, ctx.job.handle);
     end_db(system, ctx);
     let abnormal = ctx.end_code.map_or(vanished, |c| c >= 20);
     let code = ctx.end_code.unwrap_or(if vanished { 70 } else { 0 });
@@ -511,6 +512,17 @@ impl Service for Served<'_> {
 
     fn sec_api(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
         super::security::api(self.system, self.ctx, q)
+    }
+
+    fn ifs(&mut self, op: stg::ifs::IfsOp) -> stg::ifs::IfsReply {
+        let principal = self.ctx.session.borrow().principal.clone();
+        super::ifs::serve(
+            self.system,
+            self.ctx.job.handle,
+            self.ctx.job.number,
+            &principal,
+            op,
+        )
     }
 
     fn whoami(&mut self) -> sec::auth::principal::Principal {

@@ -11,6 +11,15 @@ use store::obj::header::Authority as A;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Auth(pub u32);
 
+impl ipc::Wire for Auth {
+    fn put(&self, out: &mut Vec<u8>) {
+        self.0.put(out);
+    }
+    fn get(d: &mut ipc::Dec<'_>) -> Result<Self, ipc::WireError> {
+        u32::get(d).map(Self)
+    }
+}
+
 /// Every single authority with its name, object authorities first.
 pub const NAMES: [(&str, u32); 11] = [
     ("*OBJOPR", A::OBJOPR),

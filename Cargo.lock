@@ -1385,6 +1385,7 @@ name = "ifs"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "ipc",
  "rustix",
  "sec",
  "store",
@@ -1924,6 +1925,20 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "thiserror",
+]
+
+[[package]]
+name = "qsyslib"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "db",
+ "ifs",
+ "qsname",
+ "sec",
+ "store",
+ "tracing",
 ]
 
 [[package]]
@@ -2495,6 +2510,7 @@ dependencies = [
  "dds",
  "diskimg",
  "dspf",
+ "ifs",
  "ile",
  "ipc",
  "jrn",
@@ -2506,6 +2522,7 @@ dependencies = [
  "qdecimal",
  "qir",
  "qsname",
+ "qsyslib",
  "release",
  "rpgc",
  "rpgfront",
@@ -2608,13 +2625,21 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 name = "stg"
 version = "0.1.0"
 dependencies = [
+ "blockdev",
+ "ccsid",
  "cmd",
+ "db",
+ "ifs",
  "ile",
  "ipc",
+ "jrn",
  "mi",
  "msgf",
+ "qsname",
+ "qsyslib",
  "sec",
  "sql",
+ "store",
  "svctools",
  "sysapi",
  "tracing",

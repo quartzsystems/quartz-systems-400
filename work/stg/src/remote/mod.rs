@@ -6,6 +6,7 @@
 
 mod cmds;
 mod data;
+mod ifs;
 pub mod inquiry;
 mod objects;
 mod provider;
@@ -14,6 +15,7 @@ mod sql;
 
 pub use cmds::RemoteCmds;
 pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, display_wait, new_lda, status};
+pub use ifs::RemoteIfs;
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};
 pub use provider::RemoteProvider;
 pub use sql::RemoteSql;
@@ -34,6 +36,8 @@ pub struct Sources {
     pub io: RemoteIo,
     /// The APIs' provider.
     pub provider: RemoteProvider,
+    /// The integrated file system.
+    pub ifs: RemoteIfs,
     /// The job's `*LDA`, shared by the two above.
     pub lda: Lda,
 }
@@ -50,6 +54,7 @@ impl Sources {
             data: RemoteData::new(link.clone(), lda.clone()),
             io: RemoteIo::new(link.clone()),
             provider: RemoteProvider::new(link.clone(), lda.clone()),
+            ifs: RemoteIfs::new(link.clone()),
             lda,
         }
     }

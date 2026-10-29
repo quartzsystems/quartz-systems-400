@@ -6,11 +6,13 @@
 //! IBM's naming (`/QSYS.LIB/LIB.LIB/FILE.FILE/MBR.MBR`, `.PGM`,
 //! `.USRSPC` ...). The store side is the [`QsysView`] trait, which the
 //! storage service implements over the store; [`MemQsys`] is a fake for
-//! tests. Members read and write as byte streams: a source member is
-//! its lines (the data without sequence number and date, trailing
-//! blanks removed, each ended by the CCSID's line feed), a data member
-//! its fixed-length records back to back; `*USRSPC` and `*SAVF` are
-//! their bytes.
+//! tests. Members read and write as byte streams, as IBM i 7.5 does
+//! (checked on pub400, `docs/NET_OPEN_QUESTIONS.md`): a source member
+//! is its data records (without sequence number and date, trailing
+//! blanks kept) back to back, in text mode each ended by the CCSID's
+//! line feed; a data member its fixed-length records back to back;
+//! `*USRSPC` and `*SAVF` are their bytes. A text-mode write is split
+//! into records at line ends, a binary one at the record length.
 
 use std::collections::BTreeMap;
 use std::sync::Mutex;
@@ -225,42 +227,50 @@ fn line_end(ccsid: u16) -> &'static [u8] {
     }
 }
 
-/// A member as a byte stream.
+/// A member as a byte stream: the records back to back, in text mode
+/// (`O_TEXTDATA`) each followed by the CCSID's line feed.
 #[must_use]
-pub fn member_to_stream(m: &MemberData) -> Vec<u8> {
-    if !m.source {
+pub fn member_to_stream(m: &MemberData, text: bool) -> Vec<u8> {
+    if !m.source || !text {
         return m.records.concat();
     }
-    let blank: &[u8] = match ccsid::conv::Codec::of(m.ccsid) {
-        Ok(Some(c)) if c.is_ebcdic() => &[0x40],
-        _ => &[0x20],
-    };
     let mut out = Vec::new();
     for r in &m.records {
-        let mut end = r.len();
-        while end >= blank.len() && r[..end].ends_with(blank) {
-            end -= blank.len();
-        }
-        out.extend_from_slice(&r[..end]);
+        out.extend_from_slice(r);
         out.extend_from_slice(line_end(m.ccsid));
     }
     out
 }
 
-/// A byte stream back to records of `m`'s shape: lines for a source
-/// member (a carriage return before a line end is dropped; lines are
-/// padded or cut to the record length), fixed slices for data.
+/// The size `stat` reports for a member: IBM counts two line-end
+/// bytes per source record.
 #[must_use]
-pub fn stream_to_records(m: &MemberData, data: &[u8]) -> Vec<Vec<u8>> {
+pub fn member_size(m: &MemberData) -> u64 {
+    let n = m.records.len() as u64;
+    let data: u64 = m.records.iter().map(|r| r.len() as u64).sum();
+    if m.source { data + 2 * n } else { data }
+}
+
+/// A byte stream back to records of `m`'s shape. Written in text mode
+/// (`O_TEXTDATA`), a source member's stream is lines: a carriage return
+/// before a line end is dropped, each line padded or cut to the record
+/// length. Otherwise the stream is records back to back, the last one
+/// padded, as IBM i stores a binary write (`docs/NET_OPEN_QUESTIONS.md`).
+#[must_use]
+pub fn stream_to_records(m: &MemberData, data: &[u8], text: bool) -> Vec<Vec<u8>> {
     let len = m.record_len.max(1);
     let ebcdic = matches!(ccsid::conv::Codec::of(m.ccsid), Ok(Some(c)) if c.is_ebcdic());
-    let pad = if ebcdic { 0x40 } else { 0x20 };
-    if !m.source {
+    let pad = match (ebcdic, m.source) {
+        (true, _) => 0x40,
+        (false, true) => 0x20,
+        (false, false) => 0,
+    };
+    if !m.source || !text {
         return data
             .chunks(len)
             .map(|c| {
                 let mut r = c.to_vec();
-                r.resize(len, if ebcdic { 0x40 } else { 0 });
+                r.resize(len, pad);
                 r
             })
             .collect();
@@ -414,7 +424,7 @@ impl QsysView for MemQsys {
             .map(|(n, d)| QsysEntry {
                 name: n.clone(),
                 objtype: "*MBR".into(),
-                size: member_to_stream(d).len() as u64,
+                size: member_size(d),
                 owner: o.entry.owner.clone(),
                 ccsid: d.ccsid,
                 ..QsysEntry::default()
@@ -591,18 +601,22 @@ mod tests {
             source: true,
             ccsid: 37,
         };
-        let s = member_to_stream(&src);
-        assert_eq!(ccsid::from_ebcdic(&s), "PGM\nENDPGM\n");
-        assert_eq!(stream_to_records(&src, &s), src.records);
+        let s = member_to_stream(&src, true);
+        assert_eq!(ccsid::from_ebcdic(&s), "PGM       \nENDPGM    \n");
+        assert_eq!(stream_to_records(&src, &s, true), src.records);
+        let binary = member_to_stream(&src, false);
+        assert_eq!(binary, src.records.concat());
+        assert_eq!(stream_to_records(&src, &binary, false), src.records);
+        assert_eq!(member_size(&src), 24);
         let dta = MemberData {
             records: vec![vec![1, 2], vec![3, 4]],
             record_len: 2,
             source: false,
             ccsid: 65535,
         };
-        assert_eq!(member_to_stream(&dta), vec![1, 2, 3, 4]);
+        assert_eq!(member_to_stream(&dta, true), vec![1, 2, 3, 4]);
         assert_eq!(
-            stream_to_records(&dta, &[1, 2, 3]),
+            stream_to_records(&dta, &[1, 2, 3], false),
             vec![vec![1, 2], vec![3, 0]]
         );
         let ascii = MemberData {
@@ -612,8 +626,13 @@ mod tests {
             ..MemberData::default()
         };
         assert_eq!(
-            stream_to_records(&ascii, b"ab\r\nlonger\n"),
+            stream_to_records(&ascii, b"ab\r\nlonger\n", true),
             vec![b"ab  ".to_vec(), b"long".to_vec()]
+        );
+        // A binary write keeps its line ends: records back to back.
+        assert_eq!(
+            stream_to_records(&ascii, b"ab\r\nlonger", false),
+            vec![b"ab\r\n".to_vec(), b"long".to_vec(), b"er  ".to_vec()]
         );
     }
 }

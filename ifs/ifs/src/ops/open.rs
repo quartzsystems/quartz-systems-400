@@ -359,7 +359,8 @@ impl<B: Backend> Ifs<B> {
                 share,
             },
         )?;
-        let kind = match self.open_kind(&r, created, writes, truncate) {
+        let text_mode = a.oflag & f::O_TEXTDATA != 0;
+        let kind = match self.open_kind(&r, created, writes, truncate, text_mode) {
             Ok(k) => k,
             Err(e) => {
                 rest.locks.close(key, id, cx.owner, false);
@@ -413,6 +414,7 @@ impl<B: Backend> Ifs<B> {
         created: Option<B::File>,
         write: bool,
         truncate: bool,
+        text: bool,
     ) -> Result<OpenKind<B::File>> {
         if r.node.is_dir() {
             return Ok(OpenKind::Dir);
@@ -434,7 +436,7 @@ impl<B: Backend> Ifs<B> {
                 let data = if truncate {
                     Vec::new()
                 } else {
-                    qsys::member_to_stream(&shape)
+                    qsys::member_to_stream(&shape, text)
                 };
                 OpenKind::Member {
                     lib: lib.clone(),
@@ -443,6 +445,7 @@ impl<B: Backend> Ifs<B> {
                     shape,
                     data,
                     dirty: truncate,
+                    text,
                 }
             }
             Node::Qsys(QsysNode::Obj(lib, name, t), _) => {
@@ -495,8 +498,9 @@ impl<B: Backend> Ifs<B> {
                 shape,
                 data,
                 dirty,
+                text,
             } if *dirty => {
-                let records = qsys::stream_to_records(shape, data);
+                let records = qsys::stream_to_records(shape, data, *text);
                 self.qsys.write_member(lib, file, mbr, records)?;
                 *dirty = false;
             }

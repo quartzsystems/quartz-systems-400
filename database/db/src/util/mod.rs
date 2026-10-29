@@ -12,6 +12,7 @@ pub mod cpyf;
 pub mod impf;
 pub mod inzpfm;
 pub mod lines;
+pub mod putrcds;
 pub mod rgzpfm;
 
 pub use chkpath::{PathReport, verify_all, verify_file};
@@ -20,6 +21,7 @@ pub use cpyf::{CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf};
 pub use impf::{DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpytoimpf};
 pub use inzpfm::{default_record, inzpfm};
 pub use lines::put_lines;
+pub use putrcds::put_records;
 pub use rgzpfm::{KeyFile, RgzReport, rgzpfm};
 
 use std::ops::Bound;

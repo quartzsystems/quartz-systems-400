@@ -420,7 +420,7 @@ fn default_ccsid_and_members() {
         .unwrap();
     let mut b = [0u8; 64];
     let n = s.ifs.read(&cx, fd, &mut b).unwrap();
-    assert_eq!(&b[..n], b"PGM\nENDPGM\n");
+    assert_eq!(&b[..n], b"PGM                 \nENDPGM              \n");
     s.ifs.close(&cx, fd).unwrap();
     let fd = s
         .ifs
@@ -435,7 +435,10 @@ fn default_ccsid_and_members() {
         .unwrap();
     s.ifs.close(&cx, fd).unwrap();
     let raw = s.get(&cx, m);
-    assert_eq!(ccsid::from_ebcdic(&raw), "PGM\nSNDMSG MSG(HI)\nENDPGM\n");
+    assert_eq!(
+        ccsid::from_ebcdic(&raw),
+        format!("{:<20}{:<20}{:<20}", "PGM", "SNDMSG MSG(HI)", "ENDPGM")
+    );
     // A new member through O_CREAT.
     s.put(
         &cx,

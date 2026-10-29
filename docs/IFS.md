@@ -103,13 +103,22 @@ Objects of `QSYS` sit directly in `/QSYS.LIB`, libraries as `NAME.LIB`.
 (`Qp0lCvtPathToQSYSObjName`).
 
 A physical file is a directory of members. A member reads and writes
-as a byte stream: a source member is its lines (data without sequence
-number and date, trailing blanks removed, each ended by the member
-CCSID's line feed, `0x25` in EBCDIC); a data member is its fixed-length
-records back to back. Written data is split back into records when the
-descriptor is closed, synced or its owner released (a carriage return
-before a line feed is dropped, lines are padded or cut to the record
-length). `*USRSPC` and `*SAVF` read and write as their bytes. Other
+as a byte stream, as IBM i 7.5 does (checked on pub400,
+`NET_OPEN_QUESTIONS.md` 8): a source member is its data records
+(without sequence number and date, trailing blanks kept) back to back;
+opened with `O_TEXTDATA` each record is followed by the CCSID's line
+feed (`0x25` in EBCDIC). `stat` counts two bytes of line end per
+record, as IBM's `st_size` does. A data member is its fixed-length
+records back to back. Written data becomes records again when the
+descriptor is closed, synced or its owner released: a text-mode stream
+is split at line feeds (a carriage return before one is dropped, each
+line padded with blanks or cut to the record length), a binary one at
+the record length with the last record padded. Records go in through
+`db::source::put_records` (sequence numbers from 1.00, today's date)
+and `db::util::put_records`, each allocating the member `*EXCL` as
+`CLRPFM` does. `*USRSPC` and `*SAVF` read and write as their bytes (a
+save file keeps its length in its first eight bytes until Phase 11
+gives it records). The member's CCSID is the file's. Other
 objects are `S_IFNATIVE` and do not open (`ENOTSUP`). `mkdir` of
 `NAME.LIB` makes a library, `open(O_CREAT)` of `NAME.MBR` adds a
 member, `unlink` and `rmdir` delete. The user's authority to an object
@@ -516,6 +525,78 @@ the data. A descriptor is `QSVD`, version 1, the path and type
 modification times and the data size (i64, i64, u64 LE), and the link
 target and hard-link source (a presence byte, then u32-length text).
 Phase 11 writes them to media and restores from them.
+
+## In the storage service
+
+`lic/slic/src/stgsvc/ifs.rs` builds the one `Ifs<LinuxBackend>` when
+the service starts, if `/run/qs400/ifs` is a mount point
+(`/proc/self/mountinfo`), and runs `ensure_layout` (the standard
+directories owned by `QSYS`, `*PUBLIC *RX`, `/tmp` and `/QOpenSys/tmp`
+`*RWX` with `RSTDRNMUNL`). Otherwise every IFS request answers
+`ENOTSUP` (`CPE3440`) through `ifs::client::Unavailable`, and the
+service's start line says why. The store side is the crate
+`ifs/qsyslib`:
+
+| Part | Does |
+|---|---|
+| `StoreQsys` | `QsysView` over the store: libraries, objects, members, `*USRSPC`, `*SAVF`, authority by the Phase 6 search (adopted authority included), library and member creation, deletion |
+| `StoreEnv` | `AuthEnv`: profile names and `UID`/`GID` (read once per request), groups, authorization lists, `QCRTOBJAUD` |
+| `JournalAudit` | `Audit`: each event as a `sec::audit::Event` with the IFS fields (`docs/SECURITY.md` §7), recorded for the request |
+| `StoreAccess`, `MemAccess` | one transaction per call; the service's `Lent` reaches the store lent for the request, tests use a store in memory |
+
+A request runs with the store lent and outside the store's guard: the
+IFS checks authority itself, through the view's answer, so a refusal is
+one `AF` entry, not two. After the answer the service's audit flush
+filters the recorded events by `QAUDCTL`/`QAUDLVL` and writes them to
+`QAUDJRN`, as for every other request.
+
+### The protocol
+
+One request, `ifs` (tag 440 in `stg::proto`), carries a
+`stg::ifs::IfsOp` with one variant per `IfsClient` method (variant tags
+0 to 63: open 0, openat 1, close 2, read 3, pread 4, write 5, pwrite
+6, lseek 7, fsync 8, ftruncate 9, fstat 10, stat/lstat 11, access 12,
+chmod 13, chown 14, link 15, unlink 16, rename 17, symlink 18,
+readlink 19, mkdir 20, mkfifo 21, rmdir 22, opendir 23, readdir 24,
+rewinddir 25, closedir 26, the whole directory 27, chdir 28, fchdir
+29, getcwd 30, dup 31, dup2 32, fcntl 33, byte-range locks 34, the
+descriptor's path 35, utime 36, umask 37, pathconf 38, statvfs 39,
+get attributes 40, set an attribute 41, DSPAUT 42, CHGAUT 43, revoke
+44, CHGOWN 45, CHGPGP 46, CHKOUT 47, CHKIN 48, STRJRN 49, ENDJRN 50,
+CPY 51, MOV 52, remove a tree 53, walk 54, path from file ID 55,
+CRTUDFS 56, DLTUDFS 57, MOUNT 58, UNMOUNT 59, DSPUDFS 60, RCLLNK 61,
+an object's locks 62, the job's locks 63). The answer is an
+`IfsReply` whose variant is the method's return type, each a `Result`
+whose error is the IBM `errno` number; `Errno::message_id` gives the
+`CPExxxx` and `command_message` the `CPFA0xx` a command sends. A reply
+of the wrong shape is `EUNKNOWN`. `stg::ifs::serve` maps an operation
+to any `IfsClient`, so the service, the tests and a future in-process
+caller share it. Reads and writes move at most 1 MiB
+(`ifs::client::CHUNK`) per call; `read_all`/`write_all` loop. A
+directory stream is read in batches (`readdir` with a count).
+
+The job side is `ifs::client::IfsClient`: `stg::remote::RemoteIfs`
+over the job's link (in `stg::remote::Sources`), `LocalIfs` over an
+`Ifs` in the process for tests. A job's owner is its job handle; when
+its connection ends, `end_job` calls `release_owner` with the store
+lent, so open members are written back before the job's table entry
+goes. The console's lines use an owner of their own, released after
+each line.
+
+### Console and status displays
+
+`svc.ifs` alone reports the mount and capacity; `svc.ifs ls [PATH]`,
+`cat PATH` (text mode into UTF-8), `put PATH TEXT` (a new or replaced
+stream file tagged 1208), `mkdir`, `rm` (a file or an empty
+directory), `stat` (attributes and `DSPAUT`'s rows) and `df [PATH]`
+run through the same `Ifs` as the job whose line it is.
+
+IBM keeps the IFS in the system ASP, so its capacity shows where the
+ASP's does. `WRKSYSSTS` (the console form, the panel and `QWCRSSTS`)
+counts the IFS partition's size and use in `System ASP`, `% system ASP
+used` and `Total`. `WRKDSKSTS` adds them to unit 1's `Size` and `%
+Used`: the partition is on the load source, which IBM's unit 1 is. No
+row is invented for it; IBM's screen lists disk units only.
 
 ## Not yet
 

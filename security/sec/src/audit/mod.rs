@@ -18,7 +18,7 @@ use std::cell::RefCell;
 
 pub use kind::Kind;
 
-use crate::rec::Rec;
+use crate::rec::{Rec, Tail};
 
 /// Something to audit. Fields are named by their suffix (`ONAM` for
 /// `AFONAM`); the job and user come from the request.
@@ -30,7 +30,15 @@ pub struct Event {
     pub fields: Vec<(&'static str, String)>,
     /// The user to charge, when not the job's (a sign-on that failed).
     pub user: Option<String>,
+    /// Variable-length items after the fixed fields (`rec::Tail`): tag
+    /// 1 an IFS path, tag 2 the new path of a move.
+    pub tail: Vec<(u8, String)>,
 }
+
+/// Tail tag of an IFS object's path.
+pub const TAIL_PATH: u8 = 1;
+/// Tail tag of the new path of a moved or renamed IFS object.
+pub const TAIL_NEW_PATH: u8 = 2;
 
 impl Event {
     /// An event with no fields yet.
@@ -40,7 +48,38 @@ impl Event {
             kind,
             fields: Vec::new(),
             user: None,
+            tail: Vec::new(),
         }
+    }
+
+    /// The IFS fields: the file ID (`OFID`), the path (`APIN`, `PNLN`,
+    /// tail item 1) and, for a move, the new path (`2PNL`, tail item
+    /// 2). The object fields hold the last name and `*STMF`-style type.
+    #[must_use]
+    pub fn ifs(mut self, file_id: [u8; 16], path: &str, new_path: Option<&str>) -> Self {
+        let hex = file_id.iter().fold(String::new(), |mut s, b| {
+            let _ = std::fmt::Write::write_fmt(&mut s, format_args!("{b:02X}"));
+            s
+        });
+        self = self
+            .set("OFID", hex)
+            .set("APIN", if path.starts_with('/') { "Y" } else { "N" })
+            .set("PNLN", path.chars().count().to_string());
+        self.tail.push((TAIL_PATH, path.to_string()));
+        if let Some(n) = new_path {
+            self = self.set("2PNL", n.chars().count().to_string());
+            self.tail.push((TAIL_NEW_PATH, n.to_string()));
+        }
+        self
+    }
+
+    /// The path of an IFS object, empty for a library object.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        self.tail
+            .iter()
+            .find(|(t, _)| *t == TAIL_PATH)
+            .map_or("", |(_, p)| p.as_str())
     }
 
     /// Set field `suffix`.
@@ -85,6 +124,13 @@ impl Event {
             let suffix = &f.name[2..];
             r.set_text(f.name, self.get(suffix));
         }
+        if !self.tail.is_empty() {
+            let mut t = Tail::default();
+            for (tag, s) in &self.tail {
+                t.put_str(*tag, s);
+            }
+            r.buf.extend(t.encode());
+        }
         r.buf
     }
 
@@ -97,6 +143,15 @@ impl Event {
         for f in l.fields {
             let suffix: &'static str = &f.name[2..];
             e.fields.push((suffix, r.text(f.name)));
+        }
+        if !r.tail().is_empty()
+            && let Ok(t) = Tail::decode(r.tail())
+        {
+            for tag in [TAIL_PATH, TAIL_NEW_PATH] {
+                for s in t.strs(tag) {
+                    e.tail.push((tag, s));
+                }
+            }
         }
         Some(e)
     }
@@ -228,6 +283,18 @@ mod tests {
         let back = Event::decode(Kind::Af, &b).unwrap();
         assert_eq!(back.get("ONAM"), "PAYROLL");
         assert_eq!(back.get("VIOL"), "A");
+        assert_eq!(back.path(), "");
+        let moved = Event::new(Kind::Om)
+            .object("a.txt", "", "*STMF")
+            .ifs([1; 16], "/home/bob/a.txt", Some("/tmp/a.txt"));
+        let bytes = moved.encode();
+        assert!(bytes.len() > layout::OM.size.unwrap());
+        let back = Event::decode(Kind::Om, &bytes).unwrap();
+        assert_eq!(back.path(), "/home/bob/a.txt");
+        assert_eq!(back.tail[1], (TAIL_NEW_PATH, "/tmp/a.txt".to_string()));
+        assert_eq!(back.get("OFID"), "01".repeat(16));
+        assert_eq!(back.get("PNLN"), "15");
+        assert_eq!(back.get("2PNL"), "10");
         let get = |n: &str| match n {
             "QAUDCTL" => "*AUDLVL *NOQTEMP".to_string(),
             "QAUDLVL" => "*AUTFAIL *SECURITY".to_string(),

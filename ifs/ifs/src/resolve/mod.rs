@@ -432,7 +432,11 @@ impl<B: Backend> Sys<'_, B> {
             | Node::Unsup { .. } => stored(virtual_meta("QSYS", RX)),
             Node::Qsys(qn, entry) => {
                 let a = match (qn, cx) {
-                    (QsysNode::Root, _) => RX,
+                    // Making or deleting a library is writing QSYS itself.
+                    (QsysNode::Root, Some(c)) => self
+                        .qsys
+                        .authority("QSYS", "QSYS", "*LIB", c.principal)
+                        .unwrap_or(RX),
                     (_, None) => Auth::ALL,
                     (QsysNode::Lib(lib), Some(c)) => {
                         self.qsys.authority("QSYS", lib, "*LIB", c.principal)?

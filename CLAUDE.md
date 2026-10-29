@@ -96,7 +96,8 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   slic/         PID 1 and, as `/init qsstg`, the storage service: src/ipl/ state machine,
                 src/hwrsrc/, src/net/, src/procs/ (spawn, the storage service handover and
                 close, QSVCJOB line routing), src/stgsvc/ (the service: open, serve loop,
-                per-job contexts answering stg requests, exec of console commands),
+                per-job contexts answering stg requests, exec of console commands,
+                ifs.rs the one Ifs over the xfs and its requests),
                 src/svc/ (db/ holds the database, journal, SQL, rla and dbbench console
                 commands; ile/ the ILE build and display commands and the job sources over
                 the lent store with the sysapi provider),
@@ -248,8 +249,12 @@ ifs/          the integrated file system
                 (codec, RCLLNK), src/auth/ IFS authority and requirements, src/vfs/ mounts,
                 devices, /QSYS.LIB, /QOPT; src/resolve/ the resolver and casefold index,
                 src/lock/ share modes and byte ranges, src/text/, src/ops/ Ifs and every
-                operation, src/save/; tests/linux-xfs.sh runs the LinuxBackend tests as root
+                operation, src/save/, src/client/ the IfsClient trait (LocalIfs, Unavailable)
+                and its wire codecs; tests/linux-xfs.sh runs the LinuxBackend tests as root
   xfsfmt/       a pure-Rust mkfs for the XFS v5 root (docs/IFS.md "Disk format")
+  qsyslib/      the IFS over the store, for the service: view.rs /QSYS.LIB (StoreQsys),
+                env.rs profiles, UID/GID and authorization lists, audit.rs QAUDJRN entries,
+                savf.rs, access.rs one transaction per call (MemAccess for tests)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
@@ -299,6 +304,7 @@ cargo run -p menus --bin genmenus         # regenerate the command menus in ui/m
 cargo test -p uim -p dspf -p menus        # panel, display-file and menu goldens
 cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst   # the developer tools' screens
 cargo test -p ifs                         # the IFS over MemBackend
+cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
 ```
 
@@ -345,7 +351,9 @@ management: `wrkactjob [VIEW(1|2|3)]`, `wrkjob`, `dspjob`, `chgjob`, `dspjoblog`
 `grtusraut`, `wrkobjown`, `crtautl`, `addautle`, `chgautle`, `rmvautle`, `dspautl`,
 `dspautlobj`, `chgsecaud`, `dspsecaud`, `chgobjaud`, `chgusraud`, `dspaudjrne`,
 `cpyaudjrne`, `prtadpobj`, `prtusrobj`, `prtpvtaut`, `prtpubaut`, `prtsysseca`,
-`prtjobdaut`, `prtsbsdaut`, `prtqaut`, `prtusrprf`, `anzprfact`, and `dbgkill JOB()` (slic's debug hook:
+`prtjobdaut`, `prtsbsdaut`, `prtqaut`, `prtusrprf`, `anzprfact`; IFS: `ifs` (the mount),
+`ifs ls [PATH]|cat PATH|put PATH TEXT|mkdir PATH|rm PATH|stat PATH|df [PATH]` (through the
+service's Ifs as the line's job); and `dbgkill JOB()` (slic's debug hook:
 SIGKILL a job). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`, `qs400.pace=MS` (each IPL code and
 install step stays up this long; 400 by default, 0 for none).

@@ -217,6 +217,14 @@ fn all_attrs(node: &Node, m: &Meta, st: &super::Stat, have: u32) -> Vec<Attr> {
     v
 }
 
+impl Attr {
+    /// The attribute's ID.
+    #[must_use]
+    pub fn id(&self) -> AttrId {
+        id_of(self)
+    }
+}
+
 fn id_of(a: &Attr) -> AttrId {
     match a {
         Attr::ObjType(_) => AttrId::ObjType,

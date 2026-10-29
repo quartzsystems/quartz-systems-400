@@ -25,7 +25,7 @@ mod udfs;
 mod walk;
 
 pub use attr::{Attr, AttrId};
-pub use authcmd::{AuthEntry, AuthList, ChgAut, Who};
+pub use authcmd::{AuthEntry, AuthList, ChgAut, Role, Who};
 pub use copy::CopyOpts;
 pub use dir::DirEnt;
 pub use names::RenameMode;
@@ -224,6 +224,8 @@ pub(crate) enum OpenKind<F> {
         shape: MemberData,
         data: Vec<u8>,
         dirty: bool,
+        /// Opened in text mode: lines are records.
+        text: bool,
     },
     /// A `*USRSPC` or `*SAVF`.
     Stream {

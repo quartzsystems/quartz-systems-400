@@ -437,14 +437,16 @@ pub fn wrksysact(system: &mut System) -> String {
 }
 
 /// What `WRKSYSSTS` shows of the auxiliary storage: system ASP MB, %
-/// used, and the temporary ASP MB.
+/// used, and the temporary ASP MB. The IFS root's filesystem counts in
+/// the system ASP, where IBM keeps the IFS (`docs/IFS.md`).
 fn asp_figures(system: &System) -> (u64, f64, u64) {
     let Some(s) = system.storage.as_ref() else {
         return (0, 0.0, 0);
     };
     let a = s.store.asp();
-    let total = a.layout().total_pages();
-    let used = total.saturating_sub(a.total_free());
+    let (ifs_size, ifs_used) = super::ifs::capacity().unwrap_or((0, 0));
+    let total = a.layout().total_pages() + ifs_size / 4096;
+    let used = a.layout().total_pages().saturating_sub(a.total_free()) + ifs_used / 4096;
     let temp = system.temp.as_ref().map_or(0, |_| 64);
     ((total * 4096) >> 20, percent(used, total), temp)
 }
@@ -544,6 +546,11 @@ pub fn wrkdsksts(system: &mut System, reset: bool) -> String {
         let base_d = base.disks.get(i).copied().unwrap_or_default();
         let x = now_d.since(&base_d);
         let rqs = x.reads + x.writes;
+        // The IFS partition sits on the load source, unit 1.
+        let (ifs_pages, ifs_used) = match (i, super::ifs::capacity()) {
+            (0, Some((size, used))) => (size / 4096, used / 4096),
+            _ => (0, 0),
+        };
         let per_s = |n: u64| (n as f64 / secs * 10.0).round() / 10.0;
         let req_kb = if rqs == 0 {
             0.0
@@ -554,8 +561,11 @@ pub fn wrkdsksts(system: &mut System, reset: bool) -> String {
             out,
             "{:>4}  VIRT  {:>6}  {:>4.1}  {:>5.1}  {req_kb:>8.1}  {:>5.1}  {:>5.1}  {:>5.1}  {:>6.1}  {:>4}",
             u.unit + 1,
-            (u.entry.pages * 4096) >> 20,
-            percent(u.used_pages, u.entry.usable_pages.max(1)),
+            ((u.entry.pages + ifs_pages) * 4096) >> 20,
+            percent(
+                u.used_pages + ifs_used,
+                (u.entry.usable_pages + ifs_pages).max(1)
+            ),
             per_s(rqs),
             per_s(x.reads),
             per_s(x.writes),
@@ -793,6 +803,11 @@ pub fn dsksts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
                 .unwrap_or_default()
                 .since(&base.disks.get(i).copied().unwrap_or_default());
             let rqs = x.reads + x.writes;
+            // The IFS partition sits on the load source, unit 1.
+            let (ifs_pages, ifs_used) = match (i, super::ifs::capacity()) {
+                (0, Some((size, used))) => (size / 4096, used / 4096),
+                _ => (0, 0),
+            };
             let per_s = |n: u64| format!("{:.1}", (n as f64 / secs * 10.0).round() / 10.0);
             let kb = |sectors: u64, n: u64| {
                 format!(
@@ -807,10 +822,16 @@ pub fn dsksts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
             vec![
                 pair("UNIT", u.unit + 1),
                 pair("TYPE", "VIRT"),
-                pair("SIZE", (u.entry.pages * 4096) >> 30),
+                pair("SIZE", ((u.entry.pages + ifs_pages) * 4096) >> 30),
                 pair(
                     "USED",
-                    format!("{:.1}", percent(u.used_pages, u.entry.usable_pages.max(1))),
+                    format!(
+                        "{:.1}",
+                        percent(
+                            u.used_pages + ifs_used,
+                            (u.entry.usable_pages + ifs_pages).max(1)
+                        )
+                    ),
                 ),
                 pair("IORQS", per_s(rqs)),
                 pair("RQSSIZE", kb(x.read_sectors + x.write_sectors, rqs)),

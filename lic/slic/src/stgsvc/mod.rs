@@ -15,6 +15,7 @@ mod dbg;
 pub(crate) mod devices;
 pub(crate) mod exec;
 pub(crate) mod hist;
+pub(crate) mod ifs;
 mod isql;
 mod joblog;
 mod pdm;
@@ -168,6 +169,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         Err(e) => format!("{text}; user profiles: {e}"),
     };
     security::guard(system);
+    let text = format!("{text}; {}", ifs::start(system));
     system.pools = sbs::pool_table_saved(system);
     let iplsts = jobs::take_next_iplsts(system);
     if iplsts != 0

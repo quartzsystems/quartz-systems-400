@@ -306,9 +306,12 @@ fn qsys_lib_view() {
         s.ifs.stat(&cx, "/QSYS.LIB/QGPL.LIB/X.BADTYPE"),
         Err(Errno::ENOENT)
     );
-    // Members read as their lines, EBCDIC with 0x25 line ends.
+    // Members read in binary as their data records back to back.
     let raw = s.get(&cx, "/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR");
-    assert_eq!(ccsid::from_ebcdic(&raw), "PGM\nENDPGM\n");
+    assert_eq!(
+        ccsid::from_ebcdic(&raw),
+        format!("{:<20}{:<20}", "PGM", "ENDPGM")
+    );
     // BOB has *USE (the view's public): no writes.
     assert_eq!(
         s.ifs.open(

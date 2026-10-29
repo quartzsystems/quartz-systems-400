@@ -8,6 +8,7 @@
 mod authority;
 pub(crate) mod db;
 pub(crate) mod ile;
+mod ifs;
 mod jobq;
 pub mod neta;
 mod msgq;
@@ -124,7 +125,8 @@ pub fn reply(system: &mut System, line: &str) -> String {
     match (cmd, args.as_slice()) {
         ("", _) => String::new(),
         ("help", _) => format!(
-            "{HELP}{HELP_DB}{}{}{}{}{}{}{}{}{}",
+            "{HELP}{}{HELP_DB}{}{}{}{}{}{}{}{}{}",
+            ifs::HELP,
             ile::HELP,
             work::HELP,
             msgq::HELP,
@@ -143,7 +145,6 @@ pub fn reply(system: &mut System, line: &str) -> String {
             system.hw.refresh_ports(std::path::Path::new("/sys"));
             format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links))
         }
-        ("ifs", _) => crate::ipl::ifs::report(),
         ("lic", _) => lic_dump(system),
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),
@@ -165,6 +166,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("rclstg", rest) => storage::rclstg(system, rest),
         ("chkstg", _) => storage::chkstg(system),
         ("txn", ["stats"]) => storage::txn_stats(system),
+        ("ifs", rest) => ifs::command(system, rest, line),
         _ => match db::command(system, cmd, &args, line) {
             Some(reply) => reply,
             None => match ile::command(system, cmd, &args, line)

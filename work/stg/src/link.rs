@@ -45,6 +45,16 @@ impl Link {
         }))
     }
 
+    /// Over a function that answers each request with its encoded
+    /// reply, for tests of one request family without a whole service.
+    #[must_use]
+    pub fn answering(mut answer: impl FnMut(Request) -> Vec<u8> + 'static) -> Self {
+        Self::new(Box::new(move |req: &Request| {
+            let back: Request = ipc::decode(&ipc::encode(req))?;
+            Ok(answer(back))
+        }))
+    }
+
     fn new(transport: Transport) -> Self {
         Self {
             transport,

@@ -32,11 +32,21 @@ and how to settle each against the oracle.
    owner or `*W`; storage, save and scan attributes the owner or
    `*OBJALTER`. IBM's `CHGATR` documentation lists per-attribute needs
    that may differ (`*OBJMGT` for some).
-8. **Source members as streams.** Reading a source member through the
-   IFS gives its lines without sequence numbers, trailing blanks
-   removed, each ended by a line feed in the member's CCSID. IBM may
-   end lines with CR LF or keep trailing blanks in binary mode; compare
-   `CPYTOSTMF` and a QSH `cat` of a member on the oracle.
+8. **Source members as streams.** Settled on pub400 (7.5, 2026-10-29,
+   a scratch source file in `{user}B`, removed after; JTOpen
+   `IFSFileInputStream`/`IFSFileOutputStream` and QSH). A binary read
+   of a member of four 80-byte records gives 320 bytes: the data
+   records without sequence number and date, trailing blanks kept, no
+   line ends. `IFSFile.length()` says 328, two bytes per record more.
+   QSH `cat` (text mode) gives each whole record followed by `0x25`
+   (324 bytes in CCSID 273). A text-mode write of `ONE\nTWO   \n`
+   leaves two records, `ONE` and `TWO` padded to 80. A binary write of
+   `ABC\r\nDEF` leaves one record holding those eight bytes: binary
+   writes are not split at line ends. QS/400 does all of this. Open:
+   the binary read after that write gave back only the eight bytes, not
+   a padded record; QS/400 gives the record padded with blanks. A QSH
+   write to a data member (`PF-DTA`) left it empty on IBM; QS/400 writes
+   the bytes as fixed-length records.
 9. **Fallback owner.** A node without metadata whose UID maps to no
    profile is owned by `QDFTOWN`. IBM's `RCLLNK` may assign `QDFTOWN`
    only for objects whose owner profile was deleted; nodes made outside

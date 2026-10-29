@@ -198,13 +198,13 @@ fn release_owner_writes_back_members() {
         .open(&cx, m, OpenArgs::new(O_WRONLY | ifs::ops::flags::O_TRUNC))
         .unwrap();
     s.ifs
-        .write(&cx, fd, &ccsid::to_ebcdic("X\n").unwrap())
+        .write(&cx, fd, &ccsid::to_ebcdic("X").unwrap())
         .unwrap();
     s.ifs.chdir(&cx, "/tmp").unwrap();
     // The job ends without closing.
     s.ifs.release_owner(Owner(7));
     assert_eq!(s.ifs.open_count(), 0);
     let raw = s.get(&s.cx(&p, 8), m);
-    assert_eq!(ccsid::from_ebcdic(&raw), "X\n");
+    assert_eq!(ccsid::from_ebcdic(&raw), format!("{:<20}", "X"));
     assert_eq!(s.ifs.getcwd(&s.cx(&p, 7)), "/");
 }

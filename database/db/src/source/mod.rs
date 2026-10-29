@@ -84,6 +84,57 @@ pub fn srcput(
     Ok(n)
 }
 
+/// Replace a source member's records with `lines` of data bytes
+/// (already in the file's CCSID; each padded or cut to the data
+/// width), numbered from 1.00 and dated `now`. The stream file
+/// systems write members through this. Returns the record count.
+pub fn put_records(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    member: MemberSpec,
+    lines: &[Vec<u8>],
+    now: u64,
+) -> Result<u64> {
+    crate::auth::check(txn, "file.open-output", file)?;
+    let desc = source_file(txn, file)?;
+    let entry = member_of(&desc, member)?;
+    let hold = Hold::take(
+        txn,
+        job,
+        &[
+            (file, LockState::SharedUpdate),
+            (entry.object, LockState::Exclusive),
+        ],
+        &desc.name().to_string(),
+    )?;
+    let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
+        m.clear(txn)?;
+        let fmt = m.format().clone();
+        let f = &fmt.format.fields;
+        let width = f[2].length as usize;
+        let mut record = vec![0u8; usize::try_from(fmt.format.record_len).expect("fits")];
+        let date = srcdat(now);
+        let mut n = 0u64;
+        for line in lines {
+            n += 1;
+            let seq = Decimal::new(i128::from(n), 0).expect("small");
+            record::write_field(&f[0], &mut record, &Value::Num(seq))?;
+            record::write_field(&f[1], &mut record, &Value::Num(date.clone()))?;
+            let mut bytes = line[..line.len().min(width)].to_vec();
+            bytes.resize(width, ccsid::SPACE);
+            record::write_field(&f[2], &mut record, &Value::Char(bytes))?;
+            m.write_new(txn, &record, &[])?;
+        }
+        Ok(n)
+    });
+    hold.release(txn);
+    let n = result?;
+    file::chgpfm(txn, file, entry.name, None, None, now)?;
+    Ok(n)
+}
+
 /// The member's records as (sequence in hundredths, date, data bytes).
 pub fn records(
     txn: &mut Txn<'_>,
@@ -186,7 +237,12 @@ pub fn write_member(
     }
     let entry = member_of(&desc, MemberSpec::Name(member))?;
     // The editor holds the member itself; only the file is taken here.
-    let hold = Hold::take(txn, job, &[(file, LockState::SharedUpdate)], &desc.name().to_string())?;
+    let hold = Hold::take(
+        txn,
+        job,
+        &[(file, LockState::SharedUpdate)],
+        &desc.name().to_string(),
+    )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
         m.jrn.job = job;
         m.clear(txn)?;

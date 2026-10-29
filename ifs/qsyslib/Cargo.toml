@@ -1,0 +1,22 @@
+[package]
+name = "qsyslib"
+description = "QS/400 IFS over the object store: the /QSYS.LIB view, the profile environment and the audit sink"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+ifs = { path = "../ifs", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+tracing.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true

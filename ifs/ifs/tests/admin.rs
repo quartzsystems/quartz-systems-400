@@ -130,7 +130,8 @@ fn copy_and_move_across_file_systems() {
         ccsid::to_ebcdic("hello\n").unwrap()
     );
     assert_eq!(s.ifs.stat(&cx, "/tmp/e.txt").unwrap().ccsid, 37);
-    // Copy a stream file into a member and back.
+    // Copy a stream file into a member: binary, so the line end stays
+    // in the record.
     s.ifs
         .copy(
             &cx,
@@ -141,7 +142,7 @@ fn copy_and_move_across_file_systems() {
         .unwrap();
     assert_eq!(
         ccsid::from_ebcdic(&s.get(&cx, "/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/E.MBR")),
-        "hello\n"
+        format!("{:<20}", "hello\n")
     );
     // Move within a file system renames; across, copies and removes.
     s.ifs.mov(&cx, "/home/src", "/home/moved", false).unwrap();

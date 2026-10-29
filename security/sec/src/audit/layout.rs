@@ -13,7 +13,7 @@ use crate::rec::{Layout, field};
 /// `AF`: authority failure.
 pub static AF: Layout = Layout {
     name: "AuditAF",
-    size: Some(97),
+    size: Some(135),
     fields: &[
         field("AFVIOL", 0, 1),
         field("AFONAM", 1, 10),
@@ -24,13 +24,16 @@ pub static AF: Layout = Layout {
         field("AFHAVE", 69, 8),
         field("AFPGMN", 77, 10),
         field("AFPGML", 87, 10),
+        field("AFOFID", 97, 32),
+        field("AFAPIN", 129, 1),
+        field("AFPNLN", 130, 5),
     ],
 };
 
 /// `AD`: auditing change.
 pub static AD: Layout = Layout {
     name: "AuditAD",
-    size: Some(229),
+    size: Some(267),
     fields: &[
         field("ADETYP", 0, 1),
         field("ADONAM", 1, 10),
@@ -41,6 +44,9 @@ pub static AD: Layout = Layout {
         field("ADNVAL", 49, 10),
         field("ADCMDN", 59, 10),
         field("ADALVL", 69, 160),
+        field("ADOFID", 229, 32),
+        field("ADAPIN", 261, 1),
+        field("ADPNLN", 262, 5),
     ],
 };
 
@@ -62,7 +68,7 @@ pub static AU: Layout = Layout {
 /// `CA`: authority change.
 pub static CA: Layout = Layout {
     name: "AuditCA",
-    size: Some(75),
+    size: Some(113),
     fields: &[
         field("CAETYP", 0, 1),
         field("CAONAM", 1, 10),
@@ -73,13 +79,16 @@ pub static CA: Layout = Layout {
         field("CAOAUT", 49, 8),
         field("CANAUT", 57, 8),
         field("CACMDN", 65, 10),
+        field("CAOFID", 75, 32),
+        field("CAAPIN", 107, 1),
+        field("CAPNLN", 108, 5),
     ],
 };
 
 /// `CO`: object created.
 pub static CO: Layout = Layout {
     name: "AuditCO",
-    size: Some(57),
+    size: Some(95),
     fields: &[
         field("COETYP", 0, 1),
         field("COONAM", 1, 10),
@@ -88,6 +97,9 @@ pub static CO: Layout = Layout {
         field("COOWNR", 29, 10),
         field("COPGPN", 39, 10),
         field("COPUBA", 49, 8),
+        field("COOFID", 57, 32),
+        field("COAPIN", 89, 1),
+        field("COPNLN", 90, 5),
     ],
 };
 
@@ -113,13 +125,16 @@ pub static CP: Layout = Layout {
 /// `DO`: object deleted.
 pub static DO: Layout = Layout {
     name: "AuditDO",
-    size: Some(39),
+    size: Some(77),
     fields: &[
         field("DOETYP", 0, 1),
         field("DOONAM", 1, 10),
         field("DOOLIB", 11, 10),
         field("DOOTYP", 21, 8),
         field("DOOWNR", 29, 10),
+        field("DOOFID", 39, 32),
+        field("DOAPIN", 71, 1),
+        field("DOPNLN", 72, 5),
     ],
 };
 
@@ -175,7 +190,7 @@ pub static JS: Layout = Layout {
 /// `OM`: object moved or renamed.
 pub static OM: Layout = Layout {
     name: "AuditOM",
-    size: Some(49),
+    size: Some(92),
     fields: &[
         field("OMETYP", 0, 1),
         field("OMONAM", 1, 10),
@@ -183,19 +198,26 @@ pub static OM: Layout = Layout {
         field("OMOTYP", 21, 8),
         field("OMNNAM", 29, 10),
         field("OMNLIB", 39, 10),
+        field("OMOFID", 49, 32),
+        field("OMAPIN", 81, 1),
+        field("OMPNLN", 82, 5),
+        field("OM2PNL", 87, 5),
     ],
 };
 
 /// `OW`: owner changed.
 pub static OW: Layout = Layout {
     name: "AuditOW",
-    size: Some(48),
+    size: Some(86),
     fields: &[
         field("OWONAM", 0, 10),
         field("OWOLIB", 10, 10),
         field("OWOTYP", 20, 8),
         field("OWOOWN", 28, 10),
         field("OWNOWN", 38, 10),
+        field("OWOFID", 48, 32),
+        field("OWAPIN", 80, 1),
+        field("OWPNLN", 81, 5),
     ],
 };
 
@@ -216,7 +238,7 @@ pub static PA: Layout = Layout {
 /// `PG`: primary group changed.
 pub static PG: Layout = Layout {
     name: "AuditPG",
-    size: Some(56),
+    size: Some(94),
     fields: &[
         field("PGONAM", 0, 10),
         field("PGOLIB", 10, 10),
@@ -224,6 +246,9 @@ pub static PG: Layout = Layout {
         field("PGOPGP", 28, 10),
         field("PGNPGP", 38, 10),
         field("PGPAUT", 48, 8),
+        field("PGOFID", 56, 32),
+        field("PGAPIN", 88, 1),
+        field("PGPNLN", 89, 5),
     ],
 };
 
@@ -310,26 +335,32 @@ pub static SV: Layout = Layout {
 /// `ZC`: object changed.
 pub static ZC: Layout = Layout {
     name: "AuditZC",
-    size: Some(53),
+    size: Some(91),
     fields: &[
         field("ZCONAM", 0, 10),
         field("ZCOLIB", 10, 10),
         field("ZCOTYP", 20, 8),
         field("ZCACCY", 28, 1),
         field("ZCOPER", 29, 24),
+        field("ZCOFID", 53, 32),
+        field("ZCAPIN", 85, 1),
+        field("ZCPNLN", 86, 5),
     ],
 };
 
 /// `ZR`: object read.
 pub static ZR: Layout = Layout {
     name: "AuditZR",
-    size: Some(53),
+    size: Some(91),
     fields: &[
         field("ZRONAM", 0, 10),
         field("ZROLIB", 10, 10),
         field("ZROTYP", 20, 8),
         field("ZRACCY", 28, 1),
         field("ZROPER", 29, 24),
+        field("ZROFID", 53, 32),
+        field("ZRAPIN", 85, 1),
+        field("ZRPNLN", 86, 5),
     ],
 };
 

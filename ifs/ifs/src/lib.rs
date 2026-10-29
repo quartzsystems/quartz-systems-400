@@ -7,14 +7,16 @@
 //! ([`path`]), the storage backend ([`backend`]), the one metadata layer
 //! ([`meta`]), authority ([`auth`]), the mounted file systems ([`vfs`]),
 //! the resolver ([`resolve`]), locks ([`lock`]), text conversion
-//! ([`text`]), the operations ([`ops`]) and the save walk ([`save`]).
-//! `docs/IFS.md` describes the design.
+//! ([`text`]), the operations ([`ops`]), the save walk ([`save`]) and
+//! the interface a job calls them through ([`client`]). `docs/IFS.md`
+//! describes the design.
 
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
 
 pub mod auth;
 pub mod backend;
+pub mod client;
 pub mod errno;
 pub mod lock;
 pub mod meta;

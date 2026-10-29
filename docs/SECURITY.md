@@ -502,6 +502,16 @@ named as IBM's model files name them (`QASYxxJ5` without the journal
 heading). `CPYAUDJRNE` puts the heading and these fields in its output
 files; `DSPAUDJRNE` prints them.
 
+Entries about integrated file system objects (Phase 10) carry IBM's
+IFS fields at the end of the fixed part: `xxOFID` the object's file ID
+(`Qp0lFID_t`, as 32 hexadecimal characters), `xxAPIN` `Y` for an
+absolute path and `xxPNLN` the path's length in characters; the path
+itself, of any length, follows the fixed part as a `rec::Tail` item
+with tag 1 (`xxPNM` in IBM's files), the new path of a move or rename
+as item 2 (`OM2PN`). The object fields then hold the object's last name
+and its IFS type (`*STMF`, `*DIR` ...) with no library. Entries about
+library objects leave these fields blank and have no tail.
+
 ### When an entry cannot be written
 
 A receiver past its threshold under `MNGRCV(*USER)` is full. Then:
@@ -517,7 +527,7 @@ A receiver past its threshold under `MNGRCV(*USER)` is full. Then:
   receiver stops the system; keep `MNGRCV(*SYSTEM)` on `QAUDJRN` or watch
   its threshold.
 
-### `AuditAF` (97 bytes)
+### `AuditAF` (135 bytes)
 
 Authority failure.
 
@@ -532,8 +542,11 @@ Authority failure.
 | 69 | 8 | AFHAVE | authority found, hexadecimal bits |
 | 77 | 10 | AFPGMN | program, when one was running |
 | 87 | 10 | AFPGML | its library |
+| 97 | 32 | AFOFID | file ID of an IFS object, hexadecimal |
+| 129 | 1 | AFAPIN | `Y` when the path is absolute (IFS) |
+| 130 | 5 | AFPNLN | path length (IFS); the path is tail item 1 |
 
-### `AuditAD` (229 bytes)
+### `AuditAD` (267 bytes)
 
 Auditing change.
 
@@ -548,6 +561,9 @@ Auditing change.
 | 49 | 10 | ADNVAL | new `OBJAUD` |
 | 59 | 10 | ADCMDN | command |
 | 69 | 160 | ADALVL | new `AUDLVL`, sixteen values of ten |
+| 229 | 32 | ADOFID | file ID of an IFS object, hexadecimal |
+| 261 | 1 | ADAPIN | `Y` when the path is absolute (IFS) |
+| 262 | 5 | ADPNLN | path length (IFS); the path is tail item 1 |
 
 ### `AuditAU` (139 bytes)
 
@@ -563,7 +579,7 @@ Attribute change.
 | 39 | 50 | AUOVAL | old value |
 | 89 | 50 | AUNVAL | new value |
 
-### `AuditCA` (75 bytes)
+### `AuditCA` (113 bytes)
 
 Authority change.
 
@@ -578,8 +594,11 @@ Authority change.
 | 49 | 8 | CAOAUT | old bits, hexadecimal |
 | 57 | 8 | CANAUT | new bits, hexadecimal |
 | 65 | 10 | CACMDN | command |
+| 75 | 32 | CAOFID | file ID of an IFS object, hexadecimal |
+| 107 | 1 | CAAPIN | `Y` when the path is absolute (IFS) |
+| 108 | 5 | CAPNLN | path length (IFS); the path is tail item 1 |
 
-### `AuditCO` (57 bytes)
+### `AuditCO` (95 bytes)
 
 Object created.
 
@@ -592,6 +611,9 @@ Object created.
 | 29 | 10 | COOWNR | owner |
 | 39 | 10 | COPGPN | primary group |
 | 49 | 8 | COPUBA | `*PUBLIC` bits, hexadecimal |
+| 57 | 32 | COOFID | file ID of an IFS object, hexadecimal |
+| 89 | 1 | COAPIN | `Y` when the path is absolute (IFS) |
+| 90 | 5 | COPNLN | path length (IFS); the path is tail item 1 |
 
 ### `AuditCP` (153 bytes)
 
@@ -611,7 +633,7 @@ User profile changed.
 | 133 | 10 | CPOWNR | `OWNER` |
 | 143 | 10 | CPGAUT | `GRPAUT` |
 
-### `AuditDO` (39 bytes)
+### `AuditDO` (77 bytes)
 
 Object deleted.
 
@@ -622,6 +644,9 @@ Object deleted.
 | 11 | 10 | DOOLIB | object library |
 | 21 | 8 | DOOTYP | object type |
 | 29 | 10 | DOOWNR | owner |
+| 39 | 32 | DOOFID | file ID of an IFS object, hexadecimal |
+| 71 | 1 | DOAPIN | `Y` when the path is absolute (IFS) |
+| 72 | 5 | DOPNLN | path length (IFS); the path is tail item 1 |
 
 ### `AuditDS` (11 bytes)
 
@@ -671,7 +696,7 @@ Job change.
 | 58 | 20 | JSJOBQ | job queue, `LIB/NAME` |
 | 78 | 10 | JSCMDN | command |
 
-### `AuditOM` (49 bytes)
+### `AuditOM` (92 bytes)
 
 Object moved or renamed.
 
@@ -683,8 +708,12 @@ Object moved or renamed.
 | 21 | 8 | OMOTYP | object type |
 | 29 | 10 | OMNNAM | new name |
 | 39 | 10 | OMNLIB | new library |
+| 49 | 32 | OMOFID | file ID of an IFS object, hexadecimal |
+| 81 | 1 | OMAPIN | `Y` when the path is absolute (IFS) |
+| 82 | 5 | OMPNLN | path length (IFS); the path is tail item 1 |
+| 87 | 5 | OM2PNL | new path length (IFS); the new path is tail item 2 |
 
-### `AuditOW` (48 bytes)
+### `AuditOW` (86 bytes)
 
 Owner changed.
 
@@ -695,6 +724,9 @@ Owner changed.
 | 20 | 8 | OWOTYP | object type |
 | 28 | 10 | OWOOWN | old owner |
 | 38 | 10 | OWNOWN | new owner |
+| 48 | 32 | OWOFID | file ID of an IFS object, hexadecimal |
+| 80 | 1 | OWAPIN | `Y` when the path is absolute (IFS) |
+| 81 | 5 | OWPNLN | path length (IFS); the path is tail item 1 |
 
 ### `AuditPA` (49 bytes)
 
@@ -709,7 +741,7 @@ Adopting program changed.
 | 29 | 10 | PAOWNR | owner |
 | 39 | 10 | PAUPRF | `USRPRF` |
 
-### `AuditPG` (56 bytes)
+### `AuditPG` (94 bytes)
 
 Primary group changed.
 
@@ -721,6 +753,9 @@ Primary group changed.
 | 28 | 10 | PGOPGP | old primary group |
 | 38 | 10 | PGNPGP | new primary group |
 | 48 | 8 | PGPAUT | its bits, hexadecimal |
+| 56 | 32 | PGOFID | file ID of an IFS object, hexadecimal |
+| 88 | 1 | PGAPIN | `Y` when the path is absolute (IFS) |
+| 89 | 5 | PGPNLN | path length (IFS); the path is tail item 1 |
 
 ### `AuditPS` (31 bytes)
 
@@ -796,7 +831,7 @@ System value changed.
 | 11 | 250 | SVNVAL | new value |
 | 261 | 250 | SVOVAL | old value |
 
-### `AuditZC` (53 bytes)
+### `AuditZC` (91 bytes)
 
 Object changed.
 
@@ -807,8 +842,11 @@ Object changed.
 | 20 | 8 | ZCOTYP | object type |
 | 28 | 1 | ZCACCY | `C` change |
 | 29 | 24 | ZCOPER | operation |
+| 53 | 32 | ZCOFID | file ID of an IFS object, hexadecimal |
+| 85 | 1 | ZCAPIN | `Y` when the path is absolute (IFS) |
+| 86 | 5 | ZCPNLN | path length (IFS); the path is tail item 1 |
 
-### `AuditZR` (53 bytes)
+### `AuditZR` (91 bytes)
 
 Object read.
 
@@ -819,6 +857,9 @@ Object read.
 | 20 | 8 | ZROTYP | object type |
 | 28 | 1 | ZRACCY | `R` read |
 | 29 | 24 | ZROPER | operation |
+| 53 | 32 | ZROFID | file ID of an IFS object, hexadecimal |
+| 85 | 1 | ZRAPIN | `Y` when the path is absolute (IFS) |
+| 86 | 5 | ZRPNLN | path length (IFS); the path is tail item 1 |
 
 ## 8. Security system values
 

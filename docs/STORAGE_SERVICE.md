@@ -79,6 +79,7 @@ client trait. `stg::proto` is that list:
 | 111-112 | the job scheduler's tick; the job log copy |
 | 113-118 | spooled files and printer files; the writer's next file and what it printed |
 | 119-122 | spool maintenance, a job name's state this IPL, the next IPL's `QIPLSTS`, `QWCRSSTS` |
+| 440 | the integrated file system: one request carrying an `IfsOp` (`docs/IFS.md` "The protocol"); descriptors, directory streams and locks are the connection's |
 
 Every connection starts with `hello`, naming the job and the lock
 handle its locks are taken under. Nothing else is answered before it.
@@ -105,7 +106,9 @@ The rules:
    *IMMED`, `SIGKILL`, a crash), the service ends the job's database
    session: an open commit cycle is rolled back from its before
    images, shared paths are released, record and object locks are
-   released. The same happens to every job at `close`.
+   released, and its IFS descriptors (members written back), directory
+   streams and byte-range locks go. The same happens to every job at
+   `close`.
 4. The service never waits on a job's behalf. A request that would wait
    (a data queue with nothing in it) answers at once; the job waits
    between tries (`stg::remote::RETRY`, 50 ms). The job's wait status

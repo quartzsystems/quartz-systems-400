@@ -573,6 +573,10 @@ ipc::rpc! {
     /// SST: a change to the user IDs (`create`, `delete`, `enable`,
     /// `disable`, `privileges`, `reset`); the message of a refusal.
     432 => fn sst_user_change / SstUserChange (op: String, name: String, password: String, text: String, privileges: svctools::Privilege) -> Result<(), String>;
+    // --- the integrated file system (440-459)
+    /// One IFS operation for the job (`crate::ifs`): descriptors,
+    /// directory streams and locks are the connection's and end with it.
+    440 => fn ifs / IfsReq (op: crate::ifs::IfsOp) -> crate::ifs::IfsReply;
 }
 
 /// A search index topic: title, root words, panel group (`LIB/NAME`)

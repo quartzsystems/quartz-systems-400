@@ -65,9 +65,11 @@ members = [
     "rpg/compiler",
     "rpg/qrpgrt",
     "rpg/sqlpre",
-    # Integrated file system: the namespace, metadata, authority, locks.
+    # Integrated file system: the namespace, metadata, authority, locks;
+    # the object store seen as /QSYS.LIB.
     "ifs/ifs",
     "ifs/xfsfmt",
+    "ifs/qsyslib",
     # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
     "net/netlink",
     "net/hostsvr",

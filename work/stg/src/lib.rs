@@ -9,12 +9,14 @@
 //! the requests; [`Link`] carries them; [`remote`] implements the
 //! runtime's source traits (`ObjectSource`, `IoSource`, `DataSource`,
 //! `UserSpaceSource`, `MsgLookup`, the APIs' `Provider`) by sending
-//! them. The service side lives in `slic`, which hosts the service.
+//! them; [`ifs`] carries the integrated file system the same way. The
+//! service side lives in `slic`, which hosts the service.
 //! `docs/STORAGE_SERVICE.md` describes the design.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod ifs;
 mod link;
 pub mod proto;
 pub mod remote;
