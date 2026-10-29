@@ -1,0 +1,163 @@
+### export marks for children
+x=1; export x; env | grep_ 2>/dev/null; env | cat > /tmp/e; while read l; do case $l in x=*) echo $l;; esac; done < /tmp/e
+--- out
+x=1
+
+### export with value
+export y=2; env > /tmp/e; while read l; do case $l in y=*) echo $l;; esac; done < /tmp/e
+--- out
+y=2
+
+### unexported not in environment
+z=3; env > /tmp/e; while read l; do case $l in z=*) echo $l;; esac; done < /tmp/e; echo done
+--- out
+done
+
+### temporary assignment for a program
+v=tmp env > /tmp/e; while read l; do case $l in v=*) echo $l;; esac; done < /tmp/e; echo "[$v]"
+--- out
+v=tmp
+[]
+
+### export -p
+unset HOME LOGNAME PWD; export A=1 B='two words'; export -p
+--- out
+export A=1
+export B='two words'
+
+### export without value lists name
+unset HOME LOGNAME PWD; export N; export -p
+--- out
+export N
+
+### export bad name
+export 1abc=x
+--- err
+qsh: 001-0063 export: 1abc is not a valid name.
+--- status
+1
+
+### readonly
+readonly r=5; r=6; echo not reached
+--- err
+qsh: 001-0029 Variable r is read-only.
+--- status
+1
+
+### readonly in command prefix
+readonly r=5; r=6 true; echo after
+--- err
+qsh: 001-0029 Variable r is read-only.
+--- status
+1
+
+### readonly listing
+readonly ro=val; readonly -p | while read l; do case $l in *ro=*) echo $l;; esac; done
+--- out
+readonly ro=val
+
+### unset readonly fails
+readonly k=1; unset k; echo $? $k
+--- out
+1 1
+--- err
+qsh: 001-0029 Variable k is read-only.
+
+### unset variable
+x=1; unset x; echo "[${x-unset}]"
+--- out
+[unset]
+
+### unset -v
+x=1; unset -v x; echo "[${x-unset}]"
+--- out
+[unset]
+
+### unset nonexistent is fine
+unset nothere; echo $?
+--- out
+0
+
+### shift
+set -- a b c; shift; echo $*; shift 2; echo $#
+--- out
+b c
+0
+
+### shift too far
+set -- a; shift 2; echo no
+--- err
+qsh: 001-0062 shift: cannot shift 2 positional parameters.
+--- status
+1
+
+### shift bad number
+shift x
+--- err
+qsh: 001-0068 shift: x is not a number.
+--- status
+1
+
+### set positionals
+set a b c; echo $2; set --; echo $#
+--- out
+b
+0
+
+### set lists variables
+unset HOME LOGNAME PWD PATH PS1 PS2 PS4 IFS OPTIND PPID QSH_VERSION; zz='a b'; set
+--- out
+zz='a b'
+
+### set quoting of single quote
+unset HOME LOGNAME PWD PATH PS1 PS2 PS4 IFS OPTIND PPID QSH_VERSION; q="it's"; set
+--- out
+q='it'\''s'
+
+### declare integer
+declare -i n=3+4; echo $n
+--- out
+7
+
+### typeset readonly
+typeset -r t=1; t=2
+--- err
+qsh: 001-0029 Variable t is read-only.
+--- status
+1
+
+### declare in function is local
+x=g; f() { declare x=l; echo $x; }; f; echo $x
+--- out
+l
+g
+
+### declare -x exports
+declare -x dx=1; env > /tmp/e; while read l; do case $l in dx=*) echo $l;; esac; done < /tmp/e
+--- out
+dx=1
+
+### declare -p
+v='a b'; declare -p v
+--- out
+declare -- v='a b'
+
+### allexport
+set -a; ae=1; set +a; env > /tmp/e; while read l; do case $l in ae=*) echo $l;; esac; done < /tmp/e
+--- out
+ae=1
+
+### assignment to special name fails to parse as assignment
+1x=2 2>/dev/null; echo $?
+--- out
+127
+
+### variable names are case sensitive
+a=lower; A=upper; echo $a $A
+--- out
+lower upper
+
+### OPTIND assignment resets getopts
+OPTIND=1; echo $OPTIND
+--- out
+1

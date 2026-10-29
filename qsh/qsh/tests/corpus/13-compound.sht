@@ -1,0 +1,132 @@
+### brace group
+{ echo a; echo b; }
+--- out
+a
+b
+
+### brace group shares variables
+x=1; { x=2; }; echo $x
+--- out
+2
+
+### subshell isolates variables
+x=1; (x=2; echo $x); echo $x
+--- out
+2
+1
+
+### subshell isolates cd
+cd /tmp; (cd /; pwd); pwd
+--- out
+/
+/tmp
+
+### subshell exit status
+(exit 7); echo $?
+--- out
+7
+
+### nested subshells
+( ( echo deep ) )
+--- out
+deep
+
+### brace needs separator before close
+{ echo a }
+}
+--- out
+a }
+
+### brace on separate lines
+{
+  echo multi
+}
+--- out
+multi
+
+### if then
+if true; then echo yes; fi
+--- out
+yes
+
+### if else
+if false; then echo yes; else echo no; fi
+--- out
+no
+
+### elif chain
+x=2; if [ $x = 1 ]; then echo one; elif [ $x = 2 ]; then echo two; elif true; then echo three; else echo other; fi
+--- out
+two
+
+### if status with no branch is zero
+false; if false; then :; fi; echo $?
+--- out
+0
+
+### if status is body status
+if true; then exitwith 3; fi; echo $?
+--- out
+3
+
+### if condition is a list
+if false; true; then echo last counts; fi
+--- out
+last counts
+
+### if on several lines
+if true
+then
+  echo a
+else
+  echo b
+fi
+--- out
+a
+
+### nested if
+if true; then if false; then echo x; else echo inner; fi; fi
+--- out
+inner
+
+### missing fi
+if true; then echo x
+--- err
+qsh: 001-0050 Line 2 has a syntax error: end of input inside a compound command.
+--- status
+2
+
+### then without if
+then echo x
+--- err
+qsh: 001-0050 Line 1 has a syntax error: token "then" was not expected.
+--- status
+2
+
+### empty then is an error
+if true; then fi
+--- err
+qsh: 001-0050 Line 1 has a syntax error: token "fi" was not expected.
+--- status
+2
+
+### compound with redirections and pipes
+if true; then echo piped; fi | cat
+--- out
+piped
+
+### subshell with redirection
+(echo e >&2) 2>&1
+--- out
+e
+
+### subshell runs exit trap
+(trap 'echo bye' EXIT; echo in)
+--- out
+in
+bye
+
+### reserved word after semicolon
+true; if true; then echo ok; fi
+--- out
+ok

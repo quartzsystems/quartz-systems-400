@@ -1,0 +1,96 @@
+### define and use on next line
+alias hi='echo hello'
+hi
+--- out
+hello
+
+### alias with arguments
+alias say='echo said'
+say more
+--- out
+said more
+
+### alias not used on same line
+alias x='echo x'; x 2>/dev/null; echo $?
+--- out
+127
+
+### list aliases
+alias a='echo a' b=ls
+alias
+--- out
+a='echo a'
+b=ls
+
+### show one alias
+alias q='echo q'
+alias q
+--- out
+q='echo q'
+
+### unknown alias
+alias nope
+--- err
+qsh: 001-0062 alias: nope is not an alias.
+--- status
+1
+
+### unalias
+alias u='echo u'
+unalias u
+u 2>/dev/null; echo $?
+--- out
+127
+
+### unalias all
+alias a=b c=d
+unalias -a
+alias
+echo none
+
+--- out
+none
+
+### recursive alias stops
+alias ls='ls -l'
+type ls 2>&1
+--- out
+ls is an alias for ls -l
+
+### alias ending in blank expands next word
+alias run='args ' w='word'
+run w
+--- out
+<word>
+
+### quoted alias name not expanded
+alias e='echo aliased'
+\e 2>/dev/null; echo $?
+--- out
+127
+
+### alias in function definition time
+alias g='echo from alias'
+f() { g; }
+unalias g
+f
+--- out
+from alias
+
+### alias to keyword start
+alias begin='if true; then'
+begin echo inside; fi
+--- out
+inside
+
+### alias after assignment
+alias show='echo'
+x=1 show shown
+--- out
+shown
+
+### alias chain
+alias one=two two='echo chained'
+one
+--- out
+chained

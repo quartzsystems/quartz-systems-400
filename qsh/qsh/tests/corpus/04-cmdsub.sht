@@ -1,0 +1,129 @@
+### dollar paren
+echo $(echo hi)
+--- out
+hi
+
+### backquotes
+echo `echo hi`
+--- out
+hi
+
+### trailing newlines removed
+x=$(printf 'a\n\n\n'); echo "[$x]"
+--- out
+[a]
+
+### inner newlines kept in quotes
+x=$(printf 'a\nb'); echo "$x"
+--- out
+a
+b
+
+### unquoted result splits
+args $(echo a b  c)
+--- out
+<a><b><c>
+
+### quoted result does not split
+args "$(echo a b  c)" "$(echo 'a b  c')"
+--- out
+<a b c><a b  c>
+
+### nested dollar paren
+echo $(echo $(echo deep))
+--- out
+deep
+
+### nested backquotes
+echo `echo \`echo deep\``
+--- out
+deep
+
+### backquote escapes dollar
+x=v; echo `echo \$x`
+--- out
+v
+
+### status of substitution
+x=$(exitwith 3); echo $?
+--- out
+3
+
+### assignment only takes last substitution status
+x=$(false) y=$(true); echo $?
+--- out
+0
+
+### substitution runs in subshell
+x=1; y=$(x=2; echo $x); echo $x $y
+--- out
+1 2
+
+### case inside command substitution
+echo $(case a in a) echo yes;; esac)
+--- out
+yes
+
+### parenthesis in substitution
+echo $( (echo sub) )
+--- out
+sub
+
+### here-document inside substitution
+x=$(cat <<EOF
+inside
+EOF
+); echo $x
+--- out
+inside
+
+### quotes inside substitution in quotes
+echo "$(echo "a  b")"
+--- out
+a  b
+
+### exit inside substitution
+x=$(echo a; exit 4; echo b); echo $x $?
+--- out
+a 4
+
+### substitution in a word
+echo pre$(echo mid)post
+--- out
+premidpost
+
+### empty substitution
+args $(true) x
+--- out
+<x>
+
+### stderr of substitution not captured
+x=$(echo out; echo err >&2); echo "[$x]"
+--- out
+[out]
+--- err
+err
+
+### comment in substitution
+echo $(echo a # comment
+)
+--- out
+a
+
+### pipeline in substitution
+echo $(echo abc | cat)
+--- out
+abc
+
+### multiline substitution
+x=$(
+  echo one
+  echo two
+); echo $x
+--- out
+one two
+
+### backquote with double quote escape
+echo "`echo \"q\"`"
+--- out
+q

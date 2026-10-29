@@ -1,0 +1,101 @@
+### cd and pwd
+cd /tmp; pwd; echo $PWD
+--- out
+/tmp
+/tmp
+
+### cd home
+cd /tmp; cd; pwd
+--- out
+/home/QSHUSER
+
+### cd sets OLDPWD
+cd /tmp; cd /; echo $OLDPWD
+--- out
+/tmp
+
+### cd dash
+cd /tmp; cd /; cd -; pwd
+--- out
+/tmp
+/tmp
+
+### cd relative and dot dot
+cd /home/QSHUSER; cd ..; pwd; cd ./QSHUSER; pwd
+--- out
+/home
+/home/QSHUSER
+
+### cd missing directory
+cd /nonexistent; echo $?; pwd
+--- out
+1
+/home/QSHUSER
+--- err
+qsh: 001-0002 Cannot change to directory /nonexistent. No such path or directory.
+
+### cd to a file
+cd /tmp; : > file; cd file; echo $?
+--- out
+1
+--- err
+qsh: 001-0002 Cannot change to directory file. The path is not a directory.
+
+### cd case-insensitive root
+cd /TMP; pwd -P
+--- out
+/tmp
+
+### cd logical through symlink keeps name
+mkdir /tmp/real; cd /tmp/real; cd ..; pwd
+--- out
+/tmp
+
+### cd with CDPATH prints the directory
+mkdir /tmp/cdp/sub; CDPATH=/tmp/cdp; cd sub; pwd
+--- out
+/tmp/cdp/sub
+/tmp/cdp/sub
+
+### cd without HOME
+unset HOME; cd; echo $?
+--- out
+1
+--- err
+qsh: 001-0062 cd: HOME is not set.
+
+### programs get the working directory
+cd /tmp; pwdx
+--- out
+/tmp
+
+### pwd -L and -P
+cd /tmp; pwd -L; pwd -P
+--- out
+/tmp
+/tmp
+
+### umask show and set
+umask; umask 027; umask; umask -S
+--- out
+0022
+0027
+u=rwx,g=rx,o=
+
+### umask symbolic
+umask 022; umask g-r; umask; umask a=rx; umask
+--- out
+0062
+0222
+
+### umask bad
+umask 999; echo $?
+--- out
+1
+--- err
+qsh: 001-0062 umask: mask 999 is not valid.
+
+### umask in subshell does not leak
+umask 022; (umask 077); umask
+--- out
+0022

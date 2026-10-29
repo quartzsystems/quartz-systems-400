@@ -1,0 +1,141 @@
+### command not found status
+nosuch; echo $?
+--- out
+127
+--- err
+qsh: 001-0014 Cannot find command nosuch.
+
+### not found message can be redirected
+nosuch 2>/dev/null; echo $?
+--- out
+127
+
+### assignment only status is zero
+false; x=1; echo $?
+--- out
+0
+
+### redirection only command
+cd /tmp; > created; [ -f created ] && echo made
+--- out
+made
+
+### commands on many lines with comments
+# leading comment
+echo a # trailing
+  # indented comment
+echo b
+--- out
+a
+b
+
+### deep nesting of quotes and substitutions
+echo "$(echo "$(echo "in'side")")"
+--- out
+in'side
+
+### long pipeline of builtins
+echo start | { read x; echo "$x 1"; } | { read x; echo "$x 2"; } | { read x; echo "$x 3"; }
+--- out
+start 1 2 3
+
+### variable expansion inside arithmetic inside substitution
+a=3; echo $(echo $((a*$(echo 2))))
+--- out
+6
+
+### for over command substitution lines
+for w in $(printf 'one\ntwo\n'); do echo "[$w]"; done
+--- out
+[one]
+[two]
+
+### nested functions and loops
+outer() { for i in 1 2; do inner $i; done; }; inner() { echo "inner $1"; }; outer
+--- out
+inner 1
+inner 2
+
+### case in a loop in a function
+f() { for a in "$@"; do case $a in -*) echo opt $a;; *) echo arg $a;; esac; done; }; f -x y
+--- out
+opt -x
+arg y
+
+### word with every kind of part
+x=v; echo pre'sq'"dq$x"$(echo cs)$((1+1))\!post
+--- out
+presqdqvcs2!post
+
+### empty script
+--- out
+
+### only comments
+# nothing here
+--- out
+
+### status of last command is the script status
+exitwith 9
+--- status
+9
+
+### true and false as last command
+false
+--- status
+1
+
+### semicolon after background
+{ echo x; } & wait $!; echo y
+--- out
+x
+y
+
+### environment passed to program
+X=1 env | while read l; do case $l in X=*) echo $l;; esac; done
+--- out
+X=1
+
+### PWD exported to programs
+cd /tmp; env | while read l; do case $l in PWD=*) echo $l;; esac; done
+--- out
+PWD=/tmp
+
+### assignment before special builtin persists
+x=1 :; echo $x
+--- out
+1
+
+### assignment before regular builtin is temporary
+x=1 true; echo "[$x]"
+--- out
+[]
+
+### IFS assignment before read
+echo 'a,b' | { IFS=, read p q; echo "$p $q"; }
+--- out
+a b
+
+### parameter in redirection of here-document delimiter is literal
+cat <<$x
+text
+$x
+--- out
+text
+
+### braces after words
+echo {}; echo a{}b
+--- out
+{}
+a{}b
+
+### parse error after a here-document reports its line
+cat <<E
+x
+E
+)
+--- out
+x
+--- err
+qsh: 001-0050 Line 4 has a syntax error: token ")" was not expected.
+--- status
+2

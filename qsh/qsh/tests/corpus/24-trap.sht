@@ -1,0 +1,120 @@
+### exit trap runs at end
+trap 'echo bye' EXIT; echo main
+--- out
+main
+bye
+
+### exit trap on exit builtin
+trap 'echo bye $?' EXIT; exit 3
+--- out
+bye 3
+--- status
+3
+
+### exit trap with zero signal number
+trap 'echo zero' 0; true
+--- out
+zero
+
+### exit trap can change status
+trap 'exit 9' EXIT; true
+--- status
+9
+
+### reset a trap
+trap 'echo no' EXIT; trap - EXIT; echo done
+--- out
+done
+
+### list traps
+trap 'echo hi' EXIT; trap '' INT; trap
+--- out
+trap -- 'echo hi' EXIT
+trap -- '' INT
+hi
+
+### trap with signal names and numbers
+trap 'echo t' TERM 15 SIGUSR1; trap
+--- out
+trap -- 'echo t' TERM
+trap -- 'echo t' USR1
+trap -- 'echo t' HUP
+
+### numeric first operand resets
+trap 'echo x' INT; trap 4; trap; echo none
+--- out
+none
+
+### bad signal name
+trap 'echo x' BOGUS; echo $?
+--- out
+1
+--- err
+qsh: 001-0045 trap: BOGUS is not a signal.
+
+### trap runs on signal
+trap 'echo caught' USR1; kill -USR1 $$; echo after
+--- out
+caught
+after
+
+### ignored signal
+trap '' TERM; kill -TERM $$; echo survived
+--- out
+survived
+
+### untrapped signal ends the shell
+kill -s TERM $$; echo never
+--- status
+134
+
+### trap preserves status
+trap 'false' USR2; true; kill -USR2 $$; echo $?
+--- out
+0
+
+### kill lists signals
+kill -l | while read a b c rest; do echo $a $b $c; done
+--- out
+ABRT FPE ILL
+
+### kill -l with number
+kill -l 6; kill -l 132
+--- out
+TERM
+INT
+
+### kill bad signal
+kill -s NOPE 1; echo $?
+--- out
+1
+--- err
+qsh: 001-0045 kill: NOPE is not a signal.
+
+### kill without operands
+kill; echo $?
+--- out
+2
+--- err
+qsh: 001-0062 kill: a process ID or job is required.
+
+### kill unknown job
+kill %9; echo $?
+--- out
+1
+--- err
+qsh: 001-0040 kill: there is no job %9.
+
+### trap in subshell is reset
+trap 'echo parent' EXIT; (echo child); echo end
+--- out
+child
+end
+parent
+
+### trap KILL refused
+trap 'echo' KILL; echo $?
+--- out
+1
+--- err
+qsh: 001-0062 trap: signal KILL cannot be trapped.

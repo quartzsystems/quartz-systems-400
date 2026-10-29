@@ -1,0 +1,117 @@
+### simple case
+case b in a) echo A;; b) echo B;; esac
+--- out
+B
+
+### first match wins
+case x in x) echo one;; x) echo two;; esac
+--- out
+one
+
+### alternatives
+case dog in cat|dog) echo pet;; esac
+--- out
+pet
+
+### default arm
+case zzz in a) echo a;; *) echo default;; esac
+--- out
+default
+
+### no match status zero
+false; case x in y) echo y;; esac; echo $?
+--- out
+0
+
+### last arm without double semicolon
+case a in a) echo last
+esac
+--- out
+last
+
+### leading parenthesis
+case a in (a) echo paren;; esac
+--- out
+paren
+
+### empty arm
+case a in a) ;; b) echo b;; esac; echo $?
+--- out
+0
+
+### subject expansion
+x=hello; case $x in hel*) echo matched;; esac
+--- out
+matched
+
+### subject is not split
+x='a b'; case $x in 'a b') echo whole;; esac
+--- out
+whole
+
+### pattern from variable
+p='h*'; case hello in $p) echo var;; esac
+--- out
+var
+
+### quoted variable pattern is literal
+p='h*'; case hello in "$p") echo no;; *) echo literal;; esac
+--- out
+literal
+
+### multiline case
+case x in
+  x)
+    echo first
+    echo second
+    ;;
+  *)
+    echo other
+    ;;
+esac
+--- out
+first
+second
+
+### case status is arm status
+case a in a) exitwith 4;; esac; echo $?
+--- out
+4
+
+### case with newline before in
+case a
+in a) echo ok;; esac
+--- out
+ok
+
+### esac as a word in arm
+case a in a) echo esac;; esac
+--- out
+esac
+
+### case in a pipeline
+case a in a) echo piped;; esac | cat
+--- out
+piped
+
+### case empty string
+case "" in "") echo empty;; esac
+--- out
+empty
+
+### case escaped star
+case '*' in \*) echo star;; esac
+--- out
+star
+
+### case with command substitution pattern
+case abc in $(echo a)*) echo cs;; esac
+--- out
+cs
+
+### missing esac
+case a in a) echo x;;
+--- err
+qsh: 001-0050 Line 2 has a syntax error: end of input inside a case command.
+--- status
+2

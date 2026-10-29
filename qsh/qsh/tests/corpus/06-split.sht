@@ -1,0 +1,105 @@
+### default IFS splitting
+x='  a   b	c
+d  '; args $x
+--- out
+<a><b><c><d>
+
+### custom IFS
+IFS=:; x=a:b::c; args $x
+--- out
+<a><b><><c>
+
+### leading delimiter makes empty field
+IFS=:; x=:a; args $x
+--- out
+<><a>
+
+### trailing delimiter makes no field
+IFS=:; x=a:; args $x
+--- out
+<a>
+
+### whitespace around non-whitespace delimiter
+IFS=' :'; x='a : b'; args $x
+--- out
+<a><b>
+
+### two non-whitespace delimiters
+IFS=' :'; x='a :: b'; args $x
+--- out
+<a><><b>
+
+### empty IFS no splitting
+IFS=; x='a b c'; args $x
+--- out
+<a b c>
+
+### unset IFS splits on whitespace
+unset IFS; x='a b:c'; args $x
+--- out
+<a><b:c>
+
+### literal text not split
+IFS=:; args a:b
+--- out
+<a:b>
+
+### empty unquoted expansion vanishes
+x=; args $x a $x
+--- out
+<a>
+
+### only whitespace vanishes
+x='   '; args $x
+--- out
+
+
+### quoted empty kept next to empty expansion
+x=; args "$x" ''$x
+--- out
+<><>
+
+### quoted empty with leading whitespace value
+x=' a'; args ""$x
+--- out
+<><a>
+
+### split joins with adjacent literal
+x='a b'; args pre$x
+--- out
+<prea><b>
+
+### split command substitution output
+args $(printf 'x\ny\n')
+--- out
+<x><y>
+
+### arithmetic results split
+IFS=0; args $((100))
+--- out
+<1><>
+
+### for loop splits words
+x='1 2 3'; for i in $x; do echo $i; done
+--- out
+1
+2
+3
+
+### quoted for word stays one
+x='1 2 3'; for i in "$x"; do echo "$i"; done
+--- out
+1 2 3
+
+### IFS change applies to later expansions
+x='a-b'; IFS=-; args $x; IFS=' '; args $x
+--- out
+<a><b>
+<a-b>
+
+### tab and newline in IFS
+IFS='
+'; x='a b
+c'; args $x
+--- out
+<a b><c>

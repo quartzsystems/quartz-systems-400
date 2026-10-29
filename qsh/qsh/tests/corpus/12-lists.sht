@@ -1,0 +1,116 @@
+### and list
+true && echo yes; false && echo no; echo $?
+--- out
+yes
+1
+
+### or list
+false || echo yes; true || echo no; echo $?
+--- out
+yes
+0
+
+### mixed left to right
+false && echo a || echo b; true || echo c && echo d
+--- out
+b
+d
+
+### and or continue after newline
+true &&
+echo after and
+false ||
+echo after or
+--- out
+after and
+after or
+
+### semicolon list
+echo a; echo b; echo c
+--- out
+a
+b
+c
+
+### trailing semicolon
+echo a;
+--- out
+a
+
+### newline separated
+echo 1
+echo 2
+--- out
+1
+2
+
+### blank lines and comments between commands
+echo 1
+
+# a comment
+
+echo 2
+--- out
+1
+2
+
+### async list
+echo bg & wait; echo fg
+--- out
+bg
+fg
+
+### async status is zero
+exitwith 5 & echo $?; wait
+--- out
+0
+
+### wait returns job status
+exitwith 5 & wait $!; echo $?
+--- out
+5
+
+### async in a list
+true & false & wait; echo done
+--- out
+done
+
+### async stdin is null
+echo input | { cat & wait; }
+--- out
+
+### status of and list is last run
+false && true; echo $?
+--- out
+1
+
+### empty command is a syntax error
+; echo x
+--- err
+qsh: 001-0050 Line 1 has a syntax error: token ";" was not expected.
+--- status
+2
+
+### double semicolon outside case
+echo a;; echo b
+--- err
+qsh: 001-0050 Line 1 has a syntax error: token ";;" was not expected.
+--- status
+2
+
+### dangling and
+true &&
+--- err
+qsh: 001-0050 Line 2 has a syntax error: end of input inside a command.
+--- status
+2
+
+### commands before a syntax error run
+echo first
+echo second )
+--- out
+first
+--- err
+qsh: 001-0050 Line 2 has a syntax error: token ")" was not expected.
+--- status
+2

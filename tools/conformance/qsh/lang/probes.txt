@@ -1,0 +1,133 @@
+### stderr-goes-to-file
+echo out; nosuchcmd_x; echo status $?
+### not-found-2
+exec 2>&1; nosuchcmd_x; echo status $?; /no/such/path; echo status $?
+### not-executable
+exec 2>&1; cd /home/QSTEST/qshlang; echo 'echo x' > nx; ./nx; echo status $?; /home; echo status $?
+### echo-forms
+echo -n a; echo b; echo 'a\tb|'; echo 'x\cy'; echo next; echo -e 'q\tr'; echo '\0101'
+### print-builtin
+exec 2>&1; print hello; print -n x; print y; print -r 'a\tb'; print -u2 two
+### set-o
+set -o
+### set-plus-o
+set +o
+### set-list-quoting
+x='a b'; y="it's"; z=plain; set | grep -E '^(x|y|z)='
+### export-p
+exec 2>&1; export ZZQ='a b'; export ZZR; export -p | grep ZZ
+### readonly-p
+exec 2>&1; readonly ZZRO=1; readonly -p | grep ZZRO; ZZRO=2; echo after $?
+### trap-list
+exec 2>&1; trap 'echo hi' INT; trap '' 15; trap 'echo e' EXIT; trap; trap - EXIT
+### type-forms
+exec 2>&1; f() { :; }; alias ll='ls -l'; type cd exit ls f ll if echo printf test pwd kill read getopts; type nosuchzz; echo status $?
+### command-v
+exec 2>&1; command -v ls; command -v cd; command -V cd; command -V ls; command -v nosuchzz; echo status $?
+### alias-list
+exec 2>&1; alias ll='ls -l' qq=x; alias; alias ll; alias nosuchzz; echo status $?
+### kill-l
+exec 2>&1; kill -l; kill -l 6; kill -l 15
+### special-vars
+exec 2>&1; echo "[$-][$QSH_VERSION][$PS1][$PS2][$PS4][$PATH][$IFS]"; echo "[$HOME][$PWD][$SHELL][$TERMINAL_TYPE]"; set | grep -E '^(QSH|QIBM|TERM|SHELL|ENV|PPID|OPTIND|LINENO|RANDOM|SECONDS)'
+### syntax-error-if
+exec 2>&1; echo before; if true; then
+### syntax-error-paren
+exec 2>&1; echo before
+echo )
+echo after
+### param-errors
+exec 2>&1; unset x; echo ${x?custom words}; echo after
+### param-error-default
+exec 2>&1; unset x; echo ${x?}
+### param-error-colon
+exec 2>&1; x=; echo ${x:?}
+### nounset
+exec 2>&1; set -u; echo $nosuchvarq; echo after
+### arith-errors
+exec 2>&1; echo $((1/0)); echo after
+### arith-syntax
+exec 2>&1; echo $((1+)); echo after
+### arith-forms
+exec 2>&1; x=5; echo $((x++)) $x $((2#101)) $((16#ff)) $((010)) $((0x10)) $((1?2:3)) $((x+=1)); let y=2*3; echo $y $?
+### cd-errors
+exec 2>&1; cd /nonexistentzz; echo status $?; cd /home/QSTEST/qshlang; : > afile; cd afile; echo status $?; cd /tmp; cd -; unset HOME; cd; echo status $?
+### shift-error
+exec 2>&1; set -- a; shift 3; echo after $?
+### readonly-assign
+exec 2>&1; readonly r=1; r=2; echo after
+### status-forms
+exec 2>&1; false | true; echo $?; (exit 3); echo $?; x=$(exit 4); echo $?
+### exit-big
+exit 300
+### exit-bad
+exec 2>&1; exit abc
+### return-outside
+exec 2>&1; return 2; echo after $?
+### break-outside
+exec 2>&1; break; echo after $?; continue; echo after2 $?
+### set-invalid
+exec 2>&1; set -Z; echo after $?
+### set-o-invalid
+exec 2>&1; set -o bogus; echo after $?
+### set-o-trace
+exec 2>&1; set -o trace; echo $?; set -t; echo $? $-; set -o | grep -i trace
+### jobs-format
+exec 2>&1; sleep 2 & jobs; jobs -l | sed 's/[0-9][0-9]*/N/g'; wait; echo waited; jobs
+### ulimit-umask-times
+exec 2>&1; ulimit -a; ulimit; umask; umask -S; times
+### local-forms
+exec 2>&1; x=1; f() { local x; echo "[$x]"; x=2; }; f; echo $x; local y=1; echo status $?
+### declare-forms
+exec 2>&1; declare -i n=2+3; echo $n; typeset -r t=1; declare -p n t; declare -x dx=1; echo $?
+### builtins-misc
+exec 2>&1; builtin echo viabuiltin; whence ls; echo whence $?; source /dev/null; echo source $?; let 0; echo let $?
+### getopts-errors
+exec 2>&1; getopts a o -x; echo "$? $o"; getopts f: o -f; echo "$? $o"
+### test-errors
+exec 2>&1; test 1 -eq a; echo status $?; [ a = a; echo status $?; test a -foo b; echo status $?
+### printf-errors
+exec 2>&1; printf '%d\n' abc; echo status $?; printf '%d %s\n' 12abc x; echo status $?; printf '%z\n'; echo status $?
+### redirect-errors
+exec 2>&1; cat < /nonexistentzz; echo status $?; echo x > /home; echo status $?; echo x >&7; echo status $?
+### noclobber
+exec 2>&1; cd /home/QSTEST/qshlang; echo a > nc; set -C; echo b > nc; echo status $?; echo c >| nc; cat nc
+### heredoc-forms
+exec 2>&1; x=v; cat <<EOF
+a $x \$x
+EOF
+cat <<'EOF'
+b $x
+EOF
+### hash-format
+exec 2>&1; hash ls; hash; hash nosuchzz; echo status $?
+### read-forms
+exec 2>&1; read a b <<EOF
+one two three
+EOF
+echo "$a|$b"; read -r c <<EOF
+x\ y
+EOF
+echo "$c"
+### xtrace-format
+exec 2>&1; PS4='+ '; set -x; echo traced "a b"; x=1; set +x
+### eval-dot
+exec 2>&1; eval 'echo ev'; . /nonexistentzz; echo after $?
+### signal-kill
+exec 2>&1; echo before; kill -s TERM $$; echo after
+### tilde-forms
+exec 2>&1; echo ~ ~/x ~QSYS; x=~/a:~/b; echo $x
+### dollar-at
+exec 2>&1; set -- 'a b' c; for i in "$@"; do echo "<$i>"; done; IFS=:; echo "$*"
+### glob-qsys
+exec 2>&1; echo /qsys.lib/qgp*.lib; echo /QSYS.LIB/QGPL.LIB/QCLSRC*; cd /qsys.lib; pwd
+### case-insensitive-cd
+exec 2>&1; cd /HOME; pwd; cd /QOpenSys/USR 2>&1; echo status $?
+### bad-subst
+exec 2>&1; echo ${x!}; echo after
+### func-name
+exec 2>&1; f-g() { echo dash; }; f-g; echo after
+### function-keyword
+exec 2>&1; function kf { echo ksh; }; kf; echo after
+### dollar-single-quote
+echo $'a\tb'

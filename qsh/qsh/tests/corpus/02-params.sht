@@ -1,0 +1,185 @@
+### positional parameters
+set -- a b c; echo $1 $2 $3 $#
+--- out
+a b c 3
+
+### ten and beyond need braces
+set -- 1 2 3 4 5 6 7 8 9 ten eleven; echo $10 ${10} ${11}
+--- out
+10 ten eleven
+
+### dollar zero in -c
+echo $0
+--- out
+qsh
+
+### dollar at in quotes keeps fields
+set -- 'a b' c; args "$@"
+--- out
+<a b><c>
+
+### dollar star in quotes joins
+set -- 'a b' c; args "$*"
+--- out
+<a b c>
+
+### dollar star joins with first IFS char
+set -- a b c; IFS=:; args "$*"
+--- out
+<a:b:c>
+
+### dollar star with empty IFS
+set -- a b c; IFS=; args "$*"
+--- out
+<abc>
+
+### dollar at unquoted splits
+set -- 'a b' c; args $@
+--- out
+<a><b><c>
+
+### dollar at with no parameters
+set --; args "$@"; args x"$@"y
+--- out
+
+<xy>
+
+### dollar at with prefix and suffix
+set -- a b c; args x"$@"y
+--- out
+<xa><b><cy>
+
+### empty positional in dollar at
+set -- '' a ''; args "$@"
+--- out
+<><a><>
+
+### dollar hash
+set -- a b; echo $#; set --; echo $#
+--- out
+2
+0
+
+### dollar question
+true; echo $?; false; echo $?; exitwith 7; echo $?
+--- out
+0
+1
+7
+
+### dollar dollar is a number
+case $$ in *[!0-9]*) echo bad;; *) echo ok;; esac
+--- out
+ok
+
+### dollar dollar same in subshell
+a=$$; b=$(echo $$); test "$a" = "$b" && echo same
+--- out
+same
+
+### dollar bang after background
+true & test -n "$!" && echo set; wait
+--- out
+set
+
+### dollar bang empty before any job
+echo "[$!]"
+--- out
+[]
+
+### dollar minus shows options
+set -e; set -u; case $- in *e*u*|*u*e*) echo both;; esac
+--- out
+both
+
+### braced names
+x=1; echo ${x}2 $x2.
+--- out
+12 .
+
+### names stop at non-name chars
+a=1; echo $a-b $a.b $a_b.
+--- out
+1-b 1.b .
+
+### unset variable is empty
+echo "[$nosuch]"
+--- out
+[]
+
+### assignment then use
+x=hello; y=$x; echo $y
+--- out
+hello
+
+### assignment is not split or globbed
+x='a  *  b'; y=$x; echo "$y"
+--- out
+a  *  b
+
+### several assignments left to right
+a=1 b=$a; echo $b
+--- out
+1
+
+### PATH defaults
+echo $PATH
+--- out
+/usr/bin:.
+
+### IFS default
+echo ${#IFS}; x=$(printf " 	
+."); test "$IFS." = "$x" && echo exact
+--- out
+3
+exact
+
+### PS1 PS2 PS4 defaults
+echo "[$PS1][$PS2][$PS4]"
+--- out
+[$ ][> ][+ ]
+
+### PWD and HOME
+echo $PWD $HOME
+--- out
+/home/QSHUSER /home/QSHUSER
+
+### QSH_VERSION is set
+case $QSH_VERSION in V*R*M*) echo ok;; esac
+--- out
+ok
+
+### OPTIND starts at one
+echo $OPTIND
+--- out
+1
+
+### PPID is a number
+case $PPID in ''|*[!0-9]*) echo bad;; *) echo ok;; esac
+--- out
+ok
+
+### RANDOM varies and is small
+a=$RANDOM; b=$RANDOM; test $a -le 32767 && test $b -ge 0 && echo ok
+--- out
+ok
+
+### RANDOM seeded is repeatable
+RANDOM=5; a=$RANDOM; RANDOM=5; b=$RANDOM; test $a = $b && echo same
+--- out
+same
+
+### LINENO counts lines
+echo $LINENO
+echo $LINENO
+
+echo $LINENO
+--- out
+1
+2
+4
+
+### SECONDS is a number
+case $SECONDS in *[!0-9]*) echo bad;; *) echo ok;; esac
+--- out
+ok

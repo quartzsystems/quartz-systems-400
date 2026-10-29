@@ -1,0 +1,73 @@
+### executable script runs in a new shell
+cd /tmp; printf 'echo in script $0 $1\nx=inner\n' > sc; chmod 755 sc; x=outer; ./sc arg; echo $? $x
+--- out
+in script ./sc arg
+0 outer
+
+### script sees exported variables only
+cd /tmp; printf 'echo "[$e][$l]"\n' > sc; chmod 755 sc; export e=exp; l=loc; ./sc
+--- out
+[exp][]
+
+### script does not see functions
+cd /tmp; printf 'f 2>/dev/null; echo $?\n' > sc; chmod 755 sc; f() { :; }; ./sc
+--- out
+127
+
+### script exit status
+cd /tmp; printf 'exit 12\n' > sc; chmod 755 sc; ./sc; echo $?
+--- out
+12
+
+### script found on PATH
+mkdir /tmp/bin; printf 'echo on path\n' > /tmp/bin/myscript; chmod 755 /tmp/bin/myscript; PATH=/usr/bin:/tmp/bin; myscript
+--- out
+on path
+
+### script with syntax error
+cd /tmp; printf 'echo before\nif\n' > sc; chmod 755 sc; ./sc; echo $?
+--- out
+before
+2
+--- err
+qsh: 001-0050 Line 3 has a syntax error: end of input inside a command list.
+
+### script runs exit trap
+cd /tmp; printf 'trap "echo trapped" EXIT\necho body\n' > sc; chmod 755 sc; ./sc
+--- out
+body
+trapped
+
+### script in a pipeline
+cd /tmp; printf 'cat\n' > up; chmod 755 up; echo through | ./up | cat
+--- out
+through
+
+### script arguments
+cd /tmp; printf 'for a; do echo "<$a>"; done\n' > sc; chmod 755 sc; ./sc 'a b' c
+--- out
+<a b>
+<c>
+
+### not executable script
+cd /tmp; echo 'echo x' > nx; ./nx; echo $?
+--- out
+126
+--- err
+qsh: 001-0019 Cannot run ./nx. Permission is denied.
+
+### script options are fresh
+cd /tmp; printf 'echo $-\n' > sc; chmod 755 sc; set -f; ./sc; echo $-
+--- out
+
+f
+
+### aliases defined in script apply to later lines
+cd /tmp; printf 'alias hi="echo hi from alias"\nhi\n' > sc; chmod 755 sc; ./sc
+--- out
+hi from alias
+
+### here-document in a script
+cd /tmp; printf 'cat <<E\nscript doc\nE\n' > sc; chmod 755 sc; ./sc
+--- out
+script doc

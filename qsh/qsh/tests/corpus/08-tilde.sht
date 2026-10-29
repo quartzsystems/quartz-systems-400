@@ -1,0 +1,54 @@
+### tilde alone
+echo ~
+--- out
+/home/QSHUSER
+
+### tilde with path
+echo ~/a/b
+--- out
+/home/QSHUSER/a/b
+
+### tilde follows HOME
+HOME=/x; echo ~ ~/y
+--- out
+/x /x/y
+
+### tilde user
+echo ~QSHUSER/f
+--- out
+/home/QSHUSER/f
+
+### unknown user is left alone
+echo ~nobody/f
+--- out
+~nobody/f
+
+### quoted tilde is literal
+echo "~" '~' \~
+--- out
+~ ~ ~
+
+### tilde not at start
+echo a~ x=~
+--- out
+a~ x=~
+
+### tilde in assignment
+x=~/bin; echo $x
+--- out
+/home/QSHUSER/bin
+
+### tilde after colon in assignment
+p=/a:~/b:~; echo $p
+--- out
+/a:/home/QSHUSER/b:/home/QSHUSER
+
+### tilde result is not split
+HOME='/a b'; args ~
+--- out
+</a b>
+
+### tilde in parameter default
+unset x; echo ${x:-~} "${x:-~}"
+--- out
+/home/QSHUSER ~

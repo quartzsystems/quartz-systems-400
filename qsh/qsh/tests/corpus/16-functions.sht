@@ -1,0 +1,164 @@
+### define and call
+f() { echo in f; }; f
+--- out
+in f
+
+### arguments
+f() { echo "$#: $1 $2"; }; f a b
+--- out
+2: a b
+
+### positionals restored after call
+set -- outer; f() { echo $1; }; f inner; echo $1
+--- out
+inner
+outer
+
+### dollar zero unchanged in function
+f() { echo $0; }; f
+--- out
+qsh
+
+### return status
+f() { return 3; }; f; echo $?
+--- out
+3
+
+### return without value keeps last status
+f() { false; return; }; f; echo $?
+--- out
+1
+
+### status of last command
+f() { exitwith 6; }; f; echo $?
+--- out
+6
+
+### variables are global
+f() { x=set; }; f; echo $x
+--- out
+set
+
+### local variables
+x=global; f() { local x=local; echo $x; }; f; echo $x
+--- out
+local
+global
+
+### local without value keeps value
+x=1; f() { local x; echo "[$x]"; x=2; }; f; echo $x
+--- out
+[1]
+1
+
+### local outside function
+local x=1
+--- err
+qsh: 001-0062 local: not in a function.
+--- status
+1
+
+### recursion
+fact() { if [ $1 -le 1 ]; then echo 1; else echo $(( $1 * $(fact $(($1-1))) )); fi; }; fact 5
+--- out
+120
+
+### function redefinition
+f() { echo one; }; f() { echo two; }; f
+--- out
+two
+
+### function with subshell body
+f() ( x=inside; echo $x ); x=out; f; echo $x
+--- out
+inside
+out
+
+### function with if body
+f() if true; then echo ifbody; fi; f
+--- out
+ifbody
+
+### function on several lines
+f()
+{
+  echo multi
+}
+f
+--- out
+multi
+
+### unset function
+f() { echo f; }; unset -f f; f 2>/dev/null; echo $?
+--- out
+127
+
+### function overrides command
+cat() { echo fake; }; cat
+--- out
+fake
+
+### command bypasses function
+cat() { echo fake; }; echo real | command cat
+--- out
+real
+
+### special builtin beats function
+exit() { echo fn; }; exit 0; echo not reached
+--- out
+
+### temporary assignment visible in function
+f() { echo $v; }; v=temp f; echo "[$v]"
+--- out
+temp
+[]
+
+### function definition status
+f() { :; }; echo $?
+--- out
+0
+
+### bad function name
+1f() { :; }
+--- err
+qsh: 001-0050 Line 1 has a syntax error: function name 1f is not valid.
+--- status
+2
+
+### function needs compound body
+f() echo x
+--- err
+qsh: 001-0050 Line 1 has a syntax error: token "echo" was not expected.
+--- status
+2
+
+### return outside function
+return 1
+--- err
+qsh: 001-0062 return: not in a function or dot script.
+--- status
+1
+
+### break inside function does not leave caller loop
+f() { break; }; for i in 1 2; do f; echo $i; done
+--- out
+1
+2
+
+### exit inside function exits shell
+f() { exit 4; }; f; echo no
+--- status
+4
+
+### function sees caller locals
+f() { local a=1; g; }; g() { echo $a; }; f; echo "[$a]"
+--- out
+1
+[]
+
+### deep recursion stops
+f() { f; }; f
+--- err
+qsh: 001-0030 f: functions are nested too deeply.
+--- status
+2

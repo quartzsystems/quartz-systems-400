@@ -1,0 +1,201 @@
+### default when unset
+unset x; echo ${x-def} ${x:-def}
+--- out
+def def
+
+### default when null
+x=; echo "[${x-def}]" "[${x:-def}]"
+--- out
+[] [def]
+
+### default not used when set
+x=v; echo ${x-def} ${x:-def}
+--- out
+v v
+
+### assign default
+unset x; echo ${x=new}; echo $x
+--- out
+new
+new
+
+### assign default with colon on null
+x=; echo ${x:=new}; echo $x
+--- out
+new
+new
+
+### assign default without colon keeps null
+x=; echo "[${x=new}]"; echo "[$x]"
+--- out
+[]
+[]
+
+### alternate value
+x=v; echo ${x+alt} ${x:+alt}; unset x; echo "[${x+alt}]"
+--- out
+alt alt
+[]
+
+### alternate with null
+x=; echo "[${x+alt}]" "[${x:+alt}]"
+--- out
+[alt] []
+
+### error when unset
+unset x; echo ${x?missing here}; echo not reached
+--- err
+qsh: 001-0022 x: missing here
+--- status
+2
+
+### error with colon on null
+x=; echo ${x:?}; echo no
+--- err
+qsh: 001-0022 x: the parameter is null or not set
+--- status
+2
+
+### error not raised when set
+x=1; echo ${x?bad}
+--- out
+1
+
+### error default text
+unset y; : ${y?}
+--- err
+qsh: 001-0022 y: the parameter is not set
+--- status
+2
+
+### length
+x=hello; echo ${#x}; x=; echo ${#x}; unset x; echo ${#x}
+--- out
+5
+0
+0
+
+### length of positionals
+set -- a b c; echo ${#} ${#@} ${#*}
+--- out
+3 3 3
+
+### length counts characters
+x=héllo; echo ${#x}
+--- out
+5
+
+### remove smallest suffix
+x=file.tar.gz; echo ${x%.*}
+--- out
+file.tar
+
+### remove largest suffix
+x=file.tar.gz; echo ${x%%.*}
+--- out
+file
+
+### remove smallest prefix
+x=/a/b/c; echo ${x#*/}
+--- out
+a/b/c
+
+### remove largest prefix
+x=/a/b/c; echo ${x##*/}
+--- out
+c
+
+### trim with no match
+x=abc; echo ${x%z} ${x#z}
+--- out
+abc abc
+
+### trim with literal pattern
+x=abcabc; echo ${x#abc} ${x%abc}
+--- out
+abc abc
+
+### trim with bracket pattern
+x=a1b2; echo ${x%[0-9]} ${x##*[a-z]}
+--- out
+a1b 2
+
+### trim with quoted star
+x='a*b*c'; echo ${x%"*"*} ${x#*'*'}
+--- out
+a*b b*c
+
+### trim whole value
+x=abc; echo "[${x#abc}]" "[${x%%*}]"
+--- out
+[] []
+
+### trim pattern from variable
+p='*.'; x=a.b.c; echo ${x#$p} ${x##$p}
+--- out
+b.c c
+
+### default word is expanded
+y=yy; unset x; echo ${x:-$y-z}
+--- out
+yy-z
+
+### default word splits unquoted
+unset x; args ${x:-a b}
+--- out
+<a><b>
+
+### default word in quotes does not split
+unset x; args "${x:-a b}"
+--- out
+<a b>
+
+### nested defaults
+unset a b; echo ${a:-${b:-deep}}
+--- out
+deep
+
+### default with command substitution
+unset x; echo ${x:-$(echo cs)}
+--- out
+cs
+
+### default word not expanded when unused
+x=set; echo ${x:-$(echo side >&2)}
+--- out
+set
+
+### braces in default word quoted
+unset x; echo "${x:-a}b}"
+--- out
+ab}
+
+### positional default
+set --; echo ${1:-none}; set -- one; echo ${1:-none}
+--- out
+none
+one
+
+### assign to positional is an error
+set --; echo ${1=x}
+--- err
+qsh: 001-0051 Substitution ${1=x} is not valid.
+--- status
+2
+
+### bad substitution is a syntax error
+echo ${x!}
+--- err
+qsh: 001-0050 Line 1 has a syntax error: parameter substitution is not valid.
+--- status
+2
+
+### dollar star default
+set --; echo ${*:-empty}
+--- out
+empty
+
+### special parameter with default
+echo ${?:-x} ${#:-x}
+--- out
+0 0

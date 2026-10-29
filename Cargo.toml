@@ -69,6 +69,8 @@ members = [
     "ifs/ifs",
     # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
     "net/netlink",
+    # QSH: the Qshell command language and its utilities.
+    "qsh/qsh",
 ]
 
 [workspace.package]

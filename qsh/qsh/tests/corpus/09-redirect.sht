@@ -1,0 +1,188 @@
+### output to a file
+cd /tmp; echo hi > f; cat f
+--- out
+hi
+
+### output truncates
+cd /tmp; echo one > f; echo two > f; cat f
+--- out
+two
+
+### append
+cd /tmp; echo one > f; echo two >> f; cat f
+--- out
+one
+two
+
+### input from a file
+cd /tmp; echo data > f; cat < f
+--- out
+data
+
+### redirection before the command
+cd /tmp; > f echo x; < f cat
+--- out
+x
+
+### redirection between arguments
+cd /tmp; echo a > f b; cat f
+--- out
+a b
+
+### stderr to file
+cd /tmp; nosuch 2> e; echo $?; cat e
+--- out
+127
+qsh: 001-0014 Cannot find command nosuch.
+
+### stderr to stdout
+nosuch 2>&1 | cat
+--- out
+qsh: 001-0014 Cannot find command nosuch.
+
+### stdout to stderr
+echo moved >&2
+--- err
+moved
+
+### order of duplication matters
+cd /tmp; { echo out; echo err >&2; } > f 2>&1; cat f
+--- out
+out
+err
+
+### duplicate before redirect goes to old stdout
+cd /tmp; { echo err >&2; } 2>&1 > f | cat; echo "[$(cat f)]"
+--- out
+err
+[]
+
+### close stdout
+echo hidden >&-; echo $?
+--- out
+1
+
+### noclobber refuses existing file
+cd /tmp; echo a > f; set -C; echo b > f; echo $?; cat f
+--- out
+1
+a
+--- err
+qsh: 001-0023 Cannot open f. The file already exists.
+
+### clobber overrides noclobber
+cd /tmp; echo a > f; set -C; echo b >| f; cat f
+--- out
+b
+
+### noclobber allows new files
+cd /tmp; set -C; echo n > new; cat new
+--- out
+n
+
+### read write open
+cd /tmp; echo abc > f; cat <> f
+--- out
+abc
+
+### missing input file
+cd /tmp; cat < nofile; echo $?
+--- out
+1
+--- err
+qsh: 001-0023 Cannot open nofile. No such path or directory.
+
+### redirection error skips the command
+cd /tmp; echo ran < nofile; echo after
+--- out
+after
+--- err
+qsh: 001-0023 Cannot open nofile. No such path or directory.
+
+### bad descriptor duplication
+echo x >&7; echo $?
+--- out
+1
+--- err
+qsh: 001-0024 Descriptor 7 is not open.
+
+### open a high descriptor
+cd /tmp; exec 3> f3; echo three >&3; exec 3>&-; cat f3
+--- out
+three
+
+### exec redirection persists
+cd /tmp; exec > out; echo inside; exec >&2; cat out >&2
+--- err
+inside
+
+### redirect a compound command
+cd /tmp; { echo a; echo b; } > f; cat f
+--- out
+a
+b
+
+### redirect a loop
+cd /tmp; for i in 1 2; do echo $i; done > f; cat f
+--- out
+1
+2
+
+### redirect input to a loop
+cd /tmp; printf 'x\ny\n' > f; while read l; do echo "<$l>"; done < f
+--- out
+<x>
+<y>
+
+### redirect a subshell
+cd /tmp; (echo sub) > f; cat f
+--- out
+sub
+
+### target word is expanded
+cd /tmp; n=named; echo v > $n.txt; cat named.txt
+--- out
+v
+
+### target is not split
+cd /tmp; n='a b'; echo v > $n; cat 'a b'
+--- out
+v
+
+### redirection applies to builtins temporarily
+cd /tmp; pwd > f; pwd; cat f
+--- out
+/tmp
+/tmp
+
+### descriptor number must touch the operator
+cd /tmp; echo 2 >f; cat f
+--- out
+2
+
+### here string style input with dup
+cd /tmp; echo in > f; exec 4< f; cat <&4
+--- out
+in
+
+### umask applies to created files
+cd /tmp; umask 077; echo x > f; echo ok
+--- out
+ok
+
+### redirect to directory fails
+cd /tmp; echo x > /tmp; echo $?
+--- out
+1
+--- err
+qsh: 001-0023 Cannot open /tmp. The target is a directory.
+
+### function body redirection
+cd /tmp; f() { echo infunc; } > g; f; cat g
+--- out
+infunc
+
+### null device
+echo gone > /dev/null; cat /dev/null; echo done
+--- out
+done

@@ -1,0 +1,186 @@
+### errexit exits on failure
+set -e; echo a; false; echo b
+--- out
+a
+--- status
+1
+
+### errexit ignores conditions
+set -e; if false; then :; fi; while false; do :; done; echo ok
+--- out
+ok
+
+### errexit ignores and-or non-last
+set -e; false && true; false || true; echo ok
+--- out
+ok
+
+### errexit applies to last of and-or
+set -e; true && false; echo no
+--- status
+1
+
+### errexit ignores negation
+set -e; ! true; echo ok
+--- out
+ok
+
+### errexit in subshell
+set -e; (false; echo no); echo $?
+--- status
+1
+
+### errexit with failing pipeline
+set -e; true | false; echo no
+--- status
+1
+
+### errexit off
+set -e; set +e; false; echo ok
+--- out
+ok
+
+### errexit inside function in condition
+set -e; f() { false; echo inside; }; if f; then echo t; fi
+--- out
+inside
+t
+
+### nounset
+set -u; echo $nosuch; echo no
+--- err
+qsh: 001-0021 Parameter nosuch has no value.
+--- status
+2
+
+### nounset allows defaults
+set -u; echo ${nosuch-def} ${nosuch:+x}.
+--- out
+def .
+
+### nounset and positionals
+set -u; set --; echo "$@" "$#"; echo $1
+--- out
+0
+--- err
+qsh: 001-0021 Parameter 1 has no value.
+--- status
+2
+
+### xtrace
+set -x; echo traced; x=1; set +x
+--- out
+traced
+--- err
++ echo traced
++ x=1
++ set +x
+
+### xtrace uses PS4
+PS4='>> '; set -x; true a b
+--- err
+>> true a b
+
+### xtrace shows expanded words
+x='a b'; set -x; echo $x "$x"
+--- out
+a b a b
+--- err
++ echo a b a b
+
+### verbose
+set -v
+echo shown
+--- out
+shown
+--- err
+echo shown
+
+### noexec
+set -n; echo never
+--- out
+
+### noglob option name
+cd /tmp; : > gg; set -o noglob; echo g*; set +o noglob; echo g*
+--- out
+g*
+gg
+
+### set -o lists options
+set -o | while read n v; do case $n in errexit|noglob) echo $n $v;; esac; done
+--- out
+errexit off
+noglob off
+
+### set +o lists commands
+set -e; set +o | while read l; do case $l in *errexit*|*noclobber*) echo $l;; esac; done
+--- out
+set -o errexit
+set +o noclobber
+
+### unknown option
+set -Z
+--- err
+qsh: 001-0062 set: option Z is not valid.
+--- status
+2
+
+### unknown -o name
+set -o bogus
+--- err
+qsh: 001-0062 set: option bogus is not valid.
+--- status
+2
+
+### options in dollar minus
+set -C -f; echo $-; set +C +f; echo "[$-]"
+--- out
+Cf
+[]
+
+### ignoreeof and nolog accepted
+set -o ignoreeof -o nolog; set -o | while read n v; do case $n in ignoreeof|nolog) echo $n $v;; esac; done
+--- out
+ignoreeof on
+nolog on
+
+### trace option
+set -o trace; case $- in *t*) echo t;; esac
+--- out
+t
+
+### set dash turns off x and v
+set -xv; set - a b; echo $# $-
+--- out
+2
+--- err
++ set - a b
+
+### monitor option
+set -m; case $- in *m*) echo m;; esac
+--- out
+m
+
+### notify option
+set -b; case $- in *b*) echo b;; esac
+--- out
+b
+
+### trace writes commands to the trace file
+set -o trace; echo one
+echo two
+set +o trace; cat $HOME/qsh_trace
+--- out
+one
+two
+echo two
+set +o trace; cat $HOME/qsh_trace
+
+### TRACEFILE names the trace file
+TRACEFILE=/tmp/tr; set -t
+echo x
+set +t; cat /tmp/tr
+--- out
+x
+echo x
+set +t; cat /tmp/tr

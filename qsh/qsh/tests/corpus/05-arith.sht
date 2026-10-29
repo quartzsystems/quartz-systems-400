@@ -1,0 +1,178 @@
+### basic operators
+echo $((1+2)) $((7-10)) $((6*7)) $((17/5)) $((17%5))
+--- out
+3 -3 42 3 2
+
+### precedence
+echo $((1+2*3)) $(((1+2)*3)) $((10-4-3)) $((2*3%4))
+--- out
+7 9 3 2
+
+### unary operators
+echo $((-5)) $((+5)) $((!0)) $((!7)) $((~0))
+--- out
+-5 5 1 0 -1
+
+### comparisons
+echo $((1<2)) $((2<1)) $((2<=2)) $((3>2)) $((3>=4)) $((5==5)) $((5!=5))
+--- out
+1 0 1 1 0 1 0
+
+### bitwise
+echo $((6&3)) $((6|3)) $((6^3)) $((1<<4)) $((256>>2))
+--- out
+2 7 5 16 64
+
+### logical
+echo $((1&&0)) $((1||0)) $((0||0)) $((2&&3))
+--- out
+0 1 0 1
+
+### conditional
+echo $((1?10:20)) $((0?10:20)) $((0?1:0?2:3))
+--- out
+10 20 3
+
+### variables by name
+x=4; echo $((x*x)) $(($x+1))
+--- out
+16 5
+
+### unset variable is zero
+unset z; echo $((z+1))
+--- out
+1
+
+### assignment
+echo $((x=5)) $x
+--- out
+5 5
+
+### compound assignment
+x=10; : $((x+=5)); echo $x; : $((x-=3)); echo $x; : $((x*=2)); echo $x; : $((x/=4)); echo $x; : $((x%=4)); echo $x
+--- out
+15
+12
+24
+6
+2
+
+### shift and bit assignments
+x=1; : $((x<<=3)); echo $x; : $((x|=1)); echo $x; : $((x&=12)); echo $x; : $((x^=15)); echo $x; : $((x>>=1)); echo $x
+--- out
+8
+9
+8
+7
+3
+
+### increment and decrement
+x=5; echo $((x++)) $x $((++x)) $((x--)) $((--x))
+--- out
+5 6 7 7 5
+
+### comma operator
+echo $((a=1, b=2, a+b))
+--- out
+3
+
+### octal and hex
+echo $((010)) $((0x1f)) $((0X10))
+--- out
+8 31 16
+
+### base notation
+echo $((2#1010)) $((16#ff)) $((36#z))
+--- out
+10 255 35
+
+### nested parentheses
+echo $(( (1+(2*(3+4))) ))
+--- out
+15
+
+### spaces anywhere
+echo $((   1   +   2   ))
+--- out
+3
+
+### expression in variable
+e='2*3'; echo $((e+1))
+--- out
+7
+
+### short circuit skips assignment
+x=0; : $((0 && (x=1))); : $((1 || (x=2))); echo $x
+--- out
+0
+
+### negative modulo
+echo $((-7%3)) $((7%-3)) $((-7/2))
+--- out
+-1 1 -3
+
+### large values wrap
+echo $((9223372036854775807+1))
+--- out
+-9223372036854775808
+
+### division by zero
+echo $((1/0)); echo after
+--- err
+qsh: 001-0067 Arithmetic failed: division by zero.
+--- status
+2
+
+### syntax error in expression
+echo $((1+)); echo after
+--- err
+qsh: 001-0067 Arithmetic failed: arithmetic expression 1+ is not valid.
+--- status
+2
+
+### bad number
+echo $((08))
+--- err
+qsh: 001-0067 Arithmetic failed: number 08 is not valid.
+--- status
+2
+
+### empty expression
+echo $(())
+--- out
+0
+
+### arithmetic in double quotes
+x=3; echo "$((x*2))"
+--- out
+6
+
+### arithmetic with command substitution
+echo $(( $(echo 4) * 2 ))
+--- out
+8
+
+### readonly assignment fails
+readonly r=1; echo $((r=2))
+--- err
+qsh: 001-0067 Arithmetic failed: variable r is read-only.
+--- status
+2
+
+### let builtin
+let x=2+3 'y = x * 2'; echo $x $y; let 0; echo $?; let 5; echo $?
+--- out
+5 10
+1
+0
+
+### integer variable
+declare -i n; n=2+3; echo $n; n=n*2; echo $n
+--- out
+5
+10
+
+### dollar paren paren subshell fallback
+echo $( (echo a) )$((1))
+--- out
+a1

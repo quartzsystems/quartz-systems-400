@@ -1,0 +1,160 @@
+### basic here-document
+cat <<EOF
+line one
+line two
+EOF
+--- out
+line one
+line two
+
+### expansion in body
+x=val; cat <<EOF
+x is $x and $(echo cs) and $((1+1))
+EOF
+--- out
+x is val and cs and 2
+
+### quoted delimiter stops expansion
+x=val; cat <<'EOF'
+$x $(nothing) `x`
+EOF
+--- out
+$x $(nothing) `x`
+
+### double quoted delimiter
+cat <<"END"
+$HOME
+END
+--- out
+$HOME
+
+### backslash in delimiter
+cat <<\E
+$HOME
+E
+--- out
+$HOME
+
+### partly quoted delimiter
+cat <<E"O"F
+$HOME
+EOF
+--- out
+$HOME
+
+### tabs stripped with dash
+cat <<-EOF
+		indented
+	EOF
+--- out
+indented
+
+### tabs kept without dash
+cat <<EOF
+	tab
+EOF
+--- out
+	tab
+
+### backslash in expanding body
+cat <<EOF
+\$x \\ \a "q"
+EOF
+--- out
+$x \ \a "q"
+
+### line continuation in body
+cat <<EOF
+a\
+b
+EOF
+--- out
+ab
+
+### two here-documents on one line
+cat <<A; cat <<B
+first
+A
+second
+B
+--- out
+first
+second
+
+### here-document and pipe
+cat <<EOF | cat
+piped
+EOF
+--- out
+piped
+
+### here-document to another descriptor
+cat 3<<EOF <&3
+fd three
+EOF
+--- out
+fd three
+
+### empty here-document
+cat <<EOF
+EOF
+echo after
+--- out
+after
+
+### delimiter must match whole line
+cat <<EOF
+EOFX
+ EOF
+EOF
+--- out
+EOFX
+ EOF
+
+### missing delimiter ends at end of input
+cat <<EOF
+open
+--- out
+open
+
+### here-document in a function
+f() {
+  cat <<EOF
+in $1
+EOF
+}
+f arg
+--- out
+in arg
+
+### here-document in a loop
+for i in 1 2; do cat <<EOF
+item $i
+EOF
+done
+--- out
+item 1
+item 2
+
+### quotes are literal in body
+cat <<EOF
+'single' "double"
+EOF
+--- out
+'single' "double"
+
+### read from here-document
+read a b <<EOF
+one two three
+EOF
+echo "$a|$b"
+--- out
+one|two three
+
+### here-document with command after on same line
+cat <<EOF && echo done
+body
+EOF
+--- out
+body
+done

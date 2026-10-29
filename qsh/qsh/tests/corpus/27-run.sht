@@ -1,0 +1,220 @@
+### eval
+eval 'echo evaluated'
+--- out
+evaluated
+
+### eval joins arguments
+eval echo a  b
+--- out
+a b
+
+### eval builds commands
+cmd=echo; arg='$HOME'; eval "$cmd $arg"
+--- out
+/home/QSHUSER
+
+### eval assigns in current shell
+eval 'x=from_eval'; echo $x
+--- out
+from_eval
+
+### eval empty
+false; eval ''; echo $?
+--- out
+0
+
+### eval syntax error
+eval 'if'; echo no
+--- err
+qsh: 001-0050 Line 1 has a syntax error: end of input inside a command list.
+--- status
+2
+
+### eval status
+eval 'exitwith 5'; echo $?
+--- out
+5
+
+### dot script
+cd /tmp; echo 'echo sourced; y=fromdot' > s.sh; . ./s.sh; echo $y
+--- out
+sourced
+fromdot
+
+### dot searches PATH
+mkdir /tmp/bin; echo 'echo found' > /tmp/bin/lib.sh; PATH=/tmp/bin; . lib.sh
+--- out
+found
+
+### dot with return
+cd /tmp; printf 'echo a\nreturn 4\necho b\n' > r.sh; . ./r.sh; echo $?
+--- out
+a
+4
+
+### dot missing file
+. /tmp/none.sh; echo no
+--- err
+qsh: 001-0023 Cannot open /tmp/none.sh. No such path or directory.
+--- status
+1
+
+### source alias of dot
+cd /tmp; echo 'echo via source' > s2.sh; source ./s2.sh
+--- out
+via source
+
+### dot with arguments
+cd /tmp; echo 'echo $1 $#' > a.sh; set -- x y z; . ./a.sh p; echo $1 $#
+--- out
+p 1
+x 3
+
+### exec runs and exits
+exec echo replaced; echo never
+--- out
+replaced
+
+### exec status
+exec exitwith 7
+--- status
+7
+
+### exec not found
+exec nosuch; echo no
+--- err
+qsh: 001-0014 Cannot find command nosuch.
+--- status
+127
+
+### command -v
+command -v echo; command -v cat; f() { :; }; command -v f; command -v nosuch; echo $?
+--- out
+echo
+/usr/bin/cat
+f
+1
+
+### command -V
+alias ll='ls -l'; f() { :; }; command -V cd; command -V exit; command -V cat; command -V f; command -V if
+--- out
+cd is a shell builtin
+exit is a special shell builtin
+cat is /usr/bin/cat
+f is a shell function
+if is a shell keyword
+
+### command -v alias
+alias ll='ls -l'
+command -v ll
+--- out
+alias ll='ls -l'
+
+### command runs builtin without function
+echo() { printf 'fn\n'; }; command echo real
+--- out
+real
+
+### command makes special builtin errors non-fatal
+command shift 5; echo still $?
+--- out
+still 1
+--- err
+qsh: 001-0062 shift: cannot shift 5 positional parameters.
+
+### type
+type cd exit cat
+--- out
+cd is a shell builtin
+exit is a special shell builtin
+cat is /usr/bin/cat
+
+### type not found
+type nosuch; echo $?
+--- out
+1
+--- err
+qsh: 001-0014 Cannot find command nosuch.
+
+### hash
+hash cat; hash
+--- out
+/usr/bin/cat
+
+### hash -r
+cat </dev/null; hash -r; hash; echo empty
+--- out
+empty
+
+### hash not found
+hash nosuch; echo $?
+--- out
+1
+--- err
+qsh: 001-0014 Cannot find command nosuch.
+
+### builtin runs builtin
+cd() { echo fake; }; builtin cd /tmp; pwd
+--- out
+/tmp
+
+### builtin unknown
+builtin cat; echo $?
+--- out
+1
+--- err
+qsh: 001-0062 builtin: cat is not a builtin.
+
+### colon and true and false
+: ignored args; echo $?; true; echo $?; false; echo $?
+--- out
+0
+0
+1
+
+### exit with status
+exit 5
+--- status
+5
+
+### exit without status uses last
+exitwith 4; exit
+--- status
+4
+
+### exit wraps modulo 256
+exit 257
+--- status
+1
+
+### exit bad status
+exit abc
+--- err
+qsh: 001-0068 exit: abc is not a number.
+--- status
+2
+
+### script file runs in new shell
+cd /tmp; printf 'echo in script $1\nx=inner\n' > sc; chmod_() { :; }; f() { :; }; x=outer; ./sc 2>&1; echo $?
+--- out
+qsh: 001-0019 Cannot run ./sc. Permission is denied.
+126
+
+### PATH search with dot
+cd /tmp; PATH=/usr/bin:.; type cat
+--- out
+cat is /usr/bin/cat
+
+### path with slash not found
+/no/such/cmd; echo $?
+--- out
+127
+--- err
+qsh: 001-0014 Cannot find command /no/such/cmd.
+
+### directory is not runnable
+/tmp; echo $?
+--- out
+126
+--- err
+qsh: 001-0019 Cannot run /tmp. Permission is denied.

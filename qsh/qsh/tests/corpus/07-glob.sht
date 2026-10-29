@@ -1,0 +1,115 @@
+### star matches files
+cd /tmp; : > a.txt; : > b.txt; : > c.log; echo *.txt
+--- out
+a.txt b.txt
+
+### no match keeps the pattern
+cd /tmp; echo *.none
+--- out
+*.none
+
+### question mark
+cd /tmp; : > a1; : > a2; : > a10; echo a?
+--- out
+a1 a2
+
+### bracket expression
+cd /tmp; : > x1; : > x2; : > x3; echo x[13] x[!1]
+--- out
+x1 x3 x2 x3
+
+### bracket range
+cd /tmp; : > fa; : > fb; : > fz; echo f[a-c]
+--- out
+fa fb
+
+### hidden files need a dot
+cd /tmp; : > .hid; : > vis; echo *; echo .h*
+--- out
+vis
+.hid
+
+### quoted star is literal
+cd /tmp; : > a; echo "*" '*' \*
+--- out
+* * *
+
+### glob from variable expands
+cd /tmp; : > p1; : > p2; x='p*'; echo $x; echo "$x"
+--- out
+p1 p2
+p*
+
+### noglob disables
+cd /tmp; : > g1; set -f; echo g*; set +f; echo g*
+--- out
+g*
+g1
+
+### glob across directories
+mkdir -p /tmp/d1 /tmp/d2; cd /tmp; : > d1/f; : > d2/f; echo /tm?/d*/f; echo d?/f
+--- out
+/tmp/d1/f /tmp/d2/f
+d1/f d2/f
+
+### sorted results
+cd /tmp; : > zz; : > aa; : > mm; echo ??
+--- out
+aa mm zz
+
+### relative directory pattern
+cd /home; echo */
+--- out
+QSHUSER/
+
+### root is case-insensitive
+cd /tmp; : > Mixed; echo mix*
+--- out
+Mixed
+
+### QOpenSys is case-sensitive
+cd /QOpenSys; : > Upper 2>/dev/null; echo up*; echo Up*
+--- out
+up*
+Upper
+
+### QSYS.LIB names match any case
+mkdir /QSYS.LIB/QGPL.LIB /QSYS.LIB/QTEMP.LIB; echo /qsys.lib/q*.lib; echo /QSYS.LIB/QG*
+--- out
+/qsys.lib/QGPL.LIB /qsys.lib/QTEMP.LIB
+/QSYS.LIB/QGPL.LIB
+
+### case pattern with glob characters
+case abc in a*) echo star;; esac; case abc in a?c) echo q;; esac; case b in [abc]) echo br;; esac
+--- out
+star
+q
+br
+
+### case with quoted pattern
+case '*' in "*") echo lit;; esac; case x in "*") echo no;; *) echo default;; esac
+--- out
+lit
+default
+
+### character classes
+case 5 in [[:digit:]]) echo digit;; esac; case a in [[:alpha:]]) echo alpha;; esac; case ' ' in [[:space:]]) echo space;; esac
+--- out
+digit
+alpha
+space
+
+### negated bracket in case
+case x in [!a-c]) echo yes;; esac
+--- out
+yes
+
+### bracket with closing bracket first
+case ']' in []]) echo yes;; esac
+--- out
+yes
+
+### unterminated bracket is literal
+case '[a' in [a) echo lit;; esac
+--- out
+lit

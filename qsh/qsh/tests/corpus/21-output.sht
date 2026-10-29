@@ -1,0 +1,162 @@
+### echo joins with spaces
+echo a   b c
+--- out
+a b c
+
+### echo no arguments
+echo
+--- out
+
+
+### echo -n
+echo -n no newline; echo .
+--- out
+no newline.
+
+### echo escapes
+echo 'a\tb\nc'
+--- out
+a	b
+c
+
+### echo backslash c stops output
+echo 'abc\cdef' more; echo next
+--- out
+abcnext
+
+### echo octal escape
+echo '\0101\0102'
+--- out
+AB
+
+### echo double backslash
+echo 'a\\b'
+--- out
+a\b
+
+### echo unknown escape kept
+echo '\q'
+--- out
+\q
+
+### print builtin
+print hello; print -n x; print y; print -r 'a\tb'
+--- out
+hello
+xy
+a\tb
+
+### print to descriptor
+print -u2 to err
+--- err
+to err
+
+### printf string
+printf '%s-%s\n' a b
+--- out
+a-b
+
+### printf reuses format
+printf '%s\n' a b c
+--- out
+a
+b
+c
+
+### printf missing args
+printf '%s|%d|%s\n' x
+--- out
+x|0|
+
+### printf integers
+printf '%d %i %o %x %X %u\n' 42 -7 8 255 255 3
+--- out
+42 -7 10 ff FF 3
+
+### printf width and precision
+printf '[%5s][%-5s][%.2s][%05d][%-4d][%.3d]\n' ab ab abcd 42 7 5
+--- out
+[   ab][ab   ][ab][00042][7   ][005]
+
+### printf plus and space
+printf '[%+d][% d][%+d]\n' 5 5 -5
+--- out
+[+5][ 5][-5]
+
+### printf alternate forms
+printf '%#o %#x %#X\n' 8 255 255
+--- out
+010 0xff 0XFF
+
+### printf star width
+printf '[%*s][%-*s]\n' 4 a 3 b
+--- out
+[   a][b  ]
+
+### printf character
+printf '%c%c\n' hello world
+--- out
+hw
+
+### printf percent
+printf '100%%\n'
+--- out
+100%
+
+### printf escapes in format
+printf 'a\tb\101\n'
+--- out
+a	bA
+
+### printf b conversion
+printf '%b\n' 'x\ty' 'stop\cnever'; echo
+--- out
+x	y
+stop
+
+### printf char code argument
+printf '%d %d\n' "'A" '"a'
+--- out
+65 97
+
+### printf hex and octal arguments
+printf '%d %d\n' 0x10 010
+--- out
+16 8
+
+### printf floats
+printf '%f %.2f %e %g %g\n' 1.5 3.14159 12345.678 0.0001 123456789
+--- out
+1.500000 3.14 1.234568e+04 0.0001 1.23457e+08
+
+### printf bad number
+printf '%d\n' 12abc; echo $?
+--- out
+12
+1
+--- err
+qsh: 001-0068 printf: 12abc is not a number.
+
+### printf bad conversion
+printf '%z\n'; echo $?
+--- out
+1
+--- err
+qsh: 001-0062 printf: conversion %z is not valid.
+
+### printf no format
+printf; echo $?
+--- out
+1
+--- err
+qsh: 001-0062 printf: a format is required.
+
+### printf without newline
+printf abc
+--- out -n
+abc
+
+### printf negative number as hex
+printf '%x\n' -1
+--- out
+ffffffffffffffff

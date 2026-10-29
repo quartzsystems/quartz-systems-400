@@ -1790,6 +1790,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "qsh"
+version = "0.1.0"
+dependencies = [
+ "release",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "qsjob"
 version = "0.1.0"
 dependencies = [

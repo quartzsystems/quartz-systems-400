@@ -1,0 +1,115 @@
+### background job and wait
+echo job & wait
+--- out
+job
+
+### wait for specific pid
+exitwith 3 & p=$!; wait $p; echo $?
+--- out
+3
+
+### wait for job spec
+exitwith 4 & wait %1; echo $?
+--- out
+4
+
+### wait unknown pid
+wait 99999; echo $?
+--- out
+127
+
+### jobs lists running and done
+exitwith 2 & wait $!; true & jobs > /dev/null; wait; echo ok
+--- out
+ok
+
+### jobs format after completion
+cd /tmp; true & while :; do jobs > j; case $(cat j) in *Done*) break;; esac; done; cat j
+--- out
+[1] + Done true
+
+### jobs -p prints pids
+true & p=$!; wait; echo listed
+--- out
+listed
+
+### background job output order
+{ echo a; } & wait; echo b
+--- out
+a
+b
+
+### background subshell variables do not leak
+x=1; x=2 & wait; echo $x
+--- out
+1
+
+### several jobs numbered
+while :; do :; done & while :; do :; done & jobs; kill %1 %2; wait; echo ended
+--- out
+[1] - Running while :; do :; done
+[2] + Running while :; do :; done
+ended
+
+### kill a running job by pid
+while :; do :; done & p=$!; kill $p; wait $p; echo $?
+--- out
+134
+
+### jobs -l shows pids
+while :; do :; done & p=$!; jobs -l > /tmp/j; kill $p; wait; read n m pid rest < /tmp/j; test "$pid" = "$p" && echo match
+--- out
+match
+
+### job status text in done line
+cd /tmp; exitwith 3 & while :; do jobs > j; case $(cat j) in *Done*) break;; esac; done; cat j
+--- out
+[1] + Done(3) exitwith 3
+
+### fg without jobs
+fg; echo $?
+--- out
+1
+--- err
+qsh: 001-0040 fg: there is no job %+.
+
+### fg waits for job
+exitwith 6 & fg >/dev/null; echo $?
+--- out
+6
+
+### times output shape
+times | while read a b; do case $a in *m*s) echo ok;; esac; done
+--- out
+ok
+ok
+
+### ulimit default
+ulimit; ulimit -n
+--- out
+unlimited
+unlimited
+
+### ulimit set and show
+ulimit -f 100; ulimit -f; ulimit -H -f
+--- out
+100
+100
+
+### ulimit -a
+ulimit -a
+--- out
+time(seconds)        unlimited
+file(blocks)         unlimited
+data(kbytes)         unlimited
+stack(kbytes)        unlimited
+coredump(blocks)     unlimited
+nofiles(descriptors) unlimited
+vmemory(kbytes)      unlimited
+
+### ulimit bad value
+ulimit -f lots; echo $?
+--- out
+1
+--- err
+qsh: 001-0068 ulimit: lots is not a number.

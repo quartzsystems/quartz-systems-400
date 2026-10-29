@@ -1,0 +1,160 @@
+### for over words
+for i in a b c; do echo $i; done
+--- out
+a
+b
+c
+
+### for over positionals
+set -- x y; for i; do echo $i; done
+--- out
+x
+y
+
+### for with semicolon and no in
+set -- p q; for i; do echo $i; done
+--- out
+p
+q
+
+### for over nothing
+for i in; do echo never; done; echo $?
+--- out
+0
+
+### for over glob
+cd /tmp; : > f1; : > f2; for f in f*; do echo $f; done
+--- out
+f1
+f2
+
+### for variable keeps last value
+for i in 1 2 3; do :; done; echo $i
+--- out
+3
+
+### for on several lines
+for i in 1 2
+do
+  echo $i
+done
+--- out
+1
+2
+
+### for with newline before in
+for i
+in a b; do echo $i; done
+--- out
+a
+b
+
+### while loop
+i=0; while [ $i -lt 3 ]; do echo $i; i=$((i+1)); done
+--- out
+0
+1
+2
+
+### until loop
+i=0; until [ $i -ge 2 ]; do echo $i; i=$((i+1)); done
+--- out
+0
+1
+
+### while false never runs
+while false; do echo no; done; echo $?
+--- out
+0
+
+### loop status is last body
+for i in 1 2; do exitwith $i; done; echo $?
+--- out
+2
+
+### break
+for i in 1 2 3; do if [ $i = 2 ]; then break; fi; echo $i; done
+--- out
+1
+
+### continue
+for i in 1 2 3; do if [ $i = 2 ]; then continue; fi; echo $i; done
+--- out
+1
+3
+
+### break n
+for i in 1 2; do for j in a b; do echo $i$j; break 2; done; done; echo out
+--- out
+1a
+out
+
+### continue n
+for i in 1 2; do for j in a b; do echo $i$j; continue 2; done; echo never; done
+--- out
+1a
+2a
+
+### break larger than depth
+for i in 1 2; do break 5; done; echo ok
+--- out
+ok
+
+### break outside loop is ignored
+break; echo still
+--- out
+still
+
+### break bad count
+for i in 1; do break 0; done
+--- err
+qsh: 001-0068 break: 0 is not a number.
+--- status
+1
+
+### break in while condition
+while break; do echo no; done; echo out
+--- out
+out
+
+### nested while
+i=0; while [ $i -lt 2 ]; do j=0; while [ $j -lt 2 ]; do echo $i$j; j=$((j+1)); done; i=$((i+1)); done
+--- out
+00
+01
+10
+11
+
+### loop with read from here-document
+while read a; do echo "[$a]"; done <<EOF
+x
+y
+EOF
+--- out
+[x]
+[y]
+
+### missing done
+for i in 1; do echo x
+--- err
+qsh: 001-0050 Line 2 has a syntax error: end of input inside a compound command.
+--- status
+2
+
+### for name must be a name
+for 1x in a; do :; done
+--- err
+qsh: 001-0050 Line 1 has a syntax error: token "1x" was not expected.
+--- status
+2
+
+### loop in function with break
+f() { for i in 1 2 3; do [ $i = 2 ] && return 9; done; }; f; echo $?
+--- out
+9
+
+### do as an argument
+for i in do done; do echo $i; done
+--- out
+do
+done

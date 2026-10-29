@@ -1,0 +1,141 @@
+### string tests
+test -n x && echo n; test -z "" && echo z; test x && echo nonempty; test "" || echo empty
+--- out
+n
+z
+nonempty
+empty
+
+### no arguments is false
+test; echo $?
+--- out
+1
+
+### string equality
+[ a = a ] && echo eq; [ a != b ] && echo ne; [ a == a ] && echo eqeq
+--- out
+eq
+ne
+eqeq
+
+### string ordering
+[ a \< b ] && echo lt; [ b \> a ] && echo gt
+--- out
+lt
+gt
+
+### integer comparisons
+[ 1 -eq 1 ] && [ 1 -ne 2 ] && [ 2 -gt 1 ] && [ 2 -ge 2 ] && [ 1 -lt 2 ] && [ 2 -le 2 ] && echo all
+--- out
+all
+
+### negative integers
+[ -5 -lt 3 ] && echo yes
+--- out
+yes
+
+### bad integer
+[ a -eq 1 ]; echo $?
+--- out
+2
+--- err
+qsh: 001-0062 test: a is not a number.
+
+### negation
+[ ! -n "" ] && echo yes; [ ! a = b ] && echo yes2
+--- out
+yes
+yes2
+
+### and or
+[ a -a b ] && echo and; [ "" -o b ] && echo or; [ "" -a b ] || echo notand
+--- out
+and
+or
+notand
+
+### parentheses
+[ \( a = a \) -a \( b = b \) ] && echo grouped
+--- out
+grouped
+
+### precedence of and over or
+[ a = b -o a = a -a b = b ] && echo yes
+--- out
+yes
+
+### file tests
+cd /tmp; : > f; mkdir d; [ -e f ] && [ -f f ] && [ ! -d f ] && [ -d d ] && [ ! -e none ] && echo files
+--- out
+files
+
+### size test
+cd /tmp; : > empty; echo x > full; [ -s full ] && [ ! -s empty ] && echo sizes
+--- out
+sizes
+
+### permission tests
+cd /tmp; echo x > f; [ -r f ] && [ -w f ] && [ ! -x f ] && echo perms
+--- out
+perms
+
+### executable test
+[ -x /usr/bin/cat ] && echo x
+--- out
+x
+
+### character device
+[ -c /dev/null ] && echo char
+--- out
+char
+
+### terminal test
+[ -t 0 ] || echo notty
+--- out
+notty
+
+### missing bracket
+[ a = a; echo $?
+--- out
+2
+--- err
+qsh: 001-0062 [: the closing ] is missing.
+
+### unknown binary operator
+[ a -foo b ]; echo $?
+--- out
+2
+--- err
+qsh: 001-0062 test: -foo is not a binary operator.
+
+### single argument that looks like operator
+[ -n ] && echo onearg; [ = ] && echo eq
+--- out
+onearg
+eq
+
+### three args with bang
+[ ! = a ] || echo cmp
+--- out
+cmp
+
+### four args with bang
+[ ! a = b ] && echo four
+--- out
+four
+
+### newer older
+cd /tmp; : > old; : > new; [ new -nt nonexist ] && echo nt; [ nonexist -ot new ] && echo ot
+--- out
+nt
+ot
+
+### same file
+cd /tmp; : > s; [ s -ef /tmp/s ] && echo same
+--- out
+same
+
+### test as test builtin name
+test 3 -gt 2; echo $?
+--- out
+0

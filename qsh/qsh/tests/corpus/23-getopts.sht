@@ -1,0 +1,84 @@
+### simple options
+while getopts ab o -a -b; do echo $o; done; echo $OPTIND
+--- out
+a
+b
+3
+
+### clustered options
+while getopts abc o -abc x; do echo $o; done; echo $OPTIND
+--- out
+a
+b
+c
+2
+
+### option with argument
+while getopts f:v o -f file -v; do echo "$o [${OPTARG-}]"; done
+--- out
+f [file]
+v []
+
+### attached argument
+while getopts f: o -fname; do echo "$o $OPTARG"; done
+--- out
+f name
+
+### stops at first operand
+while getopts a o -a op -a; do echo $o; done; echo $OPTIND
+--- out
+a
+2
+
+### double dash ends options
+while getopts a o -a -- -a; do echo $o; done; echo $OPTIND
+--- out
+a
+3
+
+### unknown option reports
+while getopts a o -x; do echo "got $o"; done
+--- out
+got ?
+--- err
+qsh: 001-0062 getopts: option -x is not valid.
+
+### silent mode unknown option
+while getopts :a o -x; do echo "got $o $OPTARG"; done
+--- out
+got ? x
+
+### missing argument
+while getopts f: o -f; do echo "got $o"; done
+--- out
+got ?
+--- err
+qsh: 001-0062 getopts: option -f needs a value.
+
+### silent missing argument
+while getopts :f: o -f; do echo "got $o $OPTARG"; done
+--- out
+got : f
+
+### uses positionals by default
+set -- -q -r; while getopts qr o; do echo $o; done
+--- out
+q
+r
+
+### status at end
+getopts a o; echo $? "$o"
+--- out
+1 ?
+
+### reset with OPTIND
+set -- -a; getopts a o; echo $o; OPTIND=1; getopts a o; echo $o
+--- out
+a
+a
+
+### getopts in a function
+f() { local OPTIND; while getopts n: o "$@"; do echo "$o=$OPTARG"; done; }; f -n 1; f -n 2
+--- out
+n=1
+n=2

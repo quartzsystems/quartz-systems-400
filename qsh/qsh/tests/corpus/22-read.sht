@@ -1,0 +1,135 @@
+### read one variable
+read x; echo "[$x]"
+--- in
+hello world
+--- out
+[hello world]
+
+### read several variables
+read a b c; echo "$a|$b|$c"
+--- in
+1 2 3 4 5
+--- out
+1|2|3 4 5
+
+### read fewer fields than variables
+read a b c; echo "$a|$b|$c"
+--- in
+only
+--- out
+only||
+
+### read strips leading and trailing blanks
+read a; echo "[$a]"
+--- in
+   padded
+--- out
+[padded]
+
+### read into REPLY
+read; echo "[$REPLY]"
+--- in
+reply text
+--- out
+[reply text]
+
+### read with custom IFS
+IFS=: read a b; echo "$a|$b"
+--- in
+x:y:z
+--- out
+x|y:z
+
+### read backslash escapes
+read a; printf '[%s]\n' "$a"
+--- in
+a\ b\\c
+--- out
+[a b\c]
+
+### read raw
+read -r a; printf '[%s]\n' "$a"
+--- in
+a\ b\\c
+--- out
+[a\ b\\c]
+
+### read line continuation
+read a; echo "[$a]"
+--- in
+one \
+two
+--- out
+[one two]
+
+### read at end of file
+read a; echo $? "[$a]"
+--- out
+1 []
+
+### read partial last line
+read a; echo $? "[$a]"
+--- in -n
+partial
+--- out
+1 [partial]
+
+### read loop
+while read l; do echo "<$l>"; done
+--- in
+1
+2
+3
+--- out
+<1>
+<2>
+<3>
+
+### read leaves the rest of input
+read a; cat
+--- in
+first
+second
+third
+--- out
+second
+third
+
+### read prompt goes to stderr
+read -p "name?" n; echo $n
+--- in
+bob
+--- out
+bob
+--- err -n
+name?
+
+### read from descriptor
+cd /tmp; echo fdline > f; exec 5< f; read -u 5 v; echo $v
+--- out
+fdline
+
+### read escaped IFS character
+IFS=: read a b; echo "$a|$b"
+--- in
+x\:y:z
+--- out
+x:y|z
+
+### read bad name
+read 1x
+--- in
+a
+--- err
+qsh: 001-0063 read: 1x is not a valid name.
+--- status
+2
+
+### read readonly variable
+readonly r; read r
+--- in
+a
+--- err
+qsh: 001-0029 Variable r is read-only.
+--- status
+1

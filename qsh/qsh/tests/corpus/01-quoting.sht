@@ -1,0 +1,146 @@
+### plain words
+echo a b   c
+--- out
+a b c
+
+### single quotes keep everything
+args 'a  $x `y` \n "z"'
+--- out
+<a  $x `y` \n "z">
+
+### double quotes keep spaces
+echo "a   b"
+--- out
+a   b
+
+### double quotes expand parameters
+x=val; echo "[$x]" '[$x]'
+--- out
+[val] [$x]
+
+### backslash escapes a space
+echo a\ \ b
+--- out
+a  b
+
+### backslash in double quotes before special chars
+args "\$x \`y\` \"q\" \\ \a"
+--- out
+<$x `y` "q" \ \a>
+
+### backslash newline continues a line
+echo ab\
+cd
+--- out
+abcd
+
+### backslash newline inside double quotes
+echo "ab\
+cd"
+--- out
+abcd
+
+### backslash newline is literal in single quotes
+echo 'ab\
+cd'
+--- out
+ab\
+cd
+
+### empty quoted strings are fields
+args '' "" a
+--- out
+<><><a>
+
+### adjacent quotes join
+echo 'a'"b"c'd'
+--- out
+abcd
+
+### quoted dollar alone
+echo '$' "$" $
+--- out
+$ $ $
+
+### dollar before non-name
+echo $% $, "$+"
+--- out
+$% $, $+
+
+### hash starts a comment only at word start
+echo a#b # comment here
+echo #nothing
+echo 'x' #c
+--- out
+a#b
+
+x
+
+### quoted hash is not a comment
+echo "#a" \#b
+--- out
+#a #b
+
+### reserved words are plain arguments
+echo if then fi do done
+--- out
+if then fi do done
+
+### quoted reserved word is a command name
+'if' 2>/dev/null; echo $?
+--- out
+127
+
+### newlines inside quotes
+echo "a
+b"
+--- out
+a
+b
+
+### backslash at end of input
+echo a\
+--- out
+a
+
+### double quote inside single quotes
+echo '"'
+--- out
+"
+
+### single quote inside double quotes
+echo "'"
+--- out
+'
+
+### escaped quote in double quotes
+echo "a\"b"
+--- out
+a"b
+
+### backslash before ordinary char unquoted
+echo \a\b\c
+--- out
+abc
+
+### braces are plain words
+echo { } {a,b}
+--- out
+{ } {a,b}
+
+### operators need no spaces
+echo a;echo b&&echo c||echo d
+--- out
+a
+b
+c
+
+### quoted operators are words
+echo ';' "&&" \| '>'
+--- out
+; && | >
+
+### unicode passes through
+echo "héllo wörld" ⊕
+--- out
+héllo wörld ⊕

@@ -1,0 +1,113 @@
+### two stage pipeline
+echo abc | cat
+--- out
+abc
+
+### long pipeline
+echo x | cat | cat | cat | cat
+--- out
+x
+
+### status is the last command
+exitwith 3 | exitwith 0; echo $?; exitwith 0 | exitwith 4; echo $?
+--- out
+0
+4
+
+### negation
+! true; echo $?; ! false; echo $?; ! exitwith 3; echo $?
+--- out
+1
+0
+0
+
+### negated pipeline
+! echo x | exitwith 2; echo $?
+--- out
+0
+
+### builtins in pipelines
+echo one | read x; echo "[$x]"
+--- out
+[]
+
+### pipeline elements are subshells
+x=1; x=2 | cat; echo $x
+--- out
+1
+
+### compound command in a pipeline
+{ echo a; echo b; } | cat
+--- out
+a
+b
+
+### loop feeding a pipeline
+for i in 1 2 3; do echo $i; done | cat
+--- out
+1
+2
+3
+
+### while reading a pipeline
+printf 'a\nb\n' | while read l; do echo "got $l"; done
+--- out
+got a
+got b
+
+### function in a pipeline
+f() { echo from f; }; f | cat
+--- out
+from f
+
+### pipe continues after newline
+echo joined |
+cat
+--- out
+joined
+
+### early reader exit stops the writer
+yes | head1
+--- out
+y
+
+### shell loop writer stops on closed pipe
+while true; do echo loop; done | head1; echo after
+--- out
+loop
+after
+
+### subshell in pipeline
+(echo sub; echo shell) | cat
+--- out
+sub
+shell
+
+### stderr bypasses the pipe
+{ echo out; echo err >&2; } | cat
+--- out
+out
+--- err
+err
+
+### pipeline with redirect in middle
+cd /tmp; echo data | cat > f | cat; cat f
+--- out
+data
+
+### exit in pipeline element does not exit shell
+exit 3 | cat; echo still
+--- out
+still
+
+### command substitution of a pipeline
+x=$(echo a | cat); echo $x
+--- out
+a
+
+### pipeline with here-document
+cat <<E | cat | cat
+deep
+E
+--- out
+deep
