@@ -68,6 +68,11 @@ const PROMPTED: &[(&str, &str)] = &[
     ("strdbg", "STRDBG PGM(QGPL/HELLO)"),
     ("dspjob", "DSPJOB"),
     ("chglibl", "CHGLIBL LIBL(QGPL QTEMP)"),
+    ("wrklnk", "WRKLNK OBJ('/home/*')"),
+    ("md", "MD DIR('/home/qstest')"),
+    ("chgaut", "CHGAUT OBJ('/home/qstest') USER(*PUBLIC) DTAAUT(*RX)"),
+    ("cpytostmf", "CPYTOSTMF FROMMBR('/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR') TOSTMF('/tmp/hello.txt')"),
+    ("edtf", "EDTF STMF('/tmp/hello.txt')"),
     ("addrdbdire", "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)"),
     ("chgddmtcpa", "CHGDDMTCPA"),
 ];

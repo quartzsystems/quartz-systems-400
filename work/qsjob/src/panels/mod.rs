@@ -9,6 +9,7 @@
 //! CL program's `OUTPUT(*PRINT)`) keeps the text path the storage
 //! service answers with.
 
+pub mod ifs;
 pub mod objects;
 pub mod system;
 pub mod system2;
@@ -107,6 +108,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
     }
     // --- TCP/IP configuration (tcp.rs)
     if let Some(res) = tcp::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
+    // --- the IFS displays (ifs.rs)
+    if let Some(res) = ifs::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     None

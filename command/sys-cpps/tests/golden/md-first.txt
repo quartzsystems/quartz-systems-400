@@ -1,0 +1,24 @@
+                             Create Directory (MD)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Directory  . . . . . . . . . . . > '/home/qstest'                              
+ Public authority for data  . . .   *INDIR        Name, *INDIR, *RWX, *RW, *... 
+ Public authority for object  . .   *INDIR        *INDIR, *NONE, *ALL, *OBJE... 
+                       + for more values                                        
+ Auditing value for objects . . .   *SYSVAL       *SYSVAL, *NONE, *USRPRF, *... 
+ Scanning option for objects  . .   *PARENT       *PARENT, *YES, *NO, *CHGONLY  
+ Restricted rename and unlink . .   *NO           Number, *NO, *YES             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

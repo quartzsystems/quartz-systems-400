@@ -915,6 +915,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "edtf"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "tn5250",
+]
+
+[[package]]
 name = "elliptic-curve"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1423,6 +1431,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ifscmd"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "ifs",
+ "sec",
+ "store",
+]
+
+[[package]]
 name = "ile"
 version = "0.1.0"
 dependencies = [
@@ -1928,6 +1946,9 @@ dependencies = [
  "dds",
  "dfu",
  "dspf",
+ "edtf",
+ "ifs",
+ "ifscmd",
  "ile",
  "ipc",
  "isql",
@@ -2574,6 +2595,7 @@ dependencies = [
  "diskimg",
  "dspf",
  "ifs",
+ "ifscmd",
  "ile",
  "ipc",
  "jrn",

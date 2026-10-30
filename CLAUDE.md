@@ -246,7 +246,7 @@ ui/           the display interface
   menus/        menus: src/payload/ *MENU, src/stack/ GO, src/generate/ and bin/genmenus
                 (command menus from the inventories), sys/ task menus, pnlgrp/ generated
 devtools/     developer tools, pure logic (drivers in work/qsjob/src/devtools/): seu/, pdm/,
-              sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/
+              sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/, edtf/ (EDTF, DSPF)
 ifs/          the integrated file system
   ifs/          src/errno/ IBM errno values and messages, src/path/ paths and folding,
                 src/backend/ (MemBackend, LinuxBackend), src/meta/ the one metadata record
@@ -259,6 +259,9 @@ ifs/          the integrated file system
   qsyslib/      the IFS over the store, for the service: view.rs /QSYS.LIB (StoreQsys),
                 env.rs profiles, UID/GID and authorization lists, audit.rs QAUDJRN entries,
                 savf.rs, access.rs one transaction per call (MemAccess for tests)
+  ifscmd/       the IFS commands over an IfsClient: src/cmds/ (dirs, links, auth, attr, udfs,
+                admin), display.rs what the displays show, text.rs their text forms,
+                src/stmf/ CPYTOSTMF/CPYFRMSTMF and the IMPF stream files, msg.rs IBM's messages
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
@@ -306,8 +309,9 @@ cargo run -p conformance -- --load 200    # 200 TN5250 sessions under QEMU, timi
 cargo run -p tn5250-driver -- run --target pub400 [--golden DIR --update] SCRIPT.tn   # oracle captures
 cargo run -p menus --bin genmenus         # regenerate the command menus in ui/menus/pnlgrp/
 cargo test -p uim -p dspf -p menus        # panel, display-file and menu goldens
-cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst   # the developer tools' screens
+cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst -p edtf   # the developer tools' screens
 cargo test -p ifs                         # the IFS over MemBackend
+cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFRMSTMF over MemBackend
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image

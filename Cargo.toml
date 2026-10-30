@@ -60,6 +60,7 @@ members = [
     "devtools/dbg",
     "devtools/isql",
     "devtools/sst",
+    "devtools/edtf",
     # ILE RPG: the spec tables, the compiler, its runtime.
     "rpg/specs",
     "rpg/front",
@@ -71,6 +72,7 @@ members = [
     "ifs/ifs",
     "ifs/xfsfmt",
     "ifs/qsyslib",
+    "ifs/ifscmd",
     # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
     "net/netlink",
     "net/hostsvr",

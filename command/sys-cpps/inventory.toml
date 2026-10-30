@@ -683,3 +683,81 @@ site = "job"
 
 [cmd.WRKNETTBLE]
 site = "job"
+
+# ------------------------------------------------ the IFS (Phase 10)
+# --- IFS commands (lic/slic/src/cpp/ifscmd.rs)
+# Each runs over the job's IFS (its current directory, its profile) and
+# sends IBM's CPCA08x completion or CPFA0xx escape itself.
+[cmd.CD]
+note = "CPCA08B; the directory is the job's, kept by the service per connection"
+
+[cmd.CHGCURDIR]
+note = "as CD"
+
+[cmd.RTVCURDIR]
+site = "job"
+note = "the job's current directory through its link"
+
+[cmd.SAV]
+note = "walks the objects, then CPF3700: save media are Phase 11"
+
+[cmd.RST]
+stub = "CPF3700"
+note = "restore media are Phase 11"
+
+[cmd.STRJRN]
+note = "IFS objects: the journaling attributes are stored, no entries written"
+
+[cmd.ENDJRN]
+note = "IFS objects: the stored journaling attributes removed"
+
+[cmd.MOUNT]
+note = "TYPE(*UDFS); *IOSYSCFG"
+
+[cmd.ADDMFS]
+note = "as MOUNT"
+
+[cmd.UNMOUNT]
+note = "TYPE(*UDFS)"
+
+[cmd.RMVMFS]
+note = "as UNMOUNT"
+
+[cmd.RCLLNK]
+note = "reclaims the whole IFS metadata whatever OBJ names"
+
+[cmd.DSPUDFS]
+note = "text"
+
+# --- IFS panels (work/qsjob/src/panels/ifs.rs)
+[cmd.WRKLNK]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPLNK]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKAUT]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPAUT]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+# --- IFS stream file copies (lic/slic/src/cpp/stmfcmd.rs)
+[cmd.CPYTOSTMF]
+note = "CPCA082 or CPFA097 from the processing program"
+
+[cmd.CPYFRMSTMF]
+note = "CPCA081, CPFA095 or CPFA096 from the processing program"
+
+# --- EDTF and DSPF (devtools/edtf)
+[cmd.EDTF]
+site = "job"
+note = "the editor at a display; refused without one"
+
+[cmd.DSPF]
+site = "job"
+note = "the browser at a display; the file as text otherwise"

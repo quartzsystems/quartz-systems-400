@@ -1,0 +1,24 @@
+                        Copy To Stream File (CPYTOSTMF)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Member path to copy  . . . . . . > '/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR'  
+ Stream file to write . . . . . . > '/tmp/hello.txt'                            
+ When the stream file exists  . .   *NONE         Number, *NONE, *ADD, *REPLACE 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

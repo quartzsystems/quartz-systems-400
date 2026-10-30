@@ -512,6 +512,7 @@ impl Suite {
         reports.push(self.step(&mut s, "59 IFS mount", Self::ifs_mount)?);
         reports.push(self.step(&mut s, "60 communications lines", Self::cmn_lines)?);
         reports.push(self.step(&mut s, "62 ENDTCP and STRTCP", Self::tcp_restart)?);
+        reports.push(self.step(&mut s, "63 IFS commands", Self::ifs_commands)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

@@ -508,8 +508,15 @@ file with a date or time, and the comparer compares dates as digits.
 and `rla` take a named `xfer` buffer in place of a stream file: text pushed
 as a counted run of lines over the serial console (`xfer put NAME N`),
 not the length-prefixed byte protocol first planned, because the serial
-reader hands slic whole lines. Binary data has no path until the IFS
-(`MIGRATE(phase10)`). Test: none.
+reader hands slic whole lines. Since Phase 10 `CPYTOIMPF TOSTMF` and
+`CPYFRMIMPF FROMSTMF` take a path (a value with a `/`) as a stream file
+of the job's IFS: the export is written in `STMFCCSID` (or `STMFCODPAG`;
+`*STMF` is an existing file's tag, 1208 for a new one where IBM takes
+one from the job), honouring `STMFOPT` (an empty file counts as absent)
+and `STMFAUT`; the import reads the file in its tag or `FROMCCSID`. A
+plain name is still an `xfer` buffer. `CPYTOSTMF` and `CPYFRMSTMF`
+copy members to stream files and back (`ifs/ifscmd/src/stmf`). Test:
+`ifs/ifscmd/tests/stmf.rs`.
 
 **`OPNQRYF`.** `QRYSLT` (`*EQ` and the other operators, `*AND`, `*OR`,
 `*NOT`, `*CT`, `%RANGE`, `%VALUES`, `%WLDCRD`, `%SST`) maps onto the

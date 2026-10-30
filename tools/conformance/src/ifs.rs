@@ -53,4 +53,58 @@ impl Suite {
             "{source} mounted rw at {MOUNT_POINT}, {size} MiB, {free} MiB free"
         ))
     }
+
+    /// Step 63: the IFS commands at the service console: MD, a stream
+    /// file into a source member and back (CPYFRMSTMF, CPYTOSTMF), the
+    /// WRKLNK and DSPF text forms, DEL with a pattern, RD.
+    pub(crate) fn ifs_commands(&self, s: &mut Session) -> Result<String, String> {
+        let want = |out: &str, what: &str, needles: &[&str]| -> Result<(), String> {
+            if needles.iter().all(|n| out.contains(n)) {
+                Ok(())
+            } else {
+                Err(format!("{what}: expected {needles:?}:\n{out}"))
+            }
+        };
+        let made = s.command("md DIR('/home/qs63')", CMD)?;
+        want(&made, "MD", &["/home/qs63"])?;
+        s.command("crtsrcpf FILE(QGPL/QIFSSRC) RCDLEN(92)", CMD)?;
+        crate::qir::qemu::push(s, "IFSSRC", SOURCE)?;
+        let put = s.command(
+            "svc.srcput QGPL/QIFSSRC IN SRCTYPE(CLLE) FROMSTMF(IFSSRC)",
+            CMD,
+        )?;
+        want(&put, "srcput", &["written"])?;
+        let back = s.command(
+            "cpytostmf FROMMBR('/QSYS.LIB/QGPL.LIB/QIFSSRC.FILE/IN.MBR') TOSTMF('/home/qs63/out.txt') STMFCCSID(1208)",
+            CMD,
+        )?;
+        want(&back, "CPYTOSTMF", &["copied"])?;
+        let into = s.command(
+            "cpyfrmstmf FROMSTMF('/home/qs63/out.txt') TOMBR('/QSYS.LIB/QGPL.LIB/QIFSSRC.FILE/IN2.MBR') MBROPT(*REPLACE)",
+            CMD,
+        )?;
+        want(&into, "CPYFRMSTMF", &["copied"])?;
+        let member = s.command("svc.srcget QGPL/QIFSSRC IN2", CMD)?;
+        want(&member, "the member copied back", &["SNDPGMMSG MSG('IFS step')", "ENDPGM"])?;
+        let list = s.command("wrklnk OBJ('/home/qs63/*')", CMD)?;
+        want(&list, "WRKLNK", &["/home/qs63", "out.txt", "STMF"])?;
+        let shown = s.command("dspf STMF('/home/qs63/out.txt')", CMD)?;
+        want(&shown, "DSPF", &["PGM", "SNDPGMMSG MSG('IFS step')", "ENDPGM"])?;
+        let gone = s.command("del OBJLNK('/home/qs63/*.txt')", CMD)?;
+        want(&gone, "DEL", &["/home/qs63/out.txt"])?;
+        let rd = s.command("rd DIR('/home/qs63')", CMD)?;
+        want(&rd, "RD", &["/home/qs63"])?;
+        let after = s.command("svc.ifs ls /home", CMD)?;
+        if after.contains("qs63") {
+            return Err(format!("/home/qs63 is still there:\n{after}"));
+        }
+        s.command("svc.dltf QGPL/QIFSSRC", CMD).ok();
+        Ok("MD, a member to a stream file and back (CPYTOSTMF, CPYFRMSTMF), WRKLNK and DSPF text, DEL by pattern, RD".into())
+    }
 }
+
+/// The CL source step 63 copies to a stream file and back.
+const SOURCE: &str = "PGM
+  SNDPGMMSG MSG('IFS step')
+ENDPGM
+";

@@ -1,0 +1,18 @@
+[package]
+name = "ifscmd"
+description = "QS/400 IFS commands: WRKLNK, MD, CPY, CHGAUT ... and CPYTOSTMF/CPYFRMSTMF over an IFS client, with IBM's messages and the text forms"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+ifs = { path = "../ifs", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
+
+[dev-dependencies]
+store = { path = "../../storage/store", version = "0.1.0" }
+
+[lints]
+workspace = true

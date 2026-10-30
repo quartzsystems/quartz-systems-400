@@ -62,6 +62,25 @@ fn align(rows: &mut [Vec<(usize, usize)>], widths: &[usize], limit: usize) {
             for item in &mut rows[r][from..] {
                 item.1 += delta;
             }
+        } else if near.is_none() && r == 0 {
+            snap(rows, widths, limit, k);
+        }
+    }
+}
+
+/// R7: a lower item with no upper item near it, whose pair cannot
+/// move, moves right (with what follows it) to the next upper column
+/// within ten columns when its row still ends within `limit` (wrklnk:
+/// F23 under F9).
+fn snap(rows: &mut [Vec<(usize, usize)>], widths: &[usize], limit: usize, k: usize) {
+    let b = rows[1][k].1;
+    let Some(a) = rows[0].iter().map(|i| i.1).find(|&a| a > b && a - b <= 10) else {
+        return;
+    };
+    let (last, lc) = *rows[1].last().unwrap();
+    if lc + (a - b) + widths[last] <= limit + 1 {
+        for item in &mut rows[1][k..] {
+            item.1 += a - b;
         }
     }
 }

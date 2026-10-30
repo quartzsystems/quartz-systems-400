@@ -12,6 +12,8 @@ print = { path = "../../work/print", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 stg = { path = "../../work/stg", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+ifscmd = { path = "../../ifs/ifscmd", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
 cmncfg = { path = "../../net/cmncfg", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
@@ -32,6 +34,7 @@ uim = { path = "../../ui/uim", version = "0.1.0" }
 menus = { path = "../../ui/menus", version = "0.1.0" }
 pdm = { path = "../../devtools/pdm", version = "0.1.0" }
 dfu = { path = "../../devtools/dfu", version = "0.1.0" }
+edtf = { path = "../../devtools/edtf", version = "0.1.0" }
 dds = { path = "../../database/dds", version = "0.1.0" }
 dbg = { path = "../../devtools/dbg", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }

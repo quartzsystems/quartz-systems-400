@@ -16,10 +16,12 @@ pub(crate) mod clpgm;
 mod cmncmd;
 mod dbcmd;
 mod direct;
+mod ifscmd;
 mod msgfcmd;
 mod objcmd;
 mod rpg;
 pub(crate) mod stmf;
+mod stmfcmd;
 mod sysinfo;
 mod tcpcmd;
 mod uicmd;
@@ -53,6 +55,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
         ),
         Site::Job | Site::Service => tcpcmd::run(system, name, parms)
             .or_else(|| direct::run(system, name, parms))
+            .or_else(|| ifscmd::run(system, name, parms))
+            .or_else(|| stmfcmd::run(system, name, parms))
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| objcmd::run(system, name, parms))

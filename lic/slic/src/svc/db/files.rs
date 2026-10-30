@@ -507,12 +507,18 @@ fn impf_opts(p: &Params) -> Result<ImpfOpts, String> {
     Ok(o)
 }
 
-/// `cpytoimpf FROMFILE(LIB/F) [TOSTMF(NAME)] [...]`.
+/// `cpytoimpf FROMFILE(LIB/F) [TOSTMF(PATH|NAME)] [...]`: a path (with
+/// a `/`) is a stream file of the job's IFS (`STMFOPT`, `STMFCCSID` or
+/// `STMFCODPAG`, `STMFAUT`); a plain name is an `xfer` buffer.
 pub fn cpytoimpf(system: &mut System, p: &Params) -> Result<String, String> {
     let from = p.pos_or(0, "FROMFILE")?;
     let mbr = member_spec(p, "FROMMBR")?;
     let opts = impf_opts(p)?;
-    let stmf = p.kw("TOSTMF").map(str::to_string);
+    let stmf = p.kw("TOSTMF").map(unquoted);
+    let write = match &stmf {
+        Some(path) if path.contains('/') => Some(stmf_write(p)?),
+        _ => None,
+    };
     let (store, ctx) = db(system)?;
     let text = with_txn(store, |txn| {
         let id = file_id(txn, ctx, &from)?;
@@ -520,27 +526,43 @@ pub fn cpytoimpf(system: &mut System, p: &Params) -> Result<String, String> {
         Ok(String::from_utf8_lossy(&bytes).into_owned())
     })?;
     let n = text.lines().count();
-    match stmf {
-        Some(name) => {
+    match (stmf, write) {
+        (Some(path), Some(w)) => {
+            let tag = job_ifs(system, |c| {
+                ifscmd::stmf::impf::write_text(c, &path, text.as_bytes(), w)
+            })
+            .map_err(|m| stmf_refused(&m, &path))?;
+            Ok(format!("{n} records copied to {path} (CCSID {tag})."))
+        }
+        (Some(name), None) => {
             system.svc.xfer.insert(name.clone(), text);
             Ok(format!("{n} records copied to {name}."))
         }
-        None => Ok(format!("--- {n} records\n{text}--- end")),
+        (None, _) => Ok(format!("--- {n} records\n{text}--- end")),
     }
 }
 
-/// `cpyfrmimpf FROMSTMF(NAME) TOFILE(LIB/F) [...]`.
+/// `cpyfrmimpf FROMSTMF(PATH|NAME) TOFILE(LIB/F) [...]`: a path is read
+/// from the job's IFS in its CCSID (or `STMFCCSID`'s); a name is an
+/// `xfer` buffer.
 pub fn cpyfrmimpf(system: &mut System, p: &Params) -> Result<String, String> {
-    let stmf = p.pos_or(0, "FROMSTMF")?;
+    let stmf = unquoted(&p.pos_or(0, "FROMSTMF")?);
     let to = p.pos_or(1, "TOFILE")?;
     let mbr = member_spec(p, "TOMBR")?;
     let opts = impf_opts(p)?;
-    let text = system
-        .svc
-        .xfer
-        .get(&stmf)
-        .cloned()
-        .ok_or_else(|| format!("{stmf}: no such buffer; xfer put it first"))?;
+    let text = if stmf.contains('/') {
+        let ccsid = from_ccsid(p)?;
+        let b = job_ifs(system, |c| ifscmd::stmf::impf::read_text(c, &stmf, ccsid))
+            .map_err(|m| stmf_refused(&m, &stmf))?;
+        String::from_utf8_lossy(&b).into_owned()
+    } else {
+        system
+            .svc
+            .xfer
+            .get(&stmf)
+            .cloned()
+            .ok_or_else(|| format!("{stmf}: no such buffer; xfer put it first"))?
+    };
     let (store, ctx) = db(system)?;
     with_txn(store, |txn| {
         let id = file_id(txn, ctx, &to)?;
@@ -552,6 +574,64 @@ pub fn cpyfrmimpf(system: &mut System, p: &Params) -> Result<String, String> {
         }
         Ok(out)
     })
+}
+
+/// A value without its apostrophes, doubled ones made single.
+fn unquoted(v: &str) -> String {
+    let t = v.trim();
+    match t.strip_prefix('\'').and_then(|s| s.strip_suffix('\'')) {
+        Some(inner) => inner.replace("''", "'"),
+        None => t.to_string(),
+    }
+}
+
+/// `STMFCCSID`, or `STMFCODPAG` when that is given instead.
+fn stmf_ccsid(p: &Params) -> Result<ifscmd::stmf::StmfCcsid, String> {
+    use ifscmd::stmf::StmfCcsid;
+    use ifscmd::stmf::impf::ccsid_word;
+    let parse = |k: &str| -> Result<StmfCcsid, String> {
+        let w = p.kw(k).unwrap_or("");
+        ccsid_word(w).ok_or_else(|| format!("{k}({w}) is not a CCSID"))
+    };
+    let (c, cp) = (parse("STMFCCSID")?, parse("STMFCODPAG")?);
+    match (c, cp) {
+        (StmfCcsid::Stmf, cp) => Ok(cp),
+        (c, StmfCcsid::Stmf) => Ok(c),
+        _ => Err("CPDA0B9 give STMFCCSID or STMFCODPAG, not both".into()),
+    }
+}
+
+/// `FROMCCSID` for a stream file: `*FILE` is its tag.
+fn from_ccsid(p: &Params) -> Result<ifscmd::stmf::StmfCcsid, String> {
+    let w = p.kw("FROMCCSID").unwrap_or("");
+    match w.trim().to_ascii_uppercase().as_str() {
+        "*FILE" => Ok(ifscmd::stmf::StmfCcsid::Stmf),
+        _ => ifscmd::stmf::impf::ccsid_word(w).ok_or_else(|| format!("FROMCCSID({w}) is not a CCSID")),
+    }
+}
+
+/// How `TOSTMF` is written.
+fn stmf_write(p: &Params) -> Result<ifscmd::stmf::impf::Write, String> {
+    use ifscmd::stmf::impf::{Write, aut_word, opt_word};
+    let w = p.kw("STMFOPT").unwrap_or("");
+    let a = p.kw("STMFAUT").unwrap_or("");
+    Ok(Write {
+        opt: opt_word(w).ok_or_else(|| format!("STMFOPT({w}) is not *NONE, *ADD or *REPLACE"))?,
+        ccsid: stmf_ccsid(p)?,
+        aut: aut_word(a).ok_or_else(|| format!("STMFAUT({a}) is not understood"))?,
+    })
+}
+
+/// A refusal as the console shows it: the message identifier first, so
+/// the command's escape is that message.
+fn stmf_refused(m: &ifscmd::Msg, path: &str) -> String {
+    format!("{} {path}: the stream file was not copied", m.id)
+}
+
+/// Run `f` against the job's IFS, as the job, after the store's
+/// transaction (the IFS lends the store itself).
+fn job_ifs<T>(system: &mut System, f: impl FnOnce(&dyn ifs::client::IfsClient) -> T) -> T {
+    crate::cpp::stmf::with_job(system, f)
 }
 
 /// `dspfd LIB/FILE [TYPE(...)]`.

@@ -1,0 +1,24 @@
+                                 Edit Services
+
+ Type changes, press Enter.
+
+   File . . . . . . . . . . . . . . /home/USERNAME/qsnet.txt
+   File CCSID . . . . . . . . . . . 819
+   Job CCSID  . . . . . . . . . . . 37
+   Record length  . . . . . . . . . 59
+   Records  . . . . . . . . . . . . 3
+
+   Save with CCSID  . . . . . . . . 819           1-65533
+   Line end written . . . . . . . . *CRLF         *CRLF, *LF, *CR, *LFCR, *NL
+   Columns F19 and F20 move . . . . 74            1-32766
+   Records the page keys move . . . 8             1-9999999
+
+
+
+
+
+
+
+
+ F3=Exit   F12=Cancel
+

@@ -507,6 +507,15 @@ pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcom
                 text: text.trim_end().to_string(),
             })
         }
+        None if reply.text.is_empty() => {
+            // Nothing printed: the completion messages say what was done.
+            let mut text = String::new();
+            for m in reply.messages.iter().filter(|m| m.kind == 4) {
+                let (t, _, _) = job.describe_message(&m.msgid, sysapi::param::file_of(&m.msgid), "*LIBL", &m.data);
+                let _ = writeln!(text, "{}", t.trim_end());
+            }
+            Ok(text)
+        }
         None => Ok(reply.text),
     }
 }

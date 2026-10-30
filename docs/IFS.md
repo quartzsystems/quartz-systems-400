@@ -1151,6 +1151,69 @@ prototype of an `EXTPROC` already declared with another signature is
 called through a procedure pointer (`fcntl` with an integer and with a
 `struct flock *`).
 
+## Commands
+
+The IFS commands are library functions over an `IfsClient` in the
+crate `ifs/ifscmd`; each answers a `Reply`: text, IBM's completion
+and diagnostic messages, the escape. The storage service runs them for
+the job whose request it is (`lic/slic/src/cpp/ifscmd.rs`), through
+`cpp::stmf::with_job`: the job's principal, its connection's owner (so
+its descriptors and its current directory) and its CCSID. The job
+shows the displays as UIM panels (`work/qsjob/src/panels/ifs/`) and
+runs `EDTF`, `DSPF` and `RTVCURDIR` itself; a job without a display
+gets the service's text forms (`ifscmd::text`).
+
+| Command | Where | Done | Messages |
+|---|---|---|---|
+| `CD`, `CHGCURDIR` | service | `chdir` for the job's owner; `RTVCURDIR` reads it back | `CPCA08B` |
+| `MD`, `MKDIR`, `CRTDIR` | service | `mkdir`; `DTAAUT(*INDIR)` takes the parent's mode, else `DTAAUT`/`OBJAUT` are `*PUBLIC`'s; `CRTOBJAUD`, `CRTOBJSCAN`, `RSTDRNMUNL` set after | `CPCA083`; `CPFA0AF` when made but an attribute failed |
+| `RD`, `RMDIR` | service | `rmdir`; `SUBTREE(*ALL)` the tree; `RMVLNK(*YES)` the non-directory links first | `CPCA085`, `CPDA0B8` |
+| `DEL`, `RMVLNK` | service | `unlink`, a pattern in the last name for each match | `CPCA089` each, `CPFA093` none matches, `CPFA0BD` counts |
+| `REN`, `RNM` | service | `rename` in the same directory | `CPCA084`, `CPFA0B4`, `CPFA0B5` |
+| `MOV` | service | `mov`; `DTAFMT(*TEXT)` with `TOCCSID` copies converted, then removes | `CPCA086`, `CPFA0B3`, `CPFA0B8` |
+| `CPY` | service | `copy`; `SUBTREE(*NODIR, *NONE or *ALL)`, `REPLACE`, `OWNER`, `DTAFMT(*TEXT)` | `CPCA087`; several: `CPCA082` with the count, `CPFA0BB`; one failed: `CPFA097` after the cause |
+| `ADDLNK` | service | `symlink` or `link` (`LNKTYPE`) | `CPCA088` |
+| `CHGAUT` | service | `chgaut`; `DTAAUT(*NONE) OBJAUT(*NONE)` for a user revokes the private authority | text; `CPFA091`, `CPFA0B9`, `CPFA0C3` |
+| `CHGOWN`, `CHGPGP` | service | `chgown`, `chgpgp` (then the given authority for the group) | text |
+| `CHGATR` | service | `set_attr` for each `ATR`; `*USECOUNT *RESET` accepted, `*RUNEXIT`/`*CRTRUNEXIT` refused | text; `CPDA03C`, `CPDA03D`, `CPDA0C1`, `CPDA0C2`, `CPFA0ED` |
+| `CHKOUT`, `CHKIN` | service | `check_out`, `check_in`; `SUBTREE(*ALL)` the files under | `CPCA08F`, `CPCA08A`; `CPFA0BF`, `CPFA0BE` |
+| `STRJRN`, `ENDJRN` | service | the journaling attributes stored on each object (`JRN` a `/QSYS.LIB` journal path) | text |
+| `CRTUDFS`, `DLTUDFS` | service | `crtudfs`, `dltudfs` | `CPCA1C0`, `CPCA1C1` |
+| `MOUNT`/`ADDMFS`, `UNMOUNT`/`RMVMFS` | service | `TYPE(*UDFS)` only (`ro` in `OPTIONS` mounts read-only); `*NFS` and `*NETWORK` are `CPFA0AD` | `CPCA1B0`, `CPCA1B1` |
+| `DSPUDFS` | service | text | |
+| `RCLLNK` | service | `rcllnk` over all the metadata, whatever `OBJ` names | text; `CPFA0F1` when problems are left |
+| `SAV` | service | the objects walked and counted; nothing is written | `CPF3700` (media are Phase 11) |
+| `RST` | stub | | `CPF3700` |
+| `WRKLNK`, `DSPLNK` | job | panels `QUIWRKLNK` (`WRKLNK1`..`3` for the option rows F23 cycles, `DSPLNK`, the Display Attributes pages `DSPATRF`/`DSPATRD`) | |
+| `WRKAUT`, `DSPAUT` | job | panels `QUIWRKAUT` | |
+| `EDTF`, `DSPF` | job | `devtools/edtf`; `DSPF` without a display is the service's text | `CPDB6xx`, `CPFB6xx`, `CPIB6xx` |
+| `RTVCURDIR` | job | `getcwd` through the job's link into `RTNDIR` and `DIRNAMLEN` | |
+| `CPYTOSTMF`, `CPYFRMSTMF` | service | `ifscmd::stmf` (`lic/slic/src/cpp/stmfcmd.rs`) | `CPCA082`, `CPCA081`; `CPFA097`, `CPFA095`, `CPFA096`; `CPDA08x` |
+
+An `errno` becomes its `CPFA0xx` escape (`Errno::command_message`,
+the table above) with the path as IBM's `*CCHAR *VARY 4`, which
+`QCPFMSG` declares as `*CHAR *VARY 4`. IBM sends no completion message
+for `CHGAUT`, `CHGOWN`, `CHGPGP`, `CHGATR` and `STRJRN` that the
+`QCPFMSG` capture shows; these print a line of text instead. When the
+service answers a command with no text, the job prints its completion
+messages' texts, so the service console shows what was done.
+
+**WRKLNK options.** 2 `EDTF`, 3 `?CPY`, 4 `RMVLNK` (`RD` for a
+directory), 5 the next level for a directory or `DSPF` for a file, 7
+`?RNM`, 8 the Display Attributes pages, 9 `WRKAUT`, 10 `?MOV`, 11 `CD`,
+12 work with the link (refused on a directory, as pub400 refuses it),
+13 and 14 `?CHGATR`. `DSPLNK` has 5, 8 and 9 (display authority).
+
+**EDTF and DSPF.** `devtools/edtf` holds the editing model and draws
+the screens; `work/qsjob/src/devtools/edtf.rs` reads the file through
+the job's IFS, decodes it from its CCSID (a member by its `/QSYS.LIB`
+path in text mode), and writes it back on F2/F3 with the line ends it
+had and its CCSID tag (F15 may change both). The header is `Record :
+TOP of TOTAL by SCROLL` and `Column : LEFT RCDLEN by SHIFT`; the record
+length IBM's workspace gives a stream file was read from one capture
+only (a 53-byte file shows 59: the size plus six). A tab shows as one
+blank, as the capture shows it.
+
 ## Not yet
 
 - Opening a FIFO through the service (it would have to wait) is

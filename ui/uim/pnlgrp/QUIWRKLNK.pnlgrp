@@ -1,0 +1,378 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIWRKLNK: the IFS link displays. WRKLNK1, WRKLNK2 and WRKLNK3 are
+.* Work with Object Links with each set of option legends (F23 steps
+.* through them, every option works on each); DSPLNK is Display Object
+.* Links; DSPATR an object's attributes over three pages.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=PATHCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=LINKCL BASETYPE='CHAR 21'.
+:ECLASS.
+:CLASS NAME=TYPECL BASETYPE='CHAR 7'.
+:ECLASS.
+:CLASS NAME=ATTRCL BASETYPE='CHAR 11'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 26'.
+:ECLASS.
+:CLASS NAME=VALCL BASETYPE='CHAR 30'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=DIR CLASS=PATHCL.
+:VAR NAME=LNK CLASS=LINKCL.
+:VAR NAME=LNKTYPE CLASS=TYPECL.
+:VAR NAME=LNKATR CLASS=ATTRCL.
+:VAR NAME=LNKTEXT CLASS=TEXTCL.
+:VAR NAME=OBJ CLASS=PATHCL.
+:VAR NAME=OBJTYPE CLASS=VALCL.
+:VAR NAME=OWNER CLASS=VALCL.
+:VAR NAME=SYSON CLASS=VALCL.
+:VAR NAME=ASP CLASS=VALCL.
+:VAR NAME=OVERFLOW CLASS=VALCL.
+:VAR NAME=CCSID CLASS=VALCL.
+:VAR NAME=HIDDEN CLASS=VALCL.
+:VAR NAME=PCSYSTEM CLASS=VALCL.
+:VAR NAME=RDONLY CLASS=VALCL.
+:VAR NAME=PCARC CLASS=VALCL.
+:VAR NAME=SYSARC CLASS=VALCL.
+:VAR NAME=CRTDT CLASS=VALCL.
+:VAR NAME=ACCDT CLASS=VALCL.
+:VAR NAME=CHGDT CLASS=VALCL.
+:VAR NAME=ATRDT CLASS=VALCL.
+:VAR NAME=SIZE CLASS=VALCL.
+:VAR NAME=ALLOC CLASS=VALCL.
+:VAR NAME=FILEFMT CLASS=VALCL.
+:VAR NAME=DIRFMT CLASS=VALCL.
+:VAR NAME=EASIZE CLASS=VALCL.
+:VAR NAME=STGFREE CLASS=VALCL.
+:VAR NAME=TEMP CLASS=VALCL.
+:VAR NAME=DISKOPT CLASS=VALCL.
+:VAR NAME=MAINOPT CLASS=VALCL.
+:VAR NAME=AUDIT CLASS=VALCL.
+:VAR NAME=AUTCOL CLASS=VALCL.
+:VAR NAME=DOMAIN CLASS=VALCL.
+:VAR NAME=NLINK CLASS=VALCL.
+:VAR NAME=CRTAUD CLASS=VALCL.
+:VAR NAME=CRTSCAN CLASS=VALCL.
+:VAR NAME=CRTRUNEXIT CLASS=VALCL.
+:VAR NAME=SUID CLASS=VALCL.
+:VAR NAME=SGID CLASS=VALCL.
+:VAR NAME=RSTDRNMUNL CLASS=VALCL.
+:VAR NAME=LASTUSED CLASS=VALCL.
+:VAR NAME=DAYSUSED CLASS=VALCL.
+:VAR NAME=RESETDT CLASS=VALCL.
+:VAR NAME=SCAN CLASS=VALCL.
+:VAR NAME=ALWSAV CLASS=VALCL.
+:VAR NAME=ALWCKPWRT CLASS=VALCL.
+:VAR NAME=CHKOUT CLASS=VALCL.
+:VAR NAME=CHKOUTU CLASS=VALCL.
+:VAR NAME=CHKOUTT CLASS=VALCL.
+:VAR NAME=ISDIR CLASS=VALCL VALUE='N'.
+:COND NAME=DIROBJ EXPR='&ISDIR. EQ "Y"'.
+:COND NAME=FILEOBJ EXPR='&ISDIR. NE "Y"'.
+:COND NAME=CHKD EXPR='&CHKOUT. EQ "Yes"'.
+:LISTDEF NAME=LNKS VARS='OPT LNK LNKTYPE LNKATR LNKTEXT'.
+:KEYL NAME=WRKKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+:KEYI KEY=F22 ACTION='RETURN 22'.F22=Display entire field
+:KEYI KEY=F23 ACTION='RETURN 23'.F23=More options
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=DSPKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+:KEYI KEY=F22 ACTION='RETURN 22'.F22=Display entire field
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=ATRKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F22 ACTION='RETURN 22'.F22=Display entire field
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=WRKLNK1 KEYL=WRKKEYS HELP=WRKLNKH ENTER='RETURN 0' TOPSEP=SPACE.Work with Object Links
+:DATA DEPTH=2.
+:DATACOL WIDTH=78.
+:DATAC.Directory  . . . . :   &DIR.
+:DATAC.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=LNKS ACTLEN=4 SCROLL=YES.
+:LISTACT OPTION=2 ENTER='RETURN 0'.2=Edit
+:LISTACT OPTION=3 ENTER='RETURN 0'.3=Copy
+:LISTACT OPTION=4 ENTER='RETURN 0'.4=Remove
+:LISTACT OPTION=5 ENTER='RETURN 0'.5=Display
+:LISTACT OPTION=7 ENTER='RETURN 0'.7=Rename
+:LISTACT OPTION=8 ENTER='RETURN 0'.8=Display attributes
+:LISTACT OPTION=11 ENTER='RETURN 0'.11=Change current directory ...
+:LISTACT OPTION=9 ENTER='RETURN 0'.
+:LISTACT OPTION=10 ENTER='RETURN 0'.
+:LISTACT OPTION=12 ENTER='RETURN 0'.
+:LISTACT OPTION=13 ENTER='RETURN 0'.
+:LISTACT OPTION=14 ENTER='RETURN 0'.
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters or command
+:EPANEL.
+:PANEL NAME=WRKLNK2 KEYL=WRKKEYS HELP=WRKLNKH ENTER='RETURN 0' TOPSEP=SPACE.Work with Object Links
+:DATA DEPTH=6.
+:DATACOL WIDTH=78.
+:DATAC.Directory  . . . . :   &DIR.
+:DATAC.
+:DATAC.Type options, press Enter.
+:DATAGRP GRPSEP=NONE.
+:DATAC.9=Work with authority   10=Move   13=Change attribute ...
+:EDATAGRP.
+:DATAC.
+:DATAC.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LNKS ACTLEN=4 SCROLL=YES.
+:LISTACT OPTION=9 ENTER='RETURN 0'.
+:LISTACT OPTION=10 ENTER='RETURN 0'.
+:LISTACT OPTION=13 ENTER='RETURN 0'.
+:LISTACT OPTION=2 ENTER='RETURN 0'.
+:LISTACT OPTION=3 ENTER='RETURN 0'.
+:LISTACT OPTION=4 ENTER='RETURN 0'.
+:LISTACT OPTION=5 ENTER='RETURN 0'.
+:LISTACT OPTION=7 ENTER='RETURN 0'.
+:LISTACT OPTION=8 ENTER='RETURN 0'.
+:LISTACT OPTION=11 ENTER='RETURN 0'.
+:LISTACT OPTION=12 ENTER='RETURN 0'.
+:LISTACT OPTION=14 ENTER='RETURN 0'.
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters or command
+:EPANEL.
+:PANEL NAME=WRKLNK3 KEYL=WRKKEYS HELP=WRKLNKH ENTER='RETURN 0' TOPSEP=SPACE.Work with Object Links
+:DATA DEPTH=6.
+:DATACOL WIDTH=78.
+:DATAC.Directory  . . . . :   &DIR.
+:DATAC.
+:DATAC.Type options, press Enter.
+:DATAGRP GRPSEP=NONE.
+:DATAC.12=Work with links   14=Change attributes
+:EDATAGRP.
+:DATAC.
+:DATAC.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LNKS ACTLEN=4 SCROLL=YES.
+:LISTACT OPTION=12 ENTER='RETURN 0'.
+:LISTACT OPTION=14 ENTER='RETURN 0'.
+:LISTACT OPTION=2 ENTER='RETURN 0'.
+:LISTACT OPTION=3 ENTER='RETURN 0'.
+:LISTACT OPTION=4 ENTER='RETURN 0'.
+:LISTACT OPTION=5 ENTER='RETURN 0'.
+:LISTACT OPTION=7 ENTER='RETURN 0'.
+:LISTACT OPTION=8 ENTER='RETURN 0'.
+:LISTACT OPTION=9 ENTER='RETURN 0'.
+:LISTACT OPTION=10 ENTER='RETURN 0'.
+:LISTACT OPTION=11 ENTER='RETURN 0'.
+:LISTACT OPTION=13 ENTER='RETURN 0'.
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters or command
+:EPANEL.
+:PANEL NAME=DSPLNK KEYL=DSPKEYS HELP=DSPLNKH ENTER='RETURN 0' TOPSEP=SPACE BOTSEP=NONE.Display Object Links
+:DATA DEPTH=2.
+:DATACOL WIDTH=78.
+:DATAC.Directory  . . . . :   &DIR.
+:DATAC.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=LNKS ACTLEN=4 SCROLL=YES.
+:LISTACT OPTION=5 ENTER='RETURN 0'.5=Display
+:LISTACT OPTION=8 ENTER='RETURN 0'.8=Display attributes
+:LISTACT OPTION=9 ENTER='RETURN 0'.9=Display authority
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+:PANEL NAME=DSPATRF KEYL=ATRKEYS HELP=DSPATRH ENTER=EXIT TOPSEP=SPACE.Display Attributes
+:DATA DEPTH=2.
+:DATACOL WIDTH=78.
+:DATAC.Object . . . . . . :   &OBJ.
+:DATAC.
+:EDATA.
+:DATA DEPTH='*'.
+:DATACOL WIDTH=78.
+:DATAC.Type . . . . . . . . . . . . . . . . . :   &OBJTYPE.
+:DATAC.
+:DATAC.Owner  . . . . . . . . . . . . . . . . :   &OWNER.
+:DATAC.System object is on  . . . . . . . . . :   &SYSON.
+:DATAC.Auxiliary storage pool . . . . . . . . :   &ASP.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Object overflowed  . . . . . . . . . :   &OVERFLOW.
+:EDATAGRP.
+:DATAC.
+:DATAC.Coded character set ID . . . . . . . . :   &CCSID.
+:DATAC.Hidden file  . . . . . . . . . . . . . :   &HIDDEN.
+:DATAC.PC system file . . . . . . . . . . . . :   &PCSYSTEM.
+:DATAC.Read only  . . . . . . . . . . . . . . :   &RDONLY.
+:DATAC.
+:DATAC.Need to archive (PC) . . . . . . . . . :   &PCARC.
+:DATAC.Need to archive (System) . . . . . . . :   &SYSARC.
+:DATAC.
+:DATAC.Creation date/time . . . . . . . . . . :   &CRTDT.
+:DATAC.Last access date/time  . . . . . . . . :   &ACCDT.
+:DATAC.Data change date/time  . . . . . . . . :   &CHGDT.
+:DATAC.Attribute change date/time . . . . . . :   &ATRDT.
+:DATAC.
+:DATAC.Size of object data in bytes . . . . . :   &SIZE.
+:DATAC.Allocated size of object . . . . . . . :   &ALLOC.
+:DATAC.File format  . . . . . . . . . . . . . :   &FILEFMT.
+:DATAC.Size of extended attributes  . . . . . :   &EASIZE.
+:DATAC.Storage freed  . . . . . . . . . . . . :   &STGFREE.
+:DATAC.Temporary object . . . . . . . . . . . :   &TEMP.
+:DATAC.Disk storage option  . . . . . . . . . :   &DISKOPT.
+:DATAC.Main storage option  . . . . . . . . . :   &MAINOPT.
+:DATAC.
+:DATAC.Auditing value . . . . . . . . . . . . :   &AUDIT.
+:DATAC.Authority collection value . . . . . . :   &AUTCOL.
+:DATAC.
+:DATAC.Object domain  . . . . . . . . . . . . :   &DOMAIN.
+:DATAC.
+:DATAC.Number of hard links . . . . . . . . . :   &NLINK.
+:DATAC.
+:DATAC.
+:DATAC.Set effective user ID  . . . . . . . . :   &SUID.
+:DATAC.Set effective group ID . . . . . . . . :   &SGID.
+:DATAC.Restricted rename and unlink . . . . . :   &RSTDRNMUNL.
+:DATAC.
+:DATAC.Last used date . . . . . . . . . . . . :   &LASTUSED.
+:DATAC.Days used count  . . . . . . . . . . . :   &DAYSUSED.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Reset date . . . . . . . . . . . . . :   &RESETDT.
+:EDATAGRP.
+:DATAC.
+:DATAC.Object scanning  . . . . . . . . . . . :   &SCAN.
+:DATAC.Allow save . . . . . . . . . . . . . . :   &ALWSAV.
+:DATAC.Allow write during save  . . . . . . . :   &ALWCKPWRT.
+:DATAC.
+:DATAC.Checked out  . . . . . . . . . . . . . :   &CHKOUT.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Checked out by . . . . . . . . . . . :   &CHKOUTU.
+:DATAC.Checked out date/time  . . . . . . . :   &CHKOUTT.
+:EDATAGRP.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:PANEL NAME=DSPATRD KEYL=ATRKEYS HELP=DSPATRH ENTER=EXIT TOPSEP=SPACE.Display Attributes
+:DATA DEPTH=2.
+:DATACOL WIDTH=78.
+:DATAC.Object . . . . . . :   &OBJ.
+:DATAC.
+:EDATA.
+:DATA DEPTH='*'.
+:DATACOL WIDTH=78.
+:DATAC.Type . . . . . . . . . . . . . . . . . :   &OBJTYPE.
+:DATAC.
+:DATAC.Owner  . . . . . . . . . . . . . . . . :   &OWNER.
+:DATAC.System object is on  . . . . . . . . . :   &SYSON.
+:DATAC.Auxiliary storage pool . . . . . . . . :   &ASP.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Object overflowed  . . . . . . . . . :   &OVERFLOW.
+:EDATAGRP.
+:DATAC.
+:DATAC.Coded character set ID . . . . . . . . :   &CCSID.
+:DATAC.Hidden file  . . . . . . . . . . . . . :   &HIDDEN.
+:DATAC.PC system file . . . . . . . . . . . . :   &PCSYSTEM.
+:DATAC.Read only  . . . . . . . . . . . . . . :   &RDONLY.
+:DATAC.
+:DATAC.Need to archive (PC) . . . . . . . . . :   &PCARC.
+:DATAC.Need to archive (System) . . . . . . . :   &SYSARC.
+:DATAC.
+:DATAC.Creation date/time . . . . . . . . . . :   &CRTDT.
+:DATAC.Last access date/time  . . . . . . . . :   &ACCDT.
+:DATAC.Data change date/time  . . . . . . . . :   &CHGDT.
+:DATAC.Attribute change date/time . . . . . . :   &ATRDT.
+:DATAC.
+:DATAC.Size of object data in bytes . . . . . :   &SIZE.
+:DATAC.Allocated size of object . . . . . . . :   &ALLOC.
+:DATAC.Directory format . . . . . . . . . . . :   &DIRFMT.
+:DATAC.Size of extended attributes  . . . . . :   &EASIZE.
+:DATAC.Storage freed  . . . . . . . . . . . . :   &STGFREE.
+:DATAC.Temporary object . . . . . . . . . . . :   &TEMP.
+:DATAC.
+:DATAC.Auditing value . . . . . . . . . . . . :   &AUDIT.
+:DATAC.
+:DATAC.Authority collection value . . . . . . :   &AUTCOL.
+:DATAC.Object domain  . . . . . . . . . . . . :   &DOMAIN.
+:DATAC.
+:DATAC.Number of hard links . . . . . . . . . :   &NLINK.
+:DATAC.
+:DATAC.Create object auditing . . . . . . . . :   &CRTAUD.
+:DATAC.Create object scanning . . . . . . . . :   &CRTSCAN.
+:DATAC.Create run exit program  . . . . . . . :   &CRTRUNEXIT.
+:DATAC.
+:DATAC.Set effective user ID  . . . . . . . . :   &SUID.
+:DATAC.Set effective group ID . . . . . . . . :   &SGID.
+:DATAC.Restricted rename and unlink . . . . . :   &RSTDRNMUNL.
+:DATAC.
+:DATAC.
+:DATAC.
+:DATAC.
+:DATAC.Object scanning  . . . . . . . . . . . :   &SCAN.
+:DATAC.Allow save . . . . . . . . . . . . . . :   &ALWSAV.
+:DATAC.Allow write during save  . . . . . . . :   &ALWCKPWRT.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=WRKLNKH.Work with Object Links - Help
+:P.The objects the path names, with the options that work on them.
+A directory's contents show with option 5; a stream file shows with
+option 5 and edits with option 2. A command typed on the command line
+runs as typed.
+:EHELP.
+:HELP NAME=DSPLNKH.Display Object Links - Help
+:P.The objects the path names. Option 5 shows a directory's contents
+or a stream file's data.
+:EHELP.
+:HELP NAME=DSPATRH.Display Attributes - Help
+:P.What the integrated file system keeps for the object: its type,
+owner, coded character set, PC flags, sizes and times.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 leaves the display, F12 goes back one display, F5 reads the
+directory again, F23 shows the other options.
+:EHELP.
+:EPNLGRP.

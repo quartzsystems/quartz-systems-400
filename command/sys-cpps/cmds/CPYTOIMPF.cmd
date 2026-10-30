@@ -20,8 +20,12 @@
                           RANGE(1 65533) SPCVAL((*FILE 0)) +
                           PROMPT('From CCSID')
              PARM       KWD(STMFCCSID) TYPE(*DEC) LEN(5) DFT(*STMF) +
-                          RANGE(1 65533) SPCVAL((*STMF 0) (*STDASCII -1) +
-                          (*PCASCII -2)) PROMPT('Stream file CCSID')
+                          RANGE(1 65533) SPCVAL((*STMF -1) (*PCASCII -2) +
+                          (*STDASCII -3)) PROMPT('Stream file CCSID')
+             PARM       KWD(STMFCODPAG) TYPE(*DEC) LEN(5) DFT(*STMF) +
+                          RANGE(1 32767) SPCVAL((*STMF -1) (*PCASCII -2) +
+                          (*STDASCII -3)) PMTCTL(*PMTRQS) +
+                          PROMPT('Stream file code page')
              PARM       KWD(RCDDLM) TYPE(*CHAR) LEN(6) RSTD(*YES) +
                           DFT(*EOR) VALUES(*EOR *ALL *CRLF *LF *CR +
                           *LFCR *FIXED) PROMPT('Record delimiter')
@@ -63,7 +67,7 @@
                           DFT(*NO) VALUES(*NO *YES) +
                           PROMPT('Write null values')
              PARM       KWD(STMFAUT) TYPE(*CHAR) LEN(9) RSTD(*YES) +
-                          DFT(*DFT) VALUES(*DFT *INDIR *INDIRRWX *NONE) +
+                          DFT(*DFT) VALUES(*DFT *INDIR *FILE *INDIRFILE) +
                           PROMPT('Stream file authority')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +

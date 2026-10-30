@@ -100,7 +100,9 @@ fn golden_text_stays_in_the_golden_directory() {
                 for l in text.lines() {
                     let t = l.trim();
                     // Screen furniture every system shares is not IBM's text.
-                    if t.len() > 20 && !t.starts_with("F3=") && !t.contains("===>") {
+                    // A column ruler (`....+....1`) is a scale, not text.
+                    let ruler = t.chars().all(|c| c == '.' || c == '+' || c.is_ascii_digit());
+                    if t.len() > 20 && !t.starts_with("F3=") && !t.contains("===>") && !ruler {
                         lines.insert(t.to_string());
                     }
                 }

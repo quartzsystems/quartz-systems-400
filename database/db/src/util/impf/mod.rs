@@ -3,8 +3,10 @@
 // root directory of this project.
 
 //! `CPYTOIMPF` and `CPYFRMIMPF`: records as delimited or fixed-column
-//! UTF-8 text. The stream file is a byte buffer until the IFS exists
-//! (`MIGRATE(phase10)`); `STMFCODPAG` is UTF-8.
+//! UTF-8 text. The storage service writes it to a stream file
+//! (`TOSTMF`) or reads it from one (`FROMSTMF`) through the job's IFS,
+//! converting to and from the file's CCSID (`ifscmd::stmf::impf`); a
+//! name without a `/` is a console `xfer` buffer.
 
 mod csv;
 mod from;

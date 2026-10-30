@@ -72,6 +72,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RTVNETA" => return rtvneta(host, r, out),
         "RTVMSG" => return rtvmsg(host, r, out),
         "RTVCFGSTS" => return rtvcfgsts(host, r, out),
+        "RTVCURDIR" => return rtvcurdir(host, r, out),
         "RCLRSC" => return Ok(rclrsc(job, host)),
         "STRTCPSVR" => return strtcpsvr(host, r),
         "STRTCP" | "ENDTCP" | "ENDTCPABN" | "WRKSRVTBLE" | "WRKPCLTBLE" | "WRKNETTBLE" | "CFGTCP"
@@ -113,6 +114,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "STRSQL" => return crate::devtools::isql::run(host, r),
         // --- SDA (devtools/sda)
         "STRSDA" => return crate::devtools::sda::run(job, host, r, out),
+        // --- EDTF and DSPF (devtools/edtf); DSPF without a display is the service's text
+        "EDTF" | "DSPF" => {
+            if let Some(res) = crate::devtools::edtf::run(job, host, r, out) {
+                return res;
+            }
+        }
         _ => {}
     }
     // A panel's command in a job that shows none: the service's text.
@@ -944,4 +951,28 @@ fn rclrsc(job: &mut Job, host: &Host) -> String {
     } else {
         String::new()
     }
+}
+
+/// `RTVCURDIR RTNDIR(&dir) DIRNAMLEN(&len)`: the job's current
+/// directory, kept by the storage service for the job's connection.
+fn rtvcurdir(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    use ifs::client::IfsClient as _;
+    let c = stg::remote::RemoteIfs::new(host.link.clone());
+    let dir = c.getcwd().map_err(|e| {
+        let m = ifscmd::Msg::errno(e, ".");
+        Fail {
+            msgid: m.id,
+            data: m.data,
+            text: e.text().to_string(),
+        }
+    })?;
+    let len = i128::try_from(dir.len()).unwrap_or(0);
+    let values = [
+        ("RTNDIR", Value::Char(dir)),
+        (
+            "DIRNAMLEN",
+            Value::Num(qdecimal::Decimal::new(len, 0).expect("small")),
+        ),
+    ];
+    returned(r, &values, out)
 }

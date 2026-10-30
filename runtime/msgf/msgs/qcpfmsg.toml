@@ -1551,3 +1551,628 @@ id = "CPF2611"
 sev = 40
 text = "Automatic configuration made no network device for the line."
 help = "Every name the line's TCP/IP device could take is in use. Delete unused devices, or give the line a name whose first five characters are new."
+# The integrated file system: the IFS commands (CPCA08x, CPDA0xx,
+# CPFA0xx). Paths are IBM's *CCHAR *VARY 4, kept here as *CHAR *VARY 4.
+# --- IFS commands (ifs/ifscmd)
+
+[[msg]]
+id = "CPCA083"
+sev = 0
+text = "Directory &1 made."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA084"
+sev = 0
+text = "&1 renamed to &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA085"
+sev = 0
+text = "Directory &1 removed."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA086"
+sev = 0
+text = "&1 moved to &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA087"
+sev = 0
+text = "&1 copied to &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA088"
+sev = 0
+text = "Link &2 now names &1."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA089"
+sev = 0
+text = "Link &1 removed."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA08A"
+sev = 0
+text = "&1 is checked in."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA08B"
+sev = 0
+text = "The current directory is now &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA08F"
+sev = 0
+text = "&1 is checked out to you."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA1B0"
+sev = 0
+text = "&1 is mounted over &2."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA1B1"
+sev = 0
+text = "&1 is no longer mounted."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA1C0"
+sev = 0
+text = "User-defined file system &1 made."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA1C1"
+sev = 0
+text = "User-defined file system &1 deleted."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA089"
+sev = 30
+text = "&1 may not hold a pattern here."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA08C"
+sev = 30
+text = "Only the last name of &1 may hold a pattern."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA091"
+sev = 30
+text = "&1 is not a user profile name: patterns are not taken."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA093"
+sev = 30
+text = "Nothing matches &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA094"
+sev = 30
+text = "A path name is needed."
+
+[[msg]]
+id = "CPFA09C"
+sev = 40
+text = "Not enough authority for &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA09E"
+sev = 40
+text = "&1 is being used or is checked out."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA09F"
+sev = 40
+text = "&1 is damaged."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0A0"
+sev = 40
+text = "&1 exists already."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0A1"
+sev = 40
+text = "The file system had an input or output error."
+
+[[msg]]
+id = "CPFA0A2"
+sev = 40
+text = "A value given to the file system is not valid."
+
+[[msg]]
+id = "CPFA0A3"
+sev = 40
+text = "Too many symbolic links were followed resolving &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0A4"
+sev = 40
+text = "The job has as many files open as it may."
+
+[[msg]]
+id = "CPFA0A5"
+sev = 40
+text = "The system has as many files open as it may."
+
+[[msg]]
+id = "CPFA0A6"
+sev = 40
+text = "The object has as many links as it may."
+
+[[msg]]
+id = "CPFA0A7"
+sev = 40
+text = "&1 or one of its names is too long."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0A9"
+sev = 40
+text = "&1 was not found."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0AA"
+sev = 40
+text = "The file system has no room left."
+
+[[msg]]
+id = "CPFA0AB"
+sev = 40
+text = "The operation did not complete for &1; the diagnostics say why."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0AC"
+sev = 40
+text = "Directory &1 is not empty."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0AD"
+sev = 40
+text = "The file system of &1 does not do this."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0AF"
+sev = 30
+text = "The object was made, but not every attribute asked for could be set."
+
+[[msg]]
+id = "CPFA0B0"
+sev = 40
+text = "This cannot go from one file system to another."
+
+[[msg]]
+id = "CPFA0B1"
+sev = 40
+text = "The object or its file system is read-only."
+
+[[msg]]
+id = "CPFA0B2"
+sev = 40
+text = "No object matches &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0B3"
+sev = 30
+text = "Give TODIR or TOOBJ, not both."
+
+[[msg]]
+id = "CPFA0B4"
+sev = 30
+text = "The new name &1 may not start with a slash."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0B5"
+sev = 30
+text = "The new name &1 is a name, not a path."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0B6"
+sev = 30
+text = "TOOBJ cannot be used when OBJ &1 names several objects."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0B8"
+sev = 40
+text = "&3 objects moved, &4 not moved."
+vars = ["*BIN 2", "*BIN 2", "*BIN 8", "*BIN 8"]
+
+[[msg]]
+id = "CPFA0B9"
+sev = 30
+text = "*INDIR stands alone in DTAAUT and OBJAUT."
+
+[[msg]]
+id = "CPFA0BB"
+sev = 40
+text = "&1 objects copied, &2 not copied."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA0BD"
+sev = 40
+text = "&1 links removed, &2 not removed."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA0BE"
+sev = 40
+text = "&3 objects checked in, &4 not checked in."
+vars = ["*BIN 2", "*BIN 2", "*BIN 8", "*BIN 8"]
+
+[[msg]]
+id = "CPFA0BF"
+sev = 40
+text = "&3 objects checked out, &4 not checked out."
+vars = ["*BIN 2", "*BIN 2", "*BIN 8", "*BIN 8"]
+
+[[msg]]
+id = "CPFA0C1"
+sev = 30
+text = "CCSID &1 cannot be used here."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA0C3"
+sev = 40
+text = "*SAME stands alone in OBJAUT."
+
+[[msg]]
+id = "CPFA0CB"
+sev = 40
+text = "&1 is not an auditing value."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPFA0D0"
+sev = 20
+text = "Data could not be converted between CCSIDs."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA0D4"
+sev = 40
+text = "The file system answered errno &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPFA0DA"
+sev = 40
+text = "&1 is a directory."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0DB"
+sev = 40
+text = "&1 does not name an object in /QSYS.LIB."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0DD"
+sev = 40
+text = "The operation was interrupted."
+
+[[msg]]
+id = "CPFA0E0"
+sev = 40
+text = "No object has the file identifier of &1."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0E8"
+sev = 40
+text = "&1 did not pass its scan."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA0ED"
+sev = 40
+text = "Option &1 is not available here."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPFA0F1"
+sev = 40
+text = "&1 of &2 links looked at; &3 of &4 problems put right."
+vars = ["*BIN 8", "*BIN 8", "*BIN 8", "*BIN 8"]
+
+[[msg]]
+id = "CPDA03C"
+sev = 50
+text = "Attribute number &1 cannot be changed."
+vars = ["*BIN 2"]
+
+[[msg]]
+id = "CPDA03D"
+sev = 50
+text = "That value does not go with that attribute."
+
+[[msg]]
+id = "CPDA091"
+sev = 10
+text = "A value given is not one this command takes."
+
+[[msg]]
+id = "CPDA0B8"
+sev = 30
+text = "Give SUBTREE or RMVLNK, not both."
+
+[[msg]]
+id = "CPDA0C1"
+sev = 30
+text = "TEXT is used with ATR(*TEXT) only; leave it *BLANK."
+
+[[msg]]
+id = "CPDA0C2"
+sev = 30
+text = "ATR(*TEXT) takes VALUE(*NONE); the text goes in TEXT."
+
+# --- IFS: stream file copies (CPYTOSTMF, CPYFRMSTMF, the IMPF stream files)
+
+[[msg]]
+id = "CPCA081"
+sev = 0
+text = "Stream file &1 was copied to member &2: &3 records."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "CPCA082"
+sev = 0
+text = "Member &1 was copied to stream file &2: &3 records."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA095"
+sev = 40
+text = "Stream file &1 was not copied to &2."
+help = "A message before this one in the job log says what stopped the copy. The member was not changed."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA096"
+sev = 20
+text = "Stream file &1 was copied to &2, but &3 lines were cut to the record length of &4."
+help = "The member holds every line; the ones longer than a record lost their ends. Copy into a file with longer records to keep them whole."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPFA097"
+sev = 40
+text = "Member &1 was not copied to &2."
+help = "A message before this one in the job log says what stopped the copy. The stream file was not changed."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA08A"
+sev = 30
+text = "Tabs cannot be expanded when lines have no line ends."
+help = "ENDLINFMT(*FIXED) reads the stream as fixed-length records. Give TABEXPN(*NO) with it."
+
+[[msg]]
+id = "CPDA082"
+sev = 40
+text = "&1 does not name a database member this command can copy."
+help = "Name a member as /QSYS.LIB/LIB.LIB/FILE.FILE/MEMBER.MBR."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPDA086"
+sev = 30
+text = "CVTDTA(*TBL) needs a conversion table in TBL."
+
+[[msg]]
+id = "CPDA089"
+sev = 40
+text = "Member &2 exists and MBROPT(*NONE) does not replace it."
+help = "Give MBROPT(*ADD) to add the lines after its records or MBROPT(*REPLACE) to replace them."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPDA08A"
+sev = 30
+text = "Stream file &3 is tagged with CCSID &2, not the CCSID &1 asked for."
+help = "Data added to a stream file must be in its CCSID. Leave STMFCCSID at *STMF, or replace the file."
+vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPDA08B"
+sev = 30
+text = "DBFCCSID &1 differs from the file's CCSID &2."
+help = "DBFCCSID names the data's CCSID only for a file tagged 65535."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPDA08C"
+sev = 40
+text = "The file of &1 is tagged 65535: give DBFCCSID to convert its data."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPDA090"
+sev = 40
+text = "Stream file &2 exists and STMFOPT(*NONE) does not replace it."
+help = "Give STMFOPT(*ADD) to add the records after its data or STMFOPT(*REPLACE) to replace it."
+vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPDA097"
+sev = 30
+text = "Data cannot be converted from CCSID &1 to CCSID &2."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPDA098"
+sev = 30
+text = "TBL is used only with CVTDTA(*TBL)."
+
+[[msg]]
+id = "CPDA09B"
+sev = 30
+text = "The data could not be converted: this system keeps no conversion tables."
+help = "Use CVTDTA(*AUTO) with the CCSIDs of the data instead."
+
+[[msg]]
+id = "CPDA0B9"
+sev = 30
+text = "Give STMFCCSID or STMFCODPAG, not both."
+
+# --- IFS: EDTF and DSPF
+
+[[msg]]
+id = "CPDB603"
+sev = 10
+text = "Type a record number or a column in the field first."
+
+[[msg]]
+id = "CPDB605"
+sev = 10
+text = "The position typed is not a number."
+
+[[msg]]
+id = "CPDB607"
+sev = 20
+text = "CCSID &1 cannot be converted here."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "CPDB608"
+sev = 20
+text = "That line command is not one the editor knows."
+
+[[msg]]
+id = "CPDB612"
+sev = 10
+text = "The file mixes line ends; the first one found is used on save."
+
+[[msg]]
+id = "CPDB613"
+sev = 20
+text = "&1 changes were not saved."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPDB617"
+sev = 20
+text = "There is no change to repeat: use CHANGE on the control line first."
+
+[[msg]]
+id = "CPDB624"
+sev = 30
+text = "That line end is not one of *CRLF, *LF, *CR, *LFCR, *NL."
+
+[[msg]]
+id = "CPDB627"
+sev = 30
+text = "Name a stream file or a database file, not both."
+
+[[msg]]
+id = "CPDB628"
+sev = 30
+text = "Name a stream file or a database file."
+
+[[msg]]
+id = "CPDB629"
+sev = 30
+text = "A member goes with a database file, not with a stream file."
+
+[[msg]]
+id = "CPFB602"
+sev = 30
+text = "File &1 could not be opened."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPFB610"
+sev = 30
+text = "The control line command is not one the editor knows."
+
+[[msg]]
+id = "CPFB612"
+sev = 30
+text = "Give the text to find (and the new text, to change)."
+
+[[msg]]
+id = "CPFB615"
+sev = 30
+text = "Mark where the lines go with A (after) or B (before)."
+
+[[msg]]
+id = "CPFB618"
+sev = 40
+text = "Text in CCSID &1 cannot be shown in the job's CCSID."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "CPFB619"
+sev = 40
+text = "The file holds no data."
+
+[[msg]]
+id = "CPFB621"
+sev = 40
+text = "The editor and the browser need a display: run the command from an interactive job."
+
+[[msg]]
+id = "CPIB605"
+sev = 0
+text = "The file was changed. Press F12 again to leave without saving, F3 to save and leave."
+
+[[msg]]
+id = "CPIB606"
+sev = 10
+text = "The browser does not change the file."
+
+[[msg]]
+id = "CPIB607"
+sev = 0
+text = "&1 occurrences of &2 found."
+vars = ["*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPIB608"
+sev = 0
+text = "&1 occurrences changed."
+vars = ["*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPIB611"
+sev = 0
+text = "The file will be tagged with CCSID &1 when it is saved."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "CPIB612"
+sev = 0
+text = "The file's CCSID was changed from &1 to &2."
+vars = ["*CHAR 5", "*CHAR 5"]

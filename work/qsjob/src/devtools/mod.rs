@@ -7,6 +7,7 @@
 
 pub mod dbg;
 pub mod dfu;
+pub mod edtf;
 pub mod isql;
 pub mod pdm;
 pub mod rlu;

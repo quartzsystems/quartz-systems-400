@@ -14,6 +14,7 @@
 // database's file kinds take a DDM file.
 
 use mi::Job;
+use stg::Client;
 
 use cmd::{Resolved, Value};
 use ddm::objects::panel;
@@ -38,7 +39,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
         "ADDRDBDIRE" => addrdbdire(job, host, r),
         "CHGRDBDIRE" => chgrdbdire(job, host, r),
         "RMVRDBDIRE" => rmvrdbdire(job, host, r),
-        "WRKRDBDIRE" => wrkrdbdire(host, r),
+        "WRKRDBDIRE" => Ok(wrkrdbdire(host, r)),
         "CRTDDMF" => crtddmf(job, host, r),
         "CHGDDMF" => chgddmf(job, host, r),
         "CHGDDMTCPA" => chgddmtcpa(job, host, r),
@@ -206,7 +207,7 @@ fn rmvrdbdire(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
     Ok(format!("{n} relational database directory entries removed.\n"))
 }
 
-fn wrkrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
+fn wrkrdbdire(host: &Host, r: &Resolved) -> String {
     let d = directory(host);
     let which = plain(r, "RDB").unwrap_or_else(|| "*ALL".into());
     let rows = panel::wrkrdbdire(&d.select(&which), false);
@@ -215,7 +216,7 @@ fn wrkrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
         out.push_str(row.trim_end());
         out.push('\n');
     }
-    Ok(out)
+    out
 }
 
 fn file_name(r: &Resolved, dft_lib: &str) -> (String, String) {
@@ -253,10 +254,10 @@ fn apply_ddmf(f: &mut DdmFile, r: &Resolved) {
     }
     set(&mut f.rdb, plain(r, "RDB"));
     set(&mut f.text, plain(r, "TEXT"));
-    if let Some(p) = plain(r, "PORT").and_then(|p| p.parse::<i64>().ok()) {
-        if p > 0 {
-            f.port = u16::try_from(p).unwrap_or(446);
-        }
+    if let Some(p) = plain(r, "PORT").and_then(|p| p.parse::<i64>().ok())
+        && p > 0
+    {
+        f.port = u16::try_from(p).unwrap_or(446);
     }
     set(&mut f.dev, elem(r, "DEV", 0));
     set(&mut f.lcllocname, plain(r, "LCLLOCNAME"));
