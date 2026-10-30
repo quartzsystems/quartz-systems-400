@@ -631,3 +631,51 @@ points); each item below waits for an oracle program or panel.
     then `STRTCPSVR *DDM` answers `TCP1A04`. `CHGDDMTCPA AUTOSTART` is in
     `QUSRSYS/QRWDDMTCPA`, not the server table, so `STRTCP` does not
     consult it yet.
+## SSH server (sshd, 2026-10-30)
+
+SSH is not reachable from this PC on either oracle, so nothing here was
+settled by a probe; pub400's configuration and paths came from the
+2026-10-24 capture (`tools/conformance/oracle/net/pub400/`).
+
+1. **Device name for the sign-on.** Password sign-on goes through
+   `sec::signon::sign_on` with device `QSSHD`, so the `PW` audit entry
+   names it and `QMAXSGNACN` 1 or 3 would try to vary off a device that
+   does not exist (the profile part of 2 and 3 applies). IBM's PASE
+   sshd authenticates through the PASE password check; what its `PW`
+   entries show in `DEVN`, and whether `QMAXSIGN` counts SSH attempts at
+   all on 7.5, needs a `DSPAUDJRNE`/`QSYS2.DISPLAY_JOURNAL` read on a
+   system where SSH sign-on can be tried.
+2. **`QLMTDEVSSN` and `QLMTSECOFR`.** The service's `sign_on` counts the
+   user's interactive jobs for `QLMTDEVSSN` and checks `QLMTSECOFR`
+   against a device description. Neither should apply to SSH (IBM's
+   sshd ignores both); the link's sign-on needs a "not a display" form
+   when it is wired.
+3. **Expired passwords.** Refused, logged; OpenSSH's
+   `SSH_MSG_USERAUTH_PASSWD_CHANGEREQ` dialog is not offered. On IBM i
+   an expired password over SSH is also refused; the message the
+   client shows is unknown.
+4. **User name case.** Names are folded to upper case before the
+   profile lookup and the `AllowUsers`/`DenyUsers` match (patterns are
+   compared without case). IBM's sshd matches the patterns against the
+   name as typed; a pattern `qstest` therefore matches `QSTEST` here
+   and may not there.
+5. **Host key file format.** New keys are written as PKCS#8 PEM, not
+   OpenSSH's `openssh-key-v1`. Existing OpenSSH-format Ed25519 and
+   ECDSA keys are read; OpenSSH-format RSA host keys from an IBM i
+   system are not (the CRT parameters would have to be derived). Write
+   `openssh-key-v1` instead if a tool on the system needs it.
+6. **Session job.** pub400 shows sshd as a `QP0ZSPWT` prestart job
+   (`QUSER`, `QUSRWRK`, port 2222). The jobs a session runs in (name,
+   user, subsystem) were not seen; `WRKACTJOB` during an SSH session on
+   pub400 would show them.
+7. **`/QSYS.LIB` members over SFTP.** Read and written as records back
+   to back, while `stat` reports IBM's size with two line-end bytes per
+   source record. What IBM's sftp-server returns for a member (it runs
+   in PASE over the IFS) is not known; clients that trust the size
+   (resume, progress) see a short file.
+8. **Ciphers.** Only AES-GCM is offered (graviola has no raw ChaCha20 or
+   Poly1305 for `chacha20-poly1305@openssh.com`). Clients without
+   AES-GCM (PuTTY before 0.76) cannot connect.
+9. **Forwarding half-close.** A forwarded connection's channel closes
+   when the far end closes its side; data the client still sends after
+   that is dropped.

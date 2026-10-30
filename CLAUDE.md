@@ -269,12 +269,22 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 server table's bag; listen.rs the accept loop; src/http/ the admin page. The
                 job side is work/qsjob/src/command/tcpsvr.rs and the roles work/qsjob/src/
                 work/telnet.rs (QTVTELNET) and httpadm.rs (ADMIN)
+  sshd/         the SSH server (docs/SSHD.md): src/wire/ SSH types, base64, PEM, DER;
+                src/transport/ ident, KEXINIT, key exchange (ML-KEM hybrid, X25519,
+                P-256), AES-GCM packets; src/keys/ public and private keys,
+                authorized_keys, host keys; src/config/ sshd_config and the IBM i paths;
+                src/auth/ Accounts, access rules, ssh-userauth; src/conn/ channels,
+                windows, forwarding; src/session/ SessionHost, QshHost, the line
+                discipline, FileTransfer; src/sftp/ v3 over IfsClient; src/scp/ legacy
+                scp; server.rs Server (start, serve), daemon.rs Daemon; src/client/ a
+                client for tests; tests/openssh.rs the real clients (ignored)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
+              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SSHD.md,
               images/
 ```
 
@@ -323,6 +333,8 @@ cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFR
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
+cargo test -p sshd                        # the SSH server end to end in memory
+cargo test -p sshd --test openssh -- --ignored   # real ssh/sftp/scp against the daemon
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
 ```
 

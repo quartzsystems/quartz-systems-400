@@ -2711,6 +2711,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "sshd"
+version = "0.1.0"
+dependencies = [
+ "base64ct",
+ "blockdev",
+ "ccsid",
+ "graviola",
+ "ifs",
+ "qsh",
+ "qsname",
+ "release",
+ "sec",
+ "sockets",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "sst"
 version = "0.1.0"
 dependencies = [

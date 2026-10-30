@@ -81,6 +81,7 @@ members = [
     "net/sockets",
     "net/regfac",
     "net/cmncfg",
+    "net/sshd",
 
     "net/tcpcfg",
 
