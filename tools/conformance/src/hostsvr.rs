@@ -190,6 +190,9 @@ fn whole_suite(suite: &Suite, java: &str, cp: &str) -> String {
 impl Suite {
     /// Step 63.
     pub(crate) fn host_servers(&self, s: &mut Session) -> Result<String, String> {
+        // Step 62's ENDTCP ended them and STRTCP does not (AUTOSTART *NO):
+        // as on IBM i, STRHOSTSVR brings back the ones not running.
+        s.command("STRHOSTSVR SERVER(*ALL)", CMD)?;
         let until = Instant::now() + Duration::from_secs(90);
         let jobs = loop {
             let out = s.command("WRKACTJOB", CMD)?;
