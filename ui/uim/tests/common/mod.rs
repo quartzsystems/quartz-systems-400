@@ -30,7 +30,12 @@ pub fn golden_dir() -> PathBuf {
 
 /// A golden's character rows, line ends dropped.
 pub fn golden_rows(name: &str) -> Vec<String> {
-    let path = golden_dir().join(format!("{name}.txt"));
+    golden_rows_in(&golden_dir(), name)
+}
+
+/// A golden's character rows from `dir`.
+pub fn golden_rows_in(dir: &Path, name: &str) -> Vec<String> {
+    let path = dir.join(format!("{name}.txt"));
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     text.replace("\r\n", "\n")
         .lines()
@@ -88,7 +93,12 @@ fn masked(golden: &str, ours: &str) -> String {
 
 /// The screen's character grid against golden `name`, row by row.
 pub fn compare(golden: &str, screen: &Screen) {
-    let want = golden_rows(golden);
+    compare_in(&golden_dir(), golden, screen);
+}
+
+/// [`compare`] against a golden of `dir`.
+pub fn compare_in(dir: &Path, golden: &str, screen: &Screen) {
+    let want = golden_rows_in(dir, golden);
     let got = screen.text_rows();
     let mut diff = String::new();
     for (i, w) in want.iter().enumerate() {

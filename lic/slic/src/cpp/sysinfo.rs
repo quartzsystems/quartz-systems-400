@@ -4,7 +4,8 @@
 
 //! System information commands: `DSPSFWRSC`, `DSPPTF` from the release
 //! crate; `DSPNETA`, `CHGNETA` on the network attributes; `DSPDEVD`,
-//! `CHGDEVD`, `VRYCFG`, `WRKCFGSTS` on the `*DEVD` objects.
+//! `CHGDEVD` on the `*DEVD` objects (`VRYCFG` and `WRKCFGSTS` are
+//! `cmncmd`'s).
 
 use std::fmt::Write as _;
 
@@ -30,8 +31,6 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHGDEVD" => chgdevd(system, parms),
         "CRTDEVDSP" => crtdevdsp(system, parms),
         "DLTDEVD" => dltdevd(system, parms),
-        "VRYCFG" => vrycfg(system, parms),
-        "WRKCFGSTS" => wrkcfgsts(system, parms),
         _ => return None,
     };
     Some(match r {
@@ -337,106 +336,6 @@ fn dltdevd(system: &mut System, parms: &Parms) -> Result<String, String> {
             return Err(format!("CPF2702 device description {want} not found"));
         }
         Ok(format!("{deleted} device description(s) deleted.\n"))
-    })
-}
-
-/// `VRYCFG CFGOBJ(name) CFGTYPE(*DEV) STATUS(*ON|*OFF)`.
-fn vrycfg(system: &mut System, parms: &Parms) -> Result<String, String> {
-    let ty = parms.name("CFGTYPE");
-    if ty != "*DEV" {
-        return Err(format!(
-            "CPD0084 CFGTYPE({ty}): only *DEV objects exist here"
-        ));
-    }
-    let on = match parms.name("STATUS").as_str() {
-        "*ON" => true,
-        "*OFF" => false,
-        s => return Err(format!("CPD0084 STATUS({s}) is not *ON or *OFF")),
-    };
-    let names: Vec<String> = parms
-        .list("CFGOBJ")
-        .iter()
-        .map(|v| v.source().to_ascii_uppercase())
-        .collect();
-    in_store(system, |txn, qsys, _| {
-        for name in &names {
-            let (id, mut d) = device(txn, qsys, name)?;
-            d.online = on;
-            d.status = if on {
-                wm::obj::devd::DevStatus::VariedOn
-            } else {
-                wm::obj::devd::DevStatus::VariedOff
-            };
-            wm::obj::write(txn, id, &d.encode()).map_err(|e| e.to_string())?;
-        }
-        Ok(format!(
-            "{} device(s) varied {}.\n",
-            names.len(),
-            if on { "on" } else { "off" }
-        ))
-    })
-}
-
-/// `WRKCFGSTS CFGTYPE(*DEV|*CTL)`: every device (or controller)
-/// description and its status.
-fn wrkcfgsts(system: &mut System, parms: &Parms) -> Result<String, String> {
-    let ty = parms.name("CFGTYPE");
-    if !matches!(ty.as_str(), "*DEV" | "*CTL" | "") {
-        return Err(format!(
-            "CPD0084 CFGTYPE({ty}): only *DEV and *CTL objects exist here"
-        ));
-    }
-    let want = parms.name("CFGD");
-    if ty == "*CTL" {
-        return in_store(system, |txn, qsys, _| {
-            let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
-            let mut out = String::from("Description  Type   Status\n");
-            for (key, id) in lib.list(txn, Some(0x001C)).map_err(|e| e.to_string())? {
-                let n = key.name.to_string();
-                if !want.is_empty() && want != "*ALL" && want != n && !matches_generic(&want, &n) {
-                    continue;
-                }
-                let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
-                let c = wm::obj::ctld::Ctld::decode(&b).map_err(|e| e.to_string())?;
-                let _ = writeln!(
-                    out,
-                    "{n:<11}  {:<5}  {}",
-                    c.ctltype,
-                    if c.online { "ACTIVE" } else { "VARIED OFF" }
-                );
-            }
-            Ok(out)
-        });
-    }
-    in_store(system, |txn, qsys, _| {
-        let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
-        let mut out = String::from("Description  Class  Type   Model  Status\n");
-        for (key, id) in lib
-            .list(txn, Some(types::DEVD))
-            .map_err(|e| e.to_string())?
-        {
-            let n = key.name.to_string();
-            if !want.is_empty() && want != "*ALL" && want != n && !matches_generic(&want, &n) {
-                continue;
-            }
-            let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
-            let d = Devd::decode(&b).map_err(|e| e.to_string())?;
-            let _ = writeln!(
-                out,
-                "{n:<11}  {:<5}  {:<5}  {:<5}  {}",
-                d.devcls,
-                d.devtype,
-                d.model,
-                if d.is_display() {
-                    d.status.text()
-                } else if d.online {
-                    "VARIED ON"
-                } else {
-                    "VARIED OFF"
-                }
-            );
-        }
-        Ok(out)
     })
 }
 

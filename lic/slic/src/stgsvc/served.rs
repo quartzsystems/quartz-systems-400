@@ -1733,6 +1733,16 @@ impl Service for Served<'_> {
             privileges,
         )
     }
+
+    // --- communications objects (1180-1189)
+
+    fn cmn_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
+        super::cmn::panel(self.system, &what, &args)
+    }
+
+    fn cfg_status(&mut self, name: String, ty: String) -> Option<(u16, String)> {
+        super::cmn::cfg_status(self.system, &name, &ty)
+    }
 }
 
 /// The store reads behind the message and object panels.

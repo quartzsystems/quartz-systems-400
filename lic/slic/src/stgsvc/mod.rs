@@ -11,6 +11,7 @@
 //! (open files, a commit cycle, record and object locks) is released
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
+pub(crate) mod cmn;
 mod dbg;
 pub(crate) mod devices;
 pub(crate) mod exec;
@@ -213,6 +214,7 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
         ..JobInfo::default()
     };
     ipl_message(system);
+    cmn::start(system);
     let ctx = match served::begin_job(system, scpf) {
         Ok(c) => Some(c),
         Err(e) => {
@@ -229,6 +231,7 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
         };
         let (accept, ready) = wait_ready(listener, &conns, wait);
         storage::tick(system);
+        cmn::tick(system);
         if accept {
             match listener.accept() {
                 Ok((s, _)) => conns.push(Conn::new(Chan::new(s), None)),

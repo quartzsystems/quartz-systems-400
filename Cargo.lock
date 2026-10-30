@@ -368,6 +368,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmncfg"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "msgf",
+ "qsname",
+ "thiserror",
+ "wm",
+]
+
+[[package]]
 name = "cmov"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1893,6 +1904,7 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "cmd",
+ "cmncfg",
  "dbg",
  "dds",
  "dfu",
@@ -2534,6 +2546,7 @@ dependencies = [
  "ccsid",
  "cl",
  "cmd",
+ "cmncfg",
  "console",
  "db",
  "dds",
@@ -2548,6 +2561,7 @@ dependencies = [
  "menus",
  "mi",
  "msgf",
+ "netlink",
  "print",
  "qdecimal",
  "qir",

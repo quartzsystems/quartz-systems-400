@@ -498,14 +498,30 @@ fn hardware(system: &mut System, ty: &str) -> Sys2Data {
         system.hw = hwrsrc::Table::coldplug();
     }
     let (want, word) = kinds(ty);
-    let rows = system
+    let mut picked: Vec<&hwrsrc::Resource> = system
         .hw
         .resources
         .iter()
         .filter(|r| want.contains(&r.kind))
-        .map(|r| {
+        .collect();
+    if ty == "*CMN" {
+        // A bridge shows only above the adapters and ports under it.
+        let leaves: Vec<String> = picked
+            .iter()
+            .filter(|r| r.kind != hwrsrc::Kind::Bridge)
+            .map(|r| r.devpath.clone())
+            .collect();
+        picked.retain(|r| {
+            r.kind != hwrsrc::Kind::Bridge || leaves.iter().any(|l| under(l, &r.devpath))
+        });
+    }
+    let paths: Vec<&str> = picked.iter().map(|r| r.devpath.as_str()).collect();
+    let rows = tree_order(&paths)
+        .into_iter()
+        .map(|(i, depth)| (picked[i], depth))
+        .map(|(r, depth)| {
             vars(&[
-                ("RSCNAME", r.name.clone()),
+                ("RSCNAME", format!("{}{}", "  ".repeat(depth), r.name)),
                 (
                     "RSCTYPE",
                     r.type_model
@@ -527,6 +543,44 @@ fn hardware(system: &mut System, ty: &str) -> Sys2Data {
         vars(&[("RSCKIND", word.to_string())]),
         vec![("RSCS".into(), rows)],
     )
+}
+
+/// Whether `parent` is an ancestor of `child` in sysfs.
+fn under(child: &str, parent: &str) -> bool {
+    !parent.is_empty()
+        && child.len() > parent.len()
+        && child.starts_with(parent)
+        && child.as_bytes()[parent.len()] == b'/'
+}
+
+/// Resources as `WRKHDWRSC` lists them: each after the nearest listed
+/// resource above it in sysfs, indented a level under it (pub400's
+/// `CMB09`, `  LIN03`, `    CMN01`); `(index, depth)`.
+fn tree_order(paths: &[&str]) -> Vec<(usize, usize)> {
+    fn walk(i: usize, depth: usize, kids: &[Vec<usize>], out: &mut Vec<(usize, usize)>) {
+        out.push((i, depth));
+        for &k in &kids[i] {
+            walk(k, depth + 1, kids, out);
+        }
+    }
+    let parent = |i: usize| {
+        (0..paths.len())
+            .filter(|&j| j != i && under(paths[i], paths[j]))
+            .max_by_key(|&j| paths[j].len())
+    };
+    let mut kids = vec![Vec::new(); paths.len()];
+    let mut roots = Vec::new();
+    for i in 0..paths.len() {
+        match parent(i) {
+            Some(p) => kids[p].push(i),
+            None => roots.push(i),
+        }
+    }
+    let mut out = Vec::new();
+    for r in roots {
+        walk(r, 0, &kids, &mut out);
+    }
+    out
 }
 
 /// ` X` where `bits` has `mask`.
@@ -626,4 +680,27 @@ fn user_objects(system: &mut System, user: &str, ty: &str) -> Result<Sys2Data, S
             ],
         ))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tree_order;
+
+    #[test]
+    fn resources_nest_by_sysfs_path() {
+        // A bridge, its adapter and the adapter's port, a second
+        // adapter's port listed before its adapter, a serial port.
+        let paths = [
+            "devices/pci0000:00/0000:00:02.0",
+            "devices/pci0000:00/0000:00:02.0/0000:01:00.0",
+            "devices/pci0000:00/0000:00:02.0/0000:01:00.0/net/eth0",
+            "devices/pci0000:00/0000:00:03.0/virtio1/net/eth1",
+            "devices/pci0000:00/0000:00:03.0",
+            "devices/platform/serial8250/tty/ttyS0",
+        ];
+        assert_eq!(
+            tree_order(&paths),
+            [(0, 0), (1, 1), (2, 2), (4, 0), (3, 1), (5, 0)]
+        );
+    }
 }

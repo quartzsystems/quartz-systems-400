@@ -589,6 +589,16 @@ ipc::rpc! {
     /// One IFS operation for the job (`crate::ifs`): descriptors,
     /// directory streams and locks are the connection's and end with it.
     440 => fn ifs / IfsReq (op: crate::ifs::IfsOp) -> crate::ifs::IfsReply;
+
+    // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
+    /// A communications display's data: `LIND` (`WRKLIND`; args the
+    /// name or generic name), `DSPLIND` (args the line), `CFGSTS`
+    /// (`WRKCFGSTS`; args type, description, range, status filter).
+    1180 => fn cmn_panel / CmnPanel (what: String, args: Vec<String>) -> Result<Sys2Data, String>;
+    /// A line's, controller's or device's status for `RTVCFGSTS`
+    /// (`ty` `*LIN`, `*CTL`, `*DEV`): its code and text, `None` when
+    /// there is no such object.
+    1181 => fn cfg_status / CfgStatus (name: String, ty: String) -> Option<(u16, String)>;
 }
 
 /// A search index topic: title, root words, panel group (`LIB/NAME`)

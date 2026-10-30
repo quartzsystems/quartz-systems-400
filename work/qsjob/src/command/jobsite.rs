@@ -884,38 +884,35 @@ fn chgtelna(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     Ok("TELNET attributes changed.\n".into())
 }
 
-/// `RTVCFGSTS CFGD(name) CFGTYPE(*DEV)`: varied on (10) or off (0).
+/// `RTVCFGSTS CFGD(name) CFGTYPE(*LIN|*CTL|*DEV)`: the status code
+/// (0 varied off, 30 varied on, 60 active, 80 recovery pending, ...)
+/// and its text, from the storage service.
 fn rtvcfgsts(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let name = text_of(r, "CFGD").to_ascii_uppercase();
     let ty = text_of(r, "CFGTYPE").to_ascii_uppercase();
-    if ty != "*DEV" {
+    if !matches!(ty.as_str(), "*LIN" | "*CTL" | "*DEV") {
         return Err(Fail::new(
             "CPD0084",
-            format!("CFGTYPE({ty}): only *DEV objects exist here"),
+            format!("CFGTYPE({ty}): lines, controllers and devices have a status here"),
         ));
     }
-    let b = host
+    let found = host
         .link
         .borrow_mut()
-        .with(|l| l.wm_object(format!("QSYS/{name}"), "*DEVD".into()));
-    let online = b
-        .ok()
-        .and_then(|b| wm::obj::devd::Devd::decode(&b).ok())
-        .map(|d| d.online);
-    let Some(online) = online else {
+        .with(|l| l.cfg_status(name.clone(), ty.clone()));
+    let Some((code, text)) = found else {
+        let msgid = match ty.as_str() {
+            "*LIN" => cmncfg::msgs::LINE_NOT_FOUND,
+            "*CTL" => cmncfg::msgs::CTL_NOT_FOUND,
+            _ => cmncfg::msgs::DEV_NOT_FOUND,
+        };
         return Err(Fail {
-            msgid: "CPF2702".into(),
+            msgid: msgid.into(),
             data: cmd::error::data(&[(&name, 10)]),
-            text: format!("CPF2702 device description {name} not found."),
+            text: format!("{msgid} {} {name} not found.", ty.trim_start_matches('*').to_ascii_lowercase()),
         });
     };
-    let values = [
-        ("STSCDE", num(if online { 10 } else { 0 })),
-        (
-            "STS",
-            chars(if online { "VARIED ON" } else { "VARIED OFF" }),
-        ),
-    ];
+    let values = [("STSCDE", num(i64::from(code))), ("STS", chars(&text))];
     returned(r, &values, out)
 }
 

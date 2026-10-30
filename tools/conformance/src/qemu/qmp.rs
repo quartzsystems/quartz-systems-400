@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! A minimal QMP client over a Unix socket: capabilities and screendump.
+//! A minimal QMP client over a Unix socket: capabilities, screendump
+//! and the link of a network device.
 
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
@@ -50,6 +51,16 @@ impl Qmp {
             "arguments": {"filename": file.to_string_lossy()}
         }))?;
         Ok("ppm")
+    }
+
+    /// Set a network device's link up or down (`set_link`): the guest
+    /// sees its carrier come and go, as with a pulled cable.
+    pub fn set_link(&mut self, name: &str, up: bool) -> Result<(), String> {
+        self.execute(&json!({
+            "execute": "set_link",
+            "arguments": {"name": name, "up": up}
+        }))
+        .map(|_| ())
     }
 
     /// Send a command and wait for its return value.

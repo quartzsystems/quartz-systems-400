@@ -498,6 +498,7 @@ impl Suite {
         reports.push(self.step(&mut s, "57 RPG embedded SQL", Self::rpg_sql)?);
         reports.push(self.step(&mut s, "58 RPG service program", Self::rpg_service_program)?);
         reports.push(self.step(&mut s, "59 IFS mount", Self::ifs_mount)?);
+        reports.push(self.step(&mut s, "60 communications lines", Self::cmn_lines)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

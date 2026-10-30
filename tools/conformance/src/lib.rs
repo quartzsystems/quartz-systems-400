@@ -12,6 +12,7 @@
 
 pub mod cl;
 pub mod cmdkit;
+mod cmn;
 pub mod db;
 mod dst;
 mod error;

@@ -266,6 +266,33 @@ impl Devd {
         }
     }
 
+    /// The TCP/IP network device automatic configuration makes under
+    /// network controller `ctl` (class `*NET`, type `*TCPIP`).
+    #[must_use]
+    pub fn network(ctl: &str) -> Self {
+        Self {
+            online: false,
+            status: DevStatus::VariedOff,
+            devcls: "*NET".into(),
+            devtype: "*TCPIP".into(),
+            model: String::new(),
+            outq: String::new(),
+            text: "Created by automatic configuration".into(),
+            ctl: ctl.into(),
+            kbdtype: String::new(),
+            msgq: String::new(),
+            virtual_: true,
+            alwbln: false,
+            printer: None,
+        }
+    }
+
+    /// Whether this is a network device (its status is the line's).
+    #[must_use]
+    pub fn is_network(&self) -> bool {
+        self.devcls == "*NET"
+    }
+
     /// The payload.
     #[must_use]
     pub fn encode(&self) -> Vec<u8> {

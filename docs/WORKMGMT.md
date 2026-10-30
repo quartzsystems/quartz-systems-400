@@ -572,18 +572,22 @@ names are two 10-byte fields, name then library; blank is `*NONE`.
 
 The payload of a `*CTLD`. Phase 8 has the virtual workstation
 controller `QSYS/QPACTL01` (`*VWS`), made when the first TN5250E
-session asks for a display; lines and real controllers are
-`MIGRATE(phase10)`.
+session asks for a display. Phase 10 adds the network controllers
+(`*NET`) automatic configuration makes when an Ethernet line is varied
+on (`docs/TCPIP.md`, "Communications objects"); `Line` and `Auto` sat
+in reserved bytes before, so a Phase 8 payload reads as attached to no
+line.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSWMCTLD` in ASCII |
 | 8 | 2 | Version | 1 |
 | 10 | 1 | Online | varied on at IPL |
-| 11 | 1 | Reserved | zero |
-| 12 | 10 | Type | `*VWS` |
+| 11 | 1 | Auto | made by automatic configuration |
+| 12 | 10 | Type | `*VWS`, `*NET` |
 | 22 | 50 | Text | |
-| 72 | 24 | Reserved2 | zero |
+| 72 | 10 | Line | the attached line, blank for none |
+| 82 | 14 | Reserved2 | zero |
 
 ### `OutputQueue` (256 bytes)
 

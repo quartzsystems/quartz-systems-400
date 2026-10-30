@@ -436,3 +436,74 @@ points); each item below waits for an oracle program or panel.
    description message file, library, identifier and text there.
 10. **Preprocessing exit programs** (`QTMFADDP`, `QUSEPAUT`, ...) are
     shown and stored but not called.
+
+## Communications objects
+
+1. **What a lost carrier sends.** QS/400 sends `CPI5917` (automatic
+   recovery started, the line's network controller as `&1`) on a loss
+   within `CMNRCYLMT` and the inquiry `CPA58EE` (line failed, cabling or
+   hardware) past the limit or with no recovery; `CPF5908` when the
+   carrier is back. The identifiers and layouts are pub400's `QCPFMSG`,
+   but which ones IBM really sends for an Ethernet line, and whether the
+   recovery attempts send anything, was not observed: both oracles
+   forbid varying configuration. Settle on a test partition by pulling
+   a cable with `CMNRCYLMT(2 5)` and reading `QSYSOPR`.
+2. **`RCYPND` against `FAILED` during recovery.** A loss within the
+   limit shows `RCYPND` until the carrier returns; past the limit
+   `RCYCNL` at once (the inquiry's reply is not waited for or acted
+   on: `C`, `G` and `R` all leave the line cancelled until a vary off
+   and on); `CMNRCYLMT(0 ...)` shows `FAILED`. IBM may show `FAILED`
+   while second-level recovery runs and `RCYPND` only while the
+   inquiry waits. Settle with the experiment of question 1 and
+   `WRKCFGSTS CFGTYPE(*LIN)` between steps.
+3. **`QCMNRCYLMT` shipped value.** The catalog ships `0 0`, so a line
+   with `CMNRCYLMT(*SYSVAL)` fails outright (`FAILED`). IBM's shipped
+   value may be `2 5`; it was not in the system value capture. Check
+   `DSPSYSVAL QCMNRCYLMT` on pub400.
+4. **`CRTLINETH` parameters the capture omits.** The pub400 definition
+   lists 22 parameters; `EXCHID`, `MAXCTL`, `COSTCNN`, `COSTBYTE`,
+   `SECURITY`, `PRPDLY`, `USRDFN1` to `USRDFN3`, `AUTOCRTCTL`,
+   `AUTODLTCTL`, `LINKSPEED`, `THRESHOLD` and `GENTSTFRM` are defined
+   from IBM's documentation (`DSPLIND` shows `EXCHID`, `MAXCTL`,
+   `THRESHOLD`, `GENTSTFRM`), at assumed positions and as `PMTRQS`. The
+   second page of the F10 prompt was not captured
+   (`prompt-crtlineth-f10-2` is missing), so the prompt's order past
+   `ETHSTD` is not confirmed.
+5. **The escape of a refused `CRTLINETH`.** The capture has no "line
+   description not created" message (the `CPF26xx` range was captured
+   whole); QS/400 escapes with the diagnostic itself (`CPD0084`,
+   `CPD0085`, `CPF2606`). `CHGLINETH` escapes with `CPF261E` after its
+   diagnostic.
+6. **`EXCHID(*SYSGEN)`.** pub400 shows `056D610F`; QS/400 makes `056`
+   and five hexadecimal digits from the system and line names. How IBM
+   derives the last five digits is unknown.
+7. **`DSPLIND` beyond `*BASIC`.** The capture shows `OPTION(*BASIC)`
+   only, ending at `TEXT`; `AUTOCRTCTL`, `AUTODLTCTL` and `CMNRCYLMT`
+   are in the text form only. The aggregate rows (`AGGPCY`, `AGGRSCL`
+   after `RSRCNAME`, panel `DSPLINDA`) and the other `OPTION` values
+   were not captured.
+8. **`WRKLIND` F11 view.** Not captured; QS/400 shows the resource and
+   status in place of the text.
+9. **`WRKCFGSTS` jobs and keys.** pub400 shows `QTCPWRK QSYS 090579`
+   beside the active TCP/IP device; QS/400 has no `QTCPWRK` job yet and
+   leaves the column blank for network devices (displays show their
+   signed-on job). The second key set (F24), `F23=More options` and the
+   `*DEV CFGD(*CMN)` legend's `10=Location path` were not captured; the
+   keys F5, F9, F11, F14 are QS/400's choice and F23 says there is
+   nothing more.
+10. **`RTVCFGSTS` codes.** 50 sign-on display, 80 recovery pending, 90
+    recovery cancelled and 100 failed follow IBM's documentation, not
+    a capture; the Phase 8 code 10 for a varied-on device was wrong and
+    is 30 now.
+11. **Naming when every suffix is taken.** `LINETNET` to `LINETNET99`
+    exhausted is refused with `CPF2609` (`CPF2611` for the device);
+    IBM's behavior was not seen.
+12. **`WRKHDWRSC TYPE(*CMN)` tree.** Rows are indented under the
+    nearest listed resource above them in sysfs (pub400's `CMB09`,
+    `  LIN03`, `    CMN01`); a bridge shows only above an adapter or
+    port. Option 5 ("Work with Configuration Descriptions",
+    `wrkhdwrsc-cmn04-5`) and option 7 (resource detail) are captured
+    but not built.
+13. **VLANs on lines.** No IBM line parameter names a VLAN; the
+    interface file `QATOFIPF` has `TFVLANID`, so the sub-interface is
+    TCP/IP configuration's to make (`stgsvc::cmn::kernel::ensure_vlan`).

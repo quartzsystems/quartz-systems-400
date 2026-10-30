@@ -704,3 +704,204 @@ Opaque to callers.
 | 48 | 16 | `ai_addr` |
 | 64 | 16 | `ai_next` |
 | 80 | 4 | `ai_eflags` |
+
+## Communications objects
+
+`net/cmncfg` holds the pure parts: the `*LIND` payload, the names of a
+line's network controller and device, what a line means to the kernel
+(`link::plan`), the message identifiers and the status machine
+(`status::State`). The storage service owns the objects and the status
+(`lic/slic/src/stgsvc/cmn.rs`); the commands' processing programs are
+`lic/slic/src/cpp/cmncmd.rs`, the job's displays
+`work/qsjob/src/panels/system/config.rs` (`WRKCFGSTS`) and
+`work/qsjob/src/panels/system2/cmn.rs` (`WRKLIND`, `DSPLIND`).
+
+### Line descriptions
+
+`CRTLINETH`, `CHGLINETH`, `DSPLIND`, `WRKLIND` and `DLTLIND` take the
+parameters of the pub400 definitions
+(`tools/conformance/oracle/net/pub400/command-definitions.txt`), in
+their order. The capture leaves out parameters IBM documents for
+`CRTLINETH` (`EXCHID`, `MAXCTL`, `COSTCNN`, `COSTBYTE`, `SECURITY`,
+`PRPDLY`, `USRDFN1` to `USRDFN3`, `AUTOCRTCTL`, `AUTODLTCTL`,
+`LINKSPEED`, `THRESHOLD`, `GENTSTFRM`); they are defined among the
+captured ones, prompted on request (`PMTRQS`). `AGGPCY` and `AGGRSCL`
+show when `RSRCNAME(*AGG)`, `NWS` and `ASSOCPORT` when
+`RSRCNAME(*NWSD)`.
+
+QS/400 acts on `RSRCNAME`, `ONLINE`, `VRYWAIT`, `AGGPCY`, `AGGRSCL`,
+`ADPTADR`, `MAXFRAME`, `CMNRCYLMT` and `MSGQ`; every other parameter is
+validated and stored, and what has no field of its own (`SSAP`,
+`GRPADR`, `SRVOPT`, `NETCTL`, `AUT`) is kept as typed.
+`EXCHID(*SYSGEN)` becomes `056` and five hexadecimal digits from the
+system and line names. `CHGLINETH` refuses (`CPF2633`) to change
+`RSRCNAME`, `ADPTADR`, `MAXFRAME`, `AGGRSCL` or `AGGPCY` while the line
+is varied on; `DLTLIND` refuses a varied-on line (`CPF26AB`) and
+deletes the controller and device automatic configuration made for it.
+
+The payload of a `*LIND` (type `0x001D`, in `QSYS`) is a fixed record,
+then the aggregated resource list (a 2-byte count and 10-byte names)
+and the stored parameters as `KWD=value;` text in CP037 after a 2-byte
+length.
+
+#### `LineDescription` (272 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSCMLIND` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Online | `ONLINE(*YES)` |
+| 11 | 1 | AutoCrtCtl | `AUTOCRTCTL(*YES)` |
+| 12 | 1 | GenTstFrm | `GENTSTFRM(*YES)` |
+| 13 | 1 | Reserved | zero |
+| 14 | 2 | VryWait | seconds, 0 `*NOWAIT` |
+| 16 | 10 | RsrcName | `CMNnn`, `*AGG`, `*NWSD` |
+| 26 | 10 | Bridge | |
+| 36 | 10 | AggStd | `*ETHCHL`, `*LNKAGG` |
+| 46 | 10 | AggPcy | `*DFT`, `*SRCPORT`, `*DESTPORT`, `*SRCDESTP`, `*RNDRBN` |
+| 56 | 10 | NwsName | |
+| 66 | 2 | NwsPort | |
+| 68 | 10 | AssocPort | |
+| 78 | 12 | AdptAdr | `*ADPT` or 12 hexadecimal digits |
+| 90 | 10 | EthStd | |
+| 100 | 10 | LineSpeed | |
+| 110 | 10 | Duplex | |
+| 120 | 4 | MaxFrame | 1496 to 8996 |
+| 124 | 2 | MaxCtl | |
+| 126 | 8 | ExchId | |
+| 134 | 10 | Threshold | |
+| 144 | 10 | LinkSpeed | |
+| 154 | 1 | CostCnn | |
+| 155 | 1 | CostByte | |
+| 156 | 10 | Security | |
+| 166 | 10 | PrpDly | |
+| 176 | 1 | UsrDfn1 | |
+| 177 | 1 | UsrDfn2 | |
+| 178 | 1 | UsrDfn3 | |
+| 179 | 1 | Reserved2 | zero |
+| 180 | 4 | AutoDltCtl | minutes, `0xFFFFFFFF` for `*NONE` |
+| 184 | 2 | RcyCount | `0xFFFF` for `*SYSVAL` |
+| 186 | 2 | RcyInterval | minutes |
+| 188 | 10 | MsgqName | `*SYSVAL`, `*SYSOPR` or a name |
+| 198 | 10 | MsgqLib | |
+| 208 | 50 | Text | |
+| 258 | 14 | Reserved3 | zero |
+
+### Network controllers and devices
+
+The first vary on of a line makes, by automatic configuration, a
+network controller (`*CTLD` type `*NET`, attached to the line) and a
+TCP/IP device under it (`*DEVD` class `*NET`, type `*TCPIP`), as IBM
+does for TCP/IP over a LAN line. Both are named from the line, as the
+pub400 configuration shows (line `LINETH` with controllers `LINETNET`,
+`LINETNET00` to `LINETNET02` and devices `LINETTCP`, `LINETTCP00`):
+the first five characters of the line name and `NET` (controller) or
+`TCP` (device); when that name is taken by any controller, device or
+another line's attachment, a two-digit suffix from `00` to `99` is
+added. Controller and device are named independently, so `LINETNET02`
+can hold `LINETTCP00`. They are marked as made by automatic
+configuration (`Auto` in the controller payload, `Virtual` in the
+device's) and go with their line. `CPC2629` and `CPC2630` report them.
+`AUTOCRTCTL` is stored only: it is about APPC controllers, which this
+release has none of.
+
+The virtual workstation controller `QPACTL01` of Phase 8 and its
+displays stay as they were; `WRKCFGSTS` and `VRYCFG` show and vary
+them next to the lines' objects, their status from their descriptions.
+
+### Status
+
+Statuses live in the storage service, never on disk: every IPL starts
+with every line varied off. `cmncfg::State` holds each line with its
+controllers and devices; the service keeps it behind a lock shared
+with a thread that reads `RTNLGRP_LINK` events (`stgsvc/cmn/kernel.rs`).
+
+| Status | When |
+|---|---|
+| `VARIED OFF` | after IPL, `VRYCFG STATUS(*OFF)`, a failed vary on |
+| `VARY ON PENDING` | while a vary on brings the interface up |
+| `VARIED ON` | up, no carrier yet |
+| `ACTIVE` | carrier present |
+| `RCYPND` | carrier lost within `CMNRCYLMT`: waiting for it to return |
+| `RCYCNL` | carrier lost more often than `CMNRCYLMT` allows |
+| `FAILED` | carrier lost with `CMNRCYLMT(0 ...)`: no recovery |
+| `VARY OFF PENDING` | defined; a vary off is immediate here |
+
+`CMNRCYLMT(count interval)` counts carrier losses within the last
+`interval` minutes (0: since the vary on); `*SYSVAL` takes
+`QCMNRCYLMT`. A loss within the count is `RCYPND`, and the carrier
+coming back makes the line `ACTIVE` again; the loss past the count is
+`RCYCNL`, after which only a vary off and on brings it back. A
+controller or device shows its line's status while its own switch is
+on (`VRYCFG CFGTYPE(*CTL|*DEV)`, or `RANGE(*NET)` of the line), else
+`VARIED OFF`.
+
+Messages go to the line's message queue (`MSGQ`; `*SYSVAL` and
+`*SYSOPR` are `QSYS/QSYSOPR`, there is no `QCFGMSGQ` yet) from job
+`QSYSARB`, with IBM's identifiers and data layouts from the pub400
+`QCPFMSG` and Quartz texts:
+
+| Event | Message |
+|---|---|
+| carrier present (vary on, or back) | `CPF5908`, controller `&1` contacted on line `&2` (informational) |
+| carrier lost, recovery started (`RCYPND`) | `CPI5917`, automatic recovery started for controller `&1` |
+| carrier lost past the limit (`RCYCNL`) or with none (`FAILED`) | `CPA58EE` inquiry in the 40-variable layout (`&23` line, `&24` controller), replies `C G R`, default `C` |
+
+`RTVCFGSTS` codes are IBM's: 0 varied off, 10 vary off pending, 20
+vary on pending, 30 varied on, 50 sign-on display, 60 active, 80
+recovery pending, 90 recovery cancelled, 100 failed.
+
+### Vary
+
+`VRYCFG CFGOBJ(...) CFGTYPE(*LIN|*CTL|*DEV) STATUS(*ON|*OFF)` with
+`RANGE` and `VRYWAIT` (the captured definition; `*RESET`, `*NWS` and
+the media library values are refused with `CPF2640`). A vary on of a
+line:
+
+1. `VARY ON PENDING`; the network controller and device made if
+   missing.
+2. `link::plan`: the port's interface from the `CMNnn` resource
+   (`hwrsrc`), or a bond for `RSRCNAME(*AGG)`; MTU `MAXFRAME` + 4 (the
+   1496 default is the 1500-byte Ethernet); the address from `ADPTADR`
+   unless `*ADPT`.
+3. Netlink: for an aggregate the bond `agg<line>` (lower case, cut to
+   15 characters) with mode `balance-xor` for `*ETHCHL` (`*RNDRBN`:
+   `balance-rr`) or `802.3ad` for `*LNKAGG`, transmit hash layer 2 for
+   `*DFT` and layer 3+4 otherwise, its ports enslaved; the MTU and
+   address set while the interface is down; the interface up.
+4. With `VRYWAIT` (the command's, else the line's) seconds the vary
+   waits for the carrier; the carrier is then read under the status
+   lock, so an event the thread saw while the line was pending is not
+   lost. `ACTIVE` with a carrier, else `VARIED ON`.
+
+A vary off takes the interface down (a line's bond is taken apart and
+deleted). `CPC2607`/`CPC2608` (line), `CPC2609`/`CPC2610`
+(controller) and `CPC2605`/`CPC2606` (device) complete; a refusal is a
+diagnostic (`CPD2645`, `CPD2646`, `CPD26D4`, `CPD2659`, ...) and the
+escape `CPF2640`.
+
+802.1Q: no IBM line parameter names a VLAN; the pub400 interface file
+`QATOFIPF` has a VLAN identifier (`TFVLANID`). TCP/IP configuration
+makes the sub-interface `<parent>.<id>` through
+`stgsvc::cmn::kernel::ensure_vlan` when an interface names one.
+
+At service start the lines described `ONLINE(*YES)` are varied on with
+`RANGE(*NET)` and no wait. The kernel's boot-time `bond0` (built-in
+bonding makes one; the baked command line cannot set `max_bonds=0`) is
+deleted then, unless something is enslaved to it; `dummy0` is left
+alone and unused.
+
+### Displays and requests
+
+`WRKCFGSTS` (`QUICFG`), `WRKLIND` and `DSPLIND` (`QUILIND`) match the
+pub400 captures in `tools/conformance/golden/phase10/cmn`
+(`ui/uim/tests/cmn_panels.rs`): objects indented two columns a level,
+the job column (name, user, number) or with F11 the type column, two
+key sets switched by F24; `DSPLIND` shows each value after its keyword
+until F11, an aggregated line on `DSPLINDA` with its policy and ports.
+Without a display the service answers the same commands as text.
+
+| `stg` tag | Request |
+|---|---|
+| 1180 | `cmn_panel(what, args)`: `CFGSTS` (type, description, range, status), `LIND` (generic name), `DSPLIND` (line) |
+| 1181 | `cfg_status(name, ty)`: `RTVCFGSTS`'s code and text |

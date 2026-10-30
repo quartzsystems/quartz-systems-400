@@ -1322,3 +1322,232 @@ text = "No exit point matches."
 id = "CPF3CED"
 sev = 40
 text = "No exit program matches."
+
+# Communications objects: lines, network controllers and devices
+# (net/cmncfg). The CPA58xx/CPI59xx layout is the 40-variable one the
+# pub400 QCPFMSG shows: &23 line, &24 controller, &25 device.
+
+[[msg]]
+id = "CPC2601"
+sev = 0
+text = "Ethernet line &1 is described."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2602"
+sev = 0
+text = "Device description &1 is gone."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2603"
+sev = 0
+text = "Controller description &1 is gone."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2604"
+sev = 0
+text = "Line description &1 is gone."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2605"
+sev = 0
+text = "Device &1 is varied on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2606"
+sev = 0
+text = "Device &1 is varied off."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2607"
+sev = 0
+text = "Line &1 is varied on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2608"
+sev = 0
+text = "Line &1 is varied off."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2609"
+sev = 0
+text = "Controller &1 is varied on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2610"
+sev = 0
+text = "Controller &1 is varied off."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2615"
+sev = 0
+text = "Line description &1 now has the new values."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2629"
+sev = 0
+text = "Network controller &1 was made for the line by automatic configuration."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2630"
+sev = 0
+text = "Network device &1 was made for the line by automatic configuration."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2631"
+sev = 0
+text = "Network controller &1, made by automatic configuration, is gone with its line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2632"
+sev = 0
+text = "Network device &1, made by automatic configuration, is gone with its line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD2640"
+sev = 40
+text = "Device &1 is varied off already."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD2645"
+sev = 40
+text = "Line &1 is varied on already."
+help = "VRYCFG STATUS(*OFF) first, or look at the line with WRKCFGSTS CFGTYPE(*LIN)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD2646"
+sev = 40
+text = "Line &1 is varied off already."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD2650"
+sev = 40
+text = "Controller &1 is varied off already."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD2659"
+sev = 40
+text = "Line &23 could not be varied on."
+help = "The port or the bond behind the line refused to come up. The job log has the reason; WRKHDWRSC TYPE(*CMN) shows the ports."
+vars = ["*CHAR 1", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*HEX 4", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 2", "*CHAR 8", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*HEX 4"]
+
+[[msg]]
+id = "CPD26D4"
+sev = 40
+text = "No communications resource is called &1."
+help = "WRKHDWRSC TYPE(*CMN) lists the ports by resource name (CMNnn)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2601"
+sev = 40
+text = "There is no line description &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2602"
+sev = 40
+text = "There is no controller &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2603"
+sev = 40
+text = "There is no device description &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2606"
+sev = 40
+text = "A line description called &1 exists already."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF261E"
+sev = 40
+text = "Line description &1 was left as it was."
+help = "The messages before this one say which value was refused."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2633"
+sev = 40
+text = "Vary line &1 off before changing that."
+help = "The resource name, the adapter address, the frame size and the aggregated ports change only while the line is varied off."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF26AB"
+sev = 40
+text = "Line &1 is varied on, so it cannot be deleted."
+help = "VRYCFG CFGOBJ(&1) CFGTYPE(*LIN) STATUS(*OFF) first."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2640"
+sev = 40
+text = "The vary request was not carried out."
+help = "The messages before this one say why."
+
+[[msg]]
+id = "CPF5908"
+sev = 0
+text = "Line &2 is up: network controller &1 is in contact."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 5"]
+
+[[msg]]
+id = "CPF5928"
+sev = 40
+text = "Controller &1 is not varied on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF5933"
+sev = 40
+text = "Line &1 is not varied on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI5917"
+sev = 40
+text = "Controller &1 lost its line; the system is recovering it."
+help = "The line's carrier went away. The line comes back by itself when the carrier returns, within the recovery limits of the line description (CMNRCYLMT)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPA58EE"
+sev = 99
+text = "Line &23 is down: probable cable or port trouble. Reply C, G or R."
+help = "The carrier of the line went away more often than its recovery limits (CMNRCYLMT) allow, or the line has no recovery. Check the cable and the port, then vary the line off and on. C cancels the recovery, G and R try again."
+vars = ["*CHAR 1", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*HEX 4", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 2", "*CHAR 8", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*CHAR 0", "*HEX 4"]
+reply = { default = "C", valid = ["C", "G", "R"] }
+
+[[msg]]
+id = "CPF2609"
+sev = 40
+text = "Automatic configuration made no network controller for the line."
+help = "Every name the line's controller could take is in use. Delete unused controllers, or give the line a name whose first five characters are new."
+
+[[msg]]
+id = "CPF2611"
+sev = 40
+text = "Automatic configuration made no network device for the line."
+help = "Every name the line's TCP/IP device could take is in use. Delete unused devices, or give the line a name whose first five characters are new."

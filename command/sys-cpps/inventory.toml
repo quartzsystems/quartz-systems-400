@@ -589,3 +589,22 @@ note = "the registration facility repository, *ALLOBJ and *SECADM"
 [cmd.WRKREGINF]
 site = "job"
 note = "a panel at a display (panels/system/regfac.rs); the service's listing otherwise"
+
+# --- communications objects (net/cmncfg; the service's lic/slic/src/cpp/cmncmd.rs,
+# the job's panels in work/qsjob/src/panels/system2/cmn.rs)
+[cmd.CRTLINETH]
+note = "the line description; ONLINE(*YES) varies it on at the next IPL"
+
+[cmd.CHGLINETH]
+note = "RSRCNAME, ADPTADR, MAXFRAME and AGGRSCL need the line varied off"
+
+[cmd.DLTLIND]
+note = "with the network controllers and devices automatic configuration made for it"
+
+[cmd.DSPLIND]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.WRKLIND]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"

@@ -5,11 +5,13 @@
 //! The second batch of system displays and the editors: `DSPPGM`,
 //! `DSPSRVPGM`, `DSPMOD`, `DSPBNDDIR`, `DSPCMD`, `DSPPGMREF`
 //! (`programs`), `WRKDEVD`, `WRKHDWRSC`, `DSPHDWRSC`, `DSPPTF`
-//! (`config`), `DSPUSRPRF`'s other types, `DSPAUTLOBJ`, `DSPAUDJRNE`
+//! (`config`), `WRKLIND`, `DSPLIND` (`cmn`), `DSPUSRPRF`'s other
+//! types, `DSPAUTLOBJ`, `DSPAUDJRNE`
 //! (`security`), `EDTLIBL`, `EDTOBJAUT`, `EDTAUTL` and `WRKSYSVAL`'s
 //! change (`editors`). A driver returns `None` when the data is not
 //! there, so the service's text path answers with its message.
 
+mod cmn;
 mod config;
 mod editors;
 mod programs;
@@ -46,6 +48,8 @@ pub fn run(
         "WRKHDWRSC" => config::hdwrsc(job, host, surface, r, true),
         "DSPHDWRSC" => config::hdwrsc(job, host, surface, r, false),
         "DSPPTF" => config::dspptf(host, surface),
+        "WRKLIND" => cmn::wrklind(job, host, surface, r),
+        "DSPLIND" => cmn::dsplind(host, surface, r),
         "DSPUSRPRF" => security::dspusrprf(host, surface, r),
         "DSPAUTLOBJ" => security::dspautlobj(host, surface, r),
         "DSPAUDJRNE" => Some(security::dspaudjrne(host, surface, r)),
