@@ -1,0 +1,98 @@
+; Qp0lGetAttr and Qp0lSetAttr: chosen attributes in the order asked,
+; a buffer too small, the PC flags, the CCSID and the text set
+module IFSAPI10
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI10")
+static $fz: bytes(*) inz(z"/home/QSTEST/IFSAPI10/a.txt")
+static $f: bytes(*) inz(q"/home/QSTEST/IFSAPI10/a.txt")
+static $none: bytes(*) inz(q"/home/QSTEST/IFSAPI10/none")
+static $ids: bytes(24) inz(x"000000050000000000000001000000110000001B00000016")
+static $one: bytes(8) inz(x"0000000100000011")
+static $buf: bytes(512)
+static $small: bytes(8)
+static $need: i32 inz(0)
+static $got: i32 inz(0)
+static $set: bytes(38) inz(x"0000001400000011000000010000000001000000000000000000001B000000020000000004E4")
+static $bad: bytes(17) inz(x"0000000000000000000000010000000040")
+static $type: char(5)
+proc ENTRY(byval $b: ptr, byval $at: i64) -> i64 {
+L0:
+  %q = load $b
+  %o = cvt.i64 $at
+  %next = callb INT(%q, %o)
+  %o4 = add %o, 4
+  %id = callb INT(%q, %o4)
+  dsply %id
+  %o8 = add %o, 8
+  %sz = callb INT(%q, %o8)
+  dsply %sz
+  %n64 = cvt.i64 %next
+  ret %n64
+}
+proc IFSAPI10() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  %pz = addr $fz
+  %fd = callb open(%pz, 106, 420, 1252)
+  %c = callb close(%fd)
+  dsply "object type, data size, PC read-only, CCSID, code page"
+  %p = addr $f
+  %l = addr $ids
+  %b = addr $buf
+  %n = addr $need
+  %g = addr $got
+  %r = callb Qp0lGetAttr(%p, %l, %b, 512, %n, %g, 1)
+  callb RC(%r)
+  %nv = load $need
+  dsply %nv
+  %gv = load $got
+  dsply %gv
+  %o1 = callb ENTRY(%b, 0)
+  %a = ptradd %b, 16
+  mov $type, [%a]:char(5)
+  dsply $type
+  %o2 = callb ENTRY(%b, %o1)
+  %o3 = callb ENTRY(%b, %o2)
+  %o4 = callb ENTRY(%b, %o3)
+  %ccat = add %o4, 16
+  %cc = callb SHORT(%b, %ccat)
+  dsply %cc
+  %o5 = callb ENTRY(%b, %o4)
+  dsply "a buffer of eight bytes"
+  %sm = addr $small
+  %r2 = callb Qp0lGetAttr(%p, %l, %sm, 8, %n, %g, 1)
+  callb RC(%r2)
+  %nv2 = load $need
+  dsply %nv2
+  %gv2 = load $got
+  dsply %gv2
+  dsply "set PC read-only and CCSID 1252"
+  %s = addr $set
+  %r3 = callb Qp0lSetAttr(%p, %s, 38, 1)
+  callb RC(%r3)
+  %one = addr $one
+  %r4 = callb Qp0lGetAttr(%p, %one, %b, 512, %n, %g, 1)
+  callb RC(%r4)
+  %flag = ptradd %b, 16
+  %fv = load [%flag]:u8
+  %fv32 = cvt.i32 %fv
+  dsply %fv32
+  dsply "every attribute"
+  %nul = const.ptr *NULL
+  %r5 = callb Qp0lGetAttr(%p, %nul, %b, 512, %n, %g, 1)
+  callb RC(%r5)
+  dsply "an attribute that cannot be set"
+  %bd = addr $bad
+  %r6 = callb Qp0lSetAttr(%p, %bd, 17, 1)
+  callb RC(%r6)
+  dsply "an object that does not exist"
+  %pn = addr $none
+  %r7 = callb Qp0lGetAttr(%pn, %l, %b, 512, %n, %g, 1)
+  callb RC(%r7)
+  %u = callb unlink(%pz)
+  callb RC(%u)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

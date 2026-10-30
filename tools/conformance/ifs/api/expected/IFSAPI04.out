@@ -1,0 +1,45 @@
+0
+link a b
+0
+0
+2
+link onto an existing name
+-1 errno
+3457
+unlink b
+0
+0
+1
+Qp0lRenameKeep a c: c exists
+-1 errno
+3457
+rename a c: as Qp0lRenameKeep
+-1 errno
+3457
+Qp0lRenameUnlink a c: c replaced
+0
+-1 errno
+3025
+Qp0lRenameKeep c b
+0
+rename of nothing
+-1 errno
+3025
+symlink s to c, readlink
+0
+23
+/home/QSTEST/IFSAPI04/c
+readlink into ten bytes
+10
+/home/QSTE
+readlink of a file
+-1 errno
+3021
+a dangling link: stat and lstat
+-1 errno
+3025
+0
+0
+0
+descriptors left open: 0
+pending: none

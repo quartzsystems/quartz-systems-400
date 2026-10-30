@@ -1,0 +1,112 @@
+; stat, lstat, fstat and the 64-bit forms: type bits, permissions,
+; links, size, object type, CCSID and code page (times and inodes left out)
+module IFSAPI02
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI02")
+static $f: bytes(*) inz(z"/home/QSTEST/IFSAPI02/s.txt")
+static $l: bytes(*) inz(z"/home/QSTEST/IFSAPI02/s.lnk")
+static $tgt: bytes(*) inz(z"s.txt")
+static $none: bytes(*) inz(z"/home/QSTEST/IFSAPI02/none")
+static $data: char(7) inz("abcdefg")
+static $st: bytes(128)
+static $type: char(10)
+proc SHOW(byval $p: ptr) {
+L0:
+  %q = load $p
+  %m = callb INT(%q, 0)
+  %t = div %m, 4096
+  dsply "type"
+  dsply %t
+  %perm = rem %m, 512
+  dsply %perm
+  %nl = callb SHORT(%q, 8)
+  dsply %nl
+  %sz = callb INT(%q, 20)
+  dsply %sz
+  %o = ptradd %q, 48
+  mov $type, [%o]:char(10)
+  dsply $type
+  %cp = callb SHORT(%q, 60)
+  dsply %cp
+  %cc = callb SHORT(%q, 62)
+  dsply %cc
+  ret
+}
+proc SHOW64(byval $p: ptr) {
+L0:
+  %q = load $p
+  %m = callb INT(%q, 0)
+  %t = div %m, 4096
+  dsply "type"
+  dsply %t
+  %nl = callb SHORT(%q, 44)
+  dsply %nl
+  %a = ptradd %q, 16
+  %sz = load [%a]:i64
+  dsply %sz
+  %o = ptradd %q, 60
+  mov $type, [%o]:char(10)
+  dsply $type
+  %cp = callb SHORT(%q, 46)
+  dsply %cp
+  %cc = callb SHORT(%q, 126)
+  dsply %cc
+  ret
+}
+proc IFSAPI02() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  %p = addr $f
+  %fd = callb open(%p, 106, 420, 819)
+  callb RC(%fd)
+  %b = addr $data
+  %w = callb write(%fd, %b, 7)
+  callb RC(%w)
+  %sb = addr $st
+  dsply "fstat"
+  %r1 = callb fstat(%fd, %sb)
+  callb RC(%r1)
+  callb SHOW(%sb)
+  %c = callb close(%fd)
+  dsply "stat"
+  %r2 = callb stat(%p, %sb)
+  callb RC(%r2)
+  callb SHOW(%sb)
+  dsply "stat64"
+  %r3 = callb stat64(%p, %sb)
+  callb RC(%r3)
+  callb SHOW64(%sb)
+  %t = addr $tgt
+  %lk = addr $l
+  %r4 = callb symlink(%t, %lk)
+  callb RC(%r4)
+  dsply "lstat of the link"
+  %r5 = callb lstat(%lk, %sb)
+  callb RC(%r5)
+  callb SHOW(%sb)
+  dsply "stat through the link"
+  %r6 = callb stat(%lk, %sb)
+  callb RC(%r6)
+  callb SHOW(%sb)
+  dsply "lstat64 of the link"
+  %r7 = callb lstat64(%lk, %sb)
+  callb RC(%r7)
+  callb SHOW64(%sb)
+  dsply "fstat64 of a directory"
+  %fd2 = callb open(%d, 1)
+  callb RC(%fd2)
+  %r8 = callb fstat64(%fd2, %sb)
+  callb RC(%r8)
+  callb SHOW64(%sb)
+  %c2 = callb close(%fd2)
+  dsply "stat of nothing"
+  %n = addr $none
+  %r9 = callb stat(%n, %sb)
+  callb RC(%r9)
+  %u1 = callb unlink(%lk)
+  %u2 = callb unlink(%p)
+  %r10 = callb rmdir(%d)
+  callb RC(%r10)
+  ret
+}

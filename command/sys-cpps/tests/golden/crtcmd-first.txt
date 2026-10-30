@@ -9,8 +9,8 @@
  Source file  . . . . . . . . . .   QCMDSRC       Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Source member  . . . . . . . . .   *CMD          Name, *CMD                    
+ Source stream file . . . . . . .                                               
  Description  . . . . . . . . . .   *SRCMBRTXT                                  
-                                                                                
                                                                                 
                                                                                 
                                                                                 

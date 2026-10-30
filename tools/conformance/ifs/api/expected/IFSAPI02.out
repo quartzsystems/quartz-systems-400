@@ -1,0 +1,78 @@
+0
+0
+7
+fstat
+0
+type
+8
+388
+1
+7
+*STMF
+819
+819
+stat
+0
+type
+8
+388
+1
+7
+*STMF
+819
+819
+stat64
+0
+type
+8
+1
+7
+*STMF
+819
+819
+0
+lstat of the link
+0
+type
+10
+511
+1
+5
+*SYMLNK
+1208
+1208
+stat through the link
+0
+type
+8
+388
+1
+7
+*STMF
+819
+819
+lstat64 of the link
+0
+type
+10
+1
+5
+*SYMLNK
+1208
+1208
+fstat64 of a directory
+0
+0
+type
+4
+2
+4096
+*DIR
+1208
+1208
+stat of nothing
+-1 errno
+3025
+0
+descriptors left open: 0
+pending: none

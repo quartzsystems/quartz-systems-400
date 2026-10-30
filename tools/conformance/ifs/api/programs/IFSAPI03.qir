@@ -1,0 +1,90 @@
+; access, chmod, fchmod, chown, fchown, lchown and umask
+module IFSAPI03
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI03")
+static $f: bytes(*) inz(z"/home/QSTEST/IFSAPI03/m.txt")
+static $g: bytes(*) inz(z"/home/QSTEST/IFSAPI03/u.txt")
+static $l: bytes(*) inz(z"/home/QSTEST/IFSAPI03/m.lnk")
+static $st: bytes(128)
+proc PERM(byval $p: ptr) {
+L0:
+  %q = load $p
+  %sb = addr $st
+  %r = callb stat(%q, %sb)
+  %m = callb INT(%sb, 0)
+  %perm = rem %m, 512
+  dsply %perm
+  ret
+}
+proc IFSAPI03() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 448)
+  callb RC(%r0)
+  %p = addr $f
+  %fd = callb creat(%p, 384)
+  callb RC(%fd)
+  dsply "access F_OK R_OK W_OK X_OK"
+  %a0 = callb access(%p, 0)
+  callb RC(%a0)
+  %a1 = callb access(%p, 4)
+  callb RC(%a1)
+  %a2 = callb access(%p, 2)
+  callb RC(%a2)
+  %a3 = callb access(%p, 1)
+  callb RC(%a3)
+  %a4 = callb access(%p, 8)
+  callb RC(%a4)
+  dsply "chmod 0o751"
+  %c1 = callb chmod(%p, 489)
+  callb RC(%c1)
+  callb PERM(%p)
+  %a5 = callb access(%p, 1)
+  callb RC(%a5)
+  dsply "fchmod 0o600"
+  %c2 = callb fchmod(%fd, 384)
+  callb RC(%c2)
+  callb PERM(%p)
+  dsply "chmod 0: the owner reads no more"
+  %c3 = callb chmod(%p, 0)
+  callb RC(%c3)
+  %a6 = callb access(%p, 4)
+  callb RC(%a6)
+  %fd2 = callb open(%p, 1)
+  callb RC(%fd2)
+  %c4 = callb chmod(%p, 420)
+  dsply "chown to the owner's own UID, no group"
+  %sb = addr $st
+  %s = callb stat(%p, %sb)
+  %uid0 = callb INT(%sb, 12)
+  %uid = cvt.u32 %uid0
+  %ch = callb chown(%p, %uid, 0)
+  callb RC(%ch)
+  %fch = callb fchown(%fd, %uid, 0)
+  callb RC(%fch)
+  dsply "chown to a UID no profile has"
+  %bad = callb chown(%p, 999999, 0)
+  callb RC(%bad)
+  %lk = addr $l
+  %sl = callb symlink(%p, %lk)
+  %lc = callb lchown(%lk, %uid, 0)
+  callb RC(%lc)
+  dsply "umask 0o077 then creat 0o666"
+  %old = callb umask(63)
+  %o32 = cvt.i32 %old
+  dsply %o32
+  %pg = addr $g
+  %fd3 = callb creat(%pg, 438)
+  callb RC(%fd3)
+  callb PERM(%pg)
+  %back = callb umask(%old)
+  %b32 = cvt.i32 %back
+  dsply %b32
+  %x1 = callb close(%fd)
+  %x2 = callb close(%fd3)
+  %u0 = callb unlink(%lk)
+  %u1 = callb unlink(%p)
+  %u2 = callb unlink(%pg)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

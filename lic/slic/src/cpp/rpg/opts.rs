@@ -66,6 +66,13 @@ pub struct Request {
     pub replace: bool,
     /// `CRTSQLRPGI`'s precompile options.
     pub sqlopts: Option<rpgc::sqlpre::Options>,
+    /// `SRCSTMF`: the source is this stream file, not a member.
+    pub srcstmf: Option<String>,
+    /// `INCDIR`: where `/COPY` of a stream file looks after the
+    /// current directory.
+    pub incdir: Vec<String>,
+    /// `PGMINFO(*PCML *STMF)`'s `INFOSTMF`.
+    pub infostmf: Option<String>,
 }
 
 /// A parameter's value, or `dft` when it has none.
@@ -121,11 +128,9 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
         },
         _ => (Shape::Program, Command::CrtBndRpg, "PGM", false),
     };
-    if parms.specified("SRCSTMF") {
-        // TODO(phase10): stream files, with the integrated file system.
-        return Err(
-            "CPF0006 source stream files are not available; give SRCFILE and SRCMBR".into(),
-        );
+    let srcstmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
+    if srcstmf.is_some() && (parms.specified("SRCFILE") || parms.specified("SRCMBR")) {
+        return Err("CPD0074 SRCSTMF is given with SRCFILE or SRCMBR".into());
     }
     let (name, lib) = parms.qual(kw);
     let name = if name.is_empty() {
@@ -202,6 +207,17 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
         usrprf_owner: parms.name("USRPRF") == "*OWNER",
         replace: !parms.specified("REPLACE") || parms.yes("REPLACE"),
         sqlopts: sql.then(|| sql_options(parms, genlvl)),
+        srcstmf,
+        incdir: parms
+            .list("INCDIR")
+            .iter()
+            .map(|v| v.source().trim_matches('\'').to_string())
+            .filter(|d| !d.is_empty() && d != "*NONE")
+            .collect(),
+        infostmf: parms
+            .specified("INFOSTMF")
+            .then(|| parms.text("INFOSTMF"))
+            .filter(|s| !s.is_empty()),
     })
 }
 
@@ -229,7 +245,10 @@ impl Request {
     #[must_use]
     pub fn object_name(&self, src: &Source) -> String {
         if self.name == "*CTLSPEC" {
-            src.member.name.clone()
+            match &self.srcstmf {
+                Some(p) => crate::cpp::stmf::default_name(p),
+                None => src.member.name.clone(),
+            }
         } else {
             self.name.clone()
         }

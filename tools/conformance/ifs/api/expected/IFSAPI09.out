@@ -1,0 +1,46 @@
+0
+0
+QlgGetcwd: the path's length
+ok
+21
+QlgOpen O_CREAT O_RDWR
+0
+3
+QlgStat: size
+0
+3
+QlgAccess, QlgChmod 0o600
+0
+0
+QlgLink, QlgUnlink
+0
+0
+QlgSymlink, QlgReadlink, QlgLstat
+0
+27
+27
+0
+10
+QlgRenameKeep, QlgRenameUnlink
+0
+0
+-1 errno
+3457
+0
+QlgOpendir, QlgReaddir: name lengths
+ok
+1
+2
+5
+5
+0
+QlgPathconf, QlgStatvfs, QlgUtime
+255
+0
+0
+0
+0
+0
+0
+descriptors left open: 0
+pending: none

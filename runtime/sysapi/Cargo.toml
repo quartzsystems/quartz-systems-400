@@ -19,6 +19,7 @@ ipc = { path = "../../work/ipc", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 uim = { path = "../../ui/uim", version = "0.1.0" }
 sockets = { path = "../../net/sockets", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 netlink = { path = "../../net/netlink", version = "0.1.0" }
 regfac = { path = "../../net/regfac", version = "0.1.0" }
 thiserror.workspace = true

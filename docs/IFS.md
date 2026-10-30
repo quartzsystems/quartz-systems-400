@@ -598,6 +598,559 @@ used` and `Total`. `WRKDSKSTS` adds them to unit 1's `Size` and `%
 Used`: the partition is on the load source, which IBM's unit 1 is. No
 row is invented for it; IBM's screen lists disk units only.
 
+## APIs
+
+`runtime/sysapi/src/ifs` binds the IFS APIs for ILE callers as
+C-style procedures under the service programs IBM exports them from
+(`tools/conformance/oracle/srvpgm/exports.txt`, pub400 7.5):
+`ile::SYSTEM_SRVPGM_PROCS` names each one's service program, the binder
+resolves them as `*SYSTEM` imports, `DSPPGM` shows the service program,
+and a test checks the table against the capture. RPG's upper-cased
+`EXTPROC` names are registered too.
+
+| Service program | Procedures |
+|---|---|
+| `QP0LLIB1` | `open` `open64` `creat` `creat64` `read` `write` `pread` `pwrite` (and `64`) `lseek` `lseek64` `close` `fsync` `ftruncate` `ftruncate64` `stat` `lstat` `fstat` (and `64`) `access` `chmod` `fchmod` `chown` `fchown` `lchown` `link` `unlink` `symlink` `readlink` `mkdir` `mkfifo` `rmdir` `opendir` `readdir` `readdir_r` `rewinddir` `closedir` `chdir` `fchdir` `dup` `dup2` `fcntl` `utime` `umask` `pathconf` `fpathconf` `statvfs` `fstatvfs` (and `64`), `Qp0lOpen` `Qp0lUnlink` `Qp0lRenameKeep` `Qp0lRenameUnlink`, the `Qlg` forms (`QlgOpen64` `QlgCreat` `QlgStat` `QlgLstat` `QlgAccess` `QlgChdir` `QlgChmod` `QlgChown` `QlgLchown` `QlgLink` `QlgSymlink` `QlgMkdir` `QlgMkfifo` `QlgRmdir` `QlgRenameKeep` `QlgRenameUnlink` `QlgReadlink` `QlgPathconf` `QlgStatvfs` `QlgUtime` `QlgOpendir` `QlgReaddir` `QlgReaddir_r`), and `openat` (QS/400's: IBM i has none) |
+| `QP0LLIB2` | `getcwd` `QlgGetcwd` `Qp0lGetAttr` `Qp0lCvtPathToQSYSObjName` `Qp0lProcessSubtree` `Qp0lGetPathFromFileID` `QlgGetPathFromFileID` |
+| `QP0LLIB3` | `Qp0lSetAttr` |
+| `QC2UTIL1` | `__errno` `strerror` |
+| `QC2IO` | `perror`, `rename` (`Qp0lRenameKeep`'s rule, as the header maps it outside POSIX) |
+
+The names a header `#pragma map`s to another export (`QlgOpen` to
+`Qp0lOpen`, `QlgUnlink`, `QlgGetAttr`, `QlgSetAttr`,
+`QlgProcessSubtree`, `QlgCvtPathToQSYSObjName` to their `Qp0l` names)
+are registered under both. `QP0LROR` and `QP0LRRO` are program APIs
+(OS linkage, every parameter by reference, an error code last);
+`QP0LRRO` answers for the calling job (`*` in `JIDF0100`) only.
+
+**How a job reaches the IFS.** `sysapi::ifs::configure(job, client,
+ccsid)` gives a job an `ifs::client::IfsClient` and its CCSID; the job
+process (`qsjob`'s `build_job`) passes `stg::remote::RemoteIfs` from
+`stg::remote::Sources`, tests and kits a `LocalIfs`
+(`sysapi::ifs::memory::MemIfs` builds one with `/home/QSTEST`). An
+unconfigured job answers `ENOTSUP`. `configure` installs the IFS
+operations in the job's descriptor table (`FdTable::set_ifs_ops`), so
+`read`, `write`, `readv`, `writev`, `close`, `dup`, `dup2` and `fcntl`
+serve sockets and files with one numbering; a file's number names the
+service's descriptor (`Kind::Ifs`). `fstat` of a socket answers
+`*SOCKET` and `S_IFSOCK`.
+
+**Arguments.** Paths are NUL-terminated in the job's CCSID; a
+`Qlg_Path_Name_T` names its own CCSID (0: the job's), gives the name in
+place (`QLG_CHAR_*`) or by pointer (`QLG_PTR_*`) and its own delimiter.
+`open`'s mode and CCSIDs count only when passed (the argument count).
+`fcntl`'s third argument is an integer or a `struct flock *`; the
+lock commands read the pointer, the rest the integer. Generated code
+passes a pointer that finds one register left on the stack and leaves
+the register unused; the bound procedures whose later integer
+arguments would otherwise take it declare a filler there
+(`bound_r9!`). Results are 0 or a count, or -1 with `errno` set to
+IBM's number (`__errno()`); `readdir_r` returns the number.
+
+**Text mode.** `O_TEXTDATA`, `O_CCSID`, `O_CODEPAGE` and `O_TEXT_CREAT`
+go to the IFS as given (`OpenArgs`), which converts (see Text
+conversion) with the job's CCSID as the open's when none is given.
+
+**Structures** are big-endian in job storage, laid out as `QSYSINC`
+declares them without `_LARGE_FILES` (the `64` forms use the `64`
+structures). `stat` answers `EOVERFLOW` for a size past 32 bits;
+times are seconds. `st_objtype` is the type blank-padded to ten with
+a NUL. A `dirent`'s `d_reclen` is through the name's NUL on a four-byte
+boundary; `d_nlsinfo` carries the job's CCSID. `Qp0lGetAttr` answers
+the attributes asked for in the order asked (all of them, by ID, when
+the list is null), each a `Qp0l_Attr_Header_t` and its data, the next
+header on a four-byte boundary; a buffer too small answers 0 with no
+bytes returned and the size needed. `Qp0lProcessSubtree` calls the
+exit (procedure pointer or program) for the start and each object
+below it, parents first, with selection status, error value, return
+value, the object's `Qlg_Path_Name_T` and the caller's information,
+then once with `QP0L_SELECT_DONE`; a nonzero return value ends the
+walk. `Qp0lCvtPathToQSYSObjName` answers format `QSYS0100`
+(`CPFA0DB` for a path outside `/QSYS.LIB`). Choices the oracle has not
+settled are in `NET_OPEN_QUESTIONS.md` (IFS APIs).
+
+The tables below are the code's (`runtime/sysapi/tests/ifs_spec.rs`
+compares them).
+
+### Layouts
+
+#### `stat` (128 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `st_mode` |
+| 4 | 4 | `st_ino` |
+| 8 | 2 | `st_nlink` |
+| 10 | 2 | `st_reserved2` |
+| 12 | 4 | `st_uid` |
+| 16 | 4 | `st_gid` |
+| 20 | 4 | `st_size` |
+| 24 | 4 | `st_atime` |
+| 28 | 4 | `st_mtime` |
+| 32 | 4 | `st_ctime` |
+| 36 | 4 | `st_dev` |
+| 40 | 4 | `st_blksize` |
+| 44 | 4 | `st_allocsize` |
+| 48 | 11 | `st_objtype` |
+| 59 | 1 | `st_reserved3` |
+| 60 | 2 | `st_codepage` |
+| 62 | 2 | `st_ccsid` |
+| 64 | 4 | `st_rdev` |
+| 68 | 4 | `st_nlink32` |
+| 72 | 8 | `st_rdev64` |
+| 80 | 8 | `st_dev64` |
+| 88 | 4 | `st_vfs` |
+| 92 | 32 | `st_reserved1` |
+| 124 | 4 | `st_ino_gen_id` |
+
+#### `stat64` (128 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `st_mode` |
+| 4 | 4 | `st_ino` |
+| 8 | 4 | `st_uid` |
+| 12 | 4 | `st_gid` |
+| 16 | 8 | `st_size` |
+| 24 | 4 | `st_atime` |
+| 28 | 4 | `st_mtime` |
+| 32 | 4 | `st_ctime` |
+| 36 | 4 | `st_dev` |
+| 40 | 4 | `st_blksize` |
+| 44 | 2 | `st_nlink` |
+| 46 | 2 | `st_codepage` |
+| 48 | 8 | `st_allocsize` |
+| 56 | 4 | `st_ino_gen_id` |
+| 60 | 11 | `st_objtype` |
+| 71 | 5 | `st_reserved2` |
+| 76 | 4 | `st_rdev` |
+| 80 | 8 | `st_rdev64` |
+| 88 | 8 | `st_dev64` |
+| 96 | 4 | `st_nlink32` |
+| 100 | 4 | `st_vfs` |
+| 104 | 22 | `st_reserved1` |
+| 126 | 2 | `st_ccsid` |
+
+#### `dirent` (696 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 16 | `d_reserved1` |
+| 16 | 4 | `d_fileno_gen_id` |
+| 20 | 4 | `d_fileno` |
+| 24 | 4 | `d_reclen` |
+| 28 | 4 | `d_reserved3` |
+| 32 | 8 | `d_reserved4` |
+| 40 | 12 | `d_nlsinfo` |
+| 52 | 4 | `d_namelen` |
+| 56 | 640 | `d_name` |
+
+#### `dirent_lg` (2624 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 16 | `d_lg_reserved1` |
+| 16 | 4 | `d_lg_fileno_gen_id` |
+| 20 | 4 | `d_lg_fileno` |
+| 24 | 4 | `d_lg_reclen` |
+| 28 | 4 | `d_lg_reserved3` |
+| 32 | 8 | `d_lg_reserved4` |
+| 40 | 32 | `d_lg_qlg` |
+| 72 | 2550 | `d_lg_name` |
+
+#### `statvfs` (160 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `f_bsize` |
+| 4 | 4 | `f_frsize` |
+| 8 | 8 | `f_blocks` |
+| 16 | 8 | `f_bfree` |
+| 24 | 8 | `f_bavail` |
+| 32 | 4 | `f_files` |
+| 36 | 4 | `f_ffree` |
+| 40 | 4 | `f_favail` |
+| 44 | 4 | `f_fsid` |
+| 48 | 4 | `f_flag` |
+| 52 | 4 | `f_namemax` |
+| 56 | 4 | `f_pathmax` |
+| 60 | 4 | `f_objlinkmax` |
+| 64 | 4 | `f_dirlinkmax` |
+| 68 | 4 | `f_reserved1` |
+| 72 | 8 | `f_fsid64` |
+| 80 | 80 | `f_basetype` |
+
+#### `Qlg_Path_Name_T` (32 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `CCSID` |
+| 4 | 2 | `Country_ID` |
+| 6 | 3 | `Language_ID` |
+| 9 | 3 | `Reserved` |
+| 12 | 4 | `Path_Type` |
+| 16 | 4 | `Path_Length` |
+| 20 | 2 | `Path_Name_Delimiter` |
+| 22 | 10 | `Reserved2` |
+
+#### `Qp0l_Attr_Header_t` (16 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `Next_Attr_Offset` |
+| 4 | 4 | `Attr_ID` |
+| 8 | 4 | `Attr_Size` |
+| 12 | 4 | `Reserved` |
+
+#### `Qp0l_Checkout_t` (16 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 1 | `Checked_Out_Flag` |
+| 1 | 10 | `User_Name` |
+| 11 | 1 | `Reserved` |
+| 12 | 4 | `Checked_Out_Time` |
+
+#### `Qp0l_Authority_General_t` (64 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 10 | `Object_owner` |
+| 10 | 10 | `Primary_group` |
+| 20 | 10 | `Auth_list_name` |
+| 30 | 10 | `Reserved1` |
+| 40 | 4 | `UserArray_Offset` |
+| 44 | 4 | `Number_of_users` |
+| 48 | 4 | `UserEntry_size` |
+| 52 | 12 | `Reserved2` |
+
+#### `Qp0l_Authority_Users_t` (48 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 10 | `User_name` |
+| 10 | 10 | `User_data_auth` |
+| 20 | 1 | `OBJMGT_rights` |
+| 21 | 1 | `OBJEXIST_rights` |
+| 22 | 1 | `OBJALTER_rights` |
+| 23 | 1 | `OBJREF_rights` |
+| 24 | 10 | `Reserved1` |
+| 34 | 1 | `OBJOPR_DataRights` |
+| 35 | 1 | `READ_DataRights` |
+| 36 | 1 | `ADD_DataRights` |
+| 37 | 1 | `UPDATE_DataRights` |
+| 38 | 1 | `DELETE_DataRights` |
+| 39 | 1 | `EXECUTE_DataRights` |
+| 40 | 1 | `EXCLUDE_DataRights` |
+| 41 | 7 | `Reserved2` |
+
+#### `Qp0l_Journal_Info_t` (36 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 1 | `Status` |
+| 1 | 1 | `Options` |
+| 2 | 10 | `Journal_Identifier` |
+| 12 | 10 | `Journal_Name` |
+| 22 | 10 | `Journal_Library` |
+| 32 | 4 | `Time_Last_Started` |
+
+#### `Qp0l_QSYS_Info_t` (184 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `Bytes_Returned` |
+| 4 | 4 | `Bytes_Available` |
+| 8 | 4 | `CCSID_Out` |
+| 12 | 28 | `Lib_Name` |
+| 40 | 20 | `Lib_Type` |
+| 60 | 28 | `Obj_Name` |
+| 88 | 20 | `Obj_Type` |
+| 108 | 28 | `Mbr_Name` |
+| 136 | 20 | `Mbr_Type` |
+| 156 | 28 | `Asp_Name` |
+
+#### `Qp0l_User_Function_t` (48 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `Function_Type` |
+| 4 | 10 | `Library` |
+| 14 | 10 | `Program` |
+| 24 | 1 | `Mltthdacn` |
+| 25 | 7 | `Reserved` |
+| 32 | 16 | `Procedure` |
+
+#### `flock` (48 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 2 | `l_type` |
+| 2 | 2 | `l_whence` |
+| 4 | 4 | `l_start` |
+| 8 | 4 | `l_len` |
+| 12 | 4 | `l_pid` |
+| 16 | 16 | `l_reserved0` |
+| 32 | 16 | `l_reserved1` |
+
+#### `flock64` (64 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 2 | `l_type` |
+| 2 | 2 | `l_whence` |
+| 4 | 4 | `l_reserved2` |
+| 8 | 8 | `l_start` |
+| 16 | 8 | `l_len` |
+| 24 | 4 | `l_pid` |
+| 28 | 4 | `l_reserved3` |
+| 32 | 16 | `l_reserved0` |
+| 48 | 16 | `l_reserved1` |
+
+#### `utimbuf` (8 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `actime` |
+| 4 | 4 | `modtime` |
+
+#### `Qp0l_RORO0100_Output_T` (24 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `BytesReturned` |
+| 4 | 4 | `BytesAvailable` |
+| 8 | 4 | `SimTypesOffset` |
+| 12 | 4 | `SimTypesLength` |
+| 16 | 4 | `Count` |
+| 20 | 4 | `InUse` |
+
+#### `Qp0l_Sim_Ref_Types_Output_T` (64 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `Read` |
+| 4 | 4 | `Write` |
+| 8 | 4 | `RdWr` |
+| 12 | 4 | `Execute` |
+| 16 | 4 | `ShareRead` |
+| 20 | 4 | `ShareWrite` |
+| 24 | 4 | `ShareRdWr` |
+| 28 | 4 | `ShareNone` |
+| 32 | 4 | `Attributes` |
+| 36 | 4 | `Save` |
+| 40 | 4 | `SaveInt` |
+| 44 | 4 | `Links` |
+| 48 | 4 | `CheckedOut` |
+| 52 | 10 | `CheckOutName` |
+| 62 | 2 | `Reserved0` |
+
+#### `Qp0l_RROO0100_Output_T` (24 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `BytesReturned` |
+| 4 | 4 | `BytesAvailable` |
+| 8 | 4 | `ObjectsReturned` |
+| 12 | 4 | `ObjectsAvailable` |
+| 16 | 4 | `ObjListOffset` |
+| 20 | 4 | `ReferenceStatus` |
+
+#### `Qp0l_Obj_List_Output_T` (64 bytes)
+
+| Offset | Size | Field |
+| --- | --- | --- |
+| 0 | 4 | `NextListEntryDisp` |
+| 4 | 4 | `RefDisp` |
+| 8 | 4 | `RefLength` |
+| 12 | 4 | `RefCount` |
+| 16 | 4 | `PathDisp` |
+| 20 | 4 | `PathLength` |
+| 24 | 16 | `FileID` |
+| 40 | 8 | `FileSysId` |
+| 48 | 4 | `FileSysType` |
+| 52 | 4 | `FileIdNumber` |
+| 56 | 4 | `GenId` |
+| 60 | 4 | `Reserved` |
+
+### Constants
+
+| Name | Value |
+| --- | --- |
+| `O_RDONLY` | 1 |
+| `O_WRONLY` | 2 |
+| `O_RDWR` | 4 |
+| `O_CREAT` | 8 |
+| `O_EXCL` | 16 |
+| `O_CCSID` | 32 |
+| `O_TRUNC` | 64 |
+| `O_NONBLOCK` | 128 |
+| `O_APPEND` | 256 |
+| `O_SYNC` | 1024 |
+| `O_DSYNC` | 2048 |
+| `O_RSYNC` | 4096 |
+| `O_NOFOLLOW` | 16384 |
+| `O_NOCTTY` | 32768 |
+| `O_SHARE_RDONLY` | 65536 |
+| `O_SHARE_WRONLY` | 131072 |
+| `O_SHARE_RDWR` | 262144 |
+| `O_SHARE_NONE` | 524288 |
+| `O_CODEPAGE` | 8388608 |
+| `O_TEXTDATA` | 16777216 |
+| `O_TEXT_CREAT` | 33554432 |
+| `O_INHERITMODE` | 134217728 |
+| `O_LARGEFILE` | 536870912 |
+| `F_DUPFD` | 0 |
+| `F_GETFD` | 1 |
+| `F_SETFD` | 2 |
+| `F_GETLK` | 3 |
+| `F_SETLK` | 4 |
+| `F_SETLKW` | 5 |
+| `F_GETFL` | 6 |
+| `F_SETFL` | 7 |
+| `F_GETLK64` | 12 |
+| `F_SETLK64` | 13 |
+| `F_SETLKW64` | 14 |
+| `FD_CLOEXEC` | 1 |
+| `F_RDLCK` | 1 |
+| `F_WRLCK` | 2 |
+| `F_UNLCK` | 3 |
+| `AT_FDCWD` | -100 |
+| `S_IRUSR` | 256 |
+| `S_IWUSR` | 128 |
+| `S_IXUSR` | 64 |
+| `S_IRGRP` | 32 |
+| `S_IWGRP` | 16 |
+| `S_IXGRP` | 8 |
+| `S_IROTH` | 4 |
+| `S_IWOTH` | 2 |
+| `S_IXOTH` | 1 |
+| `S_ISUID` | 2048 |
+| `S_ISGID` | 1024 |
+| `S_ISVTX` | 512 |
+| `_S_IFFIFO` | 4096 |
+| `_S_IFCHR` | 8192 |
+| `_S_IFDIR` | 16384 |
+| `_S_IFBLK` | 24576 |
+| `_S_IFREG` | 32768 |
+| `_S_IFLNK` | 40960 |
+| `_S_IFSOCK` | 49152 |
+| `_S_IFNATIVE` | 65536 |
+| `R_OK` | 4 |
+| `W_OK` | 2 |
+| `X_OK` | 1 |
+| `F_OK` | 0 |
+| `SEEK_SET` | 0 |
+| `SEEK_CUR` | 1 |
+| `SEEK_END` | 2 |
+| `_PC_CHOWN_RESTRICTED` | 0 |
+| `_PC_LINK_MAX` | 1 |
+| `_PC_MAX_CANON` | 2 |
+| `_PC_MAX_INPUT` | 3 |
+| `_PC_NAME_MAX` | 4 |
+| `_PC_NO_TRUNC` | 5 |
+| `_PC_PATH_MAX` | 6 |
+| `_PC_PIPE_BUF` | 7 |
+| `_PC_VDISABLE` | 8 |
+| `_PC_THREAD_SAFE` | 9 |
+| `ST_RDONLY` | 1 |
+| `ST_NOSUID` | 2 |
+| `ST_CASE_SENSITIVE` | 4 |
+| `ST_CHOWN_RESTRICTED` | 8 |
+| `ST_THREAD_SAFE` | 16 |
+| `QLG_CHAR_SINGLE` | 0 |
+| `QLG_PTR_SINGLE` | 1 |
+| `QLG_CHAR_DOUBLE` | 2 |
+| `QLG_PTR_DOUBLE` | 3 |
+| `QP0L_DONOT_FOLLOW_SYMLNK` | 0 |
+| `QP0L_FOLLOW_SYMLNK` | 1 |
+| `QP0L_USER_FUNCTION_PTR` | 0 |
+| `QP0L_USER_FUNCTION_PGM` | 1 |
+| `QP0L_SUBTREE_YES` | 0 |
+| `QP0L_SUBTREE_NO` | 1 |
+| `QP0L_PASS_WITH_ERRORID` | 0 |
+| `QP0L_BYPASS_NO_ERRORID` | 1 |
+| `QP0L_END_PROCESS_SUBTREE` | 4 |
+| `QP0L_SELECT_OK` | 0 |
+| `QP0L_SELECT_DONE` | 1 |
+| `QP0L_SELECT_NOT_OK` | 2 |
+
+### Attribute data
+
+| Attribute | ID | Data bytes |
+| --- | --- | --- |
+| `QP0L_ATTR_OBJTYPE` | 0 | 11 |
+| `QP0L_ATTR_DATA_SIZE` | 1 | 4 |
+| `QP0L_ATTR_ALLOC_SIZE` | 2 | 4 |
+| `QP0L_ATTR_EXTENDED_ATTR_SIZE` | 3 | 4 |
+| `QP0L_ATTR_CREATE_TIME` | 4 | 4 |
+| `QP0L_ATTR_ACCESS_TIME` | 5 | 4 |
+| `QP0L_ATTR_CHANGE_TIME` | 6 | 4 |
+| `QP0L_ATTR_MODIFY_TIME` | 7 | 4 |
+| `QP0L_ATTR_STG_FREE` | 8 | 1 |
+| `QP0L_ATTR_CHECKED_OUT` | 9 | 16 |
+| `QP0L_ATTR_LOCAL_REMOTE` | 10 | 1 |
+| `QP0L_ATTR_AUTH` | 11 | 0 |
+| `QP0L_ATTR_FILE_ID` | 12 | 16 |
+| `QP0L_ATTR_ASP` | 13 | 2 |
+| `QP0L_ATTR_DATA_SIZE_64` | 14 | 8 |
+| `QP0L_ATTR_ALLOC_SIZE_64` | 15 | 8 |
+| `QP0L_ATTR_PC_READ_ONLY` | 17 | 1 |
+| `QP0L_ATTR_PC_HIDDEN` | 18 | 1 |
+| `QP0L_ATTR_PC_SYSTEM` | 19 | 1 |
+| `QP0L_ATTR_PC_ARCHIVE` | 20 | 1 |
+| `QP0L_ATTR_SYSTEM_ARCHIVE` | 21 | 1 |
+| `QP0L_ATTR_CODEPAGE` | 22 | 2 |
+| `QP0L_ATTR_FILE_FORMAT` | 23 | 1 |
+| `QP0L_ATTR_JOURNAL_INFORMATION` | 25 | 36 |
+| `QP0L_ATTR_ALWCKPWRT` | 26 | 1 |
+| `QP0L_ATTR_CCSID` | 27 | 2 |
+| `QP0L_ATTR_SIGNED` | 28 | 1 |
+| `QP0L_ATTR_SYS_SIGNED` | 29 | 1 |
+| `QP0L_ATTR_MULT_SIGS` | 30 | 1 |
+| `QP0L_ATTR_DISK_STG_OPT` | 31 | 1 |
+| `QP0L_ATTR_MAIN_STG_OPT` | 32 | 1 |
+| `QP0L_ATTR_DIR_FORMAT` | 33 | 1 |
+| `QP0L_ATTR_AUDIT` | 34 | 10 |
+| `QP0L_ATTR_CRTOBJSCAN` | 35 | 1 |
+| `QP0L_ATTR_SCAN` | 36 | 1 |
+| `QP0L_ATTR_ALWSAV` | 38 | 1 |
+| `QP0L_ATTR_RSTDRNMUNL` | 39 | 1 |
+| `QP0L_ATTR_CRTOBJAUD` | 41 | 10 |
+| `QP0L_ATTR_SYSTEM_USE` | 42 | 1 |
+| `QP0L_ATTR_TEMPORARY` | 43 | 1 |
+| `QP0L_ATTR_INHERIT_ALWCKPWRT` | 46 | 1 |
+| `QP0L_ATTR_SYS_RESTRICTS_SAVE` | 47 | 1 |
+| `QP0L_ATTR_TEXT` | 48 | 54 |
+| `QP0L_ATTR_SUID` | 300 | 1 |
+| `QP0L_ATTR_SGID` | 301 | 1 |
+
+## Stream file sources
+
+`CRTBNDRPG`, `CRTRPGMOD` and `CRTSQLRPGI` take `SRCSTMF` and
+`INCDIR`; `CRTBNDCL`, `CRTCLMOD` and `CRTCMD` take `SRCSTMF` (as on
+7.5); `RUNSQLSTM` takes `SRCSTMF`. The storage service reads the stream
+file through its `Ifs` in the requesting job's name and with its
+descriptors' owner, so a relative path is from the job's current
+directory, authority is the job user's, and the data converts from the
+file's CCSID (`lic/slic/src/cpp/stmf.rs`). A stream file compiles as a
+member whose library is `*STMF`, file its directory and name its path;
+the object's name, when the command gives `*CTLSPEC` and the source no
+`DFTNAME`, is the file's base name. In a stream file source, `/COPY` and
+`/INCLUDE` of a name without a comma are stream files (quoted names
+are in any source); a relative path is looked for in the current
+directory, each `INCDIR` directory, then the including file's
+directory. `RPGINCDIR` is not read (jobs have no environment variables
+yet). `INFOSTMF` is accepted; no PCML is written. `svc.sqlrun` takes a
+path as well as an `xfer` buffer.
+
+When RPG calls one of the system's C-style procedures
+(`ile::SYSTEM_SRVPGM_PROCS`), the compiler passes each by-reference
+parameter as a pointer by value, as IBM's C functions expect; a second
+prototype of an `EXTPROC` already declared with another signature is
+called through a procedure pointer (`fcntl` with an integer and with a
+`struct flock *`).
+
 ## Not yet
 
 - Opening a FIFO through the service (it would have to wait) is

@@ -352,7 +352,7 @@ fn runsql(system: &mut System, parms: &Parms) -> CmdReply {
     plain(report.listing)
 }
 
-/// `RUNSQLSTM SRCFILE(lib/file) SRCMBR(m)`: the member's statements;
+/// `RUNSQLSTM SRCFILE(lib/file) SRCMBR(m)` or `SRCSTMF(path)`: the statements;
 /// `SQL9006` when errors passed `ERRLVL`.
 fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
     let q = parms.qual("SRCFILE");
@@ -360,10 +360,15 @@ fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
         Ok(m) => m,
         Err(e) => return failed("RUNSQLSTM", &e),
     };
-    let text = in_store(system, |txn, qsys, names| {
-        let id = file(txn, qsys, names, &q)?;
-        db::source::srcget(txn, id, mbr).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))
-    });
+    // SRCSTMF: the statements are a stream file read in the job's name.
+    let stmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
+    let text = match stmf {
+        Some(path) => super::stmf::read_as_job(system, &path),
+        None => in_store(system, |txn, qsys, names| {
+            let id = file(txn, qsys, names, &q)?;
+            db::source::srcget(txn, id, mbr).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))
+        }),
+    };
     let text = match text {
         Ok(t) => t,
         Err(e) => return failed("RUNSQLSTM", &e),

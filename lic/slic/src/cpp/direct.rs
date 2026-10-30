@@ -441,8 +441,19 @@ fn crtcmd(system: &mut System, parms: &Parms) -> CmdReply {
     let text = parms.text("TEXT");
     let replace = parms.yes("REPLACE");
     let cx = ctx(system);
+    // SRCSTMF: the definition source is a stream file read in the job's name.
+    let stmf = match parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty()) {
+        Some(path) => match super::stmf::read_as_job(system, &path) {
+            Ok(t) => Some(t.replace("\r\n", "\n")),
+            Err(e) => return failed("CRTCMD", &e),
+        },
+        None => None,
+    };
     let r = in_store(system, |txn, qsys, names| {
-        let source = member_text(txn, qsys, names, &sf, &sfl, &mbr)?;
+        let source = match &stmf {
+            Some(t) => t.clone(),
+            None => member_text(txn, qsys, names, &sf, &sfl, &mbr)?,
+        };
         let mut def = cmd::source::compile(&n, &source).map_err(|diags| {
             let mut s = String::from("CPF0276");
             for d in diags {

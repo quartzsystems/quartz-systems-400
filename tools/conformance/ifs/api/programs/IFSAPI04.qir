@@ -1,0 +1,94 @@
+; link, unlink, rename, Qp0lRenameKeep, Qp0lRenameUnlink, symlink and
+; readlink
+module IFSAPI04
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI04")
+static $a: bytes(*) inz(z"/home/QSTEST/IFSAPI04/a")
+static $b: bytes(*) inz(z"/home/QSTEST/IFSAPI04/b")
+static $c: bytes(*) inz(z"/home/QSTEST/IFSAPI04/c")
+static $s: bytes(*) inz(z"/home/QSTEST/IFSAPI04/s")
+static $tgt: bytes(*) inz(z"/home/QSTEST/IFSAPI04/c")
+static $none: bytes(*) inz(z"/home/QSTEST/IFSAPI04/none")
+static $st: bytes(128)
+static $lnk: char(30) inz(*BLANKS)
+static $short: char(10) inz(*BLANKS)
+proc NLINK(byval $p: ptr) {
+L0:
+  %q = load $p
+  %sb = addr $st
+  %r = callb stat(%q, %sb)
+  callb RC(%r)
+  %n = callb SHORT(%sb, 8)
+  dsply %n
+  ret
+}
+proc IFSAPI04() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  %pa = addr $a
+  %pb = addr $b
+  %pc = addr $c
+  %fd = callb creat(%pa, 420)
+  %x = callb close(%fd)
+  dsply "link a b"
+  %l1 = callb link(%pa, %pb)
+  callb RC(%l1)
+  callb NLINK(%pa)
+  dsply "link onto an existing name"
+  %l2 = callb link(%pa, %pb)
+  callb RC(%l2)
+  dsply "unlink b"
+  %u1 = callb unlink(%pb)
+  callb RC(%u1)
+  callb NLINK(%pa)
+  %fd2 = callb creat(%pc, 420)
+  %x2 = callb close(%fd2)
+  dsply "Qp0lRenameKeep a c: c exists"
+  %k = callb Qp0lRenameKeep(%pa, %pc)
+  callb RC(%k)
+  dsply "rename a c: as Qp0lRenameKeep"
+  %rn = callb rename(%pa, %pc)
+  callb RC(%rn)
+  dsply "Qp0lRenameUnlink a c: c replaced"
+  %ku = callb Qp0lRenameUnlink(%pa, %pc)
+  callb RC(%ku)
+  %ga = callb access(%pa, 0)
+  callb RC(%ga)
+  dsply "Qp0lRenameKeep c b"
+  %k2 = callb Qp0lRenameKeep(%pc, %pb)
+  callb RC(%k2)
+  dsply "rename of nothing"
+  %pn = addr $none
+  %rn2 = callb rename(%pn, %pa)
+  callb RC(%rn2)
+  dsply "symlink s to c, readlink"
+  %ps = addr $s
+  %pt = addr $tgt
+  %sy = callb symlink(%pt, %ps)
+  callb RC(%sy)
+  %lb = addr $lnk
+  %rl = callb readlink(%ps, %lb, 30)
+  callb RC(%rl)
+  dsply $lnk
+  dsply "readlink into ten bytes"
+  %sh = addr $short
+  %rl2 = callb readlink(%ps, %sh, 10)
+  callb RC(%rl2)
+  dsply $short
+  dsply "readlink of a file"
+  %rl3 = callb readlink(%pb, %lb, 30)
+  callb RC(%rl3)
+  dsply "a dangling link: stat and lstat"
+  %sb = addr $st
+  %s1 = callb stat(%ps, %sb)
+  callb RC(%s1)
+  %s2 = callb lstat(%ps, %sb)
+  callb RC(%s2)
+  %u2 = callb unlink(%ps)
+  %u3 = callb unlink(%pb)
+  callb RC(%u3)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

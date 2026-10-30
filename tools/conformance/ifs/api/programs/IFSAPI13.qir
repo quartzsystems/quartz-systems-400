@@ -1,0 +1,78 @@
+; QP0LROR (RORO0100) and QP0LRRO (RROO0100, this job) with a file open
+; for reading and for writing
+module IFSAPI13
+extern sysapi QP0LROR($r: bytes(128), $rl: i32, $fmt: char(8), $path: bytes(64), $err: bytes(16))
+extern sysapi QP0LRRO($r: bytes(256), $rl: i32, $fmt: char(8), $job: char(26), $jfmt: char(8), $err: bytes(16))
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI13")
+static $f: bytes(*) inz(z"/home/QSTEST/IFSAPI13/r.txt")
+static $q: bytes(64) inz(q"/home/QSTEST/IFSAPI13/r.txt")
+static $rcv: bytes(128)
+static $rcv2: bytes(256)
+static $len: i32 inz(128)
+static $len2: i32 inz(256)
+static $fmt: char(8) inz("RORO0100")
+static $fmt2: char(8) inz("RROO0100")
+static $jfmt: char(8) inz("JIDF0100")
+static $job: char(26) inz("*")
+static $other: char(26) inz("QZDASOINIT")
+static $err: bytes(16) inz(x"00000010000000000000000000000000")
+static $msg: char(7)
+proc SHOW() {
+L0:
+  %r = addr $rcv
+  %br = callb INT(%r, 0)
+  dsply %br
+  %cnt = callb INT(%r, 16)
+  dsply %cnt
+  %use = callb INT(%r, 20)
+  dsply %use
+  %so = callb INT(%r, 8)
+  %so64 = cvt.i64 %so
+  %rd = callb INT(%r, %so64)
+  dsply %rd
+  %wo = add %so64, 4
+  %wr = callb INT(%r, %wo)
+  dsply %wr
+  %sro = add %so64, 24
+  %srw = callb INT(%r, %sro)
+  dsply %srw
+  ret
+}
+proc IFSAPI13() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  %p = addr $f
+  %fd = callb creat(%p, 420)
+  %c = callb close(%fd)
+  dsply "no references"
+  sysapi QP0LROR($rcv, $len, $fmt, $q, $err)
+  callb SHOW()
+  dsply "one read, one write"
+  %f1 = callb open(%p, 1)
+  %f2 = callb open(%p, 2)
+  sysapi QP0LROR($rcv, $len, $fmt, $q, $err)
+  callb SHOW()
+  dsply "the objects this job references"
+  sysapi QP0LRRO($rcv2, $len2, $fmt2, $job, $jfmt, $err)
+  %r2 = addr $rcv2
+  %n = callb INT(%r2, 8)
+  dsply %n
+  %lo = callb INT(%r2, 16)
+  %lo64 = cvt.i64 %lo
+  %rc = add %lo64, 12
+  %refs = callb INT(%r2, %rc)
+  dsply %refs
+  dsply "another job"
+  sysapi QP0LRRO($rcv2, $len2, $fmt2, $other, $jfmt, $err)
+  %e = addr $err
+  %ea = ptradd %e, 8
+  mov $msg, [%ea]:char(7)
+  dsply $msg
+  %x1 = callb close(%f1)
+  %x2 = callb close(%f2)
+  %u = callb unlink(%p)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

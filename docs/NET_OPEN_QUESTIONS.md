@@ -84,6 +84,47 @@ and how to settle each against the oracle.
   (ours: `TCP9509`) or at `STRTCPIFC` is not captured (the profile could
   not run it).
 
+## IFS APIs
+
+Each is settled by running the probe under `tools/conformance/ifs/api/rpg/`
+named with it through `rpg-oracle` and diffing its `QSYSPRT` lines with
+`expected/` (the kit's test checks QS/400 prints the same as the IR).
+
+1. **`perror` and C's `rename`.** Neither is in the captured exports;
+   they are listed under `QC2IO` (`QUSAPIBD` binds it), with `rename`
+   following `Qp0lRenameKeep` as the header maps it outside POSIX.
+   Check `DSPSRVPGM QC2IO DETAIL(*PROCEXP)` on pub400 (IFSAPI04, IFSAPI14).
+2. **`openat` and `AT_FDCWD`.** IBM i has neither; QS/400 exports
+   `openat` with Linux's `AT_FDCWD` (-100) for ported code. The RPG probe
+   uses `creat` in its place (IFSAPI05).
+3. **`Qp0lGetAttr` buffer.** The next header is on a four-byte boundary;
+   `QP0L_ATTR_CCSID` and `QP0L_ATTR_CODEPAGE` are two bytes;
+   `QP0L_ATTR_TEXT` is a four-byte CCSID and 50 characters; a buffer too
+   small answers 0 with bytes returned 0. Read the offsets and sizes the
+   oracle gives (IFSAPI10).
+4. **`d_reclen`.** Through the name's NUL on a four-byte boundary;
+   `d_nlsinfo` holds the job's CCSID and zero country and language.
+   (IFSAPI05 prints the names; add `d_reclen` to the probe if it differs.)
+5. **`Qp0lProcessSubtree` calls.** The start directory is passed first,
+   then each object parents first in name order, then a last call with
+   `QP0L_SELECT_DONE`; a nonzero return value ends the walk. IBM's order
+   and the final call are unconfirmed (IFSAPI12).
+6. **Directory sizes and `nlink`.** `st_size` of a directory is the
+   backend's (4096 in memory, xfs's on disk); `nlink` at least 2
+   (IFSAPI02 prints both).
+7. **`QP0LRRO` for another job.** Only `*` (this job) is answered;
+   another job's name is `CPF3C58` until the service shares its lock
+   table across jobs (IFSAPI13).
+8. **`O_TEXT_CREAT` with a job CCSID data id (0).** Conversion from the
+   job's CCSID into the new file's; check the bytes on disk (IFSAPI08).
+
+- **`SRCSTMF` with `SRCFILE`.** The analyzer kit (`tools/conformance/cmd/`)
+  accepts `CRTBNDCL`, `CRTCLMOD` and `CRTCMD` strings that give both
+  `SRCSTMF` and `SRCFILE`/`SRCMBR`; `RUNSQLSTM` refuses the pair (SQL8019).
+  Whether IBM's 7.3+ definitions refuse the pair at analysis time is not
+  captured (the 7.1 primary has no `SRCSTMF` on these commands); settle it
+  with the strings at pub400.
+
 ## Oracle facts (capture 2026-10-24)
 
 What the oracle capture established, read-only, for the later Phase 10

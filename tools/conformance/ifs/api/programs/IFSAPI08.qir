@@ -1,0 +1,100 @@
+; Text mode: O_CCSID tags a new file, O_TEXTDATA converts between the
+; file's CCSID and the job's (37) or the open's, O_TEXT_CREAT converts
+; what a new file is written in, O_CODEPAGE names a code page
+module IFSAPI08
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI08")
+static $a: bytes(*) inz(z"/home/QSTEST/IFSAPI08/ascii.txt")
+static $u: bytes(*) inz(z"/home/QSTEST/IFSAPI08/utf8.txt")
+static $c: bytes(*) inz(z"/home/QSTEST/IFSAPI08/cp.txt")
+static $text: char(6) inz("Hello%")
+static $raw: bytes(8)
+static $back: char(8) inz(*BLANKS)
+static $st: bytes(128)
+static $hex: bytes(4)
+proc CCSID(byval $p: ptr) {
+L0:
+  %q = load $p
+  %sb = addr $st
+  %r = callb stat(%q, %sb)
+  %cc = callb SHORT(%sb, 62)
+  dsply %cc
+  %sz = callb INT(%sb, 20)
+  dsply %sz
+  ret
+}
+proc RAW(byval $p: ptr, byval $n: u32) {
+L0:
+  %q = load $p
+  %n = cvt.u32 $n
+  %fd = callb open(%q, 1)
+  %b = addr $raw
+  %r = callb read(%fd, %b, %n)
+  callb RC(%r)
+  %v = callb INT(%b, 0)
+  dsply %v
+  %c = callb close(%fd)
+  ret
+}
+proc IFSAPI08() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  dsply "create tagged 819, write EBCDIC text through O_TEXTDATA"
+  %pa = addr $a
+  %fd = callb open(%pa, 106, 420, 819)
+  callb RC(%fd)
+  %fd0 = callb close(%fd)
+  %fd1 = callb open(%pa, 16777218)
+  callb RC(%fd1)
+  %t = addr $text
+  %w = callb write(%fd1, %t, 6)
+  callb RC(%w)
+  %c1 = callb close(%fd1)
+  callb CCSID(%pa)
+  dsply "the bytes on disk: ASCII"
+  callb RAW(%pa, 4)
+  dsply "read back through O_TEXTDATA: the job's CCSID"
+  %fd2 = callb open(%pa, 16777217)
+  %bk = addr $back
+  %r2 = callb read(%fd2, %bk, 8)
+  callb RC(%r2)
+  dsply $back
+  %c2 = callb close(%fd2)
+  dsply "O_TEXT_CREAT: a new file in 1208, the data from 37"
+  %pu = addr $u
+  %fd3 = callb open(%pu, 50331754, 420, 1208, 0)
+  callb RC(%fd3)
+  %w3 = callb write(%fd3, %t, 6)
+  callb RC(%w3)
+  %c3 = callb close(%fd3)
+  callb CCSID(%pu)
+  callb RAW(%pu, 4)
+  dsply "O_CCSID 1208 on read: no conversion"
+  %fd4 = callb open(%pu, 16777249, 0, 1208)
+  callb RC(%fd4)
+  mov $back, *BLANKS
+  %r4 = callb read(%fd4, %bk, 8)
+  callb RC(%r4)
+  %v4 = callb INT(%bk, 0)
+  dsply %v4
+  %c4 = callb close(%fd4)
+  dsply "O_CODEPAGE 850"
+  %pc = addr $c
+  %fd5 = callb open(%pc, 8388682, 420, 850)
+  callb RC(%fd5)
+  %c5 = callb close(%fd5)
+  callb CCSID(%pc)
+  dsply "O_CCSID and O_CODEPAGE together"
+  %fd6 = callb open(%pc, 8388641, 0, 850)
+  callb RC(%fd6)
+  dsply "a CCSID that does not exist"
+  %fd7 = callb open(%pc, 16777249, 0, 4242)
+  callb RC(%fd7)
+  %u1 = callb unlink(%pa)
+  %u2 = callb unlink(%pu)
+  %u3 = callb unlink(%pc)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

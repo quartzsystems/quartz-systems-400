@@ -338,6 +338,14 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     let provider = Rc::new(RefCell::new(s.provider));
     let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
     sysapi::install(&mut job, dyn_provider);
+    // The IFS APIs reach the storage service's file system; paths and
+    // texts are in the job's CCSID (its default for 65535).
+    let a = host.attrs();
+    let ccsid = match u16::try_from(a.ccsid) {
+        Ok(65535) | Err(_) => u16::try_from(a.dftccsid).unwrap_or(37),
+        Ok(c) => c,
+    };
+    sysapi::ifs::configure(&mut job, Rc::new(s.ifs), ccsid);
     // Programs compiled from RPG call its runtime library.
     qrpgrt::install(&mut job);
     // Domain and state are enforced at the level of this IPL.

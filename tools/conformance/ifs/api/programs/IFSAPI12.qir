@@ -1,0 +1,82 @@
+; Qp0lProcessSubtree: the exit procedure called for the start and each
+; object below it, the object types list, subtree no, and ending early
+module IFSAPI12
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI12")
+static $sub: bytes(*) inz(z"/home/QSTEST/IFSAPI12/sub")
+static $a: bytes(*) inz(z"/home/QSTEST/IFSAPI12/a.txt")
+static $b: bytes(*) inz(z"/home/QSTEST/IFSAPI12/sub/b.txt")
+static $q: bytes(*) inz(q"/home/QSTEST/IFSAPI12")
+static $uf: bytes(48) inz(x"000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+static $stmf: bytes(15) inz(x"000000015CC1D3D3E2E3D4C6404040")
+static $info: i32 inz(0)
+static $stop: i32 inz(0)
+proc VISIT($status: u32, $error: u32, $ret: u32, $name: bytes(32), $info: i32) {
+L0:
+  %s = load $status
+  %s32 = cvt.i32 %s
+  dsply %s32
+  %nb = addr $name
+  %len = callb INT(%nb, 16)
+  dsply %len
+  %n = load $info
+  %n1 = add %n, 1
+  store $info, %n1
+  %stop = load $stop
+  %go = cmp.ne %stop, 0
+  brif %go, CHECK, DONE
+CHECK:
+  %at = cmp.ge %n1, %stop
+  brif %at, END, DONE
+END:
+  store $ret, 1
+  ret
+DONE:
+  ret
+}
+proc IFSAPI12() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  %s = addr $sub
+  %r1 = callb mkdir(%s, 493)
+  %pa = addr $a
+  %f1 = callb creat(%pa, 420)
+  %c1 = callb close(%f1)
+  %pb = addr $b
+  %f2 = callb creat(%pb, 420)
+  %c2 = callb close(%f2)
+  %vp = procaddr VISIT
+  %u = addr $uf
+  %at = ptradd %u, 32
+  store [%at]:procptr, %vp
+  %q = addr $q
+  %i = addr $info
+  %nul = const.ptr *NULL
+  dsply "every object: status and name length per call"
+  %r = callb Qp0lProcessSubtree(%q, 0, %nul, 0, %nul, 0, %u, %i)
+  callb RC(%r)
+  %n = load $info
+  dsply %n
+  dsply "stream files only"
+  store $info, 0
+  %t = addr $stmf
+  %r2 = callb Qp0lProcessSubtree(%q, 0, %t, 0, %nul, 0, %u, %i)
+  callb RC(%r2)
+  dsply "subtree no"
+  store $info, 0
+  %r3 = callb Qp0lProcessSubtree(%q, 1, %nul, 0, %nul, 0, %u, %i)
+  callb RC(%r3)
+  dsply "the exit ends the walk after two"
+  store $info, 0
+  store $stop, 2
+  %r4 = callb Qp0lProcessSubtree(%q, 0, %nul, 0, %nul, 0, %u, %i)
+  callb RC(%r4)
+  %n4 = load $info
+  dsply %n4
+  %u1 = callb unlink(%pb)
+  %u2 = callb unlink(%pa)
+  %u3 = callb rmdir(%s)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

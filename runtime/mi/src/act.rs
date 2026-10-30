@@ -269,6 +269,32 @@ pub fn call_into_handler(j: &mut crate::job::Job, addr: usize, comm: u64, items:
     rc
 }
 
+/// A bound procedure with up to six by-reference parameters.
+type ByRef6 = extern "sysv64" fn(*mut Env, i64, i64, u64, u64, u64, u64, u64, u64);
+
+/// Call a procedure a program named by a procedure pointer, with up to
+/// six by-reference parameters (native addresses), as an API calls a
+/// user exit procedure (`Qp0lProcessSubtree`).
+///
+/// # Panics
+///
+/// More than six parameters.
+pub fn call_by_ref(j: &mut crate::job::Job, addr: usize, params: &[u64]) {
+    assert!(params.len() <= 6, "at most six parameters");
+    let mut p = [0u64; 6];
+    p[..params.len()].copy_from_slice(params);
+    let env = j.env();
+    escape(j);
+    // SAFETY: `addr` is the code address of a procedure pointer the
+    // program passed; the code generator gives every bound procedure the
+    // signature `(env, argc, opdesc, params...)` with by-reference
+    // parameters as native addresses, and a callee with fewer
+    // parameters ignores the trailing registers and stack slots.
+    let f: ByRef6 = unsafe { std::mem::transmute::<usize, ByRef6>(addr) };
+    f(env, i64::try_from(params.len()).unwrap_or(0), 0, p[0], p[1], p[2], p[3], p[4], p[5]);
+    escape(j);
+}
+
 /// Call a program entry procedure with a parameter list.
 pub(crate) fn call_entry(addr: usize, env: *mut Env, args: &[u64]) {
     // The stack check in `enter` measures from here.

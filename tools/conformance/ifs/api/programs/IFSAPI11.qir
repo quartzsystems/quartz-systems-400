@@ -1,0 +1,90 @@
+; Qp0lCvtPathToQSYSObjName (QSYS0100) and Qp0lGetPathFromFileID /
+; QlgGetPathFromFileID with the file ID Qp0lGetAttr gives
+module IFSAPI11
+static $mbr: bytes(*) inz(q"/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR")
+static $lib: bytes(*) inz(q"/QSYS.LIB/QGPL.LIB")
+static $home: bytes(*) inz(q"/home/QSTEST")
+static $fmt: char(8) inz("QSYS0100")
+static $badfmt: char(8) inz("QSYS0200")
+static $info: bytes(184)
+static $err: bytes(16) inz(x"00000010000000000000000000000000")
+static $msg: char(7)
+static $name: char(10)
+static $ids: bytes(8) inz(x"000000010000000C")
+static $buf: bytes(64)
+static $need: i32 inz(0)
+static $got: i32 inz(0)
+static $path: char(20) inz(*BLANKS)
+static $qlg: bytes(96)
+proc FIELD(byval $at: i64) {
+L0:
+  %o = cvt.i64 $at
+  %b = addr $info
+  %a = ptradd %b, %o
+  mov $name, [%a]:char(10)
+  dsply $name
+  ret
+}
+proc ERR() {
+L0:
+  %e = addr $err
+  %av = callb INT(%e, 4)
+  dsply %av
+  %a = ptradd %e, 8
+  mov $msg, [%a]:char(7)
+  dsply $msg
+  ret
+}
+proc IFSAPI11() entry {
+L0:
+  dsply "a member: library, object, type, member, type"
+  %p = addr $mbr
+  %i = addr $info
+  %f = addr $fmt
+  %e = addr $err
+  callb Qp0lCvtPathToQSYSObjName(%p, %i, %f, 184, 0, %e)
+  callb ERR()
+  %br = callb INT(%i, 0)
+  dsply %br
+  callb FIELD(12)
+  callb FIELD(40)
+  callb FIELD(60)
+  callb FIELD(88)
+  callb FIELD(108)
+  callb FIELD(136)
+  dsply "a library"
+  %pl = addr $lib
+  callb Qp0lCvtPathToQSYSObjName(%pl, %i, %f, 184, 0, %e)
+  callb ERR()
+  callb FIELD(12)
+  callb FIELD(60)
+  dsply "a path outside /QSYS.LIB"
+  %ph = addr $home
+  callb Qp0lCvtPathToQSYSObjName(%ph, %i, %f, 184, 0, %e)
+  callb ERR()
+  dsply "a format not valid"
+  %bf = addr $badfmt
+  callb Qp0lCvtPathToQSYSObjName(%p, %i, %bf, 184, 0, %e)
+  callb ERR()
+  dsply "the file ID of /home/QSTEST and back"
+  %l = addr $ids
+  %b = addr $buf
+  %n = addr $need
+  %g = addr $got
+  %r = callb Qp0lGetAttr(%ph, %l, %b, 64, %n, %g, 1)
+  callb RC(%r)
+  %fid = ptradd %b, 16
+  %pa = addr $path
+  %x = callb Qp0lGetPathFromFileID(%pa, 20, %fid)
+  callb PTR(%x)
+  dsply $path
+  %q = addr $qlg
+  %y = callb QlgGetPathFromFileID(%q, 96, %fid)
+  callb PTR(%y)
+  %len = callb INT(%q, 16)
+  dsply %len
+  dsply "a buffer too small"
+  %z = callb Qp0lGetPathFromFileID(%pa, 4, %fid)
+  callb PTR(%z)
+  ret
+}

@@ -4,8 +4,8 @@
 
 //! The C-style procedures the runtime provides under IBM's service
 //! program names: sockets (`QSOSRV1`), the resolver (`QSOSRV2`), the
-//! descriptor calls shared with the IFS (`QP0LLIB1`) and `errno`
-//! (`QC2UTIL1`). An import of one is a `*SYSTEM` import like `QLEAWI`'s;
+//! descriptor and IFS calls (`QP0LLIB1`, `QP0LLIB2`, `QP0LLIB3`),
+//! `errno` (`QC2UTIL1`) and C's `perror` and `rename` (`QC2IO`). An import of one is a `*SYSTEM` import like `QLEAWI`'s;
 //! `DSPPGM` names the service program IBM binds it from. Names are
 //! matched without regard to case: the RPG compiler upper-cases every
 //! `EXTPROC` name, C-style headers spell them in lower case.
@@ -102,9 +102,129 @@ pub const SYSTEM_SRVPGM_PROCS: &[(&str, &str)] = &[
     ("ioctl", "QP0LLIB1"),
     ("dup", "QP0LLIB1"),
     ("dup2", "QP0LLIB1"),
+    // QP0LLIB1: the IFS calls on paths and open files, and the NLS forms
+    // (`QlgOpen`, `QlgUnlink` are the header's names for `Qp0lOpen`, `Qp0lUnlink`).
+    ("open", "QP0LLIB1"),
+    ("open64", "QP0LLIB1"),
+    ("openat", "QP0LLIB1"),
+    ("creat", "QP0LLIB1"),
+    ("creat64", "QP0LLIB1"),
+    ("pread", "QP0LLIB1"),
+    ("pread64", "QP0LLIB1"),
+    ("pwrite", "QP0LLIB1"),
+    ("pwrite64", "QP0LLIB1"),
+    ("lseek", "QP0LLIB1"),
+    ("lseek64", "QP0LLIB1"),
+    ("fsync", "QP0LLIB1"),
+    ("ftruncate", "QP0LLIB1"),
+    ("ftruncate64", "QP0LLIB1"),
+    ("fstat", "QP0LLIB1"),
+    ("fstat64", "QP0LLIB1"),
+    ("fchmod", "QP0LLIB1"),
+    ("fchown", "QP0LLIB1"),
+    ("fchdir", "QP0LLIB1"),
+    ("fpathconf", "QP0LLIB1"),
+    ("fstatvfs", "QP0LLIB1"),
+    ("fstatvfs64", "QP0LLIB1"),
+    ("stat", "QP0LLIB1"),
+    ("stat64", "QP0LLIB1"),
+    ("lstat", "QP0LLIB1"),
+    ("lstat64", "QP0LLIB1"),
+    ("access", "QP0LLIB1"),
+    ("chmod", "QP0LLIB1"),
+    ("chown", "QP0LLIB1"),
+    ("lchown", "QP0LLIB1"),
+    ("link", "QP0LLIB1"),
+    ("unlink", "QP0LLIB1"),
+    ("Qp0lRenameKeep", "QP0LLIB1"),
+    ("Qp0lRenameUnlink", "QP0LLIB1"),
+    ("symlink", "QP0LLIB1"),
+    ("readlink", "QP0LLIB1"),
+    ("mkdir", "QP0LLIB1"),
+    ("mkfifo", "QP0LLIB1"),
+    ("rmdir", "QP0LLIB1"),
+    ("chdir", "QP0LLIB1"),
+    ("utime", "QP0LLIB1"),
+    ("umask", "QP0LLIB1"),
+    ("pathconf", "QP0LLIB1"),
+    ("statvfs", "QP0LLIB1"),
+    ("statvfs64", "QP0LLIB1"),
+    ("opendir", "QP0LLIB1"),
+    ("readdir", "QP0LLIB1"),
+    ("readdir_r", "QP0LLIB1"),
+    ("rewinddir", "QP0LLIB1"),
+    ("closedir", "QP0LLIB1"),
+    ("QlgOpendir", "QP0LLIB1"),
+    ("QlgReaddir", "QP0LLIB1"),
+    ("QlgReaddir_r", "QP0LLIB1"),
+    ("Qp0lOpen", "QP0LLIB1"),
+    ("QlgOpen", "QP0LLIB1"),
+    ("QlgOpen64", "QP0LLIB1"),
+    ("QlgCreat", "QP0LLIB1"),
+    ("QlgCreat64", "QP0LLIB1"),
+    ("QlgStat", "QP0LLIB1"),
+    ("QlgStat64", "QP0LLIB1"),
+    ("QlgLstat", "QP0LLIB1"),
+    ("QlgLstat64", "QP0LLIB1"),
+    ("QlgAccess", "QP0LLIB1"),
+    ("QlgChdir", "QP0LLIB1"),
+    ("QlgChmod", "QP0LLIB1"),
+    ("QlgChown", "QP0LLIB1"),
+    ("QlgLchown", "QP0LLIB1"),
+    ("QlgLink", "QP0LLIB1"),
+    ("QlgSymlink", "QP0LLIB1"),
+    ("QlgMkdir", "QP0LLIB1"),
+    ("QlgMkfifo", "QP0LLIB1"),
+    ("QlgRmdir", "QP0LLIB1"),
+    ("Qp0lUnlink", "QP0LLIB1"),
+    ("QlgUnlink", "QP0LLIB1"),
+    ("QlgRenameKeep", "QP0LLIB1"),
+    ("QlgRenameUnlink", "QP0LLIB1"),
+    ("QlgReadlink", "QP0LLIB1"),
+    ("QlgPathconf", "QP0LLIB1"),
+    ("QlgStatvfs", "QP0LLIB1"),
+    ("QlgStatvfs64", "QP0LLIB1"),
+    ("QlgUtime", "QP0LLIB1"),
+    // QP0LLIB2: the current directory, attributes, path services.
+    ("getcwd", "QP0LLIB2"),
+    ("QlgGetcwd", "QP0LLIB2"),
+    ("Qp0lGetAttr", "QP0LLIB2"),
+    ("QlgGetAttr", "QP0LLIB2"),
+    ("Qp0lCvtPathToQSYSObjName", "QP0LLIB2"),
+    ("QlgCvtPathToQSYSObjName", "QP0LLIB2"),
+    ("Qp0lProcessSubtree", "QP0LLIB2"),
+    ("QlgProcessSubtree", "QP0LLIB2"),
+    ("Qp0lGetPathFromFileID", "QP0LLIB2"),
+    ("QlgGetPathFromFileID", "QP0LLIB2"),
+    // QP0LLIB3.
+    ("Qp0lSetAttr", "QP0LLIB3"),
+    ("QlgSetAttr", "QP0LLIB3"),
     // QC2UTIL1: errno.
     ("__errno", "QC2UTIL1"),
     ("strerror", "QC2UTIL1"),
+    // QC2IO: the C library's own (not in the captured exports).
+    ("perror", "QC2IO"),
+    ("rename", "QC2IO"),
+];
+
+/// Names of the table no captured export list has: `#pragma map`
+/// names a header gives another export (`QlgOpen` is `Qp0lOpen`), C
+/// library calls of service programs not captured, and `openat`, which
+/// IBM i does not have.
+pub const NOT_EXPORTED: &[&str] = &[
+    "openat",
+    "QlgOpen",
+    "QlgUnlink",
+    "QlgGetAttr",
+    "QlgSetAttr",
+    "QlgProcessSubtree",
+    "QlgCvtPathToQSYSObjName",
+    "perror",
+    "rename",
+    "htonl",
+    "htons",
+    "ntohl",
+    "ntohs",
 ];
 
 /// The service program a `*SYSTEM` import is shown under: `QLEAWI` for
@@ -150,5 +270,27 @@ mod tests {
         assert_eq!(system_srvpgm("_QRNX_SQRT"), Some("QRNXIE"));
         assert_eq!(system_srvpgm("NOSUCH"), None);
         assert!(is_system_srvpgm_proc("GETADDRINFO"));
+        assert_eq!(system_srvpgm("QP0LGETATTR"), Some("QP0LLIB2"));
+        assert_eq!(system_srvpgm("Qp0lSetAttr"), Some("QP0LLIB3"));
+    }
+
+    /// Every name is exported by the service program the table says,
+    /// as the oracle's capture lists them, but for the few known not to be.
+    #[test]
+    fn the_oracle_exports_agree() {
+        let text = include_str!("../../../../tools/conformance/oracle/srvpgm/exports.txt");
+        let exports: std::collections::HashSet<(&str, &str)> = text
+            .lines()
+            .filter_map(|l| {
+                let mut c = l.split('|');
+                Some((c.next()?, c.next()?))
+            })
+            .collect();
+        for (n, s) in SYSTEM_SRVPGM_PROCS {
+            if NOT_EXPORTED.contains(n) {
+                continue;
+            }
+            assert!(exports.contains(&(*s, *n)), "{s} does not export {n}");
+        }
     }
 }

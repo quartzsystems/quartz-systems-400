@@ -28,7 +28,7 @@ ifs ls [PATH] | cat PATH | put PATH TEXT | mkdir PATH | rm PATH | stat PATH | df
 ";
 
 /// Who the line runs as: the job's principal, else the system.
-fn principal() -> Principal {
+pub(crate) fn principal() -> Principal {
     sec::guard::current().map_or_else(
         || Principal {
             user: "QSECOFR".into(),

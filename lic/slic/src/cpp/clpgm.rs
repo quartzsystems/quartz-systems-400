@@ -243,10 +243,19 @@ fn create(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
         Ok(l) => l,
         Err(e) => return failed(cmdname, &e),
     };
-    let source = match in_store(system, |txn, qsys, names| {
-        member_text(txn, qsys, names, &sf, &sfl, &mbr)
-    }) {
-        Ok(s) => s,
+    // SRCSTMF (CRTBNDCL, CRTCLMOD): the source is a stream file read in
+    // the job's name.
+    let srcstmf = (cmdname != "CRTCLPGM" && parms.specified("SRCSTMF"))
+        .then(|| parms.text("SRCSTMF"))
+        .filter(|s| !s.is_empty());
+    let source = match &srcstmf {
+        Some(path) => super::stmf::read_as_job(system, path),
+        None => in_store(system, |txn, qsys, names| {
+            member_text(txn, qsys, names, &sf, &sfl, &mbr)
+        }),
+    };
+    let source = match source {
+        Ok(s) => s.replace("\r\n", "\n"),
         Err(e) => return failed(cmdname, &e),
     };
     let mut mem = match definitions(system, &source) {

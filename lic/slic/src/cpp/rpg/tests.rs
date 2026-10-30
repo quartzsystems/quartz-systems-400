@@ -409,3 +409,145 @@ fn a_dds_printer_file_describes_its_formats() {
     assert!(c.created, "{:?}", c.diags);
     assert!(c.qir.contains("prtio") && c.qir.contains("fmt(DTL)"), "{}", c.qir);
 }
+
+/// `/COPY` of stream files through an IFS client, as the service's
+/// includes do with the job's.
+struct StmfIncludes<'a> {
+    client: &'a dyn ifs::client::IfsClient,
+    incdir: Vec<String>,
+}
+
+impl rpgfront::Includes for StmfIncludes<'_> {
+    fn member(&mut self, lib: &str, file: &str, name: &str) -> Option<rpgfront::Member> {
+        if lib != rpgfront::reader::STMF {
+            return None;
+        }
+        let c = self.client;
+        let mut read = |p: &str| crate::cpp::stmf::read_text(c, p).ok();
+        crate::cpp::stmf::find(&mut read, name, &self.incdir, file)
+    }
+}
+
+fn put(c: &dyn ifs::client::IfsClient, path: &str, text: &str) {
+    crate::cpp::stmf::write_text(c, path, text).unwrap();
+}
+
+#[test]
+fn srcstmf_incdir_and_infostmf_are_parameters() {
+    let r = request(
+        "CRTBNDRPG",
+        &parms("CRTBNDRPG SRCSTMF('/home/QSTEST/x.rpgle') INCDIR('/inc' 'more')"),
+    )
+    .unwrap();
+    assert_eq!(r.srcstmf.as_deref(), Some("/home/QSTEST/x.rpgle"));
+    assert_eq!(r.incdir, ["/inc", "more"]);
+    let src = Source {
+        member: crate::cpp::stmf::member_of("/home/QSTEST/x.rpgle", "**FREE"),
+        text: String::new(),
+    };
+    assert_eq!(r.object_name(&src), "X", "the stream file names the program");
+    let e = request(
+        "CRTBNDRPG",
+        &parms("CRTBNDRPG PGM(QGPL/X) SRCFILE(QGPL/QRPGLESRC) SRCSTMF('/a.rpgle')"),
+    );
+    assert!(e.unwrap_err().starts_with("CPD0074"));
+}
+
+#[test]
+fn an_rpg_program_from_a_stream_file_with_copy_and_incdir() {
+    use ifs::client::IfsClient as _;
+    let sys = sysapi::ifs::memory::MemIfs::new();
+    let c = sys.client("QSTEST", 5, 37);
+    c.chdir("/home/QSTEST").unwrap();
+    c.mkdir("/home/QSTEST/inc", 0o755).unwrap();
+    c.mkdir("/home/QSTEST/src", 0o755).unwrap();
+    // The same name in INCDIR and in the source's directory: INCDIR first.
+    put(&c, "/home/QSTEST/inc/protos.rpgleinc", "**FREE
+dcl-s fromInc int(10) inz(1);");
+    put(&c, "/home/QSTEST/src/protos.rpgleinc", "**FREE
+dcl-s fromSrc int(10) inz(2);");
+    // Only in the source's directory.
+    put(&c, "/home/QSTEST/src/more.rpgleinc", "**FREE
+dcl-s more int(10) inz(3);");
+    // In the current directory: before INCDIR.
+    put(&c, "/home/QSTEST/cwd.rpgleinc", "**FREE
+dcl-s fromCwd int(10) inz(4);");
+    put(&c, "/home/QSTEST/inc/cwd.rpgleinc", "**FREE
+dcl-s wrong int(10);");
+    put(
+        &c,
+        "/home/QSTEST/src/x.rpgle",
+        "**FREE\n/copy protos.rpgleinc\n/include 'more.rpgleinc'\n/copy cwd.rpgleinc\n\
+         dsply %char(fromInc + more + fromCwd);\n*inlr = *on;\n",
+    );
+    let r = request(
+        "CRTBNDRPG",
+        &parms("CRTBNDRPG SRCSTMF('/home/QSTEST/src/x.rpgle') INCDIR('/home/QSTEST/inc')"),
+    )
+    .unwrap();
+    let path = r.srcstmf.clone().unwrap();
+    let text = crate::cpp::stmf::read_text(&c, &path).unwrap();
+    let src = Source {
+        member: crate::cpp::stmf::member_of(&path, &text),
+        text: String::new(),
+    };
+    let opts = r.options(&r.object_name(&src), "QGPL", &src);
+    let mut inc = StmfIncludes {
+        client: &c,
+        incdir: r.incdir.clone(),
+    };
+    let compiled = rpgc::compile(src.member.clone(), &mut inc, &mut rpgc::NoExtFiles, &opts);
+    assert!(compiled.created, "{:?}", compiled.diags);
+    let names: Vec<&str> = compiled.read.members.iter().map(|m| m.name.as_str()).collect();
+    assert_eq!(
+        names,
+        [
+            "/home/QSTEST/src/x.rpgle",
+            "/home/QSTEST/inc/protos.rpgleinc",
+            "/home/QSTEST/src/more.rpgleinc",
+            "cwd.rpgleinc",
+        ]
+    );
+    // A name no directory has is RNF0264-style: not found.
+    put(&c, "/home/QSTEST/src/y.rpgle", "**FREE\n/copy nowhere.rpgleinc\n*inlr = *on;\n");
+    let text = crate::cpp::stmf::read_text(&c, "/home/QSTEST/src/y.rpgle").unwrap();
+    let y = crate::cpp::stmf::member_of("/home/QSTEST/src/y.rpgle", &text);
+    let compiled = rpgc::compile(y, &mut inc, &mut rpgc::NoExtFiles, &opts);
+    assert!(!compiled.created);
+    // A member-form name in a stream file is still a member.
+    put(&c, "/home/QSTEST/src/z.rpgle", "**FREE\n/copy QRPGLESRC,PROTOS\n*inlr = *on;\n");
+    let text = crate::cpp::stmf::read_text(&c, "/home/QSTEST/src/z.rpgle").unwrap();
+    let z = crate::cpp::stmf::member_of("/home/QSTEST/src/z.rpgle", &text);
+    let mut mem = rpgfront::MemIncludes {
+        members: vec![rpgfront::Member::from_text("QSTEST", "QRPGLESRC", "PROTOS", "**FREE
+dcl-s m int(10);")],
+    };
+    let compiled = rpgc::compile(z, &mut mem, &mut rpgc::NoExtFiles, &opts);
+    assert!(compiled.created, "{:?}", compiled.diags);
+    assert_eq!(compiled.read.members[1].name, "PROTOS");
+}
+
+#[test]
+fn a_cl_program_from_a_stream_file() {
+    use ifs::client::IfsClient as _;
+    let sys = sysapi::ifs::memory::MemIfs::new();
+    let c = sys.client("QSTEST", 6, 37);
+    put(&c, "/home/QSTEST/hello.clle", "PGM\r\n  DCL VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(1)\r\nENDPGM\r\n");
+    let source = crate::cpp::stmf::read_text(&c, "/home/QSTEST/hello.clle").unwrap();
+    let mut mem = cmd::analyze::MemSource::default();
+    for n in ["PGM", "DCL", "ENDPGM"] {
+        if let Ok(o) = sys_cpps::install::object(n, 0) {
+            mem.put(o.def);
+        }
+    }
+    let mut env = Env::new(&mut mem);
+    env.setting.program = true;
+    let opts = cl::Options {
+        name: "HELLO".into(),
+        ..cl::Options::default()
+    };
+    let compiled = cl::compile(&source.replace("\r\n", "\n"), &opts, &mut env, &mut cl::NoFiles);
+    assert!(compiled.created, "{:?}", compiled.diags);
+    let st = c.stat("/home/QSTEST/hello.clle", true).unwrap();
+    assert_eq!(st.ccsid, 1208, "write_text tags 1208");
+}

@@ -38,10 +38,19 @@ pub fn run(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
         Ok(l) => l,
         Err(e) => return super::clpgm::failed(cmdname, &e),
     };
-    let src = in_store(system, |txn, qsys, names| {
-        let lib = lib_or(&req.srclib);
-        source::read(txn, qsys, names, &req.srcfile, &lib, req.mbr.as_deref())
-    });
+    let src = match &req.srcstmf {
+        // A stream file, read in the job's name; its name is the
+        // object's unless the command or the control specification
+        // gives one.
+        Some(path) => super::stmf::read_as_job(system, path).map(|text| Source {
+            member: super::stmf::member_of(path, &text),
+            text: String::new(),
+        }),
+        None => in_store(system, |txn, qsys, names| {
+            let lib = lib_or(&req.srclib);
+            source::read(txn, qsys, names, &req.srcfile, &lib, req.mbr.as_deref())
+        }),
+    };
     match src {
         Ok(src) => create(system, &req, &lib_name, &src),
         Err(e) => super::clpgm::failed(cmdname, &e),
@@ -65,11 +74,15 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     }
     if req.print {
         let listing = &compiled.listing;
-        let mbr = &src.member.name;
+        let mbr = if req.srcstmf.is_some() { &name } else { &src.member.name };
         let _ = match crate::svc::security::print_as(system, mbr, &name, listing, true) {
             Ok(w) => writeln!(out, "Listing: {w}"),
             Err(e) => writeln!(out, "The listing was not spooled: {e}"),
         };
+    }
+    if req.infostmf.is_some() {
+        // MIGRATE(phase11): PGMINFO(*PCML) documents for INFOSTMF.
+        let _ = writeln!(out, "INFOSTMF: no PCML is generated; the stream file is not written.");
     }
     let sev = format!("{:02}", compiled.max_severity);
     let refused = Refused {
@@ -92,12 +105,14 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
         bnddir: compiled.ctl.bnddir.clone(),
         source: source_view(&options.dbgview, &compiled),
     };
+    // A stream file's program names no source member.
+    let stmf = req.srcstmf.is_some();
     let create = CreateData {
         compiler: "RPGLE".into(),
         options: req.option.join(" "),
-        src_file: src.member.file.clone(),
-        src_lib: src.member.lib.clone(),
-        src_mbr: src.member.name.clone(),
+        src_file: if stmf { String::new() } else { src.member.file.clone() },
+        src_lib: if stmf { String::new() } else { src.member.lib.clone() },
+        src_mbr: if stmf { String::new() } else { src.member.name.clone() },
     };
     let stored = crate::svc::ile::commands::in_store(system, lib_name, |txn, c, lib_id| {
         object::make(txn, c, lib_id, &made, &compiled.qir, create, now_unix())
@@ -137,7 +152,10 @@ fn compile(
     options: &mut rpgc::Options,
 ) -> rpgc::Compiled {
     let cell = RefCell::new(system);
-    let mut includes = source::StoreIncludes { system: &cell };
+    let mut includes = source::StoreIncludes {
+        system: &cell,
+        incdir: req.incdir.clone(),
+    };
     let mut files = source::StoreFiles { system: &cell };
     let c = rpgc::compile(src.member.clone(), &mut includes, &mut files, options);
     match req.ctlspec_name(&c) {

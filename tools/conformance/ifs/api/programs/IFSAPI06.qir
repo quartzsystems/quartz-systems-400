@@ -1,0 +1,87 @@
+; dup, dup2 and fcntl on stream files: shared offsets, the descriptor
+; flags, the status flags and byte-range locks
+module IFSAPI06
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI06")
+static $f: bytes(*) inz(z"/home/QSTEST/IFSAPI06/d.dat")
+static $data: char(6) inz("ABCDEF")
+static $one: char(1) inz(*BLANKS)
+static $wl: bytes(48) inz(x"00020000000000020000000300000000")
+static $rl: bytes(48) inz(x"00010000000000000000000A00000000")
+static $ul: bytes(48) inz(x"00030000000000000000000000000000")
+static $bad: bytes(48) inz(x"00090000000000000000000000000000")
+proc IFSAPI06() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  %p = addr $f
+  %fd = callb open(%p, 76, 420)
+  callb RC(%fd)
+  %b = addr $data
+  %w = callb write(%fd, %b, 6)
+  dsply "dup shares the offset"
+  %fd2 = callb dup(%fd)
+  callb RC(%fd2)
+  %s = callb lseek(%fd2, 2, 0)
+  %o = addr $one
+  %r = callb read(%fd, %o, 1)
+  dsply $one
+  dsply "dup2 onto 9, then onto itself"
+  %fd3 = callb dup2(%fd, 9)
+  callb RC(%fd3)
+  %fd4 = callb dup2(%fd, %fd)
+  callb RC(%fd4)
+  dsply "dup of a bad descriptor"
+  %e1 = callb dup(77)
+  callb RC(%e1)
+  %fi = procaddr fcntl
+  dsply "F_GETFD, F_SETFD FD_CLOEXEC, F_GETFD"
+  %g0 = callpp %fi as FCNTLI(%fd, 1, 0)
+  callb RC(%g0)
+  %g1 = callpp %fi as FCNTLI(%fd, 2, 1)
+  callb RC(%g1)
+  %g2 = callpp %fi as FCNTLI(%fd, 1, 0)
+  callb RC(%g2)
+  %g3 = callpp %fi as FCNTLI(%fd2, 1, 0)
+  callb RC(%g3)
+  dsply "F_GETFL, F_SETFL O_APPEND, F_GETFL"
+  %f0 = callpp %fi as FCNTLI(%fd, 6, 0)
+  %f0m = rem %f0, 1024
+  callb RC(%f0m)
+  %f1 = callpp %fi as FCNTLI(%fd, 7, 256)
+  callb RC(%f1)
+  %f2 = callpp %fi as FCNTLI(%fd2, 6, 0)
+  %f2m = rem %f2, 1024
+  callb RC(%f2m)
+  dsply "F_DUPFD from 20"
+  %dd = callpp %fi as FCNTLI(%fd, 0, 20)
+  callb RC(%dd)
+  dsply "F_SETLK write bytes 2 to 4, F_GETLK read 0 to 9"
+  %pw = addr $wl
+  %k1 = callb fcntl(%fd, 4, %pw)
+  callb RC(%k1)
+  %pr = addr $rl
+  %k2 = callb fcntl(%fd, 3, %pr)
+  callb RC(%k2)
+  %ty = callb SHORT(%pr, 0)
+  dsply %ty
+  %pu = addr $ul
+  %k3 = callb fcntl(%fd, 4, %pu)
+  callb RC(%k3)
+  dsply "a lock type not valid"
+  %pb = addr $bad
+  %k4 = callb fcntl(%fd, 4, %pb)
+  callb RC(%k4)
+  dsply "an unknown command"
+  %k5 = callpp %fi as FCNTLI(%fd, 99, 0)
+  callb RC(%k5)
+  %c1 = callb close(%fd)
+  %c2 = callb close(%fd2)
+  %c3 = callb close(%fd3)
+  %c4 = callb close(%dd)
+  callb RC(%c4)
+  %u = callb unlink(%p)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

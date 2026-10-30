@@ -37,6 +37,7 @@ use mi::Job;
 mod cee;
 mod data;
 mod db;
+pub mod ifs;
 mod job;
 mod misc;
 mod msg;
@@ -77,6 +78,7 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(misc::APIS);
     v.extend(security::APIS);
     v.extend(regapi::APIS);
+    v.extend(ifs::APIS);
     v
 }
 
@@ -89,12 +91,21 @@ pub fn registration_procedures() -> Vec<(&'static str, usize)> {
 }
 
 /// Every bound procedure this crate adds (`QLEAWI`'s, then the C-style
-/// socket, descriptor and resolver calls of [`net`]), by export name,
-/// with its code address.
+/// socket, descriptor and resolver calls of [`net`] and the IFS calls of
+/// [`ifs`]), by export name, with its code address.
 #[must_use]
 pub fn procedures() -> Vec<(&'static str, usize)> {
     let mut v = cee::procedures();
-    v.extend(net::procedures());
+    v.extend(c_procedures());
+    v
+}
+
+/// The C-style procedures alone: those `ile::SYSTEM_SRVPGM_PROCS`
+/// names a service program for.
+#[must_use]
+pub fn c_procedures() -> Vec<(&'static str, usize)> {
+    let mut v = net::procedures();
+    v.extend(ifs::procedures());
     v
 }
 
@@ -151,4 +162,5 @@ pub fn uninstall(job: &Job) {
         m.borrow_mut().remove(&(std::ptr::from_ref(job) as usize));
     });
     net::drop_state(job);
+    ifs::drop_state(job);
 }

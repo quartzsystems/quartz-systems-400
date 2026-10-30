@@ -1,0 +1,76 @@
+; utime, pathconf, fpathconf, statvfs, fstatvfs and statvfs64
+module IFSAPI07
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI07")
+static $f: bytes(*) inz(z"/home/QSTEST/IFSAPI07/t.txt")
+static $qsys: bytes(*) inz(z"/QSYS.LIB")
+static $times: bytes(8) inz(x"3B9ACA0040000000")
+static $st: bytes(128)
+static $vfs: bytes(160)
+proc IFSAPI07() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  %p = addr $f
+  %fd = callb creat(%p, 420)
+  dsply "utime to 1000000000 and 1073741824"
+  %t = addr $times
+  %u1 = callb utime(%p, %t)
+  callb RC(%u1)
+  %sb = addr $st
+  %s = callb stat(%p, %sb)
+  %at = callb INT(%sb, 24)
+  dsply %at
+  %mt = callb INT(%sb, 28)
+  dsply %mt
+  dsply "utime with no times"
+  %nul = const.ptr *NULL
+  %u2 = callb utime(%p, %nul)
+  callb RC(%u2)
+  dsply "pathconf: link max, name max, no trunc, chown restricted"
+  %c1 = callb pathconf(%p, 1)
+  callb RC(%c1)
+  %c2 = callb pathconf(%d, 4)
+  callb RC(%c2)
+  %c3 = callb pathconf(%d, 5)
+  callb RC(%c3)
+  %c4 = callb pathconf(%d, 0)
+  callb RC(%c4)
+  dsply "pathconf of a name not valid"
+  %c5 = callb pathconf(%d, 99)
+  callb RC(%c5)
+  dsply "pathconf in /QSYS.LIB: name max"
+  %q = addr $qsys
+  %c6 = callb pathconf(%q, 4)
+  callb RC(%c6)
+  dsply "fpathconf: name max"
+  %c7 = callb fpathconf(%fd, 4)
+  callb RC(%c7)
+  dsply "statvfs: name max, the flags' case and read-only bits"
+  %v = addr $vfs
+  %v1 = callb statvfs(%d, %v)
+  callb RC(%v1)
+  %nm = callb INT(%v, 52)
+  dsply %nm
+  %fl = callb INT(%v, 48)
+  %cs = rem %fl, 8
+  dsply %cs
+  dsply "statvfs of /QSYS.LIB"
+  %v2 = callb statvfs(%q, %v)
+  callb RC(%v2)
+  %nm2 = callb INT(%v, 52)
+  dsply %nm2
+  %fl2 = callb INT(%v, 48)
+  %cs2 = rem %fl2, 8
+  dsply %cs2
+  dsply "fstatvfs, statvfs64"
+  %v3 = callb fstatvfs(%fd, %v)
+  callb RC(%v3)
+  %v4 = callb statvfs64(%d, %v)
+  callb RC(%v4)
+  %c = callb close(%fd)
+  %u = callb unlink(%p)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

@@ -10,7 +10,7 @@
 //! the `netdb` calls return pointers into. Job descriptor numbers come
 //! from the job's table (`mi::fd`), shared with IFS files.
 
-mod abi;
+pub(crate) mod abi;
 mod calls;
 mod descr;
 mod netdb;
@@ -66,7 +66,8 @@ pub(crate) struct Stable {
 }
 
 impl Stable {
-    fn new(j: &mut Job, n: usize) -> Self {
+    /// `n` zero bytes, addressable from the job.
+    pub(crate) fn new(j: &mut Job, n: usize) -> Self {
         let data = vec![0u8; n].into_boxed_slice();
         let ptr = j.spaces.add_region(data.as_ptr() as u64, n as u64);
         Self { data, ptr }
@@ -82,7 +83,8 @@ impl Stable {
         self.ptr
     }
 
-    fn native(&self) -> u64 {
+    /// The native address of the first byte.
+    pub(crate) fn native(&self) -> u64 {
         self.data.as_ptr() as u64
     }
 }
@@ -241,7 +243,11 @@ mod tests {
 
     #[test]
     fn every_procedure_has_its_service_program_and_back() {
-        let ours: Vec<&str> = procedures().iter().map(|(n, _)| *n).collect();
+        let ours: Vec<&str> = crate::c_procedures().iter().map(|(n, _)| *n).collect();
+        let mut seen = std::collections::HashSet::new();
+        for n in &ours {
+            assert!(seen.insert(*n), "{n} registered twice");
+        }
         for n in &ours {
             assert!(ile::is_system_srvpgm_proc(n), "{n} has no service program");
         }

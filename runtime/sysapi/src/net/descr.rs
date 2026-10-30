@@ -141,22 +141,36 @@ fn set_nonblock(j: &mut Job, fd: i32, on: bool) -> R<()> {
     j.fds.set_nonblock(fd, on).map_err(errno)
 }
 
-fn fcntl(j: &mut Job, fd: i64, cmd: i64, arg: i64) -> i64 {
+/// `fcntl()`: the descriptor flags and `F_DUPFD` are the table's; the
+/// status flags are the socket's or the IFS file's; the byte-range
+/// locks are the IFS's. `p` is the third argument when it is a
+/// pointer: a pointer that finds one register left goes on the stack
+/// and leaves the register unused, where an integer third argument is.
+fn fcntl(j: &mut Job, fd: i64, cmd: i64, arg: i64, p: u128) -> i64 {
     let fd = int(fd);
     let arg = int(arg);
     let r = (|| match int(cmd) {
-        F_GETFL => {
-            let nb = j.fds.nonblock(fd).map_err(errno)?;
-            Ok(i64::from(O_RDWR | if nb { O_NONBLOCK } else { 0 }))
-        }
-        F_SETFL => set_nonblock(j, fd, arg & O_NONBLOCK != 0).map(|()| 0),
         F_GETFD => Ok(i64::from(if j.fds.cloexec(fd).map_err(errno)? { FD_CLOEXEC } else { 0 })),
         F_SETFD => j.fds.set_cloexec(fd, arg & FD_CLOEXEC != 0).map(|()| 0).map_err(errno),
         F_DUPFD => j.fds.dup_from(fd, arg).map(i64::from).map_err(errno),
-        _ => {
-            j.fds.kind(fd).map_err(errno)?;
-            Err(Errno::EINVAL)
-        }
+        c => match j.fds.kind(fd).map_err(errno)? {
+            Kind::Ifs(h) => {
+                let svc = i32::try_from(h).map_err(|_| Errno::EBADF)?;
+                let v = crate::ifs::fcntl_ifs(j, svc, c, arg, p)?;
+                if c == F_SETFL {
+                    j.fds.set_nonblock(fd, arg & O_NONBLOCK != 0).map_err(errno)?;
+                }
+                Ok(v)
+            }
+            Kind::Socket(_) => match c {
+                F_GETFL => {
+                    let nb = j.fds.nonblock(fd).map_err(errno)?;
+                    Ok(i64::from(O_RDWR | if nb { O_NONBLOCK } else { 0 }))
+                }
+                F_SETFL => set_nonblock(j, fd, arg & O_NONBLOCK != 0).map(|()| 0),
+                _ => Err(Errno::EINVAL),
+            },
+        },
     })();
     ret(j, r)
 }
@@ -267,7 +281,7 @@ bound_c!(b_writev(fd: i64, v: u128, n: i64) -> i64 = writev);
 bound_c!(b_close(fd: i64) -> i64 = close);
 bound_c!(b_dup(fd: i64) -> i64 = dup);
 bound_c!(b_dup2(fd: i64, to: i64) -> i64 = dup2);
-bound_c!(b_fcntl(fd: i64, c: i64, a: i64) -> i64 = fcntl);
+bound_c!(b_fcntl(fd: i64, c: i64, a: i64, p: u128) -> i64 = fcntl);
 bound_c!(b_ioctl(fd: i64, r: i64, a: u128) -> i64 = ioctl);
 bound_c!(b_select(n: i64, r: u128, w: u128, e: u128, t: u128) -> i64 = select);
 bound_c!(b_errno() -> u128 = errno_ptr);

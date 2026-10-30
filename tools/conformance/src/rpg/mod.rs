@@ -443,6 +443,20 @@ pub fn notes(c: &rpgc::Compiled) -> String {
     s
 }
 
+/// Something done to a run's job before the call.
+pub type JobSetup = Rc<dyn Fn(&mut Job)>;
+
+thread_local! {
+    /// What the next runs do to the job before the call.
+    static JOB_SETUP: RefCell<Option<JobSetup>> = RefCell::new(None);
+}
+
+/// Give the jobs of later runs on this thread something more before
+/// the call (the IFS corpus gives them a file system); `None` stops it.
+pub fn set_job_setup(f: Option<JobSetup>) {
+    JOB_SETUP.with(|s| *s.borrow_mut() = f);
+}
+
 /// Compile and run a case: its outcome, listing and notes.
 #[allow(clippy::many_single_char_names)]
 pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
@@ -576,6 +590,9 @@ fn call_into(
         });
         sysapi::install(&mut job, Rc::new(RefCell::new(provider)));
         qrpgrt::install(&mut job);
+        if let Some(f) = JOB_SETUP.with(|s| s.borrow().clone()) {
+            f(&mut job);
+        }
         let spool = KitSpool(Rc::default(), db.map(|d| d.printers.clone()).unwrap_or_default());
         job.spool = Some(Box::new(spool.clone()));
         // A member without keys runs in a batch job: no display.

@@ -1,0 +1,37 @@
+0
+0
+dup shares the offset
+1
+C
+dup2 onto 9, then onto itself
+9
+0
+dup of a bad descriptor
+-1 errno
+3450
+F_GETFD, F_SETFD FD_CLOEXEC, F_GETFD
+0
+0
+1
+0
+F_GETFL, F_SETFL O_APPEND, F_GETFL
+76
+0
+332
+F_DUPFD from 20
+20
+F_SETLK write bytes 2 to 4, F_GETLK read 0 to 9
+0
+0
+3
+0
+a lock type not valid
+-1 errno
+3021
+an unknown command
+-1 errno
+3021
+0
+0
+descriptors left open: 0
+pending: none

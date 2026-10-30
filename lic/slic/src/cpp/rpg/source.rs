@@ -84,15 +84,22 @@ pub fn read(
     })
 }
 
-/// `/COPY` and `/INCLUDE` members, read from the store.
+/// `/COPY` and `/INCLUDE` members, read from the store, and stream
+/// files, read through the IFS as the job.
 pub struct StoreIncludes<'a, 'b> {
     /// The system, shared with the file descriptions.
     pub system: &'a RefCell<&'b mut System>,
+    /// `INCDIR`.
+    pub incdir: Vec<String>,
 }
 
 impl Includes for StoreIncludes<'_, '_> {
     fn member(&mut self, lib: &str, file: &str, name: &str) -> Option<Member> {
         let mut sys = self.system.borrow_mut();
+        if lib == rpgfront::reader::STMF {
+            let mut read = |p: &str| super::super::stmf::read_as_job(&mut sys, p).ok();
+            return super::super::stmf::find(&mut read, name, &self.incdir, file);
+        }
         let (lib, file, mbr) = (
             lib.to_ascii_uppercase(),
             file.to_ascii_uppercase(),

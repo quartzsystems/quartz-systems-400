@@ -1,0 +1,67 @@
+; errno values at the API boundary (IBM's numbers), strerror and
+; perror, and the not-supported file systems
+module IFSAPI14
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI14")
+static $f: bytes(*) inz(z"/home/QSTEST/IFSAPI14/e.txt")
+static $under: bytes(*) inz(z"/home/QSTEST/IFSAPI14/e.txt/x")
+static $deep: bytes(*) inz(z"/home/QSTEST/IFSAPI14/no/such")
+static $empty: bytes(1) inz(x"00")
+static $qntc: bytes(*) inz(z"/QNTC/server")
+static $qdls: bytes(*) inz(z"/QDLS/FOLDER")
+static $sys: bytes(*) inz(z"/QSYS.LIB/QSYS.LIB")
+static $pre: bytes(*) inz(z"IFSAPI14")
+static $one: char(1)
+proc IFSAPI14() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  %p = addr $f
+  %fd = callb creat(%p, 420)
+  dsply "ENOENT: a missing directory on the way"
+  %dp = addr $deep
+  %e1 = callb open(%dp, 1)
+  callb RC(%e1)
+  dsply "ENOTDIR: a file on the way"
+  %up = addr $under
+  %e2 = callb open(%up, 1)
+  callb RC(%e2)
+  dsply "EISDIR: a directory opened for writing"
+  %e3 = callb open(%d, 2)
+  callb RC(%e3)
+  dsply "ENOENT: an empty path"
+  %ep = addr $empty
+  %e4 = callb open(%ep, 1)
+  callb RC(%e4)
+  dsply "EBADF: read on a closed descriptor"
+  %c = callb close(%fd)
+  %o = addr $one
+  %e5 = callb read(%fd, %o, 1)
+  callb RC(%e5)
+  dsply "EINVAL: bad open flags"
+  %e6 = callb open(%p, 0)
+  callb RC(%e6)
+  dsply "/QNTC and /QDLS"
+  %qn = addr $qntc
+  %e7 = callb open(%qn, 1)
+  callb RC(%e7)
+  %qd = addr $qdls
+  %e8 = callb mkdir(%qd, 493)
+  callb RC(%e8)
+  dsply "EPERM or EACCES: unlink in QSYS"
+  %qs = addr $sys
+  %e9 = callb unlink(%qs)
+  callb RC(%e9)
+  dsply "strerror answers a text"
+  %s = callb strerror(3025)
+  callb PTR(%s)
+  %s2 = callb strerror(99999)
+  callb PTR(%s2)
+  dsply "perror"
+  %e10 = callb open(%dp, 1)
+  %pr = addr $pre
+  callb perror(%pr)
+  %u = callb unlink(%p)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

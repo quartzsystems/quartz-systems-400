@@ -1,0 +1,38 @@
+0
+0
+access F_OK R_OK W_OK X_OK
+0
+0
+0
+-1 errno
+3401
+-1 errno
+3021
+chmod 0o751
+0
+449
+0
+fchmod 0o600
+0
+384
+chmod 0: the owner reads no more
+0
+-1 errno
+3401
+-1 errno
+3401
+chown to the owner's own UID, no group
+0
+0
+chown to a UID no profile has
+-1 errno
+3021
+0
+umask 0o077 then creat 0o666
+18
+1
+384
+63
+0
+descriptors left open: 0
+pending: none

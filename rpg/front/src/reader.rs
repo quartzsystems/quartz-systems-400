@@ -52,6 +52,9 @@ pub enum Directive {
         member: String,
         /// `/INCLUDE`.
         include: bool,
+        /// The target as written (quotes removed, case kept): a stream
+        /// file's path when the source is a stream file.
+        word: String,
     },
     /// `/DEFINE name`.
     Define(String),
@@ -388,8 +391,8 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         let eof = matches!(class, Class::Directive(Directive::Eof));
         let copy = match &class {
             Class::Directive(Directive::Copy {
-                lib, file, member, ..
-            }) if !member.is_empty() => Some((lib.clone(), file.clone(), member.clone())),
+                lib, file, member, word, ..
+            }) if !member.is_empty() => Some((lib.clone(), file.clone(), member.clone(), word.clone())),
             _ => None,
         };
         r.lines.push(Line {
@@ -449,18 +452,46 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
             top.next = r.members[top.member].records.len();
             continue;
         }
-        if let Some((lib, file, name)) = copy {
-            let busy = stack.iter().any(|f| {
-                let m = &r.members[f.member];
-                m.file.eq_ignore_ascii_case(&file) && m.name.eq_ignore_ascii_case(&name)
-            });
-            if busy || stack.len() > usize::from(opts.copynest) {
-                r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(format!("{file},{name}")));
-                continue;
-            }
-            let Some(m) = includes.member(&lib, &file, &name) else {
-                r.diags.push(Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(format!("{lib}/{file},{name}")));
-                continue;
+        if let Some((lib, file, name, word)) = copy {
+            // A stream file: quoted, or any name without a comma when the
+            // source itself is a stream file. Relative paths are searched
+            // from the including stream file's directory too.
+            let stmf = lib == STMF || (r.members[0].lib == STMF && !word.contains(','));
+            let m = if stmf {
+                let cur = &r.members[stack.last().expect("a frame").member];
+                let dir = if cur.lib == STMF { cur.file.clone() } else { String::new() };
+                let target = if lib == STMF { name.clone() } else { word.clone() };
+                if stack.len() > usize::from(opts.copynest) {
+                    r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(target));
+                    continue;
+                }
+                let Some(m) = includes.member(STMF, &dir, &target) else {
+                    r.diags.push(Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(target));
+                    continue;
+                };
+                let busy = stack.iter().any(|f| {
+                    let x = &r.members[f.member];
+                    x.lib == STMF && x.name == m.name
+                });
+                if busy {
+                    r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(m.name.clone()));
+                    continue;
+                }
+                m
+            } else {
+                let busy = stack.iter().any(|f| {
+                    let m = &r.members[f.member];
+                    m.file.eq_ignore_ascii_case(&file) && m.name.eq_ignore_ascii_case(&name)
+                });
+                if busy || stack.len() > usize::from(opts.copynest) {
+                    r.diags.push(Diag::new(ids::COPY_NESTING, 40, at).arg(format!("{file},{name}")));
+                    continue;
+                }
+                let Some(m) = includes.member(&lib, &file, &name) else {
+                    r.diags.push(Diag::new(ids::COPY_NOT_FOUND, 40, at).arg(format!("{lib}/{file},{name}")));
+                    continue;
+                };
+                m
             };
             let free = is_free_marker(m.records.first().map_or("", |x| x.text.as_str()));
             r.members.push(m);
@@ -584,11 +615,13 @@ fn directive(t: &str) -> Option<Directive> {
     Some(match word {
         "/COPY" | "/INCLUDE" => {
             let (lib, file, member) = copy_target(rest_orig);
+            let target = rest_orig.split_whitespace().next().unwrap_or("").trim_matches('\'').to_string();
             Directive::Copy {
                 lib,
                 file,
                 member,
                 include: word == "/INCLUDE",
+                word: target,
             }
         }
         "/DEFINE" => Directive::Define(first_word(rest)),
@@ -628,6 +661,10 @@ fn defined_cond(rest: &str) -> Option<(bool, String)> {
     let end = inner.find(')')?;
     Some((not, inner[..end].trim().to_string()))
 }
+
+/// The library a stream file's [`Member`] has: its `file` is the
+/// directory and its `name` the path.
+pub const STMF: &str = "*STMF";
 
 /// `member`, `file,member`, `lib/file,member` or a quoted stream file.
 fn copy_target(rest: &str) -> (String, String, String) {

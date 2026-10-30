@@ -1,0 +1,110 @@
+; open, creat, write, read, lseek, pread, pwrite, fsync, ftruncate and
+; the 64-bit forms on a stream file in /home/QSTEST/IFSAPI01
+module IFSAPI01
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI01")
+static $up: bytes(*) inz(z"..")
+static $f1: bytes(*) inz(z"f1.dat")
+static $f2: bytes(*) inz(z"f2.dat")
+static $data: char(10) inz("0123456789")
+static $two: char(2) inz("AB")
+static $buf: char(16) inz(*BLANKS)
+static $three: char(3) inz(*BLANKS)
+static $st: bytes(128)
+static $st64: bytes(128)
+proc IFSAPI01() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  %r1 = callb chdir(%d)
+  callb RC(%r1)
+  dsply "open O_CREAT O_WRONLY O_TRUNC"
+  %p1 = addr $f1
+  %fd = callb open(%p1, 74, 420)
+  callb RC(%fd)
+  %b = addr $data
+  %w = callb write(%fd, %b, 10)
+  callb RC(%w)
+  %s = callb lseek(%fd, 0, 1)
+  callb RC(%s)
+  dsply "pwrite keeps the offset"
+  %t = addr $two
+  %pw = callb pwrite(%fd, %t, 2, 4)
+  callb RC(%pw)
+  %s2 = callb lseek(%fd, 0, 1)
+  callb RC(%s2)
+  dsply "read on a write-only descriptor"
+  %bf = addr $buf
+  %rd = callb read(%fd, %bf, 4)
+  callb RC(%rd)
+  %fs = callb fsync(%fd)
+  callb RC(%fs)
+  %c = callb close(%fd)
+  callb RC(%c)
+  dsply "open O_RDWR, read it back"
+  %fd2 = callb open(%p1, 4)
+  callb RC(%fd2)
+  %n = callb read(%fd2, %bf, 16)
+  callb RC(%n)
+  dsply $buf
+  %e = callb lseek(%fd2, -3, 2)
+  callb RC(%e)
+  %h = addr $three
+  %pr = callb pread(%fd2, %h, 3, 1)
+  callb RC(%pr)
+  dsply $three
+  dsply "ftruncate to 5"
+  %tr = callb ftruncate(%fd2, 5)
+  callb RC(%tr)
+  %sb = addr $st
+  %f1 = callb fstat(%fd2, %sb)
+  callb RC(%f1)
+  %size = callb INT(%sb, 20)
+  dsply %size
+  dsply "the 64-bit forms"
+  %e64 = callb lseek64(%fd2, 0, 2)
+  %e32 = cvt.i32 %e64
+  callb RC(%e32)
+  %pw64 = callb pwrite64(%fd2, %t, 2, 8)
+  callb RC(%pw64)
+  %pr64 = callb pread64(%fd2, %h, 3, 7)
+  callb RC(%pr64)
+  dsply $three
+  %t64 = callb ftruncate64(%fd2, 9)
+  callb RC(%t64)
+  %s64 = addr $st64
+  %f64 = callb fstat64(%fd2, %s64)
+  callb RC(%f64)
+  %at = ptradd %s64, 16
+  %sz64 = load [%at]:i64
+  dsply %sz64
+  %c2 = callb close(%fd2)
+  callb RC(%c2)
+  dsply "close again"
+  %c3 = callb close(%fd2)
+  callb RC(%c3)
+  dsply "creat, creat64, open64"
+  %p2 = addr $f2
+  %fd3 = callb creat(%p2, 384)
+  callb RC(%fd3)
+  %c4 = callb close(%fd3)
+  %fd4 = callb creat64(%p2, 384)
+  callb RC(%fd4)
+  %c5 = callb close(%fd4)
+  %fd5 = callb open64(%p2, 1)
+  callb RC(%fd5)
+  %c6 = callb close(%fd5)
+  dsply "O_CREAT O_EXCL on a file that exists"
+  %fd6 = callb open(%p2, 26, 420)
+  callb RC(%fd6)
+  %u1 = callb unlink(%p1)
+  callb RC(%u1)
+  %u2 = callb unlink(%p2)
+  callb RC(%u2)
+  %pu = addr $up
+  %r2 = callb chdir(%pu)
+  callb RC(%r2)
+  %r3 = callb rmdir(%d)
+  callb RC(%r3)
+  ret
+}

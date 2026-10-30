@@ -1,0 +1,143 @@
+; The prototypes and helpers every program of the corpus gets after
+; its module line (conformance::ifsapi). C's int and long are i32,
+; mode_t, uid_t, gid_t and size_t u32, off64_t i64.
+extern proc open(byval $p: ptr, byval $o: i32, byval $m: u32 *NOPASS, byval $c: u32 *NOPASS, byval $t: u32 *NOPASS) -> i32
+extern proc open64(byval $p: ptr, byval $o: i32, byval $m: u32 *NOPASS, byval $c: u32 *NOPASS, byval $t: u32 *NOPASS) -> i32
+extern proc openat(byval $d: i32, byval $p: ptr, byval $o: i32, byval $m: u32 *NOPASS) -> i32
+extern proc creat(byval $p: ptr, byval $m: u32) -> i32
+extern proc creat64(byval $p: ptr, byval $m: u32) -> i32
+extern proc read(byval $fd: i32, byval $b: ptr, byval $n: u32) -> i32
+extern proc write(byval $fd: i32, byval $b: ptr, byval $n: u32) -> i32
+extern proc pread(byval $fd: i32, byval $b: ptr, byval $n: u32, byval $o: i32) -> i32
+extern proc pread64(byval $fd: i32, byval $b: ptr, byval $n: u32, byval $o: i64) -> i32
+extern proc pwrite(byval $fd: i32, byval $b: ptr, byval $n: u32, byval $o: i32) -> i32
+extern proc pwrite64(byval $fd: i32, byval $b: ptr, byval $n: u32, byval $o: i64) -> i32
+extern proc lseek(byval $fd: i32, byval $o: i32, byval $w: i32) -> i32
+extern proc lseek64(byval $fd: i32, byval $o: i64, byval $w: i32) -> i64
+extern proc close(byval $fd: i32) -> i32
+extern proc fsync(byval $fd: i32) -> i32
+extern proc ftruncate(byval $fd: i32, byval $l: i32) -> i32
+extern proc ftruncate64(byval $fd: i32, byval $l: i64) -> i32
+extern proc stat(byval $p: ptr, byval $b: ptr) -> i32
+extern proc lstat(byval $p: ptr, byval $b: ptr) -> i32
+extern proc stat64(byval $p: ptr, byval $b: ptr) -> i32
+extern proc lstat64(byval $p: ptr, byval $b: ptr) -> i32
+extern proc fstat(byval $fd: i32, byval $b: ptr) -> i32
+extern proc fstat64(byval $fd: i32, byval $b: ptr) -> i32
+extern proc access(byval $p: ptr, byval $m: i32) -> i32
+extern proc chmod(byval $p: ptr, byval $m: u32) -> i32
+extern proc fchmod(byval $fd: i32, byval $m: u32) -> i32
+extern proc chown(byval $p: ptr, byval $u: u32, byval $g: u32) -> i32
+extern proc fchown(byval $fd: i32, byval $u: u32, byval $g: u32) -> i32
+extern proc lchown(byval $p: ptr, byval $u: u32, byval $g: u32) -> i32
+extern proc link(byval $a: ptr, byval $b: ptr) -> i32
+extern proc unlink(byval $p: ptr) -> i32
+extern proc rename(byval $a: ptr, byval $b: ptr) -> i32
+extern proc Qp0lRenameKeep(byval $a: ptr, byval $b: ptr) -> i32
+extern proc Qp0lRenameUnlink(byval $a: ptr, byval $b: ptr) -> i32
+extern proc symlink(byval $t: ptr, byval $p: ptr) -> i32
+extern proc readlink(byval $p: ptr, byval $b: ptr, byval $n: u32) -> i32
+extern proc mkdir(byval $p: ptr, byval $m: u32) -> i32
+extern proc mkfifo(byval $p: ptr, byval $m: u32) -> i32
+extern proc rmdir(byval $p: ptr) -> i32
+extern proc opendir(byval $p: ptr) -> ptr
+extern proc readdir(byval $d: ptr) -> ptr
+extern proc readdir_r(byval $d: ptr, byval $e: ptr, byval $r: ptr) -> i32
+extern proc rewinddir(byval $d: ptr)
+extern proc closedir(byval $d: ptr) -> i32
+extern proc chdir(byval $p: ptr) -> i32
+extern proc fchdir(byval $fd: i32) -> i32
+extern proc getcwd(byval $b: ptr, byval $n: u32) -> ptr
+extern proc dup(byval $fd: i32) -> i32
+extern proc dup2(byval $fd: i32, byval $to: i32) -> i32
+extern proc fcntl(byval $fd: i32, byval $c: i32, byval $l: ptr) -> i32
+proto FCNTLI(byval $fd: i32, byval $c: i32, byval $a: i32) -> i32
+extern proc utime(byval $p: ptr, byval $t: ptr) -> i32
+extern proc umask(byval $m: u32) -> u32
+extern proc pathconf(byval $p: ptr, byval $n: i32) -> i32
+extern proc fpathconf(byval $fd: i32, byval $n: i32) -> i32
+extern proc statvfs(byval $p: ptr, byval $b: ptr) -> i32
+extern proc fstatvfs(byval $fd: i32, byval $b: ptr) -> i32
+extern proc statvfs64(byval $p: ptr, byval $b: ptr) -> i32
+extern proc QlgOpen(byval $p: ptr, byval $o: i32, byval $m: u32 *NOPASS, byval $c: u32 *NOPASS) -> i32
+extern proc QlgCreat(byval $p: ptr, byval $m: u32) -> i32
+extern proc QlgStat(byval $p: ptr, byval $b: ptr) -> i32
+extern proc QlgLstat(byval $p: ptr, byval $b: ptr) -> i32
+extern proc QlgAccess(byval $p: ptr, byval $m: i32) -> i32
+extern proc QlgChmod(byval $p: ptr, byval $m: u32) -> i32
+extern proc QlgMkdir(byval $p: ptr, byval $m: u32) -> i32
+extern proc QlgRmdir(byval $p: ptr) -> i32
+extern proc QlgChdir(byval $p: ptr) -> i32
+extern proc QlgUnlink(byval $p: ptr) -> i32
+extern proc QlgLink(byval $a: ptr, byval $b: ptr) -> i32
+extern proc QlgSymlink(byval $t: ptr, byval $p: ptr) -> i32
+extern proc QlgReadlink(byval $p: ptr, byval $b: ptr, byval $n: u32) -> i32
+extern proc QlgRenameKeep(byval $a: ptr, byval $b: ptr) -> i32
+extern proc QlgRenameUnlink(byval $a: ptr, byval $b: ptr) -> i32
+extern proc QlgOpendir(byval $p: ptr) -> ptr
+extern proc QlgReaddir(byval $d: ptr) -> ptr
+extern proc QlgGetcwd(byval $b: ptr, byval $n: u32) -> ptr
+extern proc QlgPathconf(byval $p: ptr, byval $n: i32) -> i32
+extern proc QlgStatvfs(byval $p: ptr, byval $b: ptr) -> i32
+extern proc QlgUtime(byval $p: ptr, byval $t: ptr) -> i32
+extern proc Qp0lGetAttr(byval $p: ptr, byval $l: ptr, byval $b: ptr, byval $n: u32, byval $need: ptr, byval $got: ptr, byval $f: u32) -> i32
+extern proc Qp0lSetAttr(byval $p: ptr, byval $b: ptr, byval $n: u32, byval $f: u32) -> i32
+extern proc Qp0lCvtPathToQSYSObjName(byval $p: ptr, byval $o: ptr, byval $f: ptr, byval $n: u32, byval $c: u32, byval $e: ptr)
+extern proc Qp0lGetPathFromFileID(byval $b: ptr, byval $n: u32, byval $f: ptr) -> ptr
+extern proc QlgGetPathFromFileID(byval $b: ptr, byval $n: u32, byval $f: ptr) -> ptr
+extern proc Qp0lProcessSubtree(byval $p: ptr, byval $s: u32, byval $t: ptr, byval $l: u32, byval $x: ptr, byval $e: u32, byval $u: ptr, byval $i: ptr) -> i32
+extern proc __errno() -> ptr
+extern proc strerror(byval $e: i32) -> ptr
+extern proc perror(byval $s: ptr)
+; A return code as the corpus shows it: the value, or -1 and errno.
+proc RC(byval $rc: i32) {
+L0:
+  %r = cvt.i32 $rc
+  %bad = cmp.lt %r, 0
+  brif %bad, ERR, OK
+OK:
+  dsply %r
+  ret
+ERR:
+  %ep = callb __errno()
+  %e = load [%ep]:i32
+  dsply "-1 errno"
+  dsply %e
+  ret
+}
+; A pointer result: "ok", or "null" and errno.
+proc PTR(byval $p: ptr) {
+L0:
+  %nul = const.ptr *NULL
+  %q = load $p
+  %z = cmp.eq %q, %nul
+  brif %z, ERR, OK
+OK:
+  dsply "ok"
+  ret
+ERR:
+  %ep = callb __errno()
+  %e = load [%ep]:i32
+  dsply "null errno"
+  dsply %e
+  ret
+}
+; The big-endian int at an offset of storage.
+proc INT(byval $p: ptr, byval $off: i64) -> i32 {
+L0:
+  %o = cvt.i64 $off
+  %q = load $p
+  %a = ptradd %q, %o
+  %v = load [%a]:i32
+  ret %v
+}
+; The big-endian unsigned short at an offset of storage.
+proc SHORT(byval $p: ptr, byval $off: i64) -> i32 {
+L0:
+  %o = cvt.i64 $off
+  %q = load $p
+  %a = ptradd %q, %o
+  %v = load [%a]:u16
+  %w = cvt.i32 %v
+  ret %w
+}

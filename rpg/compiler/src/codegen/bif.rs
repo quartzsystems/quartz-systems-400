@@ -1040,14 +1040,41 @@ impl Gen<'_> {
             self.err(ids::PARM_COUNT, 30, p.name.clone());
             return None;
         }
+        let cstyle = self.c_style(p);
         let mut ops = Vec::new();
         for (prm, a) in p.parms.iter().zip(args) {
-            ops.push(self.argument(prm, a)?);
+            let op = self.argument(prm, a)?;
+            // A system C-style procedure takes a pointer where RPG
+            // passes by reference, as IBM's C functions do.
+            if cstyle && !prm.value {
+                let r = self.b.reg();
+                if op == "*OMIT" {
+                    self.b.ins(format!("{r} = const.ptr *NULL"));
+                } else {
+                    self.b.ins(format!("{r} = addr {op}"));
+                }
+                ops.push(r);
+                continue;
+            }
+            ops.push(op);
         }
         let list = ops.join(", ");
         let callee = match self.through_pointer(p) {
             Some(head) => head,
-            None => format!("callb {}", self.declare_callee(p)),
+            None => {
+                let ir = self.declare_callee(p);
+                match (p.extpgm.is_none() && !self.local_procs.contains(&p.name))
+                    .then(|| self.other_signature(p, &ir))
+                    .flatten()
+                {
+                    Some(proto) => {
+                        let r = self.b.reg();
+                        self.b.ins(format!("{r} = procaddr {ir}"));
+                        format!("callpp {r} as {proto}")
+                    }
+                    None => format!("callb {ir}"),
+                }
+            }
         };
         if p.extpgm.is_some() {
             let name = self.declare_callee(p);
@@ -1133,8 +1160,20 @@ impl Gen<'_> {
         Some(format!("callpp {r} as {decl}"))
     }
 
-    /// The IR name of a call's target, declaring an external one.
-    fn declare_callee(&mut self, p: &Proto) -> String {
+    /// Whether a prototype names one of the system's C-style
+    /// procedures (`ile::SYSTEM_SRVPGM_PROCS`): its by-reference
+    /// parameters are pointers passed by value.
+    fn c_style(&self, p: &Proto) -> bool {
+        if p.extpgm.is_some() || self.local_procs.contains(&p.name) || p.extproc_word {
+            return false;
+        }
+        let ext = p.extproc.clone().unwrap_or_else(|| p.name.clone());
+        ile::is_system_srvpgm_proc(&ext)
+    }
+
+    /// A prototype's parameters and return type as IR text.
+    fn signature(&self, p: &Proto) -> (Vec<String>, String) {
+        let cstyle = self.c_style(p);
         let params: Vec<String> = p
             .parms
             .iter()
@@ -1143,7 +1182,8 @@ impl Gen<'_> {
                 let ty = if prm.likefile.is_some() { "fcb_".to_string() } else { self.t.ir_type(&prm.ty) };
                 let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
                 let mut s = String::new();
-                if prm.value {
+                let ty = if cstyle && !prm.value { "ptr".to_string() } else { ty };
+                if prm.value || cstyle {
                     s.push_str("byval ");
                 } else if prm.konst {
                     s.push_str("const ");
@@ -1152,16 +1192,37 @@ impl Gen<'_> {
                 if prm.nopass {
                     s.push_str(" *NOPASS");
                 }
-                if prm.omit {
+                let pointer = cstyle && !prm.value;
+                if prm.omit && !pointer {
                     s.push_str(" *OMIT");
                 }
-                if prm.varsize {
+                if prm.varsize && !pointer {
                     s.push_str(" *VARSIZE");
                 }
                 s
             })
             .collect();
         let ret = p.ret.as_ref().map(|t| format!(" -> {}", self.t.ir_type(t))).unwrap_or_default();
+        (params, ret)
+    }
+
+    /// When another prototype declared the same external procedure with
+    /// another signature, this one's calls go through a procedure
+    /// pointer with its own (`proto`): the prototype's name.
+    fn other_signature(&mut self, p: &Proto, ir: &str) -> Option<String> {
+        let (params, ret) = self.signature(p);
+        let mine = format!("extern proc {ir}({}){ret}", params.join(", "));
+        if self.externs.get(ir).is_none_or(|e| *e == mine) {
+            return None;
+        }
+        let name = format!("_QRNPX_{}", mangle(&p.name.to_ascii_uppercase()));
+        self.externs.entry(name.clone()).or_insert_with(|| format!("proto {name}({}){ret}", params.join(", ")));
+        Some(name)
+    }
+
+    /// The IR name of a call's target, declaring an external one.
+    fn declare_callee(&mut self, p: &Proto) -> String {
+        let (params, ret) = self.signature(p);
         if let Some(pgm) = &p.extpgm {
             let name = format!("pgm_{}", mangle(&p.name));
             let (lib, obj) = match pgm.split_once('/') {

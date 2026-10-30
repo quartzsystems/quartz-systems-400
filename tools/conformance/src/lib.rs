@@ -14,6 +14,7 @@ pub mod cl;
 pub mod cmdkit;
 mod cmn;
 pub mod db;
+pub mod ifsapi;
 mod dst;
 mod error;
 mod ifs;

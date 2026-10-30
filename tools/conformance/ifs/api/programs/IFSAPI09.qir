@@ -1,0 +1,118 @@
+; The NLS-enabled forms with Qlg_Path_Name_T paths (CCSID 0, the job's)
+module IFSAPI09
+static $dir: bytes(*) inz(q"/home/QSTEST/IFSAPI09")
+static $f: bytes(*) inz(q"/home/QSTEST/IFSAPI09/q.txt")
+static $g: bytes(*) inz(q"/home/QSTEST/IFSAPI09/r.txt")
+static $h: bytes(*) inz(q"/home/QSTEST/IFSAPI09/h.txt")
+static $s: bytes(*) inz(q"/home/QSTEST/IFSAPI09/s.lnk")
+static $home: bytes(*) inz(q"/home/QSTEST")
+static $data: char(3) inz("xyz")
+static $st: bytes(128)
+static $cwd: bytes(96)
+static $lnk: bytes(96)
+static $vfs: bytes(160)
+static $name: char(5)
+proc QLGNAME(byval $p: ptr) {
+L0:
+  %q = load $p
+  %len = callb INT(%q, 16)
+  dsply %len
+  ret
+}
+proc IFSAPI09() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb QlgMkdir(%d, 493)
+  callb RC(%r0)
+  %c0 = callb QlgChdir(%d)
+  callb RC(%c0)
+  dsply "QlgGetcwd: the path's length"
+  %cw = addr $cwd
+  %g = callb QlgGetcwd(%cw, 96)
+  callb PTR(%g)
+  callb QLGNAME(%cw)
+  %p = addr $f
+  dsply "QlgOpen O_CREAT O_RDWR"
+  %fd = callb QlgOpen(%p, 12, 420)
+  callb RC(%fd)
+  %b = addr $data
+  %w = callb write(%fd, %b, 3)
+  callb RC(%w)
+  %c = callb close(%fd)
+  dsply "QlgStat: size"
+  %sb = addr $st
+  %s = callb QlgStat(%p, %sb)
+  callb RC(%s)
+  %sz = callb INT(%sb, 20)
+  dsply %sz
+  dsply "QlgAccess, QlgChmod 0o600"
+  %a = callb QlgAccess(%p, 4)
+  callb RC(%a)
+  %m = callb QlgChmod(%p, 384)
+  callb RC(%m)
+  dsply "QlgLink, QlgUnlink"
+  %ph = addr $h
+  %l = callb QlgLink(%p, %ph)
+  callb RC(%l)
+  %u = callb QlgUnlink(%ph)
+  callb RC(%u)
+  dsply "QlgSymlink, QlgReadlink, QlgLstat"
+  %ps = addr $s
+  %y = callb QlgSymlink(%p, %ps)
+  callb RC(%y)
+  %lb = addr $lnk
+  %rl = callb QlgReadlink(%ps, %lb, 96)
+  callb RC(%rl)
+  callb QLGNAME(%lb)
+  %ls = callb QlgLstat(%ps, %sb)
+  callb RC(%ls)
+  %ty = callb INT(%sb, 0)
+  %t = div %ty, 4096
+  dsply %t
+  dsply "QlgRenameKeep, QlgRenameUnlink"
+  %pg = addr $g
+  %k = callb QlgRenameKeep(%p, %pg)
+  callb RC(%k)
+  %fd2 = callb QlgCreat(%p, 420)
+  callb RC(%fd2)
+  %c2 = callb close(%fd2)
+  %k2 = callb QlgRenameKeep(%p, %pg)
+  callb RC(%k2)
+  %k3 = callb QlgRenameUnlink(%p, %pg)
+  callb RC(%k3)
+  dsply "QlgOpendir, QlgReaddir: name lengths"
+  %dd = callb QlgOpendir(%d)
+  callb PTR(%dd)
+  br NEXT
+NEXT:
+  %e = callb QlgReaddir(%dd)
+  %nul = const.ptr *NULL
+  %z = cmp.eq %e, %nul
+  brif %z, DONE, ONE
+ONE:
+  %q = ptradd %e, 40
+  callb QLGNAME(%q)
+  br NEXT
+DONE:
+  %cd = callb closedir(%dd)
+  callb RC(%cd)
+  dsply "QlgPathconf, QlgStatvfs, QlgUtime"
+  %pc = callb QlgPathconf(%d, 4)
+  callb RC(%pc)
+  %v = addr $vfs
+  %sv = callb QlgStatvfs(%d, %v)
+  callb RC(%sv)
+  %nt = const.ptr *NULL
+  %ut = callb QlgUtime(%pg, %nt)
+  callb RC(%ut)
+  %u1 = callb QlgUnlink(%ps)
+  callb RC(%u1)
+  %hm = addr $home
+  %ch = callb QlgChdir(%hm)
+  callb RC(%ch)
+  %u2 = callb QlgUnlink(%pg)
+  callb RC(%u2)
+  %r9 = callb QlgRmdir(%d)
+  callb RC(%r9)
+  ret
+}

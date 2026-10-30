@@ -11,6 +11,8 @@
              PARM       KWD(SRCFILE) TYPE(Q3) PROMPT('Source file')
              PARM       KWD(SRCMBR) TYPE(*NAME) LEN(10) DFT(*CMD) +
                           SPCVAL((*CMD)) PROMPT('Source member')
+             PARM       KWD(SRCSTMF) TYPE(*PNAME) LEN(5000) +
+                          CASE(*MIXED) PROMPT('Source stream file')
              PARM       KWD(REXSRCFILE) TYPE(Q4) PMTCTL(P1) +
                           PROMPT('REXX source file')
              PARM       KWD(REXSRCMBR) TYPE(*NAME) LEN(10) DFT(*CMD) +

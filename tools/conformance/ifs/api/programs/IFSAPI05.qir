@@ -1,0 +1,139 @@
+; mkdir, rmdir, chdir, fchdir, getcwd, openat and the directory
+; streams: opendir, readdir, readdir_r, rewinddir, closedir
+module IFSAPI05
+static $dir: bytes(*) inz(z"/home/QSTEST/IFSAPI05")
+static $sub: bytes(*) inz(z"/home/QSTEST/IFSAPI05/sub")
+static $home: bytes(*) inz(z"/home/QSTEST")
+static $rel: bytes(*) inz(z"IFSAPI05/sub")
+static $x: bytes(*) inz(z"x.txt")
+static $y: bytes(*) inz(z"/home/QSTEST/IFSAPI05/y.txt")
+static $xs: bytes(*) inz(z"/home/QSTEST/IFSAPI05/sub/x.txt")
+static $xd: bytes(*) inz(z"/home/QSTEST/IFSAPI05/x.txt")
+static $cwd: char(40) inz(*BLANKS)
+static $tiny: char(4) inz(*BLANKS)
+static $name: char(12)
+static $ent: bytes(696)
+static $res: ptr
+proc NAME(byval $e: ptr) {
+L0:
+  %q = load $e
+  %n = callb INT(%q, 52)
+  dsply %n
+  %a = ptradd %q, 56
+  mov $name, [%a]:char(12)
+  dsply $name
+  ret
+}
+proc LIST(byval $p: ptr) {
+L0:
+  %q = load $p
+  %d = callb opendir(%q)
+  callb PTR(%d)
+  br NEXT
+NEXT:
+  %e = callb readdir(%d)
+  %nul = const.ptr *NULL
+  %z = cmp.eq %e, %nul
+  brif %z, DONE, ONE
+ONE:
+  callb NAME(%e)
+  br NEXT
+DONE:
+  dsply "end"
+  %c = callb closedir(%d)
+  callb RC(%c)
+  ret
+}
+proc IFSAPI05() entry {
+L0:
+  %d = addr $dir
+  %r0 = callb mkdir(%d, 493)
+  callb RC(%r0)
+  dsply "mkdir again"
+  %r1 = callb mkdir(%d, 493)
+  callb RC(%r1)
+  %ps = addr $sub
+  %r2 = callb mkdir(%ps, 493)
+  callb RC(%r2)
+  dsply "chdir home, getcwd"
+  %h = addr $home
+  %c1 = callb chdir(%h)
+  callb RC(%c1)
+  %cw = addr $cwd
+  %g = callb getcwd(%cw, 40)
+  callb PTR(%g)
+  dsply $cwd
+  dsply "getcwd into four bytes"
+  %t = addr $tiny
+  %g2 = callb getcwd(%t, 4)
+  callb PTR(%g2)
+  dsply "chdir relative"
+  %rl = addr $rel
+  %c2 = callb chdir(%rl)
+  callb RC(%c2)
+  mov $cwd, *BLANKS
+  %g3 = callb getcwd(%cw, 40)
+  dsply $cwd
+  %px = addr $x
+  %fd = callb creat(%px, 420)
+  callb RC(%fd)
+  %cl = callb close(%fd)
+  dsply "fchdir to the directory"
+  %dfd = callb open(%d, 1)
+  callb RC(%dfd)
+  %c3 = callb fchdir(%dfd)
+  callb RC(%c3)
+  mov $cwd, *BLANKS
+  %g4 = callb getcwd(%cw, 40)
+  dsply $cwd
+  dsply "openat the directory descriptor"
+  %fd2 = callb openat(%dfd, %px, 74, 420)
+  callb RC(%fd2)
+  %cl2 = callb close(%fd2)
+  %cl3 = callb close(%dfd)
+  %py = addr $y
+  %fd3 = callb creat(%py, 420)
+  %cl4 = callb close(%fd3)
+  dsply "the listing"
+  callb LIST(%d)
+  dsply "readdir_r, rewinddir"
+  %ds = callb opendir(%d)
+  %pe = addr $ent
+  %pr = addr $res
+  %rr = callb readdir_r(%ds, %pe, %pr)
+  callb RC(%rr)
+  callb NAME(%pe)
+  %rr2 = callb readdir_r(%ds, %pe, %pr)
+  callb NAME(%pe)
+  callb rewinddir(%ds)
+  %rr3 = callb readdir_r(%ds, %pe, %pr)
+  callb NAME(%pe)
+  %cd = callb closedir(%ds)
+  callb RC(%cd)
+  dsply "opendir of a file"
+  %bad = callb opendir(%py)
+  callb PTR(%bad)
+  dsply "rmdir of a directory not empty"
+  %rm1 = callb rmdir(%d)
+  callb RC(%rm1)
+  %h2 = callb chdir(%h)
+  %pxs = addr $xs
+  %u0 = callb unlink(%pxs)
+  %u1 = callb unlink(%py)
+  %pxd = addr $xd
+  %u5 = callb unlink(%pxd)
+  callb RC(%u5)
+  %u2 = callb rmdir(%ps)
+  callb RC(%u2)
+  dsply "rmdir of a file"
+  %pxx = addr $y
+  %fd4 = callb creat(%pxx, 420)
+  %cl5 = callb close(%fd4)
+  %rm2 = callb rmdir(%pxx)
+  callb RC(%rm2)
+  %u3 = callb unlink(%pxx)
+  callb RC(%u3)
+  %r9 = callb rmdir(%d)
+  callb RC(%r9)
+  ret
+}

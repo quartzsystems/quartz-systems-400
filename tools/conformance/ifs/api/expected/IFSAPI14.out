@@ -1,0 +1,34 @@
+ENOENT: a missing directory on the way
+-1 errno
+3025
+ENOTDIR: a file on the way
+-1 errno
+3403
+EISDIR: a directory opened for writing
+-1 errno
+3471
+ENOENT: an empty path
+-1 errno
+3025
+EBADF: read on a closed descriptor
+-1 errno
+3450
+EINVAL: bad open flags
+-1 errno
+3021
+/QNTC and /QDLS
+-1 errno
+3440
+-1 errno
+3440
+EPERM or EACCES: unlink in QSYS
+-1 errno
+3025
+strerror answers a text
+ok
+ok
+perror
+IFSAPI14: No object has this name.
+0
+descriptors left open: 0
+pending: none

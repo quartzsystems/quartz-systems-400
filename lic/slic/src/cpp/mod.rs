@@ -19,6 +19,7 @@ mod direct;
 mod msgfcmd;
 mod objcmd;
 mod rpg;
+pub(crate) mod stmf;
 mod sysinfo;
 mod tcpcmd;
 mod uicmd;

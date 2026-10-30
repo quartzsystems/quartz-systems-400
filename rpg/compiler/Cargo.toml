@@ -13,6 +13,7 @@ qir = { path = "../../runtime/qir", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+ile = { path = "../../runtime/ile", version = "0.1.0" }
 
 [lints]
 workspace = true

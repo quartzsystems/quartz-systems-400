@@ -1,0 +1,37 @@
+0
+create tagged 819, write EBCDIC text through O_TEXTDATA
+0
+0
+6
+819
+6
+the bytes on disk: ASCII
+4
+1214606444
+read back through O_TEXTDATA: the job's CCSID
+6
+Hello%
+O_TEXT_CREAT: a new file in 1208, the data from 37
+0
+6
+1208
+6
+4
+1214606444
+O_CCSID 1208 on read: no conversion
+0
+6
+1214606444
+O_CODEPAGE 850
+0
+850
+0
+O_CCSID and O_CODEPAGE together
+-1 errno
+3021
+a CCSID that does not exist
+-1 errno
+3490
+0
+descriptors left open: 0
+pending: none

@@ -126,15 +126,20 @@ pub fn clof(system: &mut System, p: &Params) -> Result<String, String> {
     })
 }
 
-/// `sqlrun NAME [COMMIT(*CHG|*CS|*ALL) ERRLVL(n) NAMING(*SQL) DFTRDBCOL(LIB)]`.
+/// `sqlrun NAME|PATH [COMMIT(*CHG|*CS|*ALL) ERRLVL(n) NAMING(*SQL) DFTRDBCOL(LIB)]`.
 pub fn sqlrun(system: &mut System, p: &Params) -> Result<String, String> {
     let name = p.pos_or(0, "SRCSTMF")?;
-    let text = system
-        .svc
-        .xfer
-        .get(&name)
-        .cloned()
-        .ok_or_else(|| format!("{name}: no such buffer; xfer put it first"))?;
+    // A path is a stream file in the IFS; a bare name an xfer buffer.
+    let text = if name.contains('/') {
+        crate::cpp::stmf::read_as_job(system, &name)?
+    } else {
+        system
+            .svc
+            .xfer
+            .get(&name)
+            .cloned()
+            .ok_or_else(|| format!("{name}: no such buffer or stream file; xfer put it or give a path"))?
+    };
     let opts = RunOpts {
         commit: match p.upper("COMMIT").as_deref() {
             None | Some("*NONE") => CommitOpt::None,
