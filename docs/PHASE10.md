@@ -27,7 +27,7 @@ state.
 
 | System | Release | Reached through | Used for |
 |---|---|---|---|
-| Cody's box (primary) | V7R1M0 | JTOpen host servers only (449, 8470-8476) | the host-server traces and the JTOpen suite's oracle runs, API headers and exports; read-only for every network setting |
+| Cody's box (primary) | V7R1M0 | JTOpen host servers only (449, 8470-8476) | the host-server traces and the JTOpen suite's oracle runs (2026-10-24), API headers and exports, the `oracle/net/primary/` capture and the fetch timing (2026-10-30; it was down from 10-24 to 10-30); read-only for every network setting |
 | pub400.com | V7R5M0 | telnet 23, FTP 21, host servers | screen goldens (CFGTCP, NETSTAT, WRKLNK, EDTF, prompts), the FTP transcripts, DDM traces, message captures; SSH is not reachable from this PC |
 
 Every capture lives under `tools/conformance/`; probes write the pub400
@@ -216,11 +216,14 @@ cargo test --release -p hostserver --test db_bench -- --ignored --nocapture  # Q
 cargo test --release -p ifs --test bench -- --ignored --nocapture        # QS400_IFS_BENCH_FILES
 ```
 
-Oracle comparison: no host server fetch rate (and no FTP, SFTP or IFS
-figure) has been recorded from either oracle, in `docs/HOSTSVR.md` or
-under `tools/conformance/`. These numbers have nothing to compare
-against yet; a JTOpen timing against the primary oracle (port 8471) is
-the measurement still to take.
+Oracle comparison: on 2026-10-30 JTOpen's JDBC driver (block size 32
+KiB, prefetch) fetched 10,000 rows of `QSYS2.SYSCOLUMNS` (four columns)
+from the primary oracle (V7R1M0, over the LAN, under 1 ms round trip) at
+30,700 rows/s [29,700-32,900], prepare to close, after one warm-up run.
+That is not like for like with the 288,000 above: the oracle's figure
+crosses a real network and reads a catalog view from disk, ours runs on
+loopback over a store in memory. No FTP, SFTP or IFS figure was taken
+from either oracle.
 
 Limit found on the way: an SQL `CREATE TABLE` took the database's default
 member size and filled at 13,000 rows (SQL0901). It now creates the table
@@ -244,4 +247,22 @@ each line; this is the item only Cody can sign off.
 
 ## Acceptance checklist
 
-_Pending: filled in after the full QEMU suite runs on the final tree._
+Checked 2026-10-30 on the final tree.
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | All tests and goldens green | Pass: `cargo test --workspace` 2,214 passed, 0 failed, 75 ignored (each with its reason) |
+| 1 | `cargo run -p build -- test` passes | Pass: 70 of 70 steps, and the 3 media steps (`--media iso`) |
+| 1 | JTOpen suite, FTP/SSH/host-server replays, QSH corpus | Pass: the JTOpen suite in QEMU (host-servers commit; step 68 runs it when a JDK and `QS_JT400_JAR` are set), `ftp_replay` (192 sessions), the six host-server replays, `sshd` end to end and against OpenSSH (ignored, run by hand), the `qsh` and `qsh-utils` corpora |
+| 1 | ACS checklist signed off | Needs Cody: the seven checks above |
+| 2 | HLINV and every Phase 9 corpus program still pass | Pass: `hlinv`, `rpg_kit`, `rpg_fuzz`, `oss_corpus` |
+| 2 | Phase 9 open-source projects needing sockets, the IFS or TLS | Partly: HTTPAPI builds and `EXAMPLE1` and `EXAMPLE15` pass (`oss_net`, Linux); `EXAMPLE16`, HTTPAPI over TLS and two si-ibmi-apis modules are `BLOCKED(phase10)` in `PHASE9.md` |
+| 3 | `IFS.md`, `TCPIP.md`, `SERVERS.md`, `HOSTSVR.md`, `PRINT.md`, `CERTS.md`, `QSH.md`, this document with the bench | Pass, with the oracle fetch rate above |
+| 3 | Spec-versus-code tests: IFS `stat`, sockets structures, host-server code points, exit-point formats | Pass: `sysapi` `ifs`, `sockets` `spec`, `hostserver` `spec`, `regfac` `spec` |
+| 4 | `missing_docs = deny` on the new crates; clippy and `cargo deny` clean | Pass: all 25 new crates; clippy (host and musl) and `cargo deny` (295 crates, no C) clean |
+| 4 | Shell-utility crates banned, a test over the lockfile | Pass: `deny.toml` bans and `lockfile` |
+| 4 | Static binaries; no non-Quartz userland binaries in the image | Pass: the build's ELF check in `build all` |
+| 5 | No IBM text outside protocol tokens; tripwire over the new crates | Pass: `phase10_hygiene`; the kept interface strings are listed under Deviations |
+| 5 | Oracle material only under `conformance/`; `.env` untracked; no credential tracked | Pass: `phase8_hygiene` |
+| 5 | `QSTEST`, `/home/QSTEST`, the pub400 library and home hold nothing this phase made | Pass on the primary oracle (2026-10-30: `QSTEST` empty, `/home/QSTEST` only the 10-22 kit folders). pub400: nothing dated from Phase 10 in the home; the library's `DCL*` and `FEX010` programs are Phase 9's (10-24 before Phase 10 began) and two journal receivers of 10-25 belong to the database kit's journal. Left for Cody to keep or delete |
+| 5 | No network configuration changed on either oracle | Pass: only reads, `PING` and the host servers' own sessions |
