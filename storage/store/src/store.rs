@@ -15,6 +15,7 @@ use crate::asp::mirror::{Resume, ResumeJournal, ResumeProgress};
 use crate::asp::unit::UnitState;
 use crate::asp::{Asp, FormatParams, UnitEvent, UnitInfo};
 use crate::cache::{CacheStats, PageCache};
+use crate::group::{self, Group};
 use crate::obj::ObjectId;
 use crate::obj::guard::Guard;
 use crate::obj::lock::LockTable;
@@ -97,6 +98,8 @@ pub struct Store {
     guard: Option<Arc<dyn Guard>>,
     /// Header pages found in the object directory with this root.
     headers: (Option<PageNo>, HashMap<ObjectId, PageNo>),
+    /// The open group commit, if any (`begin_group`).
+    group: Option<Group>,
 }
 
 impl Store {
@@ -302,6 +305,7 @@ impl Store {
             locks: LockTable::default(),
             guard: None,
             headers: (None, HashMap::new()),
+            group: None,
             asp,
         }
     }
@@ -402,7 +406,8 @@ impl Store {
     }
 
     /// Commit: write the transaction's new pages, log the record, then
-    /// apply the in-place pages.
+    /// apply the in-place pages. In an open group the record joins the
+    /// group's and the in-place pages wait for it.
     pub(crate) fn commit(
         &mut self,
         record: &WalRecord,
@@ -417,6 +422,42 @@ impl Store {
             }
             self.cache.insert(pno, page);
         }
+        if self.joins_group(record)? {
+            let g = self.group.as_mut().expect("joined");
+            g.merge(record);
+            for (pno, page) in sealed {
+                self.cache.insert(pno, page.clone());
+                self.imaged.insert(pno);
+                g.held.insert(pno, page);
+            }
+        } else {
+            self.append(record)?;
+            for (pno, mut page) in sealed {
+                if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
+                    self.broken = Some("in-place write");
+                    return Err(e);
+                }
+                self.cache.insert(pno, page);
+                self.imaged.insert(pno);
+            }
+        }
+        self.stats.images += record.images.len() as u64;
+        self.stats.patches += record.patches.len() as u64;
+        for (owner, root) in &record.roots {
+            self.set_root(*owner, *root)?;
+        }
+        self.next_serial = record.next_serial;
+        self.next_txn = record.txn + 1;
+        self.txns_since_checkpoint += 1;
+        self.stats.commits += 1;
+        if self.group.is_none() {
+            self.checkpoint_due()?;
+        }
+        Ok(())
+    }
+
+    /// Log `record` and make it durable.
+    fn append(&mut self, record: &WalRecord) -> Result<()> {
         let payload = record.encode()?;
         let pages = Wal::pages_for(payload.len());
         if pages > self.wal.pages {
@@ -437,27 +478,70 @@ impl Store {
             return Err(e);
         }
         self.stats.wal_pages += pages;
-        self.stats.images += record.images.len() as u64;
-        self.stats.patches += record.patches.len() as u64;
-        for (pno, mut page) in sealed {
-            if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
-                self.broken = Some("in-place write");
-                return Err(e);
-            }
-            self.cache.insert(pno, page);
-            self.imaged.insert(pno);
-        }
-        for (owner, root) in &record.roots {
-            self.set_root(*owner, *root)?;
-        }
-        self.next_serial = record.next_serial;
-        self.next_txn = record.txn + 1;
-        self.txns_since_checkpoint += 1;
-        self.stats.commits += 1;
+        Ok(())
+    }
+
+    /// Checkpoint when enough transactions or WAL pages piled up.
+    fn checkpoint_due(&mut self) -> Result<()> {
         if self.txns_since_checkpoint >= self.config.checkpoint_txns
             || self.wal.free() < self.wal.pages / 2
         {
             self.checkpoint()?;
+        }
+        Ok(())
+    }
+
+    /// Whether `record` joins the open group. When it does not fit, the
+    /// group is flushed first, so a record logged alone stays in order.
+    fn joins_group(&mut self, record: &WalRecord) -> Result<bool> {
+        let room = |s: &Self| {
+            usize::try_from(s.wal.free().min(group::MAX_PAGES)).unwrap_or(0) * crate::wal::PAYLOAD
+        };
+        let Some(g) = &self.group else {
+            return Ok(false);
+        };
+        if g.fits(record, room(self)) {
+            return Ok(true);
+        }
+        self.flush_group()?;
+        Ok(self
+            .group
+            .as_ref()
+            .is_some_and(|g| g.fits(record, room(self))))
+    }
+
+    /// Open a group commit: until `end_group`, transactions commit
+    /// without a flush of their own and become durable together. Nothing
+    /// a group committed may be reported done before `end_group`.
+    pub fn begin_group(&mut self) {
+        if self.group.is_none() {
+            self.group = Some(Group::default());
+        }
+    }
+
+    /// Make the group's transactions durable and close it.
+    pub fn end_group(&mut self) -> Result<()> {
+        let r = self.flush_group();
+        self.group = None;
+        r?;
+        self.checkpoint_due()
+    }
+
+    /// Log the group's merged record, then write its in-place pages.
+    fn flush_group(&mut self) -> Result<()> {
+        let Some(g) = self.group.as_mut() else {
+            return Ok(());
+        };
+        let Some(record) = g.record.take() else {
+            return Ok(());
+        };
+        let held = std::mem::take(&mut g.held);
+        self.append(&record)?;
+        for (pno, mut page) in held {
+            if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
+                self.broken = Some("in-place write");
+                return Err(e);
+            }
         }
         Ok(())
     }
@@ -499,6 +583,8 @@ impl Store {
     /// tail past every committed transaction.
     pub fn checkpoint(&mut self) -> Result<()> {
         self.check()?;
+        // A group's record goes first: the superblock is to describe it.
+        self.flush_group()?;
         let sb = self.asp.superblock_mut();
         sb.objdir_root = self.objdir_root;
         sb.next_serial = self.next_serial;
@@ -539,6 +625,9 @@ impl Store {
 
     /// A page, from the cache or the units.
     pub fn read_page(&mut self, pno: PageNo) -> Result<Page> {
+        if let Some(p) = self.group.as_ref().and_then(|g| g.held.get(&pno)) {
+            return Ok(p.clone());
+        }
         if let Some(p) = self.cache.get(pno) {
             return Ok(p);
         }

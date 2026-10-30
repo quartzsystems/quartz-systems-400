@@ -250,20 +250,32 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
                 Err(e) => eprintln!("qsstg: accept: {e}"),
             }
         }
+        let mut grouped = false;
         for i in ready.into_iter().rev() {
             let frame = conns[i].chan.recv_raw();
             let req = frame.and_then(|b| ipc::decode::<Request>(&b));
             let Ok(req) = req else {
                 let c = conns.remove(i);
+                if !grouped {
+                    served::group(system, true);
+                    grouped = true;
+                }
                 served::vanished(system, c);
                 continue;
             };
+            if grouped {
+                served::group(system, false);
+                grouped = false;
+            }
             let close = matches!(req, Request::Close {});
             let reply = served::handle(system, &mut conns, i, req);
             let _ = conns[i].chan.send_raw(&reply);
             if close {
                 std::process::exit(0);
             }
+        }
+        if grouped {
+            served::group(system, false);
         }
     }
 }

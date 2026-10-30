@@ -274,6 +274,16 @@ then the last page is written and unit 0 flushed. So a valid last page
 (page CRC, `seq`, `last` flag, `record_crc` over the payload) proves
 the whole transaction is durable.
 
+A group commit (`Store::begin_group` to `end_group`) merges the records
+of the transactions committed in it into one record: the allocations,
+frees, roots, images and patches of each, in commit order, under the
+last transaction's ID. Their copy-on-write pages are written at once,
+their in-place pages only after the merged record is durable; until
+then the store serves them from memory. A checkpoint, or a record too
+large to join, logs the group first. So recovery finds the whole group
+or none of it, and a group costs the flushes of one record. The storage
+service groups the ends of the jobs it finds gone, which answer no one.
+
 Recovery reads from `wal_tail`: a page whose CRC fails or whose `seq`
 is not the expected one (a page from an earlier lap of the ring, or
 never written) ends the log, as does a record with no valid last page.

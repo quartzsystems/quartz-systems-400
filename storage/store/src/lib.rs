@@ -20,6 +20,7 @@ mod bytes;
 pub mod cache;
 mod drain;
 mod error;
+mod group;
 pub mod obj;
 pub mod page;
 pub mod reclaim;

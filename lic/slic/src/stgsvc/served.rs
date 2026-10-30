@@ -243,6 +243,20 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     Ok(ctx)
 }
 
+/// Open (`true`) or end a group commit. Ending a job answers no one,
+/// so the job ends one pass of the serve loop finds commit together:
+/// a few flushes for all of them instead of several for each.
+pub fn group(system: &mut System, open: bool) {
+    let Some(s) = system.storage.as_mut() else {
+        return;
+    };
+    if open {
+        s.store.begin_group();
+    } else if let Err(e) = s.store.end_group() {
+        eprintln!("qsstg: ending jobs: {e}");
+    }
+}
+
 /// A job's connection closed: whatever it held goes.
 pub fn vanished(system: &mut System, conn: Conn) {
     let Some(mut ctx) = conn.ctx else {
@@ -327,6 +341,8 @@ fn end_db(system: &mut System, ctx: &mut JobCtx) {
 
 /// Every job ends, then the store is checkpointed and closed.
 fn close(system: &mut System, conns: &mut [Conn]) -> Result<String, String> {
+    // The close checkpoint makes the job ends durable together.
+    group(system, true);
     for c in conns.iter_mut() {
         if let Some(ctx) = c.ctx.as_mut() {
             end_job(system, ctx, false);
