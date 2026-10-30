@@ -266,7 +266,9 @@ fn boot_catalog(image_sector: u32, image_len: usize) -> Vec<u8> {
     e[0] = 0x88; // bootable
     e[1] = 0x00; // no emulation
     // load segment 0, system type 0, unused
-    let sectors512 = u16::try_from(image_len.div_ceil(512)).unwrap_or(u16::MAX);
+    // Past sixteen bits the count is 1: firmware then takes the FAT
+    // volume's own size, where a capped count would cut it short.
+    let sectors512 = u16::try_from(image_len.div_ceil(512)).unwrap_or(1);
     e[6..8].copy_from_slice(&sectors512.to_le_bytes());
     e[8..12].copy_from_slice(&image_sector.to_le_bytes());
 

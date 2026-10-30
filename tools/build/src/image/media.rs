@@ -30,11 +30,12 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let slot_a = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotA))?)?;
     let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
 
+    let spec = fat::media_esp(uki_bytes.len() as u64);
     info!(
         "iso: building {} MiB FAT16 boot image",
-        fat::MEDIA_ESP.bytes / (1024 * 1024)
+        spec.bytes / (1024 * 1024)
     );
-    let efi = fat::build(&fat::MEDIA_ESP, &[(BOOT_FILE, &uki_bytes)])?;
+    let efi = fat::build(&spec, &[(BOOT_FILE, &uki_bytes)])?;
     let listing = fat::list(&efi)?;
     ensure!(
         listing == ["EFI/", "EFI/BOOT/", BOOT_FILE],

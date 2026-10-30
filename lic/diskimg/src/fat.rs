@@ -45,6 +45,20 @@ pub const MEDIA_ESP: Spec = Spec {
     bytes_per_cluster: 4096,
 };
 
+/// The ISO boot image for a UKI of `payload` bytes: [`MEDIA_ESP`] while
+/// the UKI fits, else grown in whole MiB with 2 MiB to spare (FAT16 at
+/// 4 KiB clusters holds up to 255 MiB). Past 32 MiB the boot catalog
+/// cannot give the size, and firmware reads the volume's own.
+#[must_use]
+pub fn media_esp(payload: u64) -> Spec {
+    const MIB: u64 = 1024 * 1024;
+    let need = (payload + 2 * MIB).div_ceil(MIB) * MIB;
+    Spec {
+        bytes: need.max(MEDIA_ESP.bytes),
+        ..MEDIA_ESP
+    }
+}
+
 fn fat_err(what: &'static str) -> impl FnOnce(std::io::Error) -> Error {
     move |e| Error::Fat {
         what,
@@ -136,6 +150,11 @@ mod tests {
             vec!["EFI/", "EFI/BOOT/", "EFI/BOOT/BOOTX64.EFI"]
         );
         assert_eq!(&img[54..59], b"FAT16");
+        let big = media_esp(40 * 1024 * 1024);
+        assert_eq!(big.bytes, 42 * 1024 * 1024);
+        let img = build(&big, &[("EFI/BOOT/BOOTX64.EFI", &vec![7u8; 40 * 1024 * 1024])]).unwrap();
+        assert_eq!(&img[54..59], b"FAT16");
+        assert_eq!(media_esp(1).bytes, MEDIA_ESP.bytes);
         assert_eq!(
             build(&MEDIA_ESP, &[]).unwrap(),
             build(&MEDIA_ESP, &[]).unwrap()
