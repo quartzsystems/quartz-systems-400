@@ -471,6 +471,31 @@ site = "job"
 site = "job"
 note = "kept in the TCP/IP server table in QUSRSYS (QATOCSVRA)"
 
+# --- SNTP, LPD, LPR and mail out (work/qsjob/src/command/netcmd.rs)
+[cmd.CHGNTPA]
+site = "job"
+note = "kept in the TCP/IP server table in QUSRSYS; QTOTNTP reads it at each poll"
+
+[cmd.CHGLPDA]
+site = "job"
+note = "kept in the TCP/IP server table in QUSRSYS"
+
+[cmd.CHGSMTPA]
+site = "job"
+note = "kept in the TCP/IP server table; only FWDHUBSVR and MAILROUTER act (no SMTP server)"
+
+[cmd.SNDTCPSPLF]
+site = "job"
+note = "LPR client of work/print; the file is read through the service as DSPSPLF reads it"
+
+[cmd.LPR]
+site = "job"
+note = "the same as SNDTCPSPLF"
+
+[cmd.SNDSMTPEMM]
+site = "job"
+note = "MIME built by net/mail, handed to the CHGSMTPA mail router"
+
 # --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
 [cmd.ADDRDBDIRE]
 site = "job"

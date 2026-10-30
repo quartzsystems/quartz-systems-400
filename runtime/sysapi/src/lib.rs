@@ -39,6 +39,7 @@ mod data;
 mod db;
 pub mod ifs;
 mod job;
+pub mod mail;
 mod misc;
 mod msg;
 pub mod net;
@@ -91,8 +92,9 @@ pub fn registration_procedures() -> Vec<(&'static str, usize)> {
 }
 
 /// Every bound procedure this crate adds (`QLEAWI`'s, then the C-style
-/// socket, descriptor and resolver calls of [`net`] and the IFS calls of
-/// [`ifs`]), by export name, with its code address.
+/// socket, descriptor and resolver calls of [`net`], the IFS calls of
+/// [`ifs`] and `QtmmSendMail` of [`mail`]), by export name, with its
+/// code address.
 #[must_use]
 pub fn procedures() -> Vec<(&'static str, usize)> {
     let mut v = cee::procedures();
@@ -106,6 +108,7 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
 pub fn c_procedures() -> Vec<(&'static str, usize)> {
     let mut v = net::procedures();
     v.extend(ifs::procedures());
+    v.extend(mail::procedures());
     v
 }
 

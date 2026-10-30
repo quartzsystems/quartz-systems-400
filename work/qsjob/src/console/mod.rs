@@ -346,6 +346,9 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
         Ok(c) => c,
     };
     sysapi::ifs::configure(&mut job, Rc::new(s.ifs), ccsid);
+    // QtmmSendMail hands its file to the mail router from here.
+    let mail_link = link.clone();
+    sysapi::mail::set_mailer(Some(Rc::new(move |req| crate::command::netcmd::qtmm(&mail_link, req))));
     // Programs compiled from RPG call its runtime library.
     qrpgrt::install(&mut job);
     // Domain and state are enforced at the level of this IPL.

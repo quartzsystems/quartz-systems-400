@@ -617,6 +617,12 @@ ipc::rpc! {
     /// (`ty` `*LIN`, `*CTL`, `*DEV`): its code and text, `None` when
     /// there is no such object.
     1181 => fn cfg_status / CfgStatus (name: String, ty: String) -> Option<(u16, String)>;
+    // --- the small servers and their clients (1200-1209; SNDTCPSPLF, LPR)
+    /// The spooled file `file` of `job` (`*` for the caller's,
+    /// `number/user/name` otherwise) numbered `splnbr` (`*ONLY`,
+    /// `*LAST`, a number), read as `DSPSPLF` reads it: its attributes
+    /// and data.
+    1200 => fn splf_fetch / SplfFetch (file: String, job: String, splnbr: String) -> Result<(SplfAttrs, Vec<u8>), String>;
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;

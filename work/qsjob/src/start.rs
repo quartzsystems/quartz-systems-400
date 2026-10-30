@@ -63,6 +63,8 @@ pub fn run() -> ! {
         "HTTPADM" => crate::work::httpadm::run(ctl, &link, &start),
         "HOSTSVRD" => crate::work::hostsvr::daemon::run(ctl, &link, &start),
         "PRESTART" => crate::work::hostsvr::prestart::run(ctl, &link, &start),
+        "NTP" => crate::work::ntp::run(ctl, &link, &start),
+        "LPD" => crate::work::lpd::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

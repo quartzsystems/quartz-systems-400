@@ -265,10 +265,22 @@ ifs/          the integrated file system
 net/          TCP/IP: configuration, sockets, TLS, servers
   servers/      the TCP servers framework (docs/SERVERS.md): src/registry/ every server, its
                 jobs, ports and readiness; src/framework/ the TcpServer hooks, the Env, the
-                Framework and Starter; src/attrs/ CHGTELNA and the HTTP admin ports over the
-                server table's bag; listen.rs the accept loop; src/http/ the admin page. The
-                job side is work/qsjob/src/command/tcpsvr.rs and the roles work/qsjob/src/
-                work/telnet.rs (QTVTELNET) and httpadm.rs (ADMIN)
+                Framework and Starter (small.rs *NTP, *LPD); src/attrs/ CHGTELNA, CHGNTPA,
+                CHGLPDA, CHGSMTPA and the HTTP admin ports over the server table's bag;
+                listen.rs the accept loop; src/http/ the admin page. The job side is
+                work/qsjob/src/command/tcpsvr.rs (netcmd.rs the CHG*A, SNDTCPSPLF/LPR and
+                SNDSMTPEMM commands) and the roles work/qsjob/src/work/telnet.rs
+                (QTVTELNET), httpadm.rs (ADMIN), ntp.rs (QTOTNTP), lpd.rs (QTLPD00001)
+  ntp/          SNTP: src/packet/ the header and timestamps, client.rs one exchange,
+                adjust.rs MINADJ/ADJTHLD/MAXADJ, poll.rs a poll over RMTSYS, server.rs the
+                answer and the UDP loop, clock.rs the Clock trait (MemClock for tests)
+  lpd/          the line printer daemon: proto.rs RFC 1179 lines, session.rs a connection
+                against a Spooler, convert.rs received jobs as spooled files (SCS, FCFC,
+                *USERASCII, the QS/400 extension), status.rs the queue state; tests/ LPR
+                from work/print over loopback
+  mail/         mail out: addr.rs, encode.rs (base64, quoted-printable, RFC 2047, dates),
+                mime.rs the SNDSMTPEMM message, smtp.rs the client (STARTTLS, AUTH);
+                tests/ a fake smart host
   sshd/         the SSH server (docs/SSHD.md): src/wire/ SSH types, base64, PEM, DER;
                 src/transport/ ident, KEXINIT, key exchange (ML-KEM hybrid, X25519,
                 P-256), AES-GCM packets; src/keys/ public and private keys,
@@ -341,6 +353,8 @@ cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFR
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
+cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
+cargo test -p sys-cpps --test smallsvr    # CHGNTPA, CHGLPDA, CHGSMTPA, SNDTCPSPLF, LPR against the oracle
 cargo test -p sshd                        # the SSH server end to end in memory
 cargo test -p sshd --test openssh -- --ignored   # real ssh/sftp/scp against the daemon
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
@@ -412,9 +426,10 @@ otherwise logs go to `target/logs/`.
   (aligned buffer views), `lic/blockdev/src/linux.rs` (BLKDISCARD),
   `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call),
   `runtime/mi/src/act.rs` (calling into generated code: entries and handlers),
-  `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler) and
+  `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler),
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
-  `AF_PACKET`).
+  `AF_PACKET`) and
+  `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in

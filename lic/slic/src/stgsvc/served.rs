@@ -679,8 +679,13 @@ impl Service for Served<'_> {
     }
 
     fn sbs_state(&mut self) -> wm::sbs::SbsState {
-        let mut s = super::sbs::state(self.system, self.ctx.job.number);
-        s.end_jobs = super::jobqs::take_end_requests(self.system, self.ctx.job.number);
+        let me = self.ctx.job.number;
+        let mut s = super::sbs::state(self.system, me);
+        s.end_jobs = super::jobqs::take_end_requests(self.system, me);
+        // A job no monitor started (a server job) reads its own ENDJOB.
+        if let Some(i) = self.system.end_requests.remove(&me) {
+            s.end_jobs.push((me, i));
+        }
         s
     }
 
@@ -1748,6 +1753,16 @@ impl Service for Served<'_> {
 
     fn sst_users(&mut self) -> Result<Vec<u8>, String> {
         super::sst::users(self.system, self.ctx.job.number)
+    }
+
+    fn splf_fetch(
+        &mut self,
+        file: String,
+        job: String,
+        splnbr: String,
+    ) -> Result<(wm::obj::splf::SplfAttrs, Vec<u8>), String> {
+        let me = self.ctx.job.number;
+        super::splcmd::fetch(self.system, me, &file, &job, &splnbr)
     }
 
     fn tcp(&mut self, op: stg::tcp::TcpOp) -> stg::tcp::TcpReply {

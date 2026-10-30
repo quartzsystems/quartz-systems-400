@@ -266,8 +266,13 @@ fn find_queued(system: &System, job: &str) -> Option<(u32, String)> {
 fn find_active(system: &System, job: &str) -> Option<u32> {
     let number = wm::job::JobId::parse(job)
         .map(|id| id.number)
-        .or_else(|| job.trim().parse().ok())?;
-    system.jobs.in_use(number).then_some(number)
+        .or_else(|| job.trim().parse().ok());
+    if let Some(n) = number {
+        return system.jobs.in_use(n).then_some(n);
+    }
+    // A bare name: the newest active job of that name.
+    let name = job.trim().to_ascii_uppercase();
+    system.jobs.all().into_iter().filter(|j| j.name == name).map(|j| j.number).max()
 }
 
 fn signal(system: &System, number: u32, sig: rustix::process::Signal) -> Result<(), String> {

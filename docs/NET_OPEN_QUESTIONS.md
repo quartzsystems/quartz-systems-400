@@ -747,3 +747,93 @@ displays and the prompts were in `golden/phase10` already.
     distributions commonly allow; nothing in QS/400 runs that is not
     Quartz's own. A job's `PING` therefore needs no special authority,
     as on IBM i.
+
+## SNTP, LPD, LPR and mail out (smallsvr, 2026-10-30)
+
+Neither oracle runs LPD or SMTP; pub400 runs `QTOTNTP` but its UDP 123
+is not reachable from this PC, and `STRTCPSVR`/`CHG*A` may not be run
+on either system. The `CHGNTPA`, `CHGLPDA`, `CHGSMTPA`, `SNDTCPSPLF`
+and `LPR` definitions and prompts are the 2026-10-24 captures; the rest
+is from IBM's documentation and unverified.
+
+1. **`CHGNTPA` defaults.** The prompt could not retrieve current values,
+   so the defaults are IBM's documented ones: `RMTSYS(*NONE)`,
+   `AUTOSTART(*NO)`, `POLLITV(60)`, `MINADJ(20)` ms, `MAXADJ(20)` min,
+   `ADJTHLD(*MAXADJ)`, `ACTLOG(*NONE)`, `SVRAUTOSTR(*NO)`,
+   `SVRACTLOG(*NONE)`, `SYNCRQD(*YES)`. A `QATOTNTP` record dump would
+   settle them and where IBM keeps them (ours: the server table's bag).
+2. **`ADJTHLD` and `SYNCRQD`.** Read here as: up to `ADJTHLD` the clock
+   is slewed, beyond it (within `MAXADJ`) set at once; `SYNCRQD(*YES)`
+   keeps the server silent until the client has synchronized. Both
+   readings are from the keyword texts; the help panels were not
+   captured.
+3. **What the server says unsynchronized.** With `SYNCRQD(*NO)` and no
+   upstream the server answers stratum 10, reference `LOCL`. IBM's
+   stratum in that state is unknown.
+4. **`STRTCPSVR *NTP` parts.** The command starts both the client and the
+   server; `STRTCP` starts those whose `AUTOSTART`/`SVRAUTOSTR` is on.
+   IBM's `STRTCPSVR` may have a parameter choosing client or server (its
+   definition was refused, `CPF9802`).
+5. **SNTP messages.** `TCP1A40`-`TCP1A46` are ours in IBM's family; IBM's
+   SNTP messages in `QTCPMSG` (beyond the `QTCPMSGF` capture) were not
+   captured. `QSYSOPR` hears of a difference beyond `MAXADJ`, a clock set
+   at once, the first poll with no answer after good ones, and another
+   `QTIMADJ` owner.
+6. **`QTIMADJ`.** The client claims it as `QIBM_OS400_SNTP` when it is
+   `*NONE` and gives it back when it ends; any other value keeps it from
+   adjusting. IBM's exact identifier string and whether its client gives
+   the value back are not confirmed.
+7. **The hardware clock.** A slew or step changes `CLOCK_REALTIME`; the
+   client then tells the kernel the clock is synchronized, which lets a
+   kernel with `RTC_SYSTOHC` copy it to the RTC every eleven minutes.
+   Whether the 6.18 configuration has `RTC_SYSTOHC` (the default with
+   `RTC_CLASS`) is to be confirmed in the built `.config`; without it a
+   correction lasts until the next IPL reads the RTC.
+8. **LPD jobs.** IBM's LPD runs `QTLPD00nnn` jobs, `NBRSVR` of them
+   prestarted; ours is one `QTLPD00001` (user `QTMPLPD`) serving each
+   connection on a thread. `NBRSVR` is kept.
+9. **Spooled file owner.** IBM's LPD makes the file the property of the
+   control file's user (`P`) when that profile exists, else `QTMPLPD`;
+   here every file belongs to the LPD job, so to `QTMPLPD`, and the
+   sending user is in `USRDTA`. Giving the file to `P` needs a storage
+   service request that spools for another profile.
+10. **What is spooled.** IBM keeps every received file as `*USERASCII`.
+    Here text (`f`, `l`, `p`) and FORTRAN carriage control (`r`) become
+    SCS, so `DSPSPLF` and the system's writers handle them; other print
+    commands are kept as sent under `*USERASCII`. A file from a QS/400
+    `DESTTYPE(*OS400)` sender keeps its SCS and attributes. The
+    spooled file's name comes from the source name (`N`), `QPRTLPD`
+    when there is none.
+11. **Queue names.** `LIB/OUTQ`, or an output queue found through the
+    LPD job's library list, then in `QUSRSYS`. IBM's LPD also takes a
+    printer device's name; that is not done.
+12. **Remove jobs (05) and the queue state's form.** Removal answers that
+    files are removed with `DLTSPLF`; the queue state is our own `lpq`-like
+    text. Neither was compared with IBM's LPD.
+13. **`SNDTCPSPLF WSCST` and `USRDTATFM`.** Taken and not used: a
+    `*WSCST` model prints as plain text, and no user transform program
+    is called.
+14. **`SNDSMTPEMM` definition.** Refused to the pub400 profile (`Not
+    authorized to command SNDSMTPEMM in library QTCP`), so `RCP`,
+    `SUBJECT`, `NOTE`, `ATTACH`, `CONTENT` and `SMIME` are IBM's
+    documented keywords with our lengths; only `SMIME(*NONE)` sends.
+15. **The sender's address.** IBM takes it from the system distribution
+    directory (`WRKDIRE`, SMTP user and domain); there is none here, so
+    it is `user@hostname.domain` from `CHGTCPDMN`.
+16. **Mail router.** `FWDHUBSVR` first, then `MAILROUTER`, either as
+    `host[:port]`; there is no MX lookup (client only). TLS is
+    `STARTTLS` when offered (implicit on 465); the relay's certificate is
+    not checked against DCM's trusted CAs because the job cannot open the
+    `*SYSTEM` store (as for the HTTP administration page).
+17. **`AUTH` credentials.** The client speaks `AUTH PLAIN` and `AUTH
+    LOGIN`; the user and password come from the bag keys `AUTHUSER` and
+    `AUTHPWD`, which no command sets and which any job reading the server
+    table can see. IBM keeps SMTP client credentials elsewhere (an
+    `ADDSMTPLE` entry type, perhaps a validation list); a `*VLDL` would
+    be their home here.
+18. **`QtmmSendMail`.** Bound procedure in service program `QTMMSNDM`
+    (assumed: the export list was not captured). `ADDT0100`'s
+    `Next_Addr_Structure_Offset` is taken from the start of the current
+    structure (0: right after its address). Failures are `TCP1A4C` with
+    the reason; IBM's identifiers were not captured. The file is sent as
+    it is stored.

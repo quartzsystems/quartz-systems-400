@@ -272,6 +272,13 @@ impl ErrCode {
         Self { addr: a.addr(i) }
     }
 
+    /// The error code at an address (0 for none), for a bound
+    /// procedure whose arguments are pointers.
+    #[must_use]
+    pub fn from_addr(addr: u64) -> Self {
+        Self { addr }
+    }
+
     /// Whether the caller gave one with room for an error.
     #[must_use]
     pub fn provided(&self) -> usize {

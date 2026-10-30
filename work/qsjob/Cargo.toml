@@ -49,12 +49,19 @@ isql = { path = "../../devtools/isql", version = "0.1.0" }
 sda = { path = "../../devtools/sda", version = "0.1.0" }
 ddm = { path = "../../net/ddm", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
+ntp = { path = "../../net/ntp", version = "0.1.0" }
+lpd = { path = "../../net/lpd", version = "0.1.0" }
+mail = { path = "../../net/mail", version = "0.1.0" }
+tls = { path = "../../net/tls", version = "0.1.0" }
 rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }
 rustls-graviola = "0.4.0"
 x509-cert = { version = "0.3.0", features = ["builder"] }
 p256 = { version = "0.14.0", default-features = false, features = ["ecdsa", "pem", "std"] }
 libc = "0.2.190"
 thiserror.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["time"] }
 
 [lints]
 workspace = true

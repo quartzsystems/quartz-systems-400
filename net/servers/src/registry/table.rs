@@ -5,7 +5,8 @@
 //! The registry's entries. Job names, users and subsystems are the
 //! oracle's (pub400, V7R5M0, `docs/NET_OPEN_QUESTIONS.md` "Server jobs
 //! and subsystems") except `QTLPD00nnn`, which no oracle runs (IBM's
-//! documentation names it).
+//! documentation names it; it runs as `QTMPLPD`, the profile LPD
+//! spooled files belong to).
 
 use super::{JobKind, JobSpec, Port, Readiness, ServerSpec};
 
@@ -79,14 +80,14 @@ pub static SPECS: &[ServerSpec] = &[
     ServerSpec {
         special: "*LPD",
         name: "LPD",
-        jobs: &[job("QTLPD00nnn", "QTCP", "QSYSWRK", JobKind::Listener, "")],
+        jobs: &[job("QTLPD00nnn", "QTMPLPD", "QSYSWRK", JobKind::Listener, "LPD")],
         ports: &[tcp(515, false)],
         attrs_cmd: Some("CHGLPDA"),
         app_id: Some("QIBM_QSO_LPD_SERVER"),
         exit_points: &[],
         start_subsystem: false,
         instances: &[],
-        readiness: Readiness::Slot("the LPD server (Phase 10 section 5)"),
+        readiness: Readiness::Built,
     },
     ServerSpec {
         special: "*HTTP",
@@ -128,7 +129,7 @@ pub static SPECS: &[ServerSpec] = &[
     ServerSpec {
         special: "*NTP",
         name: "NTP",
-        jobs: &[job("QTOTNTP", "QNTP", "QSYSWRK", JobKind::Listener, "")],
+        jobs: &[job("QTOTNTP", "QNTP", "QSYSWRK", JobKind::Listener, "NTP")],
         ports: &[Port {
             port: 123,
             protocol: "udp",
@@ -139,7 +140,7 @@ pub static SPECS: &[ServerSpec] = &[
         exit_points: &[],
         start_subsystem: false,
         instances: &[],
-        readiness: Readiness::Slot("the NTP client and server (Phase 10 section 5)"),
+        readiness: Readiness::Built,
     },
     ServerSpec {
         special: "*SSHD",

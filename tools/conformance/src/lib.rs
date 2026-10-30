@@ -33,6 +33,7 @@ mod qemu;
 pub mod qir;
 pub mod rpg;
 mod servers;
+mod smallsvr;
 mod steps;
 mod tcp;
 

@@ -25,7 +25,10 @@ use crate::console::host::Host;
 /// The servers this release runs. A server built later registers its
 /// hooks here and its job's role in `start.rs`.
 pub fn framework() -> Framework {
-    Framework::standard()
+    let mut f = Framework::standard();
+    f.register(Box::new(servers::framework::Ntp));
+    f.register(Box::new(servers::framework::Lpd));
+    f
 }
 
 /// Every server's autostart and attributes from the service.
@@ -116,6 +119,18 @@ impl Env for JobEnv<'_> {
     }
 
     fn end_job(&mut self, job: &str, immediate: bool) -> Result<(), String> {
+        // A server job this job started is told over its channel: the
+        // ENDJOB request goes to subsystem monitors, which do not hold it.
+        {
+            let mut children = self.host.children.borrow_mut();
+            children.retain_mut(|s| matches!(s.child.try_wait(), Ok(None)));
+            if let Some(s) = children.iter_mut().find(|s| s.start.name.eq_ignore_ascii_case(job)) {
+                return s
+                    .chan
+                    .send(&wm::ctl::ToJob::End { immediate })
+                    .map_err(|e| e.to_string());
+            }
+        }
         let option = if immediate { "*IMMED" } else { "*CNTRLD" };
         self.command(&format!("ENDJOB JOB({job}) OPTION({option})")).map(|_| ())
     }

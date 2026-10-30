@@ -81,6 +81,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
+        // --- SNTP, LPD, LPR and mail out (command/netcmd.rs)
+        "CHGNTPA" | "CHGLPDA" | "CHGSMTPA" | "SNDTCPSPLF" | "LPR" | "SNDSMTPEMM" => {
+            if let Some(res) = super::netcmd::run(job, host, r) {
+                return res;
+            }
+        }
         // --- TCP servers (command/tcpsvr.rs, net/servers)
         "STRTCPSVR" | "ENDTCPSVR" | "CHGTELNA" => {
             if let Some(res) = super::tcpsvr::run(job, host, r) {

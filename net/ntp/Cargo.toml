@@ -1,0 +1,14 @@
+[package]
+name = "ntp"
+description = "QS/400 SNTP: the NTP packet codec, the client's sample and adjustment rules (CHGNTPA), and the server's answer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

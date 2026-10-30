@@ -429,7 +429,10 @@ dependencies = [
  "dspf",
  "ile",
  "jrn",
+ "lpd",
  "mi",
+ "ntp",
+ "print",
  "qdecimal",
  "qir",
  "qrpgrt",
@@ -1646,6 +1649,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "lpd"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "print",
+ "spool",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "mail"
+version = "0.1.0"
+dependencies = [
+ "base64ct",
+ "certs",
+ "thiserror",
+ "tls",
+ "tracing",
+]
+
+[[package]]
 name = "matchers"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1745,6 +1770,14 @@ dependencies = [
  "ccsid",
  "libc",
  "thiserror",
+]
+
+[[package]]
+name = "ntp"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -1984,10 +2017,13 @@ dependencies = [
  "ipc",
  "isql",
  "libc",
+ "lpd",
+ "mail",
  "menus",
  "mi",
  "msgf",
  "nettools",
+ "ntp",
  "p256",
  "pdm",
  "print",
@@ -1996,6 +2032,7 @@ dependencies = [
  "qrpgrt",
  "regfac",
  "release",
+ "rustix",
  "rustls",
  "rustls-graviola",
  "sda",
@@ -2011,6 +2048,7 @@ dependencies = [
  "sysapi",
  "tcpcfg",
  "thiserror",
+ "tls",
  "tn5250",
  "uim",
  "wm",

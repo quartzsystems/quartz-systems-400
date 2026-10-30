@@ -1,0 +1,19 @@
+[package]
+name = "mail"
+description = "QS/400 outbound mail: MIME messages (SNDSMTPEMM) and the SMTP client that hands them to a smart host (CHGSMTPA), with STARTTLS and AUTH"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+tls = { path = "../../net/tls", version = "0.1.0" }
+base64ct = { version = "=1.8.3", features = ["alloc"] }
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+certs = { path = "../../net/certs", version = "0.1.0" }
+
+[lints]
+workspace = true

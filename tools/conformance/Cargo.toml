@@ -47,6 +47,9 @@ rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }
+print = { path = "../../work/print", version = "0.1.0" }
+ntp = { path = "../../net/ntp", version = "0.1.0" }
+lpd = { path = "../../net/lpd", version = "0.1.0" }
 
 [lints]
 workspace = true

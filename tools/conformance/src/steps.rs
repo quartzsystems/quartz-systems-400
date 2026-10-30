@@ -518,6 +518,7 @@ impl Suite {
         reports.push(self.step(&mut s, "64 TCP servers", Self::tcp_servers)?);
         reports.push(self.step(&mut s, "68 host servers", Self::host_servers)?);
         reports.push(self.step(&mut s, "66 network tools", Self::net_tools)?);
+        reports.push(self.step(&mut s, "69 small servers", Self::small_servers)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

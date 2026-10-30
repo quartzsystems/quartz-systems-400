@@ -8,6 +8,9 @@
 //! the table's own (`QATOCSTART`).
 
 pub mod http;
+pub mod lpd;
+pub mod ntp;
+pub mod smtp;
 pub mod telnet;
 
 /// A bag value by keyword (case does not matter).

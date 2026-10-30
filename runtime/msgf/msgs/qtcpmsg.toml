@@ -142,6 +142,97 @@ text = "TCP/IP ending."
 help = "ENDTCP is ending the servers, then the interfaces."
 
 [[msg]]
+id = "TCP1A40"
+sev = 0
+text = "SNTP client adjusted the clock by &1 milliseconds."
+help = "The time server named in CHGNTPA RMTSYS showed the system clock off by this much. The clock is moved gradually, or set at once when the difference is over ADJTHLD."
+vars = ["*CHAR 20"]
+
+[[msg]]
+id = "TCP1A41"
+sev = 40
+text = "Clock not adjusted: &2 differs by &1 seconds, more than MAXADJ."
+help = "The SNTP client leaves differences larger than CHGNTPA MAXADJ alone. Check the time server, or set the date and time and let the client keep them."
+vars = ["*CHAR 20", "*CHAR 255"]
+
+[[msg]]
+id = "TCP1A42"
+sev = 10
+text = "Clock set at once: &2 differed by &1 seconds."
+help = "The difference was over CHGNTPA ADJTHLD and within MAXADJ, so the SNTP client set the clock rather than moving it gradually."
+vars = ["*CHAR 20", "*CHAR 255"]
+
+[[msg]]
+id = "TCP1A43"
+sev = 20
+text = "No time server answered: &1."
+help = "None of the systems in CHGNTPA RMTSYS gave a usable answer. The client tries again at the next poll interval."
+vars = ["*CHAR 255"]
+
+[[msg]]
+id = "TCP1A44"
+sev = 30
+text = "SNTP client not adjusting the clock: QTIMADJ names &1."
+help = "The system value QTIMADJ says other software adjusts the clock. Change it to *NONE to let the SNTP client adjust it."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "TCP1A45"
+sev = 0
+text = "SNTP poll of &1: offset &2 ms, round trip &3 ms."
+help = "One poll of the client, logged with CHGNTPA ACTLOG(*POLL)."
+vars = ["*CHAR 255", "*CHAR 20", "*CHAR 20"]
+
+[[msg]]
+id = "TCP1A46"
+sev = 0
+text = "SNTP request from &1 &2."
+help = "A request the SNTP server received, logged as CHGNTPA SVRACTLOG asks."
+vars = ["*CHAR 64", "*CHAR 20"]
+
+[[msg]]
+id = "TCP1A47"
+sev = 0
+text = "LPD spooled file &1 from &2 into &3."
+help = "A job received by the line printer daemon is now a spooled file on the output queue its queue name names."
+vars = ["*CHAR 10", "*CHAR 64", "*CHAR 21"]
+
+[[msg]]
+id = "TCP1A48"
+sev = 20
+text = "LPD job from &1 not spooled: &2."
+help = "The line printer daemon received a job it could not make into a spooled file. The sender was told."
+vars = ["*CHAR 64", "*CHAR 128"]
+
+[[msg]]
+id = "TCP1A49"
+sev = 0
+text = "Spooled file &1 sent to queue &2 on &3."
+help = "The remote system's line printer daemon took the spooled file."
+vars = ["*CHAR 10", "*CHAR 255", "*CHAR 255"]
+
+[[msg]]
+id = "TCP1A4A"
+sev = 40
+text = "Spooled file &1 not sent: &2."
+help = "The spooled file could not be found, read, or delivered to the remote system's line printer daemon."
+vars = ["*CHAR 10", "*CHAR 128"]
+
+[[msg]]
+id = "TCP1A4B"
+sev = 0
+text = "E-mail sent to &1 of &2 recipients."
+help = "The mail router took the message for the recipients it accepted. Delivery from there is its work."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "TCP1A4C"
+sev = 40
+text = "E-mail not sent: &1."
+help = "The message could not be built or handed to the mail router that CHGSMTPA FWDHUBSVR or MAILROUTER names."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "TCP1D03"
 sev = 0
 text = "&1 entry added."

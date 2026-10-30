@@ -10,9 +10,11 @@
 //! `ServerStarter`.
 
 mod builtin;
+mod small;
 mod starter;
 
 pub use builtin::{HttpAdmin, Standard, Telnet};
+pub use small::{Lpd, Ntp};
 pub use starter::Starter;
 
 use tcpcfg::model::svr::ServerAttrs;

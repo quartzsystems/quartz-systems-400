@@ -89,6 +89,9 @@ members = [
     "net/ddm",
     "net/servers",
     "net/nettools",
+    "net/ntp",
+    "net/lpd",
+    "net/mail",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

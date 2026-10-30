@@ -1,0 +1,17 @@
+[package]
+name = "lpd"
+description = "QS/400 line printer daemon: the RFC 1179 server side (daemon commands, receive-job subcommands), and received jobs as spooled files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+print = { path = "../../work/print", version = "0.1.0" }
+spool = { path = "../../work/spool", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

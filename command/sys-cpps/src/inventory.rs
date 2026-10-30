@@ -490,6 +490,13 @@ pub const JOB_SITE: &[&str] = &[
     "STRHOSTSVR",
     "ENDHOSTSVR",
     "CHGTELNA",
+    // --- SNTP, LPD, LPR and mail out (command/netcmd.rs)
+    "CHGNTPA",
+    "CHGLPDA",
+    "CHGSMTPA",
+    "SNDTCPSPLF",
+    "LPR",
+    "SNDSMTPEMM",
     // --- DDM and DRDA (command/ddm.rs)
     "ADDRDBDIRE",
     "CHGRDBDIRE",

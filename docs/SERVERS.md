@@ -14,20 +14,27 @@ its reach. The library is `net/servers`; the job side is
 |---|---|
 | `net/servers/src/registry/` | `ServerSpec`, `JobSpec`, `Readiness`; the table of every server (`table.rs`) |
 | `net/servers/src/framework/` | `TcpServer` (the hooks), `Env` (the job's reach), `Framework`, `Starter` (the framework as `tcpcfg::server::ServerStarter`), the built-in hooks (`builtin.rs`) |
-| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `http.rs` (the administration ports) |
+| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `http.rs` (the administration ports), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`) |
 | `net/servers/src/listen.rs` | bind with retries, the accept loop with a stop flag, TLS handshake, `Service` |
 | `net/servers/src/http/` | the minimal HTTP/1.1 administration listener: request head parsing, responses, the page, `Date` |
 | `work/qsjob/src/command/tcpsvr.rs` | `JobEnv`, `STRTCPSVR`, `ENDTCPSVR`, `CHGTELNA`, `framework()` |
 | `work/qsjob/src/command/tcp.rs` | `STRTCP`/`ENDTCP` start and end the autostart servers through `Starter` |
 | `work/qsjob/src/work/telnet.rs` | role `TELNET`: `QTVTELNET` |
 | `work/qsjob/src/work/httpadm.rs` | role `HTTPADM`: `ADMIN` |
+| `net/ntp/` | SNTP: the packet codec, the client's exchange and poll, the adjustment rules, the server's answer and UDP loop |
+| `net/lpd/` | the line printer daemon: RFC 1179 lines, the session against a `Spooler`, received jobs as spooled files, the queue state |
+| `net/mail/` | mail out: addresses, MIME, the encodings, the SMTP client with `STARTTLS` and `AUTH` |
+| `work/qsjob/src/work/ntp.rs`, `lpd.rs`, `netsvc.rs` | roles `NTP` (`QTOTNTP`) and `LPD` (`QTLPD00001`), and what they share |
+| `work/qsjob/src/command/netcmd.rs` | `CHGNTPA`, `CHGLPDA`, `CHGSMTPA`, `SNDTCPSPLF`, `LPR`, `SNDSMTPEMM`, the job's `QtmmSendMail` |
+| `work/qsjob/src/platform/clock.rs` | the system clock the SNTP client steps and slews |
 
 ## The registry
 
 Each server has one entry (`servers::registry::SPECS`). Job names,
 users and subsystems are the oracle's (pub400, V7R5M0;
 `docs/NET_OPEN_QUESTIONS.md` "Server jobs and subsystems"), except
-`QTLPD00nnn`, which neither oracle runs (IBM's documentation names it).
+`QTLPD00nnn`, which neither oracle runs (IBM's documentation names it;
+it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 `nnn` in a name is a sequence number (`JobSpec::numbered`).
 
 | Server | Jobs (user, subsystem) | Ports | Attributes | Application ID | Exit points | This release |
@@ -37,8 +44,8 @@ users and subsystems are the oracle's (pub400, V7R5M0;
 | `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | slot |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
 | `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | slot |
-| `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | slot |
-| `*LPD` | `QTLPD00nnn` (`QTCP`, `QSYSWRK`) | 515 | `CHGLPDA` | `QIBM_QSO_LPD_SERVER` | | slot |
+| `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | built |
+| `*LPD` | `QTLPD00nnn` (`QTMPLPD`, `QSYSWRK`) | 515 | `CHGLPDA` | `QIBM_QSO_LPD_SERVER` | | built |
 | `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QIBM_QRW_SERVER_DDM_DRDA` | | blocked |
 | `*SMTP`, `*SNMP`, `*ROUTED`, `*BOOTP`, `*TFTP`, `*REXEC`, `*DHCP`, `*DNS`, `*POP` | | | | | | not planned (docs/PHASE10.md) |
 
@@ -184,6 +191,114 @@ pub trait Env {
 }
 ```
 
+## `*NTP`
+
+`QTOTNTP` (`QNTP`, `QSYSWRK`; role `NTP`) is the SNTP client and server
+(RFC 4330 over RFC 5905's header, `net/ntp`). `STRTCPSVR *NTP` runs
+both; `STRTCP` runs the parts whose autostart is on (`AUTOSTART` for the
+client, `SVRAUTOSTR` for the server; the server table's flag is on when
+either is), told in the request data `CLIENT(*YES|*NO) SERVER(*YES|*NO)`.
+
+`CHGNTPA` has the oracle's keywords, ranges and special values (V7R5M0
+`QCDRCMDD`, `command/sys-cpps/tests/smallsvr.rs`); its defaults are
+IBM's documented ones (the oracle's prompt could not show current
+values).
+
+| Keyword | Effect |
+|---|---|
+| `RMTSYS` | up to three time servers, tried in order each poll; the first usable answer is the sample (the shortest round trip of three exchanges) |
+| `POLLITV` | minutes between polls; the attributes are read again at each poll |
+| `MINADJ` | a smaller difference is left alone (`*NONE`: none is) |
+| `ADJTHLD` | up to this the clock is slewed, beyond it set at once (`*MAXADJ`: never at once) |
+| `MAXADJ` | a larger difference is not corrected; `QSYSOPR` gets `TCP1A41` |
+| `ACTLOG` | `*CHANGE` logs each adjustment (`TCP1A40`), `*POLL` each poll too (`TCP1A45`) |
+| `SVRACTLOG` | `*ALL` logs each request, `*ERROR` each unanswered one (`TCP1A46`) |
+| `SYNCRQD` | `*YES`: the server answers only once the client has synchronized |
+| `AUTOSTART`, `SVRAUTOSTR` | what `STRTCP` starts |
+
+The clock is `CLOCK_REALTIME`, which the IPL set from the RTC and
+`QDATE`/`QTIME` derive from (`lic/slic/src/ipl/clock.rs`). The job
+(root, with `CAP_SYS_TIME`) adjusts it itself through
+`work/qsjob/src/platform/clock.rs`: a step is `clock_settime`, a slew is
+`adjtimex(ADJ_OFFSET_SINGLESHOT)` (the kernel moves the clock at most
+500 ppm), and after a good sample the kernel is told the clock is
+synchronized (`ADJ_STATUS`, `ADJ_MAXERROR`), which lets it keep the RTC
+in step. `QTIMADJ` names the adjuster: the client claims it as
+`QIBM_OS400_SNTP` when it is `*NONE`, gives it back when it ends, and
+does not adjust (`TCP1A44` to `QSYSOPR`) while another value is there.
+`QSYSOPR` also hears of a clock set at once (`TCP1A42`) and of the first
+poll no server answered (`TCP1A43`).
+
+The server answers mode-3 requests on UDP 123 from the system clock: at
+the upstream's stratum plus one, with its address as the reference,
+once the client has synchronized; else at stratum 10 as `LOCL`, or not
+at all with `SYNCRQD(*YES)`.
+
+## `*LPD`
+
+`QTLPD00001` (`QTMPLPD`, `QSYSWRK`; role `LPD`) listens on 515 and
+serves each connection on a thread with `net/lpd`'s RFC 1179 session.
+What needs the store comes back to the job's thread, which holds the
+link: whether a queue name is an output queue (`LIB/OUTQ`, or a name
+found through the library list or in `QUSRSYS`; "receive a printer job"
+is refused otherwise), spooling a job, and the queue state.
+
+A job is spooled as soon as its control file and every data file it
+prints have arrived (the acknowledgement of the file that completed it
+says whether it was spooled); what is left when the connection ends is
+spooled with the data that came. Each data file is one spooled file:
+
+- from a QS/400 sender (`DESTTYPE(*OS400)`, `work/print`'s `YQS400=1`
+  control file extension), the SCS and the sender's attributes as they
+  were;
+- text (`f`, `l`, `p`) through the line printer into SCS (form feeds as
+  page breaks, tabs every eight, width 80, 132 or the longest line);
+  FORTRAN carriage control (`r`) through its FCFC;
+- anything else as received, device type `*USERASCII`.
+
+The file is named from the control file's source name (`N`; `QPRTLPD`
+without one), belongs to the LPD job (`QTMPLPD`) and has the sender's
+user (`P`) as its `USRDTA`. The queue-state commands (03, 04) answer an
+`lpq`-like list of the queue's files; "remove jobs" (05) answers that
+files are removed with `DLTSPLF`; "print waiting jobs" (01) answers
+nothing. `CHGLPDA` has the oracle's `AUTOSTART` and `NBRSVR` (kept: one
+job serves every connection).
+
+## `SNDTCPSPLF` and `LPR`
+
+The same command under two names (the oracle's definitions match). The
+job reads the spooled file through the storage service as `DSPSPLF`
+reads it (request `splf_fetch`: the same authority check and `SF` audit
+entry) and prints it with `work/print`'s LPR client, as a remote writer
+would: `DESTTYP(*AS400)` sends the SCS and the attributes (`*OS400`),
+`*OTHER` and `*PSF2` what `TRANSFORM` and `MFRTYPMDL` choose; `DESTOPT`
+and `SEPPAGE` as for a remote output queue; `RMTSYS(*INTNETADR)` takes
+`INTNETADR`; `DLTSPLF(*YES)` deletes the file once sent. `TCP1A49` says
+it went, `TCP1A4A` why not.
+
+## Mail out
+
+`SNDSMTPEMM` builds a MIME message (`net/mail`): `From` the job's user at
+the TCP/IP host and domain name, `To` and `Cc` from `RCP` (`*BCC`
+recipients only in the envelope), `SUBJECT` (RFC 2047 when not ASCII),
+the `NOTE` as text/plain or text/html (`CONTENT`) in UTF-8
+quoted-printable, and each `ATTACH` file read from the IFS: `*TXT` ones
+as UTF-8 text, the rest base64, with a media type from `*OCTET` (the
+extension's), `*PLAIN`, `*HTML`, `*XML` or the one given. The
+`QtmmSendMail` API sends a stream file that already holds a MIME
+message to its `ADDT0100` recipients.
+
+Both hand the message to the mail router `CHGSMTPA` names: `FWDHUBSVR`,
+else `MAILROUTER`, either as `host[:port]` (25 by default). The SMTP
+client (RFC 5321) says `EHLO` (`HELO` when refused), starts TLS with
+`STARTTLS` when the relay offers it (implicit TLS on 465; the bag key
+`SMTPTLS` makes it `*NONE`, `*STARTTLS` required or `*IMPLICIT`),
+authenticates with `AUTH PLAIN` or `AUTH LOGIN` when the bag has
+`AUTHUSER` and `AUTHPWD`, sends one `RCPT TO` per recipient and the
+message dot-stuffed. Refused recipients are listed; the message goes
+when one is accepted (`TCP1A4B`), else `TCP1A4C` says why. There is no
+SMTP server; `CHGSMTPA` keeps its other attributes as given.
+
 ## `*DDM`
 
 `net/ddm`'s application server (`server::Session` over `SqlBackend`,
@@ -209,6 +324,27 @@ built.
   memory.
 - `cargo test -p sys-cpps --test tcp_defs`: `CHGTELNA` against the
   oracle's definition.
+- `cargo test -p sys-cpps --test smallsvr`: `CHGNTPA`, `CHGLPDA`,
+  `CHGSMTPA`, `SNDTCPSPLF` and `LPR` against the oracle's definitions
+  and prompts.
+- `cargo test -p servers --test small`: `*NTP`'s parts and `*LPD`'s
+  numbered listener.
+- `cargo test -p ntp`: the packet codec and timestamps, offset and
+  delay, unusable answers, the adjustment rules, the server's answer,
+  and polls against servers on loopback (slew, step, refusal, silence).
+- `cargo test -p lpd`: RFC 1179 lines, sessions in memory (either file
+  order, abort, data to the end, refusals, queue state), received jobs
+  as spooled files, and `work/print`'s LPR client into an output queue
+  in memory over loopback.
+- `cargo test -p mail`: addresses, encodings, MIME, and the SMTP client
+  against a fake smart host (plain with `AUTH LOGIN`; `STARTTLS` with a
+  certificate from a store in memory and `AUTH PLAIN`; refusals).
+- QEMU step 69 (`tools/conformance/src/smallsvr.rs`): `STRTCPSVR *LPD`;
+  a file sent from the host with the LPR client through a port forward
+  shows on an output queue and in `DSPSPLF`; an unknown queue is
+  refused; `CHGNTPA SYNCRQD(*NO)`, `STRTCPSVR *NTP` and an SNTP query
+  from the host over a UDP forward, answered from the guest's clock;
+  `ENDTCPSVR` of both.
 - QEMU step 64 (`tools/conformance/src/servers.rs`): `STRTCPSVR *HTTP
   HTTPSVR(*ADMIN)` starts `ADMIN` in `QHTTPSVR`; the page arrives over
   2001 and 2005; a second start says already started, an unknown

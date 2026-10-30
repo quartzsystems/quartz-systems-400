@@ -205,6 +205,8 @@ pub const SYSTEM_SRVPGM_PROCS: &[(&str, &str)] = &[
     // QC2IO: the C library's own (not in the captured exports).
     ("perror", "QC2IO"),
     ("rename", "QC2IO"),
+    // QTMMSNDM: Send MIME Mail (no capture: docs/NET_OPEN_QUESTIONS.md).
+    ("QtmmSendMail", "QTMMSNDM"),
 ];
 
 /// Names of the table no captured export list has: `#pragma map`
@@ -225,6 +227,7 @@ pub const NOT_EXPORTED: &[&str] = &[
     "htons",
     "ntohl",
     "ntohs",
+    "QtmmSendMail",
 ];
 
 /// The service program a `*SYSTEM` import is shown under: `QLEAWI` for
