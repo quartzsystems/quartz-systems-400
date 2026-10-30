@@ -1,0 +1,98 @@
+# session: list/home1
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,247,167).
+C: LIST
+S: 125 List started.
+D: 123 bytes
+D| drwxrwx---   2 {user} 0          24576 Oct 22 23:28 qs400
+D| drwxrwxrwx   6 {user} 0           8192 Oct 23 02:52 qstest
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,141,148).
+C: NLST
+S: 125 List started.
+D: 17 bytes
+D| qs400/
+D| qstest/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,234,70).
+C: LIST /home/{user}
+S: 125 List started.
+D: 123 bytes
+D| drwxrwx---   2 {user} 0          24576 Oct 22 23:28 qs400
+D| drwxrwxrwx   6 {user} 0           8192 Oct 23 02:52 qstest
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,244,83).
+C: LIST /home/{user}/qs400
+S: 125 List started.
+D: 1707 bytes
+D| -rwxrwx---   1 {user} 0            250 Oct 22 23:18 QDFUZZIN.PF
+D| -rwxrwx---   1 {user} 0            211 Oct 22 23:18 QDFUZZOUT.PF
+D| -rwxrwx---   1 {user} 0         185706 Oct 22 23:19 QDFUZZ.RPGLE
+D| -rwxrwx---   1 {user} 0         161864 Oct 22 23:18 cases.csv
+D| -rwx------   1 {user} 0          16237 Oct 22 23:27 lst.txt
+D| -rwx------   1 {user} 0         193935 Oct 22 23:20 results.csv
+D| -rwxrwx---   1 {user} 0            525 Oct 22 23:26 QORACLE.RPGLE
+D| -rwxrwx---   1 {user} 0            702 Oct 22 23:26 CVTCHAR.RPGLE
+D| -rwxrwx---   1 {user} 0            562 Oct 22 23:26 DATEBAD.RPGLE
+D| -rwxrwx---   1 {user} 0            590 Oct 22 23:26 SUBSTBAD.RPGLE
+D| -rwxrwx---   1 {user} 0            510 Oct 22 23:26 RESUMEG.RPGLE
+D| -rwxrwx---   1 {user} 0            658 Oct 22 23:26 REPLYR.RPGLE
+D| -rwxrwx---   1 {user} 0           1164 Oct 22 23:28 STATMAP.RPGLE
+D| -rwxrwx---   1 {user} 0            518 Oct 22 23:28 FCCALLEE.RPGLE
+D| -rwxrwx---   1 {user} 0            573 Oct 22 23:26 FCWHERE.RPGLE
+D| -rwxrwx---   1 {user} 0           1142 Oct 22 23:28 PROMOTE.RPGLE
+D| -rwxrwx---   1 {user} 0           1134 Oct 22 23:26 CEEFC.RPGLE
+D| -rwxrwx---   1 {user} 0            700 Oct 22 23:26 CANCELTO.RPGLE
+D| -rwxrwx---   1 {user} 0            736 Oct 22 23:26 DEEPREC.RPGLE
+D| -rwxrwx---   1 {user} 0           1104 Oct 22 23:26 CMDEXC.RPGLE
+D| -rwxrwx---   1 {user} 0           1124 Oct 22 23:26 PTRSTAT.RPGLE
+D| -rwxrwx---   1 {user} 0            600 Oct 22 23:26 DECBLANK.RPGLE
+D| -rwxrwx---   1 {user} 0            864 Oct 22 23:26 DIFFTS.RPGLE
+D| -rwxrwx---   1 {user} 0           1305 Oct 22 23:26 ORACLE.CLLE
+D| -rwx------   1 {user} 0           1620 Oct 22 23:28 ile-oracle.txt
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,218,45).
+C: NLST /home/{user}/qs400
+S: 125 List started.
+D: 507 bytes
+D| qs400/QDFUZZIN.PF
+D| qs400/QDFUZZOUT.PF
+D| qs400/QDFUZZ.RPGLE
+D| qs400/cases.csv
+D| qs400/lst.txt
+D| qs400/results.csv
+D| qs400/QORACLE.RPGLE
+D| qs400/CVTCHAR.RPGLE
+D| qs400/DATEBAD.RPGLE
+D| qs400/SUBSTBAD.RPGLE
+D| qs400/RESUMEG.RPGLE
+D| qs400/REPLYR.RPGLE
+D| qs400/STATMAP.RPGLE
+D| qs400/FCCALLEE.RPGLE
+D| qs400/FCWHERE.RPGLE
+D| qs400/PROMOTE.RPGLE
+D| qs400/CEEFC.RPGLE
+D| qs400/CANCELTO.RPGLE
+D| qs400/DEEPREC.RPGLE
+D| qs400/CMDEXC.RPGLE
+D| qs400/PTRSTAT.RPGLE
+D| qs400/DECBLANK.RPGLE
+D| qs400/DIFFTS.RPGLE
+D| qs400/ORACLE.CLLE
+D| qs400/ile-oracle.txt
+S: 250 List completed.
+C: QUIT
+S: 221 QUIT subcommand received.

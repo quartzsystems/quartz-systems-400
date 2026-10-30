@@ -1,0 +1,28 @@
+# session: proto/help01
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: HELP ABOR
+S: 214-ABOR: Ends any data transfer in progress.
+S: 214-Commands APPE, HELP, LIST, NLST, RETR, STOR can be cancelled.
+S: 214 ABOR:  Cancels any pending subcommand RNFR.
+C: HELP ACCT
+S: 214 ACCT not valid for this system.
+C: HELP ADDM
+S: 214-ADDM <file-identifier>:  Adds member to physical file.
+S: 214-Example:  ADDM FILE(library/file) MBR(member).
+S: 214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+C: HELP ADDV
+S: 214-ADDV <file-identifier>:  Adds a variable-length member to a physical file.
+S: 214-Example:  ADDV FILE(library/file) MBR(member).
+S: 214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+C: HELP ALLO
+S: 214 Subcommand ALLO not valid on this system.
+C: HELP APPE
+S: 214 APPE <file-identifier>:  Appends to the file.  A file is created if no file exists.
+C: QUIT
+S: 221 QUIT subcommand received.

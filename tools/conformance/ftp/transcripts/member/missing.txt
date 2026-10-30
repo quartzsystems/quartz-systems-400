@@ -1,0 +1,44 @@
+# session: member/missing
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,56,124).
+C: RETR QSFNONE
+S: 550 File QSFNONE in library {user}B not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,126,119).
+C: RETR QSFNONE.M
+S: 550 File QSFNONE in library {user}B not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,145,46).
+C: RETR NOSUCHLIB/QSFNONE.M
+S: 550  Library NOSUCHLIB not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,142,62).
+C: STOR NOSUCHLIB/QSFX.M
+S: 550  Library NOSUCHLIB not found.
+C: DELE NOSUCHLIB/QSFX.M
+S: 550 Not able to delete member M in file QSFX in library NOSUCHLIB.
+C: RNFR QSFNONE.M
+S: 550 RNFR subcommand failed: File QSFNONE not found in library {user}B.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,142,126).
+C: LIST NOSUCHLIB/QSFX
+S: 550 Library NOSUCHLIB not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,184,5).
+C: NLST NOSUCHLIB
+S: 550 Library NOSUCHLIB not found.
+C: QUIT
+S: 221 QUIT subcommand received.

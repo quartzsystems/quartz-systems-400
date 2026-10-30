@@ -1,0 +1,60 @@
+# session: proto/prelogin
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: PWD
+S: 530 You must first log on with subcommands USER and PASS.
+C: SYST
+S: 215  OS/400 is the remote operating system. The TCP/IP version is "V7R5M0".
+C: FEAT
+S: 211-Feature listing follows:
+S:  AUTH TLS
+S:  AUTH GSS
+S:  CCC
+S:  PBSZ
+S:  PROT
+S:  ADAT
+S:  ENC
+S:  MIC
+S:  CONF
+S: 211 End of feature listing.
+C: NOOP
+S: 200 OK.
+C: HELP
+S: 214-Server-FTP commands follow:
+S: 214-Unsupported commands marked with an *.
+S: 214-ABOR, ACCT*, ADDM, ADDV, ALLO*, APPE, AUTH, CDUP, CRTL, CRTP, CRTS,
+S: 214-CWD, DELE, DLTF, DLTL, EPRT, EPSV, FEAT, HELP, LIST, MKD, MODE,
+S: 214-NLST, NOOP, OPTS, PASS, PASV, PBSZ, PORT, PROT, PWD, QUIT, RCMD,
+S: 214-REIN, REST*, RETR, RMD, RNFR, RNTO, SITE, STAT, STOR, STOU, STRU,
+S: 214-SYST,  TIME,  TYPE,  USER,  XCUP,  XCWD,  XMKD.
+S: 214-The data representation type may be ASCII(A), EBCDIC(E), binary IMAGE(I),
+S: 214-DBCS_ASCII(B), DBCS_EBCDIC(F) or CCSID(C).
+S: 214-Data structure must be file(F) or record(R).  Mode can be stream (S) or block (B).
+S: 214-If this connection is not used more than 99999 seconds, the session will end.
+S: 214-Name Format 0 :
+S: 214-File identifiers have three components: File, library, and member.
+S: 214-Library and file components are separated by the / delimiter.
+S: 214-File and member components are separated by the . delimiter.
+S: 214-Example:  Library/file.member.
+S: 214-Name Format 1 :
+S: 214-Directory levels separated by the / delimiter.
+S: 214-Database files use format: /QSYS.lib/Libname.lib/Fname.file/Mname.mbr
+S: 214-Documents (files) stored in folders use format: /QDLS/folder/document.ext
+S: 214-Integrated File Systems include: "root" (/), QOpenSys, QLANSrv.
+S: 214-Integrated File System files use format: /fsname/fsdependentnamingformat
+S: 214 For information about a specific command, enter HELP <command>.
+C: PASS x
+S: 503 PASS subcommand must be preceded by USER subcommand.
+C: LIST
+S: 530 You must first log on with subcommands USER and PASS.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,48,37).
+C: RCMD DSPLIBL
+S: 530 You must first log on with subcommands USER and PASS.
+C: QUIT
+S: 221 QUIT subcommand received.

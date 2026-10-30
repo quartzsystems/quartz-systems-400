@@ -1,0 +1,35 @@
+# session: rcmd/files
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTPF FILE({user}B/QSFPF) RCDLEN(50)
+S: 250 Command CRTPF FILE({user}B/QSFPF) RCDLEN(50) successful.
+C: RCMD ADDPFM FILE({user}B/QSFPF) MBR(TWO)
+S: 550-Error occurred on command ADDPFM FILE({user}B/QSFPF) MBR(TWO).
+S: 550 Member TWO not added to file QSFPF in {user}B..
+C: RCMD ADDPFM FILE({user}B/QSFPF) MBR(TWO)
+S: 550-Error occurred on command ADDPFM FILE({user}B/QSFPF) MBR(TWO).
+S: 550 Member TWO not added to file QSFPF in {user}B..
+C: RCMD CLRPFM FILE({user}B/QSFPF) MBR(TWO)
+S: 550-Error occurred on command CLRPFM FILE({user}B/QSFPF) MBR(TWO).
+S: 550 Member TWO not found..
+C: RCMD RMVM FILE({user}B/QSFPF) MBR(TWO)
+S: 550-Error occurred on command RMVM FILE({user}B/QSFPF) MBR(TWO).
+S: 550 Member TWO not removed from file QSFPF in {user}B..
+C: RCMD DLTF FILE({user}B/QSFPF)
+S: 250 Command DLTF FILE({user}B/QSFPF) successful.
+C: RCMD DLTF FILE({user}B/QSFPF)
+S: 550-Error occurred on command DLTF FILE({user}B/QSFPF).
+S: 550 Object QSFPF in {user}B type *FILE not found..
+C: QUIT
+S: 221 QUIT subcommand received.

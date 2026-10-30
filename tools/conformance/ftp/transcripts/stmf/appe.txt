@@ -1,0 +1,65 @@
+# session: stmf/appe
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,222,165).
+C: APPE n.txt
+S: 150 Sending file to /home/{user}/qsftp/n.txt
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,69,156).
+C: APPE n.txt
+S: 150 Sending file to /home/{user}/qsftp/n.txt
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,253,94).
+C: RETR n.txt
+S: 150 Retrieving file /home/{user}/qsftp/n.txt
+D: 34 bytes
+D| alpha
+D| beta
+D| gamma
+D| alpha
+D| beta
+D| gamma
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,172,245).
+C: APPE n.txt
+S: 150 Sending file to /home/{user}/qsftp/n.txt
+D> 16 bytes sent
+U| 000102030405060708090a0b0c0d0e0f
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,113,79).
+C: RETR n.txt
+S: 150 Retrieving file /home/{user}/qsftp/n.txt
+D: 50 bytes (hex)
+D| 616c7068610a626574610a67616d6d610a616c7068610a626574610a67616d6d
+D| 610a000102030405060708090a0b0c0d0e0f
+S: 226 File transfer completed successfully.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/n.txt
+S: 250  Deleted file /home/{user}/qsftp/n.txt
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

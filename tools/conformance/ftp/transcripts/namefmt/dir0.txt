@@ -1,0 +1,29 @@
+# session: namefmt/dir0
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: CWD /home/{user}/qsftp
+S: 250-NAMEFMT set to 1.
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PWD
+S: 257 "/home/{user}/qsftp" is current directory.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

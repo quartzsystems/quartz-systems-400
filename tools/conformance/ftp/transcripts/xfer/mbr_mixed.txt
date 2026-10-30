@@ -1,0 +1,61 @@
+# session: xfer/mbr_mixed
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,196,95).
+C: STOR QSFSRC.M
+S: 150 Sending file to member M in file QSFSRC in library {user}B.
+D> 23 bytes sent
+U| 6c66206f6e6c790a63726c660d0a6c6620616761696e0a
+S: 226 File transfer completed successfully.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,154,78).
+C: RETR QSFSRC.M
+S: 150 Retrieving member M in file QSFSRC in library {user}B.
+D: 22 bytes (hex)
+D| 938640969593a8158399938615938640818781899515
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,26,214).
+C: RETR QSFSRC.M
+S: 150 Retrieving member M in file QSFSRC in library {user}B.
+D: 240 bytes (hex)
+D| 938640969593a840404040404040404040404040404040404040404040404040
+D| 4040404040404040404040404040404040404040404040404040404040404040
+D| 4040404040404040404040404040404083999386404040404040404040404040
+D| 4040404040404040404040404040404040404040404040404040404040404040
+D| 4040404040404040404040404040404040404040404040404040404040404040
+D| 9386408187818995404040404040404040404040404040404040404040404040
+D| 4040404040404040404040404040404040404040404040404040404040404040
+D| 40404040404040404040404040404040
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,191,103).
+C: RETR QSFSRC.M
+S: 150 Retrieving member M in file QSFSRC in library {user}B.
+D: 25 bytes (hex)
+D| 6c66206f6e6c790d0a63726c660d0a6c6620616761696e0d0a
+S: 226 File transfer completed successfully.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

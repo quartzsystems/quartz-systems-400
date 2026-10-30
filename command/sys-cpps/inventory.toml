@@ -496,6 +496,19 @@ note = "the same as SNDTCPSPLF"
 site = "job"
 note = "MIME built by net/mail, handed to the CHGSMTPA mail router"
 
+# --- FTP (work/qsjob/src/command/ftp.rs, net/ftp)
+[cmd.CHGFTPA]
+site = "job"
+note = "kept in the TCP/IP server table in QUSRSYS (QATOCSVRA); PORT, TLSPORT and DTACNNPORT ride in the same bag"
+
+[cmd.FTP]
+site = "job"
+note = "the FTP client: subcommands from the display, or from the file INPUT when overridden; output to OUTPUT when overridden"
+
+[cmd.STRTCPFTP]
+site = "job"
+note = "the FTP client under its long name"
+
 # --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
 [cmd.ADDRDBDIRE]
 site = "job"

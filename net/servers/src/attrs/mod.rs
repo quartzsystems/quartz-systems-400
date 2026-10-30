@@ -7,6 +7,7 @@
 //! `ServerAttrs`, file `QATOCSVRA`); the autostart flag beside it is
 //! the table's own (`QATOCSTART`).
 
+pub mod ftp;
 pub mod http;
 pub mod lpd;
 pub mod ntp;

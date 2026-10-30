@@ -679,12 +679,16 @@ impl Service for Served<'_> {
     }
 
     fn sbs_state(&mut self) -> wm::sbs::SbsState {
+        let mut s = super::sbs::state(self.system, self.ctx.job.number);
+        s.end_jobs = super::jobqs::take_end_requests(self.system, self.ctx.job.number);
+        // A server job no monitor started (QTFTP00001, QTVTELNET) is told
+        // of its own end here.
         let me = self.ctx.job.number;
-        let mut s = super::sbs::state(self.system, me);
-        s.end_jobs = super::jobqs::take_end_requests(self.system, me);
-        // A job no monitor started (a server job) reads its own ENDJOB.
-        if let Some(i) = self.system.end_requests.remove(&me) {
-            s.end_jobs.push((me, i));
+        if !self.system.sbs.values().any(|a| a.monitor == me) {
+            self.system.self_ending.insert(me);
+            if let Some(i) = self.system.end_requests.remove(&me) {
+                s.end_jobs.push((me, i));
+            }
         }
         s
     }

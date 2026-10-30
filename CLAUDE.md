@@ -270,7 +270,8 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 listen.rs the accept loop; src/http/ the admin page. The job side is
                 work/qsjob/src/command/tcpsvr.rs (netcmd.rs the CHG*A, SNDTCPSPLF/LPR and
                 SNDSMTPEMM commands) and the roles work/qsjob/src/work/telnet.rs
-                (QTVTELNET), httpadm.rs (ADMIN), ntp.rs (QTOTNTP), lpd.rs (QTLPD00001)
+                (QTVTELNET), httpadm.rs (ADMIN), ftp.rs (QTFTP00nnn), ntp.rs (QTOTNTP),
+                lpd.rs (QTLPD00001)
   ntp/          SNTP: src/packet/ the header and timestamps, client.rs one exchange,
                 adjust.rs MINADJ/ADJTHLD/MAXADJ, poll.rs a poll over RMTSYS, server.rs the
                 answer and the UDP loop, clock.rs the Clock trait (MemClock for tests)
@@ -297,13 +298,19 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 service's side lic/slic/src/stgsvc/tcp/netstat.rs, stgsvc/cmntrc.rs,
                 cpp/cmntrc.rs; the job's work/qsjob/src/command/nettools.rs and
                 panels/tcp/netstat.rs (QTOCNETS)
+  ftp/          FTP (docs/FTP.md): src/session/ the server's session (login, dirs, xfer,
+                listing, site, info), host.rs the Host trait, names.rs NAMEFMT 0/1,
+                objects.rs and store.rs objects in a transfer's form, xlate.rs TYPE A/E/I/C,
+                list.rs LISTFMT layouts, src/net/ (tcp, mem) the connections, server.rs,
+                block.rs, src/client/ the FTP command's client, memhost.rs a Host in memory;
+                tests/ sessions in memory and the client against the server over loopback
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
-              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md,
+              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md,
               images/
 ```
 
@@ -352,6 +359,8 @@ cargo test -p nettools                    # PING, TRACEROUTE, NETSTAT rows, the 
 cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFRMSTMF over MemBackend
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
+cargo test -p ftp                         # FTP sessions in memory, the client against the server over loopback
+cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sessions; report in target/conformance-ftp/
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
 cargo test -p sys-cpps --test smallsvr    # CHGNTPA, CHGLPDA, CHGSMTPA, SNDTCPSPLF, LPR against the oracle

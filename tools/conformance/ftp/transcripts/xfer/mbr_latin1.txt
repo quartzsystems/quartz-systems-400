@@ -1,0 +1,56 @@
+# session: xfer/mbr_latin1
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,26,94).
+C: STOR QSFSRC.M
+S: 150 Sending file to member M in file QSFSRC in library {user}B.
+D> 17 bytes sent
+U| 636166e920a320737465726c696e670d0a
+S: 226 File transfer completed successfully.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,108,215).
+C: RETR QSFSRC.M
+S: 150 Retrieving member M in file QSFSRC in library {user}B.
+D: 16 bytes (hex)
+D| 8381865140b140a2a385999389958715
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,160,218).
+C: RETR QSFSRC.M
+S: 150 Retrieving member M in file QSFSRC in library {user}B.
+D: 80 bytes (hex)
+D| 8381865140b140a2a38599938995874040404040404040404040404040404040
+D| 4040404040404040404040404040404040404040404040404040404040404040
+D| 40404040404040404040404040404040
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,216,6).
+C: RETR QSFSRC.M
+S: 150 Retrieving member M in file QSFSRC in library {user}B.
+D: 17 bytes (hex)
+D| 636166e920a320737465726c696e670d0a
+S: 226 File transfer completed successfully.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

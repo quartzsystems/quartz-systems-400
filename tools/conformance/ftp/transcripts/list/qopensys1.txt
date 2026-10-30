@@ -1,0 +1,59 @@
+# session: list/qopensys1
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,67,132).
+C: LIST /QOpenSys/usr
+S: 125 List started.
+D: 846 bytes
+D| drwxr-xr-x   3 QSYS     0         122880 Oct 10 15:00 bin
+D| drwxr-xr-x   4 QSYS     0           8192 Apr 23 2016  ccs
+D| drwxr-xr-x   4 QSYS     0           8192 Oct 10 15:00 icu4c
+D| drwxr-xr-x  28 QSYS     0         114688 Oct 10 15:00 include
+D| drwxr-xr-x   7 QSYS     0           8192 Apr 24 2016  krb5
+D| drwxr-xr-x   2 QSYS     0           8192 Oct 10 15:00 lbin
+D| drwxr-xr-x   5 QSYS     0          81920 Oct 10 15:00 lib
+D| drwxr-xr-x   2 QSYS     0           8192 Oct 10 15:00 lib64
+D| drwxr-xr-x   6 QSYS     0           8192 Apr 24 2016  lpp
+D| drwxr-xr-x   3 QSYS     0           8192 Sep 04 2016  pmapi
+D| drwxr-xr-x   2 QSYS     0           8192 Oct 10 15:00 sbin
+D| drwxr-xr-x   3 QSYS     0           8192 Apr 23 2016  share
+D| drwxr-xr-x   3 QSYS     0           8192 Apr 23 2016  vacpp
+D| drwxr-xr-x   3 QSYS     0           8192 Aug 24 2025  zlibNX
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,58,111).
+C: NLST /QOpenSys/usr
+S: 125 List started.
+D: 300 bytes
+D| /QOpenSys/usr/bin/
+D| /QOpenSys/usr/ccs/
+D| /QOpenSys/usr/icu4c/
+D| /QOpenSys/usr/include/
+D| /QOpenSys/usr/krb5/
+D| /QOpenSys/usr/lbin/
+D| /QOpenSys/usr/lib/
+D| /QOpenSys/usr/lib64/
+D| /QOpenSys/usr/lpp/
+D| /QOpenSys/usr/pmapi/
+D| /QOpenSys/usr/sbin/
+D| /QOpenSys/usr/share/
+D| /QOpenSys/usr/vacpp/
+D| /QOpenSys/usr/zlibNX/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,184,94).
+C: LIST /QOpenSys/usr/bin/ls
+S: 125 List started.
+D: 99 bytes
+D| lrwxrwxrwx   1 QSYS     0             37 Apr 23 2016  ls -> ../../QIBM/ProdData/OS400/PASE/bin/ls
+S: 250 List completed.
+C: QUIT
+S: 221 QUIT subcommand received.

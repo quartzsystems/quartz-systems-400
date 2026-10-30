@@ -1,0 +1,24 @@
+# session: proto/after
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: PWD
+S: 257 "/home/{user}" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,75,76).
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: MODE S
+S: 200 Data transfer mode is stream.
+C: STRU F
+S: 250 Data structure is file.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: NOOP
+S: 200 OK.
+C: QUIT
+S: 221 QUIT subcommand received.

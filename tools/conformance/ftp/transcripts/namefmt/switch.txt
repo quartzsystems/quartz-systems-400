@@ -1,0 +1,40 @@
+# session: namefmt/switch
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: PWD
+S: 257 "{user}B" is current library.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: PWD
+S: 257 "/QSYS.LIB/{user}B.LIB" is current library.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: SITE NAMEFMT 0
+S: 550 Current directory requires name format 1.
+C: PWD
+S: 257 "/home/{user}" is current directory.
+C: STAT
+S: 211-FTP Server connected to remote address host {client}, port 12526.
+S: 211-NAMEFMT set to 1.
+S: 211-TRIM trailing blanks when sending database files option set to 1.
+S: 211-Allow database files with null fields (NULLFLDS) option set to 0.
+S: 211-Create new database file CCSID (CRTCCSID) option set to *CALC.
+S: 211-Directory listing format (LISTFMT) option set to 1.
+S: 211-User is {user}.  Working directory is /home/{user}
+S: 211-1048 bytes of control data have transferred.
+S: 211-There is no current data connection.
+S: 211-The next data connection will be actively opened.
+S: 211-to address host {client}, port 12526 using record format V and record length 80.
+S: 211-File transfer time-out value set to 420 seconds.
+S: 211  Current inactivity time-out value set to 99999 seconds.
+C: QUIT
+S: 221 QUIT subcommand received.

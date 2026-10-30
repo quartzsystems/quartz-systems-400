@@ -14,10 +14,10 @@ its reach. The library is `net/servers`; the job side is
 |---|---|
 | `net/servers/src/registry/` | `ServerSpec`, `JobSpec`, `Readiness`; the table of every server (`table.rs`) |
 | `net/servers/src/framework/` | `TcpServer` (the hooks), `Env` (the job's reach), `Framework`, `Starter` (the framework as `tcpcfg::server::ServerStarter`), the built-in hooks (`builtin.rs`) |
-| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `http.rs` (the administration ports), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`) |
+| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `ftp.rs` (`CHGFTPA`), `http.rs` (the administration ports), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`) |
 | `net/servers/src/listen.rs` | bind with retries, the accept loop with a stop flag, TLS handshake, `Service` |
 | `net/servers/src/http/` | the minimal HTTP/1.1 administration listener: request head parsing, responses, the page, `Date` |
-| `work/qsjob/src/command/tcpsvr.rs` | `JobEnv`, `STRTCPSVR`, `ENDTCPSVR`, `CHGTELNA`, `framework()` |
+| `work/qsjob/src/command/tcpsvr.rs` | `JobEnv`, `STRTCPSVR`, `ENDTCPSVR`, `CHGTELNA`, `CHGFTPA`, `framework()` |
 | `work/qsjob/src/command/tcp.rs` | `STRTCP`/`ENDTCP` start and end the autostart servers through `Starter` |
 | `work/qsjob/src/work/telnet.rs` | role `TELNET`: `QTVTELNET` |
 | `work/qsjob/src/work/httpadm.rs` | role `HTTPADM`: `ADMIN` |
@@ -27,6 +27,7 @@ its reach. The library is `net/servers`; the job side is
 | `work/qsjob/src/work/ntp.rs`, `lpd.rs`, `netsvc.rs` | roles `NTP` (`QTOTNTP`) and `LPD` (`QTLPD00001`), and what they share |
 | `work/qsjob/src/command/netcmd.rs` | `CHGNTPA`, `CHGLPDA`, `CHGSMTPA`, `SNDTCPSPLF`, `LPR`, `SNDSMTPEMM`, the job's `QtmmSendMail` |
 | `work/qsjob/src/platform/clock.rs` | the system clock the SNTP client steps and slews |
+| `work/qsjob/src/work/ftp.rs` | roles `FTP` (`QTFTP00001`) and `FTPSESS` (a session job); the server is `net/ftp` (docs/FTP.md) |
 
 ## The registry
 
@@ -41,7 +42,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 |---|---|---|---|---|---|---|
 | `*TELNET` | `QTVTELNET` listener, `QTVDEVICE` workers (`QTCP`, `QSYSWRK`) | 23, 992 TLS | `CHGTELNA` | `QIBM_QTV_TELNET_SERVER` | `QIBM_QTG_DEVINIT`, `QIBM_QTG_DEVTERM` | built |
 | `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2005 TLS | (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
-| `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | slot |
+| `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
 | `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | slot |
 | `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | built |
@@ -131,6 +132,16 @@ run in a runtime job on `QTVTELNET`'s main thread (IBM runs them in the
 `QTVDEVICE` job), built the first time a point has programs; a point
 without programs costs one registry question. A session whose call
 times out is refused.
+
+## `*FTP`
+
+`servers::framework::Ftp` starts the listener `QTFTP00001` with role
+`FTP` in `CHGFTPA SBSD`'s subsystem (`QSYSWRK`), its ports (`PORT`,
+`TLSPORT` of the server table's bag) in the request data; it is active
+while `QTFTP00001` is, and `ENDTCPSVR` ends `QTFTP00001`, which ends its
+session jobs. Each connection gets a `QTFTP00nnn` job (role `FTPSESS`)
+that is handed the socket; docs/FTP.md has the server, its attributes
+(`CHGFTPA`) and the `FTP` client.
 
 ## `*HTTP` administration
 
@@ -351,4 +362,5 @@ built.
   instance `TCP1A06`; `ENDTCPSVR` ends it and the port goes quiet;
   `ENDTCPSVR *TELNET` ends `QTVTELNET`, `CHGTELNA` takes new values and
   refuses an out-of-range one, `STRTCPSVR *TELNET` brings telnet back;
-  `STRTCPSVR *FTP` answers `TCP1A04`.
+  `STRTCPSVR *LPD` answers `TCP1A04`. QEMU step 67 (`ftpsrv.rs`) runs
+  the FTP server and client (docs/FTP.md).

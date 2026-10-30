@@ -50,6 +50,10 @@ tls = { path = "../../net/tls", version = "0.1.0" }
 print = { path = "../../work/print", version = "0.1.0" }
 ntp = { path = "../../net/ntp", version = "0.1.0" }
 lpd = { path = "../../net/lpd", version = "0.1.0" }
+ftp = { path = "../../net/ftp", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+servers = { path = "../../net/servers", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
 
 [lints]
 workspace = true

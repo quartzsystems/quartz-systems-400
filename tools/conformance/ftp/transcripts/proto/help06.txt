@@ -1,0 +1,26 @@
+# session: proto/help06
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: HELP PWD
+S: 214 PWD:  Returns the name of the current library.
+C: HELP QUIT
+S: 214-QUIT: Ends the FTP session.
+S: 214 If a data transfer is in progress it is allowed to complete.
+C: HELP RCMD
+S: 214-RCMD: Runs a system command on the remote system.
+S: 214-Example:  RCMD ADDLIBLE QUSRSYS.
+S: 214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+C: HELP REIN
+S: 214-REIN:  Ends and then starts the current session again
+S: 214  but allows any data transfer in progress to complete.
+C: HELP REST
+S: 214 REST marker: restart data transfer at this marker.
+C: HELP RETR
+S: 214 RETR <file.member>:  Retrieves data from this member of file.
+C: QUIT
+S: 221 QUIT subcommand received.

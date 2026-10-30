@@ -1,0 +1,67 @@
+# session: member/auto_ccsid
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: SITE CRTCCSID 37
+S: 250 Create new database file CCSID (CRTCCSID) option set to 37.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,59,131).
+C: STOR QSFAUTO
+S: 150 Sending file to member QSFAUTO in file QSFAUTO in library {user}B.
+D> 17 bytes sent
+U| 636166e920a320737465726c696e670d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,81,77).
+C: RETR QSFAUTO
+S: 150 Retrieving member QSFAUTO in file QSFAUTO in library {user}B.
+D: 17 bytes
+D| café £ sterling
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,60,141).
+C: RETR QSFAUTO
+S: 150 Retrieving member QSFAUTO in file QSFAUTO in library {user}B.
+D: 15 bytes (hex)
+D| 8381865140b140a2a3859993899587
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: SITE CRTCCSID 500
+S: 250 Create new database file CCSID (CRTCCSID) option set to 500.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,72,53).
+C: STOR QSFAUT2
+S: 150 Sending file to member QSFAUT2 in file QSFAUT2 in library {user}B.
+D> 17 bytes sent
+U| 636166e920a320737465726c696e670d0a
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,205,110).
+C: RETR QSFAUT2
+S: 150 Retrieving member QSFAUT2 in file QSFAUT2 in library {user}B.
+D: 15 bytes (hex)
+D| 8381865140b140a2a3859993899587
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: RCMD DLTF FILE({user}B/QSFAUTO)
+S: 250 Command DLTF FILE({user}B/QSFAUTO) successful.
+C: RCMD DLTF FILE({user}B/QSFAUT2)
+S: 250 Command DLTF FILE({user}B/QSFAUT2) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

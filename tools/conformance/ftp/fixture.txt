@@ -1,0 +1,177 @@
+# What the oracle held before the sessions ran, from their own
+# listings: kind, path or LIB/FILE[.MBR], key=value attributes.
+# {user} is the account; the replay signs on as a profile of the
+# same length and masks it the same way. Rows under [session] are
+# for that session alone (what earlier work had left there).
+dir /home/{user}/qs400 mode=770
+dir /home/{user}/qstest mode=777
+dir /QOpenSys/usr mode=755 owner=QSYS
+gone /QOpenSys/dev
+stmf /home/{user}/qs400/QDFUZZIN.PF size=250 mode=770
+stmf /home/{user}/qs400/QDFUZZOUT.PF size=211 mode=770
+stmf /home/{user}/qs400/QDFUZZ.RPGLE size=185706 mode=770
+stmf /home/{user}/qs400/cases.csv size=161864 mode=770
+stmf /home/{user}/qs400/lst.txt size=16237 mode=700
+stmf /home/{user}/qs400/results.csv size=193935 mode=700
+stmf /home/{user}/qs400/QORACLE.RPGLE size=525 mode=770
+stmf /home/{user}/qs400/CVTCHAR.RPGLE size=702 mode=770
+stmf /home/{user}/qs400/DATEBAD.RPGLE size=562 mode=770
+stmf /home/{user}/qs400/SUBSTBAD.RPGLE size=590 mode=770
+stmf /home/{user}/qs400/RESUMEG.RPGLE size=510 mode=770
+stmf /home/{user}/qs400/REPLYR.RPGLE size=658 mode=770
+stmf /home/{user}/qs400/STATMAP.RPGLE size=1164 mode=770
+stmf /home/{user}/qs400/FCCALLEE.RPGLE size=518 mode=770
+stmf /home/{user}/qs400/FCWHERE.RPGLE size=573 mode=770
+stmf /home/{user}/qs400/PROMOTE.RPGLE size=1142 mode=770
+stmf /home/{user}/qs400/CEEFC.RPGLE size=1134 mode=770
+stmf /home/{user}/qs400/CANCELTO.RPGLE size=700 mode=770
+stmf /home/{user}/qs400/DEEPREC.RPGLE size=736 mode=770
+stmf /home/{user}/qs400/CMDEXC.RPGLE size=1104 mode=770
+stmf /home/{user}/qs400/PTRSTAT.RPGLE size=1124 mode=770
+stmf /home/{user}/qs400/DECBLANK.RPGLE size=600 mode=770
+stmf /home/{user}/qs400/DIFFTS.RPGLE size=864 mode=770
+stmf /home/{user}/qs400/ORACLE.CLLE size=1305 mode=770
+stmf /home/{user}/qs400/ile-oracle.txt size=1620 mode=700
+dir /QOpenSys/usr/bin mode=755 owner=QSYS
+dir /QOpenSys/usr/ccs mode=755 owner=QSYS
+dir /QOpenSys/usr/icu4c mode=755 owner=QSYS
+dir /QOpenSys/usr/include mode=755 owner=QSYS
+dir /QOpenSys/usr/krb5 mode=755 owner=QSYS
+dir /QOpenSys/usr/lbin mode=755 owner=QSYS
+dir /QOpenSys/usr/lib mode=755 owner=QSYS
+dir /QOpenSys/usr/lib64 mode=755 owner=QSYS
+dir /QOpenSys/usr/lpp mode=755 owner=QSYS
+dir /QOpenSys/usr/pmapi mode=755 owner=QSYS
+dir /QOpenSys/usr/sbin mode=755 owner=QSYS
+dir /QOpenSys/usr/share mode=755 owner=QSYS
+dir /QOpenSys/usr/vacpp mode=755 owner=QSYS
+dir /QOpenSys/usr/zlibNX mode=755 owner=QSYS
+dir /QOpenSys/QIBM mode=755 owner=QSYS
+dir /QOpenSys/QIBM/ProdData mode=755 owner=QSYS
+dir /QOpenSys/QIBM/ProdData/OS400 mode=755 owner=QSYS
+dir /QOpenSys/QIBM/ProdData/OS400/PASE mode=755 owner=QSYS
+dir /QOpenSys/QIBM/ProdData/OS400/PASE/bin mode=755 owner=QSYS
+stmf /QOpenSys/QIBM/ProdData/OS400/PASE/bin/ls size=29261 mode=755 owner=QSYS
+link /QOpenSys/usr/bin/ls ../../QIBM/ProdData/OS400/PASE/bin/ls owner=QSYS
+lib {user}B
+file {user}B/ACTIVE rcdlen=80 owner={user}
+mbr {user}B/ACTIVE.ACTIVE
+file {user}B/BIGORD rcdlen=80 owner={user}
+mbr {user}B/BIGORD.BIGORD
+file {user}B/CUSBYNAME rcdlen=80 owner={user}
+mbr {user}B/CUSBYNAME.CUSBYNAME
+file {user}B/CUSORD rcdlen=80 owner={user}
+mbr {user}B/CUSORD.CUSORD
+file {user}B/CUSTOMER rcdlen=80 owner={user}
+mbr {user}B/CUSTOMER.CUSTOMER
+file {user}B/EVENTS rcdlen=80 owner={user}
+mbr {user}B/EVENTS.EVENTS
+file {user}B/FFD rcdlen=80 owner={user}
+mbr {user}B/FFD.FFD
+file {user}B/INVENTORY rcdlen=80 owner={user}
+mbr {user}B/INVENTORY.INVENTORY
+file {user}B/JRN rcdlen=80 owner={user}
+mbr {user}B/JRN.JRN
+file {user}B/LOGHIST rcdlen=80 owner={user}
+mbr {user}B/LOGHIST.LOGHIST
+file {user}B/LVLID rcdlen=80 owner={user}
+mbr {user}B/LVLID.LVLID
+file {user}B/NOTES rcdlen=80 owner={user}
+mbr {user}B/NOTES.NOTES
+file {user}B/ORDALL rcdlen=80 owner={user}
+mbr {user}B/ORDALL.ORDALL
+file {user}B/ORDBYCUS rcdlen=80 owner={user}
+mbr {user}B/ORDBYCUS.ORDBYCUS
+file {user}B/ORDERS rcdlen=80 owner={user}
+mbr {user}B/ORDERS.ORDERS
+file {user}B/ORDJOIN rcdlen=80 owner={user}
+mbr {user}B/ORDJOIN.ORDJOIN
+file {user}B/ORDLINE rcdlen=80 owner={user}
+mbr {user}B/ORDLINE.ORDLINE
+file {user}B/PRDBYDESC rcdlen=80 owner={user}
+mbr {user}B/PRDBYDESC.PRDBYDESC
+file {user}B/PRODUCT rcdlen=80 owner={user}
+mbr {user}B/PRODUCT.PRODUCT
+file {user}B/QRES01 rcdlen=80 owner={user}
+mbr {user}B/QRES01.QRES01
+file {user}B/QRES02 rcdlen=80 owner={user}
+mbr {user}B/QRES02.QRES02
+file {user}B/QRES03 rcdlen=80 owner={user}
+mbr {user}B/QRES03.QRES03
+file {user}B/QRES04 rcdlen=80 owner={user}
+mbr {user}B/QRES04.QRES04
+file {user}B/QRES05 rcdlen=80 owner={user}
+mbr {user}B/QRES05.QRES05
+file {user}B/QRES06 rcdlen=80 owner={user}
+mbr {user}B/QRES06.QRES06
+file {user}B/QRES07 rcdlen=80 owner={user}
+mbr {user}B/QRES07.QRES07
+file {user}B/QRES08 rcdlen=80 owner={user}
+mbr {user}B/QRES08.QRES08
+file {user}B/QRES09 rcdlen=80 owner={user}
+mbr {user}B/QRES09.QRES09
+file {user}B/QRES10 rcdlen=80 owner={user}
+mbr {user}B/QRES10.QRES10
+file {user}B/QRES11 rcdlen=80 owner={user}
+mbr {user}B/QRES11.QRES11
+file {user}B/QRES12 rcdlen=80 owner={user}
+mbr {user}B/QRES12.QRES12
+file {user}B/QSQLSRC rcdlen=80 owner={user}
+mbr {user}B/QSQLSRC.QRESULTS
+file {user}B/RLALOG rcdlen=80 owner={user}
+mbr {user}B/RLALOG.RLALOG
+file {user}B/TYPES rcdlen=80 owner={user}
+mbr {user}B/TYPES.TYPES
+lib QSYSINC
+file QSYSINC/ARPA rcdlen=92 source=1 owner=QSYS
+mbr QSYSINC/ARPA.INET
+mbr QSYSINC/ARPA.NAMESER
+mbr QSYSINC/ARPA.REXEC
+file QSYSINC/H rcdlen=92 source=1 owner=QSYS
+mbr QSYSINC/H.ARM4
+mbr QSYSINC/H.ARM4EXT
+mbr QSYSINC/H.ASSERT
+mbr QSYSINC/H.BCD
+mbr QSYSINC/H.BSE
+mbr QSYSINC/H.BSEDOS
+mbr QSYSINC/H.BSEERR
+mbr QSYSINC/H.CDRCVRT
+mbr QSYSINC/H.CDRGCCN
+mbr QSYSINC/H.CDRGESP
+mbr QSYSINC/H.CDRGRDC
+mbr QSYSINC/H.CDRSCSP
+mbr QSYSINC/H.CMC
+mbr QSYSINC/H.COMPLEX
+mbr QSYSINC/H.CTYPE
+mbr QSYSINC/H.CXXABI
+mbr QSYSINC/H.DECIMAL
+mbr QSYSINC/H.DELETE
+mbr QSYSINC/H.DEMANGLE
+mbr QSYSINC/H.DIRENT
+mbr QSYSINC/H.DSQCOMMC
+mbr QSYSINC/H.DTWLE
+mbr QSYSINC/H.ECACHCMD
+mbr QSYSINC/H.ECARTCMD
+mbr QSYSINC/H.ECHGPRF1
+mbr QSYSINC/H.ECHGRCV1
+mbr QSYSINC/H.ECHKPWD1
+mbr QSYSINC/H.ECLRMST
+mbr QSYSINC/H.ECRTPRF1
+mbr QSYSINC/H.EDBOPNDB
+mbr QSYSINC/H.EDCVARY
+mbr QSYSINC/H.EDLTKR
+mbr QSYSINC/H.EDLTPRF1
+mbr QSYSINC/H.EDLTPRF2
+mbr QSYSINC/H.EDLTRCV1
+mbr QSYSINC/H.EIM
+mbr QSYSINC/H.EIMGEPH
+mbr QSYSINC/H.EJOBNTFY
+mbr QSYSINC/H.EKIBASE
+mbr QSYSINC/H.EKICPROC
+[stmf]
+stmf /home/{user}/qsnet.txt size=53 mode=770
+stmf /home/{user}/QSFTPDTA size=54 mode=770
+stmf /home/{user}/QSFTPDT2.MBR2 size=54 mode=770
+stmf /home/{user}/QSFTPBIN size=256 mode=770
+[stmf/rename]
+dir /home/{user}/qsftp mode=770

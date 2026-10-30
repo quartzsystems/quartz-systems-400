@@ -1,0 +1,56 @@
+# session: member/src_trim
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(40)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(40) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,80,102).
+C: STOR QSFSRC.T
+S: 150 Sending file to member T in file QSFSRC in library {user}B.
+D> 32 bytes sent
+U| 747261696c696e6720626c616e6b732020200d0a2020206c656164696e670d0a
+S: 226 File transfer completed successfully.
+C: SITE TRIM 0
+S: 250  TRIM trailing blanks when sending database files option set to 0.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,183,222).
+C: RETR QSFSRC.T
+S: 150 Retrieving member T in file QSFSRC in library {user}B.
+D: 60 bytes
+D| trailing blanks             
+D|    leading                  
+S: 226 File transfer completed successfully.
+C: SITE TRIM 1
+S: 250  TRIM trailing blanks when sending database files option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,29,31).
+C: RETR QSFSRC.T
+S: 150 Retrieving member T in file QSFSRC in library {user}B.
+D: 29 bytes
+D| trailing blanks
+D|    leading
+S: 226 File transfer completed successfully.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,202,78).
+C: RETR QSFSRC.T
+S: 150 Retrieving member T in file QSFSRC in library {user}B.
+D: 27 bytes (hex)
+D| a399818993899587408293819592a2154040409385818489958715
+S: 226 File transfer completed successfully.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

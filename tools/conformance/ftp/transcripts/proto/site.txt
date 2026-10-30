@@ -1,0 +1,58 @@
+# session: proto/site
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NULLFLDS
+S: 250 Allow database files with null fields (NULLFLDS) option set to 0.
+C: SITE NULLFLDS 1
+S: 250 Allow database files with null fields (NULLFLDS) option set to 1.
+C: SITE NULLFLDS 0
+S: 250 Allow database files with null fields (NULLFLDS) option set to 0.
+C: SITE NULLFLDS 2
+S: 501 SITE NULLFLDS option not valid.
+C: SITE TRIM 2
+S: 250  TRIM trailing blanks when sending database files option set to 2.
+C: SITE TRIM 3
+S: 501 SITE TRIM option not valid.
+C: SITE LISTFMT 2
+S: 501 SITE LISTFMT option not valid.
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: SITE XYZ
+S: 550  Option on the SITE subcommand not recognized.
+C: SITE CRTCCSID *USER
+S: 250 Create new database file CCSID (CRTCCSID) option set to *USER.
+C: SITE CRTCCSID *SYSVAL
+S: 250 Create new database file CCSID (CRTCCSID) option set to *SYSVAL.
+C: SITE CRTCCSID 37
+S: 250 Create new database file CCSID (CRTCCSID) option set to 37.
+C: SITE CRTCCSID 0
+S: 501 SITE CRTCCSID option not valid.
+C: SITE CRTCCSID 65535
+S: 501 SITE CRTCCSID option not valid.
+C: SITE CRTCCSID ABC
+S: 501 SITE CRTCCSID option not valid.
+C: SITE CRTCCSID *CALC
+S: 250 Create new database file CCSID (CRTCCSID) option set to *CALC.
+C: STAT
+S: 211-FTP Server connected to remote address host {client}, port 43745.
+S: 211-NAMEFMT set to 1.
+S: 211-TRIM trailing blanks when sending database files option set to 2.
+S: 211-Allow database files with null fields (NULLFLDS) option set to 0.
+S: 211-Create new database file CCSID (CRTCCSID) option set to *CALC.
+S: 211-Directory listing format (LISTFMT) option set to 1.
+S: 211-User is {user}.  Working directory is /home/{user}
+S: 211-1821 bytes of control data have transferred.
+S: 211-There is no current data connection.
+S: 211-The next data connection will be actively opened.
+S: 211-to address host {client}, port 43745 using record format V and record length 80.
+S: 211-File transfer time-out value set to 420 seconds.
+S: 211  Current inactivity time-out value set to 99999 seconds.
+C: QUIT
+S: 221 QUIT subcommand received.

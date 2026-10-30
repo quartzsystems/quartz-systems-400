@@ -1,0 +1,57 @@
+# session: member/rename
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,190,38).
+C: STOR QSFSRC.A
+S: 150 Sending file to member A in file QSFSRC in library {user}B.
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: RNFR QSFSRC.A
+S: 350 RNFR member A in file QSFSRC in library {user}B accepted.  Enter new name using RNTO subcommand.
+C: RNTO QSFSRC.B
+S: 250 Member A in file QSFSRC in library {user}B renamed as {user}B/QSFSRC.B.
+C: RNFR QSFSRC.B
+S: 350 RNFR member B in file QSFSRC in library {user}B accepted.  Enter new name using RNTO subcommand.
+C: RNTO QSFSR2.B
+S: 250 Member B in file QSFSRC in library {user}B renamed as {user}B/QSFSR2.B.
+C: RNFR QSFSRC
+S: 350 RNFR file QSFSRC in library {user}B accepted. Type new name using RNTO subcommand.
+C: RNTO QSFSR3
+S: 250 File QSFSRC in library {user}B renamed as {user}B/QSFSR3.
+C: RNFR QSFSR3.B
+S: 550 RNFR failed: Member B not found in file QSFSR3 in library {user}B.
+C: RNTO B2
+S: 503 Subcommand RNTO must be preceded by subcommand RNFR.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,238,229).
+C: NLST QSF*
+S: 125 List started.
+D: 18 bytes
+D| QSFSR2.B
+D| QSFSR3
+S: 250 List completed.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 550-Error occurred on command DLTF FILE({user}B/QSFSRC).
+S: 550 Object QSFSRC in {user}B type *FILE not found..
+C: RCMD DLTF FILE({user}B/QSFSR3)
+S: 250 Command DLTF FILE({user}B/QSFSR3) successful.
+C: RCMD DLTF FILE({user}B/QSFSR2)
+S: 250 Command DLTF FILE({user}B/QSFSR2) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

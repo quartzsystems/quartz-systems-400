@@ -1,0 +1,57 @@
+# session: member/dta_trim
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTPF FILE({user}B/QSFPF) RCDLEN(30)
+S: 250 Command CRTPF FILE({user}B/QSFPF) RCDLEN(30) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,105,31).
+C: STOR QSFPF
+S: 150 Sending file to member QSFPF in file QSFPF in library {user}B.
+D> 32 bytes sent
+U| 747261696c696e6720626c616e6b732020200d0a2020206c656164696e670d0a
+S: 226 File transfer completed successfully.
+C: SITE TRIM 1
+S: 250  TRIM trailing blanks when sending database files option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,32,125).
+C: RETR QSFPF
+S: 150 Retrieving member QSFPF in file QSFPF in library {user}B.
+D: 29 bytes
+D| trailing blanks
+D|    leading
+S: 226 File transfer completed successfully.
+C: SITE TRIM 0
+S: 250  TRIM trailing blanks when sending database files option set to 0.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,199,46).
+C: RETR QSFPF
+S: 150 Retrieving member QSFPF in file QSFPF in library {user}B.
+D: 64 bytes
+D| trailing blanks               
+D|    leading                    
+S: 226 File transfer completed successfully.
+C: SITE TRIM 2
+S: 250  TRIM trailing blanks when sending database files option set to 2.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,174,47).
+C: RETR QSFPF
+S: 150 Retrieving member QSFPF in file QSFPF in library {user}B.
+D: 29 bytes
+D| trailing blanks
+D|    leading
+S: 226 File transfer completed successfully.
+C: RCMD DLTF FILE({user}B/QSFPF)
+S: 250 Command DLTF FILE({user}B/QSFPF) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

@@ -1,0 +1,49 @@
+# session: member/dele
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,235,116).
+C: STOR QSFDEL.A
+S: 150 Sending file to member A in file QSFDEL in library {user}B.
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,255,166).
+C: STOR QSFDEL.B
+S: 150 Sending file to member B in file QSFDEL in library {user}B.
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: DELE QSFDEL.A
+S: 250 Member A in file QSFDEL in library {user}B deleted.
+C: DELE QSFDEL.A
+S: 550 Not able to delete member A in file QSFDEL in library {user}B.
+C: DELE QSFDEL
+S: 250 File QSFDEL in library {user}B deleted.
+C: DELE QSFDEL.B
+S: 550 Not able to delete member B in file QSFDEL in library {user}B.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,44,118).
+C: NLST QSFDEL.*
+S: 550 File QSFDEL in library {user}B not found.
+C: DELE QSFNONE.X
+S: 550 Not able to delete member X in file QSFNONE in library {user}B.
+C: RCMD DLTF FILE({user}B/QSFDEL)
+S: 550-Error occurred on command DLTF FILE({user}B/QSFDEL).
+S: 550 Object QSFDEL in {user}B type *FILE not found..
+C: QUIT
+S: 221 QUIT subcommand received.

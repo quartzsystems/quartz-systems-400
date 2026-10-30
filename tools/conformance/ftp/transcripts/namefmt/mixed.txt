@@ -1,0 +1,34 @@
+# session: namefmt/mixed
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: CWD /home
+S: 250-NAMEFMT set to 1.
+S: 250 "/home" is current directory.
+C: PWD
+S: 257 "/home" is current directory.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD QGPL
+S: 550-Specified directory does not exist or cannot be accessed.
+S: 550 Working directory not changed.
+C: PWD
+S: 257 "/home" is current directory.
+C: CWD /QSYS.LIB/QGPL.LIB
+S: 250 "/QSYS.LIB/QGPL.LIB" is current library.
+C: CWD QSYSINC.LIB
+S: 250 "/QSYS.LIB/QSYSINC.LIB" is current library.
+C: PWD
+S: 257 "/QSYS.LIB/QSYSINC.LIB" is current library.
+C: QUIT
+S: 221 QUIT subcommand received.

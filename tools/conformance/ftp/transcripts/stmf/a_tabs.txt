@@ -1,0 +1,66 @@
+# session: stmf/a_tabs
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,32,95).
+C: STOR f.txt
+S: 150 Sending file to /home/{user}/qsftp/f.txt
+D> 18 bytes sent
+U| 61096209630d0a09696e64656e7465640d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,201,167).
+C: RETR f.txt
+S: 150 Retrieving file /home/{user}/qsftp/f.txt
+D: 18 bytes
+D| a	b	c
+D| 	indented
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,114,143).
+C: RETR f.txt
+S: 150 Retrieving file /home/{user}/qsftp/f.txt
+D: 18 bytes (hex)
+D| 61096209630d0a09696e64656e7465640d0a
+S: 226 File transfer completed successfully.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,48,54).
+C: RETR f.txt
+S: 150 Retrieving file /home/{user}/qsftp/f.txt
+D: 16 bytes (hex)
+D| 810582058315058995848595a3858415
+S: 226 File transfer completed successfully.
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,165,173).
+C: LIST f.txt
+S: 125 List started.
+D: 60 bytes
+D| `¦§¦§```@@@ñ@ØâÆã×äâÙ@ð@@@@@@@@@@@@@ñø@Ö£@óð@ðõzðô@K£§£
+S: 250 List completed.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/f.txt
+S: 250  Deleted file /home/{user}/qsftp/f.txt
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

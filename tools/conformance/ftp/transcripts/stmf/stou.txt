@@ -1,0 +1,58 @@
+# session: stmf/stou
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,54,85).
+C: STOU u.txt
+S: 150 Sending file to /home/{user}/qsftp/u.txt
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,238,36).
+C: STOU u.txt
+S: 150 Sending file to /home/{user}/qsftp/u.txt1
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,209,38).
+C: STOU u.txt
+S: 150 Sending file to /home/{user}/qsftp/u.txt2
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,220,38).
+C: NLST
+S: 125 List started.
+D: 23 bytes
+D| u.txt
+D| u.txt1
+D| u.txt2
+S: 250 List completed.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/u.txt
+S: 250  Deleted file /home/{user}/qsftp/u.txt
+C: DELE /home/{user}/qsftp/u.txt1
+S: 250  Deleted file /home/{user}/qsftp/u.txt1
+C: DELE /home/{user}/qsftp/u.txt2
+S: 250  Deleted file /home/{user}/qsftp/u.txt2
+C: DELE /home/{user}/qsftp/u.txt3
+S: 550  Unable to delete /home/{user}/qsftp/u.txt3
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

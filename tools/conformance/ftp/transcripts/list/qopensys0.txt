@@ -1,0 +1,59 @@
+# session: list/qopensys0
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,226,174).
+C: LIST /QOpenSys/usr
+S: 125 List started.
+D: 1014 bytes
+D| QSYS           122880 26-10-10 15:00:19 *DIR       /QOpenSys/usr/bin/
+D| QSYS             8192 16-04-23 22:57:29 *DIR       /QOpenSys/usr/ccs/
+D| QSYS             8192 26-10-10 15:00:19 *DIR       /QOpenSys/usr/icu4c/
+D| QSYS           114688 26-10-10 15:00:19 *DIR       /QOpenSys/usr/include/
+D| QSYS             8192 16-04-24 01:12:36 *DIR       /QOpenSys/usr/krb5/
+D| QSYS             8192 26-10-10 15:00:19 *DIR       /QOpenSys/usr/lbin/
+D| QSYS            81920 26-10-10 15:00:19 *DIR       /QOpenSys/usr/lib/
+D| QSYS             8192 26-10-10 15:00:51 *DIR       /QOpenSys/usr/lib64/
+D| QSYS             8192 16-04-24 01:12:36 *DIR       /QOpenSys/usr/lpp/
+D| QSYS             8192 16-09-04 00:53:16 *DIR       /QOpenSys/usr/pmapi/
+D| QSYS             8192 26-10-10 15:00:51 *DIR       /QOpenSys/usr/sbin/
+D| QSYS             8192 16-04-23 22:57:34 *DIR       /QOpenSys/usr/share/
+D| QSYS             8192 16-04-23 22:57:34 *DIR       /QOpenSys/usr/vacpp/
+D| QSYS             8192 25-08-24 10:42:34 *DIR       /QOpenSys/usr/zlibNX/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,178,197).
+C: NLST /QOpenSys/usr
+S: 125 List started.
+D: 300 bytes
+D| /QOpenSys/usr/bin/
+D| /QOpenSys/usr/ccs/
+D| /QOpenSys/usr/icu4c/
+D| /QOpenSys/usr/include/
+D| /QOpenSys/usr/krb5/
+D| /QOpenSys/usr/lbin/
+D| /QOpenSys/usr/lib/
+D| /QOpenSys/usr/lib64/
+D| /QOpenSys/usr/lpp/
+D| /QOpenSys/usr/pmapi/
+D| /QOpenSys/usr/sbin/
+D| /QOpenSys/usr/share/
+D| /QOpenSys/usr/vacpp/
+D| /QOpenSys/usr/zlibNX/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,99,61).
+C: LIST /QOpenSys/usr/bin/ls
+S: 125 List started.
+D: 73 bytes
+D| QSYS            29261 21-10-03 06:03:29 *STMF      /QOpenSys/usr/bin/ls
+S: 250 List completed.
+C: QUIT
+S: 221 QUIT subcommand received.

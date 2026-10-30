@@ -1,0 +1,102 @@
+# session: list/lib0
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) successful.
+C: RCMD ADDPFM FILE({user}B/QSFSRC) MBR(ONE)
+S: 250 Command ADDPFM FILE({user}B/QSFSRC) MBR(ONE) successful.
+C: RCMD ADDPFM FILE({user}B/QSFSRC) MBR(TWO)
+S: 250 Command ADDPFM FILE({user}B/QSFSRC) MBR(TWO) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,36,71).
+C: STOR QSFSRC.ONE
+S: 150 Sending file to member ONE in file QSFSRC in library {user}B.
+D> 61 bytes sent
+U| 202020202050474d0d0a202020202044434c2056415228265829205459504528
+U| 2a4348415229204c454e283130290d0a2020202020454e4450474d0d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,110,222).
+C: LIST QSFSRC
+S: 550 Library QSFSRC not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,107,126).
+C: NLST QSFSRC
+S: 550 Library QSFSRC not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,32,236).
+C: LIST QSFSRC.*
+S: 125 List started.
+D: 126 bytes
+D| {user}                                *MEM       QSFSRC.ONE
+D| {user}                                *MEM       QSFSRC.TWO
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,223,206).
+C: NLST QSFSRC.*
+S: 125 List started.
+D: 24 bytes
+D| QSFSRC.ONE
+D| QSFSRC.TWO
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,186,6).
+C: LIST QSFSRC.ONE
+S: 125 List started.
+D: 63 bytes
+D| {user}                                *MEM       QSFSRC.ONE
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,43,223).
+C: NLST QSFSRC.ONE
+S: 125 List started.
+D: 12 bytes
+D| QSFSRC.ONE
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,236,195).
+C: LIST {user}B/QSFSRC.TWO
+S: 125 List started.
+D: 63 bytes
+D| {user}                                *MEM       QSFSRC.TWO
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,135,167).
+C: LIST QSFSRC.NONE
+S: 125 Member NONE not found in file QSFSRC in library {user}B.
+D: 0 bytes
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,28,62).
+C: LIST QSF*
+S: 125 List started.
+D: 185 bytes
+D| {user}        49152 26-10-30 04:58:47 *FILE      QSFSRC
+D| {user}                                *MEM       QSFSRC.ONE
+D| {user}                                *MEM       QSFSRC.TWO
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,234,52).
+C: NLST QSF*
+S: 125 List started.
+D: 24 bytes
+D| QSFSRC.ONE
+D| QSFSRC.TWO
+S: 250 List completed.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

@@ -13,6 +13,7 @@
 
 pub mod ddm;
 pub mod hostsvr;
+pub mod ftp;
 pub mod jobsite;
 pub mod natives;
 pub mod nettools;

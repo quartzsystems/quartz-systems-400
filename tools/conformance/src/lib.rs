@@ -18,6 +18,8 @@ pub mod ifsapi;
 mod dst;
 mod error;
 mod hostsvr;
+pub mod ftp;
+mod ftpsrv;
 mod ifs;
 mod load;
 mod nettools;

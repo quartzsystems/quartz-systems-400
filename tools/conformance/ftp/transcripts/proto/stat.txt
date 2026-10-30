@@ -1,0 +1,18 @@
+# session: proto/stat
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: STAT /home/{user}
+S: 504 STAT <file-identifier> not valid.
+C: STAT /home/nosuch
+S: 504 STAT <file-identifier> not valid.
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: STAT /home/{user}
+S: 504 STAT <file-identifier> not valid.
+C: QUIT
+S: 221 QUIT subcommand received.

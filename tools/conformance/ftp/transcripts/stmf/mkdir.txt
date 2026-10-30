@@ -1,0 +1,52 @@
+# session: stmf/mkdir
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: MKD a
+S: 250  Created directory /home/{user}/qsftp/a
+C: MKD a
+S: 550  Directory /home/{user}/qsftp/a already exists.  Directory not created.
+C: XMKD a/b
+S: 250  Created directory /home/{user}/qsftp/a/b
+C: MKD x/y/z
+S: 550 Unable to access file or directory /home/{user}/qsftp/x/y/
+C: RMD a
+S: 550  Unable to delete directory /home/{user}/qsftp/a.
+C: XRMD a/b
+S: 250 Deleted directory /home/{user}/qsftp/a/b
+C: RMD a
+S: 250 Deleted directory /home/{user}/qsftp/a
+C: RMD a
+S: 550  Directory /home/{user}/qsftp/a does not exist.  Directory not deleted.
+C: MKD /home/{user}/qsftp/abs
+S: 250  Created directory /home/{user}/qsftp/abs
+C: CWD abs
+S: 250 "/home/{user}/qsftp/abs" is current directory.
+C: PWD
+S: 257 "/home/{user}/qsftp/abs" is current directory.
+C: CDUP
+S: 250 "/home/{user}/qsftp" is current directory.
+C: RMD abs
+S: 250 Deleted directory /home/{user}/qsftp/abs
+C: RMD x/y/z
+S: 550  Directory /home/{user}/qsftp/x/y/z does not exist.  Directory not deleted.
+C: RMD x/y
+S: 550  Directory /home/{user}/qsftp/x/y does not exist.  Directory not deleted.
+C: RMD x
+S: 550  Directory /home/{user}/qsftp/x does not exist.  Directory not deleted.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

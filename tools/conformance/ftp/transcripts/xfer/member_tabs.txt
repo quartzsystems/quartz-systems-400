@@ -1,0 +1,43 @@
+# session: xfer/member_tabs
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,94,191).
+C: STOR QSFT
+S: 150 Sending file to member QSFT in file QSFT in library {user}B.
+D> 18 bytes sent
+U| 61096209630d0a09696e64656e7465640d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,65,196).
+C: RETR QSFT
+S: 150 Retrieving member QSFT in file QSFT in library {user}B.
+D: 18 bytes (hex)
+D| 61096209630d0a09696e64656e7465640d0a
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,29,158).
+C: RETR QSFT
+S: 150 Retrieving member QSFT in file QSFT in library {user}B.
+D: 18 bytes (hex)
+D| 810582058340404040058995848595a38584
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: RCMD DLTF FILE({user}B/QSFT)
+S: 250 Command DLTF FILE({user}B/QSFT) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

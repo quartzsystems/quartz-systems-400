@@ -1,0 +1,68 @@
+# session: member/appe
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,214,29).
+C: APPE QSFSRC.A
+S: 150 Sending file to member A in file QSFSRC in library {user}B.
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,197,253).
+C: APPE QSFSRC.A
+S: 150 Sending file to member A in file QSFSRC in library {user}B.
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,250,69).
+C: RETR QSFSRC.A
+S: 150 Retrieving member A in file QSFSRC in library {user}B.
+D: 74 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+D| alpha
+D| beta
+D| gamma
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,62,21).
+C: APPE QSFNEW.A
+S: 150 Sending file to member A in file QSFNEW in library {user}B.
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,83,222).
+C: RETR QSFNEW.A
+S: 150 Retrieving member A in file QSFNEW in library {user}B.
+D: 54 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+S: 226 File transfer completed successfully.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: RCMD DLTF FILE({user}B/QSFNEW)
+S: 250 Command DLTF FILE({user}B/QSFNEW) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

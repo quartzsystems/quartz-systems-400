@@ -1,0 +1,28 @@
+# session: namefmt/qsyslib
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB
+S: 250 "/QSYS.LIB" is current library.
+C: PWD
+S: 257 "/QSYS.LIB" is current library.
+C: CWD QGPL.LIB
+S: 250 "/QSYS.LIB/QGPL.LIB" is current library.
+C: PWD
+S: 257 "/QSYS.LIB/QGPL.LIB" is current library.
+C: CDUP
+S: 250 "/QSYS.LIB" is current library.
+C: PWD
+S: 257 "/QSYS.LIB" is current library.
+C: CDUP
+S: 250 "/" is current directory.
+C: PWD
+S: 257 "/" is current directory.
+C: QUIT
+S: 221 QUIT subcommand received.

@@ -1,0 +1,23 @@
+# session: proto/help05
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: HELP OPTS
+S: 214 OPTS <command> <option>: Specify FTP command options.
+C: HELP PASS
+S: 214 PASS <password>:  Supplies the password of a user.
+C: HELP PASV
+S: 214 PASV:  Instructs this system to passively open the next data connection.
+C: HELP PBSZ
+S: 214 PBSZ <size>: Specify protection buffer size (in bytes).
+C: HELP PORT
+S: 214 PORT <IP address, port>: Identifies port on which client will listen for a data connection.
+C: HELP PROT
+S: 214-PROT <level>: Specify data channel protection level.
+S: 214 Valid protection levels are C (clear) or P (private).
+C: QUIT
+S: 221 QUIT subcommand received.

@@ -1,0 +1,69 @@
+# session: stmf/rename2
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,154,20).
+C: STOR a.txt
+S: 150 Sending file to /home/{user}/qsftp/a.txt
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,210,132).
+C: STOR b.txt
+S: 150 Sending file to /home/{user}/qsftp/b.txt
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: RNFR a.txt
+S: 350  File /home/{user}/qsftp/a.txt accepted.  Type new name using RNTO command.
+C: RNTO b.txt
+S: 550-File not renamed.  File already exists.
+S: 550  You may delete the existing file and then rename.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,137,188).
+C: NLST
+S: 125 List started.
+D: 14 bytes
+D| a.txt
+D| b.txt
+S: 250 List completed.
+C: RNFR a.txt
+S: 350  File /home/{user}/qsftp/a.txt accepted.  Type new name using RNTO command.
+C: NOOP
+S: 200 OK.
+C: RNTO c.txt
+S: 503 Subcommand RNTO must be preceded by subcommand RNFR.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,204,223).
+C: NLST
+S: 125 List started.
+D: 14 bytes
+D| a.txt
+D| b.txt
+S: 250 List completed.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/a.txt
+S: 250  Deleted file /home/{user}/qsftp/a.txt
+C: DELE /home/{user}/qsftp/b.txt
+S: 250  Deleted file /home/{user}/qsftp/b.txt
+C: DELE /home/{user}/qsftp/c.txt
+S: 550  Unable to delete /home/{user}/qsftp/c.txt
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

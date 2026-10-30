@@ -1,0 +1,36 @@
+# session: proto/help04
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: HELP HELP
+S: 214 HELP <command>:  Describes a command. If no command is specified, all commands are listed.
+C: HELP LIST
+S: 214-LIST <library/file.member>:  Supplies list of objects.
+S: 214-Lists owner, sizes, change dates and object type.
+S: 214-Some examples of its use follow:
+S: 214-LIST <library/file.member>:  Provides information about one member only.
+S: 214-LIST <library/file> or LIST <library/file.*>:  Provides information about all members in file.
+S: 214-LIST <library>:  Provides information about all objects in library.
+S: 214-LIST: Provides information about all objects in current library.
+S: 214 LIST <file.*>:  Provides information about all members in file, of current library.
+C: HELP MKD
+S: 214  MKD <directory name>: Creates a directory.
+C: HELP MODE
+S: 214-MODE <mode-symbol>:  Specifies the data transfer mode.
+S: 214 Default mode is stream.  Stream (S) and block (B) are supported.
+C: HELP NLST
+S: 214-NLST <file-identifier>:  Similar to subcommand , but supplies only file names.
+S: 214-Some examples of its use follow:
+S: 214-NLST <library/file.member>:  Provides information about one member only.
+S: 214-NLST <library/file> or NLST <library/file.*>:  Provides information about all members in file.
+S: 214-NLST <library>:  Provides information about all objects in library.
+S: 214-NLST: Provides information about all objects in current library.
+S: 214 NLST <file.*>:  Provides information about all members in file, of current library.
+C: HELP NOOP
+S: 214 NOOP:  Performs no function but replies 'OK'.
+C: QUIT
+S: 221 QUIT subcommand received.

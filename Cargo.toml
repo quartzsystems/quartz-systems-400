@@ -92,6 +92,7 @@ members = [
     "net/ntp",
     "net/lpd",
     "net/mail",
+    "net/ftp",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

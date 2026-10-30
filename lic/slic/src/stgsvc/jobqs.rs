@@ -270,9 +270,11 @@ fn find_active(system: &System, job: &str) -> Option<u32> {
     if let Some(n) = number {
         return system.jobs.in_use(n).then_some(n);
     }
-    // A bare name: the newest active job of that name.
+    // A name alone: the one active job of that name.
     let name = job.trim().to_ascii_uppercase();
-    system.jobs.all().into_iter().filter(|j| j.name == name).map(|j| j.number).max()
+    let mut found = system.jobs.all().into_iter().filter(|j| j.name == name).map(|j| j.number);
+    let first = found.next()?;
+    found.next().is_none().then_some(first)
 }
 
 fn signal(system: &System, number: u32, sig: rustix::process::Signal) -> Result<(), String> {
@@ -401,6 +403,7 @@ pub fn take_end_requests(system: &mut System, monitor: u32) -> Vec<(u32, bool)> 
     let mine: Vec<(u32, bool)> = system
         .end_requests
         .iter()
+        .filter(|(n, _)| !system.self_ending.contains(*n))
         .filter(|(n, _)| system.jobs.get(**n).is_some_and(|j| j.subsystem == sbs))
         .map(|(n, i)| (*n, *i))
         .collect();

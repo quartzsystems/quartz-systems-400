@@ -65,6 +65,8 @@ pub fn run() -> ! {
         "PRESTART" => crate::work::hostsvr::prestart::run(ctl, &link, &start),
         "NTP" => crate::work::ntp::run(ctl, &link, &start),
         "LPD" => crate::work::lpd::run(ctl, &link, &start),
+        "FTP" => crate::work::ftp::run(ctl, &link, &start),
+        "FTPSESS" => crate::work::ftp::session(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

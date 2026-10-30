@@ -1,0 +1,29 @@
+# session: proto/help02
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: HELP AUTH
+S: 214-AUTH <mechanism>: Specify security/authentication mechanism.
+S: 214 Valid mechanisms are TLS-C, TLS-P, TLS, or SSL.
+C: HELP CDUP
+S: 214  CDUP: Changes working directory to parent directory.
+C: HELP CRTL
+S: 214-CRTL <library name>:  Creates a library.
+S: 214-Example:  CRTL<library-name>.
+S: 214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+C: HELP CRTP
+S: 214-CRTP <file name>:  Creates a physical file.
+S: 214-Example:  CRTP FILE(Library/file) RCDLEN(80) MAXMBRS(*NOMAX).
+S: 214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+C: HELP CRTS
+S: 214-CRTS <file identifier>:  Creates a source physical file.
+S: 214-Example:  CRTS FILE(library/file).
+S: 214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+C: HELP CWD
+S: 214 CWD <library>:  Changes default library.
+C: QUIT
+S: 221 QUIT subcommand received.

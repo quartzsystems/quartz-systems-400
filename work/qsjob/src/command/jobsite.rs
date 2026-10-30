@@ -88,7 +88,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             }
         }
         // --- TCP servers (command/tcpsvr.rs, net/servers)
-        "STRTCPSVR" | "ENDTCPSVR" | "CHGTELNA" => {
+        "STRTCPSVR" | "ENDTCPSVR" | "CHGTELNA" | "CHGFTPA" => {
             if let Some(res) = super::tcpsvr::run(job, host, r) {
                 return res;
             }
@@ -99,6 +99,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
+        // --- the FTP client (command/ftp.rs, net/ftp)
+        "FTP" | "STRTCPFTP" => return super::ftp::run(job, host, r, out),
         // --- DDM and DRDA (command/ddm.rs)
         "ADDRDBDIRE" | "CHGRDBDIRE" | "RMVRDBDIRE" | "WRKRDBDIRE" | "CRTDDMF" | "CHGDDMF"
         | "CHGDDMTCPA" => {

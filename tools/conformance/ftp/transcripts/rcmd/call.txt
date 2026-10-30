@@ -1,0 +1,25 @@
+# session: rcmd/call
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CALL PGM({user}B/NOSUCHPGM)
+S: 550-Error occurred on command CALL PGM({user}B/NOSUCHPGM).
+S: 550 Error found on CALL command..
+C: RCMD CALL NOSUCHPGM
+S: 550-Error occurred on command CALL NOSUCHPGM.
+S: 550 Error found on CALL command..
+C: RCMD SBMJOB CMD(DLYJOB DLY(1)) JOB(QSFTST) JOBQ(NOSUCH/NOSUCH)
+S: 550-Error occurred on command SBMJOB CMD(DLYJOB DLY(1)) JOB(QSFTST) JOBQ(NOSUCH/NOSUCH).
+S: 550 Errors occurred on SBMJOB command..
+C: QUIT
+S: 221 QUIT subcommand received.

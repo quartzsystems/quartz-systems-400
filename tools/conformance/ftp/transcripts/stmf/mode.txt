@@ -1,0 +1,42 @@
+# session: stmf/mode
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: MODE B
+S: 200 Data transfer mode is block.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,87,229).
+C: STOR m.txt
+S: 504 Stream mode required to transfer stream file.
+C: MODE S
+S: 200 Data transfer mode is stream.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,219,141).
+C: RETR m.txt
+S: 550  Unable to find file /home/{user}/qsftp/m.txt
+C: STRU R
+S: 250 Data structure is record.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,20,15).
+C: RETR m.txt
+S: 504 File structure required to transfer stream file.
+C: STRU F
+S: 250 Data structure is file.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/m.txt
+S: 550  Unable to delete /home/{user}/qsftp/m.txt
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

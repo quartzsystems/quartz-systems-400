@@ -1,0 +1,22 @@
+# session: rcmd/quotes
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) TEXT('it''s (a) test')
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) TEXT('it''s (a) test') successful.
+C: RCMD ADDPFM FILE({user}B/QSFSRC) MBR(M) TEXT('x "y" z')
+S: 250 Command ADDPFM FILE({user}B/QSFSRC) MBR(M) TEXT('x "y" z') successful.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

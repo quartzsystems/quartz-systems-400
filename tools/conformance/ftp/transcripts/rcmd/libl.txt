@@ -1,0 +1,31 @@
+# session: rcmd/libl
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD CHGCURLIB CURLIB({user}B)
+S: 250 Command CHGCURLIB CURLIB({user}B) successful.
+C: RCMD ADDLIBLE LIB(QSYSINC)
+S: 250 Command ADDLIBLE LIB(QSYSINC) successful.
+C: RCMD ADDLIBLE LIB(QSYSINC)
+S: 550-Error occurred on command ADDLIBLE LIB(QSYSINC).
+S: 550 Library QSYSINC already exists in library list..
+C: RCMD RMVLIBLE LIB(QSYSINC)
+S: 250 Command RMVLIBLE LIB(QSYSINC) successful.
+C: RCMD RMVLIBLE LIB(QSYSINC)
+S: 550-Error occurred on command RMVLIBLE LIB(QSYSINC).
+S: 550 Library QSYSINC not removed from the library list..
+C: RCMD ADDLIBLE LIB(NOSUCHLIB)
+S: 550-Error occurred on command ADDLIBLE LIB(NOSUCHLIB).
+S: 550 Library NOSUCHLIB not found..
+C: QUIT
+S: 221 QUIT subcommand received.

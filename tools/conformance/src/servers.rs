@@ -172,7 +172,7 @@ impl Suite {
         if let Some(port) = self.telnet_port() {
             telnet_answers(port)?;
         }
-        expect(s, "STRTCPSVR SERVER(*FTP)", "TCP1A04")?;
+        expect(s, "STRTCPSVR SERVER(*SNMP)", "TCP1A04")?;
         Ok(format!(
             "ADMIN in QHTTPSVR served the page on 2001 (host {plain}) and 2005 (host {secure}) and ended; QTVTELNET ended, took CHGTELNA and started again"
         ))

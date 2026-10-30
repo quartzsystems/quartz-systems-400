@@ -1,0 +1,146 @@
+# session: list/stmf1
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,219,108).
+C: STOR a.txt
+S: 150 Sending file to /home/{user}/qsftp/a.txt
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,173,143).
+C: STOR b.txt
+S: 150 Sending file to /home/{user}/qsftp/b.txt
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,140,44).
+C: STOR c.bin
+S: 150 Sending file to /home/{user}/qsftp/c.bin
+D> 256 bytes sent
+U| 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+U| 202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f
+U| 404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f
+U| 606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f
+U| 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f
+U| a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf
+U| c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf
+U| e0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff
+S: 226 File transfer completed successfully.
+C: MKD sub
+S: 250  Created directory /home/{user}/qsftp/sub
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,62,126).
+C: LIST
+S: 125 List started.
+D: 242 bytes
+D| -rwxrwx---   1 {user} 0             54 Oct 30 04:59 a.txt
+D| -rwxrwx---   1 {user} 0             17 Oct 30 04:59 b.txt
+D| -rwxrwx---   1 {user} 0            256 Oct 30 04:59 c.bin
+D| drwxrwx---   2 {user} 0           8192 Oct 30 04:59 sub
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,226,197).
+C: NLST
+S: 125 List started.
+D: 27 bytes
+D| a.txt
+D| b.txt
+D| c.bin
+D| sub/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,203,206).
+C: LIST a.txt
+S: 125 List started.
+D: 61 bytes
+D| -rwxrwx---   1 {user} 0             54 Oct 30 04:59 a.txt
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,164,198).
+C: NLST a.txt
+S: 125 List started.
+D: 7 bytes
+D| a.txt
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,115,62).
+C: LIST /home/{user}/qsftp/c.bin
+S: 125 List started.
+D: 61 bytes
+D| -rwxrwx---   1 {user} 0            256 Oct 30 04:59 c.bin
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,218,253).
+C: LIST *.txt
+S: 125 List started.
+D: 122 bytes
+D| -rwxrwx---   1 {user} 0             54 Oct 30 04:59 a.txt
+D| -rwxrwx---   1 {user} 0             17 Oct 30 04:59 b.txt
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,229,109).
+C: NLST *.txt
+S: 125 List started.
+D: 14 bytes
+D| a.txt
+D| b.txt
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,146,238).
+C: LIST sub
+S: 125  No files found in directory /home/{user}/qsftp/sub
+D: 0 bytes
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,225,116).
+C: LIST /home/{user}/qsftp
+S: 125 List started.
+D: 242 bytes
+D| -rwxrwx---   1 {user} 0             54 Oct 30 04:59 a.txt
+D| -rwxrwx---   1 {user} 0             17 Oct 30 04:59 b.txt
+D| -rwxrwx---   1 {user} 0            256 Oct 30 04:59 c.bin
+D| drwxrwx---   2 {user} 0           8192 Oct 30 04:59 sub
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,189,157).
+C: NLST /home/{user}/qsftp
+S: 125 List started.
+D: 27 bytes
+D| a.txt
+D| b.txt
+D| c.bin
+D| sub/
+S: 250 List completed.
+C: RMD sub
+S: 250 Deleted directory /home/{user}/qsftp/sub
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/a.txt
+S: 250  Deleted file /home/{user}/qsftp/a.txt
+C: DELE /home/{user}/qsftp/b.txt
+S: 250  Deleted file /home/{user}/qsftp/b.txt
+C: DELE /home/{user}/qsftp/c.bin
+S: 250  Deleted file /home/{user}/qsftp/c.bin
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

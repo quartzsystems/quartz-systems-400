@@ -1,0 +1,71 @@
+# session: member/auto_mbr
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,81,28).
+C: STOR QSFAUTO.FIRST
+S: 150 Sending file to member FIRST in file QSFAUTO in library {user}B.
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,32,197).
+C: STOR QSFAUTO.SECOND
+S: 150 Sending file to member SECOND in file QSFAUTO in library {user}B.
+D> 29 bytes sent
+U| 303132333435363738394142434445464748494a0d0a73686f72740d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,73,167).
+C: RETR QSFAUTO.FIRST
+S: 150 Retrieving member FIRST in file QSFAUTO in library {user}B.
+D: 54 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,250,150).
+C: RETR QSFAUTO.SECOND
+S: 150 Retrieving member SECOND in file QSFAUTO in library {user}B.
+D: 29 bytes
+D| 0123456789ABCDEFGHIJ
+D| short
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,96,194).
+C: RETR QSFAUTO.SECOND
+S: 150 Retrieving member SECOND in file QSFAUTO in library {user}B.
+D: 46 bytes (hex)
+D| f0f1f2f3f4f5f6f7f8f9c1c2c3c4c5c6c7c8c9d1404040a2889699a340404040
+D| 4040404040404040404040404040
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,228,109).
+C: NLST QSFAUTO.*
+S: 125 List started.
+D: 31 bytes
+D| QSFAUTO.FIRST
+D| QSFAUTO.SECOND
+S: 250 List completed.
+C: RCMD DLTF FILE({user}B/QSFAUTO)
+S: 250 Command DLTF FILE({user}B/QSFAUTO) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

@@ -13,7 +13,7 @@
 //!   the [`Framework`] that answers `STRTCPSVR`/`ENDTCPSVR` and, as a
 //!   `tcpcfg::server::ServerStarter`, `STRTCP`/`ENDTCP`.
 //! - [`attrs`]: the servers' attributes in the `QUSRSYS` server table
-//!   (`CHGTELNA`, the HTTP administration ports).
+//!   (`CHGTELNA`, `CHGFTPA`, the HTTP administration ports).
 //! - [`listen`]: binding, the accept loop with its stop flag and TLS.
 //! - [`http`]: the minimal HTTP/1.1 administration listener's page.
 //! - [`msg`]: the message identifiers.

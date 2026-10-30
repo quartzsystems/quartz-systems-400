@@ -1,0 +1,32 @@
+# session: namefmt/lib0c
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: CWD QSYS
+S: 250 "QSYS" is current library.
+C: PWD
+S: 257 "QSYS" is current library.
+C: CWD 1BAD
+S: 501 Character (1) not allowed at beginning of name.
+C: CWD *LIBL
+S: 501 Character (*) not allowed in object name.
+C: CWD *CURLIB
+S: 501 Character (*) not allowed in object name.
+C: PWD
+S: 257 "QSYS" is current library.
+C: XCUP
+S: 250 "QSYS" is current library.
+C: PWD
+S: 257 "QSYS" is current library.
+C: QUIT
+S: 221 QUIT subcommand received.

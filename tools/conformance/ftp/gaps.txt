@@ -1,0 +1,11 @@
+# Commands the replay leaves out: a session's name, a tab, the command
+# as recorded. Each is something the fixture cannot set up, not a
+# difference in the server.
+#
+# What other profiles keep on the oracle (their names are not kept):
+list	LIST /QOpenSys
+list/dots	LIST ..
+list/dots	NLST ..
+# The space IBM i allocates an empty save file (24576 bytes); a save
+# file here is as long as its data.
+list/savf	LIST /QSYS.LIB/{user}B.LIB/QSFSAVF.FILE

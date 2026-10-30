@@ -530,6 +530,11 @@ pub fn sign_on(
         let dev_name = device.to_string();
         let device_authority =
             move |txn: &mut store::Txn<'_>, who: &str| -> Option<sec::auth::bits::Auth> {
+                // A server's sign-on (FTP) has no display: QLMTSECOFR
+                // is about displays.
+                if dev_name.is_empty() {
+                    return Some(sec::auth::bits::Auth(sec::auth::bits::Auth::MASK));
+                }
                 let lib = store::obj::library::Library::load(txn, qsys).ok()?;
                 let id = lib
                     .lookup(

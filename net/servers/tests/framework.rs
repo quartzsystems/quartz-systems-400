@@ -98,9 +98,9 @@ fn http_admin_instance_and_subsystem() {
 fn servers_not_in_this_release() {
     let fw = Framework::standard();
     let mut env = Fake::default();
-    let e = fw.start(&mut env, &Request::new("*FTP")).unwrap_err();
+    let e = fw.start(&mut env, &Request::new("*SNMP")).unwrap_err();
     assert_eq!(e.msgid, "TCP1A04");
-    assert!(e.text.contains("FTP server"), "{}", e.text);
+    assert!(e.text.contains("*SNMP"), "{}", e.text);
     let e = fw.start(&mut env, &Request::new("*DDM")).unwrap_err();
     assert!(e.text.contains("backends"), "{}", e.text);
     assert_eq!(fw.end(&mut env, &Request::new("*SMTP"), false).unwrap(), "TCP1A09 SMTP server not active.");
@@ -173,4 +173,21 @@ fn strtcp_and_endtcp_through_the_starter() {
     let e = end_all(&mut s, &every, true);
     assert_eq!(e.len(), 1);
     assert_eq!(e[0].1, Ok("TCP1A0A TELNET server ending.".to_string()));
+}
+
+#[test]
+fn ftp_starts_its_listener() {
+    let mut fw = Framework::standard();
+    fw.register(Box::new(servers::framework::Ftp));
+    let mut env = Fake::default();
+    env.cfg.get_mut("*FTP").set("PORT", "2121");
+    let req = Request::new("*FTP");
+    assert_eq!(fw.start(&mut env, &req).unwrap(), "TCP1A07 FTP server starting.");
+    let j = &env.running[0];
+    assert_eq!((j.name.as_str(), j.user.as_str(), j.role.as_str()), ("QTFTP00001", "QTCP", "FTP"));
+    assert_eq!((j.subsystem.as_str(), j.rqsdta.as_str()), ("QSYSWRK", "PORT(2121) TLSPORT(990)"));
+    assert!(fw.start(&mut env, &req).unwrap().contains("already started"));
+    assert_eq!(fw.end(&mut env, &req, false).unwrap(), "TCP1A0A FTP server ending.");
+    assert!(env.running.is_empty());
+    assert_eq!(fw.end(&mut env, &req, false).unwrap(), "TCP1A09 FTP server not active.");
 }

@@ -1,0 +1,65 @@
+# session: list/qsys1
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: RCMD CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92)
+S: 250 Command CRTSRCPF FILE({user}B/QSFSRC) RCDLEN(92) successful.
+C: RCMD ADDPFM FILE({user}B/QSFSRC) MBR(ONE)
+S: 250 Command ADDPFM FILE({user}B/QSFSRC) MBR(ONE) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,143,20).
+C: LIST /QSYS.LIB/{user}B.LIB/QSFSRC.FILE
+S: 125 List started.
+D: 63 bytes
+D| -rwx------   1 {user} 0              0 Oct 30 05:00 ONE.MBR
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,112,167).
+C: NLST /QSYS.LIB/{user}B.LIB/QSFSRC.FILE
+S: 125 List started.
+D: 45 bytes
+D| /QSYS.LIB/{user}B.LIB/QSFSRC.FILE/ONE.MBR
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,28,30).
+C: LIST /QSYS.LIB/{user}B.LIB/QSFSRC.FILE/ONE.MBR
+S: 125 List started.
+D: 63 bytes
+D| -rwx------   1 {user} 0              0 Oct 30 05:00 ONE.MBR
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,107,191).
+C: NLST /QSYS.LIB/{user}B.LIB/QSFSRC.FILE/ONE.MBR
+S: 125 List started.
+D: 45 bytes
+D| /QSYS.LIB/{user}B.LIB/QSFSRC.FILE/ONE.MBR
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,182,62).
+C: LIST /QSYS.LIB/{user}B.LIB/QSFSRC.FILE/*.MBR
+S: 125 List started.
+D: 63 bytes
+D| -rwx------   1 {user} 0              0 Oct 30 05:00 ONE.MBR
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,44,195).
+C: LIST /QSYS.LIB/{user}B.LIB/QSF*
+S: 501 Unknown extension in database file name.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,45,229).
+C: LIST /QSYS.LIB/{user}B.LIB/NOSUCH.FILE
+S: 550 File NOSUCH in library {user}B not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,83,181).
+C: LIST /QSYS.LIB/NOSUCH.LIB
+S: 550 Library NOSUCH not found.
+C: RCMD DLTF FILE({user}B/QSFSRC)
+S: 250 Command DLTF FILE({user}B/QSFSRC) successful.
+C: QUIT
+S: 221 QUIT subcommand received.

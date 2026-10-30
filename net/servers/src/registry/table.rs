@@ -65,8 +65,8 @@ pub static SPECS: &[ServerSpec] = &[
         special: "*FTP",
         name: "FTP",
         jobs: &[
-            job("QTFTP00nnn", "QTCP", "QSYSWRK", JobKind::Listener, ""),
-            job("QTFTP00nnn", "QTCP", "QSYSWRK", JobKind::Worker, ""),
+            job("QTFTP00nnn", "QTCP", "QSYSWRK", JobKind::Listener, "FTP"),
+            job("QTFTP00nnn", "QTCP", "QSYSWRK", JobKind::Worker, "FTPSESS"),
         ],
         ports: &[tcp(21, false), tcp(990, true)],
         attrs_cmd: Some("CHGFTPA"),
@@ -74,7 +74,7 @@ pub static SPECS: &[ServerSpec] = &[
         exit_points: &["QIBM_QTMF_SERVER_REQ", "QIBM_QTMF_SVR_LOGON"],
         start_subsystem: false,
         instances: &[],
-        readiness: Readiness::Slot("the FTP server (Phase 10 section 5)"),
+        readiness: Readiness::Built,
     },
     unplanned("*SMTP", "SMTP"),
     ServerSpec {

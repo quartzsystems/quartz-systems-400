@@ -1,0 +1,32 @@
+# session: proto/help07
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: HELP RMD
+S: 214  RMD <directory name>: Removes a directory.
+C: HELP RNFR
+S: 214-RNFR <original file.member> and RNTO <new file.member>:
+S: 214-Rename a file.member. The commands must be sent in the specified order.
+S: 214 Many FTP users have a RENAME subcommand that sends RNFR and RNTO subcommands.
+C: HELP RNTO
+S: 214-RNFR <original file.member> and RNTO <new file.member>:
+S: 214-Rename a file.member. The commands must be sent in the specified order.
+S: 214 Many FTP users have a RENAME subcommand that sends RNFR and RNTO subcommands.
+C: HELP SITE
+S: 214-SITE TRIM <0, 1, or 2>: Option to remove trailing blanks when sending database files.
+S: 214-SITE LISTFMT <0 or 1>: Options to format LIST information returned to client.
+S: 214-SITE NULLFLDS <0 or 1>: Allow database files with null fields.
+S: 214-SITE CRTCCSID <*CALC, *USER, *SYSVAL, 1-65533>: Specify EBCDIC CCSID
+S: 214- used to create new database files for ASCII transfers.
+S: 214 SITE NAMEFMT <0 or 1>: switch between naming formats.
+C: HELP STAT
+S: 214 STAT:  Describes status of FTP session.
+C: HELP STOR
+S: 214-STOR <file name>:  Stores data in file.
+S: 214 If file already exists, delete contents of file.
+C: QUIT
+S: 221 QUIT subcommand received.

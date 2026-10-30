@@ -1,0 +1,16 @@
+# session: proto/time
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: TIME
+S: 500 Subcommand TIME not valid.
+C: SYST
+S: 215  OS/400 is the remote operating system. The TCP/IP version is "V7R5M0".
+C: NOOP x
+S: 200 OK.
+C: QUIT
+S: 221 QUIT subcommand received.

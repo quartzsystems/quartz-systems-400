@@ -1,0 +1,43 @@
+# session: member/home0
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 0
+S: 550 Current directory requires name format 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,103,76).
+C: STOR QSFH
+S: 150 Sending file to /home/{user}/QSFH
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,136,142).
+C: RETR QSFH
+S: 150 Retrieving file /home/{user}/QSFH
+D: 54 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,193,159).
+C: NLST
+S: 125 List started.
+D: 23 bytes
+D| qs400/
+D| qstest/
+D| QSFH
+S: 250 List completed.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: DELE /home/{user}/QSFH
+S: 250  Deleted file /home/{user}/QSFH
+C: QUIT
+S: 221 QUIT subcommand received.

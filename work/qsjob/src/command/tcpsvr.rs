@@ -5,14 +5,15 @@
 //! The TCP servers framework (`net/servers`) in the job: [`JobEnv`]
 //! gives the servers' hooks this job's reach (server jobs start as its
 //! children, like subsystem monitors; attributes come from the storage
-//! service's server table), and the commands `STRTCPSVR`, `ENDTCPSVR`
-//! and `CHGTELNA` run here. `STRTCP` and `ENDTCP` (`tcp.rs`) start and
+//! service's server table), and the commands `STRTCPSVR`, `ENDTCPSVR`,
+//! `CHGTELNA` and `CHGFTPA` run here. `STRTCP` and `ENDTCP` (`tcp.rs`) start and
 //! end the autostart servers through the same framework.
 
 use std::fmt::Write as _;
 
 use cmd::{Resolved, Value};
 use mi::Job;
+use servers::attrs::ftp::{self as ftpattrs, FtpAttrs};
 use servers::attrs::telnet::{self, TelnetAttrs};
 use servers::{Env, Framework, Instance, JobStart};
 use stg::Client;
@@ -28,6 +29,7 @@ pub fn framework() -> Framework {
     let mut f = Framework::standard();
     f.register(Box::new(servers::framework::Ntp));
     f.register(Box::new(servers::framework::Lpd));
+    f.register(Box::new(servers::framework::Ftp));
     f
 }
 
@@ -283,12 +285,44 @@ pub fn chgtelna(host: &Host, r: &Resolved) -> Result<String, Fail> {
     }
 }
 
+/// `CHGFTPA`: the attributes into the server table, checked first.
+pub fn chgftpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let parms = parms_of(r);
+    let current = server_attrs(host, "*FTP");
+    let mut attrs = FtpAttrs::from_bag(&current.bag);
+    for kwd in ftpattrs::KEYWORDS {
+        let Some(v) = parms.get(kwd) else {
+            continue;
+        };
+        attrs
+            .set(kwd, &text(v))
+            .map_err(|e| Fail::new(servers::msg::BAD_VALUE, format!("Value not valid: {e}")))?;
+    }
+    let autostart = match parms.name("AUTOSTART").as_str() {
+        "*YES" => Some(true),
+        "*NO" => Some(false),
+        _ => None,
+    };
+    let op = TcpOp::SetServer {
+        server: "*FTP".into(),
+        autostart,
+        bag: attrs.to_bag(),
+    };
+    match host.link.borrow_mut().with(|l| l.tcp(op)) {
+        TcpReply::Done { .. } => Ok(format!("{} FTP attributes changed.
+", servers::msg::ATTRS_CHANGED)),
+        TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
+        other => Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+    }
+}
+
 /// The server commands; `None` for another command.
 pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fail>> {
     Some(match r.name.as_str() {
         "STRTCPSVR" => strtcpsvr(job, host, r),
         "ENDTCPSVR" => endtcpsvr(job, host, r),
         "CHGTELNA" => chgtelna(host, r),
+        "CHGFTPA" => chgftpa(host, r),
         _ => return None,
     })
 }

@@ -1,0 +1,28 @@
+# session: list/missing
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,235,77).
+C: LIST /home/{user}/nosuch
+S: 550  Path does not exist: /home/{user}/nosuch
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,206,157).
+C: NLST /home/{user}/nosuch
+S: 550  Path does not exist: /home/{user}/nosuch
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,200,119).
+C: LIST /home/{user}/nosuch
+S: 550  Path does not exist: /home/{user}/nosuch
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,60,71).
+C: NLST /nosuchdir/x
+S: 550  Path does not exist: /nosuchdir/x
+C: QUIT
+S: 221 QUIT subcommand received.

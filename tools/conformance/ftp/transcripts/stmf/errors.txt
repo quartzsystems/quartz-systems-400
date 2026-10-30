@@ -1,0 +1,51 @@
+# session: stmf/errors
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,60,60).
+C: RETR nosuch.txt
+S: 550  Unable to find file /home/{user}/qsftp/nosuch.txt
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,195,190).
+C: STOR nodir/x.txt
+S: 426-Unable to open or create file /home/{user}/qsftp/nodir to receive data.
+S: 426 Data transfer ended.
+C: MKD sub
+S: 250  Created directory /home/{user}/qsftp/sub
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,223,221).
+C: RETR sub
+S: 550  Path name specifies a directory: /home/{user}/qsftp/sub
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,160,38).
+C: STOR sub
+S: 550  Path name specifies a directory: /home/{user}/qsftp/sub
+C: DELE sub
+S: 550  Unable to delete /home/{user}/qsftp/sub
+C: RMD sub
+S: 250 Deleted directory /home/{user}/qsftp/sub
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,115,196).
+C: APPE /nosuchdir/y.txt
+S: 426-Unable to open or create file /nosuchdir to receive data.
+S: 426 Data transfer ended.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,28,29).
+C: RETR
+S: <closed>
+C: CWD /home/{user}
+S: <closed>
+C: RMD /home/{user}/qsftp
+# error: [WinError 10053] An established connection was aborted by the software in your host machine
+C: QUIT

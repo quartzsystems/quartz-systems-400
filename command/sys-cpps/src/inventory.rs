@@ -497,6 +497,10 @@ pub const JOB_SITE: &[&str] = &[
     "SNDTCPSPLF",
     "LPR",
     "SNDSMTPEMM",
+    // --- FTP (command/ftp.rs, net/ftp)
+    "CHGFTPA",
+    "FTP",
+    "STRTCPFTP",
     // --- DDM and DRDA (command/ddm.rs)
     "ADDRDBDIRE",
     "CHGRDBDIRE",

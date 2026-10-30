@@ -116,6 +116,9 @@ pub struct System {
     pub jobq_attach: std::collections::BTreeMap<String, String>,
     /// Jobs `ENDJOB` asked to end, and whether `*IMMED`.
     pub end_requests: std::collections::BTreeMap<u32, bool>,
+    /// Jobs that read their own end requests (server jobs no monitor
+    /// started): a monitor leaves those requests to them.
+    pub self_ending: std::collections::BTreeSet<u32>,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
     /// Every spooled file (storage service).
@@ -176,6 +179,7 @@ impl System {
             pending: std::collections::BTreeMap::new(),
             jobq_attach: std::collections::BTreeMap::new(),
             end_requests: std::collections::BTreeMap::new(),
+            self_ending: std::collections::BTreeSet::new(),
             sbs: std::collections::BTreeMap::new(),
             pools: wm::pools::PoolTable::default(),
             break_alloc: std::collections::HashMap::new(),

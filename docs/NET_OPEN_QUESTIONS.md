@@ -837,3 +837,63 @@ is from IBM's documentation and unverified.
     structure (0: right after its address). Failures are `TCP1A4C` with
     the reason; IBM's identifiers were not captured. The file is sent as
     it is stored.
+
+
+## FTP (2026-10-30)
+
+From the 186 sessions recorded on pub400 (V7R5M0) for the replay
+(`tools/conformance/ftp/`) and what they could not settle; docs/FTP.md
+has the dialect as built.
+
+1. **The job CCSID of the oracle's account.** `TYPE E` and files `STOR`
+   makes map Latin-1 X'AC' to X'BA', which is CCSID 273 (or 500), not
+   37; the replay runs with job CCSID 273. Which of the two pub400 uses
+   (and whether `*CALC` follows the job or `QCCSID`) needs `DSPJOB` of a
+   session job, which FTP cannot show.
+2. **Binary files `STOR` makes.** A binary `STOR` into a file that is
+   not there makes records of 512 bytes padded with nulls (256 and 70000
+   bytes both show it). Whether IBM's rule is "512" or "the next power of
+   two up to a limit" needs a longer upload than the account's library
+   should take.
+3. **Member sizes.** IBM's listings count two line-end bytes a record
+   for data members too; the IFS's `stat` (docs/IFS.md) counts them for
+   source members only, so the server converts. The IFS should decide
+   which is right for `st_size`.
+4. **Empty save file size.** IBM lists an empty save file as 24576 bytes
+   (its allocation); ours is as long as its data (0). Left out of the
+   replay (`gaps.txt`).
+5. **Save file data.** IBM refuses data that is not a save file with
+   `CPE3101` at close; ours checks only that the data is whole 528-byte
+   records. A real save file's layout check waits for `SAVOBJ`/`RSTOBJ`.
+6. **`MODE B` and `STRU R`.** IBM accepts both and then refuses a stream
+   file transfer in them (`504`); whether block mode works for members
+   could not be recorded (the recorder speaks stream mode only). Ours
+   moves members in block mode.
+7. **Profile swap.** IBM's session job runs as `QTCP` with the user as
+   current user. Ours swaps with `QSYGETPH`/`QWTSETP` (the security
+   API), so `WRKACTJOB` shows `QTCP` and the work is the user's. A
+   profile a logon exit program names without a password needs `QTCP` to
+   have `*USE` to it (`QSYGETPH *NOPWD`): IBM documents no such rule.
+8. **`USER` after `REIN`, `PASS` without `USER`.** Recorded (`501`,
+   `503`); a failed `PASS` was not, so as not to count sign-on failures
+   against the account: `530` is RFC 959's and what IBM documents.
+9. **Commands that closed pub400's connection.** `MKD`, `RMD`, `DELE`,
+   `RNFR` and `RETR` without a name, and `PORT 1,2,3`, ended the session
+   (pub400's front end, or the server); ours answers `501`. The replay
+   stops comparing at the close.
+10. **`PBSZ` without TLS.** IBM answers `421 ... connection closed` and
+    keeps the session; ours answers `421` and keeps it too.
+11. **Certificates.** `AUTH TLS` and port 990 should present the
+    certificate DCM assigns to `QIBM_QTMF_FTP_SERVER`
+    (`ftp::server::server_tls` reads it); the session job uses the
+    system's self-signed certificate until the storage service answers an
+    application ID's identity. The `FTP` client takes server
+    certificates as they come until it can read the trust store
+    (`QIBM_QTMF_FTP_CLIENT`).
+12. **The client's own display.** IBM's `FTP` at a display runs a
+    full-screen session; ours reads `INPUT` (batch form) only and says so
+    when it is not overridden.
+13. **`CHGFTPA` keywords.** The V7R5M0 command has no `SSLCFG`,
+    `DTACNNPORT` or `RMTEXTPTH` (the Phase 10 spec names some): TLS is
+    DCM's application ID; data ports are `DTACNNPORT` in the server
+    table's bag, which no command sets yet.

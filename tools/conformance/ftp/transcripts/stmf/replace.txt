@@ -1,0 +1,55 @@
+# session: stmf/replace
+# source: pub400 V7R5M0, port 21, 2026-10-30
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: MKD /home/{user}/qsftp
+S: 250  Created directory /home/{user}/qsftp
+C: CWD /home/{user}/qsftp
+S: 250 "/home/{user}/qsftp" is current directory.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,254,222).
+C: STOR r.txt
+S: 150 Sending file to /home/{user}/qsftp/r.txt
+D> 54 bytes sent
+U| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+U| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,253,93).
+C: STOR r.txt
+S: 150 Sending file to /home/{user}/qsftp/r.txt
+D> 17 bytes sent
+U| 616c7068610a626574610a67616d6d610a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,36,135).
+C: RETR r.txt
+S: 150 Retrieving file /home/{user}/qsftp/r.txt
+D: 17 bytes
+D| alpha
+D| beta
+D| gamma
+S: 226 File transfer completed successfully.
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,203,254).
+C: LIST r.txt
+S: 125 List started.
+D: 61 bytes
+D| -rwxrwx---   1 {user} 0             17 Oct 30 05:06 r.txt
+S: 250 List completed.
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: DELE /home/{user}/qsftp/r.txt
+S: 250  Deleted file /home/{user}/qsftp/r.txt
+C: RMD /home/{user}/qsftp
+S: 250 Deleted directory /home/{user}/qsftp
+C: QUIT
+S: 221 QUIT subcommand received.

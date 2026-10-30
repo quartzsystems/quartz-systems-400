@@ -427,6 +427,8 @@ dependencies = [
  "db",
  "dds",
  "dspf",
+ "ftp",
+ "ifs",
  "ile",
  "jrn",
  "lpd",
@@ -437,11 +439,13 @@ dependencies = [
  "qir",
  "qrpgrt",
  "qsname",
+ "release",
  "rpg-oracle",
  "rpgc",
  "rpgfront",
  "sec",
  "serde_json",
+ "servers",
  "spool",
  "sql",
  "store",
@@ -1021,6 +1025,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
+]
+
+[[package]]
+name = "ftp"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "certs",
+ "ifs",
+ "regfac",
+ "release",
+ "sec",
+ "servers",
+ "thiserror",
+ "tls",
+ "tracing",
 ]
 
 [[package]]
@@ -2009,6 +2029,7 @@ dependencies = [
  "dfu",
  "dspf",
  "edtf",
+ "ftp",
  "hostserver",
  "hostsvr",
  "ifs",
