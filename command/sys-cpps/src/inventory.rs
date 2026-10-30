@@ -433,6 +433,14 @@ pub const JOB_SITE: &[&str] = &[
     "STRTCPSVR",
     "ENDTCPSVR",
     "CHGTELNA",
+    // --- DDM and DRDA (command/ddm.rs)
+    "ADDRDBDIRE",
+    "CHGRDBDIRE",
+    "RMVRDBDIRE",
+    "WRKRDBDIRE",
+    "CRTDDMF",
+    "CHGDDMF",
+    "CHGDDMTCPA",
     "STRSBS",
     "WRKJOB",
     // --- TCP/IP: STRTCP, ENDTCP and the CFGTCP menus (work/qsjob/src/command/tcp.rs)

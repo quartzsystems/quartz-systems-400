@@ -1,0 +1,24 @@
+                   Change DDM TCP/IP Attributes (CHGDDMTCPA)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Autostart server . . . . . . . .   *SAME         *SAME, *NO, *YES              
+ Lowest authentication method . .   *SAME         *SAME, *USRID, *VLDONLY, *... 
+ Lowest encryption algorithm  . .   *SAME         *SAME, *DES, *AES             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

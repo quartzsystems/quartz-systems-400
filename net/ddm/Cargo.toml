@@ -1,0 +1,26 @@
+[package]
+name = "ddm"
+description = "QS/400 DDM and DRDA: the datastream, FD:OCA data, security mechanisms, the application server and requester, the RDB directory and DDM files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+hostsvr = { path = "../hostsvr", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+des = "0.9.0"
+getrandom = "0.4.3"
+thiserror.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+
+[lints]
+workspace = true

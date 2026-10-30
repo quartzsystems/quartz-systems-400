@@ -748,6 +748,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ddm"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "db",
+ "dds",
+ "des",
+ "getrandom 0.4.3",
+ "hostsvr",
+ "qdecimal",
+ "qsname",
+ "sql",
+ "store",
+ "thiserror",
+]
+
+[[package]]
 name = "dds"
 version = "0.1.0"
 dependencies = [
@@ -1906,6 +1924,7 @@ dependencies = [
  "cmd",
  "cmncfg",
  "dbg",
+ "ddm",
  "dds",
  "dfu",
  "dspf",
@@ -2928,6 +2947,7 @@ dependencies = [
  "anyhow",
  "ccsid",
  "clap",
+ "ddm",
  "hostsvr",
  "regex",
  "tn5250",

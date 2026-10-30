@@ -81,6 +81,8 @@ members = [
     "net/cmncfg",
 
     "net/tcpcfg",
+
+    "net/ddm",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

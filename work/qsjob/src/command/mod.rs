@@ -11,6 +11,7 @@
 //! to whoever typed the line. `svc.` lines reach the storage service's
 //! own console table (the development commands).
 
+pub mod ddm;
 pub mod jobsite;
 pub mod natives;
 pub mod prompt;

@@ -68,6 +68,8 @@ const PROMPTED: &[(&str, &str)] = &[
     ("strdbg", "STRDBG PGM(QGPL/HELLO)"),
     ("dspjob", "DSPJOB"),
     ("chglibl", "CHGLIBL LIBL(QGPL QTEMP)"),
+    ("addrdbdire", "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)"),
+    ("chgddmtcpa", "CHGDDMTCPA"),
 ];
 
 fn source() -> MemSource {

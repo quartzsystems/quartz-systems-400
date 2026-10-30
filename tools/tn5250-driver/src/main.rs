@@ -6,13 +6,16 @@
 //! under QEMU, to the primary oracle or to pub400.com, negotiates like
 //! a real emulator, runs a keystroke script, and captures or compares
 //! screens. `ftp` moves files with the oracle's FTP server;
-//! `hostsvr-trace` records a client's host server traffic.
+//! `hostsvr-trace` records a client's host server traffic; `ddm-trace`
+//! records DDM/DRDA traffic on port 446.
 
 use std::path::PathBuf;
 
 use anyhow::{Context as _, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
-use tn5250_driver::{Connect, Encoding, ModelArg, ScriptOptions, Target, env, ftp, hostsvr, session};
+use tn5250_driver::{
+    Connect, Encoding, ModelArg, ScriptOptions, Target, ddm, env, ftp, hostsvr, session,
+};
 
 /// Which system to talk to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
@@ -68,6 +71,52 @@ enum Cmd {
     Env,
     /// Run a client through a recording proxy of the host server ports.
     HostsvrTrace(HostsvrArgs),
+    /// Record DDM/DRDA traffic through a proxy of port 446.
+    DdmTrace(DdmArgs),
+}
+
+/// Arguments of `ddm-trace`.
+#[derive(clap::Args, Debug, Clone)]
+struct DdmArgs {
+    /// The system the proxy forwards to.
+    #[arg(long, value_enum, default_value_t = TargetArg::Pub400)]
+    target: TargetArg,
+    /// Where the trace goes (`OUT/<scenario>.trace`).
+    #[arg(long)]
+    out: PathBuf,
+    /// The scenario's name.
+    #[arg(long)]
+    scenario: String,
+    /// The DDM port.
+    #[arg(long, default_value_t = 446)]
+    port: u16,
+    /// Ports forwarded without recording (comma separated).
+    #[arg(long, value_delimiter = ',')]
+    forward: Vec<u16>,
+    /// Milliseconds open connections get to close.
+    #[arg(long, default_value_t = 3000)]
+    settle: u64,
+    /// The RDB name the driver's requester connects to.
+    #[arg(long, default_value = "PUB400")]
+    rdb: String,
+    /// The `SECMEC` to ask for first.
+    #[arg(long)]
+    secmec: Option<u16>,
+    /// A statement for the driver's requester (repeatable).
+    #[arg(long)]
+    sql: Vec<String>,
+    /// The package collection (`{user}` stands for the user).
+    #[arg(long)]
+    collection: Option<String>,
+    /// Bind the package with this many dynamic sections first.
+    #[arg(long, default_value_t = 0)]
+    bind: u16,
+    /// Only ask for this `SECMEC` and report what the server offers.
+    #[arg(long)]
+    offer: Option<u16>,
+    /// An external client instead (after `--`).
+    #[arg(last = true)]
+    command: Vec<String>,
 }
 
 /// Arguments of `hostsvr-trace`.
@@ -222,6 +271,24 @@ fn main() -> Result<()> {
                 command: args.command,
             };
             hostsvr::run(&run).map(|_| ())
+        }
+        Cmd::DdmTrace(args) => {
+            let run = ddm::TraceRun {
+                target: args.target.into(),
+                out: args.out,
+                scenario: args.scenario,
+                port: args.port,
+                forward: args.forward,
+                settle: std::time::Duration::from_millis(args.settle),
+                rdb: args.rdb,
+                mechanism: args.secmec,
+                sql: args.sql,
+                collection: args.collection,
+                bind: args.bind,
+                offer: args.offer,
+                command: args.command,
+            };
+            ddm::run(&run).map(|_| ())
         }
         Cmd::Env => {
             let e = env::Env::load()?;

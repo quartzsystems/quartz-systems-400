@@ -83,6 +83,13 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         }
         "ENDTCPSVR" => return endtcpsvr(job, host, r),
         "CHGTELNA" => return chgtelna(job, host, r),
+        // --- DDM and DRDA (command/ddm.rs)
+        "ADDRDBDIRE" | "CHGRDBDIRE" | "RMVRDBDIRE" | "WRKRDBDIRE" | "CRTDDMF" | "CHGDDMF"
+        | "CHGDDMTCPA" => {
+            if let Some(res) = super::ddm::run(job, host, r) {
+                return res;
+            }
+        }
         // --- STRDBG screens (devtools/dbg)
         "STRDBG" | "ENDDBG" | "DSPMODSRC" | "ADDBKP" | "RMVBKP" | "DSPBKP" | "STRSRVJOB"
         | "ENDSRVJOB" => {

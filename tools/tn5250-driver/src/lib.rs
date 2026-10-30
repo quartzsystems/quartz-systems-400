@@ -6,6 +6,7 @@
 //! drives QS/400 under QEMU with it, the `tn5250-driver` binary drives
 //! the oracle systems.
 
+pub mod ddm;
 pub mod env;
 pub mod ftp;
 pub mod golden;

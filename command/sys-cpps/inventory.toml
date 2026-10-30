@@ -464,6 +464,31 @@ site = "job"
 site = "job"
 note = "kept in the data area QUSRSYS/QTVTELNA"
 
+# --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
+[cmd.ADDRDBDIRE]
+site = "job"
+note = "the directory is kept in the data area QUSRSYS/QRWRDBDIR"
+
+[cmd.CHGRDBDIRE]
+site = "job"
+
+[cmd.RMVRDBDIRE]
+site = "job"
+
+[cmd.WRKRDBDIRE]
+site = "job"
+
+[cmd.CRTDDMF]
+site = "job"
+note = "a DDM file is kept in the data area QRWDDMF of its library"
+
+[cmd.CHGDDMF]
+site = "job"
+
+[cmd.CHGDDMTCPA]
+site = "job"
+note = "kept in the data area QUSRSYS/QRWDDMTCPA"
+
 [cmd.DLYJOB]
 site = "job"
 
