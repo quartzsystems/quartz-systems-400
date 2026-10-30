@@ -30,6 +30,7 @@ pub fn framework() -> Framework {
     f.register(Box::new(servers::framework::Ntp));
     f.register(Box::new(servers::framework::Lpd));
     f.register(Box::new(servers::framework::Ftp));
+    f.register(Box::new(servers::framework::HostSvr));
     f
 }
 
@@ -108,8 +109,8 @@ impl Env for JobEnv<'_> {
             kind: 'B',
             subsystem: j.subsystem.clone(),
             role: j.role.clone(),
-            jobd: "QSYS/QSYSJOBD".into(),
-            class: "QSYS/QSYSCLS20".into(),
+            jobd: or(&j.jobd, "QSYS/QSYSJOBD"),
+            class: or(&j.class, "QSYS/QSYSCLS20"),
             pool: "*BASE".into(),
             rqsdta: j.rqsdta.clone(),
             ..wm::ctl::Start::default()
@@ -147,6 +148,11 @@ impl Env for JobEnv<'_> {
         }
         self.command(&format!("STRSBS SBSD(QSYS/{name})")).map(|_| ())
     }
+}
+
+/// `value`, or `default` when it is empty.
+fn or(value: &str, default: &str) -> String {
+    if value.is_empty() { default } else { value }.to_string()
 }
 
 /// The text of a value: a number, a name, `LIB/NAME`.
@@ -325,4 +331,30 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
         "CHGFTPA" => chgftpa(host, r),
         _ => return None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn host_daemons_agree_with_the_host_servers() {
+        let ours: Vec<(&str, &str)> = servers::framework::HOST_DAEMONS.to_vec();
+        let theirs: Vec<(&str, &str)> = hostserver::jobs::DAEMONS
+            .iter()
+            .map(|d| (d.name, d.keyword))
+            .collect();
+        assert_eq!(ours, theirs);
+        for d in hostserver::jobs::DAEMONS {
+            let (_, j) = servers::registry::of_job(d.name).expect("in the registry");
+            assert_eq!((j.subsystem, j.role), (d.subsystem, "HOSTSVRD"), "{}", d.name);
+        }
+    }
+
+    #[test]
+    fn hostsvr_is_registered() {
+        assert!(framework().registered().contains(&"*HOSTSVR"));
+        assert_eq!(or("", "QSYS/QSYSJOBD"), "QSYS/QSYSJOBD");
+        assert_eq!(or("QSYS/QZBSJOBD", "QSYS/QSYSJOBD"), "QSYS/QZBSJOBD");
+    }
 }

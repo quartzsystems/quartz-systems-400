@@ -10,10 +10,12 @@
 //! `ServerStarter`.
 
 mod builtin;
+mod hostsvr;
 mod small;
 mod starter;
 
 pub use builtin::{Ftp, HttpAdmin, Standard, Telnet};
+pub use hostsvr::{HOST_DAEMONS, HostSvr};
 pub use small::{Lpd, Ntp};
 pub use starter::Starter;
 
@@ -100,6 +102,10 @@ pub struct JobStart {
     pub role: String,
     /// Request data the role reads (`PORT(2001)`).
     pub rqsdta: String,
+    /// Its job description, `LIB/NAME`; empty for `QSYS/QSYSJOBD`.
+    pub jobd: String,
+    /// Its class, `LIB/NAME`; empty for `QSYS/QSYSCLS20`.
+    pub class: String,
 }
 
 /// What the hooks reach in the job that runs the command.
@@ -188,6 +194,7 @@ pub fn listener_job(spec: &ServerSpec, rqsdta: String) -> Option<JobStart> {
         subsystem: l.subsystem.to_string(),
         role: l.role.to_string(),
         rqsdta,
+        ..JobStart::default()
     })
 }
 

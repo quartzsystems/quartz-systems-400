@@ -44,7 +44,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 | `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2005 TLS | (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
 | `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
-| `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | slot |
+| `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | built (`servers::framework::HostSvr`) |
 | `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | built |
 | `*LPD` | `QTLPD00nnn` (`QTMPLPD`, `QSYSWRK`) | 515 | `CHGLPDA` | `QIBM_QSO_LPD_SERVER` | | built |
 | `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QIBM_QRW_SERVER_DDM_DRDA` | | blocked |

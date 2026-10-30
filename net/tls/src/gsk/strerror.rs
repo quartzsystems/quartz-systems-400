@@ -112,7 +112,7 @@ pub fn strerror(rc: Rc) -> &'static str {
         GSK_IBMI_ASYNCHRONOUS_RECV => "The receive will complete asynchronously.",
         GSK_IBMI_ASYNCHRONOUS_SEND => "The send will complete asynchronously.",
         GSK_IBMI_ERROR_INVALID_OVERLAPPEDIO_T => "The overlapped I/O structure is not valid.",
-        GSK_IBMI_ERROR_INVALID_IOCOMPLETIONPORT => "The I/O completion port is not valid.",
+        GSK_IBMI_ERROR_INVALID_IOCOMPLETIONPORT => "That I/O completion port cannot be used.",
         GSK_IBMI_ERROR_BAD_SOCKET_DESCRIPTOR => "The socket descriptor is not valid.",
         GSK_IBMI_ERROR_CERTIFICATE_REVOKED => "The peer's certificate has been revoked.",
         GSK_IBMI_ERROR_CRL_INVALID => "The certificate revocation list is not valid.",

@@ -59,6 +59,24 @@ deny = [
     { crate = "libsqlite3-sys", reason = "links sqlite" },
     { crate = "curl-sys", reason = "links libcurl" },
     { crate = "libgit2-sys", reason = "links libgit2" },
+    # Existing shell utilities: the QSH utilities are written from
+    # scratch (qsh-utils). Every uutils `uu_*` crate depends on
+    # `uucore`, so banning it bans them all;
+    # tools/conformance/tests/lockfile.rs also rejects the `uu_` prefix.
+    { crate = "coreutils", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "uucore", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "uucore_procs", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "uutests", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "findutils", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "diffutils", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "procps", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "sed", reason = "uutils: QSH utilities are written from scratch" },
+    { crate = "busybox", reason = "busybox-style: QSH utilities are written from scratch" },
+    { crate = "rust-busybox", reason = "busybox-style: QSH utilities are written from scratch" },
+    { crate = "toybox", reason = "busybox-style: QSH utilities are written from scratch" },
+    { crate = "nu-command", reason = "a shell's utility set: QSH utilities are written from scratch" },
+    { crate = "brush-builtins", reason = "a shell's utility set: QSH utilities are written from scratch" },
+    { crate = "brush-core", reason = "an existing shell: QSH is written from scratch" },
 ]
 
 [sources]

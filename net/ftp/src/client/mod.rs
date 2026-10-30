@@ -334,7 +334,7 @@ impl<H: Host, C: Console> Client<H, C> {
     /// client's naming format.
     fn after_login(&mut self) {
         if let Some(r) = self.raw("SYST") {
-            self.os400 = r.lines.join(" ").contains("OS/400");
+            self.os400 = r.lines.join(" ").contains(crate::SYST_SYSTEM);
         }
         // Paths work wherever the server stands; library names only
         // in a library, so only format 1 is sent at sign-on.

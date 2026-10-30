@@ -1067,7 +1067,10 @@ The names, the user `QUSER` and the subsystems are pub400's
 `prestart-jobs.txt`, `netstat-listen-jobs.txt`); `hostserver::jobs`
 holds the table. `STRHOSTSVR SERVER(*ALL ...)` starts the daemons (role
 `HOSTSVRD`) as children of the job that runs it, as `STRTCPSVR` starts
-the telnet server; `QSTRUP` runs `STRHOSTSVR SERVER(*ALL)`.
+the telnet server; `STRTCPSVR SERVER(*HOSTSVR)` and `ENDTCPSVR` do the
+same through the servers framework (`servers::framework::HostSvr`,
+whose `HOST_DAEMONS` a qsjob test keeps equal to `hostserver::jobs`);
+`QSTRUP` runs `STRHOSTSVR SERVER(*ALL)`.
 `ENDHOSTSVR` ends them with `ENDJOB`. A daemon binds its plain and TLS
 ports on all addresses (so `NETSTAT` finds the job through the
 socket's owner) and gives every connection to its server's prestart

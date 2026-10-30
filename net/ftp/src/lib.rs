@@ -41,3 +41,7 @@ pub mod xlate;
 pub use host::{CmdFail, DbFile, Host, Profile, Refused};
 pub use reply::Reply;
 pub use session::{Config, Flow, Session};
+
+/// The `SYST` reply's system sentence: IBM's own, which clients test
+/// for to choose the server's dialect (interface, not prose).
+pub const SYST_SYSTEM: &str = "OS/400 is the remote operating system.";

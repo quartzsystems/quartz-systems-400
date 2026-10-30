@@ -1070,6 +1070,20 @@ struct Place<'a> {
     peer: &'a str,
 }
 
+/// `QPWDLVL`, a binary system value (4 bytes, big-endian).
+fn password_level(link: &mut Link) -> Option<u8> {
+    let v = link.sysval("QPWDLVL".into()).ok().flatten()?;
+    level_of(v.kind, &v.data)
+}
+
+fn level_of(kind: sysapi::SysValKind, data: &[u8]) -> Option<u8> {
+    let n = match kind {
+        sysapi::SysValKind::Bin => i32::from_be_bytes(data.get(..4)?.try_into().ok()?),
+        sysapi::SysValKind::Char => ccsid::from_ebcdic(data).trim().parse().ok()?,
+    };
+    u8::try_from(n).ok()
+}
+
 /// Show the sign-on display until a sign-on is accepted. A secondary
 /// job's (`cancel`) leaves with F3 or F12; the jobs' events that arrive
 /// meanwhile wait in `stash`.
@@ -1087,12 +1101,7 @@ fn sign_on_display(
     stash: &mut VecDeque<Ev>,
 ) -> Result<SignOn, String> {
     let subsystem = subsystem_for(link, device).map_or_else(|| "QINTER".into(), |(s, _)| s);
-    let long = link
-        .sysval("QPWDLVL".into())
-        .ok()
-        .flatten()
-        .and_then(|v| ccsid::from_ebcdic(&v.data).trim().parse::<u8>().ok())
-        .is_some_and(|l| l >= 2);
+    let long = password_level(link).is_some_and(|l| l >= 2);
     let mut m = ScreenModel::new(model.wide());
     let mut message = message.to_string();
     // The sign-on is the shipped display file, QDSIGNON2 from password
@@ -1690,6 +1699,16 @@ fn start_job(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn password_level_is_binary() {
+        use sysapi::SysValKind;
+        assert_eq!(level_of(SysValKind::Bin, &2i32.to_be_bytes()), Some(2));
+        assert_eq!(level_of(SysValKind::Bin, &0i32.to_be_bytes()), Some(0));
+        assert_eq!(level_of(SysValKind::Bin, &[0, 0]), None);
+        // Read as text, the binary 3 was no number at all.
+        assert_eq!(level_of(SysValKind::Char, &ccsid::to_ebcdic("3").unwrap()), Some(3));
+    }
 
     #[test]
     fn port_from_request_data() {

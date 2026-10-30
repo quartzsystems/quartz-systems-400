@@ -117,7 +117,7 @@ pub fn help(arg: &str) -> Reply {
             214,
             vec![
                 "SITE NAMEFMT <0 or 1>: library names (0) or paths (1).".into(),
-                "SITE LISTFMT <0 or 1>: listings in the IBM i layout (0) or the Unix one (1).".into(),
+                "SITE LISTFMT <0 or 1>: listings in the library layout (0) or the Unix one (1).".into(),
                 "SITE TRIM <0 or 1>: drop trailing blanks of records sent (1).".into(),
                 "SITE NULLFLDS <0 or 1>: allow files with null-capable fields (1).".into(),
                 "SITE CRTCCSID <*CALC, *USER, *SYSVAL or 1-65533>: the CCSID of files STOR creates.".into(),
@@ -181,7 +181,8 @@ impl<H: Host> Session<H> {
         Reply::new(
             215,
             format!(
-                " OS/400 is the remote operating system. The TCP/IP version is \"{}\".",
+                " {} The TCP/IP version is \"{}\".",
+                crate::SYST_SYSTEM,
                 self.cfg.release
             ),
         )

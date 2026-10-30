@@ -191,3 +191,31 @@ fn ftp_starts_its_listener() {
     assert!(env.running.is_empty());
     assert_eq!(fw.end(&mut env, &req, false).unwrap(), "TCP1A09 FTP server not active.");
 }
+
+#[test]
+fn host_servers_start_every_daemon() {
+    let mut fw = Framework::standard();
+    fw.register(Box::new(servers::framework::HostSvr));
+    let mut env = Fake::default();
+    let r = fw.start(&mut env, &Request::new("*HOSTSVR")).unwrap();
+    assert_eq!(r, "TCP1A07 HOSTSVR server starting.");
+    assert_eq!(env.running.len(), 8);
+    let db = env.running.iter().find(|j| j.name == "QZDASRVSD").unwrap();
+    assert_eq!(
+        (db.user.as_str(), db.subsystem.as_str(), db.role.as_str(), db.rqsdta.as_str()),
+        ("QUSER", "QSERVER", "HOSTSVRD", "*DATABASE")
+    );
+    assert_eq!((db.jobd.as_str(), db.class.as_str()), ("QSYS/QZBSJOBD", "QGPL/QCASERVR"));
+    assert_eq!(fw.start(&mut env, &Request::new("*HOSTSVR")).unwrap(), "TCP1A08 HOSTSVR server already started.");
+    // One daemon ended by hand comes back alone.
+    env.running.retain(|j| j.name != "QZSOSGND");
+    fw.start(&mut env, &Request::new("*HOSTSVR")).unwrap();
+    assert_eq!(env.running.len(), 8);
+    assert_eq!(env.running.last().unwrap().rqsdta, "*SIGNON");
+    assert_eq!(fw.end(&mut env, &Request::new("*HOSTSVR"), true).unwrap(), "TCP1A0A HOSTSVR server ending.");
+    assert!(env.running.is_empty());
+    assert_eq!(env.ended.len(), 8);
+    assert_eq!(fw.end(&mut env, &Request::new("*HOSTSVR"), true).unwrap(), "TCP1A09 HOSTSVR server not active.");
+    // Autostart off by default: STRTCP leaves them down.
+    assert_eq!(fw.start(&mut env, &Request::autostart("*HOSTSVR")).unwrap(), "");
+}
