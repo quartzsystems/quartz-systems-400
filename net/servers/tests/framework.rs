@@ -18,10 +18,21 @@ struct Fake {
     running: Vec<JobStart>,
     subsystems: Vec<String>,
     ended: Vec<String>,
+    /// Looks an ended job still answers as active, like a server job
+    /// that has been told to end and has not yet gone.
+    lag: u32,
+    ending: Vec<(String, u32)>,
 }
 
 impl Env for Fake {
     fn active(&mut self, job: &str) -> bool {
+        if let Some(i) = self.ending.iter().position(|(n, _)| n == job) {
+            self.ending[i].1 -= 1;
+            if self.ending[i].1 == 0 {
+                self.ending.remove(i);
+            }
+            return true;
+        }
         self.running.iter().any(|j| j.name == job)
     }
     fn start_job(&mut self, job: &JobStart) -> Result<(), String> {
@@ -34,6 +45,9 @@ impl Env for Fake {
     fn end_job(&mut self, job: &str, _immediate: bool) -> Result<(), String> {
         self.running.retain(|j| j.name != job);
         self.ended.push(job.to_string());
+        if self.lag > 0 {
+            self.ending.push((job.to_string(), self.lag));
+        }
         Ok(())
     }
     fn attrs(&mut self, server: &str) -> ServerAttrs {
@@ -173,6 +187,25 @@ fn strtcp_and_endtcp_through_the_starter() {
     let e = end_all(&mut s, &every, true);
     assert_eq!(e.len(), 1);
     assert_eq!(e[0].1, Ok("TCP1A0A TELNET server ending.".to_string()));
+}
+
+#[test]
+fn strtcp_right_after_endtcp_restarts_telnet() {
+    // ENDJOB reaches a server job on its next look at the subsystem's
+    // state; ENDTCP waits for it, so the STRTCP that follows starts it.
+    let fw = Framework::standard();
+    let mut env = Fake {
+        lag: 3,
+        ..Fake::default()
+    };
+    let telnet = list(&["*TELNET"]);
+    let mut s = servers::framework::Starter::new(&fw, &mut env);
+    start_all(&mut s, &telnet);
+    let e = end_all(&mut s, &telnet, true);
+    assert_eq!(e[0].1, Ok("TCP1A0A TELNET server ending.".to_string()));
+    let r = start_all(&mut s, &telnet);
+    assert_eq!(r[0].1, Ok("TCP1A07 TELNET server starting.".to_string()));
+    assert_eq!(env.running.len(), 1);
 }
 
 #[test]

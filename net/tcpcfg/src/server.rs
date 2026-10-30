@@ -7,6 +7,13 @@
 //! [`ServerStarter`], which the TCP servers framework implements
 //! (`servers::framework::Starter`).
 
+use std::time::Duration;
+
+/// How long `ENDTCP` waits for the servers it ended to go.
+const END_WAIT: Duration = Duration::from_secs(30);
+/// How often it looks.
+const END_POLL: Duration = Duration::from_millis(100);
+
 /// Starts and ends the servers.
 pub trait ServerStarter {
     /// Start a server (`*TELNET`, `*FTP`, a user-defined `*MYSVR`); the
@@ -16,6 +23,10 @@ pub trait ServerStarter {
     fn end(&mut self, server: &str, immediate: bool) -> Result<String, String>;
     /// Whether a server is running.
     fn active(&mut self, server: &str) -> bool;
+    /// Wait `d` before looking again whether an ended server is gone.
+    fn pause(&mut self, d: Duration) {
+        std::thread::sleep(d);
+    }
 }
 
 /// What starting the autostart servers did: one line per server.
@@ -33,7 +44,10 @@ pub fn start_all(starter: &mut dyn ServerStarter, servers: &[String]) -> Vec<(St
         .collect()
 }
 
-/// End every running server of `servers`.
+/// End every running server of `servers`, then wait (up to
+/// [`END_WAIT`]) for their jobs to go: a server job ends on its own
+/// time, and one still running would make the next `STRTCP` take it as
+/// started and skip it.
 pub fn end_all(
     starter: &mut dyn ServerStarter,
     servers: &[String],
@@ -45,6 +59,11 @@ pub fn end_all(
             out.push((s.clone(), starter.end(s, immediate)));
         }
     }
+    let mut waited = Duration::ZERO;
+    while waited < END_WAIT && out.iter().any(|(s, r)| r.is_ok() && starter.active(s)) {
+        starter.pause(END_POLL);
+        waited += END_POLL;
+    }
     out
 }
 
@@ -55,6 +74,10 @@ mod tests {
     #[derive(Default)]
     struct Fake {
         running: Vec<String>,
+        /// Looks an ended server still answers as active.
+        ending: Vec<(String, u32)>,
+        lag: u32,
+        pauses: u32,
     }
 
     impl ServerStarter for Fake {
@@ -67,10 +90,23 @@ mod tests {
         }
         fn end(&mut self, server: &str, _: bool) -> Result<String, String> {
             self.running.retain(|s| s != server);
+            if self.lag > 0 {
+                self.ending.push((server.into(), self.lag));
+            }
             Ok(format!("{server} ending"))
         }
         fn active(&mut self, server: &str) -> bool {
+            if let Some(i) = self.ending.iter().position(|(s, _)| s == server) {
+                self.ending[i].1 -= 1;
+                if self.ending[i].1 == 0 {
+                    self.ending.remove(i);
+                }
+                return true;
+            }
             self.running.iter().any(|s| s == server)
+        }
+        fn pause(&mut self, _: Duration) {
+            self.pauses += 1;
         }
     }
 
@@ -84,5 +120,22 @@ mod tests {
         let e = end_all(&mut f, &list, false);
         assert_eq!(e.len(), 1);
         assert!(f.running.is_empty());
+    }
+
+    #[test]
+    fn endtcp_waits_for_ending_servers() {
+        // The server job takes a while to go after it is told to end:
+        // STRTCP right after ENDTCP must still start it.
+        let mut f = Fake {
+            lag: 5,
+            ..Fake::default()
+        };
+        let list = vec!["*TELNET".to_string()];
+        start_all(&mut f, &list);
+        let e = end_all(&mut f, &list, true);
+        assert_eq!(e.len(), 1);
+        assert!(f.pauses > 0, "ENDTCP returned while the server was still ending");
+        let r = start_all(&mut f, &list);
+        assert_eq!(r[0].1, Ok("*TELNET starting".to_string()));
     }
 }
