@@ -740,3 +740,20 @@ fn updates_deletes_and_errors() {
     assert_eq!(kinds, ["F JM", "R PT", "R PT", "R UB", "R UP", "R DL"]);
     assert_eq!(entries[1].job.number, 1);
 }
+
+#[test]
+fn an_sql_table_has_no_size_limit() {
+    // CRTPF's default SIZE fills at 13,000 records; an SQL table is
+    // SIZE(*NOMAX).
+    let mut db = Db::new();
+    db.ok("CREATE TABLE qstest/big (k INTEGER NOT NULL)");
+    let mut t = db.store.begin().unwrap();
+    let id = db
+        .ctx
+        .resolve_file(&mut t, &sql::ast::ObjectName::new("BIG"))
+        .unwrap();
+    let size = db::file::describe(&mut t, id).unwrap().attr.size;
+    t.abort();
+    assert_eq!(size, db::file::Size::NOMAX);
+    assert_eq!(size.max_records(), 0);
+}

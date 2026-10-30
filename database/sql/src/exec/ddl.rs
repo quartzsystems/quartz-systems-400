@@ -259,6 +259,8 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
                 "SQL table {}",
                 t.name.name.value.chars().take(40).collect::<String>()
             ),
+            // An SQL table has no size limit: SIZE(*NOMAX).
+            size: file::Size::NOMAX,
             ..CreateFileOpts::default()
         },
     )?;
