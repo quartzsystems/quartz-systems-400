@@ -39,9 +39,15 @@ pub(super) fn reserved(keyl: &KeyList, limit: usize, shown: usize) -> usize {
         .keys
         .iter()
         .filter(|k| !k.text.trim().is_empty())
-        .map(|k| k.text.trim().chars().count())
+        .map(|k| bare(&k.text).chars().count())
         .collect();
     layout::flow(&widths, 2, limit).len().clamp(shown, 2)
+}
+
+/// A key's text without the blanks around it; a non-breaking blank at
+/// its end stays, holding the next key at the column the system shows.
+fn bare(text: &str) -> &str {
+    text.trim_matches(|c: char| c.is_whitespace() && c != '\u{a0}')
 }
 
 /// The texts of the set to show: the key list is cut into sets at
@@ -52,7 +58,7 @@ fn set(ctx: &Ctx, keyl: &KeyList) -> Vec<String> {
         .keys
         .iter()
         .filter(|k| !k.text.trim().is_empty() && ctx.cond(k.cond.as_deref()))
-        .map(|k| (&k.action, k.text.trim().to_string()))
+        .map(|k| (&k.action, bare(&k.text).to_string()))
         .collect();
     let Some(first) = visible.iter().position(|(a, _)| **a == Action::MoreKeys) else {
         return visible.into_iter().map(|(_, t)| t).collect();

@@ -24,10 +24,14 @@ fn every_identifier_is_described() {
 #[test]
 fn oracle_identifiers_keep_their_layouts() {
     let toml = read("../../runtime/msgf/msgs/qtcpmsg.toml");
+    // QSYS/QTCPMSG itself where it was captured (the PING and
+    // TRACEROUTE identifiers), else QTCP/QTCPMSGF.
+    let qsys = read("../../tools/conformance/oracle/net/pub400/messages-qtcpmsg-tools.txt");
     let oracle = read("../../tools/conformance/oracle/net/pub400/messages-tcp.txt");
     for block in toml.split("[[msg]]").skip(1) {
         let id = block.split('"').nth(1).unwrap();
-        let Some(line) = oracle.lines().find(|l| l.starts_with(&format!("{id}|"))) else {
+        let mut lines = qsys.lines().chain(oracle.lines());
+        let Some(line) = lines.find(|l| l.starts_with(&format!("{id}|"))) else {
             continue;
         };
         let f: Vec<&str> = line.split('|').collect();
@@ -37,6 +41,9 @@ fn oracle_identifiers_keep_their_layouts() {
             f[3].split('&')
                 .filter(|s| !s.is_empty())
                 .map(|s| s.split_once(' ').unwrap().1.trim().to_string())
+                // The message file has no unsigned binary or varying
+                // quoted fields: the signed and plain forms stand in.
+                .map(|t| t.replace("*UBIN", "*BIN").replace("*QTDCHAR *VARY", "*CHAR *VARY"))
                 .collect()
         };
         let ours: Vec<String> = block

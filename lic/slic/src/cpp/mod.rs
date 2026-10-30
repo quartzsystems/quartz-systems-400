@@ -14,6 +14,7 @@
 
 pub(crate) mod clpgm;
 mod cmncmd;
+mod cmntrc;
 mod dbcmd;
 mod direct;
 mod ifscmd;
@@ -61,6 +62,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| objcmd::run(system, name, parms))
             .or_else(|| cmncmd::run(system, name, parms))
+            .or_else(|| cmntrc::run(system, name, parms))
             .or_else(|| sysinfo::run(system, name, parms))
             .or_else(|| crate::stgsvc::regfac::command(system, name, parms))
             .unwrap_or_else(|| bridge(system, e, parms, typed)),

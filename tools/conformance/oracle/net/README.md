@@ -35,6 +35,9 @@ script (`WRKACTJOB OUTPUT(*PRINT)`, `DSPSBSD`, `WRKREGINF OUTPUT(*PRINT)`,
 | `envvars.txt`, `sysvals-net.txt` | `QSYS2.ENVIRONMENT_VARIABLE_INFO`, `QSYS2.SYSTEM_VALUE_INFO` | the system-level environment variables, the network and security system values |
 | `views-columns.txt` | `QSYS2.SYSCOLUMNS` | the columns of the QSYS2 views used here, for QS/400's own catalog |
 | `cl-log.txt` | the remote command server | every command run with its messages: the `PING` messages (`TCP3203`, `TCP3204`, `TCP3215`, `TCP3211`, `TCP3210`, and `TCP3202` for `::1`) and the work-file commands |
+| `nettools-cl-log.txt` | the remote command server, 2026-10-30 | `TRACEROUTE`/`TRCTCPRTE` (`TCP3260` and one `TCP3261` per hop; `OUTPUT(*VERBOSE)` packet dumps as `CPF9897`/`CPF9898`), `PING` timeouts (`TCP3206`), `*QUIET` and `*ESCAPE`, an unknown name (`TCP3202`), `CHKCMNTRC` refused to the profile |
+| `messages-qtcpmsg-tools.txt` | `QSYS2.MESSAGE_FILE_DATA` | `QSYS/QTCPMSG` `TCP32*`, `TCP33*`, `TCP34*`: the PING, ARPING, NDPING and TRACEROUTE message ids with their substitution layouts |
+| `messages-cmntrc.txt` | `QSYS2.MESSAGE_FILE_DATA` | `QCPFMSG` `CPF39A*` to `CPF39D*`, `CPC39*`, `CPI39*`: the communications trace messages (`CPF39A0` to `CPF39A5`, `CPF39AA`, `CPF39B1`, ...) |
 
 `WRKSRVTBLE`, `WRKPCLTBLE` and `WRKTCPHTE OUTPUT(*PRINT)` are refused
 from the remote command server (`CPD0031`); the service, protocol and

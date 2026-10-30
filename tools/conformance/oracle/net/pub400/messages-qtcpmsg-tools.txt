@@ -1,0 +1,44 @@
+-- SELECT MESSAGE_ID, SEVERITY, MESSAGE_DATA_COUNT, MESSAGE_DATA, MESSAGE_TEXT FROM QSYS2.MESSAGE_FILE_DATA WHERE MESSAGE_FILE_LIBRARY = 'QSYS' AND MESSAGE_FILE = 'QTCPMSG' AND (MESSAGE_ID LIKE 'TCP32%' OR MESSAGE_ID LIKE 'TCP33%' OR MESSAGE_ID LIKE 'TCP34%' OR MESSAGE_ID LIKE 'TCP2C%') ORDER BY MESSAGE_ID
+MESSAGE_ID|SEVERITY|MESSAGE_DATA_COUNT|MESSAGE_DATA|MESSAGE_TEXT
+TCP3200|10|0|-|Remote system name too long.
+TCP3202|10|2|&1 *CHAR 48 &2 *CHAR 208|Unknown host, &1.
+TCP3203|0|4|&1 *CHAR 24 &2 *CHAR 15 &3 *CHAR 256 &4 *CHAR 64|Verifying connection to host system &3 at address &4.
+TCP3204|0|2|&1 *CHAR 24 &2 *CHAR 256|Verifying connection to host system &2.
+TCP3205|0|3|&1 *BIN 4 &2 *DEC 11 3 &3 *BIN 4|Connection verification &1 took &2 seconds.  &3 successful connection verifications.
+TCP3206|10|2|&1 *BIN 4 &2 *BIN 4|No response from host within &1 seconds for connection verification &2.
+TCP3207|10|2|&1 *CHAR 15 &2 *CHAR 64|&2 not a valid local internet address.
+TCP3208|10|2|&1 *BIN 4 &2 *BIN 4|Response received after time limit.
+TCP3209|0|0|-|INTNETADR parameter not correct.
+TCP3210|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Connection verification statistics: &1 of &2 successful (&3 %).
+TCP3211|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Round-trip (in milliseconds) min/avg/max = &1/&2/&3.
+TCP3213|0|4|&1 *CHAR 24 &2 *CHAR 15 &3 *CHAR 256 &4 *CHAR 64|Cannot reach remote system
+TCP3215|0|5|&1 *BIN 4 &2 *BIN 2 &3 *UBIN 2 &4 *BIN 2 &5 *CHAR 15|PING reply &2 from &5 took &1 ms. &3 bytes. TTL &4.
+TCP3216|0|5|&1 *BIN 4 &2 *BIN 2 &3 *BIN 2 &4 *BIN 2 &5 *CHAR 15|PING reply &2 from &5 took &1 ms. &3 bytes. TTL &4. (Duplicate)
+TCP3217|0|5|&1 *BIN 4 &2 *BIN 2 &3 *UBIN 2 &4 *BIN 2 &5 *CHAR 64|PING reply &2 from &5 took &1 ms. &3 bytes. hop limit &4.
+TCP3218|0|5|&1 *BIN 4 &2 *BIN 2 &3 *BIN 2 &4 *BIN 2 &5 *CHAR 64|PING reply &2 from &5 took &1 ms. &3 bytes. hop limit &4. (Duplicate)
+TCP3219|10|2|&1 *CHAR 64 &2 *CHAR 5|Address &1 does not match address version format &2.
+TCP3220|0|2|&1 *CHAR 15 &2 *CHAR 10|Sending ARP request to &1 using line &2.
+TCP3221|0|2|&1 *CHAR 20 &2 *BIN 4|Reply from &1 took &2 ms.
+TCP3222|10|2|&1 *CHAR 15 &2 *BIN 4|No response from &1 within &2 seconds.
+TCP3223|10|1|&1 *CHAR 4|Error occurred sending ARP request.  Reason code &1.
+TCP3224|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|ARP request statistics: &1 of &2 successful (&3 %).
+TCP3225|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|ARP request statistics: &1 of &2 successful (&3 %).
+TCP3230|30|0|-|WCHPAL parameter cannot be specified.
+TCP3231|30|0|-|IPv6 address cannot be specified in Subnet mask or Prefix length element
+TCP3232|30|0|-|IPv6 address cannot be specified in the IP address element.
+TCP3234|30|2|&1 *CHAR 10 &2 *CHAR 5|The specified line name does not support IPv6 Neighbor Discovery.
+TCP3235|30|2|&1 *BIN 4 &2 *BIN 4|Error occurred sending Neighbor Solicitation.  Reason code &1.
+TCP3236|0|3|&1 *CHAR 45 &2 *CHAR 10 &3 *CHAR 5|Sending Neighbor Solicitation to &1 using line &2.
+TCP3237|0|2|&1 *CHAR 20 &2 *BIN 4|Reply from &1 took &2 ms.
+TCP3238|10|2|&1 *CHAR 45 &2 *BIN 4|No response from &1 within &2 second.
+TCP3239|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Neighbor Solicitation statistics: &1 of &2 successful (&3 %).
+TCP3240|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Neighbor Solicitation statistics: &1 of &2 successful (&3 %).
+TCP3250|40|0|-|DTAQ parameter value required with OUTPUT(*DTAQ).
+TCP3251|40|0|-|DTAQ parameter not valid when OUTPUT(*MSG) specified.
+TCP3252|40|0|-|Starting range value greater than range limit.
+TCP3260|0|10|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *BIN 4 &5 *CHAR 15 &6 *CHAR 18 &7 *CHAR 32 &8 *CHAR 224 &9 *CHAR 64 &10 *CHAR 64|Probing possible routes to &7&10 using &9 interface.
+TCP3261|0|6|&1 *CHAR 18 &2 *CHAR 32 &3 *CHAR 224 &4 *BIN 2 &5 *CHAR *VARY 2 &6 *CHAR 64|&4 &2&6 &5
+TCP3262|0|4|&1 *BIN 2 &2 *BIN 2 &3 *CHAR 4 &4 *CHAR *VARY 2|&3 &4
+TCP3263|40|7|&1 *CHAR 10 &2 *BIN 2 &3 *UBIN 2 &4 *UBIN 2 &5 *CHAR 16 &6 *QTDCHAR *VARY 2 &7 *CHAR 64|&1 socket operation code &2 failed. Error number &3, &6.
+TCP3264|0|3|&1 *BIN 4 &2 *BIN 4 &3 *CHAR 45|Fragmentation required by &3. Retrying with packet size &2.
+TCP3436|10|0|-|No response from remote host system within open time-out.

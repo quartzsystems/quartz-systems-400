@@ -311,6 +311,12 @@ pub const DIRECT: &[&str] = &[
     "RMVPCLTBLE",
     "ADDNETTBLE",
     "RMVNETTBLE",
+    // --- the communications trace (lic/slic/src/cpp/cmntrc.rs)
+    "STRCMNTRC",
+    "ENDCMNTRC",
+    "DLTCMNTRC",
+    "CHKCMNTRC",
+    "PRTCMNTRC",
 ];
 
 /// Whether a job-site command also runs in the service: a display the
@@ -509,6 +515,13 @@ pub const JOB_SITE: &[&str] = &[
     "WRKSRVTBLE",
     "WRKPCLTBLE",
     "WRKNETTBLE",
+    // --- the network tools (work/qsjob/src/command/nettools.rs; NETSTAT's
+    // panels in work/qsjob/src/panels/tcp/netstat.rs)
+    "NETSTAT",
+    "PING",
+    "VFYTCPCNN",
+    "TRACEROUTE",
+    "TRCTCPRTE",
 ];
 
 /// The CL statements: defined so the analyzer and the prompter know

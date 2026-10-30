@@ -1,0 +1,39 @@
+OK  TRACEROUTE RMTSYS('127.0.0.1')
+    TCP3260 Probing possible routes to 127.0.0.1 using *ANY interface.
+    TCP3261 1 LOOPBACK (127.0.0.1) 0.439 0.032 0.019
+OK  TRACEROUTE RMTSYS('127.0.0.1') OUTPUT(*VERBOSE) NAMELOOKUP(*NO)
+    TCP3260 Probing possible routes to 127.0.0.1 using *ANY interface.
+    CPF9898 20 BYTES FROM 127.0.0.1 TO 127.0.0.1: ICMP ECHO REQUEST (TYPE 8 CODE 0).
+    CPF9897 RECVFROM() DATA (CATEGORY: -1) (40 OF 40 BYTES)
+    CPF9897  4500 0028 0000 0000 0101 0000 7F00 0001
+    CPF9897  7F00 0001 0800 6000 886B 0000 0000 0001
+    CPF9897  B8AE 9996 2F10 8E3D
+    CPF9898 20 BYTES FROM 127.0.0.1 TO 127.0.0.1: ICMP ECHO REPLY (TYPE 0 CODE 0).
+    CPF9897 RECVFROM() DATA (CATEGORY: -4) (40 OF 40 BYTES)
+    CPF9897  4500 0028 DE7A 0000 4001 9E58 7F00 0001
+    CPF9897  7F00 0001 0000 6800 886B 0000 0000 0001
+OK  TRACEROUTE RMTSYS('8.8.8.8') RANGE(1 3) PROBES(2) WAITTIME(1)
+    TCP3260 Probing possible routes to 8.8.8.8 using *ANY interface.
+    TCP3261 1 185.113.5.253   0.387 0.383
+    TCP3261 2 gw-pfalzconnect-c.intersaar.de (213.135.5.145) 5.42 5.33
+    TCP3261 3 peering2.ip.intersaar.de (213.135.1.10) 5.62 5.50
+OK  TRCTCPRTE RMTSYS('127.0.0.1') PROBEPCL(*UDP)
+    TCP3260 Probing possible routes to 127.0.0.1 using *ANY interface.
+    TCP3261 1 LOOPBACK (127.0.0.1) 0.027 0.009 0.007
+OK  PING RMTSYS('192.0.2.1') NBRPKT(2) WAITTIME(1)
+    TCP3204 Verifying connection to host system 192.0.2.1.
+    TCP3206 No response from host within 1 seconds for connection verification 1.
+    TCP3206 No response from host within 1 seconds for connection verification 2.
+    TCP3210 Connection verification statistics: 0 of 2 successful (0 %).
+ERR PING RMTSYS('192.0.2.1') NBRPKT(1) WAITTIME(1) MSGMODE(*QUIET *ESCAPE)
+    TCP3204 Verifying connection to host system 192.0.2.1.
+    TCP3210 Connection verification statistics: 0 of 1 successful (0 %).
+OK  PING RMTSYS('127.0.0.1') NBRPKT(2) MSGMODE(*QUIET)
+    TCP3204 Verifying connection to host system 127.0.0.1.
+    TCP3211 Round-trip (in milliseconds) min/avg/max = 0/0/0.
+    TCP3210 Connection verification statistics: 2 of 2 successful (100 %).
+ERR PING RMTSYS(NO.SUCH.NAME.QS400.INVALID.) NBRPKT(1)
+    TCP3202 Unknown host, NO.SUCH.NAME.QS400.INVALID..
+ERR CHKCMNTRC CFGOBJ(*ALL) CFGTYPE(*ALL)
+    CPD0032 Not authorized to command CHKCMNTRC in library *LIBL.
+    CPF0001 Error found on CHKCMNTRC command.

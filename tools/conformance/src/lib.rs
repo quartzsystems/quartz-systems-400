@@ -20,6 +20,7 @@ mod error;
 mod hostsvr;
 mod ifs;
 mod load;
+mod nettools;
 mod phase2;
 mod phase5;
 mod phase6;

@@ -1739,6 +1739,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nettools"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "libc",
+ "thiserror",
+]
+
+[[package]]
 name = "nu-ansi-term"
 version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1978,6 +1987,7 @@ dependencies = [
  "menus",
  "mi",
  "msgf",
+ "nettools",
  "p256",
  "pdm",
  "print",
@@ -2642,6 +2652,7 @@ dependencies = [
  "mi",
  "msgf",
  "netlink",
+ "nettools",
  "print",
  "qdecimal",
  "qir",

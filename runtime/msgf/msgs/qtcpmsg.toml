@@ -231,6 +231,150 @@ help = "The address must be one of a configured interface."
 vars = ["*CHAR 50"]
 
 [[msg]]
+id = "TCP3200"
+sev = 10
+text = "The remote system name is too long."
+help = "A remote system name may be at most 255 characters."
+
+[[msg]]
+id = "TCP3202"
+sev = 10
+text = "No address is known for host &1."
+help = "The name is neither in the host table nor known to the name servers TCP/IP is configured with (CHGTCPDMN)."
+vars = ["*CHAR 48", "*CHAR 208"]
+
+[[msg]]
+id = "TCP3203"
+sev = 0
+text = "Checking the connection to host &3 at &4."
+help = "Echo requests are going to the address the name resolved to."
+vars = ["*CHAR 24", "*CHAR 15", "*CHAR 256", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3204"
+sev = 0
+text = "Checking the connection to host &2."
+help = "Echo requests are going to the address given."
+vars = ["*CHAR 24", "*CHAR 256"]
+
+[[msg]]
+id = "TCP3205"
+sev = 0
+text = "Packet &1 took &2 seconds; &3 answered so far."
+help = "One echo request's round trip."
+vars = ["*BIN 4", "*DEC 11 3", "*BIN 4"]
+
+[[msg]]
+id = "TCP3206"
+sev = 10
+text = "No reply within &1 seconds to packet &2."
+help = "The remote system, or a router on the way, did not answer the echo request in time. It may be down, unreachable, or dropping echo requests."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "TCP3207"
+sev = 10
+text = "&2 is not a local internet address."
+help = "LCLINTNETA must name an address of one of this system's interfaces, or be *ANY."
+vars = ["*CHAR 15", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3208"
+sev = 10
+text = "A reply came after the wait time."
+help = "The answer arrived too late to count."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "TCP3209"
+sev = 0
+text = "The INTNETADR parameter is not correct."
+help = "With RMTSYS(*INTNETADR), INTNETADR names the address to check."
+
+[[msg]]
+id = "TCP3210"
+sev = 0
+text = "&1 of &2 packets answered (&3 %)."
+help = "How many of the echo requests had a reply."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "TCP3211"
+sev = 0
+text = "Round trip in milliseconds, least/average/most: &1/&2/&3."
+help = "The fastest, average and slowest replies."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "TCP3213"
+sev = 0
+text = "The remote system cannot be reached."
+help = "No route leads to the address."
+vars = ["*CHAR 24", "*CHAR 15", "*CHAR 256", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3215"
+sev = 0
+text = "Reply &2 from &5 in &1 ms: &3 bytes, TTL &4."
+help = "An echo reply arrived."
+vars = ["*BIN 4", "*BIN 2", "*BIN 2", "*BIN 2", "*CHAR 15"]
+
+[[msg]]
+id = "TCP3216"
+sev = 0
+text = "Reply &2 from &5 in &1 ms: &3 bytes, TTL &4. (a duplicate)"
+help = "A second reply to the same echo request arrived."
+vars = ["*BIN 4", "*BIN 2", "*BIN 2", "*BIN 2", "*CHAR 15"]
+
+[[msg]]
+id = "TCP3217"
+sev = 0
+text = "Reply &2 from &5 in &1 ms: &3 bytes, hop limit &4."
+help = "An IPv6 echo reply arrived."
+vars = ["*BIN 4", "*BIN 2", "*BIN 2", "*BIN 2", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3218"
+sev = 0
+text = "Reply &2 from &5 in &1 ms: &3 bytes, hop limit &4. (a duplicate)"
+help = "A second IPv6 reply to the same echo request arrived."
+vars = ["*BIN 4", "*BIN 2", "*BIN 2", "*BIN 2", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3219"
+sev = 10
+text = "&1 is not an address of the version &2 asks for."
+help = "ADRVERFMT(*IP4) takes IPv4 addresses and ADRVERFMT(*IP6) IPv6 ones."
+vars = ["*CHAR 64", "*CHAR 5"]
+
+[[msg]]
+id = "TCP3252"
+sev = 40
+text = "The first hop is past the last hop."
+help = "RANGE's starting TTL must not be greater than its maximum."
+
+[[msg]]
+id = "TCP3260"
+sev = 0
+text = "Tracing the route to &7&10 from &9 interface."
+help = "Probes with a growing TTL go out; each router where one expires answers."
+vars = ["*BIN 4", "*BIN 4", "*BIN 4", "*BIN 4", "*CHAR 15", "*CHAR 18", "*CHAR 32", "*CHAR 224", "*CHAR 64", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3261"
+sev = 0
+text = "&4 &2&6 &5"
+help = "One hop: its number, the node that answered, and each probe's time in milliseconds (* for none)."
+vars = ["*CHAR 18", "*CHAR 32", "*CHAR 224", "*BIN 2", "*CHAR *VARY 2", "*CHAR 64"]
+
+[[msg]]
+id = "TCP3263"
+sev = 40
+text = "&1 socket operation &2 failed: error &3, &6."
+help = "The network tool could not use its socket."
+vars = ["*CHAR 10", "*BIN 2", "*BIN 2", "*BIN 2", "*CHAR 16", "*CHAR *VARY 2", "*CHAR 64"]
+
+[[msg]]
 id = "TCP8007"
 sev = 30
 text = "The line for TCP/IP could not be started."

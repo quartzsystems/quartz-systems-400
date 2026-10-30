@@ -15,6 +15,7 @@ pub mod ddm;
 pub mod hostsvr;
 pub mod jobsite;
 pub mod natives;
+pub mod nettools;
 pub mod prompt;
 pub mod tcp;
 pub mod tcpsvr;

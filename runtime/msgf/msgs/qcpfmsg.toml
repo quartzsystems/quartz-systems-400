@@ -2176,3 +2176,128 @@ id = "CPIB612"
 sev = 0
 text = "The file's CCSID was changed from &1 to &2."
 vars = ["*CHAR 5", "*CHAR 5"]
+
+# The communications trace (STRCMNTRC, ENDCMNTRC, DLTCMNTRC, CHKCMNTRC,
+# PRTCMNTRC): IBM's identifiers, our texts.
+
+[[msg]]
+id = "CPF39A0"
+sev = 0
+text = "Communications trace of &1 type &2 started."
+help = "Frames sent and received on the object's link are being collected."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39A1"
+sev = 0
+text = "Communications trace of &1 type &2 ended."
+help = "The trace no longer collects; its data stays until DLTCMNTRC."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39A2"
+sev = 0
+text = "Communications trace of &1 type &2 deleted."
+help = "The trace and its data are gone."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39A3"
+sev = 0
+text = "Communications trace of &1 type &2 printed."
+help = "The listing is a spooled file of QSYSPRT."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39A4"
+sev = 0
+text = "Communications traces checked."
+help = "Each trace's status was sent before this message."
+
+[[msg]]
+id = "CPF39A5"
+sev = 0
+text = "Communications trace &1 type &2 is &3."
+help = "Active collects, Inactive has ended, Stopped filled its buffer."
+vars = ["*CHAR 10", "*CHAR 4", "*CHAR 20"]
+
+[[msg]]
+id = "CPF39A8"
+sev = 40
+text = "Using the communications trace needs *SERVICE special authority."
+help = "Ask the security officer for *SERVICE, or for the trace to be run for you."
+
+[[msg]]
+id = "CPF39A9"
+sev = 40
+text = "The communications trace function failed."
+help = "The trace could not be started or read; the detail is in the job log."
+
+[[msg]]
+id = "CPF39AA"
+sev = 40
+text = "A trace of &1 type &2 exists already."
+help = "End and delete it (ENDCMNTRC, DLTCMNTRC) before starting another."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39AD"
+sev = 40
+text = "&1 type &2 cannot be traced."
+help = "Only a line with a link can be traced: vary the line on first."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39AE"
+sev = 40
+text = "The trace of &1 type &2 has already ended."
+help = "ENDCMNTRC was run before."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39B0"
+sev = 40
+text = "There are no communications traces."
+help = "STRCMNTRC starts one."
+
+[[msg]]
+id = "CPF39B1"
+sev = 40
+text = "There is no trace of &1 type &2."
+help = "Check the object name and type with CHKCMNTRC."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39B2"
+sev = 40
+text = "The trace of &1 type &2 cannot be deleted while it is active."
+help = "End it with ENDCMNTRC first."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39B3"
+sev = 40
+text = "The trace of &1 type &2 holds no data."
+help = "Nothing was sent or received on the link while the trace ran."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39B9"
+sev = 40
+text = "No records of trace &1 type &2 were selected for printing."
+help = "The selection left nothing to print."
+vars = ["*CHAR 10", "*CHAR 4"]
+
+[[msg]]
+id = "CPF39BE"
+sev = 40
+text = "There are no communications traces of type &1."
+help = "No trace has that configuration type."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF39C3"
+sev = 40
+text = "The trace of &1 type &2 cannot be ended."
+help = "Its capture did not stop."
+vars = ["*CHAR 10", "*CHAR 4"]

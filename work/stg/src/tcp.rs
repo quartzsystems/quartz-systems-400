@@ -46,6 +46,11 @@ pub enum TcpOp {
     SetServer { server: String, autostart: Option<bool>, bag: Vec<(String, String)> },
     /// What the kernel has against the configuration (`svc.tcp`).
     Report { what: String },
+    /// `NETSTAT`'s views: `IFC`, `IFC6`, `RTE`, `RTE6`, `CNN`, `CNN6`,
+    /// `STS`, and `IFC5`, `RTE5`, `RTEOF`, `CNN5`, `CNN8` with a key.
+    Netstat { what: String, args: Vec<String> },
+    /// `NETSTAT` option 4: end the connection with this key.
+    EndCnn { key: String },
 }
 
 wire_enum!(TcpOp {
@@ -60,6 +65,8 @@ wire_enum!(TcpOp {
     8 => Servers,
     9 => SetServer { server, autostart, bag },
     10 => Report { what },
+    11 => Netstat { what, args },
+    12 => EndCnn { key },
 });
 
 /// A panel's data: variables and named lists of entries.
@@ -127,6 +134,8 @@ mod tests {
             TcpOp::End { immediate: true, endsvr: true, ending: false },
             TcpOp::Panel { what: "IFC".into(), args: vec!["x".into()] },
             TcpOp::SetServer { server: "*FTP".into(), autostart: Some(false), bag: vec![("PORT".into(), "21".into())] },
+            TcpOp::Netstat { what: "CNN5".into(), args: vec!["T|0.0.0.0:23|0.0.0.0:0".into()] },
+            TcpOp::EndCnn { key: "T|10.0.2.15:23|10.0.2.2:4000".into() },
         ] {
             assert_eq!(ipc::decode::<TcpOp>(&ipc::encode(&op)).unwrap(), op);
         }

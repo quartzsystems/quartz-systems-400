@@ -51,6 +51,7 @@ cmncfg = { path = "../../net/cmncfg", version = "0.1.0" }
 netlink = { path = "../../net/netlink", version = "0.1.0" }
 hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }
 sockets = { path = "../../net/sockets", version = "0.1.0" }
+nettools = { path = "../../net/nettools", version = "0.1.0" }
 
 tcpcfg = { path = "../../net/tcpcfg", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }

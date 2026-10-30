@@ -5,12 +5,14 @@
 //! The TCP/IP configuration displays: the `CFGTCP` menu and its lists
 //! (interfaces, routes, port restrictions, the host table), the
 //! related tables (`WRKSRVTBLE`, `WRKPCLTBLE`, `WRKNETTBLE`), the
-//! `CFGTCPAPP` menu with the applications' menus, and `CFGTCPPTP`.
+//! `CFGTCPAPP` menu with the applications' menus, `CFGTCPPTP`, and
+//! `NETSTAT` (`netstat.rs`).
 //! The data comes from the storage service (`stg::tcp`); the panel
 //! groups are the shipped `QTOC*`.
 
 mod lists;
 mod menus;
+mod netstat;
 
 use cmd::Resolved;
 use mi::Job;
@@ -47,9 +49,15 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out
         "WRKSRVTBLE" => lists::table(job, host, surface, lists::Tbl::Srv),
         "WRKPCLTBLE" => lists::table(job, host, surface, lists::Tbl::Pcl),
         "WRKNETTBLE" => lists::table(job, host, surface, lists::Tbl::Net),
+        "NETSTAT" | "WRKTCPSTS" => netstat::run(job, host, surface, r)?,
         _ => return None,
     };
     Some(left.map(|_| String::new()))
+}
+
+/// `NETSTAT`'s `OPTION` as its number, for the text form.
+pub fn netstat_option(r: &Resolved) -> u32 {
+    netstat::option(r)
 }
 
 /// A dialog over a `QTOC*` group.

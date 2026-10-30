@@ -679,3 +679,71 @@ settled by a probe; pub400's configuration and paths came from the
 9. **Forwarding half-close.** A forwarded connection's channel closes
    when the far end closes its side; data the client still sends after
    that is dropped.
+
+## Network tools (nettools, 2026-10-30)
+
+Captured from pub400 for this section (read-only, one session): the
+`TRACEROUTE`/`TRCTCPRTE` and `PING` messages
+(`oracle/net/pub400/nettools-cl-log.txt`), the `QSYS/QTCPMSG` layouts
+of `TCP32xx`-`TCP34xx` (`messages-qtcpmsg-tools.txt`) and the
+communications trace's `CPF39xx` (`messages-cmntrc.txt`). The NETSTAT
+displays and the prompts were in `golden/phase10` already.
+
+1. **`PRTCMNTRC`'s layout.** The trace commands are refused to the
+   pub400 profile (`*SERVICE`), so no listing was seen. Ours is IBM's
+   shape from its documentation (description block, a line per record,
+   decoded headers, hex and characters) in our words. Tools that parse
+   IBM's formatted trace will not read it. Settle with a profile that
+   has `*SERVICE` (the primary oracle, when it answers): trace a line,
+   `PRTCMNTRC`, `CPYSPLF` the listing.
+2. **The trace commands' parameters.** `QCDRCMDD` could not retrieve
+   them (`CPF9802`). QS/400 defines `CFGOBJ CFGTYPE MAXSTG DTADIR
+   TRCFULL USRDTA TEXT` (`STRCMNTRC`) and `CFGOBJ CFGTYPE CTLD CODE
+   FMTTCP TCPIPADR SLTPORT FMTBCST` (`PRTCMNTRC`) from IBM's
+   documentation; `RMTCTL`, `RMTMACADR`, `RMTSNAP`, `RMTIPADR`,
+   `RMTL4PORT`, `BEGTIME`/`ENDTIME`, `FROMSTMF`/`TOSTMF` and `OUTFILE`
+   are not there. `MAXSTG`'s values (`128K` ... `1G`, `*MAX`) and its
+   default are a guess. The same capture settles them.
+3. **What a trace of a non-line is.** IBM traces a line, network
+   interface or network server description. QS/400 traces the kernel
+   link a line is varied on over and, for a `CFGOBJ` with no varied-on
+   line, a link of that name (`ETH0` is `eth0`), so a link without a
+   line description can be traced; `*NWI` and `*NWS` are refused with
+   `CPF39AD`.
+4. **Which `CPF39xx` each case sends.** The identifiers and layouts
+   are pub400's; which one IBM sends for a trace that exists
+   (`CPF39AA`), is active at delete (`CPF39B2`), has no data
+   (`CPF39B3`) or is not found (`CPF39B1`) follows the first-level
+   texts, not an observation.
+5. **`TRCCNN` and `TRCTCPAPP`** are refused to the profile and their
+   definitions were not retrievable; they are not built.
+6. **`PING` with F10.** The oracle's F10 display shows `INTNETADR`
+   (conditioned on `RMTSYS(*INTNETADR)`) before "Additional Parameters"
+   while `RMTSYS` is blank; QS/400's prompter keeps the condition, so
+   the F10 goldens of `PING` and `VFYTCPCNN` are not matched (the test
+   is ignored with this reason).
+7. **`MSGMODE(* *ESCAPE)`.** The oracle sent the escape with 0 of 1
+   answered. QS/400 makes `TCP3210` the escape whenever a packet went
+   unanswered; whether IBM escapes on a partial loss was not tried.
+8. **`TRACEROUTE` details.** Names come from the host table only (no
+   reverse lookup through the name servers, which would slow every
+   hop); `OUTPUT(*VERBOSE)` does not dump the packets the oracle shows
+   as `CPF9897`/`CPF9898`, and `OUTPUT(*DTAQ)` prints as `*MSG`;
+   `FRAGMENT` is accepted and ignored. The oracle writes a hop without
+   a name as the address followed by three blanks; ours puts one.
+9. **`NETSTAT` values the kernel does not have.** The connection
+   details' sequence numbers, push and urgency numbers and send window
+   (pages 2 and 3 of option 5) show 0; "Bytes out" is the bytes the
+   peer acknowledged. A listener's idle time is 0. An interface the
+   configuration does not hold has no change time. Option 14
+   (multicast groups), F13 (sort), F15 (subset) and F22 say they are
+   not available. The route display's second page (the oracle shows
+   `More...`) was not captured; QS/400 puts the mask and the binding
+   interface there. The IPv6 lists' F11 views were not captured.
+10. **`WRKTCPSTS`** is not in pub400's command inventory; QS/400 does
+    not define it (the panel driver answers to it if it is added).
+11. **`ping_group_range`.** Opening ICMP datagram sockets to every
+    group at IPL lets any process send echo requests, which Linux
+    distributions commonly allow; nothing in QS/400 runs that is not
+    Quartz's own. A job's `PING` therefore needs no special authority,
+    as on IBM i.

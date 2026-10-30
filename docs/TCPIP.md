@@ -360,6 +360,151 @@ on the third, `User` over `Profile` on the first two) and the host
 table's second key row (`F22` sits under `F6`, a column R7 does not give
 it); the host table's other rows are compared.
 
+## Network tools
+
+`NETSTAT`, `PING`/`VFYTCPCNN`, `TRACEROUTE`/`TRCTCPRTE` and the
+communications trace (`STRCMNTRC`, `ENDCMNTRC`, `DLTCMNTRC`,
+`CHKCMNTRC`, `PRTCMNTRC`). The logic is the `net/nettools` crate, pure
+and host-tested; its `sys` module is the only part that touches the
+kernel.
+
+| Module | What it holds |
+|---|---|
+| `nettools::icmp` | echo request and reply, v4 and v6, the RFC 1071 checksum, ICMP errors by type and code |
+| `nettools::cmsg` | the control buffer of `recvmsg` (x86_64 `cmsghdr`): the received TTL or hop limit, `sock_extended_err` with the offender's address |
+| `nettools::ping` | the echo loop over an `Echoer` and its messages |
+| `nettools::route` | the hop loop over a `Prober` and its messages |
+| `nettools::netstat` | the `NETSTAT` lists and displays as `QTOCNETS` panel variables, from plain records the storage service fills |
+| `nettools::cmntrc` | the trace (`Trace`, its byte form), the registry with the commands' rules, the frame decoder, the `PRTCMNTRC` listing |
+| `nettools::sys` | `Pinger`, `RouteProber`, `Capture` on Linux (`sys/raw.rs` holds the `unsafe` libc calls); off Linux every open fails |
+
+### NETSTAT
+
+`NETSTAT` (a job-site command) shows the `QTOCNETS` panels at a display
+(`work/qsjob/src/panels/tcp/netstat.rs`) and its views as text in a job
+without one (`command/nettools.rs`, `OPTION(*SELECT)` printing the IPv4
+views and the stack status). The data comes from the storage service
+through the `tcp` request (`TcpOp::Netstat { what, args }`; the views
+`IFC`, `IFC6`, `RTE`, `RTE6`, `CNN`, `CNN6`, `STS`, and with a key
+`IFC5`, `RTE5`, `RTEOF` (option 8 on an interface), `CNN5`, `CNN8`),
+answered by `lic/slic/src/stgsvc/tcp/netstat.rs`:
+
+- Interfaces: the configured ones with their run-time status, then
+  every address the kernel has that TCP/IP did not configure (the IPL's
+  own address, link-local IPv6), on the line varied on over the link
+  (`*LOOPBACK` for `lo`, else the link's name).
+- Routes: the kernel's main table, unicast, plus `127.0.0.0/8` (which
+  Linux keeps in its local table); a route matching an `ADDTCPRTE`
+  entry shows its type of service, priority and text.
+- Connections: `sock_diag` for TCP and UDP, v4 and v6, with
+  `tcp_info` counters; the owning job from `/proc/<pid>/fd` and the job
+  table. An IPv6 socket bound to `::` shows in the IPv4 list too unless
+  an IPv4 socket has its port. Port names come from the services table,
+  cut to the column (`ftp-con >`).
+- Option 4 on a connection (`TcpOp::EndCnn`, `*IOSYSCFG`) ends it with
+  `SOCK_DESTROY`; options 9 and 10 on an interface run `STRTCPIFC` and
+  `ENDTCPIFC`; option 12 runs `WRKCFGSTS` on the line; option 14
+  (multicast groups) says it is not shown.
+- Option 10: TCP/IP's status, when it started, how long, and which job
+  last started and ended it (recorded by the `Start` and `End` requests).
+
+Every NETSTAT golden of pub400 (`golden/phase10/netstat`, 18 displays)
+is matched by `ui/uim/tests/netstat_panels.rs`. The layouts needed one
+renderer change: a key's text keeps a trailing non-breaking blank, as a
+heading already did, so a key can sit at the column the oracle shows.
+
+### PING and TRACEROUTE
+
+Both run in the job's own process. `RMTSYS` resolves through the host
+table and the name servers (`TcpOp::HostConfig`, then the sockets
+crate's resolver); `RMTSYS(*INTNETADR)` takes `INTNETADR`; `ADRVERFMT`
+picks the family (`TCP3219` on a mismatch); an unknown name is the
+escape `TCP3202`.
+
+`PING` sends from an ICMP datagram socket (`SOCK_DGRAM`,
+`IPPROTO_ICMP` or `IPPROTO_ICMPV6`) connected to the address, with
+`IP_RECVTTL`/`IPV6_RECVHOPLIMIT` for the TTL the reply shows, `IP_TTL`
+for `IPTTL` and `IP_TOS` for `TOS`. The kernel lets a process open one
+when its group is in `net.ipv4.ping_group_range`; `slic` writes
+`0 2147483647` there at IPL (after the loopback comes up), so no job
+needs `CAP_NET_RAW`. The messages are the oracle's: `TCP3203` (a name)
+or `TCP3204` (an address), a `TCP3215` per reply (`TCP3217` for IPv6,
+`TCP3216`/`TCP3218` for a duplicate), `TCP3206` per packet unanswered
+within `WAITTIME`, then `TCP3211` (when any answered) and `TCP3210`.
+`MSGMODE(*QUIET)` keeps the summaries; `MSGMODE(* *ESCAPE)` makes
+`TCP3210` the escape when a packet went unanswered. `PKTLEN` is the
+echo's data length, as the oracle's reply line counts it.
+
+`TRACEROUTE` sends `PROBES` probes per TTL from `RANGE`'s first value:
+echo requests on an ICMP datagram socket (`PROBEPCL(*ICMP)`, IBM's
+default) or UDP datagrams to `RMTPORT` and up (`*UDP`), each with
+`IP_RECVERR`. A router's "time exceeded" and the destination's "port
+unreachable" arrive on the socket's error queue (`MSG_ERRQUEUE`) with
+the sender in `SO_EE_OFFENDER`; an echo reply is the destination. The
+output is `TCP3260` and a `TCP3261` per hop: the hop, the node (`NAME
+(address)` from the host table with `NAMELOOKUP(*YES)`, else the
+address), each probe's time in milliseconds to three significant digits
+or `*`, and `!H`, `!N`, `!P`, `!X`, `!F` for unreachables, which end
+the trace like the destination does. `PKTLEN` counts the IP and
+transport headers (28 bytes for IPv4, 48 for IPv6). `OUTPUT(*DTAQ)` and
+`OUTPUT(*VERBOSE)` print as `*MSG`; `FRAGMENT` is accepted.
+
+### Communications trace
+
+`STRCMNTRC CFGOBJ CFGTYPE(*LIN)` starts a trace of the kernel link the
+line is varied on over (a line with no description, or not varied on,
+is taken as a link of its name: `CFGOBJ(ETH0)` traces `eth0`). The
+storage service keeps the system's traces in memory
+(`lic/slic/src/stgsvc/cmntrc.rs`) and gives each active one a thread
+reading an `AF_PACKET` socket bound to the link (`ETH_P_ALL`; the
+`sockaddr_ll` packet type tells sent from received). A frame is kept
+when `DTADIR` wants its direction, cut to `USRDTA` bytes (`*CALC` and
+`*MAX` keep it whole); the frames take up to `MAXSTG` bytes (16 per
+frame plus its data) and `TRCFULL(*WRAP)` drops the oldest, `*STOPTRC`
+stops the trace (`Stopped`). `ENDCMNTRC` stops the capture and keeps
+the data; `DLTCMNTRC` deletes an ended trace; `CHKCMNTRC` sends a
+`CPF39A5` per trace (`Active`, `Inactive`, `Stopped`, `Failed`) and
+`CPF39A4`; `PRTCMNTRC` spools the listing to `QSYSPRT`. Each needs
+`*SERVICE` (`CPF39A8`). Traces are lost at IPL, as the system's trace
+buffers are.
+
+The byte form of a trace (`Trace::encode`, for a later `TOSTMF`):
+
+| Field | Bytes |
+|---|---|
+| magic `QSCMNTRC`, version 1 | 8, 2 |
+| `CFGOBJ`, the type (1 `*LIN`, 2 `*NWI`, 3 `*NWS`), the link, the protocol | text, 1, text, text |
+| `MAXSTG`, wrap (0/1), `USRDTA` (0 `*CALC`), direction (1 sent, 2 received, 3 both), `TEXT` | 8, 1, 4, 1, text |
+| started, ended (0 none), microseconds since the epoch; status (1 active, 2 inactive, 3 stopped, 4 failed) | 8, 8, 1 |
+| records numbered so far, bytes seen, records kept | 8, 8, 4 |
+| per record: time (µs), sent (0/1), length on the wire, bytes kept, the bytes | 8, 1, 4, 4, n |
+
+Text is a 2-byte length and UTF-8; numbers are big-endian.
+
+The listing (132 columns): the trace's description as labelled values
+(the dots on even columns, values at column 35), the selection
+(`FMTTCP(*YES)` keeps IP and ARP frames, narrowed by `TCPIPADR` and
+`SLTPORT`; `FMTBCST(*NO)` drops broadcasts and multicasts), then per
+record its number, `S` or `R`, length, time, MAC addresses and frame
+format, the decoded VLAN, ARP, IP (type of service, length, protocol,
+identifier, TTL, flags, the addresses and the header in hex), TCP
+(ports, sequence, acknowledgment, window, flags, header), UDP or ICMP,
+and the data, 16 bytes a line in four words with the characters
+(`CODE(*EBCDIC)` reads them as CCSID 37).
+
+### Tests
+
+`cargo test -p nettools` (the codecs, the loops over fakes, the trace,
+its byte form and listing, the `NETSTAT` rows, every message id against
+the oracle's layouts); `cargo test -p uim --test netstat_panels`;
+`cargo test -p sys-cpps --test nettools_defs` (the definitions against
+`QCDRCMDD` and the prompts against the captured displays); QEMU step 66
+(`tools/conformance/src/nettools.rs`): `PING` of the guest's own
+address, `LOOPBACK`, `::1` and QEMU's gateway, an unknown name,
+`TRACEROUTE` to the gateway, `NETSTAT` as text, and a trace of `eth0`
+started, checked, ended, printed (the listing must hold the pings) and
+deleted.
+
 ## Hardware resources
 
 Every Ethernet port with a device behind it (`/sys/class/net/*/device`)

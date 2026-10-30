@@ -87,6 +87,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
+        // --- the network tools (command/nettools.rs)
+        "PING" | "VFYTCPCNN" | "TRACEROUTE" | "TRCTCPRTE" | "NETSTAT" | "WRKTCPSTS" => {
+            if let Some(res) = super::nettools::run(job, host, r) {
+                return res;
+            }
+        }
         // --- DDM and DRDA (command/ddm.rs)
         "ADDRDBDIRE" | "CHGRDBDIRE" | "RMVRDBDIRE" | "WRKRDBDIRE" | "CRTDDMF" | "CHGDDMF"
         | "CHGDDMTCPA" => {

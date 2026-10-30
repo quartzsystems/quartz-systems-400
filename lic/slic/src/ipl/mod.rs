@@ -193,6 +193,13 @@ fn lic_phase(
         }
         Err(e) => system.out.serial(&format!("slic: rtnetlink: {e}\n")),
     }
+    // PING and TRACEROUTE use ICMP datagram sockets, which the kernel
+    // allows only to the groups in this range: every group may.
+    if cfg!(target_os = "linux")
+        && let Err(e) = std::fs::write("/proc/sys/net/ipv4/ping_group_range", "0 2147483647\n")
+    {
+        system.out.serial(&format!("slic: ping_group_range: {e}\n"));
+    }
     system.emit(&src::NET_ENUMERATED);
     net_address(system);
     procs::device_dir();

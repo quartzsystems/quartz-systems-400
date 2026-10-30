@@ -768,3 +768,41 @@ note = "the editor at a display; refused without one"
 [cmd.DSPF]
 site = "job"
 note = "the browser at a display; the file as text otherwise"
+
+# ------------------------------------------- network tools (Phase 10)
+# --- in the job (work/qsjob/src/command/nettools.rs)
+[cmd.NETSTAT]
+site = "job"
+note = "QTOCNETS panels at a display; the views as text otherwise"
+
+[cmd.PING]
+site = "job"
+note = "ICMP datagram socket from the job; TCP3203/TCP3204, TCP3215, TCP3206, TCP3211, TCP3210"
+
+[cmd.VFYTCPCNN]
+site = "job"
+note = "as PING"
+
+[cmd.TRACEROUTE]
+site = "job"
+note = "ICMP or UDP probes with IP_RECVERR; TCP3260 and a TCP3261 per hop; OUTPUT(*DTAQ) as *MSG"
+
+[cmd.TRCTCPRTE]
+site = "job"
+note = "as TRACEROUTE"
+
+# --- the communications trace (lic/slic/src/cpp/cmntrc.rs)
+[cmd.STRCMNTRC]
+note = "AF_PACKET on the line's link into a trace in the service; *SERVICE"
+
+[cmd.ENDCMNTRC]
+note = "CPF39A1"
+
+[cmd.DLTCMNTRC]
+note = "CPF39A2"
+
+[cmd.CHKCMNTRC]
+note = "CPF39A5 per trace, CPF39A4"
+
+[cmd.PRTCMNTRC]
+note = "the decoded frames spooled to QSYSPRT; CPF39A3"

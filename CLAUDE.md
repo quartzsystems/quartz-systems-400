@@ -278,6 +278,13 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 discipline, FileTransfer; src/sftp/ v3 over IfsClient; src/scp/ legacy
                 scp; server.rs Server (start, serve), daemon.rs Daemon; src/client/ a
                 client for tests; tests/openssh.rs the real clients (ignored)
+  nettools/     the network tools: icmp.rs echo packets, cmsg.rs recvmsg control data,
+                ping.rs, route.rs (TRACEROUTE), netstat.rs the NETSTAT views, src/cmntrc/ the
+                communications trace (trace and byte form, registry, frame.rs, report.rs the
+                PRTCMNTRC listing), src/sys/ the Linux sockets (raw.rs the libc calls); the
+                service's side lic/slic/src/stgsvc/tcp/netstat.rs, stgsvc/cmntrc.rs,
+                cpp/cmntrc.rs; the job's work/qsjob/src/command/nettools.rs and
+                panels/tcp/netstat.rs (QTOCNETS)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
@@ -329,6 +336,7 @@ cargo run -p menus --bin genmenus         # regenerate the command menus in ui/m
 cargo test -p uim -p dspf -p menus        # panel, display-file and menu goldens
 cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst -p edtf   # the developer tools' screens
 cargo test -p ifs                         # the IFS over MemBackend
+cargo test -p nettools                    # PING, TRACEROUTE, NETSTAT rows, the communications trace
 cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFRMSTMF over MemBackend
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
@@ -403,8 +411,10 @@ otherwise logs go to `target/logs/`.
   `lic/slic/src/platform/blk.rs` (BLKRRPART), `lic/blockdev/src/aligned.rs`
   (aligned buffer views), `lic/blockdev/src/linux.rs` (BLKDISCARD),
   `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call),
-  `runtime/mi/src/act.rs` (calling into generated code: entries and handlers) and
-  `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler).
+  `runtime/mi/src/act.rs` (calling into generated code: entries and handlers),
+  `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler) and
+  `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
+  `AF_PACKET`).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in

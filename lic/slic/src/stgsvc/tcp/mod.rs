@@ -9,6 +9,7 @@
 //! commands (`crate::cpp::tcpcmd`) change it through [`change`] and
 //! [`operate`].
 
+pub mod netstat;
 pub mod store;
 
 use std::cell::RefCell;
@@ -149,7 +150,10 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                     .map(|n| (n, if strsvr { rt.cfg.servers.autostart() } else { Vec::new() }))
             })?;
             match r {
-                Ok((notes, servers)) => done(notes, servers),
+                Ok((notes, servers)) => {
+                    netstat::started(system);
+                    done(notes, servers)
+                }
                 Err(e) => TcpReply::failed(&e),
             }
         }
@@ -175,7 +179,10 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                 }
             } else {
                 match operate(system, apply::end_tcp) {
-                    Ok(n) => done(n, Vec::new()),
+                    Ok(n) => {
+                        netstat::ended(system);
+                        done(n, Vec::new())
+                    }
                     Err(e) => TcpReply::failed(&e),
                 }
             }
@@ -235,6 +242,16 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                 Err(e) => TcpReply::failed(&e),
             }
         }
+        TcpOp::Netstat { what, args } => match netstat::panel(system, &what, &args) {
+            Ok(data) => TcpReply::Panel { data },
+            Err(e) => TcpReply::Failed {
+                note: Note::diag(msg::NOT_FOUND, e),
+            },
+        },
+        TcpOp::EndCnn { key } => match netstat::end(system, &key) {
+            Ok(note) => done(vec![note], Vec::new()),
+            Err(note) => TcpReply::Failed { note },
+        },
         TcpOp::Report { what } => TcpReply::Lines {
             lines: with(system, |_, rt| apply::report(&rt.cfg, &rt.st, &mut rt.net, &what))?,
         },

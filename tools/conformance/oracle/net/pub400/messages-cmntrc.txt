@@ -1,0 +1,157 @@
+-- SELECT MESSAGE_ID, SEVERITY, MESSAGE_DATA_COUNT, MESSAGE_DATA, MESSAGE_TEXT FROM QSYS2.MESSAGE_FILE_DATA WHERE MESSAGE_FILE_LIBRARY = 'QSYS' AND MESSAGE_FILE = 'QCPFMSG' AND (MESSAGE_ID LIKE 'CPF39A%' OR MESSAGE_ID LIKE 'CPF39B%' OR MESSAGE_ID LIKE 'CPF39C%' OR MESSAGE_ID LIKE 'CPF39D%' OR MESSAGE_ID LIKE 'CPC39%' OR MESSAGE_ID LIKE 'CPI39%') ORDER BY MESSAGE_ID
+MESSAGE_ID|SEVERITY|MESSAGE_DATA_COUNT|MESSAGE_DATA|MESSAGE_TEXT
+CPC39FD|0|0|-|Restore APAR Data function completed
+CPC39FE|0|0|-|Delete APAR Data function completed
+CPC39FF|0|0|-|Save APAR Data function completed
+CPC3901|0|1|&1 *CHAR 10|Watch session &1 successfully started.
+CPC3902|0|1|&1 *CHAR 10|End Watch completed successfully.
+CPC3903|0|1|&1 *CHAR 10|Watch session &1 successfully started but some jobs not found.
+CPC3904|0|2|&1 *BIN 2 &2 *CHAR 10|All &1 watch sessions ended.
+CPC3919|20|0|-|Trace ended but trace cleanup in serviced job may not be complete.
+CPC3920|20|0|-|Service ended but service cleanup in serviced job may not be complete.
+CPC3921|0|1|&1 *CHAR 10|STRTRC session ID &1 successfully started.
+CPC3922|10|1|&1 *CHAR 10|STRTRC session ID &1 started but some jobs not found.
+CPC3923|0|2|&1 *CHAR 10 &2 *CHAR 10|ENDTRC session ID &1 successfully saved into library &2.
+CPC3924|0|1|&1 *CHAR 10|ENDTRC session ID &1 successfully deleted.
+CPC3925|10|2|&1 *CHAR 2 &2 *CHAR 2|&1 members removed, &2 members not removed.
+CPC3926|0|2|&1 *CHAR 10 &2 *CHAR 10|&2 session ID &1 successfully deleted.
+CPC3927|10|0|-|Trace job started. Cancel ignored.
+CPC3928|10|0|-|Job being serviced. Cancel ignored.
+CPC3929|0|1|&1 *CHAR 30|Trace records successfully deleted for trace table &1.
+CPF39AA|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace &1 type &2 already exists
+CPF39AB|40|2|&1 *BIN 2 &2 *BIN 4|Beginning or ending bytes exceeds maximum value
+CPF39AC|40|1|&1 *BIN 2|Total of beginning and ending bytes exceeds maximum value
+CPF39AD|40|2|&1 *CHAR 10 &2 *CHAR 4|&1 type &2 cannot be traced
+CPF39AE|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace already ended.
+CPF39AF|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace is ending - please wait
+CPF39A0|0|2|&1 *CHAR 10 &2 *CHAR 4|STRCMNTRC completed successfully for &1 type &2
+CPF39A1|0|2|&1 *CHAR 10 &2 *CHAR 4|ENDCMNTRC completed successfully for &1 type &2
+CPF39A2|0|2|&1 *CHAR 10 &2 *CHAR 4|DLTCMNTRC completed successfully for &1 type &2
+CPF39A3|0|2|&1 *CHAR 10 &2 *CHAR 4|PRTCMNTRC completed successfully for &1 type &2
+CPF39A4|0|0|-|CHKCMNTRC completed successfully
+CPF39A5|0|3|&1 *CHAR 10 &2 *CHAR 4 &3 *CHAR 20|Communications trace &1 type &2 has status &3
+CPF39A6|40|0|-|Storage could not be allocated
+CPF39A7|40|0|-|Trace storage not available in communications processor
+CPF39A8|40|0|-|Not authorized to communications trace service tool
+CPF39A9|40|0|-|Error occurred during communications trace function
+CPF39BA|40|2|&1 *CHAR 10 &2 *CHAR 4|Formatting options selected not valid
+CPF39BB|40|0|-|Communications trace data not printed
+CPF39BC|40|0|-|Communications trace print request cannot be completed
+CPF39BD|40|1|&1 *CHAR 10|Network interface description &1 not found
+CPF39BE|40|1|&1 *CHAR 4|No communications traces of type &1 exist
+CPF39BF|40|0|-|Remote IP address not valid.
+CPF39B0|40|0|-|No communications traces exist.
+CPF39B1|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace &1 type &2 does not exist
+CPF39B2|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace data for &1 type &2 cannot be deleted
+CPF39B3|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace &1 type &2 contains no data
+CPF39B4|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace data for &1 type &2 cannot be printed
+CPF39B5|40|0|-|Communications trace data not printed
+CPF39B6|40|0|-|Communications trace function cannot be performed
+CPF39B7|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace data for &1 type &2 cannot be printed
+CPF39B8|40|2|&1 *CHAR 10 &2 *CHAR 4|No SNA data found in trace &1 type &2
+CPF39B9|40|2|&1 *CHAR 10 &2 *CHAR 4|No trace records found for printing trace &1 type &2
+CPF39CA|30|1|&1 *CHAR 10|Trace session ID &1 not found.
+CPF39CB|30|2|&1 *CHAR 10 &2 *CHAR 10|Trace session ID &1, in library &2, data exists. Specify RPLDTA(*YES).
+CPF39CC|30|0|-|No active jobs found, STRTRC session not started.
+CPF39CD|40|0|-|Error occurred during processing of the PRTTRC command.
+CPF39CE|40|0|-|Error occurred during processing of the DLTTRC command.
+CPF39CF|30|2|&1 *CHAR 10 &2 *CHAR 10|DTAMBR &1 trace data not found in library &2.
+CPF39C0|40|1|&1 *CHAR 10|Controller description &1 not found.
+CPF39C1|40|1|&1 *CHAR 10|Controller description &1 not valid.
+CPF39C2|40|0|-|Number of user bytes to trace must be *CALC.
+CPF39C3|40|2|&1 *CHAR 10 &2 *CHAR 4|Trace &1 type &2 cannot be ended.
+CPF39C4|40|0|-|IP address not valid.
+CPF39C5|30|0|-|Job name *ALL and user *ALL not allowed
+CPF39C6|30|0|-|Not authorized to trace with generic job users.
+CPF39C7|30|1|&1 *CHAR 10|STRTRC session ID &1 already exists.
+CPF39C8|30|1|&1 *CHAR 10|ENDTRC session &1 already being ended by another job
+CPF39C9|40|0|-|Unexpected STRTRC failure, see low-level messages.
+CPF39D0|40|1|&1 *CHAR 2|Watch for event function cannot start. Reason code &1.
+CPF39D1|40|0|-|Limit exceeded for jobs watching for events.
+CPF39D2|40|0|-|Error occurred during processing of the program QTRCACT.
+CPF39D3|40|0|-|Unable to start/end the trace.
+CPF39D4|30|1|&1 *CHAR 10|Another trace session is already active that specified RESTRIPL(*YES).
+CPF39D5|30|1|&1 *CHAR 10|Another trace session is already active that specified JOINTRC(*YES).
+CPF39D6|30|1|&1 *CHAR 10|Not authorized to set the trace characteristics of the specified jobs in a related job or thread.
+CPF39D7|20|1|&1 *BIN 4|Communications Trace operation failed.
+CPI39BA|0|2|&1 *CHAR 10 &2 *CHAR 10|User space &1 not created
+CPI39BB|0|3|&1 *CHAR 10 &2 *CHAR 8 &3 *CHAR 8|Problem &1 not printed
+CPI39BC|0|6|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 6 &5 *CHAR 8 &6 *DTS|Spooled file &1 not saved
+CPI39BD|0|3|&1 *CHAR 10 &2 *CHAR 8 &3 *CHAR 8|Problem &1 not updated
+CPI39BE|0|2|&1 *CHAR 10 &2 *CHAR 10|Override to output queue &1 not done
+CPI39BF|0|2|&1 *CHAR 10 &2 *CHAR 10|Output queue &1 not cleared
+CPI39B1|0|1|&1 *CCHAR *VARY 4|Integrated file system object saved.
+CPI39B2|10|1|&1 *CCHAR *VARY 4|Integrated file system object not saved.
+CPI39B3|10|1|&1 *CCHAR *VARY 4|Object not saved to a save file.
+CPI39B4|10|1|&1 *CCHAR *VARY 4|Integrated file system object not dumped
+CPI39B5|0|0|-|Not authorized to API QSPCRTSP
+CPI39B6|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Spooled file not restored
+CPI39B7|0|1|&1 *CHAR 10|Problem record not restored
+CPI39B8|0|0|-|Problem record not created
+CPI39B9|0|2|&1 *CHAR 10 &2 *CHAR 10|User space &1 not deleted
+CPI39CA|0|0|-|Problem log entries saved
+CPI39CB|0|0|-|No problem log entries saved
+CPI39CC|0|0|-|Value not valid for system object type
+CPI39CD|0|0|-|Value not valid for object type
+CPI39CE|0|4|&1 *CHAR 30 &2 *CHAR 30 &3 *CHAR 4 &4 *CHAR 4|System object &1 saved
+CPI39CF|0|4|&1 *CHAR 30 &2 *CHAR 30 &3 *CHAR 4 &4 *CHAR 4|System object &1 not saved
+CPI39C0|0|2|&1 *CHAR 10 &2 *CHAR 10|Output queue &1 not created
+CPI39C1|0|0|-|Spooled file not copied from user space
+CPI39C2|0|6|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 6 &5 *CHAR 8 &6 *DTS|Spooled file &1 not copied to user space
+CPI39C3|0|2|&1 *CHAR 10 &2 *CHAR 10|User space &1 not found
+CPI39C4|0|0|-|Program temporary fixes saved
+CPI39C5|0|0|-|Program temporary fixes not saved
+CPI39C6|0|0|-|Active jobs saved
+CPI39C7|0|0|-|Active jobs not saved
+CPI39C8|0|0|-|System values saved
+CPI39C9|0|0|-|System values not saved
+CPI39DA|0|0|-|VLIC log entries not saved
+CPI39DB|0|1|&1 *CHAR 8|Error log identifier &1 saved
+CPI39DC|0|1|&1 *CHAR 8|Error log identifier &1 not saved
+CPI39DD|0|0|-|Error log entries saved
+CPI39DE|0|0|-|Error log entries not saved
+CPI39DF|0|2|&1 *CHAR 12 &2 *CHAR 63|Document library object &1 saved
+CPI39D0|0|3|&1 *CHAR 10 &2 *CHAR 8 &3 *CHAR 8|Problem log entry &1 saved
+CPI39D1|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 6|Job &3/&2/&1 attributes saved
+CPI39D2|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 6|Job &3/&2/&1 attributes not saved
+CPI39D3|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 6|Job &3/&2/&1 log saved
+CPI39D4|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 6|Job &3/&2/&1 log not saved
+CPI39D5|0|0|-|Internal configuration saved
+CPI39D6|0|0|-|Internal configuration not saved
+CPI39D7|0|1|&1 *CHAR 8|VLIC log identifier &1 saved
+CPI39D8|0|1|&1 *CHAR 8|VLIC log identifier &1 not saved
+CPI39D9|0|0|-|VLIC log entries saved
+CPI39EA|0|0|-|History log not saved
+CPI39EB|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Not authorized to object &1 in &2 type &3
+CPI39EC|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Object &1 in &2 type &3 not found
+CPI39ED|0|0|-|Saving of problem log entries not successful
+CPI39EE|0|2|&1 *CHAR 10 &2 *CHAR 10|Object &1 type &2 not saved
+CPI39EF|0|2|&1 *CHAR 10 &2 *CHAR 10|Object &1 type &2 saved
+CPI39E0|0|2|&1 *CHAR 12 &2 *CHAR 63|Document library object &1 not saved
+CPI39E1|0|6|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 6 &5 *CHAR 8 &6 *DTS|Spooled file &1 saved
+CPI39E2|0|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 6|Spooled file &1 not saved
+CPI39E3|0|0|-|Software resources saved
+CPI39E4|0|0|-|Software resources not saved
+CPI39E5|0|0|-|Hardware resources saved
+CPI39E6|0|0|-|Hardware resources not saved
+CPI39E7|0|0|-|Hardware resources partially saved
+CPI39E8|0|3|&1 *CHAR 10 &2 *CHAR 8 &3 *CHAR 8|Problem log entry &1 not saved
+CPI39E9|0|0|-|History log saved
+CPI39FA|0|0|-|Problem data automatically saved
+CPI39FB|0|1|&1 *CHAR 10|Command &1 failed
+CPI39FC|0|1|&1 *CHAR 10|Command &1 not found
+CPI39FD|0|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 6|Spooled file &1 not found
+CPI39FE|0|1|&1 *CHAR 10|Not authorized to command &1.
+CPI39FF|0|0|-|Save APAR Data problem
+CPI39F0|0|3|&1 *CHAR 10 &2 *CHAR 7 &3 *CHAR 10|Object &1 type &2 in library &3 saved
+CPI39F1|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Object &1 type &2 in library &3 not saved
+CPI39F2|0|1|&1 *CHAR 10|APAR library &1 not created
+CPI39F3|0|1|&1 *CHAR 10|APAR library &1 not deleted
+CPI39F4|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 7|Object &1 not copied
+CPI39F5|0|2|&1 *CHAR 10 &2 *CHAR 10|Save file &1 not created
+CPI39F6|0|2|&1 *CHAR 10 &2 *CHAR 10|Save file &1 not deleted
+CPI39F7|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 7|Object &1 not saved to a save file
+CPI39F8|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 7|Object &1 not dumped
+CPI39F9|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 7|Object &1 not displayed
+CPI3998|0|10|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 16 &5 *CHAR 10 &6 *CHAR 10 &7 *CHAR 6 &8 *CHAR 10 &9 *CHAR 10 &10 *CHAR 6|Watch or trace exit program &1 will be called.
+CPI3999|10|20|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 6 &5 *HEX 1 &6 *DTS  &7 *CHAR 7 &8 *CHAR 10 &9 *CHAR 10 &10 *CHAR 7 &11 *CHAR 8 &12 *CHAR 7 &13 *CHAR 10 &14 *CHAR 10 &15 *CHAR 7 &16 *CHAR 8 &17 *CHAR 10 &18 *CHAR 8 &19 *CHAR 8 &20 *UTC|Watch session &17 ended. Reason code: &5
