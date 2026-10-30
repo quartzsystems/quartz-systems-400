@@ -80,6 +80,7 @@ client trait. `stg::proto` is that list:
 | 113-118 | spooled files and printer files; the writer's next file and what it printed |
 | 119-122 | spool maintenance, a job name's state this IPL, the next IPL's `QIPLSTS`, `QWCRSSTS` |
 | 440 | the integrated file system: one request carrying an `IfsOp` (`docs/IFS.md` "The protocol"); descriptors, directory streams and locks are the connection's |
+| 690 | TCP/IP: one request carrying a `stg::tcp::TcpOp` (`STRTCP`, `ENDTCP`, `QTCPWRK`'s heartbeat, the status snapshot, the panels' data, the resolver's configuration, the port restrictions, the services table, the servers' attributes, `svc.tcp`), answered as a `TcpReply` (`docs/TCPIP.md`) |
 
 Every connection starts with `hello`, naming the job and the lock
 handle its locks are taken under. Nothing else is answered before it.

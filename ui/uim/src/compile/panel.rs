@@ -422,6 +422,7 @@ impl Build {
             select: self.choice(el, "SELECT", &["SINGLE", "MULTI", "NONE"]),
             actlen: self.u32(el, "ACTLEN"),
             compact: self.flag(el, "COMPACT"),
+            headsep: self.flag(el, "HEADSEP"),
             help,
             actions,
             columns,

@@ -79,6 +79,8 @@ members = [
     "net/sockets",
     "net/regfac",
     "net/cmncfg",
+
+    "net/tcpcfg",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

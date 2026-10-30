@@ -80,9 +80,7 @@ impl Suite {
     /// own job and the server, and signs off; the virtual display and
     /// its controller show in `WRKCFGSTS`.
     pub(crate) fn telnet_sign_on(&self, s: &mut Session) -> Result<String, String> {
-        let port = self
-            .launch
-            .telnet_port
+        let port = self.telnet_port()
             .ok_or("the launch has no telnet port")?;
         let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions::default();
@@ -165,9 +163,7 @@ impl Suite {
     /// oracle's capture (characters only: the panel is the interim
     /// one, not yet the display file).
     pub(crate) fn telnet_command_entry(&self, _s: &mut Session) -> Result<String, String> {
-        let port = self
-            .launch
-            .telnet_port
+        let port = self.telnet_port()
             .ok_or("the launch has no telnet port")?;
         let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let golden =
@@ -208,9 +204,7 @@ impl Suite {
     /// the user signs on again, with its screen; under `*ENDJOB` the job
     /// ends and the device returns to varied on.
     pub(crate) fn telnet_recovery(&self, s: &mut Session) -> Result<String, String> {
-        let port = self
-            .launch
-            .telnet_port
+        let port = self.telnet_port()
             .ok_or("the launch has no telnet port")?;
         let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions::default();
@@ -320,9 +314,7 @@ impl Suite {
     /// session with the field the program filled, takes what was typed
     /// and shows it back; `F3` ends it through `&IN03`.
     pub(crate) fn telnet_display_file(&self, s: &mut Session) -> Result<String, String> {
-        let port = self
-            .launch
-            .telnet_port
+        let port = self.telnet_port()
             .ok_or("the launch has no telnet port")?;
         let lib = s.command("crtlib LIB(UITEST) TEXT('Phase 8 displays')", CMD)?;
         if !lib.contains("UITEST") {
@@ -403,9 +395,7 @@ impl Suite {
     /// source member: PDM's menu, SEU browsing the member, a query in
     /// STRSQL left without saving, the SDA and DFU menus.
     pub(crate) fn telnet_tools(&self, _s: &mut Session) -> Result<String, String> {
-        let port = self
-            .launch
-            .telnet_port
+        let port = self.telnet_port()
             .ok_or("the launch has no telnet port")?;
         let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions::default();

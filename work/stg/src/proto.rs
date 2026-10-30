@@ -599,6 +599,9 @@ ipc::rpc! {
     /// (`ty` `*LIN`, `*CTL`, `*DEV`): its code and text, `None` when
     /// there is no such object.
     1181 => fn cfg_status / CfgStatus (name: String, ty: String) -> Option<(u16, String)>;
+    // --- TCP/IP (690; crate::tcp)
+    /// TCP/IP configuration and operation: one operation and its answer.
+    690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;
 }
 
 /// A search index topic: title, root words, panel group (`LIB/NAME`)

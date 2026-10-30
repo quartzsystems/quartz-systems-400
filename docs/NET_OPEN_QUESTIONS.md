@@ -55,6 +55,35 @@ and how to settle each against the oracle.
     (the link itself is the last name); POSIX creates the link's target.
     Check IBM with a link to a missing file under `/home/QSTEST`.
 
+## TCP/IP configuration (tcpcfg, 2026-10-29)
+
+- `QSYS/QTCPMSG` was not captured (the query read `QTCP/QTCPMSGF`). The
+  configuration's own identifiers (`TCP1A00`-`TCP1A14`, `TCP1D03`-
+  `TCP1D0D`) are ours in IBM's families; a capture of `QSYS/QTCPMSG`
+  settles their numbers and substitution layouts.
+- The keywords IBM keeps in `QATOCTCPIP` (`KEYWORD`/`DATA`) are not
+  known; ours are the commands' keywords. A record dump of the oracle's
+  file settles it (read-only: `DSPPFM QUSRSYS/QATOCTCPIP`).
+- Where V7R5M0 keeps IPv6 interfaces, routes and host names is not in
+  the capture (no `QATOC*6` file; the host table's `INTERNET` is 15
+  characters). Ours are `QATOCIFC6`, `QATOCRTE6`, `QATOCHST6`.
+- V7R1M0's TCP/IP jobs (`QTCPIP`, `QTCPMONITR` in `QSYSWRK`) were not
+  seen; we follow V7R5M0 (`QTCPCTL`, `QTCPWRK`, type `SYS`, no
+  subsystem).
+- The host table lists IPv6 addresses before IPv4 (pub400: `::1`,
+  `127.0.0.1`, `185.113.5.134`); within a family ours is numeric order,
+  which a table with more entries would confirm.
+- `CHGTCPDMN` on V7R5M0 has `DMNSVRRTY` (attempts, interval) where
+  earlier releases had `INITQRYINT` and `QRYTIMOUT`; the resolver's
+  `HostConfig` keeps those two names, filled from `DMNSVRRTY`.
+- `IPSRCRTG` defaults to `*YES` as the oracle's definition and prompt
+  show, which sets `accept_source_route` to 1 at `STRTCP`.
+- `GO CFGTCP` is a `*PGM` menu on IBM (`ui/menus/inventory`); pub400
+  refused it to the profile. Ours is the `CFGTCP` command alone.
+- Whether `ADDTCPIFC` on a line that does not exist is refused at once
+  (ours: `TCP9509`) or at `STRTCPIFC` is not captured (the profile could
+  not run it).
+
 ## Oracle facts (capture 2026-10-24)
 
 What the oracle capture established, read-only, for the later Phase 10

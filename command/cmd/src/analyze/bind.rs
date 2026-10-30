@@ -232,8 +232,14 @@ impl Ctx<'_, '_> {
             None => Some(Value::Char(text)),
             Some(to) => {
                 let toks = default_tokens(to, self.env.opts);
+                // A group's replacement takes its first element's type.
+                let target = if is_elem(parm) || is_qual(parm) {
+                    parm.items.first().unwrap_or(parm)
+                } else {
+                    parm
+                };
                 match toks.as_slice() {
-                    [one] => self.scalar_of(parm, kwd, one, true),
+                    [one] => self.scalar_of(target, kwd, one, true),
                     _ => Some(Value::Char(to.clone())),
                 }
             }

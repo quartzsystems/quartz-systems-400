@@ -175,6 +175,13 @@ impl Build {
     }
 
     pub(super) fn scroll(&mut self, el: &Element, attr: &str) -> Scroll {
+        if el
+            .attr(attr)
+            .and_then(|a| a.value.as_deref())
+            .is_some_and(|v| v.eq_ignore_ascii_case("IND"))
+        {
+            return Scroll::Ind;
+        }
         if el.attr(attr).is_some() && self.flag(el, attr) {
             Scroll::Yes
         } else {

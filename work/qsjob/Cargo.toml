@@ -21,6 +21,7 @@ regfac = { path = "../../net/regfac", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+tcpcfg = { path = "../../net/tcpcfg", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }

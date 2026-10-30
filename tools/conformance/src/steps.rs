@@ -115,6 +115,9 @@ pub struct Suite {
     /// Run only the steps whose names start with one of these (after
     /// the boot).
     pub(crate) only: Option<Vec<String>>,
+    /// The telnet port forwarded to the address TCP/IP configuration
+    /// set up (step 61); the TN5250 steps use it once it is there.
+    pub(crate) tn_port: std::cell::Cell<Option<u16>>,
 }
 
 // The steps share one signature so `step` can take them as fn pointers.
@@ -175,6 +178,7 @@ impl Suite {
             out_dir,
             boot_timeout,
             only: None,
+            tn_port: std::cell::Cell::new(None),
         })
     }
 
@@ -200,6 +204,13 @@ impl Suite {
     /// Launch settings.
     pub fn launch(&self) -> &Launch {
         &self.launch
+    }
+
+    /// The host port the TN5250 steps connect to: the one forwarded to
+    /// the configured interface once step 61 set it up, else the
+    /// launch's.
+    pub(crate) fn telnet_port(&self) -> Option<u16> {
+        self.tn_port.get().or(self.launch.telnet_port)
     }
 
     /// Run every step in order. Stops at the first failure.
@@ -485,6 +496,7 @@ impl Suite {
         reports.push(self.step(&mut s, "48 limited user", Self::limited_user)?);
         reports.push(self.step(&mut s, "49 startup program", Self::startup_program)?);
         reports.push(self.step(&mut s, "50 analyzer console", Self::analyzer_console)?);
+        reports.push(self.step(&mut s, "61 TCP/IP configuration", Self::tcp_config)?);
         reports.push(self.step(&mut s, "51 telnet sign-on", Self::telnet_sign_on)?);
         reports.push(self.step(
             &mut s,
@@ -499,6 +511,7 @@ impl Suite {
         reports.push(self.step(&mut s, "58 RPG service program", Self::rpg_service_program)?);
         reports.push(self.step(&mut s, "59 IFS mount", Self::ifs_mount)?);
         reports.push(self.step(&mut s, "60 communications lines", Self::cmn_lines)?);
+        reports.push(self.step(&mut s, "62 ENDTCP and STRTCP", Self::tcp_restart)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

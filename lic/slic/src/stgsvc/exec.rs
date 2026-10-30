@@ -30,6 +30,7 @@ pub fn run(system: &mut System, line: &str) -> String {
         "wrkdsksts" => return super::stats::wrkdsksts(system, reset),
         "wrksysact" => return super::stats::wrksysact(system),
         "wmstats" => return system.stats.report(),
+        "tcp" => return super::tcp::console(system, line),
         _ => {}
     }
     if word == "dsplog" {

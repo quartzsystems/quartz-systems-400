@@ -148,6 +148,218 @@ bzImage (no initramfs) from 14,238,720 to 15,897,600 bytes (+1.66 MB, +11.7%).
   say so and skip those parts; with `QS400_OWN_KERNEL=1` (the QS/400
   kernel under QEMU) they must pass.
 
+## Configuration
+
+The `tcpcfg` crate (`net/tcpcfg`) is TCP/IP configuration without the
+store or the kernel: the model and the commands' rules (`model`), the
+`QUSRSYS` files and their record codecs (`files`), the run-time state
+(`state`), the engine that applies a configuration (`apply`) over a
+small trait of kernel operations (`net::NetOps`), the panels' data
+(`panel`) and what the sockets layer reads (`resolver`). The storage
+service holds the configuration and the state
+(`lic/slic/src/stgsvc/tcp`); jobs reach them through the `tcp` request
+(tag 690, `stg::tcp`).
+
+### The files
+
+The storage service creates the files in `QUSRSYS` when they are
+missing, each with a new system's records: the loopback interface
+(`127.0.0.1`, `*LOOPBACK`, mask `255.0.0.0`, MTU 576, alias
+`LOCALHOST`, as IBM ships it), the loopback host names (`LOOPBACK`,
+`LOCALHOST`, `IPV6-LOOPBACK`, `IPV6-LOCALHOST`), the attributes' and the
+domain's defaults, the servers' autostart (`*TELNET` and `*FTP` on), the
+services table (the well-known services and the host servers' `as-*`)
+and the protocols (`icmp`, `ip`, `tcp`, `udp`). A command rewrites the
+files of the table it changes; `STRTCP` reads them all again, so a file
+changed by other means takes effect at the next start.
+
+| File | Format | Holds | Layout |
+| --- | --- | --- | --- |
+| `QATOCIFC` | `QIFC` | IPv4 interfaces and `*IP4DHCP` | IBM's (1024 bytes, 32 fields); the full 25-character alias and `PREFIFC` sit in `RESERVED2` |
+| `QATOCIFC6` | `QIFC6` | IPv6 interfaces and `*IP6SAC` | ours |
+| `QATOCRTE` | `QROUTE` | IPv4 routes | IBM's (512, 23); `DUPRTEPTY` in `PRECEDENCE`, `METRIC` in `RIPMETRIC` |
+| `QATOCRTE6` | `QROUTE6` | IPv6 routes | ours |
+| `QATOCHOST` | `QHOSTS` | the host table's IPv4 entries, four names a record, continued in records with the same address | IBM's (1152, 8) |
+| `QATOCHST6` | `QHOSTS6` | its IPv6 entries | ours |
+| `QATOCTCPIP` | `QATTR` | every `CHGTCPA` keyword and the domain's (`HOSTNAME`, `DMNNAME`, `DMNSCHLIST`, `HOSTSCHPTY`, `INTNETADR`, `PORT`, `PROTOCOL`, `INLDMNSVR`, `DMNSVRRTY`, `DNSSEC`), one keyword a record | IBM's (2048, 2) |
+| `QATOCPORT` | `QPORT` | port restrictions; `UPPERPORT` -1 is `*ONLY` | IBM's (128, 5) |
+| `QATOCSTART` | `QTOCSTRT` | each server's autostart (`S`) and the user-defined servers (`U`; name and type in `EXTSTRCMD`, text in `EXTENDCMD`) | IBM's (240, 8) |
+| `QATOCSVRA` | `QSVRA` | the servers' own attributes, keyword and value | ours |
+| `QATOCPS`, `QATOCPP`, `QATOCPN` | `PRCD` | the services, protocol and network tables | IBM's (246, 214, 1344) |
+| `QATOCRSI` | `QRSI` | remote system information (X.25; created, kept empty) | IBM's (128) |
+
+`net/tcpcfg/tests/layouts.rs` compares the IBM formats field by field
+with the oracle's `DSPFFD` (`tools/conformance/oracle/net/pub400/
+config-file-fields.txt`). The IPv6 files exist because IBM's formats
+have 15 characters for an address. Graphic `TEXT` fields are UCS-2
+(CCSID 13488).
+
+### Commands
+
+The configuration commands run in the storage service
+(`lic/slic/src/cpp/tcpcmd.rs`); their definitions are generated from
+the oracle's `QCDRCMDD` capture (keywords, types, lengths, defaults,
+special values, minimum and maximum; `command/sys-cpps/tests/tcp_defs.rs`
+checks them) with our prompt texts. A change needs `*IOSYSCFG`.
+
+| Command | What it does |
+| --- | --- |
+| `ADDTCPIFC`, `CHGTCPIFC`, `RMVTCPIFC` | interfaces; an active interface's line and mask cannot change, and it cannot be removed |
+| `STRTCPIFC`, `ENDTCPIFC` | start (`*AUTOSTART`: every autostart one) and end interfaces; a line that is off is varied on first |
+| `ADDTCPRTE`, `CHGTCPRTE`, `RMVTCPRTE` | routes, found by destination, mask (prefix length for IPv6), type of service and next hop |
+| `ADDTCPHTE`, `CHGTCPHTE`, `RMVTCPHTE`, `RNMTCPHTE` | the host table; names are kept upper case, up to 65 an address; `CHGTCPHTE HOSTNAME` rebuilds the list position by position (`*SAME` keeps a name, `*BLANK` drops it) |
+| `MRGTCPHT` | merges a file: `*OPSYS`/`*AS400` records in the `QHOSTS` format, `*AIX` (`address name...  # text`) or `*NIC` (`HOST : address : names :`) lines; `REPLACE(*YES)` replaces the table, otherwise an address present gains the names it lacks and a new one is added; `FROMOBJ` (a stream file) waits for the IFS service |
+| `CPYTCPHT` | copies the IPv4 entries to a file in the `QHOSTS` format |
+| `CHGTCPDMN` | the local names, the search list, `*LOCAL`/`*REMOTE`, up to three name servers, port, protocol, retries |
+| `CHGTCPA` | every attribute of the definition; below |
+| `ADDTCPPORT`, `RMVTCPPORT` | port restrictions (at most 100); a range of a protocol may repeat for more profiles but not overlap partly |
+| `ADDTCPSVR`, `CHGTCPSVR`, `RMVTCPSVR` | user-defined servers in `QATOCSTART` |
+| `ADDSRVTBLE`, `RMVSRVTBLE`, `ADDPCLTBLE`, `RMVPCLTBLE`, `ADDNETTBLE`, `RMVNETTBLE` | the related tables |
+| `STRTCP`, `ENDTCP`, `ENDTCPABN` | in the job: the service applies or ends the configuration; the job starts and ends the servers |
+| `CFGTCP`, `CFGTCPAPP`, `CFGTCPSNMP`, `CFGTCPRTD`, `CFGTCPBP`, `CFGTCPTELN`, `CFGTCPSMTP`, `CFGTCPPTP`, `WRKSRVTBLE`, `WRKPCLTBLE`, `WRKNETTBLE` | the menus and lists, below |
+
+Messages are in `QSYS/QTCPMSG` (`runtime/msgf/msgs/qtcpmsg.toml`): the
+identifiers the oracle's `QTCP/QTCPMSGF` shows keep its numbers and
+substitution layouts (`TCP2640`, `TCP2658`, `TCP8007`, `TCP9509`,
+`TCP9515`, `TCP9517`, `TCP9518`, `TCP9640`, `TCP9642`, `TCP9644`,
+`TCP9650`, `TCP9880`); the oracle's `QSYS/QTCPMSG` was not captured, so
+`TCP1A00`-`TCP1A14` (start, end, interfaces, servers) and
+`TCP1D03`-`TCP1D0D` (added, changed, removed, exists, not found, value
+not valid) are ours in IBM's families (`docs/NET_OPEN_QUESTIONS.md`).
+
+### Operation
+
+`QTCPCTL` and `QTCPWRK` are system jobs (type `SYS`, no subsystem, as
+the oracle runs them on V7R5M0; V7R1M0's `QTCPIP` and `QTCPMONITR` were
+not captured). `QTCPWRK` asks the service every five seconds to look at
+the lines and carriers under the interfaces. The startup program runs
+`STRTCP` (in place of Phase 8's `STRTCPSVR SERVER(*TELNET)`).
+
+`STRTCP` (`apply::start_tcp`): the attributes into their sysctls, the
+host name into the kernel's, the loopback link up with `127.0.0.1/8` and
+`::1`, every `*LOOPBACK` interface, then with `STRIFC(*YES)` every
+autostart interface (IPv6 ones with `STRIP6(*YES)`), the port rules into
+nftables and every route whose next hop an active interface reaches.
+The service answers with the autostart servers; the job starts each
+through its `ServerStarter`. An interface that cannot start is a
+diagnostic, not an escape: TCP/IP still starts.
+
+An interface starts on its line's kernel link (`lo` for `*LOOPBACK`,
+`dummy0` for `*VIRTUALIP`, created when missing; `link.vid` for a VLAN,
+created and removed with the interface), which is brought up and given
+the MTU when one is set (the loopback keeps the kernel's MTU; IBM's 576
+is a figure). `*IP6SAC` turns on the link's `autoconf` and `accept_ra`;
+`*IP4DHCP` fails (no DHCP client yet). Routes go into the main table
+with protocol `RTPROT_QS400`, metric `11 - DUPRTEPTY` (IBM's 10 is the
+most preferred), the TOS bits of `TOS` (RFC 1349) and the MTU.
+
+`ENDTCP`: the job ends the servers (`ENDSVR(*YES)`), then every
+interface ends (addresses TCP/IP added and the links it made are
+removed; the loopback addresses stay, the system uses them), routes and
+port rules go. `OPTION(*CNTRLD)` and `*IMMED` differ only for the
+servers. `ENDTCPABN` is `ENDTCP OPTION(*IMMED)`.
+
+Statuses, as `NETSTAT *IFC` will show them: an interface is `Inactive`,
+`Starting`, `Active`, `Ending`, `Failed` (its last error is kept) or
+`RCYPND` (its line lost its carrier; it is `Active` again with the
+carrier). An interface whose line is varied off ends. A route is
+`Inactive`, `Active` or `Failed`. TCP/IP itself is `Inactive`,
+`Starting`, `Active` or `Ending`.
+
+`svc.tcp [ifc|rte|port|attr|host]` at the service console lists the
+configuration with its status beside what the kernel has (addresses,
+routes marked `qs400`, port rules, each mapped sysctl wanted and read).
+
+### CHGTCPA parameters
+
+Every parameter of the captured definition is kept in `QATOCTCPIP`;
+those with a kernel equivalent are written at `STRTCP` and at once when
+`CHGTCPA` runs while TCP/IP is active.
+
+| Parameter | Kernel (`/proc/sys/net`) | Conversion |
+| --- | --- | --- |
+| `TCPKEEPALV` | `ipv4/tcp_keepalive_time` | minutes to seconds |
+| `TCPURGPTR` | `ipv4/tcp_stdurg` | `*BSD` 0, `*RFC` 1 |
+| `TCPRCVBUF` | `ipv4/tcp_rmem` | the middle (default) of the triple |
+| `TCPSNDBUF` | `ipv4/tcp_wmem` | the middle (default) of the triple |
+| `TCPR1CNT` | `ipv4/tcp_retries1` | same |
+| `TCPR2CNT` | `ipv4/tcp_retries2` | same |
+| `TCPMINRTM` | stored only | (the kernel's minimum RTO is per route) |
+| `TCPCLOTIMO` | `ipv4/tcp_fin_timeout` | seconds |
+| `TCPCNNMSG` | stored only | |
+| `UDPCKS` | stored only | (the kernel always checksums) |
+| `IPPATHMTU` | `ipv4/ip_no_pmtu_disc` | `*YES` 0, `*NO` 1; the interval is stored only |
+| `IPDTGFWD` | `ipv4/ip_forward`, `ipv6/conf/all/forwarding` | `*YES` 1 |
+| `IPSRCRTG` | `ipv4/conf/all/accept_source_route` | `*YES` 1 |
+| `IPRSBTIMO` | `ipv4/ipfrag_time`, `ipv6/ip6frag_time` | seconds |
+| `IPTTL` | `ipv4/ip_default_ttl`, `ipv6/conf/default/hop_limit` | same |
+| `IPQOSENB`, `IPQOSBCH`, `IPQOSTMR` | stored only | |
+| `IPDEADGATE` | stored only | |
+| `ARPTIMO` | `ipv4/neigh/default/gc_stale_time` | minutes to seconds |
+| `ECN` | `ipv4/tcp_ecn` | `*YES` 1, `*NO` 0 |
+| `NFC` | stored only | |
+| `LOGPCLERR` | stored only | |
+| `DHCPUNQID` | stored only | |
+| `IP6ERRLMT`, `IP6ERRRATE` | stored only | |
+| `IP6HOPLMT` | `ipv6/conf/default/hop_limit`, `ipv6/conf/all/hop_limit` | same (written after `IPTTL`) |
+| `IP6DUPRTLS` | stored only | |
+| `IP6TMPAVL` | `ipv6/conf/default/temp_valid_lft` | days to seconds |
+| `IP6TMPAPL` | `ipv6/conf/default/temp_prefered_lft` | days to seconds |
+| `IP6TMPAXP` | stored only | |
+
+The table under *Kernel interfaces* is netlink's share of this; the
+four after it (`IPPATHMTU`, `IP6HOPLMT`, `IP6TMPAVL`, `IP6TMPAPL`) are
+`tcpcfg`'s (`model::attr::Attributes::sysctls`).
+
+### Port restrictions
+
+`model::port::PortRestrictions::allows(port, protocol, user)` is the
+rule every `bind()` of a QS/400 job is checked against: a port no entry
+covers is open; one that entries cover is open to the profiles they name
+only. The service answers the list (`TcpOp::PortRules`) for the sockets
+layer. The distinct ranges go to the nftables backstop above (one rule a
+range and protocol), replaced whole when the table changes.
+
+### What other parts implement or read
+
+| Interface | Implemented by | Now |
+| --- | --- | --- |
+| `tcpcfg::line::LineState` (a line exists, its kernel link, varied on, vary on) | communications configuration (`*LIND`, `VRYCFG`) | `KernelNames`: a line named like a kernel link (`LIND(ETH0)` is `eth0`), always varied on |
+| `tcpcfg::server::ServerStarter` (start, end, active) | the TCP servers framework | the job's `JobStarter`: `*TELNET` through `STRTCPSVR`, the others answer `TCP1A04` |
+| `tcpcfg::resolver::HostConfig` (`TcpOp::HostConfig`) | read by the resolver | the host table, `HOSTNAME`, `DMNNAME`, the search list, `*LOCAL`, name servers, port, protocol, `INITQRYINT`, `QRYTIMOUT` (V7R5M0's `CHGTCPDMN` has `DMNSVRRTY` in their place: the interval, and attempts times the interval) |
+| `tcpcfg::resolver::port_rules` (`TcpOp::PortRules`) | read by the sockets layer's `PortRules` | the restrictions |
+| `tcpcfg::model::tables::ServicesTable` (`TcpOp::Services`) | read by `getservbyname`, `getservbyport` | the services table |
+| `ServerAttrs` (`TcpOp::Servers`, `TcpOp::SetServer`) | the servers' `CHGxxxA` commands | autostart and a keyword bag per server |
+| `tcpcfg::state::Snapshot` (`TcpOp::Snapshot`) | read by `NETSTAT` | the status of TCP/IP, every interface and route |
+
+### The displays
+
+`CFGTCP` is a menu (`QTOCCFG`): options 1, 2, 4 and 10 show the lists of
+interfaces, routes, port restrictions and host table entries
+(`QTOCIFC`, `QTOCRTE`, `QTOCPORT`, `QTOCHTE`) with their option 5
+displays; 3, 11 and 12 prompt `CHGTCPA`, `MRGTCPHT` and `CHGTCPDMN`; 20
+is `CFGTCPAPP` (`QTOCAPP`, with the applications' menus); 21 the
+related tables (`QTOCTBL`); 22 `CFGTCPPTP`; 23 says IP filters are not
+available. A user without `*IOSYSCFG` sees the lists with `5=Display`
+only, as the oracle's profile shows them; with it, `1=Add 2=Change
+4=Remove 5=Display 9=Start 10=End` (interfaces) and the like. An
+application option whose command this release does not have says so.
+`GO TCPADM`'s options run these commands; `GO CFGTCP` (a `*PGM` menu on
+IBM) does not exist yet.
+
+The panels follow the pub400 goldens (`ui/uim/tests/tcp_panels.rs`).
+Two UIM additions of ours serve them: `:LIST HEADSEP` (a blank row
+between the headings and the entries) and `SCROLL=IND` on `:MENU` and
+`:DATA` (the `More...`/`Bottom` row kept on every page); and a
+non-breaking blank now shows as a blank and is not trimmed from text, so
+`Configure BOOTP` keeps its name inline and a heading row can be held
+off its field's edge. Two goldens are not matched: the port
+restrictions list (the oracle's headings follow no single alignment:
+`Opt`, `Lower` and `Protocol` on the middle row, `*ONLY` under `Upper`
+on the third, `User` over `Profile` on the first two) and the host
+table's second key row (`F22` sits under `F6`, a column R7 does not give
+it); the host table's other rows are compared.
+
 ## Hardware resources
 
 Every Ethernet port with a device behind it (`/sys/class/net/*/device`)

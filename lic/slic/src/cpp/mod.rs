@@ -20,6 +20,7 @@ mod msgfcmd;
 mod objcmd;
 mod rpg;
 mod sysinfo;
+mod tcpcmd;
 mod uicmd;
 
 use cmd::block::Parms;
@@ -49,7 +50,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             name,
             &format!("{name} runs in the job, not the service"),
         ),
-        Site::Job | Site::Service => direct::run(system, name, parms)
+        Site::Job | Site::Service => tcpcmd::run(system, name, parms)
+            .or_else(|| direct::run(system, name, parms))
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| objcmd::run(system, name, parms))

@@ -63,6 +63,15 @@ impl Qmp {
         .map(|_| ())
     }
 
+    /// A human monitor command (`hostfwd_add ...`); its output.
+    pub fn hmp(&mut self, line: &str) -> Result<String, String> {
+        let v = self.execute(&json!({
+            "execute": "human-monitor-command",
+            "arguments": {"command-line": line}
+        }))?;
+        Ok(v.as_str().unwrap_or_default().to_string())
+    }
+
     /// Send a command and wait for its return value.
     fn execute(&mut self, cmd: &Value) -> Result<Value, String> {
         let text = cmd.to_string();

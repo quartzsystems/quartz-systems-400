@@ -1,0 +1,80 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QTOCCFG: CFGTCP, the TCP/IP configuration menu, with its related
+.* tables menu (option 21) and the point-to-point menu (option 22,
+.* CFGTCPPTP). The driver is work/qsjob/src/panels/tcp/; a RETURN
+.* option is a list it shows, a CMD option a command it runs.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='CFGTCP'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=CFGTCP HELP=HLPCFG KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configure TCP/IP
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='RETURN 101'.Work with TCP/IP interfaces
+:MENUI OPTION=2 ACTION='RETURN 102'.Work with TCP/IP routes
+:MENUI OPTION=3 ACTION='CMD ?CHGTCPA'.Change TCP/IP attributes
+:MENUI OPTION=4 ACTION='RETURN 104'.Work with TCP/IP port restrictions
+:MENUI OPTION=10 ACTION='RETURN 110'.Work with TCP/IP host table entries
+:MENUI OPTION=11 ACTION='CMD ?MRGTCPHT'.Merge TCP/IP host table
+:MENUI OPTION=12 ACTION='CMD ?CHGTCPDMN'.Change TCP/IP domain information
+:MENUI OPTION=20 ACTION='CMD CFGTCPAPP'.Configure TCP/IP applications
+:MENUI OPTION=21 ACTION='RETURN 121'.Configure related tables
+:MENUI OPTION=22 ACTION='CMD CFGTCPPTP'.Configure point-to-point TCP/IP
+:MENUI OPTION=23 ACTION='RETURN 123'.Load/Unload IP Filter
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGTBL HELP=HLPTBL KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure Related Tables
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKSRVTBLE'.Work with service table entries
+:MENUI OPTION=2 ACTION='CMD WRKPCLTBLE'.Work with protocol table entries
+:MENUI OPTION=3 ACTION='CMD WRKNETTBLE'.Work with network table entries
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGPTP HELP=HLPPTP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure Point-to-Point TCP/IP
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=2 ACTION='RETURN 202'.Work with active point-to-point jobs
+:MENUGRP.Modem information options
+:MENUI OPTION=11 ACTION='RETURN 211'.Work with modem information
+:EMENUGRP.
+:MENUGRP.Other related options:
+:MENUI OPTION=21 ACTION='RETURN 221'.Work with PPP line descriptions
+:MENUI OPTION=22 ACTION='RETURN 222'.Work with PPP line description status
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPCFG.Configure TCP/IP - Help
+:P.Everything TCP/IP uses: the interfaces with their addresses, the routes,
+the stack's attributes, the ports kept for chosen user profiles, the host
+table, the local names and the name servers, the applications and the
+tables of services, protocols and networks.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to where you were.
+:EHELP.
+:HELP NAME=HLPTBL.Configure Related Tables - Help
+:P.The services table names the ports of well-known services; the
+protocol and network tables name protocols and networks. Programs look
+names up in them.
+:EHELP.
+:HELP NAME=HLPPTP.Configure Point-to-Point TCP/IP - Help
+:P.Point-to-point profiles connect over modems and PPP lines, which this
+release does not have.
+:EHELP.
+:EPNLGRP.

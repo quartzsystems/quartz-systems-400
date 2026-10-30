@@ -19,6 +19,7 @@ sec = { path = "../../security/sec", version = "0.1.0" }
 ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
 svctools = { path = "../../lic/svctools", version = "0.1.0", features = ["wire"] }
+tcpcfg = { path = "../../net/tcpcfg", version = "0.1.0" }
 tracing.workspace = true
 
 [dev-dependencies]

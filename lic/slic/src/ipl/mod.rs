@@ -203,10 +203,18 @@ fn lic_phase(
 /// command line, else the address QEMU's user network expects.
 /// `BLOCKED(phase10)`: TCP/IP configuration objects and DHCP.
 fn net_address(system: &mut System) {
+    // A link with a device behind it: the kernel makes bond0 and dummy0
+    // itself (bonding and dummy are built in), and neither reaches a wire.
+    let device = |n: &str| std::path::Path::new(&format!("/sys/class/net/{n}/device")).exists();
     let Some(link) = system
         .links
         .iter()
-        .find(|l| l.name != "lo" && !l.name.starts_with("sit"))
+        .find(|l| device(&l.name))
+        .or_else(|| {
+            system.links.iter().find(|l| {
+                l.name != "lo" && !["sit", "bond", "dummy"].iter().any(|p| l.name.starts_with(p))
+            })
+        })
     else {
         return;
     };

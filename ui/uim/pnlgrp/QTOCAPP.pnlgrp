@@ -1,0 +1,105 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QTOCAPP: CFGTCPAPP and the applications' own menus (CFGTCPSNMP,
+.* CFGTCPRTD, CFGTCPBP, CFGTCPTELN, CFGTCPSMTP). An option whose
+.* command this release does not have answers that it is not available.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=CFGTCPAPP HELP=HLPAPP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure TCP/IP Applications
+:MENU DEPTH='*' SCROLL=IND OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD CFGTCPSNMP'.Configure SNMP agent
+:MENUI OPTION=2 ACTION='CMD CFGTCPRTD'.Configure RouteD
+:MENUI OPTION=4 ACTION='CMD CFGTCPBP'.Configure BOOTP
+:MENUI OPTION=5 ACTION='CMD ?CHGDDMTCPA'.Change DDM TCP attributes
+:MENUI OPTION=10 ACTION='CMD ?CHGFTPA'.Change FTP attributes
+:MENUI OPTION=11 ACTION='CMD CFGTCPTELN'.Configure TELNET
+:MENUI OPTION=12 ACTION='CMD CFGTCPSMTP'.Configure SMTP
+:MENUI OPTION=13 ACTION='CMD ?CHGLPDA'.Change LPD attributes
+:MENUI OPTION=16 ACTION='CMD ?CHGPOPA'.Change POP attributes
+:MENUI OPTION=17 ACTION='CMD ?CHGRXCA'.Change REXEC attributes
+:MENUI OPTION=19 ACTION='CMD ?CHGNTPA'.Change SNTP attributes
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGSNMP HELP=HLPSNMP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure TCP/IP SNMP
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD ?CHGSNMPA'.Change SNMP attributes
+:MENUI OPTION=2 ACTION='CMD ADDCOMSNMP'.Work with communities for SNMP
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGRTD HELP=HLPRTD KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure TCP/IP RouteD
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=2 ACTION='CMD WRKRTDCFG'.Work with RouteD configuration
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGBP HELP=HLPBP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure TCP/IP BOOTP
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=2 ACTION='CMD WRKBPTBL'.Work with BOOTP table
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGTELN HELP=HLPTELN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure TCP/IP TELNET
+:MENU DEPTH='*' SCROLL=IND OPTIONS=OPTION.Select one of the following:
+:MENUGRP.Work with associated system values:
+:MENUI OPTION=10 ACTION='CMD WRKSYSVAL SYSVAL(QAUTOVRT)'.Autoconfigure virtual devices
+:MENUI OPTION=11 ACTION='CMD WRKSYSVAL SYSVAL(QLMTSECOFR)'.Limit security officer device access
+:MENUI OPTION=12 ACTION='CMD WRKSYSVAL SYSVAL(QINACTITV)'.Inactive job time-out
+:MENUI OPTION=13 ACTION='CMD WRKSYSVAL SYSVAL(QINACTMSGQ)'.Inactive job message queue
+:MENUI OPTION=14 ACTION='CMD WRKSYSVAL SYSVAL(QLMTDEVSSN)'.Limit device sessions
+:MENUI OPTION=15 ACTION='CMD WRKSYSVAL SYSVAL(QMAXSGNACN)'.Action to take for failed sign-on attempts
+:MENUI OPTION=16 ACTION='CMD WRKSYSVAL SYSVAL(QMAXSIGN)'.Maximum sign-on attempts allowed
+:MENUI OPTION=17 ACTION='CMD WRKSYSVAL SYSVAL(QRMTSIGN)'.Remote sign-on control
+:MENUI OPTION=18 ACTION='CMD WRKSYSVAL SYSVAL(QDEVRCYACN)'.Device I/O error action
+:MENUI OPTION=19 ACTION='CMD WRKSYSVAL SYSVAL(QDSCJOBITV)'.Time interval before disconnected jobs end
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:PANEL NAME=CFGSMTP HELP=HLPSMTP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure TCP/IP SMTP
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKNAMSMTP'.Work with system alias table
+:MENUI OPTION=2 ACTION='CMD WRKNAMSMTP'.Work with personal alias table
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPAPP.Configure TCP/IP Applications - Help
+:P.The applications that run over TCP/IP: their attributes and the
+menus that set them up. An application this release does not have yet
+says so when its option is chosen.
+:EHELP.
+:HELP NAME=HLPSNMP.Configure TCP/IP SNMP - Help
+:P.The SNMP agent's attributes and communities.
+:EHELP.
+:HELP NAME=HLPRTD.Configure TCP/IP RouteD - Help
+:P.The RouteD server's configuration.
+:EHELP.
+:HELP NAME=HLPBP.Configure TCP/IP BOOTP - Help
+:P.The BOOTP server's table of clients.
+:EHELP.
+:HELP NAME=HLPTELN.Configure TCP/IP TELNET - Help
+:P.The system values the TELNET server works by: how virtual devices are
+made, which sessions are allowed, how long idle jobs stay and what a
+lost connection does to its job.
+:EHELP.
+:HELP NAME=HLPSMTP.Configure TCP/IP SMTP - Help
+:P.The alias tables mail is addressed through.
+:EHELP.
+:EPNLGRP.

@@ -1715,6 +1715,10 @@ impl Service for Served<'_> {
         super::sst::users(self.system, self.ctx.job.number)
     }
 
+    fn tcp(&mut self, op: stg::tcp::TcpOp) -> stg::tcp::TcpReply {
+        super::tcp::request(self.system, op)
+    }
+
     fn sst_user_change(
         &mut self,
         op: String,

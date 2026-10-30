@@ -161,7 +161,7 @@ wire_struct!(PrintPanel {
 });
 wire_enum!(Separator { 0 => Space, 1 => Rule, 2 => None, 3 => SysName, 4 => DateTime });
 wire_enum!(Layout { 0 => One, 1 => Two, 2 => Three });
-wire_enum!(Scroll { 0 => Yes, 1 => No });
+wire_enum!(Scroll { 0 => Yes, 1 => No, 2 => Ind });
 wire_enum!(Usage { 0 => Input, 1 => Output, 2 => Inout });
 wire_enum!(Display { 0 => Yes, 1 => No });
 wire_enum!(VarUpd { 0 => Yes, 1 => No });
@@ -266,6 +266,7 @@ wire_struct!(ListArea {
     select,
     actlen,
     compact,
+    headsep,
     help,
     actions,
     columns,

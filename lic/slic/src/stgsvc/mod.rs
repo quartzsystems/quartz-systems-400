@@ -34,6 +34,7 @@ pub(crate) mod security;
 pub(crate) mod splcmd;
 pub(crate) mod spool;
 pub(crate) mod stats;
+pub(crate) mod tcp;
 mod work2;
 mod uiapi;
 pub(crate) mod wtr;
@@ -339,6 +340,7 @@ fn install(system: &mut System) -> Result<usize, String> {
     made += crate::svc::db::dspf::install_shipped(&mut txn, qsys, &stamp)?;
     made += crate::svc::ui::install_shipped(&mut txn, qsys, &stamp)?;
     made += self::regfac::install(&mut txn, qsys, &stamp)?;
+    made += tcp::store::install(&mut txn, qsys, &stamp)?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)
 }

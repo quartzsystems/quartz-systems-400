@@ -65,7 +65,9 @@ pub(super) fn render(
     let shown = |c: &Column<'_>| c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..))).count();
     let longest = columns.iter().map(shown).max().unwrap_or(0);
     // R10: pages only when the content overflows.
-    let (per, overflow) = if longest > body {
+    // `SCROLL=IND` keeps the indicator's row on every page.
+    let ind = area.scroll == crate::model::Scroll::Ind;
+    let (per, overflow) = if longest > body || ind {
         (body.saturating_sub(1), true)
     } else {
         (body, false)

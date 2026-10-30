@@ -608,3 +608,53 @@ note = "a panel when the job shows panels; else the service's text"
 [cmd.WRKLIND]
 site = "job"
 note = "a panel when the job shows panels; else the service's text"
+
+# ------------------------------------------------- TCP/IP configuration
+# The service runs the configuration commands over the QUSRSYS files
+# (lic/slic/src/cpp/tcpcmd.rs); the job runs STRTCP and ENDTCP (it starts
+# and ends the servers) and shows the CFGTCP menus and the table panels.
+
+[cmd.STRTCP]
+site = "job"
+note = "applies the configuration in the service, then starts the autostart servers"
+
+[cmd.ENDTCP]
+site = "job"
+note = "ends the servers, then the configuration in the service"
+
+[cmd.ENDTCPABN]
+site = "job"
+note = "ENDTCP OPTION(*IMMED)"
+
+[cmd.CFGTCP]
+site = "job"
+
+[cmd.CFGTCPAPP]
+site = "job"
+
+[cmd.CFGTCPBP]
+site = "job"
+
+[cmd.CFGTCPRTD]
+site = "job"
+
+[cmd.CFGTCPSNMP]
+site = "job"
+
+[cmd.CFGTCPTELN]
+site = "job"
+
+[cmd.CFGTCPSMTP]
+site = "job"
+
+[cmd.CFGTCPPTP]
+site = "job"
+
+[cmd.WRKSRVTBLE]
+site = "job"
+
+[cmd.WRKPCLTBLE]
+site = "job"
+
+[cmd.WRKNETTBLE]
+site = "job"

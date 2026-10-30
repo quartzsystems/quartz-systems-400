@@ -74,6 +74,13 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RTVCFGSTS" => return rtvcfgsts(host, r, out),
         "RCLRSC" => return Ok(rclrsc(job, host)),
         "STRTCPSVR" => return strtcpsvr(host, r),
+        "STRTCP" | "ENDTCP" | "ENDTCPABN" | "WRKSRVTBLE" | "WRKPCLTBLE" | "WRKNETTBLE" | "CFGTCP"
+        | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN" | "CFGTCPSMTP"
+        | "CFGTCPPTP" => {
+            if let Some(res) = super::tcp::run(job, host, r) {
+                return res;
+            }
+        }
         "ENDTCPSVR" => return endtcpsvr(job, host, r),
         "CHGTELNA" => return chgtelna(job, host, r),
         // --- STRDBG screens (devtools/dbg)

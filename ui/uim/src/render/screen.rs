@@ -164,7 +164,13 @@ impl Screen {
             return;
         }
         let room = self.limit() + 1 - col;
-        let text: String = text.chars().take(room).collect();
+        // A non-breaking blank (it keeps words together, R13) shows as
+        // a blank.
+        let text: String = text
+            .chars()
+            .take(room)
+            .map(|c| if c == '\u{a0}' { ' ' } else { c })
+            .collect();
         if text.trim().is_empty() && attr != Attr::Underline {
             return;
         }

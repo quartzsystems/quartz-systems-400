@@ -82,7 +82,7 @@ is a diagnostic, never a panic.
 | `:DATAC.` | leaf | NAME HELP DISPLAY WIDTH | model |
 | `:DATASLT.` | `:EDATASLT.` | **VAR** HELP USAGE NAME DISPLAY REQUIRED CSRLOC SLTTYPE NOCHECK | model |
 | `:DATASLTC.` | leaf | **VALUE** HELP COND DISPLAY | model |
-| `:LIST.` | `:ELIST.` | **DEPTH LISTDEF** VIEWS ACTOR EXTACT MAXHEAD PARMS SCROLL BOTINST ENTER LAYOUT SELECT ACTLEN HELP COMPACT | model (`COMPACT` is ours) |
+| `:LIST.` | `:ELIST.` | **DEPTH LISTDEF** VIEWS ACTOR EXTACT MAXHEAD PARMS SCROLL BOTINST ENTER LAYOUT SELECT ACTLEN HELP COMPACT HEADSEP | model (`COMPACT` and `HEADSEP` are ours) |
 | `:LISTACT.` | leaf | OPTION ENTER HELP CONFIRM USREXIT ACTFOR RETURN VARUPD ENTERMSG | model |
 | `:LISTCOL.` | leaf | **VAR USAGE** MAXWIDTH HELP NAME DISPLAY DSPCOL NOGUI AUTOSKIP MINWIDTH | model |
 | `:LISTGRP.` | `:ELISTGRP.` | COL HELP NOGUI | model |
@@ -347,6 +347,16 @@ or 132) and the last usable column is `W-1`.
 | R24 | A pop-up panel (`DEPTH` under 24 or `WIDTH` under 80) is laid out at its own size and drawn in a box over the panel under it: top border row 2, the box centered, a row of dots above, colons at the sides, `:` dots `:` below; one attribute column inside each side, so panel column `c` is screen column `left + 1 + c` and panel row `r` screen row `2 + r`. The panel under it keeps its texts outside the box. | uim-position-window (a 10 by 74 panel: borders at columns 2 and 79, rows 2 and 13) |
 | R25 | In a pop-up window an input data item has no colon: its leaders end on the dot before the colon column and its field starts two columns past it (`C+2`; an output value is at `C+4`). On a full panel R14 holds: the leaders end in a dot at the colon column and the field is at `C+4` (wrkdevd, edtobjaut). | uim-position-window `Position to` 32, `Type` 34 |
 | R26 | An option no `:LISTACT.` has: the field shows underlined and reversed and the message line says so; every such entry is marked, and the page shows the first. | uim-option-not-valid (attribute 0x25 on both fields) |
+
+Three additions of ours serve the TCP/IP configuration displays
+(`ui/uim/tests/tcp_panels.rs`): `:LIST HEADSEP` puts a blank row
+between the heading rows and the entries (R8); `SCROLL=IND` on a
+`:MENU` or `:DATA` area keeps the indicator's row on every page and
+shows `More...` or `Bottom` even on a single page (R10); a
+non-breaking blank (U+00A0) in text is kept by the reader and the
+compiler, keeps the words around it together (a trailing name stays
+inline, R13; a heading row can be held off its field's edge, R9) and
+shows as a blank.
 
 The area heights: a `DEPTH` number is the area's rows; `DEPTH='*'`
 areas share what the fixed ones leave; `:TEXT.` without a depth takes

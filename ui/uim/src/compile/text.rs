@@ -50,15 +50,20 @@ fn push_text(out: &mut Vec<Span>, t: &str) {
     }
 }
 
+/// Source blanks only: a non-breaking blank is text.
+fn blank(c: char) -> bool {
+    c == ' ' || c.is_ascii_control()
+}
+
 fn trim_start(spans: &mut [Span]) {
     if let Some(Span::Text(t)) = spans.first_mut() {
-        *t = t.trim_start().to_string();
+        *t = t.trim_start_matches(blank).to_string();
     }
 }
 
 fn trim_end(spans: &mut [Span]) {
     if let Some(Span::Text(t)) = spans.last_mut() {
-        *t = t.trim_end().to_string();
+        *t = t.trim_end_matches(blank).to_string();
     }
 }
 

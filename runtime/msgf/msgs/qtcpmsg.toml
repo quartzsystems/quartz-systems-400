@@ -1,0 +1,279 @@
+# QTCPMSG: the TCP/IP configuration and operation messages (STRTCP,
+# ENDTCP, the interface, route, host table, port and attribute commands).
+# Identifiers the oracle's QTCP/QTCPMSGF shows keep its numbers and
+# substitution layouts (tools/conformance/oracle/net/pub400/messages-tcp.txt);
+# the TCP1Axx and TCP1Dxx ones are ours in IBM's families. Every text is ours.
+name = "QTCPMSG"
+text = "TCP/IP messages"
+
+[[msg]]
+id = "TCP1A00"
+sev = 0
+text = "TCP/IP started."
+help = "The stack is up: the loopback, the interfaces that start with TCP/IP, their routes, the attributes and the port restrictions are in place."
+
+[[msg]]
+id = "TCP1A01"
+sev = 20
+text = "TCP/IP is already active."
+help = "STRTCP was run while TCP/IP was started. Nothing was changed; STRTCPIFC starts an interface on its own."
+
+[[msg]]
+id = "TCP1A02"
+sev = 0
+text = "TCP/IP ended."
+help = "Every interface has ended and the routes and port restrictions TCP/IP put in place are gone."
+
+[[msg]]
+id = "TCP1A03"
+sev = 20
+text = "TCP/IP is not active."
+help = "ENDTCP was run while TCP/IP was not started."
+
+[[msg]]
+id = "TCP1A04"
+sev = 30
+text = "&1 cannot be started in this release."
+help = "The server named is not one this release runs yet."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A05"
+sev = 30
+text = "&1 could not be started."
+help = "The server's job did not start. The job log of the job that asked has the reason."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A07"
+sev = 0
+text = "&1 server starting."
+help = "The server's job was started and is getting ready for connections."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A08"
+sev = 10
+text = "&1 server already started."
+help = "The server's job is running; nothing was started."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A09"
+sev = 10
+text = "&1 server not active."
+help = "The server's job is not running; nothing was ended."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A0A"
+sev = 0
+text = "&1 server ending."
+help = "The server's job was asked to end."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A0B"
+sev = 0
+text = "Interface &1 started."
+help = "The address is on its line and its routes are in place."
+vars = ["*CHAR 45"]
+
+[[msg]]
+id = "TCP1A0C"
+sev = 0
+text = "Interface &1 ended."
+help = "The address was taken off its line; routes through it were removed."
+vars = ["*CHAR 45"]
+
+[[msg]]
+id = "TCP1A0D"
+sev = 20
+text = "Interface &1 is already active."
+help = "STRTCPIFC was asked for an interface that is started."
+vars = ["*CHAR 45"]
+
+[[msg]]
+id = "TCP1A0E"
+sev = 20
+text = "Interface &1 is not active."
+help = "ENDTCPIFC was asked for an interface that is not started."
+vars = ["*CHAR 45"]
+
+[[msg]]
+id = "TCP1A0F"
+sev = 30
+text = "Interface &1 not started: &2"
+help = "The kernel or the line refused part of the start. The interface shows Failed until it is started again."
+vars = ["*CHAR 45", "*CHAR 128"]
+
+[[msg]]
+id = "TCP1A11"
+sev = 20
+text = "Route to &1 not added: &2"
+help = "The kernel refused the route; it shows Failed and is tried again when an interface starts."
+vars = ["*CHAR 45", "*CHAR 128"]
+
+[[msg]]
+id = "TCP1A13"
+sev = 20
+text = "Attribute not applied: &1"
+help = "A TCP/IP attribute could not be given to the kernel. It is kept and applied at the next STRTCP."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1A14"
+sev = 0
+text = "TCP/IP ending."
+help = "ENDTCP is ending the servers, then the interfaces."
+
+[[msg]]
+id = "TCP1D03"
+sev = 0
+text = "&1 entry added."
+help = "The configuration file has the new entry. An entry for an active interface takes effect now."
+vars = ["*CHAR 20"]
+
+[[msg]]
+id = "TCP1D04"
+sev = 0
+text = "&1 entry changed."
+help = "The configuration file has the changed entry."
+vars = ["*CHAR 20"]
+
+[[msg]]
+id = "TCP1D05"
+sev = 0
+text = "&1 entry removed."
+help = "The entry is gone from the configuration file."
+vars = ["*CHAR 20"]
+
+[[msg]]
+id = "TCP1D06"
+sev = 30
+text = "The entry already exists: &1"
+help = "An entry with the same key is configured. Change it, or remove it first."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1D07"
+sev = 30
+text = "The entry was not found: &1"
+help = "No entry has the key given."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1D08"
+sev = 30
+text = "Value not valid: &1"
+help = "A parameter's value is outside what the command takes, or does not fit with another parameter."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1D09"
+sev = 0
+text = "TCP/IP attributes changed."
+help = "The attributes are kept; those with a kernel setting take effect now when TCP/IP is active."
+
+[[msg]]
+id = "TCP1D0A"
+sev = 0
+text = "Host table merged: &1 entries added, &2 changed."
+help = "MRGTCPHT added the addresses that were new and the names that were missing."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "TCP1D0B"
+sev = 0
+text = "Host table entry &1 renamed to &2."
+help = "The names and text moved to the new address."
+vars = ["*CHAR 45", "*CHAR 45"]
+
+[[msg]]
+id = "TCP1D0C"
+sev = 30
+text = "The entry is in use: &1"
+help = "An active interface, or another entry, depends on it. End the interface or change the other entry first."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1D0D"
+sev = 30
+text = "The table is full: &1"
+help = "The table holds as many entries as it can."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP2640"
+sev = 20
+text = "The request needs TCP/IP, which is not active."
+help = "Start TCP/IP with STRTCP and try again."
+
+[[msg]]
+id = "TCP2658"
+sev = 30
+text = "No interface has the address '&1'."
+help = "The address must be one of a configured interface."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "TCP8007"
+sev = 30
+text = "The line for TCP/IP could not be started."
+help = "Varying the line on failed. See the earlier messages for why."
+
+[[msg]]
+id = "TCP9509"
+sev = 10
+text = "Line &1 does not exist."
+help = "Create the line description, or name another."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP9515"
+sev = 20
+text = "That internet address or line is already configured."
+help = "Interfaces need distinct addresses and alias names."
+
+[[msg]]
+id = "TCP9517"
+sev = 30
+text = "That port restriction already exists."
+help = "The same port, protocol and user profile are already restricted."
+
+[[msg]]
+id = "TCP9518"
+sev = 20
+text = "Line &1 cannot carry TCP/IP (&2)."
+help = "The line has no network port TCP/IP can use."
+vars = ["*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "TCP9640"
+sev = 0
+text = "The host table is empty."
+help = "No host table entries are configured."
+
+[[msg]]
+id = "TCP9642"
+sev = 0
+text = "No routes are configured."
+help = "The route table is empty."
+
+[[msg]]
+id = "TCP9644"
+sev = 0
+text = "No port restrictions are configured."
+help = "Every port can be bound by any user profile."
+
+[[msg]]
+id = "TCP9650"
+sev = 20
+text = "The host name and domain name are too long together."
+help = "With the period between them they may be at most 255 characters."
+
+[[msg]]
+id = "TCP9880"
+sev = 20
+text = "The local domain name is not valid."
+help = "A domain name is labels of letters, digits and hyphens separated by periods."

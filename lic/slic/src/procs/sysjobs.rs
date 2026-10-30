@@ -33,6 +33,8 @@ pub const SYSTEM_JOBS: &[&str] = &[
     "QSPLMAINT",
     "QALERT",
     "QSYSCOMM1",
+    "QTCPCTL",
+    "QTCPWRK",
 ];
 
 /// The startup job the controlling subsystem starts.

@@ -30,6 +30,7 @@ mod qemu;
 pub mod qir;
 pub mod rpg;
 mod steps;
+mod tcp;
 
 use std::env;
 use std::fs;

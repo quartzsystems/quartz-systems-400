@@ -93,6 +93,7 @@ pub struct PrintPanel {
 
 /// One area of a panel.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)] // one area per panel region, never many
 pub enum Area {
     /// `:DATA.`.
     Data(DataArea),
@@ -173,6 +174,9 @@ pub enum Scroll {
     /// `NO`.
     #[default]
     No,
+    /// `IND` (ours): scrolls, and shows `More...` or `Bottom` even on
+    /// a single page, as the TCP/IP configuration displays do.
+    Ind,
 }
 
 /// `USAGE`.
@@ -432,6 +436,9 @@ pub struct ListArea {
     pub actlen: Option<u32>,
     /// `COMPACT`: no blank row between the legends and the headings.
     pub compact: bool,
+    /// `HEADSEP` (ours): a blank row between the headings and the
+    /// entries, as the TCP/IP configuration lists have.
+    pub headsep: bool,
     /// `HELP`.
     pub help: Option<String>,
     /// `:LISTACT.` items.

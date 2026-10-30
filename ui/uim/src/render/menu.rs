@@ -39,7 +39,9 @@ pub(super) fn render(ctx: &Ctx, area: &MenuArea, s: &mut Screen, top: usize, hei
     }
     let rows = rows(ctx, area);
     let body = height.saturating_sub(2);
-    let (per, overflow) = if rows.len() > body {
+    // `SCROLL=IND` keeps the indicator's row on every page.
+    let ind = area.scroll == crate::model::Scroll::Ind;
+    let (per, overflow) = if rows.len() > body || ind {
         (body.saturating_sub(1), true)
     } else {
         (body, false)

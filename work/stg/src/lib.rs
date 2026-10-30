@@ -20,6 +20,7 @@ pub mod ifs;
 mod link;
 pub mod proto;
 pub mod remote;
+pub mod tcp;
 
 pub use link::{Link, Shared};
 pub use proto::{Client, ExecReply, Request, Service, Start, dispatch};

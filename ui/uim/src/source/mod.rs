@@ -108,7 +108,7 @@ impl Source {
         for (i, raw) in text.lines().enumerate() {
             let seq = u32::try_from(i + 1).unwrap_or(u32::MAX).saturating_mul(100);
             let line = self.lines.len();
-            let mut t = raw.trim_end().to_string();
+            let mut t = raw.trim_end_matches(|c: char| c == ' ' || c.is_ascii_control()).to_string();
             if t.contains('\t') {
                 diags.push(ids::tab(line));
                 t = t.replace('\t', " ");

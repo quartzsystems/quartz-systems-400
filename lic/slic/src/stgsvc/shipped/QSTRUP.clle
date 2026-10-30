@@ -6,8 +6,9 @@
 /* controlling subsystem's autostart job QSTRUPJD calls. It starts the   */
 /* work every system starts with: the spooling, server and user work    */
 /* subsystems; the interactive, batch and communications subsystems     */
-/* when QCTL controls; the capture printer's writer when QSTRPRTWTR is   */
-/* 1; and it releases the System/36 evoke queue.                         */
+/* when QCTL controls; TCP/IP with the servers that start with it; the   */
+/* capture printer's writer when QSTRPRTWTR is 1; and it releases the    */
+/* System/36 evoke queue.                                                */
              PGM
              DCL        VAR(&CTLSBSD) TYPE(*CHAR) LEN(20)
              DCL        VAR(&WTR) TYPE(*CHAR) LEN(1)
@@ -21,7 +22,7 @@
                STRSBS     SBSD(QSYS/QBATCH)
                STRSBS     SBSD(QSYS/QCMN)
              ENDDO
-             STRTCPSVR  SERVER(*TELNET)
+             STRTCP
              RTVSYSVAL  SYSVAL(QSTRPRTWTR) RTNVAR(&WTR)
              IF         COND(&WTR *EQ '1') THEN(STRPRTWTR DEV(QSCAPTURE))
              RLSJOBQ    JOBQ(QGPL/QS36EVOKE)

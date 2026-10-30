@@ -85,7 +85,7 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
             s.help(r, c.start, end, help);
         }
     }
-    row += head_rows;
+    row += head_rows + usize::from(area.headsep);
 
     // The entries.
     let entries = last.saturating_sub(row);
@@ -319,7 +319,9 @@ fn columns<'a>(ctx: &Ctx, area: &'a ListArea, limit: usize) -> Vec<Col<'a>> {
             field = field.max(m as usize);
         }
         let text = ctx.text(&c.heading);
-        let heading = layout::wrap(text.trim(), field);
+        // Blanks only: a non-breaking blank at an end holds a heading row
+        // off its edge.
+        let heading = layout::wrap(text.trim_matches(' '), field);
         let width = heading
             .iter()
             .map(|h| h.chars().count())

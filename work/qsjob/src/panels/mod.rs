@@ -12,6 +12,7 @@
 pub mod objects;
 pub mod system;
 pub mod system2;
+pub mod tcp;
 pub mod work;
 pub mod work2;
 
@@ -102,6 +103,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
     }
     // --- programs, config, security, editors (system2.rs)
     if let Some(res) = system2::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
+    // --- TCP/IP configuration (tcp.rs)
+    if let Some(res) = tcp::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     None
