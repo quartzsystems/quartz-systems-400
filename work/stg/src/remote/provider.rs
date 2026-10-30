@@ -33,6 +33,16 @@ impl Provider for RemoteProvider {
         self.link.borrow_mut().with(|l| l.sec_api(q))
     }
 
+    fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, ApiFail> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.regfac(q))
+            .map_err(|f| ApiFail {
+                msgid: f.msgid,
+                data: f.data,
+            })
+    }
+
     fn list_objects(&mut self, lib: &str, name: &str, ty: &str) -> Vec<ObjInfo> {
         self.link
             .borrow_mut()

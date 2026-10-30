@@ -940,3 +940,727 @@ Missing, and why:
 - TLS ports: out of scope for the recorder.
 - Change password: never run against an oracle.
 - The DDM/DRDA server (446/448) is not part of this recorder.
+
+
+## Exit points
+
+The registration facility (`net/regfac`) keeps exit points and the
+exit programs registered on them, and calls those programs for the
+servers. Names, formats, flags, maximums and preprocessing programs are
+IBM's (`tools/conformance/oracle/net/pub400/exit-points.txt`, pub400
+V7R5M0); the descriptions are Quartz-written. The structures come from
+the `QSYSINC` headers (`tools/conformance/oracle/qsysinc/H/E*.txt`,
+`QUSREG`, `QUSRGFA1`, `QUSRGFA2`) and the parameter lists of the FTP
+and telnet formats from IBM's published descriptions; every table below
+is checked against the code by `net/regfac/tests/spec.rs` (a table after
+`<!-- regfac: NAME -->` is layout `NAME`, after `<!-- regfac-parms:
+NAME -->` the parameters of format `NAME`; `cargo test -p regfac --test
+spec -- --ignored --nocapture` prints them).
+
+### The repository
+
+One object, `QUSRSYS/QUSEXRGOBJ`, type `*EXITRG` (code `0x0029`), made
+at the first IPL with the shipped points; at each later IPL the shipped
+points it lacks are added and nothing else changes. Only the storage
+service reads or writes it: jobs ask through the `Regfac` request (stg
+tag 210) with a `regfac::Query` (list, programs, register, deregister,
+add, remove, refused). Changing it takes `*ALLOBJ` and `*SECADM`
+(`CPF2222` otherwise); reading it takes nothing.
+
+The payload is the `ExitrgHeader` (magic `QREG` in ASCII, version 1,
+the number of points, little-endian), then per point an `ExitrgPoint`
+followed by its programs, each an `ExitrgProgram` followed by its
+`XPDLEN` bytes of exit program data. Names and texts are CP037, blank
+padded; integers little-endian. `EPMAX` is -1 for no maximum. `EPFLAGS`:
+1 registered, 2 deregistration allowed, 4 change allowed. A
+preprocessing field (`EPPADD`, `EPPRMV`, `EPPRTV`) is program, library
+and format, blanks for none. `EPDIND`/`XPDIND` is `T` (the text field
+holds the description) or `M` (message file, library and identifier).
+`XPTHDS` is `0` unknown, `1` not threadsafe, `2` threadsafe; `XPMTA` `0`
+`*SYSVAL`, `1` `*RUN`, `2` `*MSG`, `3` `*NORUN`.
+
+### Shipped points
+
+| Exit point | Formats | Deregister | Change | Maximum | Preprocessing (add, remove) |
+|---|---|---|---|---|---|
+| `QIBM_QZSO_SIGNONSRV` | `ZSOY0100` | no | yes | 1 | |
+| `QIBM_QZSC_LM`, `_NLS`, `_SM` | `ZSCL0100`, `ZSCN0100`, `ZSCS0100` | no | yes | 1 | |
+| `QIBM_QZDA_INIT` | `ZDAI0100` | no | yes | 1 | |
+| `QIBM_QZDA_NDB1` | `ZDAD0100`, `ZDAD0200` | no | yes | 1 | |
+| `QIBM_QZDA_ROI1` | `ZDAR0100`, `ZDAR0200` | no | yes | 1 | |
+| `QIBM_QZDA_SQL1`, `_SQL2` | `ZDAQ0100`, `ZDAQ0200` | no | yes | 1 | |
+| `QIBM_QZHQ_DATA_QUEUE` | `ZHQ00100` | no | yes | 1 | |
+| `QIBM_QPWFS_FILE_SERV` | `PWFS0100`, `PWFS0200` | no | no | 1 | `QSYS/QUSEPAUT` |
+| `QIBM_QNPS_ENTRY`, `_SPLF` | `ENTR0100`, `SPLF0100` | no | yes | none | |
+| `QIBM_QZRC_RMT` | `CZRC0100` | no | yes | 1 | |
+| `QIBM_QTMF_CLIENT_REQ`, `_SERVER_REQ` | `VLRQ0100` | yes | no | 1 | `QTCP/QTMFADDP`, `QTCP/QTMFRMVP` |
+| `QIBM_QTMF_SVR_LOGON` | `TCPL0100`, `TCPL0200`, `TCPL0300` | yes | no | 1 | `QTCP/QTMFADDP`, `QTCP/QTMFRMVP` |
+| `QIBM_QTMX_SERVER_REQ` | `VLRQ0100` | yes | no | 1 | `QTCP/QTMXADDP`, `QTCP/QTMXRMVP` |
+| `QIBM_QTMX_SVR_LOGON` | `TCPL0100`, `TCPL0300` | yes | no | 1 | `QTCP/QTMXADDP`, `QTCP/QTMXRMVP` |
+| `QIBM_QTOD_SERVER_REQ` | `VLRQ0100` | yes | yes | 1 | `QSYS/QTODADDP`, `QSYS/QTODRMVP` |
+| `QIBM_QTG_DEVINIT`, `_DEVTERM` | `INIT0100`, `TERM0100` | no | no | 1 | `QSYS/QTVADDP`, `QSYS/QTVRMVP` |
+
+The preprocessing programs are recorded and shown as IBM ships them;
+QS/400 has no such programs and does not call them (the authority they
+check is the facility's own). Not shipped, and why: the "original"
+Client Access servers' points (`QIBM_QHQ_DTAQ`, `QIBM_QRQ_SQL`,
+`QIBM_QTF_TRANSFER`, `QIBM_QVP_PRINTERS`, `QIBM_QMF_MESSAGE`,
+`QIBM_QLZP_LICENSE`; no header gives their formats),
+`QIBM_QTMX_SVR_SELECT` (`RXCS0100` unknown), the sockets points
+`QIBM_QSO_*` and the IFS open/close/scan points `QIBM_QP0L_*` (their
+callers are not this work), and every point of a function QS/400 does
+not have.
+
+### Commands, panels and APIs
+
+`ADDEXITPGM` and `RMVEXITPGM` run in the storage service. `WRKREGINF`
+shows panel `WRKREGINF` of `QSYS/QUIREGINF` in an interactive job
+(option 5 `DSPEXITPNT`, option 8 `WRKEXITPGM` with its options 1 add,
+4 remove, 5 display `DSPEXITPGM`, 10 replace) and the service's text
+otherwise. The APIs (`SYSAPI.md` §11) are the programs `QUSRGPT`,
+`QUSDRGPT`, `QUSADDEP`, `QUSRMVEP`, `QUSRTVEI` and the bound
+procedures `QusRegisterExitPoint`, `QusDeregisterExitPoint`,
+`QusAddExitProgram`, `QusRemoveExitProgram` (`QUSRGFA1`) and
+`QusRetrieveExitInformation` (`QUSRGFA2`). Messages are IBM's
+identifiers with Quartz text: `CPF3CD1` registered already, `CPF3CD2`
+and `CPF3CD3` names, `CPF3CD4` the maximum, `CPF3CD6` data length,
+`CPF3CD8` not registered, `CPF3CDA` no repository, `CPF3CDB` no such
+point, `CPF3CDC` deregistration refused, `CPF3CDD` no such program,
+`CPF3CDE` program name, `CPF3CDF` number taken, `CPF3CE1` number,
+`CPF3CE2` handle, `CPF3CE4`..`CPF3CE9` selection, `CPF3CEC`/`CPF3CED`
+nothing found.
+
+Audit: adding, replacing and removing an exit program write a `GR`
+entry (`GRETYP` `A`, `R`, `D`) with the point, program and library; an
+exit program that refuses a request or cannot run writes `GRETYP` `F`
+with its return code (`SECURITY.md`, `AuditGR`).
+
+### Calling exit programs
+
+`regfac::call_exit(registry, caller, point, request) -> ExitAnswer`:
+the registry (`ExitRegistry`) gives the point's programs (over the
+link: `stg::remote::RemoteRegistry`; in memory: `MemRegistry`), the
+caller (`ProgramCaller`, implemented by `mi::Job`) calls each in the
+server's job, by number, with the request's parameters as fresh
+buffers. The answer says whether the request goes ahead, holds the
+parameters after the last program ran (the outputs a server reads:
+`tcp::logon_out`, `telnet::init_out`) and every call. A point with no
+programs allows. A program that is missing, cannot be called or ends
+in an exception refuses, as does a registry that cannot be read; the
+first refusal ends the calls and is reported (`ExitRegistry::refused`,
+audited `GR`). The verdicts:
+
+- host server formats: two parameters, the return code `CHAR(1)`
+  (starts blank; `1` allows) and the structure;
+- `VLRQ0100`: allow operation `BINARY(4)`, 1 or 2 allow (2 means "do
+  not ask again in this session", which the server keeps), 0 and -1
+  refuse;
+- `TCPL0100`/`0200`/`0300`: the return code, 0 refuses; the others
+  choose how the session signs on (IBM's table), with the profile,
+  password, current library and home directory returned;
+- `INIT0100`: allow connection `1`; allow automatic sign-on and the
+  changed user and device descriptions are returned; `TERM0100` cannot
+  refuse.
+
+`CZRC0100` is padded to IBM's declared 6056 bytes; for a command the
+command's CCSID overlays the object name (`Qzrc_Rmtsrv_Format2`) and the
+command text follows at 56. `ZDAQ0200` puts the whole statement after
+the fixed part and the extended cursor name after it at its offset;
+`ZDAD0200` the libraries, ten bytes each, after `NBRLIBS`; `PWFS0100`
+the file name after the fixed part; `PWFS0200` the source and target
+names at their offsets; `SPLF0100` the request's data after `DATALEN`.
+
+Not confirmed on an oracle (`NET_OPEN_QUESTIONS.md`): the `VLRQ0100`,
+`TCPL*`, `INIT0100` and `TERM0100` parameter lists (no header carries
+them); the encoding of file names in `PWFS0100`/`PWFS0200` (CP037 here);
+`SPLF0100`'s layout after the server information (the header gives the
+pieces, not how they are joined); the client address fields of the
+telnet connection description (text here); the `EXTI0100` entry length
+(204 here, the fields end at 201), where `EXTI0200`/`EXTI0300` data
+offsets point (from the receiver's start here) and the continuation
+handle's form (the entry number as text here); the `THDSAFE` and
+`MLTTHDACN` codes.
+
+### Repository payload
+
+<!-- regfac: ExitrgHeader -->
+#### `ExitrgHeader` (16 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `RGMAGIC` |
+| 4 | 4 | `RGVERS` |
+| 8 | 4 | `RGCOUNT` |
+| 12 | 4 | `RGRSV` |
+
+<!-- regfac: ExitrgPoint -->
+#### `ExitrgPoint` (208 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 20 | `EPNAME` |
+| 20 | 8 | `EPFMT` |
+| 28 | 4 | `EPMAX` |
+| 32 | 1 | `EPFLAGS` |
+| 33 | 1 | `EPDIND` |
+| 34 | 28 | `EPPADD` |
+| 62 | 28 | `EPPRMV` |
+| 90 | 28 | `EPPRTV` |
+| 118 | 10 | `EPMSGF` |
+| 128 | 10 | `EPMSGL` |
+| 138 | 7 | `EPMSGID` |
+| 145 | 50 | `EPTEXT` |
+| 195 | 1 | `EPRSV1` |
+| 196 | 4 | `EPPGMS` |
+| 200 | 8 | `EPRSV2` |
+
+<!-- regfac: ExitrgProgram -->
+#### `ExitrgProgram` (116 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `XPNBR` |
+| 4 | 4 | `XPCCSID` |
+| 8 | 4 | `XPDLEN` |
+| 12 | 10 | `XPPGM` |
+| 22 | 10 | `XPLIB` |
+| 32 | 1 | `XPTHDS` |
+| 33 | 1 | `XPMTA` |
+| 34 | 1 | `XPDIND` |
+| 35 | 1 | `XPRSV1` |
+| 36 | 10 | `XPMSGF` |
+| 46 | 10 | `XPMSGL` |
+| 56 | 7 | `XPMSGID` |
+| 63 | 50 | `XPTEXT` |
+| 113 | 3 | `XPRSV2` |
+
+### Receivers of `QUSRTVEI`
+
+Every format starts with `EXTIHeader`; `CONTH` is blank when every entry fit, else it names the first left out. `EXTI0200` and `EXTI0300` entries are followed by their program data and padded to four bytes; `NEXT` and `OFFDTA` are offsets from the receiver's start. `SelectEntry` is one selection criterion (operator 1, equal, is the only one), its comparison data after it.
+
+<!-- regfac: EXTIHeader -->
+#### `EXTIHeader` (36 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `BYTRTN` |
+| 4 | 4 | `BYTAVL` |
+| 8 | 16 | `CONTH` |
+| 24 | 4 | `OFFENT` |
+| 28 | 4 | `NBRENT` |
+| 32 | 4 | `LENENT` |
+
+<!-- regfac: EXTI0100 -->
+#### `EXTI0100` (204 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 20 | `EPNAME` |
+| 20 | 8 | `EPFMT` |
+| 28 | 4 | `MAXPGM` |
+| 32 | 4 | `NBRPGM` |
+| 36 | 1 | `ALWDRG` |
+| 37 | 1 | `ALWCHG` |
+| 38 | 1 | `REGD` |
+| 39 | 10 | `PADDN` |
+| 49 | 10 | `PADDL` |
+| 59 | 8 | `PADDF` |
+| 67 | 10 | `PRMVN` |
+| 77 | 10 | `PRMVL` |
+| 87 | 8 | `PRMVF` |
+| 95 | 10 | `PRTVN` |
+| 105 | 10 | `PRTVL` |
+| 115 | 8 | `PRTVF` |
+| 123 | 1 | `DIND` |
+| 124 | 10 | `DMSGF` |
+| 134 | 10 | `DMSGL` |
+| 144 | 7 | `DMSGID` |
+| 151 | 50 | `TEXT` |
+| 201 | 3 | `RSV` |
+
+<!-- regfac: EXTI0200 -->
+#### `EXTI0200` (76 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `NEXT` |
+| 4 | 20 | `EPNAME` |
+| 24 | 8 | `EPFMT` |
+| 32 | 1 | `REGD` |
+| 33 | 1 | `COMPL` |
+| 34 | 2 | `RSV` |
+| 36 | 4 | `PGMNBR` |
+| 40 | 10 | `PGM` |
+| 50 | 10 | `PGMLIB` |
+| 60 | 4 | `CCSID` |
+| 64 | 4 | `OFFDTA` |
+| 68 | 4 | `LENDTA` |
+| 72 | 1 | `THDS` |
+| 73 | 1 | `MTA` |
+| 74 | 1 | `SVU` |
+| 75 | 1 | `RSV2` |
+
+<!-- regfac: EXTI0300 -->
+#### `EXTI0300` (156 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `NEXT` |
+| 4 | 20 | `EPNAME` |
+| 24 | 8 | `EPFMT` |
+| 32 | 1 | `REGD` |
+| 33 | 1 | `COMPL` |
+| 34 | 2 | `RSV` |
+| 36 | 4 | `PGMNBR` |
+| 40 | 10 | `PGM` |
+| 50 | 10 | `PGMLIB` |
+| 60 | 1 | `DIND` |
+| 61 | 10 | `MSGF` |
+| 71 | 10 | `MSGL` |
+| 81 | 7 | `MSGID` |
+| 88 | 50 | `TEXT` |
+| 138 | 2 | `RSV2` |
+| 140 | 4 | `CCSID` |
+| 144 | 4 | `OFFDTA` |
+| 148 | 4 | `LENDTA` |
+| 152 | 1 | `THDS` |
+| 153 | 1 | `MTA` |
+| 154 | 1 | `SVU` |
+| 155 | 1 | `RSV3` |
+
+<!-- regfac: SelectEntry -->
+#### `SelectEntry` (16 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `SIZE` |
+| 4 | 4 | `COMPOP` |
+| 8 | 4 | `START` |
+| 12 | 4 | `LENCMP` |
+
+### Format structures
+
+<!-- regfac: ZSOY0100 -->
+#### `ZSOY0100` (32 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `APPNAME` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+
+<!-- regfac: ZSCL0100 -->
+#### `ZSCL0100` (314 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 255 | `CLIENT` |
+| 287 | 8 | `HANDLE` |
+| 295 | 7 | `PRODID` |
+| 302 | 4 | `FEATURE` |
+| 306 | 6 | `RELEASE` |
+| 312 | 2 | `INFOTYPE` |
+
+<!-- regfac: ZSCS0100 -->
+#### `ZSCS0100` (798 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 255 | `CLIENT` |
+| 287 | 255 | `CMNTY` |
+| 542 | 1 | `NODETYPE` |
+| 543 | 255 | `NODENAME` |
+
+<!-- regfac: ZSCN0100 -->
+#### `ZSCN0100` (42 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 4 | `FROMCCSID` |
+| 36 | 4 | `TOCCSID` |
+| 40 | 2 | `MAPTYPE` |
+
+<!-- regfac: ZDAI0100 -->
+#### `ZDAI0100` (285 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 63 | `IFCTYPE` |
+| 95 | 127 | `IFCNAME` |
+| 222 | 63 | `IFCLEVEL` |
+
+<!-- regfac: ZDAD0100 -->
+#### `ZDAD0100` (358 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 128 | `FILE` |
+| 160 | 10 | `LIB` |
+| 170 | 10 | `MBR` |
+| 180 | 10 | `AUT` |
+| 190 | 128 | `BASEFILE` |
+| 318 | 10 | `BASELIB` |
+| 328 | 10 | `OVRFILE` |
+| 338 | 10 | `OVRLIB` |
+| 348 | 10 | `OVRMBR` |
+
+<!-- regfac: ZDAD0200 -->
+#### `ZDAD0200` (36 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 4 | `NBRLIBS` |
+
+<!-- regfac: ZDAR0100 -->
+#### `ZDAR0100` (404 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 20 | `LIB` |
+| 52 | 36 | `RDB` |
+| 88 | 20 | `PKG` |
+| 108 | 256 | `FILE` |
+| 364 | 20 | `MBR` |
+| 384 | 20 | `FMT` |
+
+<!-- regfac: ZDAR0200 -->
+#### `ZDAR0200` (308 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 10 | `PKLIB` |
+| 42 | 128 | `PKNAME` |
+| 170 | 10 | `FKLIB` |
+| 180 | 128 | `FKNAME` |
+
+<!-- regfac: ZDAQ0100 -->
+#### `ZDAQ0100` (865 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 18 | `STMTNAME` |
+| 50 | 18 | `CURSOR` |
+| 68 | 2 | `PREPOPT` |
+| 70 | 2 | `OPENATR` |
+| 72 | 10 | `PKG` |
+| 82 | 10 | `PKGLIB` |
+| 92 | 2 | `DRDA` |
+| 94 | 1 | `COMMIT` |
+| 95 | 512 | `SQLTEXT` |
+| 607 | 258 | `EXTCURSOR` |
+
+<!-- regfac: ZDAQ0200 -->
+#### `ZDAQ0200` (238 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 18 | `STMTNAME` |
+| 50 | 18 | `CURSOR` |
+| 68 | 2 | `PREPOPT` |
+| 70 | 2 | `OPENATR` |
+| 72 | 10 | `PKG` |
+| 82 | 10 | `PKGLIB` |
+| 92 | 2 | `DRDA` |
+| 94 | 1 | `COMMIT` |
+| 95 | 10 | `DFTLIB` |
+| 105 | 3 | `RSV1` |
+| 108 | 4 | `OFFEXTCUR` |
+| 112 | 4 | `LENEXTCUR` |
+| 116 | 118 | `RSV2` |
+| 234 | 4 | `SQLLEN` |
+
+<!-- regfac: ZHQ00100 -->
+#### `ZHQ00100` (314 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 10 | `OBJ` |
+| 42 | 10 | `LIB` |
+| 52 | 2 | `KEYOP` |
+| 54 | 4 | `KEYLEN` |
+| 58 | 256 | `KEY` |
+
+<!-- regfac: PWFS0100 -->
+#### `PWFS0100` (40 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 4 | `FUNCID` |
+| 24 | 8 | `FMTNAME` |
+| 32 | 1 | `READ` |
+| 33 | 1 | `WRITE` |
+| 34 | 1 | `READWRITE` |
+| 35 | 1 | `DELETE` |
+| 36 | 4 | `NAMELEN` |
+
+<!-- regfac: PWFS0200 -->
+#### `PWFS0200` (132 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 4 | `FUNCID` |
+| 24 | 8 | `FMTNAME` |
+| 32 | 1 | `READ` |
+| 33 | 1 | `WRITE` |
+| 34 | 1 | `READWRITE` |
+| 35 | 1 | `DELETE` |
+| 36 | 10 | `OBJTYPE` |
+| 46 | 6 | `RSV1` |
+| 52 | 4 | `SRCOFF` |
+| 56 | 4 | `SRCLEN` |
+| 60 | 4 | `TGTOFF` |
+| 64 | 4 | `TGTLEN` |
+| 68 | 64 | `RSV2` |
+
+<!-- regfac: ENTR0100 -->
+#### `ENTR0100` (32 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+
+<!-- regfac: SPLF0100 -->
+#### `SPLF0100` (97 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 10 | `JOBNAME` |
+| 42 | 10 | `JOBUSER` |
+| 52 | 6 | `JOBNBR` |
+| 58 | 10 | `SPLFNAME` |
+| 68 | 4 | `SPLFNBR` |
+| 72 | 8 | `JOBSYS` |
+| 80 | 7 | `CRTDATE` |
+| 87 | 6 | `CRTTIME` |
+| 93 | 4 | `DATALEN` |
+
+<!-- regfac: CZRC0100 -->
+#### `CZRC0100` (56 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `USRPRF` |
+| 10 | 10 | `SRVID` |
+| 20 | 8 | `FMTNAME` |
+| 28 | 4 | `FUNCID` |
+| 32 | 10 | `OBJ` |
+| 42 | 10 | `LIB` |
+| 52 | 4 | `LENOTHER` |
+
+<!-- regfac: QtgUserDesc -->
+#### `QtgUserDesc` (44 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `LEN` |
+| 4 | 10 | `USRPRF` |
+| 14 | 10 | `CURLIB` |
+| 24 | 10 | `PGM` |
+| 34 | 10 | `MENU` |
+
+<!-- regfac: QtgDeviceDesc -->
+#### `QtgDeviceDesc` (28 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `DEVNAME` |
+| 10 | 8 | `DEVFMT` |
+| 18 | 2 | `RSV` |
+| 20 | 4 | `OFFATTR` |
+| 24 | 4 | `LENATTR` |
+
+<!-- regfac: DSPD0100 -->
+#### `DSPD0100` (12 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 3 | `KBDID` |
+| 3 | 1 | `RSV` |
+| 4 | 4 | `CODEPAGE` |
+| 8 | 4 | `CHARSET` |
+
+<!-- regfac: QtgConnDesc -->
+#### `QtgConnDesc` (132 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `LEN` |
+| 4 | 20 | `IPADDR` |
+| 24 | 1 | `SECPWD` |
+| 25 | 14 | `WSTYPE` |
+| 39 | 1 | `SSL` |
+| 40 | 20 | `LCLADDR` |
+| 60 | 1 | `CLTAUTH` |
+| 61 | 3 | `RSV` |
+| 64 | 4 | `CERTRC` |
+| 68 | 4 | `OFFCERT` |
+| 72 | 4 | `CERTLEN` |
+| 76 | 28 | `IPV6ADDR` |
+| 104 | 28 | `LCLIPV6` |
+
+### Parameter lists
+
+`HOST` is the two parameters of every host server format.
+
+<!-- regfac-parms: HOST -->
+#### `HOST` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Output | `CHAR(1)` | Return code |
+| 2 | Input | `CHAR(*)` | Exit point information |
+
+<!-- regfac-parms: VLRQ0100 -->
+#### `VLRQ0100` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `BINARY(4)` | Application identifier |
+| 2 | Input | `BINARY(4)` | Operation identifier |
+| 3 | Input | `CHAR(10)` | User profile |
+| 4 | Input | `CHAR(*)` | Remote IP address |
+| 5 | Input | `BINARY(4)` | Length of remote IP address |
+| 6 | Input | `CHAR(*)` | Operation-specific information |
+| 7 | Input | `BINARY(4)` | Length of operation-specific information |
+| 8 | Output | `BINARY(4)` | Allow operation |
+
+<!-- regfac-parms: TCPL0100 -->
+#### `TCPL0100` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `BINARY(4)` | Application identifier |
+| 2 | Input | `CHAR(*)` | User identifier |
+| 3 | Input | `BINARY(4)` | Length of user identifier |
+| 4 | Input | `CHAR(*)` | Authentication string |
+| 5 | Input | `BINARY(4)` | Length of authentication string |
+| 6 | Input | `CHAR(*)` | Client IP address |
+| 7 | Input | `BINARY(4)` | Length of client IP address |
+| 8 | Output | `BINARY(4)` | Return code |
+| 9 | Output | `CHAR(10)` | User profile |
+| 10 | Output | `CHAR(10)` | Password |
+| 11 | Output | `CHAR(10)` | Initial current library |
+
+<!-- regfac-parms: TCPL0200 -->
+#### `TCPL0200` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `BINARY(4)` | Application identifier |
+| 2 | Input | `CHAR(*)` | User identifier |
+| 3 | Input | `BINARY(4)` | Length of user identifier |
+| 4 | Input | `CHAR(*)` | Authentication string |
+| 5 | Input | `BINARY(4)` | Length of authentication string |
+| 6 | Input | `CHAR(*)` | Client IP address |
+| 7 | Input | `BINARY(4)` | Length of client IP address |
+| 8 | Output | `BINARY(4)` | Return code |
+| 9 | Output | `CHAR(10)` | User profile |
+| 10 | Output | `CHAR(10)` | Password |
+| 11 | Output | `CHAR(10)` | Initial current library |
+| 12 | Output | `CHAR(*)` | Initial home directory |
+| 13 | I/O | `BINARY(4)` | Length of initial home directory |
+| 14 | I/O | `CHAR(*)` | Application-specific information |
+| 15 | Input | `BINARY(4)` | Length of application-specific information |
+
+<!-- regfac-parms: TCPL0300 -->
+#### `TCPL0300` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `BINARY(4)` | Application identifier |
+| 2 | Input | `CHAR(*)` | User identifier |
+| 3 | Input | `BINARY(4)` | Length of user identifier |
+| 4 | Input | `CHAR(*)` | Authentication string |
+| 5 | Input | `BINARY(4)` | Length of authentication string |
+| 6 | Input | `BINARY(4)` | CCSID of authentication string |
+| 7 | Input | `CHAR(*)` | Client IP address |
+| 8 | Input | `BINARY(4)` | Length of client IP address |
+| 9 | Output | `BINARY(4)` | Return code |
+| 10 | Output | `CHAR(10)` | User profile |
+| 11 | Output | `CHAR(*)` | Password |
+| 12 | I/O | `BINARY(4)` | Length of password |
+| 13 | Output | `BINARY(4)` | CCSID of password |
+| 14 | Output | `CHAR(10)` | Initial current library |
+| 15 | Output | `CHAR(*)` | Initial home directory |
+| 16 | I/O | `BINARY(4)` | Length of initial home directory |
+| 17 | I/O | `BINARY(4)` | CCSID of initial home directory |
+| 18 | I/O | `CHAR(*)` | Application-specific information |
+| 19 | Input | `BINARY(4)` | Length of application-specific information |
+
+<!-- regfac-parms: INIT0100 -->
+#### `INIT0100` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | I/O | `CHAR(*)` | User description information |
+| 2 | I/O | `CHAR(*)` | Device description information |
+| 3 | Input | `CHAR(*)` | Connection description information |
+| 4 | Input | `CHAR(*)` | Environment options |
+| 5 | Input | `BINARY(4)` | Length of environment options |
+| 6 | Output | `CHAR(1)` | Allow connection |
+| 7 | Output | `CHAR(1)` | Allow automatic sign-on |
+
+<!-- regfac-parms: TERM0100 -->
+#### `TERM0100` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `CHAR(*)` | Device description information |
+| 2 | Input | `CHAR(*)` | Connection description information |
+

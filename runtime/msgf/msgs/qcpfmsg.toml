@@ -1199,3 +1199,126 @@ id = "CPF6E62"
 sev = 40
 text = "Panel group &1 in &2 is in search index &3 already."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+# The registration facility (QUSRGPT, QUSADDEP, QUSRTVEI, ADDEXITPGM,
+# RMVEXITPGM, WRKREGINF). Data: the exit point (20), the format (8), a
+# program number.
+
+[[msg]]
+id = "CPF3CD1"
+sev = 40
+text = "Exit point &1 is registered with format &2 already."
+vars = ["*CHAR 20", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3CD2"
+sev = 40
+text = "&1 cannot name an exit point."
+vars = ["*CHAR 20"]
+
+[[msg]]
+id = "CPF3CD3"
+sev = 40
+text = "&1 cannot name an exit point format."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "CPF3CD4"
+sev = 40
+text = "Exit point &1 format &2 takes no more exit programs."
+vars = ["*CHAR 20", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3CD6"
+sev = 40
+text = "&1 bytes of exit program data is not a length the facility keeps."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF3CD8"
+sev = 40
+text = "Exit point &1 format &2 was not registered."
+vars = ["*CHAR 20", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3CDA"
+sev = 40
+text = "The registration facility repository cannot be used now."
+help = "QUSRSYS/QUSEXRGOBJ is missing or damaged. The next IPL makes it again with the shipped exit points."
+
+[[msg]]
+id = "CPF3CDB"
+sev = 40
+text = "There is no exit point &1 with format &2."
+vars = ["*CHAR 20", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3CDC"
+sev = 40
+text = "&1 exit points were deregistered and &2 were kept."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPF3CDD"
+sev = 40
+text = "There is no exit program number &1."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF3CDE"
+sev = 40
+text = "Program &1 in library &2 cannot be an exit program."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3CDF"
+sev = 40
+text = "Exit program number &1 is taken on exit point &2 format &3."
+vars = ["*BIN 4", "*CHAR 20", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3CE1"
+sev = 40
+text = "&1 is not an exit program number."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF3CE2"
+sev = 40
+text = "The continuation handle did not come from this API."
+
+[[msg]]
+id = "CPF3CE4"
+sev = 40
+text = "Comparison operator &1 cannot select exit programs."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF3CE6"
+sev = 40
+text = "The selection compares past the end of the exit program data."
+
+[[msg]]
+id = "CPF3CE7"
+sev = 40
+text = "The number of selection criteria is not valid."
+
+[[msg]]
+id = "CPF3CE8"
+sev = 40
+text = "A selection criterion starts at a position that is not valid."
+
+[[msg]]
+id = "CPF3CE9"
+sev = 40
+text = "A selection criterion compares a length that is not valid."
+
+[[msg]]
+id = "CPF3CEC"
+sev = 40
+text = "No exit point matches."
+
+[[msg]]
+id = "CPF3CED"
+sev = 40
+text = "No exit program matches."

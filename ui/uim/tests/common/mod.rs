@@ -31,8 +31,7 @@ pub fn golden_dir() -> PathBuf {
 /// A golden's character rows, line ends dropped.
 pub fn golden_rows(name: &str) -> Vec<String> {
     let path = golden_dir().join(format!("{name}.txt"));
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     text.replace("\r\n", "\n")
         .lines()
         .map(str::to_string)
@@ -41,8 +40,7 @@ pub fn golden_rows(name: &str) -> Vec<String> {
 
 /// A panel group from a source file, compiled.
 pub fn group_from(path: &Path) -> PanelGroup {
-    let text = std::fs::read_to_string(path)
-        .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     let c = compile(&text, &NoImbeds, &NoImports, &CompileOpts::default());
     assert!(c.ok(), "{} must compile:\n{}", path.display(), c.listing);
     c.group.expect("group")
@@ -62,7 +60,10 @@ pub fn shipped(name: &str) -> PanelGroup {
 fn masked(golden: &str, ours: &str) -> String {
     // A copyright line is the vendor's own: only where it starts counts.
     let mark = "(C) COPYRIGHT";
-    if golden.find(mark).is_some_and(|i| ours.find(mark) == Some(i)) {
+    if golden
+        .find(mark)
+        .is_some_and(|i| ours.find(mark) == Some(i))
+    {
         return golden.to_string();
     }
     let mut out: Vec<char> = ours.chars().collect();

@@ -45,6 +45,7 @@ mod obj;
 pub mod param;
 pub mod picture;
 mod provider;
+mod regapi;
 mod security;
 pub mod uiapi;
 mod usrspc;
@@ -75,7 +76,16 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(db::APIS);
     v.extend(misc::APIS);
     v.extend(security::APIS);
+    v.extend(regapi::APIS);
     v
+}
+
+/// The bound procedures of the registration facility's service
+/// programs `QUSRGFA1` and `QUSRGFA2`, by export name, with their code
+/// addresses.
+#[must_use]
+pub fn registration_procedures() -> Vec<(&'static str, usize)> {
+    regapi::procedures()
 }
 
 /// Every bound procedure this crate adds (`QLEAWI`'s, then the C-style
@@ -111,7 +121,7 @@ pub fn install(job: &mut Job, provider: SharedProvider) {
             }),
         );
     }
-    for (name, addr) in procedures() {
+    for (name, addr) in procedures().into_iter().chain(regapi::procedures()) {
         job.act.system.insert(name.to_string(), addr);
         // RPG upper-cases an EXTPROC name it was not given quoted.
         job.act.system.insert(name.to_ascii_uppercase(), addr);

@@ -663,7 +663,7 @@ Generic record.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
-| 0 | 1 | GRETYP | `F` exit program called |
+| 0 | 1 | GRETYP | `F` exit program called (written when it refused or could not run), `A` exit program added, `R` replaced, `D` removed |
 | 1 | 20 | GREXPT | exit point |
 | 21 | 10 | GREXPN | exit program |
 | 31 | 10 | GREXPL | its library |

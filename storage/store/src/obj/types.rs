@@ -121,6 +121,8 @@ pub const BNDDIR: u16 = 0x0017;
 pub const MBR: u16 = 0x00FE;
 /// Code of `*SYSVAL`.
 pub const SYSVAL: u16 = 0x00FF;
+/// Code of `*EXITRG`: the registration facility repository.
+pub const EXITRG: u16 = 0x0029;
 
 /// Every type, in code order.
 pub static TYPES: &[TypeInfo] = &[
@@ -184,6 +186,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(0x0023, "*SCHIDX", true, true, false, false, Module::Opaque),
     t(WSCST, "*WSCST", true, true, false, false, Module::Opaque),
     t(SPLF, "*SPLF", false, false, false, false, Module::Opaque),
+    t(EXITRG, "*EXITRG", false, false, false, true, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
 ];
@@ -210,7 +213,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 38);
+        assert_eq!(TYPES.len(), 39);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);

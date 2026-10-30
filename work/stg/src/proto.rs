@@ -456,6 +456,11 @@ ipc::rpc! {
     206 => fn ws_set / WsSet (device: String, jobs: Vec<WsJob>) -> ();
     /// The jobs at a display device as its session last said.
     207 => fn ws_get / WsGet (device: String) -> Vec<WsJob>;
+    // --- registration facility (210-219)
+    /// A registration facility question: the APIs', `ADDEXITPGM`'s,
+    /// `WRKREGINF`'s, and a server's looking up or reporting on its
+    /// exit programs.
+    210 => fn regfac / Regfac (q: regfac::Query) -> Result<regfac::Answer, regfac::RegFail>;
     // --- UIM APIs (220-239)
     /// A search index's entries: title, root words, panel group
     /// (`LIB/NAME`) and help module of each topic.

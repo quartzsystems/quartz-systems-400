@@ -392,3 +392,47 @@ maximum one program, change not allowed. 146 points in all
 9. **`*WSCST` object type code.** `*WSCST` is type 0x0028 here, chosen
    clear of the codes other Phase 10 work may take; the coordinator
    should confirm no collision at merge.
+
+## Registration facility
+
+Built from the headers and the pub400 capture (`HOSTSVR.md`, § Exit
+points); each item below waits for an oracle program or panel.
+
+1. **`ADDEXITPGM` and `RMVEXITPGM` definitions.** pub400 refused
+   `QCDRCMDD` for both (`CPF9802`). QS/400's follow IBM's documented
+   keywords and order (`EXITPNT FORMAT PGMNBR PGM THDSAFE MLTTHDACN TEXT
+   REPLACE CRTEXITPNT PGMDTA`; `EXITPNT FORMAT PGMNBR`). Retrieve them
+   on the primary oracle with a profile that may.
+2. **`QusRegisterExitPoint` control keys and `QusAddExitProgram`
+   attribute keys.** No header lists them; the numbers in `SYSAPI.md`
+   §11 are QS/400's reading of IBM's documentation. A CL program on the
+   oracle calling `QUSRTVEI` after `QUSRGPT` with each key would settle
+   them (registration in `QSTEST` names only, deregistered after).
+3. **`EXTI0100` entry length, `EXTI0200`/`EXTI0300` offsets and the
+   continuation handle.** QS/400 returns 204-byte point entries (the
+   fields end at 201), program entries padded to four bytes with
+   `NEXT` and `OFFDTA` from the receiver's start, and the next entry's
+   number as text in the handle. Compare with `QUSRTVEI` on the oracle.
+4. **Threadsafe and multithreaded job action codes.** `0`/`1`/`2` and
+   `0`..`3` in QS/400; confirm from `EXTI0200` of a program added with
+   `THDSAFE(*YES) MLTTHDACN(*NORUN)`.
+5. **`VLRQ0100`, `TCPL0100`/`0200`/`0300`, `INIT0100`, `TERM0100`
+   parameter lists.** No header carries them; QS/400 follows IBM's
+   published descriptions. A logging exit program on the oracle (FTP
+   server, telnet) would confirm order, sizes and the starting values
+   of the outputs.
+6. **`PWFS0100`/`PWFS0200` file name encoding** (CP037 here) and
+   **`SPLF0100`'s layout after the server information** (the pieces of
+   `ENPSEP` joined without padding here).
+7. **Telnet connection description addresses.** `CHAR(20)` client and
+   local addresses are dotted text here; the IPv6 fields are zeros.
+8. **`Work with Exit Programs` layout.** IBM's column headings are not
+   placed by UIM's column rules (the first row of the number heading is
+   centered, the columns are wider than their fields) and the empty
+   list's text sits a row lower; the panel test compares those rows by
+   words. An input row for option 1 on an empty list is not shown:
+   add with the command line or F4 there.
+9. **Display Exit Point's second page.** Not captured; QS/400 shows the
+   description message file, library, identifier and text there.
+10. **Preprocessing exit programs** (`QTMFADDP`, `QUSEPAUT`, ...) are
+    shown and stored but not called.

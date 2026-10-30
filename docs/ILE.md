@@ -152,8 +152,9 @@ library when one is given.
 3. `QUSAPIBD` in `QSYS`, when it exists, as the last directory.
 4. The procedures the runtime itself provides, as `QLEAWI` exports
    them (the condition APIs in `mi::cee`, the rest in `sysapi`;
-   `SYSAPI.md` §8): the import is recorded as `*SYSTEM` and the loader
-   binds it to the runtime's procedure.
+   `SYSAPI.md` §8), and the registration facility's of `QUSRGFA1` and
+   `QUSRGFA2` (`SYSAPI.md` §11): the import is recorded as `*SYSTEM` and
+   the loader binds it to the runtime's procedure.
 
 An import nothing resolves is `CPD5D02`; the object is not created
 unless `OPTION(*UNRSLVREF)`, in which case the import is recorded as

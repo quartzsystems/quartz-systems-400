@@ -234,6 +234,10 @@ pub const DIRECT: &[&str] = &[
     "WRKOBJ",
     "WRKOBJLCK",
     "WRKSYSVAL",
+    // The registration facility (lic/slic/src/stgsvc/regfac.rs).
+    "ADDEXITPGM",
+    "RMVEXITPGM",
+    "WRKREGINF",
 ];
 
 /// Whether a job-site command also runs in the service: a display the
@@ -295,6 +299,7 @@ pub const JOB_SITE: &[&str] = &[
     "DSPAUTL",
     "WRKAUTL",
     "DSPSECAUD",
+    "WRKREGINF",
     // --- system displays (work/qsjob/src/sysdsp/)
     "CHGGRPA",
     "DSPWSUSR",

@@ -27,6 +27,7 @@ pub(crate) mod jobscd;
 pub(crate) mod msgs;
 pub(crate) mod prtf;
 pub(crate) mod prtdev;
+pub(crate) mod regfac;
 pub(crate) mod sbs;
 pub(crate) mod security;
 pub(crate) mod splcmd;
@@ -334,6 +335,7 @@ fn install(system: &mut System) -> Result<usize, String> {
     made += usize::from(crate::svc::neta::ensure(&mut txn, qsys, stamp.now)?);
     made += crate::svc::db::dspf::install_shipped(&mut txn, qsys, &stamp)?;
     made += crate::svc::ui::install_shipped(&mut txn, qsys, &stamp)?;
+    made += self::regfac::install(&mut txn, qsys, &stamp)?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)
 }

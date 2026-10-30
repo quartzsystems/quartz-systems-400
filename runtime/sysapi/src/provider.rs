@@ -325,6 +325,10 @@ pub struct UserInfo {
 /// Where the APIs' objects live.
 #[allow(unused_variables)]
 pub trait Provider {
+    /// The registration facility's questions (`regfac::Query`).
+    fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, ApiFail> {
+        Err(ApiFail::id("CPF3CDA"))
+    }
     /// The security APIs' questions (`sec::api`).
     fn sec(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
         Err(ApiFail::id("CPF3CF2"))
@@ -557,6 +561,8 @@ pub struct MemProvider {
     pub users: Vec<UserInfo>,
     /// Answers the security APIs' questions; `CPF3CF2` without it.
     pub sec: Option<SecAnswers>,
+    /// The registration facility, the shipped points to start.
+    pub regfac: regfac::Registry,
     catalog: sysval::Catalog,
 }
 
@@ -603,6 +609,7 @@ impl Default for MemProvider {
                 text: "System profile".into(),
             }],
             sec: None,
+            regfac: regfac::Registry::shipped(),
             catalog: sysval::Catalog::builtin().expect("the catalog parses"),
         }
     }
@@ -1110,5 +1117,14 @@ impl Provider for MemProvider {
 
     fn user_info(&mut self, name: &str) -> Option<UserInfo> {
         self.users.iter().find(|u| u.name == name).cloned()
+    }
+
+    fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, ApiFail> {
+        regfac::answer(&mut self.regfac, q)
+            .map(|o| o.answer)
+            .map_err(|f| ApiFail {
+                msgid: f.msgid,
+                data: f.data,
+            })
     }
 }

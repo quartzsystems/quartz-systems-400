@@ -453,7 +453,8 @@ fn resolve_one(
         && (SYSTEM_PROCS.contains(&name)
             || PRIVILEGED_PROCS.contains(&name)
             || name.starts_with(RPG_RUNTIME_PREFIX)
-            || sysproc::is_system_srvpgm_proc(name))
+            || sysproc::is_system_srvpgm_proc(name)
+            || REGISTRATION_PROCS.contains(&name))
     {
         return ImportTarget::System;
     }
@@ -475,6 +476,16 @@ pub const SYSTEM_PROCS: &[&str] = &[
     "CEETREC", "CEEDOD", "CEEGPID", "CEETSTA", "CEECRHP", "CEEDSHP", "CEEGTST", "CEEFRST",
     "CEECZST", "CEEDAYS", "CEEDATE", "CEEDATM", "CEESECS", "CEEUTC", "CEELOCT", "CEEQCEN",
     "CEESCEN", "CEEGMT", "CEEGMTO", "CEERAN0", "CEE4RAGE",
+];
+
+/// The registration facility's procedures (`QUSRGFA1`, `QUSRGFA2`),
+/// which the runtime provides too (`sysapi`).
+pub const REGISTRATION_PROCS: &[&str] = &[
+    "QusRegisterExitPoint",
+    "QusDeregisterExitPoint",
+    "QusAddExitProgram",
+    "QusRemoveExitProgram",
+    "QusRetrieveExitInformation",
 ];
 
 /// The prefix of the ILE RPG runtime library's procedures (`qrpgrt`),

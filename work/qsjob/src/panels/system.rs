@@ -4,12 +4,14 @@
 
 //! System and security displays: `DSPSYSVAL`/`WRKSYSVAL`,
 //! `DSPSFWRSC`, `DSPNETA`, `DSPAUTUSR`, `DSPUSRPRF`/`WRKUSRPRF`,
-//! `WRKCFGSTS`, `DSPDEVD`, `DSPAUTL`/`WRKAUTL`, `DSPSECAUD`.
+//! `WRKCFGSTS`, `DSPDEVD`, `DSPAUTL`/`WRKAUTL`, `DSPSECAUD`,
+//! `WRKREGINF`.
 //! `TODO(phase8)`: `DSPSGNINF` (no shipped definition yet). A driver
 //! returns `None` when the data is not there (no such value or
 //! profile), so the service's text path answers with its message.
 
 mod config;
+mod exits;
 mod netattr;
 mod security;
 mod sysval;
@@ -44,6 +46,7 @@ pub fn run(
         "DSPAUTL" => security::dspautl(host, surface, r),
         "WRKAUTL" => security::wrkautl(job, host, surface, r),
         "DSPSECAUD" => security::dspsecaud(host, surface),
+        "WRKREGINF" => exits::wrkreginf(job, host, surface, r),
         _ => None,
     }
 }

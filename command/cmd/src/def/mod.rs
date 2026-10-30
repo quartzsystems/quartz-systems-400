@@ -391,6 +391,8 @@ impl ParmType {
             Self::Char | Self::Cmd | Self::CmdStr | Self::PName | Self::X => 5000,
             Self::Dec => 24,
             Self::VarName => 11,
+            // IBM's own WRKREGINF has a 20-character generic name.
+            Self::Name | Self::Generic | Self::SName | Self::CName => 256,
             _ => 10,
         }
     }

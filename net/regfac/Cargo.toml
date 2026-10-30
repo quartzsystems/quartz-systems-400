@@ -1,0 +1,26 @@
+[package]
+name = "regfac"
+description = "QS/400 registration facility: exit points and exit programs, the *EXITRG object, the exit point formats and the exit program call"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+wm = { path = "../../work/wm", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+mi = { path = "../../runtime/mi", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+qir = { path = "../../runtime/qir", version = "0.1.0" }
+ile = { path = "../../runtime/ile", version = "0.1.0" }
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true

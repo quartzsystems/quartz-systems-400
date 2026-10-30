@@ -525,6 +525,11 @@ impl Service for Served<'_> {
         )
     }
 
+    fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, regfac::RegFail> {
+        let me = self.ctx.session.borrow().principal.clone();
+        super::regfac::api(self.system, Some(&me), q)
+    }
+
     fn whoami(&mut self) -> sec::auth::principal::Principal {
         self.ctx.session.borrow().principal.clone()
     }

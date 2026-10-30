@@ -578,3 +578,14 @@ word = "chgjobq"
 
 [cmd.ROLLBACK]
 word = "rollbck"
+
+# --- the registration facility (lic/slic/src/stgsvc/regfac.rs)
+[cmd.ADDEXITPGM]
+note = "the registration facility repository, *ALLOBJ and *SECADM"
+
+[cmd.RMVEXITPGM]
+note = "the registration facility repository, *ALLOBJ and *SECADM"
+
+[cmd.WRKREGINF]
+site = "job"
+note = "a panel at a display (panels/system/regfac.rs); the service's listing otherwise"

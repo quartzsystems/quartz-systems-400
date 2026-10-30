@@ -419,3 +419,40 @@ then changes the password as `CHGPWD` would. `QSYRUPWD` and
 `QSYSUPWD` need `*ALLOBJ` and `*SECADM`; their data is the magic
 `QS400PWD` and the profile's hashes, not IBM's format, so it moves
 between QS/400 systems only.
+
+## 11. Registration facility
+
+The registration facility APIs live in `sysapi/src/regapi.rs`. Each asks
+the provider one `regfac::Query`; in a job the storage service answers
+it over the repository `QUSRSYS/QUSEXRGOBJ` (`stg` request 210),
+checking `*ALLOBJ` and `*SECADM` for a change (`HOSTSVR.md`, § Exit
+points). `MemProvider` holds a `regfac::Registry` with the shipped
+points. Controls and attributes are variable length records: a count
+`bin4`, then each record's length, key and data length (`bin4` each)
+and its data.
+
+| API | parameters |
+|---|---|
+| `QUSRGPT` | exit point `char(20)`, format `char(8)`, controls, error code |
+| `QUSDRGPT` | exit point, format (`*ALL` every format), error code |
+| `QUSADDEP` | exit point, format, program number `bin4` (-1 `*LOW`, -2 `*HIGH`), program `char(20)`, data, data length `bin4`, attributes, error code |
+| `QUSRMVEP` | exit point, format, program number, error code |
+| `QUSRTVEI` | continuation handle `char(16)`, receiver, length, format `EXTI0100`/`EXTI0200`/`EXTI0300`, exit point (generic, `*ALL`), format, program number (-1 every one), selection criteria, error code |
+
+The bound procedures `QusRegisterExitPoint`, `QusDeregisterExitPoint`,
+`QusAddExitProgram`, `QusRemoveExitProgram` (`QUSRGFA1`) and
+`QusRetrieveExitInformation` (`QUSRGFA2`) take the same parameters by
+reference and resolve as `*SYSTEM` imports. Control keys: 2 the maximum
+number of programs `bin4` (-1 none), 3 allow deregistration `char(1)`,
+4 allow change `char(1)`, 5, 6 and 7 the preprocessing programs for
+add, remove and retrieve `char(28)` (program, library, format), 8 a
+message description `char(27)` (file, library, identifier), 10 a text
+description `char(50)`; a point registered without them takes any
+number of programs and allows deregistration and change. Attribute
+keys: 1 replace `char(1)`, 2 a message description, 3 the data's CCSID
+`bin4`, 4 a text description, 5 threadsafe, 6 the multithreaded job
+action (`char(1)` codes as in `EXTI0200`). The receivers are in
+`HOSTSVR.md`; a receiver too small for every entry returns those that
+fit and a continuation handle naming the next. Selection criteria:
+operator 1 (equal) at a 1-based start in the program data. The keys
+and codes are *QS/400 reading*: no header gives them.

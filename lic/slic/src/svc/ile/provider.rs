@@ -73,6 +73,47 @@ fn stamp(unix: u64) -> String {
 }
 
 impl Provider for StoreProvider {
+    fn regfac(&mut self, q: regfac::Query) -> ApiResult<regfac::Answer> {
+        let fail = |f: regfac::RegFail| ApiFail {
+            msgid: f.msgid,
+            data: f.data,
+        };
+        if q.changes()
+            && let Some(p) = crate::stgsvc::security::actor()
+        {
+            p.require(
+                sec::profile::SpecialAuth::ALLOBJ.union(sec::profile::SpecialAuth::SECADM),
+                "change the registration facility",
+            )
+            .map_err(|e| ApiFail::id(e.msgid().unwrap_or("CPF2222")))?;
+        }
+        let mut failed = None;
+        let out = with_main(&self.shared, |txn, qsys| {
+            let run = || -> Result<regfac::Outcome, regfac::RegFail> {
+                let mut reg = regfac::store::load(txn, qsys)?;
+                let out = regfac::answer(&mut reg, q)?;
+                if out.changed {
+                    regfac::store::save(txn, qsys, &reg)?;
+                }
+                Ok(out)
+            };
+            run().map_err(|e| {
+                let text = e.to_string();
+                failed = Some(e);
+                text
+            })
+        });
+        match out {
+            Ok(o) => {
+                for e in o.audit {
+                    sec::audit::record(e);
+                }
+                Ok(o.answer)
+            }
+            Err(t) => Err(failed.map_or_else(|| ApiFail::id("CPF3CDA").text(&t, 50), fail)),
+        }
+    }
+
     fn list_objects(&mut self, lib: &str, name: &str, ty: &str) -> Vec<ObjInfo> {
         let wanted = if ty == "*ALL" { None } else { type_code_of(ty) };
         let r = with_main(&self.shared, |txn, qsys| {

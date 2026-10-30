@@ -1910,6 +1910,7 @@ dependencies = [
  "qdecimal",
  "qir",
  "qrpgrt",
+ "regfac",
  "release",
  "rustls",
  "rustls-graviola",
@@ -2035,6 +2036,24 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+
+[[package]]
+name = "regfac"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "ile",
+ "ipc",
+ "mi",
+ "qir",
+ "qsname",
+ "sec",
+ "store",
+ "thiserror",
+ "tracing",
+ "wm",
+]
 
 [[package]]
 name = "release"
@@ -2534,6 +2553,7 @@ dependencies = [
  "qir",
  "qsname",
  "qsyslib",
+ "regfac",
  "release",
  "rpgc",
  "rpgfront",
@@ -2648,6 +2668,7 @@ dependencies = [
  "msgf",
  "qsname",
  "qsyslib",
+ "regfac",
  "sec",
  "sql",
  "store",
@@ -2762,6 +2783,7 @@ dependencies = [
  "netlink",
  "qdecimal",
  "qir",
+ "regfac",
  "release",
  "sec",
  "sockets",
