@@ -1004,6 +1004,177 @@ classes (read with `javap` as a description of the datastream):
   read everything; a large reply (over 1024 bytes) is run-length
   encoded in `0x3832` when the request allows it.
 
+### Server code points and return codes
+
+What the servers in `net/hostserver` answer with, beyond the codec's
+tables above. `net/hostserver/tests/spec.rs` checks each table after a
+`<!-- server-consts: KEY -->` marker against the constants of module
+`hostserver::KEY` (`lib` for the crate root), both ways.
+
+<!-- server-consts: lib -->
+
+| Value | Name |
+|---|---|
+| `0x00070100` | `SERVER_VRM` |
+| `10` | `SERVER_LEVEL` |
+
+<!-- server-consts: central::rc -->
+
+| Value | Name |
+|---|---|
+| `0` | `OK` |
+| `0x0102` | `CCSID` |
+| `0x0105` | `EXIT` |
+
+<!-- server-consts: database::attr -->
+
+Set server attributes (`0x1F80`) parameters, a code point space of
+their own:
+
+| Value | Name |
+|---|---|
+| `0x3807` | `DATE_FORMAT` |
+| `0x380C` | `NAMING` |
+| `0x380E` | `COMMIT` |
+| `0x380F` | `DEFAULT_LIBRARY` |
+| `0x3824` | `AUTOCOMMIT` |
+| `0x383C` | `INTERFACE_TYPE` |
+| `0x383D` | `INTERFACE_NAME` |
+| `0x383E` | `INTERFACE_LEVEL` |
+
+<!-- server-consts: database::types::sqltype -->
+
+SQL types in the super extended data format (DB2 `SQLTYPE`, not
+nullable; the nullable type is one more):
+
+| Value | Name |
+|---|---|
+| `384` | `DATE` |
+| `388` | `TIME` |
+| `392` | `TIMESTAMP` |
+| `448` | `VARCHAR` |
+| `452` | `CHAR` |
+| `456` | `LONGVARCHAR` |
+| `464` | `VARGRAPHIC` |
+| `468` | `GRAPHIC` |
+| `472` | `LONGVARGRAPHIC` |
+| `480` | `FLOAT` |
+| `484` | `DECIMAL` |
+| `488` | `NUMERIC` |
+| `492` | `BIGINT` |
+| `496` | `INTEGER` |
+| `500` | `SMALLINT` |
+| `908` | `VARBINARY` |
+| `912` | `BINARY` |
+
+<!-- server-consts: dtaq::rc -->
+
+| Value | Name |
+|---|---|
+| `0xF000` | `OK` |
+| `0xF001` | `ERROR` |
+| `0xF002` | `PROTOCOL` |
+| `0xF006` | `NO_ENTRY` |
+| `0xF009` | `EXIT_REJECTED` |
+
+<!-- server-consts: file::cp -->
+
+| Value | Name |
+|---|---|
+| `0x0001` | `NAME1` |
+| `0x0002` | `NAME` |
+| `0x0003` | `SOURCE` |
+| `0x0004` | `TARGET` |
+| `0x0005` | `READ_DATA` |
+| `0x000A` | `CCSIDS` |
+| `0x000F` | `OA2` |
+| `0x0010` | `OA1` |
+| `0x0020` | `WRITE_DATA` |
+
+<!-- server-consts: file::rc -->
+
+| Value | Name |
+|---|---|
+| `0` | `SUCCESS` |
+| `1` | `FILE_IN_USE` |
+| `2` | `FILE_NOT_FOUND` |
+| `3` | `PATH_NOT_FOUND` |
+| `4` | `DUPLICATE` |
+| `5` | `ACCESS_DENIED` |
+| `6` | `INVALID_HANDLE` |
+| `7` | `INVALID_NAME` |
+| `9` | `DIR_NOT_EMPTY` |
+| `13` | `ACCESS_DENIED_TO_REQUEST` |
+| `18` | `NO_MORE_FILES` |
+| `23` | `REQUEST_NOT_SUPPORTED` |
+| `25` | `UNKNOWN` |
+| `32` | `SHARING_VIOLATION` |
+| `33` | `LOCK_VIOLATION` |
+
+<!-- server-consts: netprt::cp -->
+
+| Value | Name |
+|---|---|
+| `0x0001` | `ID` |
+| `0x0002` | `DATA` |
+| `0x0006` | `SELECTION` |
+| `0x0007` | `ATTR_IDS` |
+| `0x0008` | `ATTRS` |
+| `0x000C` | `TARGET_OUTQ` |
+
+<!-- server-consts: netprt::rc -->
+
+| Value | Name |
+|---|---|
+| `0` | `OK` |
+| `8` | `NOT_AUTHORIZED` |
+| `9` | `CPF_MESSAGE` |
+| `19` | `READ_EOF` |
+| `20` | `EMPTY_LIST` |
+| `21` | `NOT_SUPPORTED` |
+| `27` | `EXIT_DENIED` |
+| `30` | `SPLF_NOT_FOUND` |
+
+<!-- server-consts: netprt::attrs::kind -->
+
+| Value | Name |
+|---|---|
+| `3` | `BIN4` |
+| `5` | `STRING` |
+| `7` | `PACKED` |
+
+<!-- server-consts: netprt::attrs::ids -->
+
+| Value | Name |
+|---|---|
+| `0x001C` | `COPIES` |
+| `0x0022` | `DATE` |
+| `0x0031` | `FORMTYPE` |
+| `0x003B` | `JOBNAME` |
+| `0x003C` | `JOBNUMBER` |
+| `0x003E` | `JOBUSER` |
+| `0x0040` | `LPI` |
+| `0x0048` | `OUTPTY` |
+| `0x0049` | `OUTQUELIB` |
+| `0x004A` | `OUTQUE` |
+| `0x004E` | `PAGELEN` |
+| `0x0051` | `PAGEWIDTH` |
+| `0x005A` | `PRTDEVTYPE` |
+| `0x005B` | `PRTFLIB` |
+| `0x005C` | `PRTFILE` |
+| `0x005D` | `PRINTER` |
+| `0x0068` | `SPOOLFILE` |
+| `0x0069` | `SPLFNUM` |
+| `0x006A` | `SPLFSTATUS` |
+| `0x006E` | `TIME` |
+| `0x006F` | `PAGES` |
+| `0x0072` | `USERDATA` |
+| `0x0076` | `WRITER` |
+| `0x008A` | `NPSCCSID` |
+| `0x008D` | `NPSLEVEL` |
+| `0x00B4` | `NLV_ID` |
+| `0x00FB` | `JOBSYSTEM` |
+
 ### Database
 
 Statements run through the job's SQL session (`Embedded`): prepare with

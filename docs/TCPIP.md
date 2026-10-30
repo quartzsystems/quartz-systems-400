@@ -678,6 +678,10 @@ resolver and the descriptor table work everywhere.
 
 - `net/sockets/tests/spec.rs`: the tables below against `consts::ALL`
   and `layout::layouts()`.
+- `net/sockets/tests/codecs.rs`: what the codecs write (`sockaddr_in`
+  and `sockaddr_in6` in both forms, `timeval`, `linger`, `pollfd`, the
+  `hostent`, `servent` and `addrinfo` images) and the `msghdr` and
+  `iovec` offsets the APIs read, against the same tables.
 - Unit tests: layouts and codecs, the DNS codec, port rules, path maps,
   services, the resolver over the host table; `mi::fd` for the table.
 - `net/sockets/tests/linux.rs` (Linux): TCP echo, UDP, `AF_UNIX` under a

@@ -152,8 +152,81 @@ DHCP is not built (`*IP4DHCP` interfaces are refused).
 
 ## Bench
 
-_Pending: FTP and SFTP throughput, host-server SQL fetch rows/s against
-the oracle, IFS ops/s._
+Run 2026-10-30 on the development PC: Intel Core i9-12900K (16 cores,
+24 threads), 32 GB, Windows 11 IoT Enterprise LTSC 2024, rustc 1.98.0,
+release profile. The LinuxBackend row ran in WSL 2 (Ubuntu, kernel
+6.18.33.2-microsoft-standard-WSL2) on a 2 GiB xfs loop image. Each
+figure is the middle of three runs; ranges in brackets.
+
+| Bench | Result |
+|---|---|
+| FTP `STOR`, 64 MiB stream file, binary, passive, loopback | 215 MiB/s [215-352] |
+| FTP `RETR`, the same file | 735 MiB/s [598-745] (reading the file before `150`: 0.06 s; sending: 0.03 s) |
+| SFTP put, 64 MiB, loopback TCP, AES-GCM | 265 MiB/s [255-303] |
+| SFTP get, the same file | 361 MiB/s [360-392] |
+| SSH key exchange + password sign-on + SFTP start | 0.017 s |
+| Host server SQL fetch, 10,000 rows, loopback TCP | 288,000 rows/s [276,000-291,000], 435 rows per reply |
+| IFS over MemBackend: create + write 4 KiB + close | 75,500 files/s [73,200-76,800] |
+| IFS over MemBackend: `stat` | 190,000 ops/s [185,000-190,000] |
+| IFS over MemBackend: `unlink` | 147,500 ops/s [147,500-152,800] |
+| IFS over LinuxBackend (xfs, WSL): create + write 4 KiB + close | 18,100 files/s (one run) |
+| IFS over LinuxBackend (xfs, WSL): `stat` | 53,000 ops/s (one run) |
+| IFS over LinuxBackend (xfs, WSL): `unlink` | 37,600 ops/s (one run) |
+
+How each is measured:
+
+- FTP (`net/ftp/tests/bench.rs`): the server (`ftp::server::serve` over
+  `TcpNet`) with a `MemHost` (the IFS on a `MemBackend`) on loopback; a
+  bare client signs on, `TYPE I`, `PASV`, `STOR` of 64 MiB in 1 MiB
+  writes, then `RETR`. Each time runs from the command to the `226`.
+  The server reads a whole file before it sends, so `RETR` is the IFS
+  read plus the transfer. The client closes the data connection at end
+  of data as real clients do (the server waits up to 2 s for that
+  before `226`).
+- SFTP (`net/sshd/tests/bench.rs`): the server's `serve_tcp` on
+  loopback, the crate's own client over the same IFS in memory as the
+  sshd tests. The client keeps one 32 KiB request in flight, so this is
+  a lower bound for a client that pipelines (OpenSSH's `sftp` keeps 64
+  in flight).
+- Host server SQL (`net/hostserver/tests/db_bench.rs`): the database
+  server over loopback TCP on the Phase 3 SQL engine with a store in
+  memory, a table of `INTEGER, CHAR(10), DECIMAL(11,2), VARCHAR(50)`;
+  the client sends what `JTOpen` sends for a query: seed exchange,
+  start server, prepare and describe (`0x1803`, UTF-16 text in
+  `0x3831`), open, describe and fetch (`0x180E`), fetches (`0x180B`)
+  with a 32 KiB buffer (`0x3834`, `JTOpen`'s default block size) to end
+  of data, close. Replies are not RLE-compressed. The time covers
+  prepare to close; loading the table is not timed.
+- IFS (`ifs/ifs/tests/bench.rs`): `Ifs` operations as user `BOB`
+  (resolution, authority, the metadata record) on 20,000 files in one
+  directory the user owns. On Linux, `ifs_ops_linux` runs the same over
+  `LinuxBackend` in `QS400_IFS_TEST_DIR` (root, a file system with
+  `trusted.` attributes); the run above used a script modelled on
+  `ifs/ifs/tests/linux-xfs.sh`. In the same WSL run MemBackend measured
+  71,900 creates/s, 230,000 stats/s and 200,600 unlinks/s, so the
+  xfs-backed figures are about a quarter of the in-memory ones on the
+  same kernel.
+
+Commands:
+
+```
+cargo test --release -p ftp --test bench -- --ignored --nocapture        # QS400_FTP_BENCH_MIB
+cargo test --release -p sshd --test bench -- --ignored --nocapture       # QS400_SFTP_BENCH_MIB
+cargo test --release -p hostserver --test db_bench -- --ignored --nocapture  # QS400_HS_BENCH_ROWS
+cargo test --release -p ifs --test bench -- --ignored --nocapture        # QS400_IFS_BENCH_FILES
+```
+
+Oracle comparison: no host server fetch rate (and no FTP, SFTP or IFS
+figure) has been recorded from either oracle, in `docs/HOSTSVR.md` or
+under `tools/conformance/`. These numbers have nothing to compare
+against yet; a JTOpen timing against the primary oracle (port 8471) is
+the measurement still to take.
+
+Limit found on the way: an SQL `CREATE TABLE` gets the database's
+default member size (10,000 records, 3 increments of 1,000), so the
+table fills at 13,000 rows (SQL0901, "member is full"). On IBM i an SQL
+table is `SIZE(*NOMAX)`. The bench stays at 10,000 rows; the engine
+(`database/sql/src/exec/ddl.rs`) should create with `*NOMAX`.
 
 ## ACS checklist (Cody)
 

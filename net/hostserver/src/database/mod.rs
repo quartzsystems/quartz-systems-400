@@ -48,15 +48,23 @@ const RLE_THRESHOLD: usize = 1024;
 /// The scope the server's statements run in.
 const SCOPE: &str = "QZDASOINIT:";
 
-/// Set attributes code points.
-mod attr {
+/// Set attributes code points (docs/HOSTSVR.md keeps them in a table).
+pub mod attr {
+    /// Date format.
     pub const DATE_FORMAT: u16 = 0x3807;
+    /// Naming convention.
     pub const NAMING: u16 = 0x380C;
+    /// Commitment control level.
     pub const COMMIT: u16 = 0x380E;
+    /// Default library.
     pub const DEFAULT_LIBRARY: u16 = 0x380F;
+    /// Autocommit.
     pub const AUTOCOMMIT: u16 = 0x3824;
+    /// Client interface type.
     pub const INTERFACE_TYPE: u16 = 0x383C;
+    /// Client interface name.
     pub const INTERFACE_NAME: u16 = 0x383D;
+    /// Client interface level.
     pub const INTERFACE_LEVEL: u16 = 0x383E;
 }
 
