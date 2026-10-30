@@ -1,0 +1,410 @@
+### attr all
+attr data/fruits.txt
+--- out
+ALLOC_SIZE=4096
+ALWSAV=YES
+ASP=1
+CCSID=819
+CODEPAGE=819
+DATA_SIZE=20
+OBJTYPE=*STMF
+PC_ARCHIVE=YES
+PC_HIDDEN=NO
+PC_READ_ONLY=NO
+PC_SYSTEM=NO
+SYS_ARCHIVE=NO
+
+### attr one
+attr data/fruits.txt CCSID
+--- out
+819
+
+### attr several
+attr data/fruits.txt OBJTYPE DATA_SIZE
+--- out
+*STMF
+20
+
+### attr lower case name
+attr data/fruits.txt ccsid
+--- out
+819
+
+### attr print form
+attr -p data/fruits.txt CCSID PC_HIDDEN
+--- out
+CCSID=819
+PC_HIDDEN=NO
+
+### attr directory
+attr data OBJTYPE
+--- out
+*DIR
+
+### attr qsys member
+attr /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR OBJTYPE CCSID
+--- out
+*MBR
+37
+
+### attr qsys file
+attr /QSYS.LIB/QGPL.LIB/QCLSRC.FILE OBJTYPE
+--- out
+*FILE
+
+### attr qsys program
+attr /QSYS.LIB/QGPL.LIB/HELLO.PGM OBJTYPE
+--- out
+*PGM
+
+### attr link followed
+attr data/link OBJTYPE
+--- out
+*STMF
+
+### attr link itself
+attr -h data/link OBJTYPE
+--- out
+*SYMLNK
+
+### attr set
+attr data/fruits.txt PC_HIDDEN=YES; attr data/fruits.txt PC_HIDDEN
+--- out
+YES
+
+### attr set lower
+attr data/fruits.txt pc_archive=no; attr -p data/fruits.txt PC_ARCHIVE
+--- out
+PC_ARCHIVE=NO
+
+### attr set ccsid
+attr data/fruits.txt CCSID=1208; attr -p data/fruits.txt CCSID CODEPAGE
+--- out
+CCSID=1208
+CODEPAGE=1208
+
+### attr set and show
+attr data/fruits.txt PC_SYSTEM=YES PC_SYSTEM
+--- out
+YES
+
+### attr set bad value
+attr data/fruits.txt PC_HIDDEN=MAYBE; echo status $?
+--- out
+status 1
+--- err
+attr: data/fruits.txt: PC_HIDDEN=MAYBE: The attribute or its value is not valid.
+
+### attr set bad ccsid
+attr data/fruits.txt CCSID=abc; echo status $?
+--- out
+status 1
+--- err
+attr: data/fruits.txt: CCSID=abc: The attribute or its value is not valid.
+
+### attr set read only attribute
+attr data/fruits.txt DATA_SIZE=5; echo status $?
+--- out
+status 1
+--- err
+attr: data/fruits.txt: DATA_SIZE=5: The attribute cannot be changed.
+
+### attr set unknown
+attr data/fruits.txt NOSUCH=1; echo status $?
+--- out
+status 1
+--- err
+attr: data/fruits.txt: NOSUCH=1: The attribute or its value is not valid.
+
+### attr unknown
+attr data/fruits.txt NOSUCH; echo status $?
+--- out
+status 1
+--- err
+attr: data/fruits.txt: NOSUCH: The attribute is not known.
+
+### attr partly unknown
+attr data/fruits.txt NOSUCH CCSID; echo status $?
+--- out
+819
+status 1
+--- err
+attr: data/fruits.txt: NOSUCH: The attribute is not known.
+
+### attr missing file
+attr data/nosuch; echo status $?
+--- out
+status 1
+--- err
+attr: data/nosuch: No such path or directory.
+
+### attr none
+attr; echo status $?
+--- out
+status 2
+--- err
+attr: A file is needed.
+
+### attr bad option
+attr -x data/fruits.txt; echo status $?
+--- out
+status 2
+--- err
+attr: Option -x is not valid.
+
+### attr read only from mode
+chmod 444 data/fruits.txt; attr data/fruits.txt PC_READ_ONLY
+--- out
+YES
+
+### attr data size
+attr data/nonl.txt DATA_SIZE ALLOC_SIZE
+--- out
+10
+4096
+
+### attr in substitution
+c=$(attr data/fruits.txt CCSID); echo "ccsid $c"
+--- out
+ccsid 819
+
+### setccsid
+setccsid 1208 data/fruits.txt; attr data/fruits.txt CCSID
+--- out
+1208
+
+### setccsid several
+setccsid 37 data/fruits.txt data/nums.txt; attr data/nums.txt CCSID; attr data/fruits.txt CCSID
+--- out
+37
+37
+
+### setccsid bad
+setccsid abc data/fruits.txt; echo status $?
+--- out
+status 2
+--- err
+setccsid: The CCSID abc is not valid.
+
+### setccsid zero
+setccsid 0 data/fruits.txt; echo status $?
+--- out
+status 2
+--- err
+setccsid: The CCSID 0 is not valid.
+
+### setccsid too big
+setccsid 70000 data/fruits.txt; echo status $?
+--- out
+status 2
+--- err
+setccsid: The CCSID 70000 is not valid.
+
+### setccsid missing file
+setccsid 37 data/nosuch; echo status $?
+--- out
+status 1
+--- err
+setccsid: data/nosuch: No such path or directory.
+
+### setccsid no file
+setccsid 37; echo status $?
+--- out
+status 2
+--- err
+setccsid: A CCSID and a file are needed.
+
+### setccsid link itself
+setccsid -h 1208 data/link; attr -h data/link CCSID; attr data/link CCSID
+--- out
+1208
+819
+
+### Rfile read path
+Rfile -r /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+PGM
+ENDPGM
+
+### Rfile read file directory
+Rfile -r /qsys.lib/qgpl.lib/qclsrc.file
+--- out
+PGM
+ENDPGM
+
+### Rfile read qualified
+Rfile -rQ 'qgpl/qclsrc(hello)'
+--- out
+PGM
+ENDPGM
+
+### Rfile read qualified first
+Rfile -rQ QGPL/QCLSRC
+--- out
+PGM
+ENDPGM
+
+### Rfile read qualified library list
+Rfile -rQ 'QCLSRC(HELLO)'
+--- out
+PGM
+ENDPGM
+
+### Rfile read qualified libl
+Rfile -rQ '*LIBL/QCLSRC'
+--- out
+PGM
+ENDPGM
+
+### Rfile read qualified curlib none
+Rfile -rQ '*CURLIB/QCLSRC'; echo status $?
+--- out
+status 1
+--- err
+Rfile: *CURLIB/QCLSRC: The file QCLSRC is not found.
+
+### Rfile read qualified curlib
+liblist -c QGPL; Rfile -rQ '*CURLIB/QCLSRC'
+--- out
+PGM
+ENDPGM
+
+### Rfile read qualified missing file
+Rfile -rQ QGPL/NOSUCH; echo status $?
+--- out
+status 1
+--- err
+Rfile: QGPL/NOSUCH: The file NOSUCH is not found.
+
+### Rfile read qualified missing member
+Rfile -rQ 'QGPL/QCLSRC(NOSUCH)'; echo status $?
+--- out
+status 1
+--- err
+Rfile: QGPL/QCLSRC(NOSUCH): No such path or directory.
+
+### Rfile read qualified bad
+Rfile -rQ 'a/b/c'; echo status $?
+--- out
+status 1
+--- err
+Rfile: a/b/c: The qualified name is not valid.
+
+### Rfile trailing blanks
+printf 'PGM     \nENDPGM  \n' > /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/PAD.MBR; Rfile -r /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/PAD.MBR | od -c
+--- out
+0000000   P   G   M  \n   E   N   D   P   G   M  \n
+0000013
+
+### Rfile keep blanks
+printf 'PGM     \n' > /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/PAD.MBR; Rfile -rK /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/PAD.MBR | od -c
+--- out
+0000000   P   G   M                      \n
+0000011
+
+### Rfile binary read
+printf 'a  \nb' > /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/PAD.MBR; Rfile -rb /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/PAD.MBR | od -c
+--- out
+0000000   a          \n   b
+0000005
+
+### Rfile write
+printf 'one\ntwo\n' | Rfile -w /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; cat /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+one
+two
+
+### Rfile write append
+printf 'more\n' | Rfile -wa /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; cat /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+PGM
+ENDPGM
+more
+
+### Rfile write no final newline
+printf 'last' | Rfile -w /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; od -c /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+0000000   l   a   s   t  \n
+0000005
+
+### Rfile write binary
+printf 'last' | Rfile -wb /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; od -c /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+0000000   l   a   s   t
+0000004
+
+### Rfile write qualified
+echo new | Rfile -wQ 'QGPL/QCLSRC(HELLO)'; Rfile -rQ 'QGPL/QCLSRC(HELLO)'
+--- out
+new
+
+### Rfile command first
+Rfile -c 'OVRDBF FILE(X) TOFILE(Y)' -r /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; cat /tmp/cl.log
+--- out
+PGM
+ENDPGM
+OVRDBF FILE(X) TOFILE(Y) [same job]
+
+### Rfile command fails
+Rfile -c 'FROB' -r /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; echo status $?
+--- out
+status 1
+--- err
+Rfile: CPD0030: Command FROB in library *LIBL not found.
+Rfile: CPF0006: Errors occurred in command.
+
+### Rfile stream file
+Rfile -r data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### Rfile missing
+Rfile -r /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/NOSUCH.MBR; echo status $?
+--- out
+status 1
+--- err
+Rfile: /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/NOSUCH.MBR: No such path or directory.
+
+### Rfile no mode
+Rfile /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; echo status $?
+--- out
+status 2
+--- err
+Rfile: Give -r or -w.
+
+### Rfile both modes
+Rfile -rw /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; echo status $?
+--- out
+status 2
+--- err
+Rfile: Give -r or -w.
+
+### Rfile no file
+Rfile -r; echo status $?
+--- out
+status 2
+--- err
+Rfile: One file is taken.
+
+### Rfile two files
+Rfile -r a b; echo status $?
+--- out
+status 2
+--- err
+Rfile: One file is taken.
+
+### Rfile bad option
+Rfile -rz x; echo status $?
+--- out
+status 2
+--- err
+Rfile: Option -z is not valid.
+
+### Rfile empty file directory
+mkdir /QSYS.LIB/QGPL.LIB/EMPTY.FILE; Rfile -r /QSYS.LIB/QGPL.LIB/EMPTY.FILE; echo status $?
+--- out
+status 1
+--- err
+Rfile: /QSYS.LIB/QGPL.LIB/EMPTY.FILE: The file has no members.

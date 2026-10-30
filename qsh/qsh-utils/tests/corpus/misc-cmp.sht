@@ -1,0 +1,213 @@
+### cmp same
+cmp data/fruits.txt data/fruits.txt; echo $?
+--- out
+0
+
+### cmp differ
+printf 'apple\nbanana\ncherry\n' > a; printf 'apple\nbanAna\ncherry\n' > b; cmp a b; echo $?
+--- out
+a b differ: char 10, line 2
+1
+
+### cmp differ first byte
+printf 'x' > a; printf 'y' > b; cmp a b
+--- out
+a b differ: char 1, line 1
+--- status
+1
+
+### cmp differ line count
+printf 'apple\nbanana\ncherry\n' > a; printf 'apple\nbanana\nchErry\n' > b; cmp a b
+--- out
+a b differ: char 16, line 3
+--- status
+1
+
+### cmp silent
+printf 'apple\nbanana\ncherry\n' > a; printf 'apple\nbanAna\ncherry\n' > b; cmp -s a b; echo $?; cmp -s a a; echo $?
+--- out
+1
+0
+
+### cmp list
+printf 'apple\nbanana\ncherry\n' > a; printf 'Apple\nbanAna\ncherry\n' > b; cmp -l a b; echo $?
+--- out
+1 141 101
+10 141 101
+1
+
+### cmp list octal
+printf 'a\tb' > a; printf 'a\nB' > b; cmp -l a b
+--- out
+2 11 12
+3 142 102
+--- status
+1
+
+### cmp eof first
+printf 'apple\nbanana\ncherry\n' > a; printf 'apple\n' > b; cmp b a; echo $?
+--- out
+1
+--- err
+cmp: End of file on b.
+
+### cmp eof second
+printf 'apple\nbanana\ncherry\n' > a; printf 'apple\n' > b; cmp a b; echo $?
+--- out
+1
+--- err
+cmp: End of file on b.
+
+### cmp eof silent
+printf 'apple\nbanana\ncherry\n' > a; printf 'apple\n' > b; cmp -s a b; echo $?
+--- out
+1
+
+### cmp list then eof
+printf 'apple\nbanana\ncherry\n' > a; printf 'Apple\n' > b; cmp -l a b; echo $?
+--- out
+1 141 101
+1
+--- err
+cmp: End of file on b.
+
+### cmp empty files
+: > a; : > b; cmp a b; echo $?
+--- out
+0
+
+### cmp empty vs data
+: > a; cmp a data/fruits.txt; echo $?
+--- out
+1
+--- err
+cmp: End of file on a.
+
+### cmp stdin
+cmp - data/fruits.txt; echo $?
+
+--- in
+apple
+banana
+cherry
+--- out
+0
+
+### cmp stdin differ
+cmp data/fruits.txt -
+
+--- in
+apple
+banana
+Cherry
+--- out
+data/fruits.txt standard input differ: char 14, line 3
+--- status
+1
+
+### cmp skip
+printf 'XXabc' > a; printf 'abc' > b; cmp a b 2; echo $?
+--- out
+0
+
+### cmp skip both
+printf 'XXabc' > a; printf 'Yabd' > b; cmp a b 2 1
+--- out
+a b differ: char 3, line 1
+--- status
+1
+
+### cmp skip hex
+printf 'XXabc' > a; printf 'abc' > b; cmp a b 0x2 0; echo $?
+--- out
+0
+
+### cmp skip octal
+printf '12345678XYZ' > a; printf 'XYZ' > b; cmp a b 010; echo $?
+--- out
+0
+
+### cmp skip past end
+printf 'ab' > a; printf 'ab' > b; cmp a b 5 5; echo $?
+--- out
+0
+
+### cmp bad skip
+cmp data/fruits.txt data/fruits.txt x; echo $?
+--- out
+2
+--- err
+cmp: x is not a valid skip count.
+
+### cmp missing
+cmp data/nosuch data/fruits.txt; echo $?
+--- out
+2
+--- err
+cmp: data/nosuch: No such path or directory.
+
+### cmp missing silent
+cmp -s data/nosuch data/fruits.txt; echo $?
+--- out
+2
+
+### cmp directory
+cmp data data/fruits.txt; echo $?
+--- out
+2
+--- err
+cmp: data: The target is a directory.
+
+### cmp one operand
+cmp data/fruits.txt; echo $?
+--- out
+2
+--- err
+cmp: Two files are needed, then up to two skip counts.
+
+### cmp too many
+cmp a b 1 2 3; echo $?
+--- out
+2
+--- err
+cmp: Two files are needed, then up to two skip counts.
+
+### cmp l and s
+cmp -l -s a b; echo $?
+--- out
+2
+--- err
+cmp: Options -l and -s cannot be used together.
+
+### cmp bad option
+cmp -x a b; echo $?
+--- out
+2
+--- err
+cmp: Option -x is not valid.
+
+### cmp both stdin
+cmp - -; echo $?
+--- out
+2
+--- err
+cmp: Only one file can be standard input.
+
+### cmp raw bytes
+cmp -l raw/ff.bin raw/latin1.txt; echo $?
+--- out
+1 377 351
+2 377 12
+1
+--- err
+cmp: End of file on raw/latin1.txt.
+
+### cmp member
+printf 'PGM\nENDPGM\n' > m; cmp m /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; echo $?
+--- out
+0
+
+### cmp in if
+printf 'apple\nbanana\ncherry\n' > a; if cmp -s a data/fruits.txt; then echo same; else echo diff; fi
+--- out
+same

@@ -15,6 +15,7 @@
 mod errno;
 pub mod host;
 pub mod mem;
+pub mod services;
 pub mod stream;
 pub mod util;
 
@@ -23,7 +24,13 @@ use std::time::Duration;
 pub use errno::{Errno, SysError};
 pub use host::HostSys;
 pub use mem::MemSys;
-pub use stream::{Buffer, Bytes, Fd, Null, Stream};
+pub use services::{
+    ClMessage, ClOutcome, ClRequest, ClRunner, Credentials, DataArea, DnsAnswer, DnsQuery,
+    DnsRecord, DtaaraType, DtaqOp, DtaqReply, IpcInfo, IpcKind, IpcTarget, LibEntry, LibKind,
+    LiblChange, MsgKind, Resolver, SplfInfo, SplfNumber, Spooled, SqlColumn, SqlOutcome,
+    SqlRequest, SqlRunner,
+};
+pub use stream::{Buffer, Bytes, Duplex, Fd, Null, Stream, duplex};
 pub use util::{Registry, UtilCtx, Utility};
 
 /// How to open a path.
@@ -377,6 +384,119 @@ pub trait Sys: Send + Sync {
     /// Wait for a duration (`sleep`).
     fn sleep(&self, d: Duration) {
         std::thread::sleep(d);
+    }
+    /// The name resolver (`nslookup`, `host`, `dig`, `hostname`).
+    fn resolver(&self) -> Result<&dyn Resolver, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// The CL command runner (`system`, `logger`, `Rfile -c`).
+    fn cl_runner(&self) -> Result<&dyn ClRunner, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// The SQL statement runner (`db2`).
+    fn sql_runner(&self) -> Result<&dyn SqlRunner, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// A TCP connection to a host and port (`rexec`), as one stream.
+    fn tcp_connect(&self, host: &str, port: u16) -> Result<Fd, SysError> {
+        let _ = (host, port);
+        Err(Errno::ENOSYS.into())
+    }
+    /// Who the job runs as (`id`, `logname`).
+    fn credentials(&self) -> Result<Credentials, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// Make a FIFO.
+    fn mkfifo(&self, path: &str, mode: u32) -> Result<(), SysError> {
+        let _ = (path, mode);
+        Err(Errno::ENOSYS.into())
+    }
+    /// A process's working directory (`pwdx`).
+    fn process_cwd(&self, pid: i32) -> Result<String, SysError> {
+        let _ = pid;
+        Err(Errno::ENOSYS.into())
+    }
+    /// An object's attributes as `(NAME, value)` (`attr`), following a
+    /// final symbolic link when `follow`.
+    fn attributes(&self, path: &str, follow: bool) -> Result<Vec<(String, String)>, SysError> {
+        let _ = (path, follow);
+        Err(Errno::ENOSYS.into())
+    }
+    /// Change one attribute (`attr`, `setccsid`).
+    fn set_attribute(
+        &self,
+        path: &str,
+        follow: bool,
+        name: &str,
+        value: &str,
+    ) -> Result<(), SysError> {
+        let _ = (path, follow, name, value);
+        Err(Errno::ENOSYS.into())
+    }
+    /// The job's library list (`liblist`).
+    fn library_list(&self) -> Result<Vec<LibEntry>, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// Change the job's library list.
+    fn change_library_list(&self, change: &LiblChange) -> Result<(), SysError> {
+        let _ = change;
+        Err(Errno::ENOSYS.into())
+    }
+    /// A system value as text (`sysval`); `ENOENT` when there is none.
+    fn system_value(&self, name: &str) -> Result<String, SysError> {
+        let _ = name;
+        Err(Errno::ENOSYS.into())
+    }
+    /// A network attribute as text (`sysval -n`).
+    fn network_attribute(&self, name: &str) -> Result<String, SysError> {
+        let _ = name;
+        Err(Errno::ENOSYS.into())
+    }
+    /// A data area (`*LDA`, `*GDA`, `*PDA` or an absolute
+    /// `/QSYS.LIB` path).
+    fn read_data_area(&self, name: &str) -> Result<DataArea, SysError> {
+        let _ = name;
+        Err(Errno::ENOSYS.into())
+    }
+    /// Write a data area: the whole value, or `part` (offset from 0,
+    /// length) of a character one.
+    fn write_data_area(
+        &self,
+        name: &str,
+        part: Option<(usize, usize)>,
+        value: &str,
+    ) -> Result<(), SysError> {
+        let _ = (name, part, value);
+        Err(Errno::ENOSYS.into())
+    }
+    /// An operation on a data queue (an absolute `/QSYS.LIB` path).
+    fn data_queue(&self, path: &str, op: &DtaqOp) -> Result<DtaqReply, SysError> {
+        let _ = (path, op);
+        Err(Errno::ENOSYS.into())
+    }
+    /// A job's spooled files (`*` the current job).
+    fn spooled_files(&self, job: &str) -> Result<Vec<SplfInfo>, SysError> {
+        let _ = job;
+        Err(Errno::ENOSYS.into())
+    }
+    /// A spooled file's text, page by page.
+    fn spooled_file(
+        &self,
+        job: &str,
+        name: &str,
+        number: SplfNumber,
+    ) -> Result<Spooled, SysError> {
+        let _ = (job, name, number);
+        Err(Errno::ENOSYS.into())
+    }
+    /// The IPC objects (`ipcs`).
+    fn ipc_list(&self) -> Result<Vec<IpcInfo>, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// Remove an IPC object (`ipcrm`).
+    fn ipc_remove(&self, kind: IpcKind, target: IpcTarget) -> Result<(), SysError> {
+        let _ = (kind, target);
+        Err(Errno::ENOSYS.into())
     }
     /// A pipe: (read end, write end).
     fn pipe(&self) -> Result<(Fd, Fd), SysError> {

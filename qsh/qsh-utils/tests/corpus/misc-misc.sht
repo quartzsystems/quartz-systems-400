@@ -1,0 +1,627 @@
+### nohup runs
+nohup echo hi; echo $?
+--- out
+hi
+0
+
+### nohup status
+nohup sh -c 'exit 3'; echo $?
+--- out
+3
+
+### nohup not found
+nohup nosuchprog; echo $?
+--- out
+127
+--- err
+nohup: nosuchprog: not found.
+
+### nohup not runnable
+nohup data/fruits.txt; echo $?
+--- out
+126
+--- err
+nohup: data/fruits.txt: cannot be run.
+
+### nohup usage
+nohup; echo $?
+--- out
+127
+--- err
+nohup: A utility to run is needed.
+
+### nohup dashdash
+nohup -- echo ok
+--- out
+ok
+
+### nohup args
+nohup echo a 'b  c'
+--- out
+a b  c
+
+### nohup no nohup.out when piped
+nohup echo x | cat; ls nohup.out 2>&1; echo $?
+--- out
+x
+ls: nohup.out: No such path or directory.
+1
+
+### printenv name
+X=1 printenv X
+--- out
+1
+
+### printenv unset
+printenv NOSUCH; echo $?
+--- out
+1
+
+### printenv several
+A=1 B=2 printenv A B NOSUCH; echo $?
+--- out
+1
+2
+1
+
+### printenv all
+env -i A=1 B=two /usr/bin/printenv
+--- out
+A=1
+B=two
+
+### printenv home
+printenv HOME LOGNAME
+--- out
+/home/QSHUSER
+QSHUSER
+
+### printenv bad option
+printenv -x; echo $?
+--- out
+2
+--- err
+printenv: Option -x is not valid.
+
+### test program true
+/usr/bin/test -f data/fruits.txt; echo $?
+--- out
+0
+
+### test program false
+/usr/bin/test -d data/fruits.txt; echo $?
+--- out
+1
+
+### test program strings
+/usr/bin/test abc = abc; echo $?; /usr/bin/test abc != abc; echo $?
+--- out
+0
+1
+
+### test program numbers
+/usr/bin/test 10 -gt 9; echo $?; /usr/bin/test 1 -eq 2; echo $?
+--- out
+0
+1
+
+### test program bad number
+/usr/bin/test x -eq 1; echo $?
+--- out
+2
+--- err
+test: x is not a number.
+
+### test program no args
+/usr/bin/test; echo $?
+--- out
+1
+
+### test program one arg
+/usr/bin/test x; echo $?; /usr/bin/test ''; echo $?
+--- out
+0
+1
+
+### test program not
+/usr/bin/test ! -e nosuch; echo $?
+--- out
+0
+
+### test program and or
+/usr/bin/test -f data/fruits.txt -a -d data; echo $?; /usr/bin/test -f nosuch -o -d data; echo $?
+--- out
+0
+0
+
+### test program parens
+/usr/bin/test \( -f nosuch -o -d data \) -a -n x; echo $?
+--- out
+0
+
+### test program link
+/usr/bin/test -h data/link; echo $?; /usr/bin/test -L data/fruits.txt; echo $?
+--- out
+0
+1
+
+### test program size
+/usr/bin/test -s data/empty.txt; echo $?; /usr/bin/test -s data/fruits.txt; echo $?
+--- out
+1
+0
+
+### test program exec
+/usr/bin/test -x bin/tool; echo $?; /usr/bin/test -x data/fruits.txt; echo $?
+--- out
+0
+1
+
+### test program newer
+/usr/bin/test data/fruits.txt -nt data/old.txt; echo $?; /usr/bin/test data/old.txt -nt data/fruits.txt; echo $?
+--- out
+0
+1
+
+### test program same file
+/usr/bin/test data/link -ef data/fruits.txt; echo $?
+--- out
+0
+
+### test program zn
+/usr/bin/test -z ''; echo $?; /usr/bin/test -n ''; echo $?
+--- out
+0
+1
+
+### test program bad unary
+/usr/bin/test -q x; echo $?
+--- out
+2
+--- err
+test: -q is not a unary operator.
+
+### test program bad binary
+/usr/bin/test a -foo b; echo $?
+--- out
+2
+--- err
+test: -foo is not a binary operator.
+
+### test program extra
+/usr/bin/test a = b c d e; echo $?
+--- out
+2
+--- err
+test: c was not expected.
+
+### test program find exec
+find data -name '*.txt' -exec test -s {} \; -print | sort
+--- out
+data/csv.txt
+data/dup.txt
+data/fruits.txt
+data/mixed.txt
+data/nonl.txt
+data/nums.txt
+data/old.txt
+data/people.txt
+data/sub/deep.txt
+data/tabs.txt
+data/words.txt
+
+### test program xargs
+echo data/fruits.txt | xargs test -r; echo $?
+--- out
+0
+
+### test program qsys
+/usr/bin/test -d /QSYS.LIB/QGPL.LIB; echo $?; /usr/bin/test -f /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR; echo $?
+--- out
+0
+0
+
+### test program tty
+/usr/bin/test -t 1; echo $?
+--- out
+1
+
+### test program fifo
+mkfifo p; /usr/bin/test -p p; echo $?
+--- out
+0
+
+### file text
+file data/fruits.txt
+--- out
+data/fruits.txt: ASCII text
+
+### file several
+file data/empty.txt data/nonl.txt data data/link
+--- out
+data/empty.txt: empty
+data/nonl.txt: ASCII text
+data: directory
+data/link: ASCII text
+
+### file h
+file -h data/link
+--- out
+data/link: symbolic link to fruits.txt
+
+### file broken link
+ln -s nowhere bl; file bl; file -h bl
+--- out
+bl: broken symbolic link to nowhere
+bl: symbolic link to nowhere
+
+### file raw
+file raw/ff.bin raw/latin1.txt raw/ebcdic.txt raw/one.f8
+--- out
+raw/ff.bin: data
+raw/latin1.txt: ISO-8859 text
+raw/ebcdic.txt: EBCDIC text
+raw/one.f8: data
+
+### file utf8
+printf 'caf\303\251\n' > u; file u
+--- out
+u: UTF-8 text
+
+### file script
+printf '#!/bin/sh\necho hi\n' > s; file s
+--- out
+s: shell script
+
+### file dev null
+file /dev/null
+--- out
+/dev/null: character special
+
+### file fifo
+mkfifo p; file p
+--- out
+p: fifo
+
+### file qsys
+file /QSYS.LIB/QGPL.LIB /QSYS.LIB/QGPL.LIB/HELLO.PGM /QSYS.LIB/QGPL.LIB/CFG.DTAARA /QSYS.LIB/QGPL.LIB/QCLSRC.FILE /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+/QSYS.LIB/QGPL.LIB: library
+/QSYS.LIB/QGPL.LIB/HELLO.PGM: program object
+/QSYS.LIB/QGPL.LIB/CFG.DTAARA: data area object
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE: file object
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR: member, ASCII text
+
+### file missing
+file nosuch data/fruits.txt; echo $?
+--- out
+data/fruits.txt: ASCII text
+1
+--- err
+file: nosuch: No such path or directory.
+
+### file usage
+file; echo $?
+--- out
+2
+--- err
+file: A file name is needed.
+
+### file magic accepted
+file -m /etc/magic data/fruits.txt
+--- out
+data/fruits.txt: ASCII text
+
+### file binary data
+printf '\001\002\003' > b; file b
+--- out
+b: data
+
+### file empty utility
+file /usr/bin/ls
+--- out
+/usr/bin/ls: empty
+
+### file ebcdic by ccsid
+setccsid 37 raw/ebcdic.txt 2>/dev/null; file raw/ebcdic.txt
+--- out
+raw/ebcdic.txt: EBCDIC text
+
+### mkfifo makes
+mkfifo p; ls -l p | cut -c1-10; echo $?
+--- out
+prw-r--r--
+0
+
+### mkfifo umask
+umask 027; mkfifo p; ls -l p | cut -c1-10
+--- out
+prw-r-----
+
+### mkfifo mode octal
+mkfifo -m 600 p; ls -l p | cut -c1-10
+--- out
+prw-------
+
+### mkfifo mode symbolic
+mkfifo -m u=rw,go= p; ls -l p | cut -c1-10
+--- out
+prw-------
+
+### mkfifo mode plus
+umask 077; mkfifo -m +x p; ls -l p | cut -c1-10
+--- out
+prwxrw-rw-
+
+### mkfifo several
+mkfifo p1 p2; ls
+--- out
+bin
+data
+p1
+p2
+raw
+
+### mkfifo exists
+mkfifo data; echo $?
+--- out
+1
+--- err
+mkfifo: data: The file already exists.
+
+### mkfifo no dir
+mkfifo nodir/p; echo $?
+--- out
+1
+--- err
+mkfifo: nodir/p: No such path or directory.
+
+### mkfifo bad mode
+mkfifo -m 999 p; echo $?
+--- out
+2
+--- err
+mkfifo: 999 is not a valid mode.
+
+### mkfifo usage
+mkfifo; echo $?
+--- out
+2
+--- err
+mkfifo: A file name is needed.
+
+### mkfifo open
+mkfifo p; cat p; echo $?
+--- out
+1
+--- err
+cat: p: There is no such device or address.
+
+### pwd program
+/usr/bin/pwd
+--- out
+/home/QSHUSER
+
+### pwd program after cd
+cd data/sub && /usr/bin/pwd
+--- out
+/home/QSHUSER/data/sub
+
+### pwd program physical
+cd data && ln -s sub s && cd s && /usr/bin/pwd -L; /usr/bin/pwd -P
+--- out
+/home/QSHUSER/data/s
+/home/QSHUSER/data/sub
+
+### pwd program last option wins
+cd data && ln -s sub s && cd s && /usr/bin/pwd -P -L; /usr/bin/pwd -L -P
+--- out
+/home/QSHUSER/data/s
+/home/QSHUSER/data/sub
+
+### pwd program stale PWD
+PWD=/tmp /usr/bin/pwd
+--- out
+/home/QSHUSER
+
+### pwd program dotted PWD
+cd data; PWD=/home/QSHUSER/./data /usr/bin/pwd
+--- out
+/home/QSHUSER/data
+
+### pwd program operand
+/usr/bin/pwd x; echo $?
+--- out
+2
+--- err
+pwd: No operands are taken.
+
+### pwd program bad option
+/usr/bin/pwd -x; echo $?
+--- out
+2
+--- err
+pwd: Option -x is not valid.
+
+### pwd program case
+cd /home/qshuser/DATA && /usr/bin/pwd -P
+--- out
+/home/QSHUSER/data
+
+### locale default
+env -i /usr/bin/locale
+--- out
+LANG=
+LC_CTYPE="C"
+LC_COLLATE="C"
+LC_MONETARY="C"
+LC_NUMERIC="C"
+LC_TIME="C"
+LC_MESSAGES="C"
+LC_ALL=
+
+### locale lang
+env -i LANG=/QSYS.LIB/EN_US.LOCALE /usr/bin/locale
+--- out
+LANG=/QSYS.LIB/EN_US.LOCALE
+LC_CTYPE="/QSYS.LIB/EN_US.LOCALE"
+LC_COLLATE="/QSYS.LIB/EN_US.LOCALE"
+LC_MONETARY="/QSYS.LIB/EN_US.LOCALE"
+LC_NUMERIC="/QSYS.LIB/EN_US.LOCALE"
+LC_TIME="/QSYS.LIB/EN_US.LOCALE"
+LC_MESSAGES="/QSYS.LIB/EN_US.LOCALE"
+LC_ALL=
+
+### locale explicit category
+env -i LANG=C LC_TIME=POSIX /usr/bin/locale
+--- out
+LANG=C
+LC_CTYPE="C"
+LC_COLLATE="C"
+LC_MONETARY="C"
+LC_NUMERIC="C"
+LC_TIME=POSIX
+LC_MESSAGES="C"
+LC_ALL=
+
+### locale lc_all
+env -i LANG=C LC_NUMERIC=x LC_ALL=POSIX /usr/bin/locale
+--- out
+LANG=C
+LC_CTYPE="POSIX"
+LC_COLLATE="POSIX"
+LC_MONETARY="POSIX"
+LC_NUMERIC="POSIX"
+LC_TIME="POSIX"
+LC_MESSAGES="POSIX"
+LC_ALL=POSIX
+
+### locale keyword
+locale decimal_point
+--- out
+.
+
+### locale keyword k
+locale -k decimal_point grouping
+--- out
+decimal_point="."
+grouping=-1
+
+### locale keyword ck
+locale -ck thousands_sep
+--- out
+LC_NUMERIC
+thousands_sep=""
+
+### locale category
+locale LC_NUMERIC
+--- out
+.
+
+-1
+
+### locale category k
+locale -k LC_MESSAGES
+--- out
+yesexpr="^[yY]"
+noexpr="^[nN]"
+
+### locale category ck
+locale -ck LC_TIME
+--- out
+LC_TIME
+abday="Sun;Mon;Tue;Wed;Thu;Fri;Sat"
+day="Sunday;Monday;Tuesday;Wednesday;Thursday;Friday;Saturday"
+abmon="Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec"
+mon="January;February;March;April;May;June;July;August;September;October;November;December"
+d_t_fmt="%a %b %e %H:%M:%S %Y"
+d_fmt="%m/%d/%y"
+t_fmt="%H:%M:%S"
+am_pm="AM;PM"
+t_fmt_ampm="%I:%M:%S %p"
+
+### locale monetary
+locale -k LC_MONETARY | head -3
+--- out
+int_curr_symbol=""
+currency_symbol=""
+mon_decimal_point=""
+
+### locale ctype
+locale -k charmap
+--- out
+charmap="ANSI_X3.4-1968"
+
+### locale collate
+locale -c LC_COLLATE
+--- out
+LC_COLLATE
+
+### locale unknown
+locale nosuch decimal_point; echo $?
+--- out
+.
+1
+--- err
+locale: nosuch is not a category or keyword.
+
+### locale a
+locale -a
+--- out
+C
+POSIX
+
+### locale a objects
+touch /QSYS.LIB/EN_US.LOCALE /QSYS.LIB/FR_FR.LOCALE 2>/dev/null; locale -a
+--- out
+C
+POSIX
+/QSYS.LIB/EN_US.LOCALE
+/QSYS.LIB/FR_FR.LOCALE
+
+### locale m
+locale -m | head -3
+--- out
+IBMCCSID00037
+IBMCCSID00273
+IBMCCSID00277
+
+### locale a and m
+locale -a -m; echo $?
+--- out
+2
+--- err
+locale: Options -a and -m stand alone.
+
+### locale a operand
+locale -a x; echo $?
+--- out
+2
+--- err
+locale: Options -a and -m take no operands.
+
+### locale a with k
+locale -a -k; echo $?
+--- out
+2
+--- err
+locale: Options -a and -m stand alone.
+
+### locale bad option
+locale -z; echo $?
+--- out
+2
+--- err
+locale: Option -z is not valid.
+
+### locale day list
+locale abday mon
+--- out
+Sun;Mon;Tue;Wed;Thu;Fri;Sat
+January;February;March;April;May;June;July;August;September;October;November;December
+
+### locale yesexpr
+locale -k yesexpr noexpr
+--- out
+yesexpr="^[yY]"
+noexpr="^[nN]"

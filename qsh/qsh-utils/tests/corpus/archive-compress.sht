@@ -1,0 +1,330 @@
+### compress replaces a file
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+same() { [ "$(cat "$1")" = "$(cat "$2")" ] && echo same || echo differ; }
+rep 'the same line again' 200 > data/big.txt && compress data/big.txt && ls data | grep big && wc -c < data/big.txt.Z
+--- out
+big.txt.Z
+     455
+
+### compress then uncompress
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+same() { [ "$(cat "$1")" = "$(cat "$2")" ] && echo same || echo differ; }
+rep 'the same line again' 200 > data/big.txt && cp data/big.txt /tmp/orig && compress data/big.txt && uncompress data/big.txt.Z && same data/big.txt /tmp/orig
+--- out
+same
+
+### compress keeps the mode and time
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && chmod 600 data/big.txt && touch -t 202001020304 data/big.txt && compress data/big.txt && ls -l data/big.txt.Z
+--- out
+-rw-------  1 QSHUSER  0                   144 Jan  2  2020 data/big.txt.Z
+
+### uncompress keeps the mode and time
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && chmod 640 data/big.txt && touch -t 202001020304 data/big.txt && compress data/big.txt && uncompress data/big.txt && ls -l data/big.txt
+--- out
+-rw-r-----  1 QSHUSER  0                  2000 Jan  2  2020 data/big.txt
+
+### compress header bytes
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 50 | compress | od -c | head -1
+--- out
+0000000 037 235 220   a 304 214   Q 020   p   `   A 202 002 021 032   L
+
+### compress -b sets the header
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 50 | compress -b 12 | od -c | head -1
+rep abc 50 | compress -b 9 | od -c | head -1
+--- out
+0000000 037 235 214   a 304 214   Q 020   p   `   A 202 002 021 032   L
+0000000 037 235 211   a 304 214   Q 020   p   `   A 202 002 021 032   L
+
+### compress -b out of range
+compress -b 8 data/fruits.txt
+compress -b 17 data/fruits.txt
+compress -b x data/fruits.txt
+--- err
+compress: The code size 8 is not between 9 and 16.
+compress: The code size 17 is not between 9 and 16.
+compress: The code size x is not between 9 and 16.
+--- status
+2
+
+### compress known bytes
+printf aaa | compress | od -A n -t x1
+--- out
+ 1f 9d 90 61 02 02
+
+### compress of empty input
+compress < /dev/null | od -A n -t x1
+compress < /dev/null | uncompress | wc -c
+--- out
+ 1f 9d 90
+       0
+
+### compress a pipe both ways
+cat data/words.txt | compress | uncompress
+--- out
+the quick brown fox
+jumps over
+the lazy dog
+
+### compress at each code size
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+same() { [ "$(cat "$1")" = "$(cat "$2")" ] && echo same || echo differ; }
+rep 'one two three four five six seven' 3000 > /tmp/in
+for b in 9 10 11 12 13 14 15 16; do compress -b $b < /tmp/in | uncompress > /tmp/out; echo $b $(same /tmp/out /tmp/in); done
+--- out
+9 same
+10 same
+11 same
+12 same
+13 same
+14 same
+15 same
+16 same
+
+### compress -c writes standard output
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress -c data/big.txt > /tmp/big.Z && ls data/big.txt && uncompress -c /tmp/big.Z | wc -l
+--- out
+data/big.txt
+     500
+
+### compress -v reports
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress -v data/big.txt
+--- err
+compress: data/big.txt: 92.80% smaller, replaced with data/big.txt.Z
+
+### compress a file that would grow
+compress data/fruits.txt; echo "status $?"; ls data/fruits.txt*
+--- out
+status 2
+data/fruits.txt
+
+### compress -v of a file that would grow
+compress -v data/fruits.txt; echo "status $?"
+--- out
+status 2
+--- err
+compress: data/fruits.txt: Compressing would not make it smaller; left alone.
+
+### compress -f forces
+compress -f data/fruits.txt; echo "status $?"; ls data/fruits.txt* && zcat data/fruits.txt.Z
+--- out
+status 0
+data/fruits.txt.Z
+apple
+banana
+cherry
+
+### compress -f -v forced growth
+compress -f -v data/nonl.txt
+--- err
+compress: data/nonl.txt: 40.00% larger, replaced with data/nonl.txt.Z
+
+### compress a name ending in .Z
+echo x > data/a.Z && compress data/a.Z; echo "status $?"
+--- out
+status 1
+--- err
+compress: data/a.Z: The name already ends in .Z; left alone.
+
+### compress when the target exists
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && echo old > data/big.txt.Z && compress data/big.txt; echo "status $?"; cat data/big.txt.Z
+--- out
+status 1
+old
+--- err
+compress: data/big.txt.Z: The file exists; data/big.txt left alone.
+
+### compress -f replaces the target
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && echo old > data/big.txt.Z && compress -f data/big.txt && zcat data/big.txt.Z | wc -l
+--- out
+     500
+
+### compress a missing file
+compress data/nosuch; echo "status $?"
+--- out
+status 1
+--- err
+compress: data/nosuch: No such path or directory.
+
+### compress a directory
+compress data/sub; echo "status $?"
+--- out
+status 1
+--- err
+compress: data/sub: Not a regular file; left alone.
+
+### compress several files
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/a.txt && rep def 500 > data/b.txt && compress data/a.txt data/b.txt && ls data | grep -c 'Z$'
+--- out
+2
+
+### compress status is the worst
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/a.txt && compress data/a.txt data/fruits.txt; echo "status $?"; compress data/nosuch data/nums.txt; echo "status $?"
+--- out
+status 2
+status 2
+--- err
+compress: data/nosuch: No such path or directory.
+
+### compress -d uncompresses
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && compress -d data/big.txt.Z && wc -l < data/big.txt
+--- out
+     500
+
+### compress an unknown option
+compress -q data/fruits.txt
+--- err
+compress: Option -q is not valid.
+--- status
+2
+
+### compress raw bytes
+compress -f -c raw/ff.bin | uncompress | od -c
+--- out
+0000000 377 377 200  \0 001
+0000005
+
+### uncompress a name without .Z
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && uncompress data/big.txt && wc -l < data/big.txt
+--- out
+     500
+
+### uncompress -v reports
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && uncompress -v data/big.txt.Z
+--- err
+uncompress: data/big.txt.Z: replaced with data/big.txt
+
+### uncompress a missing file
+uncompress data/nosuch; echo "status $?"
+--- out
+status 1
+--- err
+uncompress: data/nosuch.Z: No such path or directory.
+
+### uncompress data that is not compressed
+cp data/fruits.txt data/f.Z && uncompress data/f.Z; echo "status $?"; ls data/f*
+--- out
+status 1
+data/f.Z
+data/fruits.txt
+--- err
+uncompress: data/f.Z: The data is not in compressed format.
+
+### uncompress standard input that is not compressed
+uncompress < data/fruits.txt; echo "status $?"
+--- out
+status 1
+--- err
+uncompress: standard input: The data is not in compressed format.
+
+### uncompress damaged data
+printf aaa | compress | tr '\002' '\377' | uncompress; echo "status $?"
+--- out
+status 1
+--- err
+uncompress: standard input: The compressed data is damaged.
+
+### uncompress too many bits
+printf aaa | compress | tr '\220' '\221' | uncompress; echo "status $?"
+printf aaa | compress | tr '\220' '\210' | uncompress; echo "status $?"
+--- out
+status 1
+status 1
+--- err
+uncompress: standard input: The data was compressed with more than 16 bits.
+uncompress: standard input: The compressed data is damaged.
+
+### uncompress when the target exists
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && echo keep > data/big.txt && uncompress data/big.txt.Z; echo "status $?"; cat data/big.txt
+--- out
+status 1
+keep
+--- err
+uncompress: data/big.txt: The file exists; data/big.txt.Z left alone.
+
+### uncompress -f replaces the target
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && echo keep > data/big.txt && uncompress -f data/big.txt.Z && wc -l < data/big.txt
+--- out
+     500
+
+### uncompress -c keeps the file
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && uncompress -c data/big.txt.Z | wc -l && ls data/big.txt.Z
+--- out
+     500
+data/big.txt.Z
+
+### uncompress a directory
+mkdir data/d.Z && uncompress data/d.Z; echo "status $?"
+--- out
+status 1
+--- err
+uncompress: data/d.Z: Not a regular file; left alone.
+
+### uncompress an unknown option
+uncompress -b 12 x
+--- err
+uncompress: Option -b is not valid.
+--- status
+2
+
+### zcat writes standard output
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && zcat data/big.txt.Z | head -2 && ls data/big.txt.Z
+--- out
+abc
+abc
+data/big.txt.Z
+
+### zcat adds .Z
+rep() { i=0; while [ $i -lt $2 ]; do echo "$1"; i=$((i + 1)); done; }
+rep abc 500 > data/big.txt && compress data/big.txt && zcat data/big.txt | wc -l
+--- out
+     500
+
+### zcat several files
+printf 'one\n' | compress > /tmp/1.Z && printf 'two\n' | compress > /tmp/2.Z && zcat /tmp/1.Z /tmp/2.Z
+--- out
+one
+two
+
+### zcat standard input
+printf 'from a pipe\n' | compress | zcat
+--- out
+from a pipe
+
+### zcat a missing file
+zcat /tmp/nosuch.Z; echo "status $?"
+--- out
+status 1
+--- err
+zcat: /tmp/nosuch.Z: No such path or directory.
+
+### zcat takes no options
+zcat -v x
+--- err
+zcat: Option -v is not valid.
+--- status
+2
+
+### compress a large file with table resets
+same() { [ "$(cat "$1")" = "$(cat "$2")" ] && echo same || echo differ; }
+i=0; while [ $i -lt 400 ]; do echo "line $i $((i * 7919 % 1000)) $((i * i))"; i=$((i + 1)); done > /tmp/in && cat /tmp/in /tmp/in /tmp/in /tmp/in /tmp/in /tmp/in /tmp/in /tmp/in > /tmp/in8 && compress -b 9 < /tmp/in8 > /tmp/in8.Z && uncompress < /tmp/in8.Z > /tmp/out && same /tmp/out /tmp/in8 && wc -c < /tmp/in8 && wc -c < /tmp/in8.Z
+--- out
+same
+   59040
+   25740

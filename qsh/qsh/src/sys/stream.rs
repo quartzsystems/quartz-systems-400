@@ -23,6 +23,11 @@ pub trait Stream: Send + Sync {
     fn is_terminal(&self) -> bool {
         false
     }
+    /// End the writing half of a connection (`shutdown(SHUT_WR)`); the
+    /// reading half stays open. Nothing for other streams.
+    fn shutdown_write(&self) -> io::Result<()> {
+        Ok(())
+    }
     /// The concrete type, for a `Sys` that hands its own streams to
     /// child jobs.
     fn as_any(&self) -> &dyn Any;
@@ -255,6 +260,52 @@ impl Stream for Buffer {
     fn write(&self, buf: &[u8]) -> io::Result<usize> {
         lock(&self.0).extend_from_slice(buf);
         Ok(buf.len())
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// One end of a two-way connection made of two pipes (a socket
+/// stand-in): reads come from the other end's writes.
+pub struct Duplex {
+    rx: Fd,
+    tx: Mutex<Option<Fd>>,
+}
+
+/// A connected pair of [`Duplex`] ends.
+pub fn duplex() -> (Fd, Fd) {
+    let (r1, w1) = pipe();
+    let (r2, w2) = pipe();
+    (
+        Arc::new(Duplex {
+            rx: r1,
+            tx: Mutex::new(Some(w2)),
+        }),
+        Arc::new(Duplex {
+            rx: r2,
+            tx: Mutex::new(Some(w1)),
+        }),
+    )
+}
+
+impl Stream for Duplex {
+    fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.rx.read(buf)
+    }
+
+    fn write(&self, buf: &[u8]) -> io::Result<usize> {
+        let tx = lock(&self.tx).clone();
+        match tx {
+            Some(tx) => tx.write(buf),
+            None => Err(io::ErrorKind::BrokenPipe.into()),
+        }
+    }
+
+    fn shutdown_write(&self) -> io::Result<()> {
+        lock(&self.tx).take();
+        Ok(())
     }
 
     fn as_any(&self) -> &dyn Any {

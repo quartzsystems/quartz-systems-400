@@ -14,7 +14,8 @@
 //! ```
 //!
 //! run against the seeded `MemSys`. `QSH_UPDATE_CORPUS=1` rewrites the
-//! expectations from what the shell does.
+//! expectations from what the shell does; `QSH_CORPUS_FILES=prefix`
+//! limits the run (and the rewrite) to files whose names start so.
 
 mod common;
 
@@ -138,9 +139,14 @@ fn files() -> Vec<PathBuf> {
 fn corpus() {
     let update = std::env::var_os("QSH_UPDATE_CORPUS").is_some();
     let only = std::env::var("QSH_CORPUS_ONLY").ok();
+    let prefix = std::env::var("QSH_CORPUS_FILES").ok();
     let mut failures = Vec::new();
     let mut total = 0;
     for path in files() {
+        let fname = path.file_name().unwrap_or_default().to_string_lossy();
+        if prefix.as_ref().is_some_and(|p| !fname.starts_with(p.as_str())) {
+            continue;
+        }
         let text = std::fs::read_to_string(&path)
             .expect("read")
             .replace("\r\n", "\n");

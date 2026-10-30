@@ -1,0 +1,426 @@
+### pr default
+pr data/fruits.txt | head -12
+--- out
+
+
+May 28 20:26 2026 data/fruits.txt Page 1
+
+
+apple
+banana
+cherry
+
+
+
+
+
+### pr default line count
+pr data/fruits.txt | wc -l
+--- out
+      66
+
+### pr header date
+pr data/fruits.txt | sed -n 3p
+--- out
+May 28 20:26 2026 data/fruits.txt Page 1
+
+### pr stdin header
+pr | sed -n 1,5p
+
+--- in
+x
+--- out
+
+
+Sep 21 14:13 2026  Page 1
+
+
+
+### pr two pages
+i=1; while [ $i -le 60 ]; do echo line$i; i=$((i+1)); done > f; pr f | wc -l; pr f | grep Page
+--- out
+     132
+Sep 21 14:13 2026 f Page 1
+Sep 21 14:13 2026 f Page 2
+
+### pr page break
+i=1; while [ $i -le 60 ]; do echo line$i; i=$((i+1)); done > f; pr f | sed -n 60,72p
+--- out
+line55
+line56
+
+
+
+
+
+
+
+Sep 21 14:13 2026 f Page 2
+
+
+line57
+
+### pr omit header
+pr -t data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pr omit header count
+i=1; while [ $i -le 60 ]; do echo line$i; i=$((i+1)); done > f; pr -t f | wc -l
+--- out
+      60
+
+### pr length
+i=1; while [ $i -le 5 ]; do echo line$i; i=$((i+1)); done > f; pr -l 13 f
+--- out
+
+
+Sep 21 14:13 2026 f Page 1
+
+
+line1
+line2
+line3
+
+
+
+
+
+
+
+Sep 21 14:13 2026 f Page 2
+
+
+line4
+line5
+
+
+
+
+
+
+
+### pr length small means t
+i=1; while [ $i -le 5 ]; do echo line$i; i=$((i+1)); done > f; pr -l 10 f; echo end
+--- out
+line1
+line2
+line3
+line4
+line5
+end
+
+### pr length attached
+i=1; while [ $i -le 3 ]; do echo line$i; i=$((i+1)); done > f; pr -l12 f | wc -l
+--- out
+      24
+
+### pr header text
+pr -h 'My Report' data/fruits.txt | sed -n 3p
+--- out
+May 28 20:26 2026 My Report Page 1
+
+### pr header attached
+pr -hTitle data/fruits.txt | sed -n 3p
+--- out
+May 28 20:26 2026 Title Page 1
+
+### pr start page
+i=1; while [ $i -le 120 ]; do echo line$i; i=$((i+1)); done > f; pr +2 f | grep Page
+--- out
+Sep 21 14:13 2026 f Page 2
+Sep 21 14:13 2026 f Page 3
+
+### pr start page past end
+pr +5 data/fruits.txt; echo $?
+--- out
+1
+--- err
+pr: There is no page 5.
+
+### pr double
+pr -t -d data/fruits.txt
+--- out
+apple
+
+banana
+
+cherry
+
+
+### pr double page
+i=1; while [ $i -le 60 ]; do echo line$i; i=$((i+1)); done > f; pr -d f | grep -c line
+--- out
+60
+
+### pr number
+pr -t -n data/fruits.txt
+--- out
+    1	apple
+    2	banana
+    3	cherry
+
+### pr number char width
+pr -t -n:3 data/fruits.txt
+--- out
+  1:apple
+  2:banana
+  3:cherry
+
+### pr number width only
+pr -t -n2 data/fruits.txt
+--- out
+ 1	apple
+ 2	banana
+ 3	cherry
+
+### pr offset
+pr -t -o 4 data/fruits.txt
+--- out
+    apple
+    banana
+    cherry
+
+### pr offset attached
+pr -t -o2 data/fruits.txt
+--- out
+  apple
+  banana
+  cherry
+
+### pr formfeed
+pr -F data/fruits.txt | od -c | tail -3
+--- out
+0000060   l   e  \n   b   a   n   a   n   a  \n   c   h   e   r   r   y
+0000100  \n  \f
+0000102
+
+### pr f option
+pr -t -f data/fruits.txt | od -c
+--- out
+0000000   a   p   p   l   e  \n   b   a   n   a   n   a  \n   c   h   e
+0000020   r   r   y  \n  \f
+0000025
+
+### pr columns
+i=1; while [ $i -le 6 ]; do echo line$i; i=$((i+1)); done > f; pr -t -2 f
+--- out
+line1                               line4
+line2                               line5
+line3                               line6
+
+### pr columns three
+i=1; while [ $i -le 7 ]; do echo line$i; i=$((i+1)); done > f; pr -t -3 f
+--- out
+line1                   line4                   line7
+line2                   line5
+line3                   line6
+
+### pr columns across
+i=1; while [ $i -le 7 ]; do echo line$i; i=$((i+1)); done > f; pr -t -3 -a f
+--- out
+line1                   line2                   line3
+line4                   line5                   line6
+line7
+
+### pr columns width
+i=1; while [ $i -le 4 ]; do echo line$i; i=$((i+1)); done > f; pr -t -2 -w 20 f
+--- out
+line1     line3
+line2     line4
+
+### pr columns truncate
+printf 'abcdefghijklmnop\nqrstuvwxyz0123456789\n' > f; pr -t -2 -w 21 f
+--- out
+abcdefghij qrstuvwxyz
+
+### pr columns separator
+i=1; while [ $i -le 4 ]; do echo line$i; i=$((i+1)); done > f; pr -t -2 -s, f
+--- out
+line1,line3
+line2,line4
+
+### pr columns separator tab
+i=1; while [ $i -le 4 ]; do echo line$i; i=$((i+1)); done > f; pr -t -2 -s f | od -c | head -2
+--- out
+0000000   l   i   n   e   1  \t   l   i   n   e   3  \n   l   i   n   e
+0000020   2  \t   l   i   n   e   4  \n
+
+### pr columns page
+i=1; while [ $i -le 120 ]; do echo line$i; i=$((i+1)); done > f; pr -2 f | sed -n 6,7p; pr -2 f | grep -c Page
+--- out
+line1                               line57
+line2                               line58
+2
+
+### pr columns number
+i=1; while [ $i -le 4 ]; do echo line$i; i=$((i+1)); done > f; pr -t -2 -n f
+--- out
+    1	line1                             3	line3
+    2	line2                             4	line4
+
+### pr merge
+pr -t -m data/fruits.txt data/nums.txt
+--- out
+apple                               10
+banana                              9
+cherry                              100
+                                    -5
+                                    2.5
+
+### pr merge separator
+pr -t -m -s'|' data/fruits.txt data/csv.txt
+--- out
+apple|x,1,b
+banana|y,2,a
+cherry|z,3,c
+
+### pr merge header
+pr -m data/fruits.txt data/nums.txt | sed -n 3p
+--- out
+Sep 21 14:13 2026  Page 1
+
+### pr merge with columns
+pr -m -2 data/fruits.txt; echo $?
+--- out
+2
+--- err
+pr: Options -m and -column cannot be used together.
+
+### pr expand tabs
+pr -t -e data/tabs.txt | od -c | head -3
+--- out
+0000000   a                               b                            
+0000020   c  \n   1                               2                    
+0000040           3  \n
+
+### pr expand tabs gap
+pr -t -e4 data/tabs.txt
+--- out
+a   b   c
+1   2   3
+
+### pr expand char
+printf 'a,b,c\n' | pr -t -e,4
+--- out
+a   b   c
+
+### pr output tabs
+printf 'a         b\n' | pr -t -i | od -c
+--- out
+0000000   a  \t           b  \n
+0000006
+
+### pr output tabs char
+printf 'a       b\n' | pr -t -i@4
+--- out
+a@@b
+
+### pr width ignored single
+printf 'abcdefghijklmnopqrstuvwxyz\n' | pr -t -w 10
+--- out
+abcdefghijklmnopqrstuvwxyz
+
+### pr several files
+pr data/fruits.txt data/csv.txt | grep Page
+--- out
+May 28 20:26 2026 data/fruits.txt Page 1
+May 28 20:26 2026 data/csv.txt Page 1
+
+### pr several files t
+pr -t data/fruits.txt data/csv.txt
+--- out
+apple
+banana
+cherry
+x,1,b
+y,2,a
+z,3,c
+
+### pr missing file
+pr data/nosuch data/fruits.txt | grep Page; echo $?
+--- out
+May 28 20:26 2026 data/fruits.txt Page 1
+0
+--- err
+pr: data/nosuch: No such path or directory.
+
+### pr missing quiet
+pr -r -t data/nosuch data/fruits.txt; echo $?
+--- out
+apple
+banana
+cherry
+1
+
+### pr empty file
+pr data/empty.txt | wc -l
+--- out
+       0
+
+### pr no newline
+pr -t data/nonl.txt
+--- out
+no newline
+
+### pr bad option
+pr -z data/fruits.txt; echo $?
+--- out
+2
+--- err
+pr: Option -z is not valid.
+
+### pr bad length
+pr -l x data/fruits.txt; echo $?
+--- out
+2
+--- err
+pr: The value x of option -l is not valid.
+
+### pr missing h argument
+pr -h; echo $?
+--- out
+2
+--- err
+pr: Option -h needs an argument.
+
+### pr bad page
+pr +0 data/fruits.txt; echo $?
+--- out
+2
+--- err
+pr: +0 is not a valid page number.
+
+### pr cluster
+pr -tn data/fruits.txt
+--- out
+    1	apple
+    2	banana
+    3	cherry
+
+### pr p accepted
+pr -p -t data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pr dashdash
+pr -t -- data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pr tz
+TZ=EST5 pr data/fruits.txt | sed -n 3p
+--- out
+May 28 15:26 2026 data/fruits.txt Page 1
+
+### pr member
+pr -t /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+PGM
+ENDPGM

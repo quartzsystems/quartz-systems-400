@@ -1,0 +1,471 @@
+### ipcs default
+ipcs
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP
+q         0 0x00001234 --rw-rw----  QSHUSER        0
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP
+m         1 0x00000000 --rw-------  QSHUSER        0
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0
+
+### ipcs queues
+ipcs -q
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP
+q         0 0x00001234 --rw-rw----  QSHUSER        0
+
+### ipcs memory and semaphores
+ipcs -ms
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP
+m         1 0x00000000 --rw-------  QSHUSER        0
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0
+
+### ipcs all columns
+ipcs -a
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP  CREATOR   CGROUP   CBYTES   QNUM   QBYTES  LSPID  LRPID     STIME     RTIME     CTIME
+q         0 0x00001234 --rw-rw----  QSHUSER        0  QSHUSER        0       12      2    16384    101      0  20:26:40  no-entry  06:40:00
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP  CREATOR   CGROUP NATTCH    SEGSZ   CPID   LPID     ATIME     DTIME     CTIME
+m         1 0x00000000 --rw-------  QSHUSER        0  QSHUSER        0      1     4096    101      0  20:26:40  no-entry  06:40:00
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP  CREATOR   CGROUP  NSEMS     OTIME     CTIME
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0  QSHUSER        0      3  20:26:40  06:40:00
+
+### ipcs sizes
+ipcs -b
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP   QBYTES
+q         0 0x00001234 --rw-rw----  QSHUSER        0    16384
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP    SEGSZ
+m         1 0x00000000 --rw-------  QSHUSER        0     4096
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP  NSEMS
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0      3
+
+### ipcs creators
+ipcs -qc
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP  CREATOR   CGROUP
+q         0 0x00001234 --rw-rw----  QSHUSER        0  QSHUSER        0
+
+### ipcs use
+ipcs -o
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP   CBYTES   QNUM
+q         0 0x00001234 --rw-rw----  QSHUSER        0       12      2
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP NATTCH
+m         1 0x00000000 --rw-------  QSHUSER        0      1
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0
+
+### ipcs pids
+ipcs -p
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP  LSPID  LRPID
+q         0 0x00001234 --rw-rw----  QSHUSER        0    101      0
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP   CPID   LPID
+m         1 0x00000000 --rw-------  QSHUSER        0    101      0
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0
+
+### ipcs times
+ipcs -t
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP     STIME     RTIME     CTIME
+q         0 0x00001234 --rw-rw----  QSHUSER        0  20:26:40  no-entry  06:40:00
+Shared Memory:
+T        ID KEY        MODE           OWNER    GROUP     ATIME     DTIME     CTIME
+m         1 0x00000000 --rw-------  QSHUSER        0  20:26:40  no-entry  06:40:00
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP     OTIME     CTIME
+s         2 0x00005678 --ra-ra-ra-  QSHUSER        0  20:26:40  06:40:00
+
+### ipcs operand
+ipcs x; echo status $?
+--- out
+status 2
+--- err
+ipcs: No operands are taken.
+
+### ipcs bad option
+ipcs -z; echo status $?
+--- out
+status 2
+--- err
+ipcs: Option -z is not valid.
+
+### ipcrm queue
+ipcrm -q 0; ipcs -q
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Message Queues:
+T        ID KEY        MODE           OWNER    GROUP
+
+### ipcrm memory
+ipcrm -m 1; ipcs -m | tail -1
+--- out
+T        ID KEY        MODE           OWNER    GROUP
+
+### ipcrm semaphore key
+ipcrm -S 0x5678; ipcs -s
+--- out
+IPC status from QS400 as of Mon Sep 21 14:13:20 UTC 2026
+Semaphores:
+T        ID KEY        MODE           OWNER    GROUP
+
+### ipcrm queue key decimal
+ipcrm -Q 4660; ipcs -q | wc -l
+--- out
+       3
+
+### ipcrm several
+ipcrm -q 0 -m 1 -s 2; ipcs | wc -l
+--- out
+       7
+
+### ipcrm wrong kind
+ipcrm -m 0; echo status $?
+--- out
+status 1
+--- err
+ipcrm: -m 0: The identifier is not valid.
+
+### ipcrm missing
+ipcrm -q 42; echo status $?
+--- out
+status 1
+--- err
+ipcrm: -q 42: The identifier is not valid.
+
+### ipcrm private key
+ipcrm -M 0; echo status $?
+--- out
+status 1
+--- err
+ipcrm: -M 0: No object has the key.
+
+### ipcrm bad number
+ipcrm -q abc; echo status $?
+--- out
+status 1
+--- err
+ipcrm: -q abc: The number is not valid.
+
+### ipcrm partly
+ipcrm -q 9 -s 2; echo status $?; ipcs -s | wc -l
+--- out
+status 1
+       3
+--- err
+ipcrm: -q 9: The identifier is not valid.
+
+### ipcrm nothing
+ipcrm; echo status $?
+--- out
+status 2
+--- err
+ipcrm: Name objects with -q, -m, -s, -Q, -M or -S.
+
+### ipcrm operand
+ipcrm 5; echo status $?
+--- out
+status 2
+--- err
+ipcrm: Name objects with -q, -m, -s, -Q, -M or -S.
+
+### clrtmp
+mkdir -p /tmp/a/b; echo x > /tmp/a/b/f; echo y > /tmp/top; clrtmp; echo status $?; ls -a /tmp
+--- out
+status 0
+.
+..
+
+### clrtmp empty
+clrtmp; echo status $?; ls /tmp
+--- out
+status 0
+
+### clrtmp keeps tmp
+clrtmp; test -d /tmp && echo kept
+--- out
+kept
+
+### clrtmp mine
+echo a > /tmp/mine; echo b > /tmp/theirs; chown QSYS /tmp/theirs; mkdir /tmp/d; echo c > /tmp/d/x; chown QSYS /tmp/d/x; clrtmp -c; echo status $?; ls -R /tmp
+--- out
+status 0
+/tmp:
+d
+theirs
+
+/tmp/d:
+x
+
+### clrtmp mine empty dirs
+mkdir -p /tmp/e/f; clrtmp -c; ls /tmp
+
+### clrtmp operand
+clrtmp /tmp; echo status $?
+--- out
+status 2
+--- err
+clrtmp: No operands are taken.
+
+### clrtmp bad option
+clrtmp -x; echo status $?
+--- out
+status 2
+--- err
+clrtmp: Option -x is not valid.
+
+### clrtmp read only directory
+mkdir /tmp/ro; echo z > /tmp/ro/f; chmod 555 /tmp/ro; clrtmp; echo status $?
+--- out
+status 0
+
+### logger message
+logger hello world; cat /tmp/cl.log
+--- out
+SNDMSG MSG('hello world') TOMSGQ(QSYS/QHST) [same job]
+
+### logger tag
+logger -t myapp started; cat /tmp/cl.log
+--- out
+SNDMSG MSG('myapp: started') TOMSGQ(QSYS/QHST) [same job]
+
+### logger tag and pid
+logger -i -t job ran; cat /tmp/cl.log
+--- out
+SNDMSG MSG('job[100]: ran') TOMSGQ(QSYS/QHST) [same job]
+
+### logger pid only
+logger -i plain; cat /tmp/cl.log
+--- out
+SNDMSG MSG('[100]: plain') TOMSGQ(QSYS/QHST) [same job]
+
+### logger quote
+logger "it's done"; cat /tmp/cl.log
+--- out
+SNDMSG MSG('it''s done') TOMSGQ(QSYS/QHST) [same job]
+
+### logger stdin
+printf 'one\n\ntwo\n' | logger; cat /tmp/cl.log
+--- out
+SNDMSG MSG('one') TOMSGQ(QSYS/QHST) [same job]
+SNDMSG MSG('two') TOMSGQ(QSYS/QHST) [same job]
+
+### logger file
+logger -f data/fruits.txt; cat /tmp/cl.log
+--- out
+SNDMSG MSG('apple') TOMSGQ(QSYS/QHST) [same job]
+SNDMSG MSG('banana') TOMSGQ(QSYS/QHST) [same job]
+SNDMSG MSG('cherry') TOMSGQ(QSYS/QHST) [same job]
+
+### logger file missing
+logger -f data/nosuch; echo status $?
+--- out
+status 1
+--- err
+logger: data/nosuch: No such path or directory.
+
+### logger priority
+logger -p local0.info hi; cat /tmp/cl.log
+--- out
+SNDMSG MSG('hi') TOMSGQ(QSYS/QHST) [same job]
+
+### logger level only
+logger -p err hi; echo status $?
+--- out
+status 0
+
+### logger bad priority
+logger -p bogus.info hi; echo status $?
+--- out
+status 2
+--- err
+logger: The priority bogus.info is not valid.
+
+### logger bad option
+logger -x hi; echo status $?
+--- out
+status 2
+--- err
+logger: Option -x is not valid.
+
+### id
+id
+--- out
+uid=100(QSHUSER) gid=0
+
+### id user
+id -u
+--- out
+100
+
+### id user name
+id -un
+--- out
+QSHUSER
+
+### id group
+id -g
+--- out
+0
+
+### id group name number
+id -gn
+--- out
+0
+
+### id groups
+id -G
+--- out
+0
+
+### id named user
+id QSYS
+--- out
+uid=0(QSYS) gid=0
+
+### id option after user
+id qsys -u
+--- err
+id: At most one user is taken.
+--- status
+2
+
+### id self by name
+id qshuser
+--- out
+uid=100(QSHUSER) gid=0
+
+### id unknown user
+id nosuch; echo status $?
+--- out
+status 1
+--- err
+id: nosuch: The user is not known.
+
+### id numeric user
+id 100
+--- out
+uid=100(QSHUSER) gid=0
+
+### id n alone
+id -n; echo status $?
+--- out
+status 2
+--- err
+id: -n and -r are taken with -G, -g or -u.
+
+### id two picks
+id -u -g; echo status $?
+--- out
+status 2
+--- err
+id: Use one of -G, -g and -u.
+
+### id two users
+id a b; echo status $?
+--- out
+status 2
+--- err
+id: At most one user is taken.
+
+### id bad option
+id -x; echo status $?
+--- out
+status 2
+--- err
+id: Option -x is not valid.
+
+### logname
+logname
+--- out
+QSHUSER
+
+### logname operand
+logname x; echo status $?
+--- out
+status 2
+--- err
+logname: No operands are taken.
+
+### pwdx shell
+pwdx 100
+--- out
+100: /home/QSHUSER
+
+### pwdx child
+pwdx 101
+--- out
+101: /home/QSHUSER/data
+
+### pwdx several
+pwdx 101 100
+--- out
+101: /home/QSHUSER/data
+100: /home/QSHUSER
+
+### pwdx missing
+pwdx 999; echo status $?
+--- out
+status 1
+--- err
+pwdx: 999: No such process.
+
+### pwdx bad
+pwdx abc 100; echo status $?
+--- out
+100: /home/QSHUSER
+status 1
+--- err
+pwdx: abc: The process ID is not valid.
+
+### pwdx none
+pwdx; echo status $?
+--- out
+status 2
+--- err
+pwdx: A process ID is needed.
+
+### pwdx option
+pwdx -x; echo status $?
+--- out
+status 2
+--- err
+pwdx: Option -x is not valid.
+
+### pwdx dash dash
+pwdx -- 100
+--- out
+100: /home/QSHUSER

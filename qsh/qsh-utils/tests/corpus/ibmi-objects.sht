@@ -1,0 +1,719 @@
+### liblist show
+liblist
+--- out
+QSYS       SYS
+QSYS2      SYS
+QHLPSYS    SYS
+QUSRSYS    SYS
+QGPL       USR
+QTEMP      USR
+
+### liblist add front
+liblist -a MYLIB; liblist
+--- out
+QSYS       SYS
+QSYS2      SYS
+QHLPSYS    SYS
+QUSRSYS    SYS
+MYLIB      USR
+QGPL       USR
+QTEMP      USR
+
+### liblist add several front keeps order
+liblist -a LIB1 LIB2; liblist | tail -4
+--- out
+LIB1       USR
+LIB2       USR
+QGPL       USR
+QTEMP      USR
+
+### liblist add last
+liblist -al MYLIB; liblist | tail -2
+--- out
+QTEMP      USR
+MYLIB      USR
+
+### liblist l implies add
+liblist -l MYLIB; liblist | tail -1
+--- out
+MYLIB      USR
+
+### liblist f implies add
+liblist -f mylib; liblist | sed -n 5p
+--- out
+MYLIB      USR
+
+### liblist add twice
+liblist -a QGPL; echo status $?
+--- out
+status 1
+--- err
+liblist: QGPL: The library is already in the library list.
+
+### liblist remove
+liblist -d QTEMP; liblist
+--- out
+QSYS       SYS
+QSYS2      SYS
+QHLPSYS    SYS
+QUSRSYS    SYS
+QGPL       USR
+
+### liblist remove system library
+liblist -d QSYS; echo status $?
+--- out
+status 1
+--- err
+liblist: QSYS: The library is not in the user portion of the library list.
+
+### liblist remove missing
+liblist -d NOSUCH; echo status $?
+--- out
+status 1
+--- err
+liblist: NOSUCH: The library is not in the user portion of the library list.
+
+### liblist current
+liblist -c MYCUR; liblist
+--- out
+QSYS       SYS
+QSYS2      SYS
+QHLPSYS    SYS
+QUSRSYS    SYS
+MYCUR      CUR
+QGPL       USR
+QTEMP      USR
+
+### liblist current replaced
+liblist -c ONE; liblist -c TWO; liblist | grep CUR
+--- out
+TWO        CUR
+
+### liblist current none
+liblist -c ONE; liblist -c '*CRTDFT'; liblist | grep -c CUR
+--- out
+0
+--- status
+1
+
+### liblist current two
+liblist -c A B; echo status $?
+--- out
+status 2
+--- err
+liblist: Only one current library is taken.
+
+### liblist bad name
+liblist -a 1BAD; echo status $?
+--- out
+status 1
+--- err
+liblist: 1BAD: The library name is not valid.
+
+### liblist long name
+liblist -a ABCDEFGHIJK; echo status $?
+--- out
+status 1
+--- err
+liblist: ABCDEFGHIJK: The library name is not valid.
+
+### liblist conflicting
+liblist -a -d X; echo status $?
+--- out
+status 2
+--- err
+liblist: Use one of -a, -d and -c.
+
+### liblist f and l
+liblist -f -l X; echo status $?
+--- out
+status 2
+--- err
+liblist: Use one of -a, -d and -c.
+
+### liblist operand without option
+liblist QGPL; echo status $?
+--- out
+status 2
+--- err
+liblist: Libraries are taken with -a, -d or -c.
+
+### liblist option without library
+liblist -a; echo status $?
+--- out
+status 2
+--- err
+liblist: A library is needed.
+
+### liblist bad option
+liblist -z; echo status $?
+--- out
+status 2
+--- err
+liblist: Option -z is not valid.
+
+### liblist mixed results
+liblist -a NEW1 QGPL NEW2; echo status $?; liblist | grep -c USR
+--- out
+status 1
+5
+--- err
+liblist: QGPL: The library is already in the library list.
+
+### sysval one
+sysval QCCSID
+--- out
+37
+
+### sysval several
+sysval QCCSID qdatfmt QSECURITY
+--- out
+37
+MDY
+40
+
+### sysval with names
+sysval -p QCCSID QMODEL
+--- out
+QCCSID 37
+QMODEL 8286
+
+### sysval list value
+sysval QSYSLIBL
+--- out
+QSYS QSYS2 QHLPSYS QUSRSYS
+
+### sysval unknown
+sysval QNOSUCH; echo status $?
+--- out
+status 1
+--- err
+sysval: QNOSUCH: The system value is not known.
+
+### sysval partly unknown
+sysval QCCSID QNOSUCH QSECURITY; echo status $?
+--- out
+37
+40
+status 1
+--- err
+sysval: QNOSUCH: The system value is not known.
+
+### sysval network attribute
+sysval -n SYSNAME
+--- out
+QS400
+
+### sysval network with names
+sysval -np lclnetid LCLCPNAME
+--- out
+LCLNETID APPN
+LCLCPNAME QS400
+
+### sysval network unknown
+sysval -n NOSUCH; echo status $?
+--- out
+status 1
+--- err
+sysval: NOSUCH: The network attribute is not known.
+
+### sysval none
+sysval; echo status $?
+--- out
+status 2
+--- err
+sysval: A system value name is needed.
+
+### sysval bad option
+sysval -x QCCSID; echo status $?
+--- out
+status 2
+--- err
+sysval: Option -x is not valid.
+
+### sysval in substitution
+s=$(sysval QSECURITY); test "$s" -ge 40 && echo secure
+--- out
+secure
+
+### datarea read char
+datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA | od -c | head -2
+--- out
+0000000   C   O   N   F   I   G                                        
+0000020                  \n
+
+### datarea read r
+datarea -r /qsys.lib/qgpl.lib/cfg.dtaara | sed 's/ *$/|/'
+--- out
+CONFIG|
+
+### datarea read relative
+cd /QSYS.LIB/QGPL.LIB && datarea CFG.DTAARA | tr -d ' '
+--- out
+CONFIG
+
+### datarea substring
+datarea -s 1:3 /QSYS.LIB/QGPL.LIB/CFG.DTAARA
+--- out
+CON
+
+### datarea substring to end
+datarea -s 4 /QSYS.LIB/QGPL.LIB/CFG.DTAARA | sed 's/ *$/|/'
+--- out
+FIG|
+
+### datarea substring past end
+datarea -s 15:10 /QSYS.LIB/QGPL.LIB/CFG.DTAARA; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QGPL.LIB/CFG.DTAARA: The substring is past the end of the data area.
+
+### datarea substring bad
+datarea -s 0:2 /QSYS.LIB/QGPL.LIB/CFG.DTAARA; echo status $?
+--- out
+status 2
+--- err
+datarea: The substring 0:2 is not valid.
+
+### datarea substring letters
+datarea -s a /QSYS.LIB/QGPL.LIB/CFG.DTAARA; echo status $?
+--- out
+status 2
+--- err
+datarea: The substring a is not valid.
+
+### datarea write char
+datarea -w /QSYS.LIB/QGPL.LIB/CFG.DTAARA NEWVALUE; datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA | sed 's/ *$/|/'
+--- out
+NEWVALUE|
+
+### datarea write words joined
+datarea -w /QSYS.LIB/QGPL.LIB/CFG.DTAARA two words; datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA | sed 's/ *$/|/'
+--- out
+two words|
+
+### datarea write truncated
+datarea -w /QSYS.LIB/QGPL.LIB/CFG.DTAARA ABCDEFGHIJKLMNOPQRSTUVWXYZ; datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA
+--- out
+ABCDEFGHIJKLMNOPQRST
+
+### datarea write substring
+datarea -w -s 3:2 /QSYS.LIB/QGPL.LIB/CFG.DTAARA XY; datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA | sed 's/ *$/|/'
+--- out
+COXYIG|
+
+### datarea write substring value length
+datarea -w -s 2 /QSYS.LIB/QGPL.LIB/CFG.DTAARA zz; datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA | sed 's/ *$/|/'
+--- out
+CzzFIG|
+
+### datarea write substring past end
+datarea -w -s 19:5 /QSYS.LIB/QGPL.LIB/CFG.DTAARA ABCDE; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QGPL.LIB/CFG.DTAARA: The value is not valid for the data area.
+
+### datarea decimal
+datarea /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA
+--- out
+12.50
+
+### datarea decimal write
+datarea -w /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA -3.5; datarea /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA
+--- out
+-3.50
+
+### datarea decimal write integer
+datarea -w /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA 12345; datarea /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA
+--- out
+12345.00
+
+### datarea decimal too big
+datarea -w /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA 123456; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA: The value is not valid for the data area.
+
+### datarea decimal not a number
+datarea -w /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA abc; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA: The value is not valid for the data area.
+
+### datarea decimal substring
+datarea -s 1:2 /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QSHLIB.LIB/COUNT.DTAARA: A substring is taken only for a character data area.
+
+### datarea logical
+datarea /QSYS.LIB/QSHLIB.LIB/FLAG.DTAARA
+--- out
+1
+
+### datarea logical write
+datarea -w /QSYS.LIB/QSHLIB.LIB/FLAG.DTAARA 0; datarea /QSYS.LIB/QSHLIB.LIB/FLAG.DTAARA
+--- out
+0
+
+### datarea logical bad
+datarea -w /QSYS.LIB/QSHLIB.LIB/FLAG.DTAARA 2; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QSHLIB.LIB/FLAG.DTAARA: The value is not valid for the data area.
+
+### datarea lda
+datarea '*LDA' | wc -c
+--- out
+    1025
+
+### datarea lda write
+datarea -w -s 1:5 '*lda' hello; datarea -s 1:8 '*LDA' | sed 's/ *$/|/'
+--- out
+hello|
+
+### datarea gda missing
+datarea '*GDA'; echo status $?
+--- out
+status 1
+--- err
+datarea: *GDA: The data area is not found.
+
+### datarea missing
+datarea /QSYS.LIB/QGPL.LIB/NOSUCH.DTAARA; echo status $?
+--- out
+status 1
+--- err
+datarea: /QSYS.LIB/QGPL.LIB/NOSUCH.DTAARA: The data area is not found.
+
+### datarea none
+datarea; echo status $?
+--- out
+status 2
+--- err
+datarea: A data area is needed.
+
+### datarea read and write
+datarea -r -w /QSYS.LIB/QGPL.LIB/CFG.DTAARA x; echo status $?
+--- out
+status 2
+--- err
+datarea: Use -r or -w, not both.
+
+### datarea write no value
+datarea -w /QSYS.LIB/QGPL.LIB/CFG.DTAARA; echo status $?
+--- out
+status 2
+--- err
+datarea: A value to write is needed.
+
+### datarea read with value
+datarea /QSYS.LIB/QGPL.LIB/CFG.DTAARA extra; echo status $?
+--- out
+status 2
+--- err
+datarea: A value is taken only with -w.
+
+### dataq send receive
+dataq /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ first entry; dataq /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ
+--- out
+first entry
+
+### dataq order
+q=/QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; dataq -s $q one; dataq -s $q two; dataq -r $q; dataq -r $q
+--- out
+one
+two
+
+### dataq empty
+dataq -r /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; echo status $?
+--- out
+status 1
+
+### dataq count
+q=/QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; dataq $q a; dataq $q b; dataq -n $q
+--- out
+2
+
+### dataq clear
+q=/QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; dataq $q a; dataq -c $q; dataq -n $q
+--- out
+0
+
+### dataq peek
+q=/QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; dataq $q kept; dataq -r -p $q; dataq -n $q
+--- out
+kept
+1
+
+### dataq keyed
+q=/QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; dataq -k K1 $q one; dataq -k K2 $q two; dataq -r -k K2 $q; dataq -r -k K9 $q; echo status $?
+--- out
+two
+status 1
+
+### dataq wait
+dataq -r -t 2 /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; echo status $?
+--- out
+status 1
+
+### dataq wait forever bad
+dataq -r -t x /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; echo status $?
+--- out
+status 2
+--- err
+dataq: The wait time x is not valid.
+
+### dataq missing
+dataq -n /QSYS.LIB/QSHLIB.LIB/NOSUCH.DTAQ; echo status $?
+--- out
+status 1
+--- err
+dataq: /QSYS.LIB/QSHLIB.LIB/NOSUCH.DTAQ: The data queue is not found.
+
+### dataq send nothing
+dataq -s /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ; echo status $?
+--- out
+status 2
+--- err
+dataq: An entry to send is needed.
+
+### dataq receive with entry
+dataq -r /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ entry; echo status $?
+--- out
+status 2
+--- err
+dataq: An entry is taken only when sending.
+
+### dataq two modes
+dataq -s -c /QSYS.LIB/QSHLIB.LIB/WORK.DTAQ x; echo status $?
+--- out
+status 2
+--- err
+dataq: Use one of -s, -r, -c and -n.
+
+### dataq none
+dataq; echo status $?
+--- out
+status 2
+--- err
+dataq: A data queue is needed.
+
+### dataq relative
+cd /QSYS.LIB/QSHLIB.LIB && dataq WORK.DTAQ hi && dataq work.dtaq
+--- out
+hi
+
+### catsplf only number
+catsplf QSYSPRT
+--- out
+system print
+
+### catsplf number
+catsplf QPRINT 1
+--- out
+first page line 1
+first page line 2
+second page
+
+### catsplf number two
+catsplf qprint 2
+--- out
+second QPRINT
+
+after blank
+
+### catsplf last
+catsplf QPRINT '*LAST'
+--- out
+second QPRINT
+
+after blank
+
+### catsplf only ambiguous
+catsplf QPRINT; echo status $?
+--- out
+status 1
+--- err
+catsplf: QPRINT: More than one spooled file has the name; give its number.
+
+### catsplf eject
+catsplf -e QPRINT 1 | od -c
+--- out
+0000000   f   i   r   s   t       p   a   g   e       l   i   n   e    
+0000020   1  \n   f   i   r   s   t       p   a   g   e       l   i   n
+0000040   e       2  \n  \f   s   e   c   o   n   d       p   a   g   e
+0000060  \n
+0000061
+
+### catsplf asa
+catsplf -p QPRINT 1
+--- out
+1first page line 1
+ first page line 2
+1second page
+
+### catsplf asa and eject
+catsplf -ep QPRINT 1 | tr '\f' '^'
+--- out
+1first page line 1
+ first page line 2
+^1second page
+
+### catsplf all
+catsplf -a
+--- out
+first page line 1
+first page line 2
+second page
+system print
+second QPRINT
+
+after blank
+
+### catsplf all with name
+catsplf -a QPRINT; echo status $?
+--- out
+status 2
+--- err
+catsplf: No spooled file is named with -a.
+
+### catsplf job
+catsplf -j 000124/QSHUSER/QP0ZSPWP QPJOBLOG 1
+--- out
+job log of the child
+
+### catsplf job all
+catsplf -a -j 000124/qshuser/qp0zspwp
+--- out
+job log of the child
+
+### catsplf job missing
+catsplf -j 999999/QSHUSER/NOJOB QPRINT 1; echo status $?
+--- out
+status 1
+--- err
+catsplf: QPRINT: The job 999999/QSHUSER/NOJOB is not found.
+
+### catsplf job bad
+catsplf -j NOJOB QPRINT 1; echo status $?
+--- out
+status 2
+--- err
+catsplf: The job NOJOB is not number/user/name.
+
+### catsplf missing file
+catsplf NOSUCH 1; echo status $?
+--- out
+status 1
+--- err
+catsplf: NOSUCH: The spooled file is not found.
+
+### catsplf missing number
+catsplf QPRINT 7; echo status $?
+--- out
+status 1
+--- err
+catsplf: QPRINT: The spooled file is not found.
+
+### catsplf bad number
+catsplf QPRINT x; echo status $?
+--- out
+status 2
+--- err
+catsplf: The spooled file number x is not valid.
+
+### catsplf zero number
+catsplf QPRINT 0; echo status $?
+--- out
+status 2
+--- err
+catsplf: The spooled file number 0 is not valid.
+
+### catsplf none
+catsplf; echo status $?
+--- out
+status 2
+--- err
+catsplf: A spooled file name and number are taken.
+
+### catsplf too many
+catsplf A 1 2; echo status $?
+--- out
+status 2
+--- err
+catsplf: A spooled file name and number are taken.
+
+### catsplf bad option
+catsplf -z QPRINT 1; echo status $?
+--- out
+status 2
+--- err
+catsplf: Option -z is not valid.
+
+### getjobid self
+getjobid
+--- out
+Process 100 runs in job 000123/QSHUSER/QZSHSH.
+
+### getjobid short self
+getjobid -s
+--- out
+QZSHSH QSHUSER 000123
+
+### getjobid pid
+getjobid 101
+--- out
+Process 101 runs in job 000124/QSHUSER/QP0ZSPWP.
+
+### getjobid short pid
+getjobid -s 101
+--- out
+QP0ZSPWP QSHUSER 000124
+
+### getjobid read
+getjobid -s 101 | { read name user number; echo "$number:$user:$name"; }
+--- out
+000124:QSHUSER:QP0ZSPWP
+
+### getjobid several
+getjobid 100 101
+--- out
+Process 100 runs in job 000123/QSHUSER/QZSHSH.
+Process 101 runs in job 000124/QSHUSER/QP0ZSPWP.
+
+### getjobid missing
+getjobid 999; echo status $?
+--- out
+status 1
+--- err
+getjobid: 999: No such process.
+
+### getjobid partly missing
+getjobid 101 999 100; echo status $?
+--- out
+Process 101 runs in job 000124/QSHUSER/QP0ZSPWP.
+Process 100 runs in job 000123/QSHUSER/QZSHSH.
+status 1
+--- err
+getjobid: 999: No such process.
+
+### getjobid not a number
+getjobid abc; echo status $?
+--- out
+status 2
+--- err
+getjobid: abc is not a process ID.
+
+### getjobid bad option
+getjobid -x; echo status $?
+--- out
+status 2
+--- err
+getjobid: Option -x is not valid.

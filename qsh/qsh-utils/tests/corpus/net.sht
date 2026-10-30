@@ -1,0 +1,1080 @@
+### hostname default
+hostname
+--- out
+QS400.EXAMPLE.COM
+
+### hostname short
+hostname -s
+--- out
+QS400
+
+### hostname set refused
+hostname newname
+--- err
+hostname: The host name cannot be set here; use the CHGTCPDMN command.
+--- status
+2
+
+### hostname bad option
+hostname -x
+--- err
+hostname: Option -x is not valid.
+--- status
+2
+
+### hostname in substitution
+h=$(hostname); echo "[$h]"
+--- out
+[QS400.EXAMPLE.COM]
+
+### nslookup a and aaaa
+nslookup www.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup relative name
+nslookup www
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup cname
+nslookup alias.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+alias.example.com	canonical name = www.example.com.
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup v6 only
+nslookup v6only.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	v6only.example.com
+Address: 2001:db8::1
+
+
+### nslookup two addresses
+nslookup multi.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	multi.example.com
+Address: 192.0.2.1
+Name:	multi.example.com
+Address: 192.0.2.2
+
+
+### nslookup nxdomain
+nslookup nosuch.example.com; echo status $?
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+** server can't find nosuch.example.com: NXDOMAIN
+
+status 1
+
+### nslookup mx
+nslookup -type=mx example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com	mail exchanger = 10 mail.example.com.
+example.com	mail exchanger = 20 backup.example.com.
+
+
+### nslookup mx upper
+nslookup -TYPE=MX example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com	mail exchanger = 10 mail.example.com.
+example.com	mail exchanger = 20 backup.example.com.
+
+
+### nslookup query ns
+nslookup -query=ns example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com	nameserver = ns1.example.com.
+example.com	nameserver = ns2.example.com.
+
+
+### nslookup q txt
+nslookup -q=txt example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com	text = "v=spf1 -all"
+
+
+### nslookup soa
+nslookup -type=soa example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com
+	origin = ns1.example.com
+	mail addr = hostmaster.example.com
+	serial = 2026102901
+	refresh = 7200
+	retry = 3600
+	expire = 1209600
+	minimum = 300
+
+
+### nslookup srv
+nslookup -type=srv _ldap._tcp.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+_ldap._tcp.example.com	service = 0 5 389 ldap.example.com.
+
+
+### nslookup any
+nslookup -type=any example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	example.com
+Address: 93.184.216.34
+example.com	mail exchanger = 10 mail.example.com.
+example.com	mail exchanger = 20 backup.example.com.
+example.com	nameserver = ns1.example.com.
+example.com	nameserver = ns2.example.com.
+example.com	text = "v=spf1 -all"
+example.com
+	origin = ns1.example.com
+	mail addr = hostmaster.example.com
+	serial = 2026102901
+	refresh = 7200
+	retry = 3600
+	expire = 1209600
+	minimum = 300
+
+
+### nslookup no answer
+nslookup -type=mx www.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+*** Can't find www.example.com: No answer
+
+
+### nslookup reverse v4
+nslookup 93.184.216.34
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+34.216.184.93.in-addr.arpa	name = www.example.com.
+
+
+### nslookup reverse v6
+nslookup 2001:db8::1
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa	name = v6only.example.com.
+
+
+### nslookup reverse missing
+nslookup 192.0.2.99; echo status $?
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+** server can't find 99.2.0.192.in-addr.arpa: NXDOMAIN
+
+status 1
+
+### nslookup server address
+nslookup www.example.com 192.0.2.53
+--- out
+Server:		192.0.2.53
+Address:	192.0.2.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup server name
+nslookup www.example.com ns1.example.com
+--- out
+Server:		ns1.example.com
+Address:	192.0.2.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup server unknown
+nslookup www.example.com nosuchserver; echo status $?
+--- out
+status 1
+--- err
+nslookup: The server nosuchserver cannot be found.
+
+### nslookup bad type
+nslookup -type=bogus example.com; echo status $?
+--- out
+status 2
+--- err
+nslookup: The record type bogus is not known.
+
+### nslookup bad option
+nslookup -frob example.com; echo status $?
+--- out
+status 2
+--- err
+nslookup: The option -frob is not valid.
+
+### nslookup port
+nslookup -port=5353 www.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#5353
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup norecurse accepted
+nslookup -norecurse -timeout=2 -retry=1 www.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup ptr type on address
+nslookup -type=ptr 93.184.216.34
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+34.216.184.93.in-addr.arpa	name = www.example.com.
+
+
+### nslookup a type only
+nslookup -type=a www.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+
+
+### nslookup aaaa type only
+nslookup -type=aaaa www.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup cname type
+nslookup -type=cname alias.example.com
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+alias.example.com	canonical name = www.example.com.
+
+
+### nslookup grep address
+nslookup www.example.com | grep '^Address: '
+--- out
+Address: 93.184.216.34
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+### nslookup trailing dot
+nslookup www.example.com.
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup case
+nslookup WWW.EXAMPLE.COM
+--- out
+Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+
+### nslookup interactive lookup
+printf 'www.example.com\nexit\n' | nslookup
+--- out -n
+> Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+> 
+
+### nslookup interactive eof
+printf 'mail.example.com\n' | nslookup
+--- out
+> Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+Name:	mail.example.com
+Address: 192.0.2.25
+
+> 
+
+### nslookup interactive set type
+printf 'set type=mx\nexample.com\n' | nslookup
+--- out
+> > Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com	mail exchanger = 10 mail.example.com.
+example.com	mail exchanger = 20 backup.example.com.
+
+> 
+
+### nslookup interactive set q
+printf 'set q=ns\nexample.com\nexit\n' | nslookup
+--- out -n
+> > Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+Non-authoritative answer:
+example.com	nameserver = ns1.example.com.
+example.com	nameserver = ns2.example.com.
+
+> 
+
+### nslookup interactive server
+printf 'server 192.0.2.53\nwww.example.com\n' | nslookup
+--- out
+> Default server: 192.0.2.53
+Address: 192.0.2.53#53
+
+> Server:		192.0.2.53
+Address:	192.0.2.53#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+> 
+
+### nslookup interactive bad set
+printf 'set frob\nexit\n' | nslookup
+--- out -n
+> *** The option -frob is not valid.
+> 
+
+### nslookup interactive set all
+printf 'set type=txt\nset all\n' | nslookup
+--- out
+> > Default server: 10.0.0.53
+Address: 10.0.0.53#53
+
+Set options:
+  querytype = TXT
+  port = 53
+  recurse
+> 
+
+### nslookup interactive name server
+printf 'www.example.com 192.0.2.1\n' | nslookup
+--- out
+> Server:		192.0.2.1
+Address:	192.0.2.1#53
+
+Non-authoritative answer:
+Name:	www.example.com
+Address: 93.184.216.34
+Name:	www.example.com
+Address: 2606:2800:220:1:248:1893:25c8:1946
+
+> 
+
+### nslookup interactive dash
+printf 'mail.example.com\n' | nslookup - 192.0.2.53
+--- out
+> Server:		192.0.2.53
+Address:	192.0.2.53#53
+
+Non-authoritative answer:
+Name:	mail.example.com
+Address: 192.0.2.25
+
+> 
+
+### nslookup interactive blank lines
+printf '\n\nexit\n' | nslookup
+--- out -n
+> > > 
+
+### nslookup interactive nxdomain
+printf 'nosuch.example.com\n' | nslookup
+--- out
+> Server:		10.0.0.53
+Address:	10.0.0.53#53
+
+** server can't find nosuch.example.com: NXDOMAIN
+
+> 
+
+### nslookup interactive bad command
+printf 'a b c\n' | nslookup
+--- out
+> *** The command is not valid.
+> 
+
+### host default
+host www.example.com
+--- out
+www.example.com has address 93.184.216.34
+www.example.com has IPv6 address 2606:2800:220:1:248:1893:25c8:1946
+
+### host mx domain
+host example.com
+--- out
+example.com has address 93.184.216.34
+example.com mail is handled by 10 mail.example.com.
+example.com mail is handled by 20 backup.example.com.
+
+### host cname
+host alias.example.com
+--- out
+alias.example.com is an alias for www.example.com.
+www.example.com has address 93.184.216.34
+www.example.com has IPv6 address 2606:2800:220:1:248:1893:25c8:1946
+
+### host nxdomain
+host nosuch.example.com; echo status $?
+--- out
+Host nosuch.example.com not found: 3(NXDOMAIN)
+status 1
+
+### host type mx
+host -t mx example.com
+--- out
+example.com mail is handled by 10 mail.example.com.
+example.com mail is handled by 20 backup.example.com.
+
+### host type ns
+host -t NS example.com
+--- out
+example.com name server ns1.example.com.
+example.com name server ns2.example.com.
+
+### host type txt
+host -t txt example.com
+--- out
+example.com descriptive text "v=spf1 -all"
+
+### host type soa
+host -t soa example.com
+--- out
+example.com has SOA record ns1.example.com. hostmaster.example.com. 2026102901 7200 3600 1209600 300
+
+### host type srv
+host -t srv _ldap._tcp.example.com
+--- out
+_ldap._tcp.example.com has SRV record 0 5 389 ldap.example.com.
+
+### host type aaaa none
+host -t aaaa mail.example.com
+--- out
+mail.example.com has no AAAA record
+
+### host reverse
+host 93.184.216.34
+--- out
+34.216.184.93.in-addr.arpa domain name pointer www.example.com.
+
+### host reverse v6
+host 2001:db8::1
+--- out
+1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa domain name pointer v6only.example.com.
+
+### host reverse missing
+host 192.0.2.99; echo status $?
+--- out
+Host 99.2.0.192.in-addr.arpa not found: 3(NXDOMAIN)
+status 1
+
+### host server
+host www.example.com 192.0.2.53
+--- out
+Using domain server:
+Name: 192.0.2.53
+Address: 192.0.2.53#53
+Aliases: 
+
+www.example.com has address 93.184.216.34
+www.example.com has IPv6 address 2606:2800:220:1:248:1893:25c8:1946
+
+### host verbose
+host -v www.example.com
+--- out
+Trying "www.example.com"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.example.com.		IN	A
+
+;; ANSWER SECTION:
+www.example.com.	300	IN	A	93.184.216.34
+
+Trying "www.example.com"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.example.com.		IN	AAAA
+
+;; ANSWER SECTION:
+www.example.com.	300	IN	AAAA	2606:2800:220:1:248:1893:25c8:1946
+
+Trying "www.example.com"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.example.com.		IN	MX
+
+
+### host all
+host -a example.com
+--- out
+Trying "example.com"
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 7, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;example.com.		IN	ANY
+
+;; ANSWER SECTION:
+example.com.	300	IN	A	93.184.216.34
+example.com.	300	IN	MX	10 mail.example.com.
+example.com.	300	IN	MX	20 backup.example.com.
+example.com.	300	IN	NS	ns1.example.com.
+example.com.	300	IN	NS	ns2.example.com.
+example.com.	300	IN	TXT	"v=spf1 -all"
+example.com.	300	IN	SOA	ns1.example.com. hostmaster.example.com. 2026102901 7200 3600 1209600 300
+
+
+### host bad type
+host -t bogus example.com; echo status $?
+--- out
+status 2
+--- err
+host: The record type bogus is not known.
+
+### host bad class
+host -c CH example.com; echo status $?
+--- out
+status 2
+--- err
+host: The class CH is not supported.
+
+### host class in
+host -c in www.example.com
+--- out
+www.example.com has address 93.184.216.34
+www.example.com has IPv6 address 2606:2800:220:1:248:1893:25c8:1946
+
+### host no name
+host; echo status $?
+--- out
+status 2
+--- err
+host: A name and at most one server are taken.
+
+### host too many
+host a b c; echo status $?
+--- out
+status 2
+--- err
+host: A name and at most one server are taken.
+
+### host relative
+host mail
+--- out
+mail.example.com has address 192.0.2.25
+
+### host multi
+host multi.example.com
+--- out
+multi.example.com has address 192.0.2.1
+multi.example.com has address 192.0.2.2
+
+### host v6 only
+host v6only.example.com
+--- out
+v6only.example.com has IPv6 address 2001:db8::1
+
+### host flags accepted
+host -4 -r -W 2 -R 1 -N 1 www.example.com
+--- out
+www.example.com has address 93.184.216.34
+www.example.com has IPv6 address 2606:2800:220:1:248:1893:25c8:1946
+
+### dig default
+dig www.example.com
+--- out
+
+; <<>> dig (QS/400 V1R0M0) <<>> www.example.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.example.com.		IN	A
+
+;; ANSWER SECTION:
+www.example.com.	300	IN	A	93.184.216.34
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.53#53(10.0.0.53)
+;; WHEN: Mon Sep 21 14:13:20 UTC 2026
+
+
+### dig short
+dig +short www.example.com
+--- out
+93.184.216.34
+
+### dig short cname
+dig +short alias.example.com
+--- out
+www.example.com.
+93.184.216.34
+
+### dig short mx
+dig +short example.com mx
+--- out
+10 mail.example.com.
+20 backup.example.com.
+
+### dig type first
+dig mx example.com +short
+--- out
+10 mail.example.com.
+20 backup.example.com.
+
+### dig t option
+dig -t ns example.com +short
+--- out
+ns1.example.com.
+ns2.example.com.
+
+### dig t attached
+dig -tTXT example.com +short
+--- out
+"v=spf1 -all"
+
+### dig noall answer
+dig +noall +answer www.example.com
+--- out
+www.example.com.	300	IN	A	93.184.216.34
+
+### dig noall answer cname
+dig +noall +answer alias.example.com
+--- out
+alias.example.com.	300	IN	CNAME	www.example.com.
+www.example.com.	300	IN	A	93.184.216.34
+
+### dig nxdomain
+dig nosuch.example.com; echo status $?
+--- out
+
+; <<>> dig (QS/400 V1R0M0) <<>> nosuch.example.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;nosuch.example.com.		IN	A
+
+;; Query time: 0 msec
+;; SERVER: 10.0.0.53#53(10.0.0.53)
+;; WHEN: Mon Sep 21 14:13:20 UTC 2026
+
+status 0
+
+### dig nxdomain noall
+dig +noall +comments nosuch.example.com
+--- out
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+
+### dig reverse
+dig -x 93.184.216.34 +short
+--- out
+www.example.com.
+
+### dig reverse full
+dig +nocmd +nostats -x 93.184.216.34
+--- out
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;34.216.184.93.in-addr.arpa.		IN	PTR
+
+;; ANSWER SECTION:
+34.216.184.93.in-addr.arpa.	300	IN	PTR	www.example.com.
+
+
+### dig server
+dig @192.0.2.53 www.example.com +nocmd
+--- out
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.example.com.		IN	A
+
+;; ANSWER SECTION:
+www.example.com.	300	IN	A	93.184.216.34
+
+;; Query time: 0 msec
+;; SERVER: 192.0.2.53#53(192.0.2.53)
+;; WHEN: Mon Sep 21 14:13:20 UTC 2026
+
+
+### dig no name
+dig +noall +answer; echo status $?
+--- out
+status 0
+
+### dig nocmd nostats
+dig +nocmd +nostats example.com soa
+--- out
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;example.com.		IN	SOA
+
+;; ANSWER SECTION:
+example.com.	300	IN	SOA	ns1.example.com. hostmaster.example.com. 2026102901 7200 3600 1209600 300
+
+
+### dig noquestion
+dig +nocmd +nostats +noquestion mail.example.com
+--- out
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; ANSWER SECTION:
+mail.example.com.	300	IN	A	192.0.2.25
+
+
+### dig nocomments
+dig +nocmd +nostats +nocomments www.example.com
+--- out
+;www.example.com.		IN	A
+www.example.com.	300	IN	A	93.184.216.34
+
+### dig bad plus
+dig +frobnicate www.example.com; echo status $?
+--- out
+status 2
+--- err
+dig: The option +frobnicate is not valid.
+
+### dig bad option
+dig -z www.example.com; echo status $?
+--- out
+status 2
+--- err
+dig: The option -z is not valid.
+
+### dig bad type
+dig -t bogus www.example.com; echo status $?
+--- out
+status 2
+--- err
+dig: The record type bogus is not known.
+
+### dig bad x
+dig -x notanaddress; echo status $?
+--- out
+status 2
+--- err
+dig: notanaddress is not an address.
+
+### dig missing argument
+dig www.example.com -t; echo status $?
+--- out
+status 2
+--- err
+dig: Option -t needs an argument.
+
+### dig class in
+dig www.example.com IN A +short
+--- out
+93.184.216.34
+
+### dig class ch
+dig -c CH version.bind txt; echo status $?
+--- out
+status 2
+--- err
+dig: The class CH is not supported.
+
+### dig any
+dig +noall +answer example.com any
+--- out
+example.com.	300	IN	A	93.184.216.34
+example.com.	300	IN	MX	10 mail.example.com.
+example.com.	300	IN	MX	20 backup.example.com.
+example.com.	300	IN	NS	ns1.example.com.
+example.com.	300	IN	NS	ns2.example.com.
+example.com.	300	IN	TXT	"v=spf1 -all"
+example.com.	300	IN	SOA	ns1.example.com. hostmaster.example.com. 2026102901 7200 3600 1209600 300
+
+### dig q option
+dig -q mail.example.com +short
+--- out
+192.0.2.25
+
+### dig accepted options
+dig +time=2 +tries=1 +norecurse +short www.example.com
+--- out
+93.184.216.34
+
+### dig help
+dig -h; echo status $?
+--- out
+Usage: dig [@server] [-t type] [-x address] [-q name] [-p port] [name] [type] [+[no]option ...]
+status 0
+
+### dig v6
+dig +short v6only.example.com aaaa
+--- out
+2001:db8::1
+
+### dig multi
+dig +short multi.example.com
+--- out
+192.0.2.1
+192.0.2.2
+
+### dig srv
+dig +noall +answer _ldap._tcp.example.com srv
+--- out
+_ldap._tcp.example.com.	300	IN	SRV	0 5 389 ldap.example.com.
+
+### dig four six
+dig -4 +short www.example.com
+--- out
+93.184.216.34
+
+### rexec run
+rexec -u qshuser -p secret rhost ls -l
+--- out
+ran: ls -l
+
+### rexec netrc
+printf 'machine rhost login QSHUSER password secret\n' > $HOME/.netrc; rexec rhost date
+--- out
+ran: date
+
+### rexec netrc default
+printf 'default login QSHUSER password secret\n' > $HOME/.netrc; rexec rhost.example.com pwd
+--- out
+ran: pwd
+
+### rexec netrc other machine
+printf 'machine other login x password y\n' > $HOME/.netrc; rexec rhost date; echo status $?
+--- out
+status 1
+--- err
+rexec: A password is needed: give -p or a machine entry in $HOME/.netrc.
+
+### rexec default user
+rexec -p secret rhost id
+--- out
+ran: id
+
+### rexec bad password
+rexec -u QSHUSER -p wrong rhost ls; echo status $?
+--- out
+status 1
+--- err
+rexec: rhost: Login incorrect.
+
+### rexec bad user
+rexec -u nobody -p secret rhost ls; echo status $?
+--- out
+status 1
+--- err
+rexec: rhost: Login incorrect.
+
+### rexec no password
+rexec rhost ls; echo status $?
+--- out
+status 1
+--- err
+rexec: A password is needed: give -p or a machine entry in $HOME/.netrc.
+
+### rexec unknown host
+rexec -p secret nohost ls; echo status $?
+--- out
+status 1
+--- err
+rexec: nohost: There is no route to the host.
+
+### rexec wrong port
+rexec -P 2000 -p secret rhost ls; echo status $?
+--- out
+status 1
+--- err
+rexec: rhost: The connection was refused.
+
+### rexec bad port
+rexec -P x -p secret rhost ls; echo status $?
+--- out
+status 2
+--- err
+rexec: The port x is not valid.
+
+### rexec no command
+rexec -p secret rhost; echo status $?
+--- out
+status 2
+--- err
+rexec: A host and a command are needed.
+
+### rexec no host
+rexec; echo status $?
+--- out
+status 2
+--- err
+rexec: A host and a command are needed.
+
+### rexec stdin
+printf 'line one\nline two\n' | rexec -p secret rhost cat
+--- out
+ran: cat
+line one
+line two
+
+### rexec no stdin
+printf 'ignored\n' | rexec -n -p secret rhost cat
+--- out
+ran: cat
+
+### rexec l option
+rexec -l QSHUSER -p secret rhost who
+--- out
+ran: who
+
+### rexec bad option
+rexec -z rhost ls; echo status $?
+--- out
+status 2
+--- err
+rexec: Option -z is not valid.
+
+### rexec pipe
+rexec -p secret rhost uname | tr a-z A-Z
+--- out
+RAN: UNAME

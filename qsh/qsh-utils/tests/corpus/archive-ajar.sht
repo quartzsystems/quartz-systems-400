@@ -1,0 +1,324 @@
+### ajar cf and tf
+ajar cf /tmp/a.jar data/fruits.txt data/sub && ajar tf /tmp/a.jar
+--- out
+META-INF/
+META-INF/MANIFEST.MF
+data/fruits.txt
+data/sub/
+data/sub/deep.txt
+data/sub/inner/
+data/sub/inner/leaf
+
+### ajar with a leading dash
+ajar -cf /tmp/a.jar data/fruits.txt && ajar -tf /tmp/a.jar
+--- out
+META-INF/
+META-INF/MANIFEST.MF
+data/fruits.txt
+
+### ajar with separate option words
+ajar -c -f /tmp/a.jar data/fruits.txt && ajar -t -f /tmp/a.jar
+--- out
+META-INF/
+META-INF/MANIFEST.MF
+data/fruits.txt
+
+### ajar tvf
+ajar cf /tmp/a.jar data/fruits.txt data/old.txt && ajar tvf /tmp/a.jar | sed 1,2d
+--- out
+    20 Thu May 28 20:26:40 UTC 2026 data/fruits.txt
+     4 Sun Sep 13 12:26:40 UTC 2020 data/old.txt
+
+### ajar tvf in another zone
+ajar cf /tmp/a.jar data/fruits.txt && TZ=EST5 ajar tvf /tmp/a.jar | tail -1
+--- out
+    20 Thu May 28 20:26:40 EST 2026 data/fruits.txt
+
+### ajar the zip signatures
+ajar cf /tmp/a.jar data/fruits.txt && od -A n -c -N 4 /tmp/a.jar
+--- out
+   P   K 003 004
+
+### ajar the manifest
+ajar cf /tmp/a.jar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar META-INF/MANIFEST.MF && od -c META-INF/MANIFEST.MF
+--- out
+0000000   M   a   n   i   f   e   s   t   -   V   e   r   s   i   o   n
+0000020   :       1   .   0  \r  \n   C   r   e   a   t   e   d   -   B
+0000040   y   :       Q   S   /   4   0   0       a   j   a   r  \r  \n
+0000060  \r  \n
+0000062
+
+### ajar M leaves out the manifest
+ajar cMf /tmp/a.jar data/fruits.txt && ajar tf /tmp/a.jar
+--- out
+data/fruits.txt
+
+### ajar m takes a manifest
+printf 'Main-Class: Hello\n' > /tmp/man && ajar cmf /tmp/man /tmp/a.jar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar && tr -d '\r' < META-INF/MANIFEST.MF
+--- out
+Manifest-Version: 1.0
+Created-By: QS/400 ajar
+Main-Class: Hello
+
+
+### ajar f and m in the order given
+printf 'Manifest-Version: 1.0\nSealed: true\n' > /tmp/man && ajar cfm /tmp/a.jar /tmp/man data/fruits.txt && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar META-INF/MANIFEST.MF && tr -d '\r' < META-INF/MANIFEST.MF
+--- out
+Manifest-Version: 1.0
+Created-By: QS/400 ajar
+Sealed: true
+
+
+### ajar m with a missing manifest
+ajar cmf /tmp/nosuch /tmp/a.jar data/fruits.txt; echo "status $?"
+--- out
+status 1
+--- err
+ajar: /tmp/nosuch: No such path or directory.
+
+### ajar xf
+ajar cf /tmp/a.jar data/fruits.txt data/sub && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar && find . | sort && cat data/sub/inner/leaf
+--- out
+.
+./META-INF
+./META-INF/MANIFEST.MF
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+leaf
+
+### ajar xvf
+ajar cMf /tmp/a.jar data/sub && mkdir /tmp/out && cd /tmp/out && ajar xvf /tmp/a.jar
+--- out
+created data/sub/
+extracted data/sub/deep.txt
+created data/sub/inner/
+extracted data/sub/inner/leaf
+
+### ajar x keeps times and modes
+chmod 640 data/fruits.txt && ajar cf /tmp/a.jar data/fruits.txt data/old.txt && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar && ls -l data
+--- out
+total: 1 kilobytes
+-rw-r-----  1 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  1 QSHUSER  0                     4 Sep 13  2020 old.txt
+
+### ajar x of named entries
+ajar cf /tmp/a.jar data && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar data/sub data/nums.txt && find . | sort
+--- out
+.
+./data
+./data/nums.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+
+### ajar t of named entries
+ajar cf /tmp/a.jar data && ajar tf /tmp/a.jar data/sub
+--- out
+data/sub/
+data/sub/deep.txt
+data/sub/inner/
+data/sub/inner/leaf
+
+### ajar cvf
+ajar cvf /tmp/a.jar data/sub data/words.txt
+--- out
+added manifest META-INF/MANIFEST.MF
+added data/sub/
+added data/sub/deep.txt (5 bytes, stored)
+added data/sub/inner/
+added data/sub/inner/leaf (5 bytes, stored)
+added data/words.txt (44 bytes, stored)
+
+### ajar cv to standard output reports on standard error
+ajar cvM data/fruits.txt 2>&1 > /tmp/a.jar && ajar tf /tmp/a.jar
+--- out
+added data/fruits.txt (20 bytes, stored)
+data/fruits.txt
+
+### ajar c0f stores
+ajar c0Mvf /tmp/a.jar data/words.txt && ajar tf /tmp/a.jar
+--- out
+added data/words.txt (44 bytes, stored)
+data/words.txt
+
+### ajar small entries are stored
+ajar cMvf /tmp/a.jar data/nonl.txt
+--- out
+added data/nonl.txt (10 bytes, stored)
+
+### ajar standard input and output
+ajar cM data/fruits.txt | ajar t
+--- out
+data/fruits.txt
+
+### ajar f - names standard output
+ajar cMf - data/fruits.txt | ajar tf -
+--- out
+data/fruits.txt
+
+### ajar u adds and replaces
+ajar cf /tmp/a.jar data/fruits.txt && echo changed > data/fruits.txt && ajar uf /tmp/a.jar data/fruits.txt data/nums.txt && ajar tf /tmp/a.jar && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar data/fruits.txt && cat data/fruits.txt
+--- out
+META-INF/
+META-INF/MANIFEST.MF
+data/fruits.txt
+data/nums.txt
+changed
+
+### ajar u keeps the manifest
+printf 'Main-Class: A\n' > /tmp/man && ajar cmf /tmp/man /tmp/a.jar data/fruits.txt && ajar uf /tmp/a.jar data/nums.txt && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar META-INF/MANIFEST.MF && tr -d '\r' < META-INF/MANIFEST.MF
+--- out
+Manifest-Version: 1.0
+Created-By: QS/400 ajar
+Main-Class: A
+
+
+### ajar u needs a file
+ajar u data/fruits.txt
+--- err
+ajar: Updating needs an archive named with f.
+--- status
+2
+
+### ajar u of a missing archive
+ajar uf /tmp/nosuch.jar data/fruits.txt; echo "status $?"
+--- out
+status 1
+--- err
+ajar: /tmp/nosuch.jar: No such path or directory.
+
+### ajar -C names files from a directory
+ajar cMf /tmp/a.jar -C data fruits.txt sub/deep.txt && ajar tf /tmp/a.jar
+--- out
+fruits.txt
+sub/deep.txt
+
+### ajar -C with several directories
+ajar cMf /tmp/a.jar -C data fruits.txt -C data/sub deep.txt && ajar tf /tmp/a.jar
+--- out
+fruits.txt
+deep.txt
+
+### ajar -C without a directory
+ajar cf /tmp/a.jar -C
+--- err
+ajar: Option -C needs a directory.
+--- status
+2
+
+### ajar dot paths are trimmed
+cd data && ajar cMf /tmp/a.jar ./fruits.txt . && ajar tf /tmp/a.jar | head -3
+--- out
+fruits.txt
+.hidden
+csv.txt
+
+### ajar absolute paths are made relative
+ajar cMf /tmp/a.jar /home/QSHUSER/data/fruits.txt && ajar tf /tmp/a.jar
+--- out
+home/QSHUSER/data/fruits.txt
+
+### ajar archive is not added to itself
+cd data && ajar cMf self.jar . && ajar tf self.jar | grep -c self
+--- out
+0
+--- status
+1
+
+### ajar a large file deflates
+i=0; while [ $i -lt 2000 ]; do echo "row $i of the table"; i=$((i + 1)); done > data/big.txt && ajar cMvf /tmp/a.jar data/big.txt && wc -c < /tmp/a.jar && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar && wc -l < data/big.txt
+--- out
+added data/big.txt (42890 bytes, deflated 89%)
+    4941
+    2000
+
+### ajar raw bytes survive
+ajar cMf /tmp/a.jar raw && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar && od -c raw/ff.bin
+--- out
+0000000 377 377 200  \0 001
+0000005
+
+### ajar empty file and empty directory
+mkdir data/void && ajar cMf /tmp/a.jar data/empty.txt data/void && ajar tvf /tmp/a.jar && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/a.jar && ls -l data
+--- out
+     0 Thu May 28 20:26:40 UTC 2026 data/empty.txt
+     0 Mon Sep 21 14:13:20 UTC 2026 data/void/
+total: 0 kilobytes
+-rw-r--r--  1 QSHUSER  0                     0 May 28 20:26 empty.txt
+drwxr-xr-x  2 QSHUSER  0                     0 Sep 21 14:13 void
+
+### ajar without a function
+ajar vf /tmp/a.jar
+--- err
+ajar: One of c, t, x or u is needed.
+--- status
+2
+
+### ajar with two functions
+ajar ctf /tmp/a.jar
+--- err
+ajar: Only one of c, t, x and u may be given.
+--- status
+2
+
+### ajar with a bad letter
+ajar cqf /tmp/a.jar
+--- err
+ajar: Key letter q is not valid.
+--- status
+2
+
+### ajar f without its argument
+ajar tf
+--- err
+ajar: Key letter f needs an argument.
+--- status
+2
+
+### ajar with no arguments
+ajar
+--- err
+ajar: One of c, t, x or u is needed.
+--- status
+2
+
+### ajar t of something that is not a zip
+ajar tf data/fruits.txt; echo "status $?"
+--- out
+status 1
+--- err
+ajar: The input is not a zip or jar archive.
+
+### ajar t of a missing archive
+ajar tf /tmp/nosuch.jar; echo "status $?"
+--- out
+status 1
+--- err
+ajar: /tmp/nosuch.jar: No such path or directory.
+
+### ajar x of a damaged entry
+ajar c0Mf /tmp/a.jar data/words.txt && sed 's/quick/QUICK/' /tmp/a.jar > /tmp/b.jar && mkdir /tmp/out && cd /tmp/out && ajar xf /tmp/b.jar; echo "status $?"
+--- out
+status 1
+--- err
+ajar: data/words.txt: The data does not match its check value.
+
+### ajar a missing file
+ajar cMf /tmp/a.jar data/nosuch data/fruits.txt; echo "status $?"; ajar tf /tmp/a.jar
+--- out
+status 1
+data/fruits.txt
+--- err
+ajar: data/nosuch: No such path or directory.
+
+### ajar archives read by pax are refused
+ajar cMf /tmp/a.jar data/fruits.txt && pax -f /tmp/a.jar; echo "status $?"
+--- out
+status 1
+--- err
+pax: The input is not an archive in a known format.

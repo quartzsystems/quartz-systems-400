@@ -2,9 +2,12 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The text utilities: `cut expand grep head iconv od paste sed sort
-//! split tail tee tr uniq wc`.
+//! The text utilities: `cmp cut expand grep head iconv od paste pr sed
+//! sort split tail tee tr uniq wc`, and message catalogs (`gencat`,
+//! `dspmsg`).
 
+pub mod catalog;
+pub mod cmp;
 pub mod cut;
 pub mod expand;
 pub mod grep;
@@ -12,6 +15,7 @@ pub mod head;
 pub mod iconv;
 pub mod od;
 pub mod paste;
+pub mod pr;
 pub mod sed;
 pub mod sort;
 pub mod split;

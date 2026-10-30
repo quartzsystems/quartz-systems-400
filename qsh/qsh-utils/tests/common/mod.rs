@@ -7,6 +7,8 @@
 
 #![allow(dead_code, clippy::too_many_lines, clippy::format_push_string)]
 
+pub mod services;
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -126,6 +128,7 @@ pub fn sys() -> MemSys {
         cpu: Duration::from_secs(65),
         args: vec!["/usr/bin/ls".to_string(), "-l".to_string()],
     });
+    services::seed(&s);
     s
 }
 

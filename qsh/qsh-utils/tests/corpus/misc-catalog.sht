@@ -1,0 +1,380 @@
+### gencat and dspmsg
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; echo $?; dspmsg m.cat 1
+--- out
+0
+Hello, world.
+
+### dspmsg substitution
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg m.cat 2 'default' report.txt
+--- out
+File report.txt not found.
+
+### dspmsg positional
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg m.cat 3 'd' first second
+--- out
+second before first
+
+### dspmsg set
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg -s 2 m.cat 1; dspmsg -s 2 m.cat 5
+--- out
+Set two, message one.
+tab	here
+
+### dspmsg missing message default
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg m.cat 9 'Fallback %s\n' x; echo $?
+--- out
+Fallback x
+0
+
+### dspmsg missing message
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg m.cat 9; echo $?
+--- out
+1
+--- err
+dspmsg: Message 9 of set 1 is not in catalog m.cat.
+
+### dspmsg missing set
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg -s 7 m.cat 1 'none\n'
+--- out
+none
+
+### dspmsg missing catalog default
+dspmsg nosuch.cat 1 'Default text\n'; echo $?
+--- out
+Default text
+0
+
+### dspmsg missing catalog
+dspmsg ./nosuch.cat 1; echo $?
+--- out
+1
+--- err
+dspmsg: Message 1 of set 1 is not in catalog ./nosuch.cat.
+
+### dspmsg not a catalog
+dspmsg data/fruits.txt 1 'not a catalog\n'
+--- out
+not a catalog
+
+### dspmsg extra percent
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg m.cat 9 '100%% %d %\n'
+--- out
+100% %d %
+
+### dspmsg fewer args
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+gencat m.cat m.msg; dspmsg m.cat 2 d; echo '|'
+--- out
+File  not found.
+|
+
+### dspmsg bad number
+dspmsg m.cat x; echo $?
+--- out
+2
+--- err
+dspmsg: x is not a valid message number.
+
+### dspmsg bad set
+dspmsg -s 0 m.cat 1; echo $?
+--- out
+2
+--- err
+dspmsg: 0 is not a valid set number.
+
+### dspmsg usage
+dspmsg m.cat; echo $?
+--- out
+2
+--- err
+dspmsg: A catalog and a message number are needed.
+
+### dspmsg nlspath
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+mkdir -p nls/en_US; gencat nls/en_US/app.cat m.msg; NLSPATH=$PWD/nls/%L/%N LANG=en_US dspmsg app.cat 1
+--- out
+Hello, world.
+
+### dspmsg nlspath parts
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+mkdir -p nls/en; gencat nls/en/app.cat m.msg; NLSPATH=$PWD/nls/%l/%N LANG=en_US.UTF-8 dspmsg app.cat 1
+--- out
+Hello, world.
+
+### dspmsg lc_all wins
+cat > m.msg <<'EOF'
+$ A test catalog
+1 Hello, world.\n
+2 File %s not found.\n
+3 %2$s before %1$s\n
+$set 2
+1 Set two, message one.\n
+5 tab\there\n
+EOF
+mkdir -p nls/fr; gencat nls/fr/app.cat m.msg; NLSPATH=$PWD/nls/%L/%N LANG=en LC_ALL=fr dspmsg app.cat 1
+--- out
+Hello, world.
+
+### dspmsg nlspath miss
+NLSPATH=/nowhere/%N dspmsg app.cat 1 'miss\n'
+--- out
+miss
+
+### gencat continuation
+printf '1 one \\\ntwo\n' > c.msg; gencat c.cat c.msg; dspmsg c.cat 1; echo '|'
+--- out
+one two|
+
+### gencat escapes
+printf '1 a\\tb\\\\c\\101\\n\n' > e.msg; gencat e.cat e.msg; dspmsg e.cat 1 | od -c
+--- out
+0000000   a  \t   b   \   c   A  \n
+0000007
+
+### gencat quote
+cat > q.msg <<'EOF'
+$quote "
+1 "quoted text\n"
+2 "with \" inside\n"
+3 unquoted "keeps" quotes\n
+EOF
+gencat q.cat q.msg; dspmsg q.cat 1; dspmsg q.cat 2; dspmsg q.cat 3
+--- out
+quoted text
+with " inside
+unquoted "keeps" quotes
+
+### gencat quote off
+cat > q.msg <<'EOF'
+$quote "
+$quote
+1 "literal"\n
+EOF
+gencat q.cat q.msg; dspmsg q.cat 1
+--- out
+"literal"
+
+### gencat empty message
+printf '1 \n2 two\n' > e.msg; gencat e.cat e.msg; dspmsg e.cat 1 'default'; echo "[$?]"
+--- out
+[0]
+
+### gencat delete message
+printf '1 one\n' > a.msg; printf '1\n' > b.msg; gencat x.cat a.msg b.msg; dspmsg x.cat 1 'gone\n'
+--- out
+gone
+
+### gencat delset
+printf '$set 3\n1 three\n$delset 3\n' > a.msg; gencat x.cat a.msg; dspmsg -s 3 x.cat 1 'deleted\n'
+--- out
+deleted
+
+### gencat merge existing
+printf '1 first\n' > a.msg; printf '2 second\n' > b.msg; gencat x.cat a.msg; gencat x.cat b.msg; dspmsg x.cat 1 '?'; echo; dspmsg x.cat 2 '?'; echo
+--- out
+first
+second
+
+### gencat replace in merge
+printf '1 old\n' > a.msg; printf '1 new\n' > b.msg; gencat x.cat a.msg; gencat x.cat b.msg; dspmsg x.cat 1; echo
+--- out
+new
+
+### gencat stdin source
+gencat x.cat -; dspmsg x.cat 4; echo
+
+--- in
+4 from standard input
+--- out
+from standard input
+
+### gencat stdout
+printf '1 hi\n' > a.msg; gencat - a.msg | od -c | head -1
+--- out
+0000000   Q   S   H   C   A   T   0   1  \0  \0  \0 001  \0  \0  \0 001
+
+### gencat comments and blanks
+printf '$ comment\n\n   \n$ another\n7 seven\n' > a.msg; gencat x.cat a.msg; dspmsg x.cat 7; echo
+--- out
+seven
+
+### gencat set comment
+printf '$set 2 the second set\n1 x\n' > a.msg; gencat x.cat a.msg; dspmsg -s 2 x.cat 1; echo
+--- out
+x
+
+### gencat bad line
+printf '1 ok\nnot a message\n' > a.msg; gencat x.cat a.msg; echo $?; ls x.cat
+--- out
+1
+--- err
+gencat: a.msg: line 2: The line does not start with a message number: not a message
+ls: x.cat: No such path or directory.
+--- status
+1
+
+### gencat no blank
+printf '1x\n' > a.msg; gencat x.cat a.msg; echo $?
+--- out
+1
+--- err
+gencat: a.msg: line 1: A blank must follow the message number.
+
+### gencat bad set
+printf '$set 0\n' > a.msg; gencat x.cat a.msg; echo $?; printf '$set 256\n' > a.msg; gencat x.cat a.msg; echo $?
+--- out
+1
+1
+--- err
+gencat: a.msg: line 1: 0 is not a valid set number (1 to 255).
+gencat: a.msg: line 1: 256 is not a valid set number (1 to 255).
+
+### gencat bad message number
+printf '40000 big\n' > a.msg; gencat x.cat a.msg; echo $?
+--- out
+1
+--- err
+gencat: a.msg: line 1: 40000 is not a valid message number (1 to 32767).
+
+### gencat set without number
+printf '$set\n' > a.msg; gencat x.cat a.msg; echo $?
+--- out
+1
+--- err
+gencat: a.msg: line 1: $set needs a number.
+
+### gencat unclosed quote
+printf '$quote "\n1 "open\n' > a.msg; gencat x.cat a.msg; echo $?
+--- out
+1
+--- err
+gencat: a.msg: line 2: The quoted text is not closed.
+
+### gencat not a catalog
+printf '1 x\n' > a.msg; gencat data/fruits.txt a.msg; echo $?
+--- out
+1
+--- err
+gencat: data/fruits.txt: The file is not a message catalog.
+
+### gencat missing source
+gencat x.cat nosuch.msg; echo $?
+--- out
+1
+--- err
+gencat: nosuch.msg: No such path or directory.
+
+### gencat usage
+gencat x.cat; echo $?
+--- out
+2
+--- err
+gencat: A catalog and at least one source file are needed.
+
+### gencat catalog magic
+printf '1 hi\n' > a.msg; gencat x.cat a.msg; od -A d -c x.cat | head -2
+--- out
+0000000   Q   S   H   C   A   T   0   1  \0  \0  \0 001  \0  \0  \0 001
+0000016  \0  \0  \0 001  \0  \0  \0 001  \0  \0  \0 002   h   i
+
+### gencat crlf source
+printf '1 dos\r\n' > a.msg; gencat x.cat a.msg; dspmsg x.cat 1 | od -c
+--- out
+0000000   d   o   s
+0000003

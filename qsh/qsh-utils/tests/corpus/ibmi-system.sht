@@ -1,0 +1,224 @@
+### system completion
+system "CRTLIB LIB(NEWLIB)"
+--- out
+CPC2102: Library NEWLIB created.
+
+### system positional
+system CRTLIB NEWLIB
+--- out
+CPC2102: Library NEWLIB created.
+
+### system words joined
+system CRTLIB LIB'(NEWLIB)' TEXT"('a b')"; cat /tmp/cl.log
+--- out
+CPC2102: Library NEWLIB created.
+CRTLIB LIB(NEWLIB) TEXT('a b')
+
+### system escape
+system "CRTLIB QGPL"; echo status $?
+--- out
+status 255
+--- err
+CPF2111: Library QGPL exists.
+
+### system escape to stderr only
+system "DLTLIB NOSUCH" 2>/dev/null; echo status $?
+--- out
+status 255
+
+### system escape stdout empty
+system "DLTLIB NOSUCH" >/dev/null; echo status $?
+--- out
+status 255
+--- err
+CPF2110: Library NOSUCH not found.
+
+### system create then delete
+system "CRTLIB A1" && system "DLTLIB A1" && system "DLTLIB A1"; echo status $?
+--- out
+CPC2102: Library A1 created.
+CPC2194: Library A1 deleted.
+status 255
+--- err
+CPF2110: Library A1 not found.
+
+### system unknown command
+system "FROB X"; echo status $?
+--- out
+status 255
+--- err
+CPD0030: Command FROB in library *LIBL not found.
+CPF0006: Errors occurred in command.
+
+### system no ids
+system -n "CRTLIB NEWLIB"
+--- out
+Library NEWLIB created.
+
+### system no ids escape
+system -n "DLTLIB NOSUCH"; echo status $?
+--- out
+status 255
+--- err
+Library NOSUCH not found.
+
+### system quiet
+system -q "CRTLIB NEWLIB"; echo status $?
+--- out
+status 0
+
+### system quiet escape
+system -q "DLTLIB NOSUCH"; echo status $?
+--- out
+status 255
+
+### system verbose
+system -v "CRTLIB NEWLIB"
+--- out
+CRTLIB NEWLIB
+CPC2102: Library NEWLIB created.
+
+### system spooled output
+system DSPLIBL
+--- out
+Library list of the job
+  QSYS
+  QSYS2
+  QHLPSYS
+  QUSRSYS
+  QGPL
+  QTEMP
+
+### system spooled suppressed
+system -s DSPLIBL; echo status $?
+--- out
+status 0
+
+### system pages
+system DSPJOB
+--- out
+Job 000200/QSHUSER/QP0ZSPWP
+page two
+
+### system same job
+system -i DSPJOB
+--- out
+Job 000123/QSHUSER/QZSHSH
+page two
+
+### system new job
+system DSPJOB | head -1
+--- out
+Job 000200/QSHUSER/QP0ZSPWP
+
+### system same job logged
+system -i "CRTLIB X1"; cat /tmp/cl.log
+--- out
+CPC2102: Library X1 created.
+CRTLIB X1 [same job]
+
+### system environment
+FOO=bar system -e WRKENVVAR | grep '^FOO='
+--- out
+FOO=bar
+
+### system environment not passed
+FOO=bar system WRKENVVAR | grep -c '^FOO='; echo status $?
+--- out
+0
+status 1
+
+### system info message
+system "SNDPGMMSG MSG('Hello there') MSGTYPE(*INFO)"
+--- out
+CPF9898: Hello there.
+
+### system completion message
+system "SNDPGMMSG MSG('All done') MSGTYPE(*COMP)"
+--- out
+CPF9898: All done.
+
+### system diagnostic message
+system "SNDPGMMSG MSG('Look out') MSGTYPE(*DIAG)" 2>&1; echo status $?
+--- out
+CPF9898: Look out.
+status 0
+
+### system escape message
+system "SNDPGMMSG MSG('It broke') MSGTYPE(*ESCAPE)" 2>&1; echo status $?
+--- out
+CPF9898: It broke.
+status 255
+
+### system keep options
+system -k -K -b "CRTLIB NEWLIB"
+--- out
+CPC2102: Library NEWLIB created.
+
+### system combined options
+system -vn DSPLIBL
+--- out
+DSPLIBL
+Library list of the job
+  QSYS
+  QSYS2
+  QHLPSYS
+  QUSRSYS
+  QGPL
+  QTEMP
+
+### system no command
+system; echo status $?
+--- out
+status 2
+--- err
+system: A CL command is needed.
+
+### system blank command
+system "   "; echo status $?
+--- out
+status 2
+--- err
+system: A CL command is needed.
+
+### system bad option
+system -z CRTLIB X; echo status $?
+--- out
+status 2
+--- err
+system: Option -z is not valid.
+
+### system in condition
+if system -q "CRTLIB QGPL"; then echo made; else echo failed; fi
+--- out
+failed
+
+### system in pipeline
+system DSPLIBL | grep -c Q
+--- out
+6
+
+### system command substitution
+x=$(system -n "CRTLIB NEWLIB"); echo "[$x]"
+--- out
+[Library NEWLIB created.]
+
+### system dash dash
+system -- "CRTLIB NEWLIB"
+--- out
+CPC2102: Library NEWLIB created.
+
+### system log order
+system "CRTLIB L1"; system "CRTLIB L2"; system -i "DLTLIB L1"; cat /tmp/cl.log
+--- out
+CPC2102: Library L1 created.
+CPC2102: Library L2 created.
+CPC2194: Library L1 deleted.
+CRTLIB L1
+CRTLIB L2
+DLTLIB L1 [same job]
+
+### system quotes in command
+system "SNDPGMMSG MSG('It''s here')"
+--- out
+CPF9898: It''s here.

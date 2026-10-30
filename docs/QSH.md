@@ -330,9 +330,12 @@ the system only through `Sys` (no `std::fs`, no `unsafe`).
 |---|---|
 | `common/` | `args.rs` POSIX option parsing (clusters, attached arguments, `--`, the old `-5`/`+2` forms); `io.rs` opening operands (`-` is standard input), buffered lines, `Out` (buffered output that notices a closed pipe), `confirm`; `time.rs` the civil calendar, POSIX `TZ` strings and `strftime`; `mode.rs` symbolic and octal modes and the `ls -l` mode string; `walk.rs` tree walks with pre/post visits, pruning, `-H`/`-L`/`-x` and loop detection; `exec.rs` `PATH` search and `Sys::spawn`, a script (`ENOEXEC`) going to `/usr/bin/sh` as `execvp` does |
 | `regex/` | POSIX basic and extended regular expressions over bytes (`parse.rs` the tree, `mod.rs` the compiled program and a backtracking matcher that keeps the leftmost-longest match; without back-references a visited set keeps it linear) |
-| `file/` | `cat chmod chgrp chown cp df du find ln ls mkdir mv rm rmdir touch` |
-| `text/` | `cut expand grep egrep fgrep head iconv od paste sed sort split tail tee tr uniq wc`; `sed/` is `parse.rs` (the script) and `exec.rs` (the cycle) |
-| `proc/` | `basename date dirname echo env ps sleep true false uname xargs` |
+| `file/` | `cat chmod chgrp chown cp df du file find ln ls mkdir mkfifo mv pwd rm rmdir touch` (`file` is `filetype.rs`) |
+| `text/` | `cmp cut expand grep egrep fgrep head iconv od paste pr sed sort split tail tee tr uniq wc`; `sed/` is `parse.rs` (the script) and `exec.rs` (the cycle); `catalog/` is `gencat` and `dspmsg` over the catalog format in `format.rs` |
+| `proc/` | `basename date dirname echo env printenv expr id logname locale nohup ps pwdx sleep test true false uname xargs` |
+| `archive/` | `pax tar compress uncompress zcat ajar`: `member.rs` the model every format reads and writes, `ustar.rs` and `cpio.rs` (odc, newc, crc) the formats behind `codec.rs`, `gather.rs`/`build.rs` members from files, `restore.rs` files from members, `select.rs` patterns, `subst.rs` `-s`, `listing.rs` verbose lines, `arcio.rs` blocked archive I/O, `lzw.rs` the `.Z` coder, `zip/` CRC-32, deflate, inflate and the zip container |
+| `net/` | `hostname nslookup host dig rexec`; `dns.rs` asking the resolver, reverse names, record forms |
+| `ibmi/` | `system db2 liblist sysval datarea dataq catsplf getjobid attr setccsid Rfile ipcs ipcrm clrtmp logger`; `msgs.rs` CL messages and the CL runner |
 
 Messages are `name: text` on standard error, the text Quartz-written
 (the system's `errno` text after a path). Statuses are POSIX: 0, 1 for
@@ -353,6 +356,47 @@ and `utimes`; `MemSys` implements all of them plus test setters
 library, file nor member: type `Other`, not openable, `EOPNOTSUPP`). A
 `SysError` wrapped in an `io::Error` now converts back to itself, so
 utilities report the system's `errno` after a failed read or write.
+
+### Services
+
+The utilities that reach past the file system go through hooks on
+`Sys` (`qsh::sys::services`), every one `ENOSYS` by default:
+
+| Hook | Used by | What the system supplies |
+|---|---|---|
+| `resolver() -> &dyn Resolver` | `nslookup host dig hostname` | `query(DnsQuery) -> DnsAnswer` (server, port, response code, authority flag, the name after the search list, answer, authority and additional records with data in presentation form) and `host_name()` (the TCP/IP host name and domain). The sockets resolver is wired in here. |
+| `cl_runner() -> &dyn ClRunner` | `system logger Rfile -c` | `run_cl(ClRequest)` runs one command (in the shell's job or a new one, with environment variables, keeping spooled files or the job log) and returns its messages (id, type, text), its spooled files' pages and whether it failed. |
+| `sql_runner() -> &dyn SqlRunner` | `db2` | `run_sql(SqlRequest)` (statement, system naming) returns a result set (columns with display widths and alignment, rows of text or null), a count, or an error (SQLSTATE, SQLCODE, text). |
+| `tcp_connect(host, port) -> Fd` | `rexec` | a connected stream; `Stream::shutdown_write` (new, a no-op by default) ends the sending half |
+| `credentials()` | `id logname clrtmp -c rexec` | the job's user profile, uid, group profile's gid (0 for none), supplemental groups |
+| `mkfifo(path, mode)` | `mkfifo pax tar` | |
+| `process_cwd(pid)` | `pwdx` | |
+| `attributes(path, follow)`, `set_attribute(...)` | `attr setccsid file` | `NAME=value` pairs (`OBJTYPE CCSID CODEPAGE DATA_SIZE ALLOC_SIZE ASP ALWSAV PC_READ_ONLY PC_HIDDEN PC_SYSTEM PC_ARCHIVE SYS_ARCHIVE` in the test system) |
+| `library_list()`, `change_library_list(LiblChange)` | `liblist Rfile -Q` | the job's list with each entry's portion; add first or last, remove, set the current library |
+| `system_value(name)`, `network_attribute(name)` | `sysval` | the value as text, `ENOENT` when unknown |
+| `read_data_area(name)`, `write_data_area(name, part, value)` | `datarea` | `*LDA`, `*GDA`, `*PDA` or a path; type (`*CHAR`, `*DEC` digits and places, `*LGL`), length, value |
+| `data_queue(path, DtaqOp)` | `dataq` | send (with a key), receive (key, wait, remove or peek), clear, count |
+| `spooled_files(job)`, `spooled_file(job, name, number)` | `catsplf` | a job's spooled files (`*` the current job); one file's pages of lines |
+| `ipc_list()`, `ipc_remove(kind, id or key)` | `ipcs ipcrm` | System V queues, segments and semaphore sets with their numbers and times |
+
+`errno` gained `ENXIO`, `ECONNREFUSED`, `EHOSTUNREACH`, `ETIMEDOUT`,
+`EIDRM` and `ENOMSG` (the system's numbers). `stream::duplex()` makes a
+connected pair of streams (a socket stand-in for tests).
+
+`MemSys` answers every hook. The resolver, CL runner, SQL runner and
+connector are handlers a test sets (`add_dns`, `set_dns_server`,
+`set_dns_authoritative`, `set_host_name`, `set_cl`, `set_sql`,
+`set_connector`); the rest are tables with setters
+(`set_credentials`, `set_process_cwd`, `set_sysval`, `set_netattr`,
+`set_data_area`, `make_data_queue`, `add_spooled_file`, `add_ipc`,
+`set_library_list`), a FIFO node kind (opening one is `ENXIO`), and
+attributes computed from the node with overrides. The corpus seeds
+them in `tests/common/services.rs`: DNS records for `example.com`, a
+small CL interpreter (`CRTLIB`, `DLTLIB`, `DSPLIBL`, `DSPJOB`,
+`WRKENVVAR`, `SNDPGMMSG`, unknown commands failing with `CPD0030` and
+`CPF0006`) that logs every command to `/tmp/cl.log`, canned SQL
+results, an `rexec` server on `rhost:512`, system values, data areas
+and a data queue in `QSHLIB`, spooled files and IPC objects.
 
 ### /QSYS.LIB
 
@@ -404,6 +448,212 @@ directory and removes it).
 | `uniq` | done | `uniq.sh` |
 | `wc` | done | `wc.sh` |
 | `xargs` | done | `xargs.sh` |
+| `cmp` | done (`-l -s`, skips) | `cmp.sh` |
+| `pr` | done (`+page -column -adFfmprt -e -h -i -l -n -o -s -w`) | `pr.sh` |
+| `expr` | done (the full POSIX grammar, `:` with BREs) | `expr.sh` |
+| `gencat`, `dspmsg` | done (X/Open source; our catalog format; `NLSPATH`) | `gencat.sh`, `dspmsg.sh` |
+| `file` | done (`-h`; `-m` accepted) | `file.sh` |
+| `locale` | done (`-a -m -c -k`, the POSIX locale's data) | `locale.sh` |
+| `nohup`, `printenv`, `pwd`, `test`, `mkfifo` | done | `nohup.sh`, `printenv.sh`, `pwd.sh`, `test.sh`, `mkfifo.sh` |
+| `id`, `logname`, `pwdx` | done | `id.sh`, `logname.sh`, `pwdx.sh` |
+| `pax` | done (list, `-r -w -rw`, `-a -b -c -d -f -H -k -L -l -n -p -s -u -v -x -X`; `ustar tar cpio sv4cpio sv4crc`; `-i` refused, `-o -t` accepted) | `pax.sh` |
+| `tar` | done (`c r t u x` with `b f h L l m o p v w C`) | `tar.sh` |
+| `compress`, `uncompress`, `zcat` | done (LZW `.Z`, `-b 9..16 -c -d -f -v`) | `compress.sh`, `uncompress.sh`, `zcat.sh` |
+| `ajar` | done (`c t x u` with `v f m 0 M C`; deflate and inflate) | `ajar.sh` |
+| `hostname` | done (`-s`) | `hostname.sh` |
+| `nslookup` | done (options, server operand, interactive commands) | `nslookup.sh` |
+| `host` | done (`-t -a -v -c -r`, the rest accepted) | `host.sh` |
+| `dig` | done (`@server -t -x -q -p -c`, `+[no]short cmd comments question answer authority additional stats all recurse`) | `dig.sh` |
+| `rexec` | done (`-n -u -l -p -P`, `.netrc`) | `rexec.sh` |
+| `system` | done (`-b -e -i -k -K -n -q -s -v`) | `system.sh` |
+| `db2` | done (`-S -t -v -f`) | `db2.sh` |
+| `liblist` | done (`-a -f -l -d -c`; a builtin in Qshell, a utility here) | `liblist.sh` |
+| `sysval` | done (`-p -n`) | `sysval.sh` |
+| `datarea` | done (`-r -w -s`) | `datarea.sh` |
+| `dataq` | done (`-s -r -c -n -p -k -t`) | `dataq.sh` |
+| `catsplf` | done (`-a -e -p -j`) | `catsplf.sh` |
+| `getjobid` | done (`-s`) | `getjobid.sh` |
+| `attr`, `setccsid` | done (`-h -p`) | `attr.sh`, `setccsid.sh` |
+| `Rfile` | done (`-r -w -a -b -K -Q -c`) | `Rfile.sh` |
+| `ipcs`, `ipcrm` | done (`-qms -abcopt`; `-q -m -s -Q -M -S`) | `ipcs.sh`, `ipcrm.sh` |
+| `clrtmp` | done (`-c`) | `clrtmp.sh` (messages only) |
+| `logger` | done (`-i -f -p -t`, to `QHST` through `SNDMSG`) | `logger.sh` (messages only) |
+
+### Inventory
+
+Every entry of the system's `/usr/bin` (the 163 of the 7.5 capture in
+`tools/conformance/oracle/net/pub400/qsh-usr-bin.txt`): 73 implemented,
+5 aliases, 85 not supported. `liblist` (a Qshell builtin, not in
+`/usr/bin`) is a utility here as well. Qshell has no `awk`, `diff`,
+`comm`, `join`, `nl`, `fold` or `seq`; those on the system are PASE's,
+and QS/400 ships nothing inside PASE.
+
+| Entry | Status | Note |
+|---|---|---|
+| `ajar` | implemented |  |
+| `appletviewer` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `apt` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `armsrv` | not supported | Application Response Measurement server (performance tools) |
+| `armsrvconv` | not supported | Application Response Measurement converter (performance tools) |
+| `attr` | implemented |  |
+| `basename` | implemented |  |
+| `bash` | not supported | an open-source PASE package; QS/400 ships nothing inside PASE |
+| `cat` | implemented |  |
+| `catsplf` | implemented |  |
+| `chgrp` | implemented |  |
+| `chmod` | implemented |  |
+| `chown` | implemented |  |
+| `clrtmp` | implemented |  |
+| `cmp` | implemented |  |
+| `compress` | implemented |  |
+| `cp` | implemented |  |
+| `cut` | implemented |  |
+| `dataq` | implemented |  |
+| `datarea` | implemented |  |
+| `date` | implemented |  |
+| `db2` | implemented |  |
+| `db2profc` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `db2profc_trace` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `db2profp` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `ddns-confgen` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `delv` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dfmadmin` | not supported | DataLink File Manager administration (no DataLink support) |
+| `dhcpd` | not supported | the DHCP server (no DHCP server) |
+| `dhcrelay` | not supported | the DHCP relay agent (no DHCP server) |
+| `dig` | implemented |  |
+| `dirname` | implemented |  |
+| `dnssec-dsfromkey` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-importkey` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-keyfromlabel` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-keygen` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-revoke` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-settime` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-signzone` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dnssec-verify` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `dspmsg` | implemented |  |
+| `echo` | implemented |  |
+| `egrep` | alias | `grep -E` |
+| `env` | implemented |  |
+| `expr` | implemented |  |
+| `extcheck` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `fgrep` | alias | `grep -F` |
+| `file` | implemented |  |
+| `find` | implemented |  |
+| `gencat` | implemented |  |
+| `getjobid` | implemented |  |
+| `grep` | implemented |  |
+| `head` | implemented |  |
+| `host` | implemented |  |
+| `hostname` | implemented |  |
+| `httpapi` | not supported | a third-party library's program (`LIBHTTP`), not part of the system |
+| `hwkeytool` | not supported | the cryptographic coprocessor's key tool (no coprocessor) |
+| `iconv` | implemented |  |
+| `id` | implemented |  |
+| `idlj` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `ikeyman` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `ipcrm` | implemented |  |
+| `ipcs` | implemented |  |
+| `ixlc` | not supported | the ILE C/C++ compiler (no C compiler) |
+| `jar` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `jarsigner` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `java` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `javac` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `javadoc` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `javah` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `javap` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `jconsole` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `jdb` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `jdmpview` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `jextract` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `kdestroy` | not supported | Kerberos (network authentication service): not in this phase |
+| `keytab` | not supported | Kerberos (network authentication service): not in this phase |
+| `keytool` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `kinit` | not supported | Kerberos (network authentication service): not in this phase |
+| `klist` | not supported | Kerberos (network authentication service): not in this phase |
+| `kpasswd` | not supported | Kerberos (network authentication service): not in this phase |
+| `ksetup` | not supported | Kerberos (network authentication service): not in this phase |
+| `ldapadd` | not supported | LDAP client: no directory server or client yet |
+| `ldapchangepwd` | not supported | LDAP client: no directory server or client yet |
+| `ldapcompare` | not supported | LDAP client: no directory server or client yet |
+| `ldapdelete` | not supported | LDAP client: no directory server or client yet |
+| `ldapdiff` | not supported | LDAP client: no directory server or client yet |
+| `ldapexop` | not supported | LDAP client: no directory server or client yet |
+| `ldapmodify` | not supported | LDAP client: no directory server or client yet |
+| `ldapmodrdn` | not supported | LDAP client: no directory server or client yet |
+| `ldapsearch` | not supported | LDAP client: no directory server or client yet |
+| `ln` | implemented |  |
+| `locale` | implemented |  |
+| `logger` | implemented |  |
+| `logname` | implemented |  |
+| `ls` | implemented |  |
+| `mkdir` | implemented |  |
+| `mkfifo` | implemented |  |
+| `mv` | implemented |  |
+| `named` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `named-checkconf` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `named-checkzone` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `named-compilezone` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `named-journalprint` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `named-rrchecker` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `native2ascii` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `nohup` | implemented |  |
+| `nslookup` | implemented |  |
+| `nsupdate` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `od` | implemented |  |
+| `orbd` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `pack200` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `pax` | implemented |  |
+| `policytool` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `pr` | implemented |  |
+| `printenv` | implemented |  |
+| `profconv` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `profdb` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `profp` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `ps` | implemented |  |
+| `pwd` | implemented |  |
+| `pwdx` | implemented |  |
+| `qsh` | alias | the shell itself (`qsh` crate) |
+| `rexec` | implemented |  |
+| `rexx` | not supported | the REXX interpreter (no REXX) |
+| `rm` | implemented |  |
+| `rmdir` | implemented |  |
+| `rmic` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `rmid` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `rmiregistry` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `rndc` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `rndc-confgen` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `Rfile` | implemented |  |
+| `schemagen` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `sed` | implemented |  |
+| `serialver` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `servertool` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `setccsid` | implemented |  |
+| `sh` | alias | the shell itself (`qsh` crate) |
+| `sort` | implemented |  |
+| `split` | implemented |  |
+| `sqlj` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `strEKM` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `system` | implemented |  |
+| `sysval` | implemented |  |
+| `tail` | implemented |  |
+| `tar` | implemented |  |
+| `tee` | implemented |  |
+| `test` | implemented |  |
+| `tnameserv` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `touch` | implemented |  |
+| `tr` | implemented |  |
+| `tsig-keygen` | not supported | DNS server tool (BIND): QS/400 has no DNS server; `delv` needs a validating resolver |
+| `uname` | implemented |  |
+| `uncompress` | implemented |  |
+| `uniq` | implemented |  |
+| `unpack200` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `wc` | implemented |  |
+| `wsgen` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `wsimport` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `xargs` | implemented |  |
+| `xjc` | not supported | Java tool: needs a JVM, which QS/400 does not ship |
+| `zcat` | alias | `uncompress -c` |
+
 
 ### Formats
 
@@ -421,16 +671,35 @@ directory and removes it).
 | `od` | addresses 7 octal digits (`-A d` 7 decimal, `-A x` 6 hex), multi-byte units in big-endian order as the system prints them, `*` for repeated lines |
 | `head`, `tail` | `==> name <==` before each of several files, a blank line between |
 | `grep` | `name:` before lines when several files, `(standard input)` as the name of `-` |
+| `cmp` | `a b differ: char N, line M` (POSIX); `-l` `N o1 o2` in octal; end of file on standard error |
+| `pr` | 66-line pages: two blank lines, `Mon DD HH:MM YYYY name Page n`, two blank lines, the text, five blank lines |
+| `pax -v`, `tar tv` | `mode links owner(8) group(8) size(8) date name`, ` -> target` for a link, ` == name` for a hard link |
+| `compress -v` | `name: X% smaller, replaced with name.Z` on standard error |
+| `nslookup` | `Server:\t\tS`, `Address:\tS#53`, blank, `Non-authoritative answer:`, then `Name:\tN` / `Address: A` for addresses and `N\tmail exchanger = ...`, `nameserver =`, `canonical name =`, `text =`, `name =` (PTR), `service =`, the SOA block; `** server can't find N: NXDOMAIN`, `*** Can't find N: No answer` (BIND's forms, which scripts parse) |
+| `host` | `N has address A`, `has IPv6 address`, `is an alias for`, `mail is handled by`, `name server`, `domain name pointer`, `descriptive text`, `has T record`; `Host N not found: 3(NXDOMAIN)` |
+| `dig` | `;; ->>HEADER<<-` and `;; flags:` lines, the sections in master-file form (`name.\tTTL\tIN\tTYPE\tdata`), `;; SERVER:`; our own banner line |
+| `system` | spooled lines, then `ID: text` per message: completion, informational and notify on standard output, diagnostic and escape on standard error |
+| `db2` | blank, names, dashes, rows (numbers right-aligned, null `-`), blank, `  n RECORD(S) SELECTED.`, blank; `DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.`; ` **** CLI ERROR *****`, `         SQLSTATE: s`, `NATIVE ERROR CODE: n`, the text |
+| `liblist` | `NAME` left-aligned in 10, a blank, `SYS`/`PRD`/`CUR`/`USR` |
+| `sysval -p` | `NAME value` |
+| `getjobid` | `Process P runs in job N/U/J.`; `-s` `job user number` |
+| `catsplf -p` | ASA control first: `1` a page's first line, blank otherwise; `-e` a form feed between pages |
+| `ipcs` | `IPC status from S as of date`, a title and heading line per kind, `T ID KEY MODE OWNER GROUP` and the asked-for columns, keys `0x%08x`, times `HH:MM:SS` or `no-entry` |
+| `id` | `uid=n(NAME) gid=n` (a group with a profile as `gid=n(NAME)`), `groups=` when there are supplemental groups |
+| `pwdx` | `pid: path` |
 
 ### Tests
 
-- `tests/corpus/*.sht`: 853 cases over the seeded `MemSys` (a tree
+- `tests/corpus/*.sht`: 1,861 cases over the seeded `MemSys` (a tree
   under `/home/QSHUSER` with data files, a hidden file, a link, an old
   file owned by `QSYS`, raw-byte files, a `/QSYS.LIB` library with a
   source file, member, program and data area, and `/usr/bin/sh` running
-  scripts in the same system), one file per group of utilities;
+  scripts in the same system, and the services of
+  `tests/common/services.rs`), one file per group of utilities
+  (`archive-*` 262, `misc-*` 310, `net` 124, `ibmi-*` 312);
   `QSH_UPDATE_CORPUS=1` rewrites the expectations, `QSH_CORPUS_ONLY=x`
-  runs matching cases.
+  runs matching cases and `QSH_CORPUS_FILES=prefix` limits the run and
+  the rewrite to matching files.
 - `tests/regex.rs`: a table of POSIX spans, groups, errors, case
   folding, `find_all` stepping, pathological patterns that must finish,
   and 4,000 random patterns checked against a brute-force matcher plus
@@ -439,6 +708,13 @@ directory and removes it).
   a reference sort over random records, numeric sorting against a float
   reference, `sed` scripts against string references, a 100,000-byte
   line, 20,000 lines and pathological loops.
+- `tests/archive.rs`: random data through LZW, deflate and inflate,
+  every archive format and the zip container round trip, random trees
+  through `pax`, `tar`, a `tar` and `compress` pipe and `ajar`, and
+  random bytes into every decoder (an answer, never a panic).
+- `tests/misc.rs`: 20,000 random `expr` expressions against a separate
+  evaluator, grouping, and `pr` page invariants over random input and
+  options.
 
 ### Open questions (utilities)
 
@@ -468,6 +744,32 @@ None of these was checked on the system; the probes ask each.
 | 20 | `chown` | whether names fold case and numbers name profiles | profile names in any case; numbers as IDs |
 | 21 | `echo` | whether `/usr/bin/echo` takes `-n` and the same escapes as the builtin | yes |
 | 22 | `cp`, `mv` | `-i` prompt text and whether prompts go to standard error | `name: replace x? ` on standard error |
+| 23 | `system` | the option set (`-E -I -p` exist?), where each message type goes, the exit status after an escape message, the order of spooled output and messages | `-beikKnqsv`; as in Formats; 255; spooled output first |
+| 24 | `db2` | the options (`-d`, `-r`, `-T`?), column widths and alignment, null display, the exit status after an error, whether it stops at the first error | `-Stvf`; as in Formats; 1; it goes on |
+| 25 | `liblist` | the display form, `-a` without `-f`/`-l` (front?), messages | as in Formats; front |
+| 26 | `sysval` | the `-p` form | `NAME value` |
+| 27 | `datarea` | the options (`-s` form, `-l`?), trailing blanks on read, `*DEC` text form | `-rws start[:len]`; kept; sign and point |
+| 28 | `dataq` | the options and defaults (send when an entry is given) | as implemented |
+| 29 | `catsplf` | what `-e` and `-p` do, whether `-j` may be left out | form feeds; ASA characters; the current job |
+| 30 | `getjobid` | the default text and the `-s` field order | `name user number` |
+| 31 | `attr` | attribute names and value spellings, the listing form | as in Services; `NAME=value` |
+| 32 | `Rfile` | the options (`-K`, `-l`, `-q`, `-s`), trailing blanks, `.FILE` without a member | as implemented |
+| 33 | `ipcs` | the column layout, one heading or one per kind | one per kind |
+| 34 | `clrtmp` | what `-c` selects | the user's own objects |
+| 35 | `logger` | where messages go (`QHST` assumed), the tag and priority handling | `SNDMSG ... TOMSGQ(QSYS/QHST)` |
+| 36 | `hostname` | qualified or short, case (`HOSTNAME=WWW.PUB400.COM` in the environment) | the resolver's `host_name()` as given |
+| 37 | `nslookup`, `host`, `dig` | the exact BIND release forms on the system (tabs, the AAAA second query, `Authoritative answers can be found from:`) | BIND 9 forms as in Formats |
+| 38 | `rexec` | Qshell's options (`-n` meaning), the `.netrc` use, prompting for a password | `-n` no standard input; `.netrc`; no prompt |
+| 39 | `id` | `-G` with no supplemental groups; other users' groups | the primary group alone; 0 |
+| 40 | `pax`, `tar` | `-i`, `-z`, `bcpio`; verbose columns; defaults on extract; `tar o`; the default archive | see the `pax`/`tar` rows above |
+| 41 | `compress` | the `-v` text; the status for names already ending in `.Z` | as in Formats; 1 |
+| 42 | `ajar` | the option set (`-u -C -m -h`, deleting), the manifest text, the verbose lines | `c t x u` with `v f m 0 M C` |
+| 43 | `cmp` | `char` or `byte` in the difference line; the end-of-file message | `char` |
+| 44 | `pr` | header spacing and date form, column widths and balancing, a start page past the end | as implemented |
+| 45 | `gencat`, `dspmsg` | the system's catalog format; the search order (the working directory last is ours) | our format |
+| 46 | `expr` | error statuses and texts; `+5` as an integer; string collation | 2; no; bytes |
+| 47 | `locale` | the value when nothing is set, charmap names, where `*LOCALE` objects are listed from | `C`; `IBMCCSIDnnnnn`; `/QSYS.LIB` and `/QSYS.LIB/QSYS.LIB` |
+| 48 | `file` | every description's wording; CCSID shown?; links followed by default? | as implemented |
 
 The shell's `printf` writes an octal escape above `\177` as the UTF-8
 of that code point, not as one byte (`printf '\351'` is `c3 a9`), so

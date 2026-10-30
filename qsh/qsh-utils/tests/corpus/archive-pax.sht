@@ -1,0 +1,813 @@
+### pax write and list
+cd data && pax -w -f /tmp/a.tar fruits.txt sub && pax -f /tmp/a.tar
+--- out
+fruits.txt
+sub
+sub/deep.txt
+sub/inner
+sub/inner/leaf
+
+### pax verbose list
+cd data && pax -w -f /tmp/a.tar fruits.txt sub link && pax -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 fruits.txt
+drwxr-xr-x  1 QSHUSER  0               0 May 28 20:26 sub
+-rw-r--r--  1 QSHUSER  0               5 May 28 20:26 sub/deep.txt
+drwxr-xr-x  1 QSHUSER  0               0 May 28 20:26 sub/inner
+-rw-r--r--  1 QSHUSER  0               5 May 28 20:26 sub/inner/leaf
+lrwxrwxrwx  1 QSHUSER  0              10 Jan  1  1970 link -> fruits.txt
+
+### pax list from standard input
+cd data && pax -w -f /tmp/a.tar fruits.txt words.txt && pax < /tmp/a.tar
+--- out
+fruits.txt
+words.txt
+
+### pax write to standard output
+cd data && pax -w fruits.txt > /tmp/a.tar && pax -f /tmp/a.tar && wc -c < /tmp/a.tar
+--- out
+fruits.txt
+   10240
+
+### pax names from standard input
+printf 'data/fruits.txt\ndata/nums.txt\n' | pax -w -f /tmp/a.tar && pax -f /tmp/a.tar
+--- out
+data/fruits.txt
+data/nums.txt
+
+### pax names from standard input with blank lines
+printf 'data/fruits.txt\n\ndata/csv.txt\n' | pax -w -f /tmp/a.tar && pax -f /tmp/a.tar
+--- out
+data/fruits.txt
+data/csv.txt
+
+### pax ustar block size
+pax -w -f /tmp/a.tar data/fruits.txt && wc -c < /tmp/a.tar
+--- out
+   10240
+
+### pax cpio block size
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && wc -c < /tmp/a.cpio
+--- out
+    5120
+
+### pax -b sets the block size
+pax -w -b 512 -f /tmp/a.tar data/fruits.txt && wc -c < /tmp/a.tar
+pax -w -b 1k -f /tmp/b.tar data/fruits.txt && wc -c < /tmp/b.tar
+pax -w -b 2b -f /tmp/c.tar data/fruits.txt && wc -c < /tmp/c.tar
+--- out
+    2048
+    2048
+    2048
+
+### pax -b not a multiple of 512
+pax -w -b 1000 -f /tmp/a.tar data/fruits.txt
+--- err
+pax: The block size 1000 is not valid.
+--- status
+2
+
+### pax -b too large
+pax -w -b 64k -f /tmp/a.tar data/fruits.txt
+--- err
+pax: The block size 64k is not valid.
+--- status
+2
+
+### pax -b with -r
+pax -r -b 512 -f /tmp/a.tar
+--- err
+pax: Options -a, -b and -x go with -w only.
+--- status
+2
+
+### pax ustar header
+pax -w -f /tmp/a.tar data/fruits.txt && od -A d -c -j 257 -N 8 /tmp/a.tar
+--- out
+0000257   u   s   t   a   r  \0   0   0
+0000265
+
+### pax ustar header fields
+pax -w -f /tmp/a.tar data/fruits.txt && od -A d -c -j 100 -N 8 /tmp/a.tar && od -A d -c -j 124 -N 12 /tmp/a.tar
+--- out
+0000100   0   0   0   0   6   4   4  \0
+0000108
+0000124   0   0   0   0   0   0   0   0   0   2   4  \0
+0000136
+
+### pax cpio header
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && head -c 6 /tmp/a.cpio && echo
+--- out
+070707
+
+### pax sv4cpio header
+pax -w -x sv4cpio -f /tmp/a.cpio data/fruits.txt && head -c 6 /tmp/a.cpio && echo
+--- out
+070701
+
+### pax sv4crc header
+pax -w -x sv4crc -f /tmp/a.cpio data/fruits.txt && head -c 6 /tmp/a.cpio && echo
+--- out
+070702
+
+### pax old tar has no magic
+pax -w -x tar -f /tmp/a.tar data/fruits.txt && od -A d -c -j 257 -N 6 /tmp/a.tar
+--- out
+0000257  \0  \0  \0  \0  \0  \0
+0000263
+
+### pax every format round trips
+for x in ustar tar cpio sv4cpio sv4crc; do
+  pax -w -x $x -f /tmp/a.$x data/sub data/fruits.txt || echo fail $x
+  mkdir /tmp/$x && cd /tmp/$x && pax -r -f /tmp/a.$x && find . | sort && cat data/sub/deep.txt && cd /home/QSHUSER
+done
+--- out
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+deep
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+deep
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+deep
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+deep
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+deep
+
+### pax reads any format without -x
+pax -w -x sv4cpio -f /tmp/a.cpio data/fruits.txt && pax -v -f /tmp/a.cpio
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+
+### pax cpio verbose keeps link counts
+pax -w -x cpio -f /tmp/a.cpio data && pax -v -f /tmp/a.cpio data/sub
+--- out
+drwxr-xr-x  3 QSHUSER  0               0 May 28 20:26 data/sub
+-rw-r--r--  1 QSHUSER  0               5 May 28 20:26 data/sub/deep.txt
+drwxr-xr-x  2 QSHUSER  0               0 May 28 20:26 data/sub/inner
+-rw-r--r--  1 QSHUSER  0               5 May 28 20:26 data/sub/inner/leaf
+
+### pax read into a directory
+pax -w -f /tmp/a.tar data/fruits.txt data/sub && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && find . && cat data/fruits.txt
+--- out
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+apple
+banana
+cherry
+
+### pax read keeps modification times
+pax -w -f /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -l data/old.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                     4 Sep 13  2020 data/old.txt
+
+### pax read -p m takes the current time
+pax -w -f /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && pax -r -p m -f /tmp/a.tar && ls -l data/old.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                     4 Sep 21 14:13 data/old.txt
+
+### pax read applies the umask
+chmod 666 data/fruits.txt && pax -w -f /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && umask 027 && pax -r -f /tmp/a.tar && ls -l data/fruits.txt
+--- out
+-rw-r-----  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### pax read -p p keeps the mode
+chmod 4757 data/fruits.txt && pax -w -f /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && umask 077 && pax -r -p p -f /tmp/a.tar && ls -l data/fruits.txt
+--- out
+-rwsr-xrwx  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### pax read without -p drops set-user-ID
+chmod 4755 data/fruits.txt && pax -w -f /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -l data/fruits.txt
+--- out
+-rwxr-xr-x  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### pax read -p e keeps owner and mode
+pax -w -f /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && pax -r -p e -f /tmp/a.tar && ls -ln data/old.txt
+--- out
+-rw-r--r--  1 0        50                    4 Sep 13  2020 data/old.txt
+
+### pax read without -p o takes the job's owner
+pax -w -f /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -ln data/old.txt
+--- out
+-rw-r--r--  1 100      0                     4 Sep 13  2020 data/old.txt
+
+### pax read -p with a bad letter
+pax -r -p z -f /tmp/a.tar
+--- err
+pax: The -p argument z is not valid.
+--- status
+2
+
+### pax read -p combined
+pax -w -f /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && pax -r -p om -f /tmp/a.tar && ls -ln data/old.txt
+--- out
+-rw-r--r--  1 0        50                    4 Sep 21 14:13 data/old.txt
+
+### pax read replaces a file
+pax -w -f /tmp/a.tar data/fruits.txt && echo changed > data/fruits.txt && pax -r -f /tmp/a.tar && cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pax read -k keeps a file
+pax -w -f /tmp/a.tar data/fruits.txt && echo changed > data/fruits.txt && pax -r -k -f /tmp/a.tar && cat data/fruits.txt
+--- out
+changed
+
+### pax read -u keeps a newer file
+pax -w -f /tmp/a.tar data/fruits.txt && echo newer > data/fruits.txt && pax -r -u -f /tmp/a.tar && cat data/fruits.txt
+--- out
+newer
+
+### pax read -u replaces an older file
+pax -w -f /tmp/a.tar data/fruits.txt && echo older > data/fruits.txt && touch -t 202001010000 data/fruits.txt && pax -r -u -f /tmp/a.tar && cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pax read -v names on standard error
+pax -w -f /tmp/a.tar data/fruits.txt data/sub && mkdir /tmp/out && cd /tmp/out && pax -r -v -f /tmp/a.tar 2>&1 >/dev/null
+--- out
+data/fruits.txt
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### pax write -v names on standard error
+pax -w -v -f /tmp/a.tar data/sub 2>&1 >/dev/null
+--- out
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### pax read with a pattern
+pax -w -f /tmp/a.tar data && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar 'data/s*' && find . | sort
+--- out
+.
+./data
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+
+### pax list with a pattern
+pax -w -f /tmp/a.tar data && pax -f /tmp/a.tar '*.txt'
+--- out
+data/csv.txt
+data/dup.txt
+data/empty.txt
+data/fruits.txt
+data/mixed.txt
+data/nonl.txt
+data/nums.txt
+data/old.txt
+data/people.txt
+data/sub/deep.txt
+data/tabs.txt
+data/words.txt
+
+### pax pattern selects a directory's tree
+pax -w -f /tmp/a.tar data && pax -f /tmp/a.tar data/sub
+--- out
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### pax pattern with a final slash
+pax -w -f /tmp/a.tar data && pax -f /tmp/a.tar data/sub/
+--- out
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### pax several patterns
+pax -w -f /tmp/a.tar data && pax -f /tmp/a.tar data/fruits.txt data/nums.txt
+--- out
+data/fruits.txt
+data/nums.txt
+
+### pax bracket pattern
+pax -w -f /tmp/a.tar data && pax -f /tmp/a.tar 'data/[cd]*'
+--- out
+data/csv.txt
+data/dup.txt
+
+### pax -c complements the patterns
+pax -w -f /tmp/a.tar data && pax -c -f /tmp/a.tar 'data/*.txt' 'data/sub'
+--- out
+data
+data/.hidden
+data/link
+
+### pax -n takes the first match only
+pax -w -f /tmp/a.tar data && pax -n -f /tmp/a.tar 'data/*.txt'
+--- out
+data/csv.txt
+
+### pax pattern that matches nothing
+pax -w -f /tmp/a.tar data/fruits.txt && pax -f /tmp/a.tar nosuch 'x*'; echo "status $?"
+--- out
+status 1
+--- err
+pax: nosuch: No member matched the pattern.
+pax: x*: No member matched the pattern.
+
+### pax -s renames on write
+pax -w -s ',^data/,new/,' -f /tmp/a.tar data/fruits.txt data/sub && pax -f /tmp/a.tar
+--- out
+new/fruits.txt
+new/sub
+new/sub/deep.txt
+new/sub/inner
+new/sub/inner/leaf
+
+### pax -s renames on read
+pax -w -f /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && pax -r -s '/fruits/plants/' -f /tmp/a.tar && find .
+--- out
+.
+./data
+./data/plants.txt
+
+### pax -s renames on list
+pax -w -f /tmp/a.tar data/fruits.txt data/nums.txt && pax -s '/\.txt$/.text/' -f /tmp/a.tar
+--- out
+data/fruits.text
+data/nums.text
+
+### pax -s first expression that matches wins
+pax -w -f /tmp/a.tar data/fruits.txt data/nums.txt && pax -s '/fruits/F/' -s '/data/D/' -f /tmp/a.tar
+--- out
+data/F.txt
+D/nums.txt
+
+### pax -s global flag
+pax -w -f /tmp/a.tar data/sub && pax -s ',/,_,g' -f /tmp/a.tar
+--- out
+data_sub
+data_sub_deep.txt
+data_sub_inner
+data_sub_inner_leaf
+
+### pax -s p flag reports
+pax -w -f /tmp/a.tar data/fruits.txt && pax -s ',data,d,p' -f /tmp/a.tar
+--- out
+d/fruits.txt
+--- err
+data/fruits.txt >> d/fruits.txt
+
+### pax -s with groups
+pax -w -f /tmp/a.tar data/fruits.txt && pax -s ',\(.*\)/\(.*\),\2 in \1,' -f /tmp/a.tar
+--- out
+fruits.txt in data
+
+### pax -s with & in the replacement
+pax -w -f /tmp/a.tar data/fruits.txt && pax -s ',fruits,[&],' -f /tmp/a.tar
+--- out
+data/[fruits].txt
+
+### pax -s to an empty name skips the member
+pax -w -s ',.*nums.*,,' -f /tmp/a.tar data/fruits.txt data/nums.txt && pax -f /tmp/a.tar
+--- out
+data/fruits.txt
+
+### pax -s that is not valid
+pax -s '/a/b' -f /tmp/a.tar
+--- err
+pax: The -s argument /a/b is not valid.
+--- status
+2
+
+### pax -s with a bad flag
+pax -s '/a/b/x' -f /tmp/a.tar
+--- err
+pax: The -s argument /a/b/x is not valid.
+--- status
+2
+
+### pax -s with a bad pattern
+pax -s '/\(/b/' -f /tmp/a.tar
+--- err
+pax: /\(/b/: The pattern has an unmatched (.
+--- status
+2
+
+### pax -d does not descend
+pax -w -d -f /tmp/a.tar data/sub && pax -f /tmp/a.tar
+--- out
+data/sub
+
+### pax symbolic link archived as a link
+pax -w -f /tmp/a.tar data/link && pax -v -f /tmp/a.tar && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -l data/link
+--- out
+lrwxrwxrwx  1 QSHUSER  0              10 Jan  1  1970 data/link -> fruits.txt
+lrwxrwxrwx  1 QSHUSER  0                    10 Sep 21 14:13 data/link -> fruits.txt
+
+### pax -L follows links
+pax -w -L -f /tmp/a.tar data/link && pax -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/link
+
+### pax -H follows a named link
+pax -w -H -f /tmp/a.tar data/link && pax -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/link
+
+### pax -H does not follow links below
+pax -w -H -f /tmp/a.tar data && pax -v -f /tmp/a.tar data/link
+--- out
+lrwxrwxrwx  1 QSHUSER  0              10 Jan  1  1970 data/link -> fruits.txt
+
+### pax hard link in ustar
+ln data/fruits.txt data/hard && pax -w -f /tmp/a.tar data/fruits.txt data/hard && pax -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+-rw-r--r--  1 QSHUSER  0               0 May 28 20:26 data/hard == data/fruits.txt
+
+### pax hard link extracted
+ln data/fruits.txt data/hard && pax -w -f /tmp/a.tar data/fruits.txt data/hard && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -l data && cat data/hard
+--- out
+total: 1 kilobytes
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 hard
+apple
+banana
+cherry
+
+### pax hard link in cpio
+ln data/fruits.txt data/hard && pax -w -x cpio -f /tmp/a.cpio data/fruits.txt data/hard && pax -v -f /tmp/a.cpio && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.cpio && ls -l data
+--- out
+-rw-r--r--  2 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+-rw-r--r--  2 QSHUSER  0               0 May 28 20:26 data/hard == data/fruits.txt
+total: 1 kilobytes
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 hard
+
+### pax hard link in sv4cpio
+ln data/fruits.txt data/hard && pax -w -x sv4cpio -f /tmp/a.cpio data/fruits.txt data/hard && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.cpio && ls -l data && cat data/hard
+--- out
+total: 1 kilobytes
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 hard
+apple
+banana
+cherry
+
+### pax hard link renamed with -s
+ln data/fruits.txt data/hard && pax -w -f /tmp/a.tar data/fruits.txt data/hard && mkdir /tmp/out && cd /tmp/out && pax -r -s ',data,d,' -f /tmp/a.tar && ls -l d
+--- out
+total: 1 kilobytes
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 hard
+
+### pax copy a tree
+pax -rw data/sub /tmp && find /tmp/data | sort && cat /tmp/data/sub/deep.txt
+--- out
+/tmp/data
+/tmp/data/sub
+/tmp/data/sub/deep.txt
+/tmp/data/sub/inner
+/tmp/data/sub/inner/leaf
+deep
+
+### pax copy keeps times
+pax -rw data/old.txt /tmp && ls -l /tmp/data/old.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                     4 Sep 13  2020 /tmp/data/old.txt
+
+### pax copy with -l links files
+pax -rw -l data/fruits.txt /tmp && ls -l data/fruits.txt /tmp/data/fruits.txt
+--- out
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 /tmp/data/fruits.txt
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### pax copy with -s
+pax -rw -s ',data/,,' data/fruits.txt /tmp && ls /tmp
+--- out
+fruits.txt
+
+### pax copy -v
+pax -rw -v data/sub /tmp 2>&1
+--- out
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### pax copy needs a directory
+pax -rw data/fruits.txt data/nums.txt; echo "status $?"
+--- out
+status 1
+--- err
+pax: data/nums.txt: The path is not a directory.
+
+### pax copy to a missing directory
+pax -rw data/fruits.txt /nosuch; echo "status $?"
+--- out
+status 1
+--- err
+pax: /nosuch: No such path or directory.
+
+### pax copy with no operands
+pax -rw
+--- err
+pax: Copying needs a target directory.
+--- status
+2
+
+### pax copy into itself is skipped
+mkdir data/sub/copy && pax -rw data data/sub/copy && find data/sub/copy | sort
+--- out
+data/sub/copy
+data/sub/copy/data
+data/sub/copy/data/.hidden
+data/sub/copy/data/csv.txt
+data/sub/copy/data/dup.txt
+data/sub/copy/data/empty.txt
+data/sub/copy/data/fruits.txt
+data/sub/copy/data/link
+data/sub/copy/data/mixed.txt
+data/sub/copy/data/nonl.txt
+data/sub/copy/data/nums.txt
+data/sub/copy/data/old.txt
+data/sub/copy/data/people.txt
+data/sub/copy/data/sub
+data/sub/copy/data/sub/deep.txt
+data/sub/copy/data/sub/inner
+data/sub/copy/data/sub/inner/leaf
+data/sub/copy/data/tabs.txt
+data/sub/copy/data/words.txt
+
+### pax copy -k
+mkdir -p /tmp/data && echo mine > /tmp/data/fruits.txt && pax -rw -k data/fruits.txt /tmp && cat /tmp/data/fruits.txt
+--- out
+mine
+
+### pax copy symbolic link
+pax -rw data/link /tmp && ls -l /tmp/data/link
+--- out
+lrwxrwxrwx  1 QSHUSER  0                    10 Sep 21 14:13 /tmp/data/link -> fruits.txt
+
+### pax -a appends
+pax -w -f /tmp/a.tar data/fruits.txt && pax -w -a -f /tmp/a.tar data/nums.txt && pax -f /tmp/a.tar
+--- out
+data/fruits.txt
+data/nums.txt
+
+### pax -a keeps the format
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && pax -w -a -f /tmp/a.cpio data/nums.txt && head -c 6 /tmp/a.cpio && echo && pax -f /tmp/a.cpio
+--- out
+070707
+data/fruits.txt
+data/nums.txt
+
+### pax -a with another format
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && pax -w -a -x ustar -f /tmp/a.cpio data/nums.txt; echo "status $?"
+--- out
+status 1
+--- err
+pax: The format differs from the archive's.
+
+### pax -a needs -f
+pax -w -a data/fruits.txt
+--- err
+pax: Option -a needs an archive file named with -f.
+--- status
+2
+
+### pax -a to a missing archive
+pax -w -a -f /tmp/nosuch.tar data/fruits.txt; echo "status $?"
+--- out
+status 1
+--- err
+pax: /tmp/nosuch.tar: No such path or directory.
+
+### pax -a -u skips older files
+pax -w -f /tmp/a.tar data/fruits.txt && pax -w -a -u -f /tmp/a.tar data/fruits.txt data/nums.txt && pax -f /tmp/a.tar
+--- out
+data/fruits.txt
+data/nums.txt
+
+### pax -a without -w
+pax -a -f /tmp/a.tar
+--- err
+pax: Options -a, -b and -x go with -w only.
+--- status
+2
+
+### pax -x with an unknown format
+pax -w -x zip -f /tmp/a.tar data/fruits.txt
+--- err
+pax: The format zip is not known.
+--- status
+2
+
+### pax -x with -r
+pax -r -x cpio -f /tmp/a.tar
+--- err
+pax: Options -a, -b and -x go with -w only.
+--- status
+2
+
+### pax an unknown option
+pax -q
+--- err
+pax: Option -q is not valid.
+--- status
+2
+
+### pax -i is refused
+pax -r -i -f /tmp/a.tar
+--- err
+pax: Option -i is not supported: there is no terminal to ask.
+--- status
+2
+
+### pax -t -o -X are taken
+pax -w -t -X -o nodir -f /tmp/a.tar data/fruits.txt && pax -f /tmp/a.tar
+--- out
+data/fruits.txt
+
+### pax missing operand on write
+pax -w -f /tmp/a.tar data/nosuch data/fruits.txt; echo "status $?"; pax -f /tmp/a.tar
+--- out
+status 1
+data/fruits.txt
+--- err
+pax: data/nosuch: No such path or directory.
+
+### pax a file that cannot be read
+chmod 0 data/fruits.txt && pax -w -f /tmp/a.tar data/fruits.txt data/nums.txt; echo "status $?"; pax -f /tmp/a.tar
+--- out
+status 1
+data/nums.txt
+--- err
+pax: data/fruits.txt: Permission is denied.
+
+### pax archive file is not archived
+cd data && pax -w -f arch.tar . && pax -f arch.tar | grep -c arch
+--- out
+0
+--- status
+1
+
+### pax not an archive
+echo hello | pax; echo "status $?"
+--- out
+status 1
+--- err
+pax: The input is not an archive in a known format.
+
+### pax empty input
+pax < /dev/null; echo "status $?"
+--- out
+status 1
+--- err
+pax: The archive is empty.
+
+### pax missing archive file
+pax -f /tmp/nosuch.tar; echo "status $?"
+--- out
+status 1
+--- err
+pax: /tmp/nosuch.tar: No such path or directory.
+
+### pax damaged header
+pax -w -f /tmp/a.tar data/fruits.txt && sed 's/fruits/frXits/' /tmp/a.tar > /tmp/b.tar && pax -f /tmp/b.tar; echo "status $?"
+--- out
+status 1
+--- err
+pax: The input is not an archive in a known format.
+
+### pax truncated archive
+pax -w -f /tmp/a.tar data/fruits.txt && head -c 520 /tmp/a.tar > /tmp/b.tar && pax -f /tmp/b.tar; echo "status $?"
+--- out
+status 1
+--- err
+pax: The archive ends inside a member.
+
+### pax truncated cpio
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && head -c 80 /tmp/a.cpio > /tmp/b.cpio && pax -f /tmp/b.cpio; echo "status $?"
+--- out
+status 1
+--- err
+pax: The archive has a damaged header.
+
+### pax long names use the prefix field
+mkdir -p data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccc && echo x > data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccc/file.txt && pax -w -f /tmp/a.tar data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa && pax -f /tmp/a.tar | tail -1 | wc -c
+--- out
+     127
+
+### pax a name too long for old tar
+mkdir -p data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb && echo x > data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/f && pax -w -x tar -f /tmp/a.tar data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 2>&1 | sed 's/a\{50\}/A/; s/b\{50\}/B/'; pax -f /tmp/a.tar | sed 's/a\{50\}/A/; s/b\{50\}/B/'
+--- out
+pax: data/A/B: The name is too long for the format.
+pax: data/A/B/f: The name is too long for the format.
+data/A
+
+### pax a member from QSYS.LIB
+pax -w -f /tmp/a.tar /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR && pax -f /tmp/a.tar
+--- out
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+
+### pax an object that cannot be opened
+pax -w -f /tmp/a.tar /QSYS.LIB/QGPL.LIB/HELLO.PGM; echo "status $?"
+--- out
+status 1
+--- err
+pax: /QSYS.LIB/QGPL.LIB/HELLO.PGM: The operation is not supported.
+
+### pax absolute names restore in place
+pax -w -f /tmp/a.tar /home/QSHUSER/data/fruits.txt && rm data/fruits.txt && pax -r -f /tmp/a.tar && cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pax raw bytes survive
+pax -w -x cpio -f /tmp/a.cpio raw && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.cpio && od -c raw/ff.bin
+--- out
+0000000 377 377 200  \0 001
+0000005
+
+### pax empty file and empty directory
+mkdir data/void && pax -w -f /tmp/a.tar data/empty.txt data/void && pax -v -f /tmp/a.tar && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -l data
+--- out
+-rw-r--r--  1 QSHUSER  0               0 May 28 20:26 data/empty.txt
+drwxr-xr-x  1 QSHUSER  0               0 Sep 21 14:13 data/void
+total: 0 kilobytes
+-rw-r--r--  1 QSHUSER  0                     0 May 28 20:26 empty.txt
+drwxr-xr-x  2 QSHUSER  0                     0 Sep 21 14:13 void
+
+### pax hidden files are archived
+pax -w -f /tmp/a.tar data && pax -f /tmp/a.tar data/.hidden
+--- out
+data/.hidden
+
+### pax directory modes set after contents
+chmod 555 data/sub && pax -w -f /tmp/a.tar data/sub && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -ld data/sub && cat data/sub/inner/leaf
+--- out
+dr-xr-xr-x  3 QSHUSER  0                     2 May 28 20:26 data/sub
+leaf
+
+### pax read creates missing parents
+pax -w -f /tmp/a.tar data/sub/inner/leaf && mkdir /tmp/out && cd /tmp/out && pax -r -f /tmp/a.tar && ls -ld data data/sub
+--- out
+drwxr-xr-x  3 QSHUSER  0                     1 Sep 21 14:13 data
+drwxr-xr-x  3 QSHUSER  0                     1 Sep 21 14:13 data/sub
+
+### pax read replaces a directory with a file
+pax -w -f /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && mkdir -p data/fruits.txt && pax -r -f /tmp/a.tar && cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### pax list -v of an old date
+pax -w -f /tmp/a.tar data/old.txt && pax -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSYS     QSHGRP          4 Sep 13  2020 data/old.txt
+
+### pax list -v in another zone
+pax -w -f /tmp/a.tar data/fruits.txt && TZ=EST5 pax -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 15:26 data/fruits.txt

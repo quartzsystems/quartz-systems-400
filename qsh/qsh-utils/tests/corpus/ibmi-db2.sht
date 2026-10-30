@@ -1,0 +1,272 @@
+### db2 select
+db2 "select * from qgpl.people"
+--- out
+
+NAME       AGE   CITY
+---------- ----- ----
+bob           25 ny
+alice         30 la
+carol         25 -
+dave          19 ny
+
+  4 RECORD(S) SELECTED.
+
+
+### db2 select words
+db2 select '*' from qgpl.people
+--- out
+
+NAME       AGE   CITY
+---------- ----- ----
+bob           25 ny
+alice         30 la
+carol         25 -
+dave          19 ny
+
+  4 RECORD(S) SELECTED.
+
+
+### db2 count
+db2 "select count(*) from people"
+--- out
+
+00001
+-----------
+          4
+
+  1 RECORD(S) SELECTED.
+
+
+### db2 empty result
+db2 "select * from empty"
+--- out
+
+ID          DESCRIPTION
+----------- ------------------------------
+
+  0 RECORD(S) SELECTED.
+
+
+### db2 wide values
+db2 "select * from wide"
+--- out
+
+A            LONG_COLUMN_NAME
+------------ ----------------
+x                        -1.5
+longer value           123456
+
+  2 RECORD(S) SELECTED.
+
+
+### db2 insert
+db2 "insert into people values('eve', 40, 'tx')"
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 update
+db2 "update people set age = 1"
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 create
+db2 "create table x (a int)"
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 error
+db2 "select * from nosuch"; echo status $?
+--- out
+ **** CLI ERROR *****
+         SQLSTATE: 42704
+NATIVE ERROR CODE: -204
+NOSUCH in QGPL type *FILE not found.
+status 1
+
+### db2 syntax error
+db2 "frobnicate"; echo status $?
+--- out
+ **** CLI ERROR *****
+         SQLSTATE: 42601
+NATIVE ERROR CODE: -104
+Token FROBNICATE was not valid.
+status 1
+
+### db2 sql naming slash
+db2 "select * from qgpl/people"; echo status $?
+--- out
+ **** CLI ERROR *****
+         SQLSTATE: 42601
+NATIVE ERROR CODE: -104
+Token / was not valid.
+status 1
+
+### db2 system naming
+db2 -S "select * from qgpl/people"
+--- out
+
+NAME       AGE   CITY
+---------- ----- ----
+bob           25 ny
+alice         30 la
+carol         25 -
+dave          19 ny
+
+  4 RECORD(S) SELECTED.
+
+
+### db2 system naming dot
+db2 -S "select * from qgpl.people"; echo status $?
+--- out
+ **** CLI ERROR *****
+         SQLSTATE: 42833
+NATIVE ERROR CODE: -5016
+Qualified object name PEOPLE not valid.
+status 1
+
+### db2 verbose
+db2 -v "select count(*) from people"
+--- out
+select count(*) from people
+
+00001
+-----------
+          4
+
+  1 RECORD(S) SELECTED.
+
+
+### db2 trailing semicolon
+db2 "commit;"
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 stdin lines
+printf 'select count(*) from people\ncommit\n' | db2
+--- out
+
+00001
+-----------
+          4
+
+  1 RECORD(S) SELECTED.
+
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 stdin blank and comments
+printf '\n-- a note\ncommit\n\n' | db2
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 stdin terminator
+printf 'create table t (a int);\ninsert into t\n values (1);\nselect count(*)\n from people;\n' | db2 -t
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+00001
+-----------
+          4
+
+  1 RECORD(S) SELECTED.
+
+
+### db2 terminator quoted
+printf "insert into t values (';');commit;" | db2 -tv
+--- out
+insert into t values (';')
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+commit
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 file
+printf 'commit\nselect * from empty\n' > s.sql; db2 -f s.sql
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+ID          DESCRIPTION
+----------- ------------------------------
+
+  0 RECORD(S) SELECTED.
+
+
+### db2 file terminator
+printf 'commit;\n-- note;\nrollback;' > s.sql; db2 -tf s.sql
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 file missing
+db2 -f nosuch.sql; echo status $?
+--- out
+status 1
+--- err
+db2: nosuch.sql: No such path or directory.
+
+### db2 file and statement
+db2 -f s.sql "commit"; echo status $?
+--- out
+status 2
+--- err
+db2: Give a statement or -f, not both.
+
+### db2 continue after error
+printf 'select * from nosuch\ncommit\n' | db2; echo status $?
+--- out
+ **** CLI ERROR *****
+         SQLSTATE: 42704
+NATIVE ERROR CODE: -204
+NOSUCH in QGPL type *FILE not found.
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+status 1
+
+### db2 bad option
+db2 -z commit; echo status $?
+--- out
+status 2
+--- err
+db2: Option -z is not valid.
+
+### db2 empty statement
+db2 ""; echo status $?
+--- out
+status 0
+
+### db2 nothing on stdin
+db2 </dev/null; echo status $?
+--- out
+status 0
+
+### db2 records line
+db2 "select * from people" | grep 'RECORD(S)'
+--- out
+  4 RECORD(S) SELECTED.
+
+### db2 parse count
+db2 "select count(*) from people" | sed -n 4p | tr -d ' '
+--- out
+4
+
+### db2 null shown
+db2 "select * from people" | grep carol
+--- out
+carol         25 -
+
+### db2 cut names
+db2 "select * from people" | sed -n '4,7p' | cut -c1-10
+--- out
+bob       
+alice     
+carol     
+dave      
+
+### db2 lowercase keywords
+db2 "Delete From people"
+--- out
+DB20000I  THE SQL COMMAND COMPLETED SUCCESSFULLY.
+
+### db2 multiple lines in operand
+db2 "select *
+from people" | grep -c RECORD
+--- out
+1

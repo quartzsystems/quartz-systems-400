@@ -61,6 +61,12 @@ errnos! {
     ECHILD = 3517, "No child process.";
     ENOTTY = 3536, "The descriptor is not a terminal.";
     E2BIG = 3491, "The argument list is too long.";
+    ENXIO = 3415, "There is no such device or address.";
+    ECONNREFUSED = 3425, "The connection was refused.";
+    EHOSTUNREACH = 3429, "There is no route to the host.";
+    ETIMEDOUT = 3447, "The connection timed out.";
+    EIDRM = 3509, "The identifier was removed.";
+    ENOMSG = 3510, "No message of the wanted type is available.";
     ENOEXEC = 3600, "The file is not a program.";
 }
 

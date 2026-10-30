@@ -14,11 +14,17 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
+mod svc;
+
+pub use svc::{ClHandler, Connector, MEM_JOB, SqlHandler};
+
 use super::stream::{Fd, Null, Stream};
 use super::util::{Registry, UtilCtx, Utility};
 use super::{
-    Access, Child, Errno, FileType, FsInfo, Limit, OpenFlags, ProcInfo, SigAction, SpawnRequest,
-    Stat, Sys, SysError, WaitStatus,
+    Access, Child, ClRunner, Credentials, DataArea, DtaqOp, DtaqReply, Errno, FileType, FsInfo,
+    IpcInfo, IpcKind, IpcTarget, LibEntry, LiblChange, Limit, OpenFlags, ProcInfo, Resolver,
+    SigAction, SpawnRequest, SplfInfo, SplfNumber, Spooled, SqlRunner, Stat, Sys, SysError,
+    WaitStatus,
 };
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -31,6 +37,8 @@ enum Kind {
     File(Arc<Mutex<Vec<u8>>>),
     Symlink(String),
     Null,
+    /// A FIFO (opening one is `ENXIO`: nothing is ever on the other end).
+    Fifo,
     /// A `/QSYS.LIB` object that is not a library, file or member:
     /// its size.
     Object(u64),
@@ -211,6 +219,7 @@ impl Fs {
             Kind::File(d) => (FileType::File, lock(d).len() as u64),
             Kind::Symlink(t) => (FileType::Symlink, t.len() as u64),
             Kind::Null => (FileType::Char, 0),
+            Kind::Fifo => (FileType::Fifo, 0),
             Kind::Object(n) => (FileType::Other, *n),
         };
         let nlink = match &n.kind {
@@ -389,6 +398,7 @@ struct Inner {
     fsinfo: Mutex<FsInfo>,
     procs: Mutex<Vec<ProcInfo>>,
     nodename: Mutex<String>,
+    svc: svc::Services,
 }
 
 /// The in-memory system.
@@ -453,6 +463,7 @@ impl MemSys {
                 args: vec!["qsh".to_string()],
             }]),
             nodename: Mutex::new("QS400".to_string()),
+            svc: svc::Services::new(),
         }));
         for d in [
             "/dev",
@@ -751,6 +762,7 @@ impl Sys for MemSys {
                 }))
             }
             Kind::Symlink(_) => Err(Errno::ELOOP.into()),
+            Kind::Fifo => Err(Errno::ENXIO.into()),
             Kind::Object(_) => Err(Errno::EOPNOTSUPP.into()),
         }
     }
@@ -960,6 +972,109 @@ impl Sys for MemSys {
 
     fn sleep(&self, d: Duration) {
         self.advance(d);
+    }
+
+    fn resolver(&self) -> Result<&dyn Resolver, SysError> {
+        Ok(self)
+    }
+
+    fn cl_runner(&self) -> Result<&dyn ClRunner, SysError> {
+        Ok(self)
+    }
+
+    fn sql_runner(&self) -> Result<&dyn SqlRunner, SysError> {
+        Ok(self)
+    }
+
+    fn tcp_connect(&self, host: &str, port: u16) -> Result<Fd, SysError> {
+        self.svc_connect(host, port)
+    }
+
+    fn credentials(&self) -> Result<Credentials, SysError> {
+        Ok(self.svc_credentials())
+    }
+
+    fn mkfifo(&self, path: &str, mode: u32) -> Result<(), SysError> {
+        let t = self.now_secs();
+        let mut fs = lock(&self.0.fs);
+        let (d, dpath, name) = fs.parent_of(path)?;
+        if fs.lookup(d, &dpath, &name).is_some() {
+            return Err(Errno::EEXIST.into());
+        }
+        fs.add(d, &name, Kind::Fifo, mode & 0o7777, t);
+        Ok(())
+    }
+
+    fn process_cwd(&self, pid: i32) -> Result<String, SysError> {
+        self.svc_process_cwd(pid)
+    }
+
+    fn attributes(&self, path: &str, follow: bool) -> Result<Vec<(String, String)>, SysError> {
+        self.svc_attributes(path, follow)
+    }
+
+    fn set_attribute(
+        &self,
+        path: &str,
+        follow: bool,
+        name: &str,
+        value: &str,
+    ) -> Result<(), SysError> {
+        self.svc_set_attribute(path, follow, name, value)
+    }
+
+    fn library_list(&self) -> Result<Vec<LibEntry>, SysError> {
+        Ok(self.svc_library_list())
+    }
+
+    fn change_library_list(&self, change: &LiblChange) -> Result<(), SysError> {
+        self.svc_change_libl(change)
+    }
+
+    fn system_value(&self, name: &str) -> Result<String, SysError> {
+        self.svc_sysval(name, false)
+    }
+
+    fn network_attribute(&self, name: &str) -> Result<String, SysError> {
+        self.svc_sysval(name, true)
+    }
+
+    fn read_data_area(&self, name: &str) -> Result<DataArea, SysError> {
+        self.svc_read_dtaara(name)
+    }
+
+    fn write_data_area(
+        &self,
+        name: &str,
+        part: Option<(usize, usize)>,
+        value: &str,
+    ) -> Result<(), SysError> {
+        self.svc_write_dtaara(name, part, value)
+    }
+
+    fn data_queue(&self, path: &str, op: &DtaqOp) -> Result<DtaqReply, SysError> {
+        self.svc_dtaq(path, op)
+    }
+
+    fn spooled_files(&self, job: &str) -> Result<Vec<SplfInfo>, SysError> {
+        self.svc_splfs(job)
+    }
+
+    fn spooled_file(
+        &self,
+        job: &str,
+        name: &str,
+        number: SplfNumber,
+    ) -> Result<Spooled, SysError> {
+        self.svc_splf(job, name, number)
+    }
+
+    fn ipc_list(&self) -> Result<Vec<IpcInfo>, SysError> {
+        Ok(self.svc_ipc_list())
+    }
+
+    fn ipc_remove(&self, kind: IpcKind, target: IpcTarget) -> Result<(), SysError> {
+        self.svc_ipc_remove(kind, target)
     }
 
     fn spawn(&self, req: SpawnRequest) -> Result<Box<dyn Child>, SysError> {

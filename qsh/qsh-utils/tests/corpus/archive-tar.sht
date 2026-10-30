@@ -1,0 +1,385 @@
+### tar cf and tf
+tar cf /tmp/a.tar data/fruits.txt data/sub && tar tf /tmp/a.tar
+--- out
+data/fruits.txt
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### tar with a leading dash
+tar -cf /tmp/a.tar data/fruits.txt && tar -tf /tmp/a.tar
+--- out
+data/fruits.txt
+
+### tar with separate option words
+tar -c -f /tmp/a.tar data/fruits.txt && tar -t -v -f /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+
+### tar letters after the archive name
+tar -cf /tmp/a.tar -v data/fruits.txt 2>&1 && tar -tf /tmp/a.tar
+--- out
+data/fruits.txt
+data/fruits.txt
+
+### tar tvf
+tar cf /tmp/a.tar data/fruits.txt data/link data/old.txt && tar tvf /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+lrwxrwxrwx  1 QSHUSER  0              10 Jan  1  1970 data/link -> fruits.txt
+-rw-r--r--  1 QSYS     QSHGRP          4 Sep 13  2020 data/old.txt
+
+### tar cvf names on standard error
+tar cvf /tmp/a.tar data/sub 2>&1 >/dev/null
+--- out
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### tar writes a ustar archive
+tar cf /tmp/a.tar data/fruits.txt && od -A d -c -j 257 -N 8 /tmp/a.tar && wc -c < /tmp/a.tar
+--- out
+0000257   u   s   t   a   r  \0   0   0
+0000265
+   10240
+
+### tar o writes the older format
+tar cof /tmp/a.tar data/fruits.txt && od -A d -c -j 257 -N 6 /tmp/a.tar && tar tf /tmp/a.tar
+--- out
+0000257  \0  \0  \0  \0  \0  \0
+0000263
+data/fruits.txt
+
+### tar b sets the blocking factor
+tar cbf 1 /tmp/a.tar data/fruits.txt && wc -c < /tmp/a.tar
+tar cbf 4 /tmp/b.tar data/fruits.txt && wc -c < /tmp/b.tar
+--- out
+    2048
+    2048
+
+### tar b and f take their arguments in order
+tar cfb /tmp/a.tar 2 data/fruits.txt && wc -c < /tmp/a.tar
+--- out
+    2048
+
+### tar b with a bad factor
+tar cbf 0 /tmp/a.tar data/fruits.txt
+tar cbf x /tmp/a.tar data/fruits.txt
+tar cbf 21 /tmp/a.tar data/fruits.txt
+--- err
+tar: The blocking factor 0 is not valid.
+tar: The blocking factor x is not valid.
+tar: The blocking factor 21 is not valid.
+--- status
+2
+
+### tar without f uses standard output and input
+tar c data/fruits.txt > /tmp/a.tar && tar t < /tmp/a.tar
+--- out
+data/fruits.txt
+
+### tar f - is standard output
+tar cf - data/fruits.txt | tar tf -
+--- out
+data/fruits.txt
+
+### tar TAPE names the archive
+TAPE=/tmp/tape.tar tar c data/fruits.txt && tar tf /tmp/tape.tar
+--- out
+data/fruits.txt
+
+### tar f overrides TAPE
+TAPE=/tmp/tape.tar tar cf /tmp/a.tar data/fruits.txt && tar tf /tmp/a.tar && ls /tmp
+--- out
+data/fruits.txt
+a.tar
+
+### tar xf
+tar cf /tmp/a.tar data/fruits.txt data/sub && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar && find . | sort && cat data/sub/deep.txt
+--- out
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+deep
+
+### tar xvf names on standard error
+tar cf /tmp/a.tar data/sub && mkdir /tmp/out && cd /tmp/out && tar xvf /tmp/a.tar 2>&1
+--- out
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### tar x of named members
+tar cf /tmp/a.tar data && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar data/fruits.txt data/sub && find . | sort
+--- out
+.
+./data
+./data/fruits.txt
+./data/sub
+./data/sub/deep.txt
+./data/sub/inner
+./data/sub/inner/leaf
+
+### tar x names are not patterns
+tar cf /tmp/a.tar data && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar 'data/*.txt'; echo "status $?"
+--- out
+status 1
+--- err
+tar: data/*.txt: The archive has no such member.
+
+### tar t of named members
+tar cf /tmp/a.tar data && tar tf /tmp/a.tar data/sub data/nums.txt
+--- out
+data/nums.txt
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+
+### tar t of a missing member
+tar cf /tmp/a.tar data/fruits.txt && tar tf /tmp/a.tar data/nosuch; echo "status $?"
+--- out
+status 1
+--- err
+tar: data/nosuch: The archive has no such member.
+
+### tar x keeps modification times
+tar cf /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar && ls -l data/old.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                     4 Sep 13  2020 data/old.txt
+
+### tar xm takes the current time
+tar cf /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && tar xmf /tmp/a.tar && ls -l data/old.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                     4 Sep 21 14:13 data/old.txt
+
+### tar x applies the umask
+chmod 777 data/fruits.txt && tar cf /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && umask 022 && tar xf /tmp/a.tar && ls -l data/fruits.txt
+--- out
+-rwxr-xr-x  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### tar xp keeps the mode
+chmod 4777 data/fruits.txt && tar cf /tmp/a.tar data/fruits.txt && mkdir /tmp/out && cd /tmp/out && umask 022 && tar xpf /tmp/a.tar && ls -l data/fruits.txt
+--- out
+-rwsrwxrwx  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### tar x replaces a file
+tar cf /tmp/a.tar data/fruits.txt && echo changed > data/fruits.txt && tar xf /tmp/a.tar && cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### tar x does not restore the owner
+tar cf /tmp/a.tar data/old.txt && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar && ls -ln data/old.txt
+--- out
+-rw-r--r--  1 100      0                     4 Sep 13  2020 data/old.txt
+
+### tar x of a symbolic link
+tar cf /tmp/a.tar data/link && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar && ls -l data/link
+--- out
+lrwxrwxrwx  1 QSHUSER  0                    10 Sep 21 14:13 data/link -> fruits.txt
+
+### tar h follows links
+tar chf /tmp/a.tar data/link && tar tvf /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/link
+
+### tar hard links
+ln data/fruits.txt data/hard && tar cf /tmp/a.tar data/fruits.txt data/hard && tar tvf /tmp/a.tar && mkdir /tmp/out && cd /tmp/out && tar xf /tmp/a.tar && ls -l data
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+-rw-r--r--  1 QSHUSER  0               0 May 28 20:26 data/hard == data/fruits.txt
+total: 1 kilobytes
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 hard
+
+### tar l reports links left out
+ln data/fruits.txt data/hard && tar clf /tmp/a.tar data/fruits.txt; echo "status $?"
+--- out
+status 0
+--- err
+tar: data/fruits.txt: Not every link to the file was archived.
+
+### tar l quiet when every link is archived
+ln data/fruits.txt data/hard && tar clf /tmp/a.tar data/fruits.txt data/hard; echo "status $?"
+--- out
+status 0
+
+### tar r appends
+tar cf /tmp/a.tar data/fruits.txt && tar rf /tmp/a.tar data/nums.txt && tar tf /tmp/a.tar
+--- out
+data/fruits.txt
+data/nums.txt
+
+### tar r to a new archive
+tar rf /tmp/new.tar data/nums.txt && tar tf /tmp/new.tar
+--- out
+data/nums.txt
+
+### tar r needs a file
+tar r data/nums.txt
+--- err
+tar: Appending needs an archive file named with f.
+--- status
+2
+
+### tar r to a cpio archive
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && tar rf /tmp/a.cpio data/nums.txt; echo "status $?"
+--- out
+status 1
+--- err
+tar: /tmp/a.cpio: The archive is not a tar archive.
+
+### tar u adds only newer files
+tar cf /tmp/a.tar data/fruits.txt && echo new > data/nums.txt && touch -t 203001010000 data/nums.txt && tar uf /tmp/a.tar data/fruits.txt data/nums.txt && tar tf /tmp/a.tar
+--- out
+data/fruits.txt
+data/nums.txt
+
+### tar u adds a newer copy
+tar cf /tmp/a.tar data/fruits.txt && touch -t 203001010000 data/fruits.txt && tar uf /tmp/a.tar data/fruits.txt && tar tvf /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              20 May 28 20:26 data/fruits.txt
+-rw-r--r--  1 QSHUSER  0              20 Jan  1  2030 data/fruits.txt
+
+### tar w asks before adding
+printf 'y\nn\n' | tar cwf /tmp/a.tar data/fruits.txt data/nums.txt 2>/dev/null && tar tf /tmp/a.tar
+--- out
+data/fruits.txt
+
+### tar w prompt text
+printf 'n\n' | tar cwf /tmp/a.tar data/fruits.txt 2>&1
+--- out -n
+add data/fruits.txt? 
+
+### tar w asks before extracting
+tar cf /tmp/a.tar data/fruits.txt data/nums.txt && mkdir /tmp/out && cd /tmp/out && printf 'n\ny\n' | tar xwf /tmp/a.tar 2>/dev/null && find . | sort
+--- out
+.
+./data
+./data/nums.txt
+
+### tar C changes directory
+tar cCf data /tmp/a.tar fruits.txt sub && tar tf /tmp/a.tar
+--- out
+fruits.txt
+sub
+sub/deep.txt
+sub/inner
+sub/inner/leaf
+
+### tar C to extract elsewhere
+tar cf /tmp/a.tar data/fruits.txt && mkdir /tmp/out && tar xfC /tmp/a.tar /tmp/out && find /tmp/out
+--- out
+/tmp/out
+/tmp/out/data
+/tmp/out/data/fruits.txt
+
+### tar C to a missing directory
+tar cCf /nosuch /tmp/a.tar x; echo "status $?"
+--- out
+status 1
+--- err
+tar: /nosuch: No such path or directory.
+
+### tar without a function
+tar vf /tmp/a.tar
+--- err
+tar: One of c, r, t, u or x is needed.
+--- status
+2
+
+### tar with two functions
+tar cxf /tmp/a.tar
+--- err
+tar: Only one of c, r, t, u and x may be given.
+--- status
+2
+
+### tar with a bad letter
+tar cqf /tmp/a.tar data
+--- err
+tar: Key letter q is not valid.
+--- status
+2
+
+### tar f without its argument
+tar cf
+--- err
+tar: Key letter f needs an argument.
+--- status
+2
+
+### tar c without files
+tar cf /tmp/a.tar
+--- err
+tar: No files were named.
+--- status
+2
+
+### tar with no arguments
+tar
+--- err
+tar: One of c, r, t, u or x is needed.
+--- status
+2
+
+### tar of a missing file
+tar cf /tmp/a.tar data/nosuch data/fruits.txt; echo "status $?"; tar tf /tmp/a.tar
+--- out
+status 1
+data/fruits.txt
+--- err
+tar: data/nosuch: No such path or directory.
+
+### tar t of a missing archive
+tar tf /tmp/nosuch.tar; echo "status $?"
+--- out
+status 1
+--- err
+tar: /tmp/nosuch.tar: No such path or directory.
+
+### tar t of something that is not an archive
+tar tf data/fruits.txt; echo "status $?"
+--- out
+status 1
+--- err
+tar: The input is not an archive in a known format.
+
+### tar t reads cpio archives
+pax -w -x cpio -f /tmp/a.cpio data/fruits.txt && tar tf /tmp/a.cpio
+--- out
+data/fruits.txt
+
+### tar archive is not added to itself
+cd data && tar cf self.tar . && tar tf self.tar | grep -c self
+--- out
+0
+--- status
+1
+
+### tar -- ends the letters
+tar -cf /tmp/a.tar -- data/fruits.txt && tar tf /tmp/a.tar
+--- out
+data/fruits.txt
+
+### tar pax round trip
+tar cf /tmp/a.tar data/sub && pax -v -f /tmp/a.tar
+--- out
+drwxr-xr-x  1 QSHUSER  0               0 May 28 20:26 data/sub
+-rw-r--r--  1 QSHUSER  0               5 May 28 20:26 data/sub/deep.txt
+drwxr-xr-x  1 QSHUSER  0               0 May 28 20:26 data/sub/inner
+-rw-r--r--  1 QSHUSER  0               5 May 28 20:26 data/sub/inner/leaf
+
+### tar of a QSYS.LIB member
+tar cf /tmp/a.tar /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR && mkdir /tmp/out && cd /tmp/out && tar tvf /tmp/a.tar
+--- out
+-rw-r--r--  1 QSHUSER  0              11 May 28 20:26 /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR

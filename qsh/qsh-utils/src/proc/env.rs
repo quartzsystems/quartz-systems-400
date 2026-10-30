@@ -47,3 +47,32 @@ pub fn run(cx: &mut UtilCtx<'_>) -> i32 {
         }
     }
 }
+
+/// Run `printenv [name...]`: the whole environment as `name=value`,
+/// or each named value; status 1 when a name is not set.
+pub fn run_printenv(cx: &mut UtilCtx<'_>) -> i32 {
+    let name = "printenv";
+    let p = match getopt(&cx.argv[1..], "") {
+        Ok(p) => p,
+        Err(e) => return usage(cx, name, &e.to_string()),
+    };
+    let mut out = Out::stdout(cx);
+    if p.operands.is_empty() {
+        for (k, v) in &cx.env {
+            out.text(&format!("{k}={v}
+"));
+        }
+        return out.finish(cx, name, 0);
+    }
+    let mut status = 0;
+    for n in &p.operands {
+        match cx.getenv(n) {
+            Some(v) => {
+                out.text(&format!("{v}
+"));
+            }
+            None => status = 1,
+        }
+    }
+    out.finish(cx, name, status)
+}

@@ -1,0 +1,461 @@
+### expr add
+expr 1 + 2
+--- out
+3
+
+### expr sub
+expr 10 - 3
+--- out
+7
+
+### expr negative result
+expr 3 - 10
+--- out
+-7
+
+### expr mul
+expr 6 \* 7
+--- out
+42
+
+### expr div
+expr 17 / 5
+--- out
+3
+
+### expr div negative
+expr -17 / 5
+--- out
+-3
+
+### expr mod
+expr 17 % 5
+--- out
+2
+
+### expr mod negative
+expr -17 % 5
+--- out
+-2
+
+### expr precedence
+expr 2 + 3 \* 4
+--- out
+14
+
+### expr precedence left
+expr 20 - 5 - 3
+--- out
+12
+
+### expr div left
+expr 100 / 10 / 5
+--- out
+2
+
+### expr parens
+expr \( 2 + 3 \) \* 4
+--- out
+20
+
+### expr nested parens
+expr \( \( 1 + 2 \) \* \( 3 + 4 \) \) - 1
+--- out
+20
+
+### expr single operand
+expr hello
+--- out
+hello
+
+### expr single number
+expr 0042
+--- out
+0042
+
+### expr zero status
+expr 0; echo $?
+--- out
+0
+1
+
+### expr empty status
+expr ''; echo $?
+--- out
+
+1
+
+### expr minus zero
+expr -0; echo $?
+--- out
+-0
+1
+
+### expr leading zeros sum
+expr 007 + 1
+--- out
+8
+
+### expr eq numbers
+expr 10 = 10.0; expr 10 = 010
+--- out
+0
+1
+
+### expr eq strings
+expr abc = abc; expr abc = abd
+--- out
+1
+0
+--- status
+1
+
+### expr ne
+expr 1 != 2; expr a != a
+--- out
+1
+0
+--- status
+1
+
+### expr numeric less
+expr 9 \< 10
+--- out
+1
+
+### expr string less
+expr a9 \< a10
+--- out
+0
+--- status
+1
+
+### expr gt ge le
+expr 5 \> 3; expr 5 \>= 5; expr 4 \<= 3
+--- out
+1
+1
+0
+--- status
+1
+
+### expr compare mixed
+expr 10 \< abc
+--- out
+1
+
+### expr or first
+expr 5 \| 7
+--- out
+5
+
+### expr or second
+expr 0 \| 7; expr '' \| x
+--- out
+7
+x
+
+### expr or both null
+expr 0 \| ''; echo $?
+--- out
+
+1
+
+### expr and
+expr 5 \& 7
+--- out
+5
+
+### expr and null
+expr 5 \& 0; echo $?; expr '' \& 1; echo $?
+--- out
+0
+1
+0
+1
+
+### expr match length
+expr abcdef : 'abc'
+--- out
+3
+
+### expr match anchored
+expr abcdef : 'bcd'; echo $?
+--- out
+0
+1
+
+### expr match dot star
+expr hello : '.*'
+--- out
+5
+
+### expr match group
+expr hello.txt : '\(.*\)\.txt'
+--- out
+hello
+
+### expr match group no match
+expr hello.c : '\(.*\)\.txt'; echo [$?]
+--- out
+
+[1]
+
+### expr match group empty
+expr abc : 'a\(x*\)'; echo $?
+--- out
+
+1
+
+### expr match bracket
+expr 'abc123' : '[a-z]*'
+--- out
+3
+
+### expr match digits group
+expr 'v12.3' : 'v\([0-9]*\)'
+--- out
+12
+
+### expr match interval
+expr aaaa : 'a\{2,3\}'
+--- out
+3
+
+### expr match backref
+expr abab : '\(ab\)\1'
+--- out
+ab
+
+### expr match leading caret
+expr '^x' : '^x'; expr 'x' : '^x'
+--- out
+2
+0
+--- status
+1
+
+### expr match utf8 length
+expr 'héllo' : '.*'
+--- out
+5
+
+### expr match number result
+expr 123 : '[0-9]*' + 1
+--- out
+4
+
+### expr colon precedence
+expr 2 \* abcd : 'ab'
+--- out
+4
+
+### expr strlen idiom
+x=quartz; expr "$x" : '.*'
+--- out
+6
+
+### expr substr idiom
+x=filename.tar.gz; expr "$x" : '\([^.]*\)'
+--- out
+filename
+
+### expr increment loop
+i=0; while [ $i -lt 5 ]; do i=$(expr $i + 1); done; echo $i
+--- out
+5
+
+### expr operator as operand
+expr = = =
+--- out
+1
+
+### expr plus operand
+expr + : +
+--- out
+1
+
+### expr dashdash
+expr -- 3 + 4
+--- out
+7
+
+### expr dash dash only
+expr --
+--- out
+--
+
+### expr negative operand
+expr -5 + 2
+--- out
+-3
+
+### expr overflow add
+expr 9223372036854775807 + 1; echo $?
+--- out
+2
+--- err
+expr: The result is too large.
+
+### expr overflow mul
+expr 4611686018427387904 \* 2; echo $?
+--- out
+2
+--- err
+expr: The result is too large.
+
+### expr overflow neg div
+expr -9223372036854775808 / -1; echo $?
+--- out
+2
+--- err
+expr: The result is too large.
+
+### expr max
+expr 9223372036854775807 + 0
+--- out
+9223372036854775807
+
+### expr min
+expr -9223372036854775808 + 0
+--- out
+-9223372036854775808
+
+### expr too big operand
+expr 99999999999999999999 + 1; echo $?
+--- out
+2
+--- err
+expr: An operand is not an integer.
+
+### expr div zero
+expr 1 / 0; echo $?
+--- out
+2
+--- err
+expr: Division by zero.
+
+### expr mod zero
+expr 1 % 0; echo $?
+--- out
+2
+--- err
+expr: Division by zero.
+
+### expr non integer
+expr a + 1; echo $?
+--- out
+2
+--- err
+expr: An operand is not an integer.
+
+### expr float
+expr 1.5 + 1; echo $?
+--- out
+2
+--- err
+expr: An operand is not an integer.
+
+### expr missing operand
+expr 1 +; echo $?
+--- out
+2
+--- err
+expr: An operand is missing.
+
+### expr no args
+expr; echo $?
+--- out
+2
+--- err
+expr: An expression is needed.
+
+### expr extra operand
+expr 1 2; echo $?
+--- out
+2
+--- err
+expr: The operand 2 is not expected.
+
+### expr unclosed paren
+expr \( 1 + 2; echo $?
+--- out
+2
+--- err
+expr: The closing ) is missing.
+
+### expr stray close
+expr 1 \) 2; echo $?
+--- out
+2
+--- err
+expr: The operand ) is not expected.
+
+### expr lone paren
+expr \(
+--- out
+(
+
+### expr lone close paren
+expr \)
+--- out
+)
+
+### expr paren string
+expr \( abc \)
+--- out
+abc
+
+### expr bad regex
+expr abc : 'a\(b'; echo $?
+--- out
+2
+--- err
+expr: The pattern has an unmatched (.
+
+### expr bad interval
+expr abc : 'a\{x\}'; echo $?
+--- out
+2
+--- err
+expr: The interval expression is not valid.
+
+### expr empty string compare
+expr '' = ''
+--- out
+1
+
+### expr plus sign not int
+expr +5 + 1; echo $?
+--- out
+2
+--- err
+expr: An operand is not an integer.
+
+### expr whitespace operand not int
+expr ' 5' + 1; echo $?
+--- out
+2
+--- err
+expr: An operand is not an integer.
+
+### expr chain compare
+expr 1 \< 2 \< 3
+--- out
+1
+
+### expr and or mix
+expr 0 \| 3 \& 4
+--- out
+3
+
+### expr status 1 for false compare
+expr 1 = 2; echo $?
+--- out
+0
+1
+
+### expr through xargs
+echo 3 | xargs expr 10 +
+--- out
+13

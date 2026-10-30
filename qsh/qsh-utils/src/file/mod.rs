@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The file and directory utilities: `cat chmod chgrp chown cp df du
-//! find ln ls mkdir mv rm rmdir touch`.
+//! file find ln ls mkdir mkfifo mv pwd rm rmdir touch`.
 
 pub mod cat;
 pub mod chmod;
@@ -11,11 +11,14 @@ pub mod chown;
 pub mod cp;
 pub mod df;
 pub mod du;
+pub mod filetype;
 pub mod find;
 pub mod ln;
 pub mod ls;
 pub mod mkdir;
+pub mod mkfifo;
 pub mod mv;
+pub mod pwd;
 pub mod rm;
 pub mod rmdir;
 pub mod touch;

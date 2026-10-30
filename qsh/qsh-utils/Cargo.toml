@@ -1,6 +1,6 @@
 [package]
 name = "qsh-utils"
-description = "QS/400 Qshell utilities: files, text, shell and process, over the Sys seam"
+description = "QS/400 Qshell utilities: files, text, processes, archives, network and IBM i objects, over the Sys seam"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
