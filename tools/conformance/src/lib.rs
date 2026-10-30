@@ -10,6 +10,7 @@
 
 #![forbid(unsafe_code)]
 
+mod certstep;
 pub mod cl;
 pub mod cmdkit;
 mod cmn;

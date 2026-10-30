@@ -1792,6 +1792,22 @@ impl Service for Served<'_> {
         )
     }
 
+    // --- certificates (1240-1249)
+
+    fn cert_app(&mut self, app_id: String) -> Result<stg::proto::CertTrust, String> {
+        let principal = self.ctx.session.borrow().principal.clone();
+        super::certs::cert_app(self.system, &principal, &app_id)
+    }
+
+    fn cert_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
+        let principal = self.ctx.session.borrow().principal.clone();
+        super::certs::panel(self.system, &principal, &what, &args)
+    }
+
+    fn cert_expiry(&mut self) -> Vec<String> {
+        super::certs::expiry_scan(self.system)
+    }
+
     // --- communications objects (1180-1189)
 
     fn cmn_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {

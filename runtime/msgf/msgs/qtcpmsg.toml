@@ -526,3 +526,185 @@ id = "TCP9880"
 sev = 20
 text = "The local domain name is not valid."
 help = "A domain name is labels of letters, digits and hyphens separated by periods."
+
+# The certificate commands' messages (QS* commands, Quartz extensions;
+# lic/slic/src/cpp/certcmd.rs). The TCP1Cxx family is ours.
+[[msg]]
+id = "TCP1C00"
+sev = 0
+text = "Certificate store &1 created."
+help = "The store is ready for certificates. With STASH(*YES) its password is kept, sealed by this system's key, so servers and later commands open it without one."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C01"
+sev = 0
+text = "Certificate store &1 deleted."
+help = "The store and its kept password are gone. Applications that used certificates of *SYSTEM use the system's own certificate until others are assigned."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C02"
+sev = 0
+text = "Certificate &1 created in store &2."
+help = "A new key and its certificate are in the store under this label. QSASNCRT gives it to an application."
+vars = ["*CHAR 64", "*CHAR 256"]
+
+[[msg]]
+id = "TCP1C03"
+sev = 0
+text = "Certificate request &1 created in store &2."
+help = "The key stays in the store; the request went to the stream file named by CSR. Import the certificate the authority sends back with QSIMPCRT and the same label."
+vars = ["*CHAR 64", "*CHAR 256"]
+
+[[msg]]
+id = "TCP1C04"
+sev = 0
+text = "Certificate &1 imported into store &2."
+help = "The certificate (with its key, when the file held one) is in the store under this label."
+vars = ["*CHAR 64", "*CHAR 256"]
+
+[[msg]]
+id = "TCP1C05"
+sev = 0
+text = "Certificate &1 exported to &2."
+help = "The stream file is readable by its owner only. A file with a private key should be moved with care and removed when no longer needed."
+vars = ["*CHAR 64", "*CHAR 256"]
+
+[[msg]]
+id = "TCP1C06"
+sev = 0
+text = "Certificate &1 removed from store &2."
+help = "Applications that were assigned it have no certificate assigned now."
+vars = ["*CHAR 64", "*CHAR 256"]
+
+[[msg]]
+id = "TCP1C07"
+sev = 0
+text = "Certificate &1 changed."
+help = "The changes are in effect for servers started from now on."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "TCP1C08"
+sev = 0
+text = "Certificate &1 assigned to application &2."
+help = "Servers of the application present this certificate from their next start."
+vars = ["*CHAR 64", "*CHAR 100"]
+
+[[msg]]
+id = "TCP1C09"
+sev = 0
+text = "Application &1 has no certificate assigned now."
+help = "A server of the application uses the store's default certificate, or the system's own when the store has none."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "TCP1C0A"
+sev = 0
+text = "Application &1 added."
+help = "Programs name it to use the certificate assigned to it."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "TCP1C0B"
+sev = 0
+text = "Application &1 removed."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "TCP1C0C"
+sev = 0
+text = "Application &1 changed."
+help = "The changes are in effect for servers started from now on."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "TCP1C0D"
+sev = 0
+text = "Certificate expiry checked: &1 warnings sent, &2 stores not checked."
+help = "Warnings went to QSYSOPR for certificates within 30, 7 or 1 days of expiry, or expired. A store is not checked when its kept password cannot be used."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "TCP1C10"
+sev = 40
+text = "Certificate store &1 not found."
+help = "No store file exists at this path. QSCRTCRTS creates one."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C11"
+sev = 40
+text = "Certificate store &1 already exists."
+help = "Use the existing store, or delete it with QSDLTCRTS first."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C12"
+sev = 40
+text = "Password for certificate store &1 is not correct."
+help = "The password given does not open the store."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C13"
+sev = 40
+text = "No certificate has label &1."
+help = "Labels are compared exactly, including case. QSWRKCRT lists them."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "TCP1C14"
+sev = 40
+text = "Label &1 is already used in the store."
+help = "Choose another label, or remove or rename the certificate that has it."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "TCP1C15"
+sev = 40
+text = "Application &1 is not registered."
+help = "Application IDs are compared exactly, including case. QSWRKAPPID lists them; QSADDAPPID adds one."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "TCP1C16"
+sev = 40
+text = "Application &1 is already registered."
+vars = ["*CHAR 100"]
+
+[[msg]]
+id = "TCP1C17"
+sev = 40
+text = "Certificate request not done: &1"
+help = "The reason is shown after the colon."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C18"
+sev = 40
+text = "The kept password of certificate store &1 cannot be used."
+help = "The store has no kept password, or it was sealed with a key this system no longer has. Give the store's password, or create the store again."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "TCP1C19"
+sev = 40
+text = "User &1 is not authorized to manage certificates."
+help = "Managing certificates needs *ALLOBJ and *SECADM special authority."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1C20"
+sev = 30
+text = "Certificate &1 in store &2 expires in &3 days."
+help = "Renew it before then: create or import a new certificate and assign it to the applications that use this one. This warning is sent once at 30, 7 and 1 days."
+vars = ["*CHAR 64", "*CHAR 256", "*CHAR 10"]
+
+[[msg]]
+id = "TCP1C21"
+sev = 40
+text = "Certificate &1 in store &2 has expired."
+help = "Servers assigned it use the system's own certificate until a valid one is assigned."
+vars = ["*CHAR 64", "*CHAR 256"]

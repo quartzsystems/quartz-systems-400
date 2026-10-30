@@ -13,6 +13,8 @@
 //!   requests; [`crypto`]: the keys (RSA 2048/3072/4096, ECDSA P-256 and
 //!   P-384), AES-GCM, key derivation.
 //! - [`ca`]: the local certificate authority.
+//! - [`admin`]: the `QS*` commands as library functions, the expiry
+//!   scan and the identity a server job gets for its application ID.
 //! - [`apps`]: application IDs with their certificate, client
 //!   authentication and CA trust settings.
 //! - [`pem`] and [`pkcs12`]: import and export.
@@ -25,6 +27,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod admin;
 pub mod apps;
 pub mod ca;
 pub mod crypto;

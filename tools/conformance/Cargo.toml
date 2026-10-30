@@ -54,6 +54,7 @@ ftp = { path = "../../net/ftp", version = "0.1.0" }
 ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+certs = { path = "../../net/certs", version = "0.1.0" }
 
 [lints]
 workspace = true

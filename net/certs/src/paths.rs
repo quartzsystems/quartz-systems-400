@@ -19,6 +19,8 @@ pub const OBJECT_SIGNING_STORE: &str = "/QIBM/UserData/ICSS/Cert/Signing/SIGNING
 /// The application definitions (a Quartz file; IBM keeps these in the
 /// registration facility).
 pub const APP_DEFINITIONS: &str = "/QIBM/UserData/ICSS/Cert/Server/QSAPPDEF.JSON";
+/// Which expiry warnings were sent, so each goes once (Quartz).
+pub const EXPIRY_STATE: &str = "/QIBM/UserData/ICSS/Cert/Server/QSEXPWRN.JSON";
 /// The special store name programs and commands use for the system store.
 pub const SYSTEM_NAME: &str = "*SYSTEM";
 

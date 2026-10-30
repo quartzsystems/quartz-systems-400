@@ -33,16 +33,45 @@ const RETRY: Duration = Duration::from_secs(30);
 /// The most SCS bytes in one printer record.
 const PRINT_CHUNK: usize = 4000;
 
-/// TLS for `ipps` printers. `BLOCKED(phase10)`: the client TLS engine
-/// (`net/tls`) is not in this tree yet; until it is, a secure printer
-/// connection fails with the TLS message.
-struct NoTls;
+/// TLS for `ipps` printers: the printer's chain is checked against the
+/// shipped roots and the trusted CAs of `*SYSTEM` (a printer with a
+/// self-signed certificate needs it imported there as a CA, `QSIMPCRT`),
+/// and its name against the host the device names.
+struct PrinterTls(Result<Arc<rustls::ClientConfig>, String>);
 
-impl TlsConnector for NoTls {
-    fn connect(&self, host: &str, _tcp: std::net::TcpStream) -> std::io::Result<Box<dyn Stream>> {
-        Err(std::io::Error::other(format!(
-            "{host}: no TLS client is configured for printers yet"
-        )))
+/// A TLS connection to a printer.
+struct TlsPrinter(tls::stream::TlsStream<std::net::TcpStream>);
+
+impl std::io::Read for TlsPrinter {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buf)
+    }
+}
+
+impl std::io::Write for TlsPrinter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl Stream for TlsPrinter {
+    fn finish(&mut self) -> std::io::Result<()> {
+        self.0.close().map_err(std::io::Error::other)?;
+        self.0.get_ref().shutdown(std::net::Shutdown::Write)
+    }
+}
+
+impl TlsConnector for PrinterTls {
+    fn connect(&self, host: &str, tcp: std::net::TcpStream) -> std::io::Result<Box<dyn Stream>> {
+        let config = self.0.clone().map_err(|e| std::io::Error::other(format!("{host}: no TLS client: {e}")))?;
+        let name = tls::config::server_name(host).map_err(std::io::Error::other)?;
+        let s = tls::stream::TlsStream::connect(config, name, tcp)
+            .map_err(|e| std::io::Error::other(format!("{host}: {e}")))?;
+        Ok(Box::new(TlsPrinter(s)))
     }
 }
 
@@ -84,7 +113,13 @@ pub fn run(c: &mut Console, link: &Shared, name: &str) -> u16 {
         .with(|l| l.wtr_target(name.to_string()))
         .unwrap_or(WtrDest::Capture);
     let target = target_of(&dest);
-    let tls: Arc<dyn TlsConnector> = Arc::new(NoTls);
+    // Only a secure printer needs the trusted CAs (and the service's work).
+    let config = if matches!(dest, WtrDest::Lan { secure: true, .. }) {
+        super::tls::client_config(&mut link.borrow_mut())
+    } else {
+        Err("the device does not ask for TLS".into())
+    };
+    let tls: Arc<dyn TlsConnector> = Arc::new(PrinterTls(config));
     loop {
         let step = link.borrow_mut().with(|l| l.wtr_next(name.to_string()));
         match step {

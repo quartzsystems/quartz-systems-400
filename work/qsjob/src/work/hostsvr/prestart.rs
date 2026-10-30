@@ -10,7 +10,8 @@
 use std::cell::RefCell;
 use std::net::TcpStream;
 use std::rc::Rc;
-use std::time::Duration;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use hostserver::central::Central;
 use hostserver::database::{Database, DbConfig};
@@ -84,11 +85,40 @@ fn handler(server: ServerId, job: &Job, link: &Shared, start: &Start, system: &s
     }
 }
 
+/// The certificate application ID of each host server.
+fn app_id(server: ServerId) -> &'static str {
+    match server {
+        ServerId::Central => "QIBM_OS400_QZBS_SVR_CENTRAL",
+        ServerId::File => "QIBM_OS400_QZBS_SVR_FILE",
+        ServerId::NetPrint => "QIBM_OS400_QZBS_SVR_NETPRT",
+        ServerId::Database => "QIBM_OS400_QZBS_SVR_DATABASE",
+        ServerId::DataQueue => "QIBM_OS400_QZBS_SVR_DTAQ",
+        ServerId::RemoteCommand => "QIBM_OS400_QZBS_SVR_RMTCMD",
+        ServerId::Signon => "QIBM_OS400_QZBS_SVR_SIGNON",
+    }
+}
+
+/// How long a prestart job keeps its TLS configuration.
+const TLS_KEEP: Duration = Duration::from_secs(600);
+
+/// The TLS configuration, made again when older than [`TLS_KEEP`].
+type TlsCache = Option<(Instant, Arc<rustls::ServerConfig>)>;
+
+fn tls_config(cache: &mut TlsCache, server: ServerId, link: &Shared, system: &str) -> Result<Arc<rustls::ServerConfig>, String> {
+    if let Some((at, c)) = cache
+        && at.elapsed() < TLS_KEEP
+    {
+        return Ok(Arc::clone(c));
+    }
+    let c = crate::work::tls::app_server_config(&mut link.borrow_mut(), app_id(server), system)?;
+    *cache = Some((Instant::now(), Arc::clone(&c)));
+    Ok(c)
+}
+
 /// Serve one connection.
-fn serve(h: &mut dyn Handler, stream: TcpStream, tls: bool, link: &Shared, system: &str) -> Result<(), String> {
+fn serve(h: &mut dyn Handler, stream: TcpStream, tls: Option<Arc<rustls::ServerConfig>>) -> Result<(), String> {
     let _ = stream.set_nodelay(true);
-    if tls {
-        let config = crate::work::tls::server_config(&mut link.borrow_mut(), system)?;
+    if let Some(config) = tls {
         let conn = rustls::ServerConnection::new(config).map_err(|e| e.to_string())?;
         let mut s = rustls::StreamOwned::new(conn, stream);
         hostserver::io::serve(&mut s, h).map_err(|e| e.to_string())
@@ -112,6 +142,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let pool = relay::pool(&program);
     let limit = maxuse(&start.rqsdta);
     let mut uses = 0;
+    let mut tls: TlsCache = None;
     loop {
         stg::remote::status(link, Status::Evtw, "PSRW");
         if !job.borrow_mut().idle(Duration::ZERO) {
@@ -129,7 +160,12 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         stg::remote::status(link, Status::Run, "");
         let stream = TcpStream::from(taken.fd.into_owned());
         let mut h = handler(server, &job, link, start, &system);
-        if let Err(e) = serve(&mut *h, stream, taken.note.first() == Some(&b'T'), link, &system) {
+        let r = if taken.note.first() == Some(&b'T') {
+            tls_config(&mut tls, server, link, &system).map(Some)
+        } else {
+            Ok(None)
+        };
+        if let Err(e) = r.and_then(|t| serve(&mut *h, stream, t)) {
             eprintln!("qsjob: {}: {e}", start.name);
         }
         drop(h);

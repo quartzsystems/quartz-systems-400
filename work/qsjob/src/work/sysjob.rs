@@ -7,7 +7,9 @@
 //! `QSYSCOMM1`, `QTCPCTL` and `QTCPWRK`. `QSPLMAINT` cleans up spooling
 //! every minute; `QTCPWRK` has the storage service look at the lines
 //! and carriers under TCP/IP's interfaces every few seconds (the state
-//! itself is the service's); the others hold their place until their
+//! itself is the service's); `QSYSCOMM1` has the service check the
+//! certificate stores for expiry ten minutes after the IPL and then daily
+//! (warnings go to `QSYSOPR`); the others hold their place until their
 //! work exists (`MIGRATE(phase6)` device arbitration, `MIGRATE(phase10)`
 //! communications and alerts; the storage service rebuilds access
 //! paths itself at IPL).
@@ -28,12 +30,26 @@ const SPLMAINT: Duration = Duration::from_secs(60);
 /// How often `QTCPWRK` looks at the lines.
 const TCPWRK: Duration = Duration::from_secs(5);
 
+/// When `QSYSCOMM1` first checks the certificates, after it starts.
+const CERTCHK_FIRST: Duration = Duration::from_mins(10);
+
+/// How often `QSYSCOMM1` checks them after that.
+const CERTCHK: Duration = Duration::from_hours(24);
+
 /// Run system job `start.name` until it is ended. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let ending = ctl.try_clone();
     let mut c = Console::new(ctl, link, start);
     let mut next = Instant::now();
+    let mut certchk = Instant::now() + CERTCHK_FIRST;
     loop {
+        if start.name == "QSYSCOMM1" && Instant::now() >= certchk {
+            status(link, Status::Run, "CERTCHK");
+            for line in link.borrow_mut().with(Client::cert_expiry) {
+                eprintln!("qsjob: QSYSCOMM1: {line}");
+            }
+            certchk = Instant::now() + CERTCHK;
+        }
         if start.name == "QSPLMAINT" && Instant::now() >= next {
             status(link, Status::Run, "SPLMAINT");
             let text = link.borrow_mut().with(Client::spool_maint);

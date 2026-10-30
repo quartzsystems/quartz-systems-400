@@ -420,6 +420,7 @@ dependencies = [
  "anyhow",
  "blockdev",
  "ccsid",
+ "certs",
  "cl",
  "clap",
  "cmd",
@@ -2021,6 +2022,7 @@ name = "qsjob"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "certs",
  "cmd",
  "cmncfg",
  "dbg",
@@ -2691,6 +2693,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "ccsid",
+ "certs",
  "cl",
  "cmd",
  "cmncfg",

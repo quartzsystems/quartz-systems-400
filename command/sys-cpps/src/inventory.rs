@@ -317,6 +317,21 @@ pub const DIRECT: &[&str] = &[
     "DLTCMNTRC",
     "CHKCMNTRC",
     "PRTCMNTRC",
+    // --- certificates (lic/slic/src/cpp/certcmd.rs)
+    "QSCRTCRTS",
+    "QSDLTCRTS",
+    "QSCRTCRT",
+    "QSIMPCRT",
+    "QSEXPCRT",
+    "QSCHGCRT",
+    "QSDLTCRT",
+    "QSWRKCRT",
+    "QSASNCRT",
+    "QSADDAPPID",
+    "QSCHGAPPID",
+    "QSRMVAPPID",
+    "QSWRKAPPID",
+    "QSCHKCRT",
 ];
 
 /// Whether a job-site command also runs in the service: a display the
@@ -533,6 +548,9 @@ pub const JOB_SITE: &[&str] = &[
     "VFYTCPCNN",
     "TRACEROUTE",
     "TRCTCPRTE",
+    // --- certificates (work/qsjob/src/panels/certs.rs)
+    "QSWRKCRT",
+    "QSWRKAPPID",
 ];
 
 /// The CL statements: defined so the analyzer and the prompter know

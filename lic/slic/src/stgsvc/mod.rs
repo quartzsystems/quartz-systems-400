@@ -11,6 +11,7 @@
 //! (open files, a commit cycle, record and object locks) is released
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
+pub(crate) mod certs;
 pub(crate) mod cmn;
 pub(crate) mod cmntrc;
 mod dbg;

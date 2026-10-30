@@ -334,10 +334,98 @@ features plus `tls12`, `rustls-graviola` 0.4, `rustls-webpki` 0.103,
 `pem-rfc7468` 1, and for PKCS#12 `aes` 0.9, `cipher` 0.5, `cbc` 0.2,
 `des` 0.9, `rc2` 0.9, `sha1` 0.11, `hmac` 0.13, with `zeroize` 1.
 
+## The commands
+
+DCM is web-only on IBM i, so the commands are QS/400 additions, named
+with a `QS` prefix (Quartz extensions; their messages are the `TCP1Cxx`
+family of `QTCPMSG`). They run in the storage service
+(`lic/slic/src/cpp/certcmd.rs`) on the library functions of
+`certs::admin`, which the tests drive over `MemFiles`. Every one needs
+`*ALLOBJ` and `*SECADM`, as DCM does; a refusal is `TCP1C19` and an
+`AF` audit entry. `KEYSTORE` is `*SYSTEM` (the default), `*LCLCA` (the
+local CA's store) or a path; `PASSWORD(*STASH)` (the default) opens the
+store through its stash.
+
+| Command | What |
+|---|---|
+| `QSCRTCRTS` | Create a store: `PASSWORD`, `STASH(*YES)` keeps the password sealed with the LIC key, `ROOTS(*YES)` adds the shipped root CAs. `KEYSTORE(*LCLCA)` makes the local CA (`CN`, `ORG`..., `KEYALG`, `VALIDITY`, 3650 days) and `*SYSTEM` trusts it at once; a store made later trusts an existing local CA. |
+| `QSDLTCRTS` | Delete a store and its stash (and the CA's PEM copy); deleting `*SYSTEM` clears every assignment. |
+| `QSCRTCRT` | A new key and certificate as `LABEL`: `SIGNER(*SELF)`, `*LCLCA` (the local CA signs; `LCLCAPWD`) or `*CSR` (a request: the key stays, the PKCS#10 PEM goes to the stream file `CSR`). `USAGE(*SERVER *CLIENT)`, `CN`, `ORG`, `ORGUNIT`, `LOCALITY`, `STATE`, `COUNTRY`, `ALTNAME` (`*CN` by default for servers), `KEYALG` (`*ECDSAP256` by default; `*ECDSAP384`, `*RSA2048`, `*RSA3072`, `*RSA4096`), `VALIDITY` (365), `TEXT`. |
+| `QSIMPCRT` | Import `FROMSTMF` (read as the job): `FORMAT(*AUTO *PEM *PKCS12)`, `IMPPWD`. A certificate with its key becomes `LABEL`; CA certificates become CA entries, trusted unless `TRUST(*NO)`; a PEM certificate for a waiting request named `LABEL` completes it. |
+| `QSEXPCRT` | Export to `TOSTMF` (written as the job, mode 600, CCSID 1208): `FORMAT(*PEM)` with `INCKEY(*YES)` for the key, `*PKCS12` sealed with `EXPPWD`, `*CSR` a waiting request; `REPLACE(*NO)` refuses an existing file. |
+| `QSCHGCRT` | `NEWLABEL` (assignments follow), `TRUST` of a CA, `DFTCRT(*YES)` makes it the store default, `TEXT`. |
+| `QSDLTCRT` | Remove a certificate; applications assigned it lose it. |
+| `QSWRKCRT` | The store's certificates with type, expiry date, status (`Valid`, `Expiring` within 30 days, `Expired`, `Request`), default and assignments: the panel `QSCERT/WRKCRT` (options 2 change, 4 remove, 5 display, 7 export, 8 assign; F6 create) at a display, text otherwise. |
+| `QSASNCRT` | Assign `LABEL` of `*SYSTEM` to `APPID`; `LABEL(*NONE)` takes it away. A server needs a certificate with its key. |
+| `QSADDAPPID`, `QSRMVAPPID` | Register and remove an application ID (`TYPE(*SERVER *CLIENT)`); shipped IDs stay. |
+| `QSCHGAPPID` | `CLTAUTH(*NONE *OPTIONAL *REQUIRED)` (servers), `CATRUST` (`*ALL` or up to 50 CA labels of `*SYSTEM`), `TEXT`. |
+| `QSWRKAPPID` | The application IDs with type, certificate and client authentication: the panel `QSCERT/WRKAPPID` (2 change, 4 remove, 8 assign, 9 unassign; F6 add), text otherwise. |
+| `QSCHKCRT` | The expiry scan now (below). |
+
+The store files live in the IFS, owned by `QSYS`, mode 600, in
+directories made 700. The service reads them as the system, stages the
+ones a request may touch in memory, and writes back what changed, each
+file replaced through a rename.
+
+## Servers and the storage service
+
+Only the storage service holds the LIC partition's key, so only it opens
+`*SYSTEM` through its stash. A job asks for its application's
+certificate with `cert_app` (`stg` request 1240): the answer is the
+label, the chain, the PKCS#8 key, the client authentication setting and
+the trusted CAs of the application's CA trust (`certs::admin::identity`).
+The key goes only to a job running as a system server profile (`QSYS`,
+`QTCP`, `QUSER`, `QTMHHTTP`, `QTMHHTP1`, `QSPLJOB`) or a user with
+`*ALLOBJ` and `*IOSYSCFG`; others get `TCP1C19` and an `AF` entry. An
+empty ID asks only for the trusted CAs, which any job may have. The
+service keeps an answer for ten minutes while the store files are
+unchanged (the stash costs an Argon2id derivation).
+
+A server with no certificate assigned takes the store's default; with
+no `*SYSTEM` store, nothing assigned and no default, an expired
+certificate, or a refusal, it keeps the system's own self-signed
+certificate (`QUSRSYS/QTVTLSCRT`, `QTVTLSKEY`, as before), and logs why.
+A server whose user cannot create those data areas (`QTMHHTTP` for the
+HTTP administration instance) makes a certificate for the run in memory.
+
+| Server | Application ID |
+|---|---|
+| HTTP administration, 2005 | `QIBM_HTTP_SERVER_ADMIN` |
+| Telnet, 992 | `QIBM_QTV_TELNET_SERVER` |
+| Host servers (TLS ports) | `QIBM_OS400_QZBS_SVR_CENTRAL`, `_DATABASE`, `_DTAQ`, `_FILE`, `_NETPRT`, `_RMTCMD`, `_SIGNON` |
+
+A server reads its certificate when it starts (a prestart job keeps it
+ten minutes), so an assignment takes effect at the next start. The
+protocols and suites follow `QSSLPCL`, `QSSLCSL` and `QSSLCSLCTL`.
+
+`ipps` printers (the writer's IPP connector) check the printer's chain
+and name against the shipped roots and the trusted CAs of `*SYSTEM`. A
+printer with a self-signed certificate is trusted by importing that
+certificate as a CA (`QSIMPCRT ... TRUST(*YES)`).
+
+## Expiry warnings
+
+`QSYSCOMM1` asks the service (`cert_expiry`, request 1242) to scan ten
+minutes after the IPL and then every 24 hours; `QSCHKCRT` scans at once.
+The scan opens `*SYSTEM` and the local CA's store through their stashes
+and looks at every certificate except the shipped roots. A certificate
+crossing 30, 7 or 1 days left gets `TCP1C20` (severity 30) in `QSYSOPR`,
+an expired one `TCP1C21` (40), each once: what was sent is kept in
+`/QIBM/UserData/ICSS/Cert/Server/QSEXPWRN.JSON` by store and SHA-256
+fingerprint, so a renewed certificate starts afresh. A scan that finds
+a certificate already past several thresholds sends the nearest only.
+
+## The LIC key slot
+
+`slic` gives the LIC record its stash key slot when it attaches the
+partition at IPL (`stash::ensure_key_slot`), so the slot exists before
+the storage service starts; the service only reads it.
+
 ## Not yet
 
-- The `QS*` commands (`QSCRTCRTS`, `QSCRTCRT`, `QSIMPCRT`, `QSEXPCRT`,
-  `QSWRKCRT`, `QSASNCRT`, `QSWRKAPPID`) and the `QSYSOPR` expiry job sit
-  on these crates in a later step.
 - OCSP and CRL checking; session resumption settings; ALPN from
   `GSK_SSL_EXTN_ALPN`; the asynchronous GSK calls.
+- The FTP, DDM and LPD servers take their certificates the same way when
+  their TLS is built.
+- A store's password expiry, and the web admin UI over the same
+  functions.

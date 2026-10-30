@@ -54,6 +54,9 @@ use crate::display;
 /// The TLS port.
 pub const TLS_PORT: u16 = 992;
 
+/// The certificate application ID of the telnet server.
+const TELNET_APP_ID: &str = "QIBM_QTV_TELNET_SERVER";
+
 /// What a session asks the server's main thread for.
 enum Ask {
     /// A job number; the answer comes back on the channel.
@@ -337,7 +340,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     }
     if a.secure() {
         let tls = own_link(start).and_then(|mut l| {
-            super::tls::server_config(&mut l, &host)
+            super::tls::app_server_config(&mut l, TELNET_APP_ID, &host)
                 .map_err(|e| eprintln!("qsjob: QTVTELNET TLS: {e}"))
                 .ok()
         });

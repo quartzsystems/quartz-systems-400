@@ -897,3 +897,57 @@ has the dialect as built.
     `DTACNNPORT` or `RMTEXTPTH` (the Phase 10 spec names some): TLS is
     DCM's application ID; data ports are `DTACNNPORT` in the server
     table's bag, which no command sets yet.
+
+## Certificate commands (certcmds, 2026-10-30)
+
+The `QS*` commands, `cert_app` and the expiry scan (docs/CERTS.md). No
+oracle has them: DCM is web-only and neither system's admin port is
+reachable, so everything below is our choice until the web admin UI or a
+DCM capture settles it.
+
+1. **Who may manage certificates.** `*ALLOBJ` and `*SECADM`, what DCM's
+   documentation asks of its users. Display-only access for `*AUDIT`
+   users (DCM has none) is not offered.
+2. **Who may have a server's key.** `cert_app` gives the private key to
+   jobs running as `QSYS`, `QTCP`, `QUSER`, `QTMHHTTP`, `QTMHHTP1` or
+   `QSPLJOB`, or as a user with `*ALLOBJ` and `*IOSYSCFG`. On IBM i the
+   server programs reach the store inside the system and no user ever
+   holds the key; a user program using `GSK_OS400_APPLICATION_ID` there
+   also gets its certificate, which here would need its job's user on
+   that list. Revisit when the GSK binding asks the service rather than
+   opening the store in the job.
+3. **Audit.** Phase 6 left DCM out of scope and IBM i has no audit
+   entry type for certificate store changes (DCM changes show only as
+   object changes of the `.KDB` files, `ZC`, when the files are
+   audited). Refusals are `AF` entries (violation `A`, object
+   `DEFAULT *STMF`, operation `manage certificates` or `certificate key`);
+   the store files are written as `QSYS` through the IFS, so their own
+   object auditing applies. A `GR`-style entry per change is not written.
+4. **Expiry message identifiers.** `TCP1C20` (30, 7 and 1 days) and
+   `TCP1C21` (expired) are ours. IBM i 7.4+ sends certificate expiration
+   notices through the certificate expiration manager with identifiers
+   we did not capture (DCM's "Certificate expiration" setting, the
+   `QSYS2.CERTIFICATE_INFO` view); match them if a capture shows them.
+5. **Which stores the scan watches.** `*SYSTEM` and the local CA's,
+   because their stashes open without a person. Other stores (a path
+   with its own password) are scanned only if they have a stash; the
+   shipped root CAs are never watched (they change with the root set).
+6. **The daily schedule.** The scan runs in `QSYSCOMM1` ten minutes
+   after the IPL and every 24 hours, not as a job schedule entry: IBM i
+   shows no such entry in `WRKJOBSCDE` on pub400. While `QSYSCOMM1` is
+   not running only `QSCHKCRT` scans.
+7. **When a server sees a new assignment.** At its next start (a host
+   server prestart job keeps its configuration ten minutes). DCM's
+   changes also apply only when the server restarts.
+8. **An application without an assignment.** It takes the store's
+   default certificate, as `certs::apps` already documents; on IBM i a
+   server application with nothing assigned fails its TLS start. Our
+   servers fall back further to the system's self-signed certificate so
+   that 992 and 2005 keep working on a new system.
+9. **Printers with self-signed certificates.** The IPP connector checks
+   chain and name against the shipped roots and the `*SYSTEM` trusted
+   CAs; a printer's own certificate has to be imported as a CA. IBM's
+   `*IPPDRV` behavior with an untrusted printer certificate is not
+   known (it may not check at all).
+10. **Menus.** No IBM command menu holds the `QS*` commands (genmenus
+    lists them as "ours only"); `GO CMDQS`-style access is not given.

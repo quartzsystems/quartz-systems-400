@@ -101,6 +101,11 @@ pub fn attach(system: &mut System) -> Result<(), &'static src::Src> {
         system.emit(&src::PREV_ABNORMAL);
     }
 
+    // The key that seals the certificate stores' stashes: made once.
+    if let Err(e) = certs::stash::ensure_key_slot(&mut record, crate::ipl::system::now_unix()) {
+        system.out.serial(&format!("slic: certificate stash key: {e}
+"));
+    }
     record.header.ipl_in_progress = true;
     record.header.last_ipl_type = system.ipl_type();
     record.header.last_ipl_mode = system.mode;

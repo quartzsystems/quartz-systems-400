@@ -623,10 +623,50 @@ ipc::rpc! {
     /// `*LAST`, a number), read as `DSPSPLF` reads it: its attributes
     /// and data.
     1200 => fn splf_fetch / SplfFetch (file: String, job: String, splnbr: String) -> Result<(SplfAttrs, Vec<u8>), String>;
+
+    // --- certificates (1240-1249; net/certs admin, stgsvc/certs.rs)
+    /// An application ID's certificate and trust from the `*SYSTEM`
+    /// store, which only the service opens (its stash key is the LIC
+    /// partition's). An empty ID asks for the trusted CAs alone (any
+    /// job); a certificate goes only to the system's server profiles
+    /// or a user with `*ALLOBJ` and `*IOSYSCFG`.
+    1240 => fn cert_app / CertApp (app_id: String) -> Result<CertTrust, String>;
+    /// A certificate display's data: `CRT` (`QSWRKCRT`; args the store
+    /// and its password), `DSPCRT` (store, password, label), `APPID`
+    /// (`QSWRKAPPID`).
+    1241 => fn cert_panel / CertPanel (what: String, args: Vec<String>) -> Result<Sys2Data, String>;
+    /// The expiry scan: warnings go to `QSYSOPR`; the lines for the log.
+    1242 => fn cert_expiry / CertExpiry () -> Vec<String>;
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;
 }
+
+// --- certificate types
+
+/// What `cert_app` answers: the certificate a server presents (none
+/// when `label` is empty) and the CAs it trusts.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CertTrust {
+    /// The label in `*SYSTEM`; empty for none.
+    pub label: String,
+    /// The chain, leaf first, DER.
+    pub chain: Vec<Vec<u8>>,
+    /// The private key, PKCS#8 DER.
+    pub key: Vec<u8>,
+    /// Client authentication: 0 none, 1 optional, 2 required.
+    pub client_auth: u8,
+    /// The trusted CAs, DER.
+    pub roots: Vec<Vec<u8>>,
+}
+
+wire_struct!(CertTrust {
+    label,
+    chain,
+    key,
+    client_auth,
+    roots
+});
 
 // --- host server types
 

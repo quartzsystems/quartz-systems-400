@@ -844,3 +844,57 @@ note = "CPF39A5 per trace, CPF39A4"
 
 [cmd.PRTCMNTRC]
 note = "the decoded frames spooled to QSYSPRT; CPF39A3"
+
+# ------------------------------------------------------- certificates
+# Quartz extensions (IBM i manages certificates with DCM's web pages):
+# the service runs them over the certificate stores
+# (lic/slic/src/cpp/certcmd.rs on net/certs' admin functions); the job
+# shows QSWRKCRT and QSWRKAPPID as panels (work/qsjob/src/panels/certs.rs).
+[cmd.QSCRTCRTS]
+cpp = "QSZCCRTS"
+note = "a store with its stash and the shipped roots; KEYSTORE(*LCLCA) is the local CA"
+
+[cmd.QSDLTCRTS]
+cpp = "QSZCDLTS"
+
+[cmd.QSCRTCRT]
+cpp = "QSZCCRT"
+note = "self-signed, signed by the local CA, or a request written to CSR"
+
+[cmd.QSIMPCRT]
+cpp = "QSZCIMP"
+
+[cmd.QSEXPCRT]
+cpp = "QSZCEXP"
+
+[cmd.QSCHGCRT]
+cpp = "QSZCCHG"
+
+[cmd.QSDLTCRT]
+cpp = "QSZCDLT"
+
+[cmd.QSWRKCRT]
+cpp = "QSZCWRK"
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.QSASNCRT]
+cpp = "QSZCASN"
+
+[cmd.QSADDAPPID]
+cpp = "QSZCAAPP"
+
+[cmd.QSCHGAPPID]
+cpp = "QSZCCAPP"
+
+[cmd.QSRMVAPPID]
+cpp = "QSZCRAPP"
+
+[cmd.QSWRKAPPID]
+cpp = "QSZCWAPP"
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.QSCHKCRT]
+cpp = "QSZCCHK"
+note = "what QSYSCOMM1 runs daily: warnings to QSYSOPR at 30, 7 and 1 days and at expiry"

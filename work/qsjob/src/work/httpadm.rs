@@ -5,11 +5,8 @@
 //! `ADMIN` in `QHTTPSVR`: the HTTP administration instance
 //! (`STRTCPSVR *HTTP HTTPSVR(*ADMIN)`). It serves `net/servers`' one
 //! page on 2001 and, with TLS, on 2005 until `ENDTCPSVR` or `ENDJOB`
-//! ends it. The TLS certificate is the system's own self-signed one
-//! (`tls.rs`) until the job can open the `*SYSTEM` store.
-// BLOCKED(phase10): the certificate of QIBM_HTTP_SERVER_ADMIN needs a
-// storage service request that answers an application ID's identity
-// (the stash key is the LIC partition's); servers::http::admin_tls is ready.
+//! ends it. The TLS certificate is the one `*SYSTEM` assigns
+//! `QIBM_HTTP_SERVER_ADMIN`, else the system's own (`tls.rs`).
 
 use std::sync::mpsc;
 use std::time::Duration;
@@ -42,7 +39,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         Err(e) => crate::start::end(&mut ctl, &format!("port {}: {e}", a.port)),
     }
     if a.tls_port != 0 {
-        let cfg = super::tls::server_config(&mut link.borrow_mut(), &system);
+        let cfg = super::tls::app_server_config(&mut link.borrow_mut(), servers::http::APP_ID, &system);
         match cfg.and_then(|c| {
             listen::bind(a.tls_port)
                 .and_then(|l| listen::serve(l, Some(c), admin.clone()))

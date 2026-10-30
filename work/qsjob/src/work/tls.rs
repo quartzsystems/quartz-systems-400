@@ -2,11 +2,17 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! TLS for the telnet server's port 992: a self-signed certificate on
-//! a P-256 key, made on first use and kept as PEM in the data areas
+//! TLS for the system's servers. A server asks the storage service for
+//! its application ID's certificate in the `*SYSTEM` store
+//! ([`app_server_config`]; `QSASNCRT` assigns one). When nothing is
+//! assigned, the store does not exist, or the service refuses, the
+//! server keeps the system's own self-signed certificate: a P-256 key,
+//! made on first use and kept as PEM in the data areas
 //! `QUSRSYS/QTVTLSCRT` and `QUSRSYS/QTVTLSKEY` (the key's area is
-//! `AUT(*EXCLUDE)`). The protocol versions follow `QSSLPCL`.
-//! `MIGRATE(phase10)`: certificate management.
+//! `AUT(*EXCLUDE)`). The protocol versions and suites follow `QSSLPCL`,
+//! `QSSLCSL` and `QSSLCSLCTL`. Clients (the `ipps` printers) check a
+//! server against the shipped roots and the `*SYSTEM` store's trusted
+//! CAs ([`client_config`]).
 
 use std::sync::Arc;
 
@@ -143,6 +149,11 @@ pub fn server_config(link: &mut Link, host: &str) -> Result<Arc<rustls::ServerCo
         write_area(link, KEY_AREA, &k, true)?;
         (c, k)
     };
+    config_of(link, &cert_pem, &key_pem)
+}
+
+/// A server configuration over a PEM certificate and key.
+fn config_of(link: &mut Link, cert_pem: &str, key_pem: &str) -> Result<Arc<rustls::ServerConfig>, String> {
     let certs: Vec<CertificateDer<'static>> = CertificateDer::pem_slice_iter(cert_pem.as_bytes())
         .collect::<Result<_, _>>()
         .map_err(|e| format!("certificate: {e}"))?;
@@ -155,6 +166,95 @@ pub fn server_config(link: &mut Link, host: &str) -> Result<Arc<rustls::ServerCo
         .with_single_cert(certs, key)
         .map_err(|e| e.to_string())?;
     Ok(Arc::new(config))
+}
+
+/// A system value's words.
+fn sysval_words(link: &mut Link, name: &str) -> Vec<String> {
+    link.sysval(name.into())
+        .ok()
+        .flatten()
+        .map(|v| ccsid::from_ebcdic(&v.data))
+        .unwrap_or_default()
+        .split_whitespace()
+        .map(str::to_string)
+        .collect()
+}
+
+/// The policy of `QSSLPCL`, `QSSLCSL` and `QSSLCSLCTL`.
+pub fn policy(link: &mut Link) -> tls::policy::TlsPolicy {
+    let pcl = sysval_words(link, "QSSLPCL");
+    let csl = sysval_words(link, "QSSLCSL");
+    let ctl = sysval_words(link, "QSSLCSLCTL").join("");
+    let pcl: Vec<&str> = pcl.iter().map(String::as_str).collect();
+    let csl: Vec<&str> = csl.iter().map(String::as_str).collect();
+    tls::policy::TlsPolicy::from_sysvals(&pcl, &csl, &ctl)
+}
+
+/// The server configuration of `app_id`'s certificate in `*SYSTEM`;
+/// `None` when nothing is assigned (nor a store default).
+pub fn from_store(link: &mut Link, app_id: &str) -> Result<Option<Arc<rustls::ServerConfig>>, String> {
+    let t = link
+        .cert_app(app_id.into())
+        .map_err(|e| e.to_string())??;
+    if t.label.is_empty() || t.chain.is_empty() {
+        return Ok(None);
+    }
+    let info = certs::x509::CertInfo::from_der(&t.chain[0]).map_err(|e| e.to_string())?;
+    let identity = tls::config::Identity {
+        label: t.label.clone(),
+        chain: t.chain.into_iter().map(CertificateDer::from).collect(),
+        key: Arc::new(PrivateKeyDer::Pkcs8(t.key.into())),
+        info,
+    };
+    let mut roots = rustls::RootCertStore::empty();
+    for r in t.roots {
+        let _ = roots.add(CertificateDer::from(r));
+    }
+    let mode = match t.client_auth {
+        1 => tls::config::ClientAuthMode::Optional,
+        2 => tls::config::ClientAuthMode::Required,
+        _ => tls::config::ClientAuthMode::None,
+    };
+    tls::config::server_config(&identity, &policy(link), mode, roots)
+        .map(Some)
+        .map_err(|e| format!("certificate {}: {e}", t.label))
+}
+
+/// The configuration of the server of application `app_id`: its
+/// certificate from `*SYSTEM`, else the system's own self-signed one.
+pub fn app_server_config(link: &mut Link, app_id: &str, host: &str) -> Result<Arc<rustls::ServerConfig>, String> {
+    match from_store(link, app_id) {
+        Ok(Some(c)) => return Ok(c),
+        Ok(None) => {}
+        Err(e) => eprintln!("qsjob: {app_id}: {e}; the system's own certificate is used"),
+    }
+    server_config(link, host).or_else(|e| {
+        // A server whose user cannot keep the system's certificate in
+        // QUSRSYS (QTMHHTTP) still serves TLS, with one made for now.
+        eprintln!("qsjob: {app_id}: {e}; a certificate for this run is used");
+        let (c, k) = make_certificate(host)?;
+        config_of(link, &c, &k)
+    })
+}
+
+/// A client configuration that checks servers against the shipped root
+/// set and the trusted CAs of `*SYSTEM`, by name.
+pub fn client_config(link: &mut Link) -> Result<Arc<rustls::ClientConfig>, String> {
+    let mut roots = rustls::RootCertStore::empty();
+    for r in certs::roots::roots() {
+        let _ = roots.add(CertificateDer::from(r.der.clone()));
+    }
+    match link.cert_app(String::new()) {
+        Ok(Ok(t)) => {
+            for r in t.roots {
+                let _ = roots.add(CertificateDer::from(r));
+            }
+        }
+        Ok(Err(e)) => eprintln!("qsjob: the trusted CAs of *SYSTEM: {e}"),
+        Err(e) => eprintln!("qsjob: the trusted CAs of *SYSTEM: {e}"),
+    }
+    tls::config::client_config(&policy(link), roots, None, tls::config::ServerAuthMode::Full)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
