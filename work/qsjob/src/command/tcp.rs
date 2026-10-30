@@ -4,9 +4,9 @@
 
 //! `STRTCP`, `ENDTCP` and `ENDTCPABN` in the job: the storage service
 //! applies the configuration (`stg::tcp`); the job starts and ends the
-//! servers through a [`ServerStarter`], since a server is a job this
-//! job spawns. The TCP/IP displays in a job without a display answer
-//! here too, as text.
+//! servers through the TCP servers framework (`tcpsvr.rs`), since a
+//! server is a job this job spawns. The TCP/IP displays in a job
+//! without a display answer here too, as text.
 
 use std::fmt::Write as _;
 
@@ -14,8 +14,8 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 use stg::tcp::{TcpOp, TcpReply};
-use tcpcfg::msg::{self, Note};
-use tcpcfg::server::{ServerStarter, end_all, start_all};
+use tcpcfg::msg::Note;
+use tcpcfg::server::{end_all, start_all};
 
 use super::{Fail, parms_of};
 use crate::console::host::Host;
@@ -24,68 +24,6 @@ use crate::console::host::Host;
 #[allow(clippy::unnecessary_wraps)] // callers chain it with `?`
 pub fn ask(host: &Host, op: TcpOp) -> Result<TcpReply, Fail> {
     Ok(host.link.borrow_mut().with(|l| l.tcp(op)))
-}
-
-/// The servers this release starts: `*TELNET` through `STRTCPSVR`;
-/// the others say they cannot start yet. The TCP servers framework
-/// replaces this.
-// BLOCKED(phase10): net/servers implements ServerStarter for every server.
-pub struct JobStarter<'a> {
-    job: &'a mut Job,
-    host: &'a Host,
-}
-
-impl<'a> JobStarter<'a> {
-    /// The starter of `job`.
-    pub fn new(job: &'a mut Job, host: &'a Host) -> Self {
-        Self { job, host }
-    }
-
-    fn run(&mut self, line: &str) -> Result<String, String> {
-        let out = super::run(self.job, self.host, line);
-        match out.escape {
-            Some(f) => Err(f.text),
-            None => Ok(out.text.trim().to_string()),
-        }
-    }
-}
-
-impl ServerStarter for JobStarter<'_> {
-    fn start(&mut self, server: &str) -> Result<String, String> {
-        match server {
-            "*TELNET" => {
-                // CHGTELNA AUTOSTART(*NO) keeps the telnet server down.
-                let attrs = self
-                    .host
-                    .link
-                    .borrow_mut()
-                    .with(|l| l.da_read("QTVTELNA".into(), "QUSRSYS".into()))
-                    .ok()
-                    .map(|v| ccsid::from_ebcdic(&v.value).to_ascii_uppercase())
-                    .unwrap_or_default();
-                if attrs.contains("AUTOSTART(*NO)") {
-                    return Ok(String::new());
-                }
-                self.run("STRTCPSVR SERVER(*TELNET)")
-            }
-            other => Err(format!("{} {other} cannot be started in this release.", msg::SERVER_NOT_STARTED)),
-        }
-    }
-
-    fn end(&mut self, server: &str, immediate: bool) -> Result<String, String> {
-        let _ = immediate;
-        match server {
-            "*TELNET" => self.run("ENDTCPSVR SERVER(*TELNET)"),
-            _ => Ok(String::new()),
-        }
-    }
-
-    fn active(&mut self, server: &str) -> bool {
-        match server {
-            "*TELNET" => self.host.link.borrow_mut().with(|l| l.job_state("QTVTELNET".into())) == 1,
-            _ => false,
-        }
-    }
 }
 
 fn lines(notes: &[Note], out: &mut String) {
@@ -113,7 +51,9 @@ pub fn strtcp(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
     };
     let mut out = String::new();
     lines(&notes, &mut out);
-    let mut starter = JobStarter::new(job, host);
+    let fw = super::tcpsvr::framework();
+    let mut env = super::tcpsvr::JobEnv::new(job, host);
+    let mut starter = servers::framework::Starter::new(&fw, &mut env);
     for (server, r) in start_all(&mut starter, &servers) {
         match r {
             Ok(t) if !t.is_empty() => {
@@ -138,7 +78,9 @@ pub fn endtcp(job: &mut Job, host: &Host, r: &Resolved, abnormal: bool) -> Resul
     match ask(host, TcpOp::End { immediate, endsvr, ending: true })? {
         TcpReply::Done { notes, servers } => {
             lines(&notes, &mut out);
-            let mut starter = JobStarter::new(job, host);
+            let fw = super::tcpsvr::framework();
+    let mut env = super::tcpsvr::JobEnv::new(job, host);
+    let mut starter = servers::framework::Starter::new(&fw, &mut env);
             for (_, r) in end_all(&mut starter, &servers, immediate) {
                 match r {
                     Ok(t) | Err(t) if !t.trim().is_empty() => {

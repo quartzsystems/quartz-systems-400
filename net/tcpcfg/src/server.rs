@@ -4,8 +4,8 @@
 
 //! Starting and ending servers. `STRTCP STRSVR(*YES)` starts the
 //! autostart servers and `ENDTCP ENDSVR(*YES)` ends them through a
-//! [`ServerStarter`], which the TCP servers framework implements; until
-//! it does, the job's starter runs `*TELNET` and refuses the rest.
+//! [`ServerStarter`], which the TCP servers framework implements
+//! (`servers::framework::Starter`).
 
 /// Starts and ends the servers.
 pub trait ServerStarter {

@@ -45,6 +45,13 @@ help = "The server's job did not start. The job log of the job that asked has th
 vars = ["*CHAR 10"]
 
 [[msg]]
+id = "TCP1A06"
+sev = 30
+text = "Server instance &2 of &1 not found."
+help = "The instance named on HTTPSVR or INSTANCE is not one this server has. The HTTP server has one, the administration instance *ADMIN."
+vars = ["*CHAR 10", "*CHAR 32"]
+
+[[msg]]
 id = "TCP1A07"
 sev = 0
 text = "&1 server starting."
@@ -106,6 +113,13 @@ sev = 30
 text = "Interface &1 not started: &2"
 help = "The kernel or the line refused part of the start. The interface shows Failed until it is started again."
 vars = ["*CHAR 45", "*CHAR 128"]
+
+[[msg]]
+id = "TCP1A10"
+sev = 0
+text = "&1 attributes changed."
+help = "The server's attributes are kept in the TCP/IP server table in QUSRSYS. A running server takes the new values when it is started again."
+vars = ["*CHAR 10"]
 
 [[msg]]
 id = "TCP1A11"

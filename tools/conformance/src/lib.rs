@@ -30,6 +30,7 @@ mod png;
 mod qemu;
 pub mod qir;
 pub mod rpg;
+mod servers;
 mod steps;
 mod tcp;
 

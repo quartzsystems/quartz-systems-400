@@ -52,7 +52,7 @@ fn captured() -> Captured {
 
 const COMMANDS: &[&str] = &[
     "ADDTCPHTE", "ADDTCPIFC", "ADDTCPPORT", "ADDTCPRTE", "ADDTCPSVR", "CFGTCP", "CFGTCPAPP", "CHGTCPA",
-    "CHGTCPDMN", "CHGTCPHTE", "CHGTCPIFC", "CHGTCPRTE", "CHGTCPSVR", "CPYTCPHT", "MRGTCPHT", "RMVTCPHTE",
+    "CHGTCPDMN", "CHGTCPHTE", "CHGTCPIFC", "CHGTCPRTE", "CHGTCPSVR", "CHGTELNA", "CPYTCPHT", "MRGTCPHT", "RMVTCPHTE",
     "RMVTCPIFC", "RMVTCPPORT", "RMVTCPRTE", "RMVTCPSVR", "RNMTCPHTE",
 ];
 
@@ -96,4 +96,27 @@ fn every_tcp_command_has_a_place() {
     {
         assert!(sys_cpps::entry(name).is_some(), "{name} is not in the inventory");
     }
+}
+
+/// `CHGTELNA`'s values as the job reads them: numbers with their
+/// special values mapped, the table's `*SAME` a value of its own.
+#[test]
+fn chgtelna_values() {
+    let mut src = cmd::analyze::MemSource::default();
+    src.put(sys_cpps::install::object("CHGTELNA", 0).unwrap().def);
+    let mut env = cmd::analyze::Env::new(&mut src);
+    let r = cmd::analyze(&mut env, "CHGTELNA TIMMRKTIMO(600) NBRSVR(*CALC) CCSID(*GERMAN)").unwrap();
+    let p = cmd::block::Parms::from_bound(&r.def, r.parms.clone());
+    assert_eq!(p.int("TIMMRKTIMO"), Some(600));
+    assert_eq!(p.int("NBRSVR"), Some(-2));
+    assert_eq!(p.int("NBRTASK"), Some(-1));
+    assert_eq!(p.int("CCSID"), Some(17_368_051));
+    assert_eq!(p.int("NBRFLDS"), Some(-2));
+    let tbl = p.get("TBLVTOUT").unwrap();
+    let first = match tbl {
+        cmd::Value::Qual(parts) => parts[0].source(),
+        other => other.source(),
+    };
+    assert_eq!(first, "*SAME");
+    assert_eq!(p.name("ALWSSL"), "*SAME");
 }

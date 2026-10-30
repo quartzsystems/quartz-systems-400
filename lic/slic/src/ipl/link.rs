@@ -48,21 +48,19 @@ pub fn attached() -> bool {
     current().lock().is_ok_and(|l| l.is_some())
 }
 
-/// The telnet server's port: `PORT(n)` in `QUSRSYS/QTVTELNA`, else 23.
+/// The telnet server's port: `PORT` in the server table's `*TELNET`
+/// attributes (`net/servers`), else 23.
 pub fn port(system: &mut System) -> u16 {
     let Some(stg) = system.procs.stg.as_mut() else {
         return PORT;
     };
-    let text = stg
-        .da_read("QTVTELNA".into(), "QUSRSYS".into())
-        .ok()
-        .and_then(Result::ok)
-        .map(|v| ccsid::from_ebcdic(&v.value).to_ascii_uppercase())
-        .unwrap_or_default();
-    text.split_once("PORT(")
-        .and_then(|(_, r)| r.split(')').next())
-        .and_then(|p| p.trim().parse().ok())
-        .unwrap_or(PORT)
+    match stg.tcp(stg::tcp::TcpOp::Servers) {
+        Ok(stg::tcp::TcpReply::Servers { list }) => list
+            .into_iter()
+            .find(|s| s.server == "*TELNET")
+            .map_or(PORT, |s| servers::attrs::telnet::TelnetAttrs::from_bag(&s.bag).port),
+        _ => PORT,
+    }
 }
 
 /// Connect the console to the telnet server on `port`: the terminal

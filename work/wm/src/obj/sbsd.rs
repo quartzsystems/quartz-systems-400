@@ -978,6 +978,13 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                 ..Sbsd::default()
             },
         ),
+        (
+            "QHTTPSVR",
+            Sbsd {
+                text: "HTTP server subsystem".into(),
+                ..Sbsd::default()
+            },
+        ),
     ]
 }
 

@@ -2,9 +2,13 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `QTVTELNET`: the TN5250E server. It listens on the telnet port (and
-//! on 992 with TLS) and runs one session per connection on its own
-//! thread, registered as a `QTVDEVICE` job of user `QTCP`: the
+//! `QTVTELNET`: the TN5250E server, `*TELNET` of the TCP servers
+//! framework (`net/servers`), with `CHGTELNA`'s attributes from the
+//! server table: `ALWSSL`, `TIMMRKTIMO` (timing marks, RFC 860) and
+//! the exit points `QIBM_QTG_DEVINIT` and `QIBM_QTG_DEVTERM`, whose
+//! programs run on the server's main thread. It listens on the telnet
+//! port (and on 992 with TLS) and runs one session per connection on
+//! its own thread, registered as a `QTVDEVICE` job of user `QTCP`: the
 //! negotiation, a virtual display allocated through the storage
 //! service, the sign-on display, then the interactive job it starts
 //! for the user, whose records it moves between the job's device
@@ -24,11 +28,15 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::os::unix::net::UnixListener;
 use std::path::Path;
+use std::rc::Rc;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use ipc::chan::Chan;
+use regfac::{ExitAnswer, ExitRegistry, ExitRequest};
+use servers::attrs::telnet::TelnetAttrs;
+use stg::tcp::{TcpOp, TcpReply};
 use stg::{Client, JobInfo, Link, Shared};
 use tn5250::ds::wdsf::{Model, printer_type_model};
 use tn5250::record::Record;
@@ -43,8 +51,6 @@ use wm::obj::sbsd::{PoolKind, Sbsd};
 use super::spawn::{self, Spawned};
 use crate::display;
 
-/// The telnet port when `CHGTELNA` names none.
-pub const PORT: u16 = 23;
 /// The TLS port.
 pub const TLS_PORT: u16 = 992;
 
@@ -52,6 +58,10 @@ pub const TLS_PORT: u16 = 992;
 enum Ask {
     /// A job number; the answer comes back on the channel.
     JobNumber(Sender<Result<u32, String>>),
+    /// Call an exit point's programs (`QIBM_QTG_DEVINIT`,
+    /// `QIBM_QTG_DEVTERM`); they run on the main thread, which holds
+    /// the server's runtime job.
+    Exit(&'static str, Box<ExitRequest>, Sender<ExitAnswer>),
 }
 
 /// The jobs of a display whose connection dropped under `*DSC*`
@@ -212,27 +222,70 @@ fn disconnected() -> &'static Mutex<Vec<Disconnected>> {
     LIST.get_or_init(|| Mutex::new(Vec::new()))
 }
 
-/// The attributes `CHGTELNA` keeps, read when the server starts.
-struct Attrs {
-    port: u16,
-    /// `*NO`, `*YES` or `*ONLY`.
-    alwssl: String,
+/// The attributes `CHGTELNA` keeps in the server table, read when the
+/// server starts.
+fn attrs(link: &Shared) -> TelnetAttrs {
+    match link.borrow_mut().with(|l| l.tcp(TcpOp::Servers)) {
+        TcpReply::Servers { list } => list
+            .into_iter()
+            .find(|s| s.server == "*TELNET")
+            .map(|s| TelnetAttrs::from_bag(&s.bag))
+            .unwrap_or_default(),
+        _ => TelnetAttrs::default(),
+    }
 }
 
-fn attrs(link: &Shared) -> Attrs {
-    let text = link
-        .borrow_mut()
-        .with(|l| l.da_read("QTVTELNA".into(), "QUSRSYS".into()))
-        .map(|v| ccsid::from_ebcdic(&v.value).to_ascii_uppercase())
-        .unwrap_or_default();
-    let value = |kwd: &str| -> Option<String> {
-        text.split_once(&format!("{kwd}("))
-            .and_then(|(_, r)| r.split(')').next())
-            .map(|v| v.trim().to_string())
-    };
-    Attrs {
-        port: value("PORT").and_then(|p| p.parse().ok()).unwrap_or(PORT),
-        alwssl: value("ALWSSL").unwrap_or_else(|| "*YES".into()),
+/// `TIMMRKTIMO`: how long a connection may be silent before a timing
+/// mark goes out, and how long the answer may take.
+fn timemark() -> Duration {
+    TIMEMARK.get().copied().unwrap_or(Duration::from_secs(u64::from(
+        servers::attrs::telnet::TIMMRKTIMO_DFT,
+    )))
+}
+
+static TIMEMARK: OnceLock<Duration> = OnceLock::new();
+
+/// The server's runtime job for exit programs, made when a point first
+/// has programs. Its console's control channel goes nowhere: the
+/// server's own channel stays with the server.
+struct ExitJob {
+    console: Option<(crate::console::Console, Chan)>,
+}
+
+impl ExitJob {
+    /// Call `point`'s programs for `req`. A point without programs
+    /// allows at once, without a runtime job.
+    fn call(&mut self, link: &Shared, start: &Start, point: &str, req: &ExitRequest) -> ExitAnswer {
+        let mut reg = stg::remote::RemoteRegistry::new(Rc::clone(link));
+        match reg.programs(point, req.format()) {
+            Ok(p) if p.is_empty() => {
+                return ExitAnswer {
+                    allow: true,
+                    outputs: req.parms(),
+                    called: Vec::new(),
+                    error: None,
+                };
+            }
+            _ => {}
+        }
+        if self.console.is_none() {
+            match Chan::pair() {
+                Ok((ours, keep)) => {
+                    let c = crate::console::Console::new(ours, link, start);
+                    self.console = Some((c, keep));
+                }
+                Err(e) => {
+                    return ExitAnswer {
+                        allow: false,
+                        outputs: req.parms(),
+                        called: Vec::new(),
+                        error: Some(e.to_string()),
+                    };
+                }
+            }
+        }
+        let (c, _) = self.console.as_mut().expect("made");
+        regfac::call_exit(&mut reg, c.job(), point, req)
     }
 }
 
@@ -264,6 +317,7 @@ fn own_link(start: &Start) -> Option<Link> {
 pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let a = attrs(link);
     let port = port_of(&start.rqsdta).unwrap_or(a.port);
+    let _ = TIMEMARK.set(Duration::from_secs(u64::from(a.timmrktimo)));
     let host = link
         .borrow_mut()
         .with(|l| l.sysval("QSYSNAME".into()))
@@ -272,7 +326,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
         );
     let (ask_tx, ask_rx) = mpsc::channel::<Ask>();
-    if a.alwssl != "*ONLY" {
+    if a.plain() {
         match bind(port) {
             Ok(l) => {
                 eprintln!("qsjob: QTVTELNET listening on port {port}");
@@ -281,7 +335,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             Err(e) => crate::start::end(&mut ctl, &format!("port {port}: {e}")),
         }
     }
-    if a.alwssl != "*NO" {
+    if a.secure() {
         let tls = own_link(start).and_then(|mut l| {
             super::tls::server_config(&mut l, &host)
                 .map_err(|e| eprintln!("qsjob: QTVTELNET TLS: {e}"))
@@ -313,11 +367,15 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let me = start.number;
     stg::remote::status(link, wm::job::Status::Selw, "");
     let mut last_sweep = Instant::now();
+    let mut exits = ExitJob { console: None };
     loop {
         match ask_rx.recv_timeout(Duration::from_millis(500)) {
             Ok(Ask::JobNumber(reply)) => {
                 let n = link.borrow_mut().with(Client::job_number);
                 let _ = reply.send(n);
+            }
+            Ok(Ask::Exit(point, req, reply)) => {
+                let _ = reply.send(exits.call(link, start, point, &req));
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
             Err(mpsc::RecvTimeoutError::Timeout) => {}
@@ -501,10 +559,60 @@ impl Transport {
     }
 }
 
+/// Telnet's timing mark (RFC 860): `IAC DO TIMING-MARK`.
+const DO_TM: [u8; 3] = [0xFF, 0xFD, 0x06];
+
+/// `bytes` without the client's answers to a timing mark (`IAC WILL
+/// TM`, `IAC WONT TM`), and whether there was one. A doubled `IAC` is
+/// data.
+fn strip_tm(bytes: &[u8]) -> (Vec<u8>, bool) {
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut seen = false;
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == 0xFF && i + 1 < bytes.len() {
+            if bytes[i + 1] == 0xFF {
+                out.extend_from_slice(&bytes[i..i + 2]);
+                i += 2;
+                continue;
+            }
+            if matches!(bytes[i + 1], 0xFB | 0xFC) && bytes.get(i + 2) == Some(&0x06) {
+                seen = true;
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    (out, seen)
+}
+
 /// The I/O thread: writes what the session sends, reads what arrives.
+/// A connection silent for `TIMMRKTIMO` gets a timing mark; one that
+/// does not answer within as long again is gone.
 fn io_thread(mut s: Stream, out_rx: &Receiver<Vec<u8>>, ev_tx: &Sender<Ev>) {
     let mut buf = vec![0u8; 65536];
+    let mark = timemark();
+    let mut heard = Instant::now();
+    let mut asked: Option<Instant> = None;
     loop {
+        match asked {
+            Some(at) if at.elapsed() >= mark => {
+                eprintln!("qsjob: QTVDEVICE: no answer to the timing mark in {}s", mark.as_secs());
+                let _ = ev_tx.send(Ev::TcpGone);
+                s.shutdown();
+                return;
+            }
+            None if heard.elapsed() >= mark => {
+                if s.write_all(&DO_TM).is_err() {
+                    let _ = ev_tx.send(Ev::TcpGone);
+                    return;
+                }
+                asked = Some(Instant::now());
+            }
+            _ => {}
+        }
         loop {
             match out_rx.try_recv() {
                 Ok(b) => {
@@ -526,7 +634,10 @@ fn io_thread(mut s: Stream, out_rx: &Receiver<Vec<u8>>, ev_tx: &Sender<Ev>) {
                 return;
             }
             Ok(n) => {
-                if ev_tx.send(Ev::Tcp(buf[..n].to_vec())).is_err() {
+                heard = Instant::now();
+                asked = None;
+                let (bytes, _) = strip_tm(&buf[..n]);
+                if !bytes.is_empty() && ev_tx.send(Ev::Tcp(bytes)).is_err() {
                     s.shutdown();
                     return;
                 }
@@ -565,6 +676,11 @@ fn session(
         .peer_addr()
         .map(|a| a.to_string())
         .unwrap_or_default();
+    let addrs = (
+        stream.peer_addr().map(|a| a.ip().to_string()).unwrap_or_default(),
+        stream.local_addr().map(|a| a.ip().to_string()).unwrap_or_default(),
+    );
+    let secure = tls.is_some();
     let s = match tls {
         None => {
             stream
@@ -635,9 +751,27 @@ fn session(
         }
     }
     let neg = server.negotiated.clone();
-    let requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
+    let mut requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
+    // QIBM_QTG_DEVINIT: the exit programs may refuse the connection or
+    // name its device.
+    let mut desc = exit_session(&neg, &requested, &addrs, secure);
+    let init = exit(ask, DEVINIT, ExitRequest::DevInit(desc.clone()));
+    if !init.allow {
+        return Err(format!("{peer}: refused by the {DEVINIT} exit program"));
+    }
+    let out = regfac::formats::telnet::init_out(&init.outputs);
+    if !init.called.is_empty() && !out.device.is_empty() {
+        requested = out.device.to_ascii_uppercase();
+        desc.device.clone_from(&requested);
+    }
+    // BLOCKED(phase10): an INIT0100 program's automatic sign-on needs a
+    // service request that signs on the profile it names without a
+    // password; the answer is read and not acted on.
+    let _ = out.autosignon;
     if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
-        return printer_session(&tr, &mut server, &mut link, &ev_rx, &requested, ptype, pmodel, &peer);
+        let r = printer_session(&tr, &mut server, &mut link, &ev_rx, &requested, ptype, pmodel, &peer);
+        let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
+        return r;
     }
     let model = Model::from_terminal_type(&neg.terminal_type).unwrap_or_default();
     let (devtype, devmodel) = model.device_type_model();
@@ -679,7 +813,51 @@ fn session(
     if !kept {
         let _ = link.device_status(device.clone(), 1);
     }
+    desc.device = device;
+    let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
     r
+}
+
+/// The telnet exit points.
+const DEVINIT: &str = "QIBM_QTG_DEVINIT";
+/// The session-end point.
+const DEVTERM: &str = "QIBM_QTG_DEVTERM";
+
+/// The session as the exit programs see it.
+fn exit_session(
+    neg: &Negotiated,
+    device: &str,
+    addrs: &(String, String),
+    secure: bool,
+) -> regfac::formats::telnet::Session {
+    let upper = |v: &str| neg.var(v).unwrap_or_default().to_ascii_uppercase();
+    let num = |v: &str, d: i32| neg.var(v).and_then(|s| s.trim().parse().ok()).unwrap_or(d);
+    regfac::formats::telnet::Session {
+        user: (upper("USER"), upper("IBMCURLIB"), upper("IBMPROGRAM"), upper("IBMIMENU")),
+        device: device.to_string(),
+        keyboard: upper("KBDTYPE"),
+        code_page: (num("CODEPAGE", 37), num("CHARSET", 697)),
+        addrs: addrs.clone(),
+        ws_type: neg.terminal_type.clone(),
+        secure: (neg.var_bytes("IBMSUBSPW").is_some(), secure),
+        env: Vec::new(),
+    }
+}
+
+/// Call a point's programs on the server's main thread. When the
+/// server cannot answer in time, the request is refused.
+fn exit(ask: &Sender<Ask>, point: &'static str, req: ExitRequest) -> ExitAnswer {
+    let fallback = ExitAnswer {
+        allow: false,
+        outputs: req.parms(),
+        called: Vec::new(),
+        error: Some(format!("{point}: the server did not answer")),
+    };
+    let (tx, rx) = mpsc::channel();
+    if ask.send(Ask::Exit(point, Box::new(req), tx)).is_err() {
+        return fallback;
+    }
+    rx.recv_timeout(Duration::from_secs(60)).unwrap_or(fallback)
 }
 
 /// A printer session: the named printer device, its writer started,
@@ -1514,6 +1692,17 @@ mod tests {
     fn port_from_request_data() {
         assert_eq!(port_of(""), None);
         assert_eq!(port_of("PORT(2323)"), Some(2323));
+    }
+
+    #[test]
+    fn timing_mark_answers_are_taken_out() {
+        let (b, seen) = strip_tm(&[1, 0xFF, 0xFC, 0x06, 2]);
+        assert_eq!((b, seen), (vec![1, 2], true));
+        let (b, seen) = strip_tm(&[0xFF, 0xFB, 0x06]);
+        assert_eq!((b, seen), (vec![], true));
+        // A doubled IAC is data, so what follows it is too.
+        let data = [0xFF, 0xFF, 0xFB, 0x06, 0xFF, 0xEF];
+        assert_eq!(strip_tm(&data), (data.to_vec(), false));
     }
 
     #[test]

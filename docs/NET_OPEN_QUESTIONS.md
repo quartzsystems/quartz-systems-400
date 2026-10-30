@@ -577,3 +577,57 @@ points); each item below waits for an oracle program or panel.
 13. **VLANs on lines.** No IBM line parameter names a VLAN; the
     interface file `QATOFIPF` has `TFVLANID`, so the sub-interface is
     TCP/IP configuration's to make (`stgsvc::cmn::kernel::ensure_vlan`).
+
+## TCP servers framework (2026-10-30)
+
+1. **`STRTCPSVR` and `ENDTCPSVR` definitions.** `QCDRCMDD` refused both
+   on pub400 (`CPF9802`), so their keywords are IBM's documented ones
+   (`SERVER`, `RESTART`, `HTTPSVR`, `INSTANCE`); the special values and
+   `MAX` are not compared with a capture. `*AUTOSTART` starts the
+   servers whose autostart is on, `*ALL` every server this release runs.
+2. **`CHGTELNA` on V7R5M0 has no `INACTTIMO` or `SSLCFG`.** The
+   captured definition and prompt (`prompt-chgtelna`) end at `ALWSSL`;
+   inactivity is `QINACTITV` and TLS is the application ID's in DCM. Ours
+   follows the capture. Whether V7R1M0's command still has the older
+   keywords is not captured (the primary oracle was unreachable).
+3. **Where telnet's attributes live.** The capture says telnet keeps no
+   file of its own ("its attributes live in system values and
+   `QATOCTCPIP`"). Ours are a keyword bag in the server table
+   (`QATOCSVRA`, ours) beside `QATOCSTART`'s autostart flag. A record dump
+   of `QATOCTCPIP` would say which keywords IBM keeps there.
+4. **Message identifiers.** `TCP1A04`-`TCP1A0A` and the new `TCP1A06`
+   (instance not found) and `TCP1A10` (attributes changed) are ours in
+   IBM's family; IBM's own `STRTCPSVR` completions (`TCP1A0x`/`TCP2xxx`
+   in `QTCPMSG`) were not captured because `STRTCPSVR` may not be run on
+   either oracle.
+5. **Timing mark.** `TIMMRKTIMO` here is "silent this long, then a
+   timing mark, then as long again for the answer". IBM documents the
+   timeout as the wait for the answer; whether its server also sends the
+   mark only after silence, or every interval, is not observable from a
+   client without a long idle capture.
+6. **Exit programs' job.** IBM calls `QIBM_QTG_DEVINIT` and `DEVTERM`
+   programs in the `QTVDEVICE` job; ours run in a runtime job on
+   `QTVTELNET`'s main thread (a session thread holds no runtime). A
+   program that reads its job's name sees `QTVTELNET`. An `INIT0100`
+   program's "allow automatic sign-on" is read and not acted on: it needs
+   a storage service request that signs on a profile without a password.
+7. **HTTP administration jobs.** pub400 shows `ADMIN` jobs (several, user
+   `QTMHHTTP`) in `QHTTPSVR`; ours is one `ADMIN` job serving every
+   connection on threads. The page's URL paths are `/`, `/index.html`
+   and `/HTTPAdmin`; IBM's administration server redirects `/` to
+   `/HTTPAdmin`, which a client capture of port 2001 would confirm
+   (neither oracle exposes it).
+8. **HTTPS certificate.** Port 2005 should present the certificate DCM
+   assigns to `QIBM_HTTP_SERVER_ADMIN`; the job cannot open the `*SYSTEM`
+   store (its stash key is in the LIC partition) and presents the
+   system's self-signed telnet certificate until the storage service
+   answers an application ID's identity (`servers::http::admin_tls` is
+   ready for it).
+9. **`QHTTPSVR`.** Shipped empty (no routing entries, no prestart jobs);
+   `STRTCPSVR *HTTP` starts it when it is not active and `ENDTCPSVR`
+   leaves it running, as IBM does.
+10. **`*DDM` is blocked.** The DDM server needs `SqlBackend`,
+    `FileBackend` and `Authenticator` over the storage service; until
+    then `STRTCPSVR *DDM` answers `TCP1A04`. `CHGDDMTCPA AUTOSTART` is in
+    `QUSRSYS/QRWDDMTCPA`, not the server table, so `STRTCP` does not
+    consult it yet.

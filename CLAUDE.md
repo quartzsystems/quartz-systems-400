@@ -262,12 +262,20 @@ ifs/          the integrated file system
   ifscmd/       the IFS commands over an IfsClient: src/cmds/ (dirs, links, auth, attr, udfs,
                 admin), display.rs what the displays show, text.rs their text forms,
                 src/stmf/ CPYTOSTMF/CPYFRMSTMF and the IMPF stream files, msg.rs IBM's messages
+net/          TCP/IP: configuration, sockets, TLS, servers
+  servers/      the TCP servers framework (docs/SERVERS.md): src/registry/ every server, its
+                jobs, ports and readiness; src/framework/ the TcpServer hooks, the Env, the
+                Framework and Starter; src/attrs/ CHGTELNA and the HTTP admin ports over the
+                server table's bag; listen.rs the accept loop; src/http/ the admin page. The
+                job side is work/qsjob/src/command/tcpsvr.rs and the roles work/qsjob/src/
+                work/telnet.rs (QTVTELNET) and httpadm.rs (ADMIN)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
-              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, images/
+              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
+              images/
 ```
 
 ## Commands
@@ -314,6 +322,7 @@ cargo test -p ifs                         # the IFS over MemBackend
 cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFRMSTMF over MemBackend
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
+cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
 ```
 

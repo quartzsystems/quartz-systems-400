@@ -445,6 +445,7 @@ dependencies = [
  "sys-cpps",
  "sysapi",
  "thiserror",
+ "tls",
  "tn5250",
  "tn5250-driver",
  "uim",
@@ -1968,6 +1969,7 @@ dependencies = [
  "rustls-graviola",
  "sda",
  "sec",
+ "servers",
  "seu",
  "spool",
  "sst",
@@ -2491,6 +2493,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "servers"
+version = "0.1.0"
+dependencies = [
+ "certs",
+ "release",
+ "tcpcfg",
+ "thiserror",
+ "tls",
+ "tracing",
+]
+
+[[package]]
 name = "seu"
 version = "0.1.0"
 dependencies = [
@@ -2616,6 +2630,7 @@ dependencies = [
  "rpgfront",
  "rustix",
  "sec",
+ "servers",
  "spool",
  "sql",
  "stg",

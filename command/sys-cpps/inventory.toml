@@ -455,14 +455,14 @@ site = "job"
 
 [cmd.STRTCPSVR]
 site = "job"
-note = "the telnet server job QTVTELNET; other servers wait for Phase 10"
+note = "the servers framework (net/servers): *TELNET and *HTTP HTTPSVR(*ADMIN) run; the others register their slot"
 
 [cmd.ENDTCPSVR]
 site = "job"
 
 [cmd.CHGTELNA]
 site = "job"
-note = "kept in the data area QUSRSYS/QTVTELNA"
+note = "kept in the TCP/IP server table in QUSRSYS (QATOCSVRA)"
 
 # --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
 [cmd.ADDRDBDIRE]

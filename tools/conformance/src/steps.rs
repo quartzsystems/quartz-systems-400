@@ -513,6 +513,7 @@ impl Suite {
         reports.push(self.step(&mut s, "60 communications lines", Self::cmn_lines)?);
         reports.push(self.step(&mut s, "62 ENDTCP and STRTCP", Self::tcp_restart)?);
         reports.push(self.step(&mut s, "63 IFS commands", Self::ifs_commands)?);
+        reports.push(self.step(&mut s, "64 TCP servers", Self::tcp_servers)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

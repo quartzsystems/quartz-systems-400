@@ -48,7 +48,7 @@ fn until(s: &mut Session, what: &str, want: &str) -> Result<String, String> {
 }
 
 /// The telnet server answers on `port` (it negotiates first: IAC).
-fn telnet_answers(port: u16) -> Result<(), String> {
+pub(crate) fn telnet_answers(port: u16) -> Result<(), String> {
     let end = Instant::now() + Duration::from_secs(30);
     let mut last = String::new();
     while Instant::now() < end {
@@ -164,14 +164,19 @@ impl Suite {
 }
 
 /// Forward a fresh host port to the guest's `addr`:23.
-#[cfg(unix)]
 fn forward(suite: &Suite, addr: &str) -> Result<u16, String> {
+    forward_port(suite, addr, 23)
+}
+
+/// Forward a fresh host port to the guest's `addr`:`guest`.
+#[cfg(unix)]
+pub(crate) fn forward_port(suite: &Suite, addr: &str, guest: u16) -> Result<u16, String> {
     let port = std::net::TcpListener::bind("127.0.0.1:0")
         .and_then(|l| l.local_addr())
         .map(|a| a.port())
         .map_err(|e| e.to_string())?;
     let mut q = crate::qemu::qmp::Qmp::connect(&suite.launch().qmp)?;
-    let out = q.hmp(&format!("hostfwd_add n0 tcp:127.0.0.1:{port}-{addr}:23"))?;
+    let out = q.hmp(&format!("hostfwd_add n0 tcp:127.0.0.1:{port}-{addr}:{guest}"))?;
     if !out.trim().is_empty() {
         return Err(format!("hostfwd_add: {out}"));
     }
@@ -179,6 +184,6 @@ fn forward(suite: &Suite, addr: &str) -> Result<u16, String> {
 }
 
 #[cfg(not(unix))]
-fn forward(_: &Suite, _: &str) -> Result<u16, String> {
+pub(crate) fn forward_port(_: &Suite, _: &str, _: u16) -> Result<u16, String> {
     Err("QMP needs a Unix host".into())
 }

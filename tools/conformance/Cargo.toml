@@ -46,6 +46,7 @@ rpg-oracle = { path = "../rpg-oracle", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
+tls = { path = "../../net/tls", version = "0.1.0" }
 
 [lints]
 workspace = true

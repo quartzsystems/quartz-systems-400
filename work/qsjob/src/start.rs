@@ -60,6 +60,7 @@ pub fn run() -> ! {
         "INTER" => crate::work::inter::run(ctl, &link, &start),
         "SYSTEM" => crate::work::sysjob::run(ctl, &link, &start),
         "TELNET" => crate::work::telnet::run(ctl, &link, &start),
+        "HTTPADM" => crate::work::httpadm::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

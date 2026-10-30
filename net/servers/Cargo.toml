@@ -1,0 +1,18 @@
+[package]
+name = "servers"
+description = "QS/400 TCP servers framework: the server registry, STRTCPSVR/ENDTCPSVR, server attributes, the listener and the minimal HTTP administration page"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+tcpcfg = { path = "../tcpcfg", version = "0.1.0" }
+tls = { path = "../tls", version = "0.1.0" }
+certs = { path = "../certs", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

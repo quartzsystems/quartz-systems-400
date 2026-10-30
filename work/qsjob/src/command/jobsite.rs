@@ -74,7 +74,6 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RTVCFGSTS" => return rtvcfgsts(host, r, out),
         "RTVCURDIR" => return rtvcurdir(host, r, out),
         "RCLRSC" => return Ok(rclrsc(job, host)),
-        "STRTCPSVR" => return strtcpsvr(host, r),
         "STRTCP" | "ENDTCP" | "ENDTCPABN" | "WRKSRVTBLE" | "WRKPCLTBLE" | "WRKNETTBLE" | "CFGTCP"
         | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN" | "CFGTCPSMTP"
         | "CFGTCPPTP" => {
@@ -82,8 +81,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
-        "ENDTCPSVR" => return endtcpsvr(job, host, r),
-        "CHGTELNA" => return chgtelna(job, host, r),
+        // --- TCP servers (command/tcpsvr.rs, net/servers)
+        "STRTCPSVR" | "ENDTCPSVR" | "CHGTELNA" => {
+            if let Some(res) = super::tcpsvr::run(job, host, r) {
+                return res;
+            }
+        }
         // --- DDM and DRDA (command/ddm.rs)
         "ADDRDBDIRE" | "CHGRDBDIRE" | "RMVRDBDIRE" | "WRKRDBDIRE" | "CRTDDMF" | "CHGDDMF"
         | "CHGDDMTCPA" => {
@@ -744,165 +747,6 @@ fn rtvmsg(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> 
         ("TXTCCSID", num(37)),
     ];
     returned(r, &values, out)
-}
-
-/// `STRTCPSVR SERVER(*TELNET)`: the telnet server job `QTVTELNET`
-/// starts in `QSYSWRK`, a child of this job like a subsystem monitor.
-/// The other servers wait for Phase 10.
-fn strtcpsvr(host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let servers: Vec<String> = r
-        .parms
-        .iter()
-        .find(|b| b.kwd == "SERVER")
-        .and_then(|b| b.value.as_ref())
-        .map_or_else(
-            || vec!["*ALL".to_string()],
-            |v| {
-                v.source()
-                    .split_whitespace()
-                    .map(|s| {
-                        s.trim_matches(|c| c == '(' || c == ')')
-                            .to_ascii_uppercase()
-                    })
-                    .collect()
-            },
-        );
-    let telnet = servers.iter().any(|s| s == "*TELNET" || s == "*ALL");
-    if !telnet {
-        return Err(Fail::new(
-            "TCP1A04",
-            format!(
-                "{}: only *TELNET starts in this release.",
-                servers.join(" ")
-            ),
-        ));
-    }
-    let state = host
-        .link
-        .borrow_mut()
-        .with(|l| l.job_state("QTVTELNET".into()));
-    if state == 1 {
-        return Ok("TCP1A08 TELNET server already started.\n".into());
-    }
-    let number = host
-        .link
-        .borrow_mut()
-        .with(Client::job_number)
-        .map_err(|e| Fail::new("CPF0001", e))?;
-    let start = wm::ctl::Start {
-        name: "QTVTELNET".into(),
-        user: "QTCP".into(),
-        number,
-        handle: u64::from(number),
-        kind: 'B',
-        subsystem: "QSYSWRK".into(),
-        role: "TELNET".into(),
-        jobd: "QSYS/QSYSJOBD".into(),
-        class: "QSYS/QSYSCLS20".into(),
-        pool: "*BASE".into(),
-        rqsdta: telnet_port(host),
-        ..wm::ctl::Start::default()
-    };
-    let mut s = crate::work::spawn::job(start).map_err(|e| Fail::new("TCP1A05", e))?;
-    crate::work::spawn::ready(&mut s).map_err(|e| Fail::new("TCP1A05", e))?;
-    host.children.borrow_mut().push(s);
-    Ok("TCP1A07 TELNET server starting.\n".into())
-}
-
-/// `PORT(n)` for the server from `CHGTELNA`'s data area, when one was
-/// set (the harness uses a high port where 23 is not allowed).
-fn telnet_port(host: &Host) -> String {
-    host.link
-        .borrow_mut()
-        .with(|l| l.da_read("QTVTELNA".into(), "QUSRSYS".into()))
-        .ok()
-        .map(|v| ccsid::from_ebcdic(&v.value))
-        .and_then(|t| {
-            t.to_ascii_uppercase()
-                .split_once("PORT(")
-                .map(|(_, r)| format!("PORT({})", r.split(')').next().unwrap_or("23").trim()))
-        })
-        .unwrap_or_default()
-}
-
-/// `ENDTCPSVR SERVER(*TELNET)`: the server job ends.
-fn endtcpsvr(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let _ = r;
-    let state = host
-        .link
-        .borrow_mut()
-        .with(|l| l.job_state("QTVTELNET".into()));
-    if state != 1 {
-        return Ok("TCP1A09 TELNET server not active.\n".into());
-    }
-    let out = crate::command::run(job, host, "ENDJOB JOB(QTVTELNET) OPTION(*CNTRLD)").text;
-    if let Some(id) = leading_msgid(out.trim()) {
-        return Err(Fail::new(id, out.trim().to_string()));
-    }
-    Ok("TCP1A0A TELNET server ending.\n".into())
-}
-
-/// `CHGTELNA`: the attributes kept in the data area `QUSRSYS/QTVTELNA`
-/// as `KEYWORD(value)` text.
-fn chgtelna(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let current = host
-        .link
-        .borrow_mut()
-        .with(|l| l.da_read("QTVTELNA".into(), "QUSRSYS".into()))
-        .ok()
-        .map(|v| ccsid::from_ebcdic(&v.value).trim().to_string())
-        .unwrap_or_default();
-    let mut values: Vec<(String, String)> = current
-        .split(')')
-        .filter_map(|p| p.trim().split_once('('))
-        .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
-        .collect();
-    for b in &r.parms {
-        let Some(v) = b.value.as_ref() else {
-            continue;
-        };
-        let text = v.source().trim().to_ascii_uppercase();
-        if text == "*SAME" || text.is_empty() {
-            continue;
-        }
-        values.retain(|(k, _)| k != &b.kwd);
-        values.push((b.kwd.clone(), text));
-    }
-    let joined: Vec<String> = values.iter().map(|(k, v)| format!("{k}({v})")).collect();
-    let text = joined.join(" ");
-    let out = crate::command::run(
-        job,
-        host,
-        &format!(
-            "CHGDTAARA DTAARA(QUSRSYS/QTVTELNA (1 200)) VALUE('{}')",
-            text.replace('\'', "''")
-        ),
-    )
-    .text;
-    if leading_msgid(out.trim()).is_some_and(|id| id.starts_with("CPF")) {
-        let made = crate::command::run(
-            job,
-            host,
-            "CRTDTAARA DTAARA(QUSRSYS/QTVTELNA) TYPE(*CHAR) LEN(200) TEXT('TELNET server attributes')",
-        )
-        .text;
-        if let Some(id) = leading_msgid(made.trim()) {
-            return Err(Fail::new(id, made.trim().to_string()));
-        }
-        let again = crate::command::run(
-            job,
-            host,
-            &format!(
-                "CHGDTAARA DTAARA(QUSRSYS/QTVTELNA (1 200)) VALUE('{}')",
-                text.replace('\'', "''")
-            ),
-        )
-        .text;
-        if let Some(id) = leading_msgid(again.trim()) {
-            return Err(Fail::new(id, again.trim().to_string()));
-        }
-    }
-    Ok("TELNET attributes changed.\n".into())
 }
 
 /// `RTVCFGSTS CFGD(name) CFGTYPE(*LIN|*CTL|*DEV)`: the status code

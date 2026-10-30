@@ -44,6 +44,7 @@ svctools = { path = "../../lic/svctools", version = "0.1.0" }
 isql = { path = "../../devtools/isql", version = "0.1.0" }
 sda = { path = "../../devtools/sda", version = "0.1.0" }
 ddm = { path = "../../net/ddm", version = "0.1.0" }
+servers = { path = "../../net/servers", version = "0.1.0" }
 rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }
 rustls-graviola = "0.4.0"
 x509-cert = { version = "0.3.0", features = ["builder"] }
