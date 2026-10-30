@@ -498,7 +498,8 @@ impl Suite {
         entry_wait(s, check, has(&["LEDGER", "exists"]))?;
         let cold = t1.elapsed();
         entry(s, "wrkactjob")?;
-        screen_wait(s, "QSYSARB")?;
+        // The list's last row: the jobs above it no longer fit in one screen.
+        screen_wait(s, "SCPF")?;
         let t2 = Instant::now();
         entry_wait(s, check, has(&["LEDGER", "exists"]))?;
         let cached = t2.elapsed();

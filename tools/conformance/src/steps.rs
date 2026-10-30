@@ -611,7 +611,7 @@ impl Suite {
                 ));
             }
         }
-        Ok("rows 1-10 match the layout".into())
+        Ok("rows 1-12 match the layout".into())
     }
 
     /// Step 3: read QMODEL, change and read back QSECURITY.
@@ -675,10 +675,8 @@ impl Suite {
     /// Step 6: screenshot of the sign-on display through QMP.
     #[cfg(unix)]
     fn screenshot(&self, s: &mut Session) -> Result<String, String> {
-        let dump = s.command("screen", CMD)?;
-        if !dump.contains("Sign On") {
-            return Err("sign-on display is not showing".into());
-        }
+        // After step 4's restart the console's session may still be connecting.
+        crate::phase5::screen_wait(s, "Sign On")?;
         let mut q = crate::qemu::qmp::Qmp::connect(&self.launch.qmp)?;
         let png = self.out_dir.join("signon.png");
         let raw = self.out_dir.join("signon.ppm");
@@ -771,10 +769,11 @@ pub fn free_port() -> u16 {
         .map_or(2323, |a| a.port())
 }
 
-/// Rows 1 to 10 of the sign-on display, built from the layout in the Phase 1
-/// specification (independently of the console crate).
+/// Rows 1 to 12 of the sign-on display, built from the layout in the Phase 1
+/// specification (independently of the console crate). The shipped
+/// `QPWDLVL` is 3, so it is `QDSIGNON2`: the long password takes rows 7-8.
 pub fn expected_sign_on_rows() -> Vec<String> {
-    let mut rows = vec![" ".repeat(80); 10];
+    let mut rows = vec![" ".repeat(80); 12];
     let mut put = |row: usize, col: usize, text: &str| {
         let r = &mut rows[row - 1];
         r.replace_range(col - 1..col - 1 + text.len(), text);
@@ -788,9 +787,9 @@ pub fn expected_sign_on_rows() -> Vec<String> {
     put(4, 68, "QSCONSOLE");
     put(6, 17, "User  . . . . . . . . . . . . . .");
     put(7, 17, "Password  . . . . . . . . . . . .");
-    put(8, 17, "Program/procedure . . . . . . . .");
-    put(9, 17, "Menu  . . . . . . . . . . . . . .");
-    put(10, 17, "Current library . . . . . . . . .");
+    put(10, 17, "Program/procedure . . . . . . . .");
+    put(11, 17, "Menu  . . . . . . . . . . . . . .");
+    put(12, 17, "Current library . . . . . . . . .");
     rows
 }
 
@@ -801,7 +800,7 @@ mod tests {
     #[test]
     fn expected_rows_are_80_wide() {
         let rows = expected_sign_on_rows();
-        assert_eq!(rows.len(), 10);
+        assert_eq!(rows.len(), 12);
         assert!(rows.iter().all(|r| r.chars().count() == 80));
         assert_eq!(&rows[0][35..42], "Sign On");
         assert_eq!(&rows[1][67..72], "QS400");
