@@ -10,11 +10,9 @@
 //! storage service and takes the user's profile (`QSYGETPH`/`QWTSETP`),
 //! reaches the IFS over its link, runs `RCMD` in its own runtime and
 //! calls the exit programs of `QIBM_QTMF_SERVER_REQ` and
-//! `QIBM_QTMF_SVR_LOGON`.
-// BLOCKED(phase10): the certificate of QIBM_QTMF_FTP_SERVER needs the
-// storage service to answer an application ID's identity; until then
-// the system's own self-signed certificate (tls.rs) serves AUTH TLS and
-// port 990, as *HTTP does.
+//! `QIBM_QTMF_SVR_LOGON`. `AUTH TLS` and port 990 present the
+//! certificate assigned to `QIBM_QTMF_FTP_SERVER` in `*SYSTEM`, read
+//! as `QTCP` before sign-on, else the system's own (`tls.rs`).
 
 use std::net::TcpStream;
 use std::os::fd::OwnedFd;
@@ -329,7 +327,7 @@ pub fn session(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let system = system_name(link);
     let implicit = number_of(&start.rqsdta, "IMPLICIT") == Some(1);
     let tls = if a.secure() {
-        super::tls::server_config(&mut link.borrow_mut(), &system)
+        super::tls::app_server_config(&mut link.borrow_mut(), ftp::server::APP_ID, &system)
             .map_err(|e| eprintln!("qsjob: {} TLS: {e}", start.name))
             .ok()
     } else {

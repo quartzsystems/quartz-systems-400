@@ -230,20 +230,27 @@ fn relay(link: &Shared) -> Result<(Relay, Box<dyn Connector>), String> {
         SmtpTls::Offered => TlsMode::Opportunistic,
     };
     r.auth = a.auth();
-    // BLOCKED(phase10): the job cannot open the *SYSTEM certificate
-    // store (its stash key is the LIC partition's), so the relay's
-    // certificate is not checked against the trusted CAs yet.
-    let policy = tls::policy::TlsPolicy::opsys();
-    let tls: Box<dyn Connector> = match tls::config::client_config(
-        &policy,
-        tls::rustls::RootCertStore::empty(),
-        None,
-        tls::config::ServerAuthMode::Passthru,
-    ) {
+    let auth = relay_auth(r.tls);
+    let tls: Box<dyn Connector> = match crate::work::tls::client_config_with(&mut link.borrow_mut(), auth) {
         Ok(cfg) => Box::new(RustlsConnector(cfg)),
-        Err(_) => Box::new(NoTls),
+        Err(e) => {
+            eprintln!("qsjob: mail router TLS: {e}");
+            Box::new(NoTls)
+        }
     };
     Ok((r, tls))
+}
+
+/// How the mail router's certificate is checked: against the shipped
+/// roots and the trusted CAs of `*SYSTEM`, by name, when TLS is
+/// required (`STARTTLS` required or implicit TLS). Opportunistic
+/// `STARTTLS` takes any certificate (RFC 7435): it is there against
+/// listeners, and a refusal would fail a mail clear text would send.
+fn relay_auth(mode: TlsMode) -> tls::config::ServerAuthMode {
+    match mode {
+        TlsMode::Required | TlsMode::Implicit => tls::config::ServerAuthMode::Full,
+        TlsMode::None | TlsMode::Opportunistic => tls::config::ServerAuthMode::Passthru,
+    }
 }
 
 /// Hand `message` to the mail router: the completion text.
@@ -375,4 +382,17 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
         "SNDSMTPEMM" => sndsmtpemm(host, r),
         _ => return None,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn required_tls_checks_the_router() {
+        use tls::config::ServerAuthMode;
+        assert_eq!(relay_auth(TlsMode::Required), ServerAuthMode::Full);
+        assert_eq!(relay_auth(TlsMode::Implicit), ServerAuthMode::Full);
+        assert_eq!(relay_auth(TlsMode::Opportunistic), ServerAuthMode::Passthru);
+    }
 }

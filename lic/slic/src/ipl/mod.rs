@@ -207,8 +207,9 @@ fn lic_phase(
 }
 
 /// The address of the first Ethernet link: `qs400.ip=A.B.C.D/N` on the
-/// command line, else the address QEMU's user network expects.
-/// `BLOCKED(phase10)`: TCP/IP configuration objects and DHCP.
+/// command line, else the address QEMU's user network expects. It is
+/// there before TCP/IP starts; `STRTCP` adds the configured interfaces
+/// beside it. `BLOCKED(phase10)`: DHCP (no client yet, `*IP4DHCP`).
 fn net_address(system: &mut System) {
     // A link with a device behind it: the kernel makes bond0 and dummy0
     // itself (bonding and dummy are built in), and neither reaches a wire.

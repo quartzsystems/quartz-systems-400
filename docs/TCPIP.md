@@ -324,7 +324,7 @@ range and protocol), replaced whole when the table changes.
 
 | Interface | Implemented by | Now |
 | --- | --- | --- |
-| `tcpcfg::line::LineState` (a line exists, its kernel link, varied on, vary on) | communications configuration (`*LIND`, `VRYCFG`) | `KernelNames`: a line named like a kernel link (`LIND(ETH0)` is `eth0`), always varied on |
+| `tcpcfg::line::LineState` (a line exists, its kernel link, varied on, vary on) | communications configuration (`*LIND`, `VRYCFG`) | `Described`: a line description's status in `stgsvc::cmn` (on unless varied off; its interface the one it was varied on over; `STRTCPIFC` varies it on with `RANGE(*NET)`), and for a name no description has, `KernelNames`: a line named like a kernel link (`LIND(ETH0)` is `eth0`), always varied on. A line vary off ends its interfaces at once; carrier changes reach them at the next `QTCPWRK` tick |
 | `tcpcfg::server::ServerStarter` (start, end, active) | the TCP servers framework | the job's `JobStarter`: `*TELNET` through `STRTCPSVR`, the others answer `TCP1A04` |
 | `tcpcfg::resolver::HostConfig` (`TcpOp::HostConfig`) | read by the resolver | the host table, `HOSTNAME`, `DMNNAME`, the search list, `*LOCAL`, name servers, port, protocol, `INITQRYINT`, `QRYTIMOUT` (V7R5M0's `CHGTCPDMN` has `DMNSVRRTY` in their place: the interval, and attempts times the interval) |
 | `tcpcfg::resolver::port_rules` (`TcpOp::PortRules`) | read by the sockets layer's `PortRules` | the restrictions |

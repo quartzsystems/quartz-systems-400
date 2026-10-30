@@ -10,9 +10,9 @@
 //! made on first use and kept as PEM in the data areas
 //! `QUSRSYS/QTVTLSCRT` and `QUSRSYS/QTVTLSKEY` (the key's area is
 //! `AUT(*EXCLUDE)`). The protocol versions and suites follow `QSSLPCL`,
-//! `QSSLCSL` and `QSSLCSLCTL`. Clients (the `ipps` printers) check a
-//! server against the shipped roots and the `*SYSTEM` store's trusted
-//! CAs ([`client_config`]).
+//! `QSSLCSL` and `QSSLCSLCTL`. Clients (`ipps` printers, `FTP`,
+//! `SNDSMTPEMM`) check a server against the shipped roots and the
+//! `*SYSTEM` store's trusted CAs ([`client_config`]).
 
 use std::sync::Arc;
 
@@ -237,29 +237,60 @@ pub fn app_server_config(link: &mut Link, app_id: &str, host: &str) -> Result<Ar
     })
 }
 
-/// A client configuration that checks servers against the shipped root
-/// set and the trusted CAs of `*SYSTEM`, by name.
-pub fn client_config(link: &mut Link) -> Result<Arc<rustls::ClientConfig>, String> {
+/// The shipped root set and `extra` (DER; one that does not parse is
+/// left out).
+fn trusted_roots(extra: Vec<Vec<u8>>) -> rustls::RootCertStore {
     let mut roots = rustls::RootCertStore::empty();
     for r in certs::roots::roots() {
         let _ = roots.add(CertificateDer::from(r.der.clone()));
     }
-    match link.cert_app(String::new()) {
-        Ok(Ok(t)) => {
-            for r in t.roots {
-                let _ = roots.add(CertificateDer::from(r));
-            }
-        }
-        Ok(Err(e)) => eprintln!("qsjob: the trusted CAs of *SYSTEM: {e}"),
-        Err(e) => eprintln!("qsjob: the trusted CAs of *SYSTEM: {e}"),
+    for r in extra {
+        let _ = roots.add(CertificateDer::from(r));
     }
-    tls::config::client_config(&policy(link), roots, None, tls::config::ServerAuthMode::Full)
-        .map_err(|e| e.to_string())
+    roots
+}
+
+/// A client configuration that checks servers against the shipped root
+/// set and the trusted CAs of `*SYSTEM`, by name. Any job may have the
+/// trusted CAs (`cert_app` with an empty ID); when the service cannot
+/// answer, the shipped roots alone are used.
+pub fn client_config(link: &mut Link) -> Result<Arc<rustls::ClientConfig>, String> {
+    client_config_with(link, tls::config::ServerAuthMode::Full)
+}
+
+/// [`client_config`] with server authentication `auth`.
+pub fn client_config_with(
+    link: &mut Link,
+    auth: tls::config::ServerAuthMode,
+) -> Result<Arc<rustls::ClientConfig>, String> {
+    let extra = match link.cert_app(String::new()) {
+        Ok(Ok(t)) => t.roots,
+        Ok(Err(e)) => {
+            eprintln!("qsjob: the trusted CAs of *SYSTEM: {e}");
+            Vec::new()
+        }
+        Err(e) => {
+            eprintln!("qsjob: the trusted CAs of *SYSTEM: {e}");
+            Vec::new()
+        }
+    };
+    tls::config::client_config(&policy(link), trusted_roots(extra), None, auth).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trusted_roots_add_the_system_cas() {
+        let shipped = trusted_roots(Vec::new()).len();
+        assert!(shipped > 0);
+        let (c, _) = make_certificate("QSCA").unwrap();
+        let der = CertificateDer::from_pem_slice(c.as_bytes()).unwrap().to_vec();
+        assert_eq!(trusted_roots(vec![der]).len(), shipped + 1);
+        // Bytes that are no certificate are left out.
+        assert_eq!(trusted_roots(vec![vec![1, 2, 3]]).len(), shipped);
+    }
 
     #[test]
     fn makes_a_certificate_rustls_accepts() {

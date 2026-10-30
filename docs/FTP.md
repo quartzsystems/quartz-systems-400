@@ -187,9 +187,11 @@ ports; any when empty) ride in the same bag; no command sets them.
 at once) answers `234` and does the handshake; `PBSZ 0`, `PROT C|P`
 (`S`, `E` answer `536`), `CCC` back to clear text. Port 990 is TLS from
 the first byte. The certificate is the one assigned to the application
-ID `QIBM_QTMF_FTP_SERVER` (`ftp::server::server_tls`); until the job can
-open the `*SYSTEM` store the session jobs use the system's self-signed
-certificate (`work/qsjob/src/work/tls.rs`), as `*HTTP` does.
+ID `QIBM_QTMF_FTP_SERVER` in `*SYSTEM`, which the session job asks the
+storage service for (`cert_app`, docs/CERTS.md) as `QTCP` before the
+user signs on; with none assigned, no store or a refusal it uses the
+system's self-signed certificate (`work/qsjob/src/work/tls.rs`), as
+`*HTTP` does.
 
 ### Exit points
 
@@ -219,8 +221,10 @@ starred.
 
 `SECCNN(*SSL)` sends `AUTH TLS`, `*IMPLICIT` (or `PORT(*SECURE)` with
 `*DFT`) connects with TLS; `DTAPROT` makes data private (the default
-with TLS). The client takes the server's certificate as it comes until
-the job can read the trust store (`QIBM_QTMF_FTP_CLIENT`).
+with TLS). The server's certificate must chain to the shipped roots or a
+trusted CA of `*SYSTEM` and name the host connected to; the client
+presents none (the key of `QIBM_QTMF_FTP_CLIENT` goes only to server
+profiles), and `APPID` is not read.
 
 Subcommands (shortest forms in `ftp::client::sub`): `OPEN`, `USER`,
 `PASS`, `CLOSE`, `QUIT` (`BYE`, `END`), `CD`, `CDUP`, `PWD`, `LCD`,

@@ -69,17 +69,11 @@ pub(crate) fn telnet_answers(port: u16) -> Result<(), String> {
     Err(format!("telnet on host port {port}: {last}"))
 }
 
-/// The line the NIC's interface names: a line description when the
-/// communications objects are there (`CRTLINETH`), else the kernel
-/// link's name, which TCP/IP takes as a line until they are.
-fn nic_line(s: &mut Session) -> Result<String, String> {
-    let out = s.command("CRTLINETH LIND(ETHLINE) RSRCNAME(CMN01)", CMD)?;
-    if out.contains("CPD0030") || out.contains("not found") && out.contains("CRTLINETH") {
-        // BLOCKED(phase10): no *LIND objects in this tree yet (net/cmncfg).
-        return Ok("ETH0".into());
-    }
-    Ok("ETHLINE".into())
-}
+/// The line the NIC's interface names: no line description has it, so
+/// TCP/IP takes the kernel link of that name, always varied on. A
+/// description over the NIC would share its port with step 60's line,
+/// whose vary off takes the link down.
+const NIC_LINE: &str = "ETH0";
 
 #[allow(clippy::unused_self)] // the steps share one signature
 impl Suite {
@@ -93,7 +87,7 @@ impl Suite {
                 return Err(format!("no system job {name}:\n{jobs}"));
             }
         }
-        let line = nic_line(s)?;
+        let line = NIC_LINE;
         expect(
             s,
             &format!("ADDTCPIFC INTNETADR('{VIP}') LIND(*VIRTUALIP) SUBNETMASK('255.255.255.255')"),

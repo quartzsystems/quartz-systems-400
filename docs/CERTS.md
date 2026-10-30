@@ -393,15 +393,20 @@ HTTP administration instance) makes a certificate for the run in memory.
 | HTTP administration, 2005 | `QIBM_HTTP_SERVER_ADMIN` |
 | Telnet, 992 | `QIBM_QTV_TELNET_SERVER` |
 | Host servers (TLS ports) | `QIBM_OS400_QZBS_SVR_CENTRAL`, `_DATABASE`, `_DTAQ`, `_FILE`, `_NETPRT`, `_RMTCMD`, `_SIGNON` |
+| FTP, `AUTH TLS` and 990 | `QIBM_QTMF_FTP_SERVER` |
 
 A server reads its certificate when it starts (a prestart job keeps it
-ten minutes), so an assignment takes effect at the next start. The
+ten minutes; an FTP session job at its connection), so an assignment
+takes effect at the next start. The
 protocols and suites follow `QSSLPCL`, `QSSLCSL` and `QSSLCSLCTL`.
 
-`ipps` printers (the writer's IPP connector) check the printer's chain
-and name against the shipped roots and the trusted CAs of `*SYSTEM`. A
-printer with a self-signed certificate is trusted by importing that
-certificate as a CA (`QSIMPCRT ... TRUST(*YES)`).
+`ipps` printers (the writer's IPP connector), the `FTP` command and
+`SNDSMTPEMM`/`QtmmSendMail` (when the mail router's TLS is required or
+implicit) check the server's chain and name against the shipped roots
+and the trusted CAs of `*SYSTEM`. A server with a self-signed
+certificate is trusted by importing that certificate as a CA
+(`QSIMPCRT ... TRUST(*YES)`). The FTP client presents no certificate:
+the key of `QIBM_QTMF_FTP_CLIENT` goes only to server profiles.
 
 ## Expiry warnings
 

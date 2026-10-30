@@ -183,19 +183,14 @@ fn add_lines(side: &mut JobSide<'_>, lib: &str, file: &str, mbr: &str, lines: &[
     ftp::objects::write_member(side, lib, file, mbr, &recs).map_err(|e| format!("{e:?}"))
 }
 
-/// The TLS configuration the client uses: server certificates are taken
-/// as they come until the job can read the system's trust store.
-// BLOCKED(phase10): server authentication with the *SYSTEM store and
-// the application ID QIBM_QTMF_FTP_CLIENT needs the storage service to
-// answer them.
-fn client_tls() -> Option<Arc<tls::rustls::ClientConfig>> {
-    tls::config::client_config(
-        &tls::policy::TlsPolicy::default(),
-        tls::rustls::RootCertStore::empty(),
-        None,
-        tls::config::ServerAuthMode::Passthru,
-    )
-    .ok()
+/// The TLS configuration the client uses: the server's certificate must
+/// chain to the shipped roots or a trusted CA of `*SYSTEM` and name the
+/// host. The client presents no certificate: `QIBM_QTMF_FTP_CLIENT`'s
+/// key goes only to server profiles (docs/CERTS.md).
+fn client_tls(host: &Host) -> Option<Arc<tls::rustls::ClientConfig>> {
+    crate::work::tls::client_config(&mut host.link.borrow_mut())
+        .map_err(|e| eprintln!("qsjob: FTP client TLS: {e}"))
+        .ok()
 }
 
 /// `FTP RMTSYS INTNETADR CCSID PORT SECCNN DTAPROT`.
@@ -252,7 +247,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         security,
         private,
         ccsid,
-        tls: if security == Security::None { None } else { client_tls() },
+        tls: if security == Security::None { None } else { client_tls(host) },
         batch: true,
     };
     let lcwd = ftp::names::library_dir(&curlib);

@@ -326,6 +326,10 @@ fn vrycfg(system: &mut System, parms: &Parms) -> CmdReply {
             }
         }
     }
+    if kind == Kind::Line && !on {
+        // The interfaces on a line varied off end with it.
+        crate::stgsvc::tcp::follow_lines(system);
+    }
     let mut r = done(&notes);
     if !errors.is_empty() {
         for (e, n) in &errors {

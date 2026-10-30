@@ -133,7 +133,10 @@ Each item is marked `BLOCKED(phase10)` where it lives.
 | `SNDTCPSPLF WSCST(name)` | `work/qsjob/src/command/netcmd.rs` | reading `*WSCST` in the job |
 | SMTP `AUTH` credentials | `net/servers/src/attrs/smtp.rs` | a command that sets them and storage only the mail job reads |
 
-_Pending: the certificate and line-state items now being cleared._
+Cleared during the phase: the IPP printer TLS connector, the FTP server's
+and client's certificates, the SMTP relay check and TCP/IP line state
+(all through the `*SYSTEM` store request `cert_app` and `*LIND` objects).
+DHCP is not built (`*IP4DHCP` interfaces are refused).
 
 ## Deferred
 

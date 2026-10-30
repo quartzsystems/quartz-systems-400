@@ -822,9 +822,12 @@ is from IBM's documentation and unverified.
     it is `user@hostname.domain` from `CHGTCPDMN`.
 16. **Mail router.** `FWDHUBSVR` first, then `MAILROUTER`, either as
     `host[:port]`; there is no MX lookup (client only). TLS is
-    `STARTTLS` when offered (implicit on 465); the relay's certificate is
-    not checked against DCM's trusted CAs because the job cannot open the
-    `*SYSTEM` store (as for the HTTP administration page).
+    `STARTTLS` when offered (implicit on 465). When TLS is required or
+    implicit the relay's certificate is checked against the shipped roots
+    and the trusted CAs of `*SYSTEM`, by name; opportunistic `STARTTLS`
+    takes any certificate (RFC 7435). Which application ID IBM's SMTP
+    client checks with, and whether it checks opportunistic sessions, was
+    not captured.
 17. **`AUTH` credentials.** The client speaks `AUTH PLAIN` and `AUTH
     LOGIN`; the user and password come from the bag keys `AUTHUSER` and
     `AUTHPWD`, which no command sets and which any job reading the server

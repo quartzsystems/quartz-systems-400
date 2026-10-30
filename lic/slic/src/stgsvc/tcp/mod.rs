@@ -17,7 +17,7 @@ use std::cell::RefCell;
 use stg::tcp::{ServerInfo, TcpOp, TcpReply};
 use tcpcfg::apply::{self, Ctx, StartOpts};
 use tcpcfg::files::Table;
-use tcpcfg::line::KernelNames;
+use tcpcfg::line::{Described, KernelNames, LineState};
 use tcpcfg::msg::{self, Note};
 use tcpcfg::net::NetOps;
 use tcpcfg::net::kernel::Kernel;
@@ -57,11 +57,35 @@ pub fn with<T>(system: &mut System, f: impl FnOnce(&mut System, &mut Runtime) ->
     Ok(out)
 }
 
-/// The lines TCP/IP sees until communications configuration answers:
-/// one per kernel link (`LIND(ETH0)` is `eth0`).
-// BLOCKED(phase10): the *LIND objects (net/cmncfg) implement LineState.
-fn lines(net: &mut Kernel) -> KernelNames {
-    KernelNames::new(net.links().unwrap_or_default().into_iter().map(|l| l.name))
+/// The lines TCP/IP sees: the line descriptions with their status
+/// (`super::cmn`), varied on as `VRYCFG` does; a name no description
+/// has is a kernel link's (`LIND(ETH0)` is `eth0`).
+fn lines<'a>(system: &'a mut System, net: &mut Kernel) -> Described<'a> {
+    let kernel = KernelNames::new(net.links().unwrap_or_default().into_iter().map(|l| l.name));
+    Described::new(
+        Box::new(super::cmn::line_info),
+        Box::new(move |n| super::cmn::vary_line(system, n, true, true, None).map(|_| ())),
+        kernel,
+    )
+}
+
+/// Whether line `lind` exists for TCP/IP: described, or a kernel link.
+pub fn line_exists(system: &mut System, lind: &str) -> bool {
+    let mut net = Kernel::new();
+    lines(system, &mut net).exists(lind)
+}
+
+/// Interfaces follow their lines at once (after a vary off), not at
+/// the next `QTCPWRK` tick.
+pub fn follow_lines(system: &mut System) {
+    match operate(system, |c| Ok(apply::refresh(c))) {
+        Ok(notes) => {
+            for n in notes {
+                eprintln!("qsstg: {}", n.line());
+            }
+        }
+        Err(e) => eprintln!("qsstg: TCP/IP after a vary: {}", e.text),
+    }
 }
 
 /// Run an engine step over the runtime.
@@ -69,8 +93,8 @@ pub fn operate(
     system: &mut System,
     f: impl FnOnce(&mut Ctx<'_>) -> tcpcfg::Result<Vec<Note>>,
 ) -> tcpcfg::Result<Vec<Note>> {
-    with(system, |_, rt| {
-        let mut l = lines(&mut rt.net);
+    with(system, |sys, rt| {
+        let mut l = lines(sys, &mut rt.net);
         let mut c = Ctx {
             cfg: &rt.cfg,
             st: &mut rt.st,
@@ -94,9 +118,9 @@ pub fn change(
     let mut next = with(system, |_, rt| rt.cfg.clone()).map_err(|e| tcpcfg::Error::new("CPF9898", e))?;
     let text = f(&mut next)?;
     store::save(system, &next, table).map_err(|e| tcpcfg::Error::new("CPF9898", e))?;
-    let notes = with(system, |_, rt| {
+    let notes = with(system, |sys, rt| {
         rt.cfg = next;
-        let mut l = lines(&mut rt.net);
+        let mut l = lines(sys, &mut rt.net);
         let mut c = Ctx {
             cfg: &rt.cfg,
             st: &mut rt.st,
@@ -136,9 +160,9 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
             // STRTCP reads the files afresh: they may have been changed
             // by other means.
             let cfg = store::load(system)?;
-            let r = with(system, |_, rt| {
+            let r = with(system, |sys, rt| {
                 rt.cfg = cfg;
-                let mut l = lines(&mut rt.net);
+                let mut l = lines(sys, &mut rt.net);
                 let mut c = Ctx {
                     cfg: &rt.cfg,
                     st: &mut rt.st,

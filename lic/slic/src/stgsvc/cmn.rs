@@ -60,6 +60,14 @@ fn defaults(system: &System) -> ((u16, u16), String) {
     (rcy, "QSYS/QSYSOPR".into())
 }
 
+/// Line `name` as TCP/IP sees it: varied on, and over which interface.
+pub(crate) fn line_info(name: &str) -> Option<tcpcfg::line::LineInfo> {
+    lock().state.line(name).map(|l| tcpcfg::line::LineInfo {
+        on: l.status.is_on(),
+        ifname: l.ifname.clone(),
+    })
+}
+
 /// Put line `name` described by `lind` in the state (or give it its
 /// new description).
 pub(crate) fn describe(system: &System, name: &str, lind: &Lind) {

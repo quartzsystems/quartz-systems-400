@@ -221,13 +221,11 @@ fn items(parms: &Parms, kwd: &str) -> Vec<String> {
 
 // --- interfaces
 
-fn lines_check(line: &LineRef) -> Result<(), Error> {
+fn lines_check(system: &mut System, line: &LineRef) -> Result<(), Error> {
     let LineRef::Line(n) = line else {
         return Ok(());
     };
-    let links = tcpcfg::net::NetOps::links(&mut tcpcfg::net::kernel::Kernel::new()).unwrap_or_default();
-    let known = tcpcfg::line::KernelNames::new(links.into_iter().map(|l| l.name));
-    if tcpcfg::line::LineState::exists(&known, n) {
+    if tcp::line_exists(system, n) {
         Ok(())
     } else {
         Err(Error::new(msg::LINE_NOT_FOUND, format!("Line {n} does not exist.")))
@@ -237,7 +235,7 @@ fn lines_check(line: &LineRef) -> Result<(), Error> {
 fn add_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let addr = IfcAddr::parse(&parms.text("INTNETADR"))?;
     let (line, vlan) = line_of(parms, "LIND")?.ok_or_else(|| tcpcfg::addr::bad("LIND", ""))?;
-    lines_check(&line)?;
+    lines_check(system, &line)?;
     let mut i = Interface::new(addr, line);
     i.vlan = vlan;
     if let Some(m) = opt_text(parms, "SUBNETMASK") {
@@ -304,7 +302,7 @@ fn chg_ifc(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         ));
     }
     if let Some((l, v)) = line {
-        lines_check(&l)?;
+        lines_check(system, &l)?;
         i.line = l;
         i.vlan = v;
     }

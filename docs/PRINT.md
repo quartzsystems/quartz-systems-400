@@ -71,8 +71,11 @@ in the receipt. Responses with `Content-Length`, chunked or neither are
 read.
 
 TLS goes through `TlsConnector`; `PlainConnector` passes TCP through
-(tests). The writer job's connector refuses for now
-(`BLOCKED(phase10)`: the client TLS engine comes with `net/tls`).
+(tests). The writer job's connector (`PrinterTls`,
+`work/qsjob/src/work/writer.rs`) checks the printer's chain and name
+against the shipped roots and the trusted CAs of `*SYSTEM`
+(docs/CERTS.md); a printer with a self-signed certificate needs it
+imported as a CA.
 
 **LPR** (`lpr/mod.rs`, RFC 1179): `02 queue LF`, then the data file
 (`03 count SP dfAnnnhost LF`, bytes, a zero octet), then the control
