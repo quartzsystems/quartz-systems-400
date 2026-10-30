@@ -313,8 +313,22 @@ pub(crate) fn delete_line(system: &mut System, name: &str) -> Result<Vec<Note>, 
             msgs::DELETE_VARIED_ON
         ));
     }
+    // The port goes back to the IPL's network unless another line has it.
+    let port = objects::read_lind(system, &name)
+        .ok()
+        .filter(|l| !l.is_aggregate())
+        .map(|l| l.rsrcname);
     let gone = objects::delete_lind(system, &name)?;
     lock().state.remove_line(&name);
+    if let Some(rsrc) = port {
+        let shared = objects::lines(system)?.iter().any(|(_, l)| l.rsrcname == rsrc);
+        let ifname = kernel::ports(system).into_iter().find(|(r, _)| *r == rsrc).map(|(_, i)| i);
+        if let (false, Some(i)) = (shared, ifname)
+            && let Err(e) = kernel::release(&i)
+        {
+            eprintln!("qsstg: DLTLIND {name}: {e}");
+        }
+    }
     let mut notes: Vec<Note> = gone
         .into_iter()
         .map(|(n, ctl)| {
