@@ -1,0 +1,35 @@
+# WRKCFGSTS CFGTYPE(*CTL) OUTPUT(*PRINT) -> spooled file QSYSPRT
+                 Work with Configuration Status                     Page     1
+5770SS1 V7R1M0  100423                        S062B175  10/30/26  06:07:20 EST
+ Description          Type     Status                   ----------------Job-----------------     Pass-through device
+ CTL01                *CTL     ACTIVE
+   DSP01              *DEV     VARY ON PENDING
+ ETHLINET             *CTL     ACTIVE
+   ETHLITCP           *DEV     ACTIVE                   QTCPWRK        QSYS           008003
+ QCTL                 *CTL     VARIED OFF
+   QCONSOLE           *DEV     VARIED OFF
+ QESCTL               *CTL     VARIED OFF
+   QESPAP             *DEV     VARIED OFF
+ QPACTL01             *CTL     VARIED ON
+ QPACTL02             *CTL     VARIED ON
+ QPACTL03             *CTL     VARIED ON
+ QPACTL04             *CTL     VARIED ON
+ QPACTL05             *CTL     VARIED ON
+ QPACTL06             *CTL     VARIED ON
+ QPACTL07             *CTL     VARIED ON
+ QPACTL08             *CTL     VARIED ON
+ QTICTL               *CTL     VARIED OFF
+   QTIDA              *DEV     VARIED OFF
+   QTIDA2             *DEV     VARIED OFF
+   QIADSP             *DEV     VARIED OFF
+   QIAPRT             *DEV     VARIED OFF
+   QQAHOST            *DEV     VARIED OFF
+ QVIRCD0001           *CTL     VARIED ON
+ QVIRCD0002           *CTL     VARIED ON
+ QVIRCD0003           *CTL     VARIED ON
+ QVIRCD0004           *CTL     VARIED ON
+ QVIRCD0005           *CTL     VARIED ON
+ QVIRCD0006           *CTL     VARIED ON
+ QVIRCD0007           *CTL     VARIED ON
+ QVIRCD0008           *CTL     VARIED ON
+              * * * * *   E N D   O F   L I S T I N G   * * * * *

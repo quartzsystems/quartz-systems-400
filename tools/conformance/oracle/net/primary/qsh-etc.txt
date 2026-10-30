@@ -1,0 +1,80 @@
+# qsh: ls -la /etc /QOpenSys/etc /QIBM/UserData/OS400 /QIBM/ProdData/OS400
+/QIBM/ProdData/OS400:
+total: 792 kilobytes
+drwxr-sr-x  37 QSYS  0                 28672 Sep 13 13:07 .
+drwxr-sr-x  13 QSYS  0                  8192 Sep 13 12:52 ..
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:51 AFPViewerPlugin
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:55 ARM
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 CollectionServices
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:50 DHCP
+drwxr-sr-x   2 QSYS  0                  8192 Oct 30 06:00 DRDA
+drwxr-sr-x   5 QSYS  0                  8192 Sep 13 13:41 DirSrv
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 Fonts
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:50 INETD
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:55 IPA
+drwxr-sr-x   8 QSYS  0                  8192 Sep 13 11:55 Ipp
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 Java400
+drwxr-sr-x   3 QSYS  0                 45056 Sep 13 11:50 MGTC
+drwxr-sr-x   4 QSYS  0                  8192 Sep 13 11:55 MRI2924
+drwxr-s---   2 QSYS  0                 24576 Sep 16 09:59 MarkerFiles
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:51 NetStationRmtController
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:55 NetworkAuthentication
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:51 PrintServicesFacility
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:50 QOS
+drwx--S---   2 QTCP  0                  8192 Sep 21 09:35 REXEC
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:50 RPC
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 11:50 RemoteAccessControl
+drwxr-sr-x   6 QSYS  0                  8192 Sep 13 11:55 ResourceMonitoringControl
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 SQL
+drwx--Sr-x   2 QSYS  0                  8192 Oct 30 06:00 Servers
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 ServiceAgent
+drwxr-sr-x   4 QSYS  0                  8192 Sep 13 12:42 Shell
+drwxr-sr-x   4 QSYS  0                  8192 Sep 13 11:50 TCPIP
+drwxr-sr-x   2 QSYS  0                 28672 Sep 13 11:51 UniversalConnection
+drwxr-sr-x   2 QSYS  0                 28672 Sep 13 11:50 able
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 com
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:55 dlfm
+drwxr-sr-x   7 QSYS  0                  8192 Sep 13 11:53 iSeriesNavigator
+drwxr-sr-x   6 QSYS  0                  8192 Sep 13 11:55 jt400
+-rwx---r-x   1 QSYS  0                386994 Oct  5  2009 perpl.zip
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 security
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 11:50 xml
+
+/QIBM/UserData/OS400:
+total: 176 kilobytes
+drwxr-sr-x  19 QSYS        0                 28672 Sep 13 13:09 .
+drwxr-sr-x  11 QSYS        0                  8192 Sep 13 11:52 ..
+drwxr-sr-x   2 QSYS        0                  8192 Sep 13 11:41 AFPresources
+drwxr-sr-x   3 QSYS        0                  8192 Sep 13 11:53 DHCP
+drwxr-sr-x   5 QSYS        0                  8192 Sep 14 08:57 DirSrv
+drwxr-sr-x   2 QSYS        0                  8192 Sep 13 11:41 Fonts
+drwx--Sr-x   2 QSYS        0                  8192 Sep 13 11:53 INETD
+drwxr-sr-x   6 QSYS        0                  8192 Sep 13 11:53 Ipp
+drwxr-sr-x   6 QSYS        0                  8192 Sep 13 11:53 MGTC
+drwx--S---   2 {user}     0                  8192 Sep 13 13:08 NetServer
+drwx--Sr-x   5 QSYS        0                  8192 Sep 13 11:53 NetworkAuthentication
+drwxr-s--x   5 QTCP        0                  8192 Sep 13 11:53 QOS
+drwx--Sr-x   4 QSYS        0                  8192 Sep 13 11:54 ResourceMonitoringControl
+drwxr-sr-x   3 QSYS        0                  8192 Sep 13 11:41 SQLLib
+drwx--Sr-x   9 QSYS        0                  8192 Sep 14 06:34 TCPIP
+drwxr-sr-x   3 QSYS        0                 12288 Sep 13 13:09 UniversalConnection
+drwxr-sr-x   2 QSYS        0                  8192 Sep 13 11:53 able
+drwxr-sr-x   4 QLPINSTALL  0                  8192 Sep 13 11:54 iSeriesNavigator
+drwxr-sr-x   2 QSYS        0                  8192 Sep 13 11:53 jps
+
+/QOpenSys/etc:
+total: 192 kilobytes
+drwxr-sr-x  2 QSYS  0                  8192 Sep 13 12:43 .
+drwxrwsrwx  8 QSYS  0                184320 Sep 13 12:43 ..
+lrwxrwxrwx  1 QSYS  0                    33 Sep 13 12:43 magic -> ../QIBM/ProdData/OS400/PASE/magic
+
+/etc:
+total: 232 kilobytes
+drwxr-sr-x   2 QSYS     0                  8192 Sep 17 13:06 .
+drwxrwsrwx  19 QSYS     0                184320 Sep 21 09:35 ..
+-rw-rw-rw-   1 {user}  0                  8568 Sep 17 13:04 RPCBTAB
+-rw-------   1 QSYS     0                     2 Sep 17 13:06 STATD
+lrwxrwxrwx   1 QSYS     0                    32 Sep 13 12:42 magic -> /QIBM/ProdData/OS400/Shell/magic
+-rwx---r-x   1 QSYS     0                   205 Oct  4  2009 netconfig
+-rw-r--r--   1 QSYS     0                   675 Sep 13 14:36 vfs
+exit=0

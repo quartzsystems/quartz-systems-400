@@ -1,0 +1,14 @@
+# qsh: ls -la /QOpenSys/QIBM/ProdData/OS400/PASE
+total: 248 kilobytes
+drwxr-sr-x  9 QSYS  0                  8192 Sep 13 12:43 .
+drwxr-sr-x  3 QSYS  0                  8192 Sep 13 12:42 ..
+drwxr-sr-x  5 QSYS  0                  8192 Sep 13 12:43 MRI2924
+-rwxr--r--  1 QSYS  0                  7249 Oct  4  2009 NOTICES
+drwxr-sr-x  2 QSYS  0                 90112 Sep 13 12:42 bin
+drwxr-sr-x  5 QSYS  0                  8192 Sep 13 12:42 icu4c
+drwxr-sr-x  2 QSYS  0                  8192 Sep 13 12:42 include
+drwxr-sr-x  5 QSYS  0                 40960 Sep 13 12:42 lib
+-rwxr--r--  1 QSYS  0                 23765 Oct  4  2009 magic
+drwxr-sr-x  2 QSYS  0                  8192 Sep 13 12:42 sbin
+drwxr-sr-x  2 QSYS  0                  8192 Sep 13 12:42 terminfo
+exit=0

@@ -1,0 +1,8 @@
+# qsh: ls -la /usr/bin/qsh /usr/bin/sh /QOpenSys/usr/bin/sh /QOpenSys/usr/bin/bsh /QOpenSys/usr/bin/ksh /QOpenSys/pkgs/bin/bash
+ls: 001-2113 Error found getting information for object /QOpenSys/pkgs/bin/bash. No such path or directory.
+lrwxrwxrwx  1 QSYS  0                    38 Sep 13 12:43 /QOpenSys/usr/bin/bsh -> ../../QIBM/ProdData/OS400/PASE/bin/bsh
+lrwxrwxrwx  1 QSYS  0                    38 Sep 13 12:43 /QOpenSys/usr/bin/ksh -> ../../QIBM/ProdData/OS400/PASE/bin/ksh
+lrwxrwxrwx  1 QSYS  0                    38 Sep 13 12:43 /QOpenSys/usr/bin/sh -> ../../QIBM/ProdData/OS400/PASE/bin/ksh
+lrwxrwxrwx  1 QSYS  0                    31 Sep 13 12:42 /usr/bin/qsh -> /QSYS.LIB/QSHELL.LIB/QZSHSH.PGM
+lrwxrwxrwx  1 QSYS  0                    31 Sep 13 12:42 /usr/bin/sh -> /QSYS.LIB/QSHELL.LIB/QZSHSH.PGM
+exit=1

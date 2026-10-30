@@ -1,0 +1,10 @@
+# qsh: for f in /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/sshd_config /QOpenSys/etc/ssh/sshd_config /QOpenSys/pkgs/etc/ssh/sshd_config; do echo "== $f"; grep -v '^#' $f | grep -v '^ *$'; done
+== /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config
+grep: 001-2113 Error found getting information for object /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config. No such path or directory.
+== /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/sshd_config
+grep: 001-2113 Error found getting information for object /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/sshd_config. No such path or directory.
+== /QOpenSys/etc/ssh/sshd_config
+grep: 001-2113 Error found getting information for object /QOpenSys/etc/ssh/sshd_config. No such path or directory.
+== /QOpenSys/pkgs/etc/ssh/sshd_config
+grep: 001-2113 Error found getting information for object /QOpenSys/pkgs/etc/ssh/sshd_config. No such path or directory.
+exit=1

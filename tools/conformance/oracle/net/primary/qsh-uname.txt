@@ -1,0 +1,6 @@
+# qsh: uname -a; uname -s; uname -r; uname -v
+OS400 {host} 1 7 00060002B175
+OS400
+1
+7
+exit=0

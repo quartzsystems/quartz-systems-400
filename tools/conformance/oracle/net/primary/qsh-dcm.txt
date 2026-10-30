@@ -1,0 +1,9 @@
+# qsh: ls -la /QIBM/UserData/ICSS /QIBM/UserData/ICSS/Cert /QIBM/UserData/ICSS/Cert/Server /QIBM/UserData/ICSS/Cert/CertAuth /QIBM/UserData/ICSS/Cert/SignObject /QIBM/ProdData/ICSS /QIBM/UserData/OS400/DCM
+ls: 001-2113 Error found getting information for object /QIBM/ProdData/ICSS. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/ICSS. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/ICSS/Cert. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/ICSS/Cert/CertAuth. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/ICSS/Cert/Server. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/ICSS/Cert/SignObject. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/OS400/DCM. No such path or directory.
+exit=1

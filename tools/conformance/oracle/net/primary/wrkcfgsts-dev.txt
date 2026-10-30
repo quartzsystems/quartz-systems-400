@@ -1,0 +1,17 @@
+# WRKCFGSTS CFGTYPE(*DEV) OUTPUT(*PRINT) -> spooled file QSYSPRT
+                 Work with Configuration Status                     Page     1
+5770SS1 V7R1M0  100423                        S062B175  10/30/26  06:07:21 EST
+ Description          Type     Status                   ----------------Job-----------------     Pass-through device
+ DSP01                *DEV     VARY ON PENDING
+ ETHLITCP             *DEV     ACTIVE                   QTCPWRK        QSYS           008003
+ OPTVRT01             *DEV     ACTIVE
+ OPT01                *DEV     ACTIVE
+ QCONSOLE             *DEV     VARIED OFF
+ QESPAP               *DEV     VARIED OFF
+ QIADSP               *DEV     VARIED OFF
+ QIAPRT               *DEV     VARIED OFF
+ QQAHOST              *DEV     VARIED OFF
+ QTIDA                *DEV     VARIED OFF
+ QTIDA2               *DEV     VARIED OFF
+ TAP01                *DEV     VARIED ON
+              * * * * *   E N D   O F   L I S T I N G   * * * * *

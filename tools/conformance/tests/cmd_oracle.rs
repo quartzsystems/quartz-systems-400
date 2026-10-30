@@ -77,7 +77,8 @@ fn first_diagnostic(outcome: &str) -> &str {
 /// validity checkers not yet written). A difference anywhere else
 /// fails; one of these that starts to agree should leave the list.
 const OPEN: &[usize] = &[
-    157, 186, 197, 301, 442, 443, 444, 445, 446, 494, 527, 554, 555, 604, 723, 724, 750, 751, 764,
+    157, 186, 197, 301, 335, 341, 358,
+    442, 443, 444, 445, 446, 494, 527, 554, 555, 604, 723, 724, 750, 751, 764,
 ];
 
 #[test]

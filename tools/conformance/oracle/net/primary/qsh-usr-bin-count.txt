@@ -1,0 +1,3 @@
+# qsh: ls /usr/bin | wc -l
+     126
+exit=0

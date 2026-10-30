@@ -1,0 +1,22 @@
+# qsh: ls -la /QOpenSys/QIBM/ProdData/SC1/OpenSSH /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc /QOpenSys/QIBM/UserData/SC1/OpenSSH /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc /QOpenSys/etc/ssh /QOpenSys/pkgs/etc/ssh /QOpenSys/pkgs/bin/ssh /QOpenSys/pkgs/sbin/sshd /QOpenSys/usr/bin/ssh /QOpenSys/usr/sbin/sshd
+ls: 001-2113 Error found getting information for object /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc. No such path or directory.
+ls: 001-2113 Error found getting information for object /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc. No such path or directory.
+ls: 001-2113 Error found getting information for object /QOpenSys/etc/ssh. No such path or directory.
+ls: 001-2113 Error found getting information for object /QOpenSys/pkgs/bin/ssh. No such path or directory.
+ls: 001-2113 Error found getting information for object /QOpenSys/pkgs/etc/ssh. No such path or directory.
+ls: 001-2113 Error found getting information for object /QOpenSys/pkgs/sbin/sshd. No such path or directory.
+lrwxrwxrwx  1 QSYS  0                    53 Sep 16 09:45 /QOpenSys/usr/bin/ssh -> ../../QIBM/ProdData/SC1/OpenSSH/openssh-4.7p1/bin/ssh
+lrwxrwxrwx  1 QSYS  0                    55 Sep 16 09:45 /QOpenSys/usr/sbin/sshd -> ../../QIBM/ProdData/SC1/OpenSSH/openssh-4.7p1/sbin/sshd
+
+/QOpenSys/QIBM/ProdData/SC1/OpenSSH:
+total: 24 kilobytes
+drwxr-sr-x  3 QSYS  0                  8192 Sep 16 09:43 .
+drwxr-sr-x  5 QSYS  0                  8192 Sep 16 09:43 ..
+drwxr-sr-x  8 QSYS  0                  8192 Sep 16 09:45 openssh-4.7p1
+
+/QOpenSys/QIBM/UserData/SC1/OpenSSH:
+total: 24 kilobytes
+drwxr-sr-x  3 QSYS  0                  8192 Sep 16 09:45 .
+drwxr-sr-x  4 QSYS  0                  8192 Sep 16 09:45 ..
+drwxr-sr-x  3 QSYS  0                  8192 Sep 16 09:45 openssh-4.7p1
+exit=1

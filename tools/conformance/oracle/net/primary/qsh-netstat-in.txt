@@ -1,0 +1,4 @@
+# qsh: /QOpenSys/usr/bin/netstat -in; /QOpenSys/usr/bin/netstat -rn
+qsh: 001-0014 Command /QOpenSys/usr/bin/netstat not found.
+qsh: 001-0014 Command /QOpenSys/usr/bin/netstat not found.
+exit=127

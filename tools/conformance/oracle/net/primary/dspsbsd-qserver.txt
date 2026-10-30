@@ -1,0 +1,453 @@
+# DSPSBSD SBSD(QSYS/QSERVER) OUTPUT(*PRINT) -> spooled file QPRTSBSD
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    1
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                            Operational Attributes
+ Subsystem description  . . . . . . . . . . . . . :   SBSD         QSERVER
+   Library  . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum jobs in subsystem  . . . . . . . . . . . :   MAXJOBS      *NOMAX
+ Sign-on display file . . . . . . . . . . . . . . :   SGNDSPF      QDSIGNON
+   Library  . . . . . . . . . . . . . . . . . . . :                  QSYS
+ System library list entry  . . . . . . . . . . . :   SYSLIBLE     *NONE
+ Auxiliary storage pool group . . . . . . . . . . :   ASPGRP       *NONE
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    2
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                                Pool Definitions
+   Pool           Storage              Activity
+    ID           Size (K)                Level
+     1               *BASE
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    3
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                             Autostart Job Entries
+     Job                Job Description                   Library
+ QSERVER                   QPWFSERVER                QSYS
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    4
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                                  Work Station Name Entries
+   No work station name entries.
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    5
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                                  Work Station Type Entries
+   No work station type entries.
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    6
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                                Job Queue Entries
+   Seq      Job                                  Max        -------------------------Maximum by Priority--------------------------
+   Nbr      Queue                Library        Active           1       2       3       4       5       6       7       8       9
+    10      QPWFSERVER            QSYS          *NOMAX      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    7
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                                 Routing Entries
+              Seq                                                Compare                       Start
+              Nbr          Program            Library             Value                         Pos
+              200         QPWFSERVSD         QSYS            'QPWFSERVSD'                        1
+              300         QPWFSERVER         QSYS            'QSTART'                            1
+              400         QZDAINIT           QSYS            'QZDAINIT'                         37
+              600         QZDASRVSD          QSYS            'QZDASRVSD'                         1
+              800         QZLSSERVER         QSYS            'QZLSSTART'                         1
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    8
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       200
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QPWFSERVSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QPWFSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QPWFSERVSD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page    9
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       300
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QPWFSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QPWFSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QSTART'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   10
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       400
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZDAINIT
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QPWFSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZDAINIT'
+ Compare start position . . . . . . . . . . . . . . . . . :                37
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   11
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       600
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZDASRVSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QPWFSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZDASRVSD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   12
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       800
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZLSSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QPWFSERVER
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZLSSTART'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   13
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                             Communications Entries
+                                         Job                                     Default            Max
+    Device          Mode             Description              Library             User             Active
+ *ALL             QSERVER            *USRPRF                                    *SYS               *NOMAX
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   14
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                         Remote Location Name Entries
+     Remote                              Job                                     Default             Max
+    Location        Mode             Description              Library             User             Active
+   No remote location name entries.
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   15
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                    Prestart Job Entries
+     Program           Library             User Profile
+     QPWFSERVSO        QSYS                 QUSER
+     QPWFSERVSS        QSYS                 QUSER
+     QPWFSERVS2        QSYS                 QUSER
+     QPWFSTP0          QSYS                 QUSER
+     QPWFSTP1          QSYS                 QUSER
+     QPWFSTP2          QSYS                 QUSER
+     QTFPJTCP          QIWS                 QUSER
+     QZDAINIT          QSYS                 QUSER
+     QZLSFILE          QSYS                 QUSER
+     QZLSFILET         QSYS                 QUSER
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   16
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QPWFSERVSO
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QPWFSERVSO
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QPWFSPJ
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   17
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       *NOMAX
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   18
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QPWFSERVSS
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QPWFSERVSS
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QPWFSPJ
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   19
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       *NOMAX
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   20
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QPWFSERVS2
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QPWFSERVS2
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QPWFSPJ
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   21
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       *NOMAX
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   22
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QPWFSTP0
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QPWFSERV
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QPWFSERV
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      5
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   23
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       *NOMAX
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   24
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QPWFSTP1
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QPWFSERV
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QPWFSERV
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      5
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   25
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       *NOMAX
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   26
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QPWFSTP2
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QPWFSERV
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QPWFSERV
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      5
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   27
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       *NOMAX
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   28
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QTFPJTCP
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QIWS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QTFPJTCP
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   29
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   30
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QZDAINIT
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QZDAINIT
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      3
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   31
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       1
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   32
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QZLSFILE
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QZLSFILE
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QZLSPJ
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      5
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   33
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   34
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QZLSFILET
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QZLSFILET
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QZLSPJ
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      0
+ 5770SS1 V7R1M0  100423               Display Subsystem Description                             10/30/26  6:07:09        Page   35
+ Subsystem description . . . . . . . . . . :   QSERVER        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       1
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QPWFSERVER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                          * * * * *  E N D  O F  L I S T I N G  * * * * *

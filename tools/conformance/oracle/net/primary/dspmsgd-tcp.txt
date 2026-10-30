@@ -1,0 +1,2 @@
+# command DSPMSGD RANGE(*FIRST *LAST) MSGF(QTCP/QTCPMSGS) DETAIL(*BASIC) OUTPUT(*PRINT) failed
+# msg CPF2407 Message file QTCPMSGS in QTCP not found.

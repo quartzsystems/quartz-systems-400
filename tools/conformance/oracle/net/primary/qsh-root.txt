@@ -1,0 +1,24 @@
+# qsh: ls -la /
+total: 13.860 megabytes
+drwxrwsrwx   19 QSYS     0                184320 Sep 21 09:35 .
+drwxrwsrwx   19 QSYS     0                184320 Sep 21 09:35 ..
+drwx---rwx    7 QDOC     0                  8192              QDLS
+d------r-x    2 QSYS     0                  2272 Oct 30 05:56 QFileSvr.400
+drwxr-sr-x    7 QSYS     0                  8192 Sep 13 11:41 QIBM
+d------r-x    2 QDFTOWN  0                  1200 Oct 30 05:56 QNTC
+drwxrwxrwx    2 QDFTOWN  0                  4096              QOPT
+drwxrwsrwx    8 QSYS     0                184320 Sep 13 12:43 QOpenSys
+d-----S---    3 {user}  0                 12288 Sep 18 06:54 QSR
+drwx---r-x  972 QSYS     0              13467648 Oct 30 06:02 QSYS.LIB
+drwxrws---   10 QTCP     0                  8192 Sep 13 12:52 QTCPTMM
+lrwxrwxrwx    1 QSYS     0                     8 Sep 13 12:42 bin -> /usr/bin
+drwxrwsr-x    5 QSYS     0                 40960 Sep 13 12:42 dev
+drwxr-sr-x    2 QSYS     0                  8192 Sep 17 13:06 etc
+drwxrwsrwx    4 QSYS     0                  8192 Oct 22 07:45 home
+drwxrwsrwx    3 {user}  0                  8192 Sep 16 09:57 images
+lrwxrwxrwx    1 QSYS     0                     8 Sep 13 12:43 lib -> /usr/lib
+drwxrwsrwt    5 QSYS     0                 28672 Oct 30 06:00 tmp
+drwxr-sr-x    3 QSYS     0                  8192 Sep 13 12:43 usr
+drwxr-sr-t    2 QSYS     0                  8192 Sep 13 12:43 var
+drwxrwsr-x    4 QSYS     0                  8192 Sep 13 12:45 www
+exit=0

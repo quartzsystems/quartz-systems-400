@@ -1,0 +1,140 @@
+# WRKACTJOB OUTPUT(*PRINT) SBS(QSYSWRK QUSRWRK QSERVER QSYS QCTL) -> spooled file QPDSPAJB
+ 5770SS1 V7R1M0 100423                  Work with Active Jobs                                   10/30/26  6:07:05        Page    1
+ Reset . . . . . . . . . . . . . . . . . :   *NO
+ Subsystems  . . . . . . . . . . . . . . :   QSYSWRK    QUSRWRK    QSERVER    QSYS       QCTL
+ CPU Percent Limit . . . . . . . . . . . :   *NONE
+ Response Time Limit . . . . . . . . . . :   *NONE
+ Sequence  . . . . . . . . . . . . . . . :   *SBS
+ Job name  . . . . . . . . . . . . . . . :   *ALL
+ CPU %  . . . :    11.2          Elapsed time . . . . . . . :   00:00:02           Active jobs . . . . . . :    179
+                                     Current                             --------Elapsed---------
+ Subsystem/Job  User        Number   User        Type Pool Pty     CPU   Int    Rsp  AuxIO   CPU%  Function       Status   Threads
+ QSERVER        QSYS        008033   QSYS        SBS    2   0        .0                  0     .0                  DEQW          2
+   QPWFSERV     QUSER       008046   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QPWFSERV     QUSER       008048   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QPWFSERV     QUSER       008050   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QPWFSERVSD   QUSER       008070   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QPWFSERVSO   QUSER       008496   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QPWFSERVSO   QUSER       008498   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QPWFSERVSO   QUSER       008505   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QPWFSERVSO   QUSER       008506   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QPWFSERVSS   QUSER       008044   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QPWFSERVS2   QUSER       008043   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QSERVER      QPGMR       008057   QPGMR       ASJ    2  20        .0                  0     .0                  EVTW          1
+   QTFPJTCP     QUSER       008055   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZDAINIT     QUSER       008041   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZDASRVSD    QUSER       008399   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QZLSFILE     QUSER       008052   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZLSFILET    QUSER       008433   QUSER       PJ     2  20        .0                  0     .0                  TIMW          5
+   QZLSSERVER   QPGMR       008329   QPGMR       BCH    2  20        .0                  0     .0                  EVTW          3
+ QSYSWRK        QSYS        008007   QSYS        SBS    2   0        .0                  0     .0                  DEQW          2
+   CRTPFRDTA    QSYS        008079   QSYS        BCH    2  50        .0                  0     .0  PGM-QPMCOLUSRJ  TIMW          1
+   QGLDPUBA     QDIRSRV     008031   QDIRSRV     ASJ    2  50        .0                  0     .0  PGM-QGLDPUBA    SIGW          1
+   QGLDPUBE     QDIRSRV     008030   QDIRSRV     ASJ    2  50        .0                  0     .0  PGM-QGLDPUBE    DEQW          1
+   QHTTP        QTMHHTTP    008080   QTMHHTTP    BCH    2  10        .0                  0     .0  PGM-QPMPUDCDRV  SELW          1
+   QIWVPPJT     QUSER       008008   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QJOBLOGSVR   QSYS        008040   QSYS        BCH    2  40        .3                  0     .0                  DEQW          1
+   QMSF         QMSF        008073   QMSF        BCH    2  35        .0                  0     .0                  DEQW          1
+   QNEOSOEM     QUSER       008015   QUSER       ASJ    2  50        .0                  0     .0  PGM-QNEOSOEM    TIMW          1
+   QNEOSOEM     QUSER       008037   QUSER       BCH    2  50        .0                  0     .0  PGM-QNEOSOEM    TIMA          1
+   QNEOSOEM     QUSER       008039   QUSER       BCH    2  50        .0                  0     .0  PGM-QNEOSOEM    TIMW          1
+   QNPSERVD     QUSER       008392   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QPASUTIL     QSYS        008054   QSYS        BCH    2  50        .0                  0     .0  PGM-QPASUTIL    DEQW          1
+   QPASVRP      QSYS        008038   QSYS        BCH    2  50        .0                  0     .0  PGM-QPASVRP     DEQW          1
+   QPASVRS      QSYS        008066   QSYS        BCH    2  30        .0                  0     .0  PGM-QPASVRS     TIMW          1
+   QPASVRS      QSYS        008067   QSYS        BCH    2  30        .0                  0     .0  PGM-QPASVRS     TIMW          1
+   QPASVRS      QSYS        008068   QSYS        BCH    2  30        .0                  0     .0  PGM-QPASVRS     TIMW          1
+   QPASVRS      QSYS        008072   QSYS        BCH    2  30        .0                  0     .0  PGM-QPASVRS     TIMW          1
+   QPDETSRV     QSYS        008024   QSYS        ASJ    2  25        .0                  0     .0  PGM-QPDETSRV    DEQW          1
+   QPM400       QPM400      008029   QPM400      ASJ    2  50        .0                  0     .0  PGM-Q1PBATCH    MSGW          1
+   QRMCCTCASD   QSYS        008086   QSYS        BCI    2  50       4.7                  0     .0  PGM-QRMCCTEXEC  SELW          4
+   QRMCCTHRMD   QSYS        008088   QSYS        BCI    2  50        .0                  0     .0  PGM-QRMCCTEXEC  SELW          7
+   QRMCCTRMCD   QSYS        008087   QSYS        BCI    2  50        .1                  0     .0  PGM-QRMCCTEXEC  SELW          2
+   QRMCSRCD     QSYS        008019   QSYS        ASJ    2  50        .1                  0     .0  PGM-QRMCCTSRCD  SELW          1
+   QRWTLSTN     QUSER       008099   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QSLPSVR      QSYS        008352   QSYS        BCH    2  10        .4                  0     .1  PGM-lslp-kerne  THDW          3
+ 5770SS1 V7R1M0 100423                  Work with Active Jobs                                   10/30/26  6:07:05        Page    2
+                                     Current                             --------Elapsed---------
+ Subsystem/Job  User        Number   User        Type Pool Pty     CPU   Int    Rsp  AuxIO   CPU%  Function       Status   Threads
+   QSQSRVR      QUSER       008074   QSYS        PJ     2   1        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008075   QDIRSRV     PJ     2  20        .1                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008076   QSYS        PJ     2   1        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008077   QDIRSRV     PJ     2  20        .7                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008078   QDIRSRV     PJ     2  20        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008183   QDIRSRV     PJ     2  20        .1                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008184   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008200   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008202   QDIRSRV     PJ     2  20        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008220   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QSQSRVR      QUSER       008224   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008228   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008229   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008251   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008254   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008268   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008274   {user}     PJ     2  10        .0                  0     .0                  CNDW          1
+   QSQSRVR      QUSER       008288   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QSQSRVR      QUSER       008290   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QSRVMON      QSYS        008062   {user}     BCH    2  50        .0                  0     .0  PGM-QPDETMON    TIMW          1
+   QSRVMON      QSYS        008071   {user}     BCI    2  50       2.9                  0     .0  JVM-ServiceMon  THDW         19
+   QSVRMSERMD   QSYS        008090   QSYS        BCI    2  50        .0                  0     .0  PGM-QRMCCTEXEC  SELW          7
+   QTFTP00017   QTCP        008102   QTCP        BCH    2  25        .0                  0     .0                  DEQW          1
+   QTFTP00018   QTCP        008103   QTCP        BCH    2  25        .0                  0     .0                  DEQW          1
+   QTFTP00030   QTCP        008101   QTCP        BCH    2  25        .0                  0     .0                  TIMW          1
+   QTLPD00053   QTCP        008106   QTCP        BCH    2  25        .0                  0     .0                  TIMW          1
+   QTLPD00054   QTCP        008107   QTCP        BCH    2  25        .0                  0     .0                  DEQW          1
+   QTOOROUTE    QTCP        008350   QTCP        BCH    2  50        .0                  0     .0  PGM-QTOOMPRTE   DEQW          4
+   QTOTNTP      QNTP        008344   QNTP        BCH    2  10        .0                  0     .0                  SELW          1
+   QTSMTPBRCL   QTCP        008413   QTCP        BCH    2  35        .0                  0     .0                  DEQW          1
+   QTSMTPBRSR   QTCP        008415   QTCP        BCH    2  35        .0                  0     .0                  DEQW          1
+   QTSMTPCLTD   QTCP        008410   QTCP        BCH    2  35        .0                  0     .0                  DEQW          1
+   QTSMTPCLTP   QTCP        008426   QTCP        PJ     2  35        .0                  0     .0                  PSRW          1
+   QTSMTPSRVD   QTCP        008362   QTCP        BCH    2  35        .0                  0     .0                  SELW          1
+   QTSMTPSRVP   QTCP        008383   QTCP        PJ     2  35        .0                  0     .0                  PSRW          1
+   QTVDEVICE    QTCP        008095   QTCP        BCH    2  20        .0                  0     .0                  TIMW          1
+   QTVDEVICE    QTCP        008096   QTCP        BCH    2  20        .0                  0     .0                  TIMW          1
+   QTVDEVICE    QTCP        008097   QTCP        BCH    2  20        .0                  0     .0                  TIMW          1
+   QTVDEVICE    QTCP        008098   QTCP        BCH    2  20        .0                  0     .0                  TIMW          1
+   QTVTELNET    QTCP        008094   QTCP        BCH    2  20        .0                  0     .0                  TIMW          1
+   QUSRDIR      QDIRSRV     008100   QDIRSRV     BCH    2  50        .8                  0     .0  PGM-QGLDSVR     SIGW         12
+   QYPSJSVR     QYPSJSVR    008111   QYPSJSVR    BCH    2  10       1.9                  0     .0  PGM-jvmStartPa  SIGW         32
+   QYPSPFRCOL   QSYS        008069   QSYS        BCH    2   1        .1                  0     .0  PGM-QYPSPFRCOL  DEQW         28
+   QYUSALRMD    QSYS        008091   QSYS        BCI    2  50        .0                  0     .0  PGM-QRMCCTEXEC  SELW          9
+   QYUSCMCRMD   QSYS        008089   QSYS        BCI    2  50        .0                  0     .0  PGM-QRMCCTEXEC  SELW         10
+   QZBSEVTM     QUSER       008017   QUSER       ASJ    2  50        .0                  0     .0  PGM-QZBSEVTM    EVTW          1
+   QZHQSRVD     QUSER       008389   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QZRCSRVS     QUSER       008515   {user}     BCI    2  50        .0                109     .3                  RUN           1
+   QZRCSRVSD    QUSER       008394   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QZSCSRVSD    QUSER       008381   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QZSOSGND     QUSER       008397   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   QZSOSMAPD    QUSER       008402   QUSER       BCH    2  20        .0                  0     .0                  SELW          1
+   Q1PSCH       QPM400      008081   QPM400      BCH    2  50        .0                  0     .0  DLY-60          DLYW          1
+ 5770SS1 V7R1M0 100423                  Work with Active Jobs                                   10/30/26  6:07:05        Page    3
+                                     Current                             --------Elapsed---------
+ Subsystem/Job  User        Number   User        Type Pool Pty     CPU   Int    Rsp  AuxIO   CPU%  Function       Status   Threads
+ QUSRWRK        QSYS        008034   QSYS        SBS    2   0        .0                  0     .0                  DEQW          2
+   QNPSERVS     QUSER       008049   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QP0ZSPWP     {user}     008404   {user}     BCI    2  50        .0                  0     .0  PGM-sshd        SELW          1
+   QRWTSRVR     QUSER       008059   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QSCLICEV     QUSER       008508   QSYS        BCH    2  25        .0                  0     .0                  DEQW          1
+   QSCWCHMS     QUSER       008507   QUSER       BCH    2  25        .0                  0     .0                  DEQW          1
+   QSCWCHPS     QUSER       008061   QUSER       PJ     2  25        .0                  0     .0                  PSRW          1
+   QSCWCHPS     QUSER       008063   QUSER       PJ     2  25        .0                  0     .0                  PSRW          1
+   QSCWCHPS     QUSER       008064   QUSER       PJ     2  25        .0                  0     .0                  PSRW          1
+   QZDASOINIT   QUSER       008056   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QZDASOINIT   QUSER       008510   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZDASOINIT   QUSER       008511   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZDASOINIT   QUSER       008512   {user}     PJ     2  20        .0                 17     .1                  TIMA          1
+   QZDASSINIT   QUSER       008058   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZHQSSRV     QUSER       008495   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZHQSSRV     QUSER       008497   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZHQSSRV     QUSER       008501   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QZRCSRVS     QUSER       008051   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QZRCSRVS     QUSER       008209   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QZRCSRVS     QUSER       008493   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZRCSRVS     QUSER       008499   {user}     PJ     2  20        .0                  0     .0                  TIMW          1
+   QZSCSRVS     QUSER       008047   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZSOSIGN     QUSER       008045   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZSOSIGN     QUSER       008163   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+   QZSOSIGN     QUSER       008164   QUSER       PJ     2  20        .0                  0     .0                  PSRW          1
+                          * * * * *  E N D  O F  L I S T I N G  * * * * *

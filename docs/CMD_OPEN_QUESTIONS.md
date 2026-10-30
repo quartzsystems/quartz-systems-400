@@ -85,7 +85,7 @@ now and what to check.
 14. **`CHGNETA SYSNAME`.** Takes effect at once and sets `QSYSNAME`;
     the machine keeps it pending (`PNDSYSNAME`) until the next IPL.
 
-15. **What the analyzer kit's capture left.** The 20 strings whose
+15. **What the analyzer kit's capture left.** The 23 strings whose
     outcome still differs from the box, with the reason:
     - `?CRTLIB`, `CRTLIB ?LIB(ABC)`, `CRTLIB ?*LIB(ABC)`,
       `CRTLIB ?<LIB(ABC)`, `??CRTLIB`: `QCMDCHK` refuses prompting
@@ -118,3 +118,6 @@ now and what to check.
       `TYPE` with an outfile; a `DEP` cannot count a list.
     - `MOVOBJ ... TOLIB(QTEMP)` is now `CPD0090` here too, read from
       the capture rather than the documentation.
+    - `CRTBNDCL`, `CRTCLMOD` and `CRTCMD` with `SRCSTMF`: the keyword
+      came after 7.1 (`CPD0043` on the box); Phase 10 added it as later
+      releases have it.

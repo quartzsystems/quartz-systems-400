@@ -118,11 +118,12 @@ fn golden_text_stays_in_the_golden_directory() {
         // prompt display is the compatibility interface.
         // The oracle kits are our own data on the oracle: the SEU
         // captures edit one of their members, so its records are on
-        // screen.
+        // screen. The network captures are the oracles' own output.
         if f.starts_with(root.join("tools/conformance/golden"))
             || f.starts_with(root.join("command/cmd/tests/golden"))
             || f.starts_with(root.join("command/sys-cpps/tests/golden"))
             || f.starts_with(root.join("tools/conformance/oracle/qdecimal"))
+            || f.starts_with(root.join("tools/conformance/oracle/net"))
         {
             continue;
         }

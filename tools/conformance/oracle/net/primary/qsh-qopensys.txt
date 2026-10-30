@@ -1,0 +1,40 @@
+# qsh: ls -la /QOpenSys /QOpenSys/usr /QOpenSys/QIBM/ProdData /QOpenSys/pkgs
+ls: 001-2113 Error found getting information for object /QOpenSys/pkgs. No such path or directory.
+/QOpenSys:
+total: 424 kilobytes
+drwxrwsrwx   8 QSYS     0                184320 Sep 13 12:43 .
+drwxrwsrwx  19 QSYS     0                184320 Sep 21 09:35 ..
+drwxr-sr-x   4 QSYS     0                  8192 Sep 13 14:36 QIBM
+lrwxrwxrwx   1 QSYS     0                     1 Sep 13 12:43 QOpenSys -> .
+d---rws---   2 {user}  0                 12288 Sep 16 09:59 QSR
+lrwxrwxrwx   1 QSYS     0                     7 Sep 13 12:43 bin -> usr/bin
+drwxr-sr-x   2 QSYS     0                  8192 Sep 13 12:43 etc
+lrwxrwxrwx   1 QSYS     0                     7 Sep 13 12:43 lib -> usr/lib
+drwxr-sr-x   2 QSYS     0                  8192 Sep 13 12:43 sbin
+drwxr-sr-x  12 QSYS     0                  8192 Sep 13 12:43 usr
+drwxr-sr-t   3 QSYS     0                  8192 Sep 13 12:43 var
+
+/QOpenSys/QIBM/ProdData:
+total: 48 kilobytes
+drwxr-sr-x  6 QSYS  0                  8192 Sep 16 09:43 .
+drwxr-sr-x  4 QSYS  0                  8192 Sep 13 14:36 ..
+drwxr-sr-x  6 QSYS  0                  8192 Sep 16 09:59 JavaVM
+drwxr-sr-x  3 QSYS  0                  8192 Sep 13 12:42 OS400
+drwxr-sr-x  5 QSYS  0                  8192 Sep 16 09:43 SC1
+drwxr-sr-x  3 QSYS  0                  8192 Sep 13 12:40 SOI
+
+/QOpenSys/usr:
+total: 516 kilobytes
+drwxr-sr-x  12 QSYS  0                  8192 Sep 13 12:43 .
+drwxrwsrwx   8 QSYS  0                184320 Sep 13 12:43 ..
+drwxr-sr-x   3 QSYS  0                114688 Sep 16 09:45 bin
+drwxr-sr-x   4 QSYS  0                  8192 Sep 13 12:43 ccs
+drwxr-sr-x   4 QSYS  0                  8192 Sep 13 12:43 icu4c
+drwxr-sr-x  26 QSYS  0                106496 Sep 16 09:45 include
+drwxr-sr-x   2 QSYS  0                  8192 Sep 13 12:43 lbin
+drwxr-sr-x   5 QSYS  0                 57344 Sep 16 09:45 lib
+drwxr-sr-x   5 QSYS  0                  8192 Sep 13 12:43 lpp
+drwxr-sr-x   2 QSYS  0                  8192 Sep 16 09:45 sbin
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 12:43 share
+drwxr-sr-x   3 QSYS  0                  8192 Sep 13 12:43 vacpp
+exit=1

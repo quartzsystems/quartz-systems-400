@@ -9,11 +9,15 @@ that shared system `{other}`. Nothing was changed on the system: the
 work files (`{user}B/NETSPL`, `{user}B/NETFFD`, `/home/{user}/qsnet.out`)
 were created and deleted in the same run.
 
-The primary oracle (V7R1M0) answered no connection on 2026-10-24 (the
-sign-on server dropped every connection) and had every host-server port
-closed on 2026-10-29, so there is no `primary/` directory; the queries in the capture
-script (`WRKACTJOB OUTPUT(*PRINT)`, `DSPSBSD`, `WRKREGINF OUTPUT(*PRINT)`,
-`DSPFFD` of the `QUSRSYS` configuration files, QSH listings) wait for it.
+Every file under `primary/` was taken from the primary oracle (IBM i
+V7R1M0) on 2026-10-30 the same way: `TCPIP_INFO`, `WRKACTJOB`, `DSPSBSD`
+of the three server subsystems, `WRKREGINF`, `WRKCFGSTS`, and QSH
+listings of `/usr/bin`, `/QOpenSys`, PASE, OpenSSH and DCM paths. Its
+host name is written `{host}` and its addresses `{addr}`; its work files
+were in `QSTEST` and `/home/QSTEST` and were deleted in the same run.
+On V7R1M0 `WRKHDWRSC` is not allowed from the remote command server,
+`QTCP/QTCPMSGS` does not exist, and the `QUSRSYS` configuration-file
+query returns no rows; those files record the failure.
 
 | File | Source | What it holds |
 |---|---|---|

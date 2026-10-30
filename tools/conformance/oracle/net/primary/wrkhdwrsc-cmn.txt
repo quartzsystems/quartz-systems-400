@@ -1,0 +1,3 @@
+# command WRKHDWRSC TYPE(*CMN) OUTPUT(*PRINT) failed
+# msg CPD0031 Command WRKHDWRSC not allowed in this setting.
+# msg CPF0001 Error found on WRKHDWRSC command.
