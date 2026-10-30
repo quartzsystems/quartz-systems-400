@@ -222,11 +222,9 @@ under `tools/conformance/`. These numbers have nothing to compare
 against yet; a JTOpen timing against the primary oracle (port 8471) is
 the measurement still to take.
 
-Limit found on the way: an SQL `CREATE TABLE` gets the database's
-default member size (10,000 records, 3 increments of 1,000), so the
-table fills at 13,000 rows (SQL0901, "member is full"). On IBM i an SQL
-table is `SIZE(*NOMAX)`. The bench stays at 10,000 rows; the engine
-(`database/sql/src/exec/ddl.rs`) should create with `*NOMAX`.
+Limit found on the way: an SQL `CREATE TABLE` took the database's default
+member size and filled at 13,000 rows (SQL0901). It now creates the table
+with `SIZE(*NOMAX)` as IBM i does; the bench stayed at 10,000 rows.
 
 ## ACS checklist (Cody)
 
