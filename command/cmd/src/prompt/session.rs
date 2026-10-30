@@ -122,6 +122,13 @@ impl Prompter {
             })
             .collect();
         let keyparm_only = r.def.parms.iter().any(|p| p.keyparm);
+        // A command whose every parameter waits for F10 shows them at
+        // once, under "Additional Parameters", as IBM's prompter does.
+        let only_requested = !r.def.parms.is_empty()
+            && r.def
+                .parms
+                .iter()
+                .all(|p| matches!(p.pmtctl, Some(crate::def::PmtCtlRef::PmtRqs)));
         Self {
             def: r.def.clone(),
             name: r.name.clone(),
@@ -133,7 +140,7 @@ impl Prompter {
             sel: r.parms.iter().map(|b| b.sel).collect(),
             originals,
             page: 0,
-            additional: false,
+            additional: only_requested,
             all: false,
             keywords: false,
             keyset: 0,

@@ -36,7 +36,14 @@ pub fn run() -> ! {
         user: start.user.clone(),
         number: start.number,
         kind: start.kind,
-        subtype: if start.role == "PRESTART" { 'J' } else { ' ' },
+        // A prestart job is PJ, a child job batch immediate (BCI).
+        subtype: if start.role == "PRESTART" {
+            'J'
+        } else if start.role == crate::qsh::child::ROLE {
+            'D'
+        } else {
+            ' '
+        },
         subsystem: start.subsystem.clone(),
         pid: std::process::id(),
         handle: start.handle,
@@ -67,6 +74,7 @@ pub fn run() -> ! {
         "LPD" => crate::work::lpd::run(ctl, &link, &start),
         "FTP" => crate::work::ftp::run(ctl, &link, &start),
         "FTPSESS" => crate::work::ftp::session(ctl, &link, &start),
+        crate::qsh::child::ROLE => crate::qsh::child::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

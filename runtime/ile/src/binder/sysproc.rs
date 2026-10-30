@@ -207,6 +207,30 @@ pub const SYSTEM_SRVPGM_PROCS: &[(&str, &str)] = &[
     ("rename", "QC2IO"),
     // QTMMSNDM: Send MIME Mail (no capture: docs/NET_OPEN_QUESTIONS.md).
     ("QtmmSendMail", "QTMMSNDM"),
+    // Environment variables (QP0ZCPA job level, QP0ZSYSE system level).
+    ("getenv", "QP0ZCPA"),
+    ("putenv", "QP0ZCPA"),
+    ("Qp0zGetEnv", "QP0ZCPA"),
+    ("Qp0zPutEnv", "QP0ZCPA"),
+    ("Qp0zDltEnv", "QP0ZCPA"),
+    ("Qp0zGetAllSysEnv", "QP0ZSYSE"),
+    ("Qp0zGetSysEnv", "QP0ZSYSE"),
+    ("Qp0zPutSysEnv", "QP0ZSYSE"),
+    ("Qp0zDltSysEnv", "QP0ZSYSE"),
+    // QP0ZSPWN: child jobs; QP0SSRV1 signals; QP0WSRV1 process IDs.
+    ("spawn", "QP0ZSPWN"),
+    ("spawnp", "QP0ZSPWN"),
+    ("Qp0zSpawn", "QP0ZSPWN"),
+    ("Qp0zSpawnp", "QP0ZSPWN"),
+    ("waitpid", "QP0ZSPWN"),
+    ("wait", "QP0ZSPWN"),
+    ("Qp0zWaitpid", "QP0ZSPWN"),
+    ("Qp0zWait", "QP0ZSPWN"),
+    ("kill", "QP0SSRV1"),
+    ("getpid", "QP0WSRV1"),
+    ("getppid", "QP0WSRV1"),
+    // QP2USER: PASE.
+    ("Qp2RunPase", "QP2USER"),
 ];
 
 /// Names of the table no captured export list has: `#pragma map`

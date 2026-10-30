@@ -1,0 +1,72 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIENVVAR: WRKENVVAR at either level. The driver gives each entry's
+.* name and quoted value cut to their columns, with the IBM-style ">"
+.* when cut (work/qsjob/src/qsh/env.rs); the first entry is the blank
+.* row option 1 adds from.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 26'.
+:ECLASS.
+:CLASS NAME=VALCL BASETYPE='CHAR 42'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=EVNAME CLASS=NAMECL.
+:VAR NAME=EVVALUE CLASS=VALCL.
+:LISTDEF NAME=VARS VARS='OPT EVNAME EVVALUE'.
+:KEYL NAME=ENVKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F11 ACTION='RETURN 11'.F11=Display CCSIDs
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Print list
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Top
+:KEYI KEY=F18 ACTION='RETURN 18'.F18=Bottom
+:KEYI KEY=F22 ACTION='RETURN 22'.F22=Display entire field
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=WRKENVJOB KEYL=ENVKEYS HELP=ENVH ENTER='RETURN 0'.Work with Environment Vars (*JOB)
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=VARS SCROLL=YES.(No environment variables)
+:LISTACT OPTION=1 ENTER='RETURN 101'.1=Add
+:LISTACT OPTION=2 ENTER='RETURN 102'.2=Change
+:LISTACT OPTION=4 ENTER='RETURN 104'.4=Remove
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display details
+:LISTACT OPTION=6 ENTER='RETURN 106'.6=Print
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=EVNAME USAGE=OUTPUT.Name
+:LISTCOL VAR=EVVALUE USAGE=OUTPUT.Value
+:ELIST.
+:CMDLINE SIZE=LONG.Parameters or command
+:EPANEL.
+:PANEL NAME=WRKENVSYS KEYL=ENVKEYS HELP=ENVH ENTER='RETURN 0'.Work with Environment Vars (*SYS)
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=VARS SCROLL=YES.(No environment variables)
+:LISTACT OPTION=1 ENTER='RETURN 101'.1=Add
+:LISTACT OPTION=2 ENTER='RETURN 102'.2=Change
+:LISTACT OPTION=4 ENTER='RETURN 104'.4=Remove
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display details
+:LISTACT OPTION=6 ENTER='RETURN 106'.6=Print
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=EVNAME USAGE=OUTPUT.Name
+:LISTCOL VAR=EVVALUE USAGE=OUTPUT.Value
+:ELIST.
+:CMDLINE SIZE=LONG.Parameters or command
+:EPANEL.
+:HELP NAME=ENVH.Work with Environment Variables - Help
+:P.Each line is one environment variable of the job (*JOB) or of the system (*SYS). A job starts with a copy of the system's variables; changing the job's leaves the system's as they are.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F11 shows the CCSID each value is tagged with. F22 shows a whole name and value. F16 prints the list.
+:EHELP.
+:EPNLGRP.

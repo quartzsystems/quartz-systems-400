@@ -29,6 +29,9 @@ const REQUIRED_Y: &[&str] = &[
     "CGROUP_SCHED",
     "CGROUP_PIDS",
     "NAMESPACES",
+    // PASE (qsh/pase): user, mount and PID namespaces.
+    "USER_NS",
+    "PID_NS",
     "SECCOMP",
     "SECCOMP_FILTER",
     "IO_URING",

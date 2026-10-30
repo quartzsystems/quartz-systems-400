@@ -25,6 +25,8 @@ pub const HELP: &str = "\
 ifs                  the IFS mount, capacity and the service's file system
 ifs ls [PATH] | cat PATH | put PATH TEXT | mkdir PATH | rm PATH | stat PATH | df [PATH]
                      the IFS as the job sees it (put: TEXT in UTF-8, \\n for a line end)
+ifs putx PATH BUFFER [MODE]
+                     an xfer buffer of hex digits written to PATH as bytes (MODE octal)
 ";
 
 /// Who the line runs as: the job's principal, else the system.
@@ -65,7 +67,13 @@ pub fn command(system: &mut System, args: &[&str], line: &str) -> String {
         .skip(3)
         .collect::<Vec<_>>()
         .join(" ");
+    // `putx` takes its data from the xfer area.
+    let hex = match (word, rest) {
+        ("putx", [_, name, ..]) => system.svc.xfer.get(*name).cloned(),
+        _ => None,
+    };
     let out = service::with_client(system, handle, owner, &p, ccsid, |c| match (word, rest) {
+        ("putx", [path, name, mode @ ..]) => putx(c, path, name, hex.as_deref(), mode.first().copied()),
         ("ls", []) => ls(c, "."),
         ("ls", [path]) => ls(c, path),
         ("cat", [path]) => cat(c, path),
@@ -179,6 +187,34 @@ fn put(c: &dyn IfsClient, path: &str, text: &str) -> String {
             let _ = c.close(fd);
             fail(path, e)
         }
+    }
+}
+
+/// `putx PATH BUFFER [MODE]`: the buffer's hex digits as the file's bytes.
+fn putx(c: &dyn IfsClient, path: &str, name: &str, hex: Option<&str>, mode: Option<&str>) -> String {
+    let Some(hex) = hex else {
+        return format!("{name}: no such buffer\n");
+    };
+    let digits: Vec<u8> = hex.bytes().filter(u8::is_ascii_hexdigit).collect();
+    let mut data = Vec::with_capacity(digits.len() / 2);
+    for pair in digits.chunks(2) {
+        let s = std::str::from_utf8(pair).unwrap_or("0");
+        data.push(u8::from_str_radix(s, 16).unwrap_or(0));
+    }
+    let mode = mode
+        .and_then(|m| u32::from_str_radix(m, 8).ok())
+        .unwrap_or(0o644);
+    let args = OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(mode);
+    let fd = match c.open(path, args) {
+        Ok(fd) => fd,
+        Err(e) => return fail(path, e),
+    };
+    let r = write_all(c, fd, &data)
+        .and_then(|()| c.close(fd))
+        .and_then(|()| c.chmod(path, mode));
+    match r {
+        Ok(()) => format!("{path}: {} bytes\n", data.len()),
+        Err(e) => fail(path, e),
     }
 }
 

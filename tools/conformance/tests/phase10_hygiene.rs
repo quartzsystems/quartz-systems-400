@@ -151,7 +151,6 @@ fn is_sentence(t: &str) -> bool {
 /// Known hits in crates other agents are still changing; each is to be
 /// rewritten in Quartz words and dropped from here.
 const PENDING: &[(&str, &str)] = &[
-    ("qsh/qsh/src/sys/errno.rs", "An input or output error occurred."),
 ];
 
 /// The first bytes of each text, to find candidates in one pass.

@@ -551,6 +551,13 @@ pub const JOB_SITE: &[&str] = &[
     // --- certificates (work/qsjob/src/panels/certs.rs)
     "QSWRKCRT",
     "QSWRKAPPID",
+    // --- QSH and environment variables (work/qsjob/src/qsh/)
+    "QSH",
+    "STRQSH",
+    "ADDENVVAR",
+    "CHGENVVAR",
+    "RMVENVVAR",
+    "WRKENVVAR",
 ];
 
 /// The CL statements: defined so the analyzer and the prompter know

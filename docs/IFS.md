@@ -199,7 +199,11 @@ passes a random UUID, the current time, and clears the log.
 
 At IPL `slic` mounts the partition as xfs at `/run/qs400/ifs`
 (`nosuid,nodev,noexec`) just before the storage service starts; the
-service inherits the mount namespace. A D IPL from the media does not
+service inherits the mount namespace. Once the service has started
+(it makes `/QOpenSys` on a new IFS), its `QOpenSys` directory is
+mounted again at `/run/qs400/qopensys` (`nosuid,nodev`, programs
+allowed) for PASE (`docs/QSH.md`); it is unmounted first at power
+down. A D IPL from the media does not
 mount it, since it may repartition the disk. At power down it is
 unmounted once the service has ended and the store is closed; the
 installer unmounts it before writing a disk. Neither a missing nor an

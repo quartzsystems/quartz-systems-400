@@ -369,6 +369,8 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         system.fatal(&src::STG_ENDED);
     }
     if system.procs.stg.is_some() {
+        // The service has made /QOpenSys on a new IFS by now.
+        ifs::mount_qopensys(system);
         start_work(system);
     } else {
         system.emit(&src::STRUP_SKIPPED);

@@ -521,6 +521,7 @@ impl Suite {
         reports.push(self.step(&mut s, "69 small servers", Self::small_servers)?);
         reports.push(self.step(&mut s, "67 FTP server", Self::ftp_server)?);
         reports.push(self.step(&mut s, "70 certificates", Self::certificates)?);
+        reports.push(self.step(&mut s, "65 QSH and PASE", Self::qsh_pase)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

@@ -60,6 +60,11 @@ rustls-graviola = "0.4.0"
 x509-cert = { version = "0.3.0", features = ["builder"] }
 p256 = { version = "0.14.0", default-features = false, features = ["ecdsa", "pem", "std"] }
 libc = "0.2.190"
+rustix = { version = "1.1.5", features = ["fs", "process"] }
+qsh = { path = "../../qsh/qsh", version = "0.1.0" }
+qsh-job = { path = "../../qsh/qsh-job", version = "0.1.0" }
+pase = { path = "../../qsh/pase", version = "0.1.0" }
+qshterm = { path = "../../devtools/qshterm", version = "0.1.0" }
 thiserror.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]

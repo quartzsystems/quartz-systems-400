@@ -1773,6 +1773,11 @@ impl Service for Served<'_> {
         super::tcp::request(self.system, op)
     }
 
+    fn qsh(&mut self, op: stg::qsh::QshOp) -> stg::qsh::QshReply {
+        let me = self.ctx.session.borrow().principal.clone();
+        super::qsh::request(self.system, &me, op)
+    }
+
     fn sst_user_change(
         &mut self,
         op: String,

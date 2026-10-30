@@ -61,6 +61,7 @@ members = [
     "devtools/isql",
     "devtools/sst",
     "devtools/edtf",
+    "devtools/qshterm",
     # ILE RPG: the spec tables, the compiler, its runtime.
     "rpg/specs",
     "rpg/front",
@@ -96,6 +97,10 @@ members = [
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",
+    "qsh/qsh-job",
+    "qsh/pase",
+    # The PASE test fixture, built by the harness and never shipped.
+    "tools/pase-probe",
 ]
 
 [workspace.package]
@@ -152,6 +157,11 @@ opt-level = 3
 opt-level = 3
 
 # Release profile is shared by the image binaries and the host tools.
+# The PASE test fixture is pushed over the serial console: small.
+[profile.release.package.pase-probe]
+opt-level = "z"
+strip = true
+
 [profile.release]
 lto = true
 codegen-units = 1

@@ -1,0 +1,13 @@
+[package]
+name = "qshterm"
+description = "QS/400 QSH terminal session: the QSH Command Entry display, its output area, command line and function keys"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+uim = { path = "../../ui/uim", version = "0.1.0" }
+
+[lints]
+workspace = true

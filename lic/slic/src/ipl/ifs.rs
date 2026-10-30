@@ -12,7 +12,7 @@
 use std::fmt::Write as _;
 use std::fs::OpenOptions;
 use std::io::{Seek, SeekFrom};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use diskimg::migrate::AddIfs;
 
@@ -23,6 +23,8 @@ use crate::src;
 
 /// Where the IFS root's filesystem is mounted.
 pub const MOUNT_POINT: &str = "/run/qs400/ifs";
+/// `/QOpenSys` again, with programs allowed (PASE; `qsh/pase`).
+pub const QOPENSYS_EXEC: &str = "/run/qs400/qopensys";
 
 const MIB: u64 = 1024 * 1024;
 
@@ -60,6 +62,21 @@ pub fn mount(system: &mut System) {
     }
 }
 
+/// Mount `/QOpenSys` again with programs allowed, for PASE. After the
+/// storage service has started: it makes `/QOpenSys` on a new IFS.
+pub fn mount_qopensys(system: &mut System) {
+    let qopensys = Path::new(MOUNT_POINT).join("QOpenSys");
+    if plat::mounted(MOUNT_POINT).is_none()
+        || plat::mounted(QOPENSYS_EXEC).is_some()
+        || !qopensys.is_dir()
+    {
+        return;
+    }
+    if let Err(e) = plat::mount_exec(&qopensys, QOPENSYS_EXEC) {
+        system.out.serial(&format!("slic: {QOPENSYS_EXEC}: mount: {e}\n"));
+    }
+}
+
 /// Unmount at power down (D1001012). A filesystem still busy is
 /// detached instead, which the kernel finishes once it is let go.
 pub fn unmount(system: &mut System) {
@@ -67,6 +84,9 @@ pub fn unmount(system: &mut System) {
         return;
     }
     rustix::fs::sync();
+    if plat::mounted(QOPENSYS_EXEC).is_some() {
+        let _ = plat::unmount_xfs(QOPENSYS_EXEC);
+    }
     match plat::unmount_xfs(MOUNT_POINT) {
         Ok(()) => system.emit(&src::IFS_UNMOUNTED),
         Err(e) => {

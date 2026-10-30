@@ -1,0 +1,19 @@
+[package]
+name = "qsh-job"
+description = "QS/400 Qshell in a job: the Sys of a real job over its IFS client, CL, SQL and child jobs, the batch QSH CMD path and the line-fed session"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qsh = { path = "../qsh", version = "0.1.0" }
+qsh-utils = { path = "../qsh-utils", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+
+[dev-dependencies]
+sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
+
+[lints]
+workspace = true

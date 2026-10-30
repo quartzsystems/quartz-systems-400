@@ -37,6 +37,7 @@ use mi::Job;
 mod cee;
 mod data;
 mod db;
+pub mod envproc;
 pub mod ifs;
 mod job;
 pub mod mail;
@@ -93,8 +94,8 @@ pub fn registration_procedures() -> Vec<(&'static str, usize)> {
 
 /// Every bound procedure this crate adds (`QLEAWI`'s, then the C-style
 /// socket, descriptor and resolver calls of [`net`], the IFS calls of
-/// [`ifs`] and `QtmmSendMail` of [`mail`]), by export name, with its
-/// code address.
+/// [`ifs`], `QtmmSendMail` of [`mail`] and the environment and process
+/// calls of [`envproc`]), by export name, with its code address.
 #[must_use]
 pub fn procedures() -> Vec<(&'static str, usize)> {
     let mut v = cee::procedures();
@@ -109,6 +110,7 @@ pub fn c_procedures() -> Vec<(&'static str, usize)> {
     let mut v = net::procedures();
     v.extend(ifs::procedures());
     v.extend(mail::procedures());
+    v.extend(envproc::procedures());
     v
 }
 

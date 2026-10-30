@@ -360,6 +360,9 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
         crate::devtools::dbg::stop(job, stop, &dbg_host)
             .unwrap_or_else(|| debug::session(job, stop, &mut ctl.borrow_mut(), &inbox))
     }));
+    // Environment variables, spawn() and PASE.
+    crate::qsh::child::install(host);
+    crate::qsh::pase::install(&mut job, host);
     crate::command::install_hook(&mut job, host);
     crate::command::natives::install(&mut job, host);
     crate::sysdsp::install(&mut job, host);

@@ -18,6 +18,16 @@ pub fn mount_xfs(dev: &Path, target: &str) -> Result<(), Errno> {
     mount(dev, target, "xfs", flags, None)
 }
 
+/// Mount `dir` (a directory of the IFS mount) again at `target` with
+/// programs allowed, still without devices or set-ID: PASE's `/QOpenSys`.
+pub fn mount_exec(dir: &Path, target: &str) -> Result<(), Errno> {
+    use rustix::mount::{MountPropagationFlags, mount_bind, mount_change, mount_remount};
+    let _ = fs::create_dir_all(target);
+    mount_bind(dir, target)?;
+    let _ = mount_change(target, MountPropagationFlags::PRIVATE);
+    mount_remount(target, MountFlags::BIND | MountFlags::NOSUID | MountFlags::NODEV, "")
+}
+
 /// Unmount `target`, waiting for the filesystem to be written out.
 pub fn unmount_xfs(target: &str) -> Result<(), Errno> {
     unmount(target, UnmountFlags::empty())

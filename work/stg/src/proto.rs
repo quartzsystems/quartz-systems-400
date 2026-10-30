@@ -640,6 +640,9 @@ ipc::rpc! {
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;
+    // --- QSH and environment variables (1300; crate::qsh, stgsvc/qsh.rs)
+    /// System-level environment variables and the profiles' IDs.
+    1300 => fn qsh / QshReq (op: crate::qsh::QshOp) -> crate::qsh::QshReply;
 }
 
 // --- certificate types

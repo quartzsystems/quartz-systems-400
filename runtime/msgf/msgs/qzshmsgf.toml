@@ -1,0 +1,81 @@
+# QZSHMSGF: the Qshell messages (STRQSH, QSH CMD, the terminal session).
+# Identifiers, severities and substitution layouts are the oracle's
+# QSHELL/QZSHMSGF (tools/conformance/oracle/net/pub400/messages-qsh.txt);
+# *CCHAR *VARY 4 is kept as *CHAR *VARY 4. Every text is ours. QS/400
+# installs the file in QSYS.
+name = "QZSHMSGF"
+text = "Qshell messages"
+
+[[msg]]
+id = "QSH0001"
+sev = 20
+text = "This job already has a QSH terminal session."
+help = "Only one QSH terminal session runs in a job at a time. Return to it with STRQSH from the display that started it."
+
+[[msg]]
+id = "QSH0002"
+sev = 40
+text = "The QSH session failed, reason code &1, errno &2."
+help = "The shell could not start or continue. The reason code says which step failed and the errno value why."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "QSH0003"
+sev = 0
+text = "A new QSH session has started."
+help = "The shell is ready for commands at the QSH Command Entry display."
+
+[[msg]]
+id = "QSH0004"
+sev = 0
+text = "The QSH session has ended."
+help = "The shell ended with exit or F3. STRQSH starts a new one."
+
+[[msg]]
+id = "QSH0005"
+sev = 0
+text = "The command finished with exit status &1."
+help = "QSH ran the command to its end. An exit status of 0 means success; any other value is the command's own report of a problem. Set QIBM_QSH_CMD_ESCAPE_MSG to Y to have a status above 0 sent as an escape."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "QSH0006"
+sev = 0
+text = "The command was stopped by signal &1."
+help = "A signal ended the command before it finished. Its output may be incomplete."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "QSH0007"
+sev = 0
+text = "The command was stopped by an exception."
+help = "An exception the command did not handle ended it. See the earlier messages in the job log for the cause."
+
+[[msg]]
+id = "QSH0008"
+sev = 0
+text = "QSH is running: &1"
+help = "The shell is running the command shown."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "QSH0101"
+sev = 40
+text = "Descriptor &1 is not open in this job."
+help = "The shell expected the descriptor for standard input, output or error to be open."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "QSH2001"
+sev = 0
+text = "QSH Command Entry"
+
+[[msg]]
+id = "QSH2002"
+sev = 0
+text = "F3=Exit   F6=Print F9=Retrieve F12=Disconnect"
+
+[[msg]]
+id = "QSH2003"
+sev = 0
+text = "F13=Clear F17=Top  F18=Bottom  F21=CL command entry"

@@ -354,6 +354,7 @@ pub fn file_of(msgid: &str) -> &'static str {
         Some("RNF" | "RNS") => "QRPGLEMSG",
         Some("RNX" | "RNQ" | "RNI" | "RNT") => "QRNXMSG",
         Some("TCP") => "QTCPMSG",
+        Some("QSH") => "QZSHMSGF",
         _ => "QCPFMSG",
     }
 }

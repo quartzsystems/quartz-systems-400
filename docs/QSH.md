@@ -774,3 +774,243 @@ None of these was checked on the system; the probes ask each.
 The shell's `printf` writes an octal escape above `\177` as the UTF-8
 of that code point, not as one byte (`printf '\351'` is `c3 a9`), so
 the corpus keeps raw bytes in seeded files.
+
+## QSH in a job
+
+### Crates
+
+| Crate | What |
+|---|---|
+| `qsh/qsh-job` | `JobSys`, the `Sys` of a real job; the broker between the shell's threads and the job's thread; `run::batch` (`QSH CMD()`), `run::invoke` (`qsh` arguments), `run::Session` (the line-fed terminal session) |
+| `devtools/qshterm` | the QSH Command Entry display as pure logic: the output area, the command line, the keys |
+| `qsh/pase` | the PASE mechanism (Linux only): the view of the IFS, the seccomp filter, starting a program in its own namespaces |
+| `work/qsjob/src/qsh/` | the job's side: `side.rs` (the `Side` over the job's link and runtime), `cmd.rs` (`QSH`, `STRQSH`), `env.rs` (`ADDENVVAR`, `CHGENVVAR`, `RMVENVVAR`, `WRKENVVAR`), `child.rs` (child jobs, `spawn()`), `pase.rs` (`QP2SHELL`, `QP2SHELL2`, `QP2TERM`, `Qp2RunPase`), `signals.rs` |
+| `work/qsjob/src/devtools/qsh.rs` | the terminal session's driver |
+| `runtime/sysapi/src/envproc/` | the job's environment variables and the bound procedures `getenv`, `putenv`, `Qp0zGetEnv`, `Qp0zPutEnv`, `Qp0zDltEnv` (`QP0ZCPA`), `Qp0zGetAllSysEnv`, `Qp0zGetSysEnv`, `Qp0zPutSysEnv`, `Qp0zDltSysEnv` (`QP0ZSYSE`), `spawn`, `spawnp`, `wait`, `waitpid` and their `Qp0z` names (`QP0ZSPWN`), `kill` (`QP0SSRV1`), `getpid`, `getppid` (`QP0WSRV1`), `Qp2RunPase` (`QP2USER`) |
+| `work/stg/src/qsh.rs`, `lic/slic/src/stgsvc/qsh.rs` | request 1300: the system-level variables (in the user space `QUSRSYS/QP0ZSYSENV`, changes need `*ALLOBJ`) and every profile's UID, GID and home directory |
+
+### The job's `Sys`
+
+A job's runtime (its link to the storage service, the analyzer, the ILE
+job) is single-threaded and not `Send`; the shell is `Send + Sync` and
+runs on worker threads. `JobSys` turns every operation into a task for a
+`Broker`; the job's thread holds the `Desk` and serves tasks against its
+`Side` while the shell runs (`run::with_shell`). A task's caller waits for
+its answer; closing a file is posted without waiting.
+
+- Files are the job's IFS (`IfsClient`, the `RemoteIfs` over the job's
+  link): `open` gives an `IfsFile` stream over the service's descriptor.
+  A `/QSYS.LIB` member opens in text mode with CCSID 819 and reads as
+  lines without their trailing blanks. `realpath` resolves links and
+  gives each name as its directory spells it where names fold.
+- `/usr/bin` lists every utility of `qsh-utils` and `sh` and `qsh`, as
+  IBM's shows its links to `QSHELL`, whether or not the IFS has the
+  directory; they run on threads of the job.
+- `/usr/bin/sh` and `/usr/bin/qsh` are the shell itself: a new shell on a
+  thread, with the request's arguments, environment and directory.
+- `/QSYS.LIB/LIB.LIB/PGM.PGM` (or `/QSYS.LIB/PGM.PGM`) is called in the
+  job with the arguments as parameters (`CALL PGM(LIB/PGM) PARM(...)`);
+  what it writes to the display is its standard output; 1 when it ended
+  with an escape.
+- An executable ELF file is a PASE program: it runs in a child job.
+  Anything else executable is a script (`ENOEXEC`).
+- The hooks: `system` runs CL through the job's analyzer (its output
+  lines become messages, an escape last); `db2` runs SQL in the job's SQL
+  session (requests 400 and 401); `nslookup`, `host` and `hostname` ask
+  the job's resolver (`sysapi::net`, the TCP/IP domain configuration);
+  `liblist`, `sysval` and `datarea` reach the job's library list, system
+  values, network attributes and data areas; `ps` lists the active jobs;
+  user and group names come from the profiles' UIDs; `df` from `statvfs`.
+- Process IDs of in-process children start at 4,200,000, above any Linux
+  process ID; a signal to one is recorded for its shell, a signal to any
+  other process ID goes to that job (below).
+
+### Entry points
+
+- `QSH`/`STRQSH` without a command at a display: the terminal session.
+- `QSH CMD(...)`: `run::batch` with `TERMINAL_TYPE=PIPELINE` (`5250` at a
+  display). `QIBM_QSH_CMD_OUTPUT`: `STDOUT` (the default) is the terminal
+  display in an interactive job (the output, then Enter ends it), the
+  spooled file `QPRINT` in a batch or child job and the text of the
+  service console's line; `FILE=` and `FILEAPPEND=` write the IFS file
+  (standard error too); `NONE` drops it. The ending message is `QSH0005`
+  (completion; escape with `QIBM_QSH_CMD_ESCAPE_MSG=Y` and a status above
+  0), `QSH0006` (signal) or `QSH0007` (exception), from `QZSHMSGF`
+  (`runtime/msgf/msgs/qzshmsgf.toml`, installed in `QSYS`).
+- `crate::qsh::child::start_shell(host, user, argv, env, cwd, [stdin,
+  stdout, stderr])` in `work/qsjob`: a child job (`QP0ZSPWN`, type `B`,
+  subtype `D`) running `qsh` with the given arguments (`["qsh", "-l"]` for
+  a login shell, `["qsh", "-c", text]`, a script) as the given user over
+  the given descriptors; the returned `ChildJob`'s process ends with the
+  shell's status. This is the SSH server's way to a shell.
+- `qsh_job::run::invoke(side, setup, argv, stdio)`: the same inside a job
+  that already is the shell's.
+
+A shell of a job starts with Qshell's variables (`HOME`, `LOGNAME`,
+`PATH=/usr/bin:.:/QOpenSys/usr/bin`, `HOSTNAME`, `HOSTTYPE`, `MACHTYPE`,
+`OSTYPE=os400`, `QIBM_DESCRIPTOR_STD*`, `QIBM_USE_DESCRIPTOR_STDIO=Y`,
+`SHLVL`, `TERMINAL_TYPE`, `TRACEOPT`) overlaid by the job's environment
+variables, in the user's home directory when it exists.
+
+### The terminal session
+
+QSH Command Entry (`devtools/qshterm`, against the goldens `qsh-start`
+and `qsh-session`): the title on row 1, fourteen rows of output from
+row 3 at column 4, `===>` on row 18 with a four-row command field, two
+rows of keys and the message row. A typed command is echoed as
+`> command`; the prompt (`$`) follows each command's output. Long lines
+wrap at 76 columns; F11 cuts them instead.
+
+| Key | Action |
+|---|---|
+| Enter | the line to the shell (a command, or input for a running command that reads) |
+| F3 | end the shell and leave |
+| F5 | show the display again |
+| F6 | print the output to `QPRINT` |
+| F7, F8, Page Up, Page Down | page the output |
+| F9 | retrieve earlier commands, newest first |
+| F11 | wrap or cut long lines |
+| F12 | leave; the shell waits in the job and the next `STRQSH` resumes it |
+| F13 | clear the output |
+| F17, F18 | the top, the bottom |
+| F21 | run the command line as a CL command (IBM opens a command entry window) |
+
+The shell runs on its own thread while the job's thread serves it and
+redraws the output every half second; a command that reads its standard
+input gets the next line typed.
+
+### Process model
+
+- Child jobs (`work/qsjob/src/qsh/child.rs`) are `qsjob` processes the job
+  starts with the role `SPAWN`, batch immediate (`BCI`), named
+  `QP0ZSPWN` (the parent's name with `SPAWN_SETJOBNAMEPARENT_NP`, the
+  program's with `SPAWN_SETJOBNAMEARGV_NP`), in the parent's subsystem,
+  job description, class and pool (cgroup). The request data (hex of a
+  wire record) names what to run (the shell, a PASE program or a `*PGM`),
+  the arguments, the environment, the directory, the descriptor that is
+  standard input and whether `QIBM_MULTI_THREADED=Y` was set (stored in
+  the request data and the child's environment). Standard output and
+  error are the process's own.
+- `spawn()` and `spawnp()` (`QP0ZSPWN`) start one; `spawnp` searches
+  `PATH`. The child's input is the null device and its output and error
+  the job's own: descriptors of the map other than `SPAWN_FDCLOSED` are
+  not passed (the job's IFS and socket descriptors live in the storage
+  service and the network layer; passing them is the host servers'
+  descriptor-passing work). `waitpid()` and `wait()` give the status in
+  the encoding of `<sys/wait.h>` (exit status in the low byte,
+  `0x00020000` with the signal), `WNOHANG` honoured.
+- `kill()` and the shell's `kill` to another job translate the system's
+  signal number to Linux's by name (`signals.rs`) and signal its process;
+  a job of another user needs `*JOBCTL`. A child ended by a signal
+  reports the system's number.
+- A shell's program that is a PASE program runs in a child job; its
+  streams are copied through pipes.
+
+### Environment variables
+
+`ADDENVVAR`, `CHGENVVAR`, `RMVENVVAR` and `WRKENVVAR` with IBM's
+parameters (checked against the oracle's definitions and prompts,
+`command/sys-cpps/tests/qsh_defs.rs`). `LEVEL(*JOB)` changes the job's
+variables, kept in the job's process; `LEVEL(*SYS)` the system's, kept
+by the service in `QUSRSYS/QP0ZSYSENV` and changed only with `*ALLOBJ`
+(`CPFA98E`). A job starts with a copy of the system's. Messages:
+`CPCA980`, `CPCA981`, `CPCA988`, `CPFA980`, `CPFA981`, `CPFA984`.
+`WRKENVVAR` is the `QUIENVVAR` panel (goldens `wrkenvvar` and
+`wrkenvvar-sys`): options 1 (add, on the blank first entry), 2, 4, 5 and
+6, F11 shows the CCSIDs, F17 and F18 page to the ends; names over 24
+characters and values over 34 are cut with `>` as IBM's. Without a
+display it lists as text.
+
+### PASE
+
+`QP2SHELL` and `QP2SHELL2` (`QSYS` programs: a path and argument
+strings), `QP2TERM` (with a program as `QP2SHELL`; with none it needs a
+PASE shell at `/QOpenSys/usr/bin/sh`, which QS/400 does not ship),
+`Qp2RunPase`, and a shell running an ELF file start the program through
+`qsh/pase`:
+
+1. The job forks a keeper, which unshares its user, mount and PID
+   namespaces and waits; the job writes the keeper's maps (root to root,
+   so the view can be built, and the profile's UID and GID to themselves)
+   and lets it go on.
+2. The keeper forks the program's process, PID 1 of the new namespace.
+3. That process makes its mounts private, mounts a `tmpfs` on
+   `/run/qs400/pase` and builds the view: every top-level entry of
+   `/QOpenSys` (directories and files bind-mounted, symbolic links
+   copied; taken from `/run/qs400/qopensys`, the second mount of
+   `/QOpenSys` that `slic` makes with programs allowed, since the IFS
+   mount is `noexec`) so `/usr`, `/etc`, `/tmp`, `/var` and `/bin` are those of
+   `/QOpenSys`, as an AIX program built for PASE expects; `/QOpenSys`
+   itself, so the IFS spelling works; `/home` from the root file system;
+   `/dev` with the host's null, zero, full, random, urandom and tty;
+   `/proc` of the new PID namespace. `/QSYS.LIB` and the rest of the root
+   file system are not in the view: they are the storage service's, not
+   files.
+4. It pivots its root there and detaches the old one (when the root is
+   the initramfs, which `pivot_root` refuses, it moves the view over `/`
+   and changes its root into it, as `switch_root` does; the old root
+   stays covered), makes the root
+   read-only, changes to the working directory (when in the view), sets
+   standard input, output and error, drops every other descriptor at
+   exec, clears its signal mask and supplementary groups, takes the
+   profile's GID and UID, sets `no_new_privs` and installs the seccomp
+   filter, then executes the program.
+5. The keeper ends as the program did; the job waits for the keeper.
+
+The program is in the job's pool cgroup (a descendant of the job's
+process). The filter (`qsh/pase/src/seccomp.rs`) is a classic BPF
+program written here: anything but `x86_64` is killed, x32 numbers and
+every call not on the list fail with `EPERM`; the list is what a
+userland needs (files, memory, signals, sockets, processes, time,
+`futex`, `epoll`, `getrandom`, `rseq` and the rest) and leaves out
+mounting, tracing, modules, rebooting, keyrings, BPF, namespaces,
+`io_uring`, pidfds and setting the clock. The kernel needs
+`CONFIG_USER_NS` and `CONFIG_PID_NS` (`kernel/config/qs400.config`,
+checked by the build).
+
+The fork happens in a multi-threaded process, so everything the children
+use (paths, arguments, the filter) is prepared before it and the
+children make system calls only; this is the one `unsafe` site,
+`qsh/pase/src/platform.rs`.
+
+Tests: the `qsh/pase` unit tests (the filter run by an interpreter of the
+same semantics, the view's plan); `qsh/pase/tests/linux.rs` as root
+(`wsl -d Ubuntu -u root -- bash qsh/pase/tests/linux-root.sh`) runs
+`tools/pase-probe` (a test fixture built for the musl target, never
+shipped) from a fake IFS: it sees UID and GID 1234 and 1235, is PID 1
+with no other process in `/proc`, sees `/QOpenSys/tmp` and `/home`, and
+`pidfd_open` is refused with `EPERM`. QEMU step 65 pushes the probe into
+`/QOpenSys/tmp` and runs it with `QP2SHELL` and from `qsh`.
+
+### Tests (QSH in a job)
+
+- `qsh/qsh-job/tests/corpus.rs`: the utilities' `text-*` and `misc-*`
+  corpus files (769 cases; 13 that read the clock or objects only the
+  `MemSys` seed has are skipped) run over `JobSys` and a real IFS
+  (`LocalIfs` over the memory backend, seeded as the `MemSys` corpus is,
+  owned by a user without special authority); standard output, standard
+  error and status must match.
+- `qsh/qsh-job/tests/job.rs`: the shell as `/usr/bin/sh` and `qsh`, the
+  `/usr/bin` listing, programs called in the job, `system`, scripts in
+  the IFS, and every `QIBM_QSH_CMD_OUTPUT` mode and ending message.
+- `devtools/qshterm/tests/screens.rs`: the session displays against the
+  pub400 goldens; `ui/uim/tests/envvar_panels.rs`: `WRKENVVAR` at both
+  levels; `command/sys-cpps/tests/qsh_defs.rs`: the six commands'
+  definitions and prompts.
+- QEMU step 65: `ADDENVVAR LEVEL(*SYS)`, `QSH CMD()` at the console, a
+  submitted `QSH CMD('ls /home; echo $?')` whose `QPRINT` is read back,
+  and the PASE probe through `QP2SHELL` and `qsh`.
+
+### Open questions (QSH in a job)
+
+1. IBM runs a shell's programs in child jobs; QS/400 runs `*PGM` objects
+   in the shell's job and only PASE programs in children.
+2. `QSH CMD()` with `STDOUT` at a display: IBM's terminal shows output as
+   it comes; ours shows it when the command ends.
+3. F21: IBM opens a command entry window; ours runs the command line.
+4. `QSH0003` and `QSH0004` are not sent at session start and end.
+5. `spawn()` descriptor maps beyond `SPAWN_FDCLOSED`.
+6. The top level of the PASE view is rebuilt each start: a file created
+   directly in its `/` is not kept.
+7. `QZSHMSGF` is installed in `QSYS`; IBM's is in `QSHELL`, a library
+   QS/400 does not have.

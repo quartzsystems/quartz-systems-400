@@ -898,3 +898,36 @@ note = "a panel at a display; the text form in the service otherwise"
 [cmd.QSCHKCRT]
 cpp = "QSZCCHK"
 note = "what QSYSCOMM1 runs daily: warnings to QSYSOPR at 30, 7 and 1 days and at expiry"
+
+# --- QSH and environment variables (work/qsjob/src/qsh/; the system-level
+# variables in the service, lic/slic/src/stgsvc/qsh.rs)
+[cmd.QSH]
+site = "job"
+cpp = "QZSHQSHC"
+note = "QSH CMD() through the job's shell; the QSH Command Entry display with no command"
+
+[cmd.STRQSH]
+site = "job"
+cpp = "QZSHSTRC"
+note = "as QSH"
+
+[cmd.ADDENVVAR]
+site = "job"
+cpp = "QP0ZADDE"
+comp = "CPCA980"
+note = "the job's variables in the job; LEVEL(*SYS) in the service (*ALLOBJ)"
+
+[cmd.CHGENVVAR]
+site = "job"
+cpp = "QP0ZCHGE"
+comp = "CPCA981"
+
+[cmd.RMVENVVAR]
+site = "job"
+cpp = "QP0ZRMVE"
+comp = "CPCA988"
+
+[cmd.WRKENVVAR]
+site = "job"
+cpp = "QP0ZWRKE"
+note = "a panel at a display; the list as text otherwise"

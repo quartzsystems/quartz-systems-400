@@ -1,0 +1,16 @@
+[package]
+name = "pase"
+description = "QS/400 PASE mechanism: a program in its own mount, PID and user namespaces rooted at /QOpenSys, the job's user mapped, a seccomp filter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2.190"
+
+[lints]
+workspace = true

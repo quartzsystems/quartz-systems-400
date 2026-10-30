@@ -19,6 +19,7 @@
 pub mod ifs;
 mod link;
 pub mod proto;
+pub mod qsh;
 pub mod remote;
 pub mod tcp;
 

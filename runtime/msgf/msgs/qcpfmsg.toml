@@ -2301,3 +2301,63 @@ sev = 40
 text = "The trace of &1 type &2 cannot be ended."
 help = "Its capture did not stop."
 vars = ["*CHAR 10", "*CHAR 4"]
+
+
+# Environment variables (ADDENVVAR, CHGENVVAR, RMVENVVAR, WRKENVVAR).
+
+[[msg]]
+id = "CPCA980"
+sev = 0
+text = "Added the environment variable."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA981"
+sev = 0
+text = "Changed the environment variable."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA982"
+sev = 0
+text = "Printed the list of environment variables."
+
+[[msg]]
+id = "CPCA983"
+sev = 0
+text = "Printed the environment variable."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPCA988"
+sev = 0
+text = "Removed the environment variable."
+vars = ["*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA98E"
+sev = 40
+text = "User &1 may not change system-level environment variables."
+help = "Adding, changing or removing a variable at LEVEL(*SYS) takes *ALLOBJ special authority."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPFA980"
+sev = 40
+text = "An environment variable of this name is already at level &1."
+help = "Use CHGENVVAR to give it a new value, or ADDENVVAR with REPLACE(*YES)."
+vars = ["*CHAR 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA981"
+sev = 40
+text = "There is no environment variable of this name at level &1."
+help = "Names are case-sensitive. WRKENVVAR lists the variables of each level."
+vars = ["*CHAR 4", "*CHAR 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "CPFA984"
+sev = 40
+text = "The limit of &1 environment variables has been reached."
+help = "Remove variables that are no longer needed before adding more."
+vars = ["*BIN 4"]

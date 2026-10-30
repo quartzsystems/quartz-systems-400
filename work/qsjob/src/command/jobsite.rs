@@ -140,6 +140,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
+        // --- QSH and environment variables (qsh/)
+        "QSH" | "STRQSH" => return crate::qsh::cmd::run(job, host, r),
+        "ADDENVVAR" => return crate::qsh::env::addenvvar(r),
+        "CHGENVVAR" => return crate::qsh::env::chgenvvar(r),
+        "RMVENVVAR" => return crate::qsh::env::rmvenvvar(r),
+        "WRKENVVAR" => return crate::qsh::env::wrkenvvar(job, host, r),
         _ => {}
     }
     // A panel's command in a job that shows none: the service's text.
@@ -340,7 +346,12 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail>
             }
             cmd::Value::Hex(b) => b.clone(),
             cmd::Value::Char(s) => {
-                ccsid::to_ebcdic(s).map_err(|_| Fail::new("CPD0084", format!("{s}: not CP037")))?
+                let mut b = ccsid::to_ebcdic(s)
+                    .map_err(|_| Fail::new("CPD0084", format!("{s}: not CP037")))?;
+                // A NUL after the value, for programs that take C strings
+                // (QP2SHELL); the value's own bytes are unchanged.
+                b.push(0);
+                b
             }
             other => ccsid::to_ebcdic(&other.source()).unwrap_or_default(),
         });

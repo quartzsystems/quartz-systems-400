@@ -10,6 +10,7 @@ pub mod dfu;
 pub mod edtf;
 pub mod isql;
 pub mod pdm;
+pub mod qsh;
 pub mod rlu;
 pub mod sda;
 pub mod seu;

@@ -34,7 +34,7 @@ macro_rules! errnos {
 
 errnos! {
     EINVAL = 3021, "The argument is not valid.";
-    EIO = 3006, "An input or output error occurred.";
+    EIO = 3006, "An input or output error happened.";
     EBUSY = 3029, "The resource is busy.";
     ENOENT = 3025, "No such path or directory.";
     EPERM = 3027, "The operation is not permitted.";
