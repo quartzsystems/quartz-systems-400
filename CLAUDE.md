@@ -310,7 +310,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
-              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md,
+              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md,
               images/
 ```
 
