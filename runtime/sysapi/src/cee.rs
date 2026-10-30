@@ -6,7 +6,7 @@
 //! `CEEDOD`, `CEEGPID`, `CEETSTA`, the heap APIs `CEECRHP`, `CEEDSHP`,
 //! `CEEGTST`, `CEEFRST`, `CEECZST`, the date and time APIs `CEEDAYS`,
 //! `CEEDATE`, `CEEDATM`, `CEESECS`, `CEEUTC`, `CEELOCT`, `CEEQCEN`,
-//! `CEESCEN`, `CEEGMT`, `CEEGMTO`, `CEERAN0`, and `CEE4RAGE`. Every
+//! `CEESCEN`, `CEEGMT`, `CEEGMTO` (and `CEEUTCO`), `CEERAN0`, and `CEE4RAGE`. Every
 //! parameter is by reference; a `VSTRING` is a two-byte length and the
 //! characters; `CHAR80` outputs are blank padded.
 
@@ -67,6 +67,7 @@ bound!(b_ceeqcen, ceeqcen);
 bound!(b_ceescen, ceescen);
 bound!(b_ceegmt, ceegmt);
 bound!(b_ceegmto, ceegmto);
+bound!(b_ceeutco, ceegmto);
 bound!(b_ceeran0, ceeran0);
 bound!(b_cee4rage, cee4rage);
 
@@ -99,6 +100,8 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("CEESCEN", addr!(b_ceescen)),
         ("CEEGMT", addr!(b_ceegmt)),
         ("CEEGMTO", addr!(b_ceegmto)),
+        // CEEUTCO answers as CEEGMTO.
+        ("CEEUTCO", addr!(b_ceeutco)),
         ("CEERAN0", addr!(b_ceeran0)),
         ("CEE4RAGE", addr!(b_cee4rage)),
     ]
@@ -415,7 +418,7 @@ mod tests {
     #[test]
     fn every_procedure_has_an_address() {
         let p = super::procedures();
-        assert_eq!(p.len(), 22);
+        assert_eq!(p.len(), 23);
         assert!(p.iter().all(|(_, a)| *a != 0));
     }
 }

@@ -295,6 +295,10 @@ impl Lowerer<'_, '_> {
     /// temporary holding a literal or a spilled register.
     fn arg_address(&mut self, op: &Operand, param: &Param) -> Result<Value> {
         match op {
+            Operand::Place(p) if !param.by_value => match self.based_arg_addr(p)? {
+                Some(a) => Ok(a),
+                None => Ok(self.addr(p)?.0),
+            },
             Operand::Place(p) => Ok(self.addr(p)?.0),
             Operand::Const(c) => {
                 let ty = match (c, &param.ty) {

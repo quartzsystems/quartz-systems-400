@@ -102,6 +102,19 @@ pub fn literal_shape(text: &str) -> (u8, u8) {
     (digits.max(scale).max(1), scale)
 }
 
+/// A hexadecimal literal of at most 8 bytes where a number is wanted:
+/// its unsigned value.
+#[must_use]
+pub fn hex_as_number(v: &V) -> Option<V> {
+    let h = v.op.strip_prefix("x\"")?.strip_suffix('"')?;
+    if v.kind != Vk::Lit || h.is_empty() || h.len() > 16 {
+        return None;
+    }
+    let n = u64::from_str_radix(h, 16).ok()?.to_string();
+    let (d, _) = literal_shape(&n);
+    Some(V::lit(Ty::Packed(d, 0), n))
+}
+
 /// An IR numeric literal from RPG text.
 fn num_text(text: &str) -> String {
     let t = text.replace(',', ".");
@@ -286,6 +299,7 @@ impl Gen<'_> {
             return None;
         };
         self.t.refer(id, self.at.line, modify);
+        self.refresh_basing(id, 0);
         let sym = self.t.syms[id].clone();
         match &sym.kind {
             Some(Kind::Const(ConstVal::Expr(e))) => {
@@ -840,6 +854,18 @@ impl Gen<'_> {
             return Some(V::reg(Ty::Ind, r));
         }
         if va.ty == Ty::Ind || vb.ty == Ty::Ind {
+            // *ON and *OFF against a character field: all '1's or '0's.
+            let fig_ind = |v: &V| v.kind == Vk::Lit && matches!(v.fig, Some(Fig::On | Fig::Off));
+            let field = |v: &V| v.kind != Vk::Lit && matches!(v.ty, Ty::Char(_));
+            if (fig_ind(&va) && field(&vb)) || (fig_ind(&vb) && field(&va)) {
+                let text = |f: &V, other: &V| {
+                    let n = usize::try_from(other.ty.str_len().unwrap_or(1).max(1)).unwrap_or(1);
+                    quote(&(if f.fig == Some(Fig::On) { "1" } else { "0" }).repeat(n))
+                };
+                let (a, b) = if fig_ind(&va) { (text(&va, &vb), vb.op.clone()) } else { (va.op.clone(), text(&vb, &va)) };
+                self.b.ins(format!("{r} = str.cmp.{c} {a}, {b}"));
+                return Some(V::reg(Ty::Ind, r));
+            }
             if !matches!(op, BinOp::Eq | BinOp::Ne) {
                 let a = self.ind_char(&va);
                 let b = self.ind_char(&vb);
@@ -917,7 +943,7 @@ impl Gen<'_> {
     }
 
     /// An indicator as one character, for ordering comparisons.
-    fn ind_char(&mut self, v: &V) -> String {
+    pub(crate) fn ind_char(&mut self, v: &V) -> String {
         if v.kind == Vk::Place {
             let t = self.b.temp("char(1)");
             self.b.ins(format!("cvt {t}, {}", v.op));
@@ -931,6 +957,24 @@ impl Gen<'_> {
         let c = self.b.temp("char(1)");
         self.b.ins(format!("cvt {c}, {t}"));
         c
+    }
+
+    /// Before a reference: the shadow of every subfield basing pointer
+    /// on the item's chain gets the subfield's current value.
+    fn refresh_basing(&mut self, id: crate::syms::SymId, depth: u32) {
+        if depth > 8 {
+            return;
+        }
+        if let Some(p) = self.t.syms[id].parent {
+            self.refresh_basing(p, depth + 1);
+        }
+        let crate::syms::Storage::Based(ptr) = self.t.syms[id].storage else { return };
+        self.refresh_basing(ptr, depth + 1);
+        if self.t.syms[ptr].kind == Some(crate::syms::Kind::Subfield) {
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = load {}", crate::codegen::place_of(self.t, ptr)));
+            self.b.ins(format!("store {}, {r}", crate::codegen::basing_ir(self.t, ptr)));
+        }
     }
 
     /// A pointer value as a register.

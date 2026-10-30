@@ -451,6 +451,18 @@ thread_local! {
     static JOB_SETUP: RefCell<Option<JobSetup>> = RefCell::new(None);
 }
 
+thread_local! {
+    /// The job log of the last call on this thread.
+    static LAST_JOBLOG: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// The console lines (`console: text`) and job log (`MSGID kind:
+/// text`) of the last run's call on this thread.
+#[must_use]
+pub fn last_joblog() -> Vec<String> {
+    LAST_JOBLOG.with(|l| l.borrow().clone())
+}
+
 /// Give the jobs of later runs on this thread something more before
 /// the call (the IFS corpus gives them a file system); `None` stops it.
 pub fn set_job_setup(f: Option<JobSetup>) {
@@ -546,6 +558,37 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     Ok((o, c.listing, notes))
 }
 
+/// `PARM` values as CL passes literals: a character string as at least
+/// 32 blank-padded EBCDIC bytes, a number as `*DEC (15 5)`.
+fn cl_parms(list: &str) -> Vec<Vec<u8>> {
+    let mut out = Vec::new();
+    let mut rest = list.trim();
+    while !rest.is_empty() {
+        let (word, tail) = if let Some(r) = rest.strip_prefix('\'') {
+            let end = r.find('\'').unwrap_or(r.len());
+            (format!("'{}", &r[..end]), r.get(end + 1..).unwrap_or(""))
+        } else {
+            let end = rest.find(char::is_whitespace).unwrap_or(rest.len());
+            (rest[..end].to_string(), &rest[end..])
+        };
+        rest = tail.trim_start();
+        let num = word.trim_start_matches(['-', '+']);
+        if !word.starts_with('\'') &&!num.is_empty() && num.chars().all(|c| c.is_ascii_digit() || c == '.') {
+            let p = qdecimal::Decimal::parse(&word)
+                .ok()
+                .and_then(|v| qdecimal::Packed::new(15, 5).ok()?.encode(&v, qdecimal::Rounding::Truncate).ok())
+                .unwrap_or_else(|| vec![0, 0, 0, 0, 0, 0, 0, 0x0F]);
+            out.push(p);
+        } else {
+            let text = word.trim_start_matches('\'');
+            let mut b = ccsid::to_ebcdic(text).unwrap_or_default();
+            b.resize(b.len().max(32), 0x40);
+            out.push(b);
+        }
+    }
+    out
+}
+
 /// Call a program with the case's service programs at hand, and note
 /// how it ended and what it printed.
 fn call_into(
@@ -611,7 +654,11 @@ fn call_into(
             }
         }));
         DEADLINE.store(now_ms() + LIMIT_MS, std::sync::atomic::Ordering::Relaxed);
-        let r = job.call_program(&case.name, "QGPL", &[]);
+        // CALL ... PARM(...): CL's literals, in storage the call keeps.
+        let mut parms = cl_parms(&build::kwd(&case.fill(&case.call, "QGPL"), "PARM"));
+        let args: Vec<u64> = parms.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
+        let r = job.call_program(&case.name, "QGPL", &args);
+        drop(parms);
         DEADLINE.store(0, std::sync::atomic::Ordering::Relaxed);
         job.close_printers();
         // An exception left pending ended the program with an escape.
@@ -620,6 +667,11 @@ fn call_into(
             (Ok(()), Some(e)) => Run::Escape(e.msgid.clone()),
             (Ok(()), None) => Run::Ok,
         };
+        LAST_JOBLOG.with(|l| {
+            let mut v: Vec<String> = job.console.iter().map(|c| format!("console: {c}")).collect();
+            v.extend(job.joblog.entries().map(|e| format!("{} {} from {} {}: {}", e.msgid, e.kind, e.from.0, e.from_inst, e.text.trim_end())));
+            *l.borrow_mut() = v;
+        });
         sysapi::uninstall(&job);
         o.spool = spooled(&spool.0.borrow());
         if let Some(d) = display {

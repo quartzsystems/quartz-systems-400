@@ -788,6 +788,6 @@ fn activation_group_exits_run_on_reclaim() {
     job.call_program("AGX", "*LIBL", &[]).unwrap();
     assert_eq!(job.console, vec!["main", "1", "exit ran"]);
     assert!(!job.pending());
-    assert_eq!(sysapi::qleawi_exports().len(), 30);
+    assert_eq!(sysapi::qleawi_exports().len(), 31);
     sysapi::uninstall(&job);
 }

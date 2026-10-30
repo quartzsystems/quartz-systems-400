@@ -35,6 +35,7 @@ ile = { path = "../../runtime/ile", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
 cl = { path = "../../command/cl", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
@@ -51,7 +52,6 @@ print = { path = "../../work/print", version = "0.1.0" }
 ntp = { path = "../../net/ntp", version = "0.1.0" }
 lpd = { path = "../../net/lpd", version = "0.1.0" }
 ftp = { path = "../../net/ftp", version = "0.1.0" }
-ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }

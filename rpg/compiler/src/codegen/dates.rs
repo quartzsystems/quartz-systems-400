@@ -668,6 +668,8 @@ impl Gen<'_> {
     fn dt_test(&mut self, op: &Op) {
         let Some(r) = op.result.first() else { return };
         let Some(v) = self.expr(r, Want::default()) else { return };
+        // A data structure is tested as its characters.
+        let v = if matches!(v.ty, Ty::Ds(_)) { self.as_chars(&v) } else { v };
         let class = if op.ext.contains('D') {
             Some(Class::Date)
         } else if op.ext.contains('T') {

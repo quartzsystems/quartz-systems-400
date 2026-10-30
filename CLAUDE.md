@@ -346,6 +346,7 @@ cargo test -p conformance --test qir_kit   # the IR kit in memory; outputs under
 QS400_UPDATE_QIR=1 cargo test -p conformance --test qir_kit   # rewrite conformance/qir/expected/
 cargo test --release -p conformance --test callbench -- --ignored --nocapture   # a million calls, timed
 cargo test -p conformance --test cl_kit    # the CL corpus in memory; QS400_UPDATE_CL=1 rewrites expected/
+cargo test -p conformance --test oss_net   # HTTPAPI built and its examples run against a loopback HTTP server (Linux); QS400_UPDATE_OSS=1
 cargo test -p conformance --test cmd_kit   # the analyzer kit; QS400_UPDATE_CMD=1 rewrites expected.txt
 cargo test -p sys-cpps                     # definitions, harness tripwire, inventory, prompt goldens
 cargo test --release -p conformance --test cmd_bench -- --ignored --nocapture   # analyzer, prompter, CL benches

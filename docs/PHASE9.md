@@ -85,7 +85,15 @@ their outcomes match.
   gitignored `tools/conformance/oss/src/`: noxDB, ILEastic,
   ibmi-company_system): every member compiles without a compiler
   failure; 181 of 303 are created, the rest need objects, copy
-  members or IFS files the projects do not hold.
+  members or IFS files the projects do not hold. Phase 10 added
+  HTTPAPI and si-ibmi-apis (below); with the fixes that made and
+  current clones of the three, 269 of 545 are created (214 of the
+  first 303, HTTPAPI 41 of 51, si-ibmi-apis 14 of 191).
+- **Open-source projects over the network** (Phase 10,
+  `tests/oss_net.rs`, `src/ossnet/`; see "Open-source projects that
+  need sockets, the IFS or TLS" below): HTTPAPI built as its `INSTALL`
+  builds it and its examples called against the harness host's HTTP
+  server; reports in `oss/expected/httpapi/`.
 - **Layouts** (`tests/rpg_layouts.rs`): the INFDS and PSDS tables of
   `RPG.md` against the code.
 - **IBM text** (`tests/phase9_hygiene.rs`, `tests/phase8_hygiene.rs`):
@@ -194,6 +202,82 @@ system).
   (`codegen/dbio.rs`).
 - **`DUMP(A)`** writes no formatted dump (`_QRNX_DUMP`); pub400's holds
   the job and the dates, so the corpus does not print one.
+
+## Open-source projects that need sockets, the IFS or TLS
+
+Deferred from Phase 9 until the sockets, IFS and TLS APIs existed;
+done in Phase 10. Each project is fetched as untrusted data into the
+gitignored `tools/conformance/oss/src/` (nothing of it is tracked) and
+compiled unmodified; a build step the project's own makefile or
+`INSTALL` does is done in memory: HTTPAPI's generated `VERSION` member
+and its documented `CONFIG_H` choices.
+
+| Project (licence) | What | Compiles | Runs |
+|---|---|---|---|
+| HTTPAPI 1.53 (BSD-2-Clause), `ScottKlement/httpapi` | HTTP client in RPG: the `HTTPAPIR4` service program and 33 examples | the 9 modules of the service program, `CRTSRVPGM`, the 3 examples run | `EXAMPLE1` (GET to a stream file) and `EXAMPLE15` (form POST, 302, GET) pass: the server gets the requests and the files hold the bytes served. `EXAMPLE16` (SOAP POST, `XML-INTO`) ends before it sends: BLOCKED(phase10), see below |
+| HTTPAPI over TLS | `COMMSSLR4` over GSKit | compiles | BLOCKED(phase10): no ILE binding of `QSOSSLSR` (`gsk_*`) exists; `net/tls` has the semantics only (`docs/CERTS.md`), so `CONFIG_H` is built without `HAVE_SSLAPI` |
+| HTTPAPI NTLM | `NTLMR4`, `MD4R4`, `ENCRYPTR4` | no (`RNF7535` on prototypes with continued names, `RNF7503` on `MD4_CTX_t`'s positional `DIM` subfields; not chased) | built without `NTLM_SUPPORT` |
+| si-ibmi-apis (MIT), `jsranko/si-ibmi-apis` | IFS utility service programs (`SIISF`, `SIDIR`, `SIPATH`, `SIIOF`, `SIIMF`) and IBM's pure-RPG JSON parser `JSONPARSE` | counted by `oss_corpus` | BLOCKED(phase10): `SIIOF` and `SIIMF` copy `QSYSINC/QRPGLESRC,FCNTL` and `SYSSTAT`, IBM's headers, which QS/400 does not ship; `JSONPARSE` is a `DATA-INTO` parser (see "Blocked" above) |
+
+`tests/oss_net.rs` builds the service program as `INSTALL` does (one
+`CRTRPGMOD` per module, a binding directory, `CRTSRVPGM`), compiles the
+examples with `BNDDIR('HTTPAPI')` and calls each in a job with an IFS in
+memory and the job's sockets. The host names in the examples' URLs are
+replaced in memory by the server's `127.0.0.1:port`. The server
+(`src/ossnet/server.rs`) answers the paths the examples ask for and
+keeps every request; a report holds how the call ended, the requests
+(method, path, content type, `SOAPAction`, body), the files left in the
+IFS and the job log. On a build host other than Linux the sockets are
+stubs and only the build report is compared.
+
+What running HTTPAPI found and fixed:
+
+- Compiler: `BASED(ptr)` in fixed form declares the pointer; a
+  pointer that is a subfield bases through a shadow refreshed before
+  each reference; `LIKE(data structure)` is characters of its length
+  and `LIKE(prototype)` the return type; `*ON`/`*OFF` against and into
+  characters, an indicator into characters and characters into an
+  indicator; `DOW '1'`; a hexadecimal literal where a number is wanted;
+  `%SUBST` as a target with run-time positions (only the substring's
+  bytes are written); conditional
+  compilation between an extended factor 2's continuation lines; a
+  `C` line holding only the form letter; `*NULL` to a procedure
+  pointer parameter or return; `EXTPROC` naming a procedure of the
+  module, or `DS.SUBFIELD`; local prototypes of one name with
+  different signatures; `IMPORT('name')`; fixed and varying strings to
+  a `CONST` `*VARSIZE` parameter; `TEST(Z)` of a data structure;
+  `OPDESC` on a procedure interface; a one-byte value to a C function
+  widened; a NOMAIN module's globals initialized before its first
+  procedure runs.
+- Runtime: a by-reference argument that is a based variable on a null
+  pointer passes null; `CEEDOD` gives a varying string's maximum
+  length; system data imports (`_res`) get program
+  storage; `CEEUTCO`; the C runtime calls RPG binds through `QC2LE`
+  (`sysapi::crt`: `memcpy`, `memset`, `memchr`, `memcmp`, `strlen`,
+  `strtok`, `atoi`, `atoll`, `sscanf`, `cvthc`, `cvtch`, `QtqIconvOpen`,
+  `iconv_open`, `iconv`, `iconv_close`, `_C_IFS_tmpnam`, `_CIPHER` MD5);
+  the pad an `i64` needs after a second pointer (`ABI.md` §1).
+- BLOCKED(phase10): a pointer taken to a by-reference parameter
+  (`%ADDR` of it) addresses a space the taking entry owns, so it dies
+  when that entry returns, though the storage is the caller's.
+  HTTPAPI's `getBufferInfo` hands `http_req` such a pointer to the
+  string `http_string` was given; `iconv` then finds it dead (`EFAULT`,
+  "CCSID conversion failed"). Letting such spaces outlive the entry was
+  tried and let a stale wider space cover later heap blocks; it needs
+  the runtime to know which entry owns the storage behind a parameter.
+- BLOCKED(phase10): a parameter passed by reference and a pointer
+  passed by value are not interchangeable in a call through a
+  procedure pointer, as they are on IBM i. QS/400 passes a by-reference
+  argument as a native address and a pointer as a 16-byte fat pointer
+  (`ABI.md` §3); HTTPAPI's `recvdoc` calls `rcvToBuf` (data by
+  reference) through a prototype that passes `* value`, so
+  `http_string` (`EXAMPLE16`, past the block above) gets "Not all data
+  was written" (seen while the block above was worked around). Making
+  them agree means passing every by-reference argument as a fat
+  pointer, a change of the ABI.
+- Not fixed: `QCPFMSG` has no `CPExxxx` (`errno`) messages, so a
+  program that sends one (HTTPAPI does when its debug file cannot be
+  opened) gets `CPF2499` instead; `res_init` answers `ENOENT`.
 
 ## Oracle systems
 

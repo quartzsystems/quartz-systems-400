@@ -599,6 +599,10 @@ fn classify(text: &str, fully_free: bool, first: bool, ctdata: bool, free_block:
     if free_block && c6 == ' ' {
         return Class::Free;
     }
+    // A calculation line with nothing after the form letter.
+    if c6.eq_ignore_ascii_case(&'C') && rpgspecs::cut(text, 7, 80).trim().is_empty() {
+        return Class::Blank;
+    }
     Class::Spec(c6.to_ascii_uppercase())
 }
 

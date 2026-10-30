@@ -333,6 +333,30 @@ pub fn place_of(t: &Table, id: SymId) -> String {
     }
 }
 
+/// The pointer a `BASED` item is declared on: the pointer's own
+/// variable, or for a subfield pointer a shadow the references refresh
+/// (the IR bases only on variables).
+pub fn basing_ir(t: &Table, ptr: SymId) -> String {
+    let p = &t.syms[ptr];
+    if p.kind == Some(Kind::Subfield) {
+        format!("$_bp{ptr}")
+    } else {
+        p.ir.clone()
+    }
+}
+
+/// `based X: T on P`, after the shadow `P` needs when the pointer is a
+/// subfield (`static` or `auto` as `shadow`).
+pub fn based_decls(t: &Table, ir: &str, ty: &str, ptr: SymId, shadow: &str) -> Vec<String> {
+    let on = basing_ir(t, ptr);
+    let mut out = Vec::new();
+    if t.syms[ptr].kind == Some(Kind::Subfield) {
+        out.push(format!("{shadow} {on}: ptr"));
+    }
+    out.push(format!("based {ir}: {ty} on {on}"));
+    out
+}
+
 /// The IR of a whole module.
 pub fn module(
     m: &Module,
@@ -500,7 +524,7 @@ pub fn module(
         }
         let ty = g.t.ir_storage(s);
         let decl = match &s.storage {
-            Storage::Based(p) => format!("based {}: {ty} on {}", s.ir, g.t.syms[*p].ir),
+            Storage::Based(p) => based_decls(g.t, &s.ir, &ty, *p, "static").join("\n"),
             Storage::Import => format!("import {}: {ty}", s.ir),
             Storage::Export => format!("static {}: {ty}{} export", s.ir, static_inz(s)),
             _ => format!("static {}: {ty}", s.ir),

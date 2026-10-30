@@ -1,0 +1,5 @@
+EXAMPLE1: created true
+run: ended normally
+request: GET /presentations/Web%20Services%20from%20RPG%20with%20HTTPAPI.pdf
+  user-agent: http-api/1.52
+file /tmp/Scott's HTTPAPI presentation handout.pdf: 5000 bytes, sum B55FF97B, 00070E151C232A31383F464D, the bytes served

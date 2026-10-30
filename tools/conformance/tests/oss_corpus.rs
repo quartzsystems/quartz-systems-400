@@ -41,15 +41,20 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// Members a project's build writes before it compiles: project,
+/// member, text.
+const GENERATED: &[(&str, &str, &str)] = &[("httpapi", "VERSION", "     H COPYRIGHT('HTTPAPI as built by the QS/400 harness')")];
+
 /// A project's members by file name and by stem, upper case; by stem
 /// an include member (`.rpgleinc`...) wins over a program source.
 struct ByStem {
     files: HashMap<String, PathBuf>,
     stems: HashMap<String, PathBuf>,
+    generated: Vec<(&'static str, &'static str)>,
 }
 
 impl ByStem {
-    fn new(paths: &[PathBuf]) -> Self {
+    fn new(project: &str, paths: &[PathBuf]) -> Self {
         let mut files = HashMap::new();
         let mut stems: HashMap<String, PathBuf> = HashMap::new();
         for p in paths.iter().filter(|p| BROUGHT.contains(&ext(p).as_str())) {
@@ -62,7 +67,8 @@ impl ByStem {
                 stems.insert(stem, p.clone());
             }
         }
-        Self { files, stems }
+        let generated = GENERATED.iter().filter(|(p, _, _)| *p == project).map(|(_, m, t)| (*m, *t)).collect();
+        Self { files, stems, generated }
     }
 }
 
@@ -70,6 +76,9 @@ impl Includes for ByStem {
     fn member(&mut self, _lib: &str, _file: &str, name: &str) -> Option<Member> {
         let base = name.rsplit(['/', '\\']).next().unwrap_or(name).to_ascii_uppercase();
         let stem = base.split('.').next().unwrap_or(&base).to_string();
+        if let Some((m, t)) = self.generated.iter().find(|(m, _)| *m == stem) {
+            return Some(Member::from_text("OSS", "QRPGLESRC", m, t));
+        }
         let p = self.files.get(&base).or_else(|| self.stems.get(&stem))?;
         let text = String::from_utf8_lossy(&std::fs::read(p).ok()?).to_string();
         Some(Member::from_text("OSS", "QRPGLESRC", &stem, &text))
@@ -110,7 +119,7 @@ fn open_source_members_compile_without_compiler_failures() {
             } else {
                 rpgc::Command::CrtBndRpg
             };
-            let mut inc = ByStem::new(&files);
+            let mut inc = ByStem::new(&proj.file_name().unwrap_or_default().to_string_lossy(), &files);
             let member = Member::from_text("OSS", "QRPGLESRC", &name, &text);
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 rpgc::compile(member, &mut inc, &mut rpgc::NoExtFiles, &opts)

@@ -121,7 +121,15 @@ pub mod opdesc {
 /// `datatype`, `info1`, `info2`, `length`.
 #[must_use]
 pub fn describe(ty: &Type) -> [i32; 5] {
-    let len = |t: &Type| i32::try_from(t.size()).unwrap_or(i32::MAX);
+    // A varying string's length is its maximum, without the prefix.
+    let len = |t: &Type| {
+        let n = match t {
+            Type::VarChar(n, _) => u64::from(*n),
+            Type::VarUcs2(n, _) | Type::VarGraphic(n, _) => 2 * u64::from(*n),
+            t => t.size(),
+        };
+        i32::try_from(n).unwrap_or(i32::MAX)
+    };
     if let Some((elem, n)) = ty.array() {
         let n = i32::try_from(n).unwrap_or(i32::MAX);
         return [opdesc::ARRAY, datatype(elem), n, 0, len(elem)];

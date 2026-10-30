@@ -106,6 +106,34 @@ impl Lowerer<'_, '_> {
         Some((self.param_vals[k as usize], v.ty.clone()))
     }
 
+    /// The address a whole based variable passed by reference stands
+    /// for: zero when its pointer is null, as the pointer itself is
+    /// what the callee gets; `None` for any other place.
+    pub(crate) fn based_arg_addr(&mut self, place: &Place) -> Result<Option<Value>> {
+        let PlaceBase::Var(r) = &place.base else { return Ok(None) };
+        if !place.path.is_empty() {
+            return Ok(None);
+        }
+        let v = self.m.var(*r, Some(self.p)).expect("verified");
+        let StorageClass::Based(on) = v.class else { return Ok(None) };
+        let pa = self.var_addr(on)?;
+        let fat = self.b.ins().load(types::I128, le(), pa, 0);
+        let (lo, _) = self.b.ins().isplit(fat);
+        let kind = self.b.ins().band_imm_u(lo, 0xFF);
+        let null = self.b.ins().icmp_imm_s(IntCC::Equal, kind, 0);
+        let (zero_blk, deref_blk, merge) = (self.b.create_block(), self.b.create_block(), self.b.create_block());
+        self.b.append_block_param(merge, types::I64);
+        self.b.ins().brif(null, zero_blk, &[], deref_blk, &[]);
+        self.b.switch_to_block(zero_blk);
+        let z = self.b.ins().iconst(types::I64, 0);
+        self.b.ins().jump(merge, &[z.into()]);
+        self.b.switch_to_block(deref_blk);
+        let a = self.deref(fat);
+        self.b.ins().jump(merge, &[a.into()]);
+        self.b.switch_to_block(merge);
+        Ok(Some(self.b.block_params(merge)[0]))
+    }
+
     fn var_addr(&mut self, r: VarRef) -> Result<Value> {
         let v = self.m.var(r, Some(self.p)).expect("verified");
         Ok(match (&r.scope, &v.class) {

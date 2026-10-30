@@ -18,7 +18,7 @@ pub mod ops;
 use crate::ast::{CtData, Def, DefKind, FileDecl, Module, Pos, Proc, Stmt};
 use crate::diag::{Diag, ids};
 use crate::lex::{self, Segment, Tok};
-use crate::reader::{Class, Line, Read};
+use crate::reader::{Class, Directive, Line, Read};
 
 /// A fixed-form specification and its continuation lines.
 #[derive(Clone, Debug)]
@@ -114,6 +114,21 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                 while i < lines.len() {
                     let n = &lines[i];
                     if matches!(n.class, Class::Blank | Class::Comment | Class::Skipped) {
+                        i += 1;
+                        continue;
+                    }
+                    // Conditional compilation between continuation lines.
+                    if form == 'C'
+                        && let Class::Directive(d) = &n.class
+                        && matches!(
+                            d,
+                            Directive::If(_) | Directive::ElseIf(_) | Directive::Else | Directive::EndIf | Directive::Define(_) | Directive::Undefine(_)
+                        )
+                        && lines[i + 1..]
+                            .iter()
+                            .find(|m| !matches!(m.class, Class::Blank | Class::Comment | Class::Skipped | Class::Directive(_)))
+                            .is_some_and(|m| m.class == Class::Spec('C') && rpgspecs::cut(&m.text, 7, 35).trim().is_empty())
+                    {
                         i += 1;
                         continue;
                     }

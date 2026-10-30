@@ -1,0 +1,6 @@
+EXAMPLE16: created true
+run: escape CEE9901
+joblog: CPF9897 Escape from HTTPAPIR4 9272: CCSID conversion failed: An address passed to the function is not valid.
+joblog: CPF9999 Escape from HTTPAPIR4 9272: Function check: CPF9897 was not handled at EXAMPLE16.
+joblog: CEE9901 Inquiry from HTTPAPIR4 9272: Program EXAMPLE16 ended because of an unhandled exception CPF9897. Reply C, D, F, G, I or R.
+joblog: CEE9901 Escape from HTTPAPIR4 9272: Program EXAMPLE16 ended because of an unhandled exception CPF9897. Reply C, D, F, G, I or R.

@@ -173,6 +173,8 @@ impl Gen<'_> {
         if vals.iter().all(|v| v.ty.is_char()) {
             return Some(self.bit_chars(name, &vals));
         }
+        // With numbers, a hexadecimal literal is an unsigned number.
+        let vals: Vec<V> = vals.into_iter().map(|v| crate::codegen::expr::hex_as_number(&v).unwrap_or(v)).collect();
         if !vals.iter().all(|v| v.ty.is_integer() || v.kind == Vk::Lit && v.ty.shape().is_some_and(|s| s.1 == 0)) {
             self.err(ids::BIF_ARGS, 30, name.to_string());
             return None;
@@ -459,6 +461,86 @@ impl Gen<'_> {
         self.rt_proc("_QRNX_STRGET", "($d: bytes(1) *VARSIZE, byval $cap: i64, $s: bytes(1) *VARSIZE)");
         self.b.ins(format!("callb _QRNX_STRGET({t}, {cap}, [{r}]:char({cap}))"));
         Some(V::place(Ty::varchar(cap), t))
+    }
+
+    /// `%SUBST(base : start {: length}) = value` with run-time positions:
+    /// the value, blank-padded or cut to the length, replaces those
+    /// characters of the base.
+    pub fn subst_assign(&mut self, args: &[Expr], v: &Expr) -> Option<()> {
+        let base = self.target(&args[0])?;
+        let base = self.as_chars(&base);
+        if !matches!(base.ty, Ty::Char(_) | Ty::VarChar(..)) {
+            self.err(ids::UNSUPPORTED, 30, "%SUBST");
+            return None;
+        }
+        let len = base.ty.str_len().unwrap_or(1).max(1);
+        let start = self.int_arg(&args[1])?;
+        let n = match args.get(2) {
+            Some(e) => self.int_arg(e)?,
+            None => {
+                let l = self.b.reg();
+                self.b.ins(format!("{l} = str.len {}", base.op));
+                let l64 = self.b.reg();
+                self.b.ins(format!("{l64} = cvt.i64 {l}"));
+                let a = self.b.reg();
+                self.b.ins(format!("{a} = sub {l64}, {start}"));
+                let b = self.b.reg();
+                self.b.ins(format!("{b} = add {a}, 1"));
+                b
+            }
+        };
+        let val = self.expr(v, Want::default())?;
+        let pad = V::place(Ty::Char(len), self.b.temp(&format!("char({len})")));
+        self.assign(&pad, &val, false);
+        // Outside the current length: status 100.
+        let cur = if base.ty.is_varying() {
+            let l = self.b.reg();
+            self.b.ins(format!("{l} = str.len {}", base.op));
+            let l64 = self.b.reg();
+            self.b.ins(format!("{l64} = cvt.i64 {l}"));
+            l64
+        } else {
+            len.to_string()
+        };
+        let (low, end, high) = (self.b.reg(), self.b.reg(), self.b.reg());
+        self.b.ins(format!("{low} = cmp.lt {start}, 1"));
+        self.signal_if(&low, 100);
+        self.b.ins(format!("{end} = add {start}, {n}"));
+        let past = self.b.reg();
+        self.b.ins(format!("{past} = sub {end}, 1"));
+        self.b.ins(format!("{high} = cmp.gt {past}, {cur}"));
+        self.signal_if(&high, 100);
+        // Only those bytes are written: the base may be a view wider than
+        // its storage.
+        let at = self.b.reg();
+        self.b.ins(format!("{at} = addr {}", base.op));
+        let skip = self.b.reg();
+        self.b.ins(format!("{skip} = add {start}, {}", i64::from(base.ty.var_prefix().unwrap_or(0)) - 1));
+        let dst = self.b.reg();
+        self.b.ins(format!("{dst} = ptradd {at}, {skip}"));
+        let src = self.b.reg();
+        self.b.ins(format!("{src} = addr {}", pad.op));
+        let i = self.b.temp("i64");
+        self.b.ins(format!("store {i}, 0"));
+        let (top, body, done) = (self.b.label(), self.b.label(), self.b.label());
+        self.b.term(format!("br {top}"));
+        self.b.place(&top);
+        let iv = self.b.reg();
+        self.b.ins(format!("{iv} = load {i}"));
+        let more = self.b.reg();
+        self.b.ins(format!("{more} = cmp.lt {iv}, {n}"));
+        self.b.term(format!("brif {more}, {body}, {done}"));
+        self.b.place(&body);
+        let (d, s, c, next) = (self.b.reg(), self.b.reg(), self.b.reg(), self.b.reg());
+        self.b.ins(format!("{s} = ptradd {src}, {iv}"));
+        self.b.ins(format!("{c} = load [{s} +0]:u8"));
+        self.b.ins(format!("{d} = ptradd {dst}, {iv}"));
+        self.b.ins(format!("store [{d} +0]:u8, {c}"));
+        self.b.ins(format!("{next} = add {iv}, 1"));
+        self.b.ins(format!("store {i}, {next}"));
+        self.b.term(format!("br {top}"));
+        self.b.place(&done);
+        Some(())
     }
 
     /// `%STR(pointer : maximum) = value`.

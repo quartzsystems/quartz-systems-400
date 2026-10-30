@@ -172,10 +172,21 @@ fn declare_scope(
     for d in in_dependency_order(defs) {
         decl::declare(&mut cx, d);
     }
+    // IMPORT('name') and EXPORT('name'): the external name is the IR's.
+    for d in defs.iter().filter(|_| scope == 0) {
+        let Some(k) = d.kw("IMPORT").or_else(|| d.kw("EXPORT")) else { continue };
+        let Some(n) = decl::str_arg(k, 0) else { continue };
+        if n.is_empty() || !n.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+            continue;
+        }
+        if let Some(id) = cx.t.find(scope, &d.name.to_ascii_uppercase()) {
+            cx.t.syms[id].ir = format!("${n}");
+        }
+    }
     // A basing pointer nothing declares is declared by BASED.
     for d in defs {
         let Some(p) = d.kw("BASED").and_then(|k| decl::word_arg(k, 0)).map(|p| p.to_ascii_uppercase()) else { continue };
-        let Some(id) = cx.t.find(scope, &d.name) else { continue };
+        let Some(id) = cx.t.find(scope, &d.name.to_ascii_uppercase()) else { continue };
         if p.contains('.') || p.starts_with('*') || cx.t.find(scope, &p).is_some() || matches!(cx.t.syms[id].storage, Storage::Based(_)) {
             continue;
         }

@@ -5,7 +5,9 @@
 //! The C-style procedures the runtime provides under IBM's service
 //! program names: sockets (`QSOSRV1`), the resolver (`QSOSRV2`), the
 //! descriptor and IFS calls (`QP0LLIB1`, `QP0LLIB2`, `QP0LLIB3`),
-//! `errno` (`QC2UTIL1`) and C's `perror` and `rename` (`QC2IO`). An import of one is a `*SYSTEM` import like `QLEAWI`'s;
+//! `errno` (`QC2UTIL1`), C's `perror`, `rename` and `sscanf` (`QC2IO`), the
+//! C runtime calls of `crt` in `sysapi` (`QC2UTIL1`, `QC2UTIL2`,
+//! `QTQICONV`, `QC2IFS`) and the MI built-in `_CIPHER`. An import of one is a `*SYSTEM` import like `QLEAWI`'s;
 //! `DSPPGM` names the service program IBM binds it from. Names are
 //! matched without regard to case: the RPG compiler upper-cases every
 //! `EXTPROC` name, C-style headers spell them in lower case.
@@ -231,6 +233,28 @@ pub const SYSTEM_SRVPGM_PROCS: &[(&str, &str)] = &[
     ("getppid", "QP0WSRV1"),
     // QP2USER: PASE.
     ("Qp2RunPase", "QP2USER"),
+    ("sscanf", "QC2IO"),
+    // QC2UTIL2 and QC2UTIL1: memory, strings, numbers, hex.
+    ("memcpy", "QC2UTIL2"),
+    ("memmove", "QC2UTIL2"),
+    ("memset", "QC2UTIL2"),
+    ("memchr", "QC2UTIL2"),
+    ("memcmp", "QC2UTIL2"),
+    ("strlen", "QC2UTIL2"),
+    ("strtok", "QC2UTIL1"),
+    ("atoi", "QC2UTIL1"),
+    ("atoll", "QC2UTIL1"),
+    ("cvthc", "QC2UTIL1"),
+    ("cvtch", "QC2UTIL1"),
+    // QTQICONV: code conversion.
+    ("QtqIconvOpen", "QTQICONV"),
+    ("iconv_open", "QTQICONV"),
+    ("iconv", "QTQICONV"),
+    ("iconv_close", "QTQICONV"),
+    // QC2IFS: tmpnam on the IFS.
+    ("_C_IFS_tmpnam", "QC2IFS"),
+    // An MI built-in; no service program exports it.
+    ("_CIPHER", "QSYS"),
 ];
 
 /// Names of the table no captured export list has: `#pragma map`
@@ -247,6 +271,8 @@ pub const NOT_EXPORTED: &[&str] = &[
     "QlgCvtPathToQSYSObjName",
     "perror",
     "rename",
+    "sscanf",
+    "_CIPHER",
     "htonl",
     "htons",
     "ntohl",

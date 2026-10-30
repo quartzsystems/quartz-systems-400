@@ -608,6 +608,16 @@ impl Gen<'_> {
                 let _ = self.str_assign(args, v);
                 return true;
             }
+            // Positions known only at run time.
+            let lit = |e: Option<&Expr>| matches!(e, None | Some(Expr::Lit(rpgfront::ast::Lit::Num(_), _)));
+            if matches!(name.as_str(), "%SUBST" | "%SUBSTR")
+                && aop == AssignOp::Set
+                && (2..=3).contains(&args.len())
+                && !(lit(args.get(1)) && lit(args.get(2)))
+            {
+                let _ = self.subst_assign(args, v);
+                return true;
+            }
             if name == "%OCCUR" {
                 let Some(id) = args.first().and_then(|a| self.mods(a)) else { return false };
                 let Some(n) = self.expr(v, Want::default()) else { return true };

@@ -35,6 +35,7 @@ use std::rc::Rc;
 use mi::Job;
 
 mod cee;
+mod crt;
 mod data;
 mod db;
 pub mod envproc;
@@ -94,8 +95,9 @@ pub fn registration_procedures() -> Vec<(&'static str, usize)> {
 
 /// Every bound procedure this crate adds (`QLEAWI`'s, then the C-style
 /// socket, descriptor and resolver calls of [`net`], the IFS calls of
-/// [`ifs`], `QtmmSendMail` of [`mail`] and the environment and process
-/// calls of [`envproc`]), by export name, with its code address.
+/// [`ifs`], `QtmmSendMail` of [`mail`], the environment and process
+/// calls of [`envproc`] and the C library calls of [`crt`]), by export
+/// name, with its code address.
 #[must_use]
 pub fn procedures() -> Vec<(&'static str, usize)> {
     let mut v = cee::procedures();
@@ -111,6 +113,7 @@ pub fn c_procedures() -> Vec<(&'static str, usize)> {
     v.extend(ifs::procedures());
     v.extend(mail::procedures());
     v.extend(envproc::procedures());
+    v.extend(crt::procedures());
     v
 }
 
@@ -168,4 +171,5 @@ pub fn uninstall(job: &Job) {
     });
     net::drop_state(job);
     ifs::drop_state(job);
+    crt::drop_state(job);
 }

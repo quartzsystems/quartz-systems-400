@@ -56,7 +56,7 @@ impl Gen<'_> {
     }
 
     /// An integer argument as an `i64` register.
-    fn int_arg(&mut self, e: &Expr) -> Option<String> {
+    pub(crate) fn int_arg(&mut self, e: &Expr) -> Option<String> {
         let v = self.expr(e, Want::default())?;
         self.int_reg(&v)
     }
@@ -1002,7 +1002,7 @@ impl Gen<'_> {
             if prm.value && crate::codegen::stmt::is_reg_type(&prm.ty) {
                 return match &prm.ty {
                     Ty::Ind => self.ind_reg(&v),
-                    Ty::Ptr | Ty::ProcPtr => Some(self.ptr_reg(&v)),
+                    Ty::Ptr | Ty::ProcPtr => Some(self.ptr_reg_of(&v, prm.ty == Ty::ProcPtr)),
                     Ty::Float(8) => Some(self.float_reg(&v)),
                     _ => {
                         let t = self.tmp(&prm.ty.clone());
@@ -1013,7 +1013,15 @@ impl Gen<'_> {
                     }
                 };
             }
-            if prm.varsize && v.ty.is_string() && prm.ty.is_string() && v.kind == Vk::Place && !prm.value {
+            // A shorter string of the same form passes as it is; fixed
+            // and varying convert.
+            if prm.varsize
+                && v.ty.is_string()
+                && prm.ty.is_string()
+                && v.ty.var_prefix() == prm.ty.var_prefix()
+                && v.kind == Vk::Place
+                && !prm.value
+            {
                 return Some(v.op);
             }
             let t = self.tmp(&prm.ty.clone());
@@ -1043,6 +1051,17 @@ impl Gen<'_> {
         let cstyle = self.c_style(p);
         let mut ops = Vec::new();
         for (prm, a) in p.parms.iter().zip(args) {
+            // A one-character value to C goes widened, as C's char does.
+            if cstyle && prm.value && prm.ty == Ty::Char(1) {
+                let v = self.expr(a, Want::default())?;
+                let v = self.lit_storage(&self.as_chars(&v));
+                let at = self.b.reg();
+                self.b.ins(format!("{at} = addr {v}"));
+                let r = self.b.reg();
+                self.b.ins(format!("{r} = load [{at} +0]:u8"));
+                ops.push(r);
+                continue;
+            }
             let op = self.argument(prm, a)?;
             // A system C-style procedure takes a pointer where RPG
             // passes by reference, as IBM's C functions do.
@@ -1146,7 +1165,16 @@ impl Gen<'_> {
         if !p.extproc_word {
             return None;
         }
-        let id = self.t.find(self.scope, p.extproc.as_deref()?)?;
+        let ext = p.extproc.as_deref()?;
+        let id = match ext.split_once('.') {
+            // A subfield of a qualified data structure.
+            Some((ds, f)) => {
+                let d = self.t.find(self.scope, ds)?;
+                let Some(Kind::Ds(i)) = self.t.syms[d].kind else { return None };
+                self.t.subfield(i, f)?
+            }
+            None => self.t.find(self.scope, ext)?,
+        };
         if self.t.syms[id].ty != Ty::ProcPtr {
             return None;
         }
@@ -1182,7 +1210,13 @@ impl Gen<'_> {
                 let ty = if prm.likefile.is_some() { "fcb_".to_string() } else { self.t.ir_type(&prm.ty) };
                 let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
                 let mut s = String::new();
-                let ty = if cstyle && !prm.value { "ptr".to_string() } else { ty };
+                let ty = if cstyle && !prm.value {
+                    "ptr".to_string()
+                } else if cstyle && prm.ty == Ty::Char(1) {
+                    "u8".to_string()
+                } else {
+                    ty
+                };
                 if prm.value || cstyle {
                     s.push_str("byval ");
                 } else if prm.konst {
@@ -1203,6 +1237,8 @@ impl Gen<'_> {
             })
             .collect();
         let ret = p.ret.as_ref().map(|t| format!(" -> {}", self.t.ir_type(t))).unwrap_or_default();
+        // OPDESC: the call passes operational descriptors.
+        let ret = if p.opdesc { format!("{ret} opdesc") } else { ret };
         (params, ret)
     }
 
@@ -1212,12 +1248,26 @@ impl Gen<'_> {
     fn other_signature(&mut self, p: &Proto, ir: &str) -> Option<String> {
         let (params, ret) = self.signature(p);
         let mine = format!("extern proc {ir}({}){ret}", params.join(", "));
-        if self.externs.get(ir).is_none_or(|e| *e == mine) {
+        // EXTPROC naming a procedure of this module: through its address
+        // with this prototype's own signature.
+        let local = p.extproc.as_ref().is_some_and(|e| self.local_procs.contains(&e.to_ascii_uppercase()));
+        if !local && self.externs.get(ir).is_none_or(|e| *e == mine) {
             return None;
         }
-        let name = format!("_QRNPX_{}", mangle(&p.name.to_ascii_uppercase()));
-        self.externs.entry(name.clone()).or_insert_with(|| format!("proto {name}({}){ret}", params.join(", ")));
-        Some(name)
+        // Local prototypes of one name may differ too: one each.
+        let base = format!("_QRNPX_{}", mangle(&p.name.to_ascii_uppercase()));
+        for i in 1.. {
+            let name = if i == 1 { base.clone() } else { format!("{base}_{i}") };
+            let text = format!("proto {name}({}){ret}", params.join(", "));
+            match self.externs.get(&name) {
+                Some(e) if *e != text => {}
+                _ => {
+                    self.externs.insert(name.clone(), text);
+                    return Some(name);
+                }
+            }
+        }
+        None
     }
 
     /// The IR name of a call's target, declaring an external one.
@@ -1241,7 +1291,8 @@ impl Gen<'_> {
         }
         let ext = p.extproc.clone().unwrap_or_else(|| p.name.clone());
         let ir = mangle(&ext.to_ascii_uppercase());
-        if !self.local_procs.contains(&p.name) {
+        // A prototype whose EXTPROC names a procedure of this module calls it.
+        if !self.local_procs.contains(&p.name) && !self.local_procs.contains(&ext.to_ascii_uppercase()) {
             self.externs
                 .entry(ir.clone())
                 .or_insert_with(|| format!("extern proc {ir}({}){ret}", params.join(", ")));

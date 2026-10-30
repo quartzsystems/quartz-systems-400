@@ -229,7 +229,7 @@ pub fn bind(input: BindInput<'_>) -> Result<(ProgramObject, Vec<Diag>)> {
     }
     let unresolved: Vec<String> = imports
         .iter()
-        .filter(|i| i.target == ImportTarget::Unresolved)
+        .filter(|i| i.target == ImportTarget::Unresolved && system_data_size(i.kind, &i.name).is_none())
         .map(|i| format!("{} ({})", i.name, b.modules[i.module as usize].module.name))
         .collect();
     if !unresolved.is_empty() {
@@ -251,6 +251,16 @@ pub fn bind(input: BindInput<'_>) -> Result<(ProgramObject, Vec<Diag>)> {
     for m in &mut b.modules {
         m.frame_offset = at;
         at += m.module.code.statics.size.div_ceil(16) * 16;
+    }
+    // System data the runtime does not share: zeroed storage of the
+    // program's own, after the frames.
+    for i in &mut imports {
+        if i.target == ImportTarget::Unresolved
+            && let Some(n) = system_data_size(i.kind, &i.name)
+        {
+            i.target = ImportTarget::Data { offset: at };
+            at += n.div_ceil(16) * 16;
+        }
     }
     let static_size = at;
     // Data import offsets become program static area offsets.
@@ -475,8 +485,21 @@ pub const SYSTEM_PROCS: &[&str] = &[
     "CEEHDLR", "CEEHDLU", "CEERTX", "CEEUTX", "CEESGL", "CEENCOD", "CEEDCOD", "CEEMRCR", "CEE4ABN",
     "CEETREC", "CEEDOD", "CEEGPID", "CEETSTA", "CEECRHP", "CEEDSHP", "CEEGTST", "CEEFRST",
     "CEECZST", "CEEDAYS", "CEEDATE", "CEEDATM", "CEESECS", "CEEUTC", "CEELOCT", "CEEQCEN",
-    "CEESCEN", "CEEGMT", "CEEGMTO", "CEERAN0", "CEE4RAGE",
+    "CEESCEN", "CEEGMT", "CEEGMTO", "CEEUTCO", "CEERAN0", "CEE4RAGE",
 ];
+
+/// Data exports of IBM's service programs a program may import, with
+/// the bytes each takes: `QSOSRV2`'s resolver state `_res`. Each program
+/// gets zeroed storage of its own; the runtime does not read it.
+pub const SYSTEM_DATA: &[(&str, u64)] = &[("_res", 4096)];
+
+/// The size of a system data import, `None` when it is not one.
+fn system_data_size(kind: ExportKind, name: &str) -> Option<u64> {
+    if kind != ExportKind::Data {
+        return None;
+    }
+    SYSTEM_DATA.iter().find(|(n, _)| n.eq_ignore_ascii_case(name)).map(|(_, s)| *s)
+}
 
 /// The registration facility's procedures (`QUSRGFA1`, `QUSRGFA2`),
 /// which the runtime provides too (`sysapi`).

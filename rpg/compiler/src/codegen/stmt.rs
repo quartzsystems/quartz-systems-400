@@ -69,6 +69,8 @@ impl Gen<'_> {
                     }
                     return;
                 }
+                // A hexadecimal literal is an unsigned number.
+                let src = crate::codegen::expr::hex_as_number(&src).unwrap_or(src);
                 if !src.ty.is_numeric() {
                     self.err(ids::ASSIGN_TYPE, 30, "");
                     return;
@@ -77,7 +79,14 @@ impl Gen<'_> {
                 self.b.ins(format!("dec.mov {}, {s}{h}", dst.op));
             }
             (d, _) if d.is_string() => {
-                if let Some(Fig::All(pat)) = &src.fig {
+                // *ON and *OFF into characters: all '1's or '0's.
+                let all = match &src.fig {
+                    Some(Fig::On) if d.is_char() => Some("1".to_string()),
+                    Some(Fig::Off) if d.is_char() => Some("0".to_string()),
+                    Some(Fig::All(pat)) => Some(pat.clone()),
+                    _ => None,
+                };
+                if let Some(pat) = &all {
                     let n = usize::try_from(dst.ty.str_len().unwrap_or(0)).unwrap_or(0);
                     let lit: String = pat.chars().cycle().take(n).collect();
                     self.b.ins(format!("mov {}, {}", dst.op, quote(&lit)));
@@ -100,6 +109,12 @@ impl Gen<'_> {
                 }
                 if src.fig.is_some() {
                     self.b.ins(format!("mov {}, {}", dst.op, src.op));
+                    return;
+                }
+                // An indicator is the character '1' or '0'.
+                if src.ty == Ty::Ind && dst.ty.is_char() {
+                    let c = self.ind_char(&src);
+                    self.b.ins(format!("mov {}, {c}", dst.op));
                     return;
                 }
                 if !src.ty.is_string() {
@@ -128,6 +143,13 @@ impl Gen<'_> {
                     self.b.ins(format!("store {}, {v}", dst.op));
                 } else if matches!(src.fig, Some(Fig::Blanks | Fig::Zeros)) {
                     self.b.ins(format!("store {}, *OFF", dst.op));
+                } else if matches!(src.ty, Ty::Char(_) | Ty::VarChar(..)) {
+                    // Characters: on when the first is '1'.
+                    let t = self.b.temp("char(1)");
+                    self.assign(&V::place(Ty::Char(1), t.clone()), &src, false);
+                    let r = self.b.reg();
+                    self.b.ins(format!("{r} = str.cmp.eq {t}, {}", quote("1")));
+                    self.b.ins(format!("store {}, {r}", dst.op));
                 } else {
                     self.err(ids::ASSIGN_TYPE, 30, "");
                 }
@@ -261,6 +283,13 @@ impl Gen<'_> {
     /// A condition expression as an `ind` register.
     pub fn cond(&mut self, e: &Expr) -> Option<String> {
         let v = self.expr(e, Want::default())?;
+        // A literal '1' or '0' is an indicator value.
+        if v.kind == Vk::Lit && v.fig.is_none() && matches!(v.op.as_str(), "\"1\"" | "\"0\"") {
+            let r = self.b.reg();
+            let k = if v.op == "\"1\"" { "*ON" } else { "*OFF" };
+            self.b.ins(format!("{r} = const.ind {k}"));
+            return Some(r);
+        }
         if v.ty != Ty::Ind {
             self.err(ids::NOT_LOGICAL, 30, "");
             return None;
@@ -1536,7 +1565,7 @@ impl Gen<'_> {
                 if is_reg_type(&rt) {
                     let r = match rt {
                         Ty::Ind => self.ind_reg(&val),
-                        Ty::Ptr | Ty::ProcPtr => Some(self.ptr_reg(&val)),
+                        Ty::Ptr | Ty::ProcPtr => Some(self.ptr_reg_of(&val, rt == Ty::ProcPtr)),
                         Ty::Float(_) => Some(self.float_reg(&val)),
                         _ => {
                             let t = self.b.temp(&ir);
@@ -1834,7 +1863,19 @@ fn init_subfields(g: &mut Gen<'_>, di: usize, base: &str, ds_inz: bool, values: 
     let ds = g.t.ds[di].clone();
     for &sub in &ds.subfields {
         let ss = g.t.syms[sub].clone();
-        let p = format!("{base}.{}", mangle(&ss.name));
+        // An unnamed subfield has no field in the structure's type: its
+        // bytes at its offset.
+        let unnamed = ss.name.is_empty() || ss.name == "*N";
+        if unnamed && (ss.dim > 0 || matches!(ss.ty, Ty::Ds(_) | Ty::Unknown)) {
+            continue;
+        }
+        let p = if unnamed {
+            let a = g.b.reg();
+            g.b.ins(format!("{a} = addr {base}"));
+            format!("[{a} +{}]:{}", ss.offset, g.t.ir_storage(&ss))
+        } else {
+            format!("{base}.{}", mangle(&ss.name))
+        };
         if let Ty::Ds(oi) = ss.ty {
             let likeds = values && matches!(&ss.inz, Some(Some(Expr::Special { word, .. })) if word == "*LIKEDS");
             let inz = likeds || ds_inz || matches!(ss.inz, Some(None));
@@ -2309,6 +2350,19 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     // A subprocedure's subroutines are inline (only the main
     // procedure's are procedures).
     g.subr_procs = false;
+    // A NOMAIN module's globals take their initial values before the
+    // first of its procedures runs.
+    if g.ctl.nomain {
+        let (go, init) = (g.b.label(), g.b.label());
+        let f = g.b.reg();
+        g.b.ins(format!("{f} = load $init_done"));
+        g.b.term(format!("brif {f}, {go}, {init}"));
+        g.b.place(&init);
+        g.b.ins("store $init_done, *ON".to_string());
+        g.b.ins("callb _qrni_init()".to_string());
+        g.b.term(format!("br {go}"));
+        g.b.place(&go);
+    }
     let name = p.name.to_ascii_uppercase();
     g.cur_proc.clone_from(&name);
     let proto = g
@@ -2376,7 +2430,11 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
             Storage::Auto => g.b.decls.push(format!("auto {}: {ty}", s.ir)),
             // Kept between calls: initialized once, from a literal INZ.
             Storage::Static => g.b.decls.push(format!("static {}: {ty}{}", s.ir, crate::codegen::static_inz(&s))),
-            Storage::Based(ptr) => g.b.decls.push(format!("based {}: {ty} on {}", s.ir, g.t.syms[*ptr].ir)),
+            Storage::Based(ptr) => {
+                for d in crate::codegen::based_decls(g.t, &s.ir, &ty, *ptr, "auto") {
+                    g.b.decls.push(d);
+                }
+            }
             _ => {}
         }
     }
@@ -2424,11 +2482,15 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     let export = p.kws.iter().any(|k| k.name == "EXPORT");
     let ret = g.ret.as_ref().map(|t| format!(" -> {}", g.t.ir_type(t))).unwrap_or_default();
     let body = std::mem::take(&mut g.b);
+    // OPDESC on the interface (or a prototype): callers pass descriptors.
+    let opdesc = proto.as_ref().is_some_and(|x| x.opdesc)
+        || p.pi.as_ref().is_some_and(|d| d.kw("OPDESC").is_some());
     let header = format!(
-        "proc {}({}){ret}{}",
+        "proc {}({}){ret}{}{}",
         mangle(&name),
         params.join(", "),
-        if export { " export" } else { "" }
+        if export { " export" } else { "" },
+        if opdesc { " opdesc" } else { "" }
     );
     let _ = decl::int_arg;
     let _ = Lit::Num(String::new());

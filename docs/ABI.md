@@ -19,6 +19,11 @@ and store, and moves floats through their integer bit patterns. Fat
 pointers are 16 bytes (`ILE.md` has the layout) and travel as `i128`
 values; Cranelift's `enable_llvm_abi_extensions` is on so an `i128`
 parameter or return value uses a register pair, as Rust's `u128` does.
+One difference: an `i128` that finds a single argument register left
+goes on the stack in both, but Cranelift leaves that register unused
+while Rust gives it to the next integer argument. A Rust procedure
+called from generated code whose second pointer would start in `r9`
+with an integer after it takes an `i64` pad there (`sysapi::crt`).
 
 ## 2. The environment record
 

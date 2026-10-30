@@ -548,7 +548,23 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
         diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
         return None;
     };
-    let base = cx.t.syms[id].ty.clone();
+    let mut base = cx.t.syms[id].ty.clone();
+    // LIKE of a prototype is its return value's type.
+    if let Some(Kind::Proto(pi)) = cx.t.syms[id].kind {
+        match cx.t.protos[pi].ret.clone() {
+            Some(t) => base = t,
+            None => {
+                diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
+                return None;
+            }
+        }
+    }
+    // LIKE of a data structure is characters of its length.
+    if let Ty::Ds(_) = base
+        && matches!(cx.t.syms[id].kind, Some(Kind::Ds(_)))
+    {
+        base = Ty::Char(cx.t.size(&base));
+    }
     like_adjusted(cx, d, k, base)
 }
 
@@ -1359,6 +1375,12 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
             .map(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase())),
         extproc: d.kw("EXTPROC").map(|k| {
             let i = extproc_name_arg(k);
+            // A qualified procedure pointer: `DS.SUBFIELD`.
+            if let Some(Some(Expr::Ref { name, steps, .. })) = k.arg(i).map(|a| a.expr.clone())
+                && let [rpgfront::ast::Step::Field(f)] = steps.as_slice()
+            {
+                return format!("{}.{}", name.to_ascii_uppercase(), f.to_ascii_uppercase());
+            }
             match word_arg(k, i).as_deref() {
                 // The name as the source writes it.
                 Some("*DCLCASE") => d.name.clone(),
