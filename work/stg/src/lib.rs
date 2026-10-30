@@ -23,7 +23,7 @@ pub mod remote;
 pub mod tcp;
 
 pub use link::{Link, Shared};
-pub use proto::{Client, ExecReply, Request, Service, Start, dispatch};
+pub use proto::{Client, ExecReply, HostRefused, HostSignedOn, Request, Service, Start, dispatch};
 pub use wm::table::JobInfo;
 
 /// Where the service listens for job connections.

@@ -59,6 +59,7 @@ final class Hs {
         }
         if (defaultPorts) {
             s.setServicePortsToDefault();
+            ports(s);
         }
         if (skipSignon()) {
             try {
@@ -100,7 +101,22 @@ final class Hs {
             throw new IllegalStateException(e);
         }
         s.setServicePortsToDefault();
+        ports(s);
         return s;
+    }
+
+    /** QS_HS_PORT_<well-known port> moves a server to another port (a forwarded one). */
+    static void ports(AS400 s) {
+        int[][] map = {
+            {AS400.CENTRAL, 8470}, {AS400.DATABASE, 8471}, {AS400.DATAQUEUE, 8472}, {AS400.FILE, 8473},
+            {AS400.PRINT, 8474}, {AS400.COMMAND, 8475}, {AS400.SIGNON, 8476},
+        };
+        for (int[] m : map) {
+            String v = System.getenv("QS_HS_PORT_" + m[1]);
+            if (v != null && !v.isEmpty()) {
+                s.setServicePort(m[0], Integer.parseInt(v));
+            }
+        }
     }
 
     /** A result line. */

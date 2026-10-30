@@ -9,6 +9,7 @@
 pub mod batch;
 pub mod cgroup;
 pub mod httpadm;
+pub mod hostsvr;
 pub mod inter;
 pub mod menu;
 pub mod monitor;

@@ -36,7 +36,7 @@ pub fn run() -> ! {
         user: start.user.clone(),
         number: start.number,
         kind: start.kind,
-        subtype: ' ',
+        subtype: if start.role == "PRESTART" { 'J' } else { ' ' },
         subsystem: start.subsystem.clone(),
         pid: std::process::id(),
         handle: start.handle,
@@ -61,6 +61,8 @@ pub fn run() -> ! {
         "SYSTEM" => crate::work::sysjob::run(ctl, &link, &start),
         "TELNET" => crate::work::telnet::run(ctl, &link, &start),
         "HTTPADM" => crate::work::httpadm::run(ctl, &link, &start),
+        "HOSTSVRD" => crate::work::hostsvr::daemon::run(ctl, &link, &start),
+        "PRESTART" => crate::work::hostsvr::prestart::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

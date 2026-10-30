@@ -15,6 +15,8 @@
 
 #![deny(missing_docs)]
 
+pub mod sha512;
+
 use des::Des;
 use des::cipher::{BlockCipherEncrypt, KeyInit};
 use sha1::{Digest, Sha1};

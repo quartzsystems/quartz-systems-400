@@ -206,6 +206,20 @@ fn obj_ls(system: &mut System, lib: &str, t: Option<u16>) -> Result<String, Stri
     Ok(out)
 }
 
+/// `CRTDTAQ` with its attributes: the order, the entry length, whether
+/// entries keep their sender.
+pub fn crt_dtaq(system: &mut System, qual: &str, text: &str, order: Order, max_len: u32, sender: bool) -> Result<String, String> {
+    let (lib, name) = qualified(qual)?;
+    let (store, root) = target(system, &lib)?;
+    let mut txn = store.begin().map_err(|e| e.to_string())?;
+    let lib_id = library(&mut txn, root, &lib)?;
+    let p = params(lib_id, name, types::DTAQ, text);
+    let id = dtaq::create(&mut txn, &p, types::DTAQ, order, max_len, sender).map_err(|e| e.to_string())?;
+    txn.commit().map_err(|e| e.to_string())?;
+    Ok(format!("{lib}/{} *DTAQ created as {id}
+", p.name))
+}
+
 fn obj_crt(system: &mut System, t: &str, qual: &str, text: &str) -> Result<String, String> {
     let code = type_code(t)?;
     let (lib, name) = qualified(qual)?;

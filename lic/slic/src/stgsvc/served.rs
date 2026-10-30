@@ -525,6 +525,41 @@ impl Service for Served<'_> {
         )
     }
 
+    fn host_signon(
+        &mut self,
+        user: String,
+        proof: sec::signon::Substitute,
+        token: Vec<u8>,
+        swap: bool,
+    ) -> Result<stg::HostSignedOn, stg::HostRefused> {
+        super::hostsvr::signon(self.system, self.ctx, &user, &proof, &token, swap)
+    }
+
+    fn host_token(
+        &mut self,
+        user: String,
+        proof: sec::signon::Substitute,
+        token: Vec<u8>,
+        kind: u8,
+        timeout: u32,
+    ) -> Result<Vec<u8>, stg::HostRefused> {
+        super::hostsvr::token(self.system, &user, &proof, &token, kind, timeout)
+    }
+
+    fn host_chgpwd(
+        &mut self,
+        user: String,
+        proof: sec::signon::Substitute,
+        new_protected: Vec<u8>,
+        new_len: u32,
+    ) -> Result<(), stg::HostRefused> {
+        super::hostsvr::chgpwd(self.system, &user, &proof, &new_protected, new_len)
+    }
+
+    fn host_reset(&mut self) {
+        super::hostsvr::reset(self.system, self.ctx);
+    }
+
     fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, regfac::RegFail> {
         let me = self.ctx.session.borrow().principal.clone();
         super::regfac::api(self.system, Some(&me), q)

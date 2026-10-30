@@ -590,6 +590,24 @@ ipc::rpc! {
     /// directory streams and locks are the connection's and end with it.
     440 => fn ifs / IfsReq (op: crate::ifs::IfsOp) -> crate::ifs::IfsReply;
 
+    // --- host servers (720-739; net/hostserver, stgsvc/hostsvr.rs)
+    /// Prove `user` to a host server with a password substitute over
+    /// the connection's seeds, or a profile token when `token` is not
+    /// empty: checked as a sign-on (`QMAXSIGN`, audit). With `swap` the
+    /// job then runs as the user (`QSYGETPH` and `QWTSETP`).
+    720 => fn host_signon / HostSignon (user: String, proof: sec::signon::Substitute, token: Vec<u8>, swap: bool) -> Result<HostSignedOn, HostRefused>;
+    /// A profile token for `user` proved as `host_signon` proves it:
+    /// `kind` single use (`0xF1`), multiple use (`0xF2`) or regenerable
+    /// (`0xF3`), good for `timeout` seconds.
+    721 => fn host_token / HostToken (user: String, proof: sec::signon::Substitute, token: Vec<u8>, kind: u8, timeout: u32) -> Result<Vec<u8>, HostRefused>;
+    /// Change `user`'s password: the old one proved by the substitute,
+    /// the new one protected with the old one's token (`new_len` bytes
+    /// for the SHA forms).
+    722 => fn host_chgpwd / HostChgPwd (user: String, proof: sec::signon::Substitute, new_protected: Vec<u8>, new_len: u32) -> Result<(), HostRefused>;
+    /// The job runs as its own user again (a prestart job between
+    /// connections).
+    723 => fn host_reset / HostReset () -> ();
+
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the
     /// name or generic name), `DSPLIND` (args the line), `CFGSTS`
@@ -603,6 +621,45 @@ ipc::rpc! {
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;
 }
+
+// --- host server types
+
+/// A host server sign-on that succeeded.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HostSignedOn {
+    /// The profile.
+    pub user: String,
+    /// This sign-on, Unix seconds.
+    pub now: u64,
+    /// The one before, Unix seconds, 0 for none.
+    pub previous: u64,
+    /// When the password expires, Unix seconds, 0 for never.
+    pub expires: u64,
+    /// `QPWDEXPWRN`.
+    pub warning_days: u32,
+}
+
+wire_struct!(HostSignedOn {
+    user,
+    now,
+    previous,
+    expires,
+    warning_days
+});
+
+/// A host server sign-on refused: the datastream's return code and the
+/// message.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HostRefused {
+    /// Return code (`hostsvr::common::rc`).
+    pub rc: u32,
+    /// Message identifier.
+    pub msgid: String,
+    /// Its text.
+    pub text: String,
+}
+
+wire_struct!(HostRefused { rc, msgid, text });
 
 /// A search index topic: title, root words, panel group (`LIB/NAME`)
 /// and help module.

@@ -112,11 +112,18 @@ impl Tables {
         fn walk(txn: &mut Txn<'_>, ctx: &SqlContext, r: &TableRef, out: &mut Vec<(String, Vec<dds::FieldDef>)>) {
             match r {
                 TableRef::Table { name, alias, .. } => {
-                    let fields = ctx
-                        .resolve_table(txn, name)
-                        .map(|t| t.format.format.fields.clone())
-                        .unwrap_or_default();
                     let a = alias.as_ref().map_or_else(|| name.name.value.clone(), |a| a.value.clone());
+                    let fields = ctx.resolve_table(txn, name).map_or_else(
+                        // A catalog view: its columns' fields.
+                        |_| {
+                            crate::exec::catalog::virtual_table(txn, ctx, name, &a)
+                                .ok()
+                                .flatten()
+                                .map(|(sch, _)| sch.cols.iter().filter_map(|c| c.field.clone()).collect())
+                                .unwrap_or_default()
+                        },
+                        |t| t.format.format.fields.clone(),
+                    );
                     out.push((a, fields));
                 }
                 TableRef::Join { left, right, .. } => {
@@ -137,7 +144,7 @@ impl Tables {
         self.0
             .iter()
             .filter(|(a, _)| table.is_none_or(|t| t == a))
-            .find_map(|(_, fs)| fs.iter().find(|f| f.name.to_string() == name))
+            .find_map(|(_, fs)| fs.iter().find(|f| f.name.to_string() == name || f.alias.as_deref() == Some(name)))
     }
 
     /// An expression's type.
@@ -164,10 +171,27 @@ impl Tables {
                 match f.name.as_str() {
                     "COUNT" => Col::int(),
                     "COUNT_BIG" => Col::new(492, 8, false),
-                    "MAX" | "MIN" | "SUM" | "AVG" => arg.map_or_else(Col::int, |mut c| {
+                    // DB2 widens a decimal sum to 31 digits.
+                    "SUM" => arg.map_or_else(Col::int, |mut c| {
+                        c.null = true;
+                        if matches!(c.base, 484 | 488) {
+                            c = Col::new(484, 31 * 256 + (c.len & 0xFF), true);
+                        }
+                        c
+                    }),
+                    "MAX" | "MIN" | "AVG" => arg.map_or_else(Col::int, |mut c| {
                         c.null = true;
                         c
                     }),
+                    "DATE" => Col::new(384, DATE_LEN, true),
+                    "TIME" => Col::new(388, 8, true),
+                    "TIMESTAMP" | "NOW" => Col::new(392, 26, true),
+                    "BIGINT" => Col::new(492, 8, true),
+                    "INTEGER" | "INT" | "LENGTH" | "CHAR_LENGTH" | "YEAR" | "MONTH" | "DAY" | "DAYOFMONTH" | "HOUR"
+                    | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS" | "POSSTR" | "LOCATE" => Col::new(496, 4, true),
+                    "SMALLINT" => Col::new(500, 2, true),
+                    "DOUBLE" | "DOUBLE_PRECISION" | "FLOAT" => Col::new(480, 8, true),
+                    "REAL" => Col::new(480, 4, true),
                     _ => arg.unwrap_or_else(|| Col::new(448, 32740, true)),
                 }
             }

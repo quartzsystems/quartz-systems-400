@@ -19,10 +19,24 @@ import java.sql.Timestamp;
  * a procedure call. The table is dropped at the end.
  */
 public final class Jdbc {
+    /** The URL's connection, or through a system object when the database port is moved. */
+    private static Connection open(String url) throws Exception {
+        String moved = System.getenv("QS_HS_PORT_8471");
+        if (moved == null || moved.isEmpty()) {
+            return DriverManager.getConnection(url, Hs.user(), Hs.pass());
+        }
+        java.util.Properties p = new java.util.Properties();
+        p.setProperty("naming", "sql");
+        p.setProperty("prompt", "false");
+        p.setProperty("block size", "8");
+        p.setProperty("errors", "full");
+        return new com.ibm.as400.access.AS400JDBCDriver().connect(Hs.signonSystem(), p, null);
+    }
+
     public static void main(String[] a) throws Exception {
         Class.forName("com.ibm.as400.access.AS400JDBCDriver");
         String url = "jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "") + ";naming=sql;prompt=false;block size=8;errors=full";
-        try (Connection c = DriverManager.getConnection(url, Hs.user(), Hs.pass())) {
+        try (Connection c = open(url)) {
             Hs.out("ok   connect");
             Hs.step("metadata", () -> metadata(c));
             Hs.step("catalog fetch", () -> catalog(c));

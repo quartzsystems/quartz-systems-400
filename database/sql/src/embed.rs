@@ -470,6 +470,7 @@ impl Session {
         r.err().map(|e| Reply::of(Sqlca::from_error(&e)))
     }
 
+    #[allow(clippy::too_many_lines)] // one arm per operation
     fn run_inner(&mut self, req: &Request) -> Reply {
         let d = &req.desc;
         let naming = d.naming();
@@ -520,7 +521,9 @@ impl Session {
                     };
                     for t in tables(&p.statement) {
                         ctx.naming = naming;
-                        if let Err(e) = ctx.resolve_file(txn, &t) {
+                        if let Err(e) = ctx.resolve_file(txn, &t)
+                            && !crate::exec::catalog::is_view(&t)
+                        {
                             return Reply::of(Sqlca::from_error(&e));
                         }
                     }

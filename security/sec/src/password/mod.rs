@@ -90,8 +90,8 @@ pub fn tokens_for(p: &str, pwdlvl: u8) -> Vec<PwdHash> {
 }
 
 /// Whether an RFC 4777 substitute proves the profile's password: the
-/// twenty-byte SHA-1 form at levels 2 and 3, the eight-byte DES form at
-/// 0 and 1.
+/// sixty-four-byte SHA-512 form at level 4, the twenty-byte SHA-1 form
+/// at levels 2 and 3, the eight-byte DES form at 0 and 1.
 #[must_use]
 pub fn verify_substitute(
     prf: &UsrPrf,
@@ -110,6 +110,21 @@ pub fn verify_substitute(
             let u = pwdsub::utf16_name(user);
             let token = pwdsub::sha_token(&u, &unhex(&h.phc));
             pwdsub::sha_substitute(&token, &u, &s.server_seed, &s.client_seed)[..]
+                == s.substitute[..]
+        }
+        64 if pwdlvl >= 4 => {
+            let Some(h) = prf.hash(PwdForm::ShaToken) else {
+                return false;
+            };
+            let units: Vec<u16> = unhex(&h.phc)
+                .chunks(2)
+                .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
+                .collect();
+            let Ok(pw) = String::from_utf16(&units) else {
+                return false;
+            };
+            let token = pwdsub::sha512::token(user, pw.trim_end());
+            pwdsub::sha512::substitute(&token, user, &s.server_seed, &s.client_seed, [0, 0, 0, 0, 0, 0, 0, 1])[..]
                 == s.substitute[..]
         }
         8 if pwdlvl <= 1 => {
@@ -277,5 +292,28 @@ mod tests {
             },
             0
         ));
+    }
+
+    #[test]
+    fn level_four_substitutes() {
+        let (server, client) = ([3u8; 8], [4u8; 8]);
+        let mut p = UsrPrf::new("BOB", 40);
+        p.pwd_none = false;
+        p.hashes = hashes_for("Long Secret 4", 4);
+        let token = pwdsub::sha512::token("BOB", "Long Secret 4");
+        let seq = [0, 0, 0, 0, 0, 0, 0, 1];
+        let sub = crate::signon::Substitute {
+            server_seed: server,
+            client_seed: client,
+            substitute: pwdsub::sha512::substitute(&token, "BOB", &server, &client, seq).to_vec(),
+        };
+        assert!(verify_substitute(&p, "BOB", &sub, 4));
+        assert!(!verify_substitute(&p, "BOB", &sub, 3), "SHA-512 is level 4's");
+        let bad = pwdsub::sha512::token("BOB", "Long Secret 5");
+        let wrong = crate::signon::Substitute {
+            substitute: pwdsub::sha512::substitute(&bad, "BOB", &server, &client, seq).to_vec(),
+            ..sub
+        };
+        assert!(!verify_substitute(&p, "BOB", &wrong, 4));
     }
 }

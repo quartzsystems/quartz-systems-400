@@ -94,6 +94,9 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
+        // --- host servers (command/hostsvr.rs)
+        "STRHOSTSVR" => return super::hostsvr::start(host, r),
+        "ENDHOSTSVR" => return super::hostsvr::end(job, host, r),
         // --- STRDBG screens (devtools/dbg)
         "STRDBG" | "ENDDBG" | "DSPMODSRC" | "ADDBKP" | "RMVBKP" | "DSPBKP" | "STRSRVJOB"
         | "ENDSRVJOB" => {

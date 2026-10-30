@@ -141,7 +141,19 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CRTDTAQ" => {
             let (n, l) = parms.qual("DTAQ");
             let text = parms.text("TEXT");
-            let out = old(system, &format!("obj crt *DTAQ {}/{n} {text}", lib_or(&l)));
+            let num = |k: &str, d: u32| parms.text(k).trim().parse::<u32>().unwrap_or(d);
+            let order = match parms.text("SEQ").trim() {
+                "*LIFO" => store::obj::dtaq::Order::Lifo,
+                "*KEYED" => store::obj::dtaq::Order::Keyed {
+                    key_len: u16::try_from(num("KEYLEN", 1).clamp(1, 256)).unwrap_or(1),
+                },
+                _ => store::obj::dtaq::Order::Fifo,
+            };
+            let sender = parms.text("SENDERID").trim() == "*YES";
+            let qual = format!("{}/{n}", lib_or(&l));
+            let out = crate::svc::objects::crt_dtaq(system, &qual, &text, order, num("MAXLEN", 1024), sender)
+                .unwrap_or_else(|e| format!("CPF9898 {e}
+"));
             finish(out, name, "CPC2101", &[(&n, 10), (&l, 10)])
         }
         "DLTDTAQ" => {

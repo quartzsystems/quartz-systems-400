@@ -12,7 +12,7 @@ pub(crate) mod ifs;
 mod jobq;
 pub mod neta;
 mod msgq;
-mod objects;
+pub(crate) mod objects;
 mod sbs;
 pub(crate) mod security;
 mod spool;

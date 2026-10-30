@@ -460,6 +460,13 @@ note = "the servers framework (net/servers): *TELNET and *HTTP HTTPSVR(*ADMIN) r
 [cmd.ENDTCPSVR]
 site = "job"
 
+[cmd.STRHOSTSVR]
+site = "job"
+note = "the host server daemon jobs (QZSOSMAPD, QZRCSRVSD, ...); prestart jobs come with QUSRWRK and QSERVER"
+
+[cmd.ENDHOSTSVR]
+site = "job"
+
 [cmd.CHGTELNA]
 site = "job"
 note = "kept in the TCP/IP server table in QUSRSYS (QATOCSVRA)"

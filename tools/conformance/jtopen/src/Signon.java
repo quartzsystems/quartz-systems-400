@@ -24,6 +24,7 @@ public final class Signon {
             AS400 bad = new AS400(Hs.host(), "QSNOUSR1", "NOPASSWD1");
             bad.setGuiAvailable(false);
             bad.setServicePortsToDefault();
+            Hs.ports(bad);
             Hs.out("     valid=" + bad.validateSignon());
         });
         s.disconnectAllServices();

@@ -17,6 +17,7 @@ pub mod db;
 pub mod ifsapi;
 mod dst;
 mod error;
+mod hostsvr;
 mod ifs;
 mod load;
 mod phase2;

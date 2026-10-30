@@ -30,6 +30,8 @@ pub struct Monitor {
     link: Shared,
     /// Its jobs.
     pub jobs: Vec<Spawned>,
+    /// When each prestart entry last started jobs.
+    prestarted: std::collections::HashMap<String, Instant>,
 }
 
 /// The storage pool a subsystem pool is.
@@ -61,6 +63,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         sbsd,
         link: link.clone(),
         jobs: Vec::new(),
+        prestarted: std::collections::HashMap::new(),
     };
     m.pools();
     for a in m.sbsd.ajes.clone() {
@@ -69,10 +72,12 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             eprintln!("qsjob: {}: autostart job {}: {e}", m.name, a.job);
         }
     }
+    m.prestart();
     loop {
         stg::remote::status(&m.link, wm::job::Status::Deqw, "");
         std::thread::sleep(TICK);
         m.reap();
+        m.prestart();
         let state = m.link.borrow_mut().with(Client::sbs_state);
         m.end_requested(&state.end_jobs);
         if let Some((immediate, delay)) = state.ending {
@@ -146,6 +151,67 @@ impl Monitor {
             lda: lda.to_vec(),
         };
         self.start(routed).map(|_| number)
+    }
+
+    /// Keep each prestart job entry's jobs: `INLJOBS` of them, and
+    /// `ADLJOBS` more when fewer than `THRESHOLD` wait for work (never
+    /// past `MAXJOBS`). A new batch waits until the last one could ask.
+    fn prestart(&mut self) {
+        for p in self.sbsd.pjes.clone() {
+            if !p.strjobs {
+                continue;
+            }
+            let program = format!("{}/{}", p.pgm.1, p.pgm.0);
+            let live = self.jobs.iter().filter(|s| s.start.role == "PRESTART" && s.start.program == program).count();
+            let live = u16::try_from(live).unwrap_or(u16::MAX);
+            let recent = self.prestarted.get(&program).is_some_and(|t| t.elapsed() < Duration::from_secs(3));
+            let want = if live < p.inljobs {
+                p.inljobs - live
+            } else if recent {
+                0
+            } else {
+                let idle = sockets::relay::idle(sockets::relay::SOCKET, &sockets::relay::pool(&p.pgm.0)).unwrap_or(u32::MAX);
+                if idle < u32::from(p.threshold) { p.adljobs } else { 0 }
+            };
+            let room = if p.maxjobs == 0 { want } else { want.min(p.maxjobs.saturating_sub(live)) };
+            if room == 0 {
+                continue;
+            }
+            self.prestarted.insert(program.clone(), Instant::now());
+            for _ in 0..room {
+                if let Err(e) = self.start_prestart(&p) {
+                    eprintln!("qsjob: {}: prestart job {}: {e}", self.name, p.job);
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Start one prestart job of an entry.
+    fn start_prestart(&mut self, p: &wm::obj::sbsd::Pje) -> Result<(), String> {
+        let number = self.link.borrow_mut().with(Client::job_number)?;
+        let kind_of = self.sbsd.pool(p.pool).map_or(PoolKind::Base, |x| x.kind);
+        let start = Start {
+            name: p.job.clone(),
+            user: p.user.clone(),
+            number,
+            handle: u64::from(number),
+            kind: 'B',
+            subsystem: self.name.clone(),
+            role: "PRESTART".into(),
+            jobd: format!("{}/{}", p.jobd.1, p.jobd.0),
+            class: format!("{}/{}", p.cls.1, p.cls.0),
+            program: format!("{}/{}", p.pgm.1, p.pgm.0),
+            rqsdta: if p.maxuse == 0 { String::new() } else { format!("MAXUSE({})", p.maxuse) },
+            pool: pool_name(&self.name, p.pool, kind_of),
+            lda: Vec::new(),
+            signon: None,
+            device: String::new(),
+        };
+        let mut s = spawn::job(start)?;
+        spawn::ready(&mut s)?;
+        self.jobs.push(s);
+        Ok(())
     }
 
     /// Start a job taken from a job queue: numbered when it was submitted.

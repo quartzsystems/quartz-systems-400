@@ -49,6 +49,9 @@ pub struct Launch {
     /// A user-mode network with the guest's telnet port forwarded to
     /// this host port; no network device when `None`.
     pub telnet_port: Option<u16>,
+    /// More forwards on that network: host port, guest port (the host
+    /// servers).
+    pub host_ports: Vec<(u16, u16)>,
     /// Guest memory, MiB.
     pub memory_mb: u32,
     /// Guest CPUs.
@@ -149,7 +152,12 @@ pub fn args(l: &Launch) -> Vec<OsString> {
     if let Some(port) = l.telnet_port {
         a.push(OsString::from("-netdev"));
         a.push(OsString::from(format!(
-            "user,id=n0,net=10.0.2.0/24,hostfwd=tcp:127.0.0.1:{port}-:23"
+            "user,id=n0,net=10.0.2.0/24,hostfwd=tcp:127.0.0.1:{port}-:23{}",
+            l.host_ports.iter().fold(String::new(), |mut s, (h, g)| {
+                use std::fmt::Write as _;
+                let _ = write!(s, ",hostfwd=tcp:127.0.0.1:{h}-:{g}");
+                s
+            })
         )));
         a.push(OsString::from("-device"));
         a.push(OsString::from("virtio-net-pci,netdev=n0"));

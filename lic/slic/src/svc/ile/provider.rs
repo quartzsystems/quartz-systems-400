@@ -405,7 +405,6 @@ impl Provider for StoreProvider {
         key: &[u8],
         remove: bool,
     ) -> ApiResult<Option<DtaqEntry>> {
-        let _ = remove;
         self.run(name, lib, types::DTAQ, |txn, id| {
             let op = match order.trim() {
                 "" | "EQ" => KeyOp::Eq,
@@ -421,7 +420,8 @@ impl Provider for StoreProvider {
             } else {
                 Select::Next
             };
-            Ok(dtaq::receive(txn, id, &sel)
+            let got = if remove { dtaq::receive(txn, id, &sel) } else { dtaq::peek(txn, id, &sel) };
+            Ok(got
                 .map_err(|e| e.to_string())?
                 .map(|e| DtaqEntry {
                     key: e.key,

@@ -961,6 +961,15 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                 text: "User work subsystem".into(),
                 rtges: vec![rt(9999, "*ANY", q("QBATCH", "QGPL"), 1)],
                 jobqes: vec![jq("QUSRNOMAX", "QSYS", 10, 0)],
+                pjes: vec![
+                    host_pje("QZSOSIGN", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
+                    host_pje("QZSCSRVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
+                    host_pje("QNPSERVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
+                    host_pje("QZHQSSRV", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
+                    host_pje("QZDASOINIT", q("QDFTSVR", "QGPL"), q("QPWFSERVER", "QSYS"), 200),
+                    host_pje("QZDASSINIT", q("QDFTSVR", "QGPL"), q("QPWFSERVER", "QSYS"), 200),
+                    host_pje("QZRCSRVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 2),
+                ],
                 ..Sbsd::default()
             },
         ),
@@ -968,6 +977,10 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
             "QSERVER",
             Sbsd {
                 text: "File server subsystem".into(),
+                pjes: vec![
+                    host_pje("QPWFSERVSO", q("QPWFSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 0),
+                    host_pje("QPWFSERVSS", q("QPWFSPJ", "QSYS"), q("QPWFSERVER", "QSYS"), 0),
+                ],
                 ..Sbsd::default()
             },
         ),
@@ -986,6 +999,26 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
             },
         ),
     ]
+}
+
+/// A host server prestart job entry as IBM ships it: user `QUSER`, one
+/// job at the start, two more when none is idle, no maximum.
+fn host_pje(pgm: &str, jobd: (String, String), cls: (String, String), maxuse: u16) -> Pje {
+    Pje {
+        pgm: (pgm.into(), "QSYS".into()),
+        user: "QUSER".into(),
+        job: pgm.into(),
+        jobd,
+        cls,
+        strjobs: true,
+        wait: true,
+        pool: 1,
+        inljobs: 1,
+        threshold: 1,
+        adljobs: 2,
+        maxjobs: 0,
+        maxuse,
+    }
 }
 
 #[cfg(test)]

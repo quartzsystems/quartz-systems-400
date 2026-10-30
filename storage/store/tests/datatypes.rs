@@ -280,6 +280,10 @@ fn data_queues_fifo_lifo_keyed() {
     let mut store = pull(&d, store);
     let mut t = store.begin().unwrap();
     assert_eq!(dtaq::entry_count(&mut t, fifo).unwrap(), 5);
+    // A peek leaves the entry in place.
+    let e = dtaq::peek(&mut t, fifo, &Select::Next).unwrap().unwrap();
+    assert_eq!(e.seq, 1);
+    assert_eq!(dtaq::entry_count(&mut t, fifo).unwrap(), 5);
     let e = dtaq::receive(&mut t, fifo, &Select::Next).unwrap().unwrap();
     assert_eq!((e.seq, e.data, e.sender), (1, vec![0; 10], sender));
     let e = dtaq::receive(&mut t, fifo, &Select::Next).unwrap().unwrap();

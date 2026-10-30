@@ -76,6 +76,7 @@ members = [
     # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
     "net/netlink",
     "net/hostsvr",
+    "net/hostserver",
     "net/certs",
     "net/tls",
     "net/sockets",

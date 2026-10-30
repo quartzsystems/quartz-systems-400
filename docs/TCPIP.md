@@ -485,12 +485,16 @@ and gives it the lowest free number. The relay is the
 `sockets::DescriptorPassing` trait. `sockets::InProcess` relays between
 jobs of one process.
 
-Gap: jobs are separate processes, so prestart servers need the storage
-service to relay the kernel descriptor between job processes over the
-control channel (`SCM_RIGHTS`; `sockets::sys::send_fd` and `recv_fd`
-are the primitives, `Fd::into_owned` hands the descriptor over). That
-relay is not built yet; until it is, `givedescriptor` reaches only
-jobs in the same process.
+Between job processes the storage service runs the descriptor relay
+(`sockets::relay`, a thread of the service on the Unix socket
+`/run/qs400/fdrelay`): `givedescriptor` connects, sends the target and
+its own identifier with the kernel descriptor riding `SCM_RIGHTS`, and
+the relay queues it; `takedescriptor` connects and waits for one queued
+for it (or for a pool of prestart jobs, which take as `*PROGRAM`). A
+job's `net` setup uses `sockets::Relay` when the relay's socket exists
+and `sockets::InProcess` otherwise (tests). The host server daemons
+hand their connections to their prestart jobs this way
+(`docs/HOSTSVR.md` "Jobs").
 
 ### Resolver
 

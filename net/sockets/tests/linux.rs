@@ -225,3 +225,38 @@ fn getaddrinfo_localhost_then_connect() {
     let (_, peer) = listener.accept().unwrap();
     assert_eq!(s.sockname(sd).unwrap().port(), peer.port());
 }
+
+#[test]
+fn descriptors_pass_between_processes_through_the_relay() {
+    use std::os::fd::OwnedFd;
+    use sockets::relay;
+    let dir = std::env::temp_dir().join(format!("qs400-relay-{}", std::process::id()));
+    let path = dir.join("fdrelay").display().to_string();
+    {
+        let p = path.clone();
+        std::thread::spawn(move || relay::serve(&p));
+    }
+    while !std::path::Path::new(&path).exists() {
+        std::thread::yield_now();
+    }
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = l.local_addr().unwrap().port();
+    let mut client = TcpStream::connect(("127.0.0.1", port)).unwrap();
+    let (server, _) = l.accept().unwrap();
+    let pool = relay::pool("QZRCSRVS");
+    // Nobody waits yet: the descriptor queues.
+    let fd = sockets::Fd::from(OwnedFd::from(server));
+    relay::give(&path, &fd, &pool, &[7; 16], b"T").unwrap();
+    drop(fd);
+    let t = relay::take(&path, &pool, None, 2000).unwrap().expect("a descriptor");
+    assert_eq!(t.source, [7; 16]);
+    assert_eq!(t.note, b"T");
+    let mut taken = TcpStream::from(t.fd.into_owned());
+    client.write_all(b"ping").unwrap();
+    let mut b = [0u8; 4];
+    taken.read_exact(&mut b).unwrap();
+    assert_eq!(&b, b"ping");
+    assert!(relay::take(&path, &pool, None, 100).unwrap().is_none());
+    assert_eq!(relay::idle(&path, &pool).unwrap(), 0);
+    let _ = std::fs::remove_dir_all(&dir);
+}

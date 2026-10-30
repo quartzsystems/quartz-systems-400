@@ -260,6 +260,61 @@ pub fn change_password(
     }
 }
 
+/// The new password of a change request, as the server recovers it
+/// with the old password it knows: the protected bytes `XORed` again
+/// with the old token's substitutes from sequence number 2. `new_len`
+/// is the byte length the SHA forms send (`0x111D`).
+pub fn recover_new_password(
+    level: Level,
+    user: &str,
+    old: &str,
+    seeds: &Seeds,
+    new_protected: &[u8],
+    new_len: u32,
+) -> Result<String, Error> {
+    let mut seq = 1u64;
+    match level {
+        Level::Des => {
+            let u = pwdsub::ebcdic_name(user);
+            let token = pwdsub::des_token(&u, &des_password(old)?);
+            let mut sub = || {
+                seq += 1;
+                pwdsub::des_substitute_seq(&token, &u, &seeds.server, &seeds.client, sequence(seq))
+            };
+            let mut pw: Vec<u8> = sub()
+                .iter()
+                .zip(new_protected.iter().take(8))
+                .map(|(a, b)| a ^ b)
+                .collect();
+            if new_protected.len() >= 16 {
+                let s = sub();
+                pw.extend(s.iter().zip(&new_protected[8..10]).map(|(a, b)| a ^ b));
+            }
+            Ok(ccsid::from_ebcdic(&pw).trim_end().to_string())
+        }
+        Level::Sha1 | Level::Sha512 => {
+            let plain = if level == Level::Sha1 {
+                let t = sha1_token(user, old);
+                let un = pwdsub::utf16_name(user);
+                protect(new_protected, 20, &mut seq, &|s| {
+                    pwdsub::sha_substitute_seq(&t, &un, &seeds.server, &seeds.client, s).to_vec()
+                })
+            } else {
+                let t = sha512::token(user, old.trim_end());
+                protect(new_protected, 64, &mut seq, &|s| {
+                    sha512::substitute(&t, user, &seeds.server, &seeds.client, s).to_vec()
+                })
+            };
+            let n = (new_len as usize).min(plain.len());
+            let units: Vec<u16> = plain[..n]
+                .chunks(2)
+                .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
+                .collect();
+            String::from_utf16(&units).map_err(|_| Error::Invalid("the new password is not UTF-16".into()))
+        }
+    }
+}
+
 fn len32(b: &[u8]) -> u32 {
     u32::try_from(b.len()).unwrap_or(u32::MAX)
 }

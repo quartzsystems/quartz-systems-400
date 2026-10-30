@@ -1196,13 +1196,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "hostserver"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "db",
+ "hostsvr",
+ "ifs",
+ "qdecimal",
+ "qsname",
+ "regfac",
+ "sec",
+ "sql",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "hostsvr"
 version = "0.1.0"
 dependencies = [
  "ccsid",
- "hmac",
  "pwdsub",
- "sha2",
  "thiserror",
 ]
 
@@ -1880,7 +1897,9 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "des",
+ "hmac",
  "sha1",
+ "sha2",
 ]
 
 [[package]]
@@ -1948,6 +1967,8 @@ dependencies = [
  "dfu",
  "dspf",
  "edtf",
+ "hostserver",
+ "hostsvr",
  "ifs",
  "ifscmd",
  "ile",
@@ -1971,6 +1992,7 @@ dependencies = [
  "sec",
  "servers",
  "seu",
+ "sockets",
  "spool",
  "sst",
  "stg",
@@ -2608,6 +2630,7 @@ dependencies = [
  "dds",
  "diskimg",
  "dspf",
+ "hostsvr",
  "ifs",
  "ifscmd",
  "ile",
@@ -2631,6 +2654,7 @@ dependencies = [
  "rustix",
  "sec",
  "servers",
+ "sockets",
  "spool",
  "sql",
  "stg",

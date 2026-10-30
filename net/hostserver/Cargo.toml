@@ -1,0 +1,27 @@
+[package]
+name = "hostserver"
+description = "QS/400 host servers: the request loops behind the ports ACS and JTOpen use, over backends the job supplies"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+hostsvr = { path = "../hostsvr", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+regfac = { path = "../regfac", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+store = { path = "../../storage/store", version = "0.1.0" }
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+
+[lints]
+workspace = true

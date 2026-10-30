@@ -3,8 +3,9 @@
 The host servers are what IBM i Access Client Solutions and JTOpen talk
 to: a port mapper, a sign-on server, and one server per function
 (central, database, data queue, file, network print, remote command).
-`net/hostsvr` is the codec for their datastream; the servers themselves
-come later in Phase 10. Everything here was learned from wire traces of
+`net/hostsvr` is the codec for their datastream; `net/hostserver` the
+servers' request loops; the jobs that run them are in `work/qsjob`
+(`src/work/hostsvr/`). Everything here was learned from wire traces of
 JTOpen talking to the primary oracle (IBM i 7.1), recorded by
 `tn5250-driver hostsvr-trace` and committed under
 `tools/conformance/hostsvr/traces/`, with JTOpen's open source (IBM
@@ -941,6 +942,230 @@ Missing, and why:
 - Change password: never run against an oracle.
 - The DDM/DRDA server (446/448) is not part of this recorder.
 
+
+## The servers
+
+`net/hostserver` holds one request loop per server. A server is a
+`Handler`: a request frame in, its reply frames out, and whether the
+connection closes; `hostserver::io::serve` runs one over a stream. What
+a request needs from the system is a backend trait the server job
+implements over its link to the storage service (in-memory ones serve
+the tests):
+
+| Server | Type | Backends |
+|---|---|---|
+| Port mapper | `svrmap::answer` | none |
+| Sign-on | `Signon` | `SignonHost` (the sign-on checks, tokens, password change) |
+| Central | `Central` | `Auth` |
+| Remote command | `RmtCmd` | `Commands` (the command analyzer and `ProgramCaller` of the job) |
+| Database | `Database` | `sql::embed::Embedded` (`stg::remote::RemoteSql` in a job) |
+| Data queue | `DtaqServer` | `DataQueues` |
+| File | `FileServer` | `ifs::client::IfsClient` (`stg::remote::RemoteIfs` in a job) |
+| Network print | `NetPrint` | `Spool` |
+
+Every server but the port mapper and the sign-on server starts with the
+seed exchange and start server (`session::Session`): the proof (a
+password substitute over the seeds, or a profile token) goes to
+`Auth::start`, which checks it as a sign-on and makes the job run as
+the user; until it succeeds every other request closes the connection.
+Every server asks its exit points (`Exits`, `regfac::call_exit` in a
+job) before it acts, with the formats `net/regfac` builds; a refusal
+answers the request as not authorized in the server's own terms (data
+queue `0xF009`, file 13, network print 27, database SQLCODE -551,
+remote command `CPF2234`).
+
+The servers present themselves as IBM i 7.1 (`SERVER_VRM`
+`0x00070100`, datastream level 10, database functional level
+`V7R1M00014`), as the primary oracle answers: clients choose datastream
+features by that number.
+
+What the client reads where, beyond the traces, came from `JTOpen`'s
+classes (read with `javap` as a description of the datastream):
+
+- sign-on exchange attributes: the return code at 20, the version at
+  30 and level at 40 (so `0x1101` and `0x1102` come first), then the
+  seed, password level and job name in any order;
+- sign-on information: dates as year (u16), month, day, hour, minute,
+  second; the server CCSID; messages after `0x112A`;
+- data queue replies: a u16 return code (`0xF000` done, `0xF001` failed
+  with a message parameter, `0xF006` no entry, `0xF009` an exit program
+  refused), the attributes reply's fixed fields at 22-80;
+- file replies: a chain indicator first; the open reply's 64-bit size
+  at 89 (the 32-bit one stays zero), a listing entry's at 81, its
+  restart ID at 77; the CCSID of a handle comes from the OA2 structure
+  (offset 134), so a listing by handle answers OA1 and OA2;
+- network print: replies flagged `0x80000000` while more follow, an
+  empty list return code 20, attribute lists as ID, type (3 binary,
+  5 text with a null, 7 packed 15,5), length and an offset counted from
+  the parameter's LL;
+- database: the reply's ORS bitmap echoes the request's, a reply only
+  when `RETURN_DATA` is asked, end of data as error class 1 and return
+  code 100 on a fetch and class 2, code 700 on an open-and-fetch that
+  read everything; a large reply (over 1024 bytes) is run-length
+  encoded in `0x3832` when the request allows it.
+
+### Database
+
+Statements run through the job's SQL session (`Embedded`): prepare with
+describe (`Op::Prepare` with `into`, `Op::Describe` `INPUT` for the
+markers), execute (once per row of the marker data, so a batched insert
+is one request), open with the RPB's cursor name, blocked fetch, close,
+`COMMIT`/`ROLLBACK` when the client turned autocommit off with a commit
+level. The super extended data format describes columns and markers
+(scale and precision as `JTOpen` reads them: a text column's length in
+characters is the "scale"); result rows are fixed size, positive packed
+values sign `F`, a null's bytes those of an empty value.
+
+The metadata calls `SYSIBM.SQLTABLES`, `SQLCOLUMNS` (and the other
+`SYSIBM` catalog procedures, answered empty) are answered by the server
+from `QSYS2.SYSTABLES` and `QSYS2.SYSCOLUMNS` in the JDBC shapes;
+another `CALL` answers SQL0204 (QS/400 has no stored procedures of its
+own yet). LOBs are refused (`-84`). Extended dynamic packages are
+accepted and kept nowhere (`*SQLPKG` minimal: create, clear, delete and
+return answer success).
+
+Fixed in the Phase 3 engine on the way: a catalog view can be prepared
+and opened as a cursor (it has no file), its columns describe with their
+types, `SYSIBM.SYSDUMMY1` exists, `SUM` of a decimal is `DECIMAL(31,s)`,
+and the casting functions describe with their types.
+
+### Sign-on and password levels
+
+The service checks every proof (`stg` requests 720-723,
+`lic/slic/src/stgsvc/hostsvr.rs`): a substitute through the display
+sign-on's own path (`sec::signon::sign_on`, so `QMAXSIGN`, disabling and
+`PW` audit entries are the same), at the encryption `QPWDLVL` chooses
+(DES at 0 and 1, SHA-1 at 2 and 3, SHA-512 at 4; `sec::password::
+verify_substitute` gained the 64-byte form). Profile tokens are 32
+random bytes the service keeps with the user, kind and expiry (at most
+an hour); a single-use token is gone once used. A change password
+request is proved by the old password's substitute; the service reads
+the new password with the old one's token (`hostsvr::crypt::
+recover_new_password`) and changes it as `CHGPWD` does. A server job
+then runs as the user: the session's principal is the user's (what
+`QWTSETP` does, a `PS` audit entry), the job keeps its name and job
+user (`QUSER`), and `host_reset` gives it back its own between
+connections. `net/hostserver/tests/replay_signon.rs` runs sign-on
+information, a wrong password, a profile token and a password change at
+every level 0 to 4.
+
+## Jobs
+
+| Server | Daemon (subsystem) | Prestart jobs (subsystem) | Ports |
+|---|---|---|---|
+| `*SVRMAP` | `QZSOSMAPD` (`QSYSWRK`) | none | 449 |
+| `*SIGNON` | `QZSOSGND` (`QSYSWRK`) | `QZSOSIGN` (`QUSRWRK`) | 8476, 9476 |
+| `*CENTRAL` | `QZSCSRVSD` (`QSYSWRK`) | `QZSCSRVS` (`QUSRWRK`) | 8470, 9470 |
+| `*DATABASE` | `QZDASRVSD` (`QSERVER`) | `QZDASOINIT`, TLS `QZDASSINIT` (`QUSRWRK`) | 8471, 9471 |
+| `*DTAQ` | `QZHQSRVD` (`QSYSWRK`) | `QZHQSSRV` (`QUSRWRK`) | 8472, 9472 |
+| `*FILE` | `QPWFSERVSD` (`QSERVER`) | `QPWFSERVSO`, TLS `QPWFSERVSS` (`QSERVER`) | 8473, 9473 |
+| `*NETPRT` | `QNPSERVD` (`QSYSWRK`) | `QNPSERVS` (`QUSRWRK`) | 8474, 9474 |
+| `*RMTCMD` | `QZRCSRVSD` (`QSYSWRK`) | `QZRCSRVS` (`QUSRWRK`) | 8475, 9475 |
+
+The names, the user `QUSER` and the subsystems are pub400's
+(`tools/conformance/oracle/net/pub400/jobs-by-subsystem.txt`,
+`prestart-jobs.txt`, `netstat-listen-jobs.txt`); `hostserver::jobs`
+holds the table. `STRHOSTSVR SERVER(*ALL ...)` starts the daemons (role
+`HOSTSVRD`) as children of the job that runs it, as `STRTCPSVR` starts
+the telnet server; `QSTRUP` runs `STRHOSTSVR SERVER(*ALL)`.
+`ENDHOSTSVR` ends them with `ENDJOB`. A daemon binds its plain and TLS
+ports on all addresses (so `NETSTAT` finds the job through the
+socket's owner) and gives every connection to its server's prestart
+pool through the descriptor relay, with a note saying TLS.
+
+The prestart jobs are the subsystems' work: `QUSRWRK` and `QSERVER`
+ship IBM's prestart job entries (`INLJOBS(1) THRESHOLD(1) ADLJOBS(2)
+MAXJOBS(*NOMAX)`, `MAXUSE(200)`, `QZRCSRVS` `MAXUSE(2)`, the file
+server's `*NOMAX`), with the job descriptions `QSYS/QZBSJOBD`,
+`QGPL/QDFTSVR`, `QSYS/QPWFSPJ` and the classes `QGPL/QCASERVR`,
+`QSYS/QPWFSERVER`. The monitor starts `INLJOBS` of each at the start
+and more (`ADLJOBS`, never past `MAXJOBS`) when fewer than `THRESHOLD`
+wait in the relay; a job (type `PJ`, role `PRESTART`) takes a
+connection, serves it as the user who signed on (TLS with the system's
+certificate when the note says so), runs as `QUSER` again, and ends
+after `MAXUSE` connections, when the monitor starts another.
+`ADDPJE`/`CHGPJE`/`RMVPJE` already edit the entries (Phase 5).
+
+### Descriptor passing
+
+The storage service runs the relay (`sockets::relay::serve` on
+`/run/qs400/fdrelay`, a thread per request): give sends the target, the
+giver and a note with the descriptor in `SCM_RIGHTS`; take waits (with
+a timeout) for a descriptor queued for the taker, from a source when it
+names one; idle counts the takers waiting on a pool. A pool is
+`*PROGRAM` (`relay::pool`), so a daemon gives to whichever prestart job
+of the server asks first. The same relay is `givedescriptor` and
+`takedescriptor` for every job (`sockets::Relay` behind
+`DescriptorPassing`).
+
+## Replay differences
+
+`net/hostserver/tests/replay_*.rs` feed every committed client frame to
+our servers in order, over backends in memory (the remote command job
+scripted with what the oracle's job did; the data queues, the IFS with
+`/home/QSTEST` as the oracle had it, spooled files made from the ones
+the oracle listed, the Phase 3 SQL engine over a store with an empty
+`QSTEST`), and compare each reply with the oracle's field by field. The
+differences are kept in `net/hostserver/tests/replay/*.txt`
+(`QS400_UPDATE_REPLAY=1` rewrites them) and accepted for these reasons:
+
+- Masked as different by nature: seeds (the tests answer the oracle's),
+  job numbers, times and file IDs in file server replies, SQLCA message
+  tokens, `SQLERRD(2)` and the statement kind IBM keeps in `SQLERRD(6)`,
+  result data consistency tokens, cursor attributes, whether a reply is
+  compressed (compressed parameters compare expanded).
+- Message text (remote command `0x1106`, database `0x3802`/`0x3803`) is
+  Quartz-written; IDs, types and severities compare.
+- Sign-on and central: the oracle closed every connection unanswered;
+  we answer (`signon-*.txt`, `central-*.txt`).
+- File: the listing order is the directory's (the in-memory backend
+  sorts by name, the oracle by creation), directories are tagged CCSID
+  1208 in the root (the oracle 1200), OA2's mode bits are the file's.
+- Network print: the attribute values (`0x0008`) are the subset QS/400
+  keeps for a spooled file; the IDs and the list framing match.
+- Database: the `QSYS2` catalog lists QS/400's files, not the catalog
+  views themselves, so the metadata calls and the catalog fetch find
+  nothing where the oracle found its views; the catalog views' columns
+  are `CHAR` where IBM's are `VARCHAR`; IBM's `CREATE TABLE` warns 7905
+  (not journaled) and QS/400 does not; `CALL QSYS.QCMDEXC` answers
+  SQL0204 with our text; `CALL` markers carry no parameter names; IBM's
+  set attributes refused one commitment change (`-601`) that QS/400
+  takes. The replies to everything else (prepare and describe formats,
+  marker formats, the 300-row batched insert, the selects' rows byte
+  for byte, update, delete, count, the null and type round trip) match.
+- Remote command, data queue: no differences beyond the message text.
+
+## JTOpen suite
+
+`tools/conformance/jtopen/run.sh` against QS/400 with
+`QS_HS_SKIP_SIGNON=0`, through the sign-on server. Run on the harness
+host against the servers in memory (`cargo test -p hostserver --test
+sim -- --ignored`, same request loops, scripted job) on 2026-10-29:
+`signon`, `pwdlevel`, `svrmap`, `dtaq` and `ifs` pass every step (the
+oracle failed the sign-on and central steps: its servers drop the
+connection); `central` downloads every table but CCSID 290 (no table in
+the `ccsid` crate); `jdbc` matches the oracle's output line for line
+except the catalog contents (above), `REMARKS` named `NVARCHAR` and our
+message text; `splf` lists the user's files (none there); `pgmcall` and
+`cmdcall` need a real job (the simulator runs no programs).
+
+Under QEMU (step 63 with `QS_HS_SUITE=1`, 2026-10-30), through the
+forwarded ports (`QS_HS_PORT_<port>`; `Jdbc` connects through a system
+object then, since a URL would ask the port mapper at the harness
+host's 449): `signon` 4/5, `pwdlevel` 8/8, `cmdcall` 6/6, `pgmcall`
+3/4, `sysval` 7/8, `central` 6/7, `jdbc` 14/16, `dtaq` 12/12, `ifs`
+8/8, `splf` 2/2. The failures: `signon` unknown user (refused with
+return code 32 where the oracle drops the connection), `pgmcall` the
+missing program and `jdbc` the missing table and the procedure call
+(the oracle fails the same steps with the same identifiers and states),
+`sysval` `QAUTOVRT` (not in the catalog), `central` CCSID 290 (no
+table). The command messages (`CPD0031`, `CPF0001`, `CPF9801`,
+`CPD0030`) are the oracle's identifiers. Fixed on the way: `CRTDTAQ`
+honors `SEQ`, `MAXLEN`, `KEYLEN` and `SENDERID`; a data queue peek
+leaves the entry (`store::obj::dtaq::peek`); sign-on checks
+`QLMTSECOFR` and `QLMTDEVSSN` only for a display; the service's network
+address prefers an Ethernet link; the SQL engine prepares and opens
+the `QSYS2` views and `SYSIBM.SYSDUMMY1`.
 
 ## Exit points
 

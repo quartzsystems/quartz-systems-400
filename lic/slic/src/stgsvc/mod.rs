@@ -16,6 +16,7 @@ mod dbg;
 pub(crate) mod devices;
 pub(crate) mod exec;
 pub(crate) mod hist;
+mod hostsvr;
 pub(crate) mod ifs;
 mod isql;
 mod joblog;
@@ -216,6 +217,13 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
     };
     ipl_message(system);
     cmn::start(system);
+    // The descriptor relay between job processes (givedescriptor,
+    // takedescriptor, the host server daemons and their prestart jobs).
+    std::thread::spawn(|| {
+        if let Err(e) = sockets::relay::serve(sockets::relay::SOCKET) {
+            eprintln!("qsstg: descriptor relay: {e}");
+        }
+    });
     let ctx = match served::begin_job(system, scpf) {
         Ok(c) => Some(c),
         Err(e) => {

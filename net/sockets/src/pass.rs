@@ -6,9 +6,8 @@
 //! to another (prestart servers hand accepted connections this way).
 //! A job is named by its 16-byte internal job identifier, the value
 //! `QUSRJOBI` returns. [`InProcess`] relays between jobs in one
-//! process; between job processes the storage service relays the
-//! kernel descriptor over the control channel with `SCM_RIGHTS`
-//! (`MIGRATE(phase10)`: the relay, see docs/TCPIP.md "Sockets").
+//! process; between job processes the storage service's relay passes
+//! the kernel descriptor with `SCM_RIGHTS` ([`crate::relay::Relay`]).
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Condvar, Mutex};

@@ -19,6 +19,7 @@ use super::{Stamp, create, library};
 use crate::Result;
 
 /// `(library, name, description)`.
+#[allow(clippy::too_many_lines)] // one entry per shipped description
 fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
     let d = JobD::default;
     vec![
@@ -93,6 +94,36 @@ fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
         ),
         (
             "QSYS",
+            "QZBSJOBD",
+            JobD {
+                user: "QUSER".into(),
+                jobq: ("QSYS".into(), "QUSRNOMAX".into()),
+                text: "Host server prestart job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QGPL",
+            "QDFTSVR",
+            JobD {
+                user: "QUSER".into(),
+                jobq: ("QSYS".into(), "QUSRNOMAX".into()),
+                text: "Default server job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
+            "QPWFSPJ",
+            JobD {
+                user: "QUSER".into(),
+                jobq: ("QSYS".into(), "QUSRNOMAX".into()),
+                text: "File server prestart job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
             "QSYSSCD",
             JobD {
                 user: "QSYS".into(),
@@ -137,6 +168,8 @@ fn classes() -> Vec<(&'static str, &'static str, Cls)> {
             "QSYSCLS25",
             c(25, 500, 30, "System class, priority 25"),
         ),
+        ("QGPL", "QCASERVR", c(20, 2000, 30, "Host server class")),
+        ("QSYS", "QPWFSERVER", c(20, 2000, 30, "File and database server class")),
         (
             "QSYS",
             "QSYSCLS50",

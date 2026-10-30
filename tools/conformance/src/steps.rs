@@ -156,6 +156,7 @@ impl Suite {
             .ok()
             .and_then(|s| s.parse().ok())
             .map_or(Duration::from_secs(60), Duration::from_secs);
+        let telnet_port = free_port();
         Ok(Self {
             launch: Launch {
                 qemu: qemu::locate()?,
@@ -166,7 +167,8 @@ impl Suite {
                 cdrom_first: false,
                 extra_disks: Vec::new(),
                 qmp: out_dir.join("qmp.sock"),
-                telnet_port: Some(free_port()),
+                telnet_port: Some(telnet_port),
+                host_ports: crate::hostsvr::forwards(Some(telnet_port)),
                 memory_mb: 1024,
                 cpus: 2,
             },
@@ -514,6 +516,7 @@ impl Suite {
         reports.push(self.step(&mut s, "62 ENDTCP and STRTCP", Self::tcp_restart)?);
         reports.push(self.step(&mut s, "63 IFS commands", Self::ifs_commands)?);
         reports.push(self.step(&mut s, "64 TCP servers", Self::tcp_servers)?);
+        reports.push(self.step(&mut s, "68 host servers", Self::host_servers)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

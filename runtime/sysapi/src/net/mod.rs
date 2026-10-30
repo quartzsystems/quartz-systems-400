@@ -202,7 +202,22 @@ pub fn net(j: &mut Job) -> Rc<RefCell<Net>> {
     if let Some(n) = NETS.with(|m| m.borrow().get(&key(j)).cloned()) {
         return n;
     }
-    configure(j, NetSetup::default());
+    // Between job processes descriptors pass through the storage
+    // service's relay; elsewhere (tests) within the process.
+    let passing: Box<dyn DescriptorPassing> = if cfg!(target_os = "linux")
+        && std::path::Path::new(sockets::relay::SOCKET).exists()
+    {
+        Box::new(sockets::Relay::new(internal_job_id(j)))
+    } else {
+        Box::new(InProcess::new(internal_job_id(j)))
+    };
+    configure(
+        j,
+        NetSetup {
+            passing,
+            ..NetSetup::default()
+        },
+    );
     NETS.with(|m| m.borrow().get(&key(j)).cloned()).expect("just configured")
 }
 

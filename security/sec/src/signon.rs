@@ -258,9 +258,11 @@ pub fn sign_on(
         objects::write(txn, id, &p)?;
         return Ok(Err(r));
     }
-    // Security officers sign on only where they are authorized by name.
+    // Security officers sign on only where they are authorized by name;
+    // a sign-on without a device (a host server) has no device to limit.
     let strong = p.spcaut.has(SpecialAuth::ALLOBJ) || p.spcaut.has(SpecialAuth::SERVICE);
-    if v.lmtsecofr && strong && !exempt {
+    let display = !a.device.is_empty();
+    if v.lmtsecofr && strong && !exempt && display {
         let ok = device_authority(txn, &user).is_some_and(|b| b.has(Auth::CHANGE));
         if !ok {
             return Ok(Err(refused(
@@ -273,7 +275,7 @@ pub fn sign_on(
         }
     }
     let limited = p.lmtdevssn.resolve(v.lmtdevssn);
-    if limited && a.sessions > 0 {
+    if limited && a.sessions > 0 && display {
         return Ok(Err(refused(
             "CPF1220",
             format!("User profile {user} is signed on at another device already."),

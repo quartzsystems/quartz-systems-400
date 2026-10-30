@@ -375,17 +375,9 @@ fn live_slots(txn: &mut Txn<'_>, space: &Space, attr: &QueueAttr) -> Result<Vec<
     Ok(out)
 }
 
-/// Take one entry. `wait` is always zero in Phase 2: `None` when
-/// nothing matches.
-pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<Option<Entry>> {
-    crate::obj::guard::check_id(txn, "dtaq.receive", id)?;
-    let mut attr = describe(txn, id)?;
-    if attr.entry_count == 0 {
-        return Ok(None);
-    }
-    let (space, _) = Space::load(txn, id)?;
-    let slots = live_slots(txn, &space, &attr)?;
-    let pick = match (select, attr.order) {
+/// The index of the live slot `select` picks.
+fn pick(slots: &[Slot], select: &Select<'_>, order: Order) -> Result<Option<usize>> {
+    Ok(match (select, order) {
         (Select::Next, Order::Lifo) => slots.len().checked_sub(1),
         (Select::Next, _) => (!slots.is_empty()).then_some(0),
         (Select::Key(op, key), Order::Keyed { .. }) => {
@@ -396,8 +388,32 @@ pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<O
                 what: "keyed receive on an unkeyed queue".into(),
             });
         }
-    };
-    let Some(i) = pick else {
+    })
+}
+
+/// Read the entry `select` picks without taking it (a peek).
+pub fn peek(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<Option<Entry>> {
+    crate::obj::guard::check_id(txn, "dtaq.receive", id)?;
+    let attr = describe(txn, id)?;
+    if attr.entry_count == 0 {
+        return Ok(None);
+    }
+    let (space, _) = Space::load(txn, id)?;
+    let slots = live_slots(txn, &space, &attr)?;
+    Ok(pick(&slots, select, attr.order)?.map(|i| slots[i].entry.clone()))
+}
+
+/// Take one entry. `wait` is always zero in Phase 2: `None` when
+/// nothing matches.
+pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<Option<Entry>> {
+    crate::obj::guard::check_id(txn, "dtaq.receive", id)?;
+    let mut attr = describe(txn, id)?;
+    if attr.entry_count == 0 {
+        return Ok(None);
+    }
+    let (space, _) = Space::load(txn, id)?;
+    let slots = live_slots(txn, &space, &attr)?;
+    let Some(i) = pick(&slots, select, attr.order)? else {
         return Ok(None);
     };
     let slot = &slots[i];

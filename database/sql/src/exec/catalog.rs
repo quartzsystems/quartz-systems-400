@@ -47,6 +47,9 @@ fn col(alias: &str, name: &str, ty: DataType, len: u32, dec: u8, nullable: bool)
         dec,
     );
     f.allow_null = nullable;
+    if name.len() > 10 {
+        f.alias = Some(name.to_string());
+    }
     ColInfo {
         name: name.to_string(),
         table: Some(alias.to_string()),
@@ -114,6 +117,15 @@ fn is_index(desc: &FileDesc) -> bool {
         && table_type(desc) != "V"
 }
 
+/// Whether `name` names a catalog view (`QSYS2` or no schema).
+#[must_use]
+pub fn is_view(name: &ObjectName) -> bool {
+    if name.name.value == "SYSDUMMY1" && name.schema.as_ref().is_none_or(|s| s.value == "SYSIBM") {
+        return true;
+    }
+    name.schema.as_ref().is_none_or(|s| s.value == "QSYS2") && TABLES.contains(&name.name.value.as_str())
+}
+
 /// The rows and columns of a catalog table, or `None` when `name` is
 /// not one. `QSYS2` or no schema names them.
 #[allow(clippy::too_many_lines)]
@@ -123,6 +135,11 @@ pub fn virtual_table(
     name: &ObjectName,
     alias: &str,
 ) -> Result<Option<(Schema, Vec<Row>)>> {
+    // SYSIBM.SYSDUMMY1: one row, one column.
+    if name.name.value == "SYSDUMMY1" && name.schema.as_ref().is_none_or(|s| s.value == "SYSIBM") {
+        let cols = vec![col(alias, "IBMREQD", DataType::Char, 1, 0, false)];
+        return Ok(Some((Schema { cols }, vec![vec![s("Y")]])));
+    }
     if name.schema.as_ref().is_some_and(|s| s.value != "QSYS2") {
         return Ok(None);
     }

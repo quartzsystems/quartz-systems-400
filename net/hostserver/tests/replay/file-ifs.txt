@@ -1,0 +1,10 @@
+conn 1 req 4 e002/000a corr 2 reply 1: template 93 bytes, oracle 93, differ at 54
+conn 1 req 4 e002/000a corr 2 reply 1: 0002 8 bytes, oracle 6, differ at 3,5-7
+conn 1 req 4 e002/000a corr 2 reply 2: template 93 bytes, oracle 93, differ at 54
+conn 1 req 4 e002/000a corr 2 reply 2: 0002 6 bytes, oracle 8, differ at 3,5-7
+conn 1 req 4 e002/000a corr 2 reply 3: template 93 bytes, oracle 93, differ at 54
+conn 1 req 4 e002/000a corr 2 reply 4: template 93 bytes, oracle 93, differ at 54
+conn 1 req 16 e002/000a corr 14 reply 1: 000f 160 bytes, oracle 160, differ at 59
+conn 1 req 22 e002/000a corr 20 reply 1: template 93 bytes, oracle 93, differ at 54,60
+conn 1 req 23 e002/000a corr 21 reply 1: template 93 bytes, oracle 93, differ at 54
+33 replies compared

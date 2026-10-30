@@ -481,6 +481,8 @@ pub const JOB_SITE: &[&str] = &[
     "STRDBG",
     "STRTCPSVR",
     "ENDTCPSVR",
+    "STRHOSTSVR",
+    "ENDHOSTSVR",
     "CHGTELNA",
     // --- DDM and DRDA (command/ddm.rs)
     "ADDRDBDIRE",

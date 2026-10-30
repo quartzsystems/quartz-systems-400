@@ -10,6 +10,8 @@ publish.workspace = true
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 des = "0.9.0"
 sha1 = "0.11.0"
+sha2.workspace = true
+hmac = "0.13.0"
 
 [lints]
 workspace = true

@@ -1,0 +1,6 @@
+conn 1 req 1 e009/7003 corr 0: the oracle closed without a reply; we answer 1
+conn 2 req 1 e009/7003 corr 0: 1 replies, oracle 0
+conn 3 req 1 e009/7003 corr 0: 1 replies, oracle 0
+conn 4 req 1 e009/7003 corr 0: 1 replies, oracle 0
+conn 5 req 1 e009/7003 corr 0: 1 replies, oracle 0
+0 replies compared

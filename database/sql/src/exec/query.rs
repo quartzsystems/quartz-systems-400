@@ -178,6 +178,8 @@ pub fn run_cursor_query(
             if sel.from.len() == 1 && sel.group_by.is_empty() && !sel.distinct =>
         {
             match &sel.from[0] {
+                // A catalog view has no file: its cursor is read only.
+                TableRef::Table { name, .. } if super::catalog::is_view(name) && ctx.resolve_table(txn, name).is_err() => None,
                 TableRef::Table { name, alias, .. } => Some((
                     ctx.resolve_table(txn, name)?,
                     alias

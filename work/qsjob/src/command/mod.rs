@@ -12,6 +12,7 @@
 //! own console table (the development commands).
 
 pub mod ddm;
+pub mod hostsvr;
 pub mod jobsite;
 pub mod natives;
 pub mod prompt;
