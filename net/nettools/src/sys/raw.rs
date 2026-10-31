@@ -138,6 +138,9 @@ pub struct Received {
 
 /// `recvmsg` into `buf` and `ctrl` with `flags` (`MSG_ERRQUEUE`,
 /// `MSG_DONTWAIT`).
+// `msg_controllen` is `size_t` on glibc (the conversions are no-ops
+// there) and `socklen_t` on musl.
+#[allow(clippy::useless_conversion)]
 pub fn recvmsg(fd: &OwnedFd, buf: &mut [u8], ctrl: &mut [u8], flags: i32) -> io::Result<Received> {
     // SAFETY: plain bytes; zeros are valid.
     let mut ss: libc::sockaddr_storage = unsafe { zeroed() };
