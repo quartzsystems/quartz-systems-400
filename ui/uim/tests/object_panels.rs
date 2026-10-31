@@ -246,7 +246,6 @@ fn dsplib() {
 }
 
 #[test]
-#[ignore = "the golden centers Object over Authority; R9 left-aligns heading rows"]
 fn dspobjaut() {
     let g = shipped("QUIDSPOAUT");
     let mut d = MapDialog::new();
