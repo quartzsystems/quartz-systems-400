@@ -236,7 +236,7 @@ pub fn select(
         }
         17 => {
             if s.libs.is_empty() {
-                let note = Some("Choose the libraries whose files to list.".to_string());
+                let note = Some(crate::display::msgline::say(host, "CPI9BF7", &[]));
                 pick_libraries(host, surface, s, note)?;
             }
             pick_files(host, surface, s, None)?;
@@ -248,11 +248,11 @@ pub fn select(
         }
         _ => {
             if s.libs.is_empty() {
-                let note = Some("Choose the libraries whose files to list.".to_string());
+                let note = Some(crate::display::msgline::say(host, "CPI9BF7", &[]));
                 pick_libraries(host, surface, s, note)?;
             }
             if s.files.is_empty() {
-                let note = Some("Choose the files whose fields to list.".to_string());
+                let note = Some(crate::display::msgline::say(host, "CPI9BF8", &[]));
                 pick_files(host, surface, s, note)?;
             }
             let picked = choose(surface, Which::Fields, fields(host, &s.files), sql, None)?;

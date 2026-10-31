@@ -45,6 +45,14 @@ pub fn text(host: &Host, id: &str, data: &[&str]) -> String {
     text_of(host, &LineMsg::error(id, data))
 }
 
+/// The text a service failure shows: its message when the service
+/// worded one (`CPFnnnn text`), else the function check, the detail
+/// kept for the job log (`panels::line`).
+#[must_use]
+pub fn of_error(host: &Host, e: &str) -> String {
+    text_of(host, &crate::panels::line(e))
+}
+
 /// The text of message `id` with values of any kind, for a display
 /// that draws its own message line.
 #[must_use]

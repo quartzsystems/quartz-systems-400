@@ -43,3 +43,15 @@ pub enum IsqlError {
     #[error("The saved session is damaged: {0}.")]
     Damaged(String),
 }
+
+impl IsqlError {
+    /// The message the message line shows for it.
+    #[must_use]
+    pub fn msg(&self) -> uim::engine::LineMsg {
+        match self {
+            Self::BadValue { field, value } => uim::engine::LineMsg::error("CPD9CD1", &[value, field]),
+            Self::Missing(what) => uim::engine::LineMsg::error("CPD9CD2", &[what]),
+            Self::Damaged(_) => uim::engine::LineMsg::error("CPD9CD3", &[]),
+        }
+    }
+}

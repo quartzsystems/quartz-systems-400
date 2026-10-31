@@ -30,6 +30,19 @@ use ui::{Answer, Key, show};
 /// The most rows a query brings back for Display Data.
 const MAX_ROWS: u32 = 10_000;
 
+/// Message `id` into the session's history, worded by the job's
+/// message files.
+fn note(host: &Host, h: &mut History, id: &str, data: &[&dyn std::fmt::Display]) {
+    h.message(id, &crate::display::msgline::say(host, id, data));
+}
+
+/// A service failure into the history: the service's message, else
+/// the function check.
+fn note_error(host: &Host, h: &mut History, e: &str) {
+    let m = crate::panels::line(e);
+    h.message(&m.id.clone(), &crate::display::msgline::text_of(host, &m));
+}
+
 /// A STRSQL session.
 pub struct Session {
     /// The attributes.
@@ -99,10 +112,10 @@ pub fn run(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let mut surface = Surface::new(host.clone());
     let mut s = open(host, r);
     if let Err(e) = start_sql(host, &mut s) {
-        s.h.message("", &format!("Commitment control did not start: {e}"));
+        note_error(host, &mut s.h, &e);
     }
     let rdb = crate::display::dds::system_name(host);
-    s.h.message("", &format!("Connected to relational database {rdb}."));
+    note(host, &mut s.h, "SQL7971", &[&rdb]);
     s.h.fit();
     main_loop(host, &mut surface, &mut s);
     Ok(String::new())
@@ -128,7 +141,7 @@ fn open(host: &Host, r: &Resolved) -> Session {
         s.attrs = saved.attrs;
         s.h.entries = saved.entries;
         s.h.input = saved.input;
-        s.h.message("", "The saved session was restored.");
+        note(host, &mut s.h, "CPI9BEA", &[]);
         s.h.to_end();
         return s;
     }
@@ -224,7 +237,7 @@ fn main_loop(host: &Host, surface: &mut Surface, s: &mut Session) {
                 }
                 None => msg = Some(OUT_OF_RANGE.into()),
             },
-            Key::F(9) => msg = retrieve(s, a.cursor),
+            Key::F(9) => msg = retrieve(host, s, a.cursor),
             Key::F(13) => services::services(host, surface, s),
             Key::F(n @ 16..=18) => match input_at(s, a.cursor) {
                 Some(at) => msg = lists::select(host, surface, s, n, at),
@@ -258,7 +271,7 @@ fn row_of(s: &Session, i: usize) -> Option<(usize, usize)> {
 }
 
 /// F9: the statement under the cursor, else the next earlier one.
-fn retrieve(s: &mut Session, cursor: (usize, usize)) -> Option<String> {
+fn retrieve(host: &Host, s: &mut Session, cursor: (usize, usize)) -> Option<String> {
     if let Some(Slot::History(k)) = slot_at(s, cursor) {
         let lines = s.h.lines();
         let index = lines[..=k].iter().rev().find_map(|l| match l {
@@ -276,7 +289,7 @@ fn retrieve(s: &mut Session, cursor: (usize, usize)) -> Option<String> {
         s.h.fit();
         None
     } else {
-        Some("There is no statement to retrieve.".into())
+        Some(crate::display::msgline::say(host, "CPD9B85", &[]))
     }
 }
 

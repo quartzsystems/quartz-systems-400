@@ -184,3 +184,66 @@ id = "SQL9010"
 sev = 30
 text = "The SQL statement RUNSQL ran did not complete."
 help = "The messages before this one say why the statement failed."
+
+[[msg]]
+id = "SQL0100"
+sev = 0
+text = "No row was found for &1."
+help = "The statement found no row to work on; nothing was changed."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "SQL7955"
+sev = 0
+text = "&3 rows were deleted from &1 in &2."
+help = "The DELETE statement ran."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "SQL7956"
+sev = 0
+text = "&3 rows were inserted into &1 in &2."
+help = "The INSERT statement ran."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "SQL7957"
+sev = 0
+text = "&3 rows were updated in &1 in &2."
+help = "The UPDATE statement ran."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "SQL7960"
+sev = 0
+text = "The commit is done."
+help = "The changes of the unit of work are kept."
+vars = []
+
+[[msg]]
+id = "SQL7961"
+sev = 0
+text = "The rollback is done."
+help = "The changes of the unit of work are undone."
+vars = []
+
+[[msg]]
+id = "SQL7971"
+sev = 0
+text = "The session is connected to relational database &1."
+help = "Statements run against this database."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "SQL7977"
+sev = 0
+text = "The &1 statement ran."
+help = "The statement completed."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "SQL6072"
+sev = 0
+text = "The SELECT statement ran."
+help = "The rows it returned were shown or written as the session attributes ask."
+vars = []

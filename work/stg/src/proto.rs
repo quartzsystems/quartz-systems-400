@@ -768,6 +768,9 @@ pub struct IsqlReply {
     pub rows: Vec<Vec<Option<String>>>,
     /// More rows than `max_rows` were left out.
     pub truncated: bool,
+    /// The table a data change named, and its library, for the
+    /// completion message.
+    pub table: (String, String),
 }
 
 wire_struct!(IsqlReply {
@@ -779,7 +782,8 @@ wire_struct!(IsqlReply {
     count,
     columns,
     rows,
-    truncated
+    truncated,
+    table
 });
 
 /// A system reply list entry for `rpyl_entries`: sequence, message

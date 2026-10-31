@@ -15,7 +15,7 @@ use stg::Client;
 use uim::render::Attr;
 
 use super::ui::{Key, show};
-use super::{Session, start_sql};
+use super::{Session, note, note_error, start_sql};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
 
@@ -37,7 +37,7 @@ pub fn services(host: &Host, surface: &mut Surface, s: &mut Session) {
                 }
                 "2" => {
                     let lines = session_lines(s);
-                    s.h.message("", &super::run::print(host, &lines));
+                    super::run::print(host, &mut s.h, &lines);
                     return;
                 }
                 "3" => {
@@ -45,8 +45,7 @@ pub fn services(host: &Host, surface: &mut Surface, s: &mut Session) {
                     return;
                 }
                 "4" => {
-                    if let Some(m) = save_source(host, surface, s) {
-                        s.h.message("", &m);
+                    if save_source(host, surface, s).is_some() {
                         return;
                     }
                 }
@@ -85,7 +84,7 @@ fn attributes(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
             if let Some(v) = a.vars.get(k)
                 && let Err(e) = work.set(k, v)
             {
-                msg = Some(e.to_string());
+                msg = Some(crate::display::msgline::text_of(host, &e.msg()));
             }
         }
         match a.key {
@@ -116,15 +115,15 @@ fn apply(host: &Host, s: &mut Session, new: Attrs) {
         if let Ok(n) = ended
             && n > 0
         {
-            s.h.message("", &format!("{n} pending changes were committed."));
+            note(host, &mut s.h, "CPI9BF0", &[&n]);
         }
     }
     if (commit_changed || naming_changed)
         && let Err(e) = start_sql(host, s)
     {
-        s.h.message("", &format!("The new attributes did not take: {e}"));
+        note_error(host, &mut s.h, &e);
     }
-    s.h.message("", "Session attributes changed.");
+    note(host, &mut s.h, "CPI9BF1", &[]);
 }
 
 /// Exit Interactive SQL; true when the session ends.
@@ -182,8 +181,8 @@ fn end(host: &Host, s: &Session, commit: bool) {
 }
 
 /// Save Session in Source File: the statements written to a member;
-/// the message, or `None` when cancelled.
-fn save_source(host: &Host, surface: &mut Surface, s: &Session) -> Option<String> {
+/// what happened goes into the history; `None` when cancelled.
+fn save_source(host: &Host, surface: &mut Surface, s: &mut Session) -> Option<()> {
     let mut file = "QSQLSRC".to_string();
     let mut lib = host.attrs().libl.cur.unwrap_or_else(|| "QGPL".into());
     let mut member = "QSQLSESS".to_string();
@@ -211,12 +210,11 @@ fn save_source(host: &Host, surface: &mut Surface, s: &Session) -> Option<String
                         "SQL".into(),
                     )
                 });
-                return Some(match r {
-                    Ok(()) => {
-                        format!("The session's statements were saved in {lib}/{file} {member}.")
-                    }
-                    Err(e) => format!("The session was not saved in a source file: {e}"),
-                });
+                match r {
+                    Ok(()) => note(host, &mut s.h, "CPI9BEF", &[&member, &lib, &file]),
+                    Err(e) => note_error(host, &mut s.h, &e),
+                }
+                return Some(());
             }
             _ => msg = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }

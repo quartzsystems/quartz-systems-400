@@ -90,12 +90,21 @@ pub fn run(system: &mut System, text: &str, naming: &str, check: bool, max_rows:
         Ok(x) => x,
         Err(e) => return failed(&name, &e),
     };
+    let target = target_of(&statement);
     let p = Prepared { statement, naming };
     let mut txn = match store.begin() {
         Ok(t) => t,
         Err(e) => return failed(&name, &e.to_string()),
     };
     let (ca, outcome) = p.run(&mut txn, ctx, &[]);
+    let table = target
+        .and_then(|t| {
+            let id = ctx.resolve_file(&mut txn, &t).ok()?;
+            let h = store::obj::ops::describe(&mut txn, id).ok()?;
+            let lib = store::obj::ops::describe(&mut txn, h.library).ok()?;
+            Some((h.name.to_string().trim().to_string(), lib.name.to_string().trim().to_string()))
+        })
+        .unwrap_or_default();
     if ca.is_error() {
         txn.abort();
         return IsqlReply {
@@ -114,6 +123,7 @@ pub fn run(system: &mut System, text: &str, naming: &str, check: bool, max_rows:
         sqlcode: ca.sqlcode,
         sqlstate: ca.sqlstate,
         statement: name,
+        table,
         ..IsqlReply::default()
     };
     match outcome {
@@ -143,13 +153,26 @@ pub fn run(system: &mut System, text: &str, naming: &str, check: bool, max_rows:
     reply
 }
 
+/// The table a data change names.
+fn target_of(s: &sql::ast::Statement) -> Option<sql::ast::ObjectName> {
+    use sql::ast::Statement;
+    match s {
+        Statement::Insert(i) => Some(i.table.clone()),
+        Statement::Update(u) => Some(u.table.clone()),
+        Statement::Delete(d) => Some(d.table.clone()),
+        Statement::Merge(m) => Some(m.target.clone()),
+        _ => None,
+    }
+}
+
 /// A statement that could not reach the database.
 fn failed(statement: &str, why: &str) -> IsqlReply {
+    eprintln!("qsstg: STRSQL {statement}: {why}");
     IsqlReply {
         sqlcode: -901,
         sqlstate: "58004".into(),
         msgid: "SQL0901".into(),
-        text: why.to_string(),
+        text: String::new(),
         statement: statement.to_string(),
         ..IsqlReply::default()
     }

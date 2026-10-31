@@ -7,7 +7,7 @@
 //! history as a message. Also the help behind F1.
 
 use isql::attrs::Output;
-use isql::history::Line;
+use isql::history::{History, Line};
 use isql::result::{Column, Data, report};
 use isql::screen::data;
 use isql::screen::enter::Slot;
@@ -15,23 +15,27 @@ use stg::Client;
 use stg::proto::IsqlReply;
 
 use super::ui::{Key, show};
-use super::{MAX_ROWS, Session, slot_at};
+use super::{MAX_ROWS, Session, note, note_error, slot_at};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
 
-/// What a statement that ran says.
-fn done_text(r: &IsqlReply) -> String {
+/// The message a SELECT that ran leaves.
+const SELECT_DONE: &str = "SQL6072";
+
+/// What a statement that ran says, into the history.
+fn done(host: &Host, s: &mut Session, r: &IsqlReply) {
     let n = r.count;
+    let (table, lib) = (&r.table.0, &r.table.1);
+    let h = &mut s.h;
     match r.statement.as_str() {
-        "INSERT" => format!("{n} rows inserted."),
-        "UPDATE" if n == 0 => "No rows were updated.".into(),
-        "UPDATE" => format!("{n} rows updated."),
-        "DELETE" if n == 0 => "No rows were deleted.".into(),
-        "DELETE" => format!("{n} rows deleted."),
-        "MERGE" => format!("{n} rows merged."),
-        "SELECT" | "EXPLAIN" => format!("SELECT ran; {n} rows."),
-        "" => "Statement ran.".into(),
-        other => format!("{other} ran."),
+        "UPDATE" | "DELETE" | "MERGE" if n == 0 => note(host, h, "SQL0100", &[&r.statement]),
+        "INSERT" => note(host, h, "SQL7956", &[table, lib, &n]),
+        "UPDATE" => note(host, h, "SQL7957", &[table, lib, &n]),
+        "DELETE" => note(host, h, "SQL7955", &[table, lib, &n]),
+        "SELECT" | "EXPLAIN" => note(host, h, SELECT_DONE, &[]),
+        "COMMIT" => note(host, h, "SQL7960", &[]),
+        "ROLLBACK" => note(host, h, "SQL7961", &[]),
+        other => note(host, h, "SQL7977", &[&other]),
     }
 }
 
@@ -46,20 +50,20 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
         .with(|l| l.isql_run(text.clone(), s.naming(), check, MAX_ROWS));
     s.h.statement(lines.clone());
     if r.sqlcode < 0 {
-        s.h.message(&r.msgid, &r.text);
+        if r.text.is_empty() {
+            note(host, &mut s.h, &r.msgid, &[]);
+        } else {
+            s.h.message(&r.msgid, &r.text);
+        }
         s.h.input = lines;
         s.h.to_last_statement();
         return;
     }
     if check {
-        let what = if s.attrs.get("PROCESS") == "*VLD" {
-            "The statement is valid."
-        } else {
-            "The statement's syntax is correct."
-        };
-        s.h.message("", what);
+        let id = if s.attrs.get("PROCESS") == "*VLD" { "CPI9BEB" } else { "CPI9BEC" };
+        note(host, &mut s.h, id, &[]);
     } else if r.columns.is_empty() {
-        s.h.message("", &done_text(&r));
+        done(host, s, &r);
     } else {
         let d = Data {
             columns: r
@@ -72,22 +76,18 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
                 .collect(),
             rows: r.rows.clone(),
         };
-        let note = r
+        let cut = r
             .truncated
-            .then(|| format!("Only the first {MAX_ROWS} rows are shown."));
+            .then(|| crate::display::msgline::say(host, "CPI9BED", &[&MAX_ROWS]));
         match s.attrs.output() {
-            Output::Display => display(surface, &d, note.as_deref()),
+            Output::Display => display(surface, &d, cut.as_deref()),
             Output::Printer => {
                 let lines = report(&text, &d, 132);
-                let m = print(host, &lines);
-                s.h.message("", &m);
+                print(host, &mut s.h, &lines);
             }
-            Output::File => s.h.message(
-                "",
-                "SELECT output to a file is not available; the rows were not kept.",
-            ),
+            Output::File => note(host, &mut s.h, "CPD9CD0", &[]),
         }
-        s.h.message("", &done_text(&r));
+        done(host, s, &r);
     }
     s.h.clear_input();
     s.h.to_end();
@@ -136,8 +136,9 @@ pub fn display(surface: &mut Surface, d: &Data, note: Option<&str>) {
     }
 }
 
-/// Print lines to `QSYSPRT` as a spooled file; the message to show.
-pub fn print(host: &Host, lines: &[String]) -> String {
+/// Print lines to `QSYSPRT` as a spooled file; what happened goes into
+/// the history.
+pub fn print(host: &Host, h: &mut History, lines: &[String]) {
     use spool::printer::{Control, PageFormat, Printer};
     let opened = host
         .link
@@ -145,7 +146,7 @@ pub fn print(host: &Host, lines: &[String]) -> String {
         .with(|l| l.prt_open("QSYSPRT".into(), "*LIBL".into(), "*DFTACTGRP".into()));
     let (id, prtf) = match opened {
         Ok(o) => o,
-        Err(e) => return format!("Nothing was printed: {e}"),
+        Err(e) => return note_error(host, h, &e),
     };
     let mut p = Printer::new(PageFormat {
         len: prtf.page_len,
@@ -165,8 +166,8 @@ pub fn print(host: &Host, lines: &[String]) -> String {
         .with(|l| l.splf_put(id, bytes, p.pages, p.records));
     let closed = host.link.borrow_mut().with(|l| l.splf_close(id, prtf.hold));
     match put.and(closed) {
-        Ok(()) => "The output was printed to QSYSPRT.".into(),
-        Err(e) => format!("Nothing was printed: {e}"),
+        Ok(()) => note(host, h, "CPI9BEE", &[]),
+        Err(e) => note_error(host, h, &e),
     }
 }
 

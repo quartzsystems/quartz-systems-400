@@ -6,6 +6,7 @@
 //! statement typed (and the display after it that some statements
 //! need); the statement built goes on the input lines to be run.
 
+use isql::IsqlError;
 use isql::assemble::{self, Kind, LIST, Values};
 use isql::screen::menus::{self, STATEMENTS, statement_pages};
 use isql::screen::prompt::{self, Prompt};
@@ -25,7 +26,7 @@ enum Left {
 
 /// F4 on Enter SQL Statements.
 pub fn prompt(host: &Host, surface: &mut Surface, s: &mut Session) {
-    let _ = host;
+
     let text = s.h.text();
     let kind = if text.trim().is_empty() {
         match pick_statement(surface, s) {
@@ -35,7 +36,7 @@ pub fn prompt(host: &Host, surface: &mut Surface, s: &mut Session) {
     } else if let Some(k) = assemble::kind_of(&text) {
         k
     } else {
-        s.h.message("", "That statement has no prompt; type it and press Enter.");
+        super::note(host, &mut s.h, "CPD9CD4", &[]);
         s.h.fit();
         return;
     };
@@ -57,13 +58,13 @@ pub fn prompt(host: &Host, surface: &mut Surface, s: &mut Session) {
         typed
     };
     s.h.statement(shown);
-    s.h.message("", "The prompt was left; nothing ran.");
+    super::note(host, &mut s.h, "CPI9BF2", &[]);
     s.h.clear_input();
     s.h.to_end();
 }
 
 /// A prompt display's check of its values before it is left.
-type Check = Box<dyn Fn(&Values) -> Result<(), String>>;
+type Check = Box<dyn Fn(&Values) -> Result<(), IsqlError>>;
 
 /// Select SQL Statement: the statement chosen, when it has a prompt;
 /// another one's first words go on the input instead.
@@ -110,7 +111,7 @@ fn display(
     p: &Prompt,
     values: &mut Values,
     sql: bool,
-    check: &dyn Fn(&Values) -> Result<(), String>,
+    check: &dyn Fn(&Values) -> Result<(), IsqlError>,
 ) -> Option<Left> {
     let names = prompt::names(p);
     let mut msg: Option<String> = None;
@@ -134,7 +135,7 @@ fn display(
                 let all = prompt::gather(p, values);
                 match check(&all) {
                     Ok(()) => return Some(Left::Done(all)),
-                    Err(e) => msg = Some(e),
+                    Err(e) => msg = Some(crate::display::msgline::text_of(surface.host(), &e.msg())),
                 }
             }
             _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
@@ -142,10 +143,10 @@ fn display(
     }
 }
 
-fn need(v: &Values, names: &[(&str, &str)]) -> Result<(), String> {
+fn need(v: &Values, names: &[(&str, &'static str)]) -> Result<(), IsqlError> {
     for (n, what) in names {
         if v.get(*n).is_none_or(|x| x.trim().is_empty()) {
-            return Err(format!("A value is needed for {what}."));
+            return Err(IsqlError::Missing(what));
         }
     }
     Ok(())
