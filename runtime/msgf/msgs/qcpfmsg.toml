@@ -2685,7 +2685,7 @@ vars = ["*CHAR 10", "*CHAR 10"]
 [[msg]]
 id = "CPF9812"
 sev = 40
-text = "File &1 in library &2 not found."
+text = "No file &1 in library &2."
 help = "Check the name and the library, or the library list."
 vars = ["*CHAR 10", "*CHAR 10"]
 
