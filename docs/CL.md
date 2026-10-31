@@ -92,7 +92,7 @@ the IR, and create the module and (not `CRTCLMOD`) the program, with
 module; `RTVCLSRC` writes it back to a source member. `LOG(*YES)`
 and `*JOB` are recorded on the module (the job log's logging of each
 command run is the job's `LOGCLPGM`). The startup program
-`QSYS/QSTRUP` is CL source (`lic/slic/src/stgsvc/shipped/QSTRUP.clle`)
+`QSYS/QSTRUP` is CL source (`lic/osobjects/shipped/QSTRUP.clle`)
 compiled at the storage service's first start.
 
 ## The corpus

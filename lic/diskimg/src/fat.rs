@@ -130,7 +130,7 @@ pub fn read_file(image: &[u8], path: &str) -> Result<Vec<u8>, Error> {
 }
 
 /// A file's bytes on a mounted volume (`dev` is the partition).
-pub fn read_file<T: ReadWriteSeek>(mut dev: T, path: &str) -> Result<Vec<u8>, Error> {
+pub fn read_file_at<T: ReadWriteSeek>(mut dev: T, path: &str) -> Result<Vec<u8>, Error> {
     dev.seek(std::io::SeekFrom::Start(0)).map_err(Error::io("seek"))?;
     let fs = FileSystem::new(dev, FsOptions::new()).map_err(fat_err("mount"))?;
     let mut f = fs.root_dir().open_file(path).map_err(fat_err("open"))?;
@@ -235,10 +235,10 @@ mod tests {
         let img = build(&MEDIA_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"slot a"), ("EFI/QS400/B.EFI", b"slot b")]).unwrap();
         let mut cur = Cursor::new(img);
         write_file(&mut cur, "EFI/QS400/B.EFI", b"new slot b, longer than before").unwrap();
-        assert_eq!(read_file(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"new slot b, longer than before");
-        assert_eq!(read_file(&mut cur, "EFI/BOOT/BOOTX64.EFI").unwrap(), b"slot a");
+        assert_eq!(read_file_at(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"new slot b, longer than before");
+        assert_eq!(read_file_at(&mut cur, "EFI/BOOT/BOOTX64.EFI").unwrap(), b"slot a");
         write_file(&mut cur, "EFI/QS400/B.EFI", b"short").unwrap();
-        assert_eq!(read_file(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"short");
+        assert_eq!(read_file_at(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"short");
         assert_eq!(
             list(cur.get_ref()).unwrap(),
             vec!["EFI/", "EFI/BOOT/", "EFI/BOOT/BOOTX64.EFI", "EFI/QS400/", "EFI/QS400/B.EFI"]

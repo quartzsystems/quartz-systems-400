@@ -4,11 +4,9 @@
 
 //! The initramfs: `/init` (slic, which is also the storage service),
 //! `/qsjob` (the job process), mount points, a console node and
-//! `/qs400/keys/system.pub`, the public half of the build's signing key
-//! (32 bytes), which checks signed objects and license keys
-//! (`docs/LICPGM.md` §7).
-//! `/qsjob` (the job process), mount points, a console node and the
-//! public keys of the signers the system trusts.
+//! `/qs400/keys/system.pub`: the public keys of the signers the system
+//! trusts, the build key first, 32 bytes each; they check signed objects,
+//! PTFs and license keys (`docs/LICPGM.md` §7, `docs/PTF.md` §6).
 
 use std::fs;
 use std::path::PathBuf;
@@ -32,10 +30,6 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
     let qsjob = ctx.paths.qsjob();
     let job = fs::read(&qsjob).with_context(|| format!("cannot read {}", qsjob.display()))?;
 
-    let public = crate::image::manifest::signing_key(ctx)?
-        .verifying_key()
-        .to_bytes()
-        .to_vec();
     let keys = trusted_keys(ctx)?;
 
     // The kernel does not auto-mount devtmpfs for an initramfs, so a static
@@ -47,7 +41,6 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         Entry::dir("proc"),
         Entry::dir("qs400"),
         Entry::dir("qs400/keys"),
-        Entry::file("qs400/keys/system.pub", public),
         Entry::file("qs400/keys/system.pub", keys),
         Entry::file("qsjob", job),
         Entry::dir("run"),

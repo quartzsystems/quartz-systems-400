@@ -9,7 +9,7 @@ use cmd::analyze::{Env, MemSource, Setting};
 
 #[test]
 fn qstrup_compiles() {
-    let source = include_str!("../../../lic/slic/src/stgsvc/shipped/QSTRUP.clle");
+    let source = include_str!("../../../lic/osobjects/shipped/QSTRUP.clle");
     let mut mem = MemSource::default();
     for (n, _) in sys_cpps::defs::DEFS {
         if let Ok(o) = sys_cpps::install::object(n, 0) {

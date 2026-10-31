@@ -16,7 +16,7 @@ parameter set; and the dev console's old words live on behind `svc.`.
 | `sys-cpps` (`command/sys-cpps`) | the 343 shipped definitions (`cmds/*.cmd`), the inventory (`inventory.toml`: sites, stubs, bridge words, completion messages, limited-user commands), the installer, the bridge, the denylist |
 | `cl` (`command/cl`) | the CL compiler: lexer, parser, semantic tables, lowering to IR, listing |
 | `lic/slic/src/cpp/` | the service's processing programs: direct implementations, the bridge, the CL commands (`CRTCLMOD`, `CRTBNDCL`, `CRTCLPGM`, `RTVCLSRC`) |
-| `lic/slic/src/stgsvc/shipped/QSTRUP.clle` | the startup program as CL, compiled at the service's first start |
+| `lic/osobjects/shipped/QSTRUP.clle` | the startup program as CL, compiled at the service's first start |
 | `work/qsjob/src/command/` | the job's side: `run`, the dispatch by site, the job-site commands (`CALL`, `RTVJOBA`, `RTVSYSVAL`, `RTVOBJD`, the debugger, `SBMJOB`, ...), the `*LDA` commands, the prompt session on the display, the natives a compiled CL program calls (`QC*`, `QCLEXEC`, `QCLSWS`, `QCLDMP`), the `QCMDEXC` hook |
 | `work/qsjob/src/work/inter.rs` | Command Entry: the 512-character line, F4, F9 over the last 25 commands, F10 second-level text, F11 full width, F24; `CPD0043` for a limited user |
 | `work/stg` | `cmd_lookup` and `run_cmd` requests; the job's cached `CmdSource`; the Phase 4 `QCMDEXC` queue gone |

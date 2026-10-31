@@ -143,7 +143,6 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
-    made += install_commands(system);
     if let Ok(path) = licpart::locate()
         && let Ok(f) = fs::OpenOptions::new().read(true).write(true).open(&path)
     {
