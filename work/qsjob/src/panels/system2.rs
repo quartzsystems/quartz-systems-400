@@ -4,12 +4,12 @@
 
 //! The second batch of system displays and the editors: `DSPPGM`,
 //! `DSPSRVPGM`, `DSPMOD`, `DSPBNDDIR`, `DSPCMD`, `DSPPGMREF`
-//! (`programs`), `WRKDEVD`, `WRKHDWRSC`, `DSPHDWRSC`, `DSPPTF`
+//! (`programs`), `WRKDEVD`, `WRKHDWRSC`, `DSPHDWRSC`
 //! (`config`), `WRKLIND`, `DSPLIND` (`cmn`), `DSPUSRPRF`'s other
 //! types, `DSPAUTLOBJ`, `DSPAUDJRNE`
 //! (`security`), `EDTLIBL`, `EDTOBJAUT`, `EDTAUTL` and `WRKSYSVAL`'s
-//! change (`editors`). A driver returns `None` when the data is not
-//! there, so the service's text path answers with its message.
+//! change (`editors`). A failed read ends the command with the
+//! service's message or the function check (`crate::panels::failed`).
 
 mod cmn;
 mod config;
@@ -19,6 +19,7 @@ mod programs;
 mod security;
 
 pub use editors::change_options;
+pub(crate) use programs::view_report;
 
 use cmd::{Resolved, Value};
 use mi::Job;
@@ -48,7 +49,6 @@ pub fn run(
         "WRKDEVD" => config::wrkdevd(job, host, surface, r),
         "WRKHDWRSC" => hdwrsc::run(job, host, surface, r, true),
         "DSPHDWRSC" => hdwrsc::run(job, host, surface, r, false),
-        "DSPPTF" => config::dspptf(host, surface),
         "WRKLIND" => cmn::wrklind(job, host, surface, r),
         "DSPLIND" => cmn::dsplind(host, surface, r),
         "DSPUSRPRF" => security::dspusrprf(host, surface, r),

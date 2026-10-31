@@ -45,7 +45,7 @@ const APPLIED: &str = "CPC3606";
 /// PTF removed.
 const REMOVED: &str = "CPC3608";
 
-pub(super) fn release_text() -> String {
+pub(crate) fn release_text() -> String {
     let r = release::RELEASE;
     format!("V{}R{}M{}", r.v, r.r, r.m)
 }
@@ -110,7 +110,7 @@ pub fn store_db(system: &mut System, db: &PtfDb) -> Result<(), String> {
 }
 
 /// The PTF groups the system knows (user space `QSYS/QSPTFGRP`).
-pub(super) fn load_groups(system: &mut System) -> Result<ptf::grpdb::GroupDb, String> {
+pub(crate) fn load_groups(system: &mut System) -> Result<ptf::grpdb::GroupDb, String> {
     space_text(system, GROUPS).map(|t| ptf::grpdb::GroupDb::decode(&t))
 }
 

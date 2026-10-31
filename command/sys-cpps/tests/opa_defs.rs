@@ -151,10 +151,10 @@ fn runbckup_and_dspbckup() {
 #[test]
 fn where_they_run() {
     use sys_cpps::Site;
-    for c in ["CHGCLNUP", "STRCLNUP", "ENDCLNUP", "CHGBCKUP", "DSPBCKSTS", "PRTSYSINF", "QSPMTOVR", "QSBCKUP"] {
+    for c in ["CHGCLNUP", "STRCLNUP", "ENDCLNUP", "CHGBCKUP", "PRTSYSINF", "QSPMTOVR", "QSBCKUP"] {
         assert_eq!(sys_cpps::entry(c).map(|e| e.site), Some(Site::Service), "{c}");
     }
-    for c in ["QSMNSAVE", "QSMNRST", "RUNBCKUP", "DSPBCKUP"] {
+    for c in ["QSMNSAVE", "QSMNRST", "RUNBCKUP", "DSPBCKUP", "DSPBCKSTS"] {
         assert_eq!(sys_cpps::entry(c).map(|e| e.site), Some(Site::Job), "{c}");
     }
     assert!(sys_cpps::inventory::in_service_too("DSPBCKUP"), "DSPBCKUP's text is the service's");

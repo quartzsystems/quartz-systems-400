@@ -628,6 +628,18 @@ pub const JOB_SITE: &[&str] = &[
     "DSPF",
     // --- STRSST (devtools/sst)
     "STRSST",
+    // --- the displays the CPP audit gave panels (panels/info.rs)
+    "DSPPTFCVR",
+    "WRKPTFGRP",
+    "DSPIPLA",
+    "WRKMSGD",
+    "DSPBCKSTS",
+    "DSPLICKEY",
+    "DSPTAP",
+    "DSPTAPCTG",
+    "DSPOPT",
+    "WRKOPTVOL",
+    "DSPUDFS",
     "ADDBKP",
     "CALL",
     "CHGDBG",

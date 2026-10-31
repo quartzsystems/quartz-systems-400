@@ -192,7 +192,7 @@ impl Hooks for SvcHooks {
 const TRUSTED_KEYS: &str = "/qs400/keys/system.pub";
 
 /// The trusted signers' public keys.
-pub(super) fn trusted_keys() -> Vec<[u8; 32]> {
+pub(crate) fn trusted_keys() -> Vec<[u8; 32]> {
     std::fs::read(TRUSTED_KEYS)
         .map(|b| {
             b.as_chunks::<32>().0.to_vec()

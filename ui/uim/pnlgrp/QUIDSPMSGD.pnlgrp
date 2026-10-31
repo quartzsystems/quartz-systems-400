@@ -62,6 +62,23 @@
 :LISTCOL VAR=IDTEXT USAGE=OUTPUT.Message Text
 :ELIST.
 :EPANEL.
+:PANEL NAME=WORK KEYL=KEYS HELP=WORKH ENTER='RETURN 0' TOPSEP=SYSNAM.Work with Message Descriptions
+:DATA DEPTH=2.
+:DATAC.Message file . . . . . . . . :   &MSGF.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . . . . . :     &MSGFLIB.
+:EDATAGRP.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=IDS SCROLL=YES.(No message descriptions)
+:LISTACT OPTION=2 ENTER='CMD ?CHGMSGD MSGID(&ID.) MSGF(&MSGFLIB./&MSGF.)'.2=Change
+:LISTACT OPTION=4 ENTER='CMD RMVMSGD MSGID(&ID.) MSGF(&MSGFLIB./&MSGF.)'.4=Remove
+:LISTACT OPTION=5 ENTER='CMD DSPMSGD RANGE(&ID.) MSGF(&MSGFLIB./&MSGF.)'.5=Display details
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=ID USAGE=OUTPUT.Message ID
+:LISTCOL VAR=IDTEXT USAGE=OUTPUT.Message Text
+:ELIST.
+:EPANEL.
 :PANEL NAME=SELECT KEYL=KEYS HELP=SELECTH ENTER='RETURN 0' TOPSEP=SYSNAM.Select Message Details to Display
 :DATA DEPTH=6.
 :DATAC.Message ID . . . . . . . . . :   &MSGID.
@@ -136,6 +153,10 @@
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
+:HELP NAME=WORKH.Work with Message Descriptions - Help
+:P.The descriptions of a message file: change, remove or look at one.
+ADDMSGD adds another.
+:EHELP.
 :HELP NAME=LISTH.Display Message Descriptions - Help
 :P.The descriptions in a message file, by identifier. Type 5 next to
 one to choose what to see of it.

@@ -53,6 +53,7 @@ use crate::ipl::system::System;
 
 pub use prbcmd::{detail_data as problem_detail, rows as problem_rows};
 pub use savcmd::savf_listing;
+pub(crate) use savcmd::trusted_keys;
 
 /// Run command `name` with `parms`; the text, messages and escape.
 /// `typed` is the keyword form as the caller typed it, for the bridge;

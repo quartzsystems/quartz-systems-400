@@ -26,6 +26,7 @@ macro_rules! read {
 pub mod backup;
 pub mod certs;
 pub mod ifs;
+pub mod info;
 pub mod licpgm;
 pub mod objects;
 pub mod system;
@@ -187,6 +188,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
     }
     // --- the backup display (backup.rs)
     if let Some(res) = backup::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
+    // --- the displays the CPP audit gave panels (info.rs)
+    if let Some(res) = info::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     // --- the IFS displays (ifs.rs)

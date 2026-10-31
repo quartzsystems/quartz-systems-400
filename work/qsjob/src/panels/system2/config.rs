@@ -2,12 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The configuration displays: `WRKDEVD` and `DSPPTF` (`WRKHDWRSC` and
-//! `DSPHDWRSC` are `hdwrsc`'s).
+//! The configuration displays: `WRKDEVD` (`WRKHDWRSC` and `DSPHDWRSC`
+//! are `hdwrsc`'s, `DSPPTF` is `panels::info`'s).
 
 use cmd::Resolved;
 use mi::Job;
-use stg::Client;
 
 use super::{NO_PRINT, act, dialog, exec, fetch, fill, list_of, parm, show};
 use crate::command::Fail;
@@ -101,27 +100,3 @@ pub fn wrkdevd(
     }
 }
 
-/// `DSPPTF`: the product and its fixes (none in this release).
-pub fn dspptf(host: &Host, surface: &mut Surface) -> Option<Result<String, Fail>> {
-    let rows = host.link.borrow_mut().with(Client::sfwrsc_panel);
-    let first = rows.first()?;
-    let mut d = match dialog(host, "QUIDSPPTF") {
-        Ok(d) => d,
-        Err(e) => return Some(Err(e)),
-    };
-    d.set("PRODID", first.first().map_or("", String::as_str));
-    d.set("RELEASE", first.get(6).map_or("", String::as_str));
-    fill(&mut d, "PTFS", Vec::new());
-    loop {
-        match show(&mut d, surface, "DSPPTF") {
-            Ok(Response::Exit | Response::Cancel | Response::Gone | Response::Return(0)) => {
-                return Some(Ok(String::new()));
-            }
-            Ok(Response::Return(11)) => {
-                d.message = Some(("There are no PTFs to show another view of.".into(), false));
-            }
-            Ok(_) => {}
-            Err(e) => return Some(Err(e)),
-        }
-    }
-}

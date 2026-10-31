@@ -329,7 +329,7 @@ pub fn dspcmd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result
 
 /// The lines of a report in the viewer, F19 and F20 shifting them by
 /// 20 columns.
-pub(super) fn view_report(
+pub(crate) fn view_report(
     host: &Host,
     surface: &mut Surface,
     title: &str,

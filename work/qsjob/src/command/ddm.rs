@@ -90,7 +90,7 @@ fn system_name(host: &Host) -> String {
     crate::display::dds::system_name(host)
 }
 
-fn directory(host: &Host) -> RdbDirectory {
+pub(crate) fn directory(host: &Host) -> RdbDirectory {
     RdbDirectory::decode(&read(host, RDBDIR.0, RDBDIR.1), &system_name(host))
 }
 

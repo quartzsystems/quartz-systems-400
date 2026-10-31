@@ -768,7 +768,8 @@ note = "as UNMOUNT"
 note = "reclaims the whole IFS metadata whatever OBJ names"
 
 [cmd.DSPUDFS]
-note = "text"
+site = "job"
+note = "the report viewer at a display (panels/info/reports.rs); the service's text otherwise"
 
 # --- IFS panels (work/qsjob/src/panels/ifs.rs)
 [cmd.WRKLNK]
@@ -1003,3 +1004,45 @@ note = "panels at a display; the text form in the service without one"
 [cmd.WRKMLBSTS]
 site = "job"
 note = "panels at a display; the text form in the service without one"
+
+# --- the displays the CPP audit gave panels (work/qsjob/src/panels/info.rs)
+[cmd.DSPPTFCVR]
+site = "job"
+note = "a panel at a display; the service's text otherwise"
+
+[cmd.WRKPTFGRP]
+site = "job"
+note = "a panel at a display; the service's text otherwise"
+
+[cmd.DSPIPLA]
+site = "job"
+note = "a panel at a display; the service's text otherwise"
+
+[cmd.WRKMSGD]
+site = "job"
+note = "a panel at a display; the service's text otherwise"
+
+[cmd.DSPBCKSTS]
+site = "job"
+note = "the report viewer at a display; the service's text otherwise"
+
+[cmd.DSPLICKEY]
+site = "job"
+note = "the report viewer at a display; the service's text otherwise"
+
+[cmd.DSPTAP]
+site = "job"
+note = "the report viewer at a display; the service's text otherwise"
+
+[cmd.DSPTAPCTG]
+site = "job"
+note = "the report viewer at a display; the service's text otherwise"
+
+[cmd.DSPOPT]
+site = "job"
+note = "the report viewer at a display; the service's text otherwise"
+
+[cmd.WRKOPTVOL]
+site = "job"
+note = "the report viewer at a display; the service's text otherwise"
+

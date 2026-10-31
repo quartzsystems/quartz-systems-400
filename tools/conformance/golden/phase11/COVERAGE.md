@@ -477,7 +477,7 @@ The menus: `GO RESTORE` page 3 headings; `GO TAPE` (linked from
 | `menus/menu-tape` | compared by `ui/menus/tests/task_menus.rs` |
 | `displays/dspbckup` | pending (agent): DSPBCKUP |
 | `displays/dspbckup-2` | pending (agent): DSPBCKUP |
-| `displays/dspipla` | deferred: DSPIPLA answers in text (lic/slic/src/cpp/iplcmd.rs), no panel |
+| `displays/dspipla` | compared row for row by `ui/uim/tests/phase11_panels.rs` dspipla (QUIIPLA) |
 | `displays/dspptf-refused` | refused; defined (`command/sys-cpps/tests/phase11_prompts.rs` refused_commands_are_defined); ours has no special-authority check (gap: IBM's class is *SERVICE or *ALLOBJ) |
 | `displays/wrkcntinf-refused` | refused; defined (`command/sys-cpps/tests/phase11_prompts.rs` refused_commands_are_defined); ours has no special-authority check (gap: IBM's class is *SERVICE or *ALLOBJ) |
 | `displays/wrkimgclg` | pending (agent): the WRKIMGCLG panels |

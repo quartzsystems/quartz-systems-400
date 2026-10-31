@@ -282,3 +282,65 @@ fn dspsfwrsc_libraries() {
         set(&["headings 4", "headings 5", "keys", "more"])
     );
 }
+
+/// `DSPIPLA` with pub400's values: the first page row for row (the
+/// labels, the section headings, the colon at column 52, `More...`,
+/// the instruction and the keys).
+#[test]
+fn dspipla() {
+    let values = [
+        ("RESTART", "*SYS"),
+        ("KEYLCKPOS", "*NORMAL"),
+        ("HDWDIAG", "*MIN"),
+        ("CPRJOBTBL", "*NONE"),
+        ("CHKJOBTBL", "*ALL"),
+        ("RBDPRDDIR", "*NORMAL"),
+        ("MSFRCY", "*NONE"),
+        ("DSPSTS", "*ALL"),
+        ("STRTCP", "*YES"),
+        ("SPLFRCY", "*REMOVE"),
+        ("CLRJOBQ", "*NO"),
+        ("CLROUTQ", "*NO"),
+        ("CLRINCJOB", "*NO"),
+        ("STRPRTWTR", "*YES"),
+        ("STRRSTD", "*NO"),
+    ];
+    let mut d = MapDialog::new();
+    for (k, v) in values {
+        d.set(k, v);
+    }
+    let opts = Options {
+        system: "SYSNAME".into(),
+        ..Options::default()
+    };
+    let s = render(&group("QUIIPLA"), "DSPIPLA", &d, &opts).unwrap();
+    let want = read(&golden_dir().join("displays/dspipla.txt"));
+    let ours = s.text_rows();
+    for (i, (w, o)) in want.iter().zip(&ours).enumerate().take(23) {
+        assert_eq!(o.trim_end(), w.trim_end(), "row {}", i + 1);
+    }
+    assert!(differing("displays", "dspipla", &s, &[]).is_empty());
+}
+
+/// `WRKRDBDIRE` with pub400's two entries
+/// (`tools/conformance/golden/phase10/misc/wrkrdbdire`): the option
+/// numbers, the headings and the keys. Ours has no blank entry to add
+/// from at the top of the list, two-character option fields, heads the
+/// location column on one row and ends the list a row higher.
+#[test]
+fn wrkrdbdire() {
+    let rows = vec![
+        vec![("RDB", "PUB400"), ("RMTLOC", "*LOCAL"), ("RDBTEXT", "please do not change|")],
+        vec![("RDB", "RZKHCOCKPIT"), ("RMTLOC", "cockpit.rzkh.de"), ("RDBTEXT", "")],
+    ];
+    let mut d = MapDialog::new();
+    let mut l = list(rows);
+    l.complete = true;
+    d.set_list("RDBS", l);
+    let opts = Options {
+        system: "SYSNAME".into(),
+        ..Options::default()
+    };
+    let s = render(&group("QUIRDBDIR"), "WRKRDBDIRE", &d, &opts).unwrap();
+    assert_eq!(differing("../phase10/misc", "wrkrdbdire", &s, &[9]), set(&["fields", "more"]));
+}
