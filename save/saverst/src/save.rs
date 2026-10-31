@@ -152,6 +152,9 @@ pub fn descriptor(h: &ObjectHeader, library: &str, e: &Exported, now: u64) -> Ob
     if h.flags & ObjectHeader::ADOPTS != 0 {
         flags |= flags::ADOPTS;
     }
+    if h.signature.is_some() {
+        flags |= flags::SIGNED;
+    }
     ObjectDescriptor {
         index: 0,
         owner_index: NO_OWNER,
@@ -196,6 +199,7 @@ pub(crate) fn write_object<W: Write>(
     e: &Exported,
     auths: &[AuthorityEntry],
 ) -> Result<u32> {
+    let sig = e.header.signature;
     if !auths.is_empty() {
         d.flags |= flags::PRIVATE_AUTH;
     }
@@ -207,6 +211,9 @@ pub(crate) fn write_object<W: Write>(
         w.part(*p, b)?;
     }
     w.end_object()?;
+    if let Some(s) = sig {
+        w.signature(s.key_id, s.bytes)?;
+    }
     Ok(index)
 }
 

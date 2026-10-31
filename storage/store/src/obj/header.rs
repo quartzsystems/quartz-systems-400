@@ -74,6 +74,7 @@ const OFF_OWNER_AUTH: usize = 820;
 const OFF_GROUP_AUTH: usize = 824;
 const OFF_AUTH_GEN: usize = 832;
 const OFF_SAVE: usize = 840;
+const OFF_SIGNATURE: usize = 916;
 /// `auth_flags`: the owner's authority was reduced from `*ALL`.
 const OWNER_REDUCED: u32 = 1;
 
@@ -140,7 +141,10 @@ pub static LAYOUT: Layout = Layout {
         field("save_label", 894, 17),
         field("reserved6", 911, 1),
         field("save_seq", 912, 4),
-        field("reserved7", 916, 108),
+        field("signature", 916, 64),
+        field("sig_key", 980, 8),
+        field("sig_flags", 988, 4),
+        field("reserved7", 992, 32),
     ],
 };
 
@@ -314,6 +318,20 @@ pub struct ObjectHeader {
     pub auth_gen: u64,
     /// Where and how the object was last saved, as `DSPOBJD` shows it.
     pub save: SaveInfo,
+    /// The object's signature, when it has one.
+    pub signature: Option<Signature>,
+}
+
+/// An object's signature: ed25519 over its content digest
+/// (`docs/SAVE_FORMAT.md` §5), made where the object was built.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Signature {
+    /// The signature.
+    pub bytes: [u8; 64],
+    /// First 8 bytes of the SHA-256 of the signer's public key.
+    pub key_id: [u8; 8],
+    /// The signer is one the system trusts for system objects.
+    pub system: bool,
 }
 
 /// The last save of an object: zero and blank until it is saved.
@@ -429,6 +447,7 @@ impl ObjectHeader {
             group_authority: Authority::EXCLUDE,
             auth_gen: 0,
             save: SaveInfo::default(),
+            signature: None,
         }
     }
 
@@ -495,6 +514,11 @@ impl ObjectHeader {
         put_u32(b, OFF_GROUP_AUTH, self.group_authority.0);
         put_u64(b, OFF_AUTH_GEN, self.auth_gen);
         self.save.encode(&mut b[OFF_SAVE..OFF_SAVE + 76]);
+        if let Some(sig) = &self.signature {
+            b[OFF_SIGNATURE..OFF_SIGNATURE + 64].copy_from_slice(&sig.bytes);
+            b[OFF_SIGNATURE + 64..OFF_SIGNATURE + 72].copy_from_slice(&sig.key_id);
+            put_u32(b, OFF_SIGNATURE + 72, 1 | u32::from(sig.system) << 1);
+        }
     }
 
     /// Decode the fixed part of a page body. `page` is for errors.
@@ -582,6 +606,13 @@ impl ObjectHeader {
             group_authority: Authority(get_u32(body, OFF_GROUP_AUTH)),
             auth_gen: get_u64(body, OFF_AUTH_GEN),
             save: SaveInfo::decode(&body[OFF_SAVE..OFF_SAVE + 76]),
+            signature: (get_u32(body, OFF_SIGNATURE + 72) & 1 != 0).then(|| Signature {
+                bytes: body[OFF_SIGNATURE..OFF_SIGNATURE + 64].try_into().expect("64"),
+                key_id: body[OFF_SIGNATURE + 64..OFF_SIGNATURE + 72]
+                    .try_into()
+                    .expect("8"),
+                system: get_u32(body, OFF_SIGNATURE + 72) & 2 != 0,
+            }),
         })
     }
 }

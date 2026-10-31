@@ -16,6 +16,8 @@ db = { path = "../../database/db", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
+sha2.workspace = true
+ed25519-dalek = "3.0.0"
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }

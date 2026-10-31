@@ -19,10 +19,13 @@ pub mod order;
 pub mod restore;
 pub mod save;
 pub mod secdta;
+pub mod sign;
 pub mod select;
 
 pub use error::{Error, Result};
 pub use hooks::{AllowAll, Hooks};
-pub use restore::{AllowDiff, MbrOpt, RestoreOptions, RestoreReport, RstOption, restore};
+pub use restore::{
+    AllowDiff, AllowRestore, MbrOpt, RestoreOptions, RestoreReport, RstOption, restore,
+};
 pub use save::{ObjResult, SaveOptions, SaveReport, SaveTarget, save_library};
 pub use select::ObjSel;

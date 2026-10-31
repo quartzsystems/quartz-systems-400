@@ -13,7 +13,7 @@ use std::io::Cursor;
 use cmd::Value;
 use cmd::block::Parms;
 use saverst::{
-    AllowDiff, Hooks, MbrOpt, ObjSel, RestoreOptions, RestoreReport, RstOption, SaveOptions,
+    AllowDiff, AllowRestore, Hooks, MbrOpt, ObjSel, RestoreOptions, RestoreReport, RstOption, SaveOptions,
     SaveReport, SaveTarget, msg,
 };
 use savfmt::{Compression, MediaHeader, Reader, SaveKind, Writer};
@@ -138,6 +138,17 @@ impl Hooks for SvcHooks {
         Ok(())
     }
 
+    fn verify(&self, key_id: [u8; 8], digest: &[u8; 32], sig: &[u8; 64]) -> Option<bool> {
+        trusted_keys()
+            .iter()
+            .find(|k| saverst::sign::key_id(k) == key_id)
+            .map(|k| saverst::sign::verify(k, digest, sig))
+    }
+
+    fn system_key(&self, key_id: [u8; 8]) -> bool {
+        trusted_keys().iter().any(|k| saverst::sign::key_id(k) == key_id)
+    }
+
     fn profile_exists(&self, txn: &mut Txn<'_>, name: &str) -> bool {
         sec::profile::objects::exists(txn, self.qsys, name)
     }
@@ -145,6 +156,19 @@ impl Hooks for SvcHooks {
     fn autl_exists(&self, txn: &mut Txn<'_>, name: &str) -> bool {
         sec::auth::autl::find(txn, self.qsys, name).is_ok()
     }
+}
+
+/// Where the image keeps the public keys of the signers the system
+/// trusts for its own objects: 32 raw bytes each, back to back.
+const TRUSTED_KEYS: &str = "/qs400/keys/system.pub";
+
+/// The trusted signers' public keys.
+fn trusted_keys() -> Vec<[u8; 32]> {
+    std::fs::read(TRUSTED_KEYS)
+        .map(|b| {
+            b.as_chunks::<32>().0.to_vec()
+        })
+        .unwrap_or_default()
 }
 
 /// The save file a `FILE`/`SAVF` parameter names.
@@ -630,6 +654,11 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         default_owner: "QDFTOWN".into(),
         system: "QS400".into(),
         now: now_unix(),
+        verify: crate::stgsvc::security::sysval_num(system, "QVFYOBJRST", 3),
+        allow_restore: {
+            let v = crate::stgsvc::security::sysval_text(system, "QALWOBJRST");
+            AllowRestore::from_value(if v.is_empty() { "*ALL" } else { &v })
+        },
     };
     let stream = match in_store(system, |txn, qsys, names| {
         let id = find_savf(txn, qsys, names, &savf_name)?;

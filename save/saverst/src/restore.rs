@@ -105,6 +105,40 @@ impl AllowDiff {
     }
 }
 
+/// `QALWOBJRST`: which security-sensitive objects may be restored.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct AllowRestore {
+    /// `*ALL`.
+    pub all: bool,
+    /// `*ALWSYSSTT`: system-state programs.
+    pub system_state: bool,
+    /// `*ALWPGMADP`: programs that adopt their owner's authority.
+    pub adopting: bool,
+    /// `*ALWVLDERR`: objects whose signature does not verify.
+    pub validation_errors: bool,
+}
+
+impl Default for AllowRestore {
+    fn default() -> Self {
+        Self::from_value("*ALL")
+    }
+}
+
+impl AllowRestore {
+    /// From the system value's text (`*ALL`, `*NONE`, or a list).
+    #[must_use]
+    pub fn from_value(v: &str) -> Self {
+        let has = |w: &str| v.split_whitespace().any(|x| x.eq_ignore_ascii_case(w));
+        Self {
+            all: has("*ALL"),
+            system_state: has("*ALWSYSSTT"),
+            adopting: has("*ALWPGMADP"),
+            validation_errors: has("*ALWVLDERR"),
+        }
+    }
+}
+
 /// What a restore does, from its command's parameters.
 #[derive(Debug, Clone)]
 pub struct RestoreOptions {
@@ -132,6 +166,10 @@ pub struct RestoreOptions {
     pub system: String,
     /// Unix seconds of the restore.
     pub now: u64,
+    /// `QVFYOBJRST`, 1 to 5.
+    pub verify: u8,
+    /// `QALWOBJRST`.
+    pub allow_restore: AllowRestore,
 }
 
 impl Default for RestoreOptions {
@@ -149,6 +187,8 @@ impl Default for RestoreOptions {
             default_owner: "QDFTOWN".into(),
             system: String::new(),
             now: 0,
+            verify: 3,
+            allow_restore: AllowRestore::default(),
         }
     }
 }
@@ -214,6 +254,7 @@ struct Staged {
     journal: Option<ObjectId>,
     notes: Vec<(&'static str, String)>,
     members: u32,
+    signature: Option<store::obj::Signature>,
 }
 
 struct Ctx<'a> {
@@ -445,13 +486,69 @@ fn one(
     if let Some(h) = &existing_h {
         differs(cx.opts.allow, d, h)?;
     }
-    let mut staged = Staged::default();
+    let signature = policy(cx, o)?;
+    let mut staged = Staged {
+        signature,
+        ..Staged::default()
+    };
     if d.type_code == types::FILE {
         restore_file(txn, cx, lib, o, members, existing, &mut staged)?;
     } else {
         restore_plain(txn, cx, lib, o, existing, &mut staged)?;
     }
     Ok(Some(staged))
+}
+
+/// Types whose signatures `QVFYOBJRST` checks.
+fn signable(type_code: u16) -> bool {
+    matches!(
+        type_code,
+        types::PGM | types::SRVPGM | types::MODULE | 0x001E
+    )
+}
+
+/// `QALWOBJRST` and `QVFYOBJRST`: may the object come back, and with
+/// which signature?
+fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>> {
+    let d = &o.descriptor;
+    let a = cx.opts.allow_restore;
+    let refuse = |what: &str| Err(Error::refused(msg::NOT_RESTORED_SYSVAL, format!("{}: {what}", d.object_name())));
+    if !a.all && signable(d.type_code) {
+        if d.state == 0 && !a.system_state {
+            return refuse("system state");
+        }
+        if d.has(savfmt::object::flags::ADOPTS) && !a.adopting {
+            return refuse("adopts authority");
+        }
+    }
+    let level = cx.opts.verify;
+    let sig = o.signature.map(|s| {
+        let good = cx.hooks.verify(s.key_id, &s.digest, &s.signature) == Some(true);
+        (s, good)
+    });
+    if level >= 2 && signable(d.type_code) {
+        let bad = |what: &str| {
+            Err(Error::refused(
+                msg::NOT_RESTORED_SIGNATURE,
+                format!("{}: {what}", d.object_name()),
+            ))
+        };
+        match sig {
+            None if level >= 4 => return bad("not signed"),
+            Some((_, false))
+                if matches!(level, 3 | 5) && !(a.all || a.validation_errors) =>
+            {
+                return bad("signature does not verify");
+            }
+            _ => {}
+        }
+    }
+    // Only a signature that verifies is kept.
+    Ok(sig.filter(|(_, good)| *good).map(|(s, _)| store::obj::Signature {
+        bytes: s.signature,
+        key_id: s.key_id,
+        system: cx.hooks.system_key(s.key_id),
+    }))
 }
 
 /// `ALWOBJDIF`: may the saved object replace `h`?
@@ -536,6 +633,7 @@ fn restore_plain(
     patch_refs(txn, cx, &HashMap::new(), id, &mut parts, staged)?;
     image::import(txn, id, &parts)?;
     set_header(txn, cx, id, d, &o.authorities, existing.is_none(), &mut staged.notes)?;
+    set_signature(txn, id, staged.signature)?;
     if existing.is_some() {
         txn.store().locks_mut().unlock(cx.job, id, LockState::Exclusive);
     }
@@ -655,6 +753,15 @@ fn set_header(
                 }
             }
         }
+    }
+    Ok(())
+}
+
+fn set_signature(txn: &mut Txn<'_>, id: ObjectId, sig: Option<store::obj::Signature>) -> Result<()> {
+    let (page, mut h) = ops::read_header(txn, id)?;
+    if h.signature != sig {
+        h.signature = sig;
+        ops::write_header(txn, page, &h)?;
     }
     Ok(())
 }

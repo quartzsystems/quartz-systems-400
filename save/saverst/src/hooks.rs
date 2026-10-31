@@ -48,6 +48,17 @@ pub trait Hooks {
         Ok(())
     }
 
+    /// Whether `signature` by the key `key_id` names is good for
+    /// `digest`; `None` when the key is not one the system knows.
+    fn verify(&self, _key_id: [u8; 8], _digest: &[u8; 32], _signature: &[u8; 64]) -> Option<bool> {
+        None
+    }
+
+    /// Whether `key_id` is a key the system trusts for system objects.
+    fn system_key(&self, _key_id: [u8; 8]) -> bool {
+        false
+    }
+
     /// Whether a user profile exists.
     fn profile_exists(&self, _txn: &mut Txn<'_>, _name: &str) -> bool {
         true

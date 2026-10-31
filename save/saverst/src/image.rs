@@ -67,7 +67,8 @@ pub fn export(txn: &mut Txn<'_>, id: ObjectId, data: bool) -> Result<Exported> {
     let mut refs = Vec::new();
     let mut attr = ops::read_attr(txn, page)?;
     scrub_attr(tc, &mut attr);
-    refs.extend(ids::find(txn, ids::ATTR, &attr, id)?);
+    refs.extend(ids::find(txn, ids::ATTR, &attr)?);
+    ids::zero(&mut attr, &refs, ids::ATTR);
     parts.insert(Part::ATTR, attr);
     if tc == types::USRIDX {
         let mut b = Vec::new();
@@ -82,9 +83,10 @@ pub fn export(txn: &mut Txn<'_>, id: ObjectId, data: bool) -> Result<Exported> {
         let (space, _) = Space::load(txn, id)?;
         if space.bytes() > 0 {
             let len = usize::try_from(space.bytes()).expect("space fits memory");
-            let bytes = space.read(txn, 0, len)?;
+            let mut bytes = space.read(txn, 0, len)?;
             if ids::space_has_ids(tc) {
-                refs.extend(ids::find(txn, ids::SPACE, &bytes, id)?);
+                refs.extend(ids::find(txn, ids::SPACE, &bytes)?);
+                ids::zero(&mut bytes, &refs, ids::SPACE);
             }
             parts.insert(Part::SPACE, bytes);
         }

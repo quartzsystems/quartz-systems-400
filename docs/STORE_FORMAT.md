@@ -499,7 +499,10 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 894 | 17 | save_label | tape or optical file label |
 | 911 | 1 | reserved6 | 0 |
 | 912 | 4 | save_seq | tape file sequence number |
-| 916 | 108 | reserved7 | 0 |
+| 916 | 64 | signature | ed25519 signature over the object's content digest (`docs/SAVE_FORMAT.md` §5) |
+| 980 | 8 | sig_key | first 8 bytes of the SHA-256 of the signer's public key |
+| 988 | 4 | sig_flags | bit 0 signed, bit 1 signed by a key the system trusts for system objects |
+| 992 | 32 | reserved7 | 0 |
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,

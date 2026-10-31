@@ -2564,3 +2564,17 @@ sev = 40
 text = "&1 user profiles restored. &2 not restored."
 help = "The diagnostic messages before this one name each profile that was not restored."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3847"
+sev = 40
+text = "&1 was not restored: its signature is missing or does not verify."
+help = "The system value QVFYOBJRST asks for signatures on programs. Restore a copy signed by a trusted signer, or change QVFYOBJRST."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3848"
+sev = 40
+text = "&1 was not restored: the system value QALWOBJRST does not allow it."
+help = "QALWOBJRST names which system-state, adopting or otherwise sensitive objects may be restored."
+vars = ["*CHAR 50"]

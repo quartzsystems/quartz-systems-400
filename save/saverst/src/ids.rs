@@ -21,14 +21,9 @@ pub fn space_has_ids(type_code: u16) -> bool {
     matches!(type_code, types::FILE | crate::order::JRN)
 }
 
-/// Every object ID in `bytes`, with what it names. `self_id` (the
-/// object's own ID) is not a reference.
-pub fn find(
-    txn: &mut Txn<'_>,
-    region: u16,
-    bytes: &[u8],
-    self_id: ObjectId,
-) -> store::Result<Vec<RefEntry>> {
+/// Every object ID in `bytes`, with what it names (the object's own ID
+/// included: a restore gives it a new one too).
+pub fn find(txn: &mut Txn<'_>, region: u16, bytes: &[u8]) -> store::Result<Vec<RefEntry>> {
     let asp = txn.store().asp_number().to_be_bytes();
     let next = txn.store().next_serial();
     let mut out = Vec::new();
@@ -41,7 +36,7 @@ pub fn find(
         }
         let id = ObjectId::from_bytes(w);
         let plausible =
-            id.serial > 0 && id.serial < next && type_by_code(id.type_code).is_some() && id != self_id;
+            id.serial > 0 && id.serial < next && type_by_code(id.type_code).is_some();
         if plausible && let Some(r) = describe(txn, id)? {
             out.push(RefEntry {
                 region,
@@ -100,6 +95,17 @@ pub fn resolve(
         return Some(id);
     }
     resolve_in(txn, qsys, r, qsname::Name::from_bytes(r.library))
+}
+
+/// Zero the IDs the references list, so the stream holds no system's
+/// IDs and an object's digest is the same wherever it was saved.
+pub(crate) fn zero(bytes: &mut [u8], refs: &[RefEntry], region: u16) {
+    for r in refs.iter().filter(|r| r.region == region) {
+        let at = usize::try_from(r.offset).unwrap_or(usize::MAX);
+        if at + 16 <= bytes.len() {
+            bytes[at..at + 16].fill(0);
+        }
+    }
 }
 
 /// Mark which references point into the stream, and which backwards.

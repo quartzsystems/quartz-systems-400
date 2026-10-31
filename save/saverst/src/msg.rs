@@ -38,5 +38,9 @@ pub const NO_LIBRARY: &str = "CPF3780";
 pub const NOT_RESTORED_AUTH: &str = "CPF3757";
 /// An owner that does not exist: the object went to the default owner.
 pub const DEFAULT_OWNER: &str = "CPI3722";
+/// `QALWOBJRST` does not allow the object (system state, adopting).
+pub const NOT_RESTORED_SYSVAL: &str = "CPF3848";
+/// `QVFYOBJRST`: unsigned, or a signature that does not verify.
+pub const NOT_RESTORED_SIGNATURE: &str = "CPF3847";
 /// A file's journal was not found: the file is not journaled.
 pub const JOURNAL_MISSING: &str = "CPF7033";
