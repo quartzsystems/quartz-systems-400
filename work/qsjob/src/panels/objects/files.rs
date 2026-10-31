@@ -162,6 +162,11 @@ pub fn wrkobjown(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         };
         match resp {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
+            Response::Return(11) => {
+                d.view = 1 - d.view.min(1);
+                d.set("OOVIEW", if d.view == 1 { "2" } else { "1" });
+            }
+            Response::Return(22) => d.info("CPI9B81", &[]),
             Response::Options(c) => act(job, host, &mut d, &c, &|d, c| {
                 (c.option == "4").then(|| {
                     let row = d.row(&c.list, c.row);

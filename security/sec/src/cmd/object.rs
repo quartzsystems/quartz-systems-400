@@ -433,6 +433,10 @@ pub struct UserObject {
     pub ty: String,
     /// The user's authority to it, as shown.
     pub aut: String,
+    /// Its attribute (`PF`, `CLLE`), blank when it has none.
+    pub attr: String,
+    /// Its text.
+    pub text: String,
 }
 
 /// The objects a user owns (`Kind::Owned`), holds a private authority
@@ -465,6 +469,8 @@ pub fn user_objects(
             lib: library_of(txn, &h),
             ty: type_name(id).into(),
             aut: bits.display(id.type_code == types::AUTL).into(),
+            attr: text_of(&h.attribute),
+            text: text_of(&h.text),
         });
     }
     Ok((user, out))

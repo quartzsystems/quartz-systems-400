@@ -5049,3 +5049,19 @@ release = "V7R5M0"
 date = "2026-10-31"
 script = "go-missing"
 width = 80
+
+[[golden]]
+name = "wrkobjown"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkobjown"
+width = 80
+
+[[golden]]
+name = "wrkobjown-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkobjown"
+width = 80

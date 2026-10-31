@@ -382,14 +382,24 @@ fn dspdtaara() {
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrkobjown() {
-    title_and_keys(
-        "QUIWRKOOWN",
-        "WRKOBJOWN",
-        "Work with Objects by Owner",
-        &["F3=Exit", "F4=Prompt", "F5=Refresh", "F9=Retrieve", "F12=Cancel", "F17=Top", "F18=Bottom"],
-    );
+    let g = shipped("QUIWRKOOWN");
+    let mut d = MapDialog::new();
+    d.set("USRPRF", "USERNAME");
+    let names = ["qst", "qst", "qst", "qst", "qs4", "qs4", "qs4", "qst"];
+    let objs: Vec<String> = names.iter().map(|n| format!("/home/USERNAME/{n} >")).collect();
+    let rows = objs
+        .iter()
+        .map(|o| vec![("OBJ", o.as_str()), ("OBJTYPE", "*STMF"), ("ASPDEV", "*SYSBAS")])
+        .collect();
+    let mut l = list(rows);
+    l.total = None;
+    l.complete = false;
+    d.set_list("OBJS", l);
+    compare("wrkobjown", &render(&g, "WRKOBJOWN", &d, &opts()).unwrap());
+    d.set("OOVIEW", "2");
+    let o = Options { view: 1, ..opts() };
+    compare("wrkobjown-f11", &render(&g, "WRKOBJOWN", &d, &o).unwrap());
 }
 
 #[test]

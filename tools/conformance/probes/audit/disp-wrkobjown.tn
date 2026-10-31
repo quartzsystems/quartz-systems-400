@@ -1,0 +1,16 @@
+# CPP audit: WRKOBJOWN for the signed-on user from Command Entry, its
+# first display, F11 and F3. Read-only: no option is typed.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type WRKOBJOWN
+key enter
+settle 4000
+snap wrkobjown
+key f11
+settle 1500
+snap wrkobjown-f11
+key f3
+settle 2000

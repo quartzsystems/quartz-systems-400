@@ -138,6 +138,9 @@ fn owned(system: &mut System, user: &str) -> Result<Sys2Data, String> {
                 ("OBJLIB", o.lib),
                 ("OBJTYPE", o.ty),
                 ("OBJAUT", o.aut),
+                ("OBJATR", o.attr),
+                ("OBJTEXT", o.text),
+                ("ASPDEV", "*SYSBAS".into()),
             ])
         })
         .collect();
