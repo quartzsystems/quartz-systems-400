@@ -36,7 +36,7 @@ impl Suite {
         let saved = s.command("savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71)", CMD)?;
         want(&saved, "SAVLIB", &["CPC3722", "QS71"])?;
         let again = s.command("savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71)", CMD)?;
-        want(&again, "SAVLIB without CLEAR", &["CPA4067"])?;
+        want(&again, "SAVLIB without CLEAR", &["CPF3794"])?;
         let rst = s.command(
             "rstlib SAVLIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) RSTLIB(QS71B)",
             CMD,
@@ -53,7 +53,7 @@ impl Suite {
             "rstobj OBJ(DA1) SAVLIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) RSTLIB(QS71C)",
             CMD,
         )?;
-        want(&none, "RSTOBJ to a missing library", &["CPF3780"])?;
+        want(&none, "RSTOBJ to a missing library", &["CPF3781"])?;
         s.command("crtlib LIB(QS71C)", CMD)?;
         let obj = s.command(
             "rstobj OBJ(DA1) SAVLIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) RSTLIB(QS71C)",

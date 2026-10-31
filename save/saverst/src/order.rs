@@ -7,17 +7,37 @@
 
 use store::obj::types;
 
-/// A rank: journals, receivers, physical files, logical files, the
-/// rest by type code.
+/// A rank in IBM's save order (`DSPSAVF` lists it): the library,
+/// journals, programs, service programs, modules, data queues, output
+/// queues, message files, user indexes, save files, job descriptions,
+/// commands, data areas, user spaces, the other types, physical files,
+/// logical files, then receivers.
 #[must_use]
 pub fn rank(type_code: u16, logical: bool) -> (u8, u16) {
+    const ORDER: &[u16] = &[
+        types::LIB,
+        JRN,
+        types::PGM,
+        types::SRVPGM,
+        types::MODULE,
+        types::DTAQ,
+        types::OUTQ,
+        types::MSGF,
+        types::USRIDX,
+        SAVF,
+        types::JOBD,
+        types::CMD,
+        types::DTAARA,
+        types::USRSPC,
+    ];
     match type_code {
-        types::LIB => (0, 0),
-        JRN => (1, 0),
-        JRNRCV => (2, 0),
-        types::FILE if logical => (4, 0),
-        types::FILE => (3, 0),
-        t => (5, t),
+        types::FILE if logical => (31, 0),
+        types::FILE => (30, 0),
+        JRNRCV => (40, 0),
+        t => match ORDER.iter().position(|x| *x == t) {
+            Some(i) => (u8::try_from(i).expect("small"), 0),
+            None => (20, t),
+        },
     }
 }
 
@@ -33,23 +53,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn journals_then_files_then_the_rest() {
+    fn ibm_save_order() {
         let mut v = [
+            rank(JRNRCV, false),
             rank(types::DTAARA, false),
             rank(types::FILE, true),
             rank(types::FILE, false),
-            rank(JRNRCV, false),
             rank(JRN, false),
+            rank(types::PGM, false),
         ];
         v.sort_unstable();
         assert_eq!(
             v,
             [
                 rank(JRN, false),
-                rank(JRNRCV, false),
+                rank(types::PGM, false),
+                rank(types::DTAARA, false),
                 rank(types::FILE, false),
                 rank(types::FILE, true),
-                rank(types::DTAARA, false)
+                rank(JRNRCV, false)
             ]
         );
     }

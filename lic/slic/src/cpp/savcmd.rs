@@ -50,10 +50,18 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     })
 }
 
-/// Save file not empty and `CLEAR(*NONE)`.
-const SAVF_NOT_EMPTY: &str = "CPA4067";
-/// The save needs more records than the save file allows.
-const SAVF_FULL: &str = "CPF3797";
+/// Save file not empty and `CLEAR(*NONE)`: the inquiry `CPA4067` takes
+/// its default reply C, then `CPF4110` and the escape `CPF3794`.
+const SAVF_NOT_EMPTY: &str = "CPF3794";
+/// The diagnostic before it.
+const SAVF_HOLDS_DATA: &str = "CPF4110";
+/// `CLEAR(*AFTER)` is not for save files.
+const CLEAR_AFTER: &str = "CPD3754";
+/// The save file is empty (a restore).
+const SAVF_EMPTY: &str = "CPF3707";
+/// The save needs more records than the save file allows: `CPF3808`
+/// then the escape `CPF3815`.
+const SAVF_FULL: &str = "CPF3815";
 /// A device other than `*SAVF` before the media layer is wired.
 const NO_DEVICE: &str = "CPF9814";
 /// Save active and other functions this release does not have.
@@ -517,8 +525,9 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         library_object: name == "SAVLIB",
         skip_journaled: name == "SAVCHGOBJ" && parms.text("OBJJRN") != "*YES",
         update_history: parms.text("UPDHST") != "*NO",
-        save_file_data: parms.text("SAVFDTA") == "*YES",
+        save_file_data: parms.text("SAVFDTA") != "*NO",
         spool: parms.text("SPLFDTA") == "*ALL",
+        target_savf: None,
         private_auth: parms.text("PVTAUT") == "*YES",
         changed_since: None,
         now,
@@ -539,9 +548,12 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             ));
         }
         let used = savf::len(txn, id).map_err(|e| e.to_string())?;
-        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE" | "*AFTER") {
+        if clear == "*AFTER" {
+            return Err(format!("{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"));
+        }
+        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE") {
             return Err(format!(
-                "{SAVF_NOT_EMPTY} save file {} already holds data",
+                "{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C",
                 savf_name.0
             ));
         }
@@ -549,6 +561,10 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     }) {
         Ok(id) => id,
         Err(e) => return failed(name, &e),
+    };
+    let base = SaveOptions {
+        target_savf: Some(savf_id),
+        ..base
     };
     let kind = match name {
         "SAVLIB" => SaveKind::Library,
@@ -607,6 +623,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                 reports.push(SaveReport {
                     library: lib.clone(),
                     objects: Vec::new(),
+                    notes: Vec::new(),
                 });
                 refused.push(message(msgid, 5, &[(&text, 10), (lib, 10)]));
             }
@@ -636,6 +653,10 @@ fn save_reply(reports: &[SaveReport]) -> CmdReply {
     let mut reply = CmdReply::default();
     let mut text = String::new();
     for r in reports {
+        for (id, t) in &r.notes {
+            reply.messages.push(message(id, 1, &[(t, 10)]));
+            let _ = writeln!(text, "{id} {t}: saved without its data");
+        }
         for o in r.objects.iter().filter(|o| o.msgid.is_some()) {
             let id = o.msgid.unwrap_or(msg::NOT_SAVED_IN_USE);
             let _ = writeln!(text, "{id} {} in {} not saved", o.name, o.library);
@@ -709,6 +730,15 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             name,
             &format!("{NO_DEVICE} device {} not found", dev.join(" ")),
         );
+    }
+    let alw = values(parms, "ALWOBJDIF");
+    if alw.iter().any(|v| v == "*ALL") {
+        if alw.len() > 1 {
+            return failed(name, "CPD0094 ALWOBJDIF(*ALL) must be the only value");
+        }
+        if name != "RSTCFG" && parms.text("MBROPT") != "*ALL" {
+            return failed(name, "CPD3768 ALWOBJDIF(*ALL) needs MBROPT(*ALL)");
+        }
     }
     let savf_name = parms.qual("SAVF");
     let saved = if name == "RSTCFG" {
@@ -793,7 +823,7 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     if stream.is_empty() {
         return failed(
             name,
-            &format!("{} save file {} is empty", msg::NONE_FOR_LIB, savf_name.0),
+            &format!("{SAVF_EMPTY} save file {} is empty", savf_name.0),
         );
     }
     let jobh = job(system);
@@ -930,9 +960,17 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
 fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
     let mut reply = CmdReply::default();
     let mut text = String::new();
+    for (id, t) in &r.skipped {
+        reply.messages.push(message(id, 1, &[(t, 10)]));
+        let _ = writeln!(text, "{id} {t} not selected");
+    }
     for (id, t) in &r.notes {
         reply.messages.push(message(id, 5, &[(t, 50)]));
         let _ = writeln!(text, "{id} {t}");
+    }
+    for n in &r.not_found {
+        reply.messages.push(message(msg::NOT_IN_SAVE, 5, &[(n, 10)]));
+        let _ = writeln!(text, "{} {n} is not in the save", msg::NOT_IN_SAVE);
     }
     for o in r.objects.iter().filter(|o| o.msgid.is_some()) {
         let id = o.msgid.unwrap_or(msg::NOT_RESTORED_DAMAGED);
@@ -940,6 +978,24 @@ fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
             .messages
             .push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
         let _ = writeln!(text, "{id} {} in {} not restored", o.name, o.library);
+        // These reasons are followed by the general one (rules 6-11).
+        if matches!(
+            id,
+            msg::JOURNAL_EXISTS
+                | msg::DTAQ_EXISTS
+                | msg::RECEIVER_ATTACHED
+                | msg::NOT_RESTORED_BASED_ON
+                | msg::NOT_RESTORED_MEMBERS
+        ) {
+            reply
+                .messages
+                .push(message(msg::NOT_RESTORED, 5, &[(&o.name, 10), (&o.library, 10)]));
+        }
+    }
+    if r.changes > 0 {
+        let n = r.changes.to_string();
+        reply.messages.push(message(msg::CHANGES, 5, &[(&n, 10)]));
+        let _ = writeln!(text, "{} {n} security or data format changes", msg::CHANGES);
     }
     let lib = target
         .map(str::to_string)
@@ -984,7 +1040,7 @@ fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, 
     if stream.is_empty() {
         return Err(Box::new(failed(
             name,
-            &format!("{} save file {} is empty", msg::NONE_FOR_LIB, savf_name.0),
+            &format!("{SAVF_EMPTY} save file {} is empty", savf_name.0),
         )));
     }
     Ok(stream)
@@ -1005,8 +1061,11 @@ fn savsecdta(system: &mut System, parms: &Parms) -> CmdReply {
     let savf_id = match in_store(system, |txn, qsys, names| {
         let id = find_savf(txn, qsys, names, &savf_name)?;
         let used = savf::len(txn, id).map_err(|e| e.to_string())?;
-        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE" | "*AFTER") {
-            return Err(format!("{SAVF_NOT_EMPTY} save file {} already holds data", savf_name.0));
+        if clear == "*AFTER" {
+            return Err(format!("{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"));
+        }
+        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE") {
+            return Err(format!("{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C", savf_name.0));
         }
         Ok(id)
     }) {
@@ -1172,11 +1231,11 @@ fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
 }
 
 /// IFS saves completed.
-const SAVED_LINKS: &str = "CPC370C";
+const SAVED_LINKS: &str = "CPC370D";
 /// IFS saves with links not saved.
 const SAVED_LINKS_PARTIAL: &str = "CPF3837";
 /// IFS restores completed.
-const RESTORED_LINKS: &str = "CPC370D";
+const RESTORED_LINKS: &str = "CPC370F";
 /// IFS restores with links not restored.
 const RESTORED_LINKS_PARTIAL: &str = "CPF3838";
 

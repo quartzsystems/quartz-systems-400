@@ -264,9 +264,10 @@ fn restore_to_a_renamed_library() {
     assert_eq!(rep.not_saved(), 0, "{:?}", rep.objects);
     assert_eq!(rep.saved(), 7);
     assert_eq!(rep.completion(), msg::SAVED_LIB);
-    // Save order: journal, receiver, PF, LF, then the rest.
+    // IBM's save order: journals, user indexes, data areas, user spaces,
+    // physical then logical files, receivers last.
     let order: Vec<&str> = rep.objects.iter().map(|o| o.name.as_str()).collect();
-    assert_eq!(&order[..4], &["QSTJRN", "QSTRCV001", "CUST", "CUSBYNAME"]);
+    assert_eq!(order, ["QSTJRN", "IX1", "DA1", "US1", "CUST", "CUSBYNAME", "QSTRCV001"]);
 
     let r = rst(&mut sys, &bytes, &AllowAll, &opts_to("QSTEST2"));
     assert_eq!(r.not_restored(), 0, "{:?}", r.objects);
@@ -337,7 +338,8 @@ fn option_and_mbropt_over_existing_objects() {
     dtaara::write(&mut t, da, &DataAreaValue::Char("changed".into())).unwrap();
     t.commit().unwrap();
 
-    // *NEW: everything exists, so nothing is restored.
+    // *NEW: everything exists, so nothing is restored; each object is
+    // reported as not selected.
     let r = rst(
         &mut sys,
         &bytes,
@@ -349,10 +351,14 @@ fn option_and_mbropt_over_existing_objects() {
     );
     assert_eq!(r.restored(), 0);
     assert_eq!(r.not_restored(), 0);
+    assert!(r.skipped.iter().all(|(m, _)| *m == msg::SKIP_EXISTS));
+    assert_eq!(r.skipped.len(), 7);
 
-    // *ALL with *MATCH: the saved contents come back, same IDs.
+    // *ALL with *MATCH: the saved contents come back, same IDs. The
+    // journal and its attached receiver are never restored over.
     let r = rst(&mut sys, &bytes, &AllowAll, &RestoreOptions::default());
-    assert_eq!(r.not_restored(), 0, "{:?}", r.objects);
+    let refused: Vec<_> = r.objects.iter().filter_map(|o| o.msgid).collect();
+    assert_eq!(refused, [msg::JOURNAL_EXISTS, msg::RECEIVER_ATTACHED], "{:?}", r.objects);
     let mut t = sys.store.begin().unwrap();
     assert_eq!(find(&mut t, q, "QSTEST", "CUST", types::FILE), Some(cust));
     let lf = find(&mut t, q, "QSTEST", "CUSBYNAME", types::FILE).unwrap();
@@ -378,7 +384,7 @@ fn option_and_mbropt_over_existing_objects() {
             ..RestoreOptions::default()
         },
     );
-    assert_eq!(r.not_restored(), 0, "{:?}", r.objects);
+    assert_eq!(r.not_restored(), 2, "{:?}", r.objects);
     let mut t = sys.store.begin().unwrap();
     assert_eq!(file::describe(&mut t, cust).unwrap().members.len(), 2);
     t.abort();
@@ -489,4 +495,67 @@ fn a_logical_file_alone_finds_its_physical_file_by_name() {
     let deps = file::describe(&mut t, cust).unwrap().dependents;
     assert_eq!(deps.len(), 2, "both logical files are maintained");
     t.abort();
+}
+
+#[test]
+fn owners_public_authority_and_format_changes() {
+    use saverst::AllowDiff;
+    let mut sys = system();
+    build(&mut sys);
+    let (bytes, _) = save(&mut sys, 1, &SaveOptions::default());
+    let q = sys.qsys;
+    // After the save: DA1 gets another owner and *PUBLIC *EXCLUDE.
+    let mut t = sys.store.begin().unwrap();
+    let da = find(&mut t, q, "QSTEST", "DA1", types::DTAARA).unwrap();
+    let (page, mut h) = ops::read_header(&mut t, da).unwrap();
+    h.owner = savfmt::name10("OTHER");
+    h.public_authority = store::obj::Authority::EXCLUDE;
+    ops::write_header(&mut t, page, &h).unwrap();
+    t.commit().unwrap();
+    let only_da1 = |allow: AllowDiff| RestoreOptions {
+        select: vec![saverst::ObjSel {
+            name: "DA1".into(),
+            type_code: Some(types::DTAARA),
+        }],
+        allow,
+        ..RestoreOptions::default()
+    };
+    // *NONE refuses the owner difference.
+    let r = rst(&mut sys, &bytes, &AllowAll, &only_da1(AllowDiff::default()));
+    assert_eq!(r.objects[0].msgid, Some(msg::NOT_RESTORED_OWNER));
+    // *OWNER restores, keeps OTHER, and *PUBLIC goes back to the saved
+    // value; the change makes the completion CPF3773.
+    let r = rst(
+        &mut sys,
+        &bytes,
+        &AllowAll,
+        &only_da1(AllowDiff {
+            owner: true,
+            ..AllowDiff::default()
+        }),
+    );
+    assert_eq!(r.restored(), 1);
+    assert_eq!(r.changes, 1);
+    assert!(r.notes.iter().any(|(m, _)| *m == msg::OWNER_KEPT));
+    assert_eq!(r.completion(), msg::RESTORED_LIB_PARTIAL);
+    let mut t = sys.store.begin().unwrap();
+    let (_, h) = ops::read_header(&mut t, da).unwrap();
+    assert_eq!(store::obj::header::text_of(&h.owner), "OTHER");
+    assert_ne!(h.public_authority, store::obj::Authority::EXCLUDE);
+    t.abort();
+    // A name the save does not hold.
+    let r = rst(
+        &mut sys,
+        &bytes,
+        &AllowAll,
+        &RestoreOptions {
+            select: vec![saverst::ObjSel {
+                name: "NOSUCH".into(),
+                type_code: None,
+            }],
+            ..RestoreOptions::default()
+        },
+    );
+    assert_eq!(r.not_found, ["NOSUCH"]);
+    assert_eq!(r.completion(), msg::NONE_IN_SAVE);
 }

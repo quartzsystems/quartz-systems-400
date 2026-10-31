@@ -78,7 +78,7 @@
                           DFT(*NO) VALUES(*NO *YES) PMTCTL(*PMTRQS) +
                           PROMPT('Object pre-check')
              PARM       KWD(SAVFDTA) TYPE(*CHAR) LEN(4) RSTD(*YES) +
-                          DFT(*NO) VALUES(*NO *YES) PMTCTL(*PMTRQS) +
+                          DFT(*YES) VALUES(*YES *NO) PMTCTL(*PMTRQS) +
                           PROMPT('Save file data')
              PARM       KWD(SPLFDTA) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *ALL) PMTCTL(*PMTRQS) +

@@ -2387,13 +2387,6 @@ help = "Every object the save selected was saved."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
-id = "CPF3220"
-sev = 40
-text = "&1 in &2 was not restored: a file it is based on was not found."
-help = "A logical file is restored only when its physical files are on the system or restored with it."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
 id = "CPF3741"
 sev = 40
 text = "&1 in &2 was not saved: not authorized."
@@ -2407,20 +2400,6 @@ text = "The save cannot be read by this release."
 help = "It was made for a later release, or in a format this release does not know."
 
 [[msg]]
-id = "CPF3748"
-sev = 40
-text = "&1 was not restored: it differs from the object on the system."
-help = "Use ALWOBJDIF to allow the difference, or delete the object on the system first."
-vars = ["*CHAR 50"]
-
-[[msg]]
-id = "CPF3756"
-sev = 40
-text = "&1 in &2 was in use and was not restored."
-help = "Another job holds a lock on the object. Restore it again once the job releases it."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
 id = "CPF3757"
 sev = 40
 text = "&1 in &2 was not restored: not authorized."
@@ -2428,24 +2407,10 @@ help = "Restoring over an existing object needs *OBJEXIST authority to it, or *S
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
-id = "CPF3761"
-sev = 40
-text = "&1 in &2 was in use and was not saved."
-help = "Another job holds a lock that does not allow the save to read it. Save it again once the job releases it."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
 id = "CPF3770"
 sev = 40
 text = "No objects were saved or restored."
 help = "The save or restore found nothing to do for the libraries and objects named."
-
-[[msg]]
-id = "CPF3771"
-sev = 40
-text = "&1 objects saved from &2 libraries. &3 not saved."
-help = "The diagnostic messages before this one name each object that was not saved."
-vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3773"
@@ -2462,44 +2427,10 @@ help = "The diagnostic messages before this one name each object that was not sa
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
-id = "CPF3780"
-sev = 40
-text = "&1 in &2 was not restored: the library does not exist."
-help = "Create the library, or restore the library itself with RSTLIB."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
-id = "CPF3782"
-sev = 40
-text = "&1 in &2 was not restored: the saved copy is damaged."
-help = "Part of the save could not be read. Restore from another copy of the save."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
 id = "CPF3793"
 sev = 40
 text = "The save or restore ended: &1."
 help = "The operation could not go on. Objects already handled stay as they are."
-vars = ["*CHAR 50"]
-
-[[msg]]
-id = "CPF3797"
-sev = 40
-text = "The save does not fit in the save file."
-help = "Raise MAXRCDS with CHGSAVF, or save to another save file."
-
-[[msg]]
-id = "CPF3812"
-sev = 40
-text = "&1 in &2 was not restored: its members do not match the file's."
-help = "MBROPT(*MATCH) needs the same members in the save and on the system. Use MBROPT(*ALL), *NEW or *OLD."
-vars = ["*CHAR 10", "*CHAR 10"]
-
-[[msg]]
-id = "CPF7033"
-sev = 10
-text = "Journaling was not started again: &1."
-help = "The journal the object was journaled to was not found. Start journaling with STRJRNPF."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -2571,20 +2502,6 @@ sev = 40
 text = "&1 was not restored: its signature is missing or does not verify."
 help = "The system value QVFYOBJRST asks for signatures on programs. Restore a copy signed by a trusted signer, or change QVFYOBJRST."
 vars = ["*CHAR 50"]
-
-[[msg]]
-id = "CPF3848"
-sev = 40
-text = "&1 was not restored: the system value QALWOBJRST does not allow it."
-help = "QALWOBJRST names which system-state, adopting or otherwise sensitive objects may be restored."
-vars = ["*CHAR 50"]
-
-[[msg]]
-id = "CPC370C"
-sev = 0
-text = "&1 objects saved."
-help = "Every link the save named was saved."
-vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC370D"
@@ -2687,3 +2604,271 @@ sev = 40
 text = "Problem &1 not found in the problem log."
 help = "WRKPRB lists the problems the system has logged."
 vars = ["*CHAR 10"]
+
+# Save and restore, settled against the oracle.
+[[msg]]
+id = "CPF3756"
+sev = 40
+text = "&1 in &2 was not restored."
+help = "The message before this one gives the reason."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3761"
+sev = 40
+text = "&1 in &2 is in use by another job."
+help = "Another job holds a lock that the save or restore cannot share. Try again once the job releases it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3780"
+sev = 40
+text = "Nothing named was found in the save for library &1."
+help = "Check the object names, their types and the library they were saved from with DSPSAVF."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3782"
+sev = 40
+text = "&1 in &2 could not be read from the save."
+help = "The save is damaged or is not a save file. Restore from another copy of the save."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3848"
+sev = 20
+text = "&1 security or data format changes were made during the restore."
+help = "ALWOBJDIF allowed differences between the saved objects and those on the system, or journaling could not start again. The messages before this one name each change."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3294"
+sev = 40
+text = "Journaling could not be started again: &1."
+help = "The journal the object was journaled to is not on the system. Start journaling with STRJRNPF once it is."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3701"
+sev = 40
+text = "&1 objects saved. &3 not saved."
+help = "The messages before this one name each object that was not saved."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC3723"
+sev = 0
+text = "&1 objects saved. &2 objects not included."
+help = "Some objects were left out on purpose, such as journaled files with OBJJRN(*NO)."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3764"
+sev = 40
+text = "&1 was not found to save."
+help = "Check the object name, type and library."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3781"
+sev = 40
+text = "Library &1 not found."
+help = "The library to save from or restore into does not exist."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI374B"
+sev = 0
+text = "Save file &1 was saved without its data."
+help = "The save was being written into that save file, so its data was not saved with it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3725"
+sev = 0
+text = "&1 was not restored: it exists and OPTION(*NEW) was given."
+help = "Only objects not on the system were selected."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3724"
+sev = 0
+text = "&1 was not restored: it does not exist and OPTION(*OLD) was given."
+help = "Only objects already on the system were selected."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3726"
+sev = 0
+text = "&1 was not restored: its storage was not freed."
+help = "OPTION(*FREE) selects only objects whose storage a save freed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF7085"
+sev = 40
+text = "Journal &1 exists and was not restored over."
+help = "A journal on the system is never replaced by a restore."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD2415"
+sev = 40
+text = "Data queue &1 exists and was not restored over."
+help = "A data queue on the system is never replaced by a restore. Delete it first to restore the saved one."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF7081"
+sev = 40
+text = "Receiver &1 is attached and was not restored over."
+help = "An attached journal receiver is never replaced by a restore."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3734"
+sev = 40
+text = "Receiver &1 exists and was not restored over."
+help = "Delete the receiver on the system to restore the saved one."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3204"
+sev = 40
+text = "Logical file &1 not restored: a file it is based on is missing."
+help = "Restore the physical files with it or before it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3284"
+sev = 40
+text = "&1 not restored: its members differ from the saved file's."
+help = "MBROPT(*MATCH) needs the same members in the save and on the system. Use MBROPT(*ALL), *NEW or *OLD."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3283"
+sev = 40
+text = "&1 not restored: its level identifiers differ from the saved file's."
+help = "The file on the system was created again or has another format. ALWOBJDIF(*FILELVL) accepts a file created again with the same format; ALWOBJDIF(*ALL) with MBROPT(*ALL) replaces it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI320A"
+sev = 0
+text = "The file on the system was renamed: &1."
+help = "ALWOBJDIF(*ALL) kept the file with the other format under a new name and restored the saved one."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3766"
+sev = 40
+text = "&1 not restored: its owner differs from the saved object's."
+help = "ALWOBJDIF(*OWNER) restores it and keeps the owner on the system."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF370B"
+sev = 0
+text = "The owner on the system was kept: &1."
+help = "ALWOBJDIF(*OWNER) allowed the saved object with another owner."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPD37A2"
+sev = 40
+text = "&1 not restored: its primary group differs from the saved object's."
+help = "ALWOBJDIF(*PGP) restores it and keeps the primary group on the system."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI3811"
+sev = 0
+text = "The primary group on the system was kept: &1."
+help = "ALWOBJDIF(*PGP) allowed the saved object with another primary group."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3801"
+sev = 40
+text = "&1 is not in the save."
+help = "DSPSAVF lists what the save holds."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3846"
+sev = 40
+text = "&1 was not restored: the system value QALWOBJRST does not allow it."
+help = "QALWOBJRST names which system-state, adopting or otherwise sensitive objects may be restored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPI3733"
+sev = 0
+text = "&1 spooled files already on the system were not restored again."
+help = "They match a restored output queue's saved spooled files."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF4110"
+sev = 40
+text = "Save file &1 already holds a save."
+help = "The inquiry about clearing it took the reply C. Use CLEAR(*ALL) or CLEAR(*REPLACE), or clear it with CLRSAVF."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3794"
+sev = 40
+text = "The save ended: the save file was not cleared."
+help = "The message before this one names the save file."
+
+[[msg]]
+id = "CPD3754"
+sev = 30
+text = "CLEAR(*AFTER) is not valid with a save file."
+help = "Use CLEAR(*ALL) or CLEAR(*REPLACE) to replace the save file's contents."
+
+[[msg]]
+id = "CPF3808"
+sev = 40
+text = "The save does not fit in the save file."
+help = "Raise MAXRCDS with CHGSAVF, or save to another save file."
+
+[[msg]]
+id = "CPF3815"
+sev = 40
+text = "The save ended: the save file is full."
+help = "The message before this one gives the size the save needed."
+
+[[msg]]
+id = "CPF3707"
+sev = 40
+text = "Save file &1 is empty."
+help = "There is nothing to restore from it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC370F"
+sev = 0
+text = "&1 objects restored."
+help = "Every link the restore selected was restored."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC3716"
+sev = 0
+text = "No objects restored: OPTION left them all out."
+help = "The links in the save were not selected by OPTION."
+
+[[msg]]
+id = "CPF3840"
+sev = 40
+text = "&1 is not in the save."
+help = "Check the path with DSPSAVF, or the save's OBJ list."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPD3768"
+sev = 30
+text = "ALWOBJDIF(*ALL) needs MBROPT(*ALL)."
+help = "Give MBROPT(*ALL) with ALWOBJDIF(*ALL)."

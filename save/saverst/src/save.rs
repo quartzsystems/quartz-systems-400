@@ -39,6 +39,9 @@ pub struct SaveOptions {
     pub private_auth: bool,
     /// `SPLFDTA(*ALL)`: output queues carry their spooled files.
     pub spool: bool,
+    /// The save file this save is written to: when it is in the saved
+    /// library it is saved without its data (rule 21).
+    pub target_savf: Option<ObjectId>,
     /// `SAVCHGOBJ`: only objects changed since (Unix seconds).
     pub changed_since: Option<u64>,
     /// `SAVCHGOBJ OBJJRN(*NO)`: journaled files are left out.
@@ -59,6 +62,7 @@ impl Default for SaveOptions {
             save_file_data: true,
             private_auth: false,
             spool: false,
+            target_savf: None,
             changed_since: None,
             skip_journaled: false,
             now: 0,
@@ -126,6 +130,8 @@ pub struct SaveReport {
     pub library: String,
     /// Every object considered, saved or not.
     pub objects: Vec<ObjResult>,
+    /// Informational messages, e.g. a save file saved without its data.
+    pub notes: Vec<(&'static str, String)>,
 }
 
 impl SaveReport {
@@ -258,6 +264,7 @@ pub fn save_library<W: Write>(
     let mut report = SaveReport {
         library: lib.to_string(),
         objects: Vec::new(),
+        notes: Vec::new(),
     };
     let mut locked = Vec::new();
     let mut saved = Vec::new();
@@ -309,7 +316,7 @@ fn save_in<W: Write>(
     saved: &mut Vec<(ObjectId, u64)>,
 ) -> Result<()> {
     let lib = ops::find_library(txn, qsys, lib_name)
-        .map_err(|_| crate::Error::refused(msg::NONE_FOR_LIB, lib_name.to_string()))?
+        .map_err(|_| crate::Error::refused(msg::NO_LIBRARY, lib_name.to_string()))?
         .id;
     let lib_text = lib_name.to_string();
     if txn.store().locks_mut().lock(job, lib, LockState::SharedNoUpdate).is_err() {
@@ -341,7 +348,7 @@ fn save_in<W: Write>(
         });
     }
     cands.sort_by(|a, b| {
-        let by_age = matches!(a.rank.0, 2);
+        let by_age = a.rank.0 == 40;
         a.rank.cmp(&b.rank).then(if by_age {
             a.created.cmp(&b.created)
         } else {
@@ -394,7 +401,11 @@ fn save_in<W: Write>(
             continue;
         }
         locked.push(c.id);
-        let data = c.id.type_code != order::SAVF || opts.save_file_data;
+        let target = opts.target_savf == Some(c.id);
+        if target {
+            report.notes.push((msg::SAVF_NO_DATA, c.name.clone()));
+        }
+        let data = c.id.type_code != order::SAVF || (opts.save_file_data && !target);
         let me = pos[&c.id.to_bytes()];
         let mut e = image::export(txn, c.id, data)?;
         image::mark_refs(&mut e, &pos, me);

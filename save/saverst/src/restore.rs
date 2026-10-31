@@ -205,6 +205,14 @@ pub struct RestoreReport {
     /// Output queues restored with spooled files: library, queue, the
     /// spool part, for the integrator to bring the files back.
     pub spool: Vec<(String, String, Vec<u8>)>,
+    /// Security or data format differences `ALWOBJDIF` accepted, and
+    /// journaling not started again: each turns the completion into
+    /// `CPF3773` (rules 4, 18).
+    pub changes: usize,
+    /// Objects `OPTION` did not select: informational, not counted.
+    pub skipped: Vec<(&'static str, String)>,
+    /// `OBJ` names nothing in the save matched (rule 24).
+    pub not_found: Vec<String>,
 }
 
 impl RestoreReport {
@@ -224,8 +232,9 @@ impl RestoreReport {
     #[must_use]
     pub fn completion(&self) -> &'static str {
         match (self.restored(), self.not_restored()) {
+            (0, 0) if !self.not_found.is_empty() => msg::NONE_IN_SAVE,
             (0, 0) => msg::NONE_FOR_LIB,
-            (_, 0) => msg::RESTORED_LIB,
+            (_, 0) if self.changes == 0 => msg::RESTORED_LIB,
             _ => msg::RESTORED_LIB_PARTIAL,
         }
     }
@@ -258,6 +267,7 @@ struct Staged {
     notes: Vec<(&'static str, String)>,
     members: u32,
     signature: Option<store::obj::Signature>,
+    changes: usize,
 }
 
 struct Ctx<'a> {
@@ -268,6 +278,7 @@ struct Ctx<'a> {
 }
 
 /// Restore what `reader` holds.
+#[allow(clippy::too_many_lines)]
 pub fn restore<R: Read>(
     store: &mut Store,
     job: JobHandle,
@@ -337,7 +348,8 @@ pub fn restore<R: Read>(
         let mut txn = store.begin()?;
         let r = one(&mut txn, &cx, lib, &o, &members);
         match r {
-            Ok(Some(staged)) => {
+            Ok(Outcome::Done(staged)) => {
+                report.changes += staged.changes;
                 txn.commit()?;
                 result.members = staged.members;
                 result.size = d.size_bytes;
@@ -355,7 +367,10 @@ pub fn restore<R: Read>(
                 }
                 report.objects.push(result);
             }
-            Ok(None) => txn.abort(),
+            Ok(Outcome::Skipped(m)) => {
+                txn.abort();
+                report.skipped.push((m, d.object_name()));
+            }
             Err(Error::Refused { msgid, text }) => {
                 txn.abort();
                 debug!("restore: {} not restored: {text}", d.object_name());
@@ -368,6 +383,16 @@ pub fn restore<R: Read>(
                 result.msgid = Some(msg::NOT_RESTORED_DAMAGED);
                 report.objects.push(result);
             }
+        }
+    }
+    for sel in &opts.select {
+        let seen = report
+            .objects
+            .iter()
+            .any(|o| sel.matches(&o.name, o.type_code))
+            || report.skipped.iter().any(|(_, n)| crate::select::generic(&sel.name, n));
+        if !seen && !report.not_found.contains(&sel.name) {
+            report.not_found.push(sel.name.clone());
         }
     }
     let mut txn = store.begin()?;
@@ -473,36 +498,66 @@ fn owner_for(
     cx.opts.default_owner.clone()
 }
 
-/// Restore one top-level object with its members, in `txn`. `None`:
-/// skipped by `OPTION`.
+/// What one object came to.
+enum Outcome {
+    /// Restored.
+    Done(Box<Staged>),
+    /// Not selected by `OPTION`: the informational message.
+    Skipped(&'static str),
+}
+
+/// Restore one top-level object with its members, in `txn`.
 fn one(
     txn: &mut Txn<'_>,
     cx: &Ctx<'_>,
     lib: ObjectId,
     o: &SavedObject,
     members: &[SavedObject],
-) -> Result<Option<Staged>> {
+) -> Result<Outcome> {
     let d = &o.descriptor;
     let name = qsname::Name::from_bytes(d.name);
     let existing = Library::load(txn, lib)?.lookup(txn, d.type_code, name)?;
     match (cx.opts.option, existing.is_some()) {
+        (RstOption::New, true) => return Ok(Outcome::Skipped(msg::SKIP_EXISTS)),
+        (RstOption::Old, false) => return Ok(Outcome::Skipped(msg::SKIP_MISSING)),
         // QS/400 never frees an object's storage on save, so `*FREE`
         // finds nothing to restore.
-        (RstOption::New, true) | (RstOption::Old, false) | (RstOption::Free, _) => {
-            return Ok(None);
-        }
+        (RstOption::Free, _) => return Ok(Outcome::Skipped(msg::SKIP_NOT_FREED)),
         _ => {}
+    }
+    // What a restore never replaces (rules 6, 7, 8).
+    if let Some(id) = existing {
+        let never = match d.type_code {
+            order::JRN => Some(msg::JOURNAL_EXISTS),
+            types::DTAQ => Some(msg::DTAQ_EXISTS),
+            order::JRNRCV => {
+                let (page, _) = ops::read_header(txn, id)?;
+                let attached = ops::read_attr(txn, page)?.get(10) == Some(&1);
+                Some(if attached {
+                    msg::RECEIVER_ATTACHED
+                } else {
+                    msg::RECEIVER_EXISTS
+                })
+            }
+            _ => None,
+        };
+        if let Some(m) = never {
+            return Err(Error::refused(m, d.object_name()));
+        }
     }
     let existing_h = existing.map(|id| ops::read_header(txn, id)).transpose()?.map(|x| x.1);
     cx.hooks
         .may_restore(txn, d, lib, existing_h.as_ref())
         .map_err(|m| Error::refused(m, d.object_name()))?;
+    let mut notes = Vec::new();
     if let Some(h) = &existing_h {
-        differs(cx.opts.allow, d, h)?;
+        notes = differs(cx.opts.allow, d, h)?;
     }
     let signature = policy(cx, o)?;
     let mut staged = Staged {
         signature,
+        changes: notes.len(),
+        notes,
         ..Staged::default()
     };
     if d.type_code == types::FILE {
@@ -510,7 +565,7 @@ fn one(
     } else {
         restore_plain(txn, cx, lib, o, existing, &mut staged)?;
     }
-    Ok(Some(staged))
+    Ok(Outcome::Done(Box::new(staged)))
 }
 
 /// Types whose signatures `QVFYOBJRST` checks.
@@ -565,22 +620,34 @@ fn policy(cx: &Ctx<'_>, o: &SavedObject) -> Result<Option<store::obj::Signature>
     }))
 }
 
-/// `ALWOBJDIF`: may the saved object replace `h`?
-fn differs(allow: AllowDiff, d: &ObjectDescriptor, h: &store::obj::ObjectHeader) -> Result<()> {
-    if allow.all {
-        return Ok(());
+/// `ALWOBJDIF`: may the saved object replace `h`? The differences it
+/// accepts, as messages (rule 13): the existing owner and group stay.
+fn differs(
+    allow: AllowDiff,
+    d: &ObjectDescriptor,
+    h: &store::obj::ObjectHeader,
+) -> Result<Vec<(&'static str, String)>> {
+    let name = d.object_name();
+    let mut out = Vec::new();
+    if d.owner != h.owner {
+        if !(allow.owner || allow.all) {
+            return Err(Error::refused(msg::NOT_RESTORED_OWNER, name));
+        }
+        out.push((msg::OWNER_KEPT, format!("{} owns {name}", text_of(&h.owner))));
     }
-    let refuse = |what: &str| Err(Error::refused(msg::NOT_RESTORED_DIFFERS, what.to_string()));
-    if d.owner != h.owner && !allow.owner {
-        return refuse("owner differs");
+    if d.primary_group != h.primary_group {
+        if !(allow.pgp || allow.all) {
+            return Err(Error::refused(msg::NOT_RESTORED_PGP, name));
+        }
+        out.push((msg::PGP_KEPT, format!("{} stays the primary group of {name}", text_of(&h.primary_group))));
     }
-    if d.primary_group != h.primary_group && !allow.pgp {
-        return refuse("primary group differs");
+    if d.autl != h.autl {
+        if !(allow.autl || allow.all) {
+            return Err(Error::refused(msg::NOT_RESTORED_OWNER, name));
+        }
+        out.push((msg::CHANGES, format!("{name}: the authorization list on the system stays")));
     }
-    if d.autl != h.autl && !allow.autl {
-        return refuse("authorization list differs");
-    }
-    Ok(())
+    Ok(out)
 }
 
 /// Resolve the references of an object about to be written: in-stream
@@ -708,6 +775,10 @@ fn set_header(
     h.text = d.text;
     h.created = d.created;
     h.changed = d.changed;
+    if !fresh {
+        h.public_authority = Authority(d.public_authority);
+        h.auth_gen += 1;
+    }
     h.last_restored = cx.opts.now;
     h.domain = if d.domain == 0 {
         Domain::System
@@ -748,7 +819,7 @@ fn set_header(
         } else {
             h.autl = [0x40; 10];
             notes.push((
-                msg::NOT_RESTORED_DIFFERS,
+                msg::NOT_RESTORED_OWNER,
                 format!("{}: authorization list {autl} not found", d.object_name()),
             ));
         }
@@ -778,6 +849,21 @@ fn set_signature(txn: &mut Txn<'_>, id: ObjectId, sig: Option<store::obj::Signat
         ops::write_header(txn, page, &h)?;
     }
     Ok(())
+}
+
+/// The name `ALWOBJDIF(*ALL)` gives the file it moves aside: the first
+/// six characters of its name and four digits, the first free.
+fn renamed(txn: &mut Txn<'_>, lib: ObjectId, d: &ObjectDescriptor) -> Result<qsname::Name> {
+    let base: String = d.object_name().chars().take(6).collect();
+    let l = Library::load(txn, lib)?;
+    for n in 1..10_000 {
+        let name = qsname::Name::parse(&format!("{base}{n:04}"))
+            .map_err(|e| Error::refused(msg::NOT_RESTORED_LEVEL, e.to_string()))?;
+        if l.lookup(txn, types::FILE, name)?.is_none() {
+            return Ok(name);
+        }
+    }
+    Err(Error::refused(msg::NOT_RESTORED_LEVEL, d.object_name()))
 }
 
 fn file_attr(o: &SavedObject) -> Result<FileAttr> {
@@ -818,6 +904,7 @@ fn restore_file(
         let mut parts = o.parts.clone();
         let unresolved = patch_refs(txn, cx, &HashMap::new(), fid, &mut parts, staged)?;
         if unresolved.iter().any(|r| r.type_code == order::JRN) {
+            staged.changes += 1;
             staged.notes.push((
                 msg::JOURNAL_MISSING,
                 format!("{}: its journal was not found", d.object_name()),
@@ -847,7 +934,7 @@ fn restore_file(
     };
     let desc = file::describe(txn, fid)?;
     if (desc.attr.kind == FileKind::Logical) != logical {
-        return Err(Error::refused(msg::NOT_RESTORED_DIFFERS, d.object_name()));
+        return Err(Error::refused(msg::NOT_RESTORED_LEVEL, d.object_name()));
     }
     lock(txn, cx, fid, d)?;
     staged.map.push((d.original_id, fid));
@@ -859,12 +946,22 @@ fn restore_file(
     let (space, _) = store::obj::space::Space::load(txn, fid)?;
     let len = usize::try_from(space.bytes()).expect("space");
     let cur = space.read(txn, 0, len)?;
-    let level_differs = formats(&desc.attr, &cur) != formats(&attr, o.part(Part::SPACE));
-    if level_differs && !(cx.opts.allow.filelvl || cx.opts.allow.all) {
-        return Err(Error::refused(msg::NOT_RESTORED_DIFFERS, d.object_name()));
+    let format_differs = formats(&desc.attr, &cur) != formats(&attr, o.part(Part::SPACE));
+    let created_differs = desc.header.created != d.created;
+    let allow = cx.opts.allow;
+    if format_differs && allow.all {
+        // `*ALL`: the file on the system is renamed and the saved one
+        // restored in its place.
+        txn.store().locks_mut().unlock(cx.job, fid, LockState::Exclusive);
+        let new = renamed(txn, lib, d)?;
+        ops::rename(txn, fid, new, cx.opts.now)?;
+        staged.map.retain(|(o, _)| *o != d.original_id);
+        staged.changes += 1;
+        staged.notes.push((msg::FILE_RENAMED, format!("{} renamed to {new}", d.object_name())));
+        return restore_file(txn, cx, lib, o, saved_members, None, staged);
     }
-    if level_differs && desc.attr.record_len != attr.record_len {
-        return Err(Error::refused(msg::NOT_RESTORED_DIFFERS, d.object_name()));
+    if format_differs || (created_differs && !(allow.filelvl || allow.all)) {
+        return Err(Error::refused(msg::NOT_RESTORED_LEVEL, d.object_name()));
     }
     let saved_table = members::decode_table(
         o.part(Part::SPACE)

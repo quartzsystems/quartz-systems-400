@@ -119,6 +119,7 @@ pub fn save_security<W: Write>(
     let mut report = SaveReport {
         library: "QSYS".into(),
         objects: Vec::new(),
+        notes: Vec::new(),
     };
     let lib = Library::load(&mut txn, qsys)?;
     let mut ids_ = lib.list(&mut txn, Some(types::USRPRF))?;
