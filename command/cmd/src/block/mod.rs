@@ -545,7 +545,9 @@ impl Parms {
     /// empty library (`*LIBL` is the caller's to supply).
     #[must_use]
     pub fn qual(&self, kwd: &str) -> (String, String) {
-        match self.get(kwd) {
+        // An omitted part is empty, not its source form `''`.
+        let blank = |s: String| if s == "''" { String::new() } else { s };
+        let (n, l) = match self.get(kwd) {
             Some(Value::Qual(parts)) => (
                 parts
                     .first()
@@ -562,7 +564,8 @@ impl Parms {
             },
             Some(other) => (other.source(), String::new()),
             None => (String::new(), String::new()),
-        }
+        };
+        (blank(n), blank(l))
     }
 
     /// A number.
