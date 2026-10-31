@@ -371,3 +371,16 @@ fn record_at<R: Read>(r: &mut R, offset: u64) -> Result<(RecordHeader, Vec<u8>)>
     }
     Ok((h, b))
 }
+
+/// The descriptor of the object whose `Object` record is at `offset`
+/// (from the index), and its tail, read without its data.
+pub fn descriptor_at<R: Read + Seek>(r: &mut R, offset: u64) -> Result<(ObjectDescriptor, Vec<u8>)> {
+    r.seek(SeekFrom::Start(offset))?;
+    let (h, b) = record_at(r, offset)?;
+    if h.kind != RecordKind::Object {
+        return Err(Error::Damaged { offset });
+    }
+    let d = ObjectDescriptor::decode(&b)?;
+    let tail = b.get(object::DESCRIPTOR_LEN..).unwrap_or(&[]).to_vec();
+    Ok((d, tail))
+}

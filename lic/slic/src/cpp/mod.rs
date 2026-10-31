@@ -36,6 +36,8 @@ use sys_cpps::{Entry, Site};
 
 use crate::ipl::system::System;
 
+pub use savcmd::savf_listing;
+
 /// Run command `name` with `parms`; the text, messages and escape.
 /// `typed` is the keyword form as the caller typed it, for the bridge;
 /// empty when the block is all there is.

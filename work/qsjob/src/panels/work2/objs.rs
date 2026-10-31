@@ -237,16 +237,22 @@ pub fn dspovr(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
     }
 }
 
-/// `DSPSAVF FILE(lib/name)`: the panel of a function to come.
+/// `DSPSAVF FILE(lib/name)`: the objects a save file holds.
 pub fn dspsavf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let q = qual(r, "FILE", "*LIBL");
     let (lib, name) = q.split_once('/').unwrap_or(("*LIBL", &q));
     let mut d = dialog(host, "QUIDSPSAVF")?;
     d.set("SAVF", name);
     d.set("SAVFLIB", lib);
-    d.set("OBJS", "0");
-    fill(&mut d, "OBJS", Vec::new());
-    d.message = Some(("Save files come in a later release.".into(), false));
+    let data = fetch(host, "DSPSAVF", &[name, lib])?;
+    let saved = data
+        .0
+        .iter()
+        .find(|(k, _)| k == "Library saved")
+        .map_or_else(String::new, |(_, v)| v.clone());
+    d.set("SAVLIB", &saved);
+    d.set("OBJS", &data.1.len().to_string());
+    load(&mut d, "OBJS", data);
     let mut reload = |_: &Host, _: &mut UimDialog| Ok(());
     display(host, surface, &mut d, "DSPSAVF", &mut reload)
 }

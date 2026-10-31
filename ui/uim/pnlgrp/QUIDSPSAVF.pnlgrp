@@ -42,7 +42,7 @@
 :DATAI VAR=OBJS USAGE=OUTPUT.Objects displayed
 :EDATA.
 :TOPINST.Type options, press Enter.
-:LIST DEPTH='*' LISTDEF=OBJS.(Save files come in a later release)
+:LIST DEPTH='*' LISTDEF=OBJS.(The save file is empty)
 :LISTACT OPTION=5 ENTER='RETURN 5'.5=Display
 :LISTCOL VAR=OPT USAGE=INPUT.Opt
 :LISTCOL VAR=OBJ USAGE=OUTPUT.Object

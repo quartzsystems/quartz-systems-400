@@ -341,6 +341,7 @@ pub const DIRECT: &[&str] = &[
     "CHGSAVF",
     "CLRSAVF",
     "CRTSAVF",
+    "DSPSAVF",
     "RST",
     "RSTAUT",
     "RSTCFG",

@@ -41,6 +41,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "RSTAUT" => return Some(rstaut(system, parms)),
         "SAV" => return Some(sav(system, parms)),
         "RST" => return Some(rst_ifs(system, parms)),
+        "DSPSAVF" => return Some(dspsavf(system, parms)),
         _ => return None,
     };
     Some(match r {
@@ -1440,4 +1441,101 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
         reply.escape = Some(message(RESTORED_LINKS_PARTIAL, 7, &[(&n, 10), (&k, 10)]));
     }
     reply
+}
+
+/// A save's description (name, value) and its rows.
+pub type SavfListing = (Vec<(String, String)>, Vec<Vec<String>>);
+
+/// What a save file holds, from its index alone: the save's description
+/// and one row per object (object, type, library, attribute, size,
+/// text). `DSPSAVF`'s panel and its text form.
+pub fn savf_listing(
+    system: &mut System,
+    file: &str,
+    lib: &str,
+) -> Result<SavfListing, String> {
+    let q = (file.to_ascii_uppercase(), lib.to_ascii_uppercase());
+    let stream = in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, &q)?;
+        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
+            return Err(format!("CPF2189 not authorized to save file {}", q.0));
+        }
+        savf::read(txn, id).map_err(|e| e.to_string())
+    })?;
+    if stream.is_empty() {
+        return Ok((vec![("Records".into(), "0".into())], Vec::new()));
+    }
+    let mut cur = Cursor::new(stream.as_slice());
+    let (head, trailer, index) =
+        savfmt::read_index(&mut cur).map_err(|e| format!("CPF3743 {e}"))?;
+    let parameters = Reader::new(Cursor::new(stream.as_slice()))
+        .ok()
+        .and_then(|mut r| {
+            let _ = r.next_object();
+            r.parameters().map(str::to_string)
+        })
+        .unwrap_or_default();
+    let saved_lib = index
+        .iter()
+        .find(|e| e.owner_index == savfmt::object::NO_OWNER && e.type_code != types::LIB)
+        .map(|e| savfmt::text(&e.library))
+        .unwrap_or_default();
+    let records = savf::records(stream.len() as u64);
+    let desc = vec![
+        ("Save command".into(), head.command.clone()),
+        ("Library saved".into(), saved_lib),
+        ("Objects displayed".into(), trailer.objects.to_string()),
+        ("Records".into(), records.to_string()),
+        ("Release level".into(), format!("V{}R{}M{}", head.release.0, head.release.1, head.release.2)),
+        ("Target release".into(), format!("V{}R{}M{}", head.target.0, head.target.1, head.target.2)),
+        ("Data compressed".into(), if head.compression == savfmt::Compression::None { "No" } else { "Yes" }.into()),
+        ("System serial number".into(), head.serial.clone()),
+        ("Save date/time".into(), head.created.to_string()),
+        ("Command".into(), parameters),
+    ];
+    let mut rows = Vec::new();
+    for e in index.iter().filter(|e| e.owner_index == savfmt::object::NO_OWNER) {
+        let (d, tail) = savfmt::descriptor_at(&mut cur, e.offset).map_err(|x| format!("CPF3743 {x}"))?;
+        let ty = if d.has(savfmt::object::flags::IFS) {
+            "*IFS".to_string()
+        } else {
+            types::type_by_code(d.type_code).map_or_else(|| format!("{:04X}", d.type_code), |t| t.name.to_string())
+        };
+        let name = if d.has(savfmt::object::flags::IFS) {
+            String::from_utf8_lossy(&tail).into_owned()
+        } else {
+            d.object_name()
+        };
+        rows.push(vec![
+            name,
+            ty,
+            d.library_name(),
+            savfmt::text(&d.attribute),
+            d.size_bytes.to_string(),
+            savfmt::text(&d.text),
+        ]);
+    }
+    Ok((desc, rows))
+}
+
+/// `DSPSAVF`'s text form.
+fn dspsavf(system: &mut System, parms: &Parms) -> CmdReply {
+    let (file, lib) = parms.qual("FILE");
+    match savf_listing(system, &file, &lib_or(&lib)) {
+        Ok((desc, rows)) => {
+            let mut text = String::new();
+            for (k, v) in &desc {
+                let _ = writeln!(text, "{k:<24} {v}");
+            }
+            let _ = writeln!(text, "{:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Object", "Type", "Library", "Attribute", "Size");
+            for r in &rows {
+                let _ = writeln!(text, "{:<10} {:<10} {:<10} {:<10} {:>12}  {}", r[0], r[1], r[2], r[3], r[4], r[5]);
+            }
+            CmdReply {
+                text,
+                ..CmdReply::default()
+            }
+        }
+        Err(e) => failed("DSPSAVF", &e),
+    }
 }

@@ -27,7 +27,7 @@ pub use object::{
     AuthorityEntry, IndexEntry, ObjectDescriptor, ObjectEnd, Part, RefEntry, SignatureRecord,
     Trailer, TreeImage,
 };
-pub use read::{Reader, SavedObject, Scan, read_index};
+pub use read::{Reader, SavedObject, Scan, descriptor_at, read_index};
 pub use record::{RecordHeader, RecordKind};
 pub use write::{Summary, Writer};
 
