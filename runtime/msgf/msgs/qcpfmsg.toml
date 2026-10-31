@@ -790,8 +790,8 @@ vars = ["*CHAR 10"]
 [[msg]]
 id = "CPF3700"
 sev = 40
-text = "Save and restore are not available in this release."
-help = "The function arrives in a later release."
+text = "This save or restore function is not available in this release."
+help = "The function or the value given for it arrives in a later release."
 
 [[msg]]
 id = "CPF6801"
@@ -2361,3 +2361,171 @@ sev = 40
 text = "The limit of &1 environment variables has been reached."
 help = "Remove variables that are no longer needed before adding more."
 vars = ["*BIN 4"]
+
+# Save and restore.
+
+[[msg]]
+id = "CPA4067"
+sev = 99
+text = "Save file &1 in &2 already holds a save. Clear it and continue (C G)?"
+help = "The save file is not empty and CLEAR(*NONE) was specified. Reply G to clear it and save, or C to end the save."
+vars = ["*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["C", "G"] }
+
+[[msg]]
+id = "CPC3703"
+sev = 0
+text = "&1 objects restored to library &2."
+help = "Every object the restore selected was restored."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC3722"
+sev = 0
+text = "&1 objects saved from library &2."
+help = "Every object the save selected was saved."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3220"
+sev = 40
+text = "&1 in &2 was not restored: a file it is based on was not found."
+help = "A logical file is restored only when its physical files are on the system or restored with it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3741"
+sev = 40
+text = "&1 in &2 was not saved: not authorized."
+help = "Saving an object needs *OBJEXIST authority to it, or *SAVSYS special authority."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3743"
+sev = 40
+text = "The save cannot be read by this release."
+help = "It was made for a later release, or in a format this release does not know."
+
+[[msg]]
+id = "CPF3748"
+sev = 40
+text = "&1 was not restored: it differs from the object on the system."
+help = "Use ALWOBJDIF to allow the difference, or delete the object on the system first."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3756"
+sev = 40
+text = "&1 in &2 was in use and was not restored."
+help = "Another job holds a lock on the object. Restore it again once the job releases it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3757"
+sev = 40
+text = "&1 in &2 was not restored: not authorized."
+help = "Restoring over an existing object needs *OBJEXIST authority to it, or *SAVSYS special authority."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3761"
+sev = 40
+text = "&1 in &2 was in use and was not saved."
+help = "Another job holds a lock that does not allow the save to read it. Save it again once the job releases it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3770"
+sev = 40
+text = "No objects were saved or restored."
+help = "The save or restore found nothing to do for the libraries and objects named."
+
+[[msg]]
+id = "CPF3771"
+sev = 40
+text = "&1 objects saved from &2 libraries. &3 not saved."
+help = "The diagnostic messages before this one name each object that was not saved."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3773"
+sev = 40
+text = "&1 objects restored to library &2. &3 not restored."
+help = "The diagnostic messages before this one name each object that was not restored."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3777"
+sev = 40
+text = "&1 objects saved from &2 libraries. &3 not saved."
+help = "The diagnostic messages before this one name each object that was not saved."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3780"
+sev = 40
+text = "&1 in &2 was not restored: the library does not exist."
+help = "Create the library, or restore the library itself with RSTLIB."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3782"
+sev = 40
+text = "&1 in &2 was not restored: the saved copy is damaged."
+help = "Part of the save could not be read. Restore from another copy of the save."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3793"
+sev = 40
+text = "The save or restore ended: &1."
+help = "The operation could not go on. Objects already handled stay as they are."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3797"
+sev = 40
+text = "The save does not fit in the save file."
+help = "Raise MAXRCDS with CHGSAVF, or save to another save file."
+
+[[msg]]
+id = "CPF3812"
+sev = 40
+text = "&1 in &2 was not restored: its members do not match the file's."
+help = "MBROPT(*MATCH) needs the same members in the save and on the system. Use MBROPT(*ALL), *NEW or *OLD."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF7033"
+sev = 10
+text = "Journaling was not started again: &1."
+help = "The journal the object was journaled to was not found. Start journaling with STRJRNPF."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF7302"
+sev = 40
+text = "File &1 not created in library &2."
+help = "The diagnostic messages before this one give the reason."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9812"
+sev = 40
+text = "File &1 in library &2 not found."
+help = "Check the name and the library, or the library list."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9814"
+sev = 40
+text = "Device &1 not found."
+help = "Check the device name with WRKDEVD."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI3722"
+sev = 0
+text = "An object was given the default owner: &1."
+help = "The profile that owned the object when it was saved does not exist here, so QDFTOWN owns it."
+vars = ["*CHAR 50"]

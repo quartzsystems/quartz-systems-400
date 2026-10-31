@@ -94,6 +94,8 @@ pub const SBSD: u16 = 0x000B;
 pub const JOBQ: u16 = 0x000C;
 /// Code of `*OUTQ`.
 pub const OUTQ: u16 = 0x000D;
+/// Code of `*SAVF`.
+pub const SAVF: u16 = 0x001A;
 /// Code of `*JOBSCD`.
 pub const JOBSCD: u16 = 0x0021;
 /// Code of `*DEVD`.
@@ -175,7 +177,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(BNDDIR, "*BNDDIR", true, true, false, false, Module::Opaque),
     t(0x0018, "*JRN", true, false, false, false, Module::Opaque),
     t(0x0019, "*JRNRCV", true, false, false, false, Module::Opaque),
-    t(0x001A, "*SAVF", true, true, false, false, Module::Opaque),
+    t(SAVF, "*SAVF", true, true, false, false, Module::Opaque),
     t(DEVD, "*DEVD", true, false, true, true, Module::Opaque),
     t(0x001C, "*CTLD", true, false, true, true, Module::Opaque),
     t(0x001D, "*LIND", true, false, true, true, Module::Opaque),

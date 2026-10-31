@@ -704,6 +704,19 @@ the last. Freed with the entry.
 | 8 | 2 | len | data bytes on this page |
 | 10 | 6 | reserved | 0 |
 
+### `SavfAttr` (16 bytes)
+
+A save file's byte space is an eight-byte big-endian length, then the
+save stream (`docs/SAVE_FORMAT.md`); the stream counts as 528-byte
+records against `MAXRCDS`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | max_records | `MAXRCDS`, 0 for `*NOMAX` |
+| 4 | 4 | wait_file | `WAITFILE` seconds, signed; 0 `*IMMED`, -1 `*CLS` |
+| 8 | 1 | share | 1 for `SHARE(*YES)` |
+| 9 | 7 | reserved | 0 |
+
 ### `SysvalAttr` (16 bytes)
 
 The byte space holds the `sysval` crate's TLV blob.

@@ -40,6 +40,26 @@ ibm = "MOVOBJ: *READ and *ADD to the to-library"
 
 # --------------------------------------------------------- every object
 
+[op."obj.save"]
+need = ["*OBJEXIST"]
+ibm = "SAVOBJ, SAVLIB: *OBJEXIST to the object, unless the user has *SAVSYS"
+
+[op."obj.restore"]
+need = ["*OBJEXIST"]
+ibm = "RSTOBJ, RSTLIB over an existing object: *OBJEXIST, unless the user has *SAVSYS"
+
+[op."savf.write"]
+need = ["*USE", "*ADD"]
+ibm = "saving to a save file: *USE and *ADD to it"
+
+[op."savf.read"]
+need = ["*USE"]
+ibm = "restoring from or displaying a save file: *USE"
+
+[op."savf.clear"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "CLRSAVF: *OBJOPR and *OBJMGT"
+
 [op."obj.delete"]
 need = ["*OBJEXIST"]
 ibm = "DLTxxx: *OBJEXIST"

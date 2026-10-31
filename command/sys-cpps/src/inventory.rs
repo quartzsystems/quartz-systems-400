@@ -332,6 +332,14 @@ pub const DIRECT: &[&str] = &[
     "QSRMVAPPID",
     "QSWRKAPPID",
     "QSCHKCRT",
+    // --- save and restore (lic/slic/src/cpp/savcmd.rs)
+    "CHGSAVF",
+    "CLRSAVF",
+    "CRTSAVF",
+    "RSTLIB",
+    "RSTOBJ",
+    "SAVLIB",
+    "SAVOBJ",
 ];
 
 /// Whether a job-site command also runs in the service: a display the

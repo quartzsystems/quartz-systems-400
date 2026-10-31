@@ -572,14 +572,6 @@ alwlmtusr = true
 
 # ------------------------------------------------------- later phases
 
-[cmd.SAVLIB]
-stub = "CPF3700"
-note = "save and restore are Phase 11"
-
-[cmd.RSTLIB]
-stub = "CPF3700"
-note = "save and restore are Phase 11"
-
 [cmd.CHKTAP]
 stub = "CPF3700"
 note = "tape is Phase 11"
