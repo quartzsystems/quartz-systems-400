@@ -99,6 +99,8 @@ members = [
     "save/saverst",
     # PTFs: the format, load, apply and remove, groups.
     "ptf/ptf",
+    # Service: the problem log.
+    "service/prb",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

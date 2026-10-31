@@ -1,0 +1,13 @@
+[package]
+name = "prb"
+description = "QS/400 problem log: problem entries, their analysis, statuses and the report to the service provider"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[lints]
+workspace = true

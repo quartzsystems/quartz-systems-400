@@ -1944,6 +1944,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "prb"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "primefield"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
