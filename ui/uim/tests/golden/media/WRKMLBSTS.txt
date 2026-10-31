@@ -1,15 +1,13 @@
                          Work with Media Library Status
                                                              System:   SYSNAME
  Type options, press Enter.
-   1=Vary on   2=Vary off   4=Allocate resource   5=Allocate unprotected
-   6=Deallocate resource    8=Work with cartridges
+   1=Vary on   2=Vary off   3=Reset resource        4=Allocate resource
+   5=Allocate unprotected   6=Deallocate resource   8=Work with description
 
- Opt  Device/Resource   Status        Allocation     Cartridge
-      TAPMLB76          VARIED ON
-        TAPVRT03D1      OPERATIONAL   *ALLOCATED     QS76A
-
-
-
+       Device/                                                      Job
+ Opt     Resource     Status                 Allocation             name
+      TAPMLB76        VARIED ON
+        TAPVRT03D1    OPERATIONAL            *ALLOCATED
 
 
 
@@ -19,6 +17,8 @@
 
 
                                                                          Bottom
-
- F3=Exit   F5=Refresh   F12=Cancel
+ Parameters or command
+ ===>
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel   F17=Position to
+ F23=More options
 

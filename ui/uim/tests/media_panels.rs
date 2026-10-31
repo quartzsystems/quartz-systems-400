@@ -102,13 +102,13 @@ fn catalogs_and_their_entries() {
             &[
                 ("CLG", "QS76TAP"),
                 ("CLGSTS", "Ready"),
-                ("CLGTYPE", "*TAP"),
+                ("CLGTYPE", "Tape"),
                 ("CLGASP", "*NONE"),
                 ("CLGDEV", "TAPMLB76"),
                 ("DEVSTS", "VARIED ON"),
                 ("CLGTEXT", "Cartridges of the test library"),
             ],
-            &[("CLG", "QS76OPT"), ("CLGSTS", "Not ready"), ("CLGTYPE", "*OPT"), ("CLGASP", "*NONE"), ("CLGTEXT", "Optical saves")],
+            &[("CLG", "QS76OPT"), ("CLGSTS", "Not ready"), ("CLGTYPE", "Optical"), ("CLGASP", "*NONE"), ("CLGTEXT", "Optical saves")],
         ]),
     );
     let rows = golden("WRKIMGCLG", &d);
@@ -122,7 +122,7 @@ fn catalogs_and_their_entries() {
     let mut d = MapDialog::new();
     d.set("CLG", "QS76OPT")
         .set("CLGSTS", "Ready")
-        .set("CLGTYPE", "*OPT")
+        .set("CLGTYPE", "Optical")
         .set("CLGDEV", "OPTVRT76")
         .set("CLGDIR", "/qs76/opt");
     d.set_list(
@@ -134,8 +134,8 @@ fn catalogs_and_their_entries() {
     );
     let rows = golden("WRKIMGCLGE", &d);
     has(&rows, "Work with Image Catalog Entries");
-    has(&rows, "8=Mount");
-    has(&rows, "F6=Add entry");
+    has(&rows, "6=Mount");
+    has(&rows, "F6=Load/Unload image catalog");
 }
 
 #[test]
@@ -196,4 +196,51 @@ fn wrkimgclg_matches_the_71_capture() {
     assert!(diff.is_empty(), "wrkimgclg71 differs:\n{diff}");
     wmcommon::fields_on_row("audit/displays/wrkimgclg71", &s, 9);
     wmcommon::fields_on_row("audit/displays/wrkimgclg71", &s, 10);
+}
+
+/// Rows 1 to 23 of a capture under `audit/displays/` against the
+/// screen, `skip` rows aside, then every row's input fields.
+fn against71(name: &str, s: &uim::Screen, skip: &[usize]) {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../tools/conformance/golden/audit/displays/{name}.txt"));
+    let want: Vec<String> = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("\r\n", "\n")
+        .lines()
+        .map(|l| l.trim_end().to_string())
+        .collect();
+    let got = s.text_rows();
+    let mut diff = String::new();
+    for (i, w) in want.iter().enumerate().take(23) {
+        let g = got.get(i).map_or("", |r| r.trim_end());
+        if !skip.contains(&(i + 1)) && g != w {
+            let _ = writeln!(diff, "row {}:\n  want |{w}|\n  got  |{g}|", i + 1);
+        }
+    }
+    assert!(diff.is_empty(), "{name} differs:\n{diff}");
+    for row in 1..=23 {
+        wmcommon::fields_on_row(&format!("audit/displays/{name}"), s, row);
+    }
+}
+
+/// `WRKMLBSTS` with no media library, as the 7.1 oracle shows it.
+#[test]
+fn wrkmlbsts_matches_the_71_capture() {
+    let mut d = MapDialog::new();
+    d.set_list("RSRCS", list(&[]));
+    against71("wrkmlbsts71", &render(&group(), "WRKMLBSTS", &d, &opts()).unwrap(), &[]);
+}
+
+/// `WRKIMGCLGE` of the 7.1 oracle's one catalog: two data columns, the
+/// add entry with `*AVAIL` in its index field, one mounted image.
+#[test]
+fn wrkimgclge_matches_the_71_capture() {
+    let mut d = MapDialog::new();
+    d.set("CLG", "JAVA8")
+        .set("CLGSTS", "Not ready")
+        .set("CLGTYPE", "Optical")
+        .set("CLGDEV", "")
+        .set("CLGDIR", "/images/java8");
+    d.set_list("ENTS", list(&[&[("IDX", "1"), ("ENTSTS", "Mounted"), ("IMGFILE", "5761-JV1_opt17.iso")]]));
+    d.set_ext("ENTS", &[("IDX", "*AVAIL")]);
+    against71("wrkimgclge71", &render(&group(), "WRKIMGCLGE", &d, &opts()).unwrap(), &[]);
 }

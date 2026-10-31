@@ -5,14 +5,15 @@
 //! The media displays (`QSMEDIA`): `WRKIMGCLG` (F11 between the status
 //! and text views, option 12 into the entries), `WRKIMGCLGE`,
 //! `WRKTAPCTG` (options 6 and 8 mount and demount through `service_op`)
-//! and `WRKMLBSTS` (options 4 to 6 set a drive's allocation). The data
+//! and `WRKMLBSTS` (options 4 to 6 set a drive's allocation, 8 its
+//! description). The panels follow the 7.1 oracle's captures. The data
 //! comes through `panel2_data`.
 
 use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{Step, cell, choice, dialog, fetch, load, no_more, others, parm, refused, work};
+use super::{Step, cell, choice, dialog, exec, fetch, load, no_more, others, parm, refused, work};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -87,7 +88,22 @@ pub fn wrkimgclge(job: &mut Job, host: &Host, surface: &mut Surface, name: &str)
         load(d, "ENTS", data);
         Ok(())
     };
-    let mut keys = |_: &mut Job, _: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| Ok(others(d, &resp));
+    // The add entry offers the next free index, as IBM's does.
+    d.list_mut("ENTS").set_ext("IDX", "*AVAIL");
+    let clg = name.clone();
+    let mut keys = |job: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
+        Ok(match resp {
+            Response::Return(6) => {
+                exec(job, host, d, &format!("?LODIMGCLG IMGCLG({clg})"));
+                Step::Reload
+            }
+            Response::Return(7) => {
+                exec(job, host, d, &format!("?VFYIMGCLG IMGCLG({clg})"));
+                Step::Reload
+            }
+            other => others(d, &other),
+        })
+    };
     work(job, host, surface, &mut d, "WRKIMGCLGE", &mut reload, &mut keys)
 }
 
@@ -128,6 +144,10 @@ pub fn wrkmlbsts(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
     };
     let mut keys = |_: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
         let Some(c) = choice(&resp).cloned() else {
+            if let Response::Return(23) = resp {
+                d.info("CPI9BE9", &[]);
+                return Ok(Step::Stay);
+            }
             return Ok(others(d, &resp));
         };
         let rsrc = cell(d, "RSRCS", c.row, "RSRC");

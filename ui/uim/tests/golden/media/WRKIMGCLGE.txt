@@ -1,17 +1,17 @@
                         Work with Image Catalog Entries
                                                              System:   SYSNAME
- Image catalog . . . . . :   QS76OPT
- Status  . . . . . . . . :   Ready
- Type  . . . . . . . . . :   *OPT
- Device  . . . . . . . . :   OPTVRT76
- Directory . . . . . . . :   /qs76/opt
- Type options, press Enter.
-   2=Change   4=Remove   6=Load   8=Mount   9=Unload
+ Catalog  . . :   QS76OPT                 Status . . . :   Ready
+ Type . . . . :   Optical                 Device . . . :   OPTVRT76
+ Directory  . :   /qs76/opt
 
-                         Write
- Opt  Index  Status      Protect  Volume              Image File
-      1      Mounted     N        QS76O1              OPT1.ISO
-      2      Loaded      N        QS76O2              OPT2.ISO
+ Type options, press Enter.
+   1=Add   2=Change       4=Remove   6=Mount   8=Load   9=Unload
+   10=Initialize volume   12=Work with volume
+
+ Opt   Index  Status      Image File Name
+
+           1  Mounted     OPT1.ISO
+           2  Loaded      OPT2.ISO
 
 
 
@@ -19,6 +19,6 @@
 
 
                                                                          Bottom
-
- F3=Exit   F5=Refresh   F6=Add entry   F12=Cancel
+ F3=Exit   F5=Refresh   F6=Load/Unload image catalog   F7=Verify image catalog
+ F8=Reorder by index    F12=Cancel   F24=More keys
 

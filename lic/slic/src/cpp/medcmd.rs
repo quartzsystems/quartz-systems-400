@@ -1059,6 +1059,16 @@ fn ready(s: &str) -> &'static str {
     if s == "*READY" { "Ready" } else { "Not ready" }
 }
 
+/// A catalog's type as the panels show it (the 7.1 oracle's
+/// `Optical`).
+fn kind(k: &str) -> &str {
+    match k {
+        "*OPT" => "Optical",
+        "*TAP" => "Tape",
+        other => other,
+    }
+}
+
 /// `WRKIMGCLG`'s panel data: one row per catalog `which` and `ty`
 /// select, with its device and the device's status.
 pub(crate) fn imgclg_panel(system: &mut System, which: &str, ty: &str) -> stg::proto::PanelData {
@@ -1080,7 +1090,7 @@ pub(crate) fn imgclg_panel(system: &mut System, which: &str, ty: &str) -> stg::p
         out.push(vec![
             var("CLG", &c.name),
             var("CLGSTS", ready(c.status)),
-            var("CLGTYPE", c.kind),
+            var("CLGTYPE", kind(c.kind)),
             var("CLGASP", "*NONE"),
             var("CLGDEV", dev),
             var("DEVSTS", sts),
@@ -1101,7 +1111,7 @@ pub(crate) fn imgclge_panel(name: &str) -> Result<stg::proto::PanelData, String>
     let vars = vec![
         var("CLG", &d.name),
         var("CLGSTS", ready(d.status)),
-        var("CLGTYPE", d.kind),
+        var("CLGTYPE", kind(d.kind)),
         var("CLGDEV", &d.device),
         var("CLGDIR", &d.dir),
     ];

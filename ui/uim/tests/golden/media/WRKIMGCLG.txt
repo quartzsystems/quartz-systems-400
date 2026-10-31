@@ -7,8 +7,8 @@
       Image                               ASP                 Device
  Opt  Catalog     Status      Type     Threshold  Device      Status
 
-      QS76TAP     Ready       *TAP     *NONE      TAPMLB76    VARIED ON
-      QS76OPT     Not ready   *OPT     *NONE
+      QS76TAP     Ready       Tape     *NONE      TAPMLB76    VARIED ON
+      QS76OPT     Not ready   Optical  *NONE
 
 
 
