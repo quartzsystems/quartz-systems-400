@@ -27,11 +27,14 @@ fn check(golden: &str, menu: &str, page: usize) {
 
 /// `title_words`: the title row matches by its words only.
 fn compare(golden: &str, menu: &str, page: usize, title_words: bool) {
-    let path = if let Some(g) = golden.strip_prefix("phase11/") {
-        golden_dir().join("../../phase11/menus").join(format!("{g}.txt"))
-    } else {
-        golden_dir().join(format!("{golden}.txt"))
-    };
+    // The Phase 8 captures, then Phase 11's (named with or without
+    // a `phase11/` prefix).
+    let name = golden.strip_prefix("phase11/").unwrap_or(golden);
+    let path = [golden_dir(), golden_dir().join("../../phase11/menus")]
+        .into_iter()
+        .map(|d| d.join(format!("{name}.txt")))
+        .find(|p| p.exists())
+        .unwrap_or_else(|| golden_dir().join(format!("{name}.txt")));
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     let theirs: Vec<&str> = text.lines().collect();
     let source = menus::shipped::source(menu).unwrap_or_else(|| panic!("{menu} is not shipped"));
@@ -114,6 +117,8 @@ menu_test! {
     menu_recovery_2: "menu-recovery-2", "RECOVERY", 1;
     menu_restore: "menu-restore", "RESTORE", 0;
     menu_restore_2: "menu-restore-2", "RESTORE", 1;
+    menu_restore_3: "menu-restore-3", "RESTORE", 2;
+    menu_tape: "menu-tape", "TAPE", 0;
     menu_save: "menu-save", "SAVE", 0;
     menu_save_2: "menu-save-2", "SAVE", 1;
     menu_security: "menu-security", "SECURITY", 0;

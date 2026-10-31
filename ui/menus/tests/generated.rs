@@ -3,8 +3,9 @@
 // root directory of this project.
 
 //! The committed `pnlgrp/` is what the generator writes, every source
-//! compiles, the numbering of four menus and the three fixed menus
-//! follow the pub400 goldens, and the inventory is covered.
+//! compiles, the numbering of the command menus with pub400 goldens
+//! (Phase 8 and Phase 11) and the three fixed menus follow them, and
+//! the inventory is covered.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -87,9 +88,13 @@ fn every_source_compiles() {
 
 /// `(option, NAME)` of every `  n. text  NAME` row of a golden.
 fn golden_rows(file: &str) -> Vec<(u16, String)> {
-    let path = root()
-        .join("tools/conformance/golden/verified/pub400")
-        .join(file);
+    // The Phase 8 captures, then Phase 11's.
+    let golden = root().join("tools/conformance/golden");
+    let path = [golden.join("verified/pub400"), golden.join("phase11/menus")]
+        .into_iter()
+        .map(|d| d.join(file))
+        .find(|p| p.exists())
+        .unwrap_or_else(|| golden.join(file));
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     text.lines()
         .filter_map(|line| {
@@ -184,6 +189,120 @@ const CASES: &[Case] = &[
         ibm_only: &["ADDAJE", "ADDJWDFN", "CHGAJE", "CHGGRPA", "DATA", "DLTTRC"],
         misplaced: &["DSPJVMJOB"],
         exact_prefix: 0,
+    },
+    // --- Phase 11 (golden/phase11/menus). IBM's menus end with related
+    // command menus and name commands the name rule does not place;
+    // COVERAGE.md there has the list.
+    Case {
+        menu: "CMDSAV",
+        files: &["menu-cmdsav.txt", "menu-cmdsav-2.txt", "menu-cmdsav-3.txt"],
+        ibm_only: &["CMDOPT", "CMDSAVF", "CMDSAVRST", "CMDTAP", "ENDSAVSYNC", "STRSAVSYNC"],
+        misplaced: &[],
+        exact_prefix: 0,
+    },
+    Case {
+        menu: "CMDRST",
+        files: &["menu-cmdrst.txt", "menu-cmdrst-2.txt", "menu-cmdrst-3.txt"],
+        ibm_only: &[
+            "CMDOPT", "CMDSAVRST", "CMDTAP", "LODRUN", "SAVRST", "SAVRSTCFG", "SAVRSTCHG",
+            "SAVRSTDLO", "SAVRSTLIB", "SAVRSTOBJ",
+        ],
+        // IBM lists RSTAPARDTA before RST and RSTSYSINF after RSTUSRPRF.
+        misplaced: &["RST", "RSTSYSINF"],
+        exact_prefix: 0,
+    },
+    Case {
+        menu: "CMDSAVF",
+        files: &["menu-cmdsavf.txt"],
+        ibm_only: &["CMDSAV"],
+        misplaced: &[],
+        exact_prefix: 6,
+    },
+    Case {
+        menu: "CMDPTF",
+        files: &["menu-cmdptf.txt", "menu-cmdptf-2.txt"],
+        ibm_only: &["CMDPRBMGT", "CRTFMWPRD", "DSPFMWSTS", "DSPPTFAPYI", "DSPPTFGRP"],
+        misplaced: &[],
+        exact_prefix: 0,
+    },
+    Case {
+        menu: "CMDPRB",
+        files: &["menu-cmdprb.txt", "menu-cmdprb-2.txt"],
+        ibm_only: &[
+            "CMDACNE", "CMDFTR", "CMDPRBMGT", "CMDPTF", "CMDSLTE", "DLTAPARDTA", "ENDCPYSCN",
+            "RSTAPARDTA", "SAVAPARDTA", "STRCPYSCN",
+        ],
+        misplaced: &[],
+        exact_prefix: 6,
+    },
+    Case {
+        menu: "CMDTAP",
+        files: &["menu-cmdtap.txt", "menu-cmdtap-2.txt", "menu-cmdtap-3.txt"],
+        ibm_only: &["CMDCGY", "CMDCTG", "CMDMLB", "CMDSAVRST", "CMDTAPF"],
+        misplaced: &[],
+        exact_prefix: 22,
+    },
+    Case {
+        menu: "CMDOPT",
+        files: &["menu-cmdopt.txt", "menu-cmdopt-2.txt", "menu-cmdopt-3.txt"],
+        ibm_only: &["CHGDEVMLB", "CMDMLB", "CRTDEVMLB", "WRKMLBSTS"],
+        misplaced: &[],
+        exact_prefix: 2,
+    },
+    Case {
+        menu: "CMDIMGCLG",
+        files: &["menu-cmdimgclg.txt"],
+        ibm_only: &[],
+        misplaced: &[],
+        exact_prefix: 12,
+    },
+    Case {
+        menu: "CMDBCKUP",
+        files: &["menu-cmdbckup.txt"],
+        ibm_only: &["CVTOPTBKU", "DSPBCKSTS"],
+        misplaced: &[],
+        exact_prefix: 1,
+    },
+    Case {
+        menu: "CMDCLNUP",
+        files: &["menu-cmdclnup.txt"],
+        ibm_only: &[],
+        misplaced: &[],
+        exact_prefix: 4,
+    },
+    Case {
+        menu: "CMDTRC",
+        files: &["menu-cmdtrc.txt", "menu-cmdtrc-2.txt", "menu-cmdtrc-3.txt"],
+        // IBM's trace menu is curated: every command about traces.
+        ibm_only: &[
+            "ADDTRC", "ADDTRCFTR", "CHGUSRTRC", "CHKCMNTRC", "CLRTRCDTA", "DLTCMNTRC", "DLTTRC",
+            "DLTUSRTRC", "DMPCLUTRC", "DMPCMNTRC", "DMPTRC", "DMPUSRTRC", "DSPTRC", "DSPTRCDTA",
+            "ENDCMNTRC", "ENDJOBTRC", "ENDPFRTRC", "ENDTRC", "PRTCMNTRC", "PRTJOBTRC", "PRTTRC",
+            "PRTTRCRPT", "RMVTRC", "RMVTRCFTR", "STRCMNTRC", "STRJOBTRC", "STRPFRTRC", "STRSRVJOB",
+            "STRTRC", "TRACEROUTE", "WRKTRC",
+        ],
+        misplaced: &[],
+        exact_prefix: 0,
+    },
+    Case {
+        menu: "CMDDMP",
+        files: &["menu-cmddmp.txt", "menu-cmddmp-2.txt"],
+        ibm_only: &["CPYFRMMSD", "CPYTOMSD", "GENJVMDMP"],
+        misplaced: &[],
+        exact_prefix: 0,
+    },
+    Case {
+        menu: "CMDSRV",
+        files: &["menu-cmdsrv.txt", "menu-cmdsrv-2.txt", "menu-cmdsrv-3.txt"],
+        // IBM's service menu is curated: dumps, traces, verifications.
+        ibm_only: &[
+            "CHGSRVAGT", "CHGSRVAGTA", "DMPJOB", "DMPJOBINT", "DMPOBJ", "DMPSYSOBJ", "DSPSRVAGT",
+            "ENDSRVAGT", "PRTERRLOG", "PRTINTDTA", "RTVSRVAGT", "STRDBG", "STRSRVAGT", "TRCCNN",
+            "TRCINT", "TRCJOB", "TRCTCPAPP", "VFYCMN", "VFYLNKLPDA", "VFYPRT", "VFYSRVAGT",
+            "VFYTAP", "WRKACTJOB", "WRKSRVAGT",
+        ],
+        misplaced: &[],
+        exact_prefix: 2,
     },
 ];
 
