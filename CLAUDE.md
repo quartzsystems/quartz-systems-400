@@ -167,6 +167,10 @@ media/        save media (docs/MEDIA.md)
                 CPYFRMTAP); the panels are ui/uim/pnlgrp/QSMEDIA and
                 work/qsjob/src/panels/work2/media.rs (WRKIMGCLG, WRKIMGCLGE, WRKTAPCTG,
                 WRKMLBSTS)
+  instmedia/    install media (docs/INSTALL.md, RECOVERY.md): layout.rs payloads, sign.rs the
+                manifest signature, rsp.rs the response file, savsys.rs the layout on tape and
+                optical (written, recognised), osload.rs the OS install over a store. The
+                installer is lic/slic/src/ipl/install.rs and instdev.rs, SAVSYS cpp/savsys.rs
 ptf/          PTFs (docs/PTF.md)
   ptf/          header.rs the PTF header, status.rs the states, package.rs build and open a
                 signed PTF stream, db.rs the PTF database, apply.rs LODPTF/APYPTF/RMVPTF

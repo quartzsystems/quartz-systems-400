@@ -171,3 +171,22 @@ The V7R1M0 oracle settled 27 restore rules
 26. **Cleanup job and schedule entry names.** `QEZCLNUP` (the schedule
     entry, the cleanup job) and `QEZBCKUP` (a submitted backup) follow
     IBM's `QEZ` prefix; IBM's own names are not captured.
+
+## Install and recovery
+
+27. **`SAVSYS`'s completion message.** `CPC3703` here, with the device
+   in its data; IBM's message for a completed system save was not
+   captured (the oracles may not run `SAVSYS`).
+28. **`SAVSYS` while active.** IBM i ends `SAVSYS` unless the system is
+   in restricted state; QS/400 saves while active (product loads and
+   security data are consistent units in the store). Whether to refuse
+   as IBM does is open until `ENDSBS *ALL` leaves a usable console.
+29. **A blank virtual tape.** `SAVSYS` initializes a blank virtual volume
+   first (volume `SAVSYS` or the first `VOL`); IBM requires `INZTAP`.
+   Kept until `INZTAP` is on the device layer.
+30. **Install message identifiers.** The install SRCs C6004060, C6004070,
+   C6004130 to C6004160 and A6004080 are Quartz's in IBM's C600 range;
+   IBM's install codes are not documented to that level.
+31. **The response file's agreement.** Listing a product under `licpgm`
+   accepts its software agreement as QSECOFR; IBM's automatic install
+   asks for the agreements on the console. Kept for unattended installs.

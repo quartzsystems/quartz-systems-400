@@ -20,6 +20,7 @@ state. It grows with the phase.
 | Media in the system | `MEDIA.md` | `media/medio` |
 | Console scaling, storage controllers | `CONSOLE.md`, `HARDWARE_NOTES.md` | `lic/console`, `lic/slic` |
 | Cleanup, backup, `GO SAVE`/`RESTORE` 20 to 23 | `BACKUP.md` | `work/wm` (`opa`) |
+| Install media and flow, recovery | `INSTALL.md`, `RECOVERY.md` | `media/instmedia`, `lic/svctools` |
 | Open questions | `SVC_OPEN_QUESTIONS.md` | |
 
 ## Oracles
@@ -83,6 +84,7 @@ were answered by hand during the capture, before every job got
 | 81 | `QSCRTPTF` with the build's key, `LODPTF`, `APYPTF *TEMP`, `RMVPTF`, a prerequisite refused, `DELAYED(*YES)` applied by the IPL (`C6004501`), `APYPTF *PERM`, `DSPPTFCVR`, `CHKOBJITG` clean then after a change |
 | `--media iso`, `iso-raw`, `iso-fat` | the hybrid install image as a CD, written raw to a disk, and copied onto FAT32 |
 | `--media iso` 1, 4 | the media IPL without an installed system shows No Operating System Installed; with one, option 1 IPLs the disk |
+| `--media iso --install` 1, 3, 8 to 11 | the install matrix: automatic install with the signatures checked, every panel over serial, a response file with two mirrored disks, `SAVSYS` to virtual tape and the recovery, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install (docs/INSTALL.md section 5) |
 
 ## Deviations
 
@@ -99,6 +101,12 @@ were answered by hand during the capture, before every job got
   libraries with failures (`CPF3777`).
 - **`*OPSYS` is `QS00SS1`.** `QSZRTVPR` answers QS/400's product ID; the
   IBM ID `5770SS1` finds the same product as an alias.
+
+- **Install.** LIC options 3 and 4 work (docs/INSTALL.md); the
+  operating system install restores `QS00SS1` from the media instead of
+  making the objects at the first IPL (which stays as the fallback
+  without media); `SAVSYS` saves while active and initializes a blank
+  virtual tape (`SVC_OPEN_QUESTIONS.md`, "Install and recovery").
 
 ## Deferred
 
@@ -122,6 +130,11 @@ were answered by hand during the capture, before every job got
 |---|---|---|
 | `SAVSYS` in `GO SAVE` 21 and 22 | `work/wm/src/opa/gosave.rs` | the install agent's `SAVSYS`; the options run without it until the command exists |
 | The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | an exemption in the subsystem monitor; the options run from `QSVCJOB` |
+| Virtual devices for `SAVSYS` are bound with `svc.vrtdev`, not resolved through a loaded image catalog | `lic/slic/src/cpp/savsys.rs` | the device layer (`LODIMGCLG` on `TAPVRTnn`/`OPTVRTnn`) |
+| `CHKTAP` and `DSPOPT DATA(*SAVRST)` showing install media | `media/instmedia/src/savsys.rs` (the recognition and its tests) | the device layer's commands |
+| `RSTLIB *NONSYS` and `RST` from the tape files after a system save, in the recovery | `lic/slic/src/cpp/savsys.rs` (`recover`) | `SAVLIB`/`SAV`/`RSTLIB`/`RST` to and from tape |
+| Physical tape drives as install devices | `lic/slic/src/ipl/instdev.rs` | the device layer |
+| `qs400.rsp=` naming a URL | `lic/slic/src/ipl/media.rs` | the network boot (PXE) |
 
 ## Bench
 

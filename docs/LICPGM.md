@@ -739,8 +739,8 @@ UTF-8).
   initramfs as `/qs400/keys/system.pub`, 32 raw bytes. The save engine
   trusts object signatures with it and ADDLICKEY checks Quartz license
   keys with its first key.
-- **Commands** (`lic/slic/src/cpp/lpcmd.rs`): RSTLICPGM (`DEV(*SAVF)`;
-  optical and tape are the hook in `device()`, `MIGRATE(phase11)`),
+- **Commands** (`lic/slic/src/cpp/lpcmd.rs`): RSTLICPGM (`DEV(*SAVF)`,
+  or an install device such as `OPT01` holding install media),
   DLTLICPGM, SAVLICPGM (a `SaveKind::LicPgm` stream into a save file),
   CHKPRDOPT, DSPSFWRSC, WRKLICINF, ADDLICKEY (`LICKEY` of 18 elements,
   or `LICKEYINP(*LICKEYFILE) LICKEYFILE(path)`, a stream file),
@@ -784,6 +784,8 @@ packaged `*PRDLOD`s; every object signed (ed25519 over its content
 digest, key ID the first 8 bytes of the public key's SHA-256, the
 descriptor flagged `SIGNED`); then SAVLICPGM's stream. The digests do
 not depend on the system, so two builds give the same digests. The
-manifests match `catalog.toml` (a test keeps them equal). The first
-IPL still makes the OS objects itself until the install flow restores
-the `QS00SS1` load instead.
+manifests match `catalog.toml` (a test keeps them equal). `build iso`
+puts the loads on the media under `QS400/LP/`, and the operating
+system install restores `QS00SS1` from there (docs/INSTALL.md); the
+first IPL makes the OS objects itself only on a system installed
+without media.

@@ -437,6 +437,7 @@ dependencies = [
  "ftp",
  "ifs",
  "ile",
+ "instmedia",
  "jrn",
  "licpgm",
  "lpd",

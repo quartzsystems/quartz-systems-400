@@ -166,7 +166,10 @@ holds the system value overrides. Phase 11: `0x0106` holds the IPL
 attributes (`licpart::ipla`, `KEYWORD=VALUE` lines: `CHGIPLA`,
 `DSPIPLA`), `0x0107` the LIC PTF slot state (`ptf::slot`, docs/PTF.md
 §5). The storage service writes these two, rereading the record first;
-`slic` rereads it before its own writes too.
+`slic` rereads it before its own writes too. `0x0108` holds the
+response file of an automatic install from the LIC install to the end
+of the operating system's, `0x0109` the slot an upgrade's LIC is copied
+into once the operating system is installed (docs/INSTALL.md).
 
 The IPL attributes the operating system's start honours (the service's
 `iplcmd::at_ipl`): `CLRJOBQ(*YES)` clears every job queue,
