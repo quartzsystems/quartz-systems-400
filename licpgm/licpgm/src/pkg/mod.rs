@@ -203,7 +203,14 @@ pub fn build_manifest(m: &schema::Manifest, opts: Options) -> Result<Package, Ve
             .map_err(|_| c.err("product.ibm_alias", format!("{a:?} is not a product ID")))
             .ok()
     });
-    let obj_name = p.object.clone().unwrap_or_else(|| p.id.clone());
+    // A name cannot start with a digit: `P` goes in front.
+    let obj_name = p.object.clone().unwrap_or_else(|| {
+        if p.id.starts_with(|c: char| c.is_ascii_digit()) {
+            format!("P{}", p.id)
+        } else {
+            p.id.clone()
+        }
+    });
     c.name("product.object", &obj_name);
     let msgf = p.msgf.as_ref().map(|s| c.qual("product.msgf", s));
     if let (Some(a), Some(b)) = (p.first_copyright, p.current_copyright)

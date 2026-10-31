@@ -8,7 +8,10 @@
 use std::sync::OnceLock;
 
 use crate::id::{LoadId, LoadType, OptionNo};
+use crate::model::QualName;
+use crate::model::state::LoadState;
 use crate::pkg::{self, Package, Status};
+use crate::store::{ProductStore, StoreError};
 
 const CATALOG: &str = include_str!("../catalog.toml");
 
@@ -65,6 +68,37 @@ pub fn shipped() -> &'static Catalog {
 #[must_use]
 pub fn agreement_text(id: &str) -> Option<&'static str> {
     AGREEMENTS.iter().find(|(p, _)| *p == id).map(|(_, t)| *t)
+}
+
+/// First IPL: create every catalog product's `*PRDDFN` in `QSYS`, the
+/// shipped products' loads there in state `90` (installed at `now`,
+/// seconds since the epoch) and their license information. Reserved
+/// products get their definition only. Objects already there are left
+/// alone.
+pub fn seed(store: &mut dyn ProductStore, now: u64) -> Result<(), StoreError> {
+    let cat = shipped();
+    let mut lic = store.licenses();
+    for p in &cat.products {
+        let dq = QualName::new(&p.definition_name.name, "QSYS");
+        match store.create_definition(&dq, &p.definition) {
+            Ok(()) | Err(StoreError::Exists(_)) => {}
+            Err(e) => return Err(e),
+        }
+        if p.status != Status::Shipped {
+            continue;
+        }
+        for (q, l) in &p.loads {
+            let mut l = l.clone();
+            l.state = LoadState::Installed;
+            l.installed_at = now;
+            match store.create_load(&QualName::new(&q.name, "QSYS"), &l) {
+                Ok(()) | Err(StoreError::Exists(_)) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        lic.sync_definition(&p.definition);
+    }
+    store.save_licenses(&lic)
 }
 
 /// Parse a catalog in the shipped format.

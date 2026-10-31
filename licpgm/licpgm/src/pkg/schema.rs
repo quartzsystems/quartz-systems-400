@@ -63,7 +63,8 @@ pub struct Product {
     pub ibm_alias: Option<String>,
     /// Description, up to 50 characters.
     pub text: String,
-    /// The `*PRDDFN` object name; the product ID when absent.
+    /// The `*PRDDFN` object name; the product ID when absent, after a
+    /// `P` when it starts with a digit.
     pub object: Option<String>,
     /// The principal library of `*BASE`, where the `*PRDDFN` goes.
     pub library: String,

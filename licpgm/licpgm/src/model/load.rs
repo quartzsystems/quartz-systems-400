@@ -216,14 +216,21 @@ impl ProductLoad {
     }
 
     /// The default object name: the last three characters of the
-    /// product ID, the option, `C` or `L`, the load ID
+    /// product ID (`P` and the last two when that starts with a digit),
+    /// the option, `C` or `L`, the load ID
     /// (`SS100C5050`). `None` when that is not a valid name.
     #[must_use]
     pub fn default_name(key: &LoadKey) -> Option<String> {
         let id = key.product.as_str();
+        // A name cannot start with a digit: `P` stands in for the first.
+        let tail = if id.as_bytes()[4].is_ascii_uppercase() {
+            id[4..].to_string()
+        } else {
+            format!("P{}", &id[5..])
+        };
         let n = format!(
             "{}{:02}{}{}",
-            &id[4..],
+            tail,
             key.option.0,
             if key.load_type == crate::id::LoadType::Code {
                 'C'
