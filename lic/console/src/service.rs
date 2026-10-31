@@ -14,7 +14,8 @@ use crate::fb::{FbError, Framebuffer};
 use crate::keyboard::KeyEvent;
 use crate::keyboard::map::{Key, Modifiers, translate, update_modifiers};
 use crate::render::Renderer;
-use crate::screen::{Attr, Screen};
+use crate::scale::Scale;
+use crate::screen::{Attr, COLS, ROWS, Screen};
 use crate::screens;
 
 /// Input-inhibited indicator, bottom left.
@@ -67,6 +68,9 @@ pub enum Command {
     Attach(Sender<Vec<u8>>),
     /// A record from the session.
     Record(Vec<u8>),
+    /// Reply with the display's mode and scale, asking the framebuffer
+    /// for its mode again first.
+    Describe(Sender<String>),
     /// The session ended: the console's own screens again.
     Detach,
 }
@@ -123,8 +127,14 @@ impl Console {
     /// Open with or without the display: the serial console mode keeps
     /// the screen in memory only and never touches the framebuffer.
     pub fn open_with(display: bool) -> (Self, Result<(), FbError>) {
+        Self::open_scaled(display, Scale::Auto)
+    }
+
+    /// Open with the scale chosen on the command line.
+    pub fn open_scaled(display: bool, scale: Scale) -> (Self, Result<(), FbError>) {
         let opened = if display {
-            Framebuffer::open().and_then(|fb| Renderer::new(fb).map_err(FbError::from))
+            Framebuffer::open()
+                .and_then(|fb| Renderer::new(fb, ROWS, COLS, scale).map_err(FbError::from))
         } else {
             Err(FbError::NotWanted)
         };
@@ -236,15 +246,7 @@ impl Console {
                 }
             }
             Command::Dump(reply) => {
-                let text = match &self.term {
-                    Some(t) if self.kind == Kind::Terminal => {
-                        let mut s = t.text_rows().join("\n");
-                        s.push('\n');
-                        s
-                    }
-                    _ => self.screen.dump(),
-                };
-                let _ = reply.send(text);
+                let _ = reply.send(self.dump());
                 return;
             }
             Command::Attach(link) => {
@@ -263,21 +265,46 @@ impl Console {
                 t.apply(&rec);
                 self.screen = t.screen();
             }
-            Command::Detach => {
-                self.term = None;
-                self.link = None;
-                if self.kind == Kind::Terminal {
-                    self.kind = Kind::Src;
-                    self.screen = match self.recent.last() {
-                        Some((code, text)) => {
-                            screens::src_screen(&self.system, code, text, &self.recent)
-                        }
-                        None => Screen::new(),
-                    };
+            Command::Describe(reply) => {
+                // A mode change shows at once.
+                if self.renderer.as_mut().is_some_and(Renderer::check_mode) {
+                    self.redraw();
                 }
+                let _ = reply.send(self.describe());
+                return;
             }
+            Command::Detach => self.detach(),
         }
         self.redraw();
+    }
+
+    /// The grid as text: the terminal's while attached.
+    fn dump(&self) -> String {
+        match &self.term {
+            Some(t) if self.kind == Kind::Terminal => {
+                let mut s = t.text_rows().join("\n");
+                s.push('\n');
+                s
+            }
+            _ => self.screen.dump(),
+        }
+    }
+
+    /// The session ended: the last SRC display again.
+    fn detach(&mut self) {
+        // The mode may have changed while the session drew.
+        if let Some(r) = self.renderer.as_mut() {
+            r.check_mode();
+        }
+        self.term = None;
+        self.link = None;
+        if self.kind == Kind::Terminal {
+            self.kind = Kind::Src;
+            self.screen = match self.recent.last() {
+                Some((code, text)) => screens::src_screen(&self.system, code, text, &self.recent),
+                None => Screen::new(),
+            };
+        }
     }
 
     /// The current screen.
@@ -393,8 +420,8 @@ impl Console {
         }
     }
 
-    fn redraw(&self) {
-        if let Some(r) = &self.renderer {
+    fn redraw(&mut self) {
+        if let Some(r) = self.renderer.as_mut() {
             let _ = r.draw(&self.screen);
         }
     }

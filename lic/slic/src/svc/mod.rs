@@ -143,7 +143,12 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("hist", _) => hist(system),
         ("hw", _) => {
             system.hw.refresh_ports(std::path::Path::new("/sys"));
-            format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links))
+            format!(
+                "{}\n{}\nDisplay: {}\n",
+                system.hw.dump(),
+                crate::net::dump(&system.links),
+                crate::ipl::display::describe(system)
+            )
         }
         ("lic", _) => lic_dump(system),
         ("sysval", rest) => sysval(system, rest),

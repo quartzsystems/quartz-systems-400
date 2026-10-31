@@ -227,8 +227,11 @@ every printable ASCII glyph to be present and non-empty.
 
 ### Display
 
-`/dev/fb0` at 32 bpp XRGB only; anything else raises A6005008 and the IPL
-continues on serial. The frame buffer console is detached through
+`/dev/fb0` at 16, 24 or 32 bpp in the channel layout the mode reports;
+anything else raises A6005008 and the IPL continues on serial. The grid
+is scaled by the largest integer that fits and only changed rows are
+written; see CONSOLE.md, which supersedes the 1:1 drawing and the
+page-sized writes below. The frame buffer console is detached through
 `/sys/class/vtconsole/*/bind` and the VT is put in graphics mode, otherwise
 fbcon repaints over the screen. Pixels are written with `pwrite` in pieces
 under a page followed by `fsync`: under simpledrm's fbdev emulation,

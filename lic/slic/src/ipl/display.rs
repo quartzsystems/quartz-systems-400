@@ -22,7 +22,8 @@ use crate::src;
 /// codes emitted so far. Keyboard input comes back as `Event::Console`.
 pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
     let mode = console_mode(system);
-    let (con, status) = console::Console::open_with(mode == ConsoleMode::Local);
+    let (con, status) =
+        console::Console::open_scaled(mode == ConsoleMode::Local, system.boot.console_scale);
     system.out.serial(&format!(
         "slic: display: {} ({})\n",
         con.describe(),
@@ -80,6 +81,20 @@ pub fn console_mode(system: &System) -> ConsoleMode {
         .and_then(|(_, r)| r.tlv(TAG_CONSOLE_MODE))
         .and_then(ConsoleMode::decode)
         .unwrap_or_default()
+}
+
+/// The display's mode and the scale chosen, asked of the console thread.
+pub fn describe(system: &System) -> String {
+    let Some(tx) = &system.console else {
+        return "Console not attached".to_string();
+    };
+    let (reply_tx, reply_rx) = mpsc::channel();
+    if tx.send(Command::Describe(reply_tx)).is_err() {
+        return "Console thread gone".to_string();
+    }
+    reply_rx
+        .recv_timeout(Duration::from_secs(2))
+        .unwrap_or_else(|_| "Console did not answer".to_string())
 }
 
 /// The screen as 24 lines of text, for the service console and the harness.
