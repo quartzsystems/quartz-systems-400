@@ -162,3 +162,9 @@ pub fn read_payload(f: &Found) -> Result<(Vec<u8>, Vec<u8>), String> {
         Ok((read(at, manifest::SLOT_A)?, read(at, manifest::SLOT_B)?))
     })?
 }
+
+/// On a D IPL, the disk the media is on (a raw ISO, a stick), so it is
+/// never counted or offered as a unit.
+pub fn disk_on_d_ipl(ipl_d: bool) -> Option<String> {
+    if ipl_d { locate().ok().map(|f| f.disk) } else { None }
+}

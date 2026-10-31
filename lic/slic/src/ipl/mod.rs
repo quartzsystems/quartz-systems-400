@@ -277,10 +277,11 @@ fn pending_install(
         ));
     }
     if !auto {
+        let media = media::disk_on_d_ipl(system.boot.ipl_d);
         let spare = diskimg::locate::whole_disks()
             .unwrap_or_default()
             .iter()
-            .filter(|d| !d.has_qs400)
+            .filter(|d| !d.has_qs400 && media.as_deref() != Some(d.name.as_str()))
             .count();
         if spare > 0 {
             system.emit(&src::DISK_NOT_CONFIGURED);

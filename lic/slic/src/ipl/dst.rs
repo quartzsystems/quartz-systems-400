@@ -178,7 +178,11 @@ impl DstEnv for Env<'_> {
             .map(|s| s.devices.iter().map(|d| d.display().to_string()).collect())
             .unwrap_or_default();
         let mut out = Vec::new();
+        let media = crate::ipl::media::disk_on_d_ipl(self.system.boot.ipl_d);
         for disk in diskimg::locate::whole_disks().unwrap_or_default() {
+            if media.as_deref() == Some(disk.name.as_str()) {
+                continue;
+            }
             let device = disk.dev.display().to_string();
             let in_use = configured.iter().any(|c| {
                 c == &device
@@ -293,13 +297,7 @@ impl DstEnv for Env<'_> {
 
     fn disks(&mut self) -> Vec<NonConfigured> {
         let mut out = Vec::new();
-        // On a D IPL the medium may be a disk too (a raw ISO, a stick):
-        // never offer it as a load source.
-        let media = if self.system.boot.ipl_d {
-            crate::ipl::media::locate().ok().map(|f| f.disk)
-        } else {
-            None
-        };
+        let media = crate::ipl::media::disk_on_d_ipl(self.system.boot.ipl_d);
         for disk in diskimg::locate::whole_disks().unwrap_or_default() {
             if media.as_deref() == Some(disk.name.as_str()) {
                 continue;
