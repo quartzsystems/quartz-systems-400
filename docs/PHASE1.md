@@ -278,7 +278,7 @@ fields keep their text but show nothing. Enter on the sign-on display shows
 
 ## Install media
 
-`build iso` writes `target/images/qs400-V1R0M0-<hash>.iso`, a UEFI-bootable
+`build iso` writes `target/images/QS400-V1R0M0-<hash>.iso`, a UEFI-bootable
 ISO 9660 image written entirely in Rust (no `xorriso`, `mkisofs` or
 `genisoimage`): level 2, no Joliet, no Rock Ridge, an El Torito boot
 catalog with one EFI (platform `EF`) no-emulation entry whose boot image is
@@ -308,7 +308,7 @@ Write it to a USB stick (replace `sdX` with the stick, everything on it is
 lost):
 
 ```
-sudo dd if=target/images/qs400-V1R0M0-<hash>.iso of=/dev/sdX bs=4M status=progress conv=fsync
+sudo dd if=target/images/QS400-V1R0M0-<hash>.iso of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
 Any UEFI machine that boots removable media will start it; legacy BIOS

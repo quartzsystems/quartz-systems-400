@@ -189,7 +189,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let out = ctx
         .paths
         .images()
-        .join(format!("qs400-{release}-{}.iso", short(&hash)));
+        .join(format!("QS400-{release}-{}.iso", short(&hash)));
     fs::write(&out, &image).with_context(|| format!("cannot write {}", out.display()))?;
     paths::write_pointer(&ctx.paths.iso_pointer(), &out)?;
     info!(
