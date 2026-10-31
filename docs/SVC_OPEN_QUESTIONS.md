@@ -204,3 +204,11 @@ The V7R1M0 oracle settled 27 restore rules
     completion `CPC39E0` and escape `CPF39E1` are Quartz's choices; IBM's
     `CHKOBJITG` writes an outfile instead and its messages were not
     captured. Open: an `OUTFILE` in IBM's layout, once captured.
+33. **What the recovery's `RST` leaves.** In the install suite's step 9
+    the recovery's `RST OBJ(('/*') ('/QSYS.LIB' *OMIT))` restores 12
+    links and leaves 7 (`CPF3838`), and `RSTLIB SAVLIB(*NONSYS)` ends
+    `CPF3770` for a library with nothing to restore; the user library,
+    the profile and `/rcvdata` come back. The 7 are most likely
+    directories the fresh install already made; the service now logs
+    each one not restored to serial, which settles it on the next run
+    that keeps its log.
