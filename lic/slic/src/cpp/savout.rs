@@ -9,6 +9,7 @@
 //! `17-errors.txt`), created through DDS when the file is missing.
 
 use cmd::block::Parms;
+use stg::proto::CmdMsg;
 use db::Member;
 use db::file::{self, CreateFileOpts};
 use dds::{CompileOpts, NoRefs, Source, compile_pf};
@@ -195,6 +196,47 @@ pub(super) fn write(
     fields: &[Fld],
     rows: &[Row],
 ) -> Result<String, String> {
+    write_out(system, parms, format, fields, rows).map(Written::into_text)
+}
+
+/// What writing an outfile did: the text, and the file and library
+/// when it had to be created.
+pub(crate) struct Written {
+    /// The records written.
+    pub text: String,
+    /// The file and library created, if the file was missing.
+    pub created: Option<(String, String)>,
+}
+
+impl Written {
+    /// The text with a line for a file created.
+    fn into_text(self) -> String {
+        match self.created {
+            Some((n, l)) => format!("Outfile {l}/{n} created in the model format.\n{}", self.text),
+            None => self.text,
+        }
+    }
+
+    /// The text, and `CPF9861` with the file and library when the file
+    /// was created.
+    pub(crate) fn into_reply(self) -> (String, Option<CmdMsg>) {
+        let msg = self.created.as_ref().map(|(n, l)| CmdMsg {
+            msgid: "CPF9861".into(),
+            kind: 1,
+            data: cmd::error::data(&[(n, 10), (l, 10)]),
+        });
+        (self.text, msg)
+    }
+}
+
+/// [`write`], telling whether the file was created.
+fn write_out(
+    system: &mut System,
+    parms: &Parms,
+    format: &str,
+    fields: &[Fld],
+    rows: &[Row],
+) -> Result<Written, String> {
     let (name, lib) = parms.qual("OUTFILE");
     let replace = !parms
         .elems("OUTMBR")
@@ -202,7 +244,7 @@ pub(super) fn write(
         .copied()
         .flatten()
         .is_some_and(|v| v.source().eq_ignore_ascii_case("*ADD"));
-    write_to(system, (&name, &lib, replace), format, fields, rows)
+    write_file(system, (&name, &lib, replace), format, fields, rows)
 }
 
 /// Write `rows` to file `NAME` in `LIB`, its first member cleared
@@ -210,11 +252,22 @@ pub(super) fn write(
 /// missing.
 pub(crate) fn write_to(
     system: &mut System,
-    (name, lib, replace): (&str, &str, bool),
+    file: (&str, &str, bool),
     format: &str,
     fields: &[Fld],
     rows: &[Row],
 ) -> Result<String, String> {
+    write_file(system, file, format, fields, rows).map(Written::into_text)
+}
+
+/// [`write_to`], telling whether the file was created.
+fn write_file(
+    system: &mut System,
+    (name, lib, replace): (&str, &str, bool),
+    format: &str,
+    fields: &[Fld],
+    rows: &[Row],
+) -> Result<Written, String> {
     if name.is_empty() {
         return Err("CPD0071 OUTFILE is required with OUTPUT(*OUTFILE)".into());
     }
@@ -228,12 +281,12 @@ pub(crate) fn write_to(
         let existing = store::obj::library::Library::load(txn, l)
             .and_then(|x| x.lookup(txn, types::FILE, n))
             .map_err(|e| e.to_string())?;
-        let mut note = String::new();
+        let mut created = None;
         let fid = if let Some(id) = existing {
             id
         } else {
             let def = model_def(&src)?;
-            note = format!("CPF9861 Output file {name} created in library {lib}.\n");
+            created = Some((name.clone(), lib.clone()));
             file::create_pf(
                 txn,
                 l,
@@ -258,7 +311,10 @@ pub(crate) fn write_to(
                 .map_err(|e| e.to_string())?;
         }
         let _ = job;
-        Ok(format!("{note}{} records written to {lib}/{name}.\n", rows.len()))
+        Ok(Written {
+            text: format!("{} records written to {lib}/{name}.\n", rows.len()),
+            created,
+        })
     })
 }
 
@@ -270,7 +326,7 @@ pub fn save(
     reports: &[SaveReport],
     savf: &(String, String),
     now: u64,
-) -> Result<String, String> {
+) -> Result<(String, Option<CmdMsg>), String> {
     let inftype = parms.text("INFTYPE");
     let rel = {
         let r = release::RELEASE;
@@ -334,7 +390,7 @@ pub fn save(
             rows.push(row);
         }
     }
-    write(system, parms, "QSRSAV", QSRSAV, &rows)
+    write_out(system, parms, "QSRSAV", QSRSAV, &rows).map(Written::into_reply)
 }
 
 /// The `QSRRST` rows of a restore: one per object.
@@ -345,7 +401,7 @@ pub fn restore(
     report: &RestoreReport,
     savf: &(String, String),
     now: u64,
-) -> Result<String, String> {
+) -> Result<(String, Option<CmdMsg>), String> {
     let rel = {
         let r = release::RELEASE;
         format!("V{}R{}M{}", r.v, r.r, r.m)
@@ -391,7 +447,7 @@ pub fn restore(
             ("RSODFR", "0".into()),
         ]);
     }
-    write(system, parms, "QSRRST", QSRRST, &rows)
+    write_out(system, parms, "QSRRST", QSRRST, &rows).map(Written::into_reply)
 }
 
 #[cfg(test)]

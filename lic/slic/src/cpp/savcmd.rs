@@ -837,7 +837,10 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     if parms.text("OUTPUT") == "*OUTFILE" {
         let q = (savf_name.0.clone(), lib_or(&savf_name.1));
         match super::savout::save(system, parms, name, &reports, &q, now) {
-            Ok(t) => reply.text.push_str(&t),
+            Ok((t, m)) => {
+                reply.text.push_str(&t);
+                reply.messages.extend(m);
+            }
             Err(e) => return failed(name, &e),
         }
     }
@@ -1108,7 +1111,10 @@ fn restore_stream(
             if parms.text("OUTPUT") == "*OUTFILE" {
                 let q = (savf_name.0.clone(), lib_or(&savf_name.1));
                 match super::savout::restore(system, parms, name, &r, &q, now_unix()) {
-                    Ok(t) => reply.text.push_str(&t),
+                    Ok((t, m)) => {
+                        reply.text.push_str(&t);
+                        reply.messages.extend(m);
+                    }
                     Err(e) => return failed(name, &e),
                 }
             }

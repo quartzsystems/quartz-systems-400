@@ -3847,7 +3847,7 @@ vars = ["*CHAR 10"]
 [[msg]]
 id = "CPF2403"
 sev = 40
-text = "Message queue &1 in library &2 not found."
+text = "No message queue &1 is in library &2."
 help = "Check the queue's name and library, or create the queue with CRTMSGQ."
 vars = ["*CHAR 10", "*CHAR 10"]
 
@@ -3880,7 +3880,7 @@ help = "The reply list's entries could not be read. The job log has the detail."
 [[msg]]
 id = "CPF3307"
 sev = 40
-text = "Job queue &1 in library &2 not found."
+text = "No job queue &1 is in library &2."
 help = "Check the job queue's name and library, or create it with CRTJOBQ."
 vars = ["*CHAR 10", "*CHAR 10"]
 
@@ -6542,10 +6542,10 @@ vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "CPF9861"
-sev = 40
-text = "Output file &1 created in library &2.\n."
-help = "Correct what the message names and try the request again."
-vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+sev = 0
+text = "File &1 in library &2 was made to hold the output."
+help = "The output file named did not exist. The system created it in the command's model format and wrote the output to it."
+vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF9899"
