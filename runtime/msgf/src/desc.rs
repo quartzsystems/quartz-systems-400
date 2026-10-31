@@ -190,6 +190,61 @@ impl VarType {
     }
 }
 
+impl VarType {
+    /// Message data for the variable from its text: text padded or cut
+    /// to the length, numbers in their binary or packed form.
+    #[must_use]
+    pub fn encode(&self, value: &str) -> Vec<u8> {
+        let text = |s: &str| {
+            ccsid::to_ebcdic(s).unwrap_or_else(|_| {
+                let safe: String = s.chars().map(|c| if c.is_ascii() { c } else { '?' }).collect();
+                ccsid::to_ebcdic(&safe).unwrap_or_default()
+            })
+        };
+        let fixed = |n: usize| {
+            let mut b = text(value);
+            b.resize(n, 0x40);
+            b
+        };
+        match self {
+            Self::Char(n) | Self::QtdChar(n) | Self::CChar(n) | Self::IType(n) => fixed(*n as usize),
+            Self::VaryChar(p) => {
+                let b = text(value);
+                let mut out = if *p == 2 {
+                    u16::try_from(b.len()).unwrap_or(u16::MAX).to_be_bytes().to_vec()
+                } else {
+                    u32::try_from(b.len()).unwrap_or(u32::MAX).to_be_bytes().to_vec()
+                };
+                out.extend(b);
+                out
+            }
+            Self::Dec(d, s) => {
+                let n = usize::from(*d) / 2 + 1;
+                let v = if value.trim().is_empty() { "0" } else { value.trim() };
+                qdecimal::Decimal::parse(v)
+                    .ok()
+                    .and_then(|v| {
+                        qdecimal::Packed::new(*d, *s)
+                            .and_then(|p| p.encode(&v, qdecimal::Rounding::HalfAdjust))
+                            .ok()
+                    })
+                    .unwrap_or_else(|| vec![0; n])
+            }
+            Self::Bin(p) => {
+                let v: i64 = value.trim().parse().unwrap_or(0);
+                match p {
+                    2 => i16::try_from(v).unwrap_or(0).to_be_bytes().to_vec(),
+                    4 => i32::try_from(v).unwrap_or(0).to_be_bytes().to_vec(),
+                    _ => v.to_be_bytes().to_vec(),
+                }
+            }
+            Self::Hex(n) => vec![0; *n as usize],
+            Self::Dts | Self::Utc => vec![0; 8],
+            Self::Spp | Self::Syp => vec![0; 16],
+        }
+    }
+}
+
 fn hex(b: &[u8]) -> String {
     b.iter().fold(String::new(), |mut s, x| {
         let _ = write!(s, "{x:02X}");
@@ -261,6 +316,17 @@ impl MsgDesc {
             let (text, used) = v.render(rest);
             out.push(text);
             at += used;
+        }
+        out
+    }
+
+    /// Message data from the variables' texts, `&1` first; a missing
+    /// value is blank.
+    #[must_use]
+    pub fn data_of<S: AsRef<str>>(&self, values: &[S]) -> Vec<u8> {
+        let mut out = Vec::new();
+        for (i, v) in self.vars.iter().enumerate() {
+            out.extend(v.encode(values.get(i).map_or("", AsRef::as_ref)));
         }
         out
     }
@@ -353,6 +419,28 @@ mod tests {
         );
         assert!(MsgDesc::valid_id("MCH1211"));
         assert!(!MsgDesc::valid_id("MCH12"));
+    }
+
+    #[test]
+    fn data_from_texts() {
+        let d = MsgDesc {
+            id: "CPD1234".into(),
+            severity: 30,
+            text: "Option &1 on &2, &3 of &4.".into(),
+            help: String::new(),
+            vars: vec![
+                VarType::Char(2),
+                VarType::VaryChar(2),
+                VarType::Dec(5, 0),
+                VarType::Bin(4),
+            ],
+            dft_reply: None,
+            valid_replies: Vec::new(),
+            dump: Vec::new(),
+        };
+        let data = d.data_of(&["12", "/home/x", "42", "7"]);
+        assert_eq!(d.format(&data), "Option 12 on /home/x, 42 of 7.");
+        assert_eq!(d.format(&d.data_of::<&str>(&[])), "Option  on , 0 of 0.");
     }
 
     #[test]

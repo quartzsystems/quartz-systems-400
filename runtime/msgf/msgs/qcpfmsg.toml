@@ -3924,3 +3924,1443 @@ sev = 40
 text = "No objects of type &1 named &2 were found."
 help = "Check the object's name, library and type. A generic name finds every object whose name starts with it."
 vars = ["*CHAR 7", "*CHAR 10"]
+
+# The message line. The UIM dialog's own messages carry IBM's
+# identifiers (pub400, tools/conformance/golden/audit/msgids); the
+# panels' messages with no IBM counterpart are ours, in the 9B80 to
+# 9BFF block of CPD (errors) and CPI (information).
+
+[[msg]]
+id = "CPD6A60"
+sev = 30
+text = "That function key does nothing on this display."
+help = "The key pressed is not one of the keys the display lists, or it cannot be used now. Press one of the keys shown at the bottom of the display."
+vars = []
+
+[[msg]]
+id = "CPD6A64"
+sev = 30
+text = "The selection typed is not on this menu."
+help = "Type the number of one of the menu's options, or a command, on the selection line."
+vars = []
+
+[[msg]]
+id = "CPD6A66"
+sev = 30
+text = "There is nothing further up in this area."
+help = "The first entries are showing. Page down, or position the list, to see others."
+vars = []
+
+[[msg]]
+id = "CPD6A69"
+sev = 30
+text = "There is nothing further down in this area."
+help = "The last entries are showing. Page up, or position the list, to see others."
+vars = []
+
+[[msg]]
+id = "CPD6A7C"
+sev = 30
+text = "The option typed cannot be used in this list."
+help = "Type one of the option numbers listed above the list, beside the entry to act on, or clear the option."
+vars = []
+
+[[msg]]
+id = "CPD9B80"
+sev = 30
+text = "Nothing in the list is at or after &1."
+help = "The list was positioned at its last entry. Check the value typed; the list is in the order of its first column."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "CPD9B81"
+sev = 30
+text = "That function is not available in this release."
+help = "The key or option asks for a function a later release of the system brings. Nothing was done."
+vars = []
+
+[[msg]]
+id = "CPD9B82"
+sev = 30
+text = "There is no help for that position on the display."
+help = "Move the cursor to a field, a list column or the title and press Help again."
+vars = []
+
+[[msg]]
+id = "CPD9B83"
+sev = 30
+text = "The Information Assistant cannot be opened from here."
+help = "Its panel group is not on the system or cannot be read. Type GO INFO on a command line to reach it."
+vars = []
+
+[[msg]]
+id = "CPD9B84"
+sev = 30
+text = "This display cannot be printed in this release."
+help = "Printing the display needs a function a later release brings. The display's command can usually write its information to a spooled file with OUTPUT(*PRINT)."
+vars = []
+
+[[msg]]
+id = "CPI9B80"
+sev = 0
+text = "The display was written to the spooled file QSYSPRT."
+help = "Find the spooled file with WRKSPLF; it holds the display as it showed."
+vars = []
+
+[[msg]]
+id = "CPD9B85"
+sev = 30
+text = "There is no earlier command to retrieve."
+help = "The retrieve key brings back commands run from this display. None has run yet."
+vars = []
+
+[[msg]]
+id = "CPD9B86"
+sev = 30
+text = "Type a command on the command line before pressing the prompt key."
+help = "The prompt key shows the parameters of the command on the command line. The line is empty."
+vars = []
+
+[[msg]]
+id = "CPD9B87"
+sev = 30
+text = "Type a name on the command line before pressing the position key."
+help = "The list is moved so that it starts at the first entry at or after the name typed."
+vars = []
+
+[[msg]]
+id = "CPD9B88"
+sev = 30
+text = "Option &1 cannot be used on &2."
+help = "The option is one the list offers, but not for this entry. Choose another option for it, or clear the option."
+vars = ["*CHAR 4", "*CHAR 64"]
+
+[[msg]]
+id = "CPD9B89"
+sev = 30
+text = "Option &1 is not available in this release."
+help = "The option is listed for compatibility; what it does arrives in a later release. Nothing was done."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPD9B8A"
+sev = 30
+text = "F&1 is not available in this release."
+help = "The key is listed for compatibility; what it does arrives in a later release. Nothing was done."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "CPD9B8B"
+sev = 30
+text = "That view is not available in this release."
+help = "The display shows the views this release has. The others arrive in a later release."
+vars = []
+
+[[msg]]
+id = "CPD9B8C"
+sev = 30
+text = "&1 was not found."
+help = "The search went to the end of the data without finding the value. Check the value, or search from the start."
+vars = ["*CHAR 64"]
+
+[[msg]]
+id = "CPD9B8D"
+sev = 30
+text = "Value &2 is not valid for &1."
+help = "Type a value the field accepts; Help on the field lists them."
+vars = ["*CHAR 32", "*CHAR 64"]
+
+[[msg]]
+id = "CPD9B8E"
+sev = 30
+text = "Type an option number beside an entry, then press Enter."
+help = "The display acts on the entries that have an option typed beside them. None has."
+vars = []
+
+[[msg]]
+id = "CPD9B8F"
+sev = 30
+text = "The display already shows the left edge of the data."
+help = "Shifting left moves toward column 1, which is already shown."
+vars = []
+
+[[msg]]
+id = "CPD9B90"
+sev = 30
+text = "The display already shows the right end of the data."
+help = "Shifting right moves toward the last column, which is already shown."
+vars = []
+
+[[msg]]
+id = "CPD9B91"
+sev = 30
+text = "There is no page &1 in the file."
+help = "Type a page number from 1 to the file's last page."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9B92"
+sev = 30
+text = "The data is not &1 columns wide."
+help = "Type a column number within the width of the data shown."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9B93"
+sev = 30
+text = "Place the cursor on a message first."
+help = "The key acts on the message under the cursor. Move the cursor to one of the messages, then press the key again."
+vars = []
+
+[[msg]]
+id = "CPI9B81"
+sev = 0
+text = "Every value already shows whole on this display."
+help = "There is no shorter or longer form of the entries to switch to."
+vars = []
+
+[[msg]]
+id = "CPI9B82"
+sev = 0
+text = "Each profile keeps one password for every password level."
+help = "This system holds one password per user profile, whatever QPWDLVL is, so there are no levels to show."
+vars = []
+
+[[msg]]
+id = "CPI9B83"
+sev = 0
+text = "This system has no trademark information to show."
+help = "The licensed programs installed carry no trademark notices."
+vars = []
+
+[[msg]]
+id = "CPD9B94"
+sev = 30
+text = "Type a reply, or press F12 to leave the message waiting."
+help = "The message is an inquiry. Enter sends the reply typed; F12 goes back without one."
+vars = []
+
+[[msg]]
+id = "CPI9B84"
+sev = 0
+text = "Your reply was sent."
+help = "The program that sent the inquiry has its answer and goes on."
+vars = []
+
+[[msg]]
+id = "CPI9B85"
+sev = 0
+text = "The assistance level is chosen on the message list with F21."
+help = "Go back to the list of messages and press F21 there."
+vars = []
+
+[[msg]]
+id = "CPD9B95"
+sev = 30
+text = "Control value &1 is not valid."
+help = "Type a record number, B for the bottom, T for the top, or a number with + or - to move by that many records."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9B96"
+sev = 30
+text = "The size of pool &1 must be a number of megabytes."
+help = "Type the size as a whole number of megabytes."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9B97"
+sev = 30
+text = "Pool &1 belongs to a subsystem; change it with CHGSBSD."
+help = "A subsystem's private pools are sized in its description, not on this display."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9B98"
+sev = 30
+text = "Type one of the values the field allows."
+help = "The value typed is not one the field takes. Help on the field lists the values."
+vars = []
+
+[[msg]]
+id = "CPD9B99"
+sev = 30
+text = "Type the device to install from, or a save file as LIBRARY/FILE."
+help = "The products are installed from an optical or tape device, or from a save file that holds their loads."
+vars = []
+
+[[msg]]
+id = "CPD9B9A"
+sev = 30
+text = "No secondary language can be installed on this system."
+help = "The installation media hold no secondary language loads."
+vars = []
+
+[[msg]]
+id = "CPI9B86"
+sev = 0
+text = "Every user library and folder is already in the backup list."
+help = "There is nothing more to add. Change an entry's backup with its option."
+vars = []
+
+[[msg]]
+id = "CPD9B9B"
+sev = 30
+text = "No other options apply to these objects."
+help = "The display offers no further options for the objects chosen."
+vars = []
+
+[[msg]]
+id = "CPD9B9C"
+sev = 30
+text = "Place the cursor on a column of the list first."
+help = "The key acts on the column under the cursor. Move the cursor to the column, then press the key again."
+vars = []
+
+[[msg]]
+id = "CPD9B9D"
+sev = 30
+text = "The job log of another active job cannot be shown in this release."
+help = "The log of another job can be read once the job ends, from its spooled file QPJOBLOG (WRKSPLF)."
+vars = []
+
+[[msg]]
+id = "CPD9B9E"
+sev = 30
+text = "The call stack of another job cannot be shown in this release."
+help = "Only the job running the display can show its own call stack."
+vars = []
+
+[[msg]]
+id = "CPI9B87"
+sev = 0
+text = "Journals and journal receivers are recovered during the IPL."
+help = "There is nothing to recover from this display; the system recovered them when it started."
+vars = []
+
+[[msg]]
+id = "CPD9B9F"
+sev = 30
+text = "The catalog has nothing to change here; change its entries with option 12."
+help = "Option 12 lists the catalog's entries, where each one can be changed."
+vars = []
+
+[[msg]]
+id = "CPD9BA0"
+sev = 30
+text = "Allocation is set on a drive resource, not on the library."
+help = "Work with the library's drives and change the allocation of the drive."
+vars = []
+
+[[msg]]
+id = "CPD9BA1"
+sev = 30
+text = "A member has no pages; type a record number."
+help = "Position the member by record number, or with T for the top and B for the bottom."
+vars = []
+
+[[msg]]
+id = "CPD9BA2"
+sev = 30
+text = "No problem has been prepared for reporting."
+help = "Analyze a problem with WRKPRB option 8 first; the report sends what the analysis prepared."
+vars = []
+
+[[msg]]
+id = "CPD9BA3"
+sev = 30
+text = "Type 5 beside an entry to see all of it."
+help = "Option 5 shows the whole value of the entry."
+vars = []
+
+[[msg]]
+id = "CPD9BA4"
+sev = 30
+text = "Reply &1 is not valid; the valid replies are &2."
+help = "The message accepts only the replies listed. Type one of them."
+vars = ["*CHAR 32", "*CHAR 64"]
+
+[[msg]]
+id = "CPD9BA5"
+sev = 30
+text = "Type 1 beside the job to transfer to."
+help = "Option 1 chooses the group job that the display moves to."
+vars = []
+
+[[msg]]
+id = "CPI9B88"
+sev = 0
+text = "Directory: &1"
+help = "The directory whose entries the list shows."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9B89"
+sev = 0
+text = "&1"
+help = "The object the display is about, by its full path name."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI0B18"
+sev = 0
+text = "Option &1 cannot be used on this resource."
+help = "The resource has no configuration description, and none can be made for it, so the option has nothing to work with. Choose another option for the resource."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "CPD9BA7"
+sev = 30
+text = "Type the text to find on the Find line."
+help = "F16 searches for the text on the Find line. The line is empty."
+vars = []
+
+[[msg]]
+id = "CPD9BA8"
+sev = 30
+text = "No job is using &1."
+help = "The configuration object is not allocated to a job, so there is no job to work with."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BA9"
+sev = 30
+text = "Sequence number &1 is not valid."
+help = "Type a number for each library to keep; the libraries are placed in the order of their numbers."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BAA"
+sev = 30
+text = "There is no request to end."
+help = "System Request option 2 ends the request the job is running. The job is not running one."
+vars = []
+
+[[msg]]
+id = "CPD9BAB"
+sev = 30
+text = "Option &1 is not one this menu offers."
+help = "Type the number of one of the options shown, or press Enter with the line blank to go back."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BAC"
+sev = 30
+text = "Option &1 needs display station pass-through, which this system does not have."
+help = "Passing through to another system arrives in a later release."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "CPD9BAD"
+sev = 30
+text = "No other job is in the group."
+help = "Start another group job with TFRGRPJOB and a new name, then transfer between them."
+vars = []
+
+[[msg]]
+id = "CPD9BAE"
+sev = 30
+text = "Your password has expired; choose a new one to go on."
+help = "Type the password you signed on with, then the new password twice. Signing on goes on once it is changed."
+vars = []
+
+[[msg]]
+id = "CPD9BAF"
+sev = 30
+text = "The new password and its confirmation are not the same."
+help = "Type the new password again in both fields."
+vars = []
+
+[[msg]]
+id = "CPD9BB0"
+sev = 30
+text = "Type the text of the note."
+help = "A note needs some text; the field is empty."
+vars = []
+
+[[msg]]
+id = "CPD9BB1"
+sev = 30
+text = "Choose one of the areas, 1 to 5."
+help = "The area says what part of the system the problem is in; the analysis asks its questions from it."
+vars = []
+
+[[msg]]
+id = "CPD9BB2"
+sev = 30
+text = "Describe the problem in a few words."
+help = "The description goes with the problem in the problem log and in any report of it."
+vars = []
+
+[[msg]]
+id = "CPD9BB3"
+sev = 30
+text = "The password validation program did not accept the new password."
+help = "The program named in system value QPWDVLDPGM refused the password. Choose another one."
+vars = []
+
+[[msg]]
+id = "CPD9BB4"
+sev = 30
+text = "No menu matches &1."
+help = "No menu in the library list has a name that starts with the generic name given."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BB5"
+sev = 30
+text = "Several menus match &1; type the name of one."
+help = "GO with a generic name shows the menu only when one menu matches it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BB6"
+sev = 30
+text = "Menu &1 is a &2 menu, which this release does not show."
+help = "Menus made from panel groups show; menus of the other types arrive in a later release."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9BB7"
+sev = 30
+text = "Type a user profile name."
+help = "Signing on needs the name of your user profile and its password."
+vars = []
+
+[[msg]]
+id = "CPI9BB0"
+sev = 0
+text = "Problem &1 is ready to report."
+help = "Report it to the service provider with option 6 of WRKPRB."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BB1"
+sev = 0
+text = "Problem &1 was closed."
+help = "The problem stays in the log, closed, until the log is cleaned up."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BB2"
+sev = 0
+text = "A note was added to problem &1."
+help = "The notes are kept with the problem and sent with its report."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BB3"
+sev = 0
+text = "Problem &1 was sent to the service provider; its reference is &2."
+help = "Quote the reference when you contact the service provider about the problem."
+vars = ["*CHAR 10", "*CHAR 64"]
+
+[[msg]]
+id = "CPI9BB4"
+sev = 0
+text = "Problem &1 was prepared; the report is kept: &2."
+help = "The report could not be sent now and waits in the problem log; send it again later."
+vars = ["*CHAR 10", "*CHAR 64"]
+
+[[msg]]
+id = "CPI9BB5"
+sev = 0
+text = "Cartridge &1 was mounted in &2."
+help = "The drive holds the cartridge and can read or write it."
+vars = ["*CHAR 6", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BB6"
+sev = 0
+text = "Cartridge &1 was demounted."
+help = "The cartridge is back in its slot in the library."
+vars = ["*CHAR 6"]
+
+[[msg]]
+id = "CPI9BB7"
+sev = 0
+text = "Resource &1 is now &2."
+help = "The drive's allocation changed as asked."
+vars = ["*CHAR 10", "*CHAR 12"]
+
+[[msg]]
+id = "CPI9BB8"
+sev = 0
+text = "&1: network &2, connection &3, &4."
+help = "The service provider's control point, network, connection type and description."
+vars = ["*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 50"]
+
+[[msg]]
+id = "CPI9BB9"
+sev = 0
+text = "Menu &1 is now your initial menu."
+help = "The menu shows after you sign on, from your next sign-on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BBA"
+sev = 0
+text = "&1=&2 (CCSID &3)"
+help = "The environment variable's name, its whole value and the CCSID of the value."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR 10"]
+
+# The source entry utility (SEU).
+
+[[msg]]
+id = "CPD9BC0"
+sev = 30
+text = "Line command &1 is not one SEU knows."
+help = "Type a line command SEU lists in its help over the sequence number, or blank the field."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC1"
+sev = 30
+text = "More than one &1 line command is typed."
+help = "A move or copy takes one source and one target. Remove the extra command and press Enter."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC2"
+sev = 30
+text = "Block command &1 is closed by &2."
+help = "A block starts and ends with the same line command. Correct one end of the block."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC3"
+sev = 30
+text = "SEU has no command &1."
+help = "The SEU command line takes FIND, CHANGE, TOP, BOTTOM, SAVE, FILE, CANCEL and the other commands its help lists."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC4"
+sev = 30
+text = "The operands of &1 are wrong."
+help = "The command is missing an operand or has one it does not take. See the command's help for its form."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC5"
+sev = 30
+text = "A quoted string on the command line is not closed."
+help = "End the string with an apostrophe and press Enter again."
+vars = []
+
+[[msg]]
+id = "CPD9BC6"
+sev = 30
+text = "No sequence numbers are free between &1 and &2."
+help = "Records cannot be added here until the member is resequenced. Save it with resequencing, or change the increment on the exit display."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC7"
+sev = 30
+text = "Line command &1 cannot be used while browsing."
+help = "The member is open for browse only. End the session and edit the member to change it."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BC8"
+sev = 10
+text = "A line command is waiting for its other end."
+help = "A move, copy or block command needs its target or its closing command. Type it and press Enter."
+vars = []
+
+[[msg]]
+id = "CPD9BC9"
+sev = 30
+text = "The target is within the records being moved."
+help = "Put the A, B or O target on a record outside the records moved."
+vars = []
+
+[[msg]]
+id = "CPD9BCA"
+sev = 30
+text = "The shift stopped before data would be lost."
+help = "A record holds data where the shift would cut it off. Use a smaller shift, or the hard shift commands."
+vars = []
+
+[[msg]]
+id = "CPD9BCB"
+sev = 30
+text = "Show commands can only be typed on an excluded line."
+help = "Type SF, SL or S beside the line that stands for the excluded records."
+vars = []
+
+[[msg]]
+id = "CPD9BCC"
+sev = 30
+text = "No search string is set."
+help = "Type the string with F14 or on the command line with FIND, then search again."
+vars = []
+
+[[msg]]
+id = "CPD9BCD"
+sev = 30
+text = "No record contains &1."
+help = "Check the search string and its options: the columns searched, the case and the direction."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BCE"
+sev = 30
+text = "&1 is not found again in the member."
+help = "The search reached the end of the member. Search from the top or in the other direction."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BCF"
+sev = 30
+text = "The display is at the end of the member already."
+help = "There are no more records in that direction."
+vars = []
+
+[[msg]]
+id = "CPD9BD0"
+sev = 30
+text = "No record comes before this one."
+help = "The record is the member's first. There is no record to copy from above."
+vars = []
+
+[[msg]]
+id = "CPD9BD1"
+sev = 30
+text = "Prompting is not possible while browsing."
+help = "The member is open for browse only. Edit the member to prompt and change its records."
+vars = []
+
+[[msg]]
+id = "CPD9BD2"
+sev = 30
+text = "The cursor is not on a record."
+help = "Move the cursor to the record to work with and press the key again."
+vars = []
+
+[[msg]]
+id = "CPD9BD3"
+sev = 30
+text = "The member cannot be saved while browsing."
+help = "The member is open for browse only. Nothing was saved."
+vars = []
+
+[[msg]]
+id = "CPD9BD4"
+sev = 30
+text = "Records cannot be changed while browsing."
+help = "The member is open for browse only. Edit the member to change its records."
+vars = []
+
+[[msg]]
+id = "CPD9BD5"
+sev = 30
+text = "The increment must be from 0.01 through 999.99."
+help = "Type a number with up to two decimal places in that range."
+vars = []
+
+[[msg]]
+id = "CPD9BD6"
+sev = 30
+text = "The source type is longer than 10 characters."
+help = "Type a source type of at most 10 characters."
+vars = []
+
+[[msg]]
+id = "CPD9BD7"
+sev = 30
+text = "The sequence number must be from 0000.00 through 9999.99."
+help = "Type a number with up to four whole digits and two decimal places."
+vars = []
+
+[[msg]]
+id = "CPD9BD8"
+sev = 30
+text = "The ending sequence number is lower than the starting one."
+help = "Type an ending number at or after the starting number."
+vars = []
+
+[[msg]]
+id = "CPD9BD9"
+sev = 30
+text = "The date is not in the form YY/MM/DD or YYMMDD."
+help = "Type a valid date in one of those forms."
+vars = []
+
+[[msg]]
+id = "CPD9BDA"
+sev = 30
+text = "The value must be a number with at most two decimal places."
+help = "Type digits with an optional decimal point and up to two digits after it."
+vars = []
+
+[[msg]]
+id = "CPD9BDB"
+sev = 30
+text = "Name &1 is not valid."
+help = "A name has up to 10 characters, starts with a letter, $, # or @ and goes on with those, digits, _ or periods."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BDC"
+sev = 10
+text = "Some records of the member have errors; it can still be saved."
+help = "The records flagged were left as they were typed. Save them now and correct them later, or return to editing."
+vars = []
+
+[[msg]]
+id = "CPD9BDD"
+sev = 30
+text = "A number is required in this field."
+help = "Type digits only."
+vars = []
+
+[[msg]]
+id = "CPD9BDE"
+sev = 30
+text = "Only members can be browsed from here."
+help = "Use WRKSPLF to look at spooled files and WRKOUTQ for output queues."
+vars = []
+
+[[msg]]
+id = "CPD9BDF"
+sev = 30
+text = "Source type &2 has no prompt &1."
+help = "Type a prompt format the source type has, or blank the field to take the record's own."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BC0"
+sev = 0
+text = "&1 was changed in &2 records."
+help = "Every occurrence in the range searched was changed."
+vars = ["*CHAR *VARY 2", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BC1"
+sev = 0
+text = "&1 was changed."
+help = "The occurrence found was changed. Press F16 to change the next one."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BC2"
+sev = 0
+text = "&1 was found."
+help = "The cursor is on the occurrence. Press F16 to find the next one."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BC3"
+sev = 0
+text = "Input is now taken in upper case only."
+help = "The source type asks for upper case. F13 changes it for this session."
+vars = []
+
+[[msg]]
+id = "CPI9BC4"
+sev = 0
+text = "Input now keeps lower case."
+help = "The source type allows lower case. F13 changes it for this session."
+vars = []
+
+[[msg]]
+id = "CPI9BC5"
+sev = 0
+text = "Member &1 does not exist yet and is added when saved."
+help = "The member is created in the file when the session saves it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BC6"
+sev = 0
+text = "Member &1 was saved."
+help = "The member's records were written to the file."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BC7"
+sev = 0
+text = "Editing resumed; the member was not saved."
+help = "The changes are still on the display. Save them with F3 and Y, or with SAVE."
+vars = []
+
+[[msg]]
+id = "CPI9BC8"
+sev = 0
+text = "&1 records were copied from &2."
+help = "The member's records were added at the end."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+# The developer tools: debugger, DFU, ISQL, PDM, QSH terminal, RLU and SDA.
+
+[[msg]]
+id = "CPD9BE0"
+sev = 30
+text = "The statement has a syntax error: &1"
+help = "The source type's checker found the error when the record was entered. Correct the statement, or save the member with the error and correct it later."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BE1"
+sev = 30
+text = "Type 1 beside the view to select it."
+help = "Only option 1 can be used on this list."
+vars = []
+
+[[msg]]
+id = "CPD9BE2"
+sev = 30
+text = "The program is not stopped."
+help = "Variables can be shown and watched only while the program is stopped at a breakpoint or after a step."
+vars = []
+
+[[msg]]
+id = "CPD9BE3"
+sev = 30
+text = "Place the cursor on a variable name first."
+help = "Move the cursor to the name of the variable in the source and press the key again."
+vars = []
+
+[[msg]]
+id = "CPD9BE4"
+sev = 30
+text = "Module &1 is not in the module list."
+help = "Press F14 to see the modules of the programs under debug, and add the program if its module is missing."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BE5"
+sev = 30
+text = "The module has no source view."
+help = "The module was compiled without a debug view. Compile it again with a debug view to see its source and set breakpoints on it."
+vars = []
+
+[[msg]]
+id = "CPD9BE6"
+sev = 30
+text = "A program name is required."
+help = "Type the name of the program to add to debug."
+vars = []
+
+[[msg]]
+id = "CPD9BE7"
+sev = 10
+text = "The definition has not been stored. Press F12 again to leave without it."
+help = "Press F3 to store the definition, or F12 again to leave and lose the changes."
+vars = []
+
+[[msg]]
+id = "CPD9BE8"
+sev = 30
+text = "A record number is required."
+help = "Type the relative record number of the record to show."
+vars = []
+
+[[msg]]
+id = "CPD9BE9"
+sev = 30
+text = "Member &1 has no record with that key."
+help = "Check the key values typed. The member's records are in key order."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BEA"
+sev = 30
+text = "Another job is using the record."
+help = "The record is locked by another job. Try again when that job releases it."
+vars = []
+
+[[msg]]
+id = "CPD9BEB"
+sev = 30
+text = "There are no more records in that direction."
+help = "The first or the last record of the member is shown."
+vars = []
+
+[[msg]]
+id = "CPD9BEC"
+sev = 30
+text = "The record was not changed; see message &1."
+help = "The database did not change the record. Message &1 in the job log tells why."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPD9BED"
+sev = 30
+text = "The record was not added; see message &1."
+help = "The database did not add the record. Message &1 in the job log tells why."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPD9BEE"
+sev = 30
+text = "The record was not deleted; see message &1."
+help = "The database did not delete the record. Message &1 in the job log tells why."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPD9BEF"
+sev = 30
+text = "There are no entries to list."
+help = "Nothing matched the names given. Change them and try again."
+vars = []
+
+[[msg]]
+id = "CPD9BF0"
+sev = 30
+text = "Type a sequence number beside one entry or more."
+help = "The numbers set the order in which the entries are copied into the statement."
+vars = []
+
+[[msg]]
+id = "CPD9BF1"
+sev = 30
+text = "No list of names is available here; type the name."
+help = "The field takes a name typed in full."
+vars = []
+
+[[msg]]
+id = "CPD9BF2"
+sev = 30
+text = "Position to a line number, T for the top or B for the bottom."
+help = "Type a line number of the data, or T or B, in the Position to line field."
+vars = []
+
+[[msg]]
+id = "CPD9BF3"
+sev = 30
+text = "The column must be from 1 through &1."
+help = "Type a column within the width of the data."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9BF4"
+sev = 30
+text = "A file, a library and a member are required."
+help = "Type all three to name the source member to save the session in."
+vars = []
+
+[[msg]]
+id = "CPD9BF5"
+sev = 10
+text = "Command Entry is started with CALL QCMD."
+help = "Type CALL QCMD on a command line to open Command Entry."
+vars = []
+
+[[msg]]
+id = "CPD9BF6"
+sev = 30
+text = "The date must be in the form &1."
+help = "Type the date with the separators shown."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BF7"
+sev = 30
+text = "A new name is required."
+help = "Type the name the object or member is to have."
+vars = []
+
+[[msg]]
+id = "CPD9BF8"
+sev = 30
+text = "A source file name is required."
+help = "Type the name of the source physical file that holds the member."
+vars = []
+
+[[msg]]
+id = "CPD9BF9"
+sev = 30
+text = "A command for the option is required."
+help = "Type the command the user-defined option runs."
+vars = []
+
+[[msg]]
+id = "CPD9BFA"
+sev = 30
+text = "Option &1 already exists."
+help = "Choose another code for the option, or change the existing one."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "CPD9BFB"
+sev = 30
+text = "Type a CL command on the command line before pressing F21."
+help = "F21 runs the command typed on the command line."
+vars = []
+
+[[msg]]
+id = "CPD9BFC"
+sev = 10
+text = "The member's DDS has errors; only the parts that could be read are shown."
+help = "Correct the DDS with SEU, or leave the member unchanged."
+vars = []
+
+[[msg]]
+id = "CPD9BFD"
+sev = 30
+text = "RLU has no line command &1."
+help = "Type a line command RLU lists in its help, or blank the field."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BFE"
+sev = 30
+text = "RLU has no command &1."
+help = "The command line takes the commands RLU lists in its help."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9BFF"
+sev = 30
+text = "A member name is required."
+help = "Type the name of the source member to work with."
+vars = []
+
+[[msg]]
+id = "CPD9C80"
+sev = 30
+text = "Member &1 is source type &2; this design needs type &3."
+help = "Choose a member of the source type the design works on, or change the member's type."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9C81"
+sev = 30
+text = "A valid record name is required."
+help = "A record name has up to 10 characters, starts with a letter, $, # or @ and goes on with those, digits or _."
+vars = []
+
+[[msg]]
+id = "CPD9C82"
+sev = 30
+text = "Record &1 is already in the member."
+help = "Choose another name for the record."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C83"
+sev = 30
+text = "Record type &1 is not one of those listed."
+help = "Type one of the record types the display shows."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9C84"
+sev = 30
+text = "A record type from the list is required."
+help = "Type one of the record types the display shows."
+vars = []
+
+[[msg]]
+id = "CPD9C85"
+sev = 30
+text = "The display has no more lines."
+help = "A record cannot go beyond the last line of the display size."
+vars = []
+
+[[msg]]
+id = "CPD9C86"
+sev = 10
+text = "The file is created from the saved member; type Y to save it."
+help = "Saving the member writes the DDS the file is created from."
+vars = []
+
+[[msg]]
+id = "CPD9C87"
+sev = 10
+text = "The menu is created from the saved members; type Y to save them."
+help = "Saving writes the menu's DDS and its command members, from which the menu is created."
+vars = []
+
+[[msg]]
+id = "CPD9C88"
+sev = 30
+text = "Field &1 needs a length."
+help = "Type the field's length, and its decimal positions for a numeric field."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C89"
+sev = 30
+text = "Field name &1 is not valid or is already used."
+help = "Type a name of up to 10 characters that no other field of the record has."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C8A"
+sev = 30
+text = "File &1 in library &2 has no record format &3."
+help = "Check the record format's name with DSPFD."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9C8B"
+sev = 30
+text = "Member &1 has no record of the same name."
+help = "A menu's display record has the menu's name. Add it, or design the menu again."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C8C"
+sev = 10
+text = "A menu shows constants only; fields are not used."
+help = "Type the menu's text as constants."
+vars = []
+
+[[msg]]
+id = "CPD9C8D"
+sev = 10
+text = "Type the command in full; prompt it from a command line."
+help = "The command is stored as typed. Use F4 on a command line to build it."
+vars = []
+
+[[msg]]
+id = "CPD9C8E"
+sev = 30
+text = "Display file &1 cannot be read."
+help = "Check that the display file exists and that you are authorized to it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C8F"
+sev = 30
+text = "A record of display file &1 is required."
+help = "Type the name of the record format to test."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C90"
+sev = 30
+text = "Record &1 is not in display file &2."
+help = "Check the record format's name with DSPFD."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9C91"
+sev = 30
+text = "Record &1 cannot be shown."
+help = "The record could not be written to the display. The job log has the details."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C92"
+sev = 30
+text = "Record &1 was not shown."
+help = "The display was left before the record was read."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9C93"
+sev = 10
+text = "Type an option or a command and press Enter."
+help = "Type the number of an option, or a command on the command line."
+vars = []
+
+[[msg]]
+id = "CPD9C94"
+sev = 30
+text = "&1 is not a variable of the stopped procedure."
+help = "Check the variable's name; the names of the procedure's variables are in its source."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BD0"
+sev = 0
+text = "The breakpoint at line &1 was removed."
+help = "The program no longer stops at that line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BD1"
+sev = 0
+text = "Program &1 was removed from debug."
+help = "Its breakpoints and watches were removed with it."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BD2"
+sev = 0
+text = "Watch &1 was removed."
+help = "The variable is no longer watched."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BD3"
+sev = 0
+text = "The job runs one thread, which is always the current one."
+help = "There is no other thread to select."
+vars = []
+
+[[msg]]
+id = "CPI9BD4"
+sev = 0
+text = "The program works over file &1/&2 with display format &3."
+help = "The file and the way records are shown are set when the program is defined."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BD5"
+sev = 0
+text = "DFU program &1 was deleted."
+help = "The program and its definition were removed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BD6"
+sev = 0
+text = "The record was changed."
+help = "The changes were written to the member."
+vars = []
+
+[[msg]]
+id = "CPI9BD7"
+sev = 0
+text = "The record was added."
+help = "The record was written to the member."
+vars = []
+
+[[msg]]
+id = "CPI9BD8"
+sev = 0
+text = "The record was deleted."
+help = "The record was removed from the member."
+vars = []
+
+[[msg]]
+id = "CPI9BD9"
+sev = 0
+text = "The values allowed are shown beside each field."
+help = "Type one of them in the field."
+vars = []
+
+[[msg]]
+id = "CPI9BDA"
+sev = 0
+text = "&1 options were deleted."
+help = "The options were removed from the option file."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BDB"
+sev = 0
+text = "Press Enter to end the terminal session."
+help = "The command's output stays on the display until you press Enter, F3 or F12."
+vars = []
+
+[[msg]]
+id = "CPI9BDC"
+sev = 0
+text = "Record &1 is open for design; Help lists the keys."
+help = "Type constants and field markers on the display; the keys are explained in help."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BDD"
+sev = 0
+text = "F3=End F4=Fields F9=Records F10=Database F11=List F12=Keep F14=Ruler F17=Print F20=Hidden F21=Keywords"
+help = "The function keys of the design display."
+vars = []
+
+[[msg]]
+id = "CPI9BDE"
+sev = 0
+text = "Put the help for the menu in panel group &1; SDA keeps no help member."
+help = "Create the panel group with CRTPNLGRP."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BDF"
+sev = 0
+text = "Type the name of the copy of record &1."
+help = "The copy is added to the member under the new name."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BE0"
+sev = 0
+text = "Type the new name of record &1."
+help = "The record keeps its contents under the new name."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BE1"
+sev = 0
+text = "Stopped at the breakpoint at line &1 of &2."
+help = "Press F10 to step, F12 to go on, or F11 to show a variable."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BE2"
+sev = 0
+text = "The step is done; stopped before line &1 of &2."
+help = "Press F10 to step again, or F12 to go on."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BE3"
+sev = 0
+text = "Watch &1 changed; stopped before line &2 of &3."
+help = "The watched variable changed. Press F12 to go on."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BE4"
+sev = 0
+text = "Program &1/&2 was added to debug."
+help = "Its modules are in the module list."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BE5"
+sev = 0
+text = "&1: &2"
+help = "The variable's name and its type."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BE6"
+sev = 0
+text = "Production files can now be changed."
+help = "UPDPROD(*YES) is in effect for this debug session."
+vars = []
+
+[[msg]]
+id = "CPI9BE7"
+sev = 0
+text = "Production files can no longer be changed."
+help = "UPDPROD(*NO) is in effect for this debug session."
+vars = []
+
+[[msg]]
+id = "CPI9BE8"
+sev = 0
+text = "The serviced job stopped at line &1 of &2."
+help = "Press F10 to step, F12 to go on, or F11 to show a variable."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+# The developer tools' command escapes (meanings read with DSPMSGD on
+# pub400, V7R5M0).
+
+[[msg]]
+id = "CPF1999"
+sev = 40
+text = "The command ended with errors."
+help = "Earlier messages in the job log tell what went wrong. Correct it and run the command again."
+vars = []
+
+[[msg]]
+id = "CPF5140"
+sev = 40
+text = "The display session ended at the device's request."
+help = "The work station closed the session or was disconnected. Sign on again to go on."
+vars = []
+
+[[msg]]
+id = "CPF9871"
+sev = 40
+text = "An error stopped the command."
+help = "The text of the message tells what to change. Correct it and run the command again."
+vars = []
