@@ -1,0 +1,45 @@
+# A media changer session through SG_IO on /dev/sg4, written by hand from
+# SMC-3 (READ ELEMENT STATUS, MOVE MEDIUM) and SPC fixed sense data.
+#
+# The library: transport 0x0000, drives 0x0100 and 0x0101, one
+# import/export element 0x0200, slots 0x0400 to 0x0403.
+#
+# READ ELEMENT STATUS: VOLTAG, all element types, from address 0, up to
+# 0xffff elements, allocation length 0x010000. 456 bytes come back.
+sg_io b8 10 00 00 ff ff 00 01 00 00 00 00 from 65536 -> status=0 resid=65080
+# Element status data header: first address 0, 8 elements, 0x1c0 bytes.
+data 0000 0008 00 0001c0
+# Medium transport page: type 1, PVOLTAG, descriptors of 0x34 bytes.
+data 01 80 0034 00 000034
+data 0000 00 00 00 00 000000 00 0000 spaces:32 zeros:4 zeros:4
+# Data transfer page: drive 0x0100 full (ACCESS and FULL), its cartridge
+# from slot 0x0401 (SVALID); drive 0x0101 empty.
+data 04 80 0034 00 000068
+data 0100 09 00 00 00 000000 80 0401 "E01002L5" spaces:24 zeros:4 zeros:4
+data 0101 08 00 00 00 000000 00 0000 spaces:32 zeros:4 zeros:4
+# Import/export page: one empty station.
+data 03 80 0034 00 000034
+data 0200 00 00 00 00 000000 00 0000 spaces:32 zeros:4 zeros:4
+# Storage page: four slots, two full.
+data 02 80 0034 00 0000d0
+data 0400 09 00 00 00 000000 00 0000 "E01001L5" spaces:24 zeros:4 zeros:4
+data 0401 08 00 00 00 000000 00 0000 spaces:32 zeros:4 zeros:4
+data 0402 09 00 00 00 000000 00 0000 "E01003L5" spaces:24 zeros:4 zeros:4
+data 0403 08 00 00 00 000000 00 0000 spaces:32 zeros:4 zeros:4
+
+# MOVE MEDIUM with transport 0: slot 0x0400 to drive 0x0101.
+sg_io a5 00 00 00 04 00 01 01 00 00 00 00 none 0 -> status=0
+
+# From an empty slot: CHECK CONDITION, ILLEGAL REQUEST, 3B/0E (medium
+# source element empty), fixed-format sense.
+sg_io a5 00 00 00 04 01 01 00 00 00 00 00 none 0 -> status=2 sense=700005000000000a000000003b0e0000
+
+# Into a full drive: 3B/0D (medium destination element full).
+sg_io a5 00 00 00 04 02 01 00 00 00 00 00 none 0 -> status=2 sense=700005000000000a000000003b0d0000
+
+# Out of a drive still holding its tape: 53/02 (medium removal
+# prevented), descriptor-format sense this time.
+sg_io a5 00 00 00 01 00 04 01 00 00 00 00 none 0 -> status=2 sense=7205530200000000
+
+# An adapter failure: DID_TIME_OUT (host status 3).
+sg_io a5 00 00 00 04 03 02 00 00 00 00 00 none 0 -> status=0 host=3

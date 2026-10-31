@@ -1,0 +1,71 @@
+# A tape drive session through the Linux st driver, written by hand from
+# Documentation/scsi/st.rst and linux/mtio.h. One line per call made on
+# /dev/nst0; the test drives StTransport through the same steps.
+#
+# Status of a freshly loaded LTO-5 cartridge: online, at BOT, density
+# code 0x58 in mt_dsreg's top byte, variable block size (0).
+mtget -> type=0x72 gstat=BOT,ONLINE dsreg=0x58000000 fileno=0 blkno=0
+mtop MTSETBLK 0 -> ok
+
+# identify(): rewind, read the first block (a VOL1 for TAPE01 in EBCDIC),
+# rewind again.
+mtop MTREW 1 -> ok
+mtop MTSETBLK 0 -> ok
+read 262144 -> 80 hex=e5d6d3f1e3c1d7c5f0f1 pad=40
+mtop MTREW 1 -> ok
+
+# A label, a file mark, then large blocks into the early warning: the
+# first write past it fails with ENOSPC and GMT_EOT is set; the driver
+# then takes writes up to the physical end, so the block goes again.
+write 80 -> 80
+mtop MTWEOF 1 -> ok
+write 262144 -> 262144
+write 262144 -> ENOSPC
+mtget -> gstat=EOT,ONLINE dsreg=0x58000000 fileno=1 blkno=1
+write 262144 -> 262144
+write 262144 -> 262144
+# The physical end: ENOSPC again.
+write 262144 -> ENOSPC
+
+# Reading back: a block returns its length, a file mark reads as 0 bytes
+# (GMT_EOF, not GMT_EOD), a block longer than the buffer is ENOMEM.
+mtop MTREW 1 -> ok
+read 262144 -> 80 pad=40
+read 262144 -> 0
+mtget -> gstat=EOF,ONLINE dsreg=0x58000000 fileno=1 blkno=0
+read 262144 -> ENOMEM
+
+# Spacing past the end of data: EIO with GMT_EOD. Reading there: 0 bytes
+# with GMT_EOD.
+mtop MTFSF 5 -> EIO
+mtget -> gstat=EOD,ONLINE dsreg=0x58000000 fileno=2 blkno=0
+read 262144 -> 0
+mtget -> gstat=EOD,ONLINE dsreg=0x58000000 fileno=2 blkno=0
+
+# Spacing back past the beginning: EIO with GMT_BOT.
+mtop MTBSF 9 -> EIO
+mtget -> gstat=BOT,ONLINE dsreg=0x58000000 fileno=0 blkno=0
+
+# Spacing records over a file mark: EIO with GMT_EOF.
+mtop MTFSR 3 -> EIO
+mtget -> gstat=EOF,ONLINE dsreg=0x58000000 fileno=1 blkno=0
+mtpos -> 3
+
+# A medium error: EIO without GMT_EOD.
+read 262144 -> EIO
+mtget -> gstat=ONLINE dsreg=0x58000000 fileno=1 blkno=0
+
+# Density by name (*ULTRIUM5 is 0x58), end of data, erase.
+mtop MTSETDENSITY 88 -> ok
+mtop MTEOM 1 -> ok
+mtop MTERASE 1 -> ok
+
+# A write-protected cartridge refuses writes with EROFS.
+mtop MTREW 1 -> ok
+write 80 -> EROFS
+mtget -> type=0x72 gstat=BOT,ONLINE,WR_PROT dsreg=0x58000000 fileno=0 blkno=0
+
+# Unload: offline, the door open, then no medium.
+mtop MTOFFL 1 -> ok
+mtget -> gstat=DR_OPEN dsreg=0 fileno=-1 blkno=-1
+mtop MTREW 1 -> ENOMEDIUM
