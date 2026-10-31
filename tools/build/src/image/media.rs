@@ -141,11 +141,9 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     );
     let epoch: u64 = SOURCE_DATE_EPOCH.parse()?;
     let uki_check = uki_bytes.clone();
-    // The product loads: built when missing.
+    // The product loads, built now so they carry this build's release.
     let lp_dir = ctx.paths.images().join("lp");
-    if !lp_dir.join("QS00SS1.savf").is_file() {
-        crate::image::lp::lp(ctx)?;
-    }
+    crate::image::lp::lp(ctx)?;
     let mut lp = Vec::new();
     let mut names: Vec<_> = fs::read_dir(&lp_dir)?
         .filter_map(|e| e.ok().map(|e| e.path()))

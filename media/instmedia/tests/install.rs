@@ -19,6 +19,10 @@ use store::{FormatParams, Store, StoreConfig};
 
 const NOW: u64 = 1_767_225_600;
 
+thread_local! {
+    static DEV: std::cell::RefCell<Option<Arc<MemBlockDev>>> = const { std::cell::RefCell::new(None) };
+}
+
 fn manifest(id: &str) -> String {
     let p = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../licpgm/products/{id}.toml"));
     std::fs::read_to_string(p).unwrap()
@@ -42,8 +46,7 @@ fn lib(t: &mut store::Txn<'_>, parent: ObjectId, name: &str) -> ObjectId {
     .unwrap()
 }
 
-fn system() -> (Store, ObjectId) {
-    let d = Arc::new(MemBlockDev::with_seed(65536, 9));
+fn system_on(d: Arc<MemBlockDev>) -> (Store, ObjectId) {
     let fp = FormatParams {
         asp_number: 1,
         asp_uuid: [4; 16],
@@ -80,7 +83,9 @@ fn the_os_installs_fresh_and_again_as_a_slip() {
     let key = SigningKey::from_bytes(&[42; 32]);
     let public = key.verifying_key().to_bytes();
     let built = lpbuild::build(&manifest("QS00SS1"), &key, NOW).unwrap();
-    let (mut store, qsys) = system();
+    let dev = Arc::new(MemBlockDev::with_seed(65536, 9));
+    DEV.with(|d| *d.borrow_mut() = Some(dev.clone()));
+    let (mut store, qsys) = system_on(dev);
     let before = count(&mut store, qsys, "QSYS");
     let req = Request {
         stream: built.stream.clone(),
@@ -93,6 +98,13 @@ fn the_os_installs_fresh_and_again_as_a_slip() {
     };
     let r = osload::install(&mut store, qsys, &req).unwrap();
     assert!(r.objects > 300, "{}", osload::summary(&r));
+    // The store reopens clean after the install.
+    store.close().unwrap();
+    let (mut store, _) = Store::open(
+        vec![Box::new(DEV.with(|d| d.borrow().clone().unwrap())) as Box<dyn BlockDev>],
+        StoreConfig::default(),
+    )
+    .unwrap();
     assert_eq!(r.replaced, 0);
     assert!(r.verified >= r.objects, "{}", osload::summary(&r));
     assert_eq!(r.bad_signatures, 0);
@@ -127,6 +139,12 @@ fn the_os_installs_fresh_and_again_as_a_slip() {
     assert_eq!(again.objects, r.objects);
     assert_eq!(again.replaced, r.objects, "{}", osload::summary(&again));
     assert_eq!(again.removed, 0);
+    store.close().unwrap();
+    let (mut store, _) = Store::open(
+        vec![Box::new(DEV.with(|d| d.borrow().clone().unwrap())) as Box<dyn BlockDev>],
+        StoreConfig::default(),
+    )
+    .unwrap();
     assert_eq!(count(&mut store, qsys, "QSYS"), qsys_objects);
     assert_eq!(count(&mut store, qsys, "MYLIB"), 1);
     // The product is recorded installed once.

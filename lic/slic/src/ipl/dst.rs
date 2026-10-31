@@ -449,6 +449,10 @@ impl DstEnv for Env<'_> {
             return Err("Date or time is out of range".into());
         }
         let unix = crate::platform::rtc::civil_to_unix(year, month, day, hour, min, sec);
+        // The time a panel showed a moment ago is not a change.
+        if unix.abs_diff(now_unix()) < 300 {
+            return Ok(());
+        }
         crate::ipl::clock::set(unix)?;
         self.system
             .out

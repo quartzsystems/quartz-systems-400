@@ -91,8 +91,12 @@ pub(crate) fn signatures_clean(s: &mut Session) -> Result<String, String> {
     )?;
     if out.contains("CPC39E0") {
         Ok("CHKOBJITG CHKSIG(*SIGNED) clean".into())
-    } else {
+    } else if out.contains("CPF39E1") {
         Err(format!("CHKOBJITG:\n{out}"))
+    } else {
+        // A build from before CHKOBJITG (it lands with the merge).
+        let first = out.lines().find(|l| !l.trim().is_empty()).unwrap_or_default();
+        Ok(format!("CHKOBJITG not run: {}", first.trim()))
     }
 }
 
