@@ -1,0 +1,1140 @@
+# Restoring journaled files with the journal present, missing and restored
+# primary oracle (V7R1M0), 2026-10-30
+
+> WRKJRNA JRN(QSTEST/JRN) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkjrna-before)
+                                            Work with Journal Attributes                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:11 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+ Text  . . . . . . . . . . . . . . :   Save kit journal
+ Auxiliary storage pool  . . . . . :   1
+ Message queue . . . . . . . . . . :   QSYSOPR
+   Library . . . . . . . . . . . . :     *LIBL
+ Manage receivers  . . . . . . . . :   *SYSTEM
+ Delete receivers  . . . . . . . . :   *NO
+ Journal cache . . . . . . . . . . :   *NO
+ Manage delay  . . . . . . . . . . :   10
+ Delete delay  . . . . . . . . . . :   10
+ Journal type  . . . . . . . . . . :   *LOCAL
+ Journal state . . . . . . . . . . :   *ACTIVE
+ Minimize entry data . . . . . . . :   *NONE
+ Journaled objects:
+   Current . . . . . . . . . . . . :          4
+   Maximum . . . . . . . . . . . . :     250000
+ Recovery count  . . . . . . . . . :   *SYSDFT
+ Receiver size options . . . . . . :   *RMVINTENT
+                                       *MAXOPT2
+ Fixed length data . . . . . . . . :   *JOB
+                                       *USR
+                                       *PGM
+                                                          Journaled Files
+ Number of journaled files  . . . . . . . . . . . . . . . . . :   1
+ Number of journaled members  . . . . . . . . . . . . . . . . :   1
+                       Type of                          Type of                          Type of                          Type of
+ File       Library     file      File       Library     file      File       Library     file      File       Library     file
+ ORD        QSTEST       PF
+                                                       Journaled Access Paths
+ Number of files journaling access paths  . . . . . . . . . . :   0
+ Number of journaled access paths . . . . . . . . . . . . . . :   0
+ File        Library       File        Library       File        Library       File        Library       File        Library
+   (No journaled access paths)
+                                                         Receiver Directory
+ Total size of receivers (in kilobytes)  . . . . . . . . . . . :   2696
+                                                                                                          Local        Source
+                                          Attach       Save                                      Size     Journal      Journal
+ Number     Receiver       Library        Date         Date         Status                        (K)     System       System
+ 00001      RCV0001        QSTEST         10/30/26     10/30/26     SAVED                        1348
+ 00002      RCV0002        QSTEST         10/30/26     10/30/26     ATTACHED                     1348
+                                            Work with Journal Attributes                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:11 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                     Remote Journal Information
+ Journal state . . . . . . . . . . . . . . . . . . . . . . . . :   *ACTIVE
+ Local journal . . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Source journal  . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Redirected receiver library . . . . . . . . . . . . . . . . . :   *NONE
+ Number of remote journals . . . . . . . . . . . . . . . . . . :   0
+                        ---------------------------------------Remote----------------------------------------
+ Relational                                           Journal        Delivery       Journal        Receiver
+ Database               Journal        Library        State          Mode           Type           Library
+   (No remote journals)
+                                                      Sending        Sync           Comm                Super
+ Relational             ---------Remote----------     Task           Sending        Validity           Bundle
+ Database               Journal        Library        Priority       Time-out       Checking            Count
+   (No remote journals)
+                                                       Number of        Maximum     Maximum      Maximum
+ Relational             ---------Remote----------       Bundles          Bundle     Bundle       Bundle
+ Database               Journal        Library            Sent            Size      Date         Time
+   (No remote journals)
+                                                      Number of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Entries        Entries        Entries      Entries
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      100ths of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Seconds        100ths         100ths       100ths
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      Last         Last         Active       Active
+ Relational             ---------Remote----------     Catch-up     Catch-up     State        State
+ Database               Journal        Library        Date         Time         Date         Time
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     3
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:11 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                         Maximum        Restart
+ Relational             ---------Remote----------        Restart         Delay         Number of
+ Database               Journal        Library          Attempts          Time      Retransmissions
+   (No remote journals)
+                                                      -------------------Data Port Services--------------------
+ Relational             ---------Remote----------        Node        Active           Active          Active
+ Database               Journal        Library        Identifier     Lines          Change Date     Change Time
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 1
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 2
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 3
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 4
+   (No remote journals)
+                                                      ----Controlled Inactivate Journal Information-----
+ Relational             ---------Remote----------     Journal        Receiver                   Sequence
+ Database               Journal        Library        Receiver       Library                     Number
+   (No remote journals)
+ Relational             ---------Remote----------     Filter By     Filter
+ Database               Journal        Library         Object       Images
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     4
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:11 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                                        Journaled Data Areas
+ Number of journaled data areas  . . . . . . . . . . . . . . . :   0
+ Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library
+   (No journaled data areas)
+                                                       Journaled Data Queues
+ Number of journaled data queues . . . . . . . . . . . . . . . :   0
+ Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library
+   (No journaled data queues)
+                                                        Journaled Libraries
+ Number of journaled libraries . . . . . . . . . . . . . . . . :   0
+ Library      Library      Library      Library      Library      Library      Library      Library      Library      Library
+   (No journaled libraries)
+                                              Journaled Integrated File System Objects
+ Number of journaled integrated file system objects  . . . . . :   0
+ Object link
+   (No journaled integrated file system objects)
+                                            Work with Journal Attributes                                                Page     5
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:11 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+ * * * Full text of truncated lines * * *
+   (No journaled integrated file system objects)
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# journal present: ORD deleted and restored
+
+> ENDJRNPF FILE(QSTEST/ORD)
+  -> ok
+  CPC7033 Completion 00 QJOENDJN->QSQRUN4 | 1 of 1 files have ended journaling.
+
+> DLTF FILE(QSTEST/CUSORD)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CUSORD in QSTEST type *FILE deleted.
+
+> DLTF FILE(QSTEST/ORD)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ORD in QSTEST type *FILE deleted.
+
+> RSTOBJ OBJ(ORD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/ORD) TYPE(*ATR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (ord-atr-1)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:15       Page    1
+   File  . . . . . . . . . . . : ORD
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *ATR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Externally described file . . . . . . . . . :            Yes
+   File level identifier . . . . . . . . . . . :            1261030072041
+   Creation date . . . . . . . . . . . . . . . :            10/30/26
+   Text 'description'  . . . . . . . . . . . . : TEXT
+   Distributed file  . . . . . . . . . . . . . :            No
+   Partitioned SQL Table . . . . . . . . . . . :            No
+   DBCS capable  . . . . . . . . . . . . . . . :            No
+   Maximum members . . . . . . . . . . . . . . : MAXMBRS        1
+   Number of constraints . . . . . . . . . . . :                0
+   Number of triggers  . . . . . . . . . . . . :                0
+   Number of members . . . . . . . . . . . . . :                1
+   Access path maintenance . . . . . . . . . . : MAINT      *IMMED
+   Access path recovery  . . . . . . . . . . . : RECOVER    *NO
+   Force keyed access path . . . . . . . . . . : FRCACCPTH  *NO
+   Member size                                   SIZE
+     Initial number of records . . . . . . . . :                 10000
+     Increment number of records . . . . . . . :             1000
+     Maximum number of increments  . . . . . . :                3
+   Record capacity . . . . . . . . . . . . . . :                 13000
+   Allocate storage  . . . . . . . . . . . . . : ALLOCATE   *NO
+   Contiguous storage  . . . . . . . . . . . . : CONTIG     *NO
+   Preferred storage unit  . . . . . . . . . . : UNIT       *ANY
+   Records to force a write  . . . . . . . . . : FRCRATIO   *NONE
+   Maximum file wait time  . . . . . . . . . . : WAITFILE      30
+   Maximum record wait time  . . . . . . . . . : WAITRCD       60
+   Max % deleted records allowed . . . . . . . : DLTPCT     *NONE
+   Reuse deleted records . . . . . . . . . . . : REUSEDLT   *NO
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:15       Page    2
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX
+   Language identifier . . . . . . . . . . . . : LANGID     ENU
+   Coded character set identifier  . . . . . . : CCSID      65535
+   Allow read operation  . . . . . . . . . . . :            Yes
+   Allow write operation . . . . . . . . . . . :            Yes
+   Allow update operation  . . . . . . . . . . : ALWUPD     *YES
+   Allow delete operation  . . . . . . . . . . : ALWDLT     *YES
+   Record format level check . . . . . . . . . : LVLCHK     *YES
+   Access path . . . . . . . . . . . . . . . . :            Keyed
+   Access path size  . . . . . . . . . . . . . : ACCPTHSIZ  *MAX1TB
+   Access path logical page size . . . . . . . : PAGESIZE   *KEYLEN
+   Maximum key length  . . . . . . . . . . . . :                5
+   Maximum record length . . . . . . . . . . . :               14
+   Volatile  . . . . . . . . . . . . . . . . . :            No
+   Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO
+   File is currently journaled . . . . . . . . :            Yes
+   Current or last journal . . . . . . . . . . :            JRN
+     Library . . . . . . . . . . . . . . . . . :            QSTEST
+   Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH
+   Journal entries to be omitted . . . . . . . : OMTJRNE    *NONE
+   Last journal start date/time  . . . . . . . :            10/30/26  07:30:14
+# journal present but the file restored over itself after ENDJRNPF
+
+> ENDJRNPF FILE(QSTEST/ORD)
+  -> ok
+  CPC7033 Completion 00 QJOENDJN->QSQRUN4 | 1 of 1 files have ended journaling.
+
+> RSTOBJ OBJ(ORD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/ORD) TYPE(*ATR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (ord-atr-2)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:17       Page    1
+   File  . . . . . . . . . . . : ORD
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *ATR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Externally described file . . . . . . . . . :            Yes
+   File level identifier . . . . . . . . . . . :            1261030072041
+   Creation date . . . . . . . . . . . . . . . :            10/30/26
+   Text 'description'  . . . . . . . . . . . . : TEXT
+   Distributed file  . . . . . . . . . . . . . :            No
+   Partitioned SQL Table . . . . . . . . . . . :            No
+   DBCS capable  . . . . . . . . . . . . . . . :            No
+   Maximum members . . . . . . . . . . . . . . : MAXMBRS        1
+   Number of constraints . . . . . . . . . . . :                0
+   Number of triggers  . . . . . . . . . . . . :                0
+   Number of members . . . . . . . . . . . . . :                1
+   Access path maintenance . . . . . . . . . . : MAINT      *IMMED
+   Access path recovery  . . . . . . . . . . . : RECOVER    *NO
+   Force keyed access path . . . . . . . . . . : FRCACCPTH  *NO
+   Member size                                   SIZE
+     Initial number of records . . . . . . . . :                 10000
+     Increment number of records . . . . . . . :             1000
+     Maximum number of increments  . . . . . . :                3
+   Record capacity . . . . . . . . . . . . . . :                 13000
+   Allocate storage  . . . . . . . . . . . . . : ALLOCATE   *NO
+   Contiguous storage  . . . . . . . . . . . . : CONTIG     *NO
+   Preferred storage unit  . . . . . . . . . . : UNIT       *ANY
+   Records to force a write  . . . . . . . . . : FRCRATIO   *NONE
+   Maximum file wait time  . . . . . . . . . . : WAITFILE      30
+   Maximum record wait time  . . . . . . . . . : WAITRCD       60
+   Max % deleted records allowed . . . . . . . : DLTPCT     *NONE
+   Reuse deleted records . . . . . . . . . . . : REUSEDLT   *NO
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:17       Page    2
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX
+   Language identifier . . . . . . . . . . . . : LANGID     ENU
+   Coded character set identifier  . . . . . . : CCSID      65535
+   Allow read operation  . . . . . . . . . . . :            Yes
+   Allow write operation . . . . . . . . . . . :            Yes
+   Allow update operation  . . . . . . . . . . : ALWUPD     *YES
+   Allow delete operation  . . . . . . . . . . : ALWDLT     *YES
+   Record format level check . . . . . . . . . : LVLCHK     *YES
+   Access path . . . . . . . . . . . . . . . . :            Keyed
+   Access path size  . . . . . . . . . . . . . : ACCPTHSIZ  *MAX1TB
+   Access path logical page size . . . . . . . : PAGESIZE   *KEYLEN
+   Maximum key length  . . . . . . . . . . . . :                5
+   Maximum record length . . . . . . . . . . . :               14
+   Volatile  . . . . . . . . . . . . . . . . . :            No
+   Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO
+   File is currently journaled . . . . . . . . :            No
+   Current or last journal . . . . . . . . . . :            JRN
+     Library . . . . . . . . . . . . . . . . . :            QSTEST
+   Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH
+   Journal entries to be omitted . . . . . . . : OMTJRNE    *NONE
+   Last journal start date/time  . . . . . . . :            10/30/26  07:30:14
+# journal missing: ENDJRNPF, DLTJRN, DLTF, RSTOBJ
+
+> ENDJRNPF FILE(*ALL) JRN(QSTEST/JRN)
+  -> ok
+  CPC7033 Completion 00 QJOENDJN->QSQRUN4 | 0 of 0 files have ended journaling.
+
+> DLTJRN JRN(QSTEST/JRN)
+  -> ok
+  CPF7020 Information 00 QJODLTJN->QLIDLOBJ | Journal receivers RCV0002 and *N detached.
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object JRN in QSTEST type *JRN deleted.
+
+> DLTF FILE(QSTEST/ORD)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ORD in QSTEST type *FILE deleted.
+
+> RSTOBJ OBJ(ORD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3773] 1 objects restored. 0 not restored to QSTEST.
+  CPF9801 Information 40 QDBCRTFI->QDBRSPRE | Object JRN in library QSTEST not found.
+  CPF3294 Information 40 QDBRSPRE->QDBRSPRE | Cannot start journaling for member *N.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPF3848 Diagnostic 20 QSRRLCP2->QSQRUN4 | 1 security or data format changes occurred.
+  CPF3773 Escape 20 QSRROCPR->QSQRUN4 | 1 objects restored. 0 not restored to QSTEST.
+
+> DSPFD FILE(QSTEST/ORD) TYPE(*ATR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (ord-atr-3)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:21       Page    1
+   File  . . . . . . . . . . . : ORD
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *ATR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Externally described file . . . . . . . . . :            Yes
+   File level identifier . . . . . . . . . . . :            1261030072041
+   Creation date . . . . . . . . . . . . . . . :            10/30/26
+   Text 'description'  . . . . . . . . . . . . : TEXT
+   Distributed file  . . . . . . . . . . . . . :            No
+   Partitioned SQL Table . . . . . . . . . . . :            No
+   DBCS capable  . . . . . . . . . . . . . . . :            No
+   Maximum members . . . . . . . . . . . . . . : MAXMBRS        1
+   Number of constraints . . . . . . . . . . . :                0
+   Number of triggers  . . . . . . . . . . . . :                0
+   Number of members . . . . . . . . . . . . . :                1
+   Access path maintenance . . . . . . . . . . : MAINT      *IMMED
+   Access path recovery  . . . . . . . . . . . : RECOVER    *NO
+   Force keyed access path . . . . . . . . . . : FRCACCPTH  *NO
+   Member size                                   SIZE
+     Initial number of records . . . . . . . . :                 10000
+     Increment number of records . . . . . . . :             1000
+     Maximum number of increments  . . . . . . :                3
+   Record capacity . . . . . . . . . . . . . . :                 13000
+   Allocate storage  . . . . . . . . . . . . . : ALLOCATE   *NO
+   Contiguous storage  . . . . . . . . . . . . : CONTIG     *NO
+   Preferred storage unit  . . . . . . . . . . : UNIT       *ANY
+   Records to force a write  . . . . . . . . . : FRCRATIO   *NONE
+   Maximum file wait time  . . . . . . . . . . : WAITFILE      30
+   Maximum record wait time  . . . . . . . . . : WAITRCD       60
+   Max % deleted records allowed . . . . . . . : DLTPCT     *NONE
+   Reuse deleted records . . . . . . . . . . . : REUSEDLT   *NO
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:21       Page    2
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX
+   Language identifier . . . . . . . . . . . . : LANGID     ENU
+   Coded character set identifier  . . . . . . : CCSID      65535
+   Allow read operation  . . . . . . . . . . . :            Yes
+   Allow write operation . . . . . . . . . . . :            Yes
+   Allow update operation  . . . . . . . . . . : ALWUPD     *YES
+   Allow delete operation  . . . . . . . . . . : ALWDLT     *YES
+   Record format level check . . . . . . . . . : LVLCHK     *YES
+   Access path . . . . . . . . . . . . . . . . :            Keyed
+   Access path size  . . . . . . . . . . . . . : ACCPTHSIZ  *MAX1TB
+   Access path logical page size . . . . . . . : PAGESIZE   *KEYLEN
+   Maximum key length  . . . . . . . . . . . . :                5
+   Maximum record length . . . . . . . . . . . :               14
+   Volatile  . . . . . . . . . . . . . . . . . :            No
+   Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO
+   File is currently journaled . . . . . . . . :            No
+   Current or last journal . . . . . . . . . . :            JRN
+     Library . . . . . . . . . . . . . . . . . :            QSTEST
+   Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH
+   Journal entries to be omitted . . . . . . . : OMTJRNE    *NONE
+   Last journal start date/time  . . . . . . . :            10/30/26  07:20:51
+# restore the journal, then the file again
+
+> RSTOBJ OBJ(JRN) SAVLIB(QSTEST) OBJTYPE(*JRN) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC7011 Completion 00 QJORSTJN->QSRRSOBJ | Journal receiver RCV1002 created in library QSTEST.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> WRKJRNA JRN(QSTEST/JRN) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkjrna-restored)
+                                            Work with Journal Attributes                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:23 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ Text  . . . . . . . . . . . . . . :   Save kit journal
+ Auxiliary storage pool  . . . . . :   1
+ Message queue . . . . . . . . . . :   QSYSOPR
+   Library . . . . . . . . . . . . :     *LIBL
+ Manage receivers  . . . . . . . . :   *SYSTEM
+ Delete receivers  . . . . . . . . :   *NO
+ Journal cache . . . . . . . . . . :   *NO
+ Manage delay  . . . . . . . . . . :   10
+ Delete delay  . . . . . . . . . . :   10
+ Journal type  . . . . . . . . . . :   *LOCAL
+ Journal state . . . . . . . . . . :   *ACTIVE
+ Minimize entry data . . . . . . . :   *NONE
+ Journaled objects:
+   Current . . . . . . . . . . . . :          1
+   Maximum . . . . . . . . . . . . :     250000
+ Recovery count  . . . . . . . . . :   *SYSDFT
+ Receiver size options . . . . . . :   *RMVINTENT
+                                       *MAXOPT2
+ Fixed length data . . . . . . . . :   *JOB
+                                       *USR
+                                       *PGM
+                                                          Journaled Files
+ Number of journaled files  . . . . . . . . . . . . . . . . . :   0
+ Number of journaled members  . . . . . . . . . . . . . . . . :   0
+                       Type of                          Type of                          Type of                          Type of
+ File       Library     file      File       Library     file      File       Library     file      File       Library     file
+   (No journaled files)
+                                                       Journaled Access Paths
+ Number of files journaling access paths  . . . . . . . . . . :   0
+ Number of journaled access paths . . . . . . . . . . . . . . :   0
+ File        Library       File        Library       File        Library       File        Library       File        Library
+   (No journaled access paths)
+                                                         Receiver Directory
+ Total size of receivers (in kilobytes)  . . . . . . . . . . . :   1348
+                                                                                                          Local        Source
+                                          Attach       Save                                      Size     Journal      Journal
+ Number     Receiver       Library        Date         Date         Status                        (K)     System       System
+ 00001      RCV1002        QSTEST         10/30/26     00/00/00     ATTACHED                     1348
+                                            Work with Journal Attributes                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:23 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                     Remote Journal Information
+ Journal state . . . . . . . . . . . . . . . . . . . . . . . . :   *ACTIVE
+ Local journal . . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Source journal  . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Redirected receiver library . . . . . . . . . . . . . . . . . :   *NONE
+ Number of remote journals . . . . . . . . . . . . . . . . . . :   0
+                        ---------------------------------------Remote----------------------------------------
+ Relational                                           Journal        Delivery       Journal        Receiver
+ Database               Journal        Library        State          Mode           Type           Library
+   (No remote journals)
+                                                      Sending        Sync           Comm                Super
+ Relational             ---------Remote----------     Task           Sending        Validity           Bundle
+ Database               Journal        Library        Priority       Time-out       Checking            Count
+   (No remote journals)
+                                                       Number of        Maximum     Maximum      Maximum
+ Relational             ---------Remote----------       Bundles          Bundle     Bundle       Bundle
+ Database               Journal        Library            Sent            Size      Date         Time
+   (No remote journals)
+                                                      Number of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Entries        Entries        Entries      Entries
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      100ths of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Seconds        100ths         100ths       100ths
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      Last         Last         Active       Active
+ Relational             ---------Remote----------     Catch-up     Catch-up     State        State
+ Database               Journal        Library        Date         Time         Date         Time
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     3
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:23 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                         Maximum        Restart
+ Relational             ---------Remote----------        Restart         Delay         Number of
+ Database               Journal        Library          Attempts          Time      Retransmissions
+   (No remote journals)
+                                                      -------------------Data Port Services--------------------
+ Relational             ---------Remote----------        Node        Active           Active          Active
+ Database               Journal        Library        Identifier     Lines          Change Date     Change Time
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 1
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 2
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 3
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 4
+   (No remote journals)
+                                                      ----Controlled Inactivate Journal Information-----
+ Relational             ---------Remote----------     Journal        Receiver                   Sequence
+ Database               Journal        Library        Receiver       Library                     Number
+   (No remote journals)
+ Relational             ---------Remote----------     Filter By     Filter
+ Database               Journal        Library         Object       Images
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     4
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:23 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                                        Journaled Data Areas
+ Number of journaled data areas  . . . . . . . . . . . . . . . :   0
+ Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library
+   (No journaled data areas)
+                                                       Journaled Data Queues
+ Number of journaled data queues . . . . . . . . . . . . . . . :   0
+ Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library
+   (No journaled data queues)
+                                                        Journaled Libraries
+ Number of journaled libraries . . . . . . . . . . . . . . . . :   0
+ Library      Library      Library      Library      Library      Library      Library      Library      Library      Library
+   (No journaled libraries)
+                                              Journaled Integrated File System Objects
+ Number of journaled integrated file system objects  . . . . . :   0
+ Object link
+   (No journaled integrated file system objects)
+                                            Work with Journal Attributes                                                Page     5
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:23 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ * * * Full text of truncated lines * * *
+   (No journaled integrated file system objects)
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DLTF FILE(QSTEST/ORD)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ORD in QSTEST type *FILE deleted.
+
+> RSTOBJ OBJ(ORD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/ORD) TYPE(*ATR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (ord-atr-4)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:25       Page    1
+   File  . . . . . . . . . . . : ORD
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *ATR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Externally described file . . . . . . . . . :            Yes
+   File level identifier . . . . . . . . . . . :            1261030072041
+   Creation date . . . . . . . . . . . . . . . :            10/30/26
+   Text 'description'  . . . . . . . . . . . . : TEXT
+   Distributed file  . . . . . . . . . . . . . :            No
+   Partitioned SQL Table . . . . . . . . . . . :            No
+   DBCS capable  . . . . . . . . . . . . . . . :            No
+   Maximum members . . . . . . . . . . . . . . : MAXMBRS        1
+   Number of constraints . . . . . . . . . . . :                0
+   Number of triggers  . . . . . . . . . . . . :                0
+   Number of members . . . . . . . . . . . . . :                1
+   Access path maintenance . . . . . . . . . . : MAINT      *IMMED
+   Access path recovery  . . . . . . . . . . . : RECOVER    *NO
+   Force keyed access path . . . . . . . . . . : FRCACCPTH  *NO
+   Member size                                   SIZE
+     Initial number of records . . . . . . . . :                 10000
+     Increment number of records . . . . . . . :             1000
+     Maximum number of increments  . . . . . . :                3
+   Record capacity . . . . . . . . . . . . . . :                 13000
+   Allocate storage  . . . . . . . . . . . . . : ALLOCATE   *NO
+   Contiguous storage  . . . . . . . . . . . . : CONTIG     *NO
+   Preferred storage unit  . . . . . . . . . . : UNIT       *ANY
+   Records to force a write  . . . . . . . . . : FRCRATIO   *NONE
+   Maximum file wait time  . . . . . . . . . . : WAITFILE      30
+   Maximum record wait time  . . . . . . . . . : WAITRCD       60
+   Max % deleted records allowed . . . . . . . : DLTPCT     *NONE
+   Reuse deleted records . . . . . . . . . . . : REUSEDLT   *NO
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:30:25       Page    2
+ File . : ORD          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                    Data Base File Attributes
+   Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX
+   Language identifier . . . . . . . . . . . . : LANGID     ENU
+   Coded character set identifier  . . . . . . : CCSID      65535
+   Allow read operation  . . . . . . . . . . . :            Yes
+   Allow write operation . . . . . . . . . . . :            Yes
+   Allow update operation  . . . . . . . . . . : ALWUPD     *YES
+   Allow delete operation  . . . . . . . . . . : ALWDLT     *YES
+   Record format level check . . . . . . . . . : LVLCHK     *YES
+   Access path . . . . . . . . . . . . . . . . :            Keyed
+   Access path size  . . . . . . . . . . . . . : ACCPTHSIZ  *MAX1TB
+   Access path logical page size . . . . . . . : PAGESIZE   *KEYLEN
+   Maximum key length  . . . . . . . . . . . . :                5
+   Maximum record length . . . . . . . . . . . :               14
+   Volatile  . . . . . . . . . . . . . . . . . :            No
+   Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO
+   File is currently journaled . . . . . . . . :            Yes
+   Current or last journal . . . . . . . . . . :            JRN
+     Library . . . . . . . . . . . . . . . . . :            QSTEST
+   Journal images  . . . . . . . . . . . . . . : IMAGES     *BOTH
+   Journal entries to be omitted . . . . . . . : OMTJRNE    *NONE
+   Last journal start date/time  . . . . . . . :            10/30/26  07:30:24
+# receivers: delete RCV0001 (saved in ZZFULL) and restore it
+
+> DLTJRNRCV JRNRCV(QSTEST/RCV0001)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object RCV0001 in QSTEST type *JRNRCV deleted.
+
+> WRKJRNA JRN(QSTEST/JRN) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkjrna-no-rcv1)
+                                            Work with Journal Attributes                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:27 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ Text  . . . . . . . . . . . . . . :   Save kit journal
+ Auxiliary storage pool  . . . . . :   1
+ Message queue . . . . . . . . . . :   QSYSOPR
+   Library . . . . . . . . . . . . :     *LIBL
+ Manage receivers  . . . . . . . . :   *SYSTEM
+ Delete receivers  . . . . . . . . :   *NO
+ Journal cache . . . . . . . . . . :   *NO
+ Manage delay  . . . . . . . . . . :   10
+ Delete delay  . . . . . . . . . . :   10
+ Journal type  . . . . . . . . . . :   *LOCAL
+ Journal state . . . . . . . . . . :   *ACTIVE
+ Minimize entry data . . . . . . . :   *NONE
+ Journaled objects:
+   Current . . . . . . . . . . . . :          3
+   Maximum . . . . . . . . . . . . :     250000
+ Recovery count  . . . . . . . . . :   *SYSDFT
+ Receiver size options . . . . . . :   *RMVINTENT
+                                       *MAXOPT2
+ Fixed length data . . . . . . . . :   *JOB
+                                       *USR
+                                       *PGM
+                                                          Journaled Files
+ Number of journaled files  . . . . . . . . . . . . . . . . . :   1
+ Number of journaled members  . . . . . . . . . . . . . . . . :   1
+                       Type of                          Type of                          Type of                          Type of
+ File       Library     file      File       Library     file      File       Library     file      File       Library     file
+ ORD        QSTEST       PF
+                                                       Journaled Access Paths
+ Number of files journaling access paths  . . . . . . . . . . :   0
+ Number of journaled access paths . . . . . . . . . . . . . . :   0
+ File        Library       File        Library       File        Library       File        Library       File        Library
+   (No journaled access paths)
+                                                         Receiver Directory
+ Total size of receivers (in kilobytes)  . . . . . . . . . . . :   1348
+                                                                                                          Local        Source
+                                          Attach       Save                                      Size     Journal      Journal
+ Number     Receiver       Library        Date         Date         Status                        (K)     System       System
+ 00001      RCV1002        QSTEST         10/30/26     00/00/00     ATTACHED                     1348
+                                            Work with Journal Attributes                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:27 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                     Remote Journal Information
+ Journal state . . . . . . . . . . . . . . . . . . . . . . . . :   *ACTIVE
+ Local journal . . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Source journal  . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Redirected receiver library . . . . . . . . . . . . . . . . . :   *NONE
+ Number of remote journals . . . . . . . . . . . . . . . . . . :   0
+                        ---------------------------------------Remote----------------------------------------
+ Relational                                           Journal        Delivery       Journal        Receiver
+ Database               Journal        Library        State          Mode           Type           Library
+   (No remote journals)
+                                                      Sending        Sync           Comm                Super
+ Relational             ---------Remote----------     Task           Sending        Validity           Bundle
+ Database               Journal        Library        Priority       Time-out       Checking            Count
+   (No remote journals)
+                                                       Number of        Maximum     Maximum      Maximum
+ Relational             ---------Remote----------       Bundles          Bundle     Bundle       Bundle
+ Database               Journal        Library            Sent            Size      Date         Time
+   (No remote journals)
+                                                      Number of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Entries        Entries        Entries      Entries
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      100ths of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Seconds        100ths         100ths       100ths
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      Last         Last         Active       Active
+ Relational             ---------Remote----------     Catch-up     Catch-up     State        State
+ Database               Journal        Library        Date         Time         Date         Time
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     3
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:27 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                         Maximum        Restart
+ Relational             ---------Remote----------        Restart         Delay         Number of
+ Database               Journal        Library          Attempts          Time      Retransmissions
+   (No remote journals)
+                                                      -------------------Data Port Services--------------------
+ Relational             ---------Remote----------        Node        Active           Active          Active
+ Database               Journal        Library        Identifier     Lines          Change Date     Change Time
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 1
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 2
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 3
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 4
+   (No remote journals)
+                                                      ----Controlled Inactivate Journal Information-----
+ Relational             ---------Remote----------     Journal        Receiver                   Sequence
+ Database               Journal        Library        Receiver       Library                     Number
+   (No remote journals)
+ Relational             ---------Remote----------     Filter By     Filter
+ Database               Journal        Library         Object       Images
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     4
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:27 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                                        Journaled Data Areas
+ Number of journaled data areas  . . . . . . . . . . . . . . . :   0
+ Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library
+   (No journaled data areas)
+                                                       Journaled Data Queues
+ Number of journaled data queues . . . . . . . . . . . . . . . :   0
+ Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library
+   (No journaled data queues)
+                                                        Journaled Libraries
+ Number of journaled libraries . . . . . . . . . . . . . . . . :   0
+ Library      Library      Library      Library      Library      Library      Library      Library      Library      Library
+   (No journaled libraries)
+                                              Journaled Integrated File System Objects
+ Number of journaled integrated file system objects  . . . . . :   0
+ Object link
+   (No journaled integrated file system objects)
+                                            Work with Journal Attributes                                                Page     5
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:27 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ * * * Full text of truncated lines * * *
+   (No journaled integrated file system objects)
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> RSTOBJ OBJ(RCV0001) SAVLIB(QSTEST) OBJTYPE(*JRNRCV) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> WRKJRNA JRN(QSTEST/JRN) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkjrna-rcv1-back)
+                                            Work with Journal Attributes                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:29 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ Text  . . . . . . . . . . . . . . :   Save kit journal
+ Auxiliary storage pool  . . . . . :   1
+ Message queue . . . . . . . . . . :   QSYSOPR
+   Library . . . . . . . . . . . . :     *LIBL
+ Manage receivers  . . . . . . . . :   *SYSTEM
+ Delete receivers  . . . . . . . . :   *NO
+ Journal cache . . . . . . . . . . :   *NO
+ Manage delay  . . . . . . . . . . :   10
+ Delete delay  . . . . . . . . . . :   10
+ Journal type  . . . . . . . . . . :   *LOCAL
+ Journal state . . . . . . . . . . :   *ACTIVE
+ Minimize entry data . . . . . . . :   *NONE
+ Journaled objects:
+   Current . . . . . . . . . . . . :          4
+   Maximum . . . . . . . . . . . . :     250000
+ Recovery count  . . . . . . . . . :   *SYSDFT
+ Receiver size options . . . . . . :   *RMVINTENT
+                                       *MAXOPT2
+ Fixed length data . . . . . . . . :   *JOB
+                                       *USR
+                                       *PGM
+                                                          Journaled Files
+ Number of journaled files  . . . . . . . . . . . . . . . . . :   1
+ Number of journaled members  . . . . . . . . . . . . . . . . :   1
+                       Type of                          Type of                          Type of                          Type of
+ File       Library     file      File       Library     file      File       Library     file      File       Library     file
+ ORD        QSTEST       PF
+                                                       Journaled Access Paths
+ Number of files journaling access paths  . . . . . . . . . . :   0
+ Number of journaled access paths . . . . . . . . . . . . . . :   0
+ File        Library       File        Library       File        Library       File        Library       File        Library
+   (No journaled access paths)
+                                                         Receiver Directory
+ Total size of receivers (in kilobytes)  . . . . . . . . . . . :   2696
+                                                                                                          Local        Source
+                                          Attach       Save                                      Size     Journal      Journal
+ Number     Receiver       Library        Date         Date         Status                        (K)     System       System
+ 00001      RCV0001        QSTEST         10/30/26     10/30/26     SAVED                        1348
+ 01001      RCV1002        QSTEST         10/30/26     00/00/00     ATTACHED                     1348
+                                            Work with Journal Attributes                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:29 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                     Remote Journal Information
+ Journal state . . . . . . . . . . . . . . . . . . . . . . . . :   *ACTIVE
+ Local journal . . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Source journal  . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Redirected receiver library . . . . . . . . . . . . . . . . . :   *NONE
+ Number of remote journals . . . . . . . . . . . . . . . . . . :   0
+                        ---------------------------------------Remote----------------------------------------
+ Relational                                           Journal        Delivery       Journal        Receiver
+ Database               Journal        Library        State          Mode           Type           Library
+   (No remote journals)
+                                                      Sending        Sync           Comm                Super
+ Relational             ---------Remote----------     Task           Sending        Validity           Bundle
+ Database               Journal        Library        Priority       Time-out       Checking            Count
+   (No remote journals)
+                                                       Number of        Maximum     Maximum      Maximum
+ Relational             ---------Remote----------       Bundles          Bundle     Bundle       Bundle
+ Database               Journal        Library            Sent            Size      Date         Time
+   (No remote journals)
+                                                      Number of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Entries        Entries        Entries      Entries
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      100ths of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Seconds        100ths         100ths       100ths
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      Last         Last         Active       Active
+ Relational             ---------Remote----------     Catch-up     Catch-up     State        State
+ Database               Journal        Library        Date         Time         Date         Time
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     3
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:29 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                         Maximum        Restart
+ Relational             ---------Remote----------        Restart         Delay         Number of
+ Database               Journal        Library          Attempts          Time      Retransmissions
+   (No remote journals)
+                                                      -------------------Data Port Services--------------------
+ Relational             ---------Remote----------        Node        Active           Active          Active
+ Database               Journal        Library        Identifier     Lines          Change Date     Change Time
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 1
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 2
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 3
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 4
+   (No remote journals)
+                                                      ----Controlled Inactivate Journal Information-----
+ Relational             ---------Remote----------     Journal        Receiver                   Sequence
+ Database               Journal        Library        Receiver       Library                     Number
+   (No remote journals)
+ Relational             ---------Remote----------     Filter By     Filter
+ Database               Journal        Library         Object       Images
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     4
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:29 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                                        Journaled Data Areas
+ Number of journaled data areas  . . . . . . . . . . . . . . . :   0
+ Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library
+   (No journaled data areas)
+                                                       Journaled Data Queues
+ Number of journaled data queues . . . . . . . . . . . . . . . :   0
+ Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library
+   (No journaled data queues)
+                                                        Journaled Libraries
+ Number of journaled libraries . . . . . . . . . . . . . . . . :   0
+ Library      Library      Library      Library      Library      Library      Library      Library      Library      Library
+   (No journaled libraries)
+                                              Journaled Integrated File System Objects
+ Number of journaled integrated file system objects  . . . . . :   0
+ Object link
+   (No journaled integrated file system objects)
+                                            Work with Journal Attributes                                                Page     5
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:29 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV1002                      Library . . . . . . . . . . . . . :   QSTEST
+ * * * Full text of truncated lines * * *
+   (No journaled integrated file system objects)
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPJRN JRN(QSTEST/JRN) RCVRNG(*CURCHAIN) OUTPUT(*PRINT)
+  -> ok
+  CPC7060 Completion 00 QJODSPJE->QSQRUN4 | 12 entries converted from journal JRN in QSTEST.
+-- spooled file (dspjrn)
+ 5770SS1 V7R1M0 100423                      Display Journal                  QSTEST/JRN            10/30/26  7:30:30     Page    1
+ Journal  . . . . . . :   JRN             Library  . . . . . . :   QSTEST           ASP Group . . . . . :                *SYSBAS
+ Files  (library name/file name  member name)
+      *ALLFILE
+ From receiver  . . . . . . . :   *CURCHAIN              To receiver  . . . . . . . . :
+ From entry . . . . . . . . . :   *FIRST                 To entry . . . . . . . . . . :   *LAST
+ From time  . . . . . . . . . :   00/00/00  0:00:00      To time  . . . . . . . . . . :   00/00/00  0:00:00
+ Number of entries  . . . . . :   *ALL
+ Journal code . . . . . . . . :   *ALL
+ Entry type . . . . . . . . . :   *ALL
+ Job  . . . . . . . . . . . . :   *ALL
+   User . . . . . . . . . . . :
+   Number . . . . . . . . . . :
+ Program  . . . . . . . . . . :   *ALL
+ User profile . . . . . . . . :   *ALL
+ Commit cycle ID  . . . . . . :   *ALL
+ Dependent entries  . . . . . :   *ALL
+ Output format  . . . . . . . :   *CHAR
+ Sequence/            Code/  Object/   Library/   Member/    Tgr/ 'Entry specific data'/
+ Cycle ID/            Type/  Job/      User/      Number/    Inc/ >Null Value Indicators<
+                      Flag/  Program/  Profile/   Count-RRN  Ign/
+                      Ref    Date      Time                  Min
+                    1 J                                      0
+                    0 PR    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:22              0
+                    2 J     ORD        QSTEST                0
+                    0 XP    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:24              0
+                    3 D     ORD        QSTEST                0    'ORD       QSTEST                                                '
+                    0 CT    QZDASOINIT QUSER      008709     0    '       µ   {               Z 1261030072041  7               PF  '
+                      0     QZDASOINIT QSECOFR             0 1    '              00¦    (6         BY           N        *EXCLUDE  '
+                      0     10/30/26    7:30:24              0    '         å                   1261030072041                      '
+                                                                  '                                                                '
+                                                                  '         DN        ü     Y                        ENUUS         '
+                                                                  'QSECOFR                                                     º   '
+                                                                  '¦    (6   \    0                               ø       -        '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  'ORDNO                                                    /Õi    '
+                                                                  '                    ORDR      N                                 '
+                                                                  '                                     00000000000                '
+                                                                  '                         M ¶´                              Ø d  '
+                                                                  ' {  ORDR      25484B6C661B9                                     '
+                                                                  '                nORDNO     ORDNO                                '
+                                                                  '                     °                                          '
+ 5770SS1 V7R1M0 100423                      Display Journal                  QSTEST/JRN            10/30/26  7:30:30     Page    2
+ Sequence/            Code/  Object/   Library/   Member/    Tgr/ 'Entry specific data'/
+ Cycle ID/            Type/  Job/      User/      Number/    Inc/ >Null Value Indicators<
+                      Flag/  Program/  Profile/   Count-RRN  Ign/
+                      Ref    Date      Time                  Min
+                                                                  '                               ORDNO oCUSTNO    CUSTNO          '
+                                                                  '                                          °                     '
+                                                                  '                                                    CUSTNO lAMT '
+                                                                  '      AMT                                                       '
+                                                                  '°                                                               '
+                                                                  '          AMT                       W °  p                      '
+                                                                  '                                                                '
+                                                                  '                JRN       QSTEST    -                           '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                '
+                    4 D     ORD        QSTEST                0    '000'
+                    0 JF    QZDASOINIT QUSER      008709     0
+                      1     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:24              0
+                    5 D     ORD        QSTEST                0    'ORD       QSTEST                                                '
+                    0 GT    QZDASOINIT QUSER      008709     0    '       µ   å   X   &       ZZ1261030072041                  PF  '
+                      0     QZDASOINIT QSECOFR             0 0    '               0¦    (6          ORD       QSTEST              *'
+                      0     10/30/26    7:30:24              0    'PUBLIC               1261030072041              M ¶´            '
+                                                                  '       QDBAUTFR  å                                              '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                                '
+                                                                  '                                                       '
+                    6 F     ORD        QSTEST     ORD        0    '000'
+                    0 JM    QZDASOINIT QUSER      008709     0
+                      1     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:24              0
+                    7 D     ORD        QSTEST                0    '¦    (6   ORD       QSTEST    ORD       '
+                    0 MA    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 1
+                      0     10/30/26    7:30:24              0
+                    9 F     ORD        QSTEST     ORD        0    'SAV      1030260730241ZZFULL    QSTEST    '
+                    0 MR    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:24              0
+                   10 D     ORD        QSTEST                0    'SAV      1030260730241ZZFULL    QSTEST    '
+                    0 DZ    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:25              0
+                   11 J     RCV0001    QSTEST                0
+                    0 XP    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:28              0
+ 5770SS1 V7R1M0 100423                      Display Journal                  QSTEST/JRN            10/30/26  7:30:30     Page    3
+ Sequence/            Code/  Object/   Library/   Member/    Tgr/ 'Entry specific data'/
+ Cycle ID/            Type/  Job/      User/      Number/    Inc/ >Null Value Indicators<
+                      Flag/  Program/  Profile/   Count-RRN  Ign/
+                      Ref    Date      Time                  Min
+                   12 J     RCV0001    QSTEST                0
+                    0 JR    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:28              0
+                   13 J     RCV0001    QSTEST                0    'SAV      1030260730281ZZFULL    QSTEST    '
+                    0 RR    QZDASOINIT QUSER      008709     0
+                      0     QZDASOINIT QSECOFR             0 0
+                      0     10/30/26    7:30:28              0
+ Total number of entries converted . . . . . . . . . . . . . . . . . :               12
+                       * * * * *  E N D  O F  L I S T I N G  * * * * *
+
+> RSTOBJ OBJ(RCV0002) SAVLIB(QSTEST) OBJTYPE(*JRNRCV) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3706] JRNRCV RCV0002 not restored to library QSTEST.
+  CPF3734 Diagnostic 30 QSRRSPST->QSRRSLIB | JRNRCV RCV0002 in QSTEST not restored.
+  CPF3770 Diagnostic 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+  CPF3706 Escape 30 QSRRSDEQ->QSQRUN4 | JRNRCV RCV0002 not restored to library QSTEST.
+# restore the journal over the existing one
+
+> RSTOBJ OBJ(JRN) SAVLIB(QSTEST) OBJTYPE(*JRN) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF7085 Diagnostic 30 QJORSTJN->QSRRSOBJ | Journal JRN in QSTEST already exists.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | JRN JRN not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(CUSORD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPI3210 Information 00 QDBISHRX->QDBRSPRE | File CUSORD in QSTEST shares access path.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSORD in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+-- CUSORD after the restore of the join file: SELECT * FROM QSTEST.CUSORD
+CUSTNO|NAME|ORDNO|AMT
+1|ACME|100|10.00
+1|ACME|101|20.00
+2|BETA|102|30.00
+3|GAMMA|104|50.00
+5|EPSILON|103|40.00
+(5 rows)

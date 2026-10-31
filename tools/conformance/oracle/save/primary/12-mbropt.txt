@@ -1,0 +1,278 @@
+# MBROPT(*MATCH|*ALL|*NEW|*OLD) with members added and removed after the save
+# primary oracle (V7R1M0), 2026-10-30
+
+> SAVOBJ OBJ(MPF) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> RMVM FILE(QSTEST/MPF) MBR(M3)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member M3 removed from file MPF in QSTEST.
+
+> ADDPFM FILE(QSTEST/MPF) MBR(M4)
+  -> ok
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member M4 added to file MPF in QSTEST.
+
+-- CREATE ALIAS QSTEST.ZZMA FOR QSTEST.MPF(M1)
+   -> 0
+
+-- INSERT INTO QSTEST.ZZMA VALUES ('M1 ADDED AFTER SAVE')
+   -> 1
+
+-- DROP ALIAS QSTEST.ZZMA
+   -> 0
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-before)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:45       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:44          2          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:32          1          0
+    Text:
+  M4                     8192        10/30/26 10/30/26 07:26:43          0          0
+    Text:
+  Total number of members  . . . . . . . . . :                 3
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 3
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             24576
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3284 Diagnostic 50 QDBRSPRE->QDBRSPRE | Member list of file MPF and saved file not the same.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE MPF not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*MATCH)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3284 Diagnostic 50 QDBRSPRE->QDBRSPRE | Member list of file MPF and saved file not the same.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE MPF not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-match)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:47       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:44          2          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:32          1          0
+    Text:
+  M4                     8192        10/30/26 10/30/26 07:26:43          0          0
+    Text:
+  Total number of members  . . . . . . . . . :                 3
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 3
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             24576
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*NEW)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-new)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:49       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:44          2          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:32          1          0
+    Text:
+  M3                     8192        10/30/26 10/30/26 07:26:48          1          0
+    Text:
+  M4                     8192        10/30/26 10/30/26 07:26:43          0          0
+    Text:
+  Total number of members  . . . . . . . . . :                 4
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 4
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             32768
+
+> RMVM FILE(QSTEST/MPF) MBR(M3)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member M3 removed from file MPF in QSTEST.
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*OLD)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-old)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:51       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:50          1          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:50          1          0
+    Text:
+  M4                     8192        10/30/26 10/30/26 07:26:43          0          0
+    Text:
+  Total number of members  . . . . . . . . . :                 3
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 2
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             24576
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*ALL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-all)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:53       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:52          1          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:52          1          0
+    Text:
+  M3                     8192        10/30/26 10/30/26 07:26:52          1          0
+    Text:
+  M4                     8192        10/30/26 10/30/26 07:26:43          0          0
+    Text:
+  Total number of members  . . . . . . . . . :                 4
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 3
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             32768
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*MATCH)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3284 Diagnostic 50 QDBRSPRE->QDBRSPRE | Member list of file MPF and saved file not the same.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE MPF not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+# FILEMBR on restore
+
+> RMVM FILE(QSTEST/MPF) MBR(M2)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member M2 removed from file MPF in QSTEST.
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) FILEMBR((MPF (M2)))
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD3759 Diagnostic 30 QCAIFLD->QSQRUN4 | FILEMBR cannot be specified with MBROPT(*MATCH).
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on RSTOBJ command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) FILEMBR((MPF (M2))) MBROPT(*ALL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPC3727 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored. 0 objects excluded.
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-filembr)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:56       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:52          1          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:56          1          0
+    Text:
+  M3                     8192        10/30/26 10/30/26 07:26:52          1          0
+    Text:
+  M4                     8192        10/30/26 10/30/26 07:26:43          0          0
+    Text:
+  Total number of members  . . . . . . . . . :                 4
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 3
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             32768
+
+> RMVM FILE(QSTEST/MPF) MBR(M4)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member M4 removed from file MPF in QSTEST.
+# a deleted file comes back with exactly its saved members
+
+> DLTF FILE(QSTEST/MPF)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object MPF in QSTEST type *FILE deleted.
+
+> RSTOBJ OBJ(MPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*NEW)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (mbrlist-deleted)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:59       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:26:58          1          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:26:58          1          0
+    Text:
+  M3                     8192        10/30/26 10/30/26 07:26:58          1          0
+    Text:
+  Total number of members  . . . . . . . . . :                 3
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 3
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             24576

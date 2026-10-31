@@ -1,0 +1,745 @@
+# UPDHST(*YES) and UPDHST(*NO) on the save fields of DSPOBJD
+# primary oracle (V7R1M0), 2026-10-30
+
+> CHGJOB INQMSGRPY(*DFT)
+  -> ok
+
+> DSPOBJD OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtac-before)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:37 EST
+ Object . . . . . . . :   DTAC                                      Attribute  . . . . . :
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *DTAARA                                   Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Char data area
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:53
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:23:27
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   8192
+   Offline size . . . . . . . . . . . . :   8192
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZFULL
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DTAC) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPOBJD OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtac-after-no)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:38 EST
+ Object . . . . . . . :   DTAC                                      Attribute  . . . . . :
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *DTAARA                                   Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Char data area
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:53
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:23:27
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   8192
+   Offline size . . . . . . . . . . . . :   8192
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZFULL
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DTAC) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*YES)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPOBJD OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtac-after-yes)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:40 EST
+ Object . . . . . . . :   DTAC                                      Attribute  . . . . . :
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *DTAARA                                   Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Char data area
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:53
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:23:27
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   8192
+   Offline size . . . . . . . . . . . . :   8192
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:39
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZS1
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPOBJD OBJ(QSTEST/*ALL) OBJTYPE(*ALL) DETAIL(*FULL) OUTPUT(*OUTFILE) OUTFILE(QSTEST/ZZOBJD)
+  -> ok
+  CPF9861 Information 00 QLIOUTFL->QSQRUN4 | Output file ZZOBJD created in library QSTEST.
+  CPF9862 Information 00 QLIOUTFL->QSQRUN4 | Member ZZOBJD added to output file ZZOBJD in library QSTEST.
+
+> DSPFFD FILE(QSTEST/ZZOBJD) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspffd-zzobjd)
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    1
+ Input parameters
+   File  . . . . . . . . . . . . . . . . . . . :  ZZOBJD
+     Library . . . . . . . . . . . . . . . . . :  QSTEST
+ File Information
+   File  . . . . . . . . . . . . . . . . . . . :  ZZOBJD
+     Library . . . . . . . . . . . . . . . . . :  QSTEST
+   File location . . . . . . . . . . . . . . . :  *LCL
+   Externally described  . . . . . . . . . . . :  Yes
+   Number of record formats  . . . . . . . . . :      1
+   Type of file  . . . . . . . . . . . . . . . :  Physical
+   File creation date  . . . . . . . . . . . . :  10/30/26
+   Text 'description'. . . . . . . . . . . . . :  Output file for DSPOBJD
+ Record Format Information
+   Record format . . . . . . . . . . . . . . . :  QLIDOBJD
+   Format level identifier . . . . . . . . . . :  4A30639A2ED95
+   Number of fields  . . . . . . . . . . . . . :    113
+   Record length . . . . . . . . . . . . . . . :    690
+   Format text . . . . . . . . . . . . . . . . :  Object description
+ Field Level Information
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODDCEN     CHAR            1       1         1        Both     Display
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Display century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODDDAT     CHAR            6       6         2        Both     Display
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Display date (Job date format)
+     Coded Character Set Identifier  . . . . . :     37
+   ODDTIM     CHAR            6       6         8        Both     Display
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Display time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODLBNM     CHAR           10      10        14        Both     Library
+     Field text  . . . . . . . . . . . . . . . :  Library
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBNM     CHAR           10      10        24        Both     Object
+     Field text  . . . . . . . . . . . . . . . :  Object
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    2
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODOBTP     CHAR            8       8        34        Both     Object
+                                                                  Type
+     Field text  . . . . . . . . . . . . . . . :  Object type
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBAT     CHAR           10      10        42        Both     Object
+                                                                  Attribute
+     Field text  . . . . . . . . . . . . . . . :  Object attribute
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBFR     CHAR            1       1        52        Both     Storage
+                                                                  Freed
+     Field text  . . . . . . . . . . . . . . . :  Storage freed: 0=Not freed, 1=Freed
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBSZ     PACKED      10  0       6        53        Both     Object
+                                                                  Size
+     Field text  . . . . . . . . . . . . . . . :  Object size: 9,999,999,999=Use ODSIZU*ODBPUN
+   ODOBTX     CHAR           50      50        59        Both     Text description
+     Field text  . . . . . . . . . . . . . . . :  Text description
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBLK     CHAR            1       1       109        Both     Object
+                                                                  Locked
+     Field text  . . . . . . . . . . . . . . . :  Object locked: 0=Not locked, 1=Locked
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBDM     CHAR            1       1       110        Both     Object
+                                                                  Damaged
+     Field text  . . . . . . . . . . . . . . . :  Object damaged: 0=Not damaged, 1=Full, 2=Partial
+     Coded Character Set Identifier  . . . . . :     37
+   ODCCEN     CHAR            1       1       111        Both     Creation
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Creation century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODCDAT     CHAR            6       6       112        Both     Creation
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Creation date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODCTIM     CHAR            6       6       118        Both     Creation
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Creation time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    3
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODOBOW     CHAR           10      10       124        Both     Object
+                                                                  Owner
+     Field text  . . . . . . . . . . . . . . . :  Object owner
+     Coded Character Set Identifier  . . . . . :     37
+   ODSCEN     CHAR            1       1       134        Both     Save
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Save century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODSDAT     CHAR            6       6       135        Both     Save
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Save date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODSTIM     CHAR            6       6       141        Both     Save
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Save time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODSCMD     CHAR           10      10       147        Both     Save
+                                                                  Command
+     Field text  . . . . . . . . . . . . . . . :  Save command
+     Coded Character Set Identifier  . . . . . :     37
+   ODSSZE     PACKED      10  0       6       157        Both     Saved
+                                                                  Size
+     Field text  . . . . . . . . . . . . . . . :  Saved size
+   ODSSLT     ZONED        2  0       2       163        Both     Starting
+                                                                  Slot
+     Field text  . . . . . . . . . . . . . . . :  Starting slot
+   ODSDEV     CHAR           10      10       165        Both     Save
+                                                                  Device
+     Field text  . . . . . . . . . . . . . . . :  Save device
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV01     CHAR            6       6       175        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    4
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODSV02     CHAR            6       6       181        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV03     CHAR            6       6       187        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV04     CHAR            6       6       193        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV05     CHAR            6       6       199        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV06     CHAR            6       6       205        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV07     CHAR            6       6       211        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV08     CHAR            6       6       217        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV09     CHAR            6       6       223        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+   ODSV10     CHAR            6       6       229        Both     Saved
+                                                                  Volume
+     Field text  . . . . . . . . . . . . . . . :  Saved volume
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    5
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODSVMR     CHAR            1       1       235        Both     More
+                                                                  Volumes
+     Field text  . . . . . . . . . . . . . . . :  More volumes: 0=No, 1=Yes, 2=Parallel save format
+     Coded Character Set Identifier  . . . . . :     37
+   ODRCEN     CHAR            1       1       236        Both     Restore
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Restore century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODRDAT     CHAR            6       6       237        Both     Restore
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Restore date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODRTIM     CHAR            6       6       243        Both     Restore
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Restore time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODCPFL     CHAR            6       6       249        Both     System
+                                                                  Level
+     Field text  . . . . . . . . . . . . . . . :  System level
+     Coded Character Set Identifier  . . . . . :     37
+   ODSRCF     CHAR           10      10       255        Both     SRC file
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Source file name
+     Coded Character Set Identifier  . . . . . :     37
+   ODSRCL     CHAR           10      10       265        Both     SRC file
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Source file library
+     Coded Character Set Identifier  . . . . . :     37
+   ODSRCM     CHAR           10      10       275        Both     SRC file
+                                                                  Member
+     Field text  . . . . . . . . . . . . . . . :  Source file member
+     Coded Character Set Identifier  . . . . . :     37
+   ODSRCC     CHAR            1       1       285        Both     SRC change
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Source change century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    6
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODSRCD     CHAR            6       6       286        Both     SRC change
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Source change date (YYMMDD)
+     Coded Character Set Identifier  . . . . . :     37
+   ODSRCT     CHAR            6       6       292        Both     SRC change
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Source change time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODCMNM     CHAR            7       7       298        Both     Compiler
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Compiler name
+     Coded Character Set Identifier  . . . . . :     37
+   ODCMVR     CHAR            6       6       305        Both     Compiler
+                                                                  Level
+     Field text  . . . . . . . . . . . . . . . :  Compiler level
+     Coded Character Set Identifier  . . . . . :     37
+   ODOBLV     CHAR            8       8       311        Both     Object
+                                                                  Level
+     Field text  . . . . . . . . . . . . . . . :  Object level
+     Coded Character Set Identifier  . . . . . :     37
+   ODUMOD     CHAR            1       1       319        Both     User
+                                                                  Modified
+     Field text  . . . . . . . . . . . . . . . :  User modified: 0=Not modified, 1=Modified
+     Coded Character Set Identifier  . . . . . :     37
+   ODPPNM     CHAR            7       7       320        Both     LICPGM
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  LICPGM name
+     Coded Character Set Identifier  . . . . . :     37
+   ODPPVR     CHAR            6       6       327        Both     LICPGM
+                                                                  Level
+     Field text  . . . . . . . . . . . . . . . :  LICPGM level
+     Coded Character Set Identifier  . . . . . :     37
+   ODPCNR     CHAR            5       5       333        Both     PTF
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  PTF number
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    7
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODAPAR     CHAR            6       6       338        Both     APAR
+                                                                  ID
+     Field text  . . . . . . . . . . . . . . . :  APAR ID
+     Coded Character Set Identifier  . . . . . :     37
+   ODSSQN     ZONED        4  0       4       344        Both     Sequence
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Sequence number: -5=See ODSSQL field
+   ODLCEN     CHAR            1       1       348        Both     Change
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Change century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODLDAT     CHAR            6       6       349        Both     Change
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Change date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODLTIM     CHAR            6       6       355        Both     Change
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Change time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODSFIL     CHAR           10      10       361        Both     Save
+                                                                  File
+     Field text  . . . . . . . . . . . . . . . :  Save file
+     Coded Character Set Identifier  . . . . . :     37
+   ODSFLB     CHAR           10      10       371        Both     Save file
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Save file library
+     Coded Character Set Identifier  . . . . . :     37
+   ODASP      ZONED        2  0       2       381        Both     ASP
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  ASP number: -1=See ODASPL field
+   ODLBL      CHAR           17      17       383        Both     File label
+     Field text  . . . . . . . . . . . . . . . :  File label
+     Coded Character Set Identifier  . . . . . :     37
+   ODPTFN     CHAR            7       7       400        Both     PTF ID
+     Field text  . . . . . . . . . . . . . . . :  PTF ID
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    8
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODOBSY     CHAR            8       8       407        Both     System
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  System name
+     Coded Character Set Identifier  . . . . . :     37
+   ODCRTU     CHAR           10      10       415        Both     Created by
+                                                                  User
+     Field text  . . . . . . . . . . . . . . . :  Created by user
+     Coded Character Set Identifier  . . . . . :     37
+   ODCRTS     CHAR            8       8       425        Both     System
+                                                                  Created On
+     Field text  . . . . . . . . . . . . . . . :  System created on
+     Coded Character Set Identifier  . . . . . :     37
+   ODUUPD     CHAR            1       1       433        Both     Usage
+                                                                  Updated
+     Field text  . . . . . . . . . . . . . . . :  Usage updated: Y=Yes, N=No
+     Coded Character Set Identifier  . . . . . :     37
+   ODUCEN     CHAR            1       1       434        Both     Last Used
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Last used century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODUDAT     CHAR            6       6       435        Both     Last Used
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Last used date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODUCNT     PACKED       5  0       3       441        Both     Days Used
+                                                                  Count
+     Field text  . . . . . . . . . . . . . . . :  Days used count
+   ODTCEN     CHAR            1       1       444        Both     Reset
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Reset century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODTDAT     CHAR            6       6       445        Both     Reset
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Reset date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page    9
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODODMN     CHAR            2       2       451        Both     Object
+                                                                  Domain
+     Field text  . . . . . . . . . . . . . . . :  Object domain: *S=System, *U=User
+     Coded Character Set Identifier  . . . . . :     37
+   ODCPVR     CHAR            6       6       453        Both     System
+                                                                  Version
+     Field text  . . . . . . . . . . . . . . . :  System version
+     Coded Character Set Identifier  . . . . . :     37
+   ODCVRM     CHAR            6       6       459        Both     Compiler
+                                                                  Version
+     Field text  . . . . . . . . . . . . . . . :  Compiler version
+     Coded Character Set Identifier  . . . . . :     37
+   ODPVRM     CHAR            6       6       465        Both     LICPGM
+                                                                  Version
+     Field text  . . . . . . . . . . . . . . . :  LICPGM version
+     Coded Character Set Identifier  . . . . . :     37
+   ODCPRS     CHAR            1       1       471        Both     Compression
+                                                                  Status
+     Field text  . . . . . . . . . . . . . . . :  Compression status
+     Coded Character Set Identifier  . . . . . :     37
+   ODOASP     CHAR            1       1       472        Both     Overflowed
+                                                                  ASP
+     Field text  . . . . . . . . . . . . . . . :  Overflowed ASP: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+   ODAAPI     CHAR            1       1       473        Both     Allow API
+                                                                  Change
+     Field text  . . . . . . . . . . . . . . . :  Allow change by API: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+   ODAPIC     CHAR            1       1       474        Both     Changed by
+                                                                  API
+     Field text  . . . . . . . . . . . . . . . :  Changed by API: 0=Not changed, 1=Changed
+     Coded Character Set Identifier  . . . . . :     37
+   ODUATR     CHAR           10      10       475        Both     User-defined
+                                                                  Attribute
+     Field text  . . . . . . . . . . . . . . . :  User-defined attribute
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page   10
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODACEN     CHAR            1       1       485        Both     Save
+                                                                  Active
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Save active century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODADAT     CHAR            6       6       486        Both     Save
+                                                                  Active
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Save active date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODATIM     CHAR            6       6       492        Both     Save
+                                                                  Active
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Save active time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODAUDT     CHAR           10      10       498        Both     Auditing
+                                                                  Value
+     Field text  . . . . . . . . . . . . . . . :  Object auditing value
+     Coded Character Set Identifier  . . . . . :     37
+   ODSIZU     PACKED      10  0       6       508        Both     Object
+                                                                  Size
+                                                                  in Units
+     Field text  . . . . . . . . . . . . . . . :  Object size in units
+   ODBPUN     PACKED      10  0       6       514        Both     Bytes
+                                                                  Per
+                                                                  Unit
+     Field text  . . . . . . . . . . . . . . . :  Bytes per unit
+   ODPGP      CHAR           10      10       520        Both     Primary
+                                                                  Group
+     Field text  . . . . . . . . . . . . . . . :  Primary group
+     Coded Character Set Identifier  . . . . . :     37
+   ODSSQL     ZONED       10  0      10       530        Both     Large
+                                                                  Sequence
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Large sequence number
+   ODOSIG     CHAR            1       1       540        Both     Object
+                                                                  Signed
+     Field text  . . . . . . . . . . . . . . . :  Digitally signed: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRST     CHAR            1       1       541        Both     Currently
+                                                                  Journaled
+     Field text  . . . . . . . . . . . . . . . :  Currently journaled: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page   11
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODJRNM     CHAR           10      10       542        Both     Journal
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Journal name
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRLB     CHAR           10      10       552        Both     Journal
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Journal library
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRIM     CHAR            1       1       562        Both     Journal
+                                                                  Images
+     Field text  . . . . . . . . . . . . . . . :  Journal images: 0=*AFTER, 1=*BOTH
+     Coded Character Set Identifier  . . . . . :     37
+   ODJREN     CHAR            1       1       563        Both     Journal
+                                                                  Entries
+                                                                  Omitted
+     Field text  . . . . . . . . . . . . . . . :  Journal entries omitted: 0=*NONE, 1=*OPNCLO
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRCN     CHAR            1       1       564        Both     Journal
+                                                                  Century
+     Field text  . . . . . . . . . . . . . . . :  Journal century: 0=19xx, 1=20xx
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRDT     CHAR            6       6       565        Both     Journal
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Journal date (MMDDYY)
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRTI     CHAR            6       6       571        Both     Journal
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Journal time (HHMMSS)
+     Coded Character Set Identifier  . . . . . :     37
+   ODSSZU     PACKED      10  0       6       577        Both     Save
+                                                                  Size
+                                                                  in Units
+     Field text  . . . . . . . . . . . . . . . :  Save size in units
+   ODSBPU     PACKED      10  0       6       583        Both     Save
+                                                                  Size
+                                                                  Multiplier
+     Field text  . . . . . . . . . . . . . . . :  Save size multiplier
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page   12
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODASPL     ZONED        5  0       5       589        Both     Object
+                                                                  ASP number
+     Field text  . . . . . . . . . . . . . . . :  Object ASP number
+   ODLASN     ZONED        5  0       5       594        Both     Library
+                                                                  ASP number
+     Field text  . . . . . . . . . . . . . . . :  Library ASP number
+   ODOADN     CHAR           10      10       599        Both     Object ASP
+                                                                  Device
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Object ASP device name
+     Coded Character Set Identifier  . . . . . :     37
+   ODLADN     CHAR           10      10       609        Both     Library ASP
+                                                                  Device
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Library ASP device name
+     Coded Character Set Identifier  . . . . . :     37
+   ODSSIG     CHAR            1       1       619        Both     Signed
+                                                                  Trusted
+                                                                  Source
+     Field text  . . . . . . . . . . . . . . . :  Signed by trusted source: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+   ODMSIG     CHAR            1       1       620        Both     Multiple
+                                                                  Signatures
+     Field text  . . . . . . . . . . . . . . . :  Multiple signatures: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+   ODASSZ     PACKED      15  0       8       621        Both     Associated
+                                                                  Space
+                                                                  Size
+     Field text  . . . . . . . . . . . . . . . :  Associated space size: 0=No space
+   ODALGN     CHAR            1       1       629        Both     Optimum
+                                                                  Space
+                                                                  Alignment
+     Field text  . . . . . . . . . . . . . . . :  Optimum space alignment: 0=No, 1=Yes, 2=No space
+     Coded Character Set Identifier  . . . . . :     37
+   ODOADG     CHAR           10      10       630        Both     Object ASP
+                                                                  Group name
+     Field text  . . . . . . . . . . . . . . . :  Object ASP group name
+     Coded Character Set Identifier  . . . . . :     37
+   ODLADG     CHAR           10      10       640        Both     Library ASP
+                                                                  Group name
+     Field text  . . . . . . . . . . . . . . . :  Library ASP group name
+     Coded Character Set Identifier  . . . . . :     37
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:41       Page   13
+ Record format . . . . :  QLIDOBJD      File . . . :  ZZOBJD       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   ODSJRA     CHAR           10      10       650        Both     Starting
+                                                                  Journal
+                                                                  Receiver name
+     Field text  . . . . . . . . . . . . . . . :  Starting journal receiver name for apply
+     Coded Character Set Identifier  . . . . . :     37
+   ODSJRL     CHAR           10      10       660        Both     Journal
+                                                                  Receiver
+                                                                  Library name
+     Field text  . . . . . . . . . . . . . . . :  Starting journal receiver library name
+     Coded Character Set Identifier  . . . . . :     37
+   ODSJRD     CHAR           10      10       670        Both     Receiver library
+                                                                  ASP device
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Starting receiver library ASP device name
+     Coded Character Set Identifier  . . . . . :     37
+   ODSJRG     CHAR           10      10       680        Both     Receiver library
+                                                                  ASP group
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Starting receiver library ASP group name
+     Coded Character Set Identifier  . . . . . :     37
+   ODJRJF     CHAR            1       1       690        Both     Remote
+                                                                  Journal
+                                                                  Filter
+     Field text  . . . . . . . . . . . . . . . :  Remote journal filter: 0=No, 1=Yes
+     Coded Character Set Identifier  . . . . . :     37
+
+-- save fields of every object (QADSPOBJ): SELECT ODOBNM, ODOBTP, ODOBAT, ODSDAT, ODSTIM, ODSCMD, ODSDEV, ODSFIL, ODSFLB, ODSSEQ, ODSVOL, ODSLBL, ODRDAT, ODRTIM, ODUDAT, ODCDAT, ODCTIM, ODLDAT, ODLTIM FROM QSTEST.ZZOBJD ORDER BY ODOBNM, ODOBTP
+# sql error: [SQL0206] Column or global variable ODSLBL not found.
+
+> DLTF FILE(QSTEST/ZZOBJD)
+  -> ok
+  SQL0206 Diagnostic 30 QSQRUN1->QSQRUN1 | Column or global variable ODSLBL not found.
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZOBJD in QSTEST type *FILE deleted.
+# the library itself: SAVLIB UPDHST(*YES) in 02 and UPDHST(*NO) in 03
+
+> DSPOBJD OBJ(QSYS/QSTEST) OBJTYPE(*LIB) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (lib-after)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:43 EST
+ Object . . . . . . . :   QSTEST                                    Attribute  . . . . . :   PROD
+   Library  . . . . . :     QSYS                                    Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *LIB                                      Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Database conformance kit
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/22/26  06:53:30
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:25:43
+   Usage data collected . . . . . . . . :   NO
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   147456
+   Offline size . . . . . . . . . . . . :   147456
+   Associated space size  . . . . . . . :   8192
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZFULL
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

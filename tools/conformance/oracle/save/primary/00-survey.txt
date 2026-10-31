@@ -1,0 +1,418 @@
+# Survey of QSTEST and /home/QSTEST before the session
+# primary oracle (V7R1M0), 2026-10-30
+# job 1: ? [SQL0206] Column or global variable JOB_NAME not found. Cause . . . . . :   JOB_NAME was not found as a column of table *N in *N and was not found as a global variable in *N. If the table is *N, JOB_NAME is not a column of any table or view that can be referenced. Recovery  . . . :   Do one of the following and try the request again: -- Ensure that the column and table names are specified correctly in the statement. -- If this is a SELECT statement, ensure that all the required tables were named in the FROM clause. -- If the column was intended to be a correlated reference, qualify the column with the correct table designator. -- If the column was intended to be a global variable, qualify the name with the schema where the global variable exists or ensure the schema is in the path.  job 2: ? [SQL0206] Column or global variable JOB_NAME not found. Cause . . . . . :   JOB_NAME was not found as a column of table *N in *N and was not found as a global variable in *N. If the table is *N, JOB_NAME is not a column of any table or view that can be referenced. Recovery  . . . :   Do one of the following and try the request again: -- Ensure that the column and table names are specified correctly in the statement. -- If this is a SELECT statement, ensure that all the required tables were named in the FROM clause. -- If the column was intended to be a correlated reference, qualify the column with the correct table designator. -- If the column was intended to be a global variable, qualify the name with the schema where the global variable exists or ensure the schema is in the path.
+
+-- QSTEST library: SELECT OBJNAME, OBJTYPE, OBJOWNER, OBJCREATED, OBJTEXT FROM TABLE(QSYS2.OBJECT_STATISTICS('QSYS', '*LIB')) X WHERE OBJNAME = 'QSTEST'
+OBJNAME|OBJTYPE|OBJOWNER|OBJCREATED|OBJTEXT
+(0 rows)
+
+-- QSTEST objects before the session: SELECT OBJNAME, OBJTYPE, OBJOWNER, OBJCREATED, OBJTEXT FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*ALL')) X ORDER BY 1, 2
+OBJNAME|OBJTYPE|OBJOWNER|OBJCREATED|OBJTEXT
+(0 rows)
+
+-- QSTEST tables: SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'
+TABLE_NAME|TABLE_TYPE
+(0 rows)
+
+> DSPLIB LIB(QSTEST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dsplib-qstest)
+ 5770SS1 V7R1M0  100423                   Display Library                                       10/30/26  7:01:23        Page    1
+ Library . . . . . . . . . . . . . . . . :   QSTEST
+ Type  . . . . . . . . . . . . . . . . . :   PROD
+ Number of objects . . . . . . . . . . . :            4
+ Library ASP number  . . . . . . . . . . :       1
+ Library ASP device  . . . . . . . . . . :   *SYSBAS
+ Library ASP group   . . . . . . . . . . :   *SYSBAS
+ Create authority  . . . . . . . . . . . :   *SYSVAL
+ Text description  . . . . . . . . . . . :   Database conformance kit
+   Object      Type      Attribute             Size  Description
+   ZZJLOG      *PGM      CLLE                 94208
+   ZZSPLF      *PGM      CLLE                 98304
+   ZZSPL       *FILE     PF                   36864
+   ZZSRC       *FILE     PF                   57344
+                     Total size :            425984
+                   * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+$ ls -laR /home/QSTEST
+total: 68 kilobytes
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:01 .
+drwxrwsrwx  4 QSYS     0                  8192 Oct 22 07:45 ..
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:45 data
+drwxrwsrwx  2 QSECOFR  0                 24576 Oct 22 07:45 dds
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:53 oracle
+drwxrwsrwx  4 QSECOFR  0                  8192 Oct 22 07:54 out
+-rw-rw-rw-  1 QSECOFR  0                     0 Oct 30 07:01 zz.out
+
+/home/QSTEST/data:
+total: 88 kilobytes
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:45 .
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:01 ..
+-rw-rw-rw-  1 QSECOFR  0                   212 Oct 22 07:45 CUSTOMER.csv
+-rw-rw-rw-  1 QSECOFR  0                   291 Oct 22 07:45 EVENTS.csv
+-rw-rw-rw-  1 QSECOFR  0                   153 Oct 22 07:45 INVENTORY.csv
+-rw-rw-rw-  1 QSECOFR  0                   150 Oct 22 07:45 LOGHIST.csv
+-rw-rw-rw-  1 QSECOFR  0                    81 Oct 22 07:45 NOTES.csv
+-rw-rw-rw-  1 QSECOFR  0                   378 Oct 22 07:45 ORDERS.csv
+-rw-rw-rw-  1 QSECOFR  0                   214 Oct 22 07:45 ORDLINE.csv
+-rw-rw-rw-  1 QSECOFR  0                   186 Oct 22 07:45 PRODUCT.csv
+-rw-rw-rw-  1 QSECOFR  0                   247 Oct 22 07:45 TYPES.csv
+
+/home/QSTEST/dds:
+total: 176 kilobytes
+drwxrwsrwx  2 QSECOFR  0                 24576 Oct 22 07:45 .
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:01 ..
+-rw-rw-rw-  1 QSECOFR  0                   148 Oct 22 07:45 ACTIVE.LF
+-rw-rw-rw-  1 QSECOFR  0                   197 Oct 22 07:45 BIGORD.LF
+-rw-rw-rw-  1 QSECOFR  0                   114 Oct 22 07:45 CUSBYNAME.LF
+-rw-rw-rw-  1 QSECOFR  0                   204 Oct 22 07:45 CUSORD.LF
+-rw-rw-rw-  1 QSECOFR  0                   652 Oct 22 07:45 CUSTOMER.PF
+-rw-rw-rw-  1 QSECOFR  0                   678 Oct 22 07:45 EVENTS.PF
+-rw-rw-rw-  1 QSECOFR  0                   294 Oct 22 07:45 INVENTORY.PF
+-rw-rw-rw-  1 QSECOFR  0                   186 Oct 22 07:45 LOGHIST.PF
+-rw-rw-rw-  1 QSECOFR  0                   345 Oct 22 07:45 NOTES.PF
+-rw-rw-rw-  1 QSECOFR  0                   202 Oct 22 07:45 ORDALL.LF
+-rw-rw-rw-  1 QSECOFR  0                   165 Oct 22 07:45 ORDBYCUS.LF
+-rw-rw-rw-  1 QSECOFR  0                   436 Oct 22 07:45 ORDERS.PF
+-rw-rw-rw-  1 QSECOFR  0                   345 Oct 22 07:45 ORDJOIN.LF
+-rw-rw-rw-  1 QSECOFR  0                   350 Oct 22 07:45 ORDLINE.PF
+-rw-rw-rw-  1 QSECOFR  0                    92 Oct 22 07:45 PRDBYDESC.LF
+-rw-rw-rw-  1 QSECOFR  0                   383 Oct 22 07:45 PRODUCT.PF
+-rw-rw-rw-  1 QSECOFR  0                   213 Oct 22 07:45 RLALOG.PF
+-rw-rw-rw-  1 QSECOFR  0                   759 Oct 22 07:45 TYPES.PF
+
+/home/QSTEST/oracle:
+total: 32 kilobytes
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:53 .
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:01 ..
+-rw-rw-rw-  1 QSECOFR  0                   789 Oct 22 07:53 QHEADERS.SQL
+-rw-rw-rw-  1 QSECOFR  0                  3975 Oct 22 07:53 QRESULTS.SQL
+
+/home/QSTEST/out:
+total: 388 kilobytes
+drwxrwsrwx  4 QSECOFR  0                  8192 Oct 22 07:54 .
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:01 ..
+drwxrwsrwx  2 QSECOFR  0                 24576 Oct 22 07:48 data
+-rwx------  1 QSECOFR  0                 11678 Oct 22 07:54 dspjrn.csv
+-rwx------  1 QSECOFR  0                   500 Oct 22 07:54 dspjrn.hdr
+-rwx------  1 QSECOFR  0                236130 Oct 22 07:54 ffd.csv
+-rwx------  1 QSECOFR  0                  2550 Oct 22 07:54 ffd.hdr
+-rwx------  1 QSECOFR  0                 16450 Oct 22 07:54 lvlid.csv
+-rwx------  1 QSECOFR  0                  1325 Oct 22 07:54 lvlid.hdr
+-rwx------  1 QSECOFR  0                     0 Oct 22 07:54 rla.csv
+-rwx------  1 QSECOFR  0                   100 Oct 22 07:54 rla.hdr
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:54 sql
+
+/home/QSTEST/out/data:
+total: 156 kilobytes
+drwxrwsrwx  2 QSECOFR  0                 24576 Oct 22 07:48 .
+drwxrwsrwx  4 QSECOFR  0                  8192 Oct 22 07:54 ..
+-rwx------  1 QSECOFR  0                   339 Oct 22 07:54 ACTIVE.csv
+-rwx------  1 QSECOFR  0                   150 Oct 22 07:54 BIGORD.csv
+-rwx------  1 QSECOFR  0                   515 Oct 22 07:54 CUSBYNAME.csv
+-rwx------  1 QSECOFR  0                   515 Oct 22 07:54 CUSTOMER.csv
+-rwx------  1 QSECOFR  0                   363 Oct 22 07:54 EVENTS.csv
+-rwx------  1 QSECOFR  0                   228 Oct 22 07:54 INVENTORY.csv
+-rwx------  1 QSECOFR  0                   496 Oct 22 07:54 LOGHIST.csv
+-rwx------  1 QSECOFR  0                   210 Oct 22 07:54 NOTES.csv
+-rwx------  1 QSECOFR  0                   600 Oct 22 07:54 ORDBYCUS.csv
+-rwx------  1 QSECOFR  0                   600 Oct 22 07:54 ORDERS.csv
+-rwx------  1 QSECOFR  0                   552 Oct 22 07:54 ORDJOIN.csv
+-rwx------  1 QSECOFR  0                   459 Oct 22 07:54 ORDLINE.csv
+-rwx------  1 QSECOFR  0                   545 Oct 22 07:54 PRDBYDESC.csv
+-rwx------  1 QSECOFR  0                   545 Oct 22 07:54 PRODUCT.csv
+-rwx------  1 QSECOFR  0                     0 Oct 22 07:54 RLALOG.csv
+-rwx------  1 QSECOFR  0                   468 Oct 22 07:54 TYPES.csv
+
+/home/QSTEST/out/sql:
+total: 112 kilobytes
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:54 .
+drwxrwsrwx  4 QSECOFR  0                  8192 Oct 22 07:54 ..
+-rwx------  1 QSECOFR  0                   515 Oct 22 07:54 Q01.csv
+-rwx------  1 QSECOFR  0                   395 Oct 22 07:54 Q02.csv
+-rwx------  1 QSECOFR  0                    43 Oct 22 07:54 Q03.csv
+-rwx------  1 QSECOFR  0                    78 Oct 22 07:54 Q04.csv
+-rwx------  1 QSECOFR  0                   188 Oct 22 07:54 Q05.csv
+-rwx------  1 QSECOFR  0                    99 Oct 22 07:54 Q06.csv
+-rwx------  1 QSECOFR  0                   154 Oct 22 07:54 Q07.csv
+-rwx------  1 QSECOFR  0                   246 Oct 22 07:54 Q08.csv
+-rwx------  1 QSECOFR  0                   300 Oct 22 07:54 Q09.csv
+-rwx------  1 QSECOFR  0                   552 Oct 22 07:54 Q10.csv
+-rwx------  1 QSECOFR  0                    86 Oct 22 07:54 Q11.csv
+-rwx------  1 QSECOFR  0                   235 Oct 22 07:54 Q12.csv
+exit=0
+
+> DSPOBJAUT OBJ(QSYS/QSTEST) OBJTYPE(*LIB) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-qstest)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:26 EST
+ Object . . . . . . . :   QSTEST                                    Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSYS                                    Primary group  . . . :   *NONE
+ Object type  . . . . :   *LIB                                      ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DLTF FILE(QSTEST/NOSUCH)
+  -> FAILED [CPF2105] Object NOSUCH in QSTEST type *FILE not found.
+  CPF1124 Information 00 QWTPIIPP->*EXT | Job 008606/QUSER/QZDASOINIT started on 10/30/26 at 07:00:38 in subsystem QUSRWRK in QSYS. Job entered system on 10/30/26 at 07:00:38.
+  CPD0912 Diagnostic 20 QWTCHGJB->QZBSSECR | Printer device PRT01 not found.
+  CPF1301 Information 30 QWTCHGJB->QZBSSECR | ACGDTA for 008606/QUSER/QZDASOINIT not journaled; reason 1.
+  CPD1672 Diagnostic 00 QWTCHGJB->QZBSSECR | Job changed successfully; however errors occurred.
+  CPIAD02 Information 00 QZBSSECR->QZBSSECR | User QSECOFR from client 127.0.0.1 connected to server.
+  CPD0912 Diagnostic 20 QWTCHGJB->QZDASRV | Printer device PRT01 not found.
+  CPF1301 Information 30 QWTCHGJB->QZDASRV | ACGDTA for 008606/QUSER/QZDASOINIT not journaled; reason 1.
+  CPD1672 Diagnostic 00 QWTCHGJB->QZDASRV | Job changed successfully; however errors occurred.
+  SQL0206 Diagnostic 30 QSQRUN1->QSQRUN1 | Column or global variable JOB_NAME not found.
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File ZZSRC created in library QSTEST.
+  CPD4090 Diagnostic 10 QDMCOPEN->QCLINIT | Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+  CPD4090 Diagnostic 10 QDMCOPEN->QCLINIT | Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+  CPD4090 Diagnostic 10 QDMCOPEN->QLIDSLIB | Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPD4090 Diagnostic 10 QDMCOPEN->QUIOPEN | Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+  CPF2105 Escape 40 QLIDLOBJ->QSQRUN4 | Object NOSUCH in QSTEST type *FILE not found.
+  SQL0443 Diagnostic 30 QSQRUN4->QSQRUN4 | Trigger program or external routine detected an error.
+
+> CHKOBJ OBJ(QSYS/QSTEST) OBJTYPE(*LIB)
+  -> ok
+  CPF2523 Completion 30 QMHJLOG->*EXT | No job log information.
+
+> DSPUSRPRF USRPRF(USRA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspusrprf-usra)
+                                           Display User Profile - *BASIC                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:30 EST
+ User Profile . . . . . . . . . . . . . . . :   USRA
+ Previous sign-on . . . . . . . . . . . . . :   10/22/26  07:05:46
+ Password verifications not valid . . . . . :   0
+ Status . . . . . . . . . . . . . . . . . . :   *ENABLED
+ Date password last changed . . . . . . . . :   10/22/26  07:03:43
+ Password is *NONE  . . . . . . . . . . . . :   *NO
+ Password expiration interval . . . . . . . :   *SYSVAL
+ Password set expired by command  . . . . . :   *NO
+ Block password change  . . . . . . . . . . :   *SYSVAL
+ Local password management  . . . . . . . . :   *YES
+ User class . . . . . . . . . . . . . . . . :   *USER
+ Creation date/time . . . . . . . . . . . . :   10/22/26  07:03:43
+ Change date/time . . . . . . . . . . . . . :   10/22/26  07:05:13
+ Last used date . . . . . . . . . . . . . . :   10/22/26
+ Restore date/time  . . . . . . . . . . . . :
+ User expiration date . . . . . . . . . . . :   *NONE
+ User expiration interval . . . . . . . . . :   *NONE
+ User expiration action . . . . . . . . . . :   *NONE
+ Special authority  . . . . . . . . . . . . :   *NONE
+ Group profile  . . . . . . . . . . . . . . :   *NONE
+ Owner  . . . . . . . . . . . . . . . . . . :   *USRPRF
+ Group authority  . . . . . . . . . . . . . :   *NONE
+ Group authority type . . . . . . . . . . . :   *PRIVATE
+ Supplemental groups  . . . . . . . . . . . :   *NONE
+ Assistance level . . . . . . . . . . . . . :   *SYSVAL
+ Current library  . . . . . . . . . . . . . :   *CRTDFT
+ Initial program  . . . . . . . . . . . . . :   *NONE
+   Library  . . . . . . . . . . . . . . . . :
+ Initial menu . . . . . . . . . . . . . . . :   MAIN
+   Library  . . . . . . . . . . . . . . . . :     *LIBL
+ Limit capabilities . . . . . . . . . . . . :   *NO
+ Text . . . . . . . . . . . . . . . . . . . :
+ Display sign-on information  . . . . . . . :   *SYSVAL
+ Limit device sessions  . . . . . . . . . . :   *SYSVAL
+ Keyboard buffering . . . . . . . . . . . . :   *SYSVAL
+ Storage information:
+   Maximum storage allowed  . . . . . . . . :   *NOMAX
+   Storage used . . . . . . . . . . . . . . :   12
+   Storage used on independent ASP  . . . . :   *NO
+ Highest scheduling priority  . . . . . . . :   5
+ Job description  . . . . . . . . . . . . . :   QDFTJOBD
+   Library  . . . . . . . . . . . . . . . . :     QGPL
+ Accounting code  . . . . . . . . . . . . . :
+ Message queue  . . . . . . . . . . . . . . :   USRA
+   Library  . . . . . . . . . . . . . . . . :     QUSRSYS
+ Message queue delivery . . . . . . . . . . :   *NOTIFY
+ Message queue severity . . . . . . . . . . :   00
+ Output queue . . . . . . . . . . . . . . . :   *WRKSTN
+   Library  . . . . . . . . . . . . . . . . :
+ Printer device . . . . . . . . . . . . . . :   *WRKSTN
+ Special environment  . . . . . . . . . . . :   *SYSVAL
+ Attention program  . . . . . . . . . . . . :   *SYSVAL
+   Library  . . . . . . . . . . . . . . . . :
+ Sort sequence  . . . . . . . . . . . . . . :   *SYSVAL
+   Library  . . . . . . . . . . . . . . . . :
+ Language identifier  . . . . . . . . . . . :   *SYSVAL
+                                           Display User Profile - *BASIC                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:30 EST
+ User Profile . . . . . . . . . . . . . . . :   USRA
+ Country or region identifier . . . . . . . :   *SYSVAL
+ Coded character set identifier . . . . . . :   *SYSVAL
+ Character identifier control . . . . . . . :   *SYSVAL
+ Locale job attributes  . . . . . . . . . . :   *SYSVAL
+ Locale . . . . . . . . . . . . . . . . . . :   *SYSVAL
+ User options . . . . . . . . . . . . . . . :   *NONE
+ Object auditing value  . . . . . . . . . . :   *NONE
+ Action auditing values . . . . . . . . . . :   *NONE
+ User ID number . . . . . . . . . . . . . . :   107
+ Group ID number  . . . . . . . . . . . . . :   *NONE
+ User entitlement required  . . . . . . . . :   Yes
+ Home directory . . . . . . . . . . . . . . :   /home/USRA
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPUSRPRF USRPRF(OWNA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspusrprf-owna)
+                                           Display User Profile - *BASIC                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:32 EST
+ User Profile . . . . . . . . . . . . . . . :   OWNA
+ Previous sign-on . . . . . . . . . . . . . :   10/22/26  07:04:34
+ Password verifications not valid . . . . . :   0
+ Status . . . . . . . . . . . . . . . . . . :   *ENABLED
+ Date password last changed . . . . . . . . :   10/22/26  07:03:41
+ Password is *NONE  . . . . . . . . . . . . :   *NO
+ Password expiration interval . . . . . . . :   *SYSVAL
+ Password set expired by command  . . . . . :   *NO
+ Block password change  . . . . . . . . . . :   *SYSVAL
+ Local password management  . . . . . . . . :   *YES
+ User class . . . . . . . . . . . . . . . . :   *USER
+ Creation date/time . . . . . . . . . . . . :   10/22/26  07:03:42
+ Change date/time . . . . . . . . . . . . . :   10/22/26  07:04:35
+ Last used date . . . . . . . . . . . . . . :   10/22/26
+ Restore date/time  . . . . . . . . . . . . :
+ User expiration date . . . . . . . . . . . :   *NONE
+ User expiration interval . . . . . . . . . :   *NONE
+ User expiration action . . . . . . . . . . :   *NONE
+ Special authority  . . . . . . . . . . . . :   *NONE
+ Group profile  . . . . . . . . . . . . . . :   GRPA
+ Owner  . . . . . . . . . . . . . . . . . . :   *USRPRF
+ Group authority  . . . . . . . . . . . . . :   *NONE
+ Group authority type . . . . . . . . . . . :   *PRIVATE
+ Supplemental groups  . . . . . . . . . . . :   *NONE
+ Assistance level . . . . . . . . . . . . . :   *SYSVAL
+ Current library  . . . . . . . . . . . . . :   *CRTDFT
+ Initial program  . . . . . . . . . . . . . :   *NONE
+   Library  . . . . . . . . . . . . . . . . :
+ Initial menu . . . . . . . . . . . . . . . :   MAIN
+   Library  . . . . . . . . . . . . . . . . :     *LIBL
+ Limit capabilities . . . . . . . . . . . . :   *NO
+ Text . . . . . . . . . . . . . . . . . . . :
+ Display sign-on information  . . . . . . . :   *SYSVAL
+ Limit device sessions  . . . . . . . . . . :   *SYSVAL
+ Keyboard buffering . . . . . . . . . . . . :   *SYSVAL
+ Storage information:
+   Maximum storage allowed  . . . . . . . . :   *NOMAX
+   Storage used . . . . . . . . . . . . . . :   128
+   Storage used on independent ASP  . . . . :   *NO
+ Highest scheduling priority  . . . . . . . :   3
+ Job description  . . . . . . . . . . . . . :   QDFTJOBD
+   Library  . . . . . . . . . . . . . . . . :     QGPL
+ Accounting code  . . . . . . . . . . . . . :
+ Message queue  . . . . . . . . . . . . . . :   OWNA
+   Library  . . . . . . . . . . . . . . . . :     QUSRSYS
+ Message queue delivery . . . . . . . . . . :   *NOTIFY
+ Message queue severity . . . . . . . . . . :   00
+ Output queue . . . . . . . . . . . . . . . :   *WRKSTN
+   Library  . . . . . . . . . . . . . . . . :
+ Printer device . . . . . . . . . . . . . . :   *WRKSTN
+ Special environment  . . . . . . . . . . . :   *SYSVAL
+ Attention program  . . . . . . . . . . . . :   *SYSVAL
+   Library  . . . . . . . . . . . . . . . . :
+ Sort sequence  . . . . . . . . . . . . . . :   *SYSVAL
+   Library  . . . . . . . . . . . . . . . . :
+ Language identifier  . . . . . . . . . . . :   *SYSVAL
+                                           Display User Profile - *BASIC                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:32 EST
+ User Profile . . . . . . . . . . . . . . . :   OWNA
+ Country or region identifier . . . . . . . :   *SYSVAL
+ Coded character set identifier . . . . . . :   *SYSVAL
+ Character identifier control . . . . . . . :   *SYSVAL
+ Locale job attributes  . . . . . . . . . . :   *SYSVAL
+ Locale . . . . . . . . . . . . . . . . . . :   *SYSVAL
+ User options . . . . . . . . . . . . . . . :   *NONE
+ Object auditing value  . . . . . . . . . . :   *NONE
+ Action auditing values . . . . . . . . . . :   *NONE
+ User ID number . . . . . . . . . . . . . . :   106
+ Group ID number  . . . . . . . . . . . . . :   *NONE
+ User entitlement required  . . . . . . . . :   Yes
+ Home directory . . . . . . . . . . . . . . :   /home/OWNA
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPUSRPRF USRPRF(GRPA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspusrprf-grpa)
+                                           Display User Profile - *BASIC                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:33 EST
+ User Profile . . . . . . . . . . . . . . . :   GRPA
+ Previous sign-on . . . . . . . . . . . . . :
+ Password verifications not valid . . . . . :   0
+ Status . . . . . . . . . . . . . . . . . . :   *ENABLED
+ Date password last changed . . . . . . . . :   10/22/26  07:03:40
+ Password is *NONE  . . . . . . . . . . . . :   *YES
+ Password expiration interval . . . . . . . :   *SYSVAL
+ Password set expired by command  . . . . . :   *NO
+ Block password change  . . . . . . . . . . :   *SYSVAL
+ Local password management  . . . . . . . . :   *YES
+ User class . . . . . . . . . . . . . . . . :   *USER
+ Creation date/time . . . . . . . . . . . . :   10/22/26  07:03:40
+ Change date/time . . . . . . . . . . . . . :   10/22/26  07:05:13
+ Last used date . . . . . . . . . . . . . . :   10/22/26
+ Restore date/time  . . . . . . . . . . . . :
+ User expiration date . . . . . . . . . . . :   *NONE
+ User expiration interval . . . . . . . . . :   *NONE
+ User expiration action . . . . . . . . . . :   *NONE
+ Special authority  . . . . . . . . . . . . :   *NONE
+ Group profile  . . . . . . . . . . . . . . :   *NONE
+ Owner  . . . . . . . . . . . . . . . . . . :   *USRPRF
+ Group authority  . . . . . . . . . . . . . :   *NONE
+ Group authority type . . . . . . . . . . . :   *PRIVATE
+ Supplemental groups  . . . . . . . . . . . :   *NONE
+ Assistance level . . . . . . . . . . . . . :   *SYSVAL
+ Current library  . . . . . . . . . . . . . :   *CRTDFT
+ Initial program  . . . . . . . . . . . . . :   *NONE
+   Library  . . . . . . . . . . . . . . . . :
+ Initial menu . . . . . . . . . . . . . . . :   MAIN
+   Library  . . . . . . . . . . . . . . . . :     *LIBL
+ Limit capabilities . . . . . . . . . . . . :   *NO
+ Text . . . . . . . . . . . . . . . . . . . :
+ Display sign-on information  . . . . . . . :   *SYSVAL
+ Limit device sessions  . . . . . . . . . . :   *SYSVAL
+ Keyboard buffering . . . . . . . . . . . . :   *SYSVAL
+ Storage information:
+   Maximum storage allowed  . . . . . . . . :   *NOMAX
+   Storage used . . . . . . . . . . . . . . :   12
+   Storage used on independent ASP  . . . . :   *NO
+ Highest scheduling priority  . . . . . . . :   3
+ Job description  . . . . . . . . . . . . . :   QDFTJOBD
+   Library  . . . . . . . . . . . . . . . . :     QGPL
+ Accounting code  . . . . . . . . . . . . . :
+ Message queue  . . . . . . . . . . . . . . :   GRPA
+   Library  . . . . . . . . . . . . . . . . :     QUSRSYS
+ Message queue delivery . . . . . . . . . . :   *NOTIFY
+ Message queue severity . . . . . . . . . . :   00
+ Output queue . . . . . . . . . . . . . . . :   *WRKSTN
+   Library  . . . . . . . . . . . . . . . . :
+ Printer device . . . . . . . . . . . . . . :   *WRKSTN
+ Special environment  . . . . . . . . . . . :   *SYSVAL
+ Attention program  . . . . . . . . . . . . :   *SYSVAL
+   Library  . . . . . . . . . . . . . . . . :
+ Sort sequence  . . . . . . . . . . . . . . :   *SYSVAL
+   Library  . . . . . . . . . . . . . . . . :
+ Language identifier  . . . . . . . . . . . :   *SYSVAL
+                                           Display User Profile - *BASIC                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:01:33 EST
+ User Profile . . . . . . . . . . . . . . . :   GRPA
+ Country or region identifier . . . . . . . :   *SYSVAL
+ Coded character set identifier . . . . . . :   *SYSVAL
+ Character identifier control . . . . . . . :   *SYSVAL
+ Locale job attributes  . . . . . . . . . . :   *SYSVAL
+ Locale . . . . . . . . . . . . . . . . . . :   *SYSVAL
+ User options . . . . . . . . . . . . . . . :   *NONE
+ Object auditing value  . . . . . . . . . . :   *NONE
+ Action auditing values . . . . . . . . . . :   *NONE
+ User ID number . . . . . . . . . . . . . . :   105
+ Group ID number  . . . . . . . . . . . . . :   101
+ User entitlement required  . . . . . . . . :   Yes
+ Home directory . . . . . . . . . . . . . . :   /home/GRPA
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

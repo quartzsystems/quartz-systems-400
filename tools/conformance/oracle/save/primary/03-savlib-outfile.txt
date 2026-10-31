@@ -1,0 +1,636 @@
+# SAVLIB OUTPUT(*OUTFILE) with each INFTYPE, and OUTPUT(*PRINT)
+# primary oracle (V7R1M0), 2026-10-30
+
+> CHGJOB INQMSGRPY(*DFT)
+  -> ok
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) OUTPUT(*OUTFILE) OUTFILE(QSTEST/ZZOUT) OUTMBR(*FIRST *REPLACE) INFTYPE(*OBJ)
+  -> ok
+  CPF9861 Information 00 QLIOUTFL->QSRSLCPR | Output file ZZOUT created in library QSTEST.
+  CPF9862 Information 00 QLIOUTFL->QSRSLCPR | Member ZZOUT added to output file ZZOUT in library QSTEST.
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+
+> DSPFFD FILE(QSTEST/ZZOUT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspffd-zzout)
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    1
+ Input parameters
+   File  . . . . . . . . . . . . . . . . . . . :  ZZOUT
+     Library . . . . . . . . . . . . . . . . . :  QSTEST
+ File Information
+   File  . . . . . . . . . . . . . . . . . . . :  ZZOUT
+     Library . . . . . . . . . . . . . . . . . :  QSTEST
+   File location . . . . . . . . . . . . . . . :  *LCL
+   Externally described  . . . . . . . . . . . :  Yes
+   Number of record formats  . . . . . . . . . :      1
+   Type of file  . . . . . . . . . . . . . . . :  Physical
+   File creation date  . . . . . . . . . . . . :  10/30/26
+   Text 'description'. . . . . . . . . . . . . :  Output file for SAVLIB
+ Record Format Information
+   Record format . . . . . . . . . . . . . . . :  QSRSAV
+   Format level identifier . . . . . . . . . . :  3ABB429587F17
+   Number of fields  . . . . . . . . . . . . . :     76
+   Record length . . . . . . . . . . . . . . . :   3732
+   Format text . . . . . . . . . . . . . . . . :  Saved Objects
+ Field Level Information
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROCMD     CHAR           10      10         1        Both     Save
+                                                                  Command
+     Field text  . . . . . . . . . . . . . . . :  Save command
+     Coded Character Set Identifier  . . . . . :  65535
+   SROINF     CHAR           10      10        11        Both     Information
+                                                                  Type
+     Field text  . . . . . . . . . . . . . . . :  Information type
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSYS     CHAR            8       8        21        Both     System
+     Field text  . . . . . . . . . . . . . . . :  System
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSRL     CHAR            6       6        29        Both     Saved
+                                                                  Release
+     Field text  . . . . . . . . . . . . . . . :  Saved release
+     Coded Character Set Identifier  . . . . . :  65535
+   SROLIB     CHAR           10      10        35        Both     Library
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Library name
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    2
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROASP     ZONED        2  0       2        45        Both     Library ASP
+     Field text  . . . . . . . . . . . . . . . :  Library ASP identifier
+   SROSAV     ZONED        6  0       6        47        Both     Objects
+                                                                  Saved
+     Field text  . . . . . . . . . . . . . . . :  Number of objects saved
+   SROERR     ZONED        6  0       6        53        Both     Objects
+                                                                  Not Saved
+     Field text  . . . . . . . . . . . . . . . :  Number of objects not saved due to errors
+   SROSEQ     ZONED        4  0       4        59        Both     Sequence
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Sequence number: -5=See SROSQ2 field
+   SROLBL     CHAR           17      17        63        Both     File
+                                                                  Label
+     Field text  . . . . . . . . . . . . . . . :  File label ID
+     Coded Character Set Identifier  . . . . . :  65535
+   SROVOL     CHAR           60      60        80        Both     Volume
+                                                                  Identifiers
+     Field text  . . . . . . . . . . . . . . . :  Volume identifiers
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSVT     CHAR           13      13       140        Both     Save
+                                                                  Date/Time
+     Field text  . . . . . . . . . . . . . . . :  Save timestamp:  CYYMMDDHHMMSS
+     Coded Character Set Identifier  . . . . . :  65535
+   SRONAM     CHAR           10      10       153        Both     Object
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Object name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROMNM     CHAR           10      10       163        Both     Member
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Member name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROTYP     CHAR            8       8       173        Both     Object
+                                                                  Type
+     Field text  . . . . . . . . . . . . . . . :  Object type
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    3
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROATT     CHAR           10      10       181        Both     Object
+                                                                  Attribute
+     Field text  . . . . . . . . . . . . . . . :  Object attribute
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSIZ     ZONED       15  0      15       191        Both     Size
+     Field text  . . . . . . . . . . . . . . . :  Size
+   SROOWN     CHAR           10      10       206        Both     Owner
+     Field text  . . . . . . . . . . . . . . . :  Owner
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSTA     CHAR            1       1       216        Both     Status
+     Field text  . . . . . . . . . . . . . . . :  Status:  0=Not saved 1=Saved
+     Coded Character Set Identifier  . . . . . :  65535
+   SROMSG     CHAR            7       7       217        Both     Error
+                                                                  Message
+     Field text  . . . . . . . . . . . . . . . :  Error message identifier
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSWA     CHAR           13      13       224        Both     Save
+                                                                  While
+                                                                  Active
+     Field text  . . . . . . . . . . . . . . . :  Save while active timestamp: CYYMMDDHHMMSS
+     Coded Character Set Identifier  . . . . . :  65535
+   SROTXT     CHAR           50      50       237        Both     Text
+     Field text  . . . . . . . . . . . . . . . :  Object text
+     Coded Character Set Identifier  . . . . . :  65535
+   SRODEV     CHAR           40      40       287        Both     Device
+                                                                  Names
+     Field text  . . . . . . . . . . . . . . . :  Device names
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSVF     CHAR           10      10       327        Both     Save
+                                                                  File
+     Field text  . . . . . . . . . . . . . . . :  Target save file
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSFL     CHAR           10      10       337        Both     Save
+                                                                  File
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Save file library
+     Coded Character Set Identifier  . . . . . :  65535
+   SROTRL     CHAR            6       6       347        Both     Target
+                                                                  Release
+     Field text  . . . . . . . . . . . . . . . :  Target release
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    4
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROSTF     CHAR            1       1       353        Both     Storage
+     Field text  . . . . . . . . . . . . . . . :  Storage: 0=*KEEP 1=*FREED
+     Coded Character Set Identifier  . . . . . :  65535
+   SROACP     CHAR            1       1       354        Both     Save
+                                                                  Access
+                                                                  Paths
+     Field text  . . . . . . . . . . . . . . . :  Save access paths:  0=NO 1=YES
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSFD     CHAR            1       1       355        Both     Save
+                                                                  File
+                                                                  Data
+     Field text  . . . . . . . . . . . . . . . :  Save file data:  0=NO 1=YES
+     Coded Character Set Identifier  . . . . . :  65535
+   SROCMP     CHAR            1       1       356        Both     Data
+                                                                  Compressed
+     Field text  . . . . . . . . . . . . . . . :  Compressed: 0=NO 1=YES
+     Coded Character Set Identifier  . . . . . :  65535
+   SROCOM     CHAR            1       1       357        Both     Data
+                                                                  Compacted
+     Field text  . . . . . . . . . . . . . . . :  Compact: 0=NO 1=YES
+     Coded Character Set Identifier  . . . . . :  65535
+   SRORFD     CHAR            7       7       358        Both     Reference
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Reference date
+     Coded Character Set Identifier  . . . . . :  65535
+   SRORFT     CHAR            6       6       365        Both     Reference
+                                                                  Time
+     Field text  . . . . . . . . . . . . . . . :  Reference time
+     Coded Character Set Identifier  . . . . . :  65535
+   SROEXP     CHAR            7       7       371        Both     Expiration
+                                                                  Date
+     Field text  . . . . . . . . . . . . . . . :  Expiration date
+     Coded Character Set Identifier  . . . . . :  65535
+   SROXVM     CHAR          390     392       378        Both     Extra
+                                                                  Volume
+                                                                  Identifiers
+     Field text  . . . . . . . . . . . . . . . :  Extra Volume Identifiers
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    5
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROPGP     CHAR           10      10       770        Both     Primary
+                                                                  Group
+     Field text  . . . . . . . . . . . . . . . :  Primary group
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSQ2     ZONED       10  0      10       780        Both     Large
+                                                                  Sequence
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Sequence number
+   SROMIT     CHAR            1       1       790        Both     Objects
+                                                                  Omitted
+     Field text  . . . . . . . . . . . . . . . :  Omitted: 0=NO 1=YES
+     Coded Character Set Identifier  . . . . . :  65535
+   SROFMT     CHAR            1       1       791        Both     Save
+                                                                  Format
+     Field text  . . . . . . . . . . . . . . . :  Save format: 0=Serial 1=Parallel
+     Coded Character Set Identifier  . . . . . :  65535
+   SROMFN     ZONED        3  0       3       792        Both     Media
+                                                                  File
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Media File Number
+   SROTMF     ZONED        3  0       3       795        Both     Total
+                                                                  Media
+                                                                  Files
+     Field text  . . . . . . . . . . . . . . . :  Total Media Files
+   SROMDN     CHAR           10      10       798        Both     Media
+                                                                  Definition
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Media Definition Name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROMDL     CHAR           10      10       808        Both     Media
+                                                                  Definition
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Media Definition Library
+     Coded Character Set Identifier  . . . . . :  65535
+   SROVLC     ZONED        3  0       3       818        Both     Volume
+                                                                  Count
+     Field text  . . . . . . . . . . . . . . . :  Volume Count
+   SROVLL     ZONED        3  0       3       821        Both     Volume
+                                                                  Length
+     Field text  . . . . . . . . . . . . . . . :  Volume Length
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    6
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROVLD     CHAR         2400    2402       824        Both     Volume
+                                                                  identifiers
+     Field text  . . . . . . . . . . . . . . . :  Volume identifiers
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :    500
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROOPT     CHAR          256     258      3226        Both     Optical
+                                                                  file
+     Field text  . . . . . . . . . . . . . . . :  Optical file
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :    500
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROAS1     CHAR           10      10      3484        Both     ASP
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  ASP name for object library
+     Coded Character Set Identifier  . . . . . :  65535
+   SROAS2     ZONED        5  0       5      3494        Both     ASP
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  ASP number for object library
+   SROTSZ     PACKED      21  0      11      3499        Both     Total
+                                                                  Size
+                                                                  Saved
+     Field text  . . . . . . . . . . . . . . . :  Total size
+   SROPRT     CHAR            1       1      3510        Both     Partial
+                                                                  Transaction
+                                                                  Exists
+     Field text  . . . . . . . . . . . . . . . :  Partial transaction exists: 0=No 1=Yes
+     Coded Character Set Identifier  . . . . . :  65535
+   SROJN      CHAR           10      10      3511        Both     Journal
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Journal name
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    7
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROJL      CHAR           10      10      3521        Both     Journal
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Journal library
+     Coded Character Set Identifier  . . . . . :  65535
+   SROJRN     CHAR           10      10      3531        Both     Journal
+                                                                  Receiver
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Journal receiver name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROJRL     CHAR           10      10      3541        Both     Journal
+                                                                  Receiver
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Journal receiver library
+     Coded Character Set Identifier  . . . . . :  65535
+   SROJRA     CHAR           10      10      3551        Both     Journal
+                                                                  Receiver
+                                                                  ASP
+     Field text  . . . . . . . . . . . . . . . :  Journal receiver ASP name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPFL     CHAR           10      10      3561        Both     Spooled File
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPFN     ZONED        6  0       6      3571        Both     Spooled File
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Spooled file number
+   SROPJB     CHAR           10      10      3577        Both     Spooled File
+                                                                  Job Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file job name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPUN     CHAR           10      10      3587        Both     Spooled File
+                                                                  User Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file user name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPJN     CHAR            6       6      3597        Both     Spooled File
+                                                                  Job Number
+     Field text  . . . . . . . . . . . . . . . :  Spooled file job number
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    8
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROPJS     CHAR            8       8      3603        Both     Spooled File
+                                                                  Job System Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file job system name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPCD     CHAR            7       7      3611        Both     Spooled File
+                                                                  Creation Date
+     Field text  . . . . . . . . . . . . . . . :  Spooled file creation date
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPCT     CHAR            6       6      3618        Both     Spooled File
+                                                                  Creation Time
+     Field text  . . . . . . . . . . . . . . . :  Spooled file creation time
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPQN     CHAR           10      10      3624        Both     Spooled File
+                                                                  Output Queue
+     Field text  . . . . . . . . . . . . . . . :  Spooled file output queue name
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPQL     CHAR           10      10      3634        Both     Spooled File
+                                                                  OUTQ Library
+     Field text  . . . . . . . . . . . . . . . :  Spooled file output queue library
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPUD     CHAR           10      10      3644        Both     Spooled File
+                                                                  User Data
+     Field text  . . . . . . . . . . . . . . . :  Spooled file user data
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPFT     CHAR           10      10      3654        Both     Spooled File
+                                                                  Form Type
+     Field text  . . . . . . . . . . . . . . . :  Spooled file form type
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPPG     PACKED      11  0       6      3664        Both     Spooled File
+                                                                  Pages
+     Field text  . . . . . . . . . . . . . . . :  Spooled file pages
+   SROPCP     ZONED        3  0       3      3670        Both     Spooled File
+                                                                  Copies
+     Field text  . . . . . . . . . . . . . . . :  Spooled file copies
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:25:16       Page    9
+ Record format . . . . :  QSRSAV        File . . . :  ZZOUT        Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   SROPSZ     PACKED      15  0       8      3673        Both     Spooled File
+                                                                  Size
+     Field text  . . . . . . . . . . . . . . . :  Spooled file size
+   SROPXD     CHAR            7       7      3681        Both     Spooled File
+                                                                  Expiration Date
+     Field text  . . . . . . . . . . . . . . . :  Spooled file expiration date
+     Coded Character Set Identifier  . . . . . :  65535
+   SROPVA     CHAR            1       1      3688        Both     Private
+                                                                  Authorities
+                                                                  Requested
+     Field text  . . . . . . . . . . . . . . . :  PVTAUT: 0=*NO 1=*YES
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSYN     CHAR           10      10      3689        Both     Synchronization
+                                                                  ID
+     Field text  . . . . . . . . . . . . . . . :  Synchronization ID
+     Coded Character Set Identifier  . . . . . :  65535
+   SROSYO     ZONED        2  0       2      3699        Both     Participating
+                                                                  Save
+                                                                  Operations
+     Field text  . . . . . . . . . . . . . . . :  Participating save operations
+   SROPSN     CHAR           32      32      3701        Both     Starting
+                                                                  Position
+     Field text  . . . . . . . . . . . . . . . :  Starting position in file
+     Coded Character Set Identifier  . . . . . :  65535
+
+-- INFTYPE(*OBJ) rows: SELECT * FROM QSTEST.ZZOUT
+SROCMD|SROINF|SROSYS|SROSRL|SROLIB|SROASP|SROSAV|SROERR|SROSEQ|SROLBL|SROVOL|SROSVT|SRONAM|SROMNM|SROTYP|SROATT|SROSIZ|SROOWN|SROSTA|SROMSG|SROSWA|SROTXT|SRODEV|SROSVF|SROSFL|SROTRL|SROSTF|SROACP|SROSFD|SROCMP|SROCOM|SRORFD|SRORFT|SROEXP|SROXVM|SROPGP|SROSQ2|SROMIT|SROFMT|SROMFN|SROTMF|SROMDN|SROMDL|SROVLC|SROVLL|SROVLD|SROOPT|SROAS1|SROAS2|SROTSZ|SROPRT|SROJN|SROJL|SROJRN|SROJRL|SROJRA|SROPFL|SROPFN|SROPJB|SROPUN|SROPJN|SROPJS|SROPCD|SROPCT|SROPQN|SROPQL|SROPUD|SROPFT|SROPPG|SROPCP|SROPSZ|SROPXD|SROPVA|SROSYN|SROSYO|SROPSN
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QSTEST||*LIB|PROD|147456|QSECOFR|F1|||Database conformance kit||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|JRN||*JRN||12288|QSECOFR|F1|||Save kit journal||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|PGM1||*PGM|CLLE|90112|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|PGM2||*PGM|CLLE|90112|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|SRV1||*SRVPGM|CLLE|90112|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|MOD1||*MODULE|CLLE|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|MOD2||*MODULE|CLLE|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|DQ1||*DTAQ||16384|QSECOFR|F1|||Save kit data queue||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QSTOUTQ||*OUTQ||16384|QSECOFR|F1|||Save kit output queue||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QSTMSGF||*MSGF||24576|QSECOFR|F1|||Save kit messages||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|USRIDX||*USRIDX|TESTIDX|16384|QSECOFR|F1|||Save kit user index||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QSTJOBD||*JOBD||8192|QSECOFR|F1|||Save kit job description||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QSTCMD||*CMD||8192|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|DTAC||*DTAARA||8192|QSECOFR|F1|||Char data area||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|DTAD||*DTAARA||8192|OWNA|F1|||Dec data area||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|DTAL||*DTAARA||8192|QSECOFR|F1|||Lgl data area||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||GRPA|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|USRSPC||*USRSPC|TESTSPC|8192|QSECOFR|F1|||Save kit user space||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|ORD||*FILE|PF|69632|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|JRN|QSTEST|RCV0002|QSTEST|*SYSBAS||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|CUST||*FILE|PF|69632|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|CUSTK||*FILE|LF|61440|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|CUSTSO||*FILE|LF|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|CUSORD||*FILE|LF|106496|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|FMTA||*FILE|PF|28672|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|FREEPF||*FILE|PF|28672|QSECOFR|F1|||For STG(*FREE)||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|MPF||*FILE|PF|69632|QSECOFR|F1|||Multi-member PF||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QDDSSRC||*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|QSRC||*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|SQLT||*FILE|PF|192512|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|SQLTIX||*FILE|LF|176128|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|RCV0001||*JRNRCV||1380352|QSECOFR|F1|||Save kit receiver||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*OBJ|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072515|RCV0002||*JRNRCV||1380352|QSECOFR|F1|||Save kit receiver||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+(31 rows)
+
+> DLTF FILE(QSTEST/ZZOUT)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZOUT in QSTEST type *FILE deleted.
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) OUTPUT(*OUTFILE) OUTFILE(QSTEST/ZZOUT) OUTMBR(*FIRST *REPLACE) INFTYPE(*MBR)
+  -> ok
+  CPF9861 Information 00 QLIOUTFL->QSRSLCPR | Output file ZZOUT created in library QSTEST.
+  CPF9862 Information 00 QLIOUTFL->QSRSLCPR | Member ZZOUT added to output file ZZOUT in library QSTEST.
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+
+-- INFTYPE(*MBR) rows: SELECT * FROM QSTEST.ZZOUT
+SROCMD|SROINF|SROSYS|SROSRL|SROLIB|SROASP|SROSAV|SROERR|SROSEQ|SROLBL|SROVOL|SROSVT|SRONAM|SROMNM|SROTYP|SROATT|SROSIZ|SROOWN|SROSTA|SROMSG|SROSWA|SROTXT|SRODEV|SROSVF|SROSFL|SROTRL|SROSTF|SROACP|SROSFD|SROCMP|SROCOM|SRORFD|SRORFT|SROEXP|SROXVM|SROPGP|SROSQ2|SROMIT|SROFMT|SROMFN|SROTMF|SROMDN|SROMDL|SROVLC|SROVLL|SROVLD|SROOPT|SROAS1|SROAS2|SROTSZ|SROPRT|SROJN|SROJL|SROJRN|SROJRL|SROJRA|SROPFL|SROPFN|SROPJB|SROPUN|SROPJN|SROPJS|SROPCD|SROPCT|SROPQN|SROPQL|SROPUD|SROPFT|SROPPG|SROPCP|SROPSZ|SROPXD|SROPVA|SROSYN|SROSYO|SROPSN
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSTEST||*LIB|PROD|147456|QSECOFR|F1|||Database conformance kit||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|JRN||*JRN||12288|QSECOFR|F1|||Save kit journal||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|PGM1||*PGM|CLLE|90112|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|PGM2||*PGM|CLLE|90112|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|SRV1||*SRVPGM|CLLE|90112|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|MOD1||*MODULE|CLLE|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|MOD2||*MODULE|CLLE|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|DQ1||*DTAQ||16384|QSECOFR|F1|||Save kit data queue||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSTOUTQ||*OUTQ||16384|QSECOFR|F1|||Save kit output queue||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSTMSGF||*MSGF||24576|QSECOFR|F1|||Save kit messages||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|USRIDX||*USRIDX|TESTIDX|16384|QSECOFR|F1|||Save kit user index||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSTJOBD||*JOBD||8192|QSECOFR|F1|||Save kit job description||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSTCMD||*CMD||8192|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|DTAC||*DTAARA||8192|QSECOFR|F1|||Char data area||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|DTAD||*DTAARA||8192|OWNA|F1|||Dec data area||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|DTAL||*DTAARA||8192|QSECOFR|F1|||Lgl data area||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||GRPA|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|USRSPC||*USRSPC|TESTSPC|8192|QSECOFR|F1|||Save kit user space||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|ORD|ORD|*FILE|PF|69632|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|JRN|QSTEST|RCV0002|QSTEST|*SYSBAS||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|ORD||*FILE|PF|69632|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|JRN|QSTEST|RCV0002|QSTEST|*SYSBAS||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUST|CUST|*FILE|PF|69632|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUST||*FILE|PF|69632|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUSTK|CUSTK|*FILE|LF|61440|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUSTK||*FILE|LF|61440|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUSTSO|CUSTSO|*FILE|LF|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUSTSO||*FILE|LF|65536|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUSORD|CUSORD|*FILE|LF|106496|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|CUSORD||*FILE|LF|106496|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|FMTA|FMTA|*FILE|PF|28672|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|FMTA||*FILE|PF|28672|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|FREEPF|FREEPF|*FILE|PF|28672|QSECOFR|F1|||For STG(*FREE)||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|FREEPF||*FILE|PF|28672|QSECOFR|F1|||For STG(*FREE)||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|MPF|M1|*FILE|PF|69632|QSECOFR|F1|||Multi-member PF||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|MPF|M2|*FILE|PF|69632|QSECOFR|F1|||Multi-member PF||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|MPF|M3|*FILE|PF|69632|QSECOFR|F1|||Multi-member PF||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|MPF||*FILE|PF|69632|QSECOFR|F1|||Multi-member PF||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC|CUSORD|*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC|CUST|*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC|CUSTK|*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC|CUSTSO|*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC|FMTA|*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC|ORD|*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QDDSSRC||*FILE|PF|131072|QSECOFR|F1|||Save kit DDS||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSRC|MOD1|*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSRC|MOD2|*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSRC|PGM1|*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSRC|QSTCMD|*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSRC|SRV1|*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|QSRC||*FILE|PF|110592|QSECOFR|F1|||Save kit source||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|SQLT|SQLT|*FILE|PF|192512|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|SQLT||*FILE|PF|192512|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|SQLTIX|SQLTIX|*FILE|LF|176128|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|SQLTIX||*FILE|LF|176128|QSECOFR|F1|||||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|RCV0001||*JRNRCV||1380352|QSECOFR|F1|||Save kit receiver||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+SAVLIB|*MBR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072518|RCV0002||*JRNRCV||1380352|QSECOFR|F1|||Save kit receiver||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+(54 rows)
+
+> DLTF FILE(QSTEST/ZZOUT)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZOUT in QSTEST type *FILE deleted.
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) OUTPUT(*OUTFILE) OUTFILE(QSTEST/ZZOUT) OUTMBR(*FIRST *REPLACE) INFTYPE(*LIB)
+  -> ok
+  CPF9861 Information 00 QLIOUTFL->QSRSLCPR | Output file ZZOUT created in library QSTEST.
+  CPF9862 Information 00 QLIOUTFL->QSRSLCPR | Member ZZOUT added to output file ZZOUT in library QSTEST.
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+
+-- INFTYPE(*LIB) rows: SELECT * FROM QSTEST.ZZOUT
+SROCMD|SROINF|SROSYS|SROSRL|SROLIB|SROASP|SROSAV|SROERR|SROSEQ|SROLBL|SROVOL|SROSVT|SRONAM|SROMNM|SROTYP|SROATT|SROSIZ|SROOWN|SROSTA|SROMSG|SROSWA|SROTXT|SRODEV|SROSVF|SROSFL|SROTRL|SROSTF|SROACP|SROSFD|SROCMP|SROCOM|SRORFD|SRORFT|SROEXP|SROXVM|SROPGP|SROSQ2|SROMIT|SROFMT|SROMFN|SROTMF|SROMDN|SROMDL|SROVLC|SROVLL|SROVLD|SROOPT|SROAS1|SROAS2|SROTSZ|SROPRT|SROJN|SROJL|SROJRN|SROJRL|SROJRA|SROPFL|SROPFN|SROPJB|SROPUN|SROPJN|SROPJS|SROPCD|SROPCT|SROPQN|SROPQL|SROPUD|SROPFT|SROPPG|SROPCP|SROPSZ|SROPXD|SROPVA|SROSYN|SROSYO|SROPSN
+SAVLIB|*LIB|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072519|||||147456|QSECOFR|F1|||Database conformance kit||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+(1 rows)
+
+> DLTF FILE(QSTEST/ZZOUT)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZOUT in QSTEST type *FILE deleted.
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) OUTPUT(*OUTFILE) OUTFILE(QSTEST/ZZOUT) OUTMBR(*FIRST *REPLACE) INFTYPE(*ERR)
+  -> ok
+  CPF9861 Information 00 QLIOUTFL->QSRSLCPR | Output file ZZOUT created in library QSTEST.
+  CPF9862 Information 00 QLIOUTFL->QSRSLCPR | Member ZZOUT added to output file ZZOUT in library QSTEST.
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+
+-- INFTYPE(*ERR) rows: SELECT * FROM QSTEST.ZZOUT
+SROCMD|SROINF|SROSYS|SROSRL|SROLIB|SROASP|SROSAV|SROERR|SROSEQ|SROLBL|SROVOL|SROSVT|SRONAM|SROMNM|SROTYP|SROATT|SROSIZ|SROOWN|SROSTA|SROMSG|SROSWA|SROTXT|SRODEV|SROSVF|SROSFL|SROTRL|SROSTF|SROACP|SROSFD|SROCMP|SROCOM|SRORFD|SRORFT|SROEXP|SROXVM|SROPGP|SROSQ2|SROMIT|SROFMT|SROMFN|SROTMF|SROMDN|SROMDL|SROVLC|SROVLL|SROVLD|SROOPT|SROAS1|SROAS2|SROTSZ|SROPRT|SROJN|SROJL|SROJRN|SROJRL|SROJRA|SROPFL|SROPFN|SROPJB|SROPUN|SROPJN|SROPJS|SROPCD|SROPCT|SROPQN|SROPQL|SROPUD|SROPFT|SROPPG|SROPCP|SROPSZ|SROPXD|SROPVA|SROSYN|SROSYO|SROPSN
+SAVLIB|*ERR|{host}|V7R1M0|QSTEST|1|31|0|0|||1261030072521|||||147456|QSECOFR|F1|||Database conformance kit||ZZS1|QSTEST|V7R1M0|F0|F1|F1|F0|F0|||||*NONE|0|F1|F0|1|1|||0|0|||*SYSBAS|1|4554752|F0|||||||0|||||||||||0|0|0||F0|*NONE|0|00000000000000000000000000000000
+(1 rows)
+
+> DLTF FILE(QSTEST/ZZOUT)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZOUT in QSTEST type *FILE deleted.
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) OUTPUT(*PRINT) INFTYPE(*OBJ)
+  -> ok
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+-- spooled file (savlib-print-obj)
+ 5770SS1 V7R1M0  100423         Save Library - Object Information                 {host}      10/30/26  7:25:22        Page    1
+ Save file  . . . . . . :   ZZS1             Save file library  . . :   QSTEST
+ Target release . . . . :   V7R1M0           Storage  . . . . . . . :   *KEEP
+ Save access paths  . . :   Yes              Save file data . . . . :   Yes
+ Private authorities  . :   No
+ Data compressed  . . . :   No
+ Library  . . . . . . . :   QSTEST
+ Save date/time . . . . :   10/30/26    07:25:22
+  Object              Type     Attribute    Saved           Size  Owner                            Text
+  QSTEST              *LIB     PROD          YES          147456  QSECOFR                          Database conformance kit
+  JRN                 *JRN                   YES           12288  QSECOFR                          Save kit journal
+  PGM1                *PGM     CLLE          YES           90112  QSECOFR
+  PGM2                *PGM     CLLE          YES           90112  QSECOFR
+  SRV1                *SRVPGM  CLLE          YES           90112  QSECOFR
+  MOD1                *MODULE  CLLE          YES           65536  QSECOFR
+  MOD2                *MODULE  CLLE          YES           65536  QSECOFR
+  DQ1                 *DTAQ                  YES           16384  QSECOFR                          Save kit data queue
+  QSTOUTQ             *OUTQ                  YES           16384  QSECOFR                          Save kit output queue
+  QSTMSGF             *MSGF                  YES           24576  QSECOFR                          Save kit messages
+  USRIDX              *USRIDX  TESTIDX       YES           16384  QSECOFR                          Save kit user index
+  QSTJOBD             *JOBD                  YES            8192  QSECOFR                          Save kit job description
+  QSTCMD              *CMD                   YES            8192  QSECOFR
+  DTAC                *DTAARA                YES            8192  QSECOFR                          Char data area
+  DTAD                *DTAARA                YES            8192  OWNA                             Dec data area
+  DTAL                *DTAARA                YES            8192  QSECOFR                          Lgl data area
+  USRSPC              *USRSPC  TESTSPC       YES            8192  QSECOFR                          Save kit user space
+  ORD                 *FILE    PF            YES           69632  QSECOFR
+  CUST                *FILE    PF            YES           69632  QSECOFR
+  CUSTK               *FILE    LF            YES           61440  QSECOFR
+  CUSTSO              *FILE    LF            YES           65536  QSECOFR
+  CUSORD              *FILE    LF            YES          106496  QSECOFR
+  FMTA                *FILE    PF            YES           28672  QSECOFR
+  FREEPF              *FILE    PF            YES           28672  QSECOFR                          For STG(*FREE)
+  MPF                 *FILE    PF            YES           69632  QSECOFR                          Multi-member PF
+  QDDSSRC             *FILE    PF            YES          131072  QSECOFR                          Save kit DDS
+  QSRC                *FILE    PF            YES          110592  QSECOFR                          Save kit source
+  SQLT                *FILE    PF            YES          192512  QSECOFR
+  SQLTIX              *FILE    LF            YES          176128  QSECOFR
+  RCV0001             *JRNRCV                YES         1380352  QSECOFR                          Save kit receiver
+  RCV0002             *JRNRCV                YES         1380352  QSECOFR                          Save kit receiver
+                         Library ------Objects------
+  Library    ASP          Saved   Saved   Not saved                                      Owner                 Size Text
+  QSTEST     1             YES       31           0                                      QSECOFR            4554752 Database confor
+                           * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) OUTPUT(*PRINT) INFTYPE(*MBR)
+  -> ok
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+-- spooled file (savlib-print-mbr)
+ 5770SS1 V7R1M0  100423         Save Library - Member Information                 {host}      10/30/26  7:25:23        Page    1
+ Save file  . . . . . . :   ZZS1             Save file library  . . :   QSTEST
+ Target release . . . . :   V7R1M0           Storage  . . . . . . . :   *KEEP
+ Save access paths  . . :   Yes              Save file data . . . . :   Yes
+ Private authorities  . :   No
+ Data compressed  . . . :   No
+ Library  . . . . . . . :   QSTEST
+ Save date/time . . . . :   10/30/26    07:25:23
+  Object              Type     Attribute    Saved           Size  Owner                            Member     Member     Member
+  QSTEST              *LIB     PROD          YES          147456  QSECOFR
+  JRN                 *JRN                   YES           12288  QSECOFR
+  PGM1                *PGM     CLLE          YES           90112  QSECOFR
+  PGM2                *PGM     CLLE          YES           90112  QSECOFR
+  SRV1                *SRVPGM  CLLE          YES           90112  QSECOFR
+  MOD1                *MODULE  CLLE          YES           65536  QSECOFR
+  MOD2                *MODULE  CLLE          YES           65536  QSECOFR
+  DQ1                 *DTAQ                  YES           16384  QSECOFR
+  QSTOUTQ             *OUTQ                  YES           16384  QSECOFR
+  QSTMSGF             *MSGF                  YES           24576  QSECOFR
+  USRIDX              *USRIDX  TESTIDX       YES           16384  QSECOFR
+  QSTJOBD             *JOBD                  YES            8192  QSECOFR
+  QSTCMD              *CMD                   YES            8192  QSECOFR
+  DTAC                *DTAARA                YES            8192  QSECOFR
+  DTAD                *DTAARA                YES            8192  OWNA
+  DTAL                *DTAARA                YES            8192  QSECOFR
+  USRSPC              *USRSPC  TESTSPC       YES            8192  QSECOFR
+  ORD                 *FILE    PF            YES           69632  QSECOFR                          ORD
+  CUST                *FILE    PF            YES           69632  QSECOFR                          CUST
+  CUSTK               *FILE    LF            YES           61440  QSECOFR                          CUSTK
+  CUSTSO              *FILE    LF            YES           65536  QSECOFR                          CUSTSO
+  CUSORD              *FILE    LF            YES          106496  QSECOFR                          CUSORD
+  FMTA                *FILE    PF            YES           28672  QSECOFR                          FMTA
+  FREEPF              *FILE    PF            YES           28672  QSECOFR                          FREEPF
+  MPF                 *FILE    PF            YES           69632  QSECOFR                          M1         M2         M3
+  QDDSSRC             *FILE    PF            YES          131072  QSECOFR                          CUSORD     CUST       CUSTK
+                                                                                                   CUSTSO     FMTA       ORD
+  QSRC                *FILE    PF            YES          110592  QSECOFR                          MOD1       MOD2       PGM1
+                                                                                                   QSTCMD     SRV1
+  SQLT                *FILE    PF            YES          192512  QSECOFR                          SQLT
+  SQLTIX              *FILE    LF            YES          176128  QSECOFR                          SQLTIX
+  RCV0001             *JRNRCV                YES         1380352  QSECOFR
+  RCV0002             *JRNRCV                YES         1380352  QSECOFR
+  Spooled     File                                                   Creation   Creation     Output
+  File        Number   Job          User         Number   System     Date       Time         Queue      Library
+                         Library ------Objects------
+  Library    ASP          Saved   Saved   Not saved                                      Owner                 Size Text
+  QSTEST     1             YES       31           0                                      QSECOFR            4554752 Database confor
+                           * * * * *   E N D   O F   L I S T I N G   * * * * *

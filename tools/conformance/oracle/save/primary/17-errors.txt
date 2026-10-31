@@ -1,0 +1,539 @@
+# Restore requests that find nothing or name the wrong thing
+# primary oracle (V7R1M0), 2026-10-30
+
+> RSTOBJ OBJ(NOSUCH) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3780] Specified file for library QSTEST not found.
+  CPF3801 Diagnostic 20 QSRRSFIL->QSQRUN4 | Objects from save file ZZFULL in QSTEST not restored.
+  CPF3780 Escape 30 QSRRSFIL->QSQRUN4 | Specified file for library QSTEST not found.
+
+> RSTOBJ OBJ(DTAC NOSUCH) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3773] 1 objects restored. 1 not restored to QSTEST.
+  CPD3773 Diagnostic 20 QSRRSLIB->QSRRLCP2 | Object NOSUCH type *ALL in QSTEST not restored.
+  CPF3773 Escape 20 QSRROCPR->QSQRUN4 | 1 objects restored. 1 not restored to QSTEST.
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QGPL) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3780] Specified file for library QGPL not found.
+  CPF3806 Diagnostic 20 QSRRSFIL->QSQRUN4 | Objects from save file ZZFULL in QSTEST not restored.
+  CPF3780 Escape 30 QSRRSFIL->QSQRUN4 | Specified file for library QGPL not found.
+
+> RSTLIB SAVLIB(QGPL) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3780] Specified file for library QGPL not found.
+  CPF3806 Diagnostic 20 QSRRSFIL->QSQRUN4 | Objects from save file ZZFULL in QSTEST not restored.
+  CPF3780 Escape 30 QSRRSFIL->QSQRUN4 | Specified file for library QGPL not found.
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QSTEST) OBJTYPE(*PGM) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3780] Specified file for library QSTEST not found.
+  CPF3801 Diagnostic 20 QSRRSFIL->QSQRUN4 | Objects from save file ZZFULL in QSTEST not restored.
+  CPF3780 Escape 30 QSRRSFIL->QSQRUN4 | Specified file for library QSTEST not found.
+
+> CLRSAVF FILE(QSTEST/ZZS1)
+  -> ok
+  CPC3725 Completion 00 QSRCSAVF->QSQRUN4 | Save file ZZS1 in library QSTEST cleared.
+
+> RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> FAILED [CPF3707] Save file ZZS1 in QSTEST contains no data.
+  CPF3707 Escape 30 QSRRSFIL->QSQRUN4 | Save file ZZS1 in QSTEST contains no data.
+
+> RSTLIB SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> FAILED [CPF3707] Save file ZZS1 in QSTEST contains no data.
+  CPF3707 Escape 30 QSRRSFIL->QSQRUN4 | Save file ZZS1 in QSTEST contains no data.
+
+> RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/NOSAVF)
+  -> FAILED [CPF9812] File NOSAVF in library QSTEST not found.
+  CPF9812 Escape 40 QSRLIBS1->QSQRUN4 | File NOSAVF in library QSTEST not found.
+
+> RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/CUST)
+  -> FAILED [CPF3782] File CUST in QSTEST not a save file.
+  CPF3782 Escape 30 QSRLIBS1->QSQRUN4 | File CUST in QSTEST not a save file.
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OMITOBJ(DTAC)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(DTA*) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OMITOBJ(DTAD)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 2 objects restored from QSTEST to QSTEST.
+
+> RSTLIB SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OMITOBJ((DTA*)) OPTION(*NEW)
+  -> ok
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JRN JRN not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | PGM PGM1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | PGM PGM2 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | SRVPGM SRV1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | MODULE MOD1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | MODULE MOD2 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | DTAQ DQ1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | OUTQ QSTOUTQ not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | MSGF QSTMSGF not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | USRIDX USRIDX not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JOBD QSTJOBD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | CMD QSTCMD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | USRSPC USRSPC not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE ORD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUST not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUSTK not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUSTSO not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUSORD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE FMTA not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE FREEPF not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE MPF not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE QDDSSRC not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE QSRC not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE SQLT not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE SQLTIX not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JRNRCV RCV0001 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JRNRCV RCV0002 not selected to be restored.
+  CPC3703 Completion 00 QSRRLCP2->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OUTPUT(*OUTFILE) OUTFILE(QSTEST/ZZROUT)
+  -> FAILED [CPF3706] JRNRCV RCV0002 not restored to library QSTEST.
+  CPF9861 Information 00 QLIOUTFL->QSQRUN4 | Output file ZZROUT created in library QSTEST.
+  CPF9862 Information 00 QLIOUTFL->QSQRUN4 | Member ZZROUT added to output file ZZROUT in library QSTEST.
+  CPF7085 Diagnostic 30 QJORSTJN->QSRRSOBJ | Journal JRN in QSTEST already exists.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | JRN JRN not restored to QSTEST.
+  CPD2415 Diagnostic 40 QMHQRSTQ->QSRRSOBJ | Data queue DQ1 not restored. Data queue exists in library QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | DTAQ DQ1 not restored to QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3284 Diagnostic 50 QDBRSPRE->QDBRSPRE | Member list of file QDDSSRC and saved file not the same.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE QDDSSRC not restored to QSTEST.
+  CPF3734 Diagnostic 30 QSRRSPST->QSRRSLIB | JRNRCV RCV0002 in QSTEST not restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 1 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 2 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUST in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTK in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTSO in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSORD in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FREEPF in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File QSRC in library QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 1 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLT in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLTIX in library QSTEST restored.
+  CPF3773 Diagnostic 20 QSRROCPR->QSQRUN4 | 25 objects restored. 5 not restored to QSTEST.
+  CPF3706 Escape 30 QSRRSDEQ->QSQRUN4 | JRNRCV RCV0002 not restored to library QSTEST.
+
+> DSPFFD FILE(QSTEST/ZZROUT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspffd-zzrout)
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    1
+ Input parameters
+   File  . . . . . . . . . . . . . . . . . . . :  ZZROUT
+     Library . . . . . . . . . . . . . . . . . :  QSTEST
+ File Information
+   File  . . . . . . . . . . . . . . . . . . . :  ZZROUT
+     Library . . . . . . . . . . . . . . . . . :  QSTEST
+   File location . . . . . . . . . . . . . . . :  *LCL
+   Externally described  . . . . . . . . . . . :  Yes
+   Number of record formats  . . . . . . . . . :      1
+   Type of file  . . . . . . . . . . . . . . . :  Physical
+   File creation date  . . . . . . . . . . . . :  10/30/26
+   Text 'description'. . . . . . . . . . . . . :  Output file for RSTOBJ
+ Record Format Information
+   Record format . . . . . . . . . . . . . . . :  QSRRST
+   Format level identifier . . . . . . . . . . :  46FF6A0E739AA
+   Number of fields  . . . . . . . . . . . . . :     71
+   Record length . . . . . . . . . . . . . . . :   4411
+   Format text . . . . . . . . . . . . . . . . :  Restored Objects
+ Field Level Information
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSRECR     CHAR            1       1         1        Both     Record
+                                                                  type
+     Field text  . . . . . . . . . . . . . . . :  Record type - 1=Object  2=Library 3=Restore
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOSTA     CHAR            1       1         2        Both     Restore
+                                                                  status
+     Field text  . . . . . . . . . . . . . . . :  Restored: 0=No 1=Yes 2=Excluded 3=Not converted
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOMSG     CHAR            7       7         3        Both     Message
+                                                                  ID
+     Field text  . . . . . . . . . . . . . . . :  Message ID
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOSEC     CHAR            1       1        10        Both     Security
+                                                                  messages
+     Field text  . . . . . . . . . . . . . . . :  Security messages: 0=No 1=Yes
+     Coded Character Set Identifier  . . . . . :  65535
+   RSNAME     CHAR           10      10        11        Both     Object
+                                                                  name
+     Field text  . . . . . . . . . . . . . . . :  Object name
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    2
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSMNAM     CHAR           10      10        21        Both     Member
+                                                                  name
+     Field text  . . . . . . . . . . . . . . . :  Member name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSTYPE     CHAR            8       8        31        Both     Object
+                                                                  type
+     Field text  . . . . . . . . . . . . . . . :  Object type
+     Coded Character Set Identifier  . . . . . :  65535
+   RSATTR     CHAR           10      10        39        Both     Object
+                                                                  attribute
+     Field text  . . . . . . . . . . . . . . . :  Object attribute
+     Coded Character Set Identifier  . . . . . :  65535
+   RSSIZE     ZONED       15  0      15        49        Both     Size
+     Field text  . . . . . . . . . . . . . . . :  Size
+   RSOOWN     CHAR           10      10        64        Both     Owner
+     Field text  . . . . . . . . . . . . . . . :  Owner after restore
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOTXT     CHAR           50      50        74        Both     Object
+                                                                  text
+     Field text  . . . . . . . . . . . . . . . :  Object text
+     Coded Character Set Identifier  . . . . . :  65535
+   RSRPLV     CHAR          704     706       124        Both     Replacement
+                                                                  variables
+     Field text  . . . . . . . . . . . . . . . :  Replacement variables
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :  65535
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOLIB     CHAR           10      10       830        Both     Saved
+                                                                  library
+     Field text  . . . . . . . . . . . . . . . :  Saved library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOASP     ZONED        2  0       2       840        Both     Restore ASP
+     Field text  . . . . . . . . . . . . . . . :  Restore ASP
+   RSOSEQ     ZONED        4  0       4       842        Both     Sequence
+                                                                  number
+     Field text  . . . . . . . . . . . . . . . :  Sequence number: -5=See RSOSQ2 field
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    3
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSLABL     CHAR           17      17       846        Both     File
+                                                                  label
+     Field text  . . . . . . . . . . . . . . . :  File label
+     Coded Character Set Identifier  . . . . . :  65535
+   RSSVDT     CHAR           13      13       863        Both     Save
+                                                                  date/time
+     Field text  . . . . . . . . . . . . . . . :  Save date/time - CYYMMDDHHMMSS
+     Coded Character Set Identifier  . . . . . :  65535
+   RSRSDT     CHAR           13      13       876        Both     Restore
+                                                                  date/time
+     Field text  . . . . . . . . . . . . . . . :  Restore date/time - CYYMMDDHHMMSS
+     Coded Character Set Identifier  . . . . . :  65535
+   RSVLID     CHAR          450     452       889        Both     Volume
+                                                                  identifiers
+     Field text  . . . . . . . . . . . . . . . :  Volume identifiers
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :  65535
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSODEV     CHAR           40      40      1341        Both     Device
+                                                                  names
+     Field text  . . . . . . . . . . . . . . . :  Device names
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOSVF     CHAR           10      10      1381        Both     Save
+                                                                  file
+     Field text  . . . . . . . . . . . . . . . :  Save file
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOSFL     CHAR           10      10      1391        Both     Save
+                                                                  file
+                                                                  library
+     Field text  . . . . . . . . . . . . . . . :  Save file library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOCMD     CHAR           10      10      1401        Both     Restore
+                                                                  command
+     Field text  . . . . . . . . . . . . . . . :  Restore command
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    4
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSSYSN     CHAR            8       8      1411        Both     System
+                                                                  name
+     Field text  . . . . . . . . . . . . . . . :  System name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSORRL     CHAR            6       6      1419        Both     Restore
+                                                                  release
+     Field text  . . . . . . . . . . . . . . . :  Restore release - VnRnMn
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOSRL     CHAR            6       6      1425        Both     Save
+                                                                  release
+     Field text  . . . . . . . . . . . . . . . :  Save release - VnRnMn
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPGP     CHAR           10      10      1431        Both     Primary
+                                                                  group
+     Field text  . . . . . . . . . . . . . . . :  Primary group after restore
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOSQ2     ZONED       10  0      10      1441        Both     Large
+                                                                  Sequence
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Sequence number
+   RSONLB     CHAR           10      10      1451        Both     Restored
+                                                                  library
+     Field text  . . . . . . . . . . . . . . . :  Restored library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOFMT     CHAR            1       1      1461        Both     Save
+                                                                  Format
+     Field text  . . . . . . . . . . . . . . . :  Save format: 0=Serial 1=Parallel
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOMFN     ZONED        3  0       3      1462        Both     Media
+                                                                  File
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Media File Number
+   RSOTMF     ZONED        3  0       3      1465        Both     Total
+                                                                  Media
+                                                                  Files
+     Field text  . . . . . . . . . . . . . . . :  Total Media Files
+   RSOMDN     CHAR           10      10      1468        Both     Media
+                                                                  Definition
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Media Definition Name
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    5
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOMDL     CHAR           10      10      1478        Both     Media
+                                                                  Definition
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Media Definition Library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOVLC     ZONED        3  0       3      1488        Both     Volume
+                                                                  Count
+     Field text  . . . . . . . . . . . . . . . :  Volume Count
+   RSOVLL     ZONED        3  0       3      1491        Both     Volume
+                                                                  Length
+     Field text  . . . . . . . . . . . . . . . :  Volume Length
+   RSOVLD     CHAR         2400    2402      1494        Both     Volume
+                                                                  identifiers
+     Field text  . . . . . . . . . . . . . . . :  Volume identifiers
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :    500
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOOPT     CHAR          256     258      3896        Both     Optical
+                                                                  file
+     Field text  . . . . . . . . . . . . . . . :  Optical file
+     Variable length field -- Allocated length :  None
+     Coded Character Set Identifier  . . . . . :    500
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOAS1     CHAR           10      10      4154        Both     ASP
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  ASP name for object library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOAS2     ZONED        5  0       5      4164        Both     ASP
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  ASP number for object library
+   RSOPRT     CHAR            1       1      4169        Both     Partial
+                                                                  Transaction
+                                                                  Exists
+     Field text  . . . . . . . . . . . . . . . :  Partial transaction exists: 0=No 1=Yes
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    6
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOJN      CHAR           10      10      4170        Both     Journal
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Journal name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOJL      CHAR           10      10      4180        Both     Journal
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Journal library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOJRN     CHAR           10      10      4190        Both     Journal
+                                                                  Receiver
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Journal receiver name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOJRL     CHAR           10      10      4200        Both     Journal
+                                                                  Receiver
+                                                                  Library
+     Field text  . . . . . . . . . . . . . . . :  Journal receiver library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOJRA     CHAR           10      10      4210        Both     Journal
+                                                                  Receiver
+                                                                  ASP
+     Field text  . . . . . . . . . . . . . . . :  Journal receiver ASP name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPFL     CHAR           10      10      4220        Both     Spooled File
+                                                                  Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPFN     ZONED        6  0       6      4230        Both     Spooled File
+                                                                  Number
+     Field text  . . . . . . . . . . . . . . . :  Spooled file number
+   RSOPJB     CHAR           10      10      4236        Both     Spooled File
+                                                                  Job Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file job name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPUN     CHAR           10      10      4246        Both     Spooled File
+                                                                  User Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file user name
+     Coded Character Set Identifier  . . . . . :  65535
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    7
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOPJN     CHAR            6       6      4256        Both     Spooled File
+                                                                  Job Number
+     Field text  . . . . . . . . . . . . . . . :  Spooled file job number
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPJS     CHAR            8       8      4262        Both     Spooled File
+                                                                  Job System Name
+     Field text  . . . . . . . . . . . . . . . :  Spooled file job system name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPCD     CHAR            7       7      4270        Both     Spooled File
+                                                                  Saved
+                                                                  Creation Date
+     Field text  . . . . . . . . . . . . . . . :  Spooled file saved creation date
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPCT     CHAR            6       6      4277        Both     Spooled File
+                                                                  Saved
+                                                                  Creation Time
+     Field text  . . . . . . . . . . . . . . . :  Spooled file saved creation time
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPQN     CHAR           10      10      4283        Both     Spooled File
+                                                                  Saved From
+                                                                  Output Queue
+     Field text  . . . . . . . . . . . . . . . :  Spooled file saved from output queue name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPQL     CHAR           10      10      4293        Both     Spooled File
+                                                                  Saved From
+                                                                  OUTQ Library
+     Field text  . . . . . . . . . . . . . . . :  Spooled file saved from output queue library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPUD     CHAR           10      10      4303        Both     Spooled File
+                                                                  User Data
+     Field text  . . . . . . . . . . . . . . . :  Spooled file user data
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPFT     CHAR           10      10      4313        Both     Spooled File
+                                                                  Form Type
+     Field text  . . . . . . . . . . . . . . . :  Spooled file form type
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPPG     PACKED      11  0       6      4323        Both     Spooled File
+                                                                  Pages
+     Field text  . . . . . . . . . . . . . . . :  Spooled file pages
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    8
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSOPCP     ZONED        3  0       3      4329        Both     Spooled File
+                                                                  Copies
+     Field text  . . . . . . . . . . . . . . . :  Spooled file copies
+   RSOPSZ     PACKED      15  0       8      4332        Both     Spooled File
+                                                                  Size
+     Field text  . . . . . . . . . . . . . . . :  Spooled file size
+   RSOPXD     CHAR            7       7      4340        Both     Spooled File
+                                                                  Expiration Date
+     Field text  . . . . . . . . . . . . . . . :  Spooled file expiration date
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPDR     CHAR            7       7      4347        Both     Spooled File
+                                                                  Restored
+                                                                  Creation Date
+     Field text  . . . . . . . . . . . . . . . :  Spooled file restored creation date
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPTR     CHAR            6       6      4354        Both     Spooled File
+                                                                  Restored
+                                                                  Creation Time
+     Field text  . . . . . . . . . . . . . . . :  Spooled file restored creation time
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPQR     CHAR           10      10      4360        Both     Spooled File
+                                                                  Restored To
+                                                                  Output Queue
+     Field text  . . . . . . . . . . . . . . . :  Spooled file restored to output queue name
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPLR     CHAR           10      10      4370        Both     Spooled File
+                                                                  Restored To
+                                                                  OUTQ Library
+     Field text  . . . . . . . . . . . . . . . :  Spooled file restored to output queue library
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPVA     CHAR            1       1      4380        Both     Private
+                                                                  Authorities
+                                                                  Requested
+     Field text  . . . . . . . . . . . . . . . :  PVTAUT: 0=*NO 1=*YES
+     Coded Character Set Identifier  . . . . . :  65535
+   RSOPVS     ZONED       10  0      10      4381        Both     Private
+                                                                  Authorities
+                                                                  Saved
+     Field text  . . . . . . . . . . . . . . . :  Private authorities saved
+   RSOPVR     ZONED       10  0      10      4391        Both     Private
+                                                                  Authorities
+                                                                  Restored
+     Field text  . . . . . . . . . . . . . . . :  Private authorities restored
+ 5770SS1 V7R1M0  100423      Display File Field Description                                     10/30/26   7:31:01       Page    9
+ Record format . . . . :  QSRRST        File . . . :  ZZROUT       Library . . . . . . . . . . :  QSTEST
+              Data        Field  Buffer    Buffer        Field    Column
+   Field      Type       Length  Length  Position        Usage    Heading
+   RSODFR     CHAR            1       1      4401        Both     Defer
+                                                                  Status
+     Field text  . . . . . . . . . . . . . . . :  Defer status
+     Coded Character Set Identifier  . . . . . :  65535
+   RSODFI     CHAR           10      10      4402        Both     Defer
+                                                                  ID
+     Field text  . . . . . . . . . . . . . . . :  Defer ID
+     Coded Character Set Identifier  . . . . . :  65535
+
+-- RSTOBJ OUTFILE rows: SELECT * FROM QSTEST.ZZROUT
+RSRECR|RSOSTA|RSOMSG|RSOSEC|RSNAME|RSMNAM|RSTYPE|RSATTR|RSSIZE|RSOOWN|RSOTXT|RSRPLV|RSOLIB|RSOASP|RSOSEQ|RSLABL|RSSVDT|RSRSDT|RSVLID|RSODEV|RSOSVF|RSOSFL|RSOCMD|RSSYSN|RSORRL|RSOSRL|RSOPGP|RSOSQ2|RSONLB|RSOFMT|RSOMFN|RSOTMF|RSOMDN|RSOMDL|RSOVLC|RSOVLL|RSOVLD|RSOOPT|RSOAS1|RSOAS2|RSOPRT|RSOJN|RSOJL|RSOJRN|RSOJRL|RSOJRA|RSOPFL|RSOPFN|RSOPJB|RSOPUN|RSOPJN|RSOPJS|RSOPCD|RSOPCT|RSOPQN|RSOPQL|RSOPUD|RSOPFT|RSOPPG|RSOPCP|RSOPSZ|RSOPXD|RSOPDR|RSOPTR|RSOPQR|RSOPLR|RSOPVA|RSOPVS|RSOPVR|RSODFR|RSODFI
+F1|F0|CPF3756|40|JRN||*JRN||12288|QSECOFR||D1D9D540404040404040D1D9D540404040D8E2E3C5E2E340404040|QSTEST|0|0||||||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0||*NONE|0|QSTEST|F0|1|1|||0|0||||0|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F0|CPF3756|40|DQ1||*DTAQ||16384|QSECOFR||C4D8F140404040404040C4E3C1D8404040D8E2E3C5E2E340404040|QSTEST|0|0||||||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0||*NONE|0|QSTEST|F0|1|1|||0|0||||0|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|PGM1||*PGM|CLLE|90112|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|PGM2||*PGM|CLLE|90112|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|SRV1||*SRVPGM|CLLE|90112|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|MOD1||*MODULE|CLLE|65536|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|MOD2||*MODULE|CLLE|65536|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|QSTOUTQ||*OUTQ||16384|QSECOFR|Save kit output queue||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|QSTMSGF||*MSGF||24576|QSECOFR|Save kit messages||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|USRIDX||*USRIDX|TESTIDX|16384|QSECOFR|Save kit user index||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|QSTJOBD||*JOBD||8192|QSECOFR|Save kit job description||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|QSTCMD||*CMD||8192|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|DTAC||*DTAARA||8192|QSECOFR|Char data area||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|DTAD||*DTAARA||8192|OWNA|Dec data area||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|DTAL||*DTAARA||8192|QSECOFR|Lgl data area||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|GRPA|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|USRSPC||*USRSPC|TESTSPC|8192|QSECOFR|Save kit user space||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F0|CPF3756|40|FMTA||*FILE||28672|QSECOFR||C6D4E3C1404040404040C6C9D3C5404040D8E2E3C5E2E340404040|QSTEST|1|0||1261030072510||||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F0|CPF3756|40|QDDSSRC||*FILE||131072|QSECOFR||D8C4C4E2E2D9C3404040C6C9D3C5404040D8E2E3C5E2E340404040|QSTEST|1|0||1261030072510||||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|RCV0001||*JRNRCV||1380352|QSECOFR|Save kit receiver||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F0|CPF3734|40|RCV0002||*JRNRCV||1380352|QSECOFR||D9C3E5F0F0F0F2404040D1D9D5D9C3E540D8E2E3C5E2E340404040|QSTEST|1|0||1261030072510||||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|ORD||*FILE|PF|69632|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|JRN|QSTEST|RCV0002|QSTEST|*SYSBAS||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|CUST||*FILE|PF|69632|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|CUSTK||*FILE|LF|61440|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|CUSTSO||*FILE|LF|65536|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|CUSORD||*FILE|LF|106496|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|FREEPF||*FILE|PF|28672|QSECOFR|For STG(*FREE)||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|MPF||*FILE|PF|69632|QSECOFR|Multi-member PF||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|QSRC||*FILE|PF|110592|QSECOFR|Save kit source||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|SQLT||*FILE|PF|192512|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+F1|F1||F0|SQLTIX||*FILE|LF|176128|QSECOFR|||QSTEST|1|0||1261030072510|1261030073100|||ZZFULL|QSTEST|RSTOBJ|{host}|V7R1M0|V7R1M0|*NONE|0|QSTEST|F0|1|1|||0|0|||*SYSBAS|1|F0|||||||0|||||||||||0|0|0||||||F0|0|0|F0|
+(30 rows)
+
+> DLTF FILE(QSTEST/ZZROUT)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZROUT in QSTEST type *FILE deleted.
+
+> RSTOBJ OBJ(DTA*) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OUTPUT(*PRINT)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 3 objects restored from QSTEST to QSTEST.
+-- spooled file (rstobj-print)
+ 5770SS1 V7R1M0 100423                  Restore Object Information                {host}      10/30/26  7:31:03        Page    1
+ Object name  . . . . . . . . . . . . . :   DTA*
+ Save library . . . . . . . . . . . . . :   QSTEST
+ Object type  . . . . . . . . . . . . . :   *ALL
+ Save file name . . . . . . . . . . . . :   ZZFULL
+   Save file library  . . . . . . . . . :     QSTEST
+ Label  . . . . . . . . . . . . . . . . :   *SAVLIB
+ Option . . . . . . . . . . . . . . . . :   *ALL
+ Member option  . . . . . . . . . . . . :   *MATCH
+ Private authorities  . . . . . . . . . :   *NO
+ Save date/time . . . . . . . . . . . . :
+ Allow object differences . . . . . . . :   *NONE
+ Restore library  . . . . . . . . . . . :   *SAVLIB
+ Restore ASP  . . . . . . . . . . . . . :   *SAVASP
+                      Objects Restored To Library QSTEST
+   Object      Object               Owner       Old/
+   Name        Type      Attribute  Name        New   Security Comments
+   DTAC        *DTAARA              QSECOFR     Old
+   DTAD        *DTAARA              OWNA        Old
+   DTAL        *DTAARA              QSECOFR     Old
+Restored 3 objects from QSTEST to QSTEST, 0 not restored, 0 excluded
+at 10/30/26 07:31:03.
+Objects were restored from save file ZZFULL in QSTEST, saved at 10/30/26 07:25:10.
+                           * * * * * E N D  O F  L I S T I N G * * * * *

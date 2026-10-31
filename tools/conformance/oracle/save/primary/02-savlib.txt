@@ -1,0 +1,399 @@
+# Save the library to a save file
+# primary oracle (V7R1M0), 2026-10-30
+
+> CHGJOB INQMSGRPY(*DFT)
+  -> ok
+
+> CRTSAVF FILE(QSTEST/ZZFULL) TEXT('Save kit full save')
+  -> ok
+  CPC7301 Completion 00 QDDCDF->QSQRUN4 | File ZZFULL created in library QSTEST.
+
+> CRTSAVF FILE(QSTEST/ZZS1) TEXT('Save kit scratch save file')
+  -> ok
+  CPC7301 Completion 00 QDDCDF->QSQRUN4 | File ZZS1 created in library QSTEST.
+# first save: nothing omitted, so the target save file and the tool's ZZ* files are in the saved library
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> ok
+  CPI374B Information 00 QSRSVPRE->QSRSVPRE | SAVFDTA(*YES) ignored for file ZZS1 in library QSTEST.
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 37 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1)
+  -> ok
+-- spooled file (dspsavf-batch)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:07 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     3768
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:07
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ QSTEST       *LIB       PROD         QSECOFR              144   YES        Database conformance kit
+ JRN          *JRN                    QSECOFR               12   YES        Save kit journal
+ PGM1         *PGM       CLLE         QSECOFR               88   YES
+ PGM2         *PGM       CLLE         QSECOFR               88   YES
+ ZZJLOG       *PGM       CLLE         QSECOFR               92   YES
+ ZZSPLF       *PGM       CLLE         QSECOFR               96   YES
+ SRV1         *SRVPGM    CLLE         QSECOFR               88   YES
+ MOD1         *MODULE    CLLE         QSECOFR               64   YES
+ MOD2         *MODULE    CLLE         QSECOFR               64   YES
+ DQ1          *DTAQ                   QSECOFR               16   YES        Save kit data queue
+ QSTOUTQ      *OUTQ                   QSECOFR               16   YES        Save kit output queue
+ QSTMSGF      *MSGF                   QSECOFR               24   YES        Save kit messages
+ USRIDX       *USRIDX    TESTIDX      QSECOFR               16   YES        Save kit user index
+ ZZFULL       *FILE      SAVF         QSECOFR               24   YES        Save kit full save
+ ZZS1         *FILE      SAVF         QSECOFR                5   YES        Save kit scratch save file
+ QSTJOBD      *JOBD                   QSECOFR                8   YES        Save kit job description
+ QSTCMD       *CMD                    QSECOFR                8   YES
+ DTAC         *DTAARA                 QSECOFR                8   YES        Char data area
+ DTAD         *DTAARA                 OWNA                   8   YES        Dec data area
+ DTAL         *DTAARA                 QSECOFR                8   YES        Lgl data area
+ USRSPC       *USRSPC    TESTSPC      QSECOFR                8   YES        Save kit user space
+ ORD          *FILE      PF           QSECOFR               68   YES
+ CUST         *FILE      PF           QSECOFR               68   YES
+ CUSTK        *FILE      LF           QSECOFR               60   YES
+ CUSTSO       *FILE      LF           QSECOFR               64   YES
+ CUSORD       *FILE      LF           QSECOFR              104   YES
+ FMTA         *FILE      PF           QSECOFR               28   YES
+ FREEPF       *FILE      PF           QSECOFR               28   YES        For STG(*FREE)
+ MPF          *FILE      PF           QSECOFR               68   YES        Multi-member PF
+ QDDSSRC      *FILE      PF           QSECOFR              128   YES        Save kit DDS
+ QSRC         *FILE      PF           QSECOFR              108   YES        Save kit source
+ SQLT         *FILE      PF           QSECOFR              188   YES
+ SQLTIX       *FILE      LF           QSECOFR              172   YES
+ ZZSPL        *FILE      PF           QSECOFR               36   YES
+ ZZSRC        *FILE      PF           QSECOFR               48   YES
+ RCV0001      *JRNRCV                 QSECOFR             1348   YES        Save kit receiver
+ RCV0002      *JRNRCV                 QSECOFR             1348   YES        Save kit receiver
+                                              Saved Object Information                                                  Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:07 EST
+                                                       Database File Members
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ ORD          PF                    1   ORD
+ CUST         PF                    1   CUST
+ CUSTK        LF                    1   CUSTK
+ CUSTSO       LF                    1   CUSTSO
+ CUSORD       LF                    1   CUSORD
+ FMTA         PF                    1   FMTA
+ FREEPF       PF                    1   FREEPF
+ MPF          PF                    3   M1           M2           M3
+ QDDSSRC      PF                    6   CUSORD       CUST         CUSTK        CUSTSO       FMTA         ORD
+ QSRC         PF                    5   MOD1         MOD2         PGM1         QSTCMD       SRV1
+ SQLT         PF                    1   SQLT
+ SQLTIX       LF                    1   SQLTIX
+ ZZSPL        PF                    1   ZZSPL
+ ZZSRC        PF                    2   ZZJLOG       ZZSPLF
+                                                              Summary
+ Number of objects saved  . . . . . . . :   37
+ Members  . . . . . . . . . . . . . . . :   26
+ Access paths . . . . . . . . . . . . . :   4
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-print)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:09 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     3768
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:07
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ QSTEST       *LIB       PROD         QSECOFR              144   YES        Database conformance kit
+ JRN          *JRN                    QSECOFR               12   YES        Save kit journal
+ PGM1         *PGM       CLLE         QSECOFR               88   YES
+ PGM2         *PGM       CLLE         QSECOFR               88   YES
+ ZZJLOG       *PGM       CLLE         QSECOFR               92   YES
+ ZZSPLF       *PGM       CLLE         QSECOFR               96   YES
+ SRV1         *SRVPGM    CLLE         QSECOFR               88   YES
+ MOD1         *MODULE    CLLE         QSECOFR               64   YES
+ MOD2         *MODULE    CLLE         QSECOFR               64   YES
+ DQ1          *DTAQ                   QSECOFR               16   YES        Save kit data queue
+ QSTOUTQ      *OUTQ                   QSECOFR               16   YES        Save kit output queue
+ QSTMSGF      *MSGF                   QSECOFR               24   YES        Save kit messages
+ USRIDX       *USRIDX    TESTIDX      QSECOFR               16   YES        Save kit user index
+ ZZFULL       *FILE      SAVF         QSECOFR               24   YES        Save kit full save
+ ZZS1         *FILE      SAVF         QSECOFR                5   YES        Save kit scratch save file
+ QSTJOBD      *JOBD                   QSECOFR                8   YES        Save kit job description
+ QSTCMD       *CMD                    QSECOFR                8   YES
+ DTAC         *DTAARA                 QSECOFR                8   YES        Char data area
+ DTAD         *DTAARA                 OWNA                   8   YES        Dec data area
+ DTAL         *DTAARA                 QSECOFR                8   YES        Lgl data area
+ USRSPC       *USRSPC    TESTSPC      QSECOFR                8   YES        Save kit user space
+ ORD          *FILE      PF           QSECOFR               68   YES
+ CUST         *FILE      PF           QSECOFR               68   YES
+ CUSTK        *FILE      LF           QSECOFR               60   YES
+ CUSTSO       *FILE      LF           QSECOFR               64   YES
+ CUSORD       *FILE      LF           QSECOFR              104   YES
+ FMTA         *FILE      PF           QSECOFR               28   YES
+ FREEPF       *FILE      PF           QSECOFR               28   YES        For STG(*FREE)
+ MPF          *FILE      PF           QSECOFR               68   YES        Multi-member PF
+ QDDSSRC      *FILE      PF           QSECOFR              128   YES        Save kit DDS
+ QSRC         *FILE      PF           QSECOFR              108   YES        Save kit source
+ SQLT         *FILE      PF           QSECOFR              188   YES
+ SQLTIX       *FILE      LF           QSECOFR              172   YES
+ ZZSPL        *FILE      PF           QSECOFR               36   YES
+ ZZSRC        *FILE      PF           QSECOFR               48   YES
+ RCV0001      *JRNRCV                 QSECOFR             1348   YES        Save kit receiver
+ RCV0002      *JRNRCV                 QSECOFR             1348   YES        Save kit receiver
+                                              Saved Object Information                                                  Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:09 EST
+                                                       Database File Members
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ ORD          PF                    1   ORD
+ CUST         PF                    1   CUST
+ CUSTK        LF                    1   CUSTK
+ CUSTSO       LF                    1   CUSTSO
+ CUSORD       LF                    1   CUSORD
+ FMTA         PF                    1   FMTA
+ FREEPF       PF                    1   FREEPF
+ MPF          PF                    3   M1           M2           M3
+ QDDSSRC      PF                    6   CUSORD       CUST         CUSTK        CUSTSO       FMTA         ORD
+ QSRC         PF                    5   MOD1         MOD2         PGM1         QSTCMD       SRV1
+ SQLT         PF                    1   SQLT
+ SQLTIX       LF                    1   SQLTIX
+ ZZSPL        PF                    1   ZZSPL
+ ZZSRC        PF                    2   ZZJLOG       ZZSPLF
+                                                              Summary
+ Number of objects saved  . . . . . . . :   37
+ Members  . . . . . . . . . . . . . . . :   26
+ Access paths . . . . . . . . . . . . . :   4
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# the saved library with the tool's files omitted; this save file is the one every restore case uses
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*YES)
+  -> ok
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZFULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-full)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:10 EST
+ Save file  . . . . . . . . . . . . . . :   ZZFULL
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     3176
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ QSTEST       *LIB       PROD         QSECOFR              144   YES        Database conformance kit
+ JRN          *JRN                    QSECOFR               12   YES        Save kit journal
+ PGM1         *PGM       CLLE         QSECOFR               88   YES
+ PGM2         *PGM       CLLE         QSECOFR               88   YES
+ SRV1         *SRVPGM    CLLE         QSECOFR               88   YES
+ MOD1         *MODULE    CLLE         QSECOFR               64   YES
+ MOD2         *MODULE    CLLE         QSECOFR               64   YES
+ DQ1          *DTAQ                   QSECOFR               16   YES        Save kit data queue
+ QSTOUTQ      *OUTQ                   QSECOFR               16   YES        Save kit output queue
+ QSTMSGF      *MSGF                   QSECOFR               24   YES        Save kit messages
+ USRIDX       *USRIDX    TESTIDX      QSECOFR               16   YES        Save kit user index
+ QSTJOBD      *JOBD                   QSECOFR                8   YES        Save kit job description
+ QSTCMD       *CMD                    QSECOFR                8   YES
+ DTAC         *DTAARA                 QSECOFR                8   YES        Char data area
+ DTAD         *DTAARA                 OWNA                   8   YES        Dec data area
+ DTAL         *DTAARA                 QSECOFR                8   YES        Lgl data area
+ USRSPC       *USRSPC    TESTSPC      QSECOFR                8   YES        Save kit user space
+ ORD          *FILE      PF           QSECOFR               68   YES
+ CUST         *FILE      PF           QSECOFR               68   YES
+ CUSTK        *FILE      LF           QSECOFR               60   YES
+ CUSTSO       *FILE      LF           QSECOFR               64   YES
+ CUSORD       *FILE      LF           QSECOFR              104   YES
+ FMTA         *FILE      PF           QSECOFR               28   YES
+ FREEPF       *FILE      PF           QSECOFR               28   YES        For STG(*FREE)
+ MPF          *FILE      PF           QSECOFR               68   YES        Multi-member PF
+ QDDSSRC      *FILE      PF           QSECOFR              128   YES        Save kit DDS
+ QSRC         *FILE      PF           QSECOFR              108   YES        Save kit source
+ SQLT         *FILE      PF           QSECOFR              188   YES
+ SQLTIX       *FILE      LF           QSECOFR              172   YES
+ RCV0001      *JRNRCV                 QSECOFR             1348   YES        Save kit receiver
+ RCV0002      *JRNRCV                 QSECOFR             1348   YES        Save kit receiver
+                                              Saved Object Information                                                  Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:10 EST
+                                                       Database File Members
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ ORD          PF                    1   ORD
+ CUST         PF                    1   CUST
+ CUSTK        LF                    1   CUSTK
+ CUSTSO       LF                    1   CUSTSO
+ CUSORD       LF                    1   CUSORD
+ FMTA         PF                    1   FMTA
+ FREEPF       PF                    1   FREEPF
+ MPF          PF                    3   M1           M2           M3
+ QDDSSRC      PF                    6   CUSORD       CUST         CUSTK        CUSTSO       FMTA         ORD
+ QSRC         PF                    5   MOD1         MOD2         PGM1         QSTCMD       SRV1
+ SQLT         PF                    1   SQLT
+ SQLTIX       LF                    1   SQLTIX
+                                                              Summary
+ Number of objects saved  . . . . . . . :   31
+ Members  . . . . . . . . . . . . . . . :   23
+ Access paths . . . . . . . . . . . . . :   4
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPOBJD OBJ(QSTEST/ZZFULL) OBJTYPE(*FILE) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjd-savf)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:11 EST
+ Object . . . . . . . :   ZZFULL                                    Attribute  . . . . . :   SAVF
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *FILE                                     Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Save kit full save
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:25:06
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:25:10
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :   10/30/26
+   Days used count  . . . . . . . . . . :   1
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   1667072
+   Offline size . . . . . . . . . . . . :   24576
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:07
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZS1
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPFD FILE(QSTEST/ZZFULL) TYPE(*ATR) OUTPUT(*PRINT)
+  -> ok
+  CPF4905 Sender copy 10 QWPPERRS->QWPPERRS | Printed record of file QPDSPFD continued on next line.
+  CPF4905 Notify 10 QWPPERRS->QWHDSPFD | Printed record of file QPDSPFD continued on next line.I *NONE      Reply                        10/30/26  07:25:12.949106  QMHSNINQ     QSYS        0F72     QWPPERRS    QSYS        0050I
+-- spooled file (dspfd-savf)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:25:12       Page    1
+   File  . . . . . . . . . . . : ZZFULL
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *ATR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : ZZFULL       Library . : QSTEST       Type of file . : Save                      Library Auxiliary Storage Pool ID . :
+                                      Save File Attributes
+   File level identifier . . . . . . . . . . . :            1261030072506
+   Creation date . . . . . . . . . . . . . . . :            10/30/26
+   Text 'description'  . . . . . . . . . . . . : TEXT       Save kit full save
+   Maximum file wait time  . . . . . . . . . . : WAITFILE   *IMMED
+   Share open data path  . . . . . . . . . . . : SHARE      *NO
+   Maximum record length . . . . . . . . . . . :              528
+   Current number of records . . . . . . . . . :                  3176
+   Maximum records . . . . . . . . . . . . . . : MAXRCDS    *NOMAX
+   Auxiliary storage pool ID . . . . . . . . . : ASP            1
+
+> DSPOBJD OBJ(QSYS/QSTEST) OBJTYPE(*LIB) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjd-lib)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:13 EST
+ Object . . . . . . . :   QSTEST                                    Attribute  . . . . . :   PROD
+   Library  . . . . . :     QSYS                                    Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *LIB                                      Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Database conformance kit
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/22/26  06:53:30
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:25:10
+   Usage data collected . . . . . . . . :   NO
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   147456
+   Offline size . . . . . . . . . . . . :   147456
+   Associated space size  . . . . . . . :   8192
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZFULL
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

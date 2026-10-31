@@ -1,0 +1,107 @@
+# Logical files restored with and without their physical file
+# primary oracle (V7R1M0), 2026-10-30
+
+> DLTF FILE(QSTEST/CUSORD)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CUSORD in QSTEST type *FILE deleted.
+
+> DLTF FILE(QSTEST/CUSTSO)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CUSTSO in QSTEST type *FILE deleted.
+
+> DLTF FILE(QSTEST/CUSTK)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CUSTK in QSTEST type *FILE deleted.
+
+> DLTF FILE(QSTEST/CUST)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CUST in QSTEST type *FILE deleted.
+# the logical file alone, its physical file missing
+
+> RSTOBJ OBJ(CUSTSO) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3204 Diagnostic 40 QDBRSPRE->QDBRSPRE | Cannot find object needed for file CUSTSO in QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE CUSTSO not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+# the join file, the physical files it joins only partly present
+
+> RSTOBJ OBJ(CUSORD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3204 Diagnostic 40 QDBRSPRE->QDBRSPRE | Cannot find object needed for file CUSORD in QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE CUSORD not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+# the logical files listed before the physical file in one request
+
+> RSTOBJ OBJ(CUSORD CUSTSO CUSTK CUST) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPI3210 Information 00 QDBISHRX->QDBRSPRE | File CUSORD in QSTEST shares access path.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 2 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUST in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTK in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTSO in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSORD in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 4 objects restored from QSTEST to QSTEST.
+
+> DSPDBR FILE(QSTEST/CUST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspdbr-cust)
+ 5770SS1 V7R1M0  100423               Display Data Base Relations                               10/30/26   7:31:08       Page    1
+ DSPDBR Command Input
+   File  . . . . . . . . . . . . . . . . . . . : FILE       CUST
+     Library . . . . . . . . . . . . . . . . . :            QSTEST
+   Member  . . . . . . . . . . . . . . . . . . : MBR        *NONE
+   Record format . . . . . . . . . . . . . . . : RCDFMT     *NONE
+   Output  . . . . . . . . . . . . . . . . . . : OUTPUT     *PRINT
+ Specifications
+   Type of file  . . . . . . . . . . . . . . . :            Physical
+   File  . . . . . . . . . . . . . . . . . . . :            CUST
+     Library . . . . . . . . . . . . . . . . . :            QSTEST
+     Member  . . . . . . . . . . . . . . . . . :            *NONE
+     Record format . . . . . . . . . . . . . . :            *NONE
+     Number of dependent files . . . . . . . . :                3
+ Files Dependent On Specified File
+   Dependent File         Library       Dependency   JREF    Constraint
+       CUSTK              QSTEST        Data
+       CUSTSO             QSTEST        Data
+       CUSORD             QSTEST        Data            1
+
+> DSPOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-cust)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:31:09 EST
+ Object . . . . . . . :   CUST                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *FILE                                     ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+-- CUSTSO rows: SELECT * FROM QSTEST.CUSTSO
+CUSTNO|NAME|CITY|BAL
+1|ACME|ROCHESTER|100.50
+3|GAMMA|ROCHESTER|0.00
+(2 rows)
+
+> GRTOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) USER(USRA) AUT(*CHANGE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user USRA for object CUST in QSTEST object type *FILE.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+# the SQL table and its index
+
+> DLTF FILE(QSTEST/SQLTIX)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object SQLTIX in QSTEST type *FILE deleted.
+
+> RSTOBJ OBJ(SQLTIX) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLTIX in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+-- indexes: SELECT INDEX_NAME, TABLE_NAME FROM QSYS2.SYSINDEXES WHERE INDEX_SCHEMA = 'QSTEST'
+INDEX_NAME|TABLE_NAME
+SQLTIX|SQLT
+(1 rows)

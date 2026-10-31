@@ -1,0 +1,13 @@
+# PTF groups
+# primary oracle (V7R1M0), 2026-10-30
+
+> WRKPTFGRP OUTPUT(*PRINT)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0031 Diagnostic 30 QCARULE->QSQRUN4 | Command WRKPTFGRP not allowed in this setting.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on WRKPTFGRP command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+# spooled file not copied: [CEE9901] Application error.  CPF3344 unmonitored by ZZSPLF at statement 0000001800, instruction X'0000'.
+
+-- QSYS2.GROUP_PTF_INFO: SELECT * FROM QSYS2.GROUP_PTF_INFO ORDER BY PTF_GROUP_NAME
+COLLECTED_TIME|PTF_GROUP_NAME|PTF_GROUP_DESCRIPTION|PTF_GROUP_LEVEL|PTF_GROUP_TARGET_RELEASE|PTF_GROUP_STATUS
+(0 rows)

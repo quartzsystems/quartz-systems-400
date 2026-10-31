@@ -1,0 +1,76 @@
+case 13-alwobjdif ALWOBJDIF with a recreated file (other format, same format), a changed owner and primary group
+note follow-up run: the ALWOBJDIF values that need MBROPT(*ALL) (MBROPT(*MATCH), the default, refuses *ALL)
+cl SAVOBJ OBJ(FMTA DTAD) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+sql FMTA rows as saved
+SELECT * FROM QSTEST.FMTA
+;;
+cl DLTF FILE(QSTEST/FMTA)
+cl CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTB)
+cl RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*FILELVL) MBROPT(*ALL)
+cl RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*COMPATIBLE) MBROPT(*ALL)
+splf fmta-after-compatible-all DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+sql FMTA rows after *COMPATIBLE MBROPT(*ALL)
+SELECT * FROM QSTEST.FMTA
+;;
+cl DLTF FILE(QSTEST/FMTA)
+cl CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTB)
+sqlx
+INSERT INTO QSTEST.FMTA VALUES (9, 'NINE', 9)
+;;
+cl RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL) MBROPT(*ALL)
+splf fmta-after-all-all DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+splf fmta-objd-after-all-all DSPOBJD OBJ(QSTEST/FMTA) OBJTYPE(*FILE) DETAIL(*FULL) OUTPUT(*PRINT)
+sql FMTA rows after *ALL MBROPT(*ALL)
+SELECT * FROM QSTEST.FMTA
+;;
+sql objects named FMTA* after *ALL (a renamed copy is kept?)
+SELECT OBJNAME, OBJTYPE, OBJCREATED FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*FILE')) X WHERE OBJNAME LIKE 'FMT%'
+;;
+cl CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(USRA)
+cl RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL) MBROPT(*ALL)
+splf dtad-aut-all-all DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+cl CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(OWNA)
+note ALWOBJDIF list form
+cl RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*OWNER *PGP *AUTL)
+cl RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL *OWNER)
+note a PF over a file whose creation date differs but format matches, MBROPT(*ALL), ALWOBJDIF(*NONE)
+cl DLTF FILE(QSTEST/FMTA)
+cl CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTA)
+cl RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*ALL)
+
+case 19-ifs SAV and RST of /home/QSTEST to and from save files
+qsh mk mkdir -p /home/QSTEST/zzsav/sub && echo one > /home/QSTEST/zzsav/a.txt && echo two > /home/QSTEST/zzsav/sub/b.txt && ls -lR /home/QSTEST/zzsav
+cl CRTSAVF FILE(QSTEST/ZZS4)
+cl CRTSAVF FILE(QSTEST/ZZS5)
+cl SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS4.FILE') OBJ(('/home/QSTEST'))
+splf dspsavf-home DSPSAVF FILE(QSTEST/ZZS4) OUTPUT(*PRINT)
+cl SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav'))
+splf dspsavf-zzsav DSPSAVF FILE(QSTEST/ZZS5) OUTPUT(*PRINT)
+splf sav-print SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) CLEAR(*ALL) OUTPUT(*PRINT) INFTYPE(*ALL)
+cl SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav'))
+cl SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) CLEAR(*ALL)
+cl SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS1.FILE') OBJ(('/home/QSTEST/nosuch')) CLEAR(*ALL)
+cl SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS1.FILE') OBJ(('/home/QSTEST/zzsav' *INCLUDE) ('/home/QSTEST/zzsav/sub' *OMIT)) CLEAR(*ALL)
+splf dspsavf-omit DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+note the whole tree with OPTION(*NEW): every object exists
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS4.FILE') OBJ(('/home/QSTEST')) OPTION(*NEW)
+qsh change rm /home/QSTEST/zzsav/a.txt && echo changed > /home/QSTEST/zzsav/sub/b.txt && ls -lR /home/QSTEST/zzsav
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OPTION(*NEW)
+qsh after-new ls -lR /home/QSTEST/zzsav && cat /home/QSTEST/zzsav/a.txt /home/QSTEST/zzsav/sub/b.txt
+qsh change2 rm /home/QSTEST/zzsav/a.txt
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OPTION(*OLD)
+qsh after-old ls -lR /home/QSTEST/zzsav && cat /home/QSTEST/zzsav/sub/b.txt
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OPTION(*ALL)
+qsh after-all ls -lR /home/QSTEST/zzsav && cat /home/QSTEST/zzsav/a.txt /home/QSTEST/zzsav/sub/b.txt
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav/sub/b.txt'))
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav' *INCLUDE '/home/QSTEST/zzrst'))
+qsh renamed ls -lR /home/QSTEST/zzrst
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/nosuch'))
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) ALWOBJDIF(*ALL)
+splf rst-print RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OUTPUT(*PRINT) INFTYPE(*ALL)
+note a library save file named on RST, and an IFS save file named on RSTOBJ
+cl RST DEV('/QSYS.LIB/QSTEST.LIB/ZZFULL.FILE') OBJ(('/QSYS.LIB/QSTEST.LIB/DTAC.DTAARA'))
+cl RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS5)
+qsh clean rm -r /home/QSTEST/zzsav /home/QSTEST/zzrst; ls -la /home/QSTEST
+cl DLTF FILE(QSTEST/ZZS4)
+cl DLTF FILE(QSTEST/ZZS5)

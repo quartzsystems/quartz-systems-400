@@ -1,0 +1,259 @@
+# RSTLIB and RSTOBJ OPTION(*ALL|*NEW|*OLD|*FREE)
+# primary oracle (V7R1M0), 2026-10-30
+
+> DLTDTAARA DTAARA(QSTEST/DTAC)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object DTAC in QSTEST type *DTAARA deleted.
+
+> DLTMOD MODULE(QSTEST/MOD2)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object MOD2 in QSTEST type *MODULE deleted.
+
+> RSTLIB SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OPTION(*NEW)
+  -> ok
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JRN JRN not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | PGM PGM1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | PGM PGM2 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | SRVPGM SRV1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | MODULE MOD1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | DTAQ DQ1 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | OUTQ QSTOUTQ not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | MSGF QSTMSGF not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | USRIDX USRIDX not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JOBD QSTJOBD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | CMD QSTCMD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | DTAARA DTAD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | DTAARA DTAL not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | USRSPC USRSPC not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE ORD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUST not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUSTK not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUSTSO not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUSORD not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE FMTA not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE FREEPF not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE MPF not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE QDDSSRC not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE QSRC not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE SQLT not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | FILE SQLTIX not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JRNRCV RCV0001 not selected to be restored.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | JRNRCV RCV0002 not selected to be restored.
+  CPC3703 Completion 00 QSRRLCP2->QSQRUN4 | 3 objects restored from QSTEST to QSTEST.
+
+> CHKOBJ OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA)
+  -> ok
+
+> CHKOBJ OBJ(QSTEST/MOD2) OBJTYPE(*MODULE)
+  -> ok
+
+> DLTDTAARA DTAARA(QSTEST/DTAL)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object DTAL in QSTEST type *DTAARA deleted.
+
+> RSTLIB SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OPTION(*OLD)
+  -> FAILED [CPF3773] 27 objects restored. 3 not restored to QSTEST.
+  CPF3724 Information 10 QSRRSLIB->QSRRLCP2 | DTAARA DTAL not selected to be restored.
+  CPF7085 Diagnostic 30 QJORSTJN->QSRRSOBJ | Journal JRN in QSTEST already exists.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | JRN JRN not restored to QSTEST.
+  CPD2415 Diagnostic 40 QMHQRSTQ->QSRRSOBJ | Data queue DQ1 not restored. Data queue exists in library QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | DTAQ DQ1 not restored to QSTEST.
+  CPF7081 Diagnostic 30 QJORSTRC->QSRRSOBJ | Cannot restore receiver RCV0002 while attached.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | JRNRCV RCV0002 not restored to QSTEST.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 1 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 2 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUST in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTK in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTSO in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSORD in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FMTA in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FREEPF in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File QDDSSRC in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File QSRC in library QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 1 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLT in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLTIX in library QSTEST restored.
+  CPF3773 Escape 20 QSRRLCP2->QSQRUN4 | 27 objects restored. 3 not restored to QSTEST.
+
+> CHKOBJ OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA)
+  -> FAILED [CPF9801] Object DTAL in library QSTEST not found.
+  CPF9801 Escape 40 QLICKOBJ->QSQRUN4 | Object DTAL in library QSTEST not found.
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OPTION(*OLD)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3724 Information 10 QSRRSLIB->QSRRLCP2 | DTAARA DTAL not selected to be restored.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OPTION(*NEW)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OPTION(*NEW)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3725 Information 10 QSRRSLIB->QSRRLCP2 | DTAARA DTAL not selected to be restored.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+# OPTION(*FREE): FREEPF saved with STG(*FREE)
+
+> SAVOBJ OBJ(FREEPF) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) STG(*FREE)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPFD FILE(QSTEST/FREEPF) TYPE(*MBR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspfd-freepf-mbr)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:36       Page    1
+   File  . . . . . . . . . . . : FREEPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FREEPF       Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                        Member Description
+   Member  . . . . . . . . . . . . . . . . . . : MBR        FREEPF
+                                                              Storage freed
+
+> DSPOBJD OBJ(QSTEST/FREEPF) OBJTYPE(*FILE) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjd-freepf)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:26:37 EST
+ Object . . . . . . . :   FREEPF                                    Attribute  . . . . . :   PF
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *FILE                                     Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   For STG(*FREE)
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:46
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:26:32
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :   10/30/26
+   Days used count  . . . . . . . . . . :   1
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   36864
+   Offline size . . . . . . . . . . . . :   28672
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   YES
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Restore date/time  . . . . . . . . . :   10/30/26  07:26:32
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZFULL
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+-- read a freed file: SELECT * FROM QSTEST.FREEPF
+# sql error: [SQL7008] FREEPF in QSTEST not valid for operation.
+
+> RSTOBJ OBJ(CUST) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL) OPTION(*FREE)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF4271 Escape 40 QQQOOODBOP->QSQRUN3 | Member FREEPF saved with storage freed.
+  SQL7008 Diagnostic 30 QSQRUN3->QSQRUN3 | FREEPF in QSTEST not valid for operation.
+  SQL0501 Diagnostic 30 QSQRUN4->QSQRUN4 | Cursor CRSR0001 not open.
+  CPF3726 Information 10 QSRRSLIB->QSRRLCP2 | FILE CUST not selected to be restored.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(FREEPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) OPTION(*FREE)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FREEPF in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPFD FILE(QSTEST/FREEPF) TYPE(*MBR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspfd-freepf-mbr-after)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:40       Page    1
+   File  . . . . . . . . . . . : FREEPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBR
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FREEPF       Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                        Member Description
+   Member  . . . . . . . . . . . . . . . . . . : MBR        FREEPF
+     Member level identifier . . . . . . . . . :            1261030072046
+     Member creation date  . . . . . . . . . . :            10/30/26
+     Text 'description'  . . . . . . . . . . . : TEXT       For STG(*FREE)
+     Expiration date for member  . . . . . . . : EXPDATE    *NONE
+     Member size                                 SIZE
+       Initial number of records . . . . . . . :                 10000
+       Increment number of records . . . . . . :             1000
+       Maximum number of increments  . . . . . :                3
+     Current number of increments  . . . . . . :                     0
+     Record capacity . . . . . . . . . . . . . :                 13000
+     Current number of records . . . . . . . . :                     2
+     Number of deleted records . . . . . . . . :                     0
+     Allocate storage  . . . . . . . . . . . . : ALLOCATE   *NO
+     Contiguous storage  . . . . . . . . . . . : CONTIG     *NO
+     Preferred storage unit  . . . . . . . . . : UNIT       *ANY
+     Records to force a write  . . . . . . . . : FRCRATIO   *NONE
+     Share open data path  . . . . . . . . . . : SHARE      *NO
+     Max % deleted records allowed . . . . . . : DLTPCT     *NONE
+     Data Space Activity Statistics  . . . . . :
+       Data space size in bytes  . . . . . . . :               8192
+       Physical file open accesses . . . . . . :
+       Physical file close accesses  . . . . . :
+       Write operations  . . . . . . . . . . . :
+       Update operations . . . . . . . . . . . :
+       Delete operations . . . . . . . . . . . :
+       Logical Reads . . . . . . . . . . . . . :
+       Physical Reads  . . . . . . . . . . . . :
+       Clear operations  . . . . . . . . . . . :
+       Data space copy operations  . . . . . . :
+       Reorganize operations . . . . . . . . . :
+       Access paths builds/rebuilds  . . . . . :
+       Records rejected by key selection . . . :
+       Records rejected by non-key selection . :
+       Records rejected by group-by selection. :
+     Access Path Activity Statistics . . . . . :
+       Access path logical reads . . . . . . . :
+       Access path physical reads  . . . . . . :
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:26:40       Page    2
+ File . : FREEPF       Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                        Member Description
+       Implicit access path sharing  . . . . . :            No
+     Last change date/time . . . . . . . . . . :            10/30/26  07:26:39
+     Last save date/time . . . . . . . . . . . :            10/30/26  07:26:35
+     Last restore date/time  . . . . . . . . . :            10/30/26  07:26:39
+     Last used date  . . . . . . . . . . . . . :            10/30/26
+     Days used count . . . . . . . . . . . . . :                1
+       Reset date  . . . . . . . . . . . . . . :
+     Object restored with partial transactions,
+       apply journal changes required  . . . . :            *NO
+     Partial transaction exists,
+       roll back ended . . . . . . . . . . . . :            *NO
+     Starting journal receiver for apply . . . :
+       Library . . . . . . . . . . . . . . . . :
+       ASP Device  . . . . . . . . . . . . . . :
+
+-- read after OPTION(*FREE): SELECT * FROM QSTEST.FREEPF
+FREEPF
+C6D9C5C5F1404040404040404040404040404040
+C6D9C5C5F2404040404040404040404040404040
+(2 rows)
+
+> RSTOBJ OBJ(FREEPF) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) OPTION(*FREE)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3726 Information 10 QSRRSLIB->QSRRLCP2 | FILE FREEPF not selected to be restored.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.

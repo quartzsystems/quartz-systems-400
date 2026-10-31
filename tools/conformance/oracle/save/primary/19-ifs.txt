@@ -1,0 +1,487 @@
+# SAV and RST of /home/QSTEST to and from save files
+# primary oracle (V7R1M0), 2026-10-30
+
+$ mkdir -p /home/QSTEST/zzsav/sub && echo one > /home/QSTEST/zzsav/a.txt && echo two > /home/QSTEST/zzsav/sub/b.txt && ls -lR /home/QSTEST/zzsav
+total: 16 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 a.txt
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 30 07:33 sub
+
+/home/QSTEST/zzsav/sub:
+total: 8 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 b.txt
+exit=0
+
+> CRTSAVF FILE(QSTEST/ZZS4)
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC7301 Completion 00 QDDCDF->QSQRUN4 | File ZZS4 created in library QSTEST.
+
+> CRTSAVF FILE(QSTEST/ZZS5)
+  -> ok
+  CPC7301 Completion 00 QDDCDF->QSQRUN4 | File ZZS5 created in library QSTEST.
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS4.FILE') OBJ(('/home/QSTEST'))
+  -> ok
+  CPC370D Completion 00 QSRSAV->QSQRUN4 | 76 objects saved.
+
+> DSPSAVF FILE(QSTEST/ZZS4) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-home)
+                                         Display Saved Objects - Save File                                              Page     1
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:45 EST
+ System serial number . . . . . . . . :    {serial}
+ System name  . . . . . . . . . . . . :   {host}
+ Save release level . . . . . . . . . :   V7R1M0
+ Target release level . . . . . . . . :   V7R1M0
+ Save command . . . . . . . . . . . . :   SAV
+ Save date/time . . . . . . . . . . . :   10/30/26  07:33:45
+ Save changed period:
+   Start date . . . . . . . . . . . . :   *ALL
+   Start time . . . . . . . . . . . . :   *ALL
+   End date . . . . . . . . . . . . . :   *ALL
+   End time . . . . . . . . . . . . . :   *ALL
+ Save while active  . . . . . . . . . :   *NO
+ Data compressed  . . . . . . . . . . :   No
+ Save file  . . . . . . . . . . . . . :   ZZS4
+   Library  . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . :     2424
+ Private authorities  . . . . . . . . :   No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   QSTEST            *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   data              *DIR        QSECOFR             8192  Yes        No
+   dds               *DIR        QSECOFR            24576  Yes        No
+   oracle            *DIR        QSECOFR             8192  Yes        No
+   out               *DIR        QSECOFR             8192  Yes        No
+   zzsav             *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/data
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   CUSTOMER.csv      *STMF       QSECOFR             8192  Yes        No
+   EVENTS.csv        *STMF       QSECOFR             8192  Yes        No
+   INVENTORY.csv     *STMF       QSECOFR             8192  Yes        No
+   LOGHIST.csv       *STMF       QSECOFR             8192  Yes        No
+   NOTES.csv         *STMF       QSECOFR             8192  Yes        No
+   ORDERS.csv        *STMF       QSECOFR             8192  Yes        No
+   ORDLINE.csv       *STMF       QSECOFR             8192  Yes        No
+   PRODUCT.csv       *STMF       QSECOFR             8192  Yes        No
+   TYPES.csv         *STMF       QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/dds
+                                         Display Saved Objects - Save File                                              Page     2
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:45 EST
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   ACTIVE.LF         *STMF       QSECOFR             8192  Yes        No
+   BIGORD.LF         *STMF       QSECOFR             8192  Yes        No
+   CUSBYNAME.LF      *STMF       QSECOFR             8192  Yes        No
+   CUSORD.LF         *STMF       QSECOFR             8192  Yes        No
+   CUSTOMER.PF       *STMF       QSECOFR             8192  Yes        No
+   EVENTS.PF         *STMF       QSECOFR             8192  Yes        No
+   INVENTORY.PF      *STMF       QSECOFR             8192  Yes        No
+   LOGHIST.PF        *STMF       QSECOFR             8192  Yes        No
+   NOTES.PF          *STMF       QSECOFR             8192  Yes        No
+   ORDALL.LF         *STMF       QSECOFR             8192  Yes        No
+   ORDBYCUS.LF       *STMF       QSECOFR             8192  Yes        No
+   ORDERS.PF         *STMF       QSECOFR             8192  Yes        No
+   ORDJOIN.LF        *STMF       QSECOFR             8192  Yes        No
+   ORDLINE.PF        *STMF       QSECOFR             8192  Yes        No
+   PRDBYDESC.LF      *STMF       QSECOFR             8192  Yes        No
+   PRODUCT.PF        *STMF       QSECOFR             8192  Yes        No
+   RLALOG.PF         *STMF       QSECOFR             8192  Yes        No
+   TYPES.PF          *STMF       QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/oracle
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   QHEADERS.SQL      *STMF       QSECOFR             8192  Yes        No
+   QRESULTS.SQL      *STMF       QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/out
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   data              *DIR        QSECOFR            24576  Yes        No
+   dspjrn.csv        *STMF       QSECOFR            16384  Yes        No
+   dspjrn.hdr        *STMF       QSECOFR             8192  Yes        No
+   ffd.csv           *STMF       QSECOFR           262144  Yes        No
+   ffd.hdr           *STMF       QSECOFR             8192  Yes        No
+   lvlid.csv         *STMF       QSECOFR            32768  Yes        No
+   lvlid.hdr         *STMF       QSECOFR             8192  Yes        No
+   rla.csv           *STMF       QSECOFR             4096  Yes        No
+   rla.hdr           *STMF       QSECOFR             8192  Yes        No
+   sql               *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/out/data
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   ACTIVE.csv        *STMF       QSECOFR             8192  Yes        No
+   BIGORD.csv        *STMF       QSECOFR             8192  Yes        No
+   CUSBYNAME.csv     *STMF       QSECOFR             8192  Yes        No
+   CUSTOMER.csv      *STMF       QSECOFR             8192  Yes        No
+   EVENTS.csv        *STMF       QSECOFR             8192  Yes        No
+   INVENTORY.csv     *STMF       QSECOFR             8192  Yes        No
+   LOGHIST.csv       *STMF       QSECOFR             8192  Yes        No
+                                         Display Saved Objects - Save File                                              Page     3
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:45 EST
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   NOTES.csv         *STMF       QSECOFR             8192  Yes        No
+   ORDBYCUS.csv      *STMF       QSECOFR             8192  Yes        No
+   ORDERS.csv        *STMF       QSECOFR             8192  Yes        No
+   ORDJOIN.csv       *STMF       QSECOFR             8192  Yes        No
+   ORDLINE.csv       *STMF       QSECOFR             8192  Yes        No
+   PRDBYDESC.csv     *STMF       QSECOFR             8192  Yes        No
+   PRODUCT.csv       *STMF       QSECOFR             8192  Yes        No
+   RLALOG.csv        *STMF       QSECOFR             4096  Yes        No
+   TYPES.csv         *STMF       QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/out/sql
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   Q01.csv           *STMF       QSECOFR             8192  Yes        No
+   Q02.csv           *STMF       QSECOFR             8192  Yes        No
+   Q03.csv           *STMF       QSECOFR             8192  Yes        No
+   Q04.csv           *STMF       QSECOFR             8192  Yes        No
+   Q05.csv           *STMF       QSECOFR             8192  Yes        No
+   Q06.csv           *STMF       QSECOFR             8192  Yes        No
+   Q07.csv           *STMF       QSECOFR             8192  Yes        No
+   Q08.csv           *STMF       QSECOFR             8192  Yes        No
+   Q09.csv           *STMF       QSECOFR             8192  Yes        No
+   Q10.csv           *STMF       QSECOFR             8192  Yes        No
+   Q11.csv           *STMF       QSECOFR             8192  Yes        No
+   Q12.csv           *STMF       QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   a.txt             *STMF       QSECOFR             8192  Yes        No
+   sub               *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav/sub
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   b.txt             *STMF       QSECOFR             8192  Yes        No
+ Number of objects saved  . . . . . . . :   76
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav'))
+  -> ok
+  CPC370D Completion 00 QSRSAV->QSQRUN4 | 4 objects saved.
+
+> DSPSAVF FILE(QSTEST/ZZS5) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-zzsav)
+                                         Display Saved Objects - Save File                                              Page     1
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:47 EST
+ System serial number . . . . . . . . :    {serial}
+ System name  . . . . . . . . . . . . :   {host}
+ Save release level . . . . . . . . . :   V7R1M0
+ Target release level . . . . . . . . :   V7R1M0
+ Save command . . . . . . . . . . . . :   SAV
+ Save date/time . . . . . . . . . . . :   10/30/26  07:33:47
+ Save changed period:
+   Start date . . . . . . . . . . . . :   *ALL
+   Start time . . . . . . . . . . . . :   *ALL
+   End date . . . . . . . . . . . . . :   *ALL
+   End time . . . . . . . . . . . . . :   *ALL
+ Save while active  . . . . . . . . . :   *NO
+ Data compressed  . . . . . . . . . . :   No
+ Save file  . . . . . . . . . . . . . :   ZZS5
+   Library  . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . :     88
+ Private authorities  . . . . . . . . :   No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   zzsav             *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   a.txt             *STMF       QSECOFR             8192  Yes        No
+   sub               *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav/sub
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   b.txt             *STMF       QSECOFR             8192  Yes        No
+ Number of objects saved  . . . . . . . :   4
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) CLEAR(*ALL) OUTPUT(*PRINT) INFTYPE(*ALL)
+  -> ok
+  CPC370D Completion 00 QSRSAV->QSQRUN4 | 4 objects saved.
+-- spooled file (sav-print)
+                                             Saved Objects - Save File                                                  Page     1
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:48 EST
+ System serial number . . . . . . . . :    {serial}
+ System name  . . . . . . . . . . . . :   {host}
+ Save release level . . . . . . . . . :   V7R1M0
+ Target release level . . . . . . . . :   V7R1M0
+ Save command . . . . . . . . . . . . :   SAV
+ Save date/time . . . . . . . . . . . :   10/30/26  07:33:48
+ Save changed period:
+   Start date . . . . . . . . . . . . :   *ALL
+   Start time . . . . . . . . . . . . :   *ALL
+   End date . . . . . . . . . . . . . :   *ALL
+   End time . . . . . . . . . . . . . :   *ALL
+ Save while active  . . . . . . . . . :   *NO
+ Output information type  . . . . . . :   *ALL
+ Data compressed  . . . . . . . . . . :   No
+ Save file  . . . . . . . . . . . . . :   ZZS5
+   Library  . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . :     88
+ Private authorities  . . . . . . . . :   No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST
+ Number of objects saved  . . . . . . . . . . . . :   1
+ Number of objects not saved  . . . . . . . . . . :   0
+ Size (in K) of objects saved . . . . . . . . . . :   8
+                                                                                             -----Save Active------    Error
+   Object              Type          Owner                 Size    Data        *ALWCKPWRT    Date          Time        Message
+   zzsav               *DIR          QSECOFR               8192    Yes          No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav
+ Number of objects saved  . . . . . . . . . . . . :   2
+ Number of objects not saved  . . . . . . . . . . :   0
+ Size (in K) of objects saved . . . . . . . . . . :   16
+                                                                                             -----Save Active------    Error
+   Object              Type          Owner                 Size    Data        *ALWCKPWRT    Date          Time        Message
+   a.txt               *STMF         QSECOFR               8192    Yes          No
+   sub                 *DIR          QSECOFR               8192    Yes          No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav/sub
+ Number of objects saved  . . . . . . . . . . . . :   1
+ Number of objects not saved  . . . . . . . . . . :   0
+ Size (in K) of objects saved . . . . . . . . . . :   8
+                                                                                             -----Save Active------    Error
+   Object              Type          Owner                 Size    Data        *ALWCKPWRT    Date          Time        Message
+   b.txt               *STMF         QSECOFR               8192    Yes          No
+ Total number of objects saved  . . . . . . . . . . . . :   4
+ Total number of objects not saved  . . . . . . . . . . :   0
+ Total size (in K) of objects saved . . . . . . . . . . :   32
+                                             Saved Objects - Save File                                                  Page     2
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:48 EST
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav'))
+  -> FAILED [CPF3794] Save or restore operation ended unsuccessfully.
+  CPA4067 Sender copy 99 QSRFMERR->QSRFMERR | Save file ZZS5 in QSTEST already contains data. (C G)C
+  CPF4110 Diagnostic 40 QSRFMERR->QSQRUN4 | Cancel reply received for message CPA4067.
+  CPF3794 Escape 30 QSRGENSE->QSQRUN4 | Save or restore operation ended unsuccessfully.
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) CLEAR(*ALL)
+  -> ok
+  CPC370D Completion 00 QSRSAV->QSQRUN4 | 4 objects saved.
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS1.FILE') OBJ(('/home/QSTEST/nosuch')) CLEAR(*ALL)
+  -> FAILED [CPF3823] No objects saved or restored.
+  CPFA0A9 Diagnostic 40 QSRSAV->QSRSAV | Object not found.  Object is /home/QSTEST/nosuch.
+  CPF3823 Escape 30 QSRSAV->QSQRUN4 | No objects saved or restored.
+
+> SAV DEV('/QSYS.LIB/QSTEST.LIB/ZZS1.FILE') OBJ(('/home/QSTEST/zzsav' *INCLUDE) ('/home/QSTEST/zzsav/sub' *OMIT)) CLEAR(*ALL)
+  -> ok
+  CPC370D Completion 00 QSRSAV->QSQRUN4 | 2 objects saved.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-omit)
+                                         Display Saved Objects - Save File                                              Page     1
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:33:52 EST
+ System serial number . . . . . . . . :    {serial}
+ System name  . . . . . . . . . . . . :   {host}
+ Save release level . . . . . . . . . :   V7R1M0
+ Target release level . . . . . . . . :   V7R1M0
+ Save command . . . . . . . . . . . . :   SAV
+ Save date/time . . . . . . . . . . . :   10/30/26  07:33:51
+ Save changed period:
+   Start date . . . . . . . . . . . . :   *ALL
+   Start time . . . . . . . . . . . . :   *ALL
+   End date . . . . . . . . . . . . . :   *ALL
+   End time . . . . . . . . . . . . . :   *ALL
+ Save while active  . . . . . . . . . :   *NO
+ Data compressed  . . . . . . . . . . :   No
+ Save file  . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . :     56
+ Private authorities  . . . . . . . . :   No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   zzsav             *DIR        QSECOFR             8192  Yes        No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav
+   Object            Type        Owner               Size  Data      *ALWCKPWRT  Text
+   a.txt             *STMF       QSECOFR             8192  Yes        No
+ Number of objects saved  . . . . . . . :   2
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# the whole tree with OPTION(*NEW): every object exists
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS4.FILE') OBJ(('/home/QSTEST')) OPTION(*NEW)
+  -> ok
+  CPC3716 Completion 00 QSRRST->QSQRUN4 | No objects restored, all objects were excluded.
+
+$ rm /home/QSTEST/zzsav/a.txt && echo changed > /home/QSTEST/zzsav/sub/b.txt && ls -lR /home/QSTEST/zzsav
+total: 8 kilobytes
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 30 07:33 sub
+
+/home/QSTEST/zzsav/sub:
+total: 8 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     8 Oct 30 07:33 b.txt
+exit=0
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OPTION(*NEW)
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 1 objects restored.
+
+$ ls -lR /home/QSTEST/zzsav && cat /home/QSTEST/zzsav/a.txt /home/QSTEST/zzsav/sub/b.txt
+total: 16 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 a.txt
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 30 07:33 sub
+
+/home/QSTEST/zzsav/sub:
+total: 8 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     8 Oct 30 07:33 b.txt
+one
+changed
+exit=0
+
+$ rm /home/QSTEST/zzsav/a.txt
+exit=0
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OPTION(*OLD)
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 3 objects restored.
+
+$ ls -lR /home/QSTEST/zzsav && cat /home/QSTEST/zzsav/sub/b.txt
+total: 8 kilobytes
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 30 07:34 sub
+
+/home/QSTEST/zzsav/sub:
+total: 8 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 b.txt
+two
+exit=0
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OPTION(*ALL)
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 4 objects restored.
+
+$ ls -lR /home/QSTEST/zzsav && cat /home/QSTEST/zzsav/a.txt /home/QSTEST/zzsav/sub/b.txt
+total: 16 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 a.txt
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 30 07:34 sub
+
+/home/QSTEST/zzsav/sub:
+total: 8 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 b.txt
+one
+two
+exit=0
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav/sub/b.txt'))
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 1 objects restored.
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav' *INCLUDE '/home/QSTEST/zzrst'))
+  -> ok
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 4 objects restored.
+
+$ ls -lR /home/QSTEST/zzrst
+total: 16 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 a.txt
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 30 07:34 sub
+
+/home/QSTEST/zzrst/sub:
+total: 8 kilobytes
+-rw-rw-rw-  1 QSECOFR  0                     4 Oct 30 07:33 b.txt
+exit=0
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/nosuch'))
+  -> FAILED [CPF3840] Specified file for restore operation not found.
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPF3801 Diagnostic 20 QSRGENSE->QSQRUN4 | Objects from save file ZZS5 in QSTEST not restored.
+  CPF3840 Escape 30 QSRGENSE->QSQRUN4 | Specified file for restore operation not found.
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) ALWOBJDIF(*ALL)
+  -> ok
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 4 objects restored.
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZS5.FILE') OBJ(('/home/QSTEST/zzsav')) OUTPUT(*PRINT) INFTYPE(*ALL)
+  -> ok
+  CPC370F Completion 00 QSRRST->QSQRUN4 | 4 objects restored.
+-- spooled file (rst-print)
+                                            Restored Objects - Save File                                                Page     1
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:34:15 EST
+ System name  . . . . . . . . . . . . :   {host}
+ System serial number . . . . . . . . :    {serial}
+ Restore release level  . . . . . . . :   V7R1M0
+ Restore command  . . . . . . . . . . :   RST
+ Restore date/time  . . . . . . . . . :   10/30/26  07:34:15
+ Save changed period:
+   Start date . . . . . . . . . . . . :   *ALL
+   Start time . . . . . . . . . . . . :   *ALL
+   End date . . . . . . . . . . . . . :   *ALL
+   End time . . . . . . . . . . . . . :   *ALL
+ Save while active  . . . . . . . . . :   *NO
+ Output information type  . . . . . . :   *ALL
+ Data compressed  . . . . . . . . . . :   No
+ Save file  . . . . . . . . . . . . . :   ZZS5
+   Library  . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . :     88
+ Private authorities  . . . . . . . . :   No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST
+ Number of objects restored . . . . . . . . . . . :   1
+ Number of objects not restored . . . . . . . . . :   0
+ Size (in K) of objects restored  . . . . . . . . :   8
+                                                                                             -----Save Active------    Error
+   Object              Type          Owner                 Size    Data        *ALWCKPWRT    Date          Time        Message
+   zzsav               *DIR          QSECOFR               8192    Yes          No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav
+ Number of objects restored . . . . . . . . . . . :   2
+ Number of objects not restored . . . . . . . . . :   0
+ Size (in K) of objects restored  . . . . . . . . :   16
+                                                                                             -----Save Active------    Error
+   Object              Type          Owner                 Size    Data        *ALWCKPWRT    Date          Time        Message
+   a.txt               *STMF         QSECOFR               8192    Yes          No
+   sub                 *DIR          QSECOFR               8192    Yes          No
+ Directory  . . . . . . . . . . . . . . . . . . . :   /home/QSTEST/zzsav/sub
+ Number of objects restored . . . . . . . . . . . :   1
+ Number of objects not restored . . . . . . . . . :   0
+ Size (in K) of objects restored  . . . . . . . . :   8
+                                                                                             -----Save Active------    Error
+   Object              Type          Owner                 Size    Data        *ALWCKPWRT    Date          Time        Message
+   b.txt               *STMF         QSECOFR               8192    Yes          No
+ Total number of objects restored . . . . . . . . . . . :   4
+ Total number of objects not restored . . . . . . . . . :   0
+ Total size (in K) of objects restored  . . . . . . . . :   32
+                                            Restored Objects - Save File                                                Page     2
+5770SS1 V7R1M0  100423                                                                     {host}  10/30/26         07:34:15 EST
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# a library save file named on RST, and an IFS save file named on RSTOBJ
+
+> RST DEV('/QSYS.LIB/QSTEST.LIB/ZZFULL.FILE') OBJ(('/QSYS.LIB/QSTEST.LIB/DTAC.DTAARA'))
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS5)
+  -> FAILED [CPF3780] Specified file for library QSTEST not found.
+  CPD372A Diagnostic 20 QSRRSFIL->QSQRUN4 | Objects from save file ZZS5 in QSTEST not restored.
+  CPF3780 Escape 30 QSRRSFIL->QSQRUN4 | Specified file for library QSTEST not found.
+
+$ rm -r /home/QSTEST/zzsav /home/QSTEST/zzrst; ls -la /home/QSTEST
+total: 68 kilobytes
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:34 .
+drwxrwsrwx  4 QSYS     0                  8192 Oct 22 07:45 ..
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:45 data
+drwxrwsrwx  2 QSECOFR  0                 24576 Oct 22 07:45 dds
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:53 oracle
+drwxrwsrwx  4 QSECOFR  0                  8192 Oct 22 07:54 out
+-rw-rw-rw-  1 QSECOFR  0                     0 Oct 30 07:34 zz.out
+exit=0
+
+> DLTF FILE(QSTEST/ZZS4)
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZS4 in QSTEST type *FILE deleted.
+
+> DLTF FILE(QSTEST/ZZS5)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object ZZS5 in QSTEST type *FILE deleted.

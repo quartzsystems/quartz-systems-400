@@ -1,0 +1,106 @@
+# IPL attributes, service attributes
+# primary oracle (V7R1M0), 2026-10-30
+
+> DSPIPLA
+  -> ok
+-- spooled file (dspipla)
+                                               Display IPL Attributes                                                   Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:34:40 EST
+ System Features:
+   Restart type  . . . . . . . . . . . . . . . . . :   *SYS
+   Keylock position  . . . . . . . . . . . . . . . :   *NORMAL
+ Hardware Functions:
+   Hardware diagnostics  . . . . . . . . . . . . . :   *ALL
+ Operating System Functions:
+   Compress job tables . . . . . . . . . . . . . . :   *NONE
+   Check job tables  . . . . . . . . . . . . . . . :   *ABNORMAL
+   Rebuild product directory . . . . . . . . . . . :   *NONE
+   Mail Server Framework recovery  . . . . . . . . :   *NONE
+   Display status  . . . . . . . . . . . . . . . . :   *ALL
+   Start TCP/IP  . . . . . . . . . . . . . . . . . :   *YES
+   Spooled file recovery . . . . . . . . . . . . . :   *DETACH
+ Operating System Options:
+   Clear job queues  . . . . . . . . . . . . . . . :   *NO
+   Clear output queues . . . . . . . . . . . . . . :   *NO
+   Clear incomplete joblogs  . . . . . . . . . . . :   *NO
+   Start print writers . . . . . . . . . . . . . . :   *YES
+   Start system to restricted state  . . . . . . . :   *NO
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPSRVA
+  -> FAILED [SQL0443] Trigger program or external routine detected an error.
+  CPD6A0C Diagnostic 30 QUIOPEN->QESDSPSA | Panel group or menu display not valid in batch job.
+  CPF6A12 Escape 40 QUIOPEN->QESDSPSA | Unable to open panel group.
+  CPF2499 Escape 40 QMHSNDPM->QESDSPSA | Message identifier  not valid.
+  CPF2524 Escape 40 QMHPDEH->QESDSPSA | Exception handler not available because of reason code 5.
+# spooled file not copied: [CEE9901] Application error.  CPF3344 unmonitored by ZZSPLF at statement 0000001800, instruction X'0000'.
+
+> DSPSRVSTS
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0031 Diagnostic 30 QCARULE->QSQRUN4 | Command DSPSRVSTS not allowed in this setting.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on DSPSRVSTS command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+# spooled file not copied: [CEE9901] Application error.  CPF3344 unmonitored by ZZSPLF at statement 0000001800, instruction X'0000'.
+
+> DSPBCKUP
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0071 Diagnostic 30 QCAFLD->QSQRUN4 | Parameter BCKUPOPT required.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on DSPBCKUP command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+# spooled file not copied: [CEE9901] Application error.  CPF3344 unmonitored by ZZSPLF at statement 0000001800, instruction X'0000'.
+
+> DSPBCKUP BCKUPOPT(*DAILY)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QEZCRBKL | Ownership of object QEZBACKUPL in QUSRSYS type *USRIDX changed.
+  CPI1E60 Completion 10 QEZCRBKL->QEZDSPBK | Backup options and library backup list created.
+  CPC9802 Completion 00 QEZDSPBK->QSQRUN4 | Printer output created.
+-- spooled file (dspbckup-daily)
+                      Daily Backup Options                          Page     1
+5770SS1 V7R1M0  100423                 {host}  10/30/26         07:36:30 EST
+ Last backup date . . . . . . . . . . . . :
+ Last tape set used . . . . . . . . . . . :
+ Where to back up:
+   Backup device  . . . . . . . . . . . . :
+   Tape sets to rotate  . . . . . . . . . :   DAYA
+                                              DAYB
+                                              DAYC
+   Erase tape before backup . . . . . . . :   Yes
+ What to back up:
+   Libraries  . . . . . . . . . . . . . . :   From list
+   Folders  . . . . . . . . . . . . . . . :   From list
+   Directories  . . . . . . . . . . . . . :   All
+   Security data  . . . . . . . . . . . . :   No
+   Configuration  . . . . . . . . . . . . :   No
+ How to back up:
+   Submit backup as a batch job . . . . . :   Yes
+   Save changed objects only  . . . . . . :   Yes
+   Print detailed report  . . . . . . . . :   Yes
+   User exit program  . . . . . . . . . . :   *NONE
+              * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPBCKUPL OUTPUT(*PRINT)
+  -> ok
+  CPC9802 Completion 00 QEZCHBL->QSQRUN4 | Printer output created.
+-- spooled file (dspbckupl)
+                                                Library Backup List                                                     Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:36:31 EST
+                --------------Backup--------------     Last
+ Library        Daily        Weekly       Monthly      backup       Changed      Description
+ ORACLE         Yes          Yes          Yes                       Yes          analyzer oracle kit
+ QDSNX          Yes          Yes          Yes          09/18/26     No
+ QGPL           Yes          Yes          Yes          09/18/26     Yes          General Purpose Library
+ QMGTC          Yes          Yes          Yes          09/18/26     Yes
+ QMGTC2         Yes          Yes          Yes          09/18/26     Yes
+ QPFRDATA       Yes          Yes          Yes          09/18/26     Yes          Performance Data Library
+ QRCL           Yes          Yes          Yes          09/18/26     No           Reclaim storage library.
+ QSRVAGT        Yes          Yes          Yes          09/18/26     Yes
+ QSYS2          Yes          Yes          Yes          09/18/26     Yes          System Library for CPI's
+ QUSRDIRCF      Yes          Yes          Yes          09/18/26     Yes
+ QUSRDIRDB      Yes          Yes          Yes          09/18/26     Yes
+ QUSRSYS        Yes          Yes          Yes          09/18/26     Yes          System Library for Users
+ SECORA         Yes          Yes          Yes                       Yes          security oracle kit
+ SYSIBM         Yes          Yes          Yes          09/18/26     No           System Library for DB2
+ SYSIBMADM      Yes          Yes          Yes          09/18/26     No           System Library for DB2
+ SYSPROC        Yes          Yes          Yes          09/18/26     No           System Library for DB2
+ SYSTOOLS       Yes          Yes          Yes          09/18/26     No           System Library for DB2
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

@@ -1,0 +1,258 @@
+# Private authorities, owner and primary group after restore
+# primary oracle (V7R1M0), 2026-10-30
+# saved state (02): CUST USRA *CHANGE; DTAC USRA *USE; PGM1 USRA *EXCLUDE; DTAD owner OWNA, *PUBLIC *EXCLUDE; DTAL group GRPA
+
+> GRTOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) USER(OWNA) AUT(*USE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user OWNA for object CUST in QSTEST object type *FILE.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> RSTOBJ OBJ(CUST) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 2 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUST in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (cust-over-existing)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:35 EST
+ Object . . . . . . . :   CUST                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *FILE                                     ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+ OWNA                        *USE          X                                      X                                    X
+ USRA                        *CHANGE       X                                      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> RVKOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) USER(OWNA) AUT(*ALL)
+  -> ok
+  CPI2202 Information 00 QSYRVAUT->QSYRVAUT | Authority revoked from user OWNA for object CUST in QSTEST object type *FILE.
+  CPC2202 Completion 00 QSYRVAUT->QSQRUN4 | Object authority revoked.
+
+> DLTDTAARA DTAARA(QSTEST/DTAC)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object DTAC in QSTEST type *DTAARA deleted.
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtac-new)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:38 EST
+ Object . . . . . . . :   DTAC                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DLTPGM PGM(QSTEST/PGM1)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object PGM1 in QSTEST type *PGM deleted.
+
+> RSTOBJ OBJ(PGM1) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/PGM1) OBJTYPE(*PGM) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (pgm1-new)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:40 EST
+ Object . . . . . . . :   PGM1                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *PGM                                      ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DLTDTAARA DTAARA(QSTEST/DTAD)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object DTAD in QSTEST type *DTAARA deleted.
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtad-new)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:42 EST
+ Object . . . . . . . :   DTAD                                      Owner  . . . . . . . :   OWNA
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *EXCLUDE
+ OWNA                        *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DLTDTAARA DTAARA(QSTEST/DTAL)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object DTAL in QSTEST type *DTAARA deleted.
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtal-new)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:45 EST
+ Object . . . . . . . :   DTAL                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   GRPA
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# *PUBLIC changed after the save, object restored over itself
+
+> GRTOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) USER(*PUBLIC) AUT(*USE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user *PUBLIC for object DTAL in QSTEST object type *DTAARA.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtal-public-over)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:47 EST
+ Object . . . . . . . :   DTAL                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   GRPA
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> GRTOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) USER(*PUBLIC) AUT(*CHANGE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user *PUBLIC for object DTAL in QSTEST object type *DTAARA.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+# grants put back for later cases
+
+> GRTOBJAUT OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) USER(USRA) AUT(*USE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user USRA for object DTAC in QSTEST object type *DTAARA.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> GRTOBJAUT OBJ(QSTEST/PGM1) OBJTYPE(*PGM) USER(USRA) AUT(*EXCLUDE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user USRA for object PGM1 in QSTEST object type *PGM.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+-- restore dates: SELECT OBJNAME, OBJTYPE, OBJOWNER, OBJCREATED FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*ALL')) X ORDER BY 1, 2
+OBJNAME|OBJTYPE|OBJOWNER|OBJCREATED
+CUSORD|*FILE|QSECOFR|2026-10-30 07:20:44.000000
+CUST|*FILE|QSECOFR|2026-10-30 07:20:40.000000
+CUSTK|*FILE|QSECOFR|2026-10-30 07:20:42.000000
+CUSTSO|*FILE|QSECOFR|2026-10-30 07:20:43.000000
+DQ1|*DTAQ|QSECOFR|2026-10-30 07:20:54.000000
+DTAC|*DTAARA|QSECOFR|2026-10-30 07:20:53.000000
+DTAD|*DTAARA|OWNA|2026-10-30 07:20:53.000000
+DTAL|*DTAARA|QSECOFR|2026-10-30 07:20:54.000000
+FMTA|*FILE|QSECOFR|2026-10-30 07:20:42.000000
+FREEPF|*FILE|QSECOFR|2026-10-30 07:20:46.000000
+JRN|*JRN|QSECOFR|2026-10-30 07:20:50.000000
+MOD1|*MODULE|QSECOFR|2026-10-30 07:21:05.000000
+MOD2|*MODULE|QSECOFR|2026-10-30 07:21:06.000000
+MPF|*FILE|QSECOFR|2026-10-30 07:20:44.000000
+ORD|*FILE|QSECOFR|2026-10-30 07:20:41.000000
+PGM1|*PGM|QSECOFR|2026-10-30 07:21:04.000000
+PGM2|*PGM|QSECOFR|2026-10-30 07:21:07.000000
+QDDSSRC|*FILE|QSECOFR|2026-10-30 07:20:32.000000
+QSRC|*FILE|QSECOFR|2026-10-30 07:20:31.000000
+QSTCMD|*CMD|QSECOFR|2026-10-30 07:21:08.000000
+QSTJOBD|*JOBD|QSECOFR|2026-10-30 07:21:09.000000
+QSTMSGF|*MSGF|QSECOFR|2026-10-30 07:20:57.000000
+QSTOUTQ|*OUTQ|QSECOFR|2026-10-30 07:21:10.000000
+RCV0001|*JRNRCV|QSECOFR|2026-10-30 07:20:50.000000
+RCV0002|*JRNRCV|QSECOFR|2026-10-30 07:20:52.000000
+RCV1002|*JRNRCV|QSECOFR|2026-10-30 07:30:22.000000
+SQLT|*FILE|QSECOFR|2026-10-30 07:20:49.000000
+SQLTIX|*FILE|QSECOFR|2026-10-30 07:20:49.000000
+SRV1|*SRVPGM|QSECOFR|2026-10-30 07:21:06.000000
+USRIDX|*USRIDX|QSECOFR|2026-10-30 07:20:56.000000
+USRSPC|*USRSPC|QSECOFR|2026-10-30 07:20:55.000000
+ZZFULL|*FILE|QSECOFR|2026-10-30 07:25:06.000000
+ZZJLOG|*PGM|QSECOFR|2026-10-30 07:20:15.000000
+ZZSPL|*FILE|QSECOFR|2026-10-30 07:20:11.000000
+ZZSPLF|*PGM|QSECOFR|2026-10-30 07:20:14.000000
+ZZSRC|*FILE|QSECOFR|2026-10-30 07:20:11.000000
+ZZS1|*FILE|QSECOFR|2026-10-30 07:25:06.000000
+(37 rows)
+
+> DSPOBJD OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtac-objd)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:30:50 EST
+ Object . . . . . . . :   DTAC                                      Attribute  . . . . . :
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *DTAARA                                   Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :   Char data area
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:53
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:30:37
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   8192
+   Offline size . . . . . . . . . . . . :   8192
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:10
+   Restore date/time  . . . . . . . . . :   10/30/26  07:30:37
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZFULL
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

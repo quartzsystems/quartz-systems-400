@@ -1,0 +1,629 @@
+# ALWOBJDIF with a recreated file (other format, same format), a changed owner and primary group
+# primary oracle (V7R1M0), 2026-10-30
+
+> SAVOBJ OBJ(FMTA DTAD DTAL) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 3 objects saved from library QSTEST.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-rcdfmt-saved)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:27:01       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             2      15   29F0849E382EC
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           2
+    Total record length  . . . . . . . . . . . :          15
+# FMTA recreated from FMTB: same record format name, one more field
+
+> DLTF FILE(QSTEST/FMTA)
+  -> ok
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTB added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member FMTB file QDDSSRC in QSTEST cleared.
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object FMTA in QSTEST type *FILE deleted.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTB)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-rcdfmt-new)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:27:04       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             3      17   2E363A2D01AB3
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           3
+    Total record length  . . . . . . . . . . . :          17
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*NONE)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*FILELVL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-after-filelvl)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:27:07       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             3      17   2E363A2D01AB3
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           3
+    Total record length  . . . . . . . . . . . :          17
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*COMPATIBLE)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-after-compatible)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:27:09       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             3      17   2E363A2D01AB3
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           3
+    Total record length  . . . . . . . . . . . :          17
+
+-- FMTA rows after *COMPATIBLE: SELECT * FROM QSTEST.FMTA
+K1|F1|F2
+(0 rows)
+
+> DLTF FILE(QSTEST/FMTA)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object FMTA in QSTEST type *FILE deleted.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTB)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD3768 Diagnostic 30 QCAIFLD->QSQRUN4 | ALWOBJDIF(*ALL) cannot be used with MBROPT(*MATCH).
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on RSTOBJ command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-after-all)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:27:12       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             3      17   2E363A2D01AB3
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           3
+    Total record length  . . . . . . . . . . . :          17
+
+> DSPOBJD OBJ(QSTEST/FMTA) OBJTYPE(*FILE) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-objd-after-all)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:13 EST
+ Object . . . . . . . :   FMTA                                      Attribute  . . . . . :   PF
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *FILE                                     Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:27:11
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:27:11
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   36864
+   Offline size . . . . . . . . . . . . :   0
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :
+   Restore date/time  . . . . . . . . . :
+   Save command . . . . . . . . . . . . :
+   Device type  . . . . . . . . . . . . :
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+-- FMTA rows after *ALL: SELECT * FROM QSTEST.FMTA
+K1|F1|F2
+(0 rows)
+# FMTA recreated from its own source: same format level, new creation date
+
+> DLTF FILE(QSTEST/FMTA)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object FMTA in QSTEST type *FILE deleted.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTA)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*NONE)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+-- FMTA rows after *NONE over a same-format file: SELECT * FROM QSTEST.FMTA
+K1|F1
+(0 rows)
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*FILELVL)
+  -> ok
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FMTA in library QSTEST restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+-- FMTA rows after *FILELVL over a same-format file: SELECT * FROM QSTEST.FMTA
+K1|F1
+1|ONE
+2|TWO
+3|THREE
+(3 rows)
+
+> DSPOBJD OBJ(QSTEST/FMTA) OBJTYPE(*FILE) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-objd-after-filelvl)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:18 EST
+ Object . . . . . . . :   FMTA                                      Attribute  . . . . . :   PF
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *FILE                                     Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:42
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:27:17
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :   10/30/26
+   Days used count  . . . . . . . . . . :   1
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   36864
+   Offline size . . . . . . . . . . . . :   28672
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:27:00
+   Restore date/time  . . . . . . . . . :   10/30/26  07:27:17
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZS1
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# owner: DTAD saved with owner OWNA, now owned by USRA
+
+> CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(USRA)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QSQRUN4 | Ownership of object DTAD in QSTEST type *DTAARA changed.
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*NONE)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3766 Diagnostic 20 QSRRSLIB->QSRRLCP2 | DTAARA DTAD not restored to library QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtad-aut-none)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:20 EST
+ Object . . . . . . . :   DTAD                                      Owner  . . . . . . . :   USRA
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *EXCLUDE
+ USRA                        *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*OWNER)
+  -> FAILED [CPF3773] 1 objects restored. 0 not restored to QSTEST.
+  CPF370B Information 10 QSRRSLIB->QSRRLCP2 | USRA owns DTAARA DTAD in QSTEST.
+  CPF3848 Diagnostic 20 QSRRLCP2->QSQRUN4 | 1 security or data format changes occurred.
+  CPF3773 Escape 20 QSRROCPR->QSQRUN4 | 1 objects restored. 0 not restored to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtad-aut-owner)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:22 EST
+ Object . . . . . . . :   DTAD                                      Owner  . . . . . . . :   USRA
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *EXCLUDE
+ USRA                        *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(USRA)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QSQRUN4 | Ownership of object DTAD in QSTEST type *DTAARA changed.
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD3768 Diagnostic 30 QCAIFLD->QSQRUN4 | ALWOBJDIF(*ALL) cannot be used with MBROPT(*MATCH).
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on RSTOBJ command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtad-aut-all)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:24 EST
+ Object . . . . . . . :   DTAD                                      Owner  . . . . . . . :   USRA
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *EXCLUDE
+ USRA                        *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+# primary group: DTAL saved with GRPA, now *NONE
+
+> CHGOBJPGP OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) NEWPGP(*NONE)
+  -> ok
+  CPC2228 Completion 00 QSYCHONR->QSQRUN4 | Primary group of object DTAL in QSTEST type *DTAARA changed.
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPD37A2 Diagnostic 20 QSRRSLIB->QSRRLCP2 | DTAARA DTAL not restored to library QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtal-aut-none)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:26 EST
+ Object . . . . . . . :   DTAL                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> RSTOBJ OBJ(DTAL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*PGP)
+  -> ok
+  CPI3811 Information 10 QSRRSLIB->QSRRLCP2 | *NONE is the primary group of DTAARA DTAL in QSTEST.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtal-aut-pgp)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:27:28 EST
+ Object . . . . . . . :   DTAL                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(OWNA)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QSQRUN4 | Ownership of object DTAD in QSTEST type *DTAARA changed.
+
+> CHGOBJPGP OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) NEWPGP(GRPA)
+  -> ok
+  CPC2228 Completion 00 QSYCHONR->QSQRUN4 | Primary group of object DTAL in QSTEST type *DTAARA changed.
+# follow-up run: the ALWOBJDIF values that need MBROPT(*ALL) (MBROPT(*MATCH), the default, refuses *ALL)
+
+> SAVOBJ OBJ(FMTA DTAD) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 2 objects saved from library QSTEST.
+
+-- FMTA rows as saved: SELECT * FROM QSTEST.FMTA
+K1|F1
+1|ONE
+2|TWO
+3|THREE
+(3 rows)
+
+> DLTF FILE(QSTEST/FMTA)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object FMTA in QSTEST type *FILE deleted.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTB)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*FILELVL) MBROPT(*ALL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*COMPATIBLE) MBROPT(*ALL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-after-compatible-all)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:33:28       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             3      17   2E363A2D01AB3
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           3
+    Total record length  . . . . . . . . . . . :          17
+
+-- FMTA rows after *COMPATIBLE MBROPT(*ALL): SELECT * FROM QSTEST.FMTA
+K1|F1|F2
+(0 rows)
+
+> DLTF FILE(QSTEST/FMTA)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object FMTA in QSTEST type *FILE deleted.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTB)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+-- INSERT INTO QSTEST.FMTA VALUES (9, 'NINE', 9)
+   -> 1
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL) MBROPT(*ALL)
+  -> FAILED [CPF3773] 1 objects restored. 0 not restored to QSTEST.
+  CPI320A Information 10 QDBRSPRE->QSRRSOBJ | File level identifiers do not match.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FMTA in library QSTEST restored.
+  CPF3848 Diagnostic 20 QSRRLCP2->QSQRUN4 | 1 security or data format changes occurred.
+  CPF3773 Escape 20 QSRROCPR->QSQRUN4 | 1 objects restored. 0 not restored to QSTEST.
+
+> DSPFD FILE(QSTEST/FMTA) TYPE(*RCDFMT) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-after-all-all)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:33:32       Page    1
+   File  . . . . . . . . . . . : FMTA
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *RCDFMT
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : FMTA         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                         Record Format List
+                      Record  Format Level
+ Format       Fields  Length  Identifier
+ FMTR             2      15   29F0849E382EC
+    Text . . . :
+    Total number of formats  . . . . . . . . . :           1
+    Total number of fields . . . . . . . . . . :           2
+    Total record length  . . . . . . . . . . . :          15
+
+> DSPOBJD OBJ(QSTEST/FMTA) OBJTYPE(*FILE) DETAIL(*FULL) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (fmta-objd-after-all-all)
+                                         Display Object Description - Full                                              Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:33:33 EST
+ Object . . . . . . . :   FMTA                                      Attribute  . . . . . :   PF
+   Library  . . . . . :     QSTEST                                  Owner  . . . . . . . :   QSECOFR
+ Library ASP device . :   *SYSBAS                                   Library ASP group  . :   *SYSBAS
+ Type . . . . . . . . :   *FILE                                     Primary group  . . . :   *NONE
+ User-defined information:
+   Attribute  . . . . . . . . . . . . . :
+   Text . . . . . . . . . . . . . . . . :
+ Creation information:
+   Creation date/time . . . . . . . . . :   10/30/26  07:20:42
+   Created by user  . . . . . . . . . . :   QSECOFR
+   System created on  . . . . . . . . . :   {host}
+   Object domain  . . . . . . . . . . . :   *SYSTEM
+ Change/Usage information:
+   Change date/time . . . . . . . . . . :   10/30/26  07:33:32
+   Usage data collected . . . . . . . . :   YES
+   Last used date . . . . . . . . . . . :
+   Days used count  . . . . . . . . . . :   0
+     Reset date . . . . . . . . . . . . :
+   Allow change by program  . . . . . . :   YES
+ Auditing/Integrity information:
+   Object auditing value  . . . . . . . :   *NONE
+   Digitally signed . . . . . . . . . . :   NO
+ Storage information:
+   Size . . . . . . . . . . . . . . . . :   36864
+   Offline size . . . . . . . . . . . . :   28672
+   Associated space size  . . . . . . . :   4096
+   Optimum space alignment  . . . . . . :   YES
+   Freed  . . . . . . . . . . . . . . . :   NO
+   Compressed . . . . . . . . . . . . . :   INELIGIBLE
+   Object ASP number  . . . . . . . . . :   1
+     Object overflowed  . . . . . . . . :   NO
+   Object ASP device  . . . . . . . . . :   *SYSBAS
+   Object ASP group . . . . . . . . . . :   *SYSBAS
+ Journaling information:
+   Currently journaled  . . . . . . . . :   NO
+ Save/Restore information:
+   Save date/time . . . . . . . . . . . :   10/30/26  07:33:24
+   Restore date/time  . . . . . . . . . :   10/30/26  07:33:32
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Device type  . . . . . . . . . . . . :   Save file
+   Save file  . . . . . . . . . . . . . :   QSTEST/ZZS1
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+-- FMTA rows after *ALL MBROPT(*ALL): SELECT * FROM QSTEST.FMTA
+K1|F1
+1|ONE
+2|TWO
+3|THREE
+(3 rows)
+
+-- objects named FMTA* after *ALL (a renamed copy is kept?): SELECT OBJNAME, OBJTYPE, OBJCREATED FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*FILE')) X WHERE OBJNAME LIKE 'FMT%'
+OBJNAME|OBJTYPE|OBJCREATED
+FMTA|*FILE|2026-10-30 07:20:42.000000
+FMTA0001|*FILE|2026-10-30 07:33:30.000000
+(2 rows)
+
+> CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(USRA)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QSQRUN4 | Ownership of object DTAD in QSTEST type *DTAARA changed.
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL) MBROPT(*ALL)
+  -> FAILED [CPF3773] 1 objects restored. 0 not restored to QSTEST.
+  CPF370B Information 10 QSRRSLIB->QSRRLCP2 | USRA owns DTAARA DTAD in QSTEST.
+  CPF3848 Diagnostic 20 QSRRLCP2->QSQRUN4 | 1 security or data format changes occurred.
+  CPF3773 Escape 20 QSRROCPR->QSQRUN4 | 1 objects restored. 0 not restored to QSTEST.
+
+> DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dtad-aut-all-all)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:33:37 EST
+ Object . . . . . . . :   DTAD                                      Owner  . . . . . . . :   USRA
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *EXCLUDE
+ USRA                        *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(OWNA)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QSQRUN4 | Ownership of object DTAD in QSTEST type *DTAARA changed.
+# ALWOBJDIF list form
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*OWNER *PGP *AUTL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> RSTOBJ OBJ(DTAD) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) ALWOBJDIF(*ALL *OWNER)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0094 Diagnostic 30 QCAFLD->QSQRUN4 | *ALL must be only value for parameter ALWOBJDIF.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on RSTOBJ command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+# a PF over a file whose creation date differs but format matches, MBROPT(*ALL), ALWOBJDIF(*NONE)
+
+> DLTF FILE(QSTEST/FMTA)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object FMTA in QSTEST type *FILE deleted.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTA)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+> RSTOBJ OBJ(FMTA) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) MBROPT(*ALL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.

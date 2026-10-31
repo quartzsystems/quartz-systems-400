@@ -1,0 +1,93 @@
+# DSPSFWRSC in print form
+# primary oracle (V7R1M0), 2026-10-30
+
+> DSPSFWRSC OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsfwrsc)
+                                              Software Resources List                                                   Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:34:31 EST
+                                                      Software Resources List
+ Resource                         Feature
+    ID       Option    Feature     Type      Library       Release       Description
+ 5770999     *BASE      5050       *CODE     QSYS          V7R1M0 L00    Licensed Internal Code
+ 5770SS1     *BASE      5050       *CODE     QSYS          V7R1M0 L00    IBM i
+ 5770SS1     *BASE      2924       *LNG      QSYS          V7R1M0 L00    IBM i
+ 5770SS1     1          5050       *CODE     QSYS2         V7R1M0        Extended Base Support
+ 5770SS1     1          2924       *LNG      QSYS2         V7R1M0        Extended Base Support
+ 5770SS1     3          5050       *CODE     QSYSDIR       V7R1M0        Extended Base Directory Support
+ 5770SS1     3          2924       *LNG      QSYSDIR       V7R1M0        Extended Base Directory Support
+ 5770SS1     12         5050       *CODE     QIWS          V7R1M0        Host Servers
+ 5770SS1     12         2924       *LNG      QIWS          V7R1M0        Host Servers
+ 5770SS1     13         5050       *CODE     QSYSINC       V7R1M0        System Openness Includes
+ 5770SS1     30         5050       *CODE     QSHELL        V7R1M0        Qshell
+ 5770SS1     30         2924       *LNG      QSHELL        V7R1M0        Qshell
+ 5770SS1     33         5111       *CODE     QPASE         V7R1M0        Portable App Solutions Environment
+ 5770SS1     33         2924       *LNG      QPASE         V7R1M0        Portable App Solutions Environment
+ 5733906     *BASE      5050       *CODE     QPZ906_110    V1R1M0        Server Firmware
+ 5733SC1     *BASE      5050       *CODE     QUTL          V7R1M0        IBM Portable Utilities for i
+ 5733SC1     *BASE      2924       *LNG      QUTL          V7R1M0        IBM Portable Utilities for i
+ 5733SC1     1          5050       *CODE     QUTL          V7R1M0        OpenSSH, OpenSSL, zlib
+ 5761JV1     *BASE      5050       *CODE     QJAVA         V6R1M0        IBM Developer Kit for Java
+ 5761JV1     *BASE      2924       *LNG      QJAVA         V6R1M0        IBM Developer Kit for Java
+ 5761JV1     8          5108       *CODE     QJVM50        V6R1M0        J2SE 5.0 32 bit
+ 5761JV1     9          5109       *CODE     QJVM5064      V6R1M0        J2SE 5.0 64 bit
+ 5761JV1     11         5111       *CODE     QJVM6032      V6R1M0        Java SE 6 32 bit
+ 5761JV1     12         5112       *CODE     QJVM6064      V6R1M0        Java SE 6 64 bit
+ 5761JV1     13         5113       *CODE     QJVM1464      V6R1M0        Java Developer Kit
+ 5761JV1     17         5117       *CODE     QJVM8064      V6R1M0        Java SE 8 64 bit
+ 5770DG1     *BASE      5050       *CODE     QHTTPSVR      V7R1M0        IBM HTTP Server for i
+ 5770DG1     *BASE      2924       *LNG      QHTTPSVR      V7R1M0        IBM HTTP Server for i
+ 5770TC1     *BASE      5050       *CODE     QTCP          V7R1M0        IBM TCP/IP Connectivity Utilities for i
+ 5770TC1     *BASE      2924       *LNG      QTCP          V7R1M0        IBM TCP/IP Connectivity Utilities for i
+ 5770XE1     *BASE      5050       *CODE     QCAEXP        V7R1M0        IBM i Access for Windows
+ 5770XE1     *BASE      2924       *LNG      QCAEXP        V7R1M0        IBM i Access for Windows
+ 5770XH2     *BASE      5050       *CODE     QIWA2         V7R1M0        IBM i Access for Web
+ 5770XH2     *BASE      2924       *LNG      QIWA2         V7R1M0        IBM i Access for Web
+ 5770XW1     *BASE      5050       *CODE     QCA400W       V7R1M0        IBM i Access Family
+ 5770XW1     *BASE      2924       *LNG      QCA400W       V7R1M0        IBM i Access Family
+ 5770XW1     1          5101       *CODE     QCA400W       V7R1M0        IBM i Access Enablement Support
+ AJDGP01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJDGP01 9400DGP
+ AJDG301     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJDG301 9400DG3
+ AJDG401     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJDG401 9400DG4
+ AJEAA01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEAA01 9400EAA
+ AJEAR01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEAR01 9400EAR
+ AJEAZ01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEAZ01 9400EAZ
+ AJEDA00     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEDA00 9400EDA
+ AJEHL00     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEHL00 9400EHL
+ AJEMM01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEMM01 9400EMM
+ AJENV00     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJENV00 9400ENV
+ AJEPO00     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEPO00 9400EPO
+ AJEQU00     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJEQU00 9400EQU
+ AJER101     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJER101 9400ER1
+ AJGAK01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGAK01 9400GAK
+ AJGAW01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGAW01 9400GAW
+                                              Software Resources List                                                   Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:34:31 EST
+ Resource                         Feature
+    ID       Option    Feature     Type      Library       Release       Description
+ AJGAX01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGAX01 9400GAX
+ AJGDF01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGDF01 9400GDF
+ AJGJH01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGJH01 9400GJH
+ AJGJR01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGJR01 9400GJR
+ AJGJS01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGJS01 9400GJS
+ AJGJT01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGJT01 9400GJT
+ AJGJZ01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGJZ01 9400GJZ
+ AJGJ601     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGJ601 9400GJ6
+ AJGLD01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGLD01 9400GLD
+ AJGW701     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJGW701 9400GW7
+ AJLAF01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLAF01 9400LAF
+ AJLAG01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLAG01 9400LAG
+ AJLAN01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLAN01 9400LAN
+ AJLXC01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLXC01 9400LXC
+ AJLYC01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLYC01 9400LYC
+ AJLYD01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLYD01 9400LYD
+ AJLYE01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLYE01 9400LYE
+ AJLYF01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLYF01 9400LYF
+ AJLYG01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJLYG01 9400LYG
+ AJSCB01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJSCB01 9400SCB
+ AJSDH00     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJSDH00 9400SDH
+ AJSDJ01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJSDJ01 9400SDJ
+ AJSGK01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJSGK01 9400SGK
+ AJSGM01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJSGM01 9400SGM
+ AJSLP01     *BASE      5050       *CODE     ##MACH#B      V7R1M0 L00    Licensed Internal Code - AJSLP01 9400SLP
+                              * * * * *   E N D   O F   C O M P U T E R   P R I N T O U T   * * * * *

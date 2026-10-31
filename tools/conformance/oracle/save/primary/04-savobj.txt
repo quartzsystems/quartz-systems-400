@@ -1,0 +1,197 @@
+# SAVOBJ of a subset, FILEMBR, QDTA, SPLFDTA
+# primary oracle (V7R1M0), 2026-10-30
+
+> CHGJOB INQMSGRPY(*DFT)
+  -> ok
+
+> SAVOBJ OBJ(CUST ORD DTA*) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 5 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-subset)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:25 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     624
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:25
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ DTAC         *DTAARA                 QSECOFR                8   YES        Char data area
+ DTAD         *DTAARA                 OWNA                   8   YES        Dec data area
+ DTAL         *DTAARA                 QSECOFR                8   YES        Lgl data area
+ CUST         *FILE      PF           QSECOFR               68   YES
+ ORD          *FILE      PF           QSECOFR               68   YES
+                                                       Database File Members
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ CUST         PF                    1   CUST
+ ORD          PF                    1   ORD
+                                                              Summary
+ Number of objects saved  . . . . . . . :   5
+ Members  . . . . . . . . . . . . . . . :   2
+ Access paths . . . . . . . . . . . . . :   3
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(MPF) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) FILEMBR((MPF (M1 M2)))
+  -> ok
+  CPF3259 Information 10 QDBSVPST->QDBSVPST | Saved 2 members of file MPF in QSTEST.
+  CPC3723 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST. 0 objects not included.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-filembr)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:27 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     80
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:27
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ MPF          *FILE      PF           QSECOFR               48   YES        Multi-member PF
+                                                       Database File Members
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ MPF          PF                    2   M1           M2
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   2
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DQ1) LIB(QSTEST) OBJTYPE(*DTAQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) QDTA(*DTAQ)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> SAVOBJ OBJ(DQ1) LIB(QSTEST) OBJTYPE(*DTAQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> SAVOBJ OBJ(QSTOUTQ) LIB(QSTEST) OBJTYPE(*OUTQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) SPLFDTA(*ALL)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO) SPLFDTA(*ALL)
+  -> ok
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver RCV0002 in QSTEST saved while attached.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 1 logical access paths saved or restored.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 31 objects saved from library QSTEST.
+
+> SAVOBJ OBJ(QSTOUTQ) LIB(QSTEST) OBJTYPE(*OUTQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-outq)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:31 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     40
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:31
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ QSTOUTQ      *OUTQ                   QSECOFR               16   YES        Save kit output queue
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(NOSUCH) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3764 Diagnostic 20 QSRSVPRE->QSRSVPRE | NOSUCH in QSTEST not found.
+  CPF3770 Escape 30 QSRSOCP2->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+> SAVOBJ OBJ(CUST NOSUCH) LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> FAILED [CPF3701] 1 objects saved from QSTEST. 1 not saved.
+  CPF3764 Diagnostic 20 QSRSVPRE->QSRSVPRE | NOSUCH in QSTEST not found.
+  CPI3203 Information 00 QDBSVPST->QDBSVPST | 2 logical access paths saved or restored.
+  CPF3701 Escape 20 QSRSOCP2->QSQRUN4 | 1 objects saved from QSTEST. 1 not saved.
+
+> SAVLIB LIB(QSTESTX) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL)
+  -> FAILED [CPF3781] Library QSTESTX not found.
+  CPF3781 Escape 30 QSRSLCP2->QSQRUN4 | Library QSTESTX not found.
+
+> SAVOBJ OBJ(*ALL) LIB(QSTEST) OBJTYPE(*PGM *SRVPGM *MODULE *CMD) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) OMITOBJ((QSTEST/ZZ*))
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 6 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-types)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:25:35 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     880
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:25:34
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ PGM1         *PGM       CLLE         QSECOFR               88   YES
+ PGM2         *PGM       CLLE         QSECOFR               88   YES
+ SRV1         *SRVPGM    CLLE         QSECOFR               88   YES
+ MOD1         *MODULE    CLLE         QSECOFR               64   YES
+ MOD2         *MODULE    CLLE         QSECOFR               64   YES
+ QSTCMD       *CMD                    QSECOFR                8   YES
+                                                              Summary
+ Number of objects saved  . . . . . . . :   6
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

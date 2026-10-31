@@ -1,0 +1,113 @@
+# Restore over objects another job holds
+# primary oracle (V7R1M0), 2026-10-30
+
+[job 2] > ALCOBJ OBJ((QSTEST/CUST *FILE *EXCL)) WAIT(0)
+[job 2]   -> ok
+
+> RSTOBJ OBJ(CUST) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3761 Diagnostic 20 QSRRSLIB->QSRRLCP2 | Cannot use FILE CUST in QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+[job 2] > DLCOBJ OBJ((QSTEST/CUST *FILE *EXCL))
+[job 2]   -> ok
+
+[job 2] > ALCOBJ OBJ((QSTEST/CUST *FILE *SHRRD)) WAIT(0)
+[job 2]   -> ok
+
+> RSTOBJ OBJ(CUST) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3761 Diagnostic 20 QSRRSLIB->QSRRLCP2 | Cannot use FILE CUST in QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+[job 2] > DLCOBJ OBJ((QSTEST/CUST *FILE *SHRRD))
+[job 2]   -> ok
+
+[job 2] > ALCOBJ OBJ((QSTEST/DTAC *DTAARA *EXCLRD)) WAIT(0)
+[job 2]   -> ok
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3761 Diagnostic 20 QSRRSLIB->QSRRLCP2 | Cannot use DTAARA DTAC in QSTEST.
+  CPF3770 Escape 30 QSRROCPR->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+[job 2] > ALCOBJ OBJ((QSTEST/PGM1 *PGM *SHRRD)) WAIT(0)
+[job 2]   -> ok
+# a library restore with two objects held by job 2
+
+> RSTLIB SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> FAILED [CPF3773] 24 objects restored. 7 not restored to QSTEST.
+  CPF3761 Diagnostic 20 QSRRSLIB->QSRRLCP2 | Cannot use PGM PGM1 in QSTEST.
+  CPF3761 Diagnostic 20 QSRRSLIB->QSRRLCP2 | Cannot use DTAARA DTAC in QSTEST.
+  CPF7085 Diagnostic 30 QJORSTJN->QSRRSOBJ | Journal JRN in QSTEST already exists.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | JRN JRN not restored to QSTEST.
+  CPD2415 Diagnostic 40 QMHQRSTQ->QSRRSOBJ | Data queue DQ1 not restored. Data queue exists in library QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | DTAQ DQ1 not restored to QSTEST.
+  CPF3809 Information 10 QSRRSPST->QSRRSLIB | Older version of DTAD type DTAARA in QSTEST restored.
+  CPF3809 Information 10 QSRRSPST->QSRRSLIB | Older version of DTAL type DTAARA in QSTEST restored.
+  CPF3283 Diagnostic 50 QDBRSPRE->QDBRSPRE | Saved file or member level ID not same as file FMTA.
+  CPF3284 Diagnostic 50 QDBRSPRE->QDBRSPRE | Member list of file QDDSSRC and saved file not the same.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE FMTA not restored to QSTEST.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | FILE QDDSSRC not restored to QSTEST.
+  CPF7081 Diagnostic 30 QJORSTRC->QSRRSOBJ | Cannot restore receiver RCV0002 while attached.
+  CPF3756 Diagnostic 20 QSRRSOBJ->QSRRSLIB | JRNRCV RCV0002 not restored to QSTEST.
+  CPF3809 Information 10 QSRRSPST->QSRRSLIB | Older version of FREEPF type FILE in QSTEST restored.
+  CPF3809 Information 10 QSRRSPST->QSRRSLIB | Older version of MPF type FILE in QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 1 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File ORD in library QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 2 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUST in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTK in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSTSO in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File CUSORD in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File FREEPF in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File MPF in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File QSRC in library QSTEST restored.
+  CPI3203 Information 00 QDBRSPST->QDBRSPST | 1 logical access paths saved or restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLT in library QSTEST restored.
+  CPF3292 Information 10 QDBRSPST->QDBRSPST | File SQLTIX in library QSTEST restored.
+  CPF3773 Escape 20 QSRRLCP2->QSQRUN4 | 24 objects restored. 7 not restored to QSTEST.
+
+[job 2] > DLCOBJ OBJ((QSTEST/DTAC *DTAARA *EXCLRD))
+[job 2]   -> ok
+
+[job 2] > DLCOBJ OBJ((QSTEST/PGM1 *PGM *SHRRD))
+[job 2]   -> ok
+# a lock held by the restoring job itself
+
+> ALCOBJ OBJ((QSTEST/DTAC *DTAARA *EXCL)) WAIT(0)
+  -> ok
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> DLCOBJ OBJ((QSTEST/DTAC *DTAARA *EXCL))
+  -> ok
+# the save file itself held by job 2
+
+[job 2] > ALCOBJ OBJ((QSTEST/ZZFULL *FILE *EXCL)) WAIT(0)
+[job 2]   -> FAILED [CPF1085] Objects not allocated.
+[job 2]   CPF0984 Diagnostic 30 QWCCALOC->QSQRUN4 | Cannot allocate or deallocate ZZFULL in library QSTEST.
+[job 2]   CPF1085 Escape 40 QWCCALOC->QSQRUN4 | Objects not allocated.
+
+> RSTOBJ OBJ(DTAC) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZFULL)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+[job 2] > DLCOBJ OBJ((QSTEST/ZZFULL *FILE *EXCL))
+[job 2]   -> FAILED [CPF1005] Objects not deallocated.
+[job 2]   CPF0984 Diagnostic 30 QWCCDAOC->QSQRUN4 | Cannot allocate or deallocate ZZFULL in library QSTEST.
+[job 2]   CPF1005 Escape 40 QWCCDAOC->QSQRUN4 | Objects not deallocated.
+# a save of an object job 2 holds *EXCL
+
+[job 2] > ALCOBJ OBJ((QSTEST/DTAC *DTAARA *EXCL)) WAIT(0)
+[job 2]   -> ok
+
+> SAVOBJ OBJ(DTAC) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> FAILED [CPF3770] No objects saved or restored for library QSTEST.
+  CPF3761 Diagnostic 20 QSRSVPRE->QSRSVPRE | Cannot use DTAARA DTAC in QSTEST.
+  CPF3770 Escape 30 QSRSOCP2->QSQRUN4 | No objects saved or restored for library QSTEST.
+
+[job 2] > DLCOBJ OBJ((QSTEST/DTAC *DTAARA *EXCL))
+[job 2]   -> ok

@@ -1,0 +1,72 @@
+# Problems, licenses, contact
+# primary oracle (V7R1M0), 2026-10-30
+
+> WRKPRB OUTPUT(*PRINT)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0031 Diagnostic 30 QCARULE->QSQRUN4 | Command WRKPRB not allowed in this setting.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on WRKPRB command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+# spooled file not copied: [CEE9901] Application error.  CPF3344 unmonitored by ZZSPLF at statement 0000001800, instruction X'0000'.
+
+> WRKLICINF OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrklicinf)
+                 Work with License Information                      Page     1
+5770SS1 V7R1M0  100423                            {host}  10/30/26  07:34:50
+             License                                                                   Usage           Usage          Peak
+ Product      Term       Feature     Description                                       Limit           Count          Usage
+ 5770SS1     V7R1M0       5050       IBM i                                             *NOMAX          .00            .00
+ 5770SS1     V7           5051       IBM i                                             1               1.00           1.00
+ 5770SS1     V7           5052       IBM i                                             10              5.00           6.00
+ 5770SS1     V7R1M0       5103       Media and Storage Extensions                      0               .00            .00
+ 5770SS1     V7R1M0       5112       PSF for IBM i 1-55 IPM Printer Support            0               .00            .00
+ 5770SS1     V7R1M0       5113       PSF for IBM i 1-100 IPM Printer Support           0               .00            .00
+ 5770SS1     V7R1M0       5114       PSF for IBM i Any Speed Printer Support           0               .00            .00
+ 5770SS1     V7R1M0       5116       HA Switchable Resources                           0               .00            .00
+ 5770SS1     V7R1M0       5117       HA Journal Performance                            0               .00            .00
+ 5770XW1     V7           5050       IBM i Access Family                               0               .00            .00
+ 5770XW1     V7R1M0       5101       IBM i Access Enablement Support                   0               .00            1.00
+              * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPLICKEY OUTPUT(*PRINT)
+  -> ok
+  CPI0B16 Information 00 QLZADSPC->QSQRUN4 | Print operation completed successfully.
+-- spooled file (dsplickey)
+                                          Display License Key Information                                               Page     1
+5770SS1 V7R1M0  100423                                                                                {host}  10/30/26  07:34:51
+                                                          Input parameters
+ Product Identifier . . . . . :   *ALL
+ License Term . . . . . . . . :   *ALL
+ Feature  . . . . . . . . . . :   *ALL
+ System Serial Number . . . . :   *LOCAL
+                                                  Display License Key Information
+                                     System
+             License                 Serial       Processor     License                        Usage     Expiration     Vendor
+ Product      Term       Feature     Number         Group       Key                            Limit        Date        Data
+ 5770SS1     V7R1M0       5050        {serial}       *ANY        1A2198 4AB88D 8DE101          *NOMAX      *NONE         *NONE
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPSYSVAL SYSVAL(QSRLNBR) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsysval-lic)
+                                                   System Values                                                        Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:34:52 EST
+                Current                         Shipped
+ Name           value                           value                           Description
+ QSRLNBR         {serial}                        ' '                             System serial number
+     Note:  > means current value is different from the shipped value
+                                         * * * * *   E N D  O F  L I S T I N G   * * * * *
+
+> DSPPRB OUTPUT(*PRINT)
+  -> ok
+  CPF4038 Completion 00 QSXDSPP->QSQRUN4 | The print operation is complete.
+-- spooled file (dspprb)
+                                                 Problem Log Report                                                     Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:36:40 EST
+                            System                           Resource    Service  Problem
+ Problem ID  Status         Ref Code     Date      Time      Name        Number   Description
+ 2630320559  READY          SRC11001520  10/30/26  05:59:17                       *Attention*  Contact your hardware service provid
+ 2630320556  READY          SRC57FC8150  10/30/26  05:59:13  CMB09                *Attention*  Contact your hardware service provid
+ 2629520669  READY          SRC11001520  10/22/26  06:01:13                       *Attention*  Contact your hardware service provid
+ 2629520667  READY          SRC57FC8150  10/22/26  06:01:10  CMB09                *Attention*  Contact your hardware service provid
+                              * * * * *   E N D   O F   C O M P U T E R   P R I N T O U T   * * * * *

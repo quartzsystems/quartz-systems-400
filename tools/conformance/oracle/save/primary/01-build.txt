@@ -1,0 +1,693 @@
+# Objects built in QSTEST for the save and restore cases
+# primary oracle (V7R1M0), 2026-10-30
+# job 1: ? [SQL0204] GET_JOB_INFO in QSYS2 type *N not found. Cause . . . . . :   GET_JOB_INFO in QSYS2 type *N was not found. If the member name is *ALL, the table is not partitioned. If this is an ALTER TABLE statement and the type is *N, a constraint or partition was not found. If this is not an ALTER TABLE statement and the type is *N, a function, procedure, trigger or sequence object was not found. If a function was not found, GET_JOB_INFO is the service program that contains the function.  The function will not be found unless the external name and usage name match exactly.  Examine the job log for a message that gives more details on which function name is being searched for and the name that did not match. Recovery  . . . :   Change the name and try the request again.  If the object is a node group, ensure that the DB2 Multisystem product is installed on your system and create a nodegroup with the CRTNODGRP CL command. If an external function was not found, be sure that the case of the EXTERNAL NAME on the CREATE FUNCTION statement exactly matches the case of the name exported by the service program.  job 2: ? [SQL0204] GET_JOB_INFO in QSYS2 type *N not found. Cause . . . . . :   GET_JOB_INFO in QSYS2 type *N was not found. If the member name is *ALL, the table is not partitioned. If this is an ALTER TABLE statement and the type is *N, a constraint or partition was not found. If this is not an ALTER TABLE statement and the type is *N, a function, procedure, trigger or sequence object was not found. If a function was not found, GET_JOB_INFO is the service program that contains the function.  The function will not be found unless the external name and usage name match exactly.  Examine the job log for a message that gives more details on which function name is being searched for and the name that did not match. Recovery  . . . :   Change the name and try the request again.  If the object is a node group, ensure that the DB2 Multisystem product is installed on your system and create a nodegroup with the CRTNODGRP CL command. If an external function was not found, be sure that the case of the EXTERNAL NAME on the CREATE FUNCTION statement exactly matches the case of the name exported by the service program.
+# every object below is made by these commands; ZZ* objects are the capture tool's own work files
+
+> CHGJOB INQMSGRPY(*DFT)
+  -> ok
+  CPC7033 Completion 00 QJOENDJN->QSQRUN4 | 1 of 1 files have ended journaling.
+  CPF7020 Information 00 QJODLTJN->QLIDLOBJ | Journal receivers RCV0002 and *N detached.
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object JRN in QSTEST type *JRN deleted.
+  CPC2191 Information 00 QLIDLOBJ->QLIDLOBJ | Object RCV0001 in QSTEST type *JRNRCV deleted.
+  CPC2191 Information 00 QLIDLOBJ->QLIDLOBJ | Object RCV0002 in QSTEST type *JRNRCV deleted.
+  CPC2116 Completion 00 QLIDLOBJ->QSQRUN4 | All 2 objects of type *JRNRCV deleted.
+  CPF3417 Completion 10 QSPCLSPQ->QSQRUN4 | 2 entries deleted. 0 entries not deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object USRSPC in QSTEST type *USRSPC deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object DTAL in QSTEST type *DTAARA deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object DTAD in QSTEST type *DTAARA deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object DTAC in QSTEST type *DTAARA deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object QSTCMD in QSTEST type *CMD deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object QSTJOBD in QSTEST type *JOBD deleted.
+  CPI32B1 Information 00 QDBRMVCT->QDBDLTFI | Constraint was removed.
+  CPC32B1 Completion 00 QDBRMVCT->QDBDLTFI | 1 constraint(s) removed from file SQLT.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object CUST in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object FMTA in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object FREEPF in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object MPF in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object ORD in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object QDDSSRC in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object QSRC in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object SQLT in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object SQLTIX in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLFIL->QLICLLIB | Object ZZSRC in QSTEST type *FILE deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object USRIDX in QSTEST type *USRIDX deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object QSTMSGF in QSTEST type *MSGF deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object QSTOUTQ in QSTEST type *OUTQ deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object DQ1 in QSTEST type *DTAQ deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object MOD2 in QSTEST type *MODULE deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object MOD1 in QSTEST type *MODULE deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object SRV1 in QSTEST type *SRVPGM deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object PGM2 in QSTEST type *PGM deleted.
+  CPC2191 Completion 00 QLIDLOBJ->QLICLLIB | Object PGM1 in QSTEST type *PGM deleted.
+  CPC2199 Completion 00 QLICLLIB->QSQRUN4 | Library QSTEST cleared.
+  CPF0001 Escape 30 QCACALL->QCMDEXC | Error found on CALL command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+  SQL0204 Diagnostic 30 QSQRUN1->QSQRUN1 | GET_JOB_INFO in QSYS2 type *N not found.
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File ZZSRC created in library QSTEST.
+
+> CRTSRCPF FILE(QSTEST/QSRC) RCDLEN(112) TEXT('Save kit source')
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File QSRC created in library QSTEST.
+
+> CRTSRCPF FILE(QSTEST/QDDSSRC) RCDLEN(92) MBR(*NONE) TEXT('Save kit DDS')
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File QDDSSRC created in library QSTEST.
+
+> ADDLIBLE LIB(QSTEST)
+  -> ok
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CUST added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member CUST file QDDSSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CUSTK added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member CUSTK file QDDSSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CUSTSO added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member CUSTSO file QDDSSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member ORD added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member ORD file QDDSSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CUSORD added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member CUSORD file QDDSSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file QDDSSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member FMTA file QDDSSRC in QSTEST cleared.
+  CPC2196 Completion 00 QLICUSRL->QSQRUN4 | Library QSTEST added to library list.
+
+> CRTPF FILE(QSTEST/CUST) SRCFILE(QSTEST/QDDSSRC) SRCMBR(CUST)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File CUST created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CUST added to file CUST in QSTEST.
+
+> CRTPF FILE(QSTEST/ORD) SRCFILE(QSTEST/QDDSSRC) SRCMBR(ORD)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File ORD created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member ORD added to file ORD in QSTEST.
+
+> CRTPF FILE(QSTEST/FMTA) SRCFILE(QSTEST/QDDSSRC) SRCMBR(FMTA)
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FMTA created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FMTA added to file FMTA in QSTEST.
+
+> CRTLF FILE(QSTEST/CUSTK) SRCFILE(QSTEST/QDDSSRC) SRCMBR(CUSTK)
+  -> ok
+  CPC7301 Completion 00 QDDCLF->QSQRUN4 | File CUSTK created in library QSTEST.
+  CPC7305 Completion 00 QDDCLFM->QSQRUN4 | Member CUSTK added to file CUSTK in QSTEST.
+
+> CRTLF FILE(QSTEST/CUSTSO) SRCFILE(QSTEST/QDDSSRC) SRCMBR(CUSTSO)
+  -> ok
+  CPC7301 Completion 00 QDDCLF->QSQRUN4 | File CUSTSO created in library QSTEST.
+  CPC7305 Completion 00 QDDCLFM->QSQRUN4 | Member CUSTSO added to file CUSTSO in QSTEST.
+
+> CRTLF FILE(QSTEST/CUSORD) SRCFILE(QSTEST/QDDSSRC) SRCMBR(CUSORD)
+  -> ok
+  CPC7301 Completion 00 QDDCLF->QSQRUN4 | File CUSORD created in library QSTEST.
+  CPI3210 Information 00 QDBISHRX->QDDCLFM | File CUSORD in QSTEST shares access path.
+  CPC7305 Completion 00 QDDCLFM->QSQRUN4 | Member CUSORD added to file CUSORD in QSTEST.
+
+> CRTPF FILE(QSTEST/MPF) RCDLEN(20) MBR(M1) MAXMBRS(*NOMAX) TEXT('Multi-member PF')
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File MPF created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member M1 added to file MPF in QSTEST.
+
+> ADDPFM FILE(QSTEST/MPF) MBR(M2)
+  -> ok
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member M2 added to file MPF in QSTEST.
+
+> ADDPFM FILE(QSTEST/MPF) MBR(M3)
+  -> ok
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member M3 added to file MPF in QSTEST.
+
+> CRTPF FILE(QSTEST/FREEPF) RCDLEN(20) TEXT('For STG(*FREE)')
+  -> ok
+  CPC7301 Completion 00 QDDCPF->QSQRUN4 | File FREEPF created in library QSTEST.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member FREEPF added to file FREEPF in QSTEST.
+
+-- INSERT INTO QSTEST.CUST VALUES (1, 'ACME', 'ROCHESTER', 100.50), (2, 'BETA', 'AUSTIN', 20.00), (3, 'GAMMA', 'ROCHESTER', 0), (4, 'DELTA', 'RALEIGH', -5.25), (5, 'EPSILON', 'AUSTIN', 999.99)
+   -> 5
+
+-- INSERT INTO QSTEST.FMTA VALUES (1, 'ONE'), (2, 'TWO')
+   -> 2
+
+-- INSERT INTO QSTEST.FREEPF VALUES ('FREE1'), ('FREE2')
+   -> 2
+
+-- CREATE ALIAS QSTEST.ZZMA FOR QSTEST.MPF(M1)
+   -> 0
+
+-- INSERT INTO QSTEST.ZZMA VALUES ('MEMBER1')
+   -> 1
+
+-- DROP ALIAS QSTEST.ZZMA
+   -> 0
+
+-- CREATE ALIAS QSTEST.ZZMA FOR QSTEST.MPF(M2)
+   -> 0
+
+-- INSERT INTO QSTEST.ZZMA VALUES ('MEMBER2')
+   -> 1
+
+-- DROP ALIAS QSTEST.ZZMA
+   -> 0
+
+-- CREATE ALIAS QSTEST.ZZMA FOR QSTEST.MPF(M3)
+   -> 0
+
+-- INSERT INTO QSTEST.ZZMA VALUES ('MEMBER3')
+   -> 1
+
+-- DROP ALIAS QSTEST.ZZMA
+   -> 0
+
+-- CREATE TABLE QSTEST.SQLT (ID INTEGER NOT NULL PRIMARY KEY, TXT VARCHAR(30))
+   -> 0
+
+-- INSERT INTO QSTEST.SQLT VALUES (1, 'one'), (2, 'two'), (3, 'three')
+   -> 3
+
+-- CREATE INDEX QSTEST.SQLTIX ON QSTEST.SQLT (TXT)
+   -> 0
+# journal, two receivers, ORD journaled
+
+> CRTJRNRCV JRNRCV(QSTEST/RCV0001) TEXT('Save kit receiver')
+  -> ok
+  SQL7905 Information 20 QSQCRTT->QSQCRTT | Table SQLT in QSTEST created but was not journaled.
+  CPC7011 Completion 00 QJOCRTRC->QSQRUN4 | Journal receiver RCV0001 created in library QSTEST.
+
+> CRTJRN JRN(QSTEST/JRN) JRNRCV(QSTEST/RCV0001) TEXT('Save kit journal')
+  -> ok
+  CPC7010 Completion 00 QJOCRTJN->QSQRUN4 | Journal JRN created in library QSTEST.
+
+> STRJRNPF FILE(QSTEST/ORD) JRN(QSTEST/JRN) IMAGES(*BOTH)
+  -> ok
+  CPC7031 Completion 00 QJOJRNPF->QSQRUN4 | 1 of 1 files have started journaling.
+
+-- INSERT INTO QSTEST.ORD VALUES (100, 1, 10.00), (101, 1, 20.00), (102, 2, 30.00)
+   -> 3
+
+> CHGJRN JRN(QSTEST/JRN) JRNRCV(*GEN)
+  -> ok
+  CPC7011 Completion 00 QJOCHGJN->QSQRUN4 | Journal receiver RCV0002 created in library QSTEST.
+  CPF7020 Information 00 QJOCHGJN->QSQRUN4 | Journal receivers RCV0001 and *N detached.
+  CPF7019 Information 00 QJOCHGJN->QSQRUN4 | Sequence number not reset. First sequence number is 10.
+
+-- INSERT INTO QSTEST.ORD VALUES (103, 5, 40.00)
+   -> 1
+# data areas, data queue, user space, user index
+
+> CRTDTAARA DTAARA(QSTEST/DTAC) TYPE(*CHAR) LEN(20) VALUE('HELLO') TEXT('Char data area')
+  -> ok
+  CPC0904 Completion 00 QWCCCRVC->QSQRUN4 | Data area DTAC created in library QSTEST.
+
+> CRTDTAARA DTAARA(QSTEST/DTAD) TYPE(*DEC) LEN(9 2) VALUE(123.45) TEXT('Dec data area')
+  -> ok
+  CPC0904 Completion 00 QWCCCRVC->QSQRUN4 | Data area DTAD created in library QSTEST.
+
+> CRTDTAARA DTAARA(QSTEST/DTAL) TYPE(*LGL) VALUE('1') TEXT('Lgl data area')
+  -> ok
+  CPC0904 Completion 00 QWCCCRVC->QSQRUN4 | Data area DTAL created in library QSTEST.
+
+> CRTDTAQ DTAQ(QSTEST/DQ1) MAXLEN(100) TEXT('Save kit data queue')
+  -> ok
+  CPC9801 Completion 00 QMHQCRTQ->QSQRUN4 | Object DQ1 type *DTAQ created in library QSTEST.
+
+> CALL PGM(QSNDDTAQ) PARM('DQ1' 'QSTEST' X'00010F' 'ENTRY ONE ')
+  -> ok
+
+> CALL PGM(QUSCRTUS) PARM('USRSPC    QSTEST    ' 'TESTSPC' X'00001000' X'00' '*ALL' 'Save kit user space                               ')
+  -> ok
+
+> CALL PGM(QUSCRTUI) PARM('USRIDX    QSTEST    ' 'TESTIDX' 'F' X'00000014' '1' X'00000005' '1' '0' '*ALL' 'Save kit user index                               ')
+  -> ok
+# message file
+
+> CRTMSGF MSGF(QSTEST/QSTMSGF) TEXT('Save kit messages')
+  -> ok
+  CPC9801 Completion 00 QMHCRMSF->QSQRUN4 | Object QSTMSGF type *MSGF created in library QSTEST.
+
+> ADDMSGD MSGID(QST0001) MSGF(QSTEST/QSTMSGF) MSG('First save kit message')
+  -> ok
+
+> ADDMSGD MSGID(QST0002) MSGF(QSTEST/QSTMSGF) MSG('Second message for &1') FMT((*CHAR 10))
+  -> ok
+# CL program, module, service program, program bound to it, command
+
+> CRTBNDCL PGM(QSTEST/PGM1) SRCFILE(QSTEST/QSRC) SRCMBR(PGM1)
+  -> ok
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member PGM1 added to file QSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member PGM1 file QSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member MOD1 added to file QSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member MOD1 file QSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member MOD2 added to file QSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member MOD2 file QSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member SRV1 added to file QSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member SRV1 file QSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member QSTCMD added to file QSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member QSTCMD file QSRC in QSTEST cleared.
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program PGM1 created in library QSTEST.
+
+> CRTCLMOD MODULE(QSTEST/MOD1) SRCFILE(QSTEST/QSRC) SRCMBR(MOD1)
+  -> ok
+  CPC0816 Completion 00 QCLENTR->QSQRUN4 | Module MOD1 created in library QSTEST.
+
+> CRTCLMOD MODULE(QSTEST/MOD2) SRCFILE(QSTEST/QSRC) SRCMBR(MOD2)
+  -> ok
+  CPC0816 Completion 00 QCLENTR->QSQRUN4 | Module MOD2 created in library QSTEST.
+
+> CRTSRVPGM SRVPGM(QSTEST/SRV1) MODULE(QSTEST/MOD1) EXPORT(*SRCFILE) SRCFILE(QSTEST/QSRC) SRCMBR(SRV1)
+  -> ok
+  CPD5CDC Diagnostic 10 QBNBIND->QBNBIND | QSTEST/QSRC.SRV1 line 1: ******** Signature padded to 'SAVEKIT SRV1 V1'
+  CPD5D19 Diagnostic 10 QBNBIND->QBNBIND | 1 warnings were issued from binder language compilation.
+  CPC5D0B Completion 00 QBNBIND->QSQRUN4 | Service program SRV1 created in library QSTEST.
+
+> CRTPGM PGM(QSTEST/PGM2) MODULE(QSTEST/MOD2) BNDSRVPGM(QSTEST/SRV1) ACTGRP(*NEW)
+  -> ok
+  CPC5D07 Completion 00 QBNBIND->QSQRUN4 | Program PGM2 created in library QSTEST.
+
+> CRTCMD CMD(QSTEST/QSTCMD) PGM(QSTEST/PGM1) SRCFILE(QSTEST/QSRC) SRCMBR(QSTCMD)
+  -> ok
+  CPC0202 Completion 00 QCDRCMD->QSQRUN4 | Command QSTCMD created in library QSTEST.
+
+> QSTEST/QSTCMD TXT(BUILT)
+  -> ok
+  QST0002 Completion 00 PGM1->QSQRUN4 | Second message for BUILT
+
+> CALL PGM(QSTEST/PGM2)
+  -> ok
+# job description, output queue with three spooled files
+
+> CRTJOBD JOBD(QSTEST/QSTJOBD) TEXT('Save kit job description') INLLIBL(QSTEST QGPL QTEMP)
+  -> ok
+  CPF1615 Information 00 QWDGMSG->QSQRUN4 | Job queue QBATCH found in library QGPL.
+  CPC1611 Completion 00 QWDGMSG->QSQRUN4 | Job description QSTJOBD created in library QSTEST.
+
+> CRTOUTQ OUTQ(QSTEST/QSTOUTQ) TEXT('Save kit output queue')
+  -> ok
+  CPC9801 Completion 00 QSPCRSPQ->QSQRUN4 | Object QSTOUTQ type *OUTQ created in library QSTEST.
+
+> OVRPRTF FILE(*PRTF) OUTQ(QSTEST/QSTOUTQ) OVRSCOPE(*JOB)
+  -> ok
+
+> DSPLIB LIB(QSTEST) OUTPUT(*PRINT)
+  -> ok
+
+> DSPOBJD OBJ(QSTEST/*ALL) OBJTYPE(*ALL) OUTPUT(*PRINT)
+  -> ok
+
+> DSPFD FILE(QSTEST/CUST) TYPE(*BASATR) OUTPUT(*PRINT)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD3008 Diagnostic 40 QCAIFLD->QSQRUN4 | TYPE(*BASATR) requires OUTPUT(*OUTFILE).
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on DSPFD command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> DLTOVR FILE(*PRTF) LVL(*JOB)
+  -> ok
+
+> WRKOUTQ OUTQ(QSTEST/QSTOUTQ) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkoutq-qstoutq)
+ 5770SS1 V7R1M0 100423         Work With Output Queue        QSTOUTQ     in  QSTEST     10/30/26  7:21:14 EST            Page    1
+ File       User       User Data  Status Pages Copies Form Type  Pty File Number   Job        Number Date     Time
+ QPDSPLIB   QSECOFR                RDY       1     1  *STD        5        308     QPRTJOB    007117 10/30/26 07:21:11
+ QPRTOBJD   QSECOFR                RDY       1     1  *STD        5        310     QPRTJOB    007117 10/30/26 07:21:12
+         * * * * *   E N D   O F   L I S T I N G   * * * * *
+# private authorities, owner, primary group
+
+> GRTOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) USER(USRA) AUT(*CHANGE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user USRA for object CUST in QSTEST object type *FILE.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> GRTOBJAUT OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) USER(USRA) AUT(*USE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user USRA for object DTAC in QSTEST object type *DTAARA.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> GRTOBJAUT OBJ(QSTEST/PGM1) OBJTYPE(*PGM) USER(USRA) AUT(*EXCLUDE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user USRA for object PGM1 in QSTEST object type *PGM.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> GRTOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) USER(*PUBLIC) AUT(*EXCLUDE)
+  -> ok
+  CPI2201 Information 00 QSYGRAUT->QSYGRAUT | Authority given to user *PUBLIC for object DTAD in QSTEST object type *DTAARA.
+  CPC2201 Completion 00 QSYGRAUT->QSQRUN4 | Object authority granted.
+
+> CHGOBJOWN OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) NEWOWN(OWNA)
+  -> ok
+  CPC2206 Completion 00 QSYCHONR->QSQRUN4 | Ownership of object DTAD in QSTEST type *DTAARA changed.
+
+> CHGOBJPGP OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) NEWPGP(GRPA)
+  -> ok
+  CPC2228 Completion 00 QSYCHONR->QSQRUN4 | Primary group of object DTAL in QSTEST type *DTAARA changed.
+
+> DSPOBJAUT OBJ(QSTEST/CUST) OBJTYPE(*FILE) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-cust)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:18 EST
+ Object . . . . . . . :   CUST                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *FILE                                     ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+ USRA                        *CHANGE       X                                      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPOBJAUT OBJ(QSTEST/DTAC) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-dtac)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:18 EST
+ Object . . . . . . . :   DTAC                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+ USRA                        *USE          X                                      X                                    X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPOBJAUT OBJ(QSTEST/DTAD) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-dtad)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:19 EST
+ Object . . . . . . . :   DTAD                                      Owner  . . . . . . . :   OWNA
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *EXCLUDE
+ OWNA                        *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPOBJAUT OBJ(QSTEST/DTAL) OBJTYPE(*DTAARA) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-dtal)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:19 EST
+ Object . . . . . . . :   DTAL                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   GRPA
+ Object type  . . . . :   *DTAARA                                   ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPOBJAUT OBJ(QSTEST/PGM1) OBJTYPE(*PGM) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspobjaut-pgm1)
+                                              Display Object Authority                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:20 EST
+ Object . . . . . . . :   PGM1                                      Owner  . . . . . . . :   QSECOFR
+   Library  . . . . . :     QSTEST                                  Primary group  . . . :   *NONE
+ Object type  . . . . :   *PGM                                      ASP device . . . . . :   *SYSBAS
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE
+                              Object      --------------Object---------------    -------------------Data-------------------
+ User          Group         Authority    Opr    Mgt    Exist    Alter    Ref    Read    Add    Update    Delete    Execute
+ *PUBLIC                     *CHANGE       X                                      X       X       X         X          X
+ QSECOFR                     *ALL          X      X       X        X       X      X       X       X         X          X
+ USRA                        *EXCLUDE
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+-- inventory: SELECT OBJNAME, OBJTYPE, OBJOWNER, OBJSIZE, OBJTEXT FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*ALL')) X ORDER BY 1, 2
+OBJNAME|OBJTYPE|OBJOWNER|OBJSIZE|OBJTEXT
+CUSORD|*FILE|QSECOFR|73728|
+CUST|*FILE|QSECOFR|110592|
+CUSTK|*FILE|QSECOFR|61440|
+CUSTSO|*FILE|QSECOFR|65536|
+DQ1|*DTAQ|QSECOFR|16384|Save
+DTAC|*DTAARA|QSECOFR|8192|Char
+DTAD|*DTAARA|OWNA|8192|Dec
+DTAL|*DTAARA|QSECOFR|8192|Lgl
+FMTA|*FILE|QSECOFR|36864|
+FREEPF|*FILE|QSECOFR|36864|For
+JRN|*JRN|QSECOFR|12288|Save
+MOD1|*MODULE|QSECOFR|65536|
+MOD2|*MODULE|QSECOFR|65536|
+MPF|*FILE|QSECOFR|77824|Multi-member
+ORD|*FILE|QSECOFR|94208|
+PGM1|*PGM|QSECOFR|90112|
+PGM2|*PGM|QSECOFR|90112|
+QDDSSRC|*FILE|QSECOFR|139264|Save
+QSRC|*FILE|QSECOFR|118784|Save
+QSTCMD|*CMD|QSECOFR|8192|
+QSTJOBD|*JOBD|QSECOFR|8192|Save
+QSTMSGF|*MSGF|QSECOFR|24576|Save
+QSTOUTQ|*OUTQ|QSECOFR|16384|Save
+RCV0001|*JRNRCV|QSECOFR|1380352|Save
+RCV0002|*JRNRCV|QSECOFR|1380352|Save
+SQLT|*FILE|QSECOFR|241664|
+SQLTIX|*FILE|QSECOFR|176128|
+SRV1|*SRVPGM|QSECOFR|90112|
+USRIDX|*USRIDX|QSECOFR|16384|Save
+USRSPC|*USRSPC|QSECOFR|8192|Save
+ZZJLOG|*PGM|QSECOFR|94208|
+ZZSPL|*FILE|QSECOFR|49152|
+ZZSPLF|*PGM|QSECOFR|98304|
+ZZSRC|*FILE|QSECOFR|57344|
+(34 rows)
+
+> DSPLIB LIB(QSTEST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dsplib)
+ 5770SS1 V7R1M0  100423                   Display Library                                       10/30/26  7:21:21        Page    1
+ Library . . . . . . . . . . . . . . . . :   QSTEST
+ Type  . . . . . . . . . . . . . . . . . :   PROD
+ Number of objects . . . . . . . . . . . :           34
+ Library ASP number  . . . . . . . . . . :       1
+ Library ASP device  . . . . . . . . . . :   *SYSBAS
+ Library ASP group   . . . . . . . . . . :   *SYSBAS
+ Create authority  . . . . . . . . . . . :   *SYSVAL
+ Text description  . . . . . . . . . . . :   Database conformance kit
+   Object      Type      Attribute             Size  Description
+   PGM1        *PGM      CLLE                 90112
+   PGM2        *PGM      CLLE                 90112
+   ZZJLOG      *PGM      CLLE                 94208
+   ZZSPLF      *PGM      CLLE                 98304
+   SRV1        *SRVPGM   CLLE                 90112
+   MOD1        *MODULE   CLLE                 65536
+   MOD2        *MODULE   CLLE                 65536
+   RCV0001     *JRNRCV                      1380352  Save kit receiver
+   RCV0002     *JRNRCV                      1380352  Save kit receiver
+   JRN         *JRN                           12288  Save kit journal
+   DQ1         *DTAQ                          16384  Save kit data queue
+   QSTOUTQ     *OUTQ                          16384  Save kit output queue
+   QSTMSGF     *MSGF                          24576  Save kit messages
+   USRIDX      *USRIDX   TESTIDX              16384  Save kit user index
+   CUSORD      *FILE     LF                   73728
+   CUST        *FILE     PF                  110592
+   CUSTK       *FILE     LF                   61440
+   CUSTSO      *FILE     LF                   65536
+   FMTA        *FILE     PF                   36864
+   FREEPF      *FILE     PF                   36864  For STG(*FREE)
+   MPF         *FILE     PF                   77824  Multi-member PF
+   ORD         *FILE     PF                   94208
+   QDDSSRC     *FILE     PF                  139264  Save kit DDS
+   QSRC        *FILE     PF                  118784  Save kit source
+   SQLT        *FILE     PF                  241664
+   SQLTIX      *FILE     LF                  176128
+   ZZSPL       *FILE     PF                   49152
+   ZZSRC       *FILE     PF                   57344
+   QSTJOBD     *JOBD                           8192  Save kit job description
+   QSTCMD      *CMD                            8192
+   DTAC        *DTAARA                         8192  Char data area
+   DTAD        *DTAARA                         8192  Dec data area
+   DTAL        *DTAARA                         8192  Lgl data area
+   USRSPC      *USRSPC   TESTSPC               8192  Save kit user space
+                     Total size :           4976640
+                   * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> DSPFD FILE(QSTEST/MPF) TYPE(*MBRLIST) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspfd-mpf)
+ 5770SS1 V7R1M0  100423               Display File Description                                  10/30/26   7:21:21       Page    1
+   File  . . . . . . . . . . . : MPF
+     Library . . . . . . . . . : QSTEST
+   Type of information . . . . : *MBRLIST
+   File attributes . . . . . . : *ALL
+   System  . . . . . . . . . . : *LCL
+   Processor . . . . . . . . . : IBM AS/400 Display File Description Processor
+ File . : MPF          Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001
+                                           Member List
+                              Source Creation    Last Change                  Deleted
+  Member           Size        Type  Date       Date     Time      Records    Records
+  M1                     8192        10/30/26 10/30/26 07:20:47          1          0
+    Text:  Multi-member PF
+  M2                     8192        10/30/26 10/30/26 07:20:47          1          0
+    Text:
+  M3                     8192        10/30/26 10/30/26 07:20:48          1          0
+    Text:
+  Total number of members  . . . . . . . . . :                 3
+  Total number of members not available  . . :                 0
+  Total records  . . . . . . . . . . . . . . :                 3
+  Total deleted records  . . . . . . . . . . :                 0
+  Total of member sizes  . . . . . . . . . . :             24576
+
+> WRKJRNA JRN(QSTEST/JRN) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkjrna)
+                                            Work with Journal Attributes                                                Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:22 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+ Text  . . . . . . . . . . . . . . :   Save kit journal
+ Auxiliary storage pool  . . . . . :   1
+ Message queue . . . . . . . . . . :   QSYSOPR
+   Library . . . . . . . . . . . . :     *LIBL
+ Manage receivers  . . . . . . . . :   *SYSTEM
+ Delete receivers  . . . . . . . . :   *NO
+ Journal cache . . . . . . . . . . :   *NO
+ Manage delay  . . . . . . . . . . :   10
+ Delete delay  . . . . . . . . . . :   10
+ Journal type  . . . . . . . . . . :   *LOCAL
+ Journal state . . . . . . . . . . :   *ACTIVE
+ Minimize entry data . . . . . . . :   *NONE
+ Journaled objects:
+   Current . . . . . . . . . . . . :          4
+   Maximum . . . . . . . . . . . . :     250000
+ Recovery count  . . . . . . . . . :   *SYSDFT
+ Receiver size options . . . . . . :   *RMVINTENT
+                                       *MAXOPT2
+ Fixed length data . . . . . . . . :   *JOB
+                                       *USR
+                                       *PGM
+                                                          Journaled Files
+ Number of journaled files  . . . . . . . . . . . . . . . . . :   1
+ Number of journaled members  . . . . . . . . . . . . . . . . :   1
+                       Type of                          Type of                          Type of                          Type of
+ File       Library     file      File       Library     file      File       Library     file      File       Library     file
+ ORD        QSTEST       PF
+                                                       Journaled Access Paths
+ Number of files journaling access paths  . . . . . . . . . . :   0
+ Number of journaled access paths . . . . . . . . . . . . . . :   0
+ File        Library       File        Library       File        Library       File        Library       File        Library
+   (No journaled access paths)
+                                                         Receiver Directory
+ Total size of receivers (in kilobytes)  . . . . . . . . . . . :   2696
+                                                                                                          Local        Source
+                                          Attach       Save                                      Size     Journal      Journal
+ Number     Receiver       Library        Date         Date         Status                        (K)     System       System
+ 00001      RCV0001        QSTEST         10/30/26     00/00/00     ONLINE                       1348
+ 00002      RCV0002        QSTEST         10/30/26     00/00/00     ATTACHED                     1348
+                                            Work with Journal Attributes                                                Page     2
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:22 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                     Remote Journal Information
+ Journal state . . . . . . . . . . . . . . . . . . . . . . . . :   *ACTIVE
+ Local journal . . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Source journal  . . . . . . . . . . . . . . . . . . . . . . . :
+   Library . . . . . . . . . . . . . . . . . . . . . . . . . . :
+   ASP group . . . . . . . . . . . . . . . . . . . . . . . . . :
+   System  . . . . . . . . . . . . . . . . . . . . . . . . . . :
+ Redirected receiver library . . . . . . . . . . . . . . . . . :   *NONE
+ Number of remote journals . . . . . . . . . . . . . . . . . . :   0
+                        ---------------------------------------Remote----------------------------------------
+ Relational                                           Journal        Delivery       Journal        Receiver
+ Database               Journal        Library        State          Mode           Type           Library
+   (No remote journals)
+                                                      Sending        Sync           Comm                Super
+ Relational             ---------Remote----------     Task           Sending        Validity           Bundle
+ Database               Journal        Library        Priority       Time-out       Checking            Count
+   (No remote journals)
+                                                       Number of        Maximum     Maximum      Maximum
+ Relational             ---------Remote----------       Bundles          Bundle     Bundle       Bundle
+ Database               Journal        Library            Sent            Size      Date         Time
+   (No remote journals)
+                                                      Number of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Entries        Entries        Entries      Entries
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      100ths of      Maximum        Maximum      Maximum
+ Relational             ---------Remote----------     Seconds        100ths         100ths       100ths
+ Database               Journal        Library        Behind         Behind         Date         Time
+   (No remote journals)
+                                                      Last         Last         Active       Active
+ Relational             ---------Remote----------     Catch-up     Catch-up     State        State
+ Database               Journal        Library        Date         Time         Date         Time
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     3
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:22 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+                                                         Maximum        Restart
+ Relational             ---------Remote----------        Restart         Delay         Number of
+ Database               Journal        Library          Attempts          Time      Retransmissions
+   (No remote journals)
+                                                      -------------------Data Port Services--------------------
+ Relational             ---------Remote----------        Node        Active           Active          Active
+ Database               Journal        Library        Identifier     Lines          Change Date     Change Time
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 1
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 2
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 3
+   (No remote journals)
+                                                      -------------Data Port Services--------------
+ Relational             ---------Remote----------     Internet
+ Database               Journal        Library        Address 4
+   (No remote journals)
+                                                      ----Controlled Inactivate Journal Information-----
+ Relational             ---------Remote----------     Journal        Receiver                   Sequence
+ Database               Journal        Library        Receiver       Library                     Number
+   (No remote journals)
+ Relational             ---------Remote----------     Filter By     Filter
+ Database               Journal        Library         Object       Images
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                            Work with Journal Attributes                                                Page     4
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:22 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+ Relational             ---------Remote----------     Filter         Program        Filter         Program
+ Database               Journal        Library        Program        Library        Program        Library
+   (No remote journals)
+                                                        Journaled Data Areas
+ Number of journaled data areas  . . . . . . . . . . . . . . . :   0
+ Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library       Data Area   Library
+   (No journaled data areas)
+                                                       Journaled Data Queues
+ Number of journaled data queues . . . . . . . . . . . . . . . :   0
+ Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library       Data Queue  Library
+   (No journaled data queues)
+                                                        Journaled Libraries
+ Number of journaled libraries . . . . . . . . . . . . . . . . :   0
+ Library      Library      Library      Library      Library      Library      Library      Library      Library      Library
+   (No journaled libraries)
+                                              Journaled Integrated File System Objects
+ Number of journaled integrated file system objects  . . . . . :   0
+ Object link
+   (No journaled integrated file system objects)
+                                            Work with Journal Attributes                                                Page     5
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:21:22 EST
+ Journal . . . . . . . . . . . . . :   JRN                          Library . . . . . . . . . . . . . :   QSTEST
+ Attached receiver . . . . . . . . :   RCV0002                      Library . . . . . . . . . . . . . :   QSTEST
+ * * * Full text of truncated lines * * *
+   (No journaled integrated file system objects)
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *

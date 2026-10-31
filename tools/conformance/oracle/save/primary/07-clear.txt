@@ -1,0 +1,202 @@
+# CLEAR(*NONE), CLEAR(*ALL), CLEAR(*REPLACE) on a save file that holds data
+# primary oracle (V7R1M0), 2026-10-30
+
+> CHGJOB INQMSGRPY(*DFT)
+  -> ok
+
+> SAVOBJ OBJ(DTAC) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+# the save file now holds data
+
+> SAVOBJ OBJ(DTAD) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*NONE) UPDHST(*NO)
+  -> FAILED [CPF3794] Save or restore operation ended unsuccessfully.
+  CPA4067 Sender copy 99 QSRFMERR->QSRFMERR | Save file ZZS1 in QSTEST already contains data. (C G)C
+  CPF4110 Diagnostic 40 QSRFMERR->QSQRUN4 | Cancel reply received for message CPA4067.
+  CPF3794 Escape 30 QSRSVRQI->QSQRUN4 | Save or restore operation ended unsuccessfully.
+
+> SAVOBJ OBJ(DTAD) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) UPDHST(*NO)
+  -> FAILED [CPF3794] Save or restore operation ended unsuccessfully.
+  CPA4067 Sender copy 99 QSRFMERR->QSRFMERR | Save file ZZS1 in QSTEST already contains data. (C G)C
+  CPF4110 Diagnostic 40 QSRFMERR->QSQRUN4 | Cancel reply received for message CPA4067.
+  CPF3794 Escape 30 QSRSVRQI->QSQRUN4 | Save or restore operation ended unsuccessfully.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-after-none)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:26:04 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     56
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:26:02
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ DTAC         *DTAARA                 QSECOFR                8   YES        Char data area
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DTAD) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*REPLACE) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-after-replace)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:26:06 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     56
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:26:05
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ DTAD         *DTAARA                 OWNA                   8   YES        Dec data area
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DTAL) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-after-all)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:26:07 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     56
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:26:07
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ DTAL         *DTAARA                 QSECOFR                8   YES        Lgl data area
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DTAL) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*AFTER) UPDHST(*NO)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD3754 Diagnostic 30 QCAIFLD->QSQRUN4 | Save file and device parameters cannot be used together.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on SAVOBJ command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> CLRSAVF FILE(QSTEST/ZZS1)
+  -> ok
+  CPC3725 Completion 00 QSRCSAVF->QSQRUN4 | Save file ZZS1 in library QSTEST cleared.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-empty)
+                                                  File Information                                                      Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:26:10 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     0
+ (No records in save file)
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> RSTOBJ OBJ(*ALL) SAVLIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1)
+  -> FAILED [CPF3707] Save file ZZS1 in QSTEST contains no data.
+  CPF3707 Escape 30 QSRRSFIL->QSQRUN4 | Save file ZZS1 in QSTEST contains no data.
+
+> CHGSAVF FILE(QSTEST/ZZS1) MAXRCDS(100)
+  -> ok
+  CPC7303 Completion 00 QDDMDF->QSQRUN4 | File ZZS1 in library QSTEST changed.
+
+> SAVLIB LIB(QSTEST) DEV(*SAVF) SAVF(QSTEST/ZZS1) OMITOBJ((QSTEST/ZZ*)) UPDHST(*NO)
+  -> FAILED [CPF3815] Save file ZZS1 in QSTEST too small for save operation.
+  CPF3808 Diagnostic 30 QSRSVDEQ->QSREVTHD | Save file ZZS1 in QSTEST not complete.
+  CPF3815 Escape 30 QSREVTHD->QSQRUN4 | Save file ZZS1 in QSTEST too small for save operation.
+
+> CHGSAVF FILE(QSTEST/ZZS1) MAXRCDS(*NOMAX)
+  -> ok
+  CPC7303 Completion 00 QDDMDF->QSQRUN4 | File ZZS1 in library QSTEST changed.
+
+> SAVOBJ OBJ(DTAL) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) DTACPR(*HIGH)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> SAVOBJ OBJ(DTAL) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) TGTRLS(V6R1M0)
+  -> ok
+  CPC3723 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST. 0 objects not included.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-tgtrls)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:26:14 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     56
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:26:14
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V6R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ DTAL         *DTAARA                 QSECOFR                8   YES        Lgl data area
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> SAVOBJ OBJ(DTAL) LIB(QSTEST) OBJTYPE(*DTAARA) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) TGTRLS(V5R1M0)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0084 Diagnostic 30 QCAFLD->QSQRUN4 | 'V5R1M0    ' not valid for parameter TGTRLS.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on SAVOBJ command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
