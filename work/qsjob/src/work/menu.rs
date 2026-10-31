@@ -230,10 +230,13 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             inter::remember(s, typed);
             let rest = typed.split_once(char::is_whitespace).map_or("", |(_, r)| r);
             let _request = crate::sysdsp::keys::Request::enter();
-            match go(s, rest, false) {
-                Flow::Back => Flow::Back,
-                other => other,
+            let flow = go(s, rest, false);
+            // Why the menu did not show (not found, not a UIM menu).
+            let why = s.take_message();
+            if !why.is_empty() {
+                dialog.message = Some((why, true));
             }
+            flow
         }
         _ => {
             let prompt = typed.starts_with('?');

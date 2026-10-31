@@ -130,7 +130,7 @@ pub fn dialog(host: &Host, name: &str) -> Result<UimDialog, Fail> {
 }
 
 /// Whether the job shows panels: it is interactive and the command
-/// did not ask for printed output.
+/// did not ask for printed output or an outfile.
 #[must_use]
 pub fn shows_panels(host: &Host, r: &Resolved) -> bool {
     // Only a job that owns a 5250 device: the serial service console
@@ -142,7 +142,10 @@ pub fn shows_panels(host: &Host, r: &Resolved) -> bool {
         p.kwd == "OUTPUT"
             && p.value
                 .as_ref()
-                .is_some_and(|v| v.to_string().to_ascii_uppercase().contains("*PRINT"))
+                .is_some_and(|v| {
+                    let v = v.to_string().to_ascii_uppercase();
+                    v.contains("*PRINT") || v.contains("*OUTFILE")
+                })
     })
 }
 

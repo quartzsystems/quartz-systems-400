@@ -224,6 +224,11 @@ impl Session<'_> {
     pub(super) fn message(&mut self, text: &str) {
         self.pending = text.to_string();
     }
+
+    /// The message for the next display, taken.
+    pub(super) fn take_message(&mut self) -> String {
+        std::mem::take(&mut self.pending)
+    }
 }
 
 /// The job's status for the service, with its function.

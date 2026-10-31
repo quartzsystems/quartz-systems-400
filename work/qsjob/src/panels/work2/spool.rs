@@ -105,7 +105,12 @@ fn rows(f: &Splf, col: usize, fold: bool) -> (Vec<String>, Vec<usize>) {
 pub fn dspsplf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let file = parm(r, "FILE").unwrap_or_default();
     let job = parm(r, "JOB").filter(|j| j != "*").unwrap_or_default();
-    let nbr = parm(r, "SPLNBR").unwrap_or_default();
+    // The special values arrive as their numbers (`*ONLY` 0, `*LAST` -1).
+    let nbr = match parm(r, "SPLNBR").unwrap_or_default().as_str() {
+        "0" => "*ONLY".to_string(),
+        "-1" => "*LAST".to_string(),
+        n => n.to_string(),
+    };
     let mut hex = parm(r, "VIEW").is_some_and(|v| v == "*HEX");
     let mut d = dialog(host, "QGSPDSPF")?;
     let fetch_for = |hex: bool| -> Result<(Splf, stg::proto::PanelData), Fail> {

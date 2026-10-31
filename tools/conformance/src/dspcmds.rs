@@ -55,7 +55,7 @@ const PARMS: &[(&str, &str)] = &[
     ("DSPPGMREF", "PGM(Q82LIB/Q82PGM)"),
     ("DSPSAVF", "FILE(Q82LIB/Q82SAVF)"),
     ("DSPSBSD", "SBSD(QSYS/QINTER)"),
-    ("DSPSPLF", "FILE(QPJOBLOG) SPLNBR(*LAST)"),
+    ("DSPSPLF", "FILE(QPSRVDMP) SPLNBR(*LAST)"),
     ("DSPSRVPGM", "SRVPGM(Q82LIB/Q82SRV)"),
     ("DSPSYSVAL", "SYSVAL(QDATE)"),
     ("DSPTAP", "DEV(Q82TAP)"),
@@ -65,8 +65,11 @@ const PARMS: &[(&str, &str)] = &[
     ("EDTAUTL", "AUTL(Q82AUTL)"),
     ("EDTF", "STMF('/q82.txt')"),
     ("EDTOBJAUT", "OBJ(Q82LIB/Q82DA) OBJTYPE(*DTAARA)"),
-    ("GO", "MENU(USER)"),
+    ("GO", "USER"),
     ("STRDBG", "PGM(Q82LIB/Q82PGM) UPDPROD(*YES)"),
+    ("STRRLU", "SRCFILE(Q82LIB/QDDSSRC) SRCMBR(Q82RLU) OPTION(5)"),
+    ("STRSEU", "SRCFILE(Q82LIB/QCLSRC) SRCMBR(Q82MOD) OPTION(5)"),
+    ("WRKMBRPDM", "FILE(Q82LIB/QCLSRC)"),
     ("WRKAUT", "OBJ('/QSYS.LIB')"),
     ("WRKCFGSTS", "CFGTYPE(*DEV)"),
     ("WRKHDWRSC", "TYPE(*CMN)"),
@@ -103,6 +106,7 @@ const SETUP: &[&str] = &[
     "crtjrn JRN(Q82LIB/Q82JRN) JRNRCV(Q82LIB/Q82RCV)",
     "crtsavf FILE(Q82LIB/Q82SAVF)",
     "crtsrcpf FILE(Q82LIB/QCLSRC)",
+    "crtsrcpf FILE(Q82LIB/QDDSSRC)",
     "crtdevdsp DEVD(Q82DSP) DEVCLS(*VRT) TYPE(3179) MODEL(2)",
     "chgdevd DEVD(Q82DSP) TEXT('Step 82 display')",
     "chgneta MAXHOP(16)",
@@ -163,6 +167,11 @@ fn at_main(d: &tn5250_driver::session::Session) -> bool {
     d.term.contains("Main Menu") && d.term.contains("Selection or command")
 }
 
+/// Whether the job ended and the device shows the sign-on display.
+fn signed_off(d: &tn5250_driver::session::Session) -> bool {
+    row(d, 1) == "Sign On"
+}
+
 /// A command's prompt: the title ends with `(NAME)`.
 fn prompted(title: &str, name: &str) -> bool {
     title.ends_with(&format!("({name})"))
@@ -191,6 +200,10 @@ fn setup(s: &mut Session) -> String {
     {
         let _ = s.command(&format!("CRTLINETH LIND(Q82ETH) RSRCNAME({port}) ONLINE(*NO)"), CMD);
     }
+    // A printer file source for RLU.
+    if crate::qir::qemu::push(s, "Q82RLUSRC", "     A          R LINE1\n     A                                  2'Step 82'\n").is_ok() {
+        let _ = s.command("svc.srcput Q82LIB/QDDSSRC Q82RLU SRCTYPE(PRTF) FROMSTMF(Q82RLUSRC)", CMD);
+    }
     // A stream file, and the module and programs.
     let _ = s.command("svc.ifs put /q82.txt Step 82 stream file", CMD);
     if crate::qir::qemu::push(s, "Q82SRC", MODULE_SRC).is_ok() {
@@ -211,26 +224,54 @@ fn setup(s: &mut Session) -> String {
     failed
 }
 
+/// Send `keys`, then wait (up to ten seconds) for `done`
+/// (given the screen before): a slow display is not taken for no display.
+fn press(
+    d: &mut tn5250_driver::session::Session,
+    ctx: &mut Context,
+    keys: &str,
+    done: &dyn Fn(&tn5250_driver::session::Session, &str) -> bool,
+) -> Result<(), String> {
+    let before = screen(d);
+    run(d, ctx, keys)?;
+    for _ in 0..20 {
+        if done(d, &before) {
+            break;
+        }
+        run(d, ctx, "settle 500\n")?;
+    }
+    run(d, ctx, "settle 500\n")
+}
+
 /// Back to the main menu: F3, F12, and the tools' own ways out.
 fn to_main(d: &mut tn5250_driver::session::Session, ctx: &mut Context) -> Result<bool, String> {
     for i in 0..8 {
         if at_main(d) {
             return Ok(true);
         }
+        if signed_off(d) {
+            return Ok(false);
+        }
+        // F3 first; a tool's exit display takes Enter (Interactive SQL:
+        // leave without saving); F12 once F3 has not done it.
         let keys = if d.term.contains("Exit Interactive SQL") {
-            "type 1\nkey enter\nsettle 800\n"
-        } else if i % 2 == 1 {
-            "key f12\nsettle 800\n"
+            "key eraseeof\ntype 2\nkey enter\n"
+        } else if row(d, 1).contains("Exit") {
+            "key enter\n"
+        } else if i >= 4 && i % 2 == 1 {
+            "key f12\n"
         } else {
-            "key f3\nsettle 800\n"
+            "key f3\n"
         };
-        run(d, ctx, keys)?;
+        // Done when the menu or the sign-on shows, or another display.
+        press(d, ctx, keys, &|d, before| at_main(d) || signed_off(d) || screen(d) != before)?;
     }
     Ok(at_main(d))
 }
 
 impl Suite {
     /// Step 82: every display command of `QSYS` from the main menu.
+    #[allow(clippy::too_many_lines)] // the setup, the walk and the report
     pub(crate) fn display_commands(&self, s: &mut Session) -> Result<String, String> {
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
         let setup_failed = setup(s);
@@ -248,8 +289,8 @@ impl Suite {
         let main_title = row(&d, 1);
         let main_23 = row(&d, 23);
         let main_24 = row(&d, 24);
-        // A spooled file for DSPSPLF.
-        run(&mut d, &mut ctx, "type \"DSPJOBLOG OUTPUT(*PRINT)\"\nkey enter\nsettle 1500\n")?;
+        // A spooled file for DSPSPLF: the job's dump.
+        run(&mut d, &mut ctx, "type DMPJOB\nkey enter\nsettle 1500\n")?;
         to_main(&mut d, &mut ctx)?;
 
         let names: Vec<&str> = sys_cpps::all()
@@ -267,7 +308,9 @@ impl Suite {
          -> Result<(), String> {
             let parms = PARMS.iter().find(|(n, _)| *n == name).map_or("", |(_, p)| *p);
             let line = format!("{name} {parms}");
-            run(d, ctx, &format!("type \"{}\"\nkey enter\nsettle 2000\n", line.trim()))?;
+            run(d, ctx, &format!("type \"{}\"\n", line.trim()))?;
+            // Done when the menu is gone or its message line changed.
+            press(d, ctx, "key enter\n", &|d, _| row(d, 1) != main_title || row(d, 24) != main_24)?;
             let title = row(d, 1);
             let shown = screen(d);
             let fail = if at_main(d) || title == main_title {
@@ -278,9 +321,12 @@ impl Suite {
                 None
             };
             let back = to_main(d, ctx)?;
+            let ended = signed_off(d);
             let fail = fail.or_else(|| {
                 let (r23, r24) = (row(d, 23), row(d, 24));
-                if !back {
+                if ended {
+                    Some(format!("the job ended: {r24}"))
+                } else if !back {
                     Some("could not get back to the menu".into())
                 } else if r23 != main_23 || r24 != main_24 {
                     Some(format!("left text on the menu: {r24}"))
@@ -291,9 +337,31 @@ impl Suite {
             if let Some(why) = fail {
                 failures.push(format!("{name}: {why}"));
                 let _ = write!(report, "--- {line}\n{shown}");
+                // What the job logged for it, when the menu shows.
+                if at_main(d) {
+                    run(d, ctx, "type DSPJOBLOG\n")?;
+                    press(d, ctx, "key enter\n", &|d, _| !at_main(d))?;
+                    run(d, ctx, "key pgdn\nsettle 800\nkey pgdn\nsettle 800\n")?;
+                    let _ = write!(report, "--- job log after {name}\n{}", screen(d));
+                    to_main(d, ctx)?;
+                }
+            }
+            if ended {
+                run(d, ctx, &format!("signon QSECOFR {SECOFR_PASSWORD}\nwait \"Main Menu\"\n"))?;
             }
             if !at_main(d) {
-                return Err(format!("{name}: stuck off the menu\n{}", screen(d)));
+                // A display with no way out: a new session goes on.
+                failures.push(format!("{name}: no way back to the menu"));
+                let _ = write!(report, "--- {line} (stuck)\n{}", screen(d));
+                d.disconnect();
+                *d = connect(port, "QSECOFR", SECOFR_PASSWORD)?;
+                // Device recovery may hand back the job as it was.
+                run(d, ctx, "settle 2000\n")?;
+                if signed_off(d) {
+                    secofr(d, ctx)?;
+                }
+                to_main(d, ctx)?;
+                run(d, ctx, "wait \"Main Menu\"\n")?;
             }
             Ok(())
         };

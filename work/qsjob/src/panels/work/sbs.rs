@@ -98,16 +98,16 @@ pub fn dspsbsd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
     d.set("STATUS", if active { "ACTIVE" } else { "INACTIVE" });
     fill_sbsd(&mut d, &sbsd);
     let direct = match parm(r, "OPTION").as_deref() {
-        None | Some("*ALL") => None,
+        None | Some("*ALL" | "*SELECT") => None,
         Some("*OPRATR") => Some(1),
         Some("*POOLS") => Some(2),
         Some("*AJE") => Some(3),
-        Some("*WSNE") => Some(4),
-        Some("*WSTE") => Some(5),
-        Some("*JOBQE") => Some(6),
+        Some("*WSNE" | "*WSNAME") => Some(4),
+        Some("*WSTE" | "*WSTYPE") => Some(5),
+        Some("*JOBQE" | "*JOBQ") => Some(6),
         Some("*RTGE") => Some(7),
         Some("*CMNE") => Some(8),
-        Some("*RMTLE") => Some(9),
+        Some("*RMTLE" | "*RMTLOCNAME") => Some(9),
         Some("*PJE") => Some(10),
         Some(o) => return Err(Fail::new("CPD0084", format!("OPTION({o}) is not valid"))),
     };
