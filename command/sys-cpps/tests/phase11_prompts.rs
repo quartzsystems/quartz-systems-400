@@ -487,3 +487,34 @@ fn media_prompts() {
     ]);
 }
 
+#[test]
+fn licpgm_and_system_prompts() {
+    check(&[
+        case("prompt-dspsfwrsc", "?DSPSFWRSC", &[]),
+        Case { dir: "licpgm", ..case("prompt-dspsfwrsc", "?DSPSFWRSC OUTPUT(*PRINT)", &[]) },
+        case("prompt-dspipla", "?DSPIPLA", &[]),
+        // A command with nothing to prompt: pub400 drops F4.
+        Case { known: &["keys"], ..case("prompt-wrksfwagr", "?WRKSFWAGR", &[]) },
+    ]);
+}
+
+/// The commands pub400 refused to prompt or run (its `*EXCLUDE`
+/// public authority) are defined here.
+#[test]
+fn refused_commands_are_defined() {
+    let mut missing = Vec::new();
+    for sub in ["prompts", "displays", "licpgm"] {
+        for e in std::fs::read_dir(golden_dir().join(sub)).expect("goldens") {
+            let name = e.expect("entry").file_name().to_string_lossy().to_string();
+            let Some(stem) = name.strip_suffix("-refused.txt") else {
+                continue;
+            };
+            let cmd = stem.trim_start_matches("prompt-").to_ascii_uppercase();
+            // PRTSYSINF waits (COVERAGE.md); the menus are not commands.
+            if cmd != "PRTSYSINF" && !cmd.starts_with("MENU-") && sys_cpps::entry(&cmd).is_none() {
+                missing.push(cmd);
+            }
+        }
+    }
+    assert!(missing.is_empty(), "no definition: {missing:?}");
+}
