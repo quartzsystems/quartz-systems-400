@@ -507,6 +507,20 @@ deleted.
 
 ## Hardware resources
 
+One process walks sysfs: the hardware resource service (`/init qshwr`,
+`lic/slic/src/hwsvc/`, the table in `lic/hwrsrc`), which `slic` starts
+first in the LIC phase. It names the resources once, follows
+`NETLINK_KOBJECT_UEVENT` (an event of a subsystem that makes resources
+walks sysfs again; a resource seen before keeps its name by device path,
+a new one takes the next free name of its kind, one gone is *Not
+detected*), and answers on `/run/qs400/hwrsrc.sock`. `slic` (DST, the
+installer, `svc.hw`), the storage service and, through its `hw_table`
+request, every job (WRKHDWRSC, DSPHDWRSC, `QGYRHRL`, `QGYRHRI`) ask it.
+Each resource carries its packaging parent (the nearest resource above
+it in sysfs: bridge, adapter, port or unit) and its logical parent (a
+port's network function, a unit's storage controller). Processors are
+`PNnn` and main storage `MS01` (`*PRC`).
+
 Every Ethernet port with a device behind it (`/sys/class/net/*/device`)
 is a `CMNnn` resource, numbered in PCI address order, then port number
 (`dev_port`), then interface name, so names do not move when the

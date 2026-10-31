@@ -238,7 +238,14 @@ fn lic_phase(
 fn net_address(system: &mut System) {
     // A link with a device behind it: the kernel makes bond0 and dummy0
     // itself (bonding and dummy are built in), and neither reaches a wire.
-    let device = |n: &str| std::path::Path::new(&format!("/sys/class/net/{n}/device")).exists();
+    // The hardware resource service knows which links are ports.
+    let ports: Vec<String> = system
+        .hw()
+        .resources
+        .iter()
+        .filter_map(|r| r.port.as_ref().map(|p| p.ifname.clone()))
+        .collect();
+    let device = |n: &str| ports.iter().any(|p| p == n);
     let Some(link) = system
         .links
         .iter()

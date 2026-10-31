@@ -954,3 +954,32 @@ DCM capture settles it.
    known (it may not check at all).
 10. **Menus.** No IBM command menu holds the `QS*` commands (genmenus
     lists them as "ours only"); `GO CMDQS`-style access is not given.
+
+## Hardware resources (hwrsrc, 2026-10-31)
+
+Captured from pub400 (V7R5M0): `golden/phase11/hwrsrc/` (`*STG`, `*PRC`,
+`*LWS`, `*CRP`, `*CSA`, the details of options 7 and 9, the `DSPFFD` of
+`QSYS/QARZALLF`). Open:
+
+1. **`DSPHDWRSC` is not authorized to the pub400 account**, so its
+   panels (`DSPTYPE`, `DSPTM`) and its printed list have no golden; they
+   are the lists without options. `*AHW` is refused on `WRKHDWRSC` by
+   the oracle (`wrkhdwrsc-ahw`), and our definition now refuses it too.
+2. **The detail area below the location.** IBM shows the SPD/PCI bus
+   address of its own machine; ours shows the PCI address, the SCSI
+   address, a port's interface, adapter address and link, the parents
+   and the resources attached, in IBM's column layout.
+3. **Option 5 of `*LWS`** ("Work with Controller Descriptions") has a
+   layout of its own (`wrkhdwrsc-lws-ctl01-5`, F23=More options); ours
+   shows the configuration description panel of `*CMN`.
+4. **`QARZALLF` values.** The format is the oracle's field for field;
+   which codes IBM writes in `DORECF`, `DORDSC` and `DORSTS` is not
+   known. We write the status `1` operational, `2` not detected (as the
+   APIs do), the level from 1 at the top of the list's tree, and the
+   location in `LOCCOD`. `DSPHDWRSC` writes `QARZALLF`'s format for every
+   type; IBM has per-type model files (`QARZDCMN` and others) that were
+   not captured.
+5. **`QGYRHRL` and `QGYRHRI`** cannot be called on pub400 from a 5250
+   session; their layouts are our reading (`docs/SYSAPI.md` §12).
+6. **The options' refusals** are Quartz text in the message line, not
+   IBM's message identifiers.
