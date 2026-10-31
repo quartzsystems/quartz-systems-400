@@ -140,3 +140,34 @@ fn encoders_follow_the_layouts() {
     // The principal library record follows the header.
     assert_eq!(&b[160 + 10..160 + 14], ebcdic("QSYS").as_slice());
 }
+
+/// The load-state table of `docs/LICPGM.md` §3 is the code's.
+#[test]
+fn product_directory_states_match_the_spec() {
+    use licpgm::model::state::ALL_STATES;
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/LICPGM.md");
+    let md = std::fs::read_to_string(path).expect("docs/LICPGM.md");
+    let section = md
+        .split("## 3. The product directory")
+        .nth(1)
+        .and_then(|s| s.split("\n## ").next())
+        .expect("section 3");
+    let rows: Vec<(String, String, bool)> = section
+        .lines()
+        .filter_map(|l| {
+            let cells: Vec<&str> = l.trim().trim_matches('|').split('|').map(str::trim).collect();
+            (cells.len() == 4 && cells[0].len() == 2 && cells[0] != "--").then(|| {
+                (
+                    cells[0].to_string(),
+                    cells[2].trim_matches('`').to_string(),
+                    cells[3] == "`*ERROR`",
+                )
+            })
+        })
+        .collect();
+    let code: Vec<(String, String, bool)> = ALL_STATES
+        .iter()
+        .map(|s| (s.code().to_string(), s.symbolic().to_string(), s.is_error()))
+        .collect();
+    assert_eq!(rows, code);
+}
