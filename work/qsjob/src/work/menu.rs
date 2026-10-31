@@ -28,14 +28,21 @@ pub enum Flow {
     End,
 }
 
-/// `GO MENU(...)` typed: `text` is what follows the command name.
-pub(super) fn go(s: &mut Session<'_>, text: &str, initial: bool) -> Flow {
-    let p = wm::cmd::Params::parse(text);
+/// The menu and `RTNPNT` of `GO`'s parameters: `text` is what
+/// follows the command name.
+fn go_params(text: &str) -> (String, bool) {
+    // The parser skips a command name; GO's is put back in front.
+    let p = wm::cmd::Params::parse(&format!("GO {text}"));
     let menu = p
         .pos_or(0, "MENU")
         .unwrap_or_else(|_| "MAIN".into())
         .to_ascii_uppercase();
-    let rtnpnt = p.upper("RTNPNT").as_deref() != Some("*NO");
+    (menu, p.upper("RTNPNT").as_deref() != Some("*NO"))
+}
+
+/// `GO MENU(...)` typed: `text` is what follows the command name.
+pub(super) fn go(s: &mut Session<'_>, text: &str, initial: bool) -> Flow {
+    let (menu, rtnpnt) = go_params(text);
     let target = match menu.as_str() {
         "*MAIN" => Target::Main,
         "*USER" => Target::User,
@@ -104,7 +111,7 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
         let (attrs, group) = match loaded {
             Ok(x) => x,
             Err(e) => {
-                let text = format!("Menu {} in library {} not found.", cur.name, cur.lib);
+                let text = not_found(s, &cur);
                 let _ = e;
                 if stack.depth() <= 1 {
                     s.message(&text);
@@ -231,10 +238,12 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             let rest = typed.split_once(char::is_whitespace).map_or("", |(_, r)| r);
             let _request = crate::sysdsp::keys::Request::enter();
             let flow = go(s, rest, false);
-            // Why the menu did not show (not found, not a UIM menu).
-            let why = s.take_message();
-            if !why.is_empty() {
-                dialog.message = Some((why, true));
+            // What GO had to say (a menu not found) shows on this menu.
+            let m = s.take_message();
+            if !m.is_empty() {
+                dialog.message = Some((m, true));
+                // The command stays on the line to be corrected.
+                dialog.set(crate::display::uim::CMDLINE_VAR, typed);
             }
             flow
         }
@@ -256,6 +265,16 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
     }
 }
 
+/// `CPF9801`: the menu is not there (the oracle says so for GO).
+fn not_found(s: &mut Session<'_>, q: &Qualified) -> String {
+    let text = s.cpf_text("CPF9801", &[&q.name, &q.lib]);
+    if text.is_empty() || text.starts_with("CPF9801") {
+        format!("Object {} in library {} was not found.", q.name, q.lib)
+    } else {
+        text
+    }
+}
+
 /// A menu's attributes and panel group through the storage service.
 fn load(s: &mut Session<'_>, q: &Qualified) -> Result<(MenuAttrs, Rc<uim::PanelGroup>), String> {
     let (bytes, real) = s
@@ -274,4 +293,17 @@ fn load(s: &mut Session<'_>, q: &Qualified) -> Result<(MenuAttrs, Rc<uim::PanelG
         .with(|l| l.pnlgrp_open(pnlgrp.name.clone(), lib))?;
     let p = uim::payload::decode(&payload).map_err(|e| e.to_string())?;
     Ok((attrs, Rc::new(p.group)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::go_params;
+
+    #[test]
+    fn go_takes_the_menu_typed() {
+        assert_eq!(go_params("USER"), ("USER".into(), true));
+        assert_eq!(go_params("menu(qgpl/mine) rtnpnt(*no)"), ("QGPL/MINE".into(), false));
+        assert_eq!(go_params(""), ("MAIN".into(), true));
+        assert_eq!(go_params("*main"), ("*MAIN".into(), true));
+    }
 }

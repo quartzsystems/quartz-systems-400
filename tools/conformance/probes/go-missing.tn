@@ -1,0 +1,12 @@
+# GO to a menu that does not exist: CPF9801 on the menu's message line,
+# the command kept on the line; its help names the message.
+wait "Main Menu"
+continue
+type go qzzznomnu
+key enter
+settle 1500
+snap go-missing
+cursor 24 2
+key f1
+settle 1500
+snap go-missing-help

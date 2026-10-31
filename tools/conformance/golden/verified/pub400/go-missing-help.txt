@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPF9801       Severity . . . . . . . :   40         
+ Message type . . . . . :   Diagnostic                                          
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Object QZZZNOMNU in library *LIBL not found.               
+ Cause . . . . . :   The object QZZZNOMNU in library *LIBL type *MENU not       
+   found.  The object name, library name, or the object type is not correct.    
+   If the library name is not specified, the object may be in a library that is 
+   not contained in the library list.                                           
+ Recovery  . . . :   Correct the object name, library name, or object type.  If 
+   the library name was not specified, specify the library name and try the     
+   request again.                                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

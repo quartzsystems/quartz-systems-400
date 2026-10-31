@@ -5033,3 +5033,19 @@ release = "V7R5M0"
 date = "2026-10-31"
 script = "addendum/dspmsg-reply"
 width = 80
+
+[[golden]]
+name = "go-missing"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "go-missing"
+width = 80
+
+[[golden]]
+name = "go-missing-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "go-missing"
+width = 80
