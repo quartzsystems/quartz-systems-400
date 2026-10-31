@@ -79,7 +79,12 @@ pub(super) fn render(
     let single = columns.len() == 1;
     for (c, cp) in columns.iter().zip(&by_column) {
         let mut colon = colon_of(ctx, c);
-        if single && let Some(sh) = shared {
+        // R17: a prompt width given by an empty `:DATACOL.` is the
+        // panel's own choice and keeps its colon (dsphdwrsc's location).
+        if single
+            && c.prompt.is_none()
+            && let Some(sh) = shared
+        {
             colon = colon.max(sh);
         }
         let end = (c.start + c.width - 1).min(limit);

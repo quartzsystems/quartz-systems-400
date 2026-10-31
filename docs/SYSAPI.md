@@ -456,3 +456,30 @@ action (`char(1)` codes as in `EXTI0200`). The receivers are in
 fit and a continuation handle naming the next. Selection criteria:
 operator 1 (equal) at a 1-based start in the program data. The keys
 and codes are *QS/400 reading*: no header gives them.
+
+## 12. Hardware resources
+
+`runtime/sysapi/src/hw.rs`, over the provider's `hardware()`: the table
+of the hardware resource service (`lic/hwrsrc`, `/init qshwr`), reached
+through the storage service's link (`hw_table`, request 1420) in a job
+and directly in the service. Neither API is on the oracle: the layouts
+below are *QS/400 reading* of IBM's documented field order, the status
+byte is `1` operational, `2` not detected.
+
+| API | Parameters |
+|---|---|
+| `QGYRHRL` | receiver, length `bin4`, format `RHRL0100`, resource category `bin4` (1 all, 2 communication, 3 local work station, 4 processor, 5 storage, 6 coupled, 8 cryptographic), error code |
+| `QGYRHRI` | receiver, length `bin4`, format `RHRI0100`, resource name `char(10)`, error code |
+
+`RHRL0100`: bytes returned and available, number of entries (0x08),
+entry length 100 (0x0C), entries from 0x10. An entry: category `bin4`,
+family level `bin4` (1 at the top of the list's tree), line type `bin4`
+(0), resource name `char(10)`, type `char(4)`, model `char(3)`, status
+`char(1)`, coupled system `char(8)`, adapter address `char(12)` (a
+port's MAC), text `char(50)`.
+
+`RHRI0100`: bytes returned and available, then the entry above at 0x08,
+serial number `char(10)` at 0x6C, part number `char(12)`, the packaging
+and logical parents `char(10)` each, the location `char(79)`; 229 bytes.
+A format other than the one named is `CPF3C21`; a category or resource
+not known is `CPF9898` with Quartz text.

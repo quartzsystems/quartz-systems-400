@@ -2,14 +2,14 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The configuration displays: `WRKDEVD`, `WRKHDWRSC`/`DSPHDWRSC` and
-//! `DSPPTF`.
+//! The configuration displays: `WRKDEVD` and `DSPPTF` (`WRKHDWRSC` and
+//! `DSPHDWRSC` are `hdwrsc`'s).
 
 use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{NO_PRINT, act, cell, dialog, exec, fetch, fill, list_of, parm, show};
+use super::{NO_PRINT, act, dialog, exec, fetch, fill, list_of, parm, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -97,49 +97,6 @@ pub fn wrkdevd(
             }
             Response::Print => d.message = Some((NO_PRINT.into(), true)),
             Response::Menu(_) | Response::Panel(_) => {}
-        }
-    }
-}
-
-/// `WRKHDWRSC` and `DSPHDWRSC`: the resources of the `TYPE` asked for.
-pub fn hdwrsc(
-    job: &mut Job,
-    host: &Host,
-    surface: &mut Surface,
-    r: &Resolved,
-    work: bool,
-) -> Option<Result<String, Fail>> {
-    let ty = parm(r, "TYPE");
-    let mut d = match dialog(host, "QUIHDWRSC") {
-        Ok(d) => d,
-        Err(e) => return Some(Err(e)),
-    };
-    d.copyright = false;
-    let panel = if work { "WRKHDWRSC" } else { "DSPHDWRSC" };
-    loop {
-        let data = fetch(host, "HDWRSC", &[&ty])?;
-        super::set_vars(&mut d, &data);
-        fill(&mut d, "RSCS", list_of(&data, "RSCS"));
-        let resp = match show(&mut d, surface, panel) {
-            Ok(r) => r,
-            Err(e) => return Some(Err(e)),
-        };
-        match resp {
-            Response::Exit | Response::Cancel | Response::Gone => return Some(Ok(String::new())),
-            Response::Return(0) if !work => return Some(Ok(String::new())),
-            Response::Options(c) => {
-                for ch in &c {
-                    let name = cell(&d, &ch.list, ch.row, "RSCNAME");
-                    let text = cell(&d, &ch.list, ch.row, "RSCTEXT");
-                    d.message = match ch.option.as_str() {
-                        "5" => exec(job, host, "WRKCFGSTS CFGTYPE(*DEV)"),
-                        _ => Some((format!("{name}: {text}."), false)),
-                    };
-                }
-                d.list_mut("RSCS").options.clear();
-            }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
-            _ => {}
         }
     }
 }

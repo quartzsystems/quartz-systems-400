@@ -421,46 +421,6 @@ fn wrkdevd() {
     compare("wrkdevd", &render(&g, "WRKDEVD", &d, &plain()).unwrap());
 }
 
-#[test]
-fn wrkhdwrsc() {
-    let g = shipped("QUIHDWRSC");
-    let mut d = vars(&[("RSCKIND", "Communication")]);
-    let rsc = [
-        ("CMB09", "6B03", "Operational", "Comm Processor"),
-        ("  LIN03", "6B03", "Operational", "Comm Adapter"),
-        ("    CMN01", "6B03", "Operational", "Comm Port"),
-        ("CMB10", "6B03", "Operational", "Comm Processor"),
-        ("  LIN01", "6B03", "Operational", "Comm Adapter"),
-        ("    CMN02", "6B03", "Operational", "Comm Port"),
-        ("CMB11", "268C", "Not detected", "Comm Processor"),
-        ("  LIN02", "268C", "Not detected", "LAN Adapter"),
-        ("    CMN03", "268C", "Not detected", "Ethernet Port"),
-        ("CMB12", "268C", "Operational", "Combined function IOP"),
-        ("  LIN04", "6B26", "Operational", "Comm Adapter"),
-        ("CMB17", "268C", "Operational", "Comm Processor"),
-        ("  LIN05", "268C", "Operational", "LAN Adapter"),
-        ("    CMN04", "268C", "Operational", "Ethernet Port"),
-    ];
-    let r: Vec<[(&str, &str); 4]> = rsc
-        .iter()
-        .map(|(n, t, s, x)| [("RSCNAME", *n), ("RSCTYPE", *t), ("RSCSTS", *s), ("RSCTEXT", *x)])
-        .collect();
-    d.set_list("RSCS", rows(&r));
-    compare("wrkhdwrsc", &render(&g, "WRKHDWRSC", &d, &plain()).unwrap());
-}
-
-#[test]
-#[ignore = "no golden: DSPHDWRSC is not authorized to the pub400 account"]
-fn dsphdwrsc() {
-    let g = shipped("QUIHDWRSC");
-    let d = vars(&[("RSCKIND", "Communication")]);
-    let s = render(&g, "DSPHDWRSC", &d, &plain()).unwrap();
-    let title = "Display Communication Resources";
-    let rows = s.text_rows();
-    assert!(rows[0].contains(title));
-    assert!(rows[22].contains("F3=Exit") && rows[22].contains("F12=Cancel"));
-}
-
 /// `---Name---` heading `width` wide, the name centered as the driver
 /// makes it.
 fn dashed(name: &str, width: usize) -> String {

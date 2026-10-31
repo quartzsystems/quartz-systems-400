@@ -7,6 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+hwrsrc = { path = "../../lic/hwrsrc", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 codegen = { path = "../../runtime/codegen", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }

@@ -17,6 +17,7 @@ pub(crate) mod clpgm;
 mod cmncmd;
 mod cmntrc;
 mod dbcmd;
+mod hwcmd;
 mod direct;
 mod ifscmd;
 pub(crate) mod lpapi;
@@ -98,6 +99,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| cmntrc::run(system, name, parms))
             .or_else(|| certcmd::run(system, name, parms))
             .or_else(|| sysinfo::run(system, name, parms))
+            .or_else(|| hwcmd::run(system, name, parms))
             .or_else(|| crate::stgsvc::regfac::command(system, name, parms))
             .unwrap_or_else(|| bridge(system, e, parms, typed)),
     }

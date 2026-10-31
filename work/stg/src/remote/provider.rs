@@ -36,6 +36,13 @@ impl Provider for RemoteProvider {
             .map_err(|(msgid, data)| ApiFail { msgid, data })
     }
 
+    fn hardware(&mut self) -> Result<hwrsrc::Table, ApiFail> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.hw_table(false))
+            .map_err(|e| ApiFail::id("CPF9898").text(e.trim_start_matches("CPF9898 "), 512))
+    }
+
     fn sec(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
         self.link.borrow_mut().with(|l| l.sec_api(q))
     }

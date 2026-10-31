@@ -3,8 +3,9 @@
 .* root directory of this project.
 .*
 .* QUIHDWRSC: WRKHDWRSC and DSPHDWRSC, the hardware resources of one
-.* kind (RSCKIND names it in the title). A resource under another is
-.* indented in RSCNAME by the driver.
+.* type (RSCKIND names it in the title), each type's list as the oracle
+.* lays it out; a resource under another is indented in RSCNAME by the
+.* driver. DETAIL is option 7, CFGD option 5 (and 9 of storage).
 :PNLGRP.
 :COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
 :CLASS NAME=OPTCL BASETYPE=ACTION.
@@ -13,19 +14,57 @@
 :ECLASS.
 :CLASS NAME=RSCCL BASETYPE='CHAR 14'.
 :ECLASS.
+:CLASS NAME=RSC12CL BASETYPE='CHAR 12'.
+:ECLASS.
 :CLASS NAME=TYPECL BASETYPE='CHAR 4'.
+:ECLASS.
+:CLASS NAME=TMCL BASETYPE='CHAR 10'.
 :ECLASS.
 :CLASS NAME=STSCL BASETYPE='CHAR 20'.
 :ECLASS.
+:CLASS NAME=SYSCL BASETYPE='CHAR 8'.
+:ECLASS.
 :CLASS NAME=TEXTCL BASETYPE='CHAR 28'.
+:ECLASS.
+:CLASS NAME=TEXT22CL BASETYPE='CHAR 22'.
+:ECLASS.
+:CLASS NAME=TEXT14CL BASETYPE='CHAR 14'.
+:ECLASS.
+:CLASS NAME=VALCL BASETYPE='CHAR 40'.
+:ECLASS.
+:CLASS NAME=LOCCL BASETYPE='CHAR 60'.
+:ECLASS.
+:CLASS NAME=LINECL BASETYPE='CHAR 76'.
+:ECLASS.
+:CLASS NAME=PADCL BASETYPE='CHAR 1'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
 :ECLASS.
 :VAR NAME=RSCKIND CLASS=KINDCL.
 :VAR NAME=OPT CLASS=OPTCL.
 :VAR NAME=RSCNAME CLASS=RSCCL.
+:VAR NAME=RSCNAM12 CLASS=RSC12CL.
 :VAR NAME=RSCTYPE CLASS=TYPECL.
+:VAR NAME=RSCTM CLASS=TMCL.
 :VAR NAME=RSCSTS CLASS=STSCL.
+:VAR NAME=RSCSYS CLASS=SYSCL.
 :VAR NAME=RSCTEXT CLASS=TEXTCL.
+:VAR NAME=RSCTXT22 CLASS=TEXT22CL.
+:VAR NAME=RSCTXT14 CLASS=TEXT14CL.
+:VAR NAME=DRSC CLASS=VALCL.
+:VAR NAME=DTEXT CLASS=VALCL.
+:VAR NAME=DTM CLASS=VALCL.
+:VAR NAME=DSERIAL CLASS=VALCL.
+:VAR NAME=DPART CLASS=VALCL.
+:VAR NAME=DLOC CLASS=LOCCL.
+:VAR NAME=DLINE CLASS=LINECL.
+:VAR NAME=CFGPAD CLASS=PADCL.
+:VAR NAME=CFGD CLASS=NAMECL.
 :LISTDEF NAME=RSCS VARS='OPT RSCNAME RSCTYPE RSCSTS RSCTEXT'.
+:LISTDEF NAME=RSCTMS VARS='OPT RSCNAME RSCTM RSCSTS RSCTXT22'.
+:LISTDEF NAME=RSCCSA VARS='OPT RSCNAM12 RSCTM RSCSTS RSCSYS RSCTXT14'.
+:LISTDEF NAME=DLINES VARS='DLINE'.
+:LISTDEF NAME=CFGDS VARS='OPT CFGPAD CFGD'.
 :KEYL NAME=WRKKEYS HELP=KEYSHLP.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
@@ -47,9 +86,10 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:PANEL NAME=WRKHDWRSC KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+.* *CMN: the type alone, configuration descriptions and detail.
+:PANEL NAME=HWCMN KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
-:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No resources of this kind)
+:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No communication resources were found.)
 :LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
 :LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
 :LISTCOL VAR=OPT USAGE=INPUT.Opt
@@ -59,24 +99,159 @@
 :LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
-:PANEL NAME=DSPHDWRSC KEYL=DSPKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
-:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No resources of this kind)
+.* *CRP: as *CMN.
+:PANEL NAME=HWCRP KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No cryptographic adapters were found on this system.)
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
 :LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
 :LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
 :LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
 :LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
+.* *LWS: controller descriptions instead.
+:PANEL NAME=HWLWS KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No work station resources were found.)
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with controller descriptions
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+.* *STG: type and model, option 9 works with the resource.
+:PANEL NAME=HWSTG KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(No storage resources were found.)
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTACT OPTION=9 ENTER='RETURN 109'.9=Work with resource
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+.* *PRC: as *STG, option 9 shows the attributes.
+:PANEL NAME=HWPRC KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(No processor resources were found.)
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTACT OPTION=9 ENTER='RETURN 109'.9=Work with resource attributes
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+.* *CSA: the coupled system's name besides.
+:PANEL NAME=HWCSA KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCCSA SCROLL=YES.(No coupled system adapters were found on this system.)
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=RSCNAM12 USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCSYS USAGE=OUTPUT.System
+:LISTCOL VAR=RSCTXT14 USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+.* Option 9 of *STG: the resource and those it drives (RSCKIND is its text).
+:PANEL NAME=HWSUB KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(The resource is no longer there.)
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+.* DSPHDWRSC: the lists without options.
+:PANEL NAME=DSPTYPE KEYL=DSPKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
+:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No resources of this type were found.)
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+:PANEL NAME=DSPTM KEYL=DSPKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
+:LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(No resources of this type were found.)
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+.* Option 7: the resource, its location, then its addresses and what
+.* is attached to it in a scrolled area.
+:PANEL NAME=DETAIL KEYL=WRKKEYS HELP=DETAILH ENTER='RETURN 0' TOPSEP=SYSNAM.Display Resource Detail
+:DATA DEPTH=10.
+:DATACOL WIDTH=30.
+:DATACOL WIDTH=78.
+:DATAI VAR=DRSC USAGE=OUTPUT.Resource name
+:DATAI VAR=DTEXT USAGE=OUTPUT.Text
+:DATAI VAR=DTM USAGE=OUTPUT.Type-model
+:DATAI VAR=DSERIAL USAGE=OUTPUT.Serial number
+:DATAI VAR=DPART USAGE=OUTPUT.Part number
+:EDATA.
+:DATA DEPTH=2.
+:DATACOL WIDTH=10.
+:DATACOL WIDTH=78.
+:DATAI VAR=DLOC USAGE=OUTPUT.Location
+:EDATA.
+:LIST DEPTH='*' LISTDEF=DLINES SCROLL=YES.
+:LISTCOL VAR=DLINE USAGE=OUTPUT.
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+.* Option 5: the configuration descriptions that use the resource.
+:PANEL NAME=CFGD KEYL=WRKKEYS HELP=CFGDH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with Configuration Descriptions
+:DATA DEPTH=3.
+:DATACOL WIDTH=30.
+:DATACOL WIDTH=78.
+:DATAI VAR=DRSC USAGE=OUTPUT.Resource name
+:DATAI VAR=DTEXT USAGE=OUTPUT.Text
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=CFGDS SCROLL=YES.(No configuration descriptions)
+:LISTACT OPTION=1 ENTER='RETURN 101'.1=Create
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with description
+:LISTACT OPTION=8 ENTER='RETURN 108'.8=Work with configuration status
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=CFGPAD USAGE=OUTPUT.
+:LISTCOL VAR=CFGD USAGE=OUTPUT.Description
+:ELIST.
+:EPANEL.
 :HELP NAME=WRKHDWH.Work with Hardware Resources - Help
-:P.The resources of one kind the system found, each under the resource
+:P.The resources of one type the system found, each under the resource
 it is attached to, with its type, whether it is working and what it
-is. Type 5 to see the configuration descriptions that use a resource
-or 7 for its details.
+is. Type 7 for a resource's details; 5 or 9 for the configuration
+descriptions that use it.
 :EHELP.
 :HELP NAME=DSPHDWH.Display Hardware Resources - Help
-:P.The resources of one kind the system found, each under the resource
+:P.The resources of one type the system found, each under the resource
 it is attached to, with its type, whether it is working and what it
 is.
+:EHELP.
+:HELP NAME=DETAILH.Display Resource Detail - Help
+:P.One resource: what it is, where it sits and the resources attached
+to it. Page down for its addresses.
+:EHELP.
+:HELP NAME=CFGDH.Work with Configuration Descriptions - Help
+:P.The line and device descriptions that name the resource. Type 5 to
+work with one, 8 for its status, or 1 on the first row to create one.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F5 looks at the hardware again, F6 prints the list, F3 and F12

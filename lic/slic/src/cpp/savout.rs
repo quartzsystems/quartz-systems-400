@@ -21,7 +21,7 @@ use crate::ipl::system::{System, now_unix};
 
 /// A field: name, DDS type (`A`, `S` zoned, `P` packed, `V` varying
 /// character), length, decimals.
-type Fld = (&'static str, char, u16, u8);
+pub(super) type Fld = (&'static str, char, u16, u8);
 
 /// `QSRSAV`, 76 fields, 3732 bytes.
 const QSRSAV: &[Fld] = &[
@@ -82,7 +82,7 @@ const QSRRST: &[Fld] = &[
 ];
 
 /// One row: field name and value (text, or a number for `S`/`P`).
-type Row = Vec<(&'static str, String)>;
+pub(super) type Row = Vec<(&'static str, String)>;
 
 /// DDS source of a model format.
 fn dds(format: &str, fields: &[Fld]) -> String {
@@ -151,7 +151,7 @@ fn type_name(t: u16) -> String {
 
 /// Write `rows` to the outfile `OUTFILE`/`OUTMBR` names, creating it in
 /// the model format when it is missing.
-fn write(
+pub(super) fn write(
     system: &mut System,
     parms: &Parms,
     format: &str,

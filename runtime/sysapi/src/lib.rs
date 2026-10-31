@@ -38,6 +38,7 @@ mod cee;
 mod crt;
 mod data;
 mod db;
+pub mod hw;
 pub mod envproc;
 pub mod ifs;
 mod job;
@@ -84,6 +85,7 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(security::APIS);
     v.extend(regapi::APIS);
     v.extend(ifs::APIS);
+    v.extend(hw::APIS);
     v
 }
 

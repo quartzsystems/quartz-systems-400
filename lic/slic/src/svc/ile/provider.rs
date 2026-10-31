@@ -73,6 +73,11 @@ fn stamp(unix: u64) -> String {
 }
 
 impl Provider for StoreProvider {
+    fn hardware(&mut self) -> ApiResult<hwrsrc::Table> {
+        hwrsrc::client::table(false)
+            .map_err(|e| ApiFail::id("CPF9898").text(&format!("hardware resource service: {e}"), 512))
+    }
+
     fn regfac(&mut self, q: regfac::Query) -> ApiResult<regfac::Answer> {
         let fail = |f: regfac::RegFail| ApiFail {
             msgid: f.msgid,

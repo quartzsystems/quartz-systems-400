@@ -7,5 +7,5 @@
                           ALLOW(*INTERACT *IPGM *IMOD *EXEC) +
                           HLPPNLGRP(QHSVCMD) HLPID(WRKHDWRSC)
              PARM       KWD(TYPE) TYPE(*CHAR) LEN(4) RSTD(*YES) MIN(1) +
-                          VALUES(*AHW *CMN *CRP *CSA *LWS *PRC *STG) +
+                          VALUES(*CMN *CRP *CSA *LWS *PRC *STG) +
                           PROMPT('Type')

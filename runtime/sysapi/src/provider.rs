@@ -330,6 +330,11 @@ pub trait Provider {
     fn licpgm(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
         crate::lp::catalog_answer(api, &parms)
     }
+    /// The hardware resource table (`QGYRHRL`, `QGYRHRI`); none here
+    /// by default.
+    fn hardware(&mut self) -> Result<hwrsrc::Table, ApiFail> {
+        Err(ApiFail::id("CPF9898").text("The hardware resource service is not reachable.", 512))
+    }
     /// The registration facility's questions (`regfac::Query`).
     fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, ApiFail> {
         Err(ApiFail::id("CPF3CDA"))

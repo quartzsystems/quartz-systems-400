@@ -621,14 +621,12 @@ site = "job"
 note = "files of inactive default-group programs closed, overrides of returned levels removed"
 
 [cmd.DSPHDWRSC]
-word = "hw"
 site = "job"
-note = "a panel when the job shows panels; else the service's text"
+note = "a panel at a display; the list printed or written to an outfile by lic/slic/src/cpp/hwcmd.rs otherwise"
 
 [cmd.WRKHDWRSC]
-word = "hw"
 site = "job"
-note = "a panel when the job shows panels; else the service's text"
+note = "a panel at a display; the list printed by lic/slic/src/cpp/hwcmd.rs otherwise"
 
 [cmd.EDTAUTL]
 word = "dspautl"

@@ -13,6 +13,7 @@
 
 mod cmn;
 mod config;
+mod hdwrsc;
 mod editors;
 mod programs;
 mod security;
@@ -45,8 +46,8 @@ pub fn run(
         "DSPCMD" => programs::dspcmd(host, surface, r),
         "DSPPGMREF" => Some(programs::dsppgmref(host, surface, r)),
         "WRKDEVD" => config::wrkdevd(job, host, surface, r),
-        "WRKHDWRSC" => config::hdwrsc(job, host, surface, r, true),
-        "DSPHDWRSC" => config::hdwrsc(job, host, surface, r, false),
+        "WRKHDWRSC" => hdwrsc::run(job, host, surface, r, true),
+        "DSPHDWRSC" => hdwrsc::run(job, host, surface, r, false),
         "DSPPTF" => config::dspptf(host, surface),
         "WRKLIND" => cmn::wrklind(job, host, surface, r),
         "DSPLIND" => cmn::dsplind(host, surface, r),

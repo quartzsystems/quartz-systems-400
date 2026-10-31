@@ -260,6 +260,9 @@ pub const DIRECT: &[&str] = &[
     "DLTLIND",
     "DSPLIND",
     "WRKLIND",
+    // --- hardware resources (lic/slic/src/cpp/hwcmd.rs)
+    "DSPHDWRSC",
+    "WRKHDWRSC",
     "DSPCMD",
     "DSPDEVD",
     "DSPDTAARA",
@@ -891,7 +894,6 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "hldoutq",
     "hldsplf",
     "hldwtr",
-    "hw",
     "lib",
     "mirror",
     "naming",

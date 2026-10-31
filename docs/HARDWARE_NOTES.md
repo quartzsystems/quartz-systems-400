@@ -15,7 +15,7 @@ disks come up in the same order on every boot.
 
 - Every PCI function is a resource in PCI address order. A storage
   controller is `DCnn`, with a type and model from the ID table in
-  `lic/slic/src/hwrsrc/storage.rs` (board by subsystem ID first, then
+  `lic/hwrsrc/src/scan/storage.rs` (board by subsystem ID first, then
   the chip, then the PCI class): `QD10` MegaRAID/PERC, `QD11` mpt3sas,
   `QD12` smartpqi, `QD13` hpsa, `QD14` aacraid, `QD15` mpi3mr, `QD01`
   virtio block, `QD02` virtio SCSI, `QD03` AHCI, `QD04` NVMe.

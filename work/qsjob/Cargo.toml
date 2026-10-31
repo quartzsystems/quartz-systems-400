@@ -11,6 +11,7 @@ spool = { path = "../../work/spool", version = "0.1.0" }
 print = { path = "../../work/print", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 stg = { path = "../../work/stg", version = "0.1.0" }
+hwrsrc = { path = "../../lic/hwrsrc", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 ifscmd = { path = "../../ifs/ifscmd", version = "0.1.0" }
