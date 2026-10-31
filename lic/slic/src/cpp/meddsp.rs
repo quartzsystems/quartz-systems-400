@@ -256,10 +256,16 @@ pub(crate) fn cartridges(system: &mut System, dev: &str, ids: &[String], cgy: &s
     if d.media_kind() != Some(MediaKind::TapeLibrary) {
         return Err(format!("CPF6745 device {dev} is not a tape media library"));
     }
-    Ok(media::library::rows(system, &dev, ids, cgy)?
-        .into_iter()
-        .map(|row| CtgView { dev: dev.clone(), row })
-        .collect())
+    let rows = media::library::rows(system, &dev, ids, cgy)?;
+    if rows.is_empty() {
+        // Nothing matched: the cartridge asked for, else the category.
+        if let Some(id) = ids.iter().find(|i| !i.starts_with('*')) {
+            return Err(format!("CPF67A1 Cartridge {id} is not in media library {dev}."));
+        }
+        let cgy = if cgy.trim().is_empty() { "*ALL" } else { cgy.trim() };
+        return Err(format!("CPF67EE Media library {dev} has no cartridges in category {cgy}."));
+    }
+    Ok(rows.into_iter().map(|row| CtgView { dev: dev.clone(), row }).collect())
 }
 
 // ---------------------------------------------------------------- optical
