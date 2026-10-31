@@ -19,6 +19,7 @@ pub mod ifsapi;
 pub mod ossnet;
 #[cfg(unix)]
 mod display;
+mod dspcmds;
 mod dst;
 mod error;
 mod hostsvr;
