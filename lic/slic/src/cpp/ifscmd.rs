@@ -200,7 +200,15 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         _ => return None,
     };
-    let out = super::stmf::with_job(system, r);
+    let mut out = super::stmf::with_job(system, r);
+    // DSPUDFS OUTPUT(*PRINT): the text form as a spooled file.
+    if name == "DSPUDFS" && matches!(parms.name("OUTPUT").as_str(), "P" | "*PRINT") && out.escape.is_none() {
+        let lines: Vec<String> = out.text.lines().map(str::to_string).collect();
+        match crate::svc::security::print_as(system, "QSYSPRT", "DSPUDFS", &lines, false) {
+            Ok(t) => out.text = t,
+            Err(e) => return Some(super::direct::failed(name, &e)),
+        }
+    }
     Some(reply(out, ""))
 }
 

@@ -51,12 +51,12 @@ fn text(r: &Resolved, kwd: &str) -> String {
 }
 
 /// The IFS over the job's link.
-fn client(host: &Host) -> RemoteIfs {
+pub(crate) fn client(host: &Host) -> RemoteIfs {
     RemoteIfs::new(host.link.clone())
 }
 
 /// The escape a display ends with when its object is not there.
-fn fail(e: Errno, path: &str) -> Fail {
+pub(crate) fn fail(e: Errno, path: &str) -> Fail {
     let m = ifscmd::Msg::errno(e, path);
     Fail {
         msgid: m.id,

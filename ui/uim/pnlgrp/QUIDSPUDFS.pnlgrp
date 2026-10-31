@@ -1,0 +1,67 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIDSPUDFS: DSPUDFS, one user-defined file system and the directories
+.* it is mounted over. No oracle has a UDFS (pub400 answers CPFA0A9,
+.* golden/audit/displays/dspudfs-none), so the layout follows IBM's
+.* documentation.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=PATHCL BASETYPE='CHAR 44'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=STAMPCL BASETYPE='CHAR 18'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=MNTCL BASETYPE='CHAR 76'.
+:ECLASS.
+:VAR NAME=UDFS CLASS=PATHCL.
+:VAR NAME=OWNER CLASS=NAMECL.
+:VAR NAME=CASE CLASS=NAMECL.
+:VAR NAME=DFTFMT CLASS=NAMECL.
+:VAR NAME=CRTAUD CLASS=NAMECL.
+:VAR NAME=CRTDTS CLASS=STAMPCL.
+:VAR NAME=MOUNTED CLASS=NAMECL.
+:VAR NAME=TEXT CLASS=TEXTCL.
+:VAR NAME=MNTDIR CLASS=MNTCL.
+:LISTDEF NAME=MOUNTS VARS='MNTDIR'.
+:KEYL NAME=DSPKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=DSPUDFS KEYL=DSPKEYS HELP=DSPUDFS ENTER='RETURN 0' TOPSEP=SYSNAM.Display User-Defined FS
+:DATA DEPTH=10.
+:DATACOL WIDTH=32.
+:DATACOL WIDTH=78.
+:DATAI VAR=UDFS USAGE=OUTPUT.User-defined file system
+:DATAI VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI VAR=CASE USAGE=OUTPUT.Case sensitivity
+:DATAI VAR=DFTFMT USAGE=OUTPUT.Default file format
+:DATAI VAR=CRTAUD USAGE=OUTPUT.Create object auditing value
+:DATAI VAR=CRTDTS USAGE=OUTPUT.Creation date/time
+:DATAI VAR=TEXT USAGE=OUTPUT.Text description
+:DATAC.
+:DATAI VAR=MOUNTED USAGE=OUTPUT.Mounted
+:EDATA.
+:LIST DEPTH='*' LISTDEF=MOUNTS SCROLL=YES.(Not mounted)
+:LISTCOL VAR=MNTDIR USAGE=OUTPUT.Mounted over
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=DSPUDFS.Display User-Defined FS - Help
+:P.A user-defined file system: who owns it, whether its names are case
+sensitive, the auditing value its new objects get, when it was created,
+and the directories it is mounted over now.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 and F12 leave.
+:EHELP.
+:EPNLGRP.

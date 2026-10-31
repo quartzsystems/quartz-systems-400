@@ -482,6 +482,54 @@ pub fn label(var: &str) -> &'static str {
         .map_or("", |(_, l)| *l)
 }
 
+/// What `DSPUDFS` shows: its fields (variable, value) in display
+/// order, and where it is mounted.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UdfsView {
+    /// `UDFS`, `OWNER`, `CASE`, `DFTFMT`, `CRTAUD`, `CRTDTS`, `MOUNTED`
+    /// and `TEXT`.
+    pub vars: Vec<(&'static str, String)>,
+    /// The directories it is mounted over.
+    pub mounts: Vec<String>,
+}
+
+/// The labels of `UdfsView`'s variables, for the text form.
+pub const UDFS_LABELS: &[(&str, &str)] = &[
+    ("UDFS", "User-defined file system"),
+    ("OWNER", "Owner"),
+    ("CASE", "Case sensitivity"),
+    ("DFTFMT", "Default file format"),
+    ("CRTAUD", "Create object auditing value"),
+    ("CRTDTS", "Creation date/time"),
+    ("MOUNTED", "Mounted"),
+    ("TEXT", "Text description"),
+];
+
+/// `DSPUDFS UDFS(path)` read through the client.
+pub fn udfs(c: &dyn IfsClient, path: &str) -> Result<UdfsView> {
+    let i = c.dspudfs(path)?;
+    let aud = match i.crtobjaud {
+        CrtObjAud::SysVal => "*SYSVAL",
+        CrtObjAud::Value(ObjAudit::None) => "*NONE",
+        CrtObjAud::Value(ObjAudit::UsrPrf) => "*USRPRF",
+        CrtObjAud::Value(ObjAudit::Change) => "*CHANGE",
+        CrtObjAud::Value(ObjAudit::All) => "*ALL",
+    };
+    Ok(UdfsView {
+        vars: vec![
+            ("UDFS", i.path),
+            ("OWNER", i.owner),
+            ("CASE", if i.case_sensitive { "*MIXED" } else { "*MONO" }.into()),
+            ("DFTFMT", "*TYPE2".into()),
+            ("CRTAUD", aud.into()),
+            ("CRTDTS", date_time(i.created)),
+            ("MOUNTED", if i.mounted_at.is_empty() { "No" } else { "Yes" }.into()),
+            ("TEXT", i.text),
+        ],
+        mounts: i.mounted_at,
+    })
+}
+
 /// The `errno` a display shows for a missing object.
 #[must_use]
 pub fn missing(e: Errno) -> bool {

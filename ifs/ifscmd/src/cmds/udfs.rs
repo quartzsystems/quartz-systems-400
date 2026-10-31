@@ -11,7 +11,7 @@ use std::fmt::Write as _;
 use ifs::client::IfsClient;
 use ifs::meta::{CrtObjAud, ObjAudit};
 
-use crate::display::date_time;
+use crate::display;
 use crate::msg::{Msg, Reply};
 
 /// `CRTUDFS UDFS CASE CRTOBJAUD TEXT`.
@@ -80,8 +80,8 @@ pub fn unmount(c: &dyn IfsClient, ty: &str, mfs: &str, over: &str) -> Reply {
 
 /// `DSPUDFS`'s text.
 pub fn dspudfs(c: &dyn IfsClient, udfs: &str) -> Reply {
-    let i = match c.dspudfs(udfs) {
-        Ok(i) => i,
+    let v = match display::udfs(c, udfs) {
+        Ok(v) => v,
         Err(e) => return Reply::errno(e, udfs),
     };
     let mut t = String::new();
@@ -92,33 +92,14 @@ pub fn dspudfs(c: &dyn IfsClient, udfs: &str) -> Reply {
         let _ = writeln!(t, "{lead}:   {v}");
     };
     let _ = writeln!(t, "{:^80}", "User-defined file system");
-    line(&mut t, "User-defined file system", &i.path);
-    line(&mut t, "Owner", &i.owner);
-    line(
-        &mut t,
-        "Case sensitivity",
-        if i.case_sensitive { "*MIXED" } else { "*MONO" },
-    );
-    line(
-        &mut t,
-        "Create object auditing value",
-        match i.crtobjaud {
-            CrtObjAud::SysVal => "*SYSVAL",
-            CrtObjAud::Value(ObjAudit::None) => "*NONE",
-            CrtObjAud::Value(ObjAudit::UsrPrf) => "*USRPRF",
-            CrtObjAud::Value(ObjAudit::Change) => "*CHANGE",
-            CrtObjAud::Value(ObjAudit::All) => "*ALL",
-        },
-    );
-    line(&mut t, "Default file format", "*TYPE2");
-    line(&mut t, "Creation date/time", &date_time(i.created));
-    if i.mounted_at.is_empty() {
-        line(&mut t, "Mounted", "No");
-    } else {
-        for m in &i.mounted_at {
-            line(&mut t, "Mounted over", m);
+    for (k, val) in &v.vars {
+        let label = display::UDFS_LABELS.iter().find(|(n, _)| n == k).map_or("", |(_, l)| *l);
+        line(&mut t, label, val);
+        if *k == "MOUNTED" {
+            for m in &v.mounts {
+                line(&mut t, "Mounted over", m);
+            }
         }
     }
-    line(&mut t, "Text description", &i.text);
     Reply::text(t)
 }

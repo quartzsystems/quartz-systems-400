@@ -1,0 +1,24 @@
+                            Display User-Defined FS
+                                                             System:   SYSNAME
+ User-defined file system . . . :   /dev/QASP01/mine.udfs
+ Owner  . . . . . . . . . . . . :   QSECOFR
+ Case sensitivity . . . . . . . :   *MONO
+ Default file format  . . . . . :   *TYPE2
+ Create object auditing value . :   *SYSVAL
+ Creation date/time . . . . . . :   10/31/26  12:00:00
+ Text description . . . . . . . :   probe
+
+ Mounted  . . . . . . . . . . . :   Yes
+
+ Mounted over
+ /mnt
+
+
+
+
+
+                                                                         Bottom
+ Press Enter to continue.
+
+ F3=Exit   F12=Cancel
+

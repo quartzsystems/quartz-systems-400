@@ -769,7 +769,7 @@ note = "reclaims the whole IFS metadata whatever OBJ names"
 
 [cmd.DSPUDFS]
 site = "job"
-note = "the report viewer at a display (panels/info/reports.rs); the service's text otherwise"
+note = "a panel at a display (panels/info/udfs.rs); the service's text otherwise"
 
 # --- IFS panels (work/qsjob/src/panels/ifs.rs)
 [cmd.WRKLNK]

@@ -368,3 +368,30 @@ fn dspopt_views() {
     );
     ours("dspoptsav", &render(&g, "DSPOPTSAV", &d, &opts(0)).unwrap());
 }
+
+// -------------------------------------------------------------- DSPUDFS
+
+/// `DSPUDFS`: no oracle has a UDFS (pub400 answers `CPFA0A9`,
+/// `audit/displays/dspudfs-none`); mounted once, and not mounted.
+#[test]
+fn dspudfs_mounted_and_not() {
+    let g = group("QUIDSPUDFS");
+    let mut d = MapDialog::new();
+    for (k, v) in [
+        ("UDFS", "/dev/QASP01/mine.udfs"),
+        ("OWNER", "QSECOFR"),
+        ("CASE", "*MONO"),
+        ("DFTFMT", "*TYPE2"),
+        ("CRTAUD", "*SYSVAL"),
+        ("CRTDTS", "10/31/26  12:00:00"),
+        ("TEXT", "probe"),
+        ("MOUNTED", "Yes"),
+    ] {
+        d.set(k, v);
+    }
+    d.set_list("MOUNTS", list(vec![vec![("MNTDIR", "/mnt")]]));
+    ours("dspudfs", &render(&g, "DSPUDFS", &d, &opts(0)).unwrap());
+    d.set("MOUNTED", "No");
+    d.set_list("MOUNTS", list(Vec::new()));
+    ours("dspudfs-unmounted", &render(&g, "DSPUDFS", &d, &opts(0)).unwrap());
+}

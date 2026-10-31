@@ -4,17 +4,17 @@
 
 //! The displays that had only a text listing before the CPP audit
 //! (`docs/CPP_AUDIT.md`): the PTF displays (`ptf`), `DSPIPLA`,
-//! `WRKMSGD` and `WRKRDBDIRE` (`lists`), and the reports shown in the
+//! `WRKMSGD` and `WRKRDBDIRE` (`lists`), and the eight that showed the
 //! report viewer before: `DSPPTFCVR` (`ptf`), `DSPBCKSTS` (`bcksts`),
 //! `DSPLICKEY` (`keys`), `DSPTAP`, `DSPTAPCTG`, `DSPOPT` and `WRKOPTVOL`
-//! (`media`), and `DSPUDFS` (`reports`).
+//! (`media`), and `DSPUDFS` (`udfs`).
 
 mod bcksts;
 mod keys;
 mod lists;
 mod media;
 mod ptf;
-mod reports;
+mod udfs;
 
 use cmd::{Resolved, Value};
 use mi::Job;
@@ -47,7 +47,7 @@ pub fn run(
         "DSPTAPCTG" => media::dsptapctg(host, surface, r),
         "DSPOPT" => media::dspopt(host, surface, r),
         "WRKOPTVOL" => media::wrkoptvol(job, host, surface, r),
-        "DSPUDFS" => reports::show(job, host, surface, r),
+        "DSPUDFS" => udfs::dspudfs(host, surface, r),
         _ => return None,
     })
 }
