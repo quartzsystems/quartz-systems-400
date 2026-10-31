@@ -3687,3 +3687,88 @@ sev = 30
 text = "&1 objects checked; &2 damaged or with a signature that fails."
 help = "The listing names each object and what is wrong with it. Restore a good copy, or apply the PTF that ships it."
 vars = ["*CHAR 10", "*CHAR 10"]
+# Cleanup and backup (Operational Assistant).
+
+[[msg]]
+id = "CPC1E20"
+sev = 0
+text = "Cleanup options changed."
+help = "The next cleanup uses them; a scheduled cleanup moves to the new start time."
+vars = []
+
+[[msg]]
+id = "CPC1E21"
+sev = 0
+text = "Cleanup scheduled to start each day at &1."
+help = "Job schedule entry QEZCLNUP submits the cleanup at that time. ENDCLNUP removes it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC1E22"
+sev = 0
+text = "Cleanup ended."
+help = "No cleanup runs until STRCLNUP is used again."
+vars = []
+
+[[msg]]
+id = "CPC1E23"
+sev = 0
+text = "Cleanup ran: &1."
+help = "Each kind of item older than the days CHGCLNUP keeps was removed."
+vars = ["*CHAR 200"]
+
+[[msg]]
+id = "CPF1E24"
+sev = 40
+text = "Cleanup is not allowed on this system."
+help = "CHGCLNUP ALWCLNUP(*YES) allows it."
+vars = []
+
+[[msg]]
+id = "CPF1E25"
+sev = 40
+text = "Cleanup was not started."
+help = "The job schedule entry could not be added; the messages before this one say why."
+vars = []
+
+[[msg]]
+id = "CPC1E30"
+sev = 0
+text = "Backup options changed."
+help = "The next RUNBCKUP of these options uses them."
+vars = []
+
+[[msg]]
+id = "CPC1E31"
+sev = 0
+text = "Backup &1 completed."
+help = "Every save of the backup ended normally. DSPBCKSTS shows each one."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF1E32"
+sev = 40
+text = "Backup &1 ended with saves that did not complete."
+help = "DSPBCKSTS and the job log show which saves failed and why."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF1E33"
+sev = 40
+text = "No backup device is set for these backup options."
+help = "Give RUNBCKUP a DEV, or set one with CHGBCKUP DEV()."
+vars = []
+
+[[msg]]
+id = "CPC1E35"
+sev = 0
+text = "System information printed."
+help = "Spooled file QPRTSYSINF holds the system values, network attributes, configuration, user profiles, licensed programs, fixes, library list and startup program."
+vars = []
+
+[[msg]]
+id = "CPF1E36"
+sev = 40
+text = "This job runs in a subsystem that ending the subsystems would end."
+help = "Options that end every subsystem run from the console, outside the subsystems."
+vars = []

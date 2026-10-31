@@ -365,6 +365,16 @@ pub const DIRECT: &[&str] = &[
     "DSPIPLA",
     // --- object integrity (lic/slic/src/cpp/itgcmd.rs)
     "CHKOBJITG",
+    // --- cleanup, backup, PRTSYSINF (lic/slic/src/cpp/opacmd.rs)
+    "CHGCLNUP",
+    "STRCLNUP",
+    "ENDCLNUP",
+    "CHGBCKUP",
+    "DSPBCKUP",
+    "DSPBCKSTS",
+    "PRTSYSINF",
+    "QSPMTOVR",
+    "QSBCKUP",
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
     "QSCHGUPDA",
     "QSCHKUPD",
@@ -530,6 +540,11 @@ pub const JOB_SITE: &[&str] = &[
     "WRKSRVPVD",
     "DSPSRVSTS",
     "DMPJOB",
+    // --- GO SAVE and RESTORE, RUNBCKUP, DSPBCKUP (panels/backup.rs)
+    "QSMNSAVE",
+    "QSMNRST",
+    "RUNBCKUP",
+    "DSPBCKUP",
     // --- licensed programs (panels/licpgm.rs)
     "QSLICPGM",
     "WRKSFWAGR",

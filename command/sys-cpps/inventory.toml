@@ -973,3 +973,20 @@ cpp = "QCLODIMGCE"
 
 [cmd.WRKIMGCLGE]
 cpp = "QCWRKIMGCE"
+# ------------------------------------- cleanup and backup (panels/backup.rs)
+
+[cmd.QSMNSAVE]
+site = "job"
+note = "GO SAVE 20 to 23: the command defaults panel, then ENDSBS, the saves, STRSBS"
+
+[cmd.QSMNRST]
+site = "job"
+note = "GO RESTORE 21 to 23: the command defaults panel, then the restores in IBM's order"
+
+[cmd.RUNBCKUP]
+site = "job"
+note = "the service's plan run in the job; ENDSBS and STRSBS around a restricted save"
+
+[cmd.DSPBCKUP]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"

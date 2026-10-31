@@ -26,6 +26,7 @@ mod itgcmd;
 mod medcmd;
 mod msgfcmd;
 mod objcmd;
+mod opacmd;
 mod prbcmd;
 pub(crate) mod ptfcmd;
 pub(crate) mod ptflic;
@@ -80,6 +81,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| ptfsvc::run(system, name, parms))
             .or_else(|| iplcmd::run(system, name, parms))
             .or_else(|| itgcmd::run(system, name, parms))
+            .or_else(|| opacmd::run(system, name, parms))
             .or_else(|| prbcmd::run(system, name, parms))
             .or_else(|| svccmd::run(system, name, parms))
             .or_else(|| lpcmd::run(system, name, parms))

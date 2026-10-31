@@ -18,6 +18,7 @@ mod error;
 pub mod job;
 pub mod joblog;
 pub mod obj;
+pub mod opa;
 pub mod panels;
 pub mod pools;
 pub mod rec;

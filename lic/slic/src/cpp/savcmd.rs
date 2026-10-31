@@ -399,7 +399,7 @@ const USER_Q: &[&str] = &[
 ];
 
 /// The libraries `*NONSYS`, `*ALLUSR` and `*IBM` mean.
-fn expand_libs(system: &mut System, libs: &[String]) -> Result<Vec<String>, String> {
+pub(super) fn expand_libs(system: &mut System, libs: &[String]) -> Result<Vec<String>, String> {
     let special = |l: &str| matches!(l, "*NONSYS" | "*ALLUSR" | "*IBM");
     if !libs.iter().any(|l| special(l)) {
         return Ok(libs.to_vec());
