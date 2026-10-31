@@ -6,7 +6,7 @@
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Member . . . . . . . . . . . . .   *FIRST        Name, *FIRST, *LAST           
  Key file . . . . . . . . . . . .   *NONE         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Source update options  . . . . .   *SAME         *SAME, *SEQNBR                
                        + for more values                                        
  Source sequence numbering:                                                     

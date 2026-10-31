@@ -11,7 +11,7 @@
                        + for more values                                        
  Maximum jobs . . . . . . . . . .   5             0-32767, *NOMAX               
  Sign-on display file . . . . . .   *QDSIGNON     Name                          
-   Library  . . . . . . . . . . .     *CURLIB       Name, *CURLIB, *LIBL        
+   Library  . . . . . . . . . . .                   Name, *CURLIB, *LIBL        
  Description  . . . . . . . . . .   *BLANK                                      
                                                                                 
                                                                                 

@@ -4,7 +4,7 @@
                                                                                 
  Printer  . . . . . . . . . . . . > QSCAPTURE     Name, *ALL                    
  Output queue . . . . . . . . . .   *DEV          Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Form type options:                                                             
    Form type  . . . . . . . . . .     *ALL          *ALL, *STD, *FORMS          
    Message option . . . . . . . .     *INQMSG       *INQMSG, *MSG, *NOMSG, *... 

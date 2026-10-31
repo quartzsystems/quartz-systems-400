@@ -480,6 +480,7 @@ impl Prompter {
             }
             10 => {
                 self.additional = true;
+                self.keyparm_only = false;
                 Step::Show
             }
             11 => {
@@ -849,12 +850,17 @@ fn default_texts(p: &Parm, path: &Path, out: &mut HashMap<Path, String>) {
     }
     match &p.ty {
         ParmType::Qual { .. } => {
+            // A single value leaves the other qualifiers blank.
+            let single = matches!(toks.as_slice(), [Tok::Word(w)]
+                if !w.contains('/') && p.sngval.iter().any(|s| s.from.eq_ignore_ascii_case(w)));
             if let [one] = toks.as_slice() {
                 tok_texts(p, one, path, out);
             }
             for (k, q) in p.items.iter().enumerate() {
                 let sub = path.step(k);
-                if !out.contains_key(&sub) {
+                if single && !out.contains_key(&sub) {
+                    out.insert(sub, String::new());
+                } else if !out.contains_key(&sub) {
                     default_texts(q, &sub, out);
                 }
             }

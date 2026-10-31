@@ -10,7 +10,7 @@
  Output priority (on OUTQ)  . . .   5             1-9                           
  Print device . . . . . . . . . .   *USRPRF       Name, *USRPRF, *SYSVAL, *W... 
  Output queue . . . . . . . . . .   *USRPRF       Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Description  . . . . . . . . . .   *BLANK                                      
  Initial ASP group  . . . . . . .   *NONE         Name, *NONE                   
                                                                                 

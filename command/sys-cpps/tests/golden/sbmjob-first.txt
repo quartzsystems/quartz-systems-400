@@ -5,14 +5,14 @@
  Command to run . . . . . . . . . > CALL QGPL/HELLO                             
  Job name . . . . . . . . . . . . > HELLO         Name, *JOBD                   
  Job description  . . . . . . . .   *USRPRF       Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Job queue  . . . . . . . . . . .   *JOBD         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
- Job priority (on JOBQ) . . . . .   *JOB          1-9, *JOBD                    
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
+ Job priority (on JOBQ) . . . . .   *JOBD         1-9, *JOBD                    
  Output priority (on OUTQ)  . . .   *JOBD         1-9, *JOBD                    
  Print device . . . . . . . . . .   *CURRENT      Name, *CURRENT, *USRPRF, *... 
  Output queue . . . . . . . . . .   *CURRENT      Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  User . . . . . . . . . . . . . .   *CURRENT      Name, *CURRENT, *JOBD         
  Print text . . . . . . . . . . .   *CURRENT                        *CURRENT... 
                                                                                 

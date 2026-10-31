@@ -4,7 +4,7 @@
                                                                                 
  Journal receiver . . . . . . . . > CUSTRCV       Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
- Journal receiver ASP . . . . . .   *LIBA         1-32, *LIBASP                 
+ Journal receiver ASP . . . . . .   *LIBASP       1-32, *LIBASP                 
  Description  . . . . . . . . . .   *BLANK                                      
                                                                                 
                                                                                 

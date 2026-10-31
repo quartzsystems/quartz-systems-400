@@ -12,7 +12,7 @@
 use std::collections::HashMap;
 
 use super::Path;
-use crate::def::{CmdDef, Parm, ParmType, PmtCtlRef, RelOp};
+use crate::def::{CmdDef, InlPmtLen, Parm, ParmType, PmtCtlRef, RelOp};
 use crate::token::Sel;
 
 /// Column of the first character of a prompt text.
@@ -116,12 +116,23 @@ pub fn lines(def: &CmdDef, v: &View<'_>) -> Lines {
             continue;
         }
         if v.keyparm_only && has_keyparm && !p.keyparm {
+            // IBM offers F10 on the key parameters' display when the
+            // command has additional or conditional parameters.
+            if p.pmtctl.is_some() {
+                out.has_additional = true;
+            }
             continue;
         }
         let shown = v.all
             || match &p.pmtctl {
                 None => true,
                 Some(PmtCtlRef::PmtRqs) => {
+                    if !v.additional {
+                        out.has_additional = true;
+                    }
+                    v.additional
+                }
+                Some(PmtCtlRef::Label { label }) if !pmtctl_decided(def, label, v.texts) => {
                     if !v.additional {
                         out.has_additional = true;
                     }
@@ -148,6 +159,24 @@ pub fn lines(def: &CmdDef, v: &View<'_>) -> Lines {
         }
     }
     out
+}
+
+/// Whether a `PMTCTL` chain can be decided: every controlling
+/// parameter it compares has a value. IBM shows an undecided
+/// parameter only after `F10`.
+#[allow(clippy::implicit_hasher)] // one map type throughout the prompter
+pub fn pmtctl_decided(def: &CmdDef, label: &str, texts: &HashMap<Path, String>) -> bool {
+    def.pmtctl(label).iter().all(|c| {
+        let Some(idx) = def.index(&c.ctl) else {
+            return true;
+        };
+        let spcfd = c.conds.iter().all(|(_, w)| w == "*SPCFD" || w == "*UNSPCFD");
+        spcfd
+            || texts
+                .get(&Path::parm(idx))
+                .or_else(|| texts.get(&Path::parm(idx).step(0)))
+                .is_some_and(|v| !v.trim().is_empty())
+    })
 }
 
 /// Whether a `PMTCTL` chain holds for the current values.
@@ -362,11 +391,32 @@ fn value_line(
     });
 }
 
-/// The width of a parameter's field.
+/// The width of a parameter's field: `INLPMTLEN` when it gives one;
+/// else the type's width, widened as IBM's to the longest special,
+/// single or listed value (a restricted number is as wide as its
+/// longest value).
 #[must_use]
 pub fn field_width(p: &Parm) -> usize {
+    if let Some(InlPmtLen::N { n }) = p.inlpmtlen {
+        return usize::from(n).max(1);
+    }
     let len = p.length();
-    match p.ty {
+    let longest = p
+        .spcval
+        .iter()
+        .chain(&p.sngval)
+        .map(|s| s.from.chars().count())
+        .chain(p.values.iter().map(|v| v.chars().count()))
+        .max()
+        .unwrap_or(0);
+    let numeric = matches!(
+        p.ty,
+        ParmType::Dec | ParmType::Int2 | ParmType::Int4 | ParmType::Uint2 | ParmType::Uint4
+    );
+    if numeric && p.rstd && longest > 0 {
+        return longest;
+    }
+    let base = match p.ty {
         ParmType::Dec | ParmType::X => (len.len as usize + 2).max(4),
         ParmType::Int2 | ParmType::Uint2 => 6,
         ParmType::Int4 | ParmType::Uint4 => 11,
@@ -377,7 +427,8 @@ pub fn field_width(p: &Parm) -> usize {
         ParmType::Generic => 10,
         ParmType::VarName => 11,
         _ => (len.len as usize).clamp(1, MAX_WIDTH),
-    }
+    };
+    base.max(longest)
 }
 
 /// The choices text of a parameter: the kind of value and its special

@@ -11,7 +11,7 @@
  Program to call  . . . . . . . . > QCMD          Name                          
    Library  . . . . . . . . . . .     QSYS          Name, *LIBL, *CURLIB        
  Class  . . . . . . . . . . . . .   *SBSD         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Maximum active routing steps . .   *NOMAX        1-1000, *NOMAX                
  Storage pool identifier  . . . .   1             1-10                          
  Thread resources affinity:                                                     

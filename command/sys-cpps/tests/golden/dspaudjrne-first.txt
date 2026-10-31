@@ -6,7 +6,7 @@
                        + for more values                                        
  User profile . . . . . . . . . .   *ALL          Name, *ALL                    
  Journal receiver . . . . . . . .   *CURRENT      Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Start time:                                                                    
    Start date . . . . . . . . . .     *FIRST        Date, *FIRST                
    Start time . . . . . . . . . .     *AVAIL        Time, *AVAIL                

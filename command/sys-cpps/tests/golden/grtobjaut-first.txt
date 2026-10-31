@@ -12,7 +12,7 @@
  Authority  . . . . . . . . . . . > *USE          *CHANGE, *ALL, *USE, *EXCL... 
                        + for more values                                        
  Reference object . . . . . . . .   *NONE         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Reference object type  . . . . .   *OBJTYPE      *OBJTYPE, *ALRTBL, *AUTL, ... 
  Reference ASP device . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
  Replace authority  . . . . . . .   *NO           *NO, *YES                     

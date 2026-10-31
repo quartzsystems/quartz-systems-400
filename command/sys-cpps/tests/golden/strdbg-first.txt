@@ -6,7 +6,7 @@
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
                        + for more values                                        
  Default program  . . . . . . . .   *PGM          Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Max trace statements . . . . . .   200           0-99999                       
  Trace full . . . . . . . . . . .   *STOPTRC      *STOPTRC, *WRAP               
  Update production files  . . . .   *NO           *NO, *YES                     

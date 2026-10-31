@@ -7,7 +7,7 @@
  Job description  . . . . . . . . > QBATCH        Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Job queue  . . . . . . . . . . .   *JOBD         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Job priority . . . . . . . . . .   *JOBD         1-9, *JOBD                    
                                                                                 
                              Additional Parameters                              

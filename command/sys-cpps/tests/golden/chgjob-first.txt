@@ -9,10 +9,10 @@
  Output priority (on OUTQ)  . . .   *SAME         1-9, *SAME                    
  Print device . . . . . . . . . .   *SAME         Name, *SAME, *USRPRF, *SYS... 
  Output queue . . . . . . . . . .   *SAME         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Run priority . . . . . . . . . .   *SAME         1-99, *SAME                   
  Job queue  . . . . . . . . . . .   *SAME         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Print text . . . . . . . . . . .   *SAME                           *SAME, *... 
  Message logging:                                                               
    Level  . . . . . . . . . . . .     *SAME         0-4, *SAME                  

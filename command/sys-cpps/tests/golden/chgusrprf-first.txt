@@ -10,9 +10,9 @@
  Assistance level . . . . . . . .   *SAME         *SAME, *SYSVAL, *BASIC, *I... 
  Current library  . . . . . . . .   *SAME         Name, *SAME, *CRTDFT          
  Initial program to call  . . . .   *SAME         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Initial menu . . . . . . . . . .   *SAME         Name                          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Limit capabilities . . . . . . .   *SAME         *SAME, *NO, *PARTIAL, *YES    
  Description  . . . . . . . . . .   *SAME                                       
                                                                                 

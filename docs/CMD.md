@@ -193,7 +193,12 @@ value the caller gave, the field from column 37, the choices (`Name`,
 per page, `More...` or `Bottom` on row 22, the keys on rows 23 and 24.
 Parameters with `PMTCTL(*PMTRQS)` appear after `F10=Additional
 parameters`; `PMTCTL(label)` parameters appear when their condition
-holds, the display re-evaluated after Enter. F3 and F12 cancel, F4 on
+holds, the display re-evaluated after Enter; a condition over a
+parameter with no value yet is undecided and shows after `F10`. A
+field is as wide as its longest special, single or listed value
+(`INLPMTLEN(n)` sets it); a qualified parameter defaulting to a
+single value shows its other qualifiers blank. The comparison with
+pub400's prompts is `tools/conformance/golden/phase11/COVERAGE.md`. F3 and F12 cancel, F4 on
 a field prompts its choices, F5 refreshes, F9 shows every parameter,
 F11 shows the keywords, F13 the help, F14 the command string, F15
 the error, F16 and F24 the other keys. Enter binds the fields; an
