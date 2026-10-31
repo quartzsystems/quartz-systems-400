@@ -1,0 +1,15 @@
+[package]
+name = "medio"
+description = "QS/400 save media: save streams to and from tape files, optical volumes and image catalog volumes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+tape = { path = "../tape", version = "0.1.0" }
+optical = { path = "../optical", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

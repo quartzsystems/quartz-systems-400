@@ -4,6 +4,8 @@
 
 //! The product activity log: attention and fatal reference codes with
 //! their times, a ring of the newest entries kept as reserved-tag TLVs.
+//! A device entry also names its resource (`TAP01`): ten more bytes,
+//! which an entry without one leaves off.
 
 use crate::error::LicError;
 use crate::format::{Reader, put_u64};
@@ -29,6 +31,8 @@ pub struct PalEntry {
     pub code: [u8; 8],
     /// Severity.
     pub severity: Severity,
+    /// The resource a device entry is about; empty for the others.
+    pub resource: String,
 }
 
 impl PalEntry {
@@ -46,6 +50,11 @@ impl PalEntry {
             Severity::Attention => 0,
             Severity::Fatal => 1,
         });
+        if !self.resource.is_empty() {
+            let mut r = self.resource.as_bytes().to_vec();
+            r.resize(10, b' ');
+            out.extend_from_slice(&r[..10]);
+        }
         out
     }
 
@@ -58,6 +67,11 @@ impl PalEntry {
             1 => Severity::Fatal,
             _ => return Err(LicError::Malformed("pal severity")),
         };
+        let resource = if r.at_end() {
+            String::new()
+        } else {
+            String::from_utf8_lossy(r.bytes(10)?).trim_end().to_string()
+        };
         if !r.at_end() {
             return Err(LicError::Malformed("pal entry length"));
         }
@@ -65,6 +79,7 @@ impl PalEntry {
             time,
             code,
             severity,
+            resource,
         })
     }
 }

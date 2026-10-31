@@ -118,6 +118,7 @@ members = [
     "tools/pase-probe",
     # Media: tape, optical, image catalogs.
     "media/tape",
+    "media/medio",
 ]
 
 [workspace.package]

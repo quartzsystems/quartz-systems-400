@@ -8,6 +8,7 @@
 pub mod cls;
 pub mod ctld;
 pub mod devd;
+pub mod devmed;
 pub mod devprt;
 pub mod jobd;
 pub mod jobq;

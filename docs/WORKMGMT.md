@@ -503,16 +503,20 @@ TN5250E sessions (`QPADEVnnnn`, class `*VRT`, on the controller
 `QPACTL01`) and the console `QSCONSOLE` (`*DSP`); Phase 10 adds LAN
 printers (`CRTDEVPRT DEVCLS(*LAN)`, class `*LAN`), whose
 `PrinterDevice` section follows the 192 bytes when `PrtLen` is not
-zero. Version 3; version 2 (no `PrtLen`, zero there) and version 1
-(128 bytes, ending at `Text` and a 16-byte reserve) are still read.
+zero. Phase 11 adds tape, optical and media library devices (`CRTDEVTAP`,
+`CRTDEVOPT`, `CRTDEVMLB`, classes `*TAP`, `*OPT`, `*TAPMLB`), whose
+`MediaDevice` section follows the 192 bytes when `MedLen` is not zero (a
+device has one section at most). Version 3; version 2 (no `PrtLen`, zero
+there) and version 1 (128 bytes, ending at `Text` and a 16-byte reserve)
+are still read.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSWMDEVD` in ASCII |
 | 8 | 2 | Version | 3 |
 | 10 | 1 | Online | varied on |
-| 11 | 1 | Status | 0 varied off, 1 varied on, 2 sign-on display, 3 active, 4 recovery pending |
-| 12 | 10 | DevCls | `*PRT`, `*DSP`, `*VRT` |
+| 11 | 1 | Status | 0 varied off, 1 varied on, 2 sign-on display, 3 active, 4 recovery pending, 5 unavailable, 6 failed |
+| 12 | 10 | DevCls | `*PRT`, `*DSP`, `*VRT`, `*LAN`, `*NET`, `*TAP`, `*OPT`, `*TAPMLB` |
 | 22 | 10 | Type | `QSCP`, `3179`, `3477`, `5555` |
 | 32 | 10 | Model | `1`, `2`, `FC`, `C01` |
 | 42 | 10 | OutqName | the device's queue |
@@ -525,7 +529,27 @@ zero. Version 3; version 2 (no `PrtLen`, zero there) and version 1
 | 152 | 1 | Virtual | created by `QAUTOVRT` |
 | 153 | 1 | AlwBln | `ALWBLN(*YES)` |
 | 154 | 2 | PrtLen | bytes of the `PrinterDevice` section that follows; 0 none |
-| 156 | 36 | Reserved2 | zero |
+| 156 | 2 | MedLen | bytes of the `MediaDevice` section that follows; 0 none |
+| 158 | 34 | Reserved2 | zero |
+
+### `MediaDevice` (64 bytes)
+
+The media section of a `*DEVD`, after its 192 bytes. A resource name
+starting `TAPVRT` or `OPTVRT` is a virtual device (`RSRCNAME(*VRT)`),
+whose volumes come from the image catalog loaded on it.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | Kind | 0 tape, 1 optical, 2 tape media library |
+| 1 | 1 | Assign | `ASSIGN(*YES)` |
+| 2 | 1 | Unload | `UNLOAD(*YES)` |
+| 3 | 1 | GenCtgId | `GENCTGID(*SYSGEN)` |
+| 4 | 10 | RsrcName | `TAP01`, `OPT01`, `TAPMLB01`, `TAPVRT01`, `OPTVRT01` |
+| 14 | 2 | Reserved | zero |
+| 16 | 4 | UnloadWait | `UNLOADWAIT` seconds; 0 `*SYSGEN` |
+| 20 | 4 | MaxDevTime | `MAXDEVTIME` minutes; 0 `*SYSGEN` |
+| 24 | 8 | LastUsed | Unix time of the last use; 0 never |
+| 32 | 32 | Reserved2 | zero |
 
 ### `PrinterDevice` (512 bytes)
 

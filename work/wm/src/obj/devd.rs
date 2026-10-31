@@ -9,7 +9,10 @@
 //! controller `QPACTL01`) and the console `QSCONSOLE`.
 //! Phase 10 adds LAN printers (`CRTDEVPRT DEVCLS(*LAN)`), whose
 //! printer section ([`super::devprt`]) follows the 192 bytes.
+//! Phase 11 adds tape, optical and media library devices, whose media
+//! section ([`super::devmed`]) follows the 192 bytes instead.
 
+use super::devmed::{MediaDevice, MediaKind};
 use super::devprt::LanPrinter;
 use crate::rec::{Layout, Rec, field};
 use crate::{Error, Result};
@@ -36,7 +39,8 @@ pub const LAYOUT: Layout = Layout {
         field("Virtual", 152, 1),
         field("AlwBln", 153, 1),
         field("PrtLen", 154, 2),
-        field("Reserved2", 156, 36),
+        field("MedLen", 156, 2),
+        field("Reserved2", 158, 34),
     ],
 };
 
@@ -89,6 +93,10 @@ pub enum DevStatus {
     Active = 3,
     /// The session dropped; recovery pending.
     RecoveryPending = 4,
+    /// A media device whose resource another device has.
+    Unavailable = 5,
+    /// A media device whose resource failed or is gone.
+    Failed = 6,
 }
 
 impl DevStatus {
@@ -98,6 +106,8 @@ impl DevStatus {
             2 => Self::SignonDisplay,
             3 => Self::Active,
             4 => Self::RecoveryPending,
+            5 => Self::Unavailable,
+            6 => Self::Failed,
             _ => Self::VariedOff,
         }
     }
@@ -111,6 +121,8 @@ impl DevStatus {
             Self::SignonDisplay => "SIGNON DISPLAY",
             Self::Active => "ACTIVE",
             Self::RecoveryPending => "RCYPND",
+            Self::Unavailable => "UNAVAILABLE",
+            Self::Failed => "FAILED",
         }
     }
 }
@@ -144,6 +156,8 @@ pub struct Devd {
     pub alwbln: bool,
     /// The LAN printer section (`CRTDEVPRT DEVCLS(*LAN)`).
     pub printer: Option<LanPrinter>,
+    /// The media section (`CRTDEVTAP`, `CRTDEVOPT`, `CRTDEVMLB`).
+    pub media: Option<MediaDevice>,
 }
 
 impl Devd {
@@ -164,6 +178,7 @@ impl Devd {
             virtual_: false,
             alwbln: true,
             printer: None,
+            media: None,
         }
     }
 
@@ -184,6 +199,7 @@ impl Devd {
             virtual_: false,
             alwbln: true,
             printer: None,
+            media: None,
         }
     }
 
@@ -208,6 +224,7 @@ impl Devd {
             virtual_: auto,
             alwbln: true,
             printer: None,
+            media: None,
         }
     }
 
@@ -242,6 +259,7 @@ impl Devd {
             virtual_: false,
             alwbln: false,
             printer: None,
+            media: None,
         }
     }
 
@@ -263,6 +281,7 @@ impl Devd {
             virtual_: false,
             alwbln: false,
             printer: Some(printer),
+            media: None,
         }
     }
 
@@ -284,7 +303,36 @@ impl Devd {
             virtual_: true,
             alwbln: false,
             printer: None,
+            media: None,
         }
+    }
+
+    /// A tape, optical or media library device over resource
+    /// `med.rsrcname`, varied off.
+    #[must_use]
+    pub fn media_device(devtype: &str, model: &str, med: MediaDevice) -> Self {
+        Self {
+            online: false,
+            status: DevStatus::VariedOff,
+            devcls: med.kind.devcls().into(),
+            devtype: devtype.into(),
+            model: model.into(),
+            outq: String::new(),
+            text: String::new(),
+            ctl: String::new(),
+            kbdtype: String::new(),
+            msgq: "QSYS/QSYSOPR".into(),
+            virtual_: false,
+            alwbln: false,
+            printer: None,
+            media: Some(med),
+        }
+    }
+
+    /// The media kind, for a tape, optical or library device.
+    #[must_use]
+    pub fn media_kind(&self) -> Option<MediaKind> {
+        self.media.as_ref().map(|m| m.kind)
     }
 
     /// Whether this is a network device (its status is the line's).
@@ -320,6 +368,10 @@ impl Devd {
             let b = p.encode();
             out[154..156].copy_from_slice(&u16::try_from(b.len()).unwrap_or(0).to_le_bytes());
             out.extend_from_slice(&b);
+        } else if let Some(m) = &self.media {
+            let b = m.encode();
+            out[156..158].copy_from_slice(&u16::try_from(b.len()).unwrap_or(0).to_le_bytes());
+            out.extend_from_slice(&b);
         }
         out
     }
@@ -352,6 +404,7 @@ impl Devd {
             virtual_: false,
             alwbln: true,
             printer: None,
+            media: None,
         };
         if v1 {
             d.status = if d.online {
@@ -371,6 +424,14 @@ impl Devd {
                 let tail = r.tail();
                 let sec = tail.get(..n).ok_or_else(|| Error::Corrupt("printer section truncated".into()))?;
                 d.printer = Some(LanPrinter::decode(sec)?);
+            }
+            let med_len = usize::try_from(r.uint("MedLen")).unwrap_or(0);
+            if med_len > 0 && n == 0 {
+                let tail = r.tail();
+                let sec = tail
+                    .get(..med_len)
+                    .ok_or_else(|| Error::Corrupt("media section truncated".into()))?;
+                d.media = Some(MediaDevice::decode(sec)?);
             }
         }
         Ok(d)
@@ -414,6 +475,19 @@ mod tests {
         assert!(l.is_printer() && !l.is_display());
         assert_eq!(Devd::decode(&l.encode()).unwrap(), l);
         assert_eq!(l.encode().len(), 192 + 512);
+        let med = MediaDevice {
+            kind: MediaKind::Tape,
+            rsrcname: "TAPVRT01".into(),
+            assign: true,
+            unload: true,
+            ..MediaDevice::default()
+        };
+        let mut tap = Devd::media_device("63B0", "001", med);
+        tap.status = DevStatus::Unavailable;
+        assert_eq!(tap.devcls, "*TAP");
+        assert_eq!(Devd::decode(&tap.encode()).unwrap(), tap);
+        assert_eq!(tap.encode().len(), 192 + 64);
+        assert_eq!(tap.status.text(), "UNAVAILABLE");
     }
 
     #[test]

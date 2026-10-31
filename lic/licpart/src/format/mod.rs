@@ -352,6 +352,7 @@ mod tests {
             time: 5,
             code: *b"A6001255",
             severity: pal::Severity::Attention,
+            resource: "TAP01".into(),
         });
         r
     }
