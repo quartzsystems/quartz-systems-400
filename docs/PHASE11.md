@@ -125,7 +125,32 @@ were answered by hand during the capture, before every job got
 
 ## Bench
 
-(Measured at the end of the phase.)
+Release builds on the development machine (WSL2, Ryzen, 64 GiB),
+stores in memory unless noted.
+
+**Save and restore through a save stream**
+(`cargo test --release -p saverst --test bench -- --ignored --nocapture`,
+64 MiB of user spaces, half text-like, half noise):
+
+| `DTACPR` | Save | Restore |
+|---|---|---|
+| `*NO` | 498 MiB/s | 308 MiB/s |
+| `*LOW` (LZ4) | 799 MiB/s | 319 MiB/s |
+| `*MEDIUM` (zstd) | 119 MiB/s | 308 MiB/s |
+
+**Save and restore on media**
+(`cargo test --release -p saverst --test media_bench -- --ignored --nocapture`,
+256 MiB, no compression):
+
+| Medium | Save | Restore |
+|---|---|---|
+| Virtual tape | 252 MiB/s | 200 MiB/s |
+| Virtual optical | 312 MiB/s | 349 MiB/s |
+
+**PTFs** (`cargo test --release -p ptf --test bench -- --ignored --nocapture`):
+see the acceptance run below for the measured times.
+
+**Install** (`--media iso --install`): see `INSTALL.md`.
 
 ## Acceptance checklist
 
