@@ -279,7 +279,7 @@ fn job_system_values_release_and_dates() {
 module JOB
 extern sysapi QUSRJOBI($r: char(86), $rl: i32, $fmt: char(8), $job: char(26), $iid: char(16), $err: char(16))
 extern sysapi QWCRSVAL($r: char(200), $rl: i32, $n: i32, $names: char(20), $err: char(16))
-extern sysapi QSZRTVPR($r: char(108), $rl: i32, $fmt: char(8), $prd: char(7), $err: char(16))
+extern sysapi QSZRTVPR($r: char(108), $rl: i32, $fmt: char(8), $prd: char(27), $err: char(16))
 extern sysapi QWCCVTDT($if: char(10), $i: char(17), $of: char(10), $o: char(17), $err: char(16))
 static $ji: char(86)
 static $jl: i32 inz(86)
@@ -294,7 +294,7 @@ static $names: char(20) inz(\"QDATFMT   QCCSID\")
 static $pr: char(108)
 static $prl: i32 inz(108)
 static $pfmt: char(8) inz(\"PRDR0100\")
-static $prd: char(7) inz(\"*OPSYS\")
+static $prd: char(27) inz(\"*OPSYS *CUR  0000*CODE\")
 static $yymd: char(10) inz(\"*YYMD\")
 static $in: char(17) inz(\"20261021130509250\")
 static $mdyy: char(10) inz(\"*MDYY\")
@@ -331,7 +331,8 @@ L0:
     assert_eq!(chars(&sv, o2 + 10, 1), "B");
     assert_eq!(bin4(&sv, o2 + 16), 37);
     let pr = bytes(&p, "pr");
-    assert_eq!(chars(&pr, 12, 7), "5770SS1");
+    assert_eq!(chars(&pr, 12, 7), "QS00SS1");
+    assert_eq!(chars(&pr, 63, 2), "90");
     assert_eq!(chars(&pr, 19, 6), "V1R0M0");
     assert_eq!(text(&p, "out"), "10212026130509250");
     assert_eq!(text(&p, "back"), "20261021130509250", "*DTS round trip");

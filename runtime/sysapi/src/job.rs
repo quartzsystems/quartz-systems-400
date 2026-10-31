@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Job and system APIs: `QUSRJOBI`, `QUSLJOB`, `QWCRSVAL`, `QWCCVTDT`,
-//! `QWCRTVCA`, `QWCRTVTZ`, `QSZRTVPR`, `QLGCNVCS`.
+//! `QWCRTVCA`, `QWCRTVTZ`, `QLGCNVCS` (`QSZRTVPR` is `lp`'s).
 
 use mi::Job;
 use sysval::{civil_from_days, days_from_civil};
@@ -20,7 +20,6 @@ pub const APIS: &[(&str, crate::ApiFn)] = &[
     ("QWCCVTDT", qwccvtdt),
     ("QWCRTVCA", qwcrtvca),
     ("QWCRTVTZ", qwcrtvtz),
-    ("QSZRTVPR", qszrtvpr),
     ("QLGCNVCS", qlgcnvcs),
     ("QWCRNETA", qwcrneta),
 ];
@@ -540,49 +539,6 @@ fn qwcrtvtz(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     out.char(13, 10, z.name);
     out.char(23, 10, &z.name[2..].chars().skip(4).collect::<String>());
     out.char(33, 50, z.text);
-    out.deliver(&a, 0, 1);
-    errc.ok();
-}
-
-/// `QSZRTVPR(receiver, len, format, product, errc)`: `PRDR0100` of the
-/// operating system.
-fn qszrtvpr(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
-    let a = Args(args);
-    let errc = ErrCode::at(&a, 4);
-    let format = a.char(2, 8);
-    if format != "PRDR0100" {
-        errc.fail(j, &ApiFail::id("CPF3C21").text(&format, 8));
-        return;
-    }
-    let product = a.char(3, 7);
-    if !matches!(product.as_str(), "*OPSYS" | "5770SS1" | "") {
-        errc.fail(j, &ApiFail::id("CPF0C1F").text(&product, 7));
-        return;
-    }
-    let mut out = Out::new();
-    out.bin4(8, 0);
-    out.char(12, 7, "5770SS1");
-    out.char(19, 6, &release::RELEASE.to_string());
-    out.char(25, 4, "0000");
-    out.char(29, 4, "*CODE");
-    out.char(33, 10, "*CODE");
-    out.char(43, 10, "*INSTALLED");
-    out.char(53, 10, "*NONE");
-    out.char(63, 2, "90");
-    out.ch(65, '1');
-    out.char(66, 2, "08");
-    out.char(
-        68,
-        14,
-        &release::build_id()[..release::build_id().len().min(14)],
-    );
-    out.blank(82, 2);
-    out.bin4(84, 0);
-    out.char(88, 4, "2924");
-    out.char(92, 6, &release::RELEASE.to_string());
-    out.char(98, 6, &release::RELEASE.to_string());
-    out.ch(104, '1');
-    out.char(105, 3, "0");
     out.deliver(&a, 0, 1);
     errc.ok();
 }

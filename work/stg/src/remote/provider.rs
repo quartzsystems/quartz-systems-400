@@ -29,6 +29,13 @@ impl RemoteProvider {
 }
 
 impl Provider for RemoteProvider {
+    fn licpgm(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.licpgm_api(api.into(), parms))
+            .map_err(|(msgid, data)| ApiFail { msgid, data })
+    }
+
     fn sec(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
         self.link.borrow_mut().with(|l| l.sec_api(q))
     }

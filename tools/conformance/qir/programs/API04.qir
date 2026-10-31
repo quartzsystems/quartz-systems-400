@@ -1,7 +1,7 @@
 ; system values, the release, date conversion
 module API04
 extern sysapi QWCRSVAL($r: char(200), $rl: i32, $n: i32, $names: char(20), $err: char(16))
-extern sysapi QSZRTVPR($r: char(108), $rl: i32, $fmt: char(8), $prd: char(7), $err: char(16))
+extern sysapi QSZRTVPR($r: char(108), $rl: i32, $fmt: char(8), $prd: char(27), $err: char(16))
 extern sysapi QWCCVTDT($if: char(10), $i: char(17), $of: char(10), $o: char(17), $err: char(16))
 static $sv: char(200)
 static $svl: i32 inz(200)
@@ -11,7 +11,7 @@ static $err: char(16) inz(x"00000010000000000000000000000000")
 static $pr: char(108)
 static $prl: i32 inz(108)
 static $pfmt: char(8) inz("PRDR0100")
-static $prd: char(7) inz("*OPSYS")
+static $prd: char(27) inz("*OPSYS *CUR  0000*CODE")
 static $yymd: char(10) inz("*YYMD")
 static $in: char(17) inz("20261021130509250")
 static $mdyy: char(10) inz("*MDYY")

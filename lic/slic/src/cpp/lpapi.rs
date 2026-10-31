@@ -83,22 +83,6 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec
     }
 }
 
-fn bin4(b: &[u8]) -> i32 {
-    api::bin4_at(b, 0)
-}
-
-fn p(parms: &[Vec<u8>], i: usize) -> &[u8] {
-    parms.get(i).map_or(&[], Vec::as_slice)
-}
-
-fn text(parms: &[Vec<u8>], i: usize, n: usize) -> String {
-    api::char_at(p(parms, i), 0, n)
-}
-
-fn fail(e: ApiError) -> (String, Vec<u8>) {
-    (e.id.to_string(), e.data)
-}
-
 /// `licpgm_api`: one API over its parameters' bytes, as the job read
 /// them (`runtime/sysapi/src/lp.rs` says which and how long).
 pub fn call(system: &mut System, name: &str, parms: &[Vec<u8>]) -> Result<Vec<u8>, (String, Vec<u8>)> {
@@ -109,94 +93,16 @@ pub fn call(system: &mut System, name: &str, parms: &[Vec<u8>]) -> Result<Vec<u8
         .map(|j| format!("{:06}/{}/{}", j.number, j.user, j.name))
         .unwrap_or_default();
     let today = licpgm::Date::from_days(i64::try_from(now_unix() / 86_400).unwrap_or(0));
-    let r: Result<Vec<u8>, ApiError> = lp::with(system, |s, cell, qsys| {
+    let r = lp::with(system, |s, cell, qsys| {
         let objs = Products::new(cell, qsys, lpstore::stamp(now_unix()));
-        Ok(match name {
-            "QSZRTVPR" => {
-                let fmt = text(parms, 3, 8);
-                api::rtvpr::qszrtvpr(
-                    s,
-                    &sys,
-                    bin4(p(parms, 0)),
-                    &text(parms, 1, 8),
-                    p(parms, 2),
-                    (!fmt.is_empty()).then_some(fmt.as_str()),
-                )
-            }
-            "QSZCRTPD" => api::crtpd::qszcrtpd(
-                s,
-                p(parms, 0),
-                p(parms, 1),
-                p(parms, 2),
-                bin4(p(parms, 3)),
-                p(parms, 4),
-                bin4(p(parms, 5)),
-                p(parms, 6),
-                p(parms, 7),
-                "QGPL",
-                today,
-            )
-            .map(|()| Vec::new()),
-            "QSZCRTPL" => {
-                let pl = api::crtpl::CrtPl {
-                    name: p(parms, 0),
-                    info: p(parms, 1),
-                    secondary_lib: p(parms, 2),
-                    principal: p(parms, 3),
-                    additional: p(parms, 4),
-                    n_additional: bin4(p(parms, 5)),
-                    pre_exits: p(parms, 6),
-                    n_pre_exits: bin4(p(parms, 7)),
-                    folders: p(parms, 8),
-                    n_folders: bin4(p(parms, 9)),
-                    text: p(parms, 10),
-                    public_aut: p(parms, 11),
-                    n_directories: parms.get(12).map(|b| bin4(b)),
-                };
-                api::crtpl::qszcrtpl(s, &pl).map(|()| Vec::new())
-            }
-            "QSZPKGPO" => api::pkgpo::qszpkgpo(s, &objs, p(parms, 0), p(parms, 1), p(parms, 2)).map(|_| Vec::new()),
-            "QSZDLTPD" => api::crtpd::qszdltpd(s, p(parms, 0)).map(|()| Vec::new()),
-            "QSZDLTPL" => api::crtpl::qszdltpl(s, p(parms, 0)).map(|()| Vec::new()),
-            "QSZSPTPR" => api::sptpr::qszsptpr(s, p(parms, 0), bin4(p(parms, 1)), &text(parms, 2, 8), bin4(p(parms, 3)))
-                .map(|()| Vec::new()),
-            "QSZCHKTG" => {
-                let n = usize::try_from(bin4(p(parms, 2))).unwrap_or(0);
-                let list: Vec<String> = (0..n).map(|i| api::char_at(p(parms, 1), i * 6, 6)).collect();
-                api::chktg::qszchktg(&sys, &text(parms, 0, 10), &list).map(|c| {
-                    let mut b = api::fixed(&c.validated, 6);
-                    b.extend(api::fixed(&c.equivalent, 6));
-                    b
-                })
-            }
-            "QLZAREQ" | "QLZARLS" => {
-                let defs: Vec<_> = s.definitions().into_iter().map(|(_, d)| d).collect();
-                let mut repo = s.licenses();
-                let r = if name == "QLZAREQ" {
-                    api::lic::qlzareq(
-                        &mut repo,
-                        &defs,
-                        &sys,
-                        today,
-                        p(parms, 0),
-                        &text(parms, 1, 8),
-                        p(parms, 2),
-                        &text(parms, 3, 8),
-                        &job,
-                    )
-                    .map(|_| Vec::new())
-                } else {
-                    api::lic::qlzarls(&mut repo, &defs, p(parms, 0), &text(parms, 1, 8), p(parms, 2), &text(parms, 3, 8), &job)
-                        .map(|()| Vec::new())
-                };
-                if r.is_ok() {
-                    s.save_licenses(&repo).map_err(|e| e.to_string())?;
-                }
-                r
-            }
-            _ => Err(ApiError::new("CPF3C21").text(name, 8)),
-        })
+        let cx = api::dispatch::CallCtx {
+            sys: &sys,
+            today,
+            job: &job,
+            curlib: "QGPL",
+        };
+        Ok(api::dispatch::call(s, &objs, &cx, name, parms))
     })
     .unwrap_or_else(|e| Err(ApiError::new("CPF3CF2").text(&e, 50)));
-    r.map_err(fail)
+    r.map_err(|e| (e.id.to_string(), e.data))
 }

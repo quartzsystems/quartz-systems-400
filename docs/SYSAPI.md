@@ -205,7 +205,7 @@ data area, 1024 characters.
 | `QWCCVTDT` | input format `char(10)`, input, output format `char(10)`, output, error code |
 | `QWCRTVCA` | receiver, length, format `RTVC0100`, error code |
 | `QWCRTVTZ` | receiver, length, format `RTMZ0100`, time zone `char(10)`, error code |
-| `QSZRTVPR` | receiver, length, format `PRDR0100`, product `char(7)` (`*OPSYS`), error code |
+| `QSZRTVPR` | receiver, length, format `PRDR0100` to `PRDR0800`, product information (`PRDI0100` 27 bytes, `PRDI0200`), error code, information format; with `QSZCRTPD`, `QSZCRTPL`, `QSZPKGPO`, `QSZDLTPD`, `QSZDLTPL`, `QSZSPTPR`, `QSZCHKTG`, `QLZAREQ`, `QLZARLS` in `lp.rs`, answered by the service (`docs/LICPGM.md` §4) |
 | `QLGCNVCS` | request block, input, output, length `bin4`, error code |
 | `QCMDEXC` | command, length `packed(15,5)`, [IGC] |
 | `QCMDCHK` | command, length `packed(15,5)` |

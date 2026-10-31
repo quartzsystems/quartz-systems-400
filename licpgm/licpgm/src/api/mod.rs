@@ -12,6 +12,7 @@
 pub mod chktg;
 pub mod crtpd;
 pub mod crtpl;
+pub mod dispatch;
 pub mod lic;
 pub mod pkgpo;
 pub mod rtvpr;

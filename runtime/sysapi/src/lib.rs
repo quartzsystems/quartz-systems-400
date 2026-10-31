@@ -41,6 +41,7 @@ mod db;
 pub mod envproc;
 pub mod ifs;
 mod job;
+pub mod lp;
 pub mod mail;
 mod misc;
 mod msg;
@@ -77,6 +78,7 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(obj::APIS);
     v.extend(data::APIS);
     v.extend(job::APIS);
+    v.extend(lp::APIS);
     v.extend(db::APIS);
     v.extend(misc::APIS);
     v.extend(security::APIS);

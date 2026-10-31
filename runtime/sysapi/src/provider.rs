@@ -325,6 +325,11 @@ pub struct UserInfo {
 /// Where the APIs' objects live.
 #[allow(unused_variables)]
 pub trait Provider {
+    /// A product or license API over its parameters' bytes
+    /// (`licpgm::api::dispatch`); the shipped catalog answers by default.
+    fn licpgm(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
+        crate::lp::catalog_answer(api, &parms)
+    }
     /// The registration facility's questions (`regfac::Query`).
     fn regfac(&mut self, q: regfac::Query) -> Result<regfac::Answer, ApiFail> {
         Err(ApiFail::id("CPF3CDA"))
