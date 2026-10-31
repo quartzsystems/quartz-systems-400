@@ -44,7 +44,9 @@ fn check(name: &str, text: &str, keys: &[u8]) {
         analyze(&mut env, text).unwrap_or_else(|e| panic!("{text}: {e}"))
     };
     let mut p = Prompter::new(&r);
+    let mut before = p.screen().rows;
     for k in keys {
+        before = p.screen().rows;
         let fields: Vec<String> = p.screen().fields.iter().map(|f| f.value.clone()).collect();
         let mut env = Env::new(&mut src);
         env.setting.interactive = true;
@@ -64,21 +66,30 @@ fn check(name: &str, text: &str, keys: &[u8]) {
         r.chars()
             .take(34)
             .collect::<String>()
-            .trim_end_matches(['.', ' '])
+            .trim_end_matches(['.', ' ', ':'])
             .trim_start()
             .to_string()
     };
-    // Blank rows aside: the prompter spaces "Additional Parameters" its
-    // own way.
+    // Blank rows and "+ for more values" aside: the prompter spaces
+    // "Additional Parameters" and places the list marker its own way.
     let rows = |v: &[String]| -> Vec<String> {
         v.iter()
             .take(20)
             .skip(4)
             .map(|r| r.trim_end().to_string())
-            .filter(|r| !r.is_empty())
+            .filter(|r| !r.is_empty() && !r.trim().starts_with('+'))
             .collect()
     };
-    let ours = rows(&s.rows);
+    let mut ours = rows(&s.rows);
+    // A capture that starts at "Additional Parameters" is compared with
+    // our parameters from that title on, across the two pages: where the
+    // prompter breaks the page is its own.
+    let title = |r: &String| r.trim() == "Additional Parameters";
+    if rows(&want).first().is_some_and(title) {
+        let mut both = rows(&before);
+        both.extend(ours);
+        ours = both.into_iter().skip_while(|r| !title(r)).collect();
+    }
     for (i, w) in rows(&want).iter().enumerate() {
         let got = ours.get(i).map_or("", String::as_str);
         let values: Vec<&str> = w
@@ -131,4 +142,14 @@ fn optical() {
     check("prompt-dspopt", "?DSPOPT", &[]);
     check("prompt-dupopt", "?DUPOPT", &[]);
     check("prompt-dupopt-f10", "?DUPOPT", &[10]);
+}
+
+#[test]
+fn tape_copies() {
+    check("prompt-cpytotap", "?CPYTOTAP", &[]);
+    check("prompt-cpytotap-f10", "?CPYTOTAP", &[0, 10]);
+    check("prompt-cpytotap-f10-2", "?CPYTOTAP", &[0, 10, 8]);
+    check("prompt-cpyfrmtap", "?CPYFRMTAP", &[]);
+    check("prompt-cpyfrmtap-f10", "?CPYFRMTAP", &[0, 10]);
+    check("prompt-cpyfrmtap-f10-2", "?CPYFRMTAP", &[0, 10, 8]);
 }

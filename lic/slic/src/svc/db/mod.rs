@@ -207,6 +207,7 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
             prtf::dltf(system, &qual)
                 .or_else(|| dspf::dltf(system, &qual))
+                .or_else(|| crate::cpp::tapcpy::dltf(system, &qual))
                 .unwrap_or_else(|| files::dltf(system, &p))
         }
         "crtdspf" => dspf::crtdspf(system, &p),
@@ -229,6 +230,7 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
             prtf::dspfd(system, &qual)
                 .or_else(|| dspf::dspfd(system, &qual))
+                .or_else(|| crate::cpp::tapcpy::dspfd(system, &qual))
                 .unwrap_or_else(|| files::dspfd(system, &p))
         }
         "dspffd" => files::dspffd(system, &p),

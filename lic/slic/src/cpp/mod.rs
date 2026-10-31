@@ -38,6 +38,7 @@ pub(crate) mod svccmd;
 pub(crate) mod stmf;
 mod stmfcmd;
 mod sysinfo;
+pub(crate) mod tapcpy;
 mod tcpcmd;
 mod uicmd;
 pub(crate) mod updcmd;
@@ -76,6 +77,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| direct::run(system, name, parms))
             .or_else(|| savcmd::run(system, name, parms))
             .or_else(|| medcmd::run(system, name, parms))
+            .or_else(|| tapcpy::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
             .or_else(|| updcmd::run(system, name, parms))
             .or_else(|| ptfsvc::run(system, name, parms))

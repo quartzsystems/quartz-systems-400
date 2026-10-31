@@ -14,6 +14,8 @@
 //!   choice optical devices share.
 //! - [`library`]: [`CatalogLibrary`], a virtual media library over a
 //!   `*TAP` catalog, its cartridges, categories and moves.
+//! - [`tapf`]: tape files (`*FILE TAPF`) and the records of `CPYTOTAP`
+//!   and `CPYFRMTAP`.
 //! - [`MediaWriter`] and [`MediaReader`]: what a save or restore
 //!   command holds, whichever medium it names.
 //!
@@ -26,6 +28,7 @@ pub mod error;
 pub mod library;
 pub mod optfile;
 pub mod tapefile;
+pub mod tapf;
 
 pub use catalog::{CatalogTapes, NextVolume};
 pub use library::{CatalogLibrary, LibraryState, LibraryVolumes};

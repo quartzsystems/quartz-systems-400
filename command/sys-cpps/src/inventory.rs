@@ -443,6 +443,11 @@ pub const DIRECT: &[&str] = &[
     "ADDTAPCTG",
     "RMVTAPCTG",
     "CHGTAPCTG",
+    // --- tape files and copies (lic/slic/src/cpp/tapcpy.rs)
+    "CPYTOTAP",
+    "CPYFRMTAP",
+    "CRTTAPF",
+    "CHGTAPF",
     // --- licensed programs (lic/slic/src/cpp/lpcmd.rs)
     "RSTLICPGM",
     "DLTLICPGM",
