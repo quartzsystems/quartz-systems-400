@@ -277,7 +277,7 @@ impl Suite {
     /// Install step 1: option 4 writes the LIC onto the first disk and
     /// re-IPLs; the second boot from the media installs the operating
     /// system without prompts and reaches sign-on.
-    fn automatic_install(&self, s: &mut Session) -> Result<String, String> {
+    pub(crate) fn automatic_install(&self, s: &mut Session) -> Result<String, String> {
         s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
         s.expect("Selection", self.boot_timeout)?;
         s.send("4")?;
@@ -363,7 +363,7 @@ impl Suite {
     }
 
     /// Install step 2: the disk IPLs on its own and reaches sign-on.
-    fn installed_boot(&self, s: &mut Session) -> Result<String, String> {
+    pub(crate) fn installed_boot(&self, s: &mut Session) -> Result<String, String> {
         let seen = s.expect_in_order(SRC_SEQUENCE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         let dump = s.command("screen", CMD)?;

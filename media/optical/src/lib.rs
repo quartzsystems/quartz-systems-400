@@ -12,6 +12,7 @@
 pub mod crc32;
 pub mod error;
 pub mod iso;
+pub mod manifest;
 pub mod source;
 
 pub use error::{Error, Result};

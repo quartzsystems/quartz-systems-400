@@ -90,6 +90,11 @@ const REQUIRED_Y: &[&str] = &[
     "VFAT_FS",
     "NLS_CODEPAGE_437",
     "NLS_ISO8859_1",
+    // Install media.
+    "ISO9660_FS",
+    "JOLIET",
+    "BLK_DEV_SR",
+    "USB_STORAGE",
     "FB",
     "FRAMEBUFFER_CONSOLE",
     "DRM_SIMPLEDRM",
@@ -123,6 +128,8 @@ const REQUIRED_N: &[&str] = &[
     "RTC_HCTOSYS",
     // Tape and changer nodes must exist when the SCSI scan returns.
     "SCSI_SCAN_ASYNC",
+    // Install media: plain ISO 9660 only.
+    "ZISOFS",
 ];
 
 /// Parse a `.config` into symbol -> value (`y`, `m`, `n`, numbers, quoted strings).

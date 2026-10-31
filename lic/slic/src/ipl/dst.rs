@@ -293,7 +293,17 @@ impl DstEnv for Env<'_> {
 
     fn disks(&mut self) -> Vec<NonConfigured> {
         let mut out = Vec::new();
+        // On a D IPL the medium may be a disk too (a raw ISO, a stick):
+        // never offer it as a load source.
+        let media = if self.system.boot.ipl_d {
+            crate::ipl::media::locate().ok().map(|f| f.disk)
+        } else {
+            None
+        };
         for disk in diskimg::locate::whole_disks().unwrap_or_default() {
+            if media.as_deref() == Some(disk.name.as_str()) {
+                continue;
+            }
             let device = disk.dev.display().to_string();
             let (type_model, serial) = diskimg::locate::identity(&disk.dev);
             out.push(NonConfigured {

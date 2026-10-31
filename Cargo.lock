@@ -2900,6 +2900,7 @@ dependencies = [
  "msgf",
  "netlink",
  "nettools",
+ "optical",
  "osobjects",
  "prb",
  "print",

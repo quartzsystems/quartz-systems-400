@@ -14,6 +14,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result, ensure};
 use optical::IsoBuilder;
+use optical::manifest::{self, Manifest, ManifestFile};
 use tracing::info;
 
 use crate::ctx::Ctx;
@@ -23,15 +24,15 @@ use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
 use diskimg::fat;
 
 /// The media UKI's path inside the boot image and in the ISO tree.
-pub const BOOT_FILE: &str = "EFI/BOOT/BOOTX64.EFI";
+pub const BOOT_FILE: &str = manifest::BOOT_UKI;
 /// The El Torito boot image.
 pub const BOOT_IMAGE: &str = "EFI.IMG";
 /// The media UKI under the LIC directory.
 pub const LIC_FILE: &str = "QS400/LIC/qs400.efi";
 /// Slot A's UKI, which the installer copies onto the disk.
-pub const SLOT_A_FILE: &str = "QS400A.EFI";
+pub const SLOT_A_FILE: &str = manifest::SLOT_A;
 /// Slot B's UKI.
-pub const SLOT_B_FILE: &str = "QS400B.EFI";
+pub const SLOT_B_FILE: &str = manifest::SLOT_B;
 /// The text file at the root.
 pub const README_FILE: &str = "QS400.TXT";
 
@@ -39,6 +40,8 @@ pub const README_FILE: &str = "QS400.TXT";
 pub struct Parts<'a> {
     /// Volume identifier.
     pub volume_id: &'a str,
+    /// Release, `V1R0M0`.
+    pub release: &'a str,
     /// Unix time of every timestamp.
     pub epoch: u64,
     /// The FAT boot image holding [`BOOT_FILE`].
@@ -56,6 +59,19 @@ pub struct Parts<'a> {
 /// The image's tree and options.
 pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     let mut b = IsoBuilder::new(p.volume_id, p.epoch);
+    // The marker the media locator looks for, with the payload.
+    let files = [(SLOT_A_FILE, &p.slot_a), (SLOT_B_FILE, &p.slot_b), (BOOT_FILE, &p.uki)]
+        .map(|(path, data)| ManifestFile {
+            path: path.to_string(),
+            size: data.len() as u64,
+            sha256: sha256_bytes(data),
+        });
+    let m = Manifest {
+        release: p.release.to_string(),
+        volume: p.volume_id.to_string(),
+        files: files.to_vec(),
+    };
+    b.add_file(manifest::PATH, m.to_text().into_bytes())?;
     b.add_file(BOOT_IMAGE, p.efi)?;
     b.add_file(BOOT_FILE, p.uki)?;
     b.add_link(LIC_FILE, BOOT_FILE)?;
@@ -100,6 +116,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let volume_id = format!("QS400_{release}");
     let b = compose(Parts {
         volume_id: &volume_id,
+        release: &release,
         epoch,
         efi,
         uki: uki_bytes,
@@ -192,6 +209,7 @@ mod tests {
     fn parts() -> Parts<'static> {
         Parts {
             volume_id: "QS400_V1R0M0",
+            release: "V1R0M0",
             epoch: 1_767_225_600,
             efi: fat::build(&fat::MEDIA_ESP, &[(BOOT_FILE, b"uki")]).unwrap(),
             uki: b"uki".to_vec(),
@@ -221,6 +239,10 @@ mod tests {
             let e = img.lookup(path).unwrap();
             assert_eq!(img.read_file(&e).unwrap(), want, "{path}");
         }
+        let m = img.read_file(&img.lookup(manifest::PATH).unwrap()).unwrap();
+        let m = Manifest::parse(std::str::from_utf8(&m).unwrap()).unwrap();
+        assert_eq!(m.file(SLOT_A_FILE).unwrap().size, 6);
+        assert_eq!(m.release, "V1R0M0");
         let boot = img.info().boot.unwrap();
         assert_eq!(img.lookup(BOOT_IMAGE).unwrap().extents[0].0, boot.lba);
         let gpt = optical::iso::hybrid::verify(&img.source().to_vec()).unwrap();

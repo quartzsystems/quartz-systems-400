@@ -12,6 +12,7 @@ pub mod dst;
 pub mod ifs;
 pub mod install;
 pub mod lic;
+pub mod media;
 pub mod link;
 pub mod log;
 pub mod menu;

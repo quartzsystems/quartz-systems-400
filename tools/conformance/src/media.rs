@@ -61,7 +61,8 @@ pub fn fat_stick(iso: &[u8]) -> Result<Vec<u8>, String> {
 impl Suite {
     /// The ISO as a disk: `fat` copies its tree onto a FAT32 stick,
     /// else the image is written raw. The medium boots alone into the
-    /// D IPL and reaches sign-on.
+    /// D IPL and reaches sign-on; then installs onto a blank disk beside
+    /// it, which boots on its own.
     pub(crate) fn run_media_disk(&self, fat: bool) -> Result<Vec<StepReport>, HarnessError> {
         let iso = self.iso.clone().expect("checked in new");
         let medium = self
@@ -96,6 +97,33 @@ impl Suite {
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
+
+        // 2. With a blank disk beside it: option 4 must find the payload
+        // on the medium and install onto the blank disk, not the medium.
+        let blank = self.out_dir.join("media-target.img");
+        let f = fs::File::create(&blank)?;
+        f.set_len(4 * 1024 * 1024 * 1024)?;
+        drop(f);
+        let install = Launch {
+            extra_disks: vec![blank.clone()],
+            ..alone
+        };
+        let mut s = Session::spawn(&install)?;
+        reports.push(self.step(&mut s, "2 automatic install", Self::automatic_install)?);
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(20));
+        drop(s);
+
+        // 3. The installed disk on its own.
+        let disk = Launch {
+            image: Some(blank),
+            extra_disks: Vec::new(),
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&disk)?;
+        reports.push(self.step(&mut s, "3 boot installed disk", Self::installed_boot)?);
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
         Ok(reports)
     }
 }

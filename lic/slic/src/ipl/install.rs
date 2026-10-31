@@ -13,26 +13,21 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use blockdev::{BlockDev, LinuxBlockDev};
-use diskimg::{Guids, Plan, fat, iso9660};
+use diskimg::{Guids, Plan, fat};
 use licpart::LicPart;
 use svctools::install::lic::LicEvent;
 use svctools::{DstEnv, Outcome};
 
-use crate::hwrsrc::Kind;
 use crate::ipl::dst::Env;
 use crate::ipl::menu::{self, Answer};
 use crate::ipl::system::{System, now_unix};
-use crate::ipl::{Event, dst, power, storage};
+use crate::ipl::{Event, dst, media, power, storage};
 use crate::src;
 
 /// Slot A's path on the ESP.
 const SLOT_A: &str = "EFI/BOOT/BOOTX64.EFI";
 /// Slot B's path on the ESP.
 const SLOT_B: &str = "EFI/QS400/B.EFI";
-/// The slot UKIs on the installation media.
-const MEDIA_UKI_A: &str = "QS400A.EFI";
-/// Slot B's UKI on the media.
-const MEDIA_UKI_B: &str = "QS400B.EFI";
 
 /// Drive a `svctools` runner until it ends.
 fn drive(env: &mut Env<'_>, mut runner: svctools::Runner, rx: &Receiver<Event>) -> Outcome {
@@ -279,39 +274,13 @@ impl Env<'_> {
     }
 }
 
-/// The two slot UKIs from the installation media: the first optical
-/// device whose volume is a QS/400 one.
+/// The two slot UKIs from the installation media, wherever it is (see
+/// `media`).
 fn read_media_ukis(system: &mut System) -> Result<(Vec<u8>, Vec<u8>), String> {
-    let optical: Vec<String> = system
-        .hw
-        .resources
-        .iter()
-        .filter(|r| r.kind == Kind::Optical)
-        .map(|r| r.location.clone())
-        .collect();
-    let mut tried = Vec::new();
-    for name in &optical {
-        let path = format!("/dev/{name}");
-        let Ok(mut f) = File::open(&path) else {
-            tried.push(format!("{path}: cannot open"));
-            continue;
-        };
-        match iso9660::read_root(&mut f) {
-            Ok((id, _)) if id.starts_with("QS400") => {
-                let a = iso9660::read_file(&mut f, MEDIA_UKI_A).map_err(|e| e.to_string())?;
-                let b = iso9660::read_file(&mut f, MEDIA_UKI_B).map_err(|e| e.to_string())?;
-                return Ok((a, b));
-            }
-            Ok((id, _)) => tried.push(format!("{path}: volume {id}")),
-            Err(e) => tried.push(format!("{path}: {e}")),
-        }
-    }
-    Err(format!(
-        "no QS/400 installation media found ({})",
-        if tried.is_empty() {
-            "no optical device".to_string()
-        } else {
-            tried.join("; ")
-        }
-    ))
+    let found = media::locate()?;
+    system.out.serial(&format!(
+        "slic: install: media {} on {} ({})\n",
+        found.manifest.volume, found.device, found.fstype
+    ));
+    media::read_payload(&found)
 }
