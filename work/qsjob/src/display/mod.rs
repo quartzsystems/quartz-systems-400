@@ -338,4 +338,60 @@ mod tests {
         assert!(rows[23].contains("Command not found."));
         assert!(!rows[23].contains("COPYRIGHT"));
     }
+
+    /// A panel as a terminal shows it.
+    fn shown(p: &Panel) -> Terminal {
+        let mut m = ScreenModel::new(false);
+        render(p, &mut m);
+        let out = m.render(Read::MdtFields);
+        let mut t = Terminal::new(Capabilities {
+            model: Model::M3179,
+            gui: false,
+            color: true,
+        });
+        t.apply(&Record::new(out.opcode, out.data)).unwrap();
+        t
+    }
+
+    /// Change Password's attributes against IBM's capture: each label
+    /// row from its attribute byte to the field's, and every cell of every
+    /// field, which a 128-character field shares with the two rows
+    /// below. No field may reach a label.
+    #[test]
+    fn change_password_attributes_match_ibm() {
+        for (source, long) in [("oracle71", false), ("pub400", true)] {
+            let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tools/conformance/golden/verified")
+                .join(source)
+                .join("signon/change-password.attr");
+            let want: Vec<Vec<u8>> = std::fs::read_to_string(&path)
+                .unwrap()
+                .lines()
+                .map(|l| l.trim_end_matches('\r').as_bytes().to_vec())
+                .collect();
+            let p = wm::panels::change_password("USERNAME", 0, long, "");
+            let t = shown(&p);
+            let got: Vec<Vec<u8>> = t.attr_rows().into_iter().map(String::into_bytes).collect();
+            let mut cells = Vec::new();
+            for f in t.fields() {
+                assert_eq!(f.len, if long { 128 } else { 10 });
+                let row = f.start / 80;
+                cells.extend((2..46).map(|c| row * 80 + c));
+                cells.extend(f.start..f.start + f.len);
+            }
+            for i in cells {
+                let (r, c) = (i / 80, i % 80);
+                assert_eq!(
+                    got[r][c], want[r][c],
+                    "{source}: row {} column {}",
+                    r + 1,
+                    c + 1
+                );
+            }
+            let text = t.text_rows();
+            for row in if long { [8, 11, 14] } else { [8, 10, 12] } {
+                assert!(text[row][3..].starts_with("Current password") || text[row][3..].starts_with("New password"));
+            }
+        }
+    }
 }

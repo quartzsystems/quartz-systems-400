@@ -32,7 +32,11 @@ fn golden(rel: &str, p: &Panel) {
 fn panels_match() {
     golden(
         "signon/change-password.txt",
-        &panels::change_password("QS400", 1_792_540_800, ""),
+        &panels::change_password("QSECOFR", 1_792_540_800, false, ""),
+    );
+    golden(
+        "signon/change-password-pwdlvl2.txt",
+        &panels::change_password("QSECOFR", 1_792_540_800, true, ""),
     );
     golden(
         "signon/sign-on-info.txt",
@@ -52,4 +56,28 @@ fn sign_on_matches_the_console() {
         "signon/sign-on-pwdlvl2.txt",
         &panels::sign_on("QS400", "QBASE", "QSCONSOLE", true, ""),
     );
+}
+
+/// Change Password's text against IBM's: level 0 against the 7.1
+/// capture (`tools/conformance/golden/verified/oracle71/signon`), level
+/// 2 and 3 against the 7.5 one (`verified/pub400/signon`), whose F9
+/// for the password rules the row of keys leaves out.
+#[test]
+fn change_password_matches_ibm() {
+    let cases = [("oracle71", "USERNAM", false, 23), ("pub400", "USERNAME", true, 22)];
+    for (source, user, long, rows) in cases {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/conformance/golden/verified")
+            .join(source)
+            .join("signon/change-password.txt");
+        let want = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+            .replace("\r\n", "\n");
+        let want: Vec<&str> = want.lines().collect();
+        let mut got = panels::change_password(user, 1_792_540_800, long, "").lines();
+        got[4].replace_range(46..54, "MM/DD/YY");
+        for i in 0..rows {
+            assert_eq!(got[i].trim_end(), want[i].trim_end(), "{source}: row {}", i + 1);
+        }
+    }
 }

@@ -85,10 +85,18 @@ pub fn parm_text(b: &[u8]) -> String {
 fn chgpwd(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let current = p.text("CURPWD");
     let new = p.text("NEWPWD");
+    let user = host.link.borrow_mut().with(stg::Client::whoami).user;
+    // At a display the passwords are typed on Change Password.
+    if new.is_empty() && host.has_display() {
+        return Ok(if crate::work::chgpwd::show(job, host, &user, String::new()) {
+            "Password changed successfully.\n".into()
+        } else {
+            String::new()
+        });
+    }
     if new.is_empty() {
         return Err("CPD0071 NEWPWD is required".into());
     }
-    let user = host.link.borrow_mut().with(stg::Client::whoami).user;
     if !crate::work::pwdpgm::validate(job, &host.link, &user, &new, &current)? {
         return Err(
             "CPF22C6 The password validation program did not accept the new password.".into(),

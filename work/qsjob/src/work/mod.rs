@@ -8,6 +8,7 @@
 
 pub mod batch;
 pub mod cgroup;
+pub mod chgpwd;
 pub mod consdev;
 pub mod ftp;
 pub mod httpadm;

@@ -1166,7 +1166,7 @@ fn password_level(link: &mut Link) -> Option<u8> {
     level_of(v.kind, &v.data)
 }
 
-fn level_of(kind: sysapi::SysValKind, data: &[u8]) -> Option<u8> {
+pub(crate) fn level_of(kind: sysapi::SysValKind, data: &[u8]) -> Option<u8> {
     let n = match kind {
         sysapi::SysValKind::Bin => i32::from_be_bytes(data.get(..4)?.try_into().ok()?),
         sysapi::SysValKind::Char => ccsid::from_ebcdic(data).trim().parse().ok()?,

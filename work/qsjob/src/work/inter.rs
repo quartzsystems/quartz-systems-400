@@ -162,43 +162,10 @@ fn prepare(s: &mut Session<'_>) {
 
 /// Change Password until it succeeds; false when the user leaves it.
 fn change_password(s: &mut Session<'_>) -> bool {
-    let mut message = s.msg("CPD9BAE", &[]);
-    loop {
-        s.c.show(panels::change_password(&s.system, 0, &message));
-        status(s.link, Status::Dspw, "PGM-QSYCHGPW");
-        let Some((key, fields)) = s.c.wait_input() else {
-            return false;
-        };
-        if key == 3 || key == 12 {
-            return false;
-        }
-        if key != 0 {
-            message = s.msg("CPD6A60", &[]);
-            continue;
-        }
-        let field = |i: usize| fields.get(i).map_or("", |f| f.trim()).to_string();
-        let (current, new, confirm) = (field(0), field(1), field(2));
-        if new != confirm {
-            message = s.msg("CPD9BAF", &[]);
-            continue;
-        }
-        let user = s.signon.user.clone();
-        match super::pwdpgm::validate(s.c.job(), s.link, &user, &new, &current) {
-            Ok(true) => {}
-            Ok(false) => {
-                message = s.msg("CPD9BB3", &[]);
-                continue;
-            }
-            Err(e) => {
-                message = s.text(&crate::panels::line(&e));
-                continue;
-            }
-        }
-        match s.link.borrow_mut().with(|l| l.chg_pwd(current, new, true)) {
-            Ok(()) => return true,
-            Err(e) => message = s.text(&crate::panels::line(&e)),
-        }
-    }
+    let message = s.msg("CPD9BAE", &[]);
+    let host = s.c.host.clone();
+    let user = s.signon.user.clone();
+    super::chgpwd::show(s.c.job(), &host, &user, message)
 }
 
 /// Sign-on Information; false when the user leaves with F3.

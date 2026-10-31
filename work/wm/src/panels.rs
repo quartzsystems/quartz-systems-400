@@ -31,26 +31,36 @@ pub fn date_time(t: u64) -> (String, String) {
     )
 }
 
-/// Change Password: the current password, the new one twice.
+/// Change Password: the current password, the new one twice, at IBM's
+/// places (measured on 7.1 and 7.5). A field holds 10 characters at
+/// password level 0 and 1; from level 2 (`long_password`) it holds 128,
+/// runs on over the next two rows, and the labels are three rows apart
+/// so that no field reaches the next label.
 #[must_use]
-pub fn change_password(system: &str, changed: u64, message: &str) -> Panel {
+pub fn change_password(user: &str, changed: u64, long_password: bool, message: &str) -> Panel {
     let mut p = Panel::default();
     p.text(1, 32, 1, "Change Password");
-    p.text(2, 63, 0, "System:");
-    p.text(2, 72, 0, system);
+    p.text(3, 2, 0, "User profile  . . . . . . . . . . . . . . :");
+    p.text(3, 47, 0, user);
     if changed != 0 {
         let (d, _) = date_time(changed);
-        p.text(4, 2, 0, "Password last changed . . . . . . . :");
-        p.text(4, 41, 0, d);
+        p.text(5, 2, 0, "Password last changed . . . . . . . . . . :");
+        p.text(5, 47, 0, d);
     }
-    p.text(6, 2, 0, "Type choices, press Enter.");
-    p.text(8, 2, 0, "Current password . . . . . . . . . .");
-    p.hidden(8, 41, 128);
-    p.text(10, 2, 0, "New password . . . . . . . . . . . .");
-    p.hidden(10, 41, 128);
-    p.text(12, 2, 0, "New password (to verify) . . . . . .");
-    p.hidden(12, 41, 128);
-    p.text(23, 2, 2, "F3=Exit   F12=Cancel");
+    p.text(7, 2, 2, "Type choices, press Enter.");
+    let (len, step) = if long_password { (128, 3) } else { (10, 2) };
+    let labels = [
+        "Current password  . . . . . . . . . . . .",
+        "New password  . . . . . . . . . . . . . .",
+        "New password (to verify)  . . . . . . . .",
+    ];
+    for (i, label) in (0u8..).zip(labels) {
+        let row = 9 + i * step;
+        p.text(row, 4, 0, label);
+        p.hidden(row, 47, len);
+    }
+    p.text(23, 2, 2, "F3=Exit");
+    p.text(23, 20, 2, "F12=Cancel");
     p.message = message.into();
     p.error = !message.is_empty();
     p
