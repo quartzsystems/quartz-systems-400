@@ -174,8 +174,9 @@ impl Suite {
         }
         screen_wait(s, "Sign On")?;
         crate::phase5::console_sign_on_as(s, "LIMITED", PASSWORD, PASSWORD)?;
+        // The menu's line shows the escape over the CPD0043 diagnostic.
         entry(s, "crtlib LIB(NOTALLOWED)")?;
-        screen_wait(s, "CPD0043")?;
+        screen_wait(s, "command CRTLIB")?;
         entry(s, "signoff")?;
         screen_wait(s, "Sign On")?;
         let gone = s.command("svc.obj ls NOTALLOWED", CMD)?;

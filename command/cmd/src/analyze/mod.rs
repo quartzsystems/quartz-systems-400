@@ -242,7 +242,8 @@ pub fn analyze_tokens(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     let def = object.effective();
     let name = def.name.clone();
     if env.limited && !def.alwlmtusr {
-        return Err(Diag::new("CPD0043").data(&[(&name, 10)]).into());
+        let refused = Diag::new("CPD0043").data(&[(&name, 10)]);
+        return Err(CmdError::analysis(&name, vec![refused]));
     }
     let mut diags = Vec::new();
     if !env.setting.syntax_only {
