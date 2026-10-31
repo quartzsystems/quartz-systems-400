@@ -2492,6 +2492,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "saverst"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "db",
+ "dds",
+ "jrn",
+ "qsname",
+ "release",
+ "savfmt",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "savfmt"
 version = "0.1.0"
 dependencies = [

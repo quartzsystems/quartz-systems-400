@@ -96,6 +96,7 @@ members = [
     "net/ftp",
     # Save and restore: the save stream, the engine.
     "save/savfmt",
+    "save/saverst",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

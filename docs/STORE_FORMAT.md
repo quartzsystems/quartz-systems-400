@@ -490,7 +490,16 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 824 | 4 | group_authority | the primary group's bits |
 | 828 | 4 | reserved5 | 0 |
 | 832 | 8 | auth_gen | authority generation, bumped by every authority change |
-| 840 | 184 | reserved6 | 0 |
+| 840 | 8 | save_size | bytes the object took in its last save, 0 for never saved |
+| 848 | 10 | save_command | `SAVLIB`, `SAVOBJ`, ...; zero for never saved |
+| 858 | 10 | save_device | device name, or `*SAVF` |
+| 868 | 10 | save_file | the save file, when the device was `*SAVF` |
+| 878 | 10 | save_file_lib | its library |
+| 888 | 6 | save_volume | first volume of the save |
+| 894 | 17 | save_label | tape or optical file label |
+| 911 | 1 | reserved6 | 0 |
+| 912 | 4 | save_seq | tape file sequence number |
+| 916 | 108 | reserved7 | 0 |
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,

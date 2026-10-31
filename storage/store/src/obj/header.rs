@@ -73,6 +73,7 @@ const OFF_AUTH_FLAGS: usize = 816;
 const OFF_OWNER_AUTH: usize = 820;
 const OFF_GROUP_AUTH: usize = 824;
 const OFF_AUTH_GEN: usize = 832;
+const OFF_SAVE: usize = 840;
 /// `auth_flags`: the owner's authority was reduced from `*ALL`.
 const OWNER_REDUCED: u32 = 1;
 
@@ -130,7 +131,16 @@ pub static LAYOUT: Layout = Layout {
         field("group_authority", OFF_GROUP_AUTH, 4),
         field("reserved5", 828, 4),
         field("auth_gen", OFF_AUTH_GEN, 8),
-        field("reserved6", 840, 184),
+        field("save_size", 840, 8),
+        field("save_command", 848, 10),
+        field("save_device", 858, 10),
+        field("save_file", 868, 10),
+        field("save_file_lib", 878, 10),
+        field("save_volume", 888, 6),
+        field("save_label", 894, 17),
+        field("reserved6", 911, 1),
+        field("save_seq", 912, 4),
+        field("reserved7", 916, 108),
     ],
 };
 
@@ -302,6 +312,55 @@ pub struct ObjectHeader {
     pub group_authority: Authority,
     /// Bumped by every authority change; cached decisions compare it.
     pub auth_gen: u64,
+    /// Where and how the object was last saved, as `DSPOBJD` shows it.
+    pub save: SaveInfo,
+}
+
+/// The last save of an object: zero and blank until it is saved.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SaveInfo {
+    /// Bytes the object took in the save.
+    pub size: u64,
+    /// The save command, CP037, zero for never saved.
+    pub command: [u8; 10],
+    /// The device, or `*SAVF`.
+    pub device: [u8; 10],
+    /// The save file, when the device was `*SAVF`.
+    pub file: [u8; 10],
+    /// The save file's library.
+    pub file_lib: [u8; 10],
+    /// The first volume.
+    pub volume: [u8; 6],
+    /// The tape or optical file label.
+    pub label: [u8; 17],
+    /// The tape file sequence number.
+    pub seq: u32,
+}
+
+impl SaveInfo {
+    fn encode(&self, b: &mut [u8]) {
+        put_u64(b, 0, self.size);
+        b[8..18].copy_from_slice(&self.command);
+        b[18..28].copy_from_slice(&self.device);
+        b[28..38].copy_from_slice(&self.file);
+        b[38..48].copy_from_slice(&self.file_lib);
+        b[48..54].copy_from_slice(&self.volume);
+        b[54..71].copy_from_slice(&self.label);
+        put_u32(b, 72, self.seq);
+    }
+
+    fn decode(b: &[u8]) -> Self {
+        Self {
+            size: get_u64(b, 0),
+            command: b[8..18].try_into().expect("10"),
+            device: b[18..28].try_into().expect("10"),
+            file: b[28..38].try_into().expect("10"),
+            file_lib: b[38..48].try_into().expect("10"),
+            volume: b[48..54].try_into().expect("6"),
+            label: b[54..71].try_into().expect("17"),
+            seq: get_u32(b, 72),
+        }
+    }
 }
 
 /// Blank CP037 text of a fixed size.
@@ -369,6 +428,7 @@ impl ObjectHeader {
             owner_authority: Authority::ALL,
             group_authority: Authority::EXCLUDE,
             auth_gen: 0,
+            save: SaveInfo::default(),
         }
     }
 
@@ -434,6 +494,7 @@ impl ObjectHeader {
         }
         put_u32(b, OFF_GROUP_AUTH, self.group_authority.0);
         put_u64(b, OFF_AUTH_GEN, self.auth_gen);
+        self.save.encode(&mut b[OFF_SAVE..OFF_SAVE + 76]);
     }
 
     /// Decode the fixed part of a page body. `page` is for errors.
@@ -520,6 +581,7 @@ impl ObjectHeader {
             },
             group_authority: Authority(get_u32(body, OFF_GROUP_AUTH)),
             auth_gen: get_u64(body, OFF_AUTH_GEN),
+            save: SaveInfo::decode(&body[OFF_SAVE..OFF_SAVE + 76]),
         })
     }
 }

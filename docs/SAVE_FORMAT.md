@@ -266,21 +266,39 @@ is saved as a typed export instead of a tree image.
 
 ### `RefEntry` (64 bytes)
 
-Object IDs inside a payload are the saving system's. A reference to an
-object saved in the same stream is remapped through `original_id`; a
-reference to an object outside it (a logical file over a physical file
-in another library, a file journaled to a journal elsewhere) is saved
-by name and resolved by name on restore.
+Object IDs inside a payload are the saving system's, and a restore
+gives every object a new one. The saver finds each ID in the parts that
+carry them (the attribute area of every object; the byte space of a
+`*FILE` and a `*JRN`, which hold definitions, never records) and lists
+it here with where it sits and the referenced object's name. A restore
+patches each listed offset: with the new ID of an object restored from
+the same stream, or with the ID of the object of that name already on
+the system (a logical file over a physical file in another library, a
+file journaled to a journal elsewhere), as `flags` says below. Nothing is searched on
+restore, so record data can never be mistaken for an ID. An ID found
+nowhere is zeroed, and the type's rule decides what that means (§6).
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 16 | original_id | the referenced object's ID on the saving system |
 | 16 | 2 | type_code | its type |
-| 18 | 2 | role | what the payload uses it for, per type (§6) |
-| 20 | 10 | library | its library name |
-| 30 | 10 | name | its name |
+| 18 | 2 | region | 1 the attribute area, 2 the byte space |
+| 20 | 10 | library | its library name (for a member, its file's) |
+| 30 | 10 | name | its name (for a member, its file's) |
 | 40 | 10 | member | member name for a `*MBR`, blank otherwise |
-| 50 | 14 | reserved | 0 |
+| 50 | 8 | offset | byte offset of the ID within the region |
+| 58 | 2 | flags | bit 0 the object is in the same stream, bit 1 it comes earlier in it |
+| 60 | 4 | reserved | 0 |
+
+How a restore resolves a reference: to the object restored from the
+stream when there is one; otherwise, for an object earlier in the
+stream that this restore did not bring back (`OBJ` left it out) or one
+outside the stream, by name: in the restore library first when
+`RSTLIB` renames, then in the saved library. A reference to an object
+later in the stream that is never restored is zeroed, never resolved by
+name: a physical file's dependents and a journal's objects name things
+that depend on them, and an unrelated object of the same name must not
+take their place.
 
 ## 4. Index and trailer
 
@@ -353,20 +371,20 @@ a restore in stream order always finds what an object depends on:
 4. every other type, by type code then name;
 5. DDM files last.
 
-Type-specific contents (the engine's codecs, `save/saverst/src/codec/`):
+Type-specific contents (`save/saverst/src/image.rs`):
 
-| Type | Parts | References (role) |
-|---|---|---|
-| `*LIB` | attr (directory root zeroed, count zeroed) | |
-| `*FILE` | attr, space | 1 its journal; each member is an owned object |
-| `*MBR` | attr, space, tree0 (access path), tree1 (free slots) | 2 its file; 3 each based-on physical member, in order |
-| `*JRN` | attr, space | 4 attached receiver; 5 each receiver in the directory; 6 each journaled object |
-| `*JRNRCV` | attr, space | 7 its journal, 8 previous, 9 next receiver |
-| `*USRIDX` | attr (root zeroed), typed 16: every entry in key order | |
-| `*USRPRF` | attr, space, typed 16: the profile's index entries | |
-| `*AUTL` | attr, space, tree0 | |
-| `*OUTQ` | attr, space, spool (with `SPLFDTA(*ALL)`) | |
-| every other type | attr, space | |
+| Type | Parts |
+|---|---|
+| `*LIB` | attr (directory root and object count zeroed) |
+| `*FILE` | attr, space, refs; each member follows as an owned object |
+| `*MBR` | attr, space (the record slots), tree0 (access path), tree1 (free slots), refs |
+| `*USRIDX` | attr (root and entry count zeroed), typed 16: every entry in key order, each a `u16` length and the entry |
+| every other type | attr, space, refs, tree0..tree3 when the header has them |
+
+When a reference cannot be resolved: a file's journal is dropped and
+the file is restored not journaled; a logical member whose based-on
+member is missing is not restored; a physical file's dependents and a
+journal's object list lose entries whose objects are gone.
 
 On restore, objects are created fresh (new IDs, new pages). The engine
 keeps `original_id → new id` for everything it restored from the

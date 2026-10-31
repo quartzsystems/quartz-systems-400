@@ -23,7 +23,7 @@ pub mod usridx;
 pub mod usrspc;
 
 pub use dir::DirKey;
-pub use header::{Authority, ObjectHeader};
+pub use header::{Authority, ObjectHeader, SaveInfo};
 pub use id::ObjectId;
 pub use library::{LibAttr, LibType};
 pub use lock::{JobHandle, LockState, LockTable};

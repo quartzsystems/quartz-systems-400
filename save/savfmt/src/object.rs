@@ -152,11 +152,13 @@ pub static REF_LAYOUT: Layout = Layout {
     fields: &[
         field("original_id", 0, 16),
         field("type_code", 16, 2),
-        field("role", 18, 2),
+        field("region", 18, 2),
         field("library", 20, 10),
         field("name", 30, 10),
         field("member", 40, 10),
-        field("reserved", 50, 14),
+        field("offset", 50, 8),
+        field("flags", 58, 2),
+        field("reserved", 60, 4),
     ],
 };
 
@@ -654,14 +656,25 @@ pub struct RefEntry {
     pub original_id: [u8; 16],
     /// Its type.
     pub type_code: u16,
-    /// What the payload uses it for.
-    pub role: u16,
+    /// Where it sits: 1 the attribute area, 2 the byte space.
+    pub region: u16,
     /// Library name, CP037.
     pub library: [u8; 10],
     /// Name, CP037.
     pub name: [u8; 10],
     /// Member name for a `*MBR`, blank otherwise.
     pub member: [u8; 10],
+    /// Byte offset of the ID within the region.
+    pub offset: u64,
+    /// [`RefEntry::IN_STREAM`], [`RefEntry::EARLIER`].
+    pub flags: u16,
+}
+
+impl RefEntry {
+    /// The object is in the same stream.
+    pub const IN_STREAM: u16 = 1;
+    /// It comes earlier in the stream than the object referring to it.
+    pub const EARLIER: u16 = 2;
 }
 
 /// Encode a refs part.
@@ -672,10 +685,12 @@ pub fn encode_refs(refs: &[RefEntry]) -> Vec<u8> {
         let at = i * REF_LEN;
         b[at..at + 16].copy_from_slice(&r.original_id);
         put16(&mut b, at + 16, r.type_code);
-        put16(&mut b, at + 18, r.role);
+        put16(&mut b, at + 18, r.region);
         b[at + 20..at + 30].copy_from_slice(&r.library);
         b[at + 30..at + 40].copy_from_slice(&r.name);
         b[at + 40..at + 50].copy_from_slice(&r.member);
+        put64(&mut b, at + 50, r.offset);
+        put16(&mut b, at + 58, r.flags);
     }
     b
 }
@@ -691,10 +706,12 @@ pub fn decode_refs(b: &[u8]) -> Result<Vec<RefEntry>> {
         .map(|c| RefEntry {
             original_id: arr(c, 0),
             type_code: get16(c, 16),
-            role: get16(c, 18),
+            region: get16(c, 18),
             library: arr(c, 20),
             name: arr(c, 30),
             member: arr(c, 40),
+            offset: get64(c, 50),
+            flags: get16(c, 58),
         })
         .collect())
 }

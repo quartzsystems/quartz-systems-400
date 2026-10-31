@@ -689,6 +689,25 @@ pub fn add_dependent(txn: &mut Txn<'_>, base_file: ObjectId, entry: DependentEnt
     write_dependents(txn, &mut desc)
 }
 
+/// Drop the dependents whose logical member is gone (after a restore
+/// brought a physical file back without them). Returns how many.
+pub fn prune_dependents(txn: &mut Txn<'_>, file: ObjectId) -> Result<usize> {
+    let mut desc = describe(txn, file)?;
+    let before = desc.dependents.len();
+    let mut kept = Vec::with_capacity(before);
+    for d in std::mem::take(&mut desc.dependents) {
+        if ops::read_header(txn, d.lf_member).is_ok() {
+            kept.push(d);
+        }
+    }
+    desc.dependents = kept;
+    let gone = before - desc.dependents.len();
+    if gone > 0 {
+        write_dependents(txn, &mut desc)?;
+    }
+    Ok(gone)
+}
+
 /// Forget a logical member in every based-on file.
 fn remove_dependents(
     txn: &mut Txn<'_>,

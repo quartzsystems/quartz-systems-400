@@ -335,6 +335,50 @@ pub fn walk_pages(p: &mut dyn Pager, root: PageNo) -> Result<Vec<PageNo>> {
     Ok(out)
 }
 
+/// The key length of the tree rooted at `root`, from its root node.
+pub fn key_len_at(p: &mut dyn Pager, root: PageNo) -> Result<usize> {
+    let page = p.read(root)?;
+    page.verify_type(root, PageType::BTreeNode)?;
+    let b = page.body();
+    Ok(usize::from(u16::from_le_bytes([b[4], b[5]])))
+}
+
+/// Raw key and value bytes of a tree's entries.
+pub type RawEntries = Vec<(Vec<u8>, Vec<u8>)>;
+
+/// Every entry of the tree rooted at `root` as raw key and value bytes,
+/// ascending, with the key length: what a save writes.
+pub fn dump(p: &mut dyn Pager, root: PageNo) -> Result<(usize, RawEntries)> {
+    let key_len = key_len_at(p, root)?;
+    let tree: BTree<DynKey, Vec<u8>> = BTree::with_key_len(Some(root), ObjectId::NONE, key_len);
+    let mut out = Vec::new();
+    for e in tree.entries(p)? {
+        let (k, v) = e?;
+        out.push((k.0, v));
+    }
+    Ok((key_len, out))
+}
+
+/// Build a tree owned by `owner` from strictly ascending raw entries:
+/// what a restore writes. `None` for no entries.
+pub fn load(
+    p: &mut dyn Pager,
+    owner: ObjectId,
+    key_len: usize,
+    entries: RawEntries,
+) -> Result<Option<PageNo>> {
+    if entries.is_empty() {
+        return Ok(None);
+    }
+    let tree = BTree::<DynKey, Vec<u8>>::bulk_load_with_key_len(
+        p,
+        owner,
+        key_len,
+        entries.into_iter().map(|(k, v)| (DynKey(k), v)),
+    )?;
+    Ok(tree.root())
+}
+
 /// Free every page of the tree rooted at `root`, whatever its key type.
 pub fn free_tree(p: &mut dyn Pager, root: PageNo) -> Result<()> {
     for pno in walk_pages(p, root)? {
