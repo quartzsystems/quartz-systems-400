@@ -47,26 +47,84 @@ pub(super) fn tape(system: &mut System, args: &[String]) -> Result<Sys2Data, Str
         ("DEV", v.dev.clone()),
         ("VOLID", v.vol.clone()),
         ("OWNER", v.owner.clone()),
+        ("DENS", v.density.clone()),
         ("VOLTYPE", v.vol_type.to_string()),
         ("CODE", v.code.to_string()),
     ]);
+    // One row a file, with what each of its displays shows: the labels
+    // (zero-filled as the oracle shows them), and for a save its header.
     let files: Rows = v
         .files
         .iter()
         .map(|f| {
-            pairs(&[
-                ("FSEQ", f.seq.to_string()),
+            let mut row = pairs(&[
                 ("FLABEL", f.label.clone()),
-                ("FVSEQ", f.volseq.to_string()),
+                ("FSEQ", format!("{:010}", f.seq)),
+                ("SSEQ", f.seq.to_string()),
+                ("RECFMT", f.record_format.to_string()),
+                ("BLKATR", String::new()),
+                ("RECLEN", format!("{:05}", f.record_length)),
+                ("BLKLEN", format!("{:06}", f.block_length)),
+                ("FLEN", format!("{:010}", f.blocks)),
+                ("BUFOFF", String::new()),
+                ("CTLCHR", String::new()),
+                ("MVIND", if f.end == "EOV" || f.volseq > 1 { "Y" } else { "" }.to_string()),
+                ("FVSEQ", format!("{:010}", f.volseq)),
                 ("FCRT", f.created.clone()),
                 ("FEXP", f.expires.clone()),
-                ("FBLK", f.blocks.to_string()),
-                ("FEND", f.end.to_string()),
-            ])
+                ("FILTYP", String::new()),
+                ("CMPACT", "*NO".into()),
+                ("SYSCOD", f.system_code.clone()),
+            ]);
+            let save = v.saves.iter().find(|s| s.seq == f.seq);
+            row.push(("ISSAVE".into(), if save.is_some() { "Y" } else { "N" }.into()));
+            if let Some(s) = save {
+                row.extend(pairs(&[
+                    ("SLIB", s.library.clone()),
+                    ("SAVCMD", s.command.clone()),
+                    ("SAVDTS", stamp(s.created)),
+                    ("SAVCMP", if s.compressed { "Yes" } else { "No" }.into()),
+                    ("SAVCPT", "No".into()),
+                    ("SAVRLS", s.release.clone()),
+                    ("SAVFMT", "Serial".into()),
+                    ("SASP", "1".into()),
+                    ("SSYS", s.system.clone()),
+                    ("SSER", s.serial.clone()),
+                    ("SPVT", "No".into()),
+                ]));
+            }
+            row
         })
         .collect();
-    let objs: Rows = v.objects.iter().map(|o| object(("OSEQ", o.seq.to_string()), &o.row)).collect();
+    let objs: Rows = v.objects.iter().map(|o| saved_object(o.seq, &o.row)).collect();
     Ok((vars, vec![("FILES".into(), files), ("OBJS".into(), objs)]))
+}
+
+/// `MM/DD/YY  HH:MM:SS` of Unix seconds.
+fn stamp(t: u64) -> String {
+    let s = crate::cpp::savout::stamp(t);
+    // CYYMMDDHHMMSS
+    let p = |a: usize, b: usize| s.get(a..b).unwrap_or("");
+    format!("{}/{}/{}  {}:{}:{}", p(3, 5), p(5, 7), p(1, 3), p(7, 9), p(9, 11), p(11, 13))
+}
+
+/// A row of Display Saved Objects: the size in kilobytes right-aligned
+/// in its eight columns.
+fn saved_object(seq: u32, r: &[String]) -> Vec<(String, String)> {
+    let c = |i: usize| r.get(i).cloned().unwrap_or_default();
+    let k = c(4).parse::<u64>().map_or(0, |b| b.div_ceil(1024));
+    pairs(&[
+        ("OSEQ", seq.to_string()),
+        ("OPT", String::new()),
+        ("OBJ", c(0)),
+        ("OTYPE", c(1)),
+        ("OLIB", c(2)),
+        ("OATTR", c(3)),
+        ("OOWN", c(6)),
+        ("OSIZK", format!("{k:>8}")),
+        ("ODATA", c(7)),
+        ("OTEXT", c(5)),
+    ])
 }
 
 /// `DSPTAPCTG DEV CTG(comma-separated) CGY`: one row per cartridge.

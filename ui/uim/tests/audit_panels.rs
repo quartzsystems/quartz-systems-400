@@ -303,33 +303,107 @@ fn wrkoptvol_with_volumes() {
     ours("wrkoptvol", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap());
 }
 
-/// `DSPTAP`: no oracle has a tape (`CPF6718` on pub400,
-/// `audit/displays/ids-dsptap`); the labels, the volume label alone and
-/// the saves, from IBM's documentation.
+/// The 7.1 oracle's `DSPTAP` displays, on the SAVSYS volume in its
+/// TAP01 (`audit/displays/dsptap71-*`, 2026-10-31).
+const TAP71: &str = "audit/displays/dsptap71";
+
+/// Capture `name`'s text at `row` from `col` (both from 1), `len`
+/// wide; `trim` drops the blanks around it. The tests fill the panels
+/// with the capture's own values and hold our geometry to its rows.
+fn cap(name: &str, row: usize, col: usize, len: usize, trim: bool) -> String {
+    let rows = read(&goldens().join(format!("{TAP71}-{name}.txt")));
+    let s: String = rows[row - 1].chars().skip(col - 1).take(len).collect();
+    if trim { s.trim().to_string() } else { s }
+}
+
+/// The volume rows every labels display shows.
+fn tape_volume(d: &mut MapDialog) {
+    for (k, row, col) in [("DEV", 3, 25), ("OWNER", 4, 25), ("VOLTYPE", 5, 25), ("VOLID", 3, 66), ("DENS", 4, 66), ("CODE", 5, 66)] {
+        d.set(k, &cap("lbl-1", row, col, 14, true));
+    }
+}
+
+/// One file's labels: the first page's rows from `first`, the second
+/// page's from `lbl-2`.
+fn tape_file(d: &mut MapDialog, first: &str) {
+    for (k, row) in [("FLABEL", 8), ("FSEQ", 9), ("RECFMT", 11), ("BLKATR", 12), ("RECLEN", 13), ("BLKLEN", 14), ("FLEN", 15), ("BUFOFF", 16), ("CTLCHR", 17)] {
+        d.set(k, &cap(first, row, 41, 20, true));
+    }
+    for (k, row) in [("MVIND", 8), ("FVSEQ", 9), ("FCRT", 11), ("FEXP", 12), ("FILTYP", 14), ("CMPACT", 15), ("SYSCOD", 16)] {
+        d.set(k, &cap("lbl-2", row, 41, 20, true));
+    }
+}
+
+/// `DSPTAP DATA(*LABELS)`: one file to a display, two pages; F14 shows
+/// from the second file on. Row 23 is the oracle's message line.
 #[test]
-fn dsptap_views() {
+fn dsptap_labels_match_the_71_captures() {
     let g = group("QSMEDIA");
     let mut d = MapDialog::new();
-    for (k, v) in [("VOLID", "VOL001"), ("OWNER", "QS400"), ("VOLTYPE", "SL"), ("CODE", "*EBCDIC"), ("DEV", "TAPVRT01")] {
+    tape_volume(&mut d);
+    tape_file(&mut d, "lbl-1");
+    d.set("PRVENT", "N");
+    against(&format!("{TAP71}-lbl-1"), &render(&g, "DSPTAP", &d, &opts(0)).unwrap(), &[23]);
+    against(&format!("{TAP71}-lbl-2"), &render(&g, "DSPTAP", &d, &opts(1)).unwrap(), &[23]);
+    tape_file(&mut d, "lbl-next1");
+    d.set("PRVENT", "Y");
+    against(&format!("{TAP71}-lbl-next1"), &render(&g, "DSPTAP", &d, &opts(0)).unwrap(), &[23]);
+    // `DATA(*VOLLBL)`, ours: the volume rows alone.
+    for (k, v) in [("DEV", "TAPVRT01"), ("VOLID", "VOL001"), ("OWNER", "QS400"), ("DENS", "*VRT256K")] {
         d.set(k, v);
     }
-    d.set_list(
-        "FILES",
-        list(vec![
-            vec![("FSEQ", "1"), ("FLABEL", "QFILEA"), ("FVSEQ", "1"), ("FCRT", "10/31/26"), ("FEXP", "*PERM"), ("FBLK", "12"), ("FEND", "EOF")],
-            vec![("FSEQ", "2"), ("FLABEL", "QGPL"), ("FVSEQ", "1"), ("FCRT", "10/31/26"), ("FEXP", "*NONE"), ("FBLK", "340"), ("FEND", "EOF")],
-        ]),
-    );
-    ours("dsptap", &render(&g, "DSPTAP", &d, &opts(0)).unwrap());
     ours("dsptapvol", &render(&g, "DSPTAPVOL", &d, &opts(0)).unwrap());
-    d.set_list(
-        "OBJS",
-        list(vec![
-            vec![("OSEQ", "2"), ("OBJ", "QGPL"), ("OTYPE", "*LIB"), ("OLIB", "QSYS"), ("OATTR", "PROD"), ("OSIZE", "65536"), ("OTEXT", "General purpose")],
-            vec![("OSEQ", "2"), ("OBJ", "QCLSRC"), ("OTYPE", "*FILE"), ("OLIB", "QGPL"), ("OATTR", "PF"), ("OSIZE", "28672")],
-        ]),
-    );
-    ours("dsptapsav", &render(&g, "DSPTAPSAV", &d, &opts(0)).unwrap());
+}
+
+/// `DATA(*SAVRST)` on a file that holds no save: Display File
+/// Information. Row 11 is IBM's description of its own Licensed
+/// Internal Code file, which no QS/400 file has.
+#[test]
+fn dsptap_file_information_matches_the_71_capture() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    for (k, row) in [("DEV", 4), ("VOLID", 5), ("SSEQ", 6), ("FLABEL", 7), ("FEXP", 8)] {
+        d.set(k, &cap("sav-1", row, 44, 20, true));
+    }
+    against(&format!("{TAP71}-sav-1"), &render(&g, "DSPTAPFIL", &d, &opts(0)).unwrap(), &[11, 23]);
+}
+
+/// The objects of capture `name`'s rows 9 to 21.
+fn saved_objects(name: &str) -> ListState {
+    let rows: Vec<Vec<(String, String)>> = (9..=21)
+        .map(|r| {
+            vec![
+                ("OBJ".to_string(), cap(name, r, 7, 10, true)),
+                ("OTYPE".to_string(), cap(name, r, 19, 10, true)),
+                ("OATTR".to_string(), cap(name, r, 29, 10, true)),
+                ("OOWN".to_string(), cap(name, r, 41, 10, true)),
+                ("OSIZK".to_string(), cap(name, r, 56, 8, false)),
+                ("ODATA".to_string(), cap(name, r, 66, 4, true)),
+            ]
+        })
+        .collect();
+    ListState { total: None, rows, top: 0, complete: false }
+}
+
+/// `DATA(*SAVRST)` on a save: Display Saved Objects, its text view (F11)
+/// and the save's header (F16, two pages).
+#[test]
+fn dsptap_saves_match_the_71_captures() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    d.set("SLIB", &cap("obj-1", 3, 34, 10, true));
+    d.set_list("OBJS", saved_objects("obj-1"));
+    against(&format!("{TAP71}-obj-1"), &render(&g, "DSPTAPSAV", &d, &opts(0)).unwrap(), &[]);
+    d.set_list("OBJS", saved_objects("obj-3"));
+    against(&format!("{TAP71}-obj-f11"), &render(&g, "DSPTAPSAV2", &d, &opts(0)).unwrap(), &[]);
+    for (k, row) in [("DEV", 4), ("VOLID", 5), ("SSEQ", 6), ("FLABEL", 7), ("FEXP", 8), ("SAVCMD", 10), ("SAVDTS", 11), ("SAVCMP", 12), ("SAVCPT", 13), ("SAVRLS", 14), ("SAVFMT", 15)] {
+        d.set(k, &cap("obj-f16", row, 44, 20, true));
+    }
+    for (k, row) in [("SLIB", 4), ("SASP", 5), ("SSYS", 6), ("SSER", 7), ("SPVT", 8)] {
+        d.set(k, &cap("obj-f16-2", row, 44, 20, true));
+    }
+    against(&format!("{TAP71}-obj-f16"), &render(&g, "DSPTAPHDR", &d, &opts(0)).unwrap(), &[]);
+    against(&format!("{TAP71}-obj-f16-2"), &render(&g, "DSPTAPHDR", &d, &opts(1)).unwrap(), &[]);
 }
 
 /// `DSPTAPCTG`: one cartridge (no oracle has a library: `CPF9814`).

@@ -606,14 +606,14 @@ fn tape_lines(v: &meddsp::TapView, data: &str) -> Vec<String> {
 }
 
 fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    // Refused before the tape is read, as the 7.1 oracle does
+    // (`audit/displays/dsptap71-outf-sav-err`).
+    if parms.name("OUTPUT") == "*OUTFILE" && parms.name("DATA") != "*LABELS" {
+        return Err("CPD0084 OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only.".into());
+    }
     let v = tape_view_of(system, parms)?;
     match parms.name("OUTPUT").as_str() {
-        "*OUTFILE" => {
-            if parms.name("DATA") != "*LABELS" {
-                return Err("CPD0084 OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only.".into());
-            }
-            super::medout::tape(system, parms, &v).map(plain)
-        }
+        "*OUTFILE" => super::medout::tape(system, parms, &v).map(plain),
         "*PRINT" => crate::svc::security::print_as(system, "QSYSPRT", "DSPTAP", &tape_lines(&v, &parms.name("DATA")), false).map(plain),
         _ => Ok(plain(tape_lines(&v, &parms.name("DATA")).join("\n") + "\n")),
     }

@@ -37,7 +37,7 @@ pub(crate) mod ptflic;
 mod ptfsvc;
 mod rpg;
 mod savcmd;
-mod savout;
+pub(crate) mod savout;
 pub(crate) mod svccmd;
 pub(crate) mod savsys;
 pub(crate) mod stmf;

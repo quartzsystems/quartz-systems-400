@@ -1,10 +1,10 @@
                         Display Tape Volume Information
-                                                             System:   SYSNAME
- Volume identifier  . . . . . . :   VOL001
- Owner identifier . . . . . . . :   QS400
- Volume type  . . . . . . . . . :   SL
- Code . . . . . . . . . . . . . :   *EBCDIC
- Device . . . . . . . . . . . . :   TAPVRT01
+
+ Device . . . . . . :   TAPVRT01          Volume ID  . . . . :   VOL001
+ Owner ID . . . . . :   QS400             Density  . . . . . :   *VRT256K
+ Type . . . . . . . :   *SL               Code . . . . . . . :   *EBCDIC
+
+
 
 
 

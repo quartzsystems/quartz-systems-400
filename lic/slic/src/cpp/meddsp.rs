@@ -10,7 +10,7 @@
 //! records are `medout.rs`'s.
 
 use medio::MediaError;
-use tape::label::{Code, Date, Expiry, LabelSet};
+use tape::label::{Code, Date, Expiry, LabelSet, RecordFormat};
 use tape::volume::{FileReader, ReadOptions, VolumeKind};
 use tape::{MAX_BLOCK, TapeTransport, VolumeProvider};
 use wm::obj::devmed::MediaKind;
@@ -64,8 +64,35 @@ pub(crate) struct TapFile {
     pub blocks: u64,
     /// `EOF`, `EOV` (continues), or `*NONE` (no trailer).
     pub end: &'static str,
-    /// The two header labels as written, 80 characters each.
-    pub hdr: (String, String),
+    /// The two trailer labels (the header's when there is no
+    /// trailer), 80 characters each, as the outfile keeps them.
+    pub trl: (String, String),
+    /// `F`, `V` or `U`.
+    pub record_format: &'static str,
+    /// Record and block lengths.
+    pub record_length: u32,
+    pub block_length: u32,
+    /// The writer's system code.
+    pub system_code: String,
+}
+
+/// A save on tape: what its media header says.
+pub(crate) struct TapSave {
+    /// The file sequence number.
+    pub seq: u32,
+    /// The library saved.
+    pub library: String,
+    /// The save command.
+    pub command: String,
+    /// Unix seconds when the save began.
+    pub created: u64,
+    /// The stream is compressed.
+    pub compressed: bool,
+    /// `VxRyMz`.
+    pub release: String,
+    /// The saving system's name and serial number.
+    pub system: String,
+    pub serial: String,
 }
 
 /// One object of a save on tape.
@@ -90,10 +117,14 @@ pub(crate) struct TapView {
     pub code: &'static str,
     /// The volume label as written, 80 characters, blank when none.
     pub vol1: String,
+    /// The density the drive reports (`*VRT256K` on a virtual drive).
+    pub density: String,
     /// The files in the sequence range, with the label asked for.
     pub files: Vec<TapFile>,
     /// For `DATA(*SAVRST)`: the objects of each save.
     pub objects: Vec<TapObj>,
+    /// For `DATA(*SAVRST)`: each save's header.
+    pub saves: Vec<TapSave>,
 }
 
 /// DSPTAP's job: the labels, and for `*SAVRST` each save's stream.
@@ -105,12 +136,13 @@ struct Dsp {
     end_opt: tape::EndOpt,
 }
 
-type DspOut = (tape::volume::VolumeLabels, Vec<(u32, String, Vec<u8>)>);
+type DspOut = (tape::volume::VolumeLabels, Vec<(u32, String, Vec<u8>)>, String);
 
 impl TapeJob for Dsp {
     type Out = DspOut;
     fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<DspOut, MediaError> {
         let l = tape::volume::labels(d, self.vol.as_deref(), tape::EndOpt::Rewind)?;
+        let density = d.status().map(|s| s.density).unwrap_or_default();
         let mut out = Vec::new();
         if self.saves {
             let wanted: Vec<(u32, String)> = l
@@ -137,7 +169,7 @@ impl TapeJob for Dsp {
             }
         }
         self.end_opt.apply(d)?;
-        Ok((l, out))
+        Ok((l, out, density))
     }
 }
 
@@ -168,15 +200,15 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
         end_opt: stream::end_opt(a.end_opt),
     };
     let vl: Vec<String> = job.vol.iter().cloned().collect();
-    let (l, saves) = drive::with_tape(system, a.dev, &vl, false, &mut job)?;
+    let (l, saves, density) = drive::with_tape(system, a.dev, &vl, false, &mut job)?;
     let (owner, vol_type, code, vol1) = match &l.kind {
         VolumeKind::Labeled { vol1, code } => (
             vol1.owner.clone(),
-            "SL",
+            "*SL",
             if *code == Code::Ascii { "*ASCII" } else { "*EBCDIC" },
             vol1.encode(Code::Ascii).map(|r| label_text(&r)).unwrap_or_default(),
         ),
-        VolumeKind::Unlabeled => (String::new(), "NL", "", String::new()),
+        VolumeKind::Unlabeled => (String::new(), "*NL", "", String::new()),
         VolumeKind::Blank => (String::new(), "", "", String::new()),
     };
     let files = if a.data == "*VOLLBL" {
@@ -187,9 +219,9 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
             .filter(|f| (a.range.0..=a.range.1).contains(&f.label.file_seq))
             .filter(|f| job.label.as_ref().is_none_or(|x| *x == f.label.file_id))
             .map(|f| {
-                let hdr = f
+                let trl = f
                     .label
-                    .encode(LabelSet::Header, Code::Ascii)
+                    .encode(f.trailer, Code::Ascii)
                     .map(|(a, b)| (label_text(&a), label_text(&b)))
                     .unwrap_or_default();
                 TapFile {
@@ -208,16 +240,41 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
                         LabelSet::EndOfVolume => "EOV",
                         LabelSet::Header => "*NONE",
                     },
-                    hdr,
+                    trl,
+                    record_format: match f.label.record_format {
+                        RecordFormat::Fixed => "F",
+                        RecordFormat::Variable => "V",
+                        RecordFormat::Undefined => "U",
+                    },
+                    record_length: f.label.record_length,
+                    block_length: f.label.block_length,
+                    system_code: f.label.system_code.clone(),
                 }
             })
             .collect()
     };
     let mut objects = Vec::new();
+    let mut headers = Vec::new();
     for (seq, _, bytes) in &saves {
-        if let Ok((_, rows)) = super::savcmd::stream_listing(bytes) {
-            objects.extend(rows.into_iter().map(|row| TapObj { seq: *seq, row }));
+        let Ok((_, rows)) = super::savcmd::stream_listing(bytes) else { continue };
+        if let Ok((head, _, index)) = savfmt::read_index(&mut std::io::Cursor::new(bytes.as_slice())) {
+            let library = index
+                .iter()
+                .find(|e| e.owner_index == savfmt::object::NO_OWNER && e.type_code != store::obj::types::LIB)
+                .map(|e| savfmt::text(&e.library))
+                .unwrap_or_default();
+            headers.push(TapSave {
+                seq: *seq,
+                library,
+                command: head.command.clone(),
+                created: head.created,
+                compressed: head.compression != savfmt::Compression::None,
+                release: format!("V{}R{}M{}", head.release.0, head.release.1, head.release.2),
+                system: head.system.clone(),
+                serial: head.serial.clone(),
+            });
         }
+        objects.extend(rows.into_iter().map(|row| TapObj { seq: *seq, row }));
     }
     Ok(TapView {
         dev: a.dev.to_ascii_uppercase(),
@@ -226,8 +283,10 @@ pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, 
         vol_type,
         code,
         vol1,
+        density,
         files,
         objects,
+        saves: headers,
     })
 }
 

@@ -44,7 +44,32 @@ fn seq_range(r: &Resolved) -> (u32, u32) {
     (first, last)
 }
 
-/// `DSPTAP DEV VOL LABEL SEQNBR DATA ENDOPT`.
+/// Where a file's display leaves `DSPTAP`.
+enum Step {
+    /// F3 or F12: back to where the command was typed.
+    Leave,
+    /// Enter: the next file, or out after the last.
+    Next,
+    /// F14: the file before.
+    Back,
+}
+
+/// A row's value.
+fn get<'a>(row: &'a [(String, String)], key: &str) -> &'a str {
+    row.iter().find(|(k, _)| k == key).map_or("", |(_, v)| v.as_str())
+}
+
+/// Option 5 on a library's own entry; elsewhere the object display
+/// is not in this release.
+const NOT_FOR_LIBRARY: &str = "CPD9D40";
+const NOT_AVAILABLE: &str = "CPD9B89";
+
+/// `DSPTAP DEV VOL LABEL SEQNBR DATA ENDOPT`: one file to a display as
+/// the 7.1 oracle shows them (`audit/displays/dsptap71-*`). The labels
+/// on Display Tape Volume Information, two pages a file; with
+/// `DATA(*SAVRST)` a save's objects on Display Saved Objects (F11 the
+/// text view, F16 the save's header) and any other file on Display
+/// File Information. Enter shows the next file, F14 the one before.
 pub fn dsptap(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let (first, last) = seq_range(r);
     let data = match parm(r, "DATA").as_str() {
@@ -60,14 +85,83 @@ pub fn dsptap(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
         data.clone(),
         parm(r, "ENDOPT"),
     ];
+    let (vars, lists) = fetch(host, "TAP", &args)?;
     let mut d = dialog(host, "QSMEDIA")?;
-    load(&mut d, fetch(host, "TAP", &args)?);
-    let panel = match data.as_str() {
-        "*VOLLBL" => "DSPTAPVOL",
-        "*SAVRST" => "DSPTAPSAV",
-        _ => "DSPTAP",
-    };
-    until_left(&mut d, surface, panel)
+    for (k, v) in &vars {
+        d.set(k, v);
+    }
+    let take = |name: &str| lists.iter().find(|(n, _)| n == name).map(|(_, rows)| rows.clone()).unwrap_or_default();
+    let (files, objs) = (take("FILES"), take("OBJS"));
+    if data == "*VOLLBL" || files.is_empty() {
+        return until_left(&mut d, surface, "DSPTAPVOL");
+    }
+    let saves = data == "*SAVRST";
+    let mut i = 0;
+    loop {
+        let f = &files[i];
+        for (k, v) in f {
+            d.set(k, v);
+        }
+        d.set("PRVENT", if i > 0 { "Y" } else { "N" });
+        d.page = 0;
+        let step = if saves && get(f, "ISSAVE") == "Y" {
+            saved_objects(&mut d, surface, get(f, "SSEQ"), &objs)?
+        } else {
+            file_display(&mut d, surface, if saves { "DSPTAPFIL" } else { "DSPTAP" })?
+        };
+        match step {
+            Step::Leave => return Ok(String::new()),
+            Step::Next if i + 1 >= files.len() => return Ok(String::new()),
+            Step::Next => i += 1,
+            Step::Back => i = i.saturating_sub(1),
+        }
+    }
+}
+
+/// One file's labels or information until Enter, F14 or a way out.
+fn file_display(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Step, Fail> {
+    loop {
+        match show(d, surface, panel)? {
+            Response::Exit | Response::Cancel | Response::Gone => return Ok(Step::Leave),
+            Response::Return(14) => return Ok(Step::Back),
+            Response::Print => d.error("CPD9B84", &[]),
+            Response::Return(_) => return Ok(Step::Next),
+            _ => {}
+        }
+    }
+}
+
+/// Display Saved Objects for the save in file `seq`.
+fn saved_objects(d: &mut UimDialog, surface: &mut Surface, seq: &str, objs: &[Vec<(String, String)>]) -> Result<Step, Fail> {
+    let rows: Vec<Vec<(String, String)>> = objs.iter().filter(|r| get(r, "OSEQ") == seq).cloned().collect();
+    super::fill(d, "OBJS", rows);
+    d.list_mut("OBJS").top = 0;
+    let mut alternate = false;
+    loop {
+        match show(d, surface, if alternate { "DSPTAPSAV2" } else { "DSPTAPSAV" })? {
+            Response::Exit | Response::Cancel | Response::Gone => return Ok(Step::Leave),
+            Response::Return(11) => alternate = !alternate,
+            Response::Return(16) => {
+                d.page = 0;
+                if matches!(show(d, surface, "DSPTAPHDR")?, Response::Exit | Response::Gone) {
+                    return Ok(Step::Leave);
+                }
+            }
+            Response::Options(choices) => {
+                for c in choices.iter().filter(|c| !c.option.trim().is_empty()) {
+                    let row = d.row("OBJS", c.row);
+                    if get(&row, "OTYPE") == "*LIB" {
+                        d.error(NOT_FOR_LIBRARY, &[c.option.trim()]);
+                    } else {
+                        d.error(NOT_AVAILABLE, &[c.option.trim()]);
+                    }
+                }
+            }
+            Response::Print => d.error("CPD9B84", &[]),
+            Response::Return(_) => return Ok(Step::Next),
+            _ => {}
+        }
+    }
 }
 
 /// `DSPTAPCTG DEV CTG CGY`: each cartridge in turn.
@@ -109,7 +203,7 @@ pub fn dspopt(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
 
 /// `WRKOPTVOL DEV VOL CSI`: the volumes, read again on F5 and when the
 /// device asked for changes. Option 1 on the add entry above the list
-/// prompts `ADDOPTCTG` for the volume typed beside it, as the 7.1
+/// prompts `ADDOPTCTG`, whose parameters name no volume, as the 7.1
 /// oracle's does (`audit/displays/wrkoptvol-add-prompt71`).
 pub fn wrkoptvol(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let vol = parm(r, "VOL");

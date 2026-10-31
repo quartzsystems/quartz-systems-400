@@ -1847,7 +1847,8 @@ pub type SavfListing = (Vec<(String, String)>, Vec<Vec<String>>);
 
 /// What a save file holds, from its index alone: the save's description
 /// and one row per object (object, type, library, attribute, size,
-/// text). `DSPSAVF`'s panel and its text form.
+/// text, owner, `YES` or `NO` for its data saved). `DSPSAVF`'s panel
+/// and its text form.
 pub fn savf_listing(
     system: &mut System,
     file: &str,
@@ -1916,6 +1917,8 @@ pub fn stream_listing(stream: &[u8]) -> Result<SavfListing, String> {
             savfmt::text(&d.attribute),
             d.size_bytes.to_string(),
             savfmt::text(&d.text),
+            savfmt::text(&d.owner),
+            if d.has(savfmt::object::flags::FREED) { "NO" } else { "YES" }.to_string(),
         ]);
     }
     Ok((desc, rows))
