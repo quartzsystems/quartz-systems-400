@@ -26,7 +26,7 @@ fn position_to(d: &mut UimDialog, list: &str, var: &str, n: u32, position: &mut 
         d.set(CMDLINE_VAR, "");
     }
     if position.is_empty() {
-        d.message = Some(("Type a name on the command line, then F17.".into(), true));
+        d.error("CPD9B87", &[]);
         return;
     }
     let l = d.list_mut(list);
@@ -35,7 +35,7 @@ fn position_to(d: &mut UimDialog, list: &str, var: &str, n: u32, position: &mut 
             .any(|(k, v)| k == var && !v.is_empty() && *v >= *position)
     }) {
         Some(i) => l.top = i,
-        None => d.message = Some((format!("No entry is at or after {position}."), true)),
+        None => d.error("CPD9B80", &[position]),
     }
 }
 

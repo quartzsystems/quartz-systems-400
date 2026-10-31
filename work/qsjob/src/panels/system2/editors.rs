@@ -17,7 +17,7 @@ use super::{cell, dashed, dialog, exec, parm, qual, service_text, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{Choice, Response, UimDialog};
+use crate::display::uim::{Choice, LineMsg, Response, UimDialog};
 
 /// The sequence numbers a page of `EDTLIBL` shows: three columns of 15.
 const LIBL_PAGE: usize = 45;
@@ -49,7 +49,7 @@ fn libl_rows(libs: &[String]) -> Vec<Vec<(String, String)>> {
 
 /// The libraries the rows hold, in sequence number order (a number
 /// typed twice keeps the order on the display).
-fn libl_of(d: &mut UimDialog) -> Result<Vec<String>, String> {
+fn libl_of(d: &mut UimDialog) -> Result<Vec<String>, LineMsg> {
     let rows = d.list_mut("LIBS").rows.clone();
     let mut out: Vec<(u32, usize, String)> = Vec::new();
     for (i, row) in rows.iter().enumerate() {
@@ -67,7 +67,7 @@ fn libl_of(d: &mut UimDialog) -> Result<Vec<String>, String> {
             let seq = get(format!("SEQ{col}"));
             let n: u32 = seq
                 .parse()
-                .map_err(|_| format!("Sequence number {seq} is not valid."))?;
+                .map_err(|_| LineMsg::error("CPD9BA9", &[&seq]))?;
             out.push((n, i * 3 + col, lib));
         }
     }
@@ -101,7 +101,7 @@ pub fn edtlibl(job: &mut Job, host: &Host, surface: &mut Surface) -> Option<Resu
                 let after = match libl_of(&mut d) {
                     Ok(a) => a,
                     Err(m) => {
-                        d.message = Some((m, true));
+                        d.send(m);
                         continue;
                     }
                 };
@@ -114,7 +114,7 @@ pub fn edtlibl(job: &mut Job, host: &Host, surface: &mut Surface) -> Option<Resu
                     after.join(" ")
                 };
                 match exec(job, host, &format!("CHGLIBL LIBL({list})")) {
-                    Some((m, true)) => d.message = Some((m, true)),
+                    Some(m) if m.error => d.send(m),
                     _ => return Some(Ok(String::new())),
                 }
             }
@@ -280,7 +280,7 @@ fn new_users(
                     let bits = typed_bits(d, "AUTS", i);
                     let aut = if aut.is_empty() { bits.join(" ") } else { aut };
                     let aut = if aut.is_empty() { "*USE".to_string() } else { aut };
-                    d.message = exec(job, host, &grant(&user, &aut));
+                    d.set_message(exec(job, host, &grant(&user, &aut)));
                     done += 1;
                 }
                 if done > 0 || d.message.is_none() {
@@ -361,7 +361,7 @@ pub fn edtobjaut(
                 Response::Return(5) => break 'show,
                 Response::Return(11) => next_view(&mut d),
                 Response::Return(10) => {
-                    d.message = exec(job, host, &format!("?GRTOBJAUT {obj} REFOBJ()"));
+                    d.set_message(exec(job, host, &format!("?GRTOBJAUT {obj} REFOBJ()")));
                     break 'show;
                 }
                 Response::Return(6) => {
@@ -392,7 +392,7 @@ pub fn edtobjaut(
                             format!("GRTOBJAUT {obj} USER({user}) AUT({aut}) REPLACE(*YES)")
                         };
                         if let Some(m) = exec(job, host, &line) {
-                            d.message = Some(m);
+                            d.send(m);
                         }
                     }
                     let new = d.get("AUTL").trim().to_ascii_uppercase();
@@ -404,7 +404,7 @@ pub fn edtobjaut(
                             format!("GRTOBJAUT {obj} AUTL({new})")
                         };
                         if let Some(m) = exec(job, host, &line) {
-                            d.message = Some(m);
+                            d.send(m);
                         }
                     }
                     if !changed {
@@ -505,7 +505,7 @@ pub fn edtautl(
                             format!("CHGAUTLE AUTL({name}) USER({user}) AUT({aut}{extra})")
                         };
                         if let Some(m) = exec(job, host, &line) {
-                            d.message = Some(m);
+                            d.send(m);
                         }
                     }
                     if !changed {
@@ -609,7 +609,7 @@ fn chgsysval(
                     return Some(Ok(String::new()));
                 }
                 match exec(job, host, &format!("CHGSYSVAL SYSVAL({name}) VALUE({value})")) {
-                    Some((m, true)) => d.message = Some((m, true)),
+                    Some(m) if m.error => d.send(m),
                     _ => return Some(Ok(String::new())),
                 }
             }

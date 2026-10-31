@@ -8,7 +8,7 @@
 use cmd::Resolved;
 use mi::Job;
 
-use super::{NO_PRINT, act, dialog, fetch, load, parm, parm_list, show};
+use super::{act, dialog, fetch, load, parm, parm_list, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -30,7 +30,7 @@ pub fn dspptf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
                 // F3 on a detail leaves the command (`CPF6801` here).
                 let done = act(job, host, &mut d, &choices, &mut |d, c| {
                     if c.option.trim() != "5" {
-                        d.message = Some((format!("Option {} is not valid here.", c.option.trim()), true));
+                        d.error("CPD6A7C", &[]);
                         return Ok(());
                     }
                     let id = cell(d, &c.list, c.row, "PTFID");
@@ -49,9 +49,9 @@ pub fn dspptf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
                 }
             }
             Response::Return(11) => {
-                d.message = Some(("This release has one view of the PTFs.".into(), false));
+                d.error("CPD9B8B", &[]);
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
@@ -65,7 +65,7 @@ pub fn wrkptfgrp(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
         load(&mut d, fetch(host, "PTFGRP", std::slice::from_ref(&pattern))?);
         match show(&mut d, surface, "WRKPTFGRP")? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }

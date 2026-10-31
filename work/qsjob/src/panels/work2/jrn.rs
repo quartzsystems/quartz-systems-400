@@ -77,10 +77,7 @@ pub fn wrkjrn(
                 if c.first()
                     .is_some_and(|c| c.option == "6" || c.option == "7") =>
             {
-                d.message = Some((
-                    "Journals and receivers are recovered at IPL in this release.".into(),
-                    false,
-                ));
+                d.info("CPI9B87", &[]);
                 Step::Stay
             }
             _ => others(d, &resp),

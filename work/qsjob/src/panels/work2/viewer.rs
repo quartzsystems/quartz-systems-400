@@ -33,7 +33,7 @@ pub enum Control {
     Bottom,
     /// `*HEX` (`true`) or `*CHAR`.
     Hex(bool),
-    /// Not a command: why.
+    /// Not a command: the value typed (`CPD9B95`).
     Bad(String),
 }
 
@@ -51,7 +51,7 @@ pub fn parse(text: &str) -> Control {
     if t.is_empty() {
         return Control::None;
     }
-    let bad = |why: &str| Control::Bad(why.to_string());
+    let bad = || Control::Bad(t.clone());
     match t.as_str() {
         "T" | "*TOP" => return Control::Top,
         "B" | "*BOT" => return Control::Bottom,
@@ -63,23 +63,12 @@ pub fn parse(text: &str) -> Control {
     }
     let (head, rest) = t.split_at(1);
     match head {
-        "+" => number(rest).map_or_else(
-            || bad("A number must follow the plus sign."),
-            |n| Control::Down(Some(n)),
-        ),
-        "-" => number(rest).map_or_else(
-            || bad("A number must follow the minus sign."),
-            |n| Control::Up(Some(n)),
-        ),
-        "P" => number(rest).map_or_else(|| bad("A page number must follow P."), Control::Page),
-        "W" => number(rest)
-            .filter(|n| *n > 0)
-            .map_or_else(|| bad("A column number must follow W."), Control::Column),
-        "T" | "B" => bad("T and B stand alone on the Control line."),
-        _ => number(&t).map_or_else(
-            || bad("The Control line takes +n, -n, n, Pn, Wn, T, B, *HEX or *CHAR."),
-            Control::Line,
-        ),
+        "+" => number(rest).map_or_else(bad, |n| Control::Down(Some(n))),
+        "-" => number(rest).map_or_else(bad, |n| Control::Up(Some(n))),
+        "P" => number(rest).map_or_else(bad, Control::Page),
+        "W" => number(rest).filter(|n| *n > 0).map_or_else(bad, Control::Column),
+        "T" | "B" => bad(),
+        _ => number(&t).map_or_else(bad, Control::Line),
     }
 }
 

@@ -21,6 +21,7 @@ use wm::dev::key;
 use super::{attn, print, sysreq};
 use crate::command::{Outcome, RunMode};
 use crate::console::host::Host;
+use crate::display::uim::LineMsg;
 
 /// The escape a cancelled request's caller receives.
 pub const ENDED: &str = "CPF1907";
@@ -40,7 +41,7 @@ pub enum Act {
     /// Back to the job, its screen as it was.
     Back,
     /// Back, with a message on the restored screen.
-    Say(String),
+    Say(LineMsg),
     /// End the current request.
     EndRequest,
     /// Sign off: the job ends.
@@ -162,7 +163,7 @@ fn shown(host: &Host, bit: u8, f: fn(&Host) -> Act) -> After {
             After::Unwind
         }
         Act::EndRequest => {
-            put_back(host, saved, Some("There is no request to end."));
+            put_back(host, saved, Some(&LineMsg::error("CPD9BAA", &[])));
             After::Resume
         }
         Act::SignOff | Act::Gone => {
@@ -173,13 +174,14 @@ fn shown(host: &Host, bit: u8, f: fn(&Host) -> Act) -> After {
 }
 
 /// The screen back as it was, with a message on its message line.
-pub fn put_back(host: &Host, saved: Option<crate::display::Snapshot>, message: Option<&str>) {
+pub fn put_back(host: &Host, saved: Option<crate::display::Snapshot>, message: Option<&LineMsg>) {
+    let message = message.map(|m| crate::display::msgline::text_of(host, m));
     let mut d = host.display.borrow_mut();
     let Some(d) = d.as_mut() else {
         return;
     };
     if let Some(mut s) = saved {
-        if let Some(m) = message {
+        if let Some(m) = &message {
             s.message(m);
         }
         d.restore(s);
@@ -229,14 +231,10 @@ pub fn command(host: &Host, text: &str, mode: RunMode) -> Outcome {
 /// The message a command left: its escape, else the first line of its
 /// output when that starts with a message identifier.
 #[must_use]
-pub fn message_of(o: &Outcome) -> Option<String> {
-    let first = o.text.lines().find(|l| !l.trim().is_empty()).map(str::trim);
+pub fn message_of(host: &Host, o: &Outcome) -> Option<LineMsg> {
     if let Some(f) = &o.escape {
-        if !f.text.trim().is_empty() {
-            return Some(format!("{} {}", f.msgid, f.text.trim()));
-        }
-        return Some(first.map_or_else(|| f.msgid.clone(), str::to_string));
+        return Some(crate::display::msgline::of_fail(host, f));
     }
-    let line = first?;
-    crate::command::jobsite::leading_msgid(line).map(|_| line.to_string())
+    let line = o.text.lines().find(|l| !l.trim().is_empty())?;
+    crate::panels::said(line.trim())
 }

@@ -31,11 +31,11 @@ fn op(host: &Host, what: &str, args: &[&str]) -> Result<Vec<String>, Fail> {
 fn act(host: &Host, d: &mut UimDialog, what: &str, args: &[&str]) {
     match op(host, what, args) {
         Ok(lines) => {
-            if let Some(l) = lines.first() {
-                d.message = Some((l.clone(), false));
+            if let Some(m) = lines.first().and_then(|l| crate::panels::said(l)) {
+                d.send(m);
             }
         }
-        Err(f) => d.message = Some((f.text, true)),
+        Err(f) => d.send(crate::display::msgline::of_fail(host, &f)),
     }
 }
 
@@ -79,7 +79,7 @@ pub fn wrkprb(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
                 .map(|i| cell(d, "PRBS", i, "PRBID"))
                 .collect();
             if ids.is_empty() {
-                d.message = Some(("No problem is prepared for reporting.".into(), false));
+                d.error("CPD9BA2", &[]);
             }
             for id in ids {
                 act(host, d, "prb-report", &[&id]);
@@ -99,7 +99,7 @@ pub fn wrkprb(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
             "6" => exec(job, host, d, &format!("DSPPRB PRBID({id}) OUTPUT(*PRINT)")),
             "8" => work_with(host, surface, &id)?,
             "9" => {
-                d.message = Some(("Work with alerts is not available in this release.".into(), true));
+                d.error("CPD9B81", &[]);
             }
             "12" => note(host, surface, &id)?,
             _ => return Ok(no_more(d, &resp)),
@@ -140,7 +140,7 @@ fn work_with(host: &Host, surface: &mut Surface, id: &str) -> Result<(), Fail> {
             Response::Return(105) => act(host, &mut d, "prb-close", &[id]),
             Response::Exit | Response::Cancel | Response::Gone => return Ok(()),
             Response::Return(_) => {
-                d.message = Some(("Type an option number, press Enter.".into(), true));
+                d.error("CPD9B8E", &[]);
             }
             other => {
                 no_more(&mut d, &other);
@@ -161,7 +161,7 @@ fn note(host: &Host, surface: &mut Surface, id: &str) -> Result<(), Fail> {
                 let text = d.get("NEWNOTE").trim().to_string();
                 match op(host, "prb-note", &[id, &text]) {
                     Ok(_) => return Ok(()),
-                    Err(f) => d.message = Some((f.text, true)),
+                    Err(f) => d.send(crate::display::msgline::of_fail(host, &f)),
                 }
             }
             other => {
@@ -181,7 +181,7 @@ pub fn anzprb(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(n @ 201..=205) => n - 200,
             Response::Return(_) => {
-                d.message = Some(("Type an option number, press Enter.".into(), true));
+                d.error("CPD9B8E", &[]);
                 continue;
             }
             other => {
@@ -209,7 +209,7 @@ pub fn anzprb(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
                             let _ = show(&mut d, surface, "ANZPRB3")?;
                             return Ok(format!("Problem {id} created.\n"));
                         }
-                        Err(f) => d.message = Some((f.text, true)),
+                        Err(f) => d.send(crate::display::msgline::of_fail(host, &f)),
                     }
                 }
                 other => {
@@ -238,7 +238,7 @@ pub fn wrkcntinf(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<St
                 display(host, surface, &mut c, "DSPCNTINF", &mut reload)?;
             }
             Response::Return(_) => {
-                d.message = Some(("Type an option number, press Enter.".into(), true));
+                d.error("CPD9B8E", &[]);
             }
             other => {
                 no_more(&mut d, &other);
@@ -266,13 +266,12 @@ pub fn wrksrvpvd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         let cp = cell(d, "PVDS", c.row, "CPNAME");
         match c.option.trim() {
             "5" => {
-                let line = format!(
-                    "{cp}: network {}, connection {}, {}.",
+                let (net, cnn, text) = (
                     cell(d, "PVDS", c.row, "NETID"),
                     cell(d, "PVDS", c.row, "CNNTYPE"),
-                    cell(d, "PVDS", c.row, "PVDTEXT")
+                    cell(d, "PVDS", c.row, "PVDTEXT"),
                 );
-                d.message = Some((line, false));
+                d.info("CPI9BB8", &[&cp, &net, &cnn, &text]);
                 Ok(Step::Stay)
             }
             "9" => {

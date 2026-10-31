@@ -203,21 +203,11 @@ fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
 
 /// Run a command for a panel; its first line goes on the message line.
 fn exec(job: &mut Job, host: &Host, d: &mut UimDialog, text: &str) {
-    let text = text.trim();
-    if text.is_empty() {
+    if text.trim().is_empty() {
         return;
     }
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        let line = out
-            .text
-            .lines()
-            .map(str::trim)
-            .find(|l| !l.is_empty())
-            .map_or_else(|| format!("{} {}", f.msgid, f.text), str::to_string);
-        d.message = Some((line, true));
-    } else if let Some(l) = out.text.lines().map(str::trim).find(|l| !l.is_empty()) {
-        d.message = Some((l.to_string(), false));
+    if let Some(m) = crate::panels::exec(job, host, text.trim()) {
+        d.send(m);
     }
 }
 
@@ -257,14 +247,14 @@ fn work(
             }
             Response::Retrieve => {
                 if last.is_empty() {
-                    d.message = Some(("There is no command to retrieve.".into(), true));
+                    d.error("CPD9B85", &[]);
                 } else {
                     d.set(CMDLINE_VAR, &last);
                 }
                 Step::Stay
             }
             Response::Return(4) if d.get(CMDLINE_VAR).trim().is_empty() => {
-                d.message = Some(("Type a command to prompt on the command line.".into(), true));
+                d.error("CPD9B86", &[]);
                 Step::Stay
             }
             Response::Return(5) => Step::Reload,
@@ -313,19 +303,13 @@ fn no_more(d: &mut UimDialog, resp: &Response) -> Step {
     match resp {
         Response::Options(c) => {
             let opt = c.first().map_or("", |c| c.option.as_str());
-            d.message = Some((
-                format!("Option {opt} is not available in this release."),
-                true,
-            ));
+            d.error("CPD9B89", &[opt]);
         }
         Response::Return(n) => {
-            d.message = Some((format!("F{n} is not available in this release."), true));
+            d.error("CPD9B8A", &[&n.to_string()]);
         }
         _ => {
-            d.message = Some((
-                "That function is not available in this release.".into(),
-                true,
-            ));
+            d.error("CPD9B81", &[]);
         }
     }
     Step::Stay
@@ -354,10 +338,7 @@ fn display(
             | Response::Menu(_)
             | Response::Panel(_)
             | Response::Print => {
-                d.message = Some((
-                    "That function is not available in this release.".into(),
-                    true,
-                ));
+                d.error("CPD9B81", &[]);
             }
         }
     }

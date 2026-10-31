@@ -74,21 +74,11 @@ fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Respons
 /// Run a command as Command Entry would; its first line or its escape
 /// goes on the message line.
 fn exec(job: &mut Job, host: &Host, d: &mut UimDialog, text: &str) {
-    let text = text.trim();
-    if text.is_empty() {
+    if text.trim().is_empty() {
         return;
     }
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        let line = out
-            .text
-            .lines()
-            .map(str::trim)
-            .find(|l| !l.is_empty())
-            .map_or_else(|| format!("{} {}", f.msgid, f.text), str::to_string);
-        d.message = Some((line, true));
-    } else if let Some(l) = out.text.lines().map(str::trim).find(|l| !l.is_empty()) {
-        d.message = Some((l.to_string(), false));
+    if let Some(m) = crate::panels::exec(job, host, text.trim()) {
+        d.send(m);
     }
 }
 

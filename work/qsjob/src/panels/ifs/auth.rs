@@ -102,17 +102,17 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
             Response::Return(4) => {
                 let t = d.get(CMDLINE_VAR).trim().to_string();
                 if t.is_empty() {
-                    d.message = Some(("Type a command on the command line, then F4.".into(), true));
+                    d.error("CPD9B86", &[]);
                 } else {
                     d.set(CMDLINE_VAR, "");
                     exec(job, host, &mut d, &format!("?{}", t.trim_start_matches('?')));
                     reload = true;
                 }
             }
-            Response::Return(22) => d.message = Some((path.to_string(), false)),
+            Response::Return(22) => d.info("CPI9B89", &[path]),
             Response::Retrieve => {
                 if last.is_empty() {
-                    d.message = Some(("There is no command to retrieve.".into(), true));
+                    d.error("CPD9B85", &[]);
                 } else {
                     d.set(CMDLINE_VAR, &last);
                 }
@@ -137,7 +137,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
                             let l = d.list_mut(LIST);
                             l.options.insert(ch.row, o.to_string());
                             l.errors.insert(ch.row);
-                            d.message = Some((format!("Option {o} is not allowed on this entry."), true));
+                            d.error("CPD6A7C", &[]);
                             break;
                         }
                     };
@@ -145,12 +145,12 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
                     reload = true;
                 }
             }
-            _ => d.message = Some(("That function is not available here.".into(), true)),
+            _ => d.error("CPD9B81", &[]),
         }
         if reload
             && let Err(f) = load(host, &mut d, path, work)
         {
-            d.message = Some((f.text, true));
+            d.send(crate::display::msgline::of_fail(host, &f));
         }
     }
 }

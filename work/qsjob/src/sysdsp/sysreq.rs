@@ -21,6 +21,7 @@ use crate::command::RunMode;
 use crate::console::host::Host;
 use crate::display::dds;
 use crate::display::surface::Surface;
+use crate::display::uim::LineMsg;
 
 /// The menu's display file: the object, else the shipped source.
 fn file(host: &Host) -> Option<DisplayFile> {
@@ -83,7 +84,7 @@ pub enum Choice {
     /// Sign off.
     SignOff,
     /// Not on this menu: the message.
-    Refused(String),
+    Refused(LineMsg),
 }
 
 /// The option typed, as the menu shown takes it.
@@ -101,15 +102,13 @@ pub fn choice(typed: &str, shown: Shown) -> Choice {
         Ok(5) => Choice::Command("SNDMSG", RunMode::PromptRun),
         Ok(6) => Choice::Command("DSPMSG MSGQ(QSYSOPR)", RunMode::Run),
         Ok(7) => Choice::WsUser,
-        Ok(n @ (10 | 11)) => Choice::Refused(format!(
-            "Option {n} is not available: this system has no display station pass-through."
-        )),
+        Ok(n @ (10 | 11)) => Choice::Refused(LineMsg::error("CPD9BAC", &[&n.to_string()])),
         Ok(13) if shown.group => Choice::Group("*SELECT"),
         Ok(14) if shown.group => Choice::Group("*PRV"),
         Ok(15) if shown.secondary => Choice::Secondary,
         Ok(80) => Choice::Disconnect,
         Ok(90) => Choice::SignOff,
-        _ => Choice::Refused(format!("Option {t} is not valid.")),
+        _ => Choice::Refused(LineMsg::error("CPD9BAB", &[t])),
     }
 }
 
@@ -130,7 +129,7 @@ fn shown(host: &Host) -> Shown {
 /// The System Request menu until an option or a key leaves it.
 pub fn run(host: &Host) -> Act {
     let Some(df) = file(host) else {
-        return Act::Say("The System Request menu is not available.".into());
+        return Act::Say(LineMsg::error("CPF9801", &["QWSSYSRQ", "QSYS"]));
     };
     let mut surface = Surface::new(host.clone());
     let wide = surface.wide();
@@ -142,7 +141,7 @@ pub fn run(host: &Host) -> Act {
     let Some(rec) = rt.file().record(format).cloned() else {
         return Act::Back;
     };
-    let mut message: Option<String> = None;
+    let mut message: Option<LineMsg> = None;
     loop {
         let mut out = dds::out_buffer(&rec, &[("SYSNAME", &sysname)]);
         for (i, n) in rec.layout.output.indicators.iter().enumerate() {
@@ -152,8 +151,8 @@ pub fn run(host: &Host) -> Act {
         }
         let written = surface.with_model(|m| {
             let r = rt.write(m, &env, format, &out, &[]);
-            if let Some(text) = message.take() {
-                m.error_line(&text, attr::WHITE);
+            if let Some(msg) = message.take() {
+                m.error_line(&crate::display::msgline::text_of(host, &msg), attr::WHITE);
                 m.alarm();
             }
             r
@@ -188,7 +187,7 @@ pub fn run(host: &Host) -> Act {
             }
             a if matches!(aid::function_of(a), Some(3 | 12)) => return Act::Back,
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(LineMsg::error("CPD6A60", &[]));
                 continue;
             }
         }
@@ -201,7 +200,7 @@ pub fn run(host: &Host) -> Act {
             Choice::Secondary => return group::secondary(host),
             Choice::Group(which) => match group::transfer_to(host, which, "") {
                 Ok(act) => return act,
-                Err(m) => message = Some(m),
+                Err(m) => message = Some(crate::panels::line(&m)),
             },
             Choice::WsUser => return wsusr::show(host),
             Choice::Command(text, mode) => {
@@ -209,7 +208,7 @@ pub fn run(host: &Host) -> Act {
                 if keys::unwinding() {
                     return Act::Gone;
                 }
-                match keys::message_of(&o) {
+                match keys::message_of(host, &o) {
                     Some(m) if o.escape.is_some() => message = Some(m),
                     _ => return Act::Back,
                 }
@@ -229,7 +228,7 @@ mod tests {
         assert_eq!(choice(" 3", alone), Choice::Command("DSPJOB", RunMode::Run));
         assert_eq!(choice("90", alone), Choice::SignOff);
         assert!(matches!(choice("13", alone), Choice::Refused(_)));
-        assert!(matches!(choice("10", alone), Choice::Refused(m) if m.contains("pass-through")));
+        assert!(matches!(choice("10", alone), Choice::Refused(m) if m.id == "CPD9BAC"));
         let grp = Shown {
             group: true,
             secondary: false,

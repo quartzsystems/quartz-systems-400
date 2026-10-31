@@ -10,7 +10,7 @@ use cmd::Resolved;
 use mi::Job;
 
 use super::{
-    NO_PRINT, act, dashed, dialog, fetch, fill, list_of, parm, parm_list, qual, service_text,
+    act, dashed, dialog, fetch, fill, list_of, parm, parm_list, qual, service_text,
     set_vars, show, var_of,
 };
 use crate::command::Fail;
@@ -234,9 +234,9 @@ pub fn dsppgm(
                 d.set("CURSIG", &if chars { sig_chars(&sig) } else { sig });
             }
             Response::Return(4) => {
-                d.message = Some(("Type an option or press Enter.".into(), true));
+                d.error("CPD9B8E", &[]);
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => at += 1,
         }
     }
@@ -280,7 +280,7 @@ fn walk(surface: &mut Surface, d: &mut UimDialog, panels: &[(&str, &str)]) -> Re
                 }
                 i -= 1;
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Return(0) => i += 1,
             _ => {}
         }
@@ -309,7 +309,7 @@ fn until_left(surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<S
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(0) => {
                 return Ok(String::new());
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }

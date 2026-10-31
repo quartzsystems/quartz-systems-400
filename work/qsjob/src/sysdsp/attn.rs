@@ -20,7 +20,7 @@ use super::keys::{self, Act};
 use crate::command::{Fail, RunMode};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{Response, UimDialog};
+use crate::display::uim::{LineMsg, Response, UimDialog};
 
 thread_local! {
     /// `SETATNPGM`: the programs set, the last in force, each with
@@ -125,7 +125,7 @@ pub fn run(host: &Host) -> Act {
             if keys::unwinding() {
                 return Act::Gone;
             }
-            match keys::message_of(&o) {
+            match keys::message_of(host, &o) {
                 Some(m) if o.escape.is_some() => Act::Say(m),
                 _ => Act::Back,
             }
@@ -162,26 +162,26 @@ fn assist(host: &Host) -> Act {
     let system = crate::display::dds::system_name(host);
     let mut surface = Surface::new(host.clone());
     let mut stack = vec!["ASSIST".to_string()];
-    let mut message: Option<String> = None;
+    let mut message: Option<LineMsg> = None;
     while let Some(cur) = stack.last().cloned() {
         let Some(g) = menu_group(host, &cur) else {
             if stack.len() == 1 {
-                return Act::Say("The Operational Assistant menu ASSIST is not available.".into());
+                return Act::Say(LineMsg::error("CPF9801", &["ASSIST", "*LIBL"]));
             }
             stack.pop();
-            message = Some(format!("Menu {cur} not found."));
+            message = Some(LineMsg::error("CPF9801", &[&cur, "*LIBL"]));
             continue;
         };
         let mut d = UimDialog::new(g, &system);
         d.copyright = true;
         loop {
             if let Some(m) = message.take() {
-                d.message = Some((m, true));
+                d.send(m);
             }
             let r = match d.show(&mut surface, &cur) {
                 Ok(r) => r,
                 Err(e) => {
-                    message = Some(format!("Menu {cur}: {e}"));
+                    message = Some(crate::panels::line(&format!("menu {cur}: {e}")));
                     stack.pop();
                     break;
                 }
@@ -205,7 +205,7 @@ fn assist(host: &Host) -> Act {
                     if keys::unwinding() {
                         return Act::Gone;
                     }
-                    if let Some(m) = keys::message_of(&o) {
+                    if let Some(m) = keys::message_of(host, &o) {
                         message = Some(m);
                     }
                 }
@@ -291,7 +291,7 @@ pub fn cmdline(host: &Host) -> Act {
                     continue;
                 }
                 _ => {
-                    message = "Function key not allowed.".into();
+                    message = crate::display::msgline::text(host, "CPD6A60", &[]);
                     typed = line;
                     continue;
                 }
@@ -299,7 +299,7 @@ pub fn cmdline(host: &Host) -> Act {
         };
         if line.is_empty() {
             if mode == RunMode::PromptRun {
-                message = "Type a command to prompt.".into();
+                message = crate::display::msgline::text(host, "CPD9B86", &[]);
             }
             continue;
         }
@@ -309,7 +309,9 @@ pub fn cmdline(host: &Host) -> Act {
         if keys::unwinding() {
             return Act::Gone;
         }
-        message = keys::message_of(&o).unwrap_or_default();
+        message = keys::message_of(host, &o)
+            .map(|m| crate::display::msgline::text_of(host, &m))
+            .unwrap_or_default();
     }
 }
 

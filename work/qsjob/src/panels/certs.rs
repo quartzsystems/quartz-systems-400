@@ -14,7 +14,7 @@ use stg::proto::Sys2Data;
 use crate::command::{Fail, Outcome};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{CMDLINE_VAR, Choice, Response, UimDialog};
+use crate::display::uim::{CMDLINE_VAR, Choice, LineMsg, Response, UimDialog};
 
 /// The driver of a command, if it is one of these.
 pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out: &mut Outcome) -> Option<Result<String, Fail>> {
@@ -84,21 +84,8 @@ pub(super) fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
 }
 
 /// Run a command from a panel: the line to show after it.
-pub(super) fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        if f.msgid == "CPF6801" {
-            return None;
-        }
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        let line = if line.is_empty() { format!("{} ended with {}.", out.name, f.msgid) } else { line };
-        return Some((line, true));
-    }
-    out.text
-        .lines()
-        .map(str::trim)
-        .rfind(|l| !l.is_empty())
-        .map(|l| (l.to_string(), false))
+pub(super) fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
+    crate::panels::exec(job, host, text)
 }
 
 /// Run the options typed: a `CMD` action with the entry's values, else
@@ -114,7 +101,7 @@ pub(super) fn options(
         if let Some(uim::model::Action::Cmd(t)) = &c.action {
             let text = d.substitute(t, Some((&c.list, c.row)));
             if let Some(m) = exec(job, host, &text) {
-                d.message = Some(m);
+                d.send(m);
             }
         } else {
             special(job, d, c)?;
@@ -139,7 +126,7 @@ fn wrkcrt(job: &mut Job, host: &Host, surface: &mut Surface, store: &str, passwo
             Response::Options(choices) => {
                 let mut five = |_: &mut Job, d: &mut UimDialog, c: &Choice| -> Result<(), Fail> {
                     if c.option != "5" {
-                        d.message = Some((format!("Option {} is not valid here.", c.option), true));
+                        d.error("CPD6A7C", &[]);
                         return Ok(());
                     }
                     let label = cell(d, &c.list, c.row, "CRTLABEL");
@@ -151,15 +138,15 @@ fn wrkcrt(job: &mut Job, host: &Host, surface: &mut Surface, store: &str, passwo
             }
             Response::Return(6) => {
                 let ks = d.get("KEYSTORE").trim().to_string();
-                d.message = exec(job, host, &format!("?QSCRTCRT KEYSTORE('{ks}')"));
+                d.set_message(exec(job, host, &format!("?QSCRTCRT KEYSTORE('{ks}')")));
             }
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
-            Response::Print => d.message = Some(("Print is not available in this release.".into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Return(_) | Response::Menu(_) | Response::Panel(_) => {}
         }
     }
@@ -172,7 +159,7 @@ fn display(host: &Host, surface: &mut Surface, args: &[String]) -> Result<(), Fa
     fill(&mut d, &data);
     loop {
         match show(&mut d, surface, "DSPCRT")? {
-            Response::Print => d.message = Some(("Print is not available in this release.".into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Return(r) if r != 0 => {}
             _ => return Ok(()),
         }
@@ -192,20 +179,20 @@ fn wrkappid(job: &mut Job, host: &Host, surface: &mut Surface, which: &str) -> R
         match show(&mut d, surface, "WRKAPPID")? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(()),
             Response::Options(choices) => {
-                let mut none = |_: &mut Job, d: &mut UimDialog, c: &Choice| -> Result<(), Fail> {
-                    d.message = Some((format!("Option {} is not valid here.", c.option), true));
+                let mut none = |_: &mut Job, d: &mut UimDialog, _: &Choice| -> Result<(), Fail> {
+                    d.error("CPD6A7C", &[]);
                     Ok(())
                 };
                 options(job, host, &mut d, &choices, &mut none)?;
             }
-            Response::Return(6) => d.message = exec(job, host, "?QSADDAPPID"),
+            Response::Return(6) => d.set_message(exec(job, host, "?QSADDAPPID")),
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
-            Response::Print => d.message = Some(("Print is not available in this release.".into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Return(_) | Response::Menu(_) | Response::Panel(_) => {}
         }
     }

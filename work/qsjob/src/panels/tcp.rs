@@ -22,7 +22,7 @@ use stg::tcp::{PanelData, TcpOp, TcpReply};
 use crate::command::{Fail, Outcome};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{Choice, Response, UimDialog};
+use crate::display::uim::{Choice, LineMsg, Response, UimDialog};
 
 /// How a display was left.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -74,16 +74,24 @@ fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Respons
 }
 
 /// A panel's data from the service.
-fn fetch(host: &Host, what: &str, args: &[String]) -> Result<PanelData, (String, bool)> {
+fn fetch(host: &Host, what: &str, args: &[String]) -> Result<PanelData, LineMsg> {
     match host
         .link
         .borrow_mut()
         .with(|l| l.tcp(TcpOp::Panel { what: what.into(), args: args.to_vec() }))
     {
         TcpReply::Panel { data } => Ok(data),
-        TcpReply::Failed { note } => Err((note.text, true)),
-        _ => Err(("The storage service gave no panel data.".into(), true)),
+        TcpReply::Failed { note } => Err(note_msg(&note)),
+        other => Err(crate::panels::line(&format!("{what}: no panel data: {other:?}"))),
     }
+}
+
+/// A configuration note as a message line's message, in its wording.
+pub(super) fn note_msg(n: &tcpcfg::msg::Note) -> LineMsg {
+    let mut m = LineMsg::error(&n.msgid, &[]);
+    m.error = n.error;
+    m.text = Some(n.text.clone());
+    m
 }
 
 /// The data's variables and lists into the dialog, a list's page kept
@@ -132,25 +140,12 @@ fn exists(host: &Host, text: &str) -> bool {
 
 /// Run a command from a panel: the line to show after it, an error
 /// when it failed or does not exist here. A leading `?` prompts.
-fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
+fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
     if !exists(host, text) {
         let name = text.trim().trim_start_matches('?').split_whitespace().next().unwrap_or("").to_ascii_uppercase();
-        return Some((format!("{name} is not available in this release."), true));
+        return Some(LineMsg::error("CPD0030", &[&name, "*LIBL"]));
     }
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        if f.msgid == "CPF6801" {
-            return None;
-        }
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        let line = if line.is_empty() { format!("{} ended with {}.", out.name, f.msgid) } else { line };
-        return Some((line, true));
-    }
-    out.text
-        .lines()
-        .map(str::trim)
-        .rfind(|l| !l.is_empty())
-        .map(|l| (l.to_string(), false))
+    crate::panels::exec(job, host, text)
 }
 
 /// A `CMD` option's command with the entry's values.
@@ -168,5 +163,3 @@ fn may_change(host: &Host) -> bool {
     p.has(sec::profile::SpecialAuth::IOSYSCFG)
 }
 
-/// Print is not there yet.
-const NO_PRINT: &str = "Print is not available in this release.";

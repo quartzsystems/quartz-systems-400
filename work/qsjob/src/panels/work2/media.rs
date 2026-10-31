@@ -24,11 +24,11 @@ fn act(host: &Host, d: &mut UimDialog, what: &str, args: &[&str]) {
     let args: Vec<String> = args.iter().map(|a| (*a).to_string()).collect();
     match host.link.borrow_mut().with(|l| l.service_op(what.into(), args)).map_err(|e| refused(&e)) {
         Ok(lines) => {
-            if let Some(l) = lines.first() {
-                d.message = Some((l.clone(), false));
+            if let Some(m) = lines.first().and_then(|l| crate::panels::said(l)) {
+                d.send(m);
             }
         }
-        Err(f) => d.message = Some((f.text, true)),
+        Err(f) => d.send(crate::display::msgline::of_fail(host, &f)),
     }
 }
 
@@ -66,7 +66,7 @@ pub fn wrkimgclg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                         Ok(Step::Reload)
                     }
                     "2" => {
-                        d.message = Some(("Change the entries with option 12; the catalog itself has nothing to change here.".into(), true));
+                        d.error("CPD9B9F", &[]);
                         Ok(Step::Stay)
                     }
                     _ => Ok(no_more(d, &resp)),
@@ -143,7 +143,7 @@ pub fn wrkmlbsts(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         };
         // Drives are the indented rows.
         if !rsrc.starts_with(' ') {
-            d.message = Some(("Allocation is set on a drive resource, not on the library.".into(), true));
+            d.error("CPD9BA0", &[]);
             return Ok(Step::Stay);
         }
         act(host, d, "mlb-alloc", &[&lib, rsrc.trim(), alloc]);

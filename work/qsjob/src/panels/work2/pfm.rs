@@ -145,14 +145,14 @@ pub fn dsppfm(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(19) => {
                 if col == 0 {
-                    d.message = Some(("Already at the left edge.".into(), false));
+                    d.error("CPD9B8F", &[]);
                 } else {
                     col = col.saturating_sub(step(&mode));
                 }
             }
             Response::Return(20) => {
                 if col + step(&mode) >= reclen {
-                    d.message = Some(("The end of the record is shown.".into(), false));
+                    d.error("CPD9B90", &[]);
                 } else {
                     col += step(&mode);
                 }
@@ -178,7 +178,7 @@ pub fn dsppfm(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
                         .position(|r| r.text.contains(&what))
                     {
                         Some(i) => top = first_row(&mode, at + 1 + i),
-                        None => d.message = Some((format!("{what} was not found."), true)),
+                        None => d.error("CPD9B8C", &[&what]),
                     }
                 }
                 let last = shown.len().saturating_sub(1);
@@ -197,8 +197,7 @@ pub fn dsppfm(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
                     }
                     Control::Column(c) => {
                         if c > reclen.max(1) {
-                            d.message =
-                                Some((format!("The records are not {c} columns long."), true));
+                            d.error("CPD9B92", &[&c.to_string()]);
                         } else {
                             col = c - 1;
                         }
@@ -212,20 +211,16 @@ pub fn dsppfm(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
                     }
                     Control::Page(_) => {
                         d.set("CTL", &ctl);
-                        d.message =
-                            Some(("A member has no pages: type a record number.".into(), true));
+                        d.error("CPD9BA1", &[]);
                     }
                     Control::Bad(why) => {
                         d.set("CTL", &ctl);
-                        d.message = Some((why, true));
+                        d.error("CPD9B95", &[&why]);
                     }
                 }
             }
             _ => {
-                d.message = Some((
-                    "That function is not available in this release.".into(),
-                    true,
-                ));
+                d.error("CPD9B81", &[]);
             }
         }
     }

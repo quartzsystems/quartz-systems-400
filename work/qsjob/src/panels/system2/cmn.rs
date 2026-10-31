@@ -10,7 +10,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{NO_PRINT, act, dialog, exec, fill, parm, show};
+use super::{act, dialog, exec, fill, parm, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -62,23 +62,20 @@ pub fn wrklind(
                     (c.option == "9").then(String::new)
                 });
                 if c.iter().any(|c| c.option == "9") {
-                    d.message = Some((
-                        "Retrieving configuration source is not available in this release.".into(),
-                        true,
-                    ));
+                    d.error("CPD9B81", &[]);
                 }
             }
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
-            Response::Return(6) => d.message = exec(job, host, "?CRTLINETH"),
+            Response::Return(6) => d.set_message(exec(job, host, "?CRTLINETH")),
             Response::Return(11) => d.view = 1 - d.view.min(1),
-            Response::Return(14) => d.message = exec(job, host, "WRKCFGSTS CFGTYPE(*LIN)"),
+            Response::Return(14) => d.set_message(exec(job, host, "WRKCFGSTS CFGTYPE(*LIN)")),
             Response::Return(4) => {
-                d.message = Some(("Type a command to prompt on the command line.".into(), true));
+                d.error("CPD9B86", &[]);
             }
             Response::Return(_) => {
                 let pos = d.get("POSTO").trim().to_ascii_uppercase();
@@ -92,7 +89,7 @@ pub fn wrklind(
                     d.set("POSTO", "");
                 }
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Menu(_) | Response::Panel(_) => {}
         }
     }
@@ -129,7 +126,7 @@ pub fn dsplind(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Resul
         d.set("*DATETIME", &crate::panels::work::stamp(host));
         match show(&mut d, surface, panel) {
             Ok(Response::Return(11)) => keywords = !keywords,
-            Ok(Response::Print) => d.message = Some((NO_PRINT.into(), true)),
+            Ok(Response::Print) => d.error("CPD9B84", &[]),
             Ok(_) => return Some(Ok(String::new())),
             Err(e) => return Some(Err(e)),
         }

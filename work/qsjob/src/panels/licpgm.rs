@@ -76,7 +76,7 @@ fn installed(host: &Host, surface: &mut Surface) -> Result<(), Fail> {
     loop {
         match show(&mut d, surface, panel)? {
             Response::Return(11) => panel = if panel == "LICPGM10" { "LICPGM10R" } else { "LICPGM10" },
-            Response::Return(19) => d.message = Some(("This system shows no trademarks.".into(), false)),
+            Response::Return(19) => d.info("CPI9B83", &[]),
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(()),
             _ => {}
         }
@@ -90,8 +90,8 @@ fn select(job: &mut Job, host: &Host, surface: &mut Surface, panel: &str) -> Res
         fill(&mut d, "PROGRAMS", &rows(host, "INSTALLED", &[])?, &["LPID", "LPOPT", "STATUS", "LPTEXT", "LPRLS"]);
         match show(&mut d, surface, panel)? {
             Response::Options(choices) => {
-                let mut none = |_: &mut Job, d: &mut UimDialog, c: &Choice| -> Result<(), Fail> {
-                    d.message = Some((format!("Option {} is not valid here.", c.option), true));
+                let mut none = |_: &mut Job, d: &mut UimDialog, _: &Choice| -> Result<(), Fail> {
+                    d.error("CPD6A7C", &[]);
                     Ok(())
                 };
                 options(job, host, &mut d, &choices, &mut none)?;
@@ -118,7 +118,7 @@ fn install_options(host: &Host, surface: &mut Surface) -> Result<Option<(String,
                     "2" => "*PGM",
                     "3" => "*LNG",
                     _ => {
-                        d.message = Some(("Type 1, 2 or 3 for the objects to install.".into(), true));
+                        d.error("CPD9B98", &[]);
                         continue;
                     }
                 };
@@ -127,10 +127,7 @@ fn install_options(host: &Host, surface: &mut Surface) -> Result<Option<(String,
                     && (1..=10).contains(&dev.len())
                     && dev.bytes().all(|b| b.is_ascii_alphanumeric());
                 if dev.is_empty() || !(dev.contains('/') || device) {
-                    d.message = Some((
-                        "Type the install device, or the save file that holds the products as LIBRARY/FILE.".into(),
-                        true,
-                    ));
+                    d.error("CPD9B99", &[]);
                     continue;
                 }
                 return Ok(Some((dev, objs)));
@@ -233,8 +230,9 @@ fn install(job: &mut Job, host: &Host, surface: &mut Surface, all: bool) -> Resu
             format!("DEV({savf})")
         };
         let cmd = format!("RSTLICPGM LICPGM({p}) OPTION({o}) {from} RSTOBJ({objs})");
-        if let Some((m, true)) = exec(job, host, &cmd) {
-            return Err(Fail::new("CPF3D94", m));
+        if let Some(m) = exec(job, host, &cmd).filter(|m| m.error) {
+            let text = crate::display::msgline::text_of(host, &m);
+            return Err(Fail::new("CPF3D94", text));
         }
     }
     Ok(())
@@ -255,7 +253,7 @@ fn languages(host: &Host, surface: &mut Surface, option: &str) -> Result<(), Fai
     };
     loop {
         match show(&mut d, surface, panel)? {
-            Response::Options(_) => d.message = Some(("No secondary language is available.".into(), true)),
+            Response::Options(_) => d.error("CPD9B9A", &[]),
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(()),
             _ => {}
         }
@@ -299,8 +297,8 @@ fn licenses(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<(), Fai
         fill(&mut d, "LICS", &data, &["LPID", "LICTRM", "LICFTR", "LICCMP", "LICLMT", "LICCNT"]);
         match show(&mut d, surface, "WRKLICINF")? {
             Response::Options(choices) => {
-                let mut none = |_: &mut Job, d: &mut UimDialog, c: &Choice| -> Result<(), Fail> {
-                    d.message = Some((format!("Option {} is not valid here.", c.option), true));
+                let mut none = |_: &mut Job, d: &mut UimDialog, _: &Choice| -> Result<(), Fail> {
+                    d.error("CPD6A7C", &[]);
                     Ok(())
                 };
                 options(job, host, &mut d, &choices, &mut none)?;

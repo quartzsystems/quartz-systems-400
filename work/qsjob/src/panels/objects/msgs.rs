@@ -97,7 +97,7 @@ pub fn info_lines(host: &Host, m: &QMsg, details: bool) -> Vec<String> {
 
 /// Additional Message Information for `m`, a reply taken for an
 /// inquiry waiting for one; false when F3 asked to leave everything.
-pub(super) fn info(
+pub(crate) fn info(
     host: &Host,
     surface: &mut Surface,
     d: &mut UimDialog,
@@ -137,13 +137,10 @@ pub(super) fn info(
             Response::Cancel => return Ok(true),
             Response::Return(9) => details = !details,
             Response::Return(21) => {
-                d.message = Some((
-                    "Choose the assistance level from the message list (F21 there).".into(),
-                    false,
-                ));
+                d.info("CPI9B85", &[]);
             }
             Response::Print => {
-                d.message = Some(("Printing is not available in this release.".into(), true));
+                d.error("CPD9B84", &[]);
             }
             Response::Return(_) => {
                 let reply = d.get("REPLY").trim().to_string();
@@ -151,10 +148,7 @@ pub(super) fn info(
                     return Ok(true);
                 }
                 if reply.is_empty() {
-                    d.message = Some((
-                        "Type a reply, or press F12 to leave it waiting.".into(),
-                        true,
-                    ));
+                    d.error("CPD9B94", &[]);
                     continue;
                 }
                 match host
@@ -164,12 +158,12 @@ pub(super) fn info(
                 {
                     Ok(_) => {
                         // The message stays up, answered.
-                        d.message = Some(("The reply was sent.".into(), false));
+                        d.info("CPI9B84", &[]);
                         waiting = false;
                         answered = true;
                         d.set("REPLY", &reply);
                     }
-                    Err(e) => d.message = Some((crate::panels::line(&e), true)),
+                    Err(e) => d.send(crate::panels::line(&e)),
                 }
             }
             _ => {}
@@ -487,10 +481,7 @@ pub fn dsplog(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
                 let at =
                     at_cursor(&mut d, "LOG", LOG_ROW, LOG_ROWS).and_then(|i| owner.get(i).copied());
                 let Some(e) = at.and_then(|i| entries.get(i)) else {
-                    d.message = Some((
-                        "Place the cursor on a message to see all of it.".into(),
-                        true,
-                    ));
+                    d.error("CPD9B93", &[]);
                     continue;
                 };
                 let m = QMsg {

@@ -15,7 +15,7 @@ use super::{command, display, parm};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{CMDLINE_VAR, Response, UimDialog};
+use crate::display::uim::{CMDLINE_VAR, LineMsg, Response, UimDialog};
 
 /// A list entry's value.
 fn cell(d: &UimDialog, row: usize, var: &str) -> String {
@@ -28,7 +28,7 @@ fn cell(d: &UimDialog, row: usize, var: &str) -> String {
 
 /// What an option that is not a command does with an entry: the
 /// command to run, or the message to show.
-fn special(d: &UimDialog, row: usize, option: &str) -> Result<String, String> {
+fn special(d: &UimDialog, row: usize, option: &str) -> Result<String, LineMsg> {
     let name = cell(d, row, "CFOBJ");
     let ty = cell(d, row, "CFTYPE");
     match option {
@@ -37,18 +37,16 @@ fn special(d: &UimDialog, row: usize, option: &str) -> Result<String, String> {
             let words: Vec<&str> = job.split_whitespace().collect();
             match words.as_slice() {
                 [jobname, user, number] => Ok(format!("WRKJOB JOB({number}/{user}/{jobname})")),
-                _ => Err(format!("No job is using {name}.")),
+                _ => Err(LineMsg::error("CPD9BA8", &[&name])),
             }
         }
         "8" => match ty.as_str() {
             "*LIN" => Ok(format!("WRKLIND LIND({name})")),
             "*DEV" => Ok(format!("WRKDEVD DEVD({name})")),
-            _ => Err(format!(
-                "Controller {name} has no description display in this release."
-            )),
+            _ => Err(LineMsg::error("CPD9B88", &[option, &name])),
         },
-        "9" | "13" => Err(format!("{name} has no modes or APPN status.")),
-        o => Err(format!("Option {o} is not valid.")),
+        "9" | "13" => Err(LineMsg::error("CPD9B88", &[option, &name])),
+        _ => Err(LineMsg::error("CPD6A7C", &[])),
     }
 }
 
@@ -119,10 +117,10 @@ pub fn wrkcfgsts(
                             }
                             _ => special(&d, c.row, c.option.trim()),
                         };
-                        d.message = match text {
+                        d.set_message(match text {
                             Ok(t) => command(job, host, &t),
-                            Err(m) => Some((m, true)),
-                        };
+                            Err(m) => Some(m),
+                        });
                     }
                     d.list_mut("CFGS").options.clear();
                     break;
@@ -130,7 +128,7 @@ pub fn wrkcfgsts(
                 Response::Command(text) => {
                     last = text.trim_start_matches('?').to_string();
                     let text = d.substitute(&text, None);
-                    d.message = command(job, host, &text);
+                    d.set_message(command(job, host, &text));
                     d.set(CMDLINE_VAR, "");
                     break;
                 }
@@ -141,16 +139,14 @@ pub fn wrkcfgsts(
                     d.set("KEYSET", next);
                 }
                 Response::Return(23) => {
-                    d.message =
-                        Some(("There are no more options for these objects.".into(), false));
+                    d.error("CPD9B9B", &[]);
                 }
                 Response::Return(14) => {
-                    d.message = command(job, host, "WRKLIND");
+                    d.set_message(command(job, host, "WRKLIND"));
                     break;
                 }
                 Response::Return(4) => {
-                    d.message =
-                        Some(("Type a command to prompt on the command line.".into(), true));
+                    d.error("CPD9B86", &[]);
                 }
                 Response::Return(_) => {
                     // Enter, F5: position the list and look again.
@@ -163,7 +159,7 @@ pub fn wrkcfgsts(
                     break;
                 }
                 Response::Print => {
-                    d.message = Some(("Print is not available in this release.".into(), true));
+                    d.error("CPD9B84", &[]);
                 }
             }
         }

@@ -9,7 +9,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{NO_PRINT, act, dialog, exec, fetch, fill, load, qual, show};
+use super::{act, dialog, exec, fetch, fill, load, qual, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -22,7 +22,7 @@ pub fn dspipla(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
         load(&mut d, fetch(host, "IPLA", &[])?);
         match show(&mut d, surface, "DSPIPLA")? {
             Response::Return(5) => {}
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => return Ok(String::new()),
         }
     }
@@ -74,24 +74,20 @@ pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Options(choices) => {
                 act(job, host, &mut d, &choices, &mut |d, c| {
-                    d.message = Some(if c.option.trim() == "6" {
-                        (NO_PRINT.into(), true)
-                    } else {
-                        (format!("Option {} is not valid here.", c.option.trim()), true)
-                    });
+                    d.error(if c.option.trim() == "6" { "CPD9B84" } else { "CPD6A7C" }, &[]);
                     Ok(())
                 })?;
             }
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
             Response::Return(6) => {
-                d.message = exec(job, host, &format!("?ADDMSGD MSGF({real}/{msgf})"));
+                d.set_message(exec(job, host, &format!("?ADDMSGD MSGF({real}/{msgf})")));
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
@@ -129,7 +125,7 @@ pub fn wrkrdbdire(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolve
             Response::Options(choices) => {
                 act(job, host, &mut d, &choices, &mut |d, c| {
                     if c.option.trim() == "6" {
-                        d.message = Some((NO_PRINT.into(), true));
+                        d.error("CPD9B84", &[]);
                         return Ok(());
                     }
                     let name = d
@@ -149,9 +145,9 @@ pub fn wrkrdbdire(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolve
                     Ok(())
                 })?;
             }
-            Response::Print | Response::Return(6) => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print | Response::Return(6) => d.error("CPD9B84", &[]),
             Response::Return(22) => {
-                d.message = Some(("Every field shows whole in this release.".into(), false));
+                d.info("CPI9B81", &[]);
             }
             _ => {}
         }

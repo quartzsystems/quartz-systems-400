@@ -116,13 +116,10 @@ pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
     loop {
         match d.show(surface, "DSPAUTUSR") {
             Ok(Response::Return(11)) => {
-                d.message = Some((
-                    "Every profile here keeps one password, for every password level.".into(),
-                    false,
-                ));
+                d.info("CPI9B82", &[]);
             }
             Ok(Response::Print) => {
-                d.message = Some(("Print is not available in this release.".into(), true));
+                d.error("CPD9B84", &[]);
             }
             Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
             Ok(_) => return Some(Ok(String::new())),

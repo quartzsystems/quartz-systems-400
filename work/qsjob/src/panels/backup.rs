@@ -71,7 +71,7 @@ fn dspbckup(job: &mut Job, host: &Host, surface: &mut Surface, which: &str) -> R
     loop {
         match show(&mut d, surface, panel)? {
             Response::Return(16 | 17) => {
-                d.message = Some(("Every user library and folder is in the backup list.".into(), false));
+                d.info("CPI9B86", &[]);
             }
             Response::Return(_) | Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             _ => {}
@@ -161,7 +161,7 @@ fn defaults(job: &mut Job, host: &Host) -> Result<Option<Defaults>, Fail> {
                 let typed: BTreeMap<String, String> = kept.fields().iter().map(|(k, _)| ((*k).to_string(), d.get(k).clone())).collect();
                 match Defaults::from_fields(|k| typed.get(k).cloned().unwrap_or_default()) {
                     Ok(v) => return Ok(Some(v)),
-                    Err(gosave::Bad(f, v)) => d.message = Some((format!("Value '{v}' for {f} is not valid."), true)),
+                    Err(gosave::Bad(f, v)) => d.error("CPD9B8D", &[f, &v]),
                 }
             }
             Response::Exit | Response::Cancel | Response::Gone => return Ok(None),

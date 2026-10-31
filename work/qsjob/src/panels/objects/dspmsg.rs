@@ -453,7 +453,7 @@ fn one_queue(
                     }
                 }
                 match failed {
-                    Some(e) => d.message = Some((e, true)),
+                    Some(e) => d.send(crate::panels::line(&e)),
                     None => return Ok(End::Onward),
                 }
             }
@@ -464,14 +464,14 @@ fn one_queue(
                     }
                 }
                 None => {
-                    d.message = Some(("Place the cursor on a message to see all of it.".into(), true));
+                    d.error("CPD9B93", &[]);
                 }
             },
             Response::Return(10) => all = true,
             Response::Return(11) => match under(d) {
                 Some(i) => remove(host, queue, &[msgs[i].key]),
                 None => {
-                    d.message = Some(("Place the cursor on the message to remove.".into(), true));
+                    d.error("CPD9B93", &[]);
                 }
             },
             Response::Return(13) => {
@@ -488,7 +488,7 @@ fn one_queue(
             }
             Response::Return(21) => return Ok(End::Switch),
             Response::Return(22) => {
-                d.message = Some(("Each message shows whole: there are no more details to add.".into(), false));
+                d.info("CPI9B81", &[]);
             }
             Response::Return(24) => next_set(d),
             _ => {}
@@ -566,7 +566,7 @@ fn basic(
                         "5" => {
                             info(host, surface, d, queue, m)?;
                         }
-                        o => d.message = Some((format!("Option {o} is not valid here."), true)),
+                        _ => d.error("CPD6A7C", &[]),
                     }
                 }
                 for c in &choices {
@@ -587,7 +587,7 @@ fn basic(
             }
             Response::Return(21) => return Ok(End::Switch),
             Response::Return(22) => {
-                d.message = Some(("Each message shows whole: there are no more details to add.".into(), false));
+                d.info("CPI9B81", &[]);
             }
             Response::Return(24) => next_set(d),
             _ => {}

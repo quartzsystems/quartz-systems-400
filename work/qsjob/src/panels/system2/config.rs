@@ -8,7 +8,7 @@
 use cmd::Resolved;
 use mi::Job;
 
-use super::{NO_PRINT, act, dialog, exec, fetch, fill, list_of, parm, show};
+use super::{act, dialog, exec, fetch, fill, list_of, parm, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -62,21 +62,18 @@ pub fn wrkdevd(
                     (c.option == "9").then(String::new)
                 });
                 if c.iter().any(|c| c.option == "9") {
-                    d.message = Some((
-                        "Retrieving configuration source is not available in this release.".into(),
-                        true,
-                    ));
+                    d.error("CPD9B81", &[]);
                 }
             }
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
-            Response::Return(6) => d.message = exec(job, host, "?CRTDEVDSP"),
-            Response::Return(14) => d.message = exec(job, host, "WRKCFGSTS CFGTYPE(*DEV)"),
+            Response::Return(6) => d.set_message(exec(job, host, "?CRTDEVDSP")),
+            Response::Return(14) => d.set_message(exec(job, host, "WRKCFGSTS CFGTYPE(*DEV)")),
             Response::Return(4) => {
-                d.message = Some(("Type a command to prompt on the command line.".into(), true));
+                d.error("CPD9B86", &[]);
             }
             Response::Return(_) => {
                 // Enter: position the list; F5 and Enter both look again.
@@ -94,7 +91,7 @@ pub fn wrkdevd(
                     d.set("POSTO", "");
                 }
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Menu(_) | Response::Panel(_) => {}
         }
     }

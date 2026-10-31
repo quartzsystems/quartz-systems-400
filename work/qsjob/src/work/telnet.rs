@@ -316,6 +316,19 @@ fn own_link(start: &Start) -> Option<Link> {
     Some(l)
 }
 
+/// A message's text for the sign-on display, from its message file
+/// over the link (there is no job yet).
+fn say(link: &mut Link, m: &uim::engine::LineMsg) -> String {
+    if let Some(t) = &m.text {
+        return t.clone();
+    }
+    let file = sysapi::param::file_of(&m.id);
+    link.describe(m.id.clone(), file.into(), "*LIBL".into())
+        .ok()
+        .flatten()
+        .map_or_else(|| m.fallback(), |d| d.format(&d.data_of(&m.data)))
+}
+
 /// Run the server job. Never returns.
 pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let a = attrs(link);
@@ -1117,7 +1130,7 @@ fn serve_device(
             Ok(Outcome::ConnectionGone) => return Ok(()),
             Err(e) => {
                 eprintln!("qsjob: QTVDEVICE: {peer}: {e}");
-                message = e;
+                message = say(link, &crate::panels::line(&e));
             }
         }
     }
@@ -1256,7 +1269,7 @@ fn sign_on_display(
         let user = v.first().map_or("", |s| s.trim()).to_ascii_uppercase();
         let password = v.get(1).map_or("", |s| s.trim()).to_string();
         if user.is_empty() {
-            message = "Type a user profile name.".into();
+            message = say(link, &uim::engine::LineMsg::error("CPD9BB7", &[]));
             continue;
         }
         let checked = link

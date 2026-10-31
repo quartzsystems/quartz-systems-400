@@ -79,7 +79,7 @@ pub fn transfer_to(host: &Host, which: &str, program: &str) -> Result<Act, Strin
         "*SELECT" => {
             let others: Vec<_> = members.into_iter().filter(|m| m.0 != me).collect();
             if others.is_empty() {
-                return Err("No other job is in the group.".into());
+                return Err("CPD9BAD".into());
             }
             match select(host, &me, &others) {
                 Some(n) => Ok(hand_over(host, &FromJob::GroupTransfer { job: n })),
@@ -129,7 +129,7 @@ fn select(host: &Host, me: &str, others: &[(String, u32, String)]) -> Option<u32
                 if let Some(pick) = c.iter().find(|c| c.option == "1") {
                     return others.get(pick.row).map(|o| o.1);
                 }
-                d.message = Some(("Type 1 next to the job to transfer to.".into(), true));
+                d.error("CPD9BA5", &[]);
             }
             Response::Return(_) => {}
             _ => return None,

@@ -14,7 +14,7 @@
 mod dspmsg;
 mod files;
 mod libs;
-mod msgs;
+pub(crate) mod msgs;
 
 use cmd::{Resolved, Value};
 use mi::Job;
@@ -23,7 +23,7 @@ use stg::Client;
 use crate::command::{Fail, Outcome};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{CMDLINE_VAR, Choice, Response, UimDialog};
+use crate::display::uim::{CMDLINE_VAR, Choice, LineMsg, Response, UimDialog};
 use uim::model::Action;
 
 /// The driver of a message or object command, if it has one.
@@ -102,24 +102,8 @@ fn user(host: &Host) -> String {
 
 /// Run a command from a panel: the line to show after it, an error
 /// when it failed. A leading `?` prompts it.
-fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        let line = if line.is_empty() {
-            format!("{} ended with {}.", out.name, f.msgid)
-        } else {
-            line
-        };
-        return Some((line, true));
-    }
-    let first = out
-        .text
-        .lines()
-        .find(|l| !l.trim().is_empty())?
-        .trim()
-        .to_string();
-    Some((first, false))
+fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
+    crate::panels::exec(job, host, text)
 }
 
 /// The options typed on a list, run in order: a `CMD` action with the
@@ -137,11 +121,11 @@ fn act(
         } else if let Some(t) = special(d, c) {
             t
         } else {
-            d.message = Some((format!("Option {} is not valid here.", c.option), true));
+            d.error("CPD6A7C", &[]);
             continue;
         };
         if let Some(m) = exec(job, host, &text) {
-            d.message = Some(m);
+            d.send(m);
         }
     }
     for c in choices {
@@ -163,20 +147,20 @@ fn common(
             let typed = text.trim_start_matches('?').to_string();
             *last = typed;
             if let Some(m) = exec(job, host, &text) {
-                d.message = Some(m);
+                d.send(m);
             }
             None
         }
         Response::Retrieve => {
             if last.is_empty() {
-                d.message = Some(("There is no command to retrieve.".into(), true));
+                d.error("CPD9B85", &[]);
             } else {
                 d.set(CMDLINE_VAR, last);
             }
             None
         }
         Response::Return(4) => {
-            d.message = Some(("Type a command to prompt on the command line.".into(), true));
+            d.error("CPD9B86", &[]);
             None
         }
         other => Some(other),

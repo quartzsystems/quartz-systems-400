@@ -199,10 +199,7 @@ pub fn wrkobj(
                     d.set(CMDLINE_VAR, "");
                 }
                 if position.is_empty() {
-                    d.message = Some((
-                        "Type a name on the command line, then press F17.".into(),
-                        true,
-                    ));
+                    d.error("CPD9B87", &[]);
                     continue;
                 }
                 let l = d.list_mut("OBJS");
@@ -212,7 +209,7 @@ pub fn wrkobj(
                 });
                 match at {
                     Some(i) => l.top = i,
-                    None => d.message = Some((format!("No object at or after {position}."), true)),
+                    None => d.error("CPD9B80", &[&position]),
                 }
             }
             _ => {}

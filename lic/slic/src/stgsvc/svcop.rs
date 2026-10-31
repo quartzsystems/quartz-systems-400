@@ -32,33 +32,31 @@ pub fn run(system: &mut System, me: &JobInfo, op: &str, args: &[String]) -> Resu
         "prb-analyze" => analyze(system, args),
         "prb-ready" => change(system, arg(args, 0), |l, id, now| {
             l.analyzed(id, now);
-            Ok(format!("Problem {id} is ready to report."))
+            Ok(format!("CPI9BB0\t{id}"))
         }),
         "prb-close" => change(system, arg(args, 0), |l, id, now| {
             let p = l.get_mut(id).expect("there");
             p.status = PrbStatus::Closed;
             p.changed = now;
-            Ok(format!("Problem {id} closed."))
+            Ok(format!("CPI9BB1\t{id}"))
         }),
         "prb-note" => {
             let text = arg(args, 1).to_string();
             change(system, arg(args, 0), move |l, id, now| {
                 if text.is_empty() {
-                    return Err("Type the text of the note.".into());
+                    return Err("CPD9BB0".into());
                 }
                 let p = l.get_mut(id).expect("there");
                 p.notes.push(text);
                 p.changed = now;
-                Ok(format!("Note added to problem {id}."))
+                Ok(format!("CPI9BB2\t{id}"))
             })
         }
         "prb-report" => {
             let id = arg(args, 0).to_string();
             Ok(vec![match prblog::report(system, &id)? {
-                Reported::Sent(r) => format!("Problem {id} sent to the service provider: {r}."),
-                Reported::Kept(why) => {
-                    format!("Problem {id} prepared; the report is kept: {why}.")
-                }
+                Reported::Sent(r) => format!("CPI9BB3\t{id}\t{r}"),
+                Reported::Kept(why) => format!("CPI9BB4\t{id}\t{why}"),
             }])
         }
         "prb-dump" => {
@@ -85,7 +83,7 @@ fn analyze(system: &mut System, args: &[String]) -> Result<Vec<String>, String> 
         .parse()
         .ok()
         .and_then(Area::from_choice)
-        .ok_or("Select one of the areas, 1 to 5.")?;
+        .ok_or("CPD9BB1")?;
     let a = Answers {
         area,
         msgid: arg(args, 1).to_ascii_uppercase(),
@@ -94,7 +92,7 @@ fn analyze(system: &mut System, args: &[String]) -> Result<Vec<String>, String> 
         description: arg(args, 4).to_string(),
     };
     if a.description.is_empty() {
-        return Err("Describe the problem in a few words.".into());
+        return Err("CPD9BB2".into());
     }
     let d = prb::analyze::guided(&a);
     let id = prblog::log(system, PrbType::User, &d)?;

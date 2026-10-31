@@ -28,7 +28,7 @@ use stg::Client;
 use crate::command::{Fail, Outcome};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{Choice, Response, UimDialog};
+use crate::display::uim::{Choice, LineMsg, Response, UimDialog};
 use uim::model::Action;
 
 /// The driver of a command of the batch, if it has one.
@@ -192,25 +192,8 @@ fn dashed(name: &str, width: usize) -> String {
 
 /// Run a command from a panel: the line to show after it, an error
 /// when it failed. A leading `?` prompts it.
-fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        if f.msgid == "CPF6801" {
-            return None;
-        }
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        let line = if line.is_empty() {
-            format!("{} ended with {}.", out.name, f.msgid)
-        } else {
-            line
-        };
-        return Some((line, true));
-    }
-    out.text
-        .lines()
-        .map(str::trim)
-        .find(|l| !l.is_empty())
-        .map(|l| (l.to_string(), false))
+fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
+    crate::panels::exec(job, host, text)
 }
 
 /// The options typed on a list, run in order: a `CMD` action with the
@@ -228,11 +211,11 @@ fn act(
         } else if let Some(t) = special(d, c) {
             t
         } else {
-            d.message = Some((format!("Option {} is not valid here.", c.option), true));
+            d.error("CPD6A7C", &[]);
             continue;
         };
         if let Some(m) = exec(job, host, &text) {
-            d.message = Some(m);
+            d.send(m);
         }
     }
     for c in choices {
@@ -251,5 +234,3 @@ fn service_text(host: &Host, line: &str) -> Result<String, Fail> {
     Ok(text)
 }
 
-/// Print is not there yet.
-const NO_PRINT: &str = "Print is not available in this release.";

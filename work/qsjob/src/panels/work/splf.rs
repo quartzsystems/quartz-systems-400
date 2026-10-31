@@ -58,13 +58,13 @@ pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         loop {
             let flow = match d.show(surface, "WRKSPLF").map_err(|e| render_fail(&e))? {
                 Response::Options(choices) => {
-                    for (n, c) in run_options(job, host, &mut d, &mut history, &choices) {
-                        d.message = Some((format!("Option {} ({n}) is not available yet.", c.option), true));
+                    for (_, c) in run_options(job, host, &mut d, &mut history, &choices) {
+                        d.error("CPD9B89", &[c.option.trim()]);
                     }
                     Flow::Refresh
                 }
                 Response::Return(10 | 11) => {
-                    d.message = Some(("That view is not available in this release.".into(), true));
+                    d.error("CPD9B8B", &[]);
                     Flow::Stay
                 }
                 other => common(job, host, &mut d, &mut history, other),

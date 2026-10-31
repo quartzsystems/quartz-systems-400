@@ -26,7 +26,7 @@ pub fn wrksbs(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Strin
         loop {
             let flow = match d.show(surface, "WRKSBS").map_err(|e| render_fail(&e))? {
                 Response::Return(11) => {
-                    d.message = Some(("That view is not available in this release.".into(), true));
+                    d.error("CPD9B8B", &[]);
                     Flow::Stay
                 }
                 other => common(job, host, &mut d, &mut history, other),
@@ -296,7 +296,7 @@ fn entries(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog,
         8 => "CMNES",
         10 => "PJES",
         _ => {
-            d.message = Some((format!("Option {n} is not available in this release."), true));
+            d.error("CPD9B89", &[&n.to_string()]);
             return Ok(Left::Back);
         }
     };
@@ -309,7 +309,7 @@ fn entries(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog,
             Response::Options(_) | Response::Return(9) => {
                 d.list_mut("WSES").options.clear();
                 d.list_mut("RTGES").options.clear();
-                d.message = Some(("The detailed descriptions are not available in this release.".into(), true));
+                d.error("CPD9B81", &[]);
             }
             other => {
                 if let Flow::Leave = common(job, host, d, &mut history, other) {

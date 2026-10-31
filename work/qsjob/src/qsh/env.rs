@@ -286,18 +286,16 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
                         ("2", Some(v)) => Some(format!("?CHGENVVAR ENVVAR('{}') LEVEL({})", q(&v.name), level(sys))),
                         ("4", Some(v)) => Some(format!("RMVENVVAR ENVVAR('{}') LEVEL({})", q(&v.name), level(sys))),
                         ("5", Some(v)) => {
-                            shown = Some((
-                                format!("{}={} (CCSID {})", v.name, v.value.as_deref().unwrap_or("*NULL"), v.ccsid),
-                                false,
-                            ));
+                            let value = v.value.as_deref().unwrap_or("*NULL");
+                            shown = Some(uim::engine::LineMsg::info("CPI9BBA", &[&v.name, value, &v.ccsid.to_string()]));
                             None
                         }
                         ("6", Some(_)) => {
-                            shown = Some(("Printing is not available in this release.".into(), true));
+                            shown = Some(uim::engine::LineMsg::error("CPD9B84", &[]));
                             None
                         }
-                        (o, _) => {
-                            shown = Some((format!("Option {o} is not valid here."), true));
+                        _ => {
+                            shown = Some(uim::engine::LineMsg::error("CPD6A7C", &[]));
                             None
                         }
                     };
@@ -306,11 +304,11 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
                     }
                 }
                 d.list_mut("VARS").options.clear();
-                d.message = shown;
+                d.set_message(shown);
             }
             Response::Command(text) => {
                 let text = d.substitute(&text, None);
-                d.message = run_line(job, host, &text);
+                d.set_message(run_line(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Return(11) => ccsids = !ccsids,
@@ -320,10 +318,10 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
                 l.top = l.rows.len().saturating_sub(1);
             }
             Response::Return(16) | Response::Print => {
-                d.message = Some(("Printing is not available in this release.".into(), true));
+                d.error("CPD9B84", &[]);
             }
             Response::Return(22) => {
-                d.message = Some(("Type 5 by an entry to see all of it.".into(), false));
+                d.error("CPD9BA3", &[]);
             }
             Response::Exit | Response::Cancel | Response::Gone | Response::Menu(_) | Response::Panel(_) => {
                 return Ok(String::new());
@@ -334,20 +332,8 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
 }
 
 /// Run a command from the panel; the message to show after it.
-fn run_line(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
-    let o = crate::command::run(job, host, text);
-    if let Some(f) = &o.escape {
-        if f.msgid == "CPF6801" {
-            return None;
-        }
-        let t = f.text.lines().last().unwrap_or("").trim();
-        return Some((if t.is_empty() { f.msgid.clone() } else { t.to_string() }, true));
-    }
-    o.text
-        .lines()
-        .map(str::trim)
-        .find(|l| !l.is_empty())
-        .map(|l| (l.to_string(), false))
+fn run_line(job: &mut Job, host: &Host, text: &str) -> Option<uim::engine::LineMsg> {
+    crate::panels::exec(job, host, text)
 }
 
 #[cfg(test)]

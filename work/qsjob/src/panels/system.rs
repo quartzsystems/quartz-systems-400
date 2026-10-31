@@ -23,7 +23,7 @@ use mi::Job;
 use crate::command::{Fail, Outcome};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{Choice, Response, UimDialog};
+use crate::display::uim::{Choice, LineMsg, Response, UimDialog};
 
 /// The driver of a system or security command, if it has one.
 pub fn run(
@@ -67,7 +67,7 @@ fn display(surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<Stri
     loop {
         match d.show(surface, panel) {
             Ok(Response::Print) => {
-                d.message = Some(("Print is not available in this release.".into(), true));
+                d.error("CPD9B84", &[]);
             }
             Ok(
                 Response::Return(_)
@@ -85,23 +85,8 @@ fn display(surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<Stri
 
 /// Run a command from a list option or the command line; the message
 /// to show after it, if any.
-fn command(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
-    let o = crate::command::run(job, host, text);
-    if let Some(f) = &o.escape {
-        if f.msgid == "CPF6801" {
-            return None;
-        }
-        let t = f.text.lines().last().unwrap_or("").trim();
-        return Some((
-            if t.is_empty() { f.msgid.clone() } else { t.to_string() },
-            true,
-        ));
-    }
-    o.text
-        .lines()
-        .map(str::trim)
-        .find(|l| !l.is_empty())
-        .map(|l| (l.to_string(), false))
+fn command(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
+    crate::panels::exec(job, host, text)
 }
 
 /// What a work-with list does with an answer: go on (after the options
@@ -122,13 +107,13 @@ fn work_answer(job: &mut Job, host: &Host, d: &mut UimDialog, list: &str, r: Res
         }
         Response::Command(text) => {
             let text = d.substitute(&text, None);
-            d.message = command(job, host, &text);
+            d.set_message(command(job, host, &text));
             d.set(crate::display::uim::CMDLINE_VAR, "");
             Next::Refresh
         }
         Response::Return(5) => Next::Refresh,
         Response::Print => {
-            d.message = Some(("Print is not available in this release.".into(), true));
+            d.error("CPD9B84", &[]);
             Next::Stay
         }
         Response::Retrieve | Response::Return(_) => Next::Stay,
@@ -153,10 +138,10 @@ fn run_choices(job: &mut Job, host: &Host, d: &mut UimDialog, list: &str, choice
                 }
             }
             _ => {
-                shown = Some((format!("Option {} is not valid.", c.option.trim()), true));
+                shown = Some(LineMsg::error("CPD6A7C", &[]));
             }
         }
     }
     d.list_mut(list).options.clear();
-    d.message = shown;
+    d.set_message(shown);
 }

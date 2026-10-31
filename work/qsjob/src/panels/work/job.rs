@@ -164,7 +164,7 @@ fn option(
         13 => libl(job, host, surface, d, detail)?,
         14 => openfiles(job, host, surface, d, detail)?,
         _ => {
-            d.message = Some((format!("Option {n} is not available in this release."), true));
+            d.error("CPD9B89", &[&n.to_string()]);
             Left::Back
         }
     };
@@ -342,9 +342,8 @@ fn spooled(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog,
                 Response::Exit => return Ok(Left::Exit),
                 Response::Cancel | Response::Return(16) => return Ok(Left::Back),
                 Response::Options(choices) => {
-                    for (n, c) in run_options(job, host, d, &mut history, &choices) {
-                        d.message =
-                            Some((format!("Option {} ({n}) is not available yet.", c.option), true));
+                    for (_, c) in run_options(job, host, d, &mut history, &choices) {
+                        d.error("CPD9B89", &[c.option.trim()]);
                     }
                     Flow::Refresh
                 }
@@ -387,10 +386,7 @@ fn log_lines(job: &Job, host: &Host, all: bool) -> Vec<Vec<(String, String)>> {
 /// Option 10 and `DSPJOBLOG`: the job's log, the basic view first.
 fn joblog(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
     if !own(host, detail) {
-        d.message = Some((
-            "The log of another job is shown once it ends (WRKSPLF).".into(),
-            true,
-        ));
+        d.error("CPD9B9D", &[]);
         return Ok(Left::Back);
     }
     let mut all = false;
@@ -417,7 +413,7 @@ fn joblog(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, 
 /// Option 11: the call stack, command entry at the bottom.
 fn callstack(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
     if !own(host, detail) {
-        d.message = Some(("The call stack of another job is not shown yet.".into(), true));
+        d.error("CPD9B9E", &[]);
         return Ok(Left::Back);
     }
     d.set("THREAD", &format!("{:08X}", detail.job.pid));

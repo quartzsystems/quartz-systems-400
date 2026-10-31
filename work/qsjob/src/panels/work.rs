@@ -156,14 +156,6 @@ fn qual_job(number: u32, user: &str, name: &str) -> String {
     format!("{number:06}/{user}/{name}")
 }
 
-/// The first line of what a command said, for the message line.
-fn first_line(text: &str) -> Option<String> {
-    text.lines()
-        .map(str::trim)
-        .find(|l| !l.is_empty())
-        .map(str::to_string)
-}
-
 /// Run a command for a panel; what it said goes on the message line.
 fn run_command(job: &mut Job, host: &Host, d: &mut UimDialog, history: &mut Vec<String>, text: &str) {
     let text = text.trim();
@@ -171,12 +163,8 @@ fn run_command(job: &mut Job, host: &Host, d: &mut UimDialog, history: &mut Vec<
         return;
     }
     history.push(text.to_string());
-    let out = crate::command::run(job, host, text);
-    if let Some(e) = &out.escape {
-        let msg = first_line(&out.text).unwrap_or_else(|| format!("{} {}", e.msgid, e.text));
-        d.message = Some((msg, true));
-    } else if let Some(msg) = first_line(&out.text) {
-        d.message = Some((msg, false));
+    if let Some(m) = crate::panels::exec(job, host, text) {
+        d.send(m);
     }
 }
 
@@ -198,7 +186,7 @@ fn run_options(
             }
             Some(Action::Return(n)) => returned.push((*n, c.clone())),
             _ => {
-                d.message = Some((format!("Option {} is not valid here.", c.option), true));
+                d.error("CPD6A7C", &[]);
             }
         }
     }
@@ -235,8 +223,8 @@ fn common(
             Flow::Refresh
         }
         Response::Options(choices) => {
-            for (n, c) in run_options(job, host, d, history, &choices) {
-                d.message = Some((format!("Option {} ({n}) is not available yet.", c.option), true));
+            for (_, c) in run_options(job, host, d, history, &choices) {
+                d.error("CPD9B89", &[c.option.trim()]);
             }
             Flow::Refresh
         }
@@ -251,11 +239,11 @@ fn common(
             Flow::Refresh
         }
         Response::Return(n) => {
-            d.message = Some((format!("F{n} is not available in this release."), true));
+            d.error("CPD9B8A", &[&n.to_string()]);
             Flow::Stay
         }
         Response::Panel(_) | Response::Print => {
-            d.message = Some(("That function is not available in this release.".into(), true));
+            d.error("CPD9B81", &[]);
             Flow::Stay
         }
     }

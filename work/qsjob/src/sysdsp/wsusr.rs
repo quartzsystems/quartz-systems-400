@@ -12,7 +12,7 @@ use super::keys::Act;
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::Response;
+use crate::display::uim::{LineMsg, Response};
 
 /// An object's text.
 fn text_of(host: &Host, name: &str, ty: &str) -> String {
@@ -26,7 +26,7 @@ fn text_of(host: &Host, name: &str, ty: &str) -> String {
 /// Fill and show the panel; the act that left it.
 pub fn show(host: &Host) -> Act {
     let Ok(mut d) = crate::panels::dialog(host, "QWCDSPWSU") else {
-        return Act::Say("Display Work Station User is not available.".into());
+        return Act::Say(LineMsg::error("CPF9801", &["QWCDSPWSU", "QSYS"]));
     };
     let device = host.start.device.clone();
     let mut jobs = host

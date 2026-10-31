@@ -77,16 +77,23 @@ thread_local! {
     static DETAILS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
 }
 
-/// A failure's text for a panel's message line: the service's message
-/// when `e` starts with one, else the function check's sentence, the
-/// detail kept for the job log ([`take_details`]).
-pub fn line(e: &str) -> String {
+/// A failure for a panel's message line: the service's message when
+/// `e` starts with one (its identifier, in the service's wording),
+/// else the function check, the detail kept for the job log
+/// ([`take_details`]).
+pub fn line(e: &str) -> uim::engine::LineMsg {
     if !sys_cpps::check::is_internal(e) {
-        return e.trim().to_string();
+        let t = e.trim();
+        let mut m = uim::engine::LineMsg::error(&t[..7], &[]);
+        let rest = t[7..].trim_start_matches(':').trim();
+        if !rest.is_empty() {
+            m.text = Some(rest.to_string());
+        }
+        return m;
     }
     DETAILS.with(|d| d.borrow_mut().push(e.to_string()));
     let name = RUNNING.with(|r| r.borrow().last().cloned().unwrap_or_else(|| "*N".into()));
-    sys_cpps::check::text(&name)
+    uim::engine::LineMsg::error(sys_cpps::check::ESCAPE, &[&sys_cpps::check::text(&name)])
 }
 
 /// The details [`line`] kept since the last call.
@@ -127,6 +134,38 @@ pub fn dialog(host: &Host, name: &str) -> Result<UimDialog, Fail> {
     let g = group(host, "QSYS", name)?;
     let system = crate::display::dds::system_name(host);
     Ok(UimDialog::new(g, &system))
+}
+
+/// A service answer's line for the message line: `MSGID` then each
+/// value after a tab, or `MSGID text` in the service's wording; `None`
+/// for a line that is no message.
+pub fn said(line: &str) -> Option<uim::engine::LineMsg> {
+    let t = line.trim_end();
+    let id = t.get(..7)?;
+    if sys_cpps::check::is_internal(id) {
+        return None;
+    }
+    let rest = &t[7..];
+    if let Some(vals) = rest.strip_prefix('\t') {
+        let vals: Vec<&str> = vals.split('\t').collect();
+        return Some(uim::engine::LineMsg::info(id, &vals));
+    }
+    let mut m = uim::engine::LineMsg::info(id, &[]);
+    if !rest.trim().is_empty() {
+        m.text = Some(rest.trim().to_string());
+    }
+    Some(m)
+}
+
+/// Run a command from a panel: what it leaves on the message line
+/// ([`crate::display::msgline::run`]); nothing when its prompt was
+/// cancelled.
+pub fn exec(job: &mut Job, host: &Host, text: &str) -> Option<uim::engine::LineMsg> {
+    let (out, m) = crate::display::msgline::run(job, host, text);
+    if out.escape.as_ref().is_some_and(|f| f.msgid == "CPF6801") {
+        return None;
+    }
+    m
 }
 
 /// Whether the job shows panels: it is interactive and the command

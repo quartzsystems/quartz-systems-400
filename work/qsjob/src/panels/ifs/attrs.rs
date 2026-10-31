@@ -38,7 +38,7 @@ pub fn show(host: &Host, surface: &mut Surface, c: &dyn IfsClient, path: &str) -
     loop {
         match super::show(&mut d, surface, panel)? {
             Response::Return(22) => {
-                d.message = Some((path.to_string(), false));
+                d.info("CPI9B89", &[path]);
             }
             _ => return Ok(()),
         }

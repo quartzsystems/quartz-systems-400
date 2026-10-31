@@ -15,7 +15,7 @@ use wm::job::Status;
 use super::inter::{self, Session};
 use crate::command::RunMode;
 use crate::display::surface::Surface;
-use crate::display::uim::{Response, UimDialog};
+use crate::display::uim::{LineMsg, Response, UimDialog};
 
 /// How a menu session ended.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -81,16 +81,12 @@ pub(super) fn go(s: &mut Session<'_>, text: &str, initial: bool) -> Flow {
         Target::SignOff => return Flow::SignOff,
         Target::Choice(list) => match list.len() {
             0 => {
-                s.message(&format!("No menu matches {menu}."));
+                s.say(LineMsg::error("CPD9BB4", &[&menu]));
                 return Flow::Back;
             }
             1 => list[0].clone(),
             _ => {
-                let names: Vec<String> = list.iter().map(ToString::to_string).collect();
-                s.message(&format!(
-                    "Several menus match {menu}: {}. Type one name.",
-                    names.join(", ")
-                ));
+                s.say(LineMsg::error("CPD9BB5", &[&menu]));
                 return Flow::Back;
             }
         },
@@ -104,30 +100,26 @@ pub(super) fn go(s: &mut Session<'_>, text: &str, initial: bool) -> Flow {
 #[allow(clippy::too_many_lines)] // one arm per response
 fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow {
     let mut surface = Surface::new(s.c.host.clone());
-    let mut message: Option<String> = None;
+    let mut message: Option<LineMsg> = None;
     loop {
         let cur = stack.current().clone();
         let loaded = load(s, &cur);
         let (attrs, group) = match loaded {
             Ok(x) => x,
             Err(e) => {
-                let text = not_found(s, &cur);
+                let m = not_found(&cur);
                 let _ = e;
                 if stack.depth() <= 1 {
-                    s.message(&text);
+                    s.say(m);
                     return Flow::Back;
                 }
                 stack.cancel();
-                message = Some(text);
+                message = Some(m);
                 continue;
             }
         };
         if attrs.kind != MenuKind::Uim {
-            s.message(&format!(
-                "Menu {} is a {} menu, which this release does not show.",
-                cur.name,
-                attrs.kind.text()
-            ));
+            s.say(LineMsg::error("CPD9BB6", &[&cur.name, attrs.kind.text()]));
             if stack.cancel().is_none() {
                 return Flow::Back;
             }
@@ -136,7 +128,7 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
         let mut dialog = UimDialog::new(group, &s.system);
         dialog.copyright = true;
         if let Some(m) = message.take() {
-            dialog.message = Some((m, true));
+            dialog.send(m);
         }
         inter::status_of(s, Status::Dspw, &format!("MNU-{}", cur.name));
         let panel = cur.name.clone();
@@ -144,7 +136,7 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
             let r = match dialog.show(&mut surface, &panel) {
                 Ok(r) => r,
                 Err(e) => {
-                    s.message(&format!("Menu {}: {e}", cur.name));
+                    s.say(crate::panels::line(&format!("menu {}: {e}", cur.name)));
                     return Flow::Back;
                 }
             };
@@ -174,7 +166,7 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
                     match stack.go(target, true) {
                         Outcome::Show(_) => break,
                         Outcome::Choose(_) | Outcome::NotFound => {
-                            dialog.message = Some((format!("Menu {name} not found."), true));
+                            dialog.error("CPF9801", &[&name, "*LIBL"]);
                         }
                         Outcome::SignOff => return Flow::SignOff,
                     }
@@ -192,23 +184,19 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
                 }
                 Response::Return(23) => {
                     let who = s.signon.user.clone();
-                    let out = inter::command_output(
+                    let m = inter::command_msg(
                         s,
                         &format!("CHGUSRPRF USRPRF({who}) INLMNU({}/{})", cur.lib, cur.name),
                         RunMode::Run,
                     );
-                    dialog.message = Some((
-                        if out.trim().is_empty() || out.starts_with("CPC") {
-                            format!("Menu {} is now the initial menu.", cur.name)
-                        } else {
-                            inter::first_line(&out)
-                        },
-                        false,
-                    ));
+                    match m {
+                        Some(m) if m.error => dialog.send(m),
+                        _ => dialog.info("CPI9BB9", &[&cur.name]),
+                    }
                 }
                 Response::Return(_) | Response::Options(_) | Response::Panel(_) => {}
                 Response::Print => {
-                    dialog.message = Some(("Print is not available in this release.".into(), true));
+                    dialog.error("CPD9B84", &[]);
                 }
             }
         }
@@ -239,9 +227,8 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             let _request = crate::sysdsp::keys::Request::enter();
             let flow = go(s, rest, false);
             // What GO had to say (a menu not found) shows on this menu.
-            let m = s.take_message();
-            if !m.is_empty() {
-                dialog.message = Some((m, true));
+            if let Some(m) = s.take_message() {
+                dialog.send(m);
                 // The command stays on the line to be corrected.
                 dialog.set(crate::display::uim::CMDLINE_VAR, typed);
             }
@@ -255,10 +242,8 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             if word == "call" && cmd.to_ascii_uppercase().trim_end().ends_with("QCMD") {
                 return if inter::command_entry(s) { Flow::SignOff } else { Flow::Back };
             }
-            let out = inter::command_output(s, cmd, mode);
-            let line = inter::first_line(&out);
-            if !line.is_empty() {
-                dialog.message = Some((line, true));
+            if let Some(m) = inter::command_msg(s, cmd, mode) {
+                dialog.send(m);
             }
             Flow::Back
         }
@@ -266,13 +251,8 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
 }
 
 /// `CPF9801`: the menu is not there (the oracle says so for GO).
-fn not_found(s: &mut Session<'_>, q: &Qualified) -> String {
-    let text = s.cpf_text("CPF9801", &[&q.name, &q.lib]);
-    if text.is_empty() || text.starts_with("CPF9801") {
-        format!("Object {} in library {} was not found.", q.name, q.lib)
-    } else {
-        text
-    }
+fn not_found(q: &Qualified) -> LineMsg {
+    LineMsg::error("CPF9801", &[&q.name, &q.lib])
 }
 
 /// A menu's attributes and panel group through the storage service.

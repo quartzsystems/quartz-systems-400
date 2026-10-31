@@ -16,7 +16,7 @@ use super::{Next, command, display, parm, work_answer};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{CMDLINE_VAR, Choice, Response, UimDialog};
+use crate::display::uim::{CMDLINE_VAR, Choice, LineMsg, Response, UimDialog};
 
 fn ask(host: &Host, q: Query) -> Result<Answer, Fail> {
     host.link
@@ -122,8 +122,8 @@ pub fn wrkreginf(
                                     return Some(Err(e));
                                 }
                             }
-                            o => {
-                                d.message = Some((format!("Option {o} is not valid."), true));
+                            _ => {
+                                d.error("CPD6A7C", &[]);
                             }
                         }
                     }
@@ -145,10 +145,10 @@ pub fn wrkreginf(
 fn prompt(job: &mut Job, host: &Host, d: &mut UimDialog) {
     let text = d.get(CMDLINE_VAR).trim().to_string();
     if text.is_empty() {
-        d.message = Some(("Type a command, then press F4.".into(), true));
+        d.error("CPD9B86", &[]);
         return;
     }
-    d.message = command(job, host, &format!("?{text}"));
+    d.set_message(command(job, host, &format!("?{text}")));
     d.set(CMDLINE_VAR, "");
 }
 
@@ -276,8 +276,8 @@ fn program_options(
                 dspexitpgm(host, surface, (name, format), g)?;
                 continue;
             }
-            o => {
-                shown = Some((format!("Option {o} is not valid."), true));
+            _ => {
+                shown = Some(LineMsg::error("CPD6A7C", &[]));
                 continue;
             }
         };
@@ -286,7 +286,7 @@ fn program_options(
         }
     }
     d.list_mut("PGMS").options.clear();
-    d.message = shown;
+    d.set_message(shown);
     Ok(())
 }
 

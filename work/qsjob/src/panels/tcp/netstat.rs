@@ -14,11 +14,11 @@ use mi::Job;
 use stg::Client;
 use stg::tcp::{PanelData, TcpOp, TcpReply};
 
-use super::{Left, NO_PRINT, cell, dialog, exec, fill, may_change, option_command, show};
+use super::{Left, cell, dialog, exec, fill, may_change, option_command, show};
 use crate::command::{Fail, parms_of};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{CMDLINE_VAR, Response, UimDialog};
+use crate::display::uim::{CMDLINE_VAR, LineMsg, Response, UimDialog};
 
 const GROUP: &str = "QTOCNETS";
 
@@ -49,15 +49,15 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> O
 }
 
 /// The data of a view.
-fn fetch(host: &Host, what: &str, args: &[String]) -> Result<PanelData, (String, bool)> {
+fn fetch(host: &Host, what: &str, args: &[String]) -> Result<PanelData, LineMsg> {
     match host
         .link
         .borrow_mut()
         .with(|l| l.tcp(TcpOp::Netstat { what: what.into(), args: args.to_vec() }))
     {
         TcpReply::Panel { data } => Ok(data),
-        TcpReply::Failed { note } => Err((note.text, true)),
-        _ => Err(("The storage service gave no network status.".into(), true)),
+        TcpReply::Failed { note } => Err(super::note_msg(&note)),
+        other => Err(crate::panels::line(&format!("NETSTAT {what}: no network status: {other:?}"))),
     }
 }
 
@@ -84,17 +84,17 @@ fn menu(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail>
             Response::Gone => return Ok(Left::Gone),
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
             Response::Return(4) => {
                 let typed = d.get(CMDLINE_VAR).trim().to_string();
                 if typed.is_empty() {
-                    d.message = Some(("Type a command to prompt on the command line.".into(), true));
+                    d.error("CPD9B86", &[]);
                 } else {
                     last.clone_from(&typed);
-                    d.message = exec(job, host, &format!("?{}", typed.trim_start_matches('?')));
+                    d.set_message(exec(job, host, &format!("?{}", typed.trim_start_matches('?'))));
                     d.set(CMDLINE_VAR, "");
                 }
             }
@@ -103,7 +103,7 @@ fn menu(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail>
                 Left::Gone => return Ok(Left::Gone),
                 Left::Cancel => {}
             },
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
@@ -205,7 +205,7 @@ fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Opti
         };
         match fetch(host, what, &args) {
             Ok(data) => fill(&mut d, &data),
-            Err(m) => d.message = Some(m),
+            Err(m) => d.send(m),
         }
         match show(&mut d, surface, kind.panel(full))? {
             Response::Exit => return Ok(Left::Exit),
@@ -214,7 +214,7 @@ fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Opti
             Response::Options(choices) => {
                 for c in &choices {
                     if let Some(text) = option_command(&d, c) {
-                        d.message = exec(job, host, &text);
+                        d.set_message(exec(job, host, &text));
                         continue;
                     }
                     let key = cell(&d, &c.list, c.row, kind.key());
@@ -223,24 +223,24 @@ fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Opti
                         (Kind::Ifc(_), "8") => Some(list(job, host, surface, Kind::Rte(kind.v6()), Some(&key))?),
                         (Kind::Ifc(_), "12") => {
                             let line = cell(&d, &c.list, c.row, if kind.v6() { "XLIND" } else { "ILIND" });
-                            d.message = if line.starts_with('*') {
-                                Some((format!("{line} has no configuration status."), true))
+                            d.set_message(if line.starts_with('*') {
+                                Some(LineMsg::error("CPD9B88", &["12", &line]))
                             } else {
                                 exec(job, host, &format!("WRKCFGSTS CFGTYPE(*LIN) CFGD({line})"))
-                            };
+                            });
                             None
                         }
                         (Kind::Ifc(_), "14") => {
-                            d.message = Some(("Multicast groups are not shown in this release.".into(), true));
+                            d.error("CPD9B81", &[]);
                             None
                         }
                         (Kind::Cnn(_), "8") => jobs(job, host, surface, &key)?,
                         (Kind::Cnn(_), "4") => {
-                            d.message = Some(end_cnn(host, &key));
+                            d.set_message(end_cnn(host, &key));
                             None
                         }
                         _ => {
-                            d.message = Some((format!("Option {} is not valid here.", c.option), true));
+                            d.error("CPD6A7C", &[]);
                             None
                         }
                     };
@@ -274,14 +274,14 @@ fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Opti
                 let n = d.list_ref(kind.list()).map_or(0, |l| l.rows.len());
                 d.list_mut(kind.list()).top = n.saturating_sub(1);
             }
-            Response::Return(9) => d.message = command_line(job, host),
+            Response::Return(9) => d.set_message(command_line(job, host)),
             Response::Return(13 | 15 | 22) => {
-                d.message = Some(("That function is not available in this release.".into(), true));
+                d.error("CPD9B81", &[]);
             }
-            Response::Return(6) | Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Return(6) | Response::Print => d.error("CPD9B84", &[]),
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
             _ => {}
@@ -290,16 +290,17 @@ fn list(job: &mut Job, host: &Host, surface: &mut Surface, start: Kind, of: Opti
 }
 
 /// F9: Command Entry, until it is left.
-fn command_line(job: &mut Job, host: &Host) -> Option<(String, bool)> {
+fn command_line(job: &mut Job, host: &Host) -> Option<LineMsg> {
     exec(job, host, "CALL PGM(QCMD)")
 }
 
 /// `NETSTAT` option 4 on a connection.
-fn end_cnn(host: &Host, key: &str) -> (String, bool) {
+fn end_cnn(host: &Host, key: &str) -> Option<LineMsg> {
+    let note = super::note_msg;
     match host.link.borrow_mut().with(|l| l.tcp(TcpOp::EndCnn { key: key.into() })) {
-        TcpReply::Done { notes, .. } => notes.last().map_or_else(|| (String::new(), false), |n| (n.text.clone(), false)),
-        TcpReply::Failed { note } => (note.text, true),
-        _ => ("The storage service gave no answer.".into(), true),
+        TcpReply::Done { notes, .. } => notes.last().map(note),
+        TcpReply::Failed { note: n } => Some(note(&n)),
+        other => Some(crate::panels::line(&format!("ENDTCPCNN: unexpected reply {other:?}"))),
     }
 }
 
@@ -321,16 +322,16 @@ fn display(
     loop {
         match fetch(host, what, &args) {
             Ok(data) => fill(&mut d, &data),
-            Err(m) => d.message = Some(m),
+            Err(m) => d.send(m),
         }
         match show(&mut d, surface, panel)? {
             Response::Exit => return Ok(Some(Left::Exit)),
             Response::Gone => return Ok(Some(Left::Gone)),
             Response::Cancel | Response::Return(0) => return Ok(None),
             Response::Return(5) => {}
-            Response::Return(9) => d.message = command_line(job, host),
-            Response::Return(6) | Response::Print => d.message = Some((NO_PRINT.into(), true)),
-            Response::Return(22) => d.message = Some(("Every field is shown whole on this display.".into(), false)),
+            Response::Return(9) => d.set_message(command_line(job, host)),
+            Response::Return(6) | Response::Print => d.error("CPD9B84", &[]),
+            Response::Return(22) => d.info("CPI9B81", &[]),
             Response::Return(n) => {
                 if let Some(l) = on(job, host, surface, &mut d, n)? {
                     return Ok(Some(l));
@@ -354,7 +355,7 @@ fn detail(job: &mut Job, host: &Host, surface: &mut Surface, kind: Kind, key: &s
             display(job, host, surface, "DSPCNN", "CNN5", key, &mut |job, host, surface, d, n| {
                 match n {
                     8 => return jobs(job, host, surface, &k),
-                    14 => d.message = Some(("The ports are shown by name and number in the list (F11).".into(), false)),
+                    14 => d.info("CPI9B81", &[]),
                     _ => {}
                 }
                 Ok(None)
@@ -370,7 +371,7 @@ fn jobs(job: &mut Job, host: &Host, surface: &mut Surface, key: &str) -> Result<
     loop {
         match fetch(host, "CNN8", &args) {
             Ok(data) => fill(&mut d, &data),
-            Err(m) => d.message = Some(m),
+            Err(m) => d.send(m),
         }
         match show(&mut d, surface, "DSPJOBS")? {
             Response::Exit => return Ok(Some(Left::Exit)),
@@ -379,13 +380,13 @@ fn jobs(job: &mut Job, host: &Host, surface: &mut Surface, key: &str) -> Result<
             Response::Options(choices) => {
                 for c in &choices {
                     if let Some(text) = option_command(&d, c) {
-                        d.message = exec(job, host, &text);
+                        d.set_message(exec(job, host, &text));
                     }
                 }
                 d.list_mut("JOBS").options.clear();
             }
-            Response::Return(9) => d.message = command_line(job, host),
-            Response::Return(6) | Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Return(9) => d.set_message(command_line(job, host)),
+            Response::Return(6) | Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }

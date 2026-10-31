@@ -34,17 +34,17 @@ fn menu(
             Response::Gone => return Ok(Left::Gone),
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
             Response::Return(4) => {
                 let typed = d.get(CMDLINE_VAR).trim().to_string();
                 if typed.is_empty() {
-                    d.message = Some(("Type a command to prompt on the command line.".into(), true));
+                    d.error("CPD9B86", &[]);
                 } else {
                     last.clone_from(&typed);
-                    d.message = exec(job, host, &format!("?{}", typed.trim_start_matches('?')));
+                    d.set_message(exec(job, host, &format!("?{}", typed.trim_start_matches('?'))));
                     d.set(CMDLINE_VAR, "");
                 }
             }
@@ -53,7 +53,7 @@ fn menu(
                 Some(Left::Gone) => return Ok(Left::Gone),
                 Some(Left::Cancel) | None => {}
             },
-            Response::Print => d.message = Some((super::NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Return(_) | Response::Options(_) | Response::Menu(_) | Response::Panel(_) => {}
         }
     }
@@ -73,7 +73,7 @@ pub fn cfgtcp(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left,
                 Some(menu(job, host, surface, &mut t, "CFGTBL", &mut |_, _, _, _, _| Ok(None))?)
             }
             123 => {
-                d.message = Some(("IP filter rules are not available in this release.".into(), true));
+                d.error("CPD9B81", &[]);
                 None
             }
             _ => None,
@@ -93,7 +93,7 @@ pub fn app(job: &mut Job, host: &Host, surface: &mut Surface, panel: &str) -> Re
 pub fn ptp(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, Fail> {
     let mut d = dialog(host, "QTOCCFG", false)?;
     menu(job, host, surface, &mut d, "CFGPTP", &mut |_, _, _, d, _| {
-        d.message = Some(("Point-to-point connections are not available in this release.".into(), true));
+        d.error("CPD9B81", &[]);
         Ok(None)
     })
 }

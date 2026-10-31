@@ -8,7 +8,7 @@
 use cmd::Resolved;
 use stg::Client;
 
-use super::{NO_PRINT, dashed, dialog, fetch, fill, list_of, parm, service_text, set_vars, show};
+use super::{dashed, dialog, fetch, fill, list_of, parm, service_text, set_vars, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -47,7 +47,7 @@ pub fn dspusrprf(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
                 d.view = usize::from(data_view);
                 d.set("AUTVIEW", if data_view { "DTA" } else { "OBJ" });
             }
-            Ok(Response::Print) => d.message = Some((NO_PRINT.into(), true)),
+            Ok(Response::Print) => d.error("CPD9B84", &[]),
             Ok(_) => {}
             Err(e) => return Some(Err(e)),
         }
@@ -102,7 +102,7 @@ pub fn dspautlobj(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Re
             Ok(Response::Exit | Response::Cancel | Response::Gone | Response::Return(0)) => {
                 return Some(Ok(String::new()));
             }
-            Ok(Response::Print) => d.message = Some((NO_PRINT.into(), true)),
+            Ok(Response::Print) => d.error("CPD9B84", &[]),
             Ok(_) => {}
             Err(e) => return Some(Err(e)),
         }

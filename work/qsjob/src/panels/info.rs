@@ -23,7 +23,7 @@ use stg::Client;
 use crate::command::{Fail, Outcome};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::{Response, UimDialog};
+use crate::display::uim::{LineMsg, Response, UimDialog};
 use uim::model::Action;
 
 /// The driver of a command of the batch, if it has one.
@@ -134,20 +134,8 @@ fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Respons
 }
 
 /// Run a command from a panel: the line to show after it.
-fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        if f.msgid == "CPF6801" {
-            return None;
-        }
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        return Some((line, true));
-    }
-    out.text
-        .lines()
-        .map(str::trim)
-        .find(|l| !l.is_empty())
-        .map(|l| (l.to_string(), false))
+fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
+    crate::panels::exec(job, host, text)
 }
 
 /// The `CMD` options typed on a list, run in order; `special` answers
@@ -163,7 +151,7 @@ fn act(
         if let Some(Action::Cmd(t)) = &c.action {
             let text = d.substitute(t, Some((&c.list, c.row)));
             if let Some(m) = exec(job, host, &text) {
-                d.message = Some(m);
+                d.send(m);
             }
         } else {
             special(d, c)?;
@@ -185,6 +173,3 @@ fn datetime(host: &Host) -> String {
         _ => s,
     }
 }
-
-/// Print is not there yet.
-const NO_PRINT: &str = "Print is not available in this release.";

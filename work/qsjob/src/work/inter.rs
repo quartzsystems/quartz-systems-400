@@ -23,6 +23,7 @@ use wm::panels;
 
 use crate::command::RunMode;
 use crate::console::Console;
+use crate::display::uim::LineMsg;
 
 /// Lines of previous commands and messages the panel shows.
 const SHOWN: usize = 12;
@@ -33,7 +34,7 @@ const LINE_MAX: usize = 512;
 /// Commands kept for `F9`.
 const RETRIEVED: usize = 25;
 /// The message for menu options that wait for menus.
-const NO_MENU: &str = "Menu not available in this release.";
+const NO_MENU: &str = "CPD9B81";
 
 /// A line of the previous commands and messages.
 #[derive(Clone, Debug)]
@@ -58,7 +59,7 @@ pub(super) struct Session<'a> {
     retrieve: usize,
     history: Vec<Line>,
     /// A message for the next Command Entry display.
-    pending: String,
+    pending: Option<LineMsg>,
     /// `F10`: second-level text shown.
     detailed: bool,
     /// `F11`: lines shown at their full width.
@@ -108,7 +109,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         full: false,
         more_keys: false,
         top: None,
-        pending: String::new(),
+        pending: None,
     };
     if s.signon.next == Next::ChangePassword && !change_password(&mut s) {
         end(s, &mut ending);
@@ -161,7 +162,7 @@ fn prepare(s: &mut Session<'_>) {
 
 /// Change Password until it succeeds; false when the user leaves it.
 fn change_password(s: &mut Session<'_>) -> bool {
-    let mut message = "Your password has expired and must be changed.".to_string();
+    let mut message = s.msg("CPD9BAE", &[]);
     loop {
         s.c.show(panels::change_password(&s.system, 0, &message));
         status(s.link, Status::Dspw, "PGM-QSYCHGPW");
@@ -172,30 +173,30 @@ fn change_password(s: &mut Session<'_>) -> bool {
             return false;
         }
         if key != 0 {
-            message = "Function key not allowed.".into();
+            message = s.msg("CPD6A60", &[]);
             continue;
         }
         let field = |i: usize| fields.get(i).map_or("", |f| f.trim()).to_string();
         let (current, new, confirm) = (field(0), field(1), field(2));
         if new != confirm {
-            message = "The new password and its confirmation differ.".into();
+            message = s.msg("CPD9BAF", &[]);
             continue;
         }
         let user = s.signon.user.clone();
         match super::pwdpgm::validate(s.c.job(), s.link, &user, &new, &current) {
             Ok(true) => {}
             Ok(false) => {
-                message = "The password validation program did not accept the new password.".into();
+                message = s.msg("CPD9BB3", &[]);
                 continue;
             }
             Err(e) => {
-                message = e;
+                message = s.text(&crate::panels::line(&e));
                 continue;
             }
         }
         match s.link.borrow_mut().with(|l| l.chg_pwd(current, new, true)) {
             Ok(()) => return true,
-            Err(e) => message = e,
+            Err(e) => message = s.text(&crate::panels::line(&e)),
         }
     }
 }
@@ -226,24 +227,23 @@ fn signon_info(s: &mut Session<'_>) -> bool {
 /// back here.
 impl Session<'_> {
     /// A message for the next display.
-    pub(super) fn message(&mut self, text: &str) {
-        self.pending = text.to_string();
+    pub(super) fn say(&mut self, m: LineMsg) {
+        self.pending = Some(m);
     }
 
     /// The message waiting for the next display, taken.
-    pub(super) fn take_message(&mut self) -> String {
-        std::mem::take(&mut self.pending)
+    pub(super) fn take_message(&mut self) -> Option<LineMsg> {
+        self.pending.take()
     }
 
-    /// A message by its ID in `QCPFMSG`, `&1` and on from `data`
-    /// (each padded to 10 characters, the `*CHAR 10` replacement).
-    pub(super) fn cpf_text(&mut self, msgid: &str, data: &[&str]) -> String {
-        let mut rpl = Vec::new();
-        for d in data {
-            rpl.extend(ccsid::to_ebcdic(&format!("{d:<10}")).unwrap_or_default());
-        }
-        let (text, _, _) = self.c.job().describe_message(msgid, "QCPFMSG", "QSYS", &rpl);
-        text.trim().to_string()
+    /// A message's text from the job's message files.
+    pub(super) fn text(&self, m: &LineMsg) -> String {
+        crate::display::msgline::text_of(&self.c.host, m)
+    }
+
+    /// The text of message `id` with `data`.
+    pub(super) fn msg(&self, id: &str, data: &[&str]) -> String {
+        crate::display::msgline::text(&self.c.host, id, data)
     }
 }
 
@@ -269,10 +269,10 @@ fn main_menu(s: &mut Session<'_>) {
             4 => {
                 let typed = fields.first().map_or("", |f| f.trim()).to_string();
                 if typed.is_empty() {
-                    message = "Type a command to prompt.".into();
+                    message = s.msg("CPD9B86", &[]);
                 } else {
-                    let out = command_output(s, &typed, RunMode::PromptRun);
-                    message = last_line(&out);
+                    let m = command_msg(s, &typed, RunMode::PromptRun);
+                    message = m.map(|m| s.text(&m)).unwrap_or_default();
                 }
                 continue;
             }
@@ -281,11 +281,11 @@ fn main_menu(s: &mut Session<'_>) {
                 continue;
             }
             13 | 23 => {
-                message = NO_MENU.into();
+                message = s.msg(NO_MENU, &[]);
                 continue;
             }
             _ => {
-                message = "Function key not allowed.".into();
+                message = s.msg("CPD6A60", &[]);
                 continue;
             }
         }
@@ -296,8 +296,8 @@ fn main_menu(s: &mut Session<'_>) {
         if let Ok(n) = typed.parse::<u32>() {
             match n {
                 90 => return,
-                1..=11 => message = NO_MENU.into(),
-                _ => message = format!("Selection {n} is not valid."),
+                1..=11 => message = s.msg(NO_MENU, &[]),
+                _ => message = s.msg("CPD6A64", &[]),
             }
             continue;
         }
@@ -317,30 +317,11 @@ fn main_menu(s: &mut Session<'_>) {
             }
             continue;
         }
-        let out = command_output(s, &typed, RunMode::Run);
-        message = first_line(&out);
+        let m = command_msg(s, &typed, RunMode::Run);
+        message = m.map(|m| s.text(&m)).unwrap_or_default();
     }
 }
 
-/// The first line of some output, for a message line: the most
-/// specific diagnostic comes first.
-pub(super) fn first_line(out: &str) -> String {
-    out.lines()
-        .find(|l| !l.trim().is_empty())
-        .unwrap_or("")
-        .trim()
-        .to_string()
-}
-
-/// The last line of some output, for a message line.
-fn last_line(out: &str) -> String {
-    out.lines()
-        .rev()
-        .find(|l| !l.trim().is_empty())
-        .unwrap_or("")
-        .trim()
-        .to_string()
-}
 
 /// Keep a command for F9: the last 25, the newest last.
 pub(super) fn remember(s: &mut Session<'_>, cmd: &str) {
@@ -384,7 +365,7 @@ fn function_key(
         3 | 16 => return Act::Exit,
         4 => {
             if typed.is_empty() {
-                *message = "Type a command to prompt.".into();
+                *message = s.msg("CPD9B86", &[]);
             } else {
                 s.top = None;
                 field.clear();
@@ -404,11 +385,11 @@ fn function_key(
         10 => s.detailed = !s.detailed,
         11 => s.full = !s.full,
         12 => field.clear(),
-        13 => *message = "The assistant is not available in this release.".into(),
+        13 => *message = s.msg("CPD9B81", &[]),
         17 => s.top = Some(0),
         18 => s.top = None,
         24 => s.more_keys = !s.more_keys,
-        _ => *message = "Function key not allowed.".into(),
+        _ => *message = s.msg("CPD6A60", &[]),
     }
     Act::Show
 }
@@ -418,8 +399,10 @@ pub(super) fn command_entry(s: &mut Session<'_>) -> bool {
     let mut field = String::new();
     let mut message = String::new();
     loop {
-        if message.is_empty() {
-            message = std::mem::take(&mut s.pending);
+        if message.is_empty()
+            && let Some(m) = s.pending.take()
+        {
+            message = s.text(&m);
         }
         s.c.show(panel(s, &field, &message));
         status(s.link, Status::Dspw, "PGM-QCMD");
@@ -445,10 +428,7 @@ pub(super) fn command_entry(s: &mut Session<'_>) -> bool {
             continue;
         }
         if typed.chars().count() > LINE_MAX {
-            let (text, _, _) =
-                s.c.job()
-                    .describe_message("CPF0005", "QCPFMSG", "QSYS", &[]);
-            message = format!("CPF0005 {}", text.trim());
+            message = s.msg("CPF0005", &[]);
             field = typed;
             continue;
         }
@@ -487,8 +467,10 @@ pub(super) fn signoff(s: &mut Session<'_>, cmd: &str) {
     }
 }
 
-/// Run a command as a request of `QCMD`; its output.
-pub(super) fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> String {
+/// Run a command as a request of `QCMD`; what it leaves on the message
+/// line ([`crate::display::msgline::of_outcome`]).
+pub(super) fn command_msg(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> Option<LineMsg> {
+    let since = crate::display::msgline::newest(s.c.job());
     let _request = crate::sysdsp::keys::Request::enter();
     let word = cmd.split_whitespace().next().unwrap_or("");
     status(
@@ -497,7 +479,9 @@ pub(super) fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> S
         &format!("CMD-{}", word.trim_start_matches('?').to_ascii_uppercase()),
     );
     s.c.job().log_request(cmd, ("QCMD", "QSYS"));
-    s.c.run(cmd, mode).text
+    let o = s.c.run(cmd, mode);
+    let host = s.c.host.clone();
+    crate::display::msgline::of_outcome(s.c.job(), &host, since, &o)
 }
 
 /// Run one command and add it, its output and the messages' help to

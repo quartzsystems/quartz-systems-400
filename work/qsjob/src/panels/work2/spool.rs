@@ -154,14 +154,14 @@ pub fn dspsplf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(19) => {
                 if fold || col == 0 {
-                    d.message = Some(("Already at the left edge.".into(), false));
+                    d.error("CPD9B8F", &[]);
                 } else {
                     col = col.saturating_sub(WIDTH);
                 }
             }
             Response::Return(20) => {
                 if fold || col + WIDTH >= f.widest {
-                    d.message = Some(("The right end of the lines is shown.".into(), false));
+                    d.error("CPD9B90", &[]);
                 } else {
                     col += WIDTH;
                 }
@@ -173,7 +173,7 @@ pub fn dspsplf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
             Response::Return(16) => {
                 let what = d.get("FIND").trim().to_string();
                 if what.is_empty() {
-                    d.message = Some(("Type the text to find on the Find line.".into(), true));
+                    d.error("CPD9BA7", &[]);
                 } else {
                     let hit = shown
                         .iter()
@@ -183,15 +183,12 @@ pub fn dspsplf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
                         .find(|(_, l)| l.contains(&what));
                     match hit {
                         Some((i, _)) => top = i,
-                        None => d.message = Some((format!("{what} was not found."), true)),
+                        None => d.error("CPD9B8C", &[&what]),
                     }
                 }
             }
             Response::Return(14) => {
-                d.message = Some((
-                    "Find options are not available in this release.".into(),
-                    true,
-                ));
+                d.error("CPD9B81", &[]);
             }
             Response::Return(_) => match viewer::parse(&ctl) {
                 Control::None => {}
@@ -207,12 +204,12 @@ pub fn dspsplf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
                     let p = u32::try_from(p).unwrap_or(u32::MAX);
                     match f.pos.iter().position(|(pg, _)| *pg == p) {
                         Some(l) => top = from.iter().position(|i| *i == l).unwrap_or(0),
-                        None => d.message = Some((format!("The file has no page {p}."), true)),
+                        None => d.error("CPD9B91", &[&p.to_string()]),
                     }
                 }
                 Control::Column(c) => {
                     if c > f.widest.max(1) {
-                        d.message = Some((format!("The lines are not {c} columns wide."), true));
+                        d.error("CPD9B92", &[&c.to_string()]);
                     } else {
                         col = c - 1;
                     }
@@ -231,14 +228,11 @@ pub fn dspsplf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
                 }
                 Control::Bad(why) => {
                     d.set("CTL", &ctl);
-                    d.message = Some((why, true));
+                    d.error("CPD9B95", &[&why]);
                 }
             },
             _ => {
-                d.message = Some((
-                    "That function is not available in this release.".into(),
-                    true,
-                ));
+                d.error("CPD9B81", &[]);
             }
         }
         d.list_mut(LIST).top = top;

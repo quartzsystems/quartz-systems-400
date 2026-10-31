@@ -9,7 +9,7 @@
 
 use mi::Job;
 
-use super::{Left, NO_PRINT, cell, dialog, exec, fetch, fill, may_change, option_command, show};
+use super::{Left, cell, dialog, exec, fetch, fill, may_change, option_command, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -40,7 +40,7 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, spec: Spec<'_>) -> Re
     loop {
         match fetch(host, spec.what, &args) {
             Ok(data) => fill(&mut d, &data),
-            Err(m) => d.message = Some(m),
+            Err(m) => d.send(m),
         }
         let resp = show(&mut d, surface, panel)?;
         match resp {
@@ -51,7 +51,7 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, spec: Spec<'_>) -> Re
                 for c in &choices {
                     if let Some(text) = option_command(&d, c) {
                         if let Some(m) = exec(job, host, &text) {
-                            d.message = Some(m);
+                            d.send(m);
                         }
                     } else {
                         match (spec.special)(job, host, surface, &mut d, c)? {
@@ -78,10 +78,10 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, spec: Spec<'_>) -> Re
                 let n = d.list_ref(spec.list).map_or(0, |l| l.rows.len());
                 d.list_mut(spec.list).top = n.saturating_sub(1);
             }
-            Response::Return(6) | Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Return(6) | Response::Print => d.error("CPD9B84", &[]),
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
             }
             Response::Retrieve => d.set(crate::display::uim::CMDLINE_VAR, &last),
             Response::Return(_) | Response::Menu(_) | Response::Panel(_) => {}
@@ -102,7 +102,7 @@ fn display(
     match fetch(host, what, args) {
         Ok(data) => fill(&mut d, &data),
         Err(m) => {
-            d.message = Some(m);
+            d.send(m);
         }
     }
     loop {
@@ -111,15 +111,15 @@ fn display(
             Response::Gone => return Ok(Some(Left::Gone)),
             Response::Cancel | Response::Return(0) => return Ok(None),
             Response::Return(22) => {
-                d.message = Some(("Every field is shown whole on this display.".into(), false));
+                d.info("CPI9B81", &[]);
             }
             _ => {}
         }
     }
 }
 
-fn not_valid(d: &mut UimDialog, c: &Choice) -> Option<Left> {
-    d.message = Some((format!("Option {} is not valid here.", c.option), true));
+fn not_valid(d: &mut UimDialog, _: &Choice) -> Option<Left> {
+    d.error("CPD6A7C", &[]);
     None
 }
 
@@ -178,11 +178,11 @@ pub fn rtes(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, F
                 let (parm, args) = route_parms(d, c);
                 match c.option.as_str() {
                     "2" => {
-                        d.message = exec(job, host, &format!("?CHGTCPRTE {parm}"));
+                        d.set_message(exec(job, host, &format!("?CHGTCPRTE {parm}")));
                         Ok(None)
                     }
                     "4" => {
-                        d.message = exec(job, host, &format!("RMVTCPRTE {parm}"));
+                        d.set_message(exec(job, host, &format!("RMVTCPRTE {parm}")));
                         Ok(None)
                     }
                     "5" => display(host, surface, "QTOCRTE", "DSPRTE", "RTE5", &args),
@@ -212,11 +212,11 @@ pub fn ports(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, 
                     let upper = cell(d, &c.list, c.row, "PUPPER");
                     let proto = cell(d, &c.list, c.row, "PPROTO");
                     let user = cell(d, &c.list, c.row, "PUSER");
-                    d.message = exec(
+                    d.set_message(exec(
                         job,
                         host,
                         &format!("RMVTCPPORT PORT({lower} {upper}) PROTOCOL({proto}) USRPRF({user})"),
-                    );
+                    ));
                     Ok(None)
                 }
                 _ => Ok(not_valid(d, c)),
@@ -286,7 +286,7 @@ pub fn table(job: &mut Job, host: &Host, surface: &mut Surface, t: Tbl) -> Resul
                         .filter(|(k, _)| k != "OPT" && k != "SP")
                         .map(|(_, v)| v.trim().to_string())
                         .collect();
-                    d.message = Some((vals.join("  "), false));
+                    d.info("CPI9B89", &[&vals.join("  ")]);
                     Ok(None)
                 }
                 _ => Ok(not_valid(d, c)),

@@ -95,10 +95,10 @@ pub fn dspsfwrsc(host: &Host, surface: &mut Surface) -> Option<Result<String, Fa
                 panel = if panel == "DSPSFWRSC" { "DSPSFWLIB" } else { "DSPSFWRSC" };
             }
             Ok(Response::Return(19)) => {
-                d.message = Some(("This system shows no trademarks.".into(), false));
+                d.info("CPI9B83", &[]);
             }
             Ok(Response::Print) => {
-                d.message = Some(("Print is not available in this release.".into(), true));
+                d.error("CPD9B84", &[]);
             }
             Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
             Ok(_) => return Some(Ok(String::new())),

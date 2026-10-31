@@ -60,10 +60,14 @@ pub fn screen(host: &Host) {
         "Display {} printed for job {:06}/{}/{}",
         host.start.device, host.start.number, host.start.user, host.start.name
     );
-    let message = match spool(host, &image(&rows, &header)) {
-        Ok(_) => "Print request completed: the display is spooled to QSYSPRT.".to_string(),
-        Err(id) => format!("{id} The display could not be printed."),
-    };
+    let message = crate::display::msgline::text(
+        host,
+        match &spool(host, &image(&rows, &header)) {
+            Ok(_) => "CPI9B80",
+            Err(id) => id.as_str(),
+        },
+        &[],
+    );
     let mut d = host.display.borrow_mut();
     let Some(d) = d.as_mut() else {
         return;

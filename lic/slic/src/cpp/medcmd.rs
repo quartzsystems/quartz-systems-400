@@ -1162,8 +1162,8 @@ pub(crate) fn mlbsts_panel(system: &mut System, which: &str) -> stg::proto::Pane
 }
 
 /// The panels' library actions (`service_op`): `mlb-mount DEV CTG`,
-/// `mlb-demount DEV CTG`, `mlb-alloc DEV DRIVE ALLOCATION`. A line for
-/// the message line.
+/// `mlb-demount DEV CTG`, `mlb-alloc DEV DRIVE ALLOCATION`. The message
+/// for the message line: its identifier, then each value after a tab.
 pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<Vec<String>, String> {
     let arg = |i: usize| args.get(i).map_or("", |s| s.trim()).to_ascii_uppercase();
     let (dev, what) = (arg(0), arg(1));
@@ -1171,7 +1171,7 @@ pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<V
         let line = match op {
             "mlb-mount" => {
                 let i = lib.mount(&what).map_err(|e| media::library::refused(&e))?;
-                format!("Cartridge {what} mounted in {}.", lib.model.drives[i].name)
+                format!("CPI9BB5\t{what}\t{}", lib.model.drives[i].name)
             }
             "mlb-demount" => {
                 let i = lib
@@ -1181,7 +1181,7 @@ pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<V
                     .position(|d| d.cartridge.as_deref() == Some(what.as_str()))
                     .ok_or_else(|| format!("CPF6747 cartridge {what} is not mounted"))?;
                 lib.demount(i).map_err(|e| media::library::refused(&e))?;
-                format!("Cartridge {what} demounted.")
+                format!("CPI9BB6\t{what}")
             }
             "mlb-alloc" => {
                 let a = match arg(2).as_str() {
@@ -1190,7 +1190,7 @@ pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<V
                     _ => tape::device::Allocation::Allocated,
                 };
                 lib.allocate(&what, a).map_err(|e| media::library::refused(&e))?;
-                format!("Resource {what} is {}.", a.name())
+                format!("CPI9BB7\t{what}\t{}", a.name())
             }
             _ => return Err(format!("CPF9899 no library action {op}")),
         };

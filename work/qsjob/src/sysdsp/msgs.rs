@@ -174,7 +174,7 @@ fn ask(host: &Host, q: &Inquiry) -> Option<String> {
             aid::ENTER => {}
             a if matches!(aid::function_of(a), Some(3 | 12)) => break None,
             _ => {
-                message = "Function key not allowed.".into();
+                message = crate::display::msgline::text(host, "CPD6A60", &[]);
                 continue;
             }
         }
@@ -183,7 +183,7 @@ fn ask(host: &Host, q: &Inquiry) -> Option<String> {
             break None;
         }
         if !q.valid.is_empty() && !q.valid.iter().any(|v| v.eq_ignore_ascii_case(&r)) {
-            message = format!("Reply {r} is not valid; type one of {}.", q.valid.join(", "));
+            message = crate::display::msgline::text(host, "CPD9BA4", &[&r, &q.valid.join(", ")]);
             continue;
         }
         break Some(r);

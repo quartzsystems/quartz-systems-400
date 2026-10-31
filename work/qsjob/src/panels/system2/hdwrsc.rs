@@ -17,7 +17,7 @@ use super::{cell, dialog, exec, fill, parm, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::Response;
+use crate::display::uim::{LineMsg, Response};
 
 type Rows = Vec<Vec<(String, String)>>;
 
@@ -26,7 +26,7 @@ fn table(host: &Host, refresh: bool) -> Result<Table, Fail> {
     host.link
         .borrow_mut()
         .with(|l| l.hw_table(refresh))
-        .map_err(|e| Fail::new("CPF9898", e.trim_start_matches("CPF9898 ").to_string()))
+        .map_err(|e| crate::panels::failed(&e))
 }
 
 /// The panel and list of a type's display.
@@ -119,7 +119,7 @@ fn list_loop(job: &mut Job, host: &Host, surface: &mut Surface, spec: &TypeSpec,
                         ("5", "*CMN" | "*LWS" | "*CRP") => cfgds(job, host, surface, &t, &name)?,
                         ("9", "*STG") => sub_list(job, host, surface, &name)?,
                         (o, _) => {
-                            d.message = Some((format!("Option {o} is not valid for resource {name}."), true));
+                            d.error("CPI0B18", &[o]);
                             Next::Back
                         }
                     };
@@ -129,7 +129,7 @@ fn list_loop(job: &mut Job, host: &Host, surface: &mut Surface, spec: &TypeSpec,
                 }
                 d.list_mut(list).options.clear();
             }
-            Response::Print => d.message = print(job, host, spec),
+            Response::Print => d.set_message(print(job, host, spec)),
             Response::Return(5) => refresh = true,
             _ => {}
         }
@@ -146,7 +146,7 @@ enum Next {
 }
 
 /// F6: the list printed by the service.
-fn print(job: &mut Job, host: &Host, spec: &TypeSpec) -> Option<(String, bool)> {
+fn print(job: &mut Job, host: &Host, spec: &TypeSpec) -> Option<LineMsg> {
     exec(job, host, &format!("DSPHDWRSC TYPE({}) OUTPUT(*PRINT)", spec.ty))
 }
 
@@ -173,7 +173,7 @@ fn detail(host: &Host, surface: &mut Surface, t: &Table, name: &str) -> Result<N
         match show(&mut d, surface, "DETAIL")? {
             Response::Exit | Response::Gone => return Ok(Next::Exit),
             Response::Return(5) => t = table(host, true)?,
-            Response::Print => d.message = Some(("Print the list with F6 from the resource list.".into(), false)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => return Ok(Next::Back),
         }
     }
@@ -221,14 +221,14 @@ fn cfgds(job: &mut Job, host: &Host, surface: &mut Surface, t: &Table, name: &st
                         ("8", Some((n, _))) => Some(format!("WRKCFGSTS CFGTYPE(*DEV) CFGD({n})")),
                         _ => None,
                     };
-                    d.message = match line {
+                    d.set_message(match line {
                         Some(l) => exec(job, host, &l),
-                        None => Some((format!("Option {} is not valid on this row.", ch.option), true)),
-                    };
+                        None => Some(LineMsg::error("CPI0B18", &[ch.option.trim()])),
+                    });
                 }
                 d.list_mut("CFGDS").options.clear();
             }
-            Response::Print => d.message = Some(("There is nothing to print here.".into(), false)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
@@ -270,7 +270,7 @@ fn sub_list(job: &mut Job, host: &Host, surface: &mut Surface, name: &str) -> Re
                         "7" => detail(host, surface, &tbl, &rsc)?,
                         "5" => cfgds(job, host, surface, &tbl, &rsc)?,
                         o => {
-                            dlg.message = Some((format!("Option {o} is not valid for resource {rsc}."), true));
+                            dlg.error("CPI0B18", &[o]);
                             Next::Back
                         }
                     };

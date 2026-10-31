@@ -68,10 +68,7 @@ fn apply(job: &mut Job, host: &Host, d: &mut UimDialog, name: &str, act: &str) -
         let mut parms = String::new();
         if get("SIZE") != get("SIZE0") {
             let Some(k) = kb(&get("SIZE")) else {
-                d.message = Some((
-                    format!("The size of {pool} is not a number of megabytes."),
-                    true,
-                ));
+                d.error("CPD9B96", &[&pool]);
                 return true;
             };
             let _ = write!(parms, " SIZE({k})");
@@ -86,10 +83,7 @@ fn apply(job: &mut Job, host: &Host, d: &mut UimDialog, name: &str, act: &str) -
         if pool.starts_with('*') {
             exec(job, host, d, &format!("CHGSHRPOOL POOL({pool}){parms}"));
         } else {
-            d.message = Some((
-                format!("Pool {pool} is a subsystem's own pool; change it with CHGSBSD."),
-                true,
-            ));
+            d.error("CPD9B97", &[&pool]);
         }
     }
     changed

@@ -71,7 +71,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, work
             Response::Return(4) => {
                 let t = d.get(CMDLINE_VAR).trim().to_string();
                 if t.is_empty() {
-                    d.message = Some(("Type a command on the command line, then F4.".into(), true));
+                    d.error("CPD9B86", &[]);
                 } else {
                     d.set(CMDLINE_VAR, "");
                     last.clone_from(&t);
@@ -83,7 +83,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, work
             Response::Return(22) => whole_name(&mut d),
             Response::Retrieve => {
                 if last.is_empty() {
-                    d.message = Some(("There is no command to retrieve.".into(), true));
+                    d.error("CPD9B85", &[]);
                 } else {
                     d.set(CMDLINE_VAR, &last);
                 }
@@ -112,23 +112,23 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, work
                             let l = d.list_mut(LIST);
                             l.options.insert(ch.row, ch.option.clone());
                             l.errors.insert(ch.row);
-                            d.message = Some((
-                                format!("Option {} is not allowed on {}.", ch.option, link.name),
-                                true,
-                            ));
+                            d.error("CPD6A7C", &[]);
                             break;
                         }
                     }
                 }
             }
             _ => {
-                d.message = Some(("That function is not available here.".into(), true));
+                d.error("CPD9B81", &[]);
             }
         }
         if reload {
             let level = stack.last().expect("a level").clone();
             if let Err(e) = load(&c, &mut d, &level) {
-                d.message = Some((format!("{}: {}", level.obj, e.text()), true));
+                // The IFS commands' message for the errno, the path its value.
+                let code = e.code().to_string();
+                let id = e.command_message();
+                d.error(id, &[if id == "CPFA0D4" { &code } else { &level.obj }]);
                 fill(&mut d, LIST, Vec::new());
             }
         }
@@ -224,7 +224,7 @@ fn position(d: &mut UimDialog) {
     let want = d.get(CMDLINE_VAR).trim().to_uppercase();
     d.set(CMDLINE_VAR, "");
     if want.is_empty() {
-        d.message = Some(("Type a name on the command line, then F17.".into(), true));
+        d.error("CPD9B87", &[]);
         return;
     }
     let names: Vec<String> = (0..d.list_mut(LIST).rows.len())
@@ -232,7 +232,7 @@ fn position(d: &mut UimDialog) {
         .collect();
     match names.iter().position(|n| *n >= want) {
         Some(i) => d.list_mut(LIST).top = i,
-        None => d.message = Some((format!("No entry is at or after {want}."), true)),
+        None => d.error("CPD9B80", &[&want]),
     }
 }
 
@@ -244,9 +244,9 @@ fn whole_name(d: &mut UimDialog) {
     let i = top + r.saturating_sub(FIRST_ROW);
     if r >= FIRST_ROW && i < n {
         let path = cell(d, LIST, i, "PATH");
-        d.message = Some((path, false));
+        d.info("CPI9B89", &[&path]);
     } else {
         let dir = d.get("DIR");
-        d.message = Some((format!("Directory: {dir}"), false));
+        d.info("CPI9B88", &[&dir]);
     }
 }

@@ -88,17 +88,13 @@ pub fn wrkactjob(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                             d.list_mut(LIST).top = 0;
                         }
                         None => {
-                            d.message = Some(("Put the cursor on a column of the list, then F16.".into(), true));
+                            d.error("CPD9B9C", &[]);
                         }
                     }
                     Flow::Refresh
                 }
-                Response::Return(19) => {
-                    d.message = Some(("Automatic refresh is not available in this release.".into(), true));
-                    Flow::Stay
-                }
-                Response::Return(21) => {
-                    d.message = Some(("The instructions and keys always show in this release.".into(), true));
+                Response::Return(19 | 21) => {
+                    d.error("CPD9B81", &[]);
                     Flow::Stay
                 }
                 Response::Options(choices) => {

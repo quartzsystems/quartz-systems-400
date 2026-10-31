@@ -25,10 +25,7 @@ pub fn wrksbmjob(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<St
     let mut keys = |_: &mut Job, _: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
         Ok(match resp {
             Response::Return(11) => {
-                d.message = Some((
-                    "Schedule data is not available in this release.".into(),
-                    true,
-                ));
+                d.error("CPD9B81", &[]);
                 Step::Stay
             }
             other => others(d, &other),
@@ -122,8 +119,7 @@ pub fn wrksbsd(
                     {
                         Some(i) if !position.is_empty() => l.top = i,
                         _ => {
-                            d.message =
-                                Some(("Type a name on the command line, then F17.".into(), true));
+                            d.error("CPD9B87", &[]);
                         }
                     }
                     Step::Stay

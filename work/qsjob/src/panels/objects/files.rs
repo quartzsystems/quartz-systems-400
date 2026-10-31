@@ -72,7 +72,7 @@ pub fn splf(host: &Host, surface: &mut Surface, r: &Resolved, file: &str) -> Res
                     let to = i64::try_from(l.top).unwrap_or(0) + k;
                     l.top = usize::try_from(to.max(0)).unwrap_or(0).min(n.saturating_sub(1));
                 } else {
-                    d.message = Some((format!("Control value {c} is not valid."), true));
+                    d.error("CPD9B95", &[c]);
                     search = false;
                 }
             }
@@ -85,7 +85,7 @@ pub fn splf(host: &Host, surface: &mut Surface, r: &Resolved, file: &str) -> Res
                 .find(|i| lines[*i].to_ascii_uppercase().contains(&find.to_ascii_uppercase()));
             match hit {
                 Some(i) => d.list_mut("LINES").top = i,
-                None => d.message = Some((format!("{find} was not found."), true)),
+                None => d.error("CPD9B8C", &[&find]),
             }
         }
     }

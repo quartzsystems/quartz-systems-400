@@ -74,7 +74,7 @@ fn show(
         loop {
             let flow = match d.show(surface, panel).map_err(|e| render_fail(&e))? {
                 Response::Return(11 | 21) => {
-                    d.message = Some(("That view is not available in this release.".into(), true));
+                    d.error("CPD9B8B", &[]);
                     Flow::Stay
                 }
                 other => common(job, host, d, &mut history, other),

@@ -74,7 +74,7 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, k: &Kin
         loop {
             let flow = match d.show(surface, k.panel).map_err(|e| render_fail(&e))? {
                 Response::Return(11 | 16 | 17) => {
-                    d.message = Some(("That function is not available in this release.".into(), true));
+                    d.error("CPD9B81", &[]);
                     Flow::Stay
                 }
                 other => common(job, host, &mut d, &mut history, other),
