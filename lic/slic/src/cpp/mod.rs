@@ -21,6 +21,7 @@ mod direct;
 mod ifscmd;
 mod msgfcmd;
 mod objcmd;
+mod prbcmd;
 pub(crate) mod ptfcmd;
 mod rpg;
 mod savcmd;
@@ -36,6 +37,7 @@ use sys_cpps::{Entry, Site};
 
 use crate::ipl::system::System;
 
+pub use prbcmd::rows as problem_rows;
 pub use savcmd::savf_listing;
 
 /// Run command `name` with `parms`; the text, messages and escape.
@@ -63,6 +65,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| direct::run(system, name, parms))
             .or_else(|| savcmd::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
+            .or_else(|| prbcmd::run(system, name, parms))
             .or_else(|| ifscmd::run(system, name, parms))
             .or_else(|| stmfcmd::run(system, name, parms))
             .or_else(|| msgfcmd::run(system, name, parms))

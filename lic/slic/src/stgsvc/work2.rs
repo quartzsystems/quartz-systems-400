@@ -45,6 +45,19 @@ pub fn data(
     let arg = |i: usize| args.get(i).map_or("", String::as_str);
     match what {
         "SBMJOB" => Ok(sbmjobs(system, me)),
+        "WRKPRB" => {
+            let status: Vec<prb::PrbStatus> =
+                args.iter().filter_map(|s| prb::PrbStatus::parse(s)).collect();
+            let rows = crate::cpp::problem_rows(system, &status)?;
+            let row = |r: Vec<String>| {
+                ["PRBID", "PRBSTS", "PRBTEXT"]
+                    .iter()
+                    .zip(r)
+                    .map(|(k, v)| ((*k).to_string(), v))
+                    .collect()
+            };
+            Ok((Vec::new(), rows.into_iter().map(row).collect()))
+        }
         "DSPSAVF" => {
             let (desc, rows) = crate::cpp::savf_listing(system, arg(0), arg(1))?;
             let row = |r: Vec<String>| {

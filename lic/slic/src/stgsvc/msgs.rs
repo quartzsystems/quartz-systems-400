@@ -100,6 +100,10 @@ pub fn send(system: &mut System, lib: &str, name: &str, mut m: QMsg) -> Result<u
         return Ok(0);
     }
     let sent = m.clone();
+    if lib == "QSYS" && name == "QSYSOPR" {
+        let text = if m.text.is_empty() { m.msgid.clone() } else { m.text.clone() };
+        super::prblog::message_sent(system, &m.msgid, m.severity, &text);
+    }
     let (key, id, breaks, brkpgm) = with_queue(system, "msgq.send", lib, name, |q, id| {
         let key = q
             .send(m)

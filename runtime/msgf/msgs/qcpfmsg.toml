@@ -2678,3 +2678,12 @@ sev = 40
 text = "An applied PTF needs this one: &1."
 help = "Remove the PTFs that name it as a requisite first."
 vars = ["*CHAR 50"]
+
+# Problems.
+
+[[msg]]
+id = "CPF3925"
+sev = 40
+text = "Problem &1 not found in the problem log."
+help = "WRKPRB lists the problems the system has logged."
+vars = ["*CHAR 10"]

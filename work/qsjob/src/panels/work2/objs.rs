@@ -257,10 +257,15 @@ pub fn dspsavf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
     display(host, surface, &mut d, "DSPSAVF", &mut reload)
 }
 
-/// `WRKPRB`: the problem log, empty in this release.
+/// `WRKPRB`: the problem log.
 pub fn wrkprb(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
     let mut d = dialog(host, "QGSXPNLS")?;
-    fill(&mut d, "PRBS", Vec::new());
-    let mut reload = |_: &Host, _: &mut UimDialog| Ok(());
+    let data = fetch(host, "WRKPRB", &[])?;
+    load(&mut d, "PRBS", data);
+    let mut reload = |h: &Host, d: &mut UimDialog| {
+        let data = fetch(h, "WRKPRB", &[])?;
+        load(d, "PRBS", data);
+        Ok(())
+    };
     display(host, surface, &mut d, "WRKPRB", &mut reload)
 }
