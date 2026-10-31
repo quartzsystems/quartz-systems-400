@@ -585,6 +585,14 @@ fn tape_lines(v: &meddsp::TapView, data: &str) -> Vec<String> {
         return s;
     }
     if data == "*SAVRST" {
+        // Each save's header, then the objects of every save.
+        for h in &v.saves {
+            s.push(String::new());
+            s.push(format!("File sequence number  . . . : {}", h.seq));
+            s.push(format!("Save command  . . . . . . . : {}", h.command));
+            s.push(format!("Library saved . . . . . . . : {}", h.library));
+            s.push(format!("Release . . . . . . . . . . : {}", h.release));
+        }
         s.push(String::new());
         s.push(format!("{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Seq", "Object", "Type", "Library", "Attribute", "Size"));
         for o in &v.objects {
