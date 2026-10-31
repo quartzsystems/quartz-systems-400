@@ -59,6 +59,56 @@ impl Fail {
             text: text.into(),
         }
     }
+
+    /// The function check of command `cmd`: `CPF9898`, with `detail`
+    /// for the job log's `CPD9898` only ([`sys_cpps::check`]).
+    #[must_use]
+    pub fn check(cmd: &str, detail: impl Into<String>) -> Self {
+        Self {
+            msgid: sys_cpps::check::ESCAPE.into(),
+            data: sys_cpps::check::escape_data(cmd),
+            text: detail.into(),
+        }
+    }
+
+    /// A form of command `cmd` a later release brings (`CPF9B70`).
+    #[must_use]
+    pub fn later(cmd: &str) -> Self {
+        Self {
+            msgid: sys_cpps::check::LATER.into(),
+            data: cmd::error::data(&[(cmd, 10)]),
+            text: String::new(),
+        }
+    }
+
+    /// Command `cmd` shows a display and the job has none (`CPF9B71`).
+    #[must_use]
+    pub fn no_display(cmd: &str) -> Self {
+        Self {
+            msgid: "CPF9B71".into(),
+            data: cmd::error::data(&[(cmd, 10)]),
+            text: String::new(),
+        }
+    }
+
+    /// A failed read over the link: the service's message when it
+    /// sent one, else the function check of `cmd`.
+    #[must_use]
+    pub fn read(cmd: &str, e: &str) -> Self {
+        if sys_cpps::check::is_internal(e) {
+            return Self::check(cmd, e);
+        }
+        let t = e.trim();
+        Self::new(&t[..7], t.to_string())
+    }
+
+    /// Whether this is a function check still carrying its detail.
+    #[must_use]
+    pub fn is_check(&self) -> bool {
+        self.msgid == sys_cpps::check::ESCAPE
+            && !self.text.is_empty()
+            && sys_cpps::check::is_check_data(&self.data)
+    }
 }
 
 /// What running a line produced.
@@ -237,9 +287,22 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
         None => user_cpp(job, host, r),
     };
     libs.leave(host);
+    // Details of failures a panel's message line showed as a check.
+    for detail in crate::panels::take_details() {
+        let data = sys_cpps::check::diag_data(&r.name, &detail);
+        log(job, sys_cpps::check::DIAG, &data, MsgType::Diag, None);
+    }
     match result {
         Ok(text) => out.text.push_str(&text),
-        Err(f) => {
+        Err(mut f) => {
+            if f.is_check() {
+                // The detail stays in the job log.
+                let data = sys_cpps::check::diag_data(&r.name, &f.text);
+                log(job, sys_cpps::check::DIAG, &data, MsgType::Diag, None);
+                f.data = sys_cpps::check::escape_data(&r.name);
+                f.text.clear();
+                f.text = shown(job, &f).trim_end().to_string();
+            }
             let last = f.text.lines().last().unwrap_or("");
             log(job, &f.msgid, &f.data, MsgType::Escape, Some(last));
             if out.text.is_empty() {

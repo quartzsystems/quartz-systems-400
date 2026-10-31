@@ -287,7 +287,7 @@ pub fn chgtelna(host: &Host, r: &Resolved) -> Result<String, Fail> {
     match host.link.borrow_mut().with(|l| l.tcp(op)) {
         TcpReply::Done { .. } => Ok(format!("{} TELNET attributes changed.\n", servers::msg::ATTRS_CHANGED)),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
-        other => Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
 }
 
@@ -318,7 +318,7 @@ pub fn chgftpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
         TcpReply::Done { .. } => Ok(format!("{} FTP attributes changed.
 ", servers::msg::ATTRS_CHANGED)),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
-        other => Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
 }
 

@@ -118,7 +118,7 @@ fn nomax(v: Option<u32>) -> String {
 /// `DSPJOBD JOBD(lib/name)`.
 pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let (payload, lib, name) = fetch(host, r, "JOBD", "*JOBD")?;
-    let j = JobD::decode(&payload).map_err(|e| Fail::new("CPF9801", e.to_string()))?;
+    let j = JobD::decode(&payload).map_err(|e| crate::panels::failed(e.to_string()))?;
     let mut d = crate::panels::dialog(host, "QUIWRKJOBD")?;
     let values: Vec<(&str, String)> = vec![
         ("JOBD", name),
@@ -169,7 +169,7 @@ pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 /// `DSPCLS CLS(lib/name)`.
 pub fn dspcls(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let (payload, lib, name) = fetch(host, r, "CLS", "*CLS")?;
-    let c = Cls::decode(&payload).map_err(|e| Fail::new("CPF9801", e.to_string()))?;
+    let c = Cls::decode(&payload).map_err(|e| crate::panels::failed(e.to_string()))?;
     let mut d = crate::panels::dialog(host, "QUIWRKCLS")?;
     let values: Vec<(&str, String)> = vec![
         ("CLS", name),

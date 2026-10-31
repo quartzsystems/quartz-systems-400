@@ -22,11 +22,7 @@ pub fn dspusrprf(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
         return None;
     }
     let name = parm(r, "USRPRF");
-    let vars = host
-        .link
-        .borrow_mut()
-        .with(|l| l.usrprf_panel(name.clone()))
-        .ok()?;
+    let vars = read!(&r.name, host.link.borrow_mut().with(|l| l.usrprf_panel(name.clone())));
     let mut d = match crate::panels::dialog(host, "QUIUSRPRF") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -61,7 +57,7 @@ pub fn wrkusrprf(
         Err(e) => return Some(Err(e)),
     };
     loop {
-        let users = host.link.borrow_mut().with(Client::usrprf_panel_list).ok()?;
+        let users = read!(&r.name, host.link.borrow_mut().with(Client::usrprf_panel_list));
         let top = d.list_mut("USERS").top;
         d.clear_list("USERS");
         for (name, class, text) in users {
@@ -83,7 +79,7 @@ pub fn wrkusrprf(
         loop {
             let answer = match d.show(surface, "WRKUSRPRF") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
+                Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
             };
             match work_answer(job, host, &mut d, "USERS", answer) {
                 Next::Stay => {}
@@ -97,11 +93,7 @@ pub fn wrkusrprf(
 /// `DSPAUTUSR SEQ()`.
 pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let by_group = parm(r, "SEQ") == "*GRPPRF";
-    let rows = host
-        .link
-        .borrow_mut()
-        .with(|l| l.autusr_panel(by_group))
-        .ok()?;
+    let rows = read!(&r.name, host.link.borrow_mut().with(|l| l.autusr_panel(by_group)));
     let mut d = match crate::panels::dialog(host, "QUIAUTUSR") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -134,7 +126,7 @@ pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
             }
             Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
             Ok(_) => return Some(Ok(String::new())),
-            Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
+            Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
         }
         d.copyright = false;
     }

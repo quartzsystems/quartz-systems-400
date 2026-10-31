@@ -36,7 +36,7 @@ pub fn wrkdevd(
     r: &Resolved,
 ) -> Option<Result<String, Fail>> {
     let which = parm(r, "DEVD");
-    let mut data = fetch(host, "DEVD", &[])?;
+    let mut data = read!("WRKDEVD", fetch(host, "DEVD", &[]));
     let mut d = match dialog(host, "QUIWRKDEVD") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -82,7 +82,7 @@ pub fn wrkdevd(
             Response::Return(_) => {
                 // Enter: position the list; F5 and Enter both look again.
                 let pos = d.get("POSTO").trim().to_ascii_uppercase();
-                if let Some(fresh) = fetch(host, "DEVD", &[]) {
+                if let Ok(fresh) = fetch(host, "DEVD", &[]) {
                     data = fresh;
                 }
                 if !pos.is_empty() {

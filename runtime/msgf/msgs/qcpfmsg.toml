@@ -131,6 +131,20 @@ help = ""
 vars = ["*CHAR 512"]
 
 [[msg]]
+id = "CPF9B70"
+sev = 30
+text = "&1 with the values given is not available in this release."
+help = "The command exists and its other forms work; the form asked for arrives in a later release. Nothing was changed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9898"
+sev = 30
+text = "Detail of the unexpected condition in &1: &2"
+help = "The command named ended with function check CPF9898. This entry, kept in the job log only, says what failed underneath; it is for the person who looks after the system."
+vars = ["*CHAR 10", "*CHAR 480"]
+
+[[msg]]
 id = "CPF9999"
 sev = 50
 text = "Function check: &1 was not handled at &2."
@@ -3808,3 +3822,93 @@ sev = 40
 text = "This job runs in a subsystem that ending the subsystems would end."
 help = "Options that end every subsystem run from the console, outside the subsystems."
 vars = []
+
+# Messages the panels and the job's processing programs send.
+
+[[msg]]
+id = "CPD0071"
+sev = 30
+text = "A name is required for parameter &1."
+help = "Type the object's name, qualified by its library when it is not in the library list."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2403"
+sev = 40
+text = "Message queue &1 in library &2 not found."
+help = "Check the queue's name and library, or create the queue with CRTMSGQ."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2407"
+sev = 40
+text = "Message file &1 in library &2 not found."
+help = "Check the message file's name and library, or create it with CRTMSGF."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2419"
+sev = 40
+text = "Message &1 is not in message file &2 in library &3."
+help = "Check the identifier, or add the message with ADDMSGD."
+vars = ["*CHAR 7", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2447"
+sev = 40
+text = "The history log could not be read."
+help = "The QHST log's members could not be opened. The job log has the detail."
+
+[[msg]]
+id = "CPF2555"
+sev = 40
+text = "The system reply list could not be read."
+help = "The reply list's entries could not be read. The job log has the detail."
+
+[[msg]]
+id = "CPF3307"
+sev = 40
+text = "Job queue &1 in library &2 not found."
+help = "Check the job queue's name and library, or create it with CRTJOBQ."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3357"
+sev = 40
+text = "Output queue &1 in library &2 not found."
+help = "Check the output queue's name and library, or create it with CRTOUTQ."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3C46"
+sev = 40
+text = "The job's output could not be spooled."
+help = "The spooled file could not be created or written. The job log has the detail."
+
+[[msg]]
+id = "CPF9815"
+sev = 40
+text = "Member &1 of file &2 in library &3 not found."
+help = "Check the member's name, or list the file's members with DSPFD TYPE(*MBRLIST)."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9B71"
+sev = 30
+text = "&1 shows a display, and the job has none."
+help = "Run the command from a work station. A batch job can give FTP its subcommands in the file INPUT (OVRDBF FILE(INPUT))."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF1088"
+sev = 40
+text = "Data area &1 in library &2 is too small for the change."
+help = "The value would not fit the data area's length. Remove entries first, or ask for less."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2123"
+sev = 40
+text = "No objects of type &1 named &2 were found."
+help = "Check the object's name, library and type. A generic name finds every object whose name starts with it."
+vars = ["*CHAR 7", "*CHAR 10"]

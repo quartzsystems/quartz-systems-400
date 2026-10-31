@@ -19,11 +19,7 @@ pub fn dspautl(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Resul
         return None;
     }
     let name = parm(r, "AUTL");
-    let rows = host
-        .link
-        .borrow_mut()
-        .with(|l| l.autl_panel(name.clone()))
-        .ok()?;
+    let rows = read!(&r.name, host.link.borrow_mut().with(|l| l.autl_panel(name.clone())));
     let cell = |r: usize, i: usize| {
         rows.get(r)
             .and_then(|row| row.get(i))
@@ -64,7 +60,7 @@ pub fn wrkautl(
         Err(e) => return Some(Err(e)),
     };
     loop {
-        let lists = host.link.borrow_mut().with(Client::autl_panel_list).ok()?;
+        let lists = read!(&r.name, host.link.borrow_mut().with(Client::autl_panel_list));
         let top = d.list_mut("LISTS").top;
         d.clear_list("LISTS");
         for (name, text) in lists {
@@ -90,7 +86,7 @@ pub fn wrkautl(
         loop {
             let answer = match d.show(surface, "WRKAUTL") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
+                Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
             };
             match work_answer(job, host, &mut d, "LISTS", answer) {
                 Next::Stay => {}
@@ -103,7 +99,7 @@ pub fn wrkautl(
 
 /// `DSPSECAUD`.
 pub fn dspsecaud(host: &Host, surface: &mut Surface) -> Option<Result<String, Fail>> {
-    let values = host.link.borrow_mut().with(Client::secaud_panel).ok()?;
+    let values = read!("DSPSECAUD", host.link.borrow_mut().with(Client::secaud_panel));
     let mut d = match crate::panels::dialog(host, "QUISECAUD") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),

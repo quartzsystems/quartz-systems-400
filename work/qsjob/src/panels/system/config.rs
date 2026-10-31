@@ -62,7 +62,7 @@ pub fn wrkcfgsts(
 ) -> Option<Result<String, Fail>> {
     let ty = parm(r, "CFGTYPE");
     if !matches!(ty.as_str(), "*LIN" | "*CTL" | "*DEV") {
-        return None;
+        return Some(Err(Fail::later("WRKCFGSTS")));
     }
     let args = vec![
         ty.clone(),
@@ -81,15 +81,7 @@ pub fn wrkcfgsts(
             .link
             .borrow_mut()
             .with(|l| l.cmn_panel("CFGSTS".into(), args.clone()));
-        let data = match data {
-            Ok(x) => x,
-            Err(e) => {
-                let id = crate::command::jobsite::leading_msgid(&e)
-                    .unwrap_or("CPF9898")
-                    .to_string();
-                return Some(Err(Fail::new(&id, e)));
-            }
-        };
+        let data = read!("WRKCFGSTS", data);
         let rows = data
             .1
             .into_iter()
@@ -109,7 +101,7 @@ pub fn wrkcfgsts(
         loop {
             let resp = match d.show(surface, "WRKCFGSTS") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
+                Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
             };
             match resp {
                 Response::Exit
@@ -181,11 +173,7 @@ pub fn wrkcfgsts(
 /// `DSPDEVD DEVD()`.
 pub fn dspdevd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let name = parm(r, "DEVD");
-    let vars = host
-        .link
-        .borrow_mut()
-        .with(|l| l.devd_panel(name.clone()))
-        .ok()?;
+    let vars = read!("DSPDEVD", host.link.borrow_mut().with(|l| l.devd_panel(name.clone())));
     let mut d = match crate::panels::dialog(host, "QUICFG") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),

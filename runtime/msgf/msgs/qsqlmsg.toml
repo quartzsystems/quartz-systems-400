@@ -172,3 +172,15 @@ sev = 30
 text = "The SQL precompile of &1 failed; the object was not created."
 help = "The precompile listing shows the statements in error. Correct them and run CRTSQLRPGI again."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "SQL9006"
+sev = 30
+text = "RUNSQLSTM ended: errors above the severity allowed were found."
+help = "The listing gives each statement's messages. Correct the statements or raise ERRLVL."
+
+[[msg]]
+id = "SQL9010"
+sev = 30
+text = "The SQL statement RUNSQL ran did not complete."
+help = "The messages before this one say why the statement failed."

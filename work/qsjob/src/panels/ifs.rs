@@ -68,7 +68,7 @@ fn fail(e: Errno, path: &str) -> Fail {
 /// A panel shown, its failure an escape.
 fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
     d.show(surface, panel)
-        .map_err(|e| Fail::new("CPF6A12", format!("panel {panel}: {e}")))
+        .map_err(|e| crate::panels::failed(format!("panel {panel}: {e}")))
 }
 
 /// Run a command as Command Entry would; its first line or its escape

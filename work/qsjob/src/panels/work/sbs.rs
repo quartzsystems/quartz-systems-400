@@ -80,7 +80,7 @@ pub fn dspsbsd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
             let (id, text) = e.split_once(' ').unwrap_or(("CPF1619", e.as_str()));
             Fail::new(id, text)
         })?;
-    let sbsd = Sbsd::decode(&payload).map_err(|e| Fail::new("CPF1619", e.to_string()))?;
+    let sbsd = Sbsd::decode(&payload).map_err(|e| crate::panels::failed(e.to_string()))?;
     let real_lib = host
         .link
         .borrow_mut()

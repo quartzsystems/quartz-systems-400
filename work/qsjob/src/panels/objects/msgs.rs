@@ -169,7 +169,7 @@ pub(super) fn info(
                         answered = true;
                         d.set("REPLY", &reply);
                     }
-                    Err(e) => d.message = Some((e, true)),
+                    Err(e) => d.message = Some((crate::panels::line(&e), true)),
                 }
             }
             _ => {}

@@ -141,7 +141,7 @@ pub fn dsppgm(
     srvpgm: bool,
 ) -> Option<Result<String, Fail>> {
     let (name, lib) = qual(cmd, if srvpgm { "SRVPGM" } else { "PGM" });
-    let data = fetch(host, if srvpgm { "SRVPGM" } else { "PGM" }, &[&lib, &name])?;
+    let data = read!(&cmd.name, fetch(host, if srvpgm { "SRVPGM" } else { "PGM" }, &[&lib, &name]));
     let all = if srvpgm { SRV_DETAILS } else { PGM_DETAILS };
     let asked = parm_list(cmd, "DETAIL");
     let details: Vec<&Detail> = if asked.is_empty() || asked.iter().any(|a| a == "*ALL") {
@@ -150,7 +150,7 @@ pub fn dsppgm(
         all.iter().filter(|d| asked.iter().any(|a| a == d.name)).collect()
     };
     if details.is_empty() {
-        return None;
+        return Some(Err(Fail::later(&cmd.name)));
     }
     let mut d = match dialog(host, "QUIDSPPGM") {
         Ok(d) => d,
@@ -246,7 +246,7 @@ pub fn dsppgm(
 /// `DSPMOD`: the module's attributes, then its procedures.
 pub fn dspmod(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let (name, lib) = qual(r, "MODULE");
-    let data = fetch(host, "MODULE", &[&lib, &name])?;
+    let data = read!(&r.name, fetch(host, "MODULE", &[&lib, &name]));
     let detail = parm(r, "DETAIL");
     let panels: Vec<(&str, &str)> = match detail.as_str() {
         "*BASIC" => vec![("MODBASIC", "*BASIC")],
@@ -291,7 +291,7 @@ fn walk(surface: &mut Surface, d: &mut UimDialog, panels: &[(&str, &str)]) -> Re
 /// `DSPBNDDIR`: the entries in binding order.
 pub fn dspbnddir(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let (name, lib) = qual(r, "BNDDIR");
-    let data = fetch(host, "BNDDIR", &[&lib, &name])?;
+    let data = read!(&r.name, fetch(host, "BNDDIR", &[&lib, &name]));
     let mut d = match dialog(host, "QUIDSPBNDD") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -318,7 +318,7 @@ fn until_left(surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<S
 /// `DSPCMD`: the command definition's attributes.
 pub fn dspcmd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let (name, lib) = qual(r, "CMD");
-    let data = fetch(host, "CMD", &[&lib, &name])?;
+    let data = read!(&r.name, fetch(host, "CMD", &[&lib, &name]));
     let mut d = match dialog(host, "QUIDSPCMD") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),

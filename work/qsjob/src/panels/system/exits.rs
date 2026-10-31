@@ -101,7 +101,7 @@ pub fn wrkreginf(
         loop {
             let answer = match d.show(surface, "WRKREGINF") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
+                Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
             };
             match answer {
                 Response::Options(choices) => {
@@ -233,7 +233,7 @@ fn wrkexitpgm(
         loop {
             let answer = d
                 .show(surface, "WRKEXITPGM")
-                .map_err(|e| Fail::new("CPF6A12", e.to_string()))?;
+                .map_err(|e| crate::panels::failed(e.to_string()))?;
             match answer {
                 Response::Options(choices) => {
                     program_options(job, host, surface, &mut d, (name, format), &found, &choices)?;

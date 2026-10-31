@@ -15,6 +15,7 @@
 #![deny(missing_docs)]
 
 pub mod bridge;
+pub mod check;
 pub mod install;
 pub mod inventory;
 

@@ -103,7 +103,7 @@ pub fn dspdtaara(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
         .link
         .borrow_mut()
         .with(|l| l.da_read(found.name.clone(), found.lib.clone()))
-        .map_err(|e| Fail::new("CPF1015", format!("{e:?}")))?;
+        .map_err(|e| crate::panels::failed(format!("{e:?}")))?;
     let mut d = dialog(host, "QUIDSPDTAA")?;
     d.set("DTAARA", &found.name);
     d.set("DTALIB", &found.lib);

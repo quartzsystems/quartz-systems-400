@@ -22,12 +22,7 @@ fn fetch(host: &Host, what: &str, args: &[String]) -> Result<stg::proto::Sys2Dat
         .link
         .borrow_mut()
         .with(|l| l.cmn_panel(what.into(), args.to_vec()));
-    r.map_err(|e| {
-        let id = crate::command::jobsite::leading_msgid(&e)
-            .unwrap_or("CPF9898")
-            .to_string();
-        Fail::new(&id, e)
-    })
+    r.map_err(|e| crate::panels::failed(&e))
 }
 
 /// `WRKLIND LIND()`.

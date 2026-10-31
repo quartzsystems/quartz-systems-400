@@ -7,7 +7,21 @@
 //! service, fills a dialog and shows a shipped panel group with the
 //! engine (`crate::display::uim`). A job without a display (batch, a
 //! CL program's `OUTPUT(*PRINT)`) keeps the text path the storage
-//! service answers with.
+//! service answers with. A driver whose read fails ends the command
+//! with the service's message or the function check
+//! ([`crate::command::Fail::read`]); it never hands the command back to
+//! the text path.
+
+/// A read over the link in a driver returning
+/// `Option<Result<String, Fail>>`: its value, or the command's escape.
+macro_rules! read {
+    ($cmd:expr, $e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(e) => return Some(Err($crate::command::Fail::read($cmd, &e))),
+        }
+    };
+}
 
 pub mod backup;
 pub mod certs;
@@ -36,6 +50,55 @@ use crate::display::uim::UimDialog;
 thread_local! {
     /// Panel groups opened so far, by `LIB/NAME`.
     static GROUPS: RefCell<HashMap<String, Rc<uim::PanelGroup>>> = RefCell::new(HashMap::new());
+    /// The commands whose panels are showing, the innermost last.
+    static RUNNING: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// A command's panels showing; the command before it again on drop.
+struct Running;
+
+impl Running {
+    fn enter(name: &str) -> Self {
+        RUNNING.with(|r| r.borrow_mut().push(name.to_string()));
+        Self
+    }
+}
+
+impl Drop for Running {
+    fn drop(&mut self) {
+        RUNNING.with(|r| r.borrow_mut().pop());
+    }
+}
+
+thread_local! {
+    /// Failure details a message line showed as a function check,
+    /// for the job log.
+    static DETAILS: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+}
+
+/// A failure's text for a panel's message line: the service's message
+/// when `e` starts with one, else the function check's sentence, the
+/// detail kept for the job log ([`take_details`]).
+pub fn line(e: &str) -> String {
+    if !sys_cpps::check::is_internal(e) {
+        return e.trim().to_string();
+    }
+    DETAILS.with(|d| d.borrow_mut().push(e.to_string()));
+    let name = RUNNING.with(|r| r.borrow().last().cloned().unwrap_or_else(|| "*N".into()));
+    sys_cpps::check::text(&name)
+}
+
+/// The details [`line`] kept since the last call.
+pub fn take_details() -> Vec<String> {
+    DETAILS.with(|d| std::mem::take(&mut *d.borrow_mut()))
+}
+
+/// A driver's failure: the service's message when `e` starts with
+/// one, else the function check of the command whose panels show,
+/// `e` its detail for the job log.
+pub fn failed(e: impl AsRef<str>) -> Fail {
+    let name = RUNNING.with(|r| r.borrow().last().cloned().unwrap_or_else(|| "*N".into()));
+    Fail::read(&name, e.as_ref())
 }
 
 /// A panel group through the storage service, kept once opened.
@@ -49,9 +112,9 @@ pub fn group(host: &Host, lib: &str, name: &str) -> Result<Rc<uim::PanelGroup>, 
         .link
         .borrow_mut()
         .with(|l| l.pnlgrp_open(name.into(), lib.into()))
-        .map_err(|e| Fail::new("CPF6A12", format!("panel group {lib}/{name}: {e}")))?;
+        .map_err(|e| crate::panels::failed(format!("panel group {lib}/{name}: {e}")))?;
     let p = uim::payload::decode(&payload)
-        .map_err(|e| Fail::new("CPF6A12", format!("panel group {lib}/{name}: {e}")))?;
+        .map_err(|e| crate::panels::failed(format!("panel group {lib}/{name}: {e}")))?;
     let g = Rc::new(p.group);
     GROUPS.with(|m| m.borrow_mut().insert(key, Rc::clone(&g)));
     Ok(g)
@@ -89,6 +152,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
         return None;
     }
     let mut surface = Surface::new(host.clone());
+    let _running = Running::enter(&r.name);
     // --- work management (work.rs)
     if let Some(res) = work::run(job, host, &mut surface, r, out) {
         return Some(res);

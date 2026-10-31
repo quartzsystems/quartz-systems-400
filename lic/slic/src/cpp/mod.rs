@@ -113,8 +113,34 @@ fn bridge(system: &mut System, e: &Entry, parms: &Parms, typed: &str) -> CmdRepl
     } else {
         typed.to_string()
     };
+    // A word only the console process answers is no processing program.
+    let word = line.split_whitespace().next().unwrap_or("");
+    if crate::procs::svcjob::LOCAL.contains(&word) {
+        return check(&e.name, &format!("{word} is a console word, not the storage service's"));
+    }
     let text = crate::stgsvc::exec::run(system, &line);
+    if text.trim_start().starts_with("CPF9899") {
+        return check(&e.name, &text);
+    }
     classify(text, e, parms)
+}
+
+/// The function check of command `name` (`sys_cpps::check`): `CPF9898`
+/// as the escape, the detail in a `CPD9898` for the job log only.
+pub fn check(name: &str, detail: &str) -> CmdReply {
+    CmdReply {
+        messages: vec![CmdMsg {
+            msgid: sys_cpps::check::DIAG.into(),
+            kind: 5,
+            data: sys_cpps::check::diag_data(name, detail),
+        }],
+        escape: Some(CmdMsg {
+            msgid: sys_cpps::check::ESCAPE.into(),
+            kind: 7,
+            data: sys_cpps::check::escape_data(name),
+        }),
+        ..CmdReply::default()
+    }
 }
 
 /// Output into a reply: a leading message identifier is the escape;

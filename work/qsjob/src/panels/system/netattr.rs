@@ -30,7 +30,7 @@ fn split_net(v: &str) -> (String, String) {
 
 /// `DSPNETA`.
 pub fn dspneta(host: &Host, surface: &mut Surface) -> Option<Result<String, Fail>> {
-    let attrs = host.link.borrow_mut().with(Client::neta_panel).ok()?;
+    let attrs = read!("DSPNETA", host.link.borrow_mut().with(Client::neta_panel));
     let mut d = match crate::panels::dialog(host, "QUIDSPNETA") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -102,7 +102,7 @@ pub fn dspsfwrsc(host: &Host, surface: &mut Surface) -> Option<Result<String, Fa
             }
             Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
             Ok(_) => return Some(Ok(String::new())),
-            Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
+            Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
         }
     }
 }

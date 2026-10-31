@@ -60,7 +60,7 @@ impl FtpHost for JobSide<'_> {
 
     fn sign_on(&mut self, _user: &str, _password: &str) -> Result<String, Refused> {
         Err(Refused {
-            msgid: "CPF9898".into(),
+            msgid: sys_cpps::check::LATER.into(),
             text: "The client does not sign on locally.".into(),
         })
     }
@@ -206,12 +206,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "*SSL" => Security::Explicit,
         "*IMPLICIT" => Security::Implicit,
         "*DFT" if port == 990 => Security::Implicit,
-        "*KERBEROS" => return Err(Fail::new("CPF9898", "Kerberos connections are not supported.")),
+        "*KERBEROS" => return Err(Fail::later("FTP")),
         _ => Security::None,
     };
     let private = match parms.name("DTAPROT").as_str() {
         "*CLEAR" => false,
-        "*SAFE" => return Err(Fail::new("CPF9898", "Data protection *SAFE needs Kerberos.")),
+        "*SAFE" => return Err(Fail::later("FTP")),
         _ => security != Security::None,
     };
     let ccsid = parms.int("CCSID").and_then(|c| u16::try_from(c).ok()).unwrap_or(819);
@@ -230,12 +230,9 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         ccsid: job_ccsid,
     };
     let lines = match &input {
-        Some((l, f, m)) => member_lines(&mut side, l, f, m).map_err(|e| Fail::new("CPF9898", format!("INPUT: {e}")))?,
+        Some((l, f, m)) => member_lines(&mut side, l, f, m).map_err(|e| Fail::check("", format!("INPUT: {e}")))?,
         None => {
-            return Err(Fail::new(
-                "CPF9898",
-                "FTP reads its subcommands from the file INPUT: override it to a member (OVRDBF FILE(INPUT)).",
-            ));
+            return Err(Fail::no_display("FTP"));
         }
     };
     let script = Script {
@@ -257,7 +254,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     let text = console.out;
     match &output {
         Some((l, f, m)) => {
-            add_lines(&mut host, l, f, m, &text).map_err(|e| Fail::new("CPF9898", format!("OUTPUT: {e}")))?;
+            add_lines(&mut host, l, f, m, &text).map_err(|e| Fail::check("", format!("OUTPUT: {e}")))?;
             Ok(format!("FTP session with {rmtsys} ended; its log is in {l}/{f}({m}).\n"))
         }
         None => Ok(text.join("\n") + "\n"),

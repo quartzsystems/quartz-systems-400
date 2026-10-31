@@ -276,7 +276,7 @@ fn view(host: &Host, what: &str) -> Result<stg::tcp::PanelData, Fail> {
     {
         TcpReply::Panel { data } => Ok(data),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
-        other => Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
 }
 

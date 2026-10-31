@@ -43,12 +43,7 @@ fn fetch(host: &Host, what: &str, args: &[String]) -> Result<Sys2Data, Fail> {
     host.link
         .borrow_mut()
         .with(|l| l.cert_panel(what.into(), args.to_vec()))
-        .map_err(|e| {
-            let id = crate::command::jobsite::leading_msgid(&e)
-                .unwrap_or("TCP1C17")
-                .to_string();
-            Fail::new(&id, e)
-        })
+        .map_err(|e| crate::panels::failed(&e))
 }
 
 fn dialog(host: &Host) -> Result<UimDialog, Fail> {
@@ -59,7 +54,7 @@ fn dialog(host: &Host) -> Result<UimDialog, Fail> {
 
 pub(super) fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
     d.show(surface, panel)
-        .map_err(|e| Fail::new("CPF6A12", format!("panel {panel}: {e}")))
+        .map_err(|e| crate::panels::failed(format!("panel {panel}: {e}")))
 }
 
 /// The data into the dialog, lists kept at their page.

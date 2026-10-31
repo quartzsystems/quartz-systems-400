@@ -112,14 +112,13 @@ fn qual(cmd: &Resolved, kwd: &str) -> (String, String) {
     }
 }
 
-/// The variables and lists of display `what`, `None` when the
-/// service has none to give.
-fn fetch(host: &Host, what: &str, args: &[&str]) -> Option<stg::proto::Sys2Data> {
+/// The variables and lists of display `what`; the service's error
+/// otherwise.
+fn fetch(host: &Host, what: &str, args: &[&str]) -> Result<stg::proto::Sys2Data, String> {
     let args: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
     host.link
         .borrow_mut()
         .with(|l| l.sys2_panel(what.into(), args))
-        .ok()
 }
 
 /// A list's entries from the data, empty when it has none.
@@ -173,7 +172,7 @@ fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
 /// Show a panel, a render failure as the command's escape.
 fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
     d.show(surface, panel)
-        .map_err(|e| Fail::new("CPF6A12", format!("panel {panel}: {e}")))
+        .map_err(|e| crate::panels::failed(format!("panel {panel}: {e}")))
 }
 
 /// A dialog over a shipped group, the copyright line shown.

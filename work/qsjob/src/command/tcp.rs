@@ -47,7 +47,7 @@ pub fn strtcp(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
     let (notes, servers) = match ask(host, op)? {
         TcpReply::Done { notes, servers } => (notes, servers),
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
-        other => return Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
     };
     let mut out = String::new();
     lines(&notes, &mut out);
@@ -91,12 +91,12 @@ pub fn endtcp(job: &mut Job, host: &Host, r: &Resolved, abnormal: bool) -> Resul
             }
         }
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
-        other => return Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
     match ask(host, TcpOp::End { immediate, endsvr, ending: false })? {
         TcpReply::Done { notes, .. } => lines(&notes, &mut out),
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
-        other => return Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
     Ok(out)
 }
@@ -106,7 +106,7 @@ pub fn listing(host: &Host, what: &str) -> Result<String, Fail> {
     let data = match ask(host, TcpOp::Panel { what: what.into(), args: Vec::new() })? {
         TcpReply::Panel { data } => data,
         TcpReply::Failed { note } => return Err(Fail::new(&note.msgid, note.line())),
-        other => return Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => return Err(Fail::check("", format!("unexpected answer {other:?}"))),
     };
     let mut out = String::new();
     for (_, rows) in &data.1 {
@@ -128,10 +128,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
         "WRKPCLTBLE" => listing(host, "PCL"),
         "WRKNETTBLE" => listing(host, "NET"),
         "CFGTCP" | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN" | "CFGTCPSMTP"
-        | "CFGTCPPTP" => Err(Fail::new(
-            "CPF9898",
-            format!("{} is a menu; it needs a display.", r.name),
-        )),
+        | "CFGTCPPTP" => Err(Fail::no_display(&r.name)),
         _ => return None,
     })
 }

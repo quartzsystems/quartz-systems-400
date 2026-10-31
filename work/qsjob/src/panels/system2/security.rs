@@ -24,10 +24,10 @@ pub fn dspusrprf(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
         "*CMDAUT" => ("CMDAUT", "CMDS"),
         "*DEVAUT" => ("DEVAUT", "DEVS"),
         "*GRPMBR" => ("GRPMBR", "MBRS"),
-        _ => return None,
+        _ => return Some(Err(Fail::later("DSPUSRPRF"))),
     };
     let user = parm(r, "USRPRF");
-    let data = fetch(host, "UPRF", &[&user, &ty])?;
+    let data = read!(&r.name, fetch(host, "UPRF", &[&user, &ty]));
     let mut d = match dialog(host, "QUIUPRFTYP") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
@@ -82,11 +82,7 @@ fn secured(text: &str) -> Vec<Vec<(String, String)>> {
 /// `DSPAUTLOBJ`: the objects an authorization list secures.
 pub fn dspautlobj(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Result<String, Fail>> {
     let name = parm(r, "AUTL");
-    let head = host
-        .link
-        .borrow_mut()
-        .with(|l| l.autl_panel(name.clone()))
-        .ok()?;
+    let head = read!("DSPAUTLOBJ", host.link.borrow_mut().with(|l| l.autl_panel(name.clone())));
     let text = match service_text(host, &r.text()) {
         Ok(t) => t,
         Err(e) => return Some(Err(e)),

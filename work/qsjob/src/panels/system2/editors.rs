@@ -445,11 +445,7 @@ pub fn edtautl(
     d.set("DTAHEAD", &dashed("Data", 37));
     d.set("AUTVIEW", "OBJ");
     loop {
-        let rows = host
-            .link
-            .borrow_mut()
-            .with(|l| l.autl_panel(name.clone()))
-            .ok()?;
+        let rows = read!("EDTAUTL", host.link.borrow_mut().with(|l| l.autl_panel(name.clone())));
         let owner = rows.first().and_then(|r| r.first()).cloned().unwrap_or_default();
         d.set("OWNER", &owner);
         let orig: Vec<(String, String, bool)> = rows

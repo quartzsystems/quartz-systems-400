@@ -118,7 +118,7 @@ fn dialog(host: &Host, group: &str) -> Result<UimDialog, Fail> {
 /// Show a panel, a render failure as the command's escape.
 fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
     d.show(surface, panel)
-        .map_err(|e| Fail::new("CPF6A12", format!("panel {panel}: {e}")))
+        .map_err(|e| crate::panels::failed(format!("panel {panel}: {e}")))
 }
 
 /// The service's refusal as an escape: `CPFnnnn text` keeps its
@@ -132,7 +132,7 @@ fn refused(e: &str) -> Fail {
     if is_id {
         Fail::new(id, e[7..].trim())
     } else {
-        Fail::new("CPF9898", e)
+        crate::panels::failed(e)
     }
 }
 

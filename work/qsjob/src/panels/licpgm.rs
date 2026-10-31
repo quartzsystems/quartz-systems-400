@@ -27,7 +27,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out
             "12" => select(job, host, surface, "LICPGM12"),
             "13" => select(job, host, surface, "LICPGM13"),
             o @ ("20" | "21" | "22") => languages(host, surface, o),
-            o => Err(Fail::new("CPF9899", format!("option {o} is not a GO LICPGM panel"))),
+            _ => Err(Fail::later("QSLICPGM")),
         },
         "WRKSFWAGR" => agreements(host, surface),
         "WRKLICINF" => licenses(job, host, surface),
@@ -41,10 +41,7 @@ fn rows(host: &Host, what: &str, args: &[String]) -> Result<Vec<Vec<String>>, Fa
     host.link
         .borrow_mut()
         .with(|l| l.licpgm_panel(what.into(), args.to_vec()))
-        .map_err(|e| {
-            let id = crate::command::jobsite::leading_msgid(&e).unwrap_or("CPF9899").to_string();
-            Fail::new(&id, e)
-        })
+        .map_err(|e| crate::panels::failed(&e))
 }
 
 fn dialog(host: &Host) -> Result<UimDialog, Fail> {

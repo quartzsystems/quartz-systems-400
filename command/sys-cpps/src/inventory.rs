@@ -985,3 +985,18 @@ pub const UNSUPPORTED: &[&str] = &[
     "POSDBF",
     "TFRJOB",
 ];
+
+/// The `STR*` commands that open a tool's display.
+pub const TOOLS: &[&str] = &[
+    "STRDBG", "STRDFU", "STRPDM", "STRQSH", "STRRLU", "STRSDA", "STRSEU", "STRSQL", "STRSST",
+];
+
+/// Whether a command opens a display at a 5250 session (IBM's
+/// `WRK*`, `DSP*`, `EDT*`, the tools' `STR*`, `GO`): in a job with a
+/// display it shows a panel, never text.
+#[must_use]
+pub fn is_display(name: &str) -> bool {
+    ["WRK", "DSP", "EDT", "QSWRK"].iter().any(|p| name.starts_with(p))
+        || name == "GO"
+        || TOOLS.contains(&name)
+}

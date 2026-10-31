@@ -46,6 +46,7 @@ pub const OLD_JOB_WORDS: &[&str] = &[
 ];
 
 /// Run a job-site command.
+#[allow(clippy::too_many_lines)] // one arm per family of commands
 pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let parms = parms_of(r);
     let entry = sys_cpps::entry(&r.name).expect("a job-site command is in the inventory");
@@ -155,6 +156,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RMVENVVAR" => return crate::qsh::env::rmvenvvar(r),
         "WRKENVVAR" => return crate::qsh::env::wrkenvvar(job, host, r),
         _ => {}
+    }
+    // A display in a job that shows panels never falls back to text.
+    if sys_cpps::inventory::is_display(&r.name) && crate::panels::shows_panels(host, r) {
+        return Err(Fail::check(&r.name, format!("no panel answered {}", r.text())));
     }
     // A panel's command in a job that shows none: the service's text.
     if sys_cpps::inventory::in_service_too(&r.name) {

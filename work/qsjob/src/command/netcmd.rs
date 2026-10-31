@@ -73,7 +73,7 @@ fn store(host: &Host, server: &str, name: &str, autostart: Option<bool>, bag: Ve
     match host.link.borrow_mut().with(|l| l.tcp(op)) {
         TcpReply::Done { .. } => Ok(format!("{} {name} attributes changed.\n", msg::ATTRS_CHANGED)),
         TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
-        other => Err(Fail::new("CPF9898", format!("unexpected answer {other:?}"))),
+        other => Err(Fail::check("", format!("unexpected answer {other:?}"))),
     }
 }
 
