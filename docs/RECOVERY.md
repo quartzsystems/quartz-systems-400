@@ -28,11 +28,38 @@ Keep with the saves: the release and PTF level (`DSPPTF`), the disk
 configuration (DST option 4, `Work with disk units`), the service tools
 user IDs, and QSECOFR's password at the time of the save.
 
-> `BLOCKED(phase11)`: until the device layer resolves virtual devices
-> through image catalogs, a virtual device is bound to a volume file or
-> disk with the dev word `svc.vrtdev TAPVRT01 PATH`. `SAVLIB` and `SAV`
-> to tape come with the same layer; until then user data is saved to
-> save files and copied off the system.
+`SAVSYS` writes to any tape or optical device the device layer opens
+(docs/MEDIA.md, "In the storage service"): a virtual device over the
+image catalog loaded on it, a media library, a real drive. The tape
+must be labeled first, as IBM i requires (`INZTAP`; a catalog's
+`FROMFILE(*NEW)` volume is labeled when it is made); `SAVSYS` writes
+from sequence 1, asks `CPA4036` before it overwrites files that have
+not expired (`CLEAR(*ALL)` does not ask) and honors `EXPDATE` and
+`ENDOPT`. On optical it asks `OPT1260` before it replaces an earlier
+system save on the volume. The user data goes on the same tape after
+it: `SAVLIB LIB(*NONSYS) DEV(TAPVRT01)` and `SAV DEV('/QSYS.LIB/
+TAPVRT01.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT))` append (`SEQNBR(*END)`
+is their default); omit the image catalog's own directory from `SAV`.
+
+For example, onto a virtual tape:
+
+```
+CRTDEVTAP DEVD(TAPVRT01) RSRCNAME(*VRT)
+CRTIMGCLG IMGCLG(SAVSYS) DIR('/savsys') TYPE(*TAP)
+ADDIMGCLGE IMGCLG(SAVSYS) FROMFILE(*NEW) TOFILE(SYS001) VOLNAM(SYS001) IMGSIZ(900)
+LODIMGCLG IMGCLG(SAVSYS) DEV(TAPVRT01)
+VRYCFG CFGOBJ(TAPVRT01) CFGTYPE(*DEV) STATUS(*ON)
+SAVSYS DEV(TAPVRT01)
+SAVLIB LIB(*NONSYS) DEV(TAPVRT01)
+SAV DEV('/QSYS.LIB/TAPVRT01.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/savsys' *OMIT))
+```
+
+A virtual volume lives in the IFS of the system it saves. Copy its
+image file off the system (FTP or SFTP from the catalog's directory)
+before it is needed; at the recovery it is attached as a disk, where
+the installer finds it as `TAPVRTnn` (docs/INSTALL.md, "Install
+devices"). The install suite does the copy with the dev word
+`svc.vrtout TAPVRT01 /dev/vdb`.
 
 ## 2. Choosing the procedure
 
@@ -91,20 +118,33 @@ user IDs, and QSECOFR's password at the time of the save.
    saved.
 10. **Restore the user libraries**: `RSTLIB SAVLIB(*NONSYS) DEV(...)`
     (or library by library from save files: `RSTLIB SAVLIB(lib)
-    DEV(*SAVF) SAVF(...)`).
+    DEV(*SAVF) SAVF(...)`). From media, `*NONSYS`, `*ALLUSR` and `*IBM`
+    restore every file on the volume labeled with such a library's
+    name, each from its own file.
 11. **Restore the IFS**: `RST DEV(...) OBJ(('/*') ('/QSYS.LIB' *OMIT))`.
 12. **Restore the authorities again**: `RSTAUT USRPRF(*ALL)`, since the
     objects of steps 10 and 11 came back after the first one.
+
+When the system save's tape holds files after it (the `SAVLIB` and
+`SAV` of §1), steps 10 to 12 run by themselves: the install notes them
+(`slic: install: user data: N files after the system save on
+TAPVRT01`), and when the storage service starts it runs
+`RSTLIB SAVLIB(*NONSYS) DEV(dev) MBROPT(*ALL) ALWOBJDIF(*ALL)`, `RST
+DEV('/QSYS.LIB/dev.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT))` and `RSTAUT
+USRPRF(*ALL)` through the device layer, each with a `qsstg:` line on
+the serial log, before the IPL goes on. The IPL that installed the
+operating system mounts the IFS even when it runs from the media (a D
+IPL otherwise leaves it unmounted), so `RST` has it. `dev` is the drive (`TAPnn`)
+or, for a disk holding a virtual tape volume, the device `QRCYTAP`
+over the image catalog `QRCYCLG` whose one entry is that disk; both
+are deleted afterwards. A system save on optical, or user data saved
+elsewhere, is restored by hand as above.
 13. **Apply the journals** where files were journaled after the saves:
     `APYJRNCHG` from the receivers that were saved or kept.
 14. **Check**: `DSPSFWRSC` lists the products; `CHKPRDOPT` for each;
     `CHKOBJITG OBJ(QSYS/*ALL) CHKSIG(*SIGNED)` clean; `DSPLOG` and the
     job log of the restores for objects not restored; `WRKDSKSTS` for
     the units; then an IPL to normal mode.
-
-> `BLOCKED(phase11)`: steps 10 and 11 from tape wait for `SAVLIB` and
-> `SAV` to tape in the device layer; the installer restores the files of
-> a system save only. Save files copied back onto the system work today.
 
 ## 5. An automatic recovery
 
@@ -113,8 +153,9 @@ distribution media with a response file (docs/INSTALL.md, "Automatic
 install and the response file") or option 4 on the IPL menu. The
 installer takes the LIC from the system save, re-IPLs, takes the
 operating system from it (`device = *MEDIA` prefers a system save) and
-runs the restores of step 7. Steps 9 to 14 follow by hand. The harness
-does exactly this in the install suite's step 9.
+runs the restores of step 7, and the storage service those of steps 10
+to 12 from the files after the system save. Steps 13 and 14 follow by
+hand. The harness does exactly this in the install suite's step 9.
 
 ## 6. After the recovery
 

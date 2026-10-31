@@ -910,10 +910,23 @@ reading: `MediaWriter`, `MediaReader`).
   one before it); with no other loaded entry it stays mounted.
   `*REWIND` and `*LEAVE` keep it mounted.
 - `SAV` and `RST` take `DEV('/QSYS.LIB/TAP01.DEVD')` or the name alone.
+  A `*` in the last part of a `SAV` object (`'/*'`, `'/home/*.txt'`)
+  saves the directory's matching entries, less those omitted.
 - `DSPTAP DATA(*SAVRST)` reads every file in the `SEQNBR` range (and
   `LABEL`) and lists it as `DSPSAVF` does (`savcmd::stream_listing`);
   `DSPOPT DATA(*SAVRST)` does the same for the files in the volume's
-  root and `/QSAVSYS`.
+  root and `/QSAVSYS` (and `/QS400/LP` on install media, which it names
+  first).
+- `RSTLIB SAVLIB(*NONSYS)` (or `*ALLUSR`, `*IBM`) from a device lists
+  the files and restores each one labeled with a library's name that
+  the value takes (`savcmd::library_files`), not the other saves'
+  labels (`QFILEIOC`, `QFILEUPR`, `QSAVIFS`, the install media's).
+- `SAVSYS` (`cpp/savsys.rs`) writes the install media layout
+  (docs/INSTALL.md) through the same devices: on tape from sequence 1
+  of a labeled volume (`CPF6772` for a blank one; `CPA4036` for files
+  not expired unless `CLEAR`), on optical into the mounted volume
+  (`OPT1260` for a system save already there unless `CLEAR`). It does
+  not span volumes.
 
 ### Tape and optical commands
 
@@ -921,7 +934,7 @@ reading: `MediaWriter`, `MediaReader`).
 |---|---|
 | `INZTAP` | `tape::volume::inztap`; `NEWVOL(*CTGID)` takes `VOL` |
 | `DSPTAP` | `DATA(*LABELS)` every file's labels, `*SAVRST` the saves, `*VOLLBL` the volume label |
-| `CHKTAP` | `tape::volume::chktap`; `SEQNBR(*END)`, `*ONLY`, a number |
+| `CHKTAP` | `tape::volume::chktap`; `SEQNBR(*END)`, `*ONLY`, a number; install media or a system save is said so, with its release, products and payload files (`instmedia::savsys::recognize_tape`) |
 | `DUPTAP` | `tape::volume::duptap` between two virtual tape devices |
 | `INZOPT` | `optical::volume::ops::inzopt` on the entry's image; the entry is put back in the catalog under its new identifier |
 | `DSPOPT` | `*VOLATR`, `*DIRATR`, `*FILATR`, `*SAVRST` |

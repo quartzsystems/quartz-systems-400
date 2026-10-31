@@ -36,12 +36,16 @@ iso`, `iso-raw`, `iso-fat`).
 On tape the manifest is file 1 (label `QS400MANIFEST`), the payload
 files follow in manifest order with 64 KiB blocks, IBM standard labels
 throughout (docs/MEDIA.md, "Tape: labels"). Files after them (a
-`SAVLIB *NONSYS`, a `SAV`) belong to the recovery.
+`SAVLIB *NONSYS`, a `SAV`) belong to the recovery
+(`instmedia::savsys::user_files`; docs/RECOVERY.md, §4).
 
-`instmedia::savsys::recognize_tape` and `recognize_iso` tell install
-media from any other volume; `CHKTAP` and `DSPOPT DATA(*SAVRST)` show
-what they say (`BLOCKED(phase11)`: the commands come with the device
-layer; the recognition and its tests are in `media/instmedia`).
+`instmedia::savsys::recognize_tape`, `recognize_iso` and
+`recognize_volume` (a mounted optical volume) tell install media from
+any other volume. `CHKTAP` and `DSPOPT DATA(*SAVRST)` show what they
+say: distribution media or a system save, the release, the volume the
+manifest names, the products, and each payload file with its size;
+`DSPOPT` then lists the save streams among them (the security data,
+the configuration, the product loads) as for any save.
 
 ### Install devices
 
@@ -52,10 +56,18 @@ The operating system install reads from an install device:
 | Optical | `OPT01` | the boot media of the D IPL: CD, raw image, or FAT copy |
 | Virtual | `TAPVRTnn` | a disk whose first bytes are a virtual tape volume (`QSTAPVOL`) holding install media |
 | Virtual | `OPTVRTnn` | a disk holding an ISO 9660 image with install media |
-| Tape | `TAPnn` | `BLOCKED(phase11)`: physical drives come with the device layer |
+| Tape | `TAPnn` | a tape drive (`/sys/class/scsi_tape`, named by `tape::device::naming` as the hardware table names it) with a cartridge of install media or a system save loaded, read through its no-rewind node `/dev/nstN` |
 
 Disks holding install media are never offered as load sources or units
-and do not count as non-configured disks (`A6001260`).
+and do not count as non-configured disks (`A6001260`). A `TAPVRTnn`
+disk is how a system save made to an image catalog reaches a recovery:
+the catalog's image file is copied off the system (FTP, SFTP) and
+attached as a disk; the harness copies it with the dev word `svc.vrtout
+DEV PATH`. No real drive was available to test `TAPnn`: the probe and
+the reads are tested over the tape crate's in-memory volumes
+(`lic/slic/src/ipl/instdev.rs`), the drive's transport by the `st`
+transcripts (`media/tape/tests/st_replay.rs`); the procedure for real
+hardware is docs/MEDIA.md, "Tape: physical tape acceptance".
 
 ## 2. The flow, panel by panel
 
@@ -101,7 +113,7 @@ option 1 on media with no ASP 1 anywhere.
 | 2 | Restore the operating system's code into QSYS | C6004130 | `QS00SS1` read from the device and installed through the RSTLICPGM planning: every option whose code is on the media, `*BASE` first |
 | 3 | Restore the language objects | | the 2924 loads, in the same restore |
 | 4 | Check signatures and translate programs again | C6004140 | every object's signature checked against `/qs400/keys/system.pub` as it is restored; after an upgrade every program in a user library translated from its IR |
-| 5 | Create the system values, profiles and configuration | C6004150 | `SAVSYS` media: RSTUSRPRF, RSTCFG, RSTAUT (docs/RECOVERY.md) |
+| 5 | Create the system values, profiles and configuration | C6004150 | `SAVSYS` media: RSTUSRPRF, RSTCFG, RSTAUT; files after the system save on a tape are left for the storage service's RSTLIB and RST (docs/RECOVERY.md) |
 | 6 | Complete the operating system install | C6004160 | the licensed programs asked for |
 
 The software agreements of products installed this way are recorded
@@ -233,7 +245,7 @@ matrix:
 | 1 automatic install | option 4 on a blank disk; QS00SS1 restored from the media; `CHKOBJITG OBJ(QSYS/*ALL) CHKSIG(*SIGNED)` clean |
 | 3 interactive install | every panel of §2 over serial, `Specify Install Options` included |
 | 8 response file mirrored | a FAT32 copy of the media with `QS400/INSTALL.RSP`: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
-| 9 SAVSYS and recovery | `SAVSYS DEV(TAPVRT01)`, the system disk wiped, option 4: LIC and operating system from the tape, RSTUSRPRF, RSTCFG, RSTAUT; the profile made before the save is back |
+| 9 SAVSYS and recovery | `CRTDEVTAP`, `CRTIMGCLG`, `ADDIMGCLGE`, `LODIMGCLG`, then `SAVSYS DEV(TAPVRT01)`, `CHKTAP` (a system save), `SAVLIB LIB(*NONSYS)` and `SAV` after it; the volume copied onto a disk (`svc.vrtout`), the system disk wiped, option 4: LIC and operating system from the tape, RSTUSRPRF, RSTCFG, RSTAUT, then the storage service's RSTLIB, RST and RSTAUT; the profile, the library and the IFS file made before the save are back |
 | 10 slip install V1R1M0 | option 3 with V1R1M0 media over V1R0M0, the upgrade's panels, user data kept, the store at V1R1M0; then V1R0M0 media refused |
 | 11 power pull mid-install | killed during the LIC install; the reinstall reaches sign-on, `chkstg` clean |
 

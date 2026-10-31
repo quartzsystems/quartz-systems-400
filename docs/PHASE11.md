@@ -85,7 +85,7 @@ were answered by hand during the capture, before every job got
 | 81 | `QSCRTPTF` with the build's key, `LODPTF`, `APYPTF *TEMP`, `RMVPTF`, a prerequisite refused, `DELAYED(*YES)` applied by the IPL (`C6004501`), `APYPTF *PERM`, `DSPPTFCVR`, `CHKOBJITG` of the commands |
 | `--media iso`, `iso-raw`, `iso-fat` | the hybrid install image as a CD, written raw to a disk, and copied onto FAT32 |
 | `--media iso` 1, 4 | the media IPL without an installed system shows No Operating System Installed; with one, option 1 IPLs the disk |
-| `--media iso --install` 1, 3, 8 to 11 | the install matrix: automatic install with the signatures checked, every panel over serial, a response file with two mirrored disks, `SAVSYS` to virtual tape and the recovery, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install (docs/INSTALL.md section 5) |
+| `--media iso --install` 1, 3, 8 to 11 | the install matrix: automatic install with the signatures checked, every panel over serial, a response file with two mirrored disks, `SAVSYS`, `SAVLIB` and `SAV` to a virtual tape over an image catalog and the recovery with the user data, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install (docs/INSTALL.md section 5) |
 
 Install suite, 2026-10-31, QEMU with KVM on the development host,
 `--media iso --install` whole: PASS 11 steps. 1 automatic install 34 s,
@@ -99,6 +99,18 @@ refused afterwards), 11 power pull mid-install 53 s. `--media iso-raw`
 (the D IPL from the USB image), `iso-fat` and `iso` pass. `CHKOBJITG`
 is not in this worktree; the steps report it as not run until the
 merge brings it.
+
+After the media device layer, 2026-10-31 (`--media iso --install`
+whole: PASS 11 steps): step 9 makes `TAPVRT01` and the image catalog
+`SAVSYS`, runs `SAVSYS DEV(TAPVRT01)`, `CHKTAP` (a system save),
+`SAVLIB LIB(*NONSYS)` and `SAV OBJ(('/*') ...)` onto the same volume (9
+system save files, then the user files), copies the volume onto a disk
+(`svc.vrtout`), wipes the system disk and recovers by option 4: 55
+profiles back, then the storage service's `RSTLIB *NONSYS` (`CPF3770`, some objects
+of the other libraries not restored; which ones the run did not
+record; `RCVUSR` whole), `RST` (12 links, 7 not restored: `CPF3838`)
+and `RSTAUT`; the profile, the library and the IFS file made before the
+save are back, 190 s. Steps 75 and 76 of the disk suite pass.
 
 Two earlier-phase bugs the matrix found, fixed in their own commits: a
 store formatted over units another store had used replayed that store's
@@ -125,8 +137,10 @@ storage service (the IPL now finishes it first).
 - **Install.** LIC options 3 and 4 work (docs/INSTALL.md); the
   operating system install restores `QS00SS1` from the media instead of
   making the objects at the first IPL (which stays as the fallback
-  without media); `SAVSYS` saves while active and initializes a blank
-  virtual tape (`SVC_OPEN_QUESTIONS.md`, "Install and recovery").
+  without media); `SAVSYS` saves while active, and a recovery restores
+  the user data after the system save by itself once the storage
+  service starts (docs/RECOVERY.md; `SVC_OPEN_QUESTIONS.md`, "Install
+  and recovery").
 
 ## Deferred
 
@@ -149,10 +163,6 @@ storage service (the IPL now finishes it first).
 | Item | Where | Waits for |
 |---|---|---|
 | The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | an exemption in the subsystem monitor; the options run from `QSVCJOB` |
-| Virtual devices for `SAVSYS` are bound with `svc.vrtdev`, not resolved through a loaded image catalog | `lic/slic/src/cpp/savsys.rs` | the device layer (`LODIMGCLG` on `TAPVRTnn`/`OPTVRTnn`) |
-| `CHKTAP` and `DSPOPT DATA(*SAVRST)` showing install media | `media/instmedia/src/savsys.rs` (the recognition and its tests) | the device layer's commands |
-| `RSTLIB *NONSYS` and `RST` from the tape files after a system save, in the recovery | `lic/slic/src/cpp/savsys.rs` (`recover`) | `SAVLIB`/`SAV`/`RSTLIB`/`RST` to and from tape |
-| Physical tape drives as install devices | `lic/slic/src/ipl/instdev.rs` | the device layer |
 | `qs400.rsp=` naming a URL | `lic/slic/src/ipl/media.rs` | the network boot (PXE) |
 
 ## Bench
@@ -197,7 +207,7 @@ the bench machine, from a worktree pinned to that commit.
 | Item | State |
 |---|---|
 | `cargo run -p build -- test` (the disk suite) | PASS, 78 steps |
-| `--media iso --install` (the install matrix) | PASS, 11 steps: automatic install with `CHKOBJITG` clean, the installed disk, every panel over serial, the DST mirror steps, a response file with two mirrored disks, `SAVSYS` to virtual tape and the recovery, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install |
+| `--media iso --install` (the install matrix) | PASS, 11 steps: automatic install with `CHKOBJITG` clean, the installed disk, every panel over serial, the DST mirror steps, a response file with two mirrored disks, `SAVSYS`, `SAVLIB` and `SAV` to a virtual tape over an image catalog and the recovery with the user data, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install |
 | `--media iso`, `iso-raw` (the USB image), `iso-fat` | PASS, 4, 3 and 3 steps |
 | Workspace tests, goldens | pass; `golden/phase11/COVERAGE.md` lists every pub400 capture and how it is compared (112 compared, 175 covered as later pages, 45 refused on pub400 and checked, 21 deferred with reasons) |
 | Save/restore matrix | `save/saverst/tests/matrix.rs`: every `OPTION` x `MBROPT` x `ALWOBJDIF`, the oracle's 27 rules asserted where they apply; QEMU 71, 75, 76 |

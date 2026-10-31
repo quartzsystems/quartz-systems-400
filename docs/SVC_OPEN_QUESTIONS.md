@@ -181,9 +181,11 @@ The V7R1M0 oracle settled 27 restore rules
    in restricted state; QS/400 saves while active (product loads and
    security data are consistent units in the store). Whether to refuse
    as IBM does is open until `ENDSBS *ALL` leaves a usable console.
-29. **A blank virtual tape.** `SAVSYS` initializes a blank virtual volume
-   first (volume `SAVSYS` or the first `VOL`); IBM requires `INZTAP`.
-   Kept until `INZTAP` is on the device layer.
+29. **A blank virtual tape.** Resolved: `SAVSYS` requires a labeled
+   volume as IBM does and refuses a blank or unlabeled one with
+   `CPF6772` before it builds anything; `INZTAP` labels it. A catalog's
+   `ADDIMGCLGE FROMFILE(*NEW)` volume is labeled with its `VOLNAM` when
+   it is made, so a new virtual tape needs no `INZTAP`.
 30. **Install message identifiers.** The install SRCs C6004060, C6004070,
    C6004130 to C6004160 and A6004080 are Quartz's in IBM's C600 range;
    IBM's install codes are not documented to that level.
