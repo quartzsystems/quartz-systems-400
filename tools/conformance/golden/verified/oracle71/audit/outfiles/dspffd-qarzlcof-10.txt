@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/37          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCDTMI     CHAR            7       7       268        Both     Message      
+                                                                   ID           
+      Field text  . . . . . . . . . . . . . . . :  Descriptive text message ID  
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCDTMF     CHAR           10      10       275        Both     Message      
+                                                                   file         
+      Field text  . . . . . . . . . . . . . . . :  Message file name            
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCDTML     CHAR           10      10       285        Both     Message      
+                                                                   library      
+      Field text  . . . . . . . . . . . . . . . :  Message file library         
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCFTYP     CHAR            1       1       295        Both     Feature      
+                                                                   type         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

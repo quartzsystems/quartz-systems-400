@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   4/8           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   Release      
+                                                                   Century      
+      Field text  . . . . . . . . . . . . . . . :  System release century       
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCSTCEN    CHAR            1       1       287        Both     Status       
+                                                                   Date         
+                                                                   Century      
+      Field text  . . . . . . . . . . . . . . . :  Status Date Century          
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCXPFLVL   CHAR            2       2       288        Both     System       
+                                                                   Product      
+                                                                   Level        
+      Field text  . . . . . . . . . . . . . . . :  System product level         
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCMNLV     CHAR            2       2       290        Both     PTF          
+                                                                   Minimum      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   4/40          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Server IPL source            
+      Coded Character Set Identifier  . . . . . :  65535                        
+    SCSVIPLR   CHAR            1       1       309        Both     NOT          
+                                                                   USED         
+      Field text  . . . . . . . . . . . . . . . :  Field not used               
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCCRTDAT   CHAR            8       8       310        Both     CREATION     
+                                                                   DATE         
+      Field text  . . . . . . . . . . . . . . . :  Creation date (YYYYMMDD)     
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCCRTTIM   CHAR            6       6       318        Both     CREATION     
+                                                                   TIME         
+      Field text  . . . . . . . . . . . . . . . :  Creation time (HHMMSS)       
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

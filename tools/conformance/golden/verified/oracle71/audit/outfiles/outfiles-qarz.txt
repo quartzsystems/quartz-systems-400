@@ -1,0 +1,24 @@
+                               Work with Objects                                
+                                                                                
+ Type options, press Enter.                                                     
+   2=Edit authority        3=Copy   4=Delete   5=Display authority   7=Rename   
+   8=Display description   13=Change description                                
+                                                                                
+ Opt  Object      Type      Library     Attribute   Text                        
+      QARZALLF    *FILE     QSYS        PF          DSPHDWRSC *TYPE2 output fil 
+      QARZDCMN    *FILE     QSYS        PF          DSPHDWRSC *CMN output file  
+      QARZDCRP    *FILE     QSYS        PF          DSPHDWRSC *CRP output file  
+      QARZDCSA    *FILE     QSYS        PF          DSPHDWRSC *CSA output file  
+      QARZDLWS    *FILE     QSYS        PF          DSPHDWRSC *LWS output file  
+      QARZDPRC    *FILE     QSYS        PF          DSPHDWRSC *PRC output file  
+      QARZDSTG    *FILE     QSYS        PF          DSPHDWRSC *STG output file  
+      QARZDTRA    *FILE     QSYS        PF          DSPHDWRSC *TRA output file  
+      QARZLCOF    *FILE     QSYS        PF          DSPSFWRSC output file model 
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 5, 7 and 13 or command                                  
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names and types   
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+                                                                                

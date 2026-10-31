@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/22          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    Number of fields  . . . . . . . . . . . . . :     27                        
+    Record length . . . . . . . . . . . . . . . :    148                        
+    Format text . . . . . . . . . . . . . . . . :  Display Object Authority     
+  Field Level Information                                                       
+               Data        Field  Buffer    Buffer        Field    Column       
+    Field      Type       Length  Length  Position        Usage    Heading      
+    OADCEN     CHAR            1       1         1        Both     DISPLAY      
+                                                                   CENTURY      
+      Field text  . . . . . . . . . . . . . . . :  Display century: 0-19xx, 1-2 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OADDAT     CHAR            6       6         2        Both     DISPLAY      
+                                                                   DATE         
+      Field text  . . . . . . . . . . . . . . . :  Display date: month/day/year 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OADTIM     CHAR            6       6         8        Both     DISPLAY      
+                                                                   TIME         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

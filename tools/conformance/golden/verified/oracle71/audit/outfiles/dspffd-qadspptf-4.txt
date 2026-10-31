@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/59          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCXPFDAT   CHAR            6       6        35        Both     SYSTEM       
+                                                                   RELEASE      
+                                                                   DATE         
+      Field text  . . . . . . . . . . . . . . . :  System release date          
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCLIB      CHAR           10      10        41        Both     LIBRARY      
+      Field text  . . . . . . . . . . . . . . . :  Library                      
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCPPID     CHAR            7       7        51        Both     LIC PGM      
+      Field text  . . . . . . . . . . . . . . . :  Licensed program             
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCPTFID    CHAR            7       7        58        Both     PTF          
+      Field text  . . . . . . . . . . . . . . . :  PTF                          
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCPPREL    CHAR            6       6        65        Both     NOT          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

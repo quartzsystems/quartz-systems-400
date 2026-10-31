@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/1           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Optional part                
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCSPTF     CHAR            7       7       216        Both     SUPERSEDING  
+                                                                   PTF          
+      Field text  . . . . . . . . . . . . . . . :  Superseding PTF              
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCENST     CHAR            1       1       223        Both     ENCODED      
+                                                                   STATUS       
+      Field text  . . . . . . . . . . . . . . . :  Encoded status               
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCENDT     CHAR            6       6       224        Both     ENCODED      
+                                                                   STATUS       
+                                                                   DATE         
+      Field text  . . . . . . . . . . . . . . . :  Encoded status date          
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCENTP     CHAR            1       1       230        Both     ENCODED      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/51          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    LCRPLU     ZONED        4  0       4       168        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+    LCRUNM     CHAR           10      10       172        Both     RU           
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  Replaceable unit name        
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV5     CHAR            1       1       182        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRUTY     CHAR            3       3       183        Both     RU           
+                                                                   type         
+      Field text  . . . . . . . . . . . . . . . :  Replaceable unit type        
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCOBJT     CHAR            2       2       186        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

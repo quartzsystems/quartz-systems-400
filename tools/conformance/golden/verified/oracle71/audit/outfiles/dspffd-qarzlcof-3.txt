@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/44          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  System name                  
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCDBRT     CHAR            1       1        16        Both     Record       
+                                                                   type         
+      Field text  . . . . . . . . . . . . . . . :  Record type: 2-*PRDLOD, 3-li 
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV1     CHAR            7       7        17        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCLCGN     CHAR           10      10        24        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV2     CHAR            6       6        34        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCLCGL     CHAR           10      10        40        Both     Reserved     
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

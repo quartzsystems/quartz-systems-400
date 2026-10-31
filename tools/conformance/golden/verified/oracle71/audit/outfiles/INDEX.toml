@@ -1,0 +1,295 @@
+[[golden]]
+name = "outfiles-qadsp"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles"
+width = 80
+
+[[golden]]
+name = "outfiles-qadsp-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles"
+width = 80
+
+[[golden]]
+name = "outfiles-qarz"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles"
+width = 80
+
+[[golden]]
+name = "outfiles-qaobj"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-12"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-13"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qadspptf-14"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qarzlcof-11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80
+
+[[golden]]
+name = "dspffd-qaobjaut-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ffd"
+width = 80

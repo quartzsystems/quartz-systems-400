@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/28          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCIPLACT   CHAR           34      34       142        Both     IPL          
+                                                                   ACTION       
+      Field text  . . . . . . . . . . . . . . . :  IPL action                   
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCLANG     CHAR            8       8       176        Both     LANGUAGE     
+                                                                   FEATURE      
+      Field text  . . . . . . . . . . . . . . . :  Language feature             
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCOBJLIB   CHAR           10      10       184        Both     OBJECT       
+                                                                   LIBRARY      
+      Field text  . . . . . . . . . . . . . . . :  Object library               
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCISRC     CHAR            8       8       194        Both     IPL          
+                                                                   SOURCE       
+      Field text  . . . . . . . . . . . . . . . :  IPL source                   
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

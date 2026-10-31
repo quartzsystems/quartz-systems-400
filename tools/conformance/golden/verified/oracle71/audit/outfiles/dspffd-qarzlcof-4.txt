@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/61          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV3     CHAR            6       6        50        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCPRDI     CHAR            7       7        56        Both     Product      
+                                                                   identificati 
+      Field text  . . . . . . . . . . . . . . . :  Product identification       
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV4     CHAR            2       2        63        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCLVLI     CHAR            2       2        65        Both     Level        
+      Field text  . . . . . . . . . . . . . . . :  Level                        
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV8     CHAR            1       1        67        Both     Reserved     
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

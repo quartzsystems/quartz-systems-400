@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/22          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    Number of fields  . . . . . . . . . . . . . :     48                        
+    Record length . . . . . . . . . . . . . . . :    323                        
+    Format text . . . . . . . . . . . . . . . . :  DSPPTF OUTPUT                
+  Field Level Information                                                       
+               Data        Field  Buffer    Buffer        Field    Column       
+    Field      Type       Length  Length  Position        Usage    Heading      
+    SCCENTRY   CHAR            1       1         1        Both     CENTURY      
+      Field text  . . . . . . . . . . . . . . . :  Century                      
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCDATE     CHAR            6       6         2        Both     DATE         
+      Field text  . . . . . . . . . . . . . . . :  Date                         
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCTIME     CHAR            6       6         8        Both     TIME         
+      Field text  . . . . . . . . . . . . . . . :  Time                         
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCSRLNBR   CHAR            8       8        14        Both     MACHINE      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/49          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Execute authority: X-auth, b 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAALT      CHAR            1       1       117        Both     OBJECT       
+                                                                   ALTER        
+      Field text  . . . . . . . . . . . . . . . :  Alter authority: X-auth, bla 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAREF      CHAR            1       1       118        Both     OBJECT       
+                                                                   REF          
+      Field text  . . . . . . . . . . . . . . . :  Reference authority: X-auth, 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OARES1     CHAR           10      10       119        Both     RESERVED     
+      Field text  . . . . . . . . . . . . . . . :  Not used                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAASPL     CHAR           10      10       129        Both     LIBRARY      
+                                                                   ASP          
+      Field text  . . . . . . . . . . . . . . . :  ASP name for object library  
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

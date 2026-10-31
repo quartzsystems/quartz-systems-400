@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/22          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    Number of fields  . . . . . . . . . . . . . :     43                        
+    Record length . . . . . . . . . . . . . . . :    311                        
+    Format text . . . . . . . . . . . . . . . . :  Display Loadable Code Resour 
+  Field Level Information                                                       
+               Data        Field  Buffer    Buffer        Field    Column       
+    Field      Type       Length  Length  Position        Usage    Heading      
+    LCCEN      CHAR            1       1         1        Both     Display      
+                                                                   Century      
+      Field text  . . . . . . . . . . . . . . . :  Display century: 0-20th, 1-2 
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCDDAT     CHAR            6       6         2        Both     Display      
+                                                                   Date         
+      Field text  . . . . . . . . . . . . . . . :  Display date: YYMMDD         
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCSYSN     CHAR            8       8         8        Both     System       
+                                                                   Name         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

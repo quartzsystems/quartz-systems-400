@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/3           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    LCRULB     CHAR           10      10       188        Both     RU           
+                                                                   library      
+      Field text  . . . . . . . . . . . . . . . :  Replaceable unit library     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRSV6     CHAR            6       6       198        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRUDI     CHAR            8       8       204        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRUDC     CHAR            8       8       212        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCRUTI     CHAR            8       8       220        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :  65535                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

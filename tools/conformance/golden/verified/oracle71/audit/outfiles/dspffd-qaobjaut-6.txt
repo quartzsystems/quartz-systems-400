@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/31          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAOWN      CHAR           10      10        78        Both     OWNER        
+      Field text  . . . . . . . . . . . . . . . :  Owner of object              
+      Coded Character Set Identifier  . . . . . :     37                        
+    OASYST     CHAR            8       8        88        Both     SYSTEM       
+                                                                   NAME         
+      Field text  . . . . . . . . . . . . . . . :  System name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAPGRP     CHAR           10      10        96        Both     PRIMARY      
+                                                                   GROUP        
+      Field text  . . . . . . . . . . . . . . . :  Primary group                
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAGRPN     CHAR           10      10       106        Both     GROUP        
+      Field text  . . . . . . . . . . . . . . . :  Group                        
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAEXEC     CHAR            1       1       116        Both     EXECUTE      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

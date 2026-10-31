@@ -1,0 +1,72 @@
+# CPP audit on the 7.1 oracle: what the system writes to the model
+# outfiles of DSPSFWRSC, DSPPTF and DSPOBJAUT. Each outfile goes to
+# QTEMP (the only library we may create in) and is shown with DSPPFM,
+# shifted right with F20; the job ends with the session.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPSFWRSC OUTPUT(*OUTFILE) OUTFILE(QTEMP/SFW)
+key enter
+settle 5000
+snap outf-sfw-cmd
+type DSPPFM FILE(QTEMP/SFW)
+key enter
+settle 3000
+snap outf-sfw-1
+key f20
+settle 1000
+snap outf-sfw-2
+key f20
+settle 1000
+snap outf-sfw-3
+key f20
+settle 1000
+snap outf-sfw-4
+key f20
+settle 1000
+snap outf-sfw-5
+key f3
+settle 2000
+type DSPPTF OUTPUT(*OUTFILE) OUTFILE(QTEMP/PTF)
+key enter
+settle 5000
+snap outf-ptf-cmd
+type DSPPFM FILE(QTEMP/PTF)
+key enter
+settle 3000
+snap outf-ptf-1
+key f20
+settle 1000
+snap outf-ptf-2
+key f20
+settle 1000
+snap outf-ptf-3
+key f20
+settle 1000
+snap outf-ptf-4
+key f20
+settle 1000
+snap outf-ptf-5
+key f3
+settle 2000
+type DSPOBJAUT OBJ(QSYS/QCMD) OBJTYPE(*PGM) OUTPUT(*OUTFILE) OUTFILE(QTEMP/OAUT)
+key enter
+settle 5000
+snap outf-oaut-cmd
+type DSPPFM FILE(QTEMP/OAUT)
+key enter
+settle 3000
+snap outf-oaut-1
+key f20
+settle 1000
+snap outf-oaut-2
+key f20
+settle 1000
+snap outf-oaut-3
+key f3
+settle 2000

@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/19          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   TYPE         
+      Field text  . . . . . . . . . . . . . . . :  Encoded type                 
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCENIA     CHAR            1       1       231        Both     ENCODED      
+                                                                   IPL          
+                                                                   ACTION       
+      Field text  . . . . . . . . . . . . . . . :  Encoded IPL action           
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCENLG     CHAR            4       4       232        Both     ENCODED      
+                                                                   LANGUAGE     
+                                                                   FEATURE      
+      Field text  . . . . . . . . . . . . . . . :  Encoded language feature     
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCXPFV     CHAR            6       6       236        Both     SYSTEM       
+                                                                   RELEASE      
+      Field text  . . . . . . . . . . . . . . . :  System release               
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

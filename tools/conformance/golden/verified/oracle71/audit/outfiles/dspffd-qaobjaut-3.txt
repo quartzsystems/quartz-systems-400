@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/44          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Display time: hour/minute/se 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAUSR      CHAR           10      10        14        Both     USER         
+      Field text  . . . . . . . . . . . . . . . :  User profile name            
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAOBJA     CHAR            8       8        24        Both     OBJECT       
+                                                                   AUTHORITY    
+      Field text  . . . . . . . . . . . . . . . :  Object authority             
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAOPR      CHAR            1       1        32        Both     OBJECT       
+                                                                   OPERATIONAL  
+      Field text  . . . . . . . . . . . . . . . :  Operational auth: X-auth, bl 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAOMGT     CHAR            1       1        33        Both     OBJECT       
+                                                                   MANAGEMENT   
+      Field text  . . . . . . . . . . . . . . . :  Management auth: X-auth, /-f 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

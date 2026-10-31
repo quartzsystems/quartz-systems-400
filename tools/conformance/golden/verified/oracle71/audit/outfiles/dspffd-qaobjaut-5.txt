@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/14          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAAMGT     CHAR            1       1        39        Both     AUTL         
+                                                                   MANAGEMENT   
+      Field text  . . . . . . . . . . . . . . . :  Auth. list mgt auth: X-auth, 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OAANAM     CHAR           10      10        40        Both     AUTH. LIST   
+      Field text  . . . . . . . . . . . . . . . :  Authorization list object is 
+      Coded Character Set Identifier  . . . . . :     37                        
+    OANAME     CHAR           10      10        50        Both     OBJECT       
+      Field text  . . . . . . . . . . . . . . . :  Object name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    OALIB      CHAR           10      10        60        Both     LIBRARY      
+      Field text  . . . . . . . . . . . . . . . :  Library                      
+      Coded Character Set Identifier  . . . . . :     37                        
+    OATYPE     CHAR            8       8        70        Both     TYPE         
+      Field text  . . . . . . . . . . . . . . . :  Type of object               
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

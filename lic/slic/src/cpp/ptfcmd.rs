@@ -364,6 +364,14 @@ fn dspptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         .filter(|r| product.is_empty() || product == "*ALL" || r.product == product)
         .filter(|r| sel.is_empty() || sel.contains(&r.ptf))
         .collect();
+    if parms.name("OUTPUT") == "*OUTFILE" {
+        let prod = if product.is_empty() || product == "*ALL" { release::PRODUCT_ID } else { product.as_str() };
+        let text = super::dspout::ptfs(system, parms, prod, &rows)?;
+        return Ok(CmdReply {
+            text,
+            ..CmdReply::default()
+        });
+    }
     if rows.is_empty() {
         text.push_str("No PTFs.\n");
     }

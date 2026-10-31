@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/57          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Feature type: 1-code, 3-lang 
+      Coded Character Set Identifier  . . . . . :  65535                        
+    LCNMUT     ZONED       10  0      10       296        Both     Number       
+                                                                   of units     
+      Field text  . . . . . . . . . . . . . . . :  Number of units              
+    LCUTSZ     ZONED        6  0       6       306        Both     Unit         
+                                                                   size         
+      Field text  . . . . . . . . . . . . . . . :  Unit size                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

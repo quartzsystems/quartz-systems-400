@@ -84,6 +84,7 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
         "dspobjaut" | "edtobjaut" if p.upper("AUTFMT").as_deref() == Some("*DETAIL") => {
             on_object(system, &p, |txn, _, id| object::dspobjaut_detail(txn, id))
         }
+        "dspobjaut" if p.upper("OUTPUT").as_deref() == Some("*OUTFILE") => outfile(system, &p),
         "dspobjaut" | "edtobjaut" => on_object(system, &p, object::dspobjaut),
         "chgobjown" => on_object(system, &p, |txn, env, id| {
             object::chgobjown(txn, env, id, &k)
@@ -130,6 +131,18 @@ fn on_object(
         let id = resolve(txn, env.qsys, p)?;
         f(txn, env, id)
     })
+}
+
+/// `DSPOBJAUT OUTPUT(*OUTFILE) OUTFILE() OUTMBR()`.
+fn outfile(system: &mut System, p: &Params) -> Result<String, String> {
+    let a = in_store(system, |txn, env| {
+        let id = resolve(txn, env.qsys, p)?;
+        object::authorities(txn, env, id)
+    })?;
+    let file = p.upper("OUTFILE").unwrap_or_default();
+    let (lib, name) = file.split_once('/').unwrap_or(("*LIBL", &file));
+    let add = p.upper("OUTMBR").is_some_and(|m| m.contains("*ADD"));
+    crate::cpp::dspout::objaut(system, (name, lib, !add), &a)
 }
 
 /// `DSPUSRPRF`: one of its displays.

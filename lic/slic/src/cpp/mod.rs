@@ -19,6 +19,7 @@ mod cmntrc;
 mod dbcmd;
 mod hwcmd;
 mod direct;
+pub(crate) mod dspout;
 mod ifscmd;
 pub(crate) mod lpapi;
 pub(crate) mod lpcmd;

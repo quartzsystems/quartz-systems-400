@@ -21,7 +21,7 @@ use crate::ipl::system::{System, now_unix};
 
 /// A field: name, DDS type (`A`, `S` zoned, `P` packed, `V` varying
 /// character), length, decimals.
-pub(super) type Fld = (&'static str, char, u16, u8);
+pub(crate) type Fld = (&'static str, char, u16, u8);
 
 /// `QSRSAV`, 76 fields, 3732 bytes.
 const QSRSAV: &[Fld] = &[
@@ -82,7 +82,7 @@ const QSRRST: &[Fld] = &[
 ];
 
 /// One row: field name and value (text, or a number for `S`/`P`).
-pub(super) type Row = Vec<(&'static str, String)>;
+pub(crate) type Row = Vec<(&'static str, String)>;
 
 /// DDS source of a model format.
 fn dds(format: &str, fields: &[Fld]) -> String {
@@ -159,16 +159,30 @@ pub(super) fn write(
     rows: &[Row],
 ) -> Result<String, String> {
     let (name, lib) = parms.qual("OUTFILE");
-    if name.is_empty() {
-        return Err("CPD0071 OUTFILE is required with OUTPUT(*OUTFILE)".into());
-    }
-    let lib = lib_or(&lib);
     let replace = !parms
         .elems("OUTMBR")
         .get(1)
         .copied()
         .flatten()
         .is_some_and(|v| v.source().eq_ignore_ascii_case("*ADD"));
+    write_to(system, (&name, &lib, replace), format, fields, rows)
+}
+
+/// Write `rows` to file `NAME` in `LIB`, its first member cleared
+/// first when `replace`, creating it in the model format when it is
+/// missing.
+pub(crate) fn write_to(
+    system: &mut System,
+    (name, lib, replace): (&str, &str, bool),
+    format: &str,
+    fields: &[Fld],
+    rows: &[Row],
+) -> Result<String, String> {
+    if name.is_empty() {
+        return Err("CPD0071 OUTFILE is required with OUTPUT(*OUTFILE)".into());
+    }
+    let name = name.to_ascii_uppercase();
+    let lib = lib_or(&lib.to_ascii_uppercase());
     let src = dds(format, fields);
     let job = JobHandle(u64::from(system.current_job));
     in_store(system, |txn, qsys, names| {

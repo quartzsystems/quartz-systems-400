@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/41          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   SERIAL       
+                                                                   NUMBER       
+      Field text  . . . . . . . . . . . . . . . :  Machine serial number        
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCXPFID    CHAR            7       7        22        Both     SYSTEM       
+                                                                   LICENSED     
+                                                                   PROGRAM      
+      Field text  . . . . . . . . . . . . . . . :  System licensed program      
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCXPFREL   CHAR            3       3        29        Both     NOT          
+                                                                   USED         
+      Field text  . . . . . . . . . . . . . . . :  System release should be obt 
+      Coded Character Set Identifier  . . . . . :     37                        
+    SCXPFMOD   CHAR            3       3        32        Both     NOT          
+                                                                   USED         
+      Field text  . . . . . . . . . . . . . . . :  System release should be obt 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

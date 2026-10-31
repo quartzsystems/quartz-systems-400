@@ -1,0 +1,38 @@
+# CPP audit on the 7.1 oracle: which model outfiles QSYS holds for
+# DSPPTF, DSPSFWRSC and DSPOBJAUT. Read-only: WRKOBJ lists, each left
+# with F3. (The 7.1 box has no STRSQL.)
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type WRKOBJ OBJ(QSYS/QADSP*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap outfiles-qadsp
+key pgdn
+settle 1000
+snap outfiles-qadsp-2
+key f3
+settle 2000
+type WRKOBJ OBJ(QSYS/QARZ*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap outfiles-qarz
+key f3
+settle 2000
+type WRKOBJ OBJ(QSYS/QAOBJ*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap outfiles-qaobj
+key f3
+settle 2000
+type WRKOBJ OBJ(QSYS/QASZ*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap outfiles-qasz
+key f3
+settle 2000

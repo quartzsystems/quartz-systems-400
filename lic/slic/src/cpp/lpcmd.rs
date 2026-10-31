@@ -45,6 +45,13 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "DLTLICPGM" => dltlicpgm(system, parms),
         "SAVLICPGM" => savlicpgm(system, parms),
         "CHKPRDOPT" => chkprdopt_cmd(system, parms),
+        "DSPSFWRSC" if parms.name("OUTPUT") == "*OUTFILE" => {
+            let rows = sfwrsc_rows(system);
+            super::dspout::sfwrsc(system, parms, &rows).map(|text| CmdReply {
+                text,
+                ..CmdReply::default()
+            })
+        }
         "DSPSFWRSC" => Ok(CmdReply {
             text: dspsfwrsc_text(system),
             ..CmdReply::default()
