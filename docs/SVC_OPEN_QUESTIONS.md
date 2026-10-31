@@ -201,4 +201,4 @@ The V7R1M0 oracle settled 27 restore rules
     *JOBQ` and `QSCONSOLE *DEVD`). Damage is checked for every type. The
     completion `CPC39E0` and escape `CPF39E1` are Quartz's choices; IBM's
     `CHKOBJITG` writes an outfile instead and its messages were not
-    captured. Open: an `OUTFILE` in IBM's `QASVOBJI` layout.
+    captured. Open: an `OUTFILE` in IBM's layout, once captured.
