@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Media: tape, optical, image catalogs
 
 Save and restore write to three classes of media: tape (real drives and
@@ -465,3 +466,148 @@ Record for each step what the screen showed, and attach the appliance's
 ## Image catalogs
 
 (Written with the image catalog support.)
+=======
+# QS/400 removable media: tape, optical and image catalogs
+
+## Optical
+
+The crate `media/optical` (package `optical`) is everything QS/400 knows
+about optical media: an ISO 9660 writer and reader with Joliet and Rock
+Ridge, the hybrid install image, the install media manifest, writable
+virtual volumes and the operations behind the optical commands, the
+naming of physical drives, and the set of volumes `/QOPT` shows.
+
+| Module | Does |
+|---|---|
+| `iso::write`, `iso::plan` | `IsoBuilder`: a tree of files, directories and links to an image, in one pass |
+| `iso::read` | `IsoImage`: descriptors, a directory walk, names, extents, reads |
+| `iso::name`, `iso::susp`, `iso::boot`, `iso::date` | level 2 and Joliet names, Rock Ridge entries, El Torito, timestamps |
+| `iso::hybrid` | the protective MBR and GPT of the hybrid image, and their check |
+| `manifest` | `QS400/MEDIA.MANIFEST`, the mark of installation media |
+| `source` | `ReadAt`, `ImageStore`: images in memory, in files, in windows of devices |
+
+### ISO 9660 as written
+
+- Level 2 identifiers in the primary tree (d-characters, files `NAME.EXT;1`
+  in 30 characters, directories in 31); a real name that does not fit is
+  upper-cased, other characters become `_`, and clashes in a directory
+  get `_1`, `_2` ... in name order.
+- A Joliet tree (UCS-2 level 3, `%/E`) with the real names, 64 characters
+  at most, none of `* / : ; ? \`.
+- Rock Ridge (RRIP 1.10) in the primary tree: `SP` and `ER` on the root's
+  `.`, `PX` (mode `r-x` for directories, `r--` for files, owner 0), `NM`
+  with the real name and `TF` on every record. A record never needs a
+  continuation area; a name too long for one record is refused.
+- El Torito with one EFI no-emulation entry when a boot image is named.
+- Files larger than an extent (4 GiB less one sector) are recorded as
+  several extents with the multi-extent flag.
+- A link is a second record pointing at another file's extents.
+- Deterministic: one timestamp (the caller's, `SOURCE_DATE_EPOCH` for
+  `build iso`) on every record and descriptor, records sorted by
+  identifier, path tables in level, parent and identifier order, files in
+  name order with the boot image last, GUIDs derived from the volume
+  identifier and the timestamp.
+
+The descriptors follow sector 16 in the order primary, El Torito boot
+record (always sector 17 when present), Joliet, terminator; then the
+boot catalog, the four path tables, the primary directories, the Joliet
+directories and the files.
+
+### ISO 9660 as read
+
+The reader scans at most 64 descriptors from sector 16, needs a primary
+descriptor with 2048-byte blocks, and walks directories rather than
+trusting path tables. Names come from the Joliet tree when there is one,
+else from Rock Ridge `NM` entries when the root's `.` carries `SP`, else
+from the level 2 identifiers (without `;1` and a trailing dot). Rock
+Ridge `CE` continuations are not followed. A directory is at most 16 MiB,
+a walk at most 64 levels and a million entries, a directory met twice is
+a loop; every extent must lie inside the image. Damage of any kind is
+`Error::Malformed` (`OPT1605`), never a panic; a test mutates images
+thousands of times to hold it to that. UDF is not read.
+
+### Hybrid install image
+
+`build iso` writes one image that works three ways: as a CD or virtual
+optical volume (El Torito), written raw to a disk or stick (the GPT), and
+with its tree copied onto a FAT32 stick, as Rufus does (the loose
+`EFI/BOOT/BOOTX64.EFI`). The tree:
+
+| Path | Holds |
+|---|---|
+| `EFI.IMG` | the El Torito boot image: a FAT16 volume with `EFI/BOOT/BOOTX64.EFI` |
+| `EFI/BOOT/BOOTX64.EFI` | the media UKI (IPL type D) |
+| `QS400/LIC/qs400.efi` | a second record for the same extents |
+| `QS400/MEDIA.MANIFEST` | the manifest |
+| `QS400A.EFI`, `QS400B.EFI` | the slot UKIs the installer copies onto the disk |
+| `QS400.TXT` | a few lines about the media |
+
+The image is laid out from one table of byte regions; the 2048-byte ISO
+sectors and the 512-byte partition LBAs are both derived from it
+(`iso::hybrid::HybridLayout`). The boot image is the last file, so the
+two partitions do not overlap. `T` is the image size; the volume space in
+the primary descriptor is all of it.
+
+| Region | Offset | Length | ISO sector | LBA | Holds |
+|---|---|---|---|---|---|
+| protective MBR | 0 | 512 | 0 | 0 | one entry of type `0xEE` over the whole image |
+| primary GPT header | 512 | 512 | 0 | 1 | revision 1.0, 128 entries of 128 bytes from LBA 2 |
+| primary GPT entries | 1024 | 16384 | 0 | 2 | partitions 1 and 2, the rest zero |
+| ISO 9660 payload | 32768 | to the boot image | 16 | 64 | descriptors, path tables, directories, files: partition 2 |
+| EFI boot image | `EFI.IMG`'s extent | its length | its sector | sector × 4 | partition 1 |
+| backup GPT entries | T − 16896 | 16384 | | T/512 − 33 | the same entries |
+| backup GPT header | T − 512 | 512 | | T/512 − 1 | the header for the backup |
+
+The tail after the boot image is 9 sectors (18432 bytes), enough for the
+backup entries and header. Partition 1 has the EFI System type
+`c12a7328-f81f-11d2-ba4b-00a0c93ec93b` and the name `QS400 EFI BOOT`;
+partition 2 has the Quartz media type
+`c8a1e5d2-7f34-4b6e-a2d9-515334304d44` and the name `QS400 MEDIA`. The
+first usable LBA is 34, the last T/512 − 34. Disk and partition GUIDs are
+derived from the volume identifier and the build time, so two builds
+agree byte for byte.
+
+`build iso` reads the result back with these readers before it writes
+it: the El Torito entry is a bootable EFI no-emulation entry pointing at
+`EFI.IMG`; `EFI.IMG` holds `EFI/BOOT/BOOTX64.EFI` and it is the media
+UKI; the tree's `EFI/BOOT/BOOTX64.EFI` and `QS400/LIC/qs400.efi` are the
+same bytes; partition 1 is exactly the boot image's LBAs, partition 2
+runs from LBA 64 to just before it; the MBR, both headers and both entry
+arrays check out (CRC-32 of header and array, backup at the last LBA,
+backup equal to the primary).
+
+The conformance harness boots it each way: `test --media iso` (the CD),
+`--media iso-raw` (the image as a virtio disk) and `--media iso-fat` (the
+tree copied onto an MBR disk with one FAT32 partition, built in Rust from
+our own ISO reader). The last two also install onto a blank disk beside
+the medium and boot it.
+
+### Install media manifest
+
+`QS400/MEDIA.MANIFEST` marks a file system as QS/400 installation media
+and lists the payload. Text, LF line ends; the paths are level 2 names so
+they read the same through every name form and FAT.
+
+| Line | Fields |
+|---|---|
+| `QS400-MEDIA 1` | the first line, always |
+| `release` | the release, `V1R0M0` |
+| `volume` | the ISO volume identifier |
+| `file` | path, size in bytes, SHA-256 in lower-case hex; one line per payload file |
+
+The payload files are `QS400A.EFI`, `QS400B.EFI` and
+`EFI/BOOT/BOOTX64.EFI`.
+
+On a D IPL, `slic` looks for the manifest on every block device in this
+order: optical drives (`sr*`), removable disks, then the other disks,
+each disk before its partitions. A device is mounted read-only only when
+it looks like ISO 9660 (`CD001` at byte 32769) or FAT (`0x55AA` and a FAT
+signature in the boot sector); the kernel mounts it as `iso9660` or
+`vfat` at `/run/qs400/media`. The first device with a manifest is the
+media; the slot UKIs are read from it and their sizes checked against
+the manifest. The disk holding the media is never offered as a load
+source. The kernel carries `ISO9660_FS`, `JOLIET`, `BLK_DEV_SR` and
+`USB_STORAGE`, and not `ZISOFS`.
+
+## Image catalogs
+>>>>>>> 8490bda7 (docs: MEDIA.md hybrid install image, checked by a test)
