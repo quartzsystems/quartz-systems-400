@@ -12,7 +12,7 @@
 
 use std::time::Duration;
 
-use crate::phase5::{SECOFR_PASSWORD, console_sign_on_as, screen_wait};
+use crate::phase5::{SECOFR_PASSWORD, console_sign_on_as, screen_any, screen_wait};
 use crate::qemu::session::Session;
 use crate::steps::Suite;
 
@@ -96,9 +96,10 @@ impl Suite {
         enter(s, "1")?;
         screen_wait(s, "User Tasks")?;
         enter(s, "2")?;
-        screen_wait(s, "Display Messages").map_err(|e| {
-            format!("User Tasks option 2 did not open Display Messages: {e}")
-        })?;
+        // QASTLVL ships *BASIC: Work with Messages; intermediate shows
+        // Display Messages.
+        screen_any(s, &["Work with Messages", "Display Messages"])
+            .map_err(|e| format!("User Tasks option 2 did not open DSPMSG: {e}"))?;
         back_to_main(s)?;
         // GO USER typed on MAIN's command line.
         enter(s, "GO USER")?;
