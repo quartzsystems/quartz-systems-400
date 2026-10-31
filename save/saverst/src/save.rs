@@ -41,6 +41,8 @@ pub struct SaveOptions {
     pub spool: bool,
     /// `SAVCHGOBJ`: only objects changed since (Unix seconds).
     pub changed_since: Option<u64>,
+    /// `SAVCHGOBJ OBJJRN(*NO)`: journaled files are left out.
+    pub skip_journaled: bool,
     /// Unix seconds of the save.
     pub now: u64,
     /// Where the save goes, for the history.
@@ -58,6 +60,7 @@ impl Default for SaveOptions {
             private_auth: false,
             spool: false,
             changed_since: None,
+            skip_journaled: false,
             now: 0,
             target: SaveTarget::default(),
         }
@@ -323,8 +326,13 @@ fn save_in<W: Write>(
         if opts.changed_since.is_some_and(|t| h.changed < t) {
             continue;
         }
-        let logical = id.type_code == types::FILE
-            && db::file::describe(txn, id).is_ok_and(|d| d.attr.kind == db::FileKind::Logical);
+        let file = (id.type_code == types::FILE)
+            .then(|| db::file::describe(txn, id).ok())
+            .flatten();
+        if opts.skip_journaled && file.as_ref().is_some_and(|d| !d.attr.journal.is_none()) {
+            continue;
+        }
+        let logical = file.is_some_and(|d| d.attr.kind == db::FileKind::Logical);
         cands.push(Candidate {
             id,
             name,

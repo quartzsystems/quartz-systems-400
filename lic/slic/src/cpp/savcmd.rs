@@ -34,8 +34,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CRTSAVF" => crtsavf(system, parms),
         "CHGSAVF" => chgsavf(system, parms),
         "CLRSAVF" => clrsavf(system, parms),
-        "SAVLIB" | "SAVOBJ" => return Some(save(system, name, parms)),
-        "RSTLIB" | "RSTOBJ" => return Some(rst(system, name, parms)),
+        "SAVLIB" | "SAVOBJ" | "SAVCHGOBJ" | "SAVCFG" => return Some(save(system, name, parms)),
+        "RSTLIB" | "RSTOBJ" | "RSTCFG" => return Some(rst(system, name, parms)),
         "SAVSECDTA" => return Some(savsecdta(system, parms)),
         "RSTUSRPRF" => return Some(rstusrprf(system, parms)),
         "RSTAUT" => return Some(rstaut(system, parms)),
@@ -325,6 +325,52 @@ fn type_code(ty: &str) -> Option<u16> {
     }
 }
 
+/// The configuration object types `SAVCFG` saves and `RSTCFG` restores.
+const CFG_TYPES: &[u16] = &[types::DEVD, 0x001C, 0x001D];
+
+/// `REFDATE`/`REFTIME` as Unix seconds, `None` for `*SAVLIB`. Dates
+/// arrive as `CYYMMDD`, times as `HHMMSS`.
+fn refdate(parms: &Parms) -> Option<u64> {
+    let d = parms.text("REFDATE");
+    let d = d.trim();
+    if d.is_empty() || d == "*SAVLIB" || d.trim_matches('0').is_empty() {
+        return None;
+    }
+    let n: u64 = d.parse().ok()?;
+    let (c, yy, mm, dd) = (n / 1_000_000, n / 10_000 % 100, n / 100 % 100, n % 100);
+    let year = i64::try_from(1900 + c * 100 + yy).ok()?;
+    let days = days_from_civil(year, u32::try_from(mm).ok()?, u32::try_from(dd).ok()?);
+    let t: u64 = parms.text("REFTIME").trim().parse().unwrap_or(0);
+    let secs = t / 10_000 * 3600 + t / 100 % 100 * 60 + t % 100;
+    u64::try_from(days).ok().map(|d| d * 86_400 + secs)
+}
+
+/// Days since 1970-01-01 of a civil date.
+fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = i64::from((m + 9) % 12);
+    let doy = (153 * mp + 2) / 5 + i64::from(d) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+/// When `SAVLIB` last saved `lib`, for `REFDATE(*SAVLIB)`; 0 for never.
+fn last_savlib(system: &mut System, lib: &str) -> u64 {
+    in_store(system, |txn, qsys, _| {
+        let n = qsname::Name::parse(lib).map_err(|e| e.to_string())?;
+        let id = ops::find_library(txn, qsys, n).map_err(|e| e.to_string())?.id;
+        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+        Ok(if store::obj::header::text_of(&h.save.command) == "SAVLIB" {
+            h.last_saved
+        } else {
+            0
+        })
+    })
+    .unwrap_or(0)
+}
+
 /// Never saved by `SAVLIB`: the system's own and the per-IPL ones.
 const NEVER: &[&str] = &[
     "QSYS",
@@ -426,14 +472,26 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         );
     }
     let savf_name = parms.qual("SAVF");
-    let libs = values(parms, "LIB");
+    let libs = if name == "SAVCFG" {
+        vec!["QSYS".to_string()]
+    } else {
+        values(parms, "LIB")
+    };
     let libs = match expand_libs(system, &libs) {
         Ok(l) => l,
         Err(e) => return failed(name, &e),
     };
     let omit_libs = values(parms, "OMITLIB");
     let omit = objsels(parms, "OMITOBJ");
-    let select: Vec<ObjSel> = if name == "SAVOBJ" {
+    let select: Vec<ObjSel> = if name == "SAVCFG" {
+        CFG_TYPES
+            .iter()
+            .map(|t| ObjSel {
+                name: "*ALL".into(),
+                type_code: Some(*t),
+            })
+            .collect()
+    } else if matches!(name, "SAVOBJ" | "SAVCHGOBJ") {
         let types: Vec<Option<u16>> = values(parms, "OBJTYPE")
             .iter()
             .map(|t| type_code(t))
@@ -456,6 +514,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         select,
         omit: Vec::new(),
         library_object: name == "SAVLIB",
+        skip_journaled: name == "SAVCHGOBJ" && parms.text("OBJJRN") != "*YES",
         update_history: parms.text("UPDHST") != "*NO",
         save_file_data: parms.text("SAVFDTA") == "*YES",
         spool: parms.text("SPLFDTA") == "*ALL",
@@ -490,11 +549,20 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         Ok(id) => id,
         Err(e) => return failed(name, &e),
     };
-    let kind = if name == "SAVLIB" {
-        SaveKind::Library
-    } else {
-        SaveKind::Objects
+    let kind = match name {
+        "SAVLIB" => SaveKind::Library,
+        "SAVCHGOBJ" => SaveKind::Changed,
+        "SAVCFG" => SaveKind::Config,
+        _ => SaveKind::Objects,
     };
+    let since = refdate(parms);
+    let mut changed_since = std::collections::HashMap::new();
+    if name == "SAVCHGOBJ" {
+        for lib in &libs {
+            let t = since.unwrap_or_else(|| last_savlib(system, lib));
+            changed_since.insert(lib.clone(), t);
+        }
+    }
     let head = header(system, name, parms, kind);
     let spool = if base.spool {
         match spool_parts(system, &libs) {
@@ -529,6 +597,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                 .filter(|(_, l)| saverst::select::generic(l, lib))
                 .map(|(s, _)| s.clone())
                 .collect(),
+            changed_since: changed_since.get(lib).copied(),
             ..base.clone()
         };
         match saverst::save_library(&mut storage.store, jobh, &hooks, qsys, lib, &opts, &mut w) {
@@ -641,10 +710,30 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         );
     }
     let savf_name = parms.qual("SAVF");
-    let saved = values(parms, "SAVLIB");
+    let saved = if name == "RSTCFG" {
+        vec!["QSYS".to_string()]
+    } else {
+        values(parms, "SAVLIB")
+    };
     let rstlib = parms.text("RSTLIB");
     let target = (!rstlib.is_empty() && rstlib != "*SAVLIB").then(|| rstlib.to_ascii_uppercase());
-    let select: Vec<ObjSel> = if name == "RSTOBJ" {
+    let select: Vec<ObjSel> = if name == "RSTCFG" {
+        let wanted: Vec<u16> = values(parms, "OBJTYPE")
+            .iter()
+            .filter_map(|t| type_code(t))
+            .filter(|t| CFG_TYPES.contains(t))
+            .collect();
+        let types = if wanted.is_empty() { CFG_TYPES.to_vec() } else { wanted };
+        values(parms, "OBJ")
+            .iter()
+            .flat_map(|o| {
+                types.iter().map(|t| ObjSel {
+                    name: o.clone(),
+                    type_code: Some(*t),
+                })
+            })
+            .collect()
+    } else if name == "RSTOBJ" {
         let types: Vec<Option<u16>> = values(parms, "OBJTYPE")
             .iter()
             .map(|t| type_code(t))
