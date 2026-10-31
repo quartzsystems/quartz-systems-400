@@ -44,6 +44,13 @@ impl Suite {
         want(&rst, "RSTLIB", &["CPC3703", "QS71B"])?;
         let v = s.command("svc.dtaara get QS71B/DA1", CMD)?;
         want(&v, "restored data area", &["kept value"])?;
+        let out = s.command(
+            "savlib LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) CLEAR(*ALL) OUTPUT(*OUTFILE) OUTFILE(QGPL/S71OUT)",
+            CMD,
+        )?;
+        want(&out, "SAVLIB OUTPUT(*OUTFILE)", &["CPF9861", "records written to QGPL/S71OUT"])?;
+        let ffd = s.command("dspffd FILE(QGPL/S71OUT)", CMD)?;
+        want(&ffd, "the QSRSAV outfile", &["SROCMD", "SROPSN"])?;
         let one = s.command(
             "savobj OBJ(DA1) LIB(QS71) DEV(*SAVF) SAVF(QGPL/S71) CLEAR(*ALL)",
             CMD,
@@ -66,6 +73,7 @@ impl Suite {
             s.command(&format!("dltlib LIB({l})"), CMD).ok();
         }
         s.command("svc.obj dlt *SAVF QGPL/S71", CMD).ok();
+        s.command("dltf FILE(QGPL/S71OUT)", CMD).ok();
         Ok("SAVLIB, RSTLIB to a new name, SAVOBJ and RSTOBJ through a save file".into())
     }
 }

@@ -646,6 +646,13 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     }
     let mut reply = save_reply(&reports);
     reply.messages.splice(0..0, refused);
+    if parms.text("OUTPUT") == "*OUTFILE" {
+        let q = (savf_name.0.clone(), lib_or(&savf_name.1));
+        match super::savout::save(system, parms, name, &reports, &q, now) {
+            Ok(t) => reply.text.push_str(&t),
+            Err(e) => return failed(name, &e),
+        }
+    }
     reply
 }
 
@@ -852,6 +859,13 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     match res {
         Ok(r) => {
             let mut reply = rst_reply(&r, opts.target_library.as_deref());
+            if parms.text("OUTPUT") == "*OUTFILE" {
+                let q = (savf_name.0.clone(), lib_or(&savf_name.1));
+                match super::savout::restore(system, parms, name, &r, &q, now_unix()) {
+                    Ok(t) => reply.text.push_str(&t),
+                    Err(e) => return failed(name, &e),
+                }
+            }
             if parms.text("SPLFDTA") != "*NONE" {
                 for (lib, q, part) in &r.spool {
                     let n = restore_spool(system, &format!("{lib}/{q}"), part);

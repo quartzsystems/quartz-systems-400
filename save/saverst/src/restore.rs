@@ -410,6 +410,9 @@ fn result_of(d: &ObjectDescriptor, msgid: Option<&'static str>) -> ObjResult {
         size: 0,
         msgid,
         members: 0,
+        owner: text_of(&d.owner),
+        primary_group: text_of(&d.primary_group),
+        text: text_of(&d.text),
     }
 }
 

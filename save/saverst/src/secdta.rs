@@ -134,6 +134,7 @@ pub fn save_security<W: Write>(
             size: 0,
             msgid: None,
             members: 0,
+            ..ObjResult::default()
         };
         if let Err(m) = hooks.may_save(&mut txn, &h) {
             result.msgid = Some(m);
@@ -305,6 +306,7 @@ pub fn restore_profiles<R: Read>(
             size: d.size_bytes,
             msgid: None,
             members: 0,
+            ..ObjResult::default()
         };
         let mut txn = store.begin()?;
         let r = one_profile(&mut txn, job, hooks, qsys, &o, opts);

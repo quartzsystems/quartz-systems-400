@@ -27,6 +27,7 @@ mod prbcmd;
 pub(crate) mod ptfcmd;
 mod rpg;
 mod savcmd;
+mod savout;
 pub(crate) mod stmf;
 mod stmfcmd;
 mod sysinfo;

@@ -105,7 +105,7 @@ impl SaveTarget {
 }
 
 /// One object's outcome.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ObjResult {
     /// Library.
     pub library: String,
@@ -121,6 +121,12 @@ pub struct ObjResult {
     pub msgid: Option<&'static str>,
     /// Members saved (restored) with a file.
     pub members: u32,
+    /// Owner (after a restore, the object's owner then).
+    pub owner: String,
+    /// Primary group, blank for none.
+    pub primary_group: String,
+    /// Text description.
+    pub text: String,
 }
 
 /// What a library's save did.
@@ -389,6 +395,9 @@ fn save_in<W: Write>(
             size: 0,
             msgid: None,
             members: 0,
+            owner: store::obj::header::text_of(&h.owner),
+            primary_group: store::obj::header::text_of(&h.primary_group),
+            text: store::obj::header::text_of(&h.text),
         };
         if let Err(m) = hooks.may_save(txn, &h) {
             result.msgid = Some(m);
