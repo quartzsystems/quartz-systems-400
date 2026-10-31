@@ -32,6 +32,7 @@ pub fn apply(s: &mut Screen, key: Key) -> Outcome {
         Key::Function(n) => return Outcome::Function(n),
         Key::Attention => return Outcome::Attention,
         Key::Reset => return Outcome::Reset,
+        Key::SysReq => return Outcome::Ignored,
         _ => {}
     }
     if s.fields.is_empty() {
@@ -87,7 +88,7 @@ pub fn apply(s: &mut Screen, key: Key) -> Outcome {
                 goto_field(s, next(s, fi));
             }
         }
-        Key::Enter | Key::Function(_) | Key::Attention | Key::Reset => {}
+        Key::Enter | Key::Function(_) | Key::Attention | Key::SysReq | Key::Reset => {}
     }
     Outcome::Edited
 }

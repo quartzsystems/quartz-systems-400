@@ -253,6 +253,7 @@ fn key(system: &mut System, name: &str) -> String {
         "insert" => Key::Insert,
         "reset" => Key::Reset,
         "attn" => Key::Attention,
+        "sysreq" => Key::SysReq,
         f if f.starts_with('f') => match f[1..].parse::<u8>() {
             Ok(n) if (1..=24).contains(&n) => Key::Function(n),
             _ => return format!("Unknown key '{name}'\n"),

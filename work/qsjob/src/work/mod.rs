@@ -8,6 +8,7 @@
 
 pub mod batch;
 pub mod cgroup;
+pub mod consdev;
 pub mod ftp;
 pub mod httpadm;
 pub mod hostsvr;

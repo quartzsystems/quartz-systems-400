@@ -4,16 +4,15 @@
 
 //! The job's display when it owns a 5250 device: the socket to the
 //! session holding the device, the screen model, and panels turned
-//! into data streams. The console job keeps sending panels to `slic`;
-//! a device job renders them here. Display files (`dds`) write through
-//! the model directly; `MIGRATE(phase8)`: UIM too.
+//! into data streams. Every interactive job has one, the console's too.
+//! Display files (`dds`) and UIM (`uim`) write through the model.
 
 pub mod dds;
 pub mod surface;
 pub mod uim;
 
-/// The framebuffer console's device, a TN5250 client of the system's
-/// own telnet server once the IPL is complete.
+/// The framebuffer console's device, held by the console job
+/// `QCONSOLE` with or without TCP/IP.
 pub const CONSOLE_DEVICE: &str = "QSCONSOLE";
 
 use std::os::unix::net::UnixStream;

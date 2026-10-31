@@ -3,11 +3,12 @@
 // root directory of this project.
 
 //! The console as a 5250 terminal: a `tn5250` terminal fed with the
-//! records of a TN5250E session to the system's own telnet server,
-//! its cells drawn on the framebuffer, the operator's keys typed into
-//! it. The screens then come from the jobs like any other display's
-//! (`docs/TN5250.md`); the console's own screens (SRCs, DST, the
-//! interim sign-on) show only before the link is up.
+//! records of the console display's TN5250E session (held by the
+//! console job `QCONSOLE`, over a local socket), its cells drawn on the
+//! framebuffer, the operator's keys typed into it. The screens then come
+//! from the jobs like any other display's (`docs/TN5250.md`); the
+//! console's own screens (SRCs, DST, the installer) show only while the
+//! link is down.
 
 use tn5250::ds::attr;
 use tn5250::ds::wdsf::{Capabilities, Model};
@@ -40,6 +41,7 @@ pub fn term_key(key: Key) -> Option<TermKey> {
         Key::Delete => TermKey::Delete,
         Key::Function(n) => TermKey::F(n),
         Key::Attention => TermKey::Attn,
+        Key::SysReq => TermKey::SysReq,
         Key::Reset => TermKey::Reset,
         Key::Left => TermKey::Left,
         Key::Right => TermKey::Right,

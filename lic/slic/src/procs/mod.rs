@@ -23,10 +23,8 @@ pub struct Procs {
     pub stg: Option<stg::StgProc>,
     /// The service console job.
     pub svcjob: Option<svcjob::SvcJob>,
-    /// The job signed on at the console display.
+    /// The console job `QCONSOLE`, which holds the console display.
     pub console: Option<console::ConsoleJob>,
-    /// The console job `DSCJOB` or inactivity left running.
-    pub disconnected: Option<console::Disconnected>,
     /// The system jobs and the subsystem monitors `slic` started.
     pub jobs: Vec<sysjobs::Child>,
 }
@@ -43,11 +41,6 @@ pub fn end_all(system: &mut crate::ipl::system::System, immediate: bool, delay: 
         j.end();
         spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
     }
-    if let Some(d) = system.procs.disconnected.take() {
-        let mut j = d.job;
-        j.end();
-        spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
-    }
     if let Some(mut j) = system.procs.svcjob.take() {
         j.end();
         spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
@@ -59,25 +52,7 @@ pub fn end_all(system: &mut crate::ipl::system::System, immediate: bool, delay: 
     stg::close(system);
 }
 
-/// Put a process in a storage pool's cgroup, making the cgroup when it
-/// is missing (`docs/WORKMGMT.md`, pools).
 /// The directory of the display device sockets (`wm::dev`).
 pub fn device_dir() {
     let _ = std::fs::create_dir_all(wm::dev::DIR);
-}
-
-pub fn cgroup_place(pool: &str, pid: u32) {
-    let mut dir = std::path::PathBuf::from("/sys/fs/cgroup/qs400");
-    for part in pool.trim_start_matches('*').split('/') {
-        dir.push(part);
-    }
-    let _ = std::fs::write("/sys/fs/cgroup/cgroup.subtree_control", "+memory +pids");
-    let _ = std::fs::create_dir_all(&dir);
-    let _ = std::fs::write(
-        "/sys/fs/cgroup/qs400/cgroup.subtree_control",
-        "+memory +pids",
-    );
-    if let Err(e) = std::fs::write(dir.join("cgroup.procs"), pid.to_string()) {
-        eprintln!("slic: job {pid} into pool {pool}: {e}");
-    }
 }

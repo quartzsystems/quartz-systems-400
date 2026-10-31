@@ -63,8 +63,8 @@ fn arm_slot(system: &mut System, iplsrc: u8) {
 /// `iplsrc` 1 or 2 boots slot A or B once.
 pub fn down_ending(system: &mut System, restart: bool, immediate: bool, delay: u32, iplsrc: u8) -> ! {
     system.emit(&src::PWRDWN_STARTED);
-    // The console's own TN5250 session would keep the telnet server
-    // (and so the storage service) from ending.
+    // The console's session ends first; its jobs end with their
+    // subsystems.
     crate::ipl::link::disconnect();
     if restart && let Some(s) = system.procs.stg.as_mut() {
         let _ = stg::Client::next_iplsts(s, 2);

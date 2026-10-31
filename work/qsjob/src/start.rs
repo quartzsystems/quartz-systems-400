@@ -67,6 +67,7 @@ pub fn run() -> ! {
         "INTER" => crate::work::inter::run(ctl, &link, &start),
         "SYSTEM" => crate::work::sysjob::run(ctl, &link, &start),
         "TELNET" => crate::work::telnet::run(ctl, &link, &start),
+        "CONSOLE" => crate::work::consdev::run(ctl, &link, &start),
         "HTTPADM" => crate::work::httpadm::run(ctl, &link, &start),
         "HOSTSVRD" => crate::work::hostsvr::daemon::run(ctl, &link, &start),
         "PRESTART" => crate::work::hostsvr::prestart::run(ctl, &link, &start),

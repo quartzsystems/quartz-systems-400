@@ -13,6 +13,14 @@ use ipc::wire_enum;
 /// Where a device's socket lives.
 pub const DIR: &str = "/run/qs400/dev";
 
+/// The console's terminal socket: the console job (`QCONSOLE`), which
+/// holds the display `QSCONSOLE`, listens; `slic` connects the
+/// framebuffer console's terminal (telnet framing, no TCP).
+pub const CONSOLE_TERMINAL: &str = "/run/qs400/console";
+
+/// The console job's name.
+pub const CONSOLE_JOB: &str = "QCONSOLE";
+
 /// The socket path of a device.
 #[must_use]
 pub fn socket(device: &str) -> String {

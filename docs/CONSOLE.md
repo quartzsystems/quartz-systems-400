@@ -1,11 +1,25 @@
 # The local console
 
 The console is the display and keyboards on the machine itself: the SRC
-display during the IPL, the IPL menu, DST and the installer, the
-sign-on display and, once the IPL completes, a 5250 terminal of the
-system's own telnet server. All of them are one 24×80 cell grid drawn by
-one renderer (`lic/console`); `svc.screen` returns that grid as text and
-does not depend on how it is drawn.
+display during the IPL, the IPL menu, DST and the installer and, once
+the IPL completes, the 5250 display `QSCONSOLE`, held by the console job
+`QCONSOLE` with or without TCP/IP (`docs/TN5250.md`, "The console as a
+client"). All of them are one 24×80 cell grid drawn by one renderer
+(`lic/console`); `screen` returns that grid as text and does not depend
+on how it is drawn.
+
+## The console display
+
+`slic` links the console's `tn5250` terminal to `QCONSOLE` over the
+local socket `/run/qs400/console` (`lic/slic/src/ipl/link.rs`); there is
+no TCP in the path, so a machine with no network, TCP/IP ended or the
+telnet server down still signs on at the console, and its commands open
+their panels exactly as at a `QPADEV` display. The sign-on is the
+shipped display file `QDSIGNON` (`QDSIGNON2` at `QPWDLVL` 2 and 3), as at
+any display. While the link is down the console shows its own screens
+and `slic` connects again every second; `QCONSOLE` ending is started
+again. `tn5250 status|connect|disconnect` at the service console shows
+or drives the link.
 
 ## Display mode
 
@@ -77,7 +91,7 @@ not used: under `simpledrm`'s deferred I/O it is never flushed.
 The first draw, and the first after a change of mode or grid size,
 writes the whole frame, margins included. The mode is asked for again
 whenever a write fails (EIO from a framebuffer that went away or
-changed) and when the console leaves a TN5250 session; a changed mode
+changed) and when the console leaves its session; a changed mode
 lays the grid out again and repaints. There is no splash screen to
 resume from.
 

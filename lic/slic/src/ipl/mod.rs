@@ -47,12 +47,14 @@ pub enum Event {
     Job(wm::ctl::FromJob),
     /// The service console job's channel closed.
     JobGone,
-    /// A message from the job signed on at the console display.
+    /// A message from the console job `QCONSOLE`.
     ConsoleJob(wm::ctl::FromJob),
     /// That job's channel closed.
     ConsoleGone(u32),
-    /// The console's TN5250 session to the telnet server ended.
+    /// The console's session ended; the link is made again.
     ConsoleLinkGone,
+    /// The console's link could not be made (said once until it is).
+    ConsoleLinkDown(String),
     /// Something from the local console's keyboard.
     Console(::console::Input),
 }
@@ -449,13 +451,13 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     }
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
-    // The console becomes a terminal of the telnet server; its own
-    // sign-on display stands in when the server is not there.
-    let port = link::port(system);
-    if let Err(e) = link::connect(system, port, tx) {
-        system.out.serial(&format!("slic: console: {e}; the interim sign-on shows
-"));
-        procs::console::sign_on(system, "");
+    // The console becomes a 5250 display: QCONSOLE holds QSCONSOLE,
+    // the console's terminal is its client.
+    if system.procs.stg.is_some() {
+        match procs::console::start(system, tx.clone()) {
+            Ok(()) => link::start(system, tx, Duration::from_secs(15)),
+            Err(e) => system.out.serial(&format!("slic: {e}\n")),
+        }
     }
     audit_lic(system);
     if system.procs.stg.is_some()
@@ -685,7 +687,7 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
             system.procs.stg = None;
             system.fatal(&src::STG_ENDED);
         }
-        procs::console::gone(system, pid);
+        procs::console::gone(system, pid, tx);
         procs::hwr::reaped(system, pid);
         if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
             system.procs.svcjob = None;
@@ -714,7 +716,6 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         match rx.recv_timeout(wait) {
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 storage::tick(system);
-                procs::console::inactivity(system);
             }
             Ok(Event::Signal(s)) if s == libc_sigchld() => {
                 let pids = sys::reap();
@@ -732,15 +733,16 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                 }
             }
             Ok(Event::Job(m)) => job_message(system, m),
-            Ok(Event::Console(input)) => console_input(system, input, tx),
+            Ok(Event::Console(input)) => console_input(system, &input),
             Ok(Event::ConsoleJob(m)) => procs::console::from_job(system, m),
-            Ok(Event::ConsoleGone(pid)) => procs::console::gone(system, pid),
+            Ok(Event::ConsoleGone(pid)) => procs::console::gone(system, pid, tx),
             Ok(Event::ConsoleLinkGone) => {
-                system.out.serial("slic: console: the TN5250 session ended
-");
-                if system.procs.console.is_none() {
-                    procs::console::sign_on(system, "");
-                }
+                system.out.serial("slic: console: the session ended\n");
+            }
+            Ok(Event::ConsoleLinkDown(e)) => {
+                system
+                    .out
+                    .serial(&format!("slic: console: no session yet: {e}\n"));
             }
             Err(_) => park(),
         }
@@ -782,16 +784,9 @@ pub fn park() -> ! {
     }
 }
 
-/// Input at the console display: to the signed-on job, or a sign-on.
-fn console_input(system: &mut System, input: ::console::Input, tx: &mpsc::Sender<Event>) {
-    use ::console::Input;
-    match (system.procs.console.as_mut(), input) {
-        (Some(j), Input::Enter(fields)) => j.input(0, fields),
-        (Some(j), Input::Function(n, fields)) => j.input(n, fields),
-        // The console shows sign-on only after C6001090.
-        (None, Input::SignOn(fields)) => {
-            procs::console::sign_on_entered(system, &fields, tx.clone());
-        }
-        (_, other) => system.out.serial(&format!("slic: console {other:?}\n")),
-    }
+/// Input at the console's own screens once the IPL is complete: the
+/// display's keys go to its session while the link is up, so this is
+/// only noted.
+fn console_input(system: &mut System, input: &::console::Input) {
+    system.out.serial(&format!("slic: console {input:?}\n"));
 }

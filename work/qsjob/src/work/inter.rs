@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! An interactive job at the console. Signing on may first need a new
+//! An interactive job at a display. Signing on may first need a new
 //! password (Change Password) and may show Sign-on Information; then
 //! the initial program runs, and the initial menu shows: the interim
 //! MAIN menu for `MAIN`, sign-off for `*SIGNOFF`, otherwise Command
@@ -78,6 +78,11 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
             std::process::exit(1);
         }
     };
+    // Every interactive job has a display device, the console's too
+    // (`QSCONSOLE`, held by `QCONSOLE`).
+    if start.device.is_empty() {
+        crate::start::end(&mut ending, "an interactive job needs a display device");
+    }
     let mut c = Console::new(ctl, link, start);
     c.started();
     let system = link
@@ -225,9 +230,20 @@ impl Session<'_> {
         self.pending = text.to_string();
     }
 
-    /// The message for the next display, taken.
+    /// The message waiting for the next display, taken.
     pub(super) fn take_message(&mut self) -> String {
         std::mem::take(&mut self.pending)
+    }
+
+    /// A message by its ID in `QCPFMSG`, `&1` and on from `data`
+    /// (each padded to 10 characters, the `*CHAR 10` replacement).
+    pub(super) fn cpf_text(&mut self, msgid: &str, data: &[&str]) -> String {
+        let mut rpl = Vec::new();
+        for d in data {
+            rpl.extend(ccsid::to_ebcdic(&format!("{d:<10}")).unwrap_or_default());
+        }
+        let (text, _, _) = self.c.job().describe_message(msgid, "QCPFMSG", "QSYS", &rpl);
+        text.trim().to_string()
     }
 }
 

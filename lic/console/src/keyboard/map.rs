@@ -29,8 +29,10 @@ pub enum Key {
     Delete,
     /// F1 to F24.
     Function(u8),
-    /// Attention (Esc). No-op in Phase 1.
+    /// Attention (Esc).
     Attention,
+    /// System Request (Shift+Esc, or the `SysRq` key).
+    SysReq,
     /// Reset (Ctrl+Left).
     Reset,
     /// Cursor left.
@@ -55,6 +57,7 @@ pub struct Modifiers {
 }
 
 const KEY_ESC: u16 = 1;
+const KEY_SYSRQ: u16 = 99;
 const KEY_BACKSPACE: u16 = 14;
 const KEY_TAB: u16 = 15;
 const KEY_ENTER: u16 = 28;
@@ -177,6 +180,8 @@ pub fn translate(code: u16, mods: Modifiers) -> Option<Key> {
         KEY_HOME => Key::Home,
         KEY_INSERT => Key::Insert,
         KEY_DELETE => Key::Delete,
+        KEY_ESC if mods.shift => Key::SysReq,
+        KEY_SYSRQ => Key::SysReq,
         KEY_ESC => Key::Attention,
         KEY_LEFT if mods.ctrl => Key::Reset,
         KEY_LEFT => Key::Left,
@@ -278,6 +283,8 @@ mod tests {
         assert_eq!(translate(KEY_F1, shift), Some(Key::Function(13)));
         assert_eq!(translate(KEY_F12, shift), Some(Key::Function(24)));
         assert_eq!(translate(KEY_ESC, plain), Some(Key::Attention));
+        assert_eq!(translate(KEY_ESC, shift), Some(Key::SysReq));
+        assert_eq!(translate(KEY_SYSRQ, plain), Some(Key::SysReq));
         assert_eq!(translate(KEY_LEFT, ctrl), Some(Key::Reset));
         assert_eq!(translate(KEY_LEFT, plain), Some(Key::Left));
         assert_eq!(translate(200, plain), None);

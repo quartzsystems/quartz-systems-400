@@ -63,8 +63,8 @@ pub struct Host {
     pub start: Rc<Start>,
     /// The job's attributes as last fetched; `None` until needed.
     pub attrs: Rc<RefCell<Option<JobAttrs>>>,
-    /// The job's own display device, when it has one; the console job
-    /// shows its panels through the parent instead.
+    /// The job's own display device, when it has one (every
+    /// interactive job; not `QSVCJOB` nor a batch job).
     pub display: Rc<RefCell<Option<crate::display::Display>>>,
     /// What the inbox delivered while a program ran, for the next wait.
     pub pending: Rc<RefCell<VecDeque<ToJob>>>,

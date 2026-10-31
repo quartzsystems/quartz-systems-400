@@ -26,7 +26,7 @@
 use std::collections::VecDeque;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::os::unix::net::UnixListener;
+use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -400,15 +400,20 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             sweep(minutes);
         }
     }
+    end_disconnected();
+    let _ = ctl.send(&FromJob::Ending {
+        reason: "ENDTCPSVR".into(),
+    });
+    std::process::exit(0)
+}
+
+/// End every job kept for a later sign-on.
+pub(super) fn end_disconnected() {
     for d in disconnected().lock().expect("list").drain(..) {
         for h in d.held {
             end_job(h.job);
         }
     }
-    let _ = ctl.send(&FromJob::Ending {
-        reason: "ENDTCPSVR".into(),
-    });
-    std::process::exit(0)
 }
 
 fn accept_loop(
@@ -460,7 +465,7 @@ fn bind(port: u16) -> std::io::Result<TcpListener> {
 }
 
 /// Disconnected jobs past `QDSCJOBITV` end.
-fn sweep(minutes: Option<u64>) {
+pub(super) fn sweep(minutes: Option<u64>) {
     let Some(m) = minutes else {
         return;
     };
@@ -513,6 +518,8 @@ enum Ev {
 enum Stream {
     Plain(TcpStream),
     Tls(Box<rustls::StreamOwned<rustls::ServerConnection, TcpStream>>),
+    /// The console's local socket from `slic`.
+    Local(UnixStream),
 }
 
 impl Stream {
@@ -520,6 +527,7 @@ impl Stream {
         match self {
             Self::Plain(s) => s.read(buf),
             Self::Tls(s) => s.read(buf),
+            Self::Local(s) => s.read(buf),
         }
     }
 
@@ -527,12 +535,16 @@ impl Stream {
         match self {
             Self::Plain(s) => s.write_all(b),
             Self::Tls(s) => s.write_all(b),
+            Self::Local(s) => s.write_all(b),
         }
     }
 
     fn shutdown(&mut self) {
         match self {
             Self::Plain(s) => {
+                let _ = s.shutdown(std::net::Shutdown::Both);
+            }
+            Self::Local(s) => {
                 let _ = s.shutdown(std::net::Shutdown::Both);
             }
             Self::Tls(s) => {
@@ -667,7 +679,6 @@ fn startup_response(code: &str, device: &str) -> Vec<u8> {
 }
 
 /// One connection, start to end.
-#[allow(clippy::too_many_lines)] // the negotiation, then the device
 fn session(
     stream: TcpStream,
     tls: Option<Arc<rustls::ServerConfig>>,
@@ -703,13 +714,6 @@ fn session(
             Stream::Tls(Box::new(rustls::StreamOwned::new(conn, tcp)))
         }
     };
-    let (ev_tx, ev_rx) = mpsc::channel::<Ev>();
-    let (out_tx, out_rx) = mpsc::channel::<Vec<u8>>();
-    {
-        let ev_tx = ev_tx.clone();
-        std::thread::spawn(move || io_thread(s, &out_rx, &ev_tx));
-    }
-    let tr = Transport { out: out_tx };
     // The session is a job of its own in the active job table.
     let mut link = {
         let (tx, rx) = mpsc::channel();
@@ -734,6 +738,56 @@ fn session(
         .map_err(|e| e.to_string())??;
         l
     };
+    let at = Conn {
+        peer: &peer,
+        addrs: &addrs,
+        secure,
+        ask: Some(ask),
+    };
+    serve(s, &at, &mut link, host)
+}
+
+/// The console's session (`docs/TN5250.md`, "The console as a
+/// client"): the same negotiation and device over a local socket from
+/// `slic`, always for `QSCONSOLE`, with the console job's own link and
+/// no exit programs.
+pub(super) fn console_session(stream: UnixStream, link: &mut Link, host: &str) -> Result<(), String> {
+    stream
+        .set_read_timeout(Some(Duration::from_millis(50)))
+        .map_err(|e| e.to_string())?;
+    let none = (String::new(), String::new());
+    let at = Conn {
+        peer: "console",
+        addrs: &none,
+        secure: false,
+        ask: None,
+    };
+    serve(Stream::Local(stream), &at, link, host)
+}
+
+/// Where a connection comes from: the peer, its addresses, TLS, and
+/// the server's main thread (`None` for the console, which runs no
+/// exit programs).
+struct Conn<'a> {
+    peer: &'a str,
+    addrs: &'a (String, String),
+    secure: bool,
+    ask: Option<&'a Sender<Ask>>,
+}
+
+/// A connection's negotiation, its device, then the device's sign-on
+/// and jobs until it goes.
+#[allow(clippy::too_many_lines)] // the negotiation, then the device
+fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), String> {
+    let peer = at.peer;
+    let console = at.ask.is_none();
+    let (ev_tx, ev_rx) = mpsc::channel::<Ev>();
+    let (out_tx, out_rx) = mpsc::channel::<Vec<u8>>();
+    {
+        let ev_tx = ev_tx.clone();
+        std::thread::spawn(move || io_thread(s, &out_rx, &ev_tx));
+    }
+    let tr = Transport { out: out_tx };
     let seed = seed();
     let mut server = Server::new(seed);
     tr.send(server.opening())?;
@@ -755,26 +809,38 @@ fn session(
     }
     let neg = server.negotiated.clone();
     let mut requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
-    // QIBM_QTG_DEVINIT: the exit programs may refuse the connection or
-    // name its device.
-    let mut desc = exit_session(&neg, &requested, &addrs, secure);
-    let init = exit(ask, DEVINIT, ExitRequest::DevInit(desc.clone()));
-    if !init.allow {
-        return Err(format!("{peer}: refused by the {DEVINIT} exit program"));
-    }
-    let out = regfac::formats::telnet::init_out(&init.outputs);
-    if !init.called.is_empty() && !out.device.is_empty() {
-        requested = out.device.to_ascii_uppercase();
-        desc.device.clone_from(&requested);
-    }
-    // BLOCKED(phase10): an INIT0100 program's automatic sign-on needs a
-    // service request that signs on the profile it names without a
-    // password; the answer is read and not acted on.
-    let _ = out.autosignon;
-    if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
-        let r = printer_session(&tr, &mut server, &mut link, &ev_rx, &requested, ptype, pmodel, &peer);
-        let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
-        return r;
+    let mut desc = exit_session(&neg, &requested, at.addrs, at.secure);
+    if let Some(ask) = at.ask {
+        // The console display is the console's, never a network session's.
+        if requested == display::CONSOLE_DEVICE {
+            let _ = tr.send(startup_response("8903", &requested));
+            return Err(format!("{peer}: {requested} is the console"));
+        }
+        // QIBM_QTG_DEVINIT: the exit programs may refuse the connection
+        // or name its device.
+        let init = exit(ask, DEVINIT, ExitRequest::DevInit(desc.clone()));
+        if !init.allow {
+            return Err(format!("{peer}: refused by the {DEVINIT} exit program"));
+        }
+        let out = regfac::formats::telnet::init_out(&init.outputs);
+        if !init.called.is_empty() && !out.device.is_empty() {
+            requested = out.device.to_ascii_uppercase();
+            desc.device.clone_from(&requested);
+        }
+        // BLOCKED(phase10): an INIT0100 program's automatic sign-on needs a
+        // service request that signs on the profile it names without a
+        // password; the answer is read and not acted on.
+        let _ = out.autosignon;
+        if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
+            let r = printer_session(&tr, &mut server, link, &ev_rx, &requested, ptype, pmodel, peer);
+            let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
+            return r;
+        }
+    } else {
+        // The console's device is free whenever its session starts: the
+        // jobs it kept are taken back by signing on again.
+        requested = display::CONSOLE_DEVICE.to_string();
+        let _ = link.device_status(requested.clone(), 1);
     }
     let model = Model::from_terminal_type(&neg.terminal_type).unwrap_or_default();
     let (devtype, devmodel) = model.device_type_model();
@@ -791,21 +857,25 @@ fn session(
             return Err(format!("{peer}: no device: {code}"));
         }
     };
-    if !requested.is_empty() {
+    if !requested.is_empty() && !console {
         tr.send(startup_response("I902", &device))?;
     }
-    let auto = auto_signon(&neg, seed, &mut link, &device);
+    let auto = if console {
+        None
+    } else {
+        auto_signon(&neg, seed, link, &device)
+    };
     let r = serve_device(
         &tr,
         &mut server,
-        &mut link,
+        link,
         &ev_rx,
         &ev_tx,
         &device,
         model,
         host,
         auto,
-        &peer,
+        peer,
     );
     // A device whose job waits disconnected stays in recovery pending.
     let kept = disconnected()
@@ -817,7 +887,9 @@ fn session(
         let _ = link.device_status(device.clone(), 1);
     }
     desc.device = device;
-    let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
+    if let Some(ask) = at.ask {
+        let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
+    }
     r
 }
 
@@ -1038,10 +1110,15 @@ fn serve_device(
             host,
             peer,
         };
-        let outcome = run_job(&at, server, link, ev_rx, ev_tx, &signed)?;
-        match outcome {
-            Outcome::SignedOff(m) => message = m,
-            Outcome::ConnectionGone => return Ok(()),
+        // A job that cannot start (no subsystem takes the device) is
+        // said on the sign-on display; a connection that went ends there.
+        match run_job(&at, server, link, ev_rx, ev_tx, &signed) {
+            Ok(Outcome::SignedOff(m)) => message = m,
+            Ok(Outcome::ConnectionGone) => return Ok(()),
+            Err(e) => {
+                eprintln!("qsjob: QTVDEVICE: {peer}: {e}");
+                message = e;
+            }
         }
     }
 }
@@ -1183,7 +1260,7 @@ fn sign_on_display(
             continue;
         }
         let checked = link
-            .sign_on(user, password, device.to_string(), false)
+            .sign_on(user, password, device.to_string(), device == display::CONSOLE_DEVICE)
             .map_err(|e| e.to_string())?;
         match checked {
             Ok(mut s) => {
