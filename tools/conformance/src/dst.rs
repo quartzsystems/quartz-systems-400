@@ -214,6 +214,9 @@ impl Suite {
             s.send("1")?;
             s.expect("Confirm Language Feature Selection", CMD)?;
             s.send("key f10")?;
+            s.expect("Type choices, press Enter.", CMD)?;
+            s.send("key enter")?;
+            s.expect("SRC C6004130", Duration::from_mins(10))?;
             s.expect("IPL Options", self.boot_timeout)?;
             s.send("key enter")?;
             s.expect("Set Major System Options", CMD)?;

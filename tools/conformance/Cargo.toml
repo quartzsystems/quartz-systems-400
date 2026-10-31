@@ -27,6 +27,7 @@ licpgm = { path = "../../licpgm/licpgm", version = "0.1.0" }
 ed25519-dalek = "3.0.0"
 diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
 optical = { path = "../../media/optical", version = "0.1.0" }
+instmedia = { path = "../../media/instmedia", version = "0.1.0" }
 db = { path = "../../database/db", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }
 sql = { path = "../../database/sql", version = "0.1.0" }

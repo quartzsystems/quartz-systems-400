@@ -36,7 +36,11 @@ pub fn iso_files(iso: &[u8]) -> Result<Vec<(String, Vec<u8>)>, String> {
 /// A disk image: an MBR with one FAT32 partition holding every file of
 /// the ISO's tree.
 pub fn fat_stick(iso: &[u8]) -> Result<Vec<u8>, String> {
-    let files = iso_files(iso)?;
+    fat_stick_of(&iso_files(iso)?)
+}
+
+/// A disk image: an MBR with one FAT32 partition holding `files`.
+pub fn fat_stick_of(files: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
     let payload: u64 = files.iter().map(|(_, d)| d.len() as u64).sum();
     let spec = diskimg::fat::fat32_for(payload);
     let refs: Vec<(&str, &[u8])> = files.iter().map(|(p, d)| (p.as_str(), d.as_slice())).collect();

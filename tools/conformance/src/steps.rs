@@ -270,7 +270,16 @@ impl Suite {
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(20));
         drop(s);
-        reports.extend(self.dst_scenarios(&media)?);
+        let dst = ["4 ", "5 ", "6 ", "7 "];
+        let wanted = self
+            .only
+            .as_ref()
+            .is_none_or(|p| p.iter().any(|p| dst.contains(&p.as_str())));
+        if wanted {
+            reports.extend(self.dst_scenarios(&media)?);
+        }
+        let installed = self.out_dir.join("install.img");
+        reports.extend(self.install_matrix(&installed)?);
         Ok(reports)
     }
 
@@ -295,7 +304,11 @@ impl Suite {
         if !asp.contains("created by V1R0M0") {
             return Err(format!("svc.asp did not report the store: {asp}"));
         }
-        Ok("LIC written by option 4, re-IPL, operating system installed, sign-on".into())
+        if !s.log.contains("SRC C6004130") {
+            return Ok("LIC written by option 4, re-IPL, operating system made at the first IPL, sign-on".into());
+        }
+        let sig = crate::install::signatures_clean(s)?;
+        Ok(format!("LIC written by option 4, re-IPL, QS00SS1 restored from the media, sign-on; {sig}"))
     }
 
     /// Install step 3: option 2 through every screen, over the disk
@@ -342,7 +355,13 @@ impl Suite {
         s.send("1")?;
         s.expect("Confirm Language Feature Selection", CMD)?;
         s.send("key f10")?;
+        s.expect("Install option", CMD)?;
+        self.snap("install-os");
+        s.send("2")?;
+        s.expect("Specify Install Options", CMD)?;
+        s.send("key enter")?;
         s.expect("SRC C6004120", Duration::from_secs(120))?;
+        s.expect("SRC C6004130", Duration::from_mins(10))?;
         s.expect("IPL Options", self.boot_timeout)?;
         self.snap("install-ipl-options");
         s.send("key enter")?;

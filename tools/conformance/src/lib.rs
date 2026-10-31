@@ -25,6 +25,7 @@ mod hostsvr;
 pub mod ftp;
 mod ftpsrv;
 mod ifs;
+mod install;
 mod load;
 mod lpstep;
 pub mod media;
