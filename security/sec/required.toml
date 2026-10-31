@@ -50,11 +50,15 @@ ibm = "RSTOBJ, RSTLIB over an existing object: *OBJEXIST, unless the user has *S
 
 [op."savf.write"]
 need = ["*USE", "*ADD"]
-ibm = "saving to a save file: *USE and *ADD to it"
+ibm = "SAVLIB, SAVOBJ, SAV, SAVSECDTA, SAVLICPGM to an empty save file: *USE and *ADD; *SAVSYS does not cover the save file"
+
+[op."savf.replace"]
+need = ["*USE", "*ADD", "*OBJMGT"]
+ibm = "the same saves to a save file with records in it: *USE, *ADD and *OBJMGT; *SAVSYS does not cover the save file"
 
 [op."savf.read"]
 need = ["*USE"]
-ibm = "restoring from or displaying a save file: *USE"
+ibm = "RSTLIB, RSTOBJ, RST, RSTUSRPRF, RSTLICPGM from a save file, DSPSAVF: *USE; *SAVSYS does not cover the save file"
 
 [op."savf.change"]
 need = ["*OBJOPR", "*OBJMGT"]

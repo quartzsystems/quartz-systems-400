@@ -54,7 +54,11 @@ settle it.
 
 9. **Required authorities.** Settled for `ADDPFM`: `*OBJALTER` alone
    suffices, so `required.toml` takes either of `*OBJMGT` and
-   `*OBJALTER` for members, `CHGPF`/`CHGLF` and journaling. The rest
+   `*OBJALTER` for members, `CHGPF`/`CHGLF` and journaling. Settled
+   from the Security Reference's save and restore rows: the save file
+   rows (`*USE *ADD` empty, `*OBJMGT *USE *ADD` with records, `*USE`
+   to restore) carry no `*SAVSYS` footnote, so `*SAVSYS` does not
+   cover the save file (SECURITY.md §4). The rest
    of the table follows IBM's published tables as remembered. Oracle:
    `CHKOBJ` and each command as a user given exactly the authorities
    the table lists, then each minus one.

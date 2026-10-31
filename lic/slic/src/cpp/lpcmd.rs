@@ -271,7 +271,11 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let label = pid.as_str().to_string();
     let stream = if dev == "*SAVF" {
         let savf_id = find_savf(system, &parms.qual("SAVF"))?;
-        in_store(system, |txn, _, _| savf::read(txn, savf_id).map_err(|e| e.to_string()))?
+        let file = parms.qual("SAVF").0;
+        in_store(system, |txn, qsys, _| {
+            super::savcmd::may_read_savf(txn, qsys, savf_id, &file)?;
+            savf::read(txn, savf_id).map_err(|e| e.to_string())
+        })?
     } else if let Some((_, s)) = media_streams(&dev, Some(&label)).ok().and_then(|mut v| v.pop()) {
         // The install media's product loads.
         s
@@ -434,8 +438,8 @@ fn header(system: &System, kind: SaveKind) -> MediaHeader {
 fn to_savf(system: &mut System, file: &(String, String), clear: &str, bytes: &[u8]) -> Result<(), String> {
     let id = find_savf(system, file)?;
     let clear = clear.to_ascii_uppercase();
-    in_store(system, |txn, _, _| {
-        let used = savf::len(txn, id).map_err(|e| e.to_string())?;
+    in_store(system, |txn, qsys, _| {
+        let used = super::savcmd::may_write_savf(txn, qsys, id, &file.0)?;
         if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE" | "*AFTER") {
             return Err(format!("CPA4067 save file {} already holds data", file.0));
         }

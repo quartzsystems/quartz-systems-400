@@ -313,6 +313,55 @@ fn clrsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(CmdReply::default())
 }
 
+/// A save into save file `id`: `*USE` and `*ADD`, and `*OBJMGT` too
+/// when it holds records. `*SAVSYS` covers the objects saved, not the
+/// save file (IBM's table puts no `*SAVSYS` footnote on its rows);
+/// `*ALLOBJ` passes through the search. Returns the records it holds.
+pub(super) fn may_write_savf(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, file: &str) -> Result<u64, String> {
+    let used = savf::len(txn, id).map_err(|e| e.to_string())?;
+    let ok = if used > 0 {
+        sec::guard::allowed(txn, qsys, "savf.replace", id)
+    } else {
+        sec::guard::allowed(txn, qsys, "savf.write", id)
+    };
+    if !ok {
+        return Err(format!("CPF2189 not authorized to save file {file}"));
+    }
+    Ok(used)
+}
+
+/// The save file a save writes into: found, allowed, and empty unless
+/// `CLEAR(*ALL)` or `CLEAR(*REPLACE)` clears it.
+fn save_target(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    names: &ops::NameContext,
+    file: &(String, String),
+    clear: &str,
+) -> Result<ObjectId, String> {
+    let id = find_savf(txn, qsys, names, file)?;
+    let used = may_write_savf(txn, qsys, id, &file.0)?;
+    if clear == "*AFTER" {
+        return Err(format!("{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"));
+    }
+    if used > 0 && !matches!(clear, "*ALL" | "*REPLACE") {
+        return Err(format!(
+            "{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C",
+            file.0
+        ));
+    }
+    Ok(id)
+}
+
+/// A restore or display from save file `id`: `*USE`, `*SAVSYS` or not.
+pub(super) fn may_read_savf(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, file: &str) -> Result<(), String> {
+    if sec::guard::allowed(txn, qsys, "savf.read", id) {
+        Ok(())
+    } else {
+        Err(format!("CPF2189 not authorized to save file {file}"))
+    }
+}
+
 /// Text values of a list parameter, uppercase.
 pub(super) fn values(parms: &Parms, kwd: &str) -> Vec<String> {
     parms
@@ -642,26 +691,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let savf_id = if media.is_some() {
         None
     } else {
-        match in_store(system, |txn, qsys, names| {
-        let id = find_savf(txn, qsys, names, &savf_name)?;
-        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.write", id) {
-            return Err(format!(
-                "CPF2189 not authorized to save file {}",
-                savf_name.0
-            ));
-        }
-        let used = savf::len(txn, id).map_err(|e| e.to_string())?;
-        if clear == "*AFTER" {
-            return Err(format!("{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"));
-        }
-        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE") {
-            return Err(format!(
-                "{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C",
-                savf_name.0
-            ));
-        }
-        Ok(id)
-        }) {
+        match in_store(system, |txn, qsys, names| save_target(txn, qsys, names, &savf_name, &clear)) {
             Ok(id) => Some(id),
             Err(e) => return failed(name, &e),
         }
@@ -1008,12 +1038,7 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     } else {
         vec![in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, &savf_name)?;
-            if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
-                return Err(format!(
-                    "CPF2189 not authorized to save file {}",
-                    savf_name.0
-                ));
-            }
+            may_read_savf(txn, qsys, id, &savf_name.0)?;
             savf::read(txn, id).map_err(|e| e.to_string())
         })]
     };
@@ -1270,9 +1295,7 @@ fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, 
     let savf_name = parms.qual("SAVF");
     let stream = in_store(system, |txn, qsys, names| {
         let id = find_savf(txn, qsys, names, &savf_name)?;
-        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
-            return Err(format!("CPF2189 not authorized to save file {}", savf_name.0));
-        }
+        may_read_savf(txn, qsys, id, &savf_name.0)?;
         savf::read(txn, id).map_err(|e| e.to_string())
     })
     .map_err(|e| Box::new(failed(name, &e)))?;
@@ -1301,17 +1324,7 @@ fn savsecdta(system: &mut System, parms: &Parms) -> CmdReply {
     let savf_id = if media.is_some() {
         None
     } else {
-        match in_store(system, |txn, qsys, names| {
-        let id = find_savf(txn, qsys, names, &savf_name)?;
-        let used = savf::len(txn, id).map_err(|e| e.to_string())?;
-        if clear == "*AFTER" {
-            return Err(format!("{CLEAR_AFTER} CLEAR(*AFTER) is not valid for a save file"));
-        }
-        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE") {
-            return Err(format!("{SAVF_NOT_EMPTY} {SAVF_HOLDS_DATA}: save file {} already holds data; the reply was C", savf_name.0));
-        }
-        Ok(id)
-        }) {
+        match in_store(system, |txn, qsys, names| save_target(txn, qsys, names, &savf_name, &clear)) {
             Ok(id) => Some(id),
             Err(e) => return failed(NAME, &e),
         }
@@ -1650,9 +1663,7 @@ fn sav(system: &mut System, parms: &Parms) -> CmdReply {
         (None, None) => return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" "))),
         (None, Some(savf_name)) => match in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, savf_name)?;
-            if !savsys() && !sec::guard::allowed(txn, qsys, "savf.write", id) {
-                return Err(format!("CPF2189 not authorized to save file {}", savf_name.0));
-            }
+            may_write_savf(txn, qsys, id, &savf_name.0)?;
             Ok(id)
         }) {
             Ok(id) => Some(id),
@@ -1753,9 +1764,7 @@ fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
         (None, None) => return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" "))),
         (None, Some(savf_name)) => in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, &savf_name)?;
-            if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
-                return Err(format!("CPF2189 not authorized to save file {}", savf_name.0));
-            }
+            may_read_savf(txn, qsys, id, &savf_name.0)?;
             savf::read(txn, id).map_err(|e| e.to_string())
         }),
     };
@@ -1841,9 +1850,7 @@ pub fn savf_listing(
     let q = (file.to_ascii_uppercase(), lib.to_ascii_uppercase());
     let stream = in_store(system, |txn, qsys, names| {
         let id = find_savf(txn, qsys, names, &q)?;
-        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
-            return Err(format!("CPF2189 not authorized to save file {}", q.0));
-        }
+        may_read_savf(txn, qsys, id, &q.0)?;
         savf::read(txn, id).map_err(|e| e.to_string())
     })?;
     if stream.is_empty() {
@@ -2118,5 +2125,118 @@ mod auth_tests {
         grant::set_public(&mut t, id, Some(Auth::EXCLUDE)).unwrap();
         let e = as_job(&bob, || read(&mut t)).unwrap_err();
         assert!(e.starts_with("CPF2189"), "{e}");
+    }
+
+    fn auth(words: &[&str]) -> Auth {
+        Auth::parse(words, false).unwrap()
+    }
+
+    /// APPLIB/EMPTY, a save file with no records (`*PUBLIC *USE`).
+    fn empty_savf(t: &mut Txn<'_>, app: ObjectId) -> ObjectId {
+        let id = savf::create(
+            t,
+            &ops::CreateParams {
+                library: app,
+                name: qsname::Name::parse("EMPTY").unwrap(),
+                type_code: types::SAVF,
+                attribute: String::new(),
+                text: String::new(),
+                owner: "QSECOFR".into(),
+                system: "QS400".into(),
+                now: NOW,
+                by_system: true,
+            },
+            SavfAttr::default(),
+        )
+        .unwrap();
+        grant::set_public(t, id, Some(Auth::USE)).unwrap();
+        id
+    }
+
+    /// A session for a new profile `name` with special authority `spc`.
+    fn user_with(t: &mut Txn<'_>, qsys: ObjectId, name: &str, spc: &str) -> Rc<RefCell<Session>> {
+        let secofr = Principal::load(t, qsys, "QSECOFR", 40).unwrap();
+        let env = Env {
+            qsys,
+            actor: &secofr,
+            now: NOW,
+            sysval: &sysval,
+        };
+        usrprf::crtusrprf(t, &env, &Keywords::new(&[("USRPRF", name), ("SPCAUT", spc)])).unwrap();
+        Rc::new(RefCell::new(Session::new(Principal::load(t, qsys, name, 40).unwrap())))
+    }
+
+    #[test]
+    fn savsys_does_not_cover_the_save_file() {
+        let (mut store, qsys, app, _, _) = setup();
+        let names = ops::NameContext {
+            curlib: Some(app),
+            libl: vec![qsys, app],
+        };
+        let mut t = store.begin().unwrap();
+        empty_savf(&mut t, app);
+        let saver = user_with(&mut t, qsys, "SAVER", "*SAVSYS");
+        let empty = ("EMPTY".to_string(), "APPLIB".to_string());
+        let full = ("SF".to_string(), "APPLIB".to_string());
+        // *PUBLIC *USE: no *ADD to save into, *USE to restore from.
+        let e = as_job(&saver, || save_target(&mut t, qsys, &names, &empty, "*NONE")).unwrap_err();
+        assert!(e.starts_with("CPF2189"), "{e}");
+        let sf = find_savf(&mut t, qsys, &names, &full).unwrap();
+        as_job(&saver, || may_read_savf(&mut t, qsys, sf, "SF")).unwrap();
+        grant::set_public(&mut t, sf, Some(Auth::EXCLUDE)).unwrap();
+        let e = as_job(&saver, || may_read_savf(&mut t, qsys, sf, "SF")).unwrap_err();
+        assert!(e.starts_with("CPF2189"), "{e}");
+    }
+
+    #[test]
+    fn use_and_add_save_into_an_empty_save_file() {
+        let (mut store, qsys, app, bob, _) = setup();
+        let names = ops::NameContext {
+            curlib: Some(app),
+            libl: vec![qsys, app],
+        };
+        let mut t = store.begin().unwrap();
+        let id = empty_savf(&mut t, app);
+        let empty = ("EMPTY".to_string(), "APPLIB".to_string());
+        grant::set_private(&mut t, qsys, id, "BOB", Some(auth(&["*USE", "*ADD"]))).unwrap();
+        assert_eq!(as_job(&bob, || save_target(&mut t, qsys, &names, &empty, "*NONE")).unwrap(), id);
+    }
+
+    #[test]
+    fn a_save_file_with_records_needs_objmgt() {
+        let (mut store, qsys, app, bob, _) = setup();
+        let names = ops::NameContext {
+            curlib: Some(app),
+            libl: vec![qsys, app],
+        };
+        let full = ("SF".to_string(), "APPLIB".to_string());
+        let mut t = store.begin().unwrap();
+        let sf = find_savf(&mut t, qsys, &names, &full).unwrap();
+        grant::set_private(&mut t, qsys, sf, "BOB", Some(auth(&["*USE", "*ADD"]))).unwrap();
+        let e = as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*ALL")).unwrap_err();
+        assert!(e.starts_with("CPF2189"), "{e}");
+        grant::set_private(&mut t, qsys, sf, "BOB", Some(auth(&["*USE", "*ADD", "*OBJMGT"]))).unwrap();
+        assert_eq!(as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*ALL")).unwrap(), sf);
+        // Allowed, but still not cleared without CLEAR.
+        let e = as_job(&bob, || save_target(&mut t, qsys, &names, &full, "*NONE")).unwrap_err();
+        assert!(e.starts_with(SAVF_NOT_EMPTY), "{e}");
+    }
+
+    #[test]
+    fn allobj_passes() {
+        let (mut store, qsys, app, _, secofr) = setup();
+        let names = ops::NameContext {
+            curlib: Some(app),
+            libl: vec![qsys, app],
+        };
+        let full = ("SF".to_string(), "APPLIB".to_string());
+        let mut t = store.begin().unwrap();
+        let sf = find_savf(&mut t, qsys, &names, &full).unwrap();
+        grant::set_public(&mut t, sf, Some(Auth::EXCLUDE)).unwrap();
+        let all = user_with(&mut t, qsys, "ALLER", "*ALLOBJ");
+        for s in [&secofr, &all] {
+            assert_eq!(as_job(s, || save_target(&mut t, qsys, &names, &full, "*REPLACE")).unwrap(), sf);
+            as_job(s, || may_read_savf(&mut t, qsys, sf, "SF")).unwrap();
+        }
     }
 }

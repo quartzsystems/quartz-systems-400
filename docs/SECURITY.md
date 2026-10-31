@@ -357,6 +357,15 @@ A refusal reaches a program as an escape with the guard's identifier
 database's feedback and on a data area or queue through the job's
 source, so a program monitors it like any other condition.
 
+Save and restore follow IBM's table: `*SAVSYS` stands in for the
+authority to the objects saved or restored (`obj.save`,
+`obj.restore`), never for the save file used as the medium. A save
+into a save file needs `*USE` and `*ADD` to it (`savf.write`), and
+`*OBJMGT` as well when it holds records (`savf.replace`), which is
+when `CLEAR(*ALL)` or `CLEAR(*REPLACE)` empties it; a restore or
+`DSPSAVF` needs `*USE` (`savf.read`). `*ALLOBJ` covers all three, as it
+does every object. A refusal is `CPF2189`.
+
 `security/sec/exempt.toml` lists every public store, database,
 journal and work management function that takes a transaction yet
 checks nothing itself, with the reason (its caller checks, it runs as
