@@ -189,4 +189,51 @@ QEMU, step 81's whole cycle with an IPL takes 13 s.
 
 ## Acceptance checklist
 
-(Filled in at the end of the phase.)
+The state at `35d314dd` (2026-10-31). The QEMU runs are KVM guests on
+the bench machine, from a worktree pinned to that commit.
+
+**1. Tests, goldens and matrices; `build test`.**
+
+| Item | State |
+|---|---|
+| `cargo run -p build -- test` (the disk suite) | PASS, 78 steps |
+| `--media iso --install` (the install matrix) | PASS, 11 steps: automatic install with `CHKOBJITG` clean, the installed disk, every panel over serial, the DST mirror steps, a response file with two mirrored disks, `SAVSYS` to virtual tape and the recovery, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install |
+| `--media iso`, `iso-raw` (the USB image), `iso-fat` | PASS, 4, 3 and 3 steps |
+| Workspace tests, goldens | pass; `golden/phase11/COVERAGE.md` lists every pub400 capture and how it is compared (112 compared, 175 covered as later pages, 45 refused on pub400 and checked, 21 deferred with reasons) |
+| Save/restore matrix | `save/saverst/tests/matrix.rs`: every `OPTION` x `MBROPT` x `ALWOBJDIF`, the oracle's 27 rules asserted where they apply; QEMU 71, 75, 76 |
+| Install matrix | the install suite above |
+| PTF matrix | QEMU 81 (immediate and delayed with an IPL, `RMVPTF`, a prerequisite, `*PERM`); `ptf/ptf/tests` (supersedes, groups, LIC slots, a power loss during a delayed apply, `INSPTF`); `ptf/update/tests` (`SNDPTFORD` against the reference server) |
+| LP matrix | QEMU 80 (`DLTLICPGM QS00WDS` then `CPF0C1F`, `RSTLICPGM`, a `QSPKGPRD` product keyed and deleted); `QLZAREQ` limits in `licpgm/licpgm/tests/license.rs` |
+| Physical tape | `StTransport` transcript tests in `media/tape`; the procedure is `MEDIA.md` "Tape: physical tape acceptance", for Cody's hardware |
+| The ACS checklist of Phase 10 on a freshly installed system | Cody's sign-off (it needs ACS on a workstation) |
+
+Not every combination was run on the primary oracle: it settled 20
+cases (`tools/conformance/oracle/save/primary/README.md`), and the
+matrix applies their rules to every combination in memory.
+
+**2. Documents and spec tests.** `SAVE_FORMAT.md`, `MEDIA.md` (with the
+physical tape procedure), `LICPGM.md`, `INSTALL.md`, `RECOVERY.md`,
+`PTF.md`, `UPDATE_PROTOCOL.md`, `SERVICE.md`, `BACKUP.md` and this file.
+The spec-vs-code tests cover the save stream and the `QSRSAV`/`QSRRST`
+outfiles (`save/savfmt/tests/spec.rs`), the PTF header
+(`ptf/ptf/tests/spec.rs`), the product payloads and the product
+directory's states (`licpgm/licpgm/tests/spec.rs`).
+
+**3. Lints, dependencies, signatures.** `missing_docs = deny` in all 15
+new crates; `cargo clippy --workspace --all-targets` and the musl lint
+of slic, qsjob, svctools and conformance clean; `build deny` clean (310
+crates, no C build helpers, no `links`); the binaries static (`build
+userland` checks the ELF); the media manifest signed and checked at a D
+IPL; every shipped object signed by `build lp`, the signatures checked
+on restore (1845 in the slip install) and by `CHKOBJITG` after a fresh
+install (install steps 1 and 8).
+
+**4. Text and the oracles.** No IBM text in shipped panels, messages,
+help, agreements or cover letters: `phase8_hygiene`, `phase10_hygiene`
+and `phase11_hygiene` pass. Oracle output lives under `tools/conformance/`
+only; `tools/conformance/oracle/.env` is ignored by git. Both oracles
+were left as found (`tools/conformance/oracle/save/README.md`, "State
+after the session"): the primary's `QSTEST` empty and `/home/QSTEST`
+holding only its 2026-10-22 folders; on pub400 the save file deleted.
+Nothing outside them was saved, restored, loaded, applied, initialized
+or varied.
