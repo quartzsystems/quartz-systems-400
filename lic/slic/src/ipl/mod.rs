@@ -455,7 +455,8 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     // the console's terminal is its client.
     if system.procs.stg.is_some() {
         match procs::console::start(system, tx.clone()) {
-            Ok(()) => link::start(system, tx, Duration::from_secs(15)),
+            // A short wait: the prompt follows, and the sign-on may come later.
+            Ok(()) => link::start(system, tx, Duration::from_secs(5)),
             Err(e) => system.out.serial(&format!("slic: {e}\n")),
         }
     }
