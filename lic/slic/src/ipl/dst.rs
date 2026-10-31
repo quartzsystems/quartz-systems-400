@@ -114,6 +114,22 @@ impl<'a> Env<'a> {
     fn resource_for(&self, device: &str) -> String {
         resource_for(self.system, device)
     }
+
+    /// Where a unit's device sits in the list of configured devices.
+    fn device_index(&self, uuid: [u8; 16]) -> Option<usize> {
+        self.system.storage.as_ref().and_then(|s| {
+            s.devices
+                .iter()
+                .position(|d| storage::unit_uuid_of(d) == Some(uuid))
+        })
+    }
+
+    /// Drop a removed unit's device from the configured devices.
+    fn forget_device(&mut self, at: Option<usize>) {
+        if let (Some(s), Some(at)) = (self.system.storage.as_mut(), at) {
+            s.devices.remove(at);
+        }
+    }
 }
 
 /// The disk resource name of a device node, or dashes.
@@ -258,6 +274,7 @@ impl DstEnv for Env<'_> {
                     partner: e.mirrored().then_some(e.mirror_partner),
                     attached: u.attached,
                     resume_percent: resume.filter(|p| p.unit == u.unit).map(|p| p.percent),
+                    controller: controller_for(self.system, &device),
                     device,
                 }
             })
@@ -319,28 +336,40 @@ impl DstEnv for Env<'_> {
     }
 
     fn remove_unit(&mut self, unit: u16) -> Result<(), String> {
+        let uuid = self
+            .store()?
+            .units()
+            .get(usize::from(unit))
+            .map(|u| u.entry.unit_uuid);
+        let at = uuid.and_then(|u| self.device_index(u));
         self.store()?.remove_unit(unit).map_err(fail("Removing the disk unit"))?;
-        if let Some(s) = self.system.storage.as_mut()
-            && usize::from(unit) < s.devices.len()
-        {
-            s.devices.remove(usize::from(unit));
-        }
+        self.forget_device(at);
         Ok(())
     }
 
     fn start_mirror(&mut self, unit: u16, device: &str) -> Result<u16, String> {
-        // A unit added to the ASP leaves the configuration first.
-        let configured = self.system.storage.as_ref().and_then(|s| {
-            s.devices
-                .iter()
-                .position(|d| d.display().to_string() == device)
-        });
-        if let Some(n) = configured {
-            let n = u16::try_from(n).map_err(fail("Starting mirrored protection"))?;
+        // A configured partner leaves the configuration first; its data
+        // moves to the other units. Devices are matched to units by the
+        // UUID in their header, not by the order they were found in.
+        let configured = self
+            .system
+            .storage
+            .as_ref()
+            .filter(|s| s.devices.iter().any(|d| d.display().to_string() == device))
+            .and_then(|_| storage::unit_uuid_of(std::path::Path::new(device)))
+            .and_then(|uuid| {
+                self.system.storage.as_ref().and_then(|s| {
+                    s.store
+                        .units()
+                        .iter()
+                        .find(|u| u.entry.unit_uuid == uuid)
+                        .map(|u| (u.unit, uuid))
+                })
+            });
+        if let Some((n, uuid)) = configured {
+            let at = self.device_index(uuid);
             self.store()?.remove_unit(n).map_err(fail("Starting mirrored protection"))?;
-            if let Some(s) = self.system.storage.as_mut() {
-                s.devices.remove(usize::from(n));
-            }
+            self.forget_device(at);
         }
         let (dev, serial) = open_unit(device)?;
         let store = self.store()?;

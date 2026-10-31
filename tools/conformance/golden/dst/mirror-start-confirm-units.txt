@@ -1,0 +1,24 @@
+                       Confirm Start Mirrored Protection                        
+                                                                 System:  QS400 
+                                                                                
+ Press F10 to form these pairs. The data on a second unit marked                
+ "data moves" goes to the other units first; each second unit is                
+ then copied from its first at the next IPL.                                    
+                                                                                
+   ASP Unit  Serial Number     Type Model    Resource  Protection               
+     1    1  QM00000           QEMU HARDDISK DD001     Device                   
+     1    1  QM00003           QEMU HARDDISK DD004     Device  data moves       
+     1    2  QM00001           QEMU HARDDISK DD002     Device                   
+     1    2  QM00002           QEMU HARDDISK DD003     Device  data moves       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

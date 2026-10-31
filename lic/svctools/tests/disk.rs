@@ -55,6 +55,7 @@ fn unit(n: u16, mirrored: bool, partner: Option<u16>, status: &str, attached: bo
         attached,
         resume_percent: None,
         device: format!("/dev/vd{}", (b'a' + u8::try_from(n).unwrap()) as char),
+        controller: "DC01".into(),
     }
 }
 
@@ -197,4 +198,25 @@ fn actions_reach_the_environment() {
     r.enter(&f(&["95"]), &mut e);
     assert_eq!(e.actions, vec!["threshold 95"]);
     assert_eq!(r.top(), "dst-disk-config");
+}
+
+#[test]
+fn units_holding_data_pair_with_each_other() {
+    let mut e = MemEnv::new("QS400");
+    e.units = (0..4)
+        .map(|n| unit(n, false, None, "Unprotected", true))
+        .collect();
+    let mut r = walk(&mut e, &["4", "1", "4", "2"], "mirror-start");
+    r.enter(&f(&["1"]), &mut e);
+    check("mirror-start-confirm-units", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["mirror 0 /dev/vdd", "mirror 1 /dev/vdc"]);
+    assert!(r.screen(&mut e).dump().contains("2 pair(s) formed"));
+    // Three units: one would be left without a partner.
+    e.units.pop();
+    e.actions.clear();
+    let mut r = walk(&mut e, &["4", "1", "4", "2"], "mirror-start");
+    r.enter(&f(&["1"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("even number"));
+    assert!(e.actions.is_empty());
 }

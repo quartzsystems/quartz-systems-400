@@ -64,7 +64,7 @@ guest's own screens with the same files.
 | Display Disk Configuration (menu, status, capacity, protection, non-configured) | `disk-display.txt`, `disk-status.txt`, `disk-capacity.txt`, `disk-protection.txt`, `disk-nonconfigured.txt` |
 | Work with ASP Threshold | `asp-threshold.txt` |
 | Work with ASP Configuration, Add Units, Remove Units | `asp-config.txt`, `add-units.txt`, `add-units-confirm.txt`, `remove-units.txt` |
-| Work with Mirrored Protection, Start, Stop | `mirror.txt`, `mirror-start.txt`, `mirror-start-confirm.txt`, `mirror-stop.txt` |
+| Work with Mirrored Protection, Start, Stop | `mirror.txt`, `mirror-start.txt`, `mirror-start-confirm.txt`, `mirror-start-confirm-units.txt`, `mirror-stop.txt` |
 | Work with Device Parity Protection | `disk-parity.txt` |
 | Work with Disk Unit Recovery, Replace, Procedures, Suspend, Resume | `disk-recovery.txt`, `replace-unit.txt`, `disk-procedures.txt`, `suspend.txt`, `resume.txt` |
 | Work with Licensed Internal Code | `lic-info.txt` |
@@ -152,7 +152,8 @@ ASP Unit  Serial Number     Type Model    Resource  Status
 
 Unit numbers on the displays start at 1; the store numbers units from
 0. Status is `Unprotected`, `Active`, `Suspended`, `Resuming nn%`,
-`Not operational` or `Missing`.
+`Not operational` or `Missing`. The halves of a pair are listed
+together.
 
 - Add units: pick non-configured disks (whole disks with no QS/400
   partitions and no unit header); each becomes an unprotected unit.
@@ -160,11 +161,32 @@ Unit numbers on the displays start at 1; the store numbers units from
   Internal Code install creates: from the media's DST before that
   install the option answers `ASP 1 has no load source unit`.
 - Remove units: data on the unit moves to the other units, then it
-  leaves the configuration (only the last unit can leave).
-- Start mirrored protection: each unprotected unit is paired with the
-  first non-configured disk at least as large (another disk preferred).
-  The pair is formed at once and the copy runs at the next IPL
-  (`C1001075 Mirrored protection synchronization`).
+  leaves the configuration (only the unit of the last span can leave;
+  halves of pairs formed later may follow it and are renumbered).
+- Start mirrored protection pairs every unprotected unit of ASP 1,
+  unit 1 first (`propose_pairs` in `lic/svctools/src/dst/disk/mirror.rs`):
+  1. A non-configured disk at least as large is taken first.
+  2. The units left pair with each other, as on IBM i, where half of
+     the unit numbers disappear: the lower half keep their data, the
+     upper half become their partners, the highest with the lowest.
+     A partner's data moves to the other units (the removal above)
+     before its pair forms, highest partner first; each removal and
+     each pair is checkpointed, so a power loss leaves a valid
+     configuration and the option can be run again.
+  3. A partner behind another controller is preferred; the
+     confirmation shows the level each pair gets, `Controller` or
+     `Device` (IBM's levels run bus, IOP, IOA, controller, device;
+     this system has no buses or IOPs to tell apart).
+  It refuses when every unit already has a partner, when an odd number
+  of units is left without a partner, when no unit or disk is large
+  enough for a unit, when a partner could not leave because an
+  unpaired unit follows it, and when the data in use on the units to
+  pair does not fit on the half that keeps it.
+  `Confirm Start Mirrored Protection` lists each pair as two rows
+  under the first half's unit number, with its protection level; a
+  second half marked `data moves` is a configured unit. The copies run
+  at the next IPL (`C1001075 Mirrored protection synchronization`),
+  one half after another.
 - Stop mirrored protection: the chosen half stays, its partner leaves
   the configuration and its header is wiped.
 - Replace configured unit: a missing, failed or suspended half is

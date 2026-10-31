@@ -24,7 +24,8 @@ wire_struct!(DiskUnit {
     partner,
     attached,
     resume_percent,
-    device
+    device,
+    controller
 });
 
 wire_struct!(NonConfigured {
@@ -91,6 +92,7 @@ mod tests {
             attached: true,
             resume_percent: None,
             device: "/dev/vdc".into(),
+            controller: "DC01".into(),
         };
         assert_eq!(ipc::decode::<DiskUnit>(&ipc::encode(&u)).unwrap(), u);
         let e = SignOnError::BadPassword("empty".into());

@@ -91,7 +91,8 @@ pub fn clip(s: &str, n: usize) -> String {
     s.chars().take(n).collect()
 }
 
-/// A display of every configured unit, one line each.
+/// A display of every configured unit, one line each, the halves of a
+/// pair together.
 pub fn display(
     name: &'static str,
     title: &'static str,
@@ -100,7 +101,8 @@ pub fn display(
     row: fn(&DiskUnit) -> String,
 ) -> Notice {
     let mut lines = vec![headings.to_string()];
-    let units = env.disk_units();
+    let mut units = env.disk_units();
+    units.sort_by_key(|u| (u.partner.map_or(u.unit, |p| p.min(u.unit)), u.unit));
     if units.is_empty() {
         lines.push("  (No configured units)".into());
     }

@@ -46,6 +46,8 @@ pub struct DiskUnit {
     pub resume_percent: Option<u8>,
     /// Device node, for pairing an added unit.
     pub device: String,
+    /// The storage controller resource it is attached through (`DC01`).
+    pub controller: String,
 }
 
 /// A disk the system sees that belongs to no ASP.
