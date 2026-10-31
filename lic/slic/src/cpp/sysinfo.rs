@@ -24,7 +24,6 @@ use crate::svc::neta;
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     let r = match name {
         "DSPSFWRSC" => Ok(dspsfwrsc()),
-        "DSPPTF" => Ok(dspptf()),
         "DSPNETA" => dspneta(system),
         "CHGNETA" => chgneta(system, parms),
         "DSPDEVD" => dspdevd(system, parms),
@@ -57,14 +56,6 @@ fn dspsfwrsc() -> String {
 }
 
 /// `DSPPTF`: no PTF has been applied to this release.
-fn dspptf() -> String {
-    format!(
-        "Product {} release {}: no PTFs applied (cumulative package *NONE, IPL source ##MACH#A).\n",
-        release::PRODUCT_ID,
-        release::RELEASE
-    )
-}
-
 fn dspneta(system: &mut System) -> Result<String, String> {
     let sysname = system.system_name();
     in_store(system, |txn, qsys, _| {

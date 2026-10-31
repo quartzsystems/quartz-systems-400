@@ -2606,3 +2606,75 @@ sev = 40
 text = "&1 objects restored. &2 not restored."
 help = "The messages before this one name the links that were not restored and why."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+# PTFs.
+
+[[msg]]
+id = "CPC3604"
+sev = 0
+text = "PTF &1 of product &2 loaded."
+help = "The PTF is on the system and can be applied with APYPTF."
+vars = ["*CHAR 7", "*CHAR 7"]
+
+[[msg]]
+id = "CPC3606"
+sev = 0
+text = "PTF &1 of product &2 applied."
+help = "A delayed PTF is applied at the next IPL; DSPPTF shows its state."
+vars = ["*CHAR 7", "*CHAR 7"]
+
+[[msg]]
+id = "CPC3608"
+sev = 0
+text = "PTF &1 of product &2 removed."
+help = "The objects the PTF replaced are back in place."
+vars = ["*CHAR 7", "*CHAR 7"]
+
+[[msg]]
+id = "CPF3586"
+sev = 40
+text = "The PTF is not signed by a signer this system trusts: &1."
+help = "PTFs come signed from the build or from Quartz. A PTF whose signature does not verify is not loaded."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3598"
+sev = 40
+text = "This is not a PTF for this product or release: &1."
+help = "Check the product, the release and the save file named."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3601"
+sev = 40
+text = "The PTF is already in that state: &1."
+help = "DSPPTF shows each PTF's state."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3606"
+sev = 40
+text = "The PTF is not loaded: &1."
+help = "Load it with LODPTF before applying or removing it."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3612"
+sev = 40
+text = "A requisite PTF is not applied: &1."
+help = "Apply the prerequisite and co-requisite PTFs first, or in the same request."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3613"
+sev = 40
+text = "The PTF is superseded: &1."
+help = "A later PTF replaces it. Apply that one instead."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF3618"
+sev = 40
+text = "An applied PTF needs this one: &1."
+help = "Remove the PTFs that name it as a requisite first."
+vars = ["*CHAR 50"]

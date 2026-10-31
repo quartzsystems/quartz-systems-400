@@ -92,14 +92,14 @@ fn savsys() -> bool {
 }
 
 /// The security layer's answers for the engine.
-struct SvcHooks {
+pub(super) struct SvcHooks {
     qsys: ObjectId,
     /// Spool parts gathered before a save, by `lib/queue`.
     spool: std::collections::HashMap<String, Vec<u8>>,
 }
 
 impl SvcHooks {
-    fn new(qsys: ObjectId) -> Self {
+    pub(super) fn new(qsys: ObjectId) -> Self {
         Self {
             qsys,
             spool: std::collections::HashMap::new(),
@@ -180,7 +180,7 @@ impl Hooks for SvcHooks {
 const TRUSTED_KEYS: &str = "/qs400/keys/system.pub";
 
 /// The trusted signers' public keys.
-fn trusted_keys() -> Vec<[u8; 32]> {
+pub(super) fn trusted_keys() -> Vec<[u8; 32]> {
     std::fs::read(TRUSTED_KEYS)
         .map(|b| {
             b.as_chunks::<32>().0.to_vec()

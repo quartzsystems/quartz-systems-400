@@ -332,6 +332,11 @@ pub const DIRECT: &[&str] = &[
     "QSRMVAPPID",
     "QSWRKAPPID",
     "QSCHKCRT",
+    // --- PTFs (lic/slic/src/cpp/ptfcmd.rs)
+    "APYPTF",
+    "DSPPTFCVR",
+    "LODPTF",
+    "RMVPTF",
     // --- save and restore (lic/slic/src/cpp/savcmd.rs)
     "CHGSAVF",
     "CLRSAVF",
