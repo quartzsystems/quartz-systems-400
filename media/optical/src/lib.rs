@@ -10,11 +10,16 @@
 #![deny(missing_docs)]
 
 pub mod crc32;
+pub mod device;
 pub mod error;
 pub mod iso;
 pub mod manifest;
+pub mod mount;
 pub mod source;
+pub mod volume;
 
 pub use error::{Error, Result};
 pub use iso::{Entry, EntryKind, IsoBuilder, IsoImage, VolumeInfo};
+pub use mount::VolumeSet;
 pub use source::{FileImage, ImageStore, MemImage, ReadAt, Slice};
+pub use volume::{VolEntry, Volume};

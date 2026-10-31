@@ -58,7 +58,10 @@ impl Manifest {
     /// The text form.
     #[must_use]
     pub fn to_text(&self) -> String {
-        let mut s = format!("{MAGIC}\nrelease {}\nvolume {}\n", self.release, self.volume);
+        let mut s = format!(
+            "{MAGIC}\nrelease {}\nvolume {}\n",
+            self.release, self.volume
+        );
         for f in &self.files {
             let _ = writeln!(s, "file {} {} {}", f.path, f.size, f.sha256);
         }
@@ -93,7 +96,9 @@ impl Manifest {
     /// The entry for `path`.
     #[must_use]
     pub fn file(&self, path: &str) -> Option<&ManifestFile> {
-        self.files.iter().find(|f| f.path.eq_ignore_ascii_case(path))
+        self.files
+            .iter()
+            .find(|f| f.path.eq_ignore_ascii_case(path))
     }
 }
 
