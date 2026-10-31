@@ -21,7 +21,7 @@ mod direct;
 mod ifscmd;
 mod msgfcmd;
 mod objcmd;
-mod ptfcmd;
+pub(crate) mod ptfcmd;
 mod rpg;
 mod savcmd;
 pub(crate) mod stmf;

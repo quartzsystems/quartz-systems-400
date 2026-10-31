@@ -130,6 +130,14 @@ pub const INSTALL_OS_PENDING: Src = src("C6004100", "Operating system install pe
 pub const INSTALL_ASP: Src = src("C6004110", "ASP 1 initialized by the installer", Phase::Os);
 /// QSYS and the system libraries created by the installer.
 pub const INSTALL_LIBRARIES: Src = src("C6004120", "System libraries created", Phase::Os);
+/// Delayed PTFs being applied (`docs/PTF.md` §5).
+pub const PTF_APPLY: Src = src("C6004501", "Applying delayed PTFs", Phase::Os);
+/// PTFs marked for the next IPL being removed.
+pub const PTF_REMOVE: Src = src("C6004502", "Removing PTFs", Phase::Os);
+/// A LIC PTF took effect from the other slot.
+pub const PTF_LIC: Src = src("C6004503", "LIC PTF in effect from the other slot", Phase::Os);
+/// A delayed PTF failed to apply.
+pub const PTF_FAILED: Src = src("C6004504", "Delayed PTF failed to apply", Phase::Attention);
 /// The operating system install is done.
 pub const INSTALL_OS_COMPLETE: Src = src("C6004190", "Operating system installed", Phase::Os);
 /// Console not found; continuing on serial.
@@ -227,6 +235,10 @@ pub const TABLE: &[Src] = &[
     INSTALL_OS_PENDING,
     INSTALL_ASP,
     INSTALL_LIBRARIES,
+    PTF_APPLY,
+    PTF_REMOVE,
+    PTF_LIC,
+    PTF_FAILED,
     INSTALL_OS_COMPLETE,
     CONSOLE_MISSING,
     DISK_NOT_CONFIGURED,

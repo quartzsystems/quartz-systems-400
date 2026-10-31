@@ -142,6 +142,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
     made += install_commands(system);
+    let ptfs = crate::cpp::ptfcmd::ipl_pending(system);
     jobqs::load(system);
     spool::load(system);
     wtr::clear_queues(system);
@@ -159,6 +160,11 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         format!("{text}; {made} work management object(s) created")
     } else {
         text
+    };
+    let text = if ptfs.is_empty() {
+        text
+    } else {
+        format!("{text}; {ptfs}")
     };
     if let Some(blob) = &start.sysvals {
         let host = crate::ipl::sysvals::host_info();

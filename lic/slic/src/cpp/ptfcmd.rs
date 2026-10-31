@@ -352,3 +352,55 @@ fn dspptfcvr(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         ..CmdReply::default()
     })
 }
+
+/// At IPL: apply the delayed PTFs and remove those marked for the next
+/// IPL (`docs/PTF.md` §3, §5). LIC PTFs are the IPL's slot switch and
+/// are left to it. What was done, for the IPL's message.
+pub fn ipl_pending(system: &mut System) -> String {
+    let Ok(mut db) = load_db(system) else {
+        return String::new();
+    };
+    let pending: Vec<(String, Action)> = apply::pending(&db)
+        .into_iter()
+        .filter(|(p, _)| db.get(p).is_some_and(|r| !r.lic))
+        .collect();
+    if pending.is_empty() {
+        return String::new();
+    }
+    let (mut applied, mut removed, mut failed_n) = (0, 0, 0);
+    for (p, action) in &pending {
+        let ok = match action {
+            Action::ApplyAtIpl => {
+                system.emit(&crate::src::PTF_APPLY);
+                package_of(system, &db, p)
+                    .and_then(|(pkg, bytes)| {
+                        ctx_run(system, |cx| apply::apply_temp(cx, &mut db, &pkg, &bytes, &[], true))?
+                            .map(|_| ())
+                            .map_err(|e| e.to_string())
+                    })
+                    .inspect(|()| applied += 1)
+            }
+            Action::RemoveAtIpl => {
+                system.emit(&crate::src::PTF_REMOVE);
+                if let Some(r) = db.ptfs.get_mut(p) {
+                    // The remove itself, now that no job runs.
+                    r.delayed = false;
+                }
+                ctx_run(system, |cx| apply::remove(cx, &mut db, p, false))
+                    .and_then(|r| r.map_err(|e| e.to_string()))
+                    .inspect(|()| removed += 1)
+            }
+            Action::None => Ok(()),
+        };
+        if ok.is_err() {
+            failed_n += 1;
+            system.emit(&crate::src::PTF_FAILED);
+            if let Some(r) = db.ptfs.get_mut(p) {
+                r.status = Status::Damaged;
+                r.action = Action::None;
+            }
+        }
+    }
+    let _ = store_db(system, &db);
+    format!("{applied} PTF(s) applied, {removed} removed, {failed_n} failed at IPL")
+}
