@@ -495,6 +495,7 @@ fn licpgm_and_system_prompts() {
         case("prompt-dspsfwrsc", "?DSPSFWRSC", &[]),
         Case { dir: "licpgm", ..case("prompt-dspsfwrsc", "?DSPSFWRSC OUTPUT(*PRINT)", &[]) },
         case("prompt-dspipla", "?DSPIPLA", &[]),
+        case("prompt-chgdstpwd", "?CHGDSTPWD", &[]),
         // A command with nothing to prompt: pub400 drops F4.
         Case { known: &["keys"], ..case("prompt-wrksfwagr", "?WRKSFWAGR", &[]) },
     ]);

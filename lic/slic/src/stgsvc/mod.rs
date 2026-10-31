@@ -25,7 +25,7 @@ mod joblog;
 pub(crate) mod media;
 mod pdm;
 mod dfu;
-mod sst;
+pub(crate) mod sst;
 pub(crate) mod dumps;
 pub(crate) mod liclog;
 mod svcop;

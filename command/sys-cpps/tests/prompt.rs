@@ -75,6 +75,7 @@ const PROMPTED: &[(&str, &str)] = &[
     ("edtf", "EDTF STMF('/tmp/hello.txt')"),
     ("addrdbdire", "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)"),
     ("chgddmtcpa", "CHGDDMTCPA"),
+    ("chgdstpwd", "CHGDSTPWD"),
 ];
 
 fn source() -> MemSource {

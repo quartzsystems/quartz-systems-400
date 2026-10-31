@@ -6184,6 +6184,13 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF2275"
+sev = 40
+text = "Not allowed to reset the password of service tools user ID QSECOFR."
+help = "Only user profile QSECOFR may run CHGDSTPWD. Sign on as QSECOFR and run the command again."
+vars = []
+
+[[msg]]
 id = "CPF2282"
 sev = 40
 text = "Authorization list &1 already exists."
@@ -6935,6 +6942,13 @@ sev = 0
 text = "System value &1 has its new value."
 help = "Some system values take effect at once and others at the next IPL; DSPSYSVAL shows the value kept."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9C02"
+sev = 0
+text = "Service tools user ID QSECOFR has its default password again."
+help = "The password is QSECOFR and has expired, and the user ID is enabled. Sign on to DST or SST as QSECOFR and set a new password at once."
+vars = []
 
 [[msg]]
 id = "CPD0045"

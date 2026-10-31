@@ -171,8 +171,9 @@ impl Panel for ChangePassword {
 
 #[cfg(test)]
 mod tests {
-    use crate::env::MemEnv;
+    use crate::env::{DstEnv, MemEnv};
     use crate::panel::Outcome;
+    use crate::users::SignOnError;
 
     fn f(items: &[&str]) -> Vec<String> {
         items.iter().map(|s| (*s).to_string()).collect()
@@ -215,5 +216,35 @@ mod tests {
         assert!(r.screen(&mut env).dump().contains("User ID is disabled"));
         assert!(env.users.get("QSRV").unwrap().disabled);
         assert_eq!(env.saves, 3);
+    }
+
+    #[test]
+    fn chgdstpwd_enables_a_disabled_secofr() {
+        let mut env = MemEnv::new("QS400");
+        for _ in 0..3 {
+            let _ = DstEnv::sign_on(&mut env, "QSECOFR", "wrong");
+        }
+        assert_eq!(
+            DstEnv::sign_on(&mut env, "QSECOFR", "QSECOFR"),
+            Err(SignOnError::Disabled)
+        );
+        env.reset_secofr().unwrap();
+        let u = env.users.get("QSECOFR").unwrap();
+        assert!(u.expired && !u.disabled && u.failures == 0);
+        assert_eq!(
+            DstEnv::sign_on(&mut env, "QSECOFR", "QSECOFR"),
+            Err(SignOnError::Expired)
+        );
+    }
+
+    #[test]
+    fn chgdstpwd_makes_a_deleted_secofr_again() {
+        let mut env = MemEnv::new("QS400");
+        env.users.create("ADMIN", "pw", crate::Privilege::ALL, "", 0, [1; 16]).unwrap();
+        env.users.delete("QSECOFR").unwrap();
+        env.reset_secofr().unwrap();
+        let u = env.users.get("QSECOFR").unwrap();
+        assert_eq!(u.privileges, crate::Privilege::ALL);
+        assert!(u.expired && !u.disabled);
     }
 }

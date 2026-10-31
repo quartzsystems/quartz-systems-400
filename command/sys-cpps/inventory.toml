@@ -590,6 +590,10 @@ alwlmtusr = true
 site = "job"
 note = "the SST menus at a display (devtools/sst), with a service tools sign-on and *SERVICE"
 
+[cmd.CHGDSTPWD]
+comp = "CPI9C02"
+note = "QSECOFR only (CPF2275); the service tools user ID QSECOFR reset in the LIC record (stgsvc/sst.rs)"
+
 # ------------------------------------------------- the cleanup's commands
 
 [cmd.RTVMBRD]

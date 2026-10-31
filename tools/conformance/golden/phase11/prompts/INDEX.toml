@@ -1022,3 +1022,11 @@ release = "V7R1M0"
 date = "2026-10-31"
 script = "probe-addoptctg71"
 width = 80
+
+[[golden]]
+name = "prompt-chgdstpwd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-chgdstpwd"
+width = 80

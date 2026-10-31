@@ -289,3 +289,49 @@ pub fn user_change(
     }
     r
 }
+
+/// Who may run `CHGDSTPWD`: a job signed on as `QSECOFR`, or the system
+/// itself (`None`). Group or special authority is not enough.
+fn may_reset_secofr(user: Option<&str>) -> Result<(), String> {
+    match user {
+        Some(u) if u != "QSECOFR" => {
+            Err(format!("CPF2275 User {u} may not reset service tools user ID QSECOFR"))
+        }
+        _ => Ok(()),
+    }
+}
+
+/// `CHGDSTPWD`: check the caller; with `reset`, put `QSECOFR` back to
+/// its shipped, expired password and enable it, saved in the LIC record
+/// and audited as DST's changes are.
+pub fn chgdstpwd(system: &mut System, reset: bool) -> Result<(), String> {
+    let by = super::security::actor().map(|p| p.user);
+    may_reset_secofr(by.as_deref())?;
+    if !reset {
+        return Ok(());
+    }
+    let r = env(system).reset_secofr();
+    audit(system);
+    if r.is_ok() {
+        eprintln!(
+            "qsstg: service tools user ID QSECOFR reset to its default by {}",
+            by.as_deref().unwrap_or("the system")
+        );
+    }
+    r
+}
+
+#[cfg(test)]
+mod tests {
+    use super::may_reset_secofr;
+
+    #[test]
+    fn only_qsecofr_resets_the_service_tools_secofr() {
+        assert!(may_reset_secofr(Some("QSECOFR")).is_ok());
+        assert!(may_reset_secofr(None).is_ok());
+        for user in ["ANNE", "QSRV", "QSYSOPR"] {
+            let e = may_reset_secofr(Some(user)).unwrap_err();
+            assert!(e.starts_with("CPF2275 "), "{e}");
+        }
+    }
+}

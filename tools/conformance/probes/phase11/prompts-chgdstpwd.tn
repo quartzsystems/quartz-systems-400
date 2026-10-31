@@ -1,0 +1,11 @@
+# CHGDSTPWD's prompt: F4 from the Main Menu, captured, left with F12.
+# The command is never run.
+wait "Main Menu"
+continue
+timeout 30000
+type chgdstpwd
+key f4
+wait "Change IBM Service Tools Pwd"
+snap prompt-chgdstpwd
+key f12
+wait "Main Menu"

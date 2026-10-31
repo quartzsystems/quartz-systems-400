@@ -339,6 +339,34 @@ impl UserDb {
         Ok(())
     }
 
+    /// `CHGDSTPWD PASSWORD(*DEFAULT)`: `QSECOFR` back to its shipped
+    /// password, expired and enabled; made again with every privilege
+    /// if it was deleted.
+    pub fn reset_secofr(&mut self, now: u64, salt: [u8; 16]) {
+        const SECOFR: &str = "QSECOFR";
+        if self.get(SECOFR).is_none() {
+            self.users.insert(
+                0,
+                ServiceUser {
+                    name: SECOFR.into(),
+                    privileges: Privilege::ALL,
+                    hash: String::new(),
+                    expired: true,
+                    disabled: false,
+                    failures: 0,
+                    changed: now,
+                    text: "Security officer".into(),
+                },
+            );
+        }
+        let u = self.get_mut(SECOFR).expect("present");
+        u.hash = hash_password(SECOFR, salt);
+        u.expired = true;
+        u.disabled = false;
+        u.failures = 0;
+        u.changed = now;
+    }
+
     /// Enable or disable a user.
     pub fn set_enabled(&mut self, name: &str, enabled: bool) -> Result<(), SignOnError> {
         let Some(u) = self.get_mut(name) else {

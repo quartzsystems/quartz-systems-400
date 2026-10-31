@@ -222,8 +222,9 @@ pub trait DstEnv {
     fn save_users(&mut self) -> Result<(), String>;
 
     /// Something the security audit journal records: `kind` `ST` (a
-    /// sign-on, `code` `DS`), `DS` (a password reset) or `PW` (`X`, a
-    /// service tools user ID or password not valid).
+    /// sign-on, `code` `DS`), `DS` (`R` a password reset, `A` `QSECOFR`
+    /// reset to its default) or `PW` (`X`, a service tools user ID or
+    /// password not valid).
     fn audit(&mut self, _kind: &str, _code: &str, _user: &str) {}
 
     /// Let a progress display stay up long enough to be read; the
@@ -277,6 +278,16 @@ pub trait DstEnv {
         if let UserChange::Reset { name, .. } = change {
             self.audit("DS", "R", name);
         }
+        self.save_users()
+    }
+
+    /// `CHGDSTPWD PASSWORD(*DEFAULT)`: `QSECOFR` reset to its shipped,
+    /// expired password and enabled, audited as `DS` `A` and saved.
+    fn reset_secofr(&mut self) -> Result<(), String> {
+        let now = self.now();
+        let salt = self.random();
+        self.users().reset_secofr(now, salt);
+        self.audit("DS", "A", "QSECOFR");
         self.save_users()
     }
 

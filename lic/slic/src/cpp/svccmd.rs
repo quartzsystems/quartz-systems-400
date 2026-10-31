@@ -7,7 +7,7 @@
 //! the contact information (`WRKCNTINF`, `CHGCNTINF`) and
 //! service providers (`WRKSRVPVD`) as text, `DSPSRVSTS`, the dumps
 //! `DMPOBJ` and `DMPSYSOBJ`, and the traces `STRTRC`, `ENDTRC`,
-//! `PRTTRC`, `TRCJOB` and `TRCINT`.
+//! `PRTTRC`, `TRCJOB` and `TRCINT`, and `CHGDSTPWD`.
 
 use std::fmt::Write as _;
 
@@ -40,6 +40,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "TRCJOB" => trcjob(system, parms),
         "TRCINT" => trcint(system, parms),
         "RCLDBXREF" => rcldbxref(system, parms),
+        "CHGDSTPWD" => chgdstpwd(system, parms),
         _ => return None,
     };
     Some(r.unwrap_or_else(|e| failed(name, &e)))
@@ -412,4 +413,16 @@ fn trcint(system: &mut System, parms: &Parms) -> R {
             Ok(done(format!("Trace {tbl} started.\n"), "CPC39D5", &[(&tbl, 10)]))
         }
     }
+}
+
+/// `CHGDSTPWD`: `*DEFAULT` resets service tools user ID `QSECOFR`;
+/// `*SAME` changes nothing.
+fn chgdstpwd(system: &mut System, parms: &Parms) -> R {
+    let reset = parms.text("PASSWORD").trim() == "*DEFAULT";
+    crate::stgsvc::sst::chgdstpwd(system, reset)?;
+    Ok(if reset {
+        done(String::new(), "CPI9C02", &[])
+    } else {
+        CmdReply::default()
+    })
 }
