@@ -6,15 +6,13 @@
 //! text read through the IFS in the job's name (relative paths from the
 //! job's current directory), converted from the file's CCSID; the
 //! stream files `/COPY` and `/INCLUDE` name, searched in IBM's order;
-//! and, for the tests, stream files written.
+//! and stream files written.
 
 use ifs::Errno;
 use ifs::client::{IfsClient, read_all};
-#[cfg(test)]
 use ifs::client::write_all;
 use ifs::ops::OpenArgs;
 use ifs::ops::flags::{O_CCSID, O_RDONLY, O_TEXTDATA};
-#[cfg(test)]
 use ifs::ops::flags::{O_CREAT, O_TRUNC, O_WRONLY};
 use rpgfront::Member;
 use rpgfront::reader::STMF;
@@ -45,7 +43,6 @@ pub fn read_text(c: &dyn IfsClient, path: &str) -> Result<String, String> {
 /// # Errors
 ///
 /// The IFS's error as a command's message.
-#[cfg(test)]
 pub fn write_text(c: &dyn IfsClient, path: &str, text: &str) -> Result<(), String> {
     let fail = |e: Errno| format!("{} {path}: {}", e.command_message(), e.text());
     let fd = c

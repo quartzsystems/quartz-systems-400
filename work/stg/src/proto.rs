@@ -643,6 +643,19 @@ ipc::rpc! {
     // --- QSH and environment variables (1300; crate::qsh, stgsvc/qsh.rs)
     /// System-level environment variables and the profiles' IDs.
     1300 => fn qsh / QshReq (op: crate::qsh::QshOp) -> crate::qsh::QshReply;
+    // --- licensed programs (1320-1329; licpgm, cpp/lpcmd.rs)
+    /// A licensed program display's rows: `INSTALLED` (GO LICPGM 10:
+    /// product, option, status, text, release), `SFWRSC`, `LICINF`
+    /// (args the product or none), `AGREEMENTS` (product, release, text,
+    /// status), `AGRTEXT` (args product and release: the text, one row
+    /// per line), `ACCEPT` and `DECLINE` (args product and release),
+    /// `MEDIA` (args the save file `LIB/NAME`: product, option, type,
+    /// load ID, release, text of each load in it).
+    1320 => fn licpgm_panel / LicpgmPanel (what: String, args: Vec<String>) -> Result<Vec<Vec<String>>, String>;
+    /// A product or license API (`QSZRTVPR`, `QSZCRTPD`, ... `QLZAREQ`)
+    /// over its parameters' bytes: the receiver bytes, or the message
+    /// ID and its data for the error code parameter.
+    1321 => fn licpgm_api / LicpgmApi (api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)>;
 }
 
 // --- certificate types

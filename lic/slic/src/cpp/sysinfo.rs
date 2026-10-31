@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! System information commands: `DSPSFWRSC`, `DSPPTF` from the release
+//! System information commands: `DSPPTF` from the release
 //! crate; `DSPNETA`, `CHGNETA` on the network attributes; `DSPDEVD`,
 //! `CHGDEVD` on the `*DEVD` objects (`VRYCFG` and `WRKCFGSTS` are
 //! `cmncmd`'s).
@@ -23,7 +23,6 @@ use crate::svc::neta;
 /// Run `name`, or `None` when it is not one of these.
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     let r = match name {
-        "DSPSFWRSC" => Ok(dspsfwrsc()),
         "DSPNETA" => dspneta(system),
         "CHGNETA" => chgneta(system, parms),
         "DSPDEVD" => dspdevd(system, parms),
@@ -38,24 +37,6 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     })
 }
 
-/// `DSPSFWRSC`: the operating system and the licensed programs beside
-/// it, each with its English language feature.
-fn dspsfwrsc() -> String {
-    let rls = release::RELEASE.to_string();
-    let mut out = String::from("Resource ID  Option  Feature  Release  Description\n");
-    let base = [(release::PRODUCT_ID, "*BASE", release::PRODUCT_TEXT)];
-    let more = release::PRODUCTS.iter().map(|p| (p.id, p.option, p.text));
-    for (id, opt, text) in base.into_iter().chain(more) {
-        let _ = writeln!(out, "{id:<11}  {opt:<6}  5050     {rls:<7}  {text}");
-        let _ = writeln!(
-            out,
-            "{id:<11}  {opt:<6}  2924     {rls:<7}  {text} (English)"
-        );
-    }
-    out
-}
-
-/// `DSPPTF`: no PTF has been applied to this release.
 fn dspneta(system: &mut System) -> Result<String, String> {
     let sysname = system.system_name();
     in_store(system, |txn, qsys, _| {

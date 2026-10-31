@@ -261,23 +261,6 @@ pub fn usrprfs(system: &mut System) -> Result<Vec<(String, String, String)>, Str
     })
 }
 
-/// `DSPSFWRSC`: the Licensed Internal Code and the operating system
-/// with its English language feature.
-pub fn sfwrsc() -> Vec<Vec<String>> {
-    let rls = release::RELEASE.to_string();
-    let row = |id: &str, ftr: &str, text: &str, ty: &str, lib: &str| {
-        [id, "*BASE", ftr, text, ty, lib, &rls]
-            .iter()
-            .map(|s| (*s).to_string())
-            .collect::<Vec<String>>()
-    };
-    vec![
-        row("5770999", "5050", "Licensed Internal Code", "*CODE", ""),
-        row(release::PRODUCT_ID, "5050", release::PRODUCT_TEXT, "*CODE", "QSYS"),
-        row(release::PRODUCT_ID, "2924", release::PRODUCT_TEXT, "*LNG", "QSYS"),
-    ]
-}
-
 /// `DSPAUTUSR`: user, group, date the password changed, `X` for no
 /// password, text; by user, or by group with `by_group`.
 pub fn autusr(system: &mut System, by_group: bool) -> Result<Vec<Vec<String>>, String> {

@@ -358,6 +358,18 @@ pub const DIRECT: &[&str] = &[
     "SAVLIB",
     "SAVOBJ",
     "SAVSECDTA",
+    // --- licensed programs (lic/slic/src/cpp/lpcmd.rs)
+    "RSTLICPGM",
+    "DLTLICPGM",
+    "SAVLICPGM",
+    "CHKPRDOPT",
+    "WRKLICINF",
+    "ADDLICKEY",
+    "RMVLICKEY",
+    "DSPLICKEY",
+    "CHGLICINF",
+    "WRKSFWAGR",
+    "QSPKGPRD",
 ];
 
 /// Whether a job-site command also runs in the service: a display the

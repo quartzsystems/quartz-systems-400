@@ -30,6 +30,19 @@ use source::Source;
 
 /// Run one of the RPG commands.
 pub fn run(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
+    // The compiler is QS00WDS option 31, the precompiler option 61.
+    let needs: &[u8] = if cmdname == "CRTSQLRPGI" { &[31, 61] } else { &[31] };
+    for o in needs {
+        if !crate::stgsvc::licpgm::installed(system, "QS00WDS", licpgm::OptionNo(*o)) {
+            return super::clpgm::failed(
+                cmdname,
+                &format!(
+                    "{} product QS00WDS option {o} is not installed",
+                    super::lpcmd::NOT_INSTALLED
+                ),
+            );
+        }
+    }
     let req = match opts::request(cmdname, parms) {
         Ok(r) => r,
         Err(e) => return super::clpgm::failed(cmdname, &e),

@@ -2362,6 +2362,248 @@ text = "The limit of &1 environment variables has been reached."
 help = "Remove variables that are no longer needed before adding more."
 vars = ["*BIN 4"]
 
+
+# Licensed programs (docs/LICPGM.md): RSTLICPGM, DLTLICPGM, SAVLICPGM,
+# CHKPRDOPT, the license key commands, QSPKGPRD and the QSZ*/QLZA* APIs.
+
+[[msg]]
+id = "CPC3D81"
+sev = 0
+text = "Product &1 option &2 release &3 installed."
+help = "The product's loads were restored and are now installed."
+vars = ["*CHAR 7", "*CHAR 5", "*CHAR 6"]
+
+[[msg]]
+id = "CPC3D82"
+sev = 0
+text = "Product &1 option &2 deleted."
+help = "The product's loads and the objects only they used were removed."
+vars = ["*CHAR 7", "*CHAR 5"]
+
+[[msg]]
+id = "CPC3D85"
+sev = 0
+text = "Product &1 option &2 saved."
+help = "The product's loads and objects were written to the save file."
+vars = ["*CHAR 7", "*CHAR 5"]
+
+[[msg]]
+id = "CPF3D94"
+sev = 40
+text = "The licensed program was not installed."
+help = "The media did not hold what was asked for, a prerequisite is missing, or a restore step failed. The job log says which."
+
+[[msg]]
+id = "CPF3D95"
+sev = 40
+text = "The licensed program was not deleted."
+help = "It is not installed, or installed options of other products still need it."
+
+[[msg]]
+id = "CPF3D97"
+sev = 40
+text = "The licensed program was not saved."
+help = "A load selected is not installed or packaged, or the save failed."
+
+[[msg]]
+id = "CPC0C20"
+sev = 0
+text = "No errors were found for product &1."
+help = "Every object of the product's installed loads is present and undamaged."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPF0C20"
+sev = 40
+text = "Errors were found checking the product."
+help = "Objects are missing, damaged or at another release, or a prerequisite is not installed. The load states were updated."
+
+[[msg]]
+id = "CPF0C1F"
+sev = 40
+text = "The product, option or load is not on the system."
+help = "No product definition or load matches. Check the product ID, release, option and load ID."
+
+[[msg]]
+id = "CPF0C1C"
+sev = 40
+text = "More than one release of the product was found."
+help = "Name the release instead of *ONLY."
+
+[[msg]]
+id = "CPF0C1D"
+sev = 40
+text = "The release given is not valid."
+help = "Give a release as VxRyMz or as *CUR, *ONLY or *PRV."
+
+[[msg]]
+id = "CPF0C17"
+sev = 40
+text = "A product definition for this product and release already exists."
+help = "Delete the existing definition first or use another release."
+
+[[msg]]
+id = "CPF0C19"
+sev = 40
+text = "Object &1 in &2 is damaged."
+help = "Restore the object or delete and create it again, then package the product."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0C52"
+sev = 40
+text = "Product object &1 in &2 was not deleted."
+help = "A product definition with loads, or an installed load, is deleted with DLTLICPGM."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0C84"
+sev = 40
+text = "The load ID is not valid for this option."
+help = "A code load takes the option's feature; a language load one of the option's languages."
+
+[[msg]]
+id = "CPC0C2A"
+sev = 0
+text = "Product &1 packaged from &2."
+help = "The product definition and loads were created and packaged."
+vars = ["*CHAR 7", "*CHAR 50"]
+
+[[msg]]
+id = "CPF0C2B"
+sev = 40
+text = "The product manifest has errors."
+help = "The job log lists each error with where in the manifest it is."
+
+[[msg]]
+id = "CPC9E25"
+sev = 0
+text = "License key information for product &1 added."
+help = "The key was checked against its product, feature, serial number and limits."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPC9E26"
+sev = 0
+text = "License key information for product &1 removed."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPC9E27"
+sev = 0
+text = "License information for product &1 changed."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPF9E11"
+sev = 40
+text = "No license information was found."
+help = "No license key or license information matches what was given."
+
+[[msg]]
+id = "CPF9E12"
+sev = 40
+text = "License information is not available for the product."
+help = "The product, term and feature have no license terms on this system."
+
+[[msg]]
+id = "CPF9E15"
+sev = 40
+text = "A license management value is not valid."
+help = "Check the usage limit, threshold, term and feature given."
+
+[[msg]]
+id = "CPF9E17"
+sev = 10
+text = "The usage limit was exceeded; the user was added."
+help = "The product's compliance type is *WARNING. Raise the usage limit with CHGLICINF."
+
+[[msg]]
+id = "CPF9E18"
+sev = 40
+text = "The usage limit would be exceeded; the user was not added."
+help = "The product's compliance type is *OPRACTION. Raise the usage limit with CHGLICINF or release a use."
+
+[[msg]]
+id = "CPF9E71"
+sev = 40
+text = "The grace period has ended; the user was not added."
+help = "Add a license key for the product with ADDLICKEY."
+
+[[msg]]
+id = "CPF9E72"
+sev = 10
+text = "The usage limit was exceeded; use continues until the grace period ends."
+help = "Add a license key with a higher usage limit before the grace period ends."
+
+[[msg]]
+id = "CPF9E73"
+sev = 40
+text = "The license key has expired."
+help = "Add a current license key with ADDLICKEY."
+
+[[msg]]
+id = "CPF9E78"
+sev = 40
+text = "The license key is not valid."
+help = "The key was typed wrongly or does not match its product, feature, serial number, processor group or limits."
+
+[[msg]]
+id = "CPF9E79"
+sev = 40
+text = "The user already holds a different number of uses."
+help = "Release the uses held before asking for another number."
+
+[[msg]]
+id = "CPF9E91"
+sev = 40
+text = "The license user is not valid."
+help = "The user holds no uses under the handle given, or the name is empty."
+
+[[msg]]
+id = "CPI9E75"
+sev = 0
+text = "No license key: use is allowed until the grace period ends."
+help = "Add a license key with ADDLICKEY."
+
+[[msg]]
+id = "CPI9E76"
+sev = 0
+text = "The license key expires soon."
+help = "Add a new license key before the expiration date."
+
+[[msg]]
+id = "CPI9E19"
+sev = 0
+text = "License use reached its threshold."
+help = "Use of the product reached the threshold set with CHGLICINF."
+
+[[msg]]
+id = "CPF3C21"
+sev = 40
+text = "Format name &1 is not valid."
+help = "Give a format the API documents."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "CPF3C24"
+sev = 40
+text = "The length of the receiver variable is not valid."
+help = "The receiver must be at least 8 bytes."
+
+[[msg]]
+id = "CPF3C1D"
+sev = 40
+text = "A length or count parameter is not valid."
+help = "Check the lengths given for the parameters."
+
+[[msg]]
+id = "CPF24B4"
+sev = 40
+text = "A parameter could not be read."
+help = "A parameter is shorter than the API needs."
+
+
 # Save and restore.
 
 [[msg]]

@@ -1388,7 +1388,7 @@ impl Service for Served<'_> {
     }
 
     fn sfwrsc_panel(&mut self) -> Vec<Vec<String>> {
-        super::sysdata::sfwrsc()
+        crate::cpp::lpcmd::sfwrsc_rows(self.system)
     }
 
     fn autl_panel(&mut self, name: String) -> Result<Vec<Vec<String>>, String> {
@@ -1792,6 +1792,14 @@ impl Service for Served<'_> {
     fn qsh(&mut self, op: stg::qsh::QshOp) -> stg::qsh::QshReply {
         let me = self.ctx.session.borrow().principal.clone();
         super::qsh::request(self.system, &me, op)
+    }
+
+    fn licpgm_panel(&mut self, what: String, args: Vec<String>) -> Result<Vec<Vec<String>>, String> {
+        crate::cpp::lpapi::panel(self.system, &what, &args)
+    }
+
+    fn licpgm_api(&mut self, api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)> {
+        crate::cpp::lpapi::call(self.system, &api, &parms)
     }
 
     fn sst_user_change(
