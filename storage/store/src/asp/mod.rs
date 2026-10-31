@@ -154,6 +154,18 @@ impl Asp {
             sysval: ObjectId::NONE,
             units,
         };
+        // The WAL of a store that used these units before would replay
+        // into this one: its pages carry the sequence numbers this one
+        // reaches. Zero them.
+        let chunk = 256u64;
+        let zeros = blockdev::AlignedBuf::new(usize::try_from(chunk).expect("small"));
+        let mut done = 0;
+        while done < params.wal_pages {
+            let n = chunk.min(params.wal_pages - done);
+            let bytes = usize::try_from(n).expect("small") * crate::page::PAGE_SIZE;
+            io.write_bytes(RESERVED_HEAD + done, &zeros[..bytes])?;
+            done += n;
+        }
         let alloc = Allocator::format(layout, params.wal_pages);
         let mut asp = Self { io, sb, alloc };
         asp.checkpoint()?;
