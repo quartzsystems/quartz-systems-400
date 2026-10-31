@@ -5,7 +5,9 @@
 //! `build iso`: UEFI-bootable installation media. The El Torito boot
 //! image holds the media UKI; the same UKI is also a plain file at
 //! `EFI/BOOT/BOOTX64.EFI` and `QS400/LIC/qs400.efi`, so a copy of the
-//! tree onto a FAT stick boots too.
+//! tree onto a FAT stick boots too. The image is a hybrid: its GPT
+//! makes the boot image an EFI System partition when the ISO is
+//! written raw to a disk (docs/MEDIA.md, "Hybrid install image").
 
 use std::fs;
 use std::path::PathBuf;
@@ -61,6 +63,8 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     b.add_file(SLOT_B_FILE, p.slot_b)?;
     b.add_file(README_FILE, p.readme.into_bytes())?;
     b.boot_image(BOOT_IMAGE)?;
+    // Protective MBR and GPT: a raw copy onto a disk boots under UEFI.
+    b.hybrid(true);
     Ok(b)
 }
 
@@ -153,6 +157,11 @@ mod tests {
         }
         let boot = img.info().boot.unwrap();
         assert_eq!(img.lookup(BOOT_IMAGE).unwrap().extents[0].0, boot.lba);
+        let gpt = optical::iso::hybrid::verify(&img.source().to_vec()).unwrap();
+        let esp = img.lookup(BOOT_IMAGE).unwrap();
+        assert_eq!(gpt.partitions[0].first_lba, u64::from(boot.lba) * 4);
+        assert_eq!(gpt.partitions[0].last_lba, u64::from(boot.lba) * 4 + esp.size / 512 - 1);
+        assert_eq!(gpt.partitions[1].type_guid, optical::iso::hybrid::QUARTZ_MEDIA);
         // The installer's reader still finds the slot UKIs.
         let mut cur = std::io::Cursor::new(iso);
         let (id, _) = diskimg::iso9660::read_root(&mut cur).unwrap();
