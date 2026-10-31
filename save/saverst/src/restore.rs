@@ -311,6 +311,10 @@ pub fn restore<R: Read>(
             library(store, &cx, &mut st, &mut report, &o)?;
             continue;
         }
+        // A PTF's header or LIC image, an IFS link: not library objects.
+        if store::obj::type_by_code(d.type_code).is_none() {
+            continue;
+        }
         let saved_lib = d.library_name();
         if !lib_selected(opts, &saved_lib) {
             continue;
