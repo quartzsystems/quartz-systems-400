@@ -9,6 +9,7 @@
 //! themselves, so no IBM text is written here.
 
 mod common;
+mod wmcommon;
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -182,14 +183,9 @@ fn wrkreginf_option_8_works_with_the_programs() {
     );
     // IBM's column headings here are not laid out by UIM's rules (the
     // first row is centered over a number, the columns are wider than
-    // their fields): those rows match by words. IBM shows the empty
-    // list's text one row lower than its other lists do.
+    // their fields): those rows match by words. Row 11 is the add entry
+    // (R27): the option, the program and its library, no number.
     let s = render(&g, "WRKEXITPGM", &d, &opts()).unwrap();
-    compare("wrkreginf-qtmf-8", &s, &[8, 9, 10], &[12, 13]);
-    let want = golden("wrkreginf-qtmf-8");
-    assert_eq!(
-        s.text_rows()[11].trim(),
-        want[12].trim(),
-        "the empty list's text"
-    );
+    compare("wrkreginf-qtmf-8", &s, &[8, 9, 10], &[]);
+    wmcommon::fields_on_row("phase10/misc/wrkreginf-qtmf-8", &s, 11);
 }

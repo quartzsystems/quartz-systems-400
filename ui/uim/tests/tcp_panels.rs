@@ -7,6 +7,7 @@
 //! and compared row by row. One test per golden, named after it.
 
 mod tcpcommon;
+mod wmcommon;
 
 use tcpcommon::{compare, shipped};
 use uim::render::{ListState, MapDialog, Options, render};
@@ -20,6 +21,14 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
         top: 0,
         total: Some(rows.len()),
         complete: true,
+    }
+}
+
+/// The input fields of `rows` against the capture's: the add entry
+/// (R27) and the entries' options.
+fn fields(name: &str, s: &uim::Screen, rows: &[usize]) {
+    for r in rows {
+        wmcommon::fields_on_row(&format!("phase10/tcpcfg/{name}"), s, *r);
     }
 }
 
@@ -146,6 +155,7 @@ fn cfgtcp_1_ifc() {
     d.set_list("IFCS", interfaces());
     let s = render(&g, "WRKIFCD", &d, &opts()).unwrap();
     compare("cfgtcp-1-ifc", &s);
+    fields("cfgtcp-1-ifc", &s, &[8, 9]);
 }
 
 #[test]
@@ -157,6 +167,7 @@ fn cfgtcp_1_ifc_f11() {
     let o = Options { view: 1, ..opts() };
     let s = render(&g, "WRKIFCD", &d, &o).unwrap();
     compare("cfgtcp-1-ifc-f11", &s);
+    fields("cfgtcp-1-ifc-f11", &s, &[8, 9]);
 }
 
 #[test]
@@ -200,6 +211,7 @@ fn cfgtcp_2_rte() {
     d.set_list("RTES", dft_route());
     let s = render(&g, "WRKRTED", &d, &opts()).unwrap();
     compare("cfgtcp-2-rte", &s);
+    fields("cfgtcp-2-rte", &s, &[8, 9]);
 }
 
 #[test]
@@ -211,6 +223,7 @@ fn cfgtcp_2_rte_f11() {
     let o = Options { view: 1, ..opts() };
     let s = render(&g, "WRKRTED", &d, &o).unwrap();
     compare("cfgtcp-2-rte-f11", &s);
+    fields("cfgtcp-2-rte-f11", &s, &[8, 9]);
 }
 
 #[test]
@@ -235,14 +248,16 @@ fn cfgtcp_2_rte_5() {
     compare("cfgtcp-2-rte-5", &s);
 }
 
+/// The add entry holds `*ONLY` in the upper port, as the driver puts it.
 #[test]
-#[ignore = "the oracle's headings are not aligned by one rule: Opt, Lower and Protocol on the middle row, *ONLY under Upper on the third, User over Profile on the first two"]
 fn cfgtcp_4_port() {
     let g = shipped("QTOCPORT");
     let mut d = MapDialog::new();
     d.set_list("PORTS", list(&[]));
+    d.set_ext("PORTS", &[("PUPPER", "*ONLY")]);
     let s = render(&g, "WRKPORTD", &d, &opts()).unwrap();
     compare("cfgtcp-4-port", &s);
+    fields("cfgtcp-4-port", &s, &[8]);
 }
 
 /// pub400's host table as option 10 lists it.
@@ -283,6 +298,7 @@ fn cfgtcp_10_hte_body() {
     for r in 2..22 {
         assert_eq!(got[r].trim_end(), want[r].trim_end(), "row {}", r + 1);
     }
+    fields("cfgtcp-10-hte", &s, &[8, 9]);
 }
 
 #[test]
@@ -335,6 +351,7 @@ fn tables_1_service() {
     );
     let s = render(&g, "WRKSRVD", &d, &opts()).unwrap();
     compare("tables-1-service", &s);
+    fields("tables-1-service", &s, &[7, 8]);
 }
 
 #[test]
@@ -349,6 +366,7 @@ fn tables_2_protocol() {
     d.set_list("PCLS", list(&refs));
     let s = render(&g, "WRKPCLD", &d, &opts()).unwrap();
     compare("tables-2-protocol", &s);
+    fields("tables-2-protocol", &s, &[8, 9]);
 }
 
 #[test]
@@ -358,4 +376,5 @@ fn tables_3_network() {
     d.set_list("NETS", list(&[]));
     let s = render(&g, "WRKNETD", &d, &opts()).unwrap();
     compare("tables-3-network", &s);
+    fields("tables-3-network", &s, &[8]);
 }

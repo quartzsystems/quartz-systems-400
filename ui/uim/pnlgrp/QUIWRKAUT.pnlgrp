@@ -3,7 +3,7 @@
 .* root directory of this project.
 .*
 .* QUIWRKAUT: an IFS object's authorities. WRKAUT lists them with the
-.* options that change them (a blank first entry takes option 1);
+.* options that change them (option 1 on the add entry, R27);
 .* DSPAUT shows them. VIEW 0 shows the object authorities, VIEW 1
 .* (F11) the data authorities one by one.
 :PNLGRP.
@@ -81,13 +81,13 @@
 :DATAC.
 :EDATA.
 :TOPINST.Type options, press Enter.
-:LIST DEPTH='*' LISTDEF=AUTS VIEWS=2 SCROLL=YES.
-:LISTACT OPTION=1 ENTER='RETURN 0'.1=Add user
-:LISTACT OPTION=2 ENTER='RETURN 0'.2=Change user authority
-:LISTACT OPTION=4 ENTER='RETURN 0'.4=Remove user
+:LIST DEPTH='*' LISTDEF=AUTS VIEWS=2 SCROLL=YES ACTLEN=1 EXTACT=YES.
+:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 0'.1=Add user
+:LISTACT OPTION=2 ACTFOR=LISTE ENTER='RETURN 0'.2=Change user authority
+:LISTACT OPTION=4 ACTFOR=LISTE ENTER='RETURN 0'.4=Remove user
 :LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=DTAAUT USAGE=OUTPUT.Data Authority
+:LISTCOL VAR=USER USAGE=OUTPUT EXTACT=YES.User
+:LISTCOL VAR=DTAAUT USAGE=OUTPUT EXTACT=YES.Data Authority
 :LISTGRP COL=OBJAUTS.--Object Authorities--
 :LISTCOL VAR=EXIST USAGE=OUTPUT.Exist
 :LISTCOL VAR=MGT USAGE=OUTPUT.Mgt

@@ -8,6 +8,7 @@
 //! vendor's copyright line) is not compared.
 
 mod common;
+mod wmcommon;
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -38,12 +39,8 @@ fn cut(row: &str, from: usize, to: usize) -> String {
 
 fn check(name: &str, panel: &str) {
     let rows = golden(name);
-    // The blank row option 1 adds from, then the entries.
-    let mut list = vec![vec![
-        ("OPT".to_string(), String::new()),
-        ("EVNAME".to_string(), String::new()),
-        ("EVVALUE".to_string(), String::new()),
-    ]];
+    // The entries; the add entry (R27) is the panel's.
+    let mut list = Vec::new();
     for r in &rows[7..18] {
         let n = cut(r, 6, 32);
         if n.trim().is_empty() {
@@ -86,6 +83,9 @@ fn check(name: &str, panel: &str) {
         }
     }
     assert!(diff.is_empty(), "{name} differs:\n{diff}");
+    // The add entry: the option, and the name 24 wide under its 26.
+    wmcommon::fields_on_row(&format!("phase10/misc/{name}"), &s, 7);
+    wmcommon::fields_on_row(&format!("phase10/misc/{name}"), &s, 8);
 }
 
 #[test]

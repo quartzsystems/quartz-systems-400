@@ -198,7 +198,7 @@ pub fn data_var(data: &stg::proto::Sys2Data, name: &str) -> String {
 
 /// The command of an option typed on a list's extended action entry,
 /// with the entry's values: a parameter the entry left blank (`KWD()`,
-/// `KWD(/)`) is left out for the prompt to ask, and a name typed
+/// `KWD('')`, `KWD(/)`) is left out for the prompt to ask, and a name typed
 /// without its library goes to `*CURLIB`, as a create command's
 /// default.
 #[must_use]
@@ -210,7 +210,7 @@ pub fn ext_command(d: &UimDialog, c: &uim::engine::Choice, text: &str) -> String
             && word.ends_with(')')
         {
             let value = &word[open + 1..word.len() - 1];
-            if value.is_empty() || value == "/" {
+            if value.is_empty() || value == "/" || value == "''" {
                 continue;
             }
             if let Some(name) = value.strip_prefix('/') {
@@ -344,5 +344,7 @@ mod tests {
         assert_eq!(ext_command(&d, &c, text), "?CRTCLS");
         let (d, c) = entry(&[("VOL", "VOL01")]);
         assert_eq!(ext_command(&d, &c, "?ADDOPTCTG ?-VOL(&VOL.)"), "?ADDOPTCTG ?-VOL(VOL01)");
+        let (d, c) = entry(&[]);
+        assert_eq!(ext_command(&d, &c, "?ADDTCPHTE INTNETADR('&HTEADR.')"), "?ADDTCPHTE");
     }
 }

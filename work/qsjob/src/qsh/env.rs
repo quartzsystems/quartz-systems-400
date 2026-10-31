@@ -259,8 +259,6 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
                 ("EVVALUE".to_string(), v),
             ]
         };
-        // The blank entry option 1 adds from.
-        d.add_row("VARS", row(String::new(), String::new()));
         for v in &list {
             let shown = if ccsids {
                 v.ccsid.to_string()
@@ -279,10 +277,23 @@ pub fn wrkenvvar(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
             Response::Options(choices) => {
                 let mut shown = None;
                 for c in &choices {
-                    let var = c.row.checked_sub(1).and_then(|i| list.get(i));
+                    let var = if c.is_ext() { None } else { list.get(c.row) };
                     let q = |n: &str| n.replace('\'', "''");
                     let line = match (c.option.trim(), var) {
-                        ("1", _) => Some(format!("?ADDENVVAR LEVEL({})", level(sys))),
+                        // Option 1 on the add entry, with the name typed there.
+                        ("1", _) => {
+                            let name = d
+                                .row("VARS", c.row)
+                                .into_iter()
+                                .find(|(v, _)| v == "EVNAME")
+                                .map(|(_, x)| x.trim().to_string())
+                                .unwrap_or_default();
+                            Some(if name.is_empty() {
+                                format!("?ADDENVVAR LEVEL({})", level(sys))
+                            } else {
+                                format!("?ADDENVVAR ENVVAR('{}') LEVEL({})", q(&name), level(sys))
+                            })
+                        }
                         ("2", Some(v)) => Some(format!("?CHGENVVAR ENVVAR('{}') LEVEL({})", q(&v.name), level(sys))),
                         ("4", Some(v)) => Some(format!("RMVENVVAR ENVVAR('{}') LEVEL({})", q(&v.name), level(sys))),
                         ("5", Some(v)) => {

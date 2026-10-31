@@ -59,6 +59,10 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         if !area.compact {
             row += 1;
         }
+    } else if area.extact {
+        // R27: a list with an add entry keeps its legend row, blank when
+        // no option is shown (the display-only port list).
+        row += 2;
     }
 
     // R9: the columns of the view.
@@ -194,8 +198,10 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
 }
 
 /// R27: the extended action entry's row: the option field where the
-/// entries have theirs, and each `EXTACT` column's field at its start,
-/// as wide as its field; the values are the dialog's.
+/// entries have theirs, and each `EXTACT` column's field where an
+/// entry's input field would be, as wide as its variable's class and at
+/// most its field (`MAXWIDTH` can make the column wider: wrkenvvar's 24
+/// under 26); the values are the dialog's.
 fn extended_entry(ctx: &Ctx, area: &ListArea, cols: &[Col], s: &mut Screen, row: usize) {
     let limit = s.limit();
     let values = ctx.dialog.ext_entry(&area.listdef);
@@ -221,13 +227,19 @@ fn extended_entry(ctx: &Ctx, area: &ListArea, cols: &[Col], s: &mut Screen, row:
             }
             s.field(f);
         } else if c.column.extact && c.start <= limit {
-            let len = c.field.min(limit + 1 - c.start);
+            // Centered under a heading wider than the field, as the
+            // entries' input fields are (the port list's protocol).
+            let col = c.start + (c.width - c.field) / 2;
+            let len = ctx
+                .width_of(&c.column.var)
+                .min(c.field)
+                .min((limit + 1).saturating_sub(col));
             let target = Target::ListCell {
                 list: area.listdef.clone(),
                 row_index: EXT_ENTRY,
                 var: c.column.var.clone(),
             };
-            let mut f = field(row, c.start, len, raw, target, c.column);
+            let mut f = field(row, col, len, raw, target, c.column);
             f.usage = crate::model::Usage::Inout;
             s.field(f);
         }

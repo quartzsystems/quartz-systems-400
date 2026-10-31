@@ -8,6 +8,8 @@
 //! masks (`USERNAME`, dates and times) copied over our side. One test
 //! per golden, named after it.
 
+mod wmcommon;
+
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -349,7 +351,7 @@ fn wrklnk_8_dir() {
 
 /// Authority rows: user, data authority, the four object authorities.
 fn auts(rows: &[(&str, &str, &str)]) -> ListState {
-    let mut v = vec![Vec::new()];
+    let mut v = Vec::new();
     for (u, d, o) in rows {
         let mut r = vec![
             ("USER".to_string(), (*u).to_string()),
@@ -387,7 +389,11 @@ fn wrklnk_9_root() {
         "QSYS",
         &[("*PUBLIC", "*RWX", "XXXX"), ("QSYS", "*RWX", "XXXX"), ("QDIRSRV", "*X", "")],
     );
-    compare("wrklnk-9-root", &render(&g, "WRKAUT", &d, &with_copyright(&g)).unwrap());
+    let s = render(&g, "WRKAUT", &d, &with_copyright(&g)).unwrap();
+    compare("wrklnk-9-root", &s);
+    // The add entry (option, user, data authority), then an entry.
+    wmcommon::fields_on_row("phase10/ifs/wrklnk-9-root", &s, 14);
+    wmcommon::fields_on_row("phase10/ifs/wrklnk-9-root", &s, 15);
 }
 
 #[test]
@@ -399,7 +405,11 @@ fn wrklnk_9_stmf() {
         "USERNAME",
         &[("*PUBLIC", "*EXCLUDE", ""), ("USERNAME", "*RWX", "XXXX")],
     );
-    compare("wrklnk-9-stmf", &render(&g, "WRKAUT", &d, &with_copyright(&g)).unwrap());
+    let s = render(&g, "WRKAUT", &d, &with_copyright(&g)).unwrap();
+    compare("wrklnk-9-stmf", &s);
+    // The add entry (option, user, data authority), then an entry.
+    wmcommon::fields_on_row("phase10/ifs/wrklnk-9-stmf", &s, 14);
+    wmcommon::fields_on_row("phase10/ifs/wrklnk-9-stmf", &s, 15);
 }
 
 /// A panel without a golden: its title centred on row 1, its keys on

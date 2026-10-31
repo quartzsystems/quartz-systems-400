@@ -263,10 +263,17 @@ fn program_options(
 ) -> Result<(), Fail> {
     let mut shown = None;
     for c in choices {
-        let Some(g) = found.get(c.row) else { continue };
         let point = format!("EXITPNT({name}) FORMAT({format})");
+        // Option 1 on the add entry, with the program typed there.
+        if c.is_ext() {
+            let text = crate::panels::ext_command(d, c, &format!("?ADDEXITPGM {point} PGM(&PGMLIB./&PGM.)"));
+            if let Some(m) = command(job, host, &text) {
+                shown = Some(m);
+            }
+            continue;
+        }
+        let Some(g) = found.get(c.row) else { continue };
         let text = match c.option.trim() {
-            "1" => format!("?ADDEXITPGM {point}"),
             "4" => format!("RMVEXITPGM {point} PGMNBR({})", g.number),
             "10" => format!(
                 "?ADDEXITPGM {point} PGMNBR({}) PGM({}/{}) REPLACE(*YES)",

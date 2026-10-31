@@ -3,8 +3,8 @@
 // root directory of this project.
 
 //! `WRKAUT` and `DSPAUT` (`QUIWRKAUT`): an object's authority rows from
-//! `DSPAUT`'s answer. `WRKAUT` puts a blank entry first for option 1;
-//! options 1 and 2 prompt `CHGAUT`, 4 takes the user's authority away.
+//! `DSPAUT`'s answer. Option 1 on `WRKAUT`'s add entry and 2 prompt
+//! `CHGAUT`, 4 takes the user's authority away.
 //! F11 switches between the object authorities and the data
 //! authorities one by one.
 
@@ -36,11 +36,8 @@ fn mark(on: bool, width: usize) -> String {
 }
 
 /// The dialog's rows for an answer.
-fn rows(a: &AuthList, work: bool) -> Vec<Vec<(String, String)>> {
+fn rows(a: &AuthList) -> Vec<Vec<(String, String)>> {
     let mut v = Vec::new();
-    if work {
-        v.push(Vec::new());
-    }
     for e in &a.entries {
         let has = |n: &str| e.auth.0 & bit(n) != 0;
         let role = match e.role {
@@ -69,7 +66,7 @@ fn rows(a: &AuthList, work: bool) -> Vec<Vec<(String, String)>> {
 }
 
 /// The answer for `path` into the dialog.
-fn load(host: &Host, d: &mut UimDialog, path: &str, work: bool) -> Result<(), Fail> {
+fn load(host: &Host, d: &mut UimDialog, path: &str) -> Result<(), Fail> {
     let c = client(host);
     let a = ifs::client::IfsClient::dspaut(&c, path).map_err(|e| fail(e, path))?;
     d.set("OBJ", &a.path);
@@ -77,14 +74,14 @@ fn load(host: &Host, d: &mut UimDialog, path: &str, work: bool) -> Result<(), Fa
     d.set("OWNER", &a.owner);
     d.set("PGP", a.group.as_deref().unwrap_or("*NONE"));
     d.set("AUTL", a.autl.as_deref().unwrap_or("*NONE"));
-    fill(d, LIST, rows(&a, work));
+    fill(d, LIST, rows(&a));
     Ok(())
 }
 
 /// `WRKAUT OBJ(path)` (`work`) or `DSPAUT`.
 pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: bool) -> Result<String, Fail> {
     let mut d = crate::panels::dialog(host, "QUIWRKAUT")?;
-    load(host, &mut d, path, work)?;
+    load(host, &mut d, path)?;
     let panel = if work { "WRKAUT" } else { "DSPAUT" };
     let p = quote(path);
     let mut last = String::new();
@@ -128,7 +125,17 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
                     let user = cell(&d, LIST, ch.row, "USER");
                     let role = cell(&d, LIST, ch.row, "ROLE");
                     let cmd = match (ch.option.trim(), user.is_empty()) {
-                        ("1", _) => format!("?CHGAUT OBJ({p})"),
+                        // The add entry's user and data authority, when typed.
+                        ("1", _) => {
+                            let mut cmd = format!("?CHGAUT OBJ({p})");
+                            for var in ["USER", "DTAAUT"] {
+                                let v = cell(&d, LIST, ch.row, var).trim().to_ascii_uppercase();
+                                if !v.is_empty() {
+                                    cmd = format!("{cmd} {var}({v})");
+                                }
+                            }
+                            cmd
+                        }
                         ("2", false) => format!("?CHGAUT OBJ({p}) USER({user})"),
                         ("4", false) if role == "U" || role == "G" => {
                             format!("CHGAUT OBJ({p}) USER({user}) DTAAUT(*NONE) OBJAUT(*NONE)")
@@ -148,7 +155,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, path: &str, work: 
             _ => d.error("CPD9B81", &[]),
         }
         if reload
-            && let Err(f) = load(host, &mut d, path, work)
+            && let Err(f) = load(host, &mut d, path)
         {
             d.send(crate::display::msgline::of_fail(host, &f));
         }

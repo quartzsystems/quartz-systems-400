@@ -27,6 +27,8 @@ struct Spec<'a> {
     what: &'static str,
     list: &'static str,
     views: usize,
+    /// The add entry's first values (R27).
+    ext: &'static [(&'static str, &'static str)],
     special: Special<'a>,
 }
 
@@ -34,6 +36,9 @@ struct Spec<'a> {
 #[allow(clippy::needless_pass_by_value)] // the spec is the call's own
 fn work(job: &mut Job, host: &Host, surface: &mut Surface, spec: Spec<'_>) -> Result<Left, Fail> {
     let mut d = dialog(host, spec.group, false)?;
+    for (k, v) in spec.ext {
+        d.list_mut(spec.list).set_ext(k, v);
+    }
     let panel = if may_change(host) { spec.full } else { spec.only };
     let mut args: Vec<String> = Vec::new();
     let mut last = String::new();
@@ -136,6 +141,7 @@ pub fn ifcs(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, F
             what: "IFC",
             list: "IFCS",
             views: 3,
+            ext: &[],
             special: &mut |_, host, surface, d, c| match c.option.as_str() {
                 "5" => {
                     let key = cell(d, &c.list, c.row, "IFCADR");
@@ -174,6 +180,7 @@ pub fn rtes(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, F
             what: "RTE",
             list: "RTES",
             views: 3,
+            ext: &[],
             special: &mut |job, host, surface, d, c| {
                 let (parm, args) = route_parms(d, c);
                 match c.option.as_str() {
@@ -206,7 +213,21 @@ pub fn ports(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, 
             what: "PORT",
             list: "PORTS",
             views: 1,
+            ext: &[("PUPPER", "*ONLY")],
             special: &mut |job, host, _, d, c| match c.option.as_str() {
+                // Option 1 on the add entry: what it holds, the rest prompted.
+                "1" => {
+                    let v = |k: &str| cell(d, &c.list, c.row, k);
+                    let range = [v("PLOWER"), v("PUPPER")].join(" ");
+                    let mut text = "?ADDTCPPORT".to_string();
+                    for (kwd, val) in [("PORT", range.trim().to_string()), ("PROTOCOL", v("PPROTO")), ("USRPRF", v("PUSER"))] {
+                        if !val.is_empty() && (kwd != "PORT" || val != "*ONLY") {
+                            text = format!("{text} {kwd}({val})");
+                        }
+                    }
+                    d.set_message(exec(job, host, &text));
+                    Ok(None)
+                }
                 "4" => {
                     let lower = cell(d, &c.list, c.row, "PLOWER");
                     let upper = cell(d, &c.list, c.row, "PUPPER");
@@ -238,6 +259,7 @@ pub fn hosts(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<Left, 
             what: "HTE",
             list: "HOSTS",
             views: 1,
+            ext: &[],
             special: &mut |_, host, surface, d, c| match c.option.as_str() {
                 "5" => {
                     let key = cell(d, &c.list, c.row, "HTEKEY");
@@ -278,6 +300,7 @@ pub fn table(job: &mut Job, host: &Host, surface: &mut Surface, t: Tbl) -> Resul
             what,
             list,
             views: 1,
+            ext: &[],
             special: &mut |_, _, _, d, c| match c.option.as_str() {
                 "5" => {
                     let vals: Vec<String> = d
