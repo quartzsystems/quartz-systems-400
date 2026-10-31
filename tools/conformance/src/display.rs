@@ -155,13 +155,13 @@ pub fn read_ppm(path: &Path) -> Result<Image, String> {
 // The steps share one signature so `step` can take them as fn pointers.
 #[allow(clippy::unused_self)]
 impl Suite {
-    /// Steps 71 and 72: a guest at each size reaches sign-on; its display
+    /// Steps 72 and 73: a guest at each size reaches sign-on; its display
     /// must be the scaler's rendering of the screen text.
     pub(crate) fn display_steps(&self) -> Result<Vec<StepReport>, crate::HarnessError> {
         type Check = fn(&Suite, &mut Session) -> Result<String, String>;
         let steps: [(&'static str, Check); 2] = [
-            ("71 display 1920x1080", Self::scaled_large),
-            ("72 display 1024x768", Self::scaled_small),
+            ("72 display 1920x1080", Self::scaled_large),
+            ("73 display 1024x768", Self::scaled_small),
         ];
         let mut reports = Vec::new();
         for ((name, check), size) in steps.into_iter().zip(SIZES) {

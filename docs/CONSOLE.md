@@ -88,7 +88,7 @@ resume from.
 and channel order, and the dirty-row spans (a cell, a cursor move
 across rows and along one, a resize).
 
-The QEMU suite's steps 71 and 72 (`tools/conformance/src/display.rs`)
+The QEMU suite's steps 72 and 73 (`tools/conformance/src/display.rs`)
 boot the disk on a `virtio-vga` device with `xres`/`yres` of 1920×1080
 and 1024×768 (OVMF takes the device's size as its GOP mode; the baked
 command line has no `video=`). At sign-on they check `svc.hw`'s
