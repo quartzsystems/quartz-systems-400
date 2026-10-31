@@ -158,7 +158,9 @@ pub enum Pending {
 }
 
 /// The menu F3 or F12 on the pending install's DST sign-on returns to:
-/// option 1 IPLs, 2 installs the operating system, 3 is DST again.
+/// option 1 IPLs, 2 installs the operating system (from the media, the
+/// Install Licensed Internal Code menu first, as on any media IPL), 3
+/// and F3 or F12 go back to DST.
 pub fn pending(system: &mut System, rx: &Receiver<Event>) -> Pending {
     let mut message: Option<(String, bool)> = None;
     loop {
@@ -170,8 +172,12 @@ pub fn pending(system: &mut System, rx: &Receiver<Event>) -> Pending {
         let Some(answer) = read(system, rx) else {
             return Pending::Dst;
         };
+        if let Answer::Function(3 | 12) = answer {
+            return Pending::Dst;
+        }
         match first_field(&answer).as_str() {
             "1" => return Pending::Ipl,
+            "2" if system.boot.ipl_d => install::run_lic(system, rx),
             "2" => return Pending::InstallOs,
             "3" => return Pending::Dst,
             "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
