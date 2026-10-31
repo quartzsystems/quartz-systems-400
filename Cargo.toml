@@ -104,6 +104,8 @@ members = [
     "qsh/pase",
     # The PASE test fixture, built by the harness and never shipped.
     "tools/pase-probe",
+    # Media: tape, optical, image catalogs.
+    "media/tape",
 ]
 
 [workspace.package]

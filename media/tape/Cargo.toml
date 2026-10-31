@@ -1,0 +1,18 @@
+[package]
+name = "tape"
+description = "QS/400 tape: the transport and changer traits, virtual volumes and libraries, Linux st and sg, IBM standard labels"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+crc.workspace = true
+thiserror.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2.190"
+
+[lints]
+workspace = true
