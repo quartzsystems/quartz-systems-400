@@ -133,7 +133,12 @@ fn form_labelled(
     for (i, (line, label)) in lines.iter().zip(labels).enumerate() {
         let r = BODY_ROW + i;
         s.put(r, BODY_COL, label, Attr::GREEN);
-        s.field(r, col, line.len, line.hidden);
+        if line.hidden {
+            // A password: no underline, and as long as a password may be.
+            s.field_secret(r, col, line.len, crate::users::PASSWORD_LEN);
+        } else {
+            s.field(r, col, line.len, false);
+        }
         if !line.value.is_empty() {
             s.put(r, col, &line.value, Attr::INPUT);
         }
@@ -152,7 +157,8 @@ pub struct FormLine {
     pub len: usize,
     /// Initial contents.
     pub value: String,
-    /// Typed text shows nothing.
+    /// A password: typed text shows nothing, no underline, up to 128
+    /// characters.
     pub hidden: bool,
 }
 
@@ -284,6 +290,30 @@ mod tests {
         assert_eq!(f.fields.len(), 2);
         assert_eq!((f.fields[0].col, f.fields[1].col), (24, 24));
         assert!(f.dump().contains("User . . . . . . . .    "));
+    }
+
+    #[test]
+    fn a_password_has_no_underline_and_takes_128_characters() {
+        use console::Key;
+        use console::editor::{apply, home};
+        let mut f = form_wide(
+            "Sign On",
+            "QS400",
+            &[FormLine::new("User", 10, ""), FormLine::hidden("Password", 10)],
+            "F3=Exit",
+            20,
+        );
+        let p = f.fields[1];
+        assert_eq!(p.capacity, crate::users::PASSWORD_LEN);
+        assert!(!f.cell(p.row - 1, p.col - 1).attr.underline);
+        home(&mut f);
+        apply(&mut f, Key::FieldExit);
+        let long: String = (b'a'..=b'z').cycle().take(100).map(char::from).collect();
+        for c in long.chars() {
+            apply(&mut f, Key::Char(c));
+        }
+        assert_eq!(f.field_text(&p), long);
+        assert!(!f.dump().contains("abc"));
     }
 
     #[test]
