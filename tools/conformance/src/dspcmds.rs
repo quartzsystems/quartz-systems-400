@@ -42,11 +42,16 @@ impl Suite {
         let mut report = String::new();
         for (cmd, keys) in [
             ("WRKHDWRSC TYPE(*CMN)", ""),
-            ("WRKHDWRSC TYPE(*STG)", ""),
-            ("GO USER", "type 2\nkey enter\nsettle 1500\n"),
+            ("GO USER", ""),
+            ("GO USER", "type 2\nkey enter\nsettle 2000\n"),
+            ("1", "type 2\nkey enter\nsettle 2000\n"),
         ] {
-            run(&mut d, &mut ctx, &format!("type \"{cmd}\"\nkey enter\nsettle 1500\n{keys}"))?;
+            run(&mut d, &mut ctx, &format!("type \"{cmd}\"\nkey enter\nsettle 2000\n"))?;
             report.push_str(&format!("--- {cmd}\n{}", screen(&d)));
+            if !keys.is_empty() {
+                run(&mut d, &mut ctx, keys)?;
+                report.push_str(&format!("--- {cmd} then 2\n{}", screen(&d)));
+            }
             for _ in 0..3 {
                 if d.term.contains("Main Menu") {
                     break;
