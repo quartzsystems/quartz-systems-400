@@ -179,7 +179,11 @@ impl<B: Read + Write + Seek> VirtualTape<B> {
     }
 
     fn ready(&self) -> Result<(), TransportError> {
-        if self.loaded { Ok(()) } else { Err(TransportError::NotLoaded) }
+        if self.loaded {
+            Ok(())
+        } else {
+            Err(TransportError::NotLoaded)
+        }
     }
 
     fn writable(&self) -> Result<(), TransportError> {
@@ -257,7 +261,9 @@ fn scan<B: Read + Seek>(io: &mut B, capacity: u64) -> Result<(Vec<Rec>, u32), Tr
         if !read_full(io, &mut raw)? {
             break;
         }
-        let Some(head) = decode_frame(&raw) else { break };
+        let Some(head) = decode_frame(&raw) else {
+            break;
+        };
         let rec = Rec {
             offset,
             kind: head.kind,
@@ -287,7 +293,9 @@ impl<B: Read + Write + Seek> TapeTransport for VirtualTape<B> {
     fn fsf(&mut self, n: u32) -> Result<(), TransportError> {
         self.ready()?;
         for _ in 0..n {
-            if let Some(i) = (self.pos..self.recs.len()).find(|&i| self.is_mark(i)) { self.pos = i + 1 } else {
+            if let Some(i) = (self.pos..self.recs.len()).find(|&i| self.is_mark(i)) {
+                self.pos = i + 1;
+            } else {
                 self.pos = self.recs.len();
                 return Err(TransportError::EndOfData);
             }
@@ -298,7 +306,9 @@ impl<B: Read + Write + Seek> TapeTransport for VirtualTape<B> {
     fn bsf(&mut self, n: u32) -> Result<(), TransportError> {
         self.ready()?;
         for _ in 0..n {
-            if let Some(i) = (0..self.pos).rev().find(|&i| self.is_mark(i)) { self.pos = i } else {
+            if let Some(i) = (0..self.pos).rev().find(|&i| self.is_mark(i)) {
+                self.pos = i;
+            } else {
                 self.pos = 0;
                 return Err(TransportError::BeginningOfTape);
             }
@@ -350,7 +360,10 @@ impl<B: Read + Write + Seek> TapeTransport for VirtualTape<B> {
     fn erase(&mut self) -> Result<(), TransportError> {
         self.writable()?;
         let from = self.offset_at(self.pos);
-        let to = self.end().max(from + FRAME_LEN as u64).min(self.header.capacity);
+        let to = self
+            .end()
+            .max(from + FRAME_LEN as u64)
+            .min(self.header.capacity);
         self.io.seek(SeekFrom::Start(HEADER_LEN as u64 + from))?;
         let zeros = vec![0u8; 64 * 1024];
         let mut left = to.saturating_sub(from);
@@ -438,8 +451,9 @@ impl<B: Read + Write + Seek> TapeTransport for VirtualTape<B> {
                 max: buf.len(),
             });
         }
-        self.io
-            .seek(SeekFrom::Start(HEADER_LEN as u64 + rec.offset + FRAME_LEN as u64))?;
+        self.io.seek(SeekFrom::Start(
+            HEADER_LEN as u64 + rec.offset + FRAME_LEN as u64,
+        ))?;
         self.io.read_exact(&mut buf[..len])?;
         Ok(ReadOutcome::Block(len))
     }

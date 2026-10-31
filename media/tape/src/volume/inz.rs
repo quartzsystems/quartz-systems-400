@@ -104,7 +104,12 @@ pub fn inztap<D: TapeTransport + ?Sized>(t: &mut D, opts: &InzOptions) -> Result
         }
         if let VolumeKind::Labeled { vol1, code } = &kind {
             let files = scan_files(t, *code)?;
-            refuse_active(&vol1.volume_id, &files, opts.check == Check::First, opts.today)?;
+            refuse_active(
+                &vol1.volume_id,
+                &files,
+                opts.check == Check::First,
+                opts.today,
+            )?;
         }
     }
     t.rewind()?;

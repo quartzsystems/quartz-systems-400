@@ -93,8 +93,12 @@ fn node_number(node: &str) -> u32 {
 pub fn assign(scanned: &[Scanned], known: &[(String, String)]) -> Vec<Resource> {
     let mut sorted: Vec<&Scanned> = scanned.iter().collect();
     sorted.sort_by(|a, b| {
-        (a.kind, a.hctl, node_number(&a.node), &a.node)
-            .cmp(&(b.kind, b.hctl, node_number(&b.node), &b.node))
+        (a.kind, a.hctl, node_number(&a.node), &a.node).cmp(&(
+            b.kind,
+            b.hctl,
+            node_number(&b.node),
+            &b.node,
+        ))
     });
     let number = |kind: ResourceKind, name: &str| -> Option<u32> {
         let rest = name.strip_prefix(kind.prefix())?;

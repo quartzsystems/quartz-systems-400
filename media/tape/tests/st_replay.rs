@@ -42,14 +42,20 @@ fn st_session() {
     assert!(!t.write_block(&big).unwrap().early_warning);
     assert!(t.write_block(&big).unwrap().early_warning);
     assert!(t.write_block(&big).unwrap().early_warning);
-    assert!(matches!(t.write_block(&big), Err(TransportError::EndOfMedium)));
+    assert!(matches!(
+        t.write_block(&big),
+        Err(TransportError::EndOfMedium)
+    ));
 
     t.rewind().unwrap();
     let mut buf = vec![0u8; MAX_BLOCK];
     assert_eq!(t.read_block(&mut buf).unwrap(), ReadOutcome::Block(80));
     assert!(buf[..80].iter().all(|&b| b == 0x40));
     assert_eq!(t.read_block(&mut buf).unwrap(), ReadOutcome::TapeMark);
-    assert!(matches!(t.read_block(&mut buf), Err(TransportError::BlockTooLarge { .. })));
+    assert!(matches!(
+        t.read_block(&mut buf),
+        Err(TransportError::BlockTooLarge { .. })
+    ));
 
     assert!(matches!(t.fsf(5), Err(TransportError::EndOfData)));
     assert_eq!(t.read_block(&mut buf).unwrap(), ReadOutcome::EndOfData);
@@ -59,12 +65,18 @@ fn st_session() {
     assert!(matches!(t.read_block(&mut buf), Err(TransportError::Io(_))));
 
     t.set_density("*ULTRIUM5").unwrap();
-    assert!(matches!(t.set_density("*QIC120"), Err(TransportError::Density(_))));
+    assert!(matches!(
+        t.set_density("*QIC120"),
+        Err(TransportError::Density(_))
+    ));
     t.eom().unwrap();
     t.erase().unwrap();
 
     t.rewind().unwrap();
-    assert!(matches!(t.write_block(&[0; 80]), Err(TransportError::WriteProtected)));
+    assert!(matches!(
+        t.write_block(&[0; 80]),
+        Err(TransportError::WriteProtected)
+    ));
     let st = t.status().unwrap();
     assert!(st.write_protected);
     assert_eq!(st.position, Position { file: 0, block: 0 });
@@ -87,7 +99,13 @@ fn sg_session() {
         summary,
         [
             (ElementKind::Transport, 0x0000, false, None, None),
-            (ElementKind::Drive, 0x0100, true, Some("E01002L5"), Some(0x0401)),
+            (
+                ElementKind::Drive,
+                0x0100,
+                true,
+                Some("E01002L5"),
+                Some(0x0401)
+            ),
             (ElementKind::Drive, 0x0101, false, None, None),
             (ElementKind::ImportExport, 0x0200, false, None, None),
             (ElementKind::Storage, 0x0400, true, Some("E01001L5"), None),
@@ -97,13 +115,26 @@ fn sg_session() {
         ]
     );
     c.move_medium(0x0400, 0x0101).unwrap();
-    assert!(matches!(c.move_medium(0x0401, 0x0100), Err(ChangerError::SourceEmpty(0x0401))));
-    assert!(matches!(c.move_medium(0x0402, 0x0100), Err(ChangerError::DestinationFull(0x0100))));
+    assert!(matches!(
+        c.move_medium(0x0401, 0x0100),
+        Err(ChangerError::SourceEmpty(0x0401))
+    ));
+    assert!(matches!(
+        c.move_medium(0x0402, 0x0100),
+        Err(ChangerError::DestinationFull(0x0100))
+    ));
     assert!(matches!(
         c.move_medium(0x0100, 0x0401),
-        Err(ChangerError::Check { key: 5, asc: 0x53, ascq: 2 })
+        Err(ChangerError::Check {
+            key: 5,
+            asc: 0x53,
+            ascq: 2
+        })
     ));
-    assert!(matches!(c.move_medium(0x0403, 0x0200), Err(ChangerError::Io(_))));
+    assert!(matches!(
+        c.move_medium(0x0403, 0x0200),
+        Err(ChangerError::Io(_))
+    ));
     c.into_inner().finish();
 }
 

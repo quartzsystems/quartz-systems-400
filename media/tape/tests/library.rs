@@ -8,13 +8,13 @@
 use std::io::Cursor;
 
 use tape::device::{
-    Allocation, Category, DriveResource, LibraryError, Location, MediaLibrary, Move,
-    ResourceKind, Scanned, assign, execute, parse_hctl, tape_nodes,
+    Allocation, Category, DriveResource, LibraryError, Location, MediaLibrary, Move, ResourceKind,
+    Scanned, assign, execute, parse_hctl, tape_nodes,
 };
 use tape::virt::{DRIVE_BASE, SLOT_BASE, STATION_BASE};
 use tape::{
-    Changer, ChangerError, ElementKind, TapeTransport, TransportError, VirtualLibrary,
-    VirtualTape, VolumeOptions,
+    Changer, ChangerError, ElementKind, TapeTransport, TransportError, VirtualLibrary, VirtualTape,
+    VolumeOptions,
 };
 
 type Lib = VirtualLibrary<Cursor<Vec<u8>>>;
@@ -35,9 +35,27 @@ fn lib() -> Lib {
 fn moves_between_slots_drives_and_stations() {
     let mut l = lib();
     let elems = l.read_element_status().unwrap();
-    assert_eq!(elems.iter().filter(|e| e.kind == ElementKind::Storage).count(), 4);
-    assert_eq!(elems.iter().filter(|e| e.kind == ElementKind::Drive).count(), 2);
-    assert_eq!(elems.iter().filter(|e| e.kind == ElementKind::ImportExport).count(), 1);
+    assert_eq!(
+        elems
+            .iter()
+            .filter(|e| e.kind == ElementKind::Storage)
+            .count(),
+        4
+    );
+    assert_eq!(
+        elems
+            .iter()
+            .filter(|e| e.kind == ElementKind::Drive)
+            .count(),
+        2
+    );
+    assert_eq!(
+        elems
+            .iter()
+            .filter(|e| e.kind == ElementKind::ImportExport)
+            .count(),
+        1
+    );
     assert_eq!(elems[0].kind, ElementKind::Transport);
     let s1 = elems.iter().find(|e| e.address == SLOT_BASE).unwrap();
     assert_eq!(s1.volume_tag.as_deref(), Some("CTG001"));
@@ -52,16 +70,29 @@ fn moves_between_slots_drives_and_stations() {
     // Still loaded: removal prevented.
     assert!(matches!(
         l.move_medium(DRIVE_BASE, SLOT_BASE + 1),
-        Err(ChangerError::Check { key: 5, asc: 0x53, ascq: 2 })
+        Err(ChangerError::Check {
+            key: 5,
+            asc: 0x53,
+            ascq: 2
+        })
     ));
     l.unload().unwrap();
     let e = l.read_element_status().unwrap();
     let d = e.iter().find(|e| e.address == DRIVE_BASE).unwrap();
     assert_eq!((d.full, d.source), (true, Some(SLOT_BASE + 1)));
     // Full destination, empty source, unknown element.
-    assert!(matches!(l.move_medium(DRIVE_BASE, SLOT_BASE), Err(ChangerError::DestinationFull(_))));
-    assert!(matches!(l.move_medium(SLOT_BASE + 3, SLOT_BASE + 1), Err(ChangerError::SourceEmpty(_))));
-    assert!(matches!(l.move_medium(0x999, SLOT_BASE), Err(ChangerError::NoElement(0x999))));
+    assert!(matches!(
+        l.move_medium(DRIVE_BASE, SLOT_BASE),
+        Err(ChangerError::DestinationFull(_))
+    ));
+    assert!(matches!(
+        l.move_medium(SLOT_BASE + 3, SLOT_BASE + 1),
+        Err(ChangerError::SourceEmpty(_))
+    ));
+    assert!(matches!(
+        l.move_medium(0x999, SLOT_BASE),
+        Err(ChangerError::NoElement(0x999))
+    ));
     l.move_medium(DRIVE_BASE, SLOT_BASE + 1).unwrap();
 
     // Second drive, then out through the station.
@@ -103,18 +134,38 @@ fn model(l: &mut Lib) -> MediaLibrary {
 fn categories_and_their_rules() {
     let mut l = lib();
     let mut m = model(&mut l);
-    let all: Vec<_> = m.cartridges().map(|c| (c.id.as_str(), c.category.clone())).collect();
+    let all: Vec<_> = m
+        .cartridges()
+        .map(|c| (c.id.as_str(), c.category.clone()))
+        .collect();
     assert_eq!(
         all,
-        [("CTG001", Category::Insert), ("CTG002", Category::Insert), ("CTG003", Category::Insert)]
+        [
+            ("CTG001", Category::Insert),
+            ("CTG002", Category::Insert),
+            ("CTG003", Category::Insert)
+        ]
     );
     // ADDTAPCTG: only from *INSERT, only to an assignable category.
     m.add("CTG001", Category::Share400).unwrap();
-    assert!(matches!(m.add("CTG001", Category::NoShare), Err(LibraryError::Category { .. })));
-    assert!(matches!(m.add("CTG002", Category::Eject), Err(LibraryError::BadCategory(_))));
-    assert!(matches!(m.add("CTG002", Category::SysGen), Err(LibraryError::BadCategory(_))));
-    assert!(matches!(m.add("NOSUCH", Category::Nl), Err(LibraryError::NotFound(_))));
-    m.add("CTG002", Category::parse("PAYROLL").unwrap()).unwrap();
+    assert!(matches!(
+        m.add("CTG001", Category::NoShare),
+        Err(LibraryError::Category { .. })
+    ));
+    assert!(matches!(
+        m.add("CTG002", Category::Eject),
+        Err(LibraryError::BadCategory(_))
+    ));
+    assert!(matches!(
+        m.add("CTG002", Category::SysGen),
+        Err(LibraryError::BadCategory(_))
+    ));
+    assert!(matches!(
+        m.add("NOSUCH", Category::Nl),
+        Err(LibraryError::NotFound(_))
+    ));
+    m.add("CTG002", Category::parse("PAYROLL").unwrap())
+        .unwrap();
     m.add("CTG003", Category::Cnv).unwrap();
     // CHGTAPCTG.
     m.change("CTG001", Category::NoShare).unwrap();
@@ -130,7 +181,10 @@ fn categories_and_their_rules() {
     let mut s = MediaLibrary::new("TAPMLB02", Vec::new(), true);
     s.sync(&l.read_element_status().unwrap());
     assert!(s.cartridges().all(|c| c.category == Category::SysGen));
-    assert!(matches!(s.add("CTG001", Category::Nl), Err(LibraryError::SysGen(_))));
+    assert!(matches!(
+        s.add("CTG001", Category::Nl),
+        Err(LibraryError::SysGen(_))
+    ));
 }
 
 #[test]
@@ -138,7 +192,10 @@ fn volume_selection_and_its_moves() {
     let mut l = lib();
     let mut m = model(&mut l);
     // *INSERT cartridges cannot be mounted by VOL.
-    assert!(matches!(m.select("CTG001"), Err(LibraryError::Category { .. })));
+    assert!(matches!(
+        m.select("CTG001"),
+        Err(LibraryError::Category { .. })
+    ));
     m.add("CTG001", Category::NoShare).unwrap();
     m.add("CTG002", Category::Share400).unwrap();
     m.add("CTG003", Category::Cnv).unwrap();
@@ -146,17 +203,35 @@ fn volume_selection_and_its_moves() {
     // Only TAP01 is allocated.
     let s = m.select("CTG001").unwrap();
     assert_eq!(s.drive, "TAP01");
-    assert_eq!(s.moves, [Move { from: SLOT_BASE, to: DRIVE_BASE }]);
+    assert_eq!(
+        s.moves,
+        [Move {
+            from: SLOT_BASE,
+            to: DRIVE_BASE
+        }]
+    );
     execute(&mut l, &s.moves).unwrap();
     m.sync(&l.read_element_status().unwrap());
-    assert_eq!(m.cartridge("CTG001").unwrap().location, Location::Drive(DRIVE_BASE));
+    assert_eq!(
+        m.cartridge("CTG001").unwrap().location,
+        Location::Drive(DRIVE_BASE)
+    );
     assert_eq!(m.select("CTG001").unwrap().moves, []);
 
     // Another volume: the first goes home, the second comes in.
     let s = m.select("CTG002").unwrap();
     assert_eq!(
         s.moves,
-        [Move { from: DRIVE_BASE, to: SLOT_BASE }, Move { from: SLOT_BASE + 1, to: DRIVE_BASE }]
+        [
+            Move {
+                from: DRIVE_BASE,
+                to: SLOT_BASE
+            },
+            Move {
+                from: SLOT_BASE + 1,
+                to: DRIVE_BASE
+            }
+        ]
     );
     l.unload().unwrap();
     execute(&mut l, &s.moves).unwrap();
@@ -174,11 +249,23 @@ fn volume_selection_and_its_moves() {
     l.select_drive(1).unwrap();
     l.unload().unwrap();
     let back = m.release("TAP02").unwrap();
-    assert_eq!(back, [Move { from: DRIVE_BASE + 1, to: STATION_BASE }]);
+    assert_eq!(
+        back,
+        [Move {
+            from: DRIVE_BASE + 1,
+            to: STATION_BASE
+        }]
+    );
     assert_eq!(m.cartridge("CTG003").unwrap().category, Category::Eject);
     execute(&mut l, &back).unwrap();
     // Others go home.
-    assert_eq!(m.release("TAP01").unwrap(), [Move { from: DRIVE_BASE, to: SLOT_BASE + 1 }]);
+    assert_eq!(
+        m.release("TAP01").unwrap(),
+        [Move {
+            from: DRIVE_BASE,
+            to: SLOT_BASE + 1
+        }]
+    );
 
     m.drives[0].allocation = Allocation::Deallocated;
     m.drives[1].allocation = Allocation::Deallocated;
@@ -194,7 +281,13 @@ fn rmvtapctg_ejects() {
     let mut m = model(&mut l);
     m.add("CTG003", Category::NoShare).unwrap();
     let moves = m.remove("CTG003").unwrap();
-    assert_eq!(moves, [Move { from: SLOT_BASE + 2, to: STATION_BASE }]);
+    assert_eq!(
+        moves,
+        [Move {
+            from: SLOT_BASE + 2,
+            to: STATION_BASE
+        }]
+    );
     assert_eq!(m.cartridge("CTG003").unwrap().category, Category::Eject);
     execute(&mut l, &moves).unwrap();
     // The station is now full: the next one stays in its slot.
@@ -222,7 +315,9 @@ fn scanned(kind: ResourceKind, node: &str, hctl: &str, serial: &str) -> Scanned 
 
 #[test]
 fn resource_names() {
-    let entries = ["nst0", "st1", "st0", "st0a", "st0l", "st10", "nst1a", "st2m", "st2"];
+    let entries = [
+        "nst0", "st1", "st0", "st0a", "st0l", "st10", "nst1a", "st2m", "st2",
+    ];
     assert_eq!(tape_nodes(&entries), ["st0", "st1", "st2", "st10"]);
     assert_eq!(parse_hctl("2:0:1:0"), Some([2, 0, 1, 0]));
     assert_eq!(parse_hctl("2:0:1"), None);
@@ -234,7 +329,10 @@ fn resource_names() {
         scanned(ResourceKind::Tape, "st0", "3:0:1:0", "XYZ001"),
         scanned(ResourceKind::Tape, "st2", "1:0:0:0", "XYZ003"),
     ];
-    let names: Vec<_> = assign(&scan, &[]).into_iter().map(|r| (r.name, r.device.node)).collect();
+    let names: Vec<_> = assign(&scan, &[])
+        .into_iter()
+        .map(|r| (r.name, r.device.node))
+        .collect();
     assert_eq!(
         names,
         [
@@ -253,7 +351,10 @@ fn resource_names() {
         ("XYZ001".to_string(), "TAP01".to_string()),
         ("LIB001".to_string(), "TAPMLB03".to_string()),
     ];
-    let names: Vec<_> = assign(&scan, &known).into_iter().map(|r| (r.name, r.device.node)).collect();
+    let names: Vec<_> = assign(&scan, &known)
+        .into_iter()
+        .map(|r| (r.name, r.device.node))
+        .collect();
     assert_eq!(
         names,
         [
@@ -263,4 +364,20 @@ fn resource_names() {
             ("TAPMLB03".into(), "sg4".into()),
         ]
     );
+}
+
+#[test]
+fn bar_codes_give_six_character_cartridge_ids() {
+    assert_eq!(tape::device::cartridge_id("E01001L5"), "E01001");
+    assert_eq!(tape::device::cartridge_id("VOL1"), "VOL1");
+    let elems = [tape::Element {
+        kind: ElementKind::Storage,
+        address: SLOT_BASE,
+        full: true,
+        volume_tag: Some("E01001L5".into()),
+        source: None,
+    }];
+    let mut m = MediaLibrary::new("TAPMLB01", Vec::new(), false);
+    m.sync(&elems);
+    assert!(m.cartridge("E01001").is_some());
 }

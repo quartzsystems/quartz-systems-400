@@ -261,9 +261,10 @@ impl MediaLibrary {
                 ElementKind::ImportExport => self.stations.push((e.address, e.full)),
                 ElementKind::Drive | ElementKind::Transport => {}
             }
-            let Some(tag) = e.volume_tag.as_ref().filter(|_| e.full) else {
+            let Some(tag) = e.volume_tag.as_deref().filter(|_| e.full) else {
                 continue;
             };
+            let tag = &cartridge_id(tag).to_string();
             let location = match e.kind {
                 ElementKind::Storage => Location::Slot(e.address),
                 ElementKind::Drive => Location::Drive(e.address),
@@ -273,7 +274,11 @@ impl MediaLibrary {
             if let Some(d) = self.drives.iter_mut().find(|d| d.address == e.address) {
                 d.cartridge = Some(tag.clone());
             }
-            let default = if self.sysgen { Category::SysGen } else { Category::Insert };
+            let default = if self.sysgen {
+                Category::SysGen
+            } else {
+                Category::Insert
+            };
             let c = self.cartridges.entry(tag.clone()).or_insert(Cartridge {
                 id: tag.clone(),
                 category: default,
@@ -456,10 +461,19 @@ impl MediaLibrary {
             c.category = Category::Eject;
             s
         } else {
-            c.home.or(free_slot).ok_or(LibraryError::NoSpace("storage"))?
+            c.home
+                .or(free_slot)
+                .ok_or(LibraryError::NoSpace("storage"))?
         };
         Ok(vec![Move { from, to }])
     }
+}
+
+/// The cartridge identifier for a volume tag: its first six characters
+/// (an LTO bar code `E01001L5` is cartridge `E01001`).
+#[must_use]
+pub fn cartridge_id(tag: &str) -> &str {
+    tag.char_indices().nth(6).map_or(tag, |(i, _)| &tag[..i])
 }
 
 /// Run moves on a changer.

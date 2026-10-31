@@ -7,6 +7,7 @@
 
 use super::{VolumeProvider, VolumeRequest};
 use crate::TapeError;
+use crate::device::cartridge::cartridge_id;
 use crate::transport::{Changer, ChangerError, ElementKind, TapeTransport, TransportError};
 
 /// A provider with no further volumes: a multi-volume request fails
@@ -65,7 +66,11 @@ impl<L: Changer + TapeTransport + ?Sized> VolumeProvider<L> for LibraryProvider 
         }
         let from = elems
             .iter()
-            .find(|e| e.full && e.kind != ElementKind::Drive && e.volume_tag.as_ref() == Some(&want))
+            .find(|e| {
+                e.full
+                    && e.kind != ElementKind::Drive
+                    && e.volume_tag.as_deref().map(cartridge_id) == Some(want.as_str())
+            })
             .map(|e| e.address)
             .ok_or_else(|| TapeError::WrongVolume {
                 expected: want.clone(),

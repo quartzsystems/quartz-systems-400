@@ -74,7 +74,10 @@ impl<B: Read + Write + Seek> VirtualLibrary<B> {
     /// Put a volume in a storage slot (0-based), as the catalog loads it.
     pub fn insert(&mut self, slot: usize, tape: VirtualTape<B>) -> Result<u16, ChangerError> {
         let addr = address(SLOT_BASE, slot);
-        let cell = self.slots.get_mut(slot).ok_or(ChangerError::NoElement(addr))?;
+        let cell = self
+            .slots
+            .get_mut(slot)
+            .ok_or(ChangerError::NoElement(addr))?;
         if cell.is_some() {
             return Err(ChangerError::DestinationFull(addr));
         }

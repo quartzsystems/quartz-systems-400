@@ -33,7 +33,16 @@ fn reopen(t: Mem) -> Mem {
 
 fn block(seed: u32, len: usize) -> Vec<u8> {
     (0..len)
-        .map(|i| u8::try_from(u32::try_from(i).unwrap().wrapping_mul(31).wrapping_add(seed) % 251).unwrap())
+        .map(|i| {
+            u8::try_from(
+                u32::try_from(i)
+                    .unwrap()
+                    .wrapping_mul(31)
+                    .wrapping_add(seed)
+                    % 251,
+            )
+            .unwrap()
+        })
         .collect()
 }
 
@@ -100,7 +109,10 @@ fn spacing_follows_st() {
     t.bsr(0).unwrap();
     t.rewind().unwrap();
     t.fsr(2).unwrap();
-    assert!(matches!(t.bsr(3), Ok(()) | Err(TransportError::BeginningOfTape)));
+    assert!(matches!(
+        t.bsr(3),
+        Ok(()) | Err(TransportError::BeginningOfTape)
+    ));
     t.eom().unwrap();
     assert!(t.status().unwrap().eod);
 }
@@ -137,7 +149,10 @@ fn stale_frames_never_rejoin_after_an_overwrite() {
     // Append in a new session: blocks after it are still the new ones.
     t.write_block(&block(101, 64)).unwrap();
     let mut t = reopen(t);
-    assert_eq!(drain(&mut t), vec![Some(block(100, 64)), Some(block(101, 64))]);
+    assert_eq!(
+        drain(&mut t),
+        vec![Some(block(100, 64)), Some(block(101, 64))]
+    );
 }
 
 #[test]
@@ -158,7 +173,10 @@ fn a_torn_last_block_is_not_there() {
         // Writing again at the end of data replaces the torn bytes.
         t.write_block(&block(3, 40)).unwrap();
         let mut t = reopen(t);
-        assert_eq!(drain(&mut t), vec![Some(block(1, 300)), None, Some(block(3, 40))]);
+        assert_eq!(
+            drain(&mut t),
+            vec![Some(block(1, 300)), None, Some(block(3, 40))]
+        );
     }
 }
 
@@ -215,14 +233,26 @@ fn write_protect_refuses_writes_and_survives_reopen() {
     let mut t = reopen(t);
     assert!(t.status().unwrap().write_protected);
     t.rewind().unwrap();
-    assert!(matches!(t.write_block(&[1]), Err(TransportError::WriteProtected)));
-    assert!(matches!(t.write_eof(1), Err(TransportError::WriteProtected)));
+    assert!(matches!(
+        t.write_block(&[1]),
+        Err(TransportError::WriteProtected)
+    ));
+    assert!(matches!(
+        t.write_eof(1),
+        Err(TransportError::WriteProtected)
+    ));
     assert!(matches!(t.erase(), Err(TransportError::WriteProtected)));
     assert_eq!(drain(&mut t), vec![Some(block(0, 10))]);
-    let mut wp = VolumeOptions { write_protect: true, ..opts(1 << 20) };
+    let mut wp = VolumeOptions {
+        write_protect: true,
+        ..opts(1 << 20)
+    };
     wp.tag = "WP0001".into();
     let mut t = VirtualTape::create(Cursor::new(Vec::new()), &wp).unwrap();
-    assert!(matches!(t.write_block(&[1]), Err(TransportError::WriteProtected)));
+    assert!(matches!(
+        t.write_block(&[1]),
+        Err(TransportError::WriteProtected)
+    ));
 }
 
 #[test]
@@ -234,10 +264,16 @@ fn unload_block_size_density_and_erase() {
     assert!(matches!(t.rewind(), Err(TransportError::NotLoaded)));
     t.load();
     t.set_block_size(512).unwrap();
-    assert!(matches!(t.write_block(&[0; 100]), Err(TransportError::BlockSize { .. })));
+    assert!(matches!(
+        t.write_block(&[0; 100]),
+        Err(TransportError::BlockSize { .. })
+    ));
     t.write_block(&[0; 512]).unwrap();
     t.set_block_size(0).unwrap();
-    assert!(t.set_block_size(u32::try_from(MAX_BLOCK).unwrap() + 1).is_err());
+    assert!(
+        t.set_block_size(u32::try_from(MAX_BLOCK).unwrap() + 1)
+            .is_err()
+    );
     t.rewind().unwrap();
     t.set_density("*VRT64K").unwrap();
     assert!(t.set_density("TOO LONG DENSITY NAME").is_err());
@@ -248,8 +284,14 @@ fn unload_block_size_density_and_erase() {
     let mut small = vec![0u8; 4];
     t.write_block(&[7; 8]).unwrap();
     t.rewind().unwrap();
-    assert!(matches!(t.read_block(&mut small), Err(TransportError::BlockTooLarge { len: 8, max: 4 })));
-    assert!(matches!(t.write_block(&[]), Err(TransportError::BlockTooLarge { .. })));
+    assert!(matches!(
+        t.read_block(&mut small),
+        Err(TransportError::BlockTooLarge { len: 8, max: 4 })
+    ));
+    assert!(matches!(
+        t.write_block(&[]),
+        Err(TransportError::BlockTooLarge { .. })
+    ));
 }
 
 #[test]
@@ -262,7 +304,10 @@ fn headers_are_checked() {
         Err(TransportError::Format(_))
     ));
     assert!(VirtualTape::open(Cursor::new(vec![0u8; 100])).is_err());
-    assert_eq!(VolumeOptions::imgsiz(1000, "X").capacity, 1000 * 1024 * 1024);
+    assert_eq!(
+        VolumeOptions::imgsiz(1000, "X").capacity,
+        1000 * 1024 * 1024
+    );
 }
 
 /// A table of random-ish sessions: whatever is written and then cut

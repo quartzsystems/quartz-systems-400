@@ -72,6 +72,11 @@ const REQUIRED_Y: &[&str] = &[
     "SCSI",
     "BLK_DEV_SD",
     "CHR_DEV_ST",
+    // Tape: changers through sg, Fibre Channel HBAs.
+    "CHR_DEV_SG",
+    "SCSI_FC_ATTRS",
+    "SCSI_QLA_FC",
+    "SCSI_LPFC",
     "E1000",
     "E1000E",
     "IGB",
@@ -116,6 +121,8 @@ const REQUIRED_N: &[&str] = &[
     "SND",
     "MEDIA_SUPPORT",
     "RTC_HCTOSYS",
+    // Tape and changer nodes must exist when the SCSI scan returns.
+    "SCSI_SCAN_ASYNC",
 ];
 
 /// Parse a `.config` into symbol -> value (`y`, `m`, `n`, numbers, quoted strings).

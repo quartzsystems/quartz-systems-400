@@ -70,12 +70,13 @@ impl<'a, D: TapeTransport + ?Sized> FileReader<'a, D> {
                 let files = scan_files(r.t, code)?;
                 let found = files.iter().find(|f| {
                     r.opts.seq.is_none_or(|s| f.label.file_seq == s)
-                        && r.opts.file_label.as_ref().is_none_or(|l| &f.label.file_id == l)
+                        && r.opts
+                            .file_label
+                            .as_ref()
+                            .is_none_or(|l| &f.label.file_id == l)
                 });
                 let Some(f) = found else {
-                    return Err(TapeError::FileNotFound {
-                        what: r.wanted(),
-                    });
+                    return Err(TapeError::FileNotFound { what: r.wanted() });
                 };
                 seek_header(r.t, f.index)?;
                 let (_, label) = read_pair(r.t, code, &mut r.labels)?.expect("scanned header");
@@ -131,12 +132,10 @@ impl<'a, D: TapeTransport + ?Sized> FileReader<'a, D> {
                     self.done = true;
                 }
                 ReadOutcome::TapeMark if self.opts.unlabeled => self.done = true,
-                ReadOutcome::TapeMark => {
-                    match read_pair(self.t, self.code, &mut self.labels)? {
-                        Some((LabelSet::EndOfVolume, _)) => self.continue_on_next()?,
-                        _ => self.done = true,
-                    }
-                }
+                ReadOutcome::TapeMark => match read_pair(self.t, self.code, &mut self.labels)? {
+                    Some((LabelSet::EndOfVolume, _)) => self.continue_on_next()?,
+                    _ => self.done = true,
+                },
             }
         }
     }

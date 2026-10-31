@@ -197,7 +197,11 @@ impl FileLabel {
         code.put_field(&mut r1, l::H1_CREATED, &created)?;
         code.put_field(&mut r1, l::H1_EXPIRES, &self.expires.to_label())?;
         code.put_field(&mut r1, l::H1_SECURITY, "0")?;
-        let blocks = if set == LabelSet::Header { 0 } else { self.block_count };
+        let blocks = if set == LabelSet::Header {
+            0
+        } else {
+            self.block_count
+        };
         if blocks >= 10_000_000_000 {
             return Err(LabelError::Field(blocks.to_string()));
         }
@@ -216,7 +220,11 @@ impl FileLabel {
             code.put_num(&mut r2, l::H2_BLOCK_LEN, u64::from(self.block_length))?;
         }
         code.put_num(&mut r2, l::H2_RECORD_LEN, u64::from(self.record_length))?;
-        code.put_field(&mut r2, l::H2_SWITCH, if self.continued { "1" } else { "0" })?;
+        code.put_field(
+            &mut r2,
+            l::H2_SWITCH,
+            if self.continued { "1" } else { "0" },
+        )?;
         code.put_field(&mut r2, l::H2_JOB, &self.job_step)?;
         let attr = match self.record_format {
             RecordFormat::Undefined => "",
@@ -249,7 +257,11 @@ impl FileLabel {
                     LabelSet::EndOfFile => "EOF2",
                     LabelSet::EndOfVolume => "EOV2",
                 },
-                found: if r2.len() >= 4 { ident_of(r2, code) } else { String::new() },
+                found: if r2.len() >= 4 {
+                    ident_of(r2, code)
+                } else {
+                    String::new()
+                },
             });
         }
         let n32 = |rec: &[u8], f| -> Result<u32, LabelError> {
@@ -276,8 +288,7 @@ impl FileLabel {
                 block_count: code.get_num(r1, l::H1_BLOCKS_HIGH)? * 1_000_000
                     + code.get_num(r1, l::H1_BLOCKS)?,
                 system_code: code.get_field(r1, l::H1_SYSTEM),
-                record_format: RecordFormat::of(&format)
-                    .ok_or(LabelError::Field(format))?,
+                record_format: RecordFormat::of(&format).ok_or(LabelError::Field(format))?,
                 block_length,
                 record_length: n32(r2, l::H2_RECORD_LEN)?,
                 continued: code.get_field(r2, l::H2_SWITCH) == "1",

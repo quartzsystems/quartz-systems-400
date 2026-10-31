@@ -100,7 +100,9 @@ pub struct Header {
 
 fn ascii(out: &mut [u8], s: &str) -> Result<(), TransportError> {
     if s.len() > out.len() || !s.bytes().all(|b| (0x21..0x7f).contains(&b)) {
-        return Err(TransportError::Format(format!("{s:?} does not fit the header")));
+        return Err(TransportError::Format(format!(
+            "{s:?} does not fit the header"
+        )));
     }
     out.fill(b' ');
     out[..s.len()].copy_from_slice(s.as_bytes());
@@ -129,9 +131,19 @@ impl Header {
         let mut b = [0u8; HEADER_LEN];
         b[..8].copy_from_slice(MAGIC);
         put(&mut b, H_VERSION, self.version.to_le_bytes());
-        let flags = if self.write_protect { FLAG_WRITE_PROTECT } else { 0 };
+        let flags = if self.write_protect {
+            FLAG_WRITE_PROTECT
+        } else {
+            0
+        };
         put(&mut b, H_FLAGS, flags.to_le_bytes());
-        put(&mut b, H_LEN, u32::try_from(HEADER_LEN).expect("header length").to_le_bytes());
+        put(
+            &mut b,
+            H_LEN,
+            u32::try_from(HEADER_LEN)
+                .expect("header length")
+                .to_le_bytes(),
+        );
         put(&mut b, H_CAPACITY, self.capacity.to_le_bytes());
         put(&mut b, H_EW, self.early_warning.to_le_bytes());
         ascii(slice(&mut b, H_DENSITY), &self.density)?;

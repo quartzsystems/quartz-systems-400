@@ -27,8 +27,25 @@ pub const STATUS_TIMEOUT_MS: u32 = 120_000;
 /// The MOVE MEDIUM command block.
 #[must_use]
 pub fn move_medium_cdb(transport: u16, from: u16, to: u16) -> [u8; 12] {
-    let (t, f, d) = (transport.to_be_bytes(), from.to_be_bytes(), to.to_be_bytes());
-    [MOVE_MEDIUM, 0, t[0], t[1], f[0], f[1], d[0], d[1], 0, 0, 0, 0]
+    let (t, f, d) = (
+        transport.to_be_bytes(),
+        from.to_be_bytes(),
+        to.to_be_bytes(),
+    );
+    [
+        MOVE_MEDIUM,
+        0,
+        t[0],
+        t[1],
+        f[0],
+        f[1],
+        d[0],
+        d[1],
+        0,
+        0,
+        0,
+        0,
+    ]
 }
 
 /// The READ ELEMENT STATUS command block: all element types, volume
@@ -36,7 +53,20 @@ pub fn move_medium_cdb(transport: u16, from: u16, to: u16) -> [u8; 12] {
 #[must_use]
 pub fn read_element_status_cdb(allocation: usize) -> [u8; 12] {
     let a = u32::try_from(allocation).expect("allocation").to_be_bytes();
-    [READ_ELEMENT_STATUS, 0x10, 0, 0, 0xff, 0xff, 0, a[1], a[2], a[3], 0, 0]
+    [
+        READ_ELEMENT_STATUS,
+        0x10,
+        0,
+        0,
+        0xff,
+        0xff,
+        0,
+        a[1],
+        a[2],
+        a[3],
+        0,
+        0,
+    ]
 }
 
 fn be16(b: &[u8], at: usize) -> u16 {
@@ -61,8 +91,8 @@ pub fn parse_element_status(data: &[u8]) -> Result<Vec<Element>, ChangerError> {
             return Err(bad("short page header"));
         }
         let page = &data[at..];
-        let kind = ElementKind::from_code(page[0] & 0x0f)
-            .ok_or_else(|| bad("unknown element type"))?;
+        let kind =
+            ElementKind::from_code(page[0] & 0x0f).ok_or_else(|| bad("unknown element type"))?;
         let pvoltag = page[1] & 0x80 != 0;
         let dlen = usize::from(be16(page, 2));
         let bytes = be24(page, 5);
@@ -130,7 +160,9 @@ impl<I: SgIoctl> SgChanger<I> {
                 reply.host_status, reply.driver_status
             ))));
         }
-        if reply.status == 0 { Ok(()) } else {
+        if reply.status == 0 {
+            Ok(())
+        } else {
             let (key, asc, ascq) = sense_codes(&reply.sense).unwrap_or((0, 0, 0));
             Err(match (key, asc, ascq) {
                 (0x5, 0x3b, 0x0e) => ChangerError::SourceEmpty(from),
@@ -144,7 +176,9 @@ impl<I: SgIoctl> SgChanger<I> {
 
 impl<I: SgIoctl> Changer for SgChanger<I> {
     fn move_medium(&mut self, from: u16, to: u16) -> Result<(), ChangerError> {
-        let transport = if let Some(t) = self.transport { t } else {
+        let transport = if let Some(t) = self.transport {
+            t
+        } else {
             self.read_element_status()?;
             self.transport.unwrap_or(0)
         };

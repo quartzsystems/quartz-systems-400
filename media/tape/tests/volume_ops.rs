@@ -5,15 +5,19 @@
 //! The label layer over virtual volumes: INZTAP, files at SEQNBR, ENDOPT,
 //! CHKTAP, DUPTAP, the CPYTOTAP/CPYFRMTAP data, *NL and multi-volume.
 
-#![allow(clippy::many_single_char_names, clippy::similar_names, clippy::type_complexity)]
+#![allow(
+    clippy::many_single_char_names,
+    clippy::similar_names,
+    clippy::type_complexity
+)]
 
 use std::io::Cursor;
 
 use tape::label::{Code, Date, Expiry, FileLabel, LabelSet, RecordFormat};
 use tape::volume::{
     Check, ChkOptions, DupOptions, DupSeq, FileReader, FileWriter, InzOptions, LibraryProvider,
-    NoMoreVolumes, ReadOptions, ToSeq, VolumeKind, WriteOptions, blocks_to_records, chktap,
-    duptap, inztap, labels, records_to_blocks,
+    NoMoreVolumes, ReadOptions, ToSeq, VolumeKind, WriteOptions, blocks_to_records, chktap, duptap,
+    inztap, labels, records_to_blocks,
 };
 use tape::{
     Changer, EndOpt, MAX_BLOCK, SeqNbr, TapeError, TapeTransport, VirtualLibrary, VirtualTape,
@@ -129,8 +133,20 @@ fn inztap_labels_and_checks() {
     assert!(l.files.is_empty());
 
     // Two files, the second protected.
-    write(&mut t, &mut NoMoreVolumes, wopts(SeqNbr::End, label("A", Expiry::None)), &data(1, 2, 100)).unwrap();
-    write(&mut t, &mut NoMoreVolumes, wopts(SeqNbr::End, label("B", Expiry::Perm)), &data(2, 2, 100)).unwrap();
+    write(
+        &mut t,
+        &mut NoMoreVolumes,
+        wopts(SeqNbr::End, label("A", Expiry::None)),
+        &data(1, 2, 100),
+    )
+    .unwrap();
+    write(
+        &mut t,
+        &mut NoMoreVolumes,
+        wopts(SeqNbr::End, label("B", Expiry::Perm)),
+        &data(2, 2, 100),
+    )
+    .unwrap();
 
     let again = |check, vol: Option<&str>| InzOptions {
         new_vol: Some("VOL002".into()),
@@ -152,8 +168,18 @@ fn inztap_labels_and_checks() {
     assert!(l.files.is_empty());
 
     // NEWVOL(*NONE) leaves it unlabeled; CODE(*ASCII); CLEAR; DENSITY.
-    inztap(&mut t, &InzOptions { check: Check::No, ..InzOptions::default() }).unwrap();
-    assert_eq!(labels(&mut t, None, EndOpt::Rewind).unwrap().kind, VolumeKind::Unlabeled);
+    inztap(
+        &mut t,
+        &InzOptions {
+            check: Check::No,
+            ..InzOptions::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        labels(&mut t, None, EndOpt::Rewind).unwrap().kind,
+        VolumeKind::Unlabeled
+    );
     inztap(
         &mut t,
         &InzOptions {
@@ -170,12 +196,27 @@ fn inztap_labels_and_checks() {
     assert!(!t.status().unwrap().loaded);
     t.load();
     let l = labels(&mut t, Some("ASC001"), EndOpt::Rewind).unwrap();
-    assert!(matches!(l.kind, VolumeKind::Labeled { code: Code::Ascii, .. }));
+    assert!(matches!(
+        l.kind,
+        VolumeKind::Labeled {
+            code: Code::Ascii,
+            ..
+        }
+    ));
     assert_eq!(t.status().unwrap().density, "*VRT64K");
 
     // Bad parameters and write protection.
-    let bad = InzOptions { new_vol: Some("TOOLONG1".into()), ..InzOptions::default() };
-    assert!(matches!(inztap(&mut t, &bad), Err(TapeError::Parameter { param: "NEWVOL", .. })));
+    let bad = InzOptions {
+        new_vol: Some("TOOLONG1".into()),
+        ..InzOptions::default()
+    };
+    assert!(matches!(
+        inztap(&mut t, &bad),
+        Err(TapeError::Parameter {
+            param: "NEWVOL",
+            ..
+        })
+    ));
     t.set_write_protect(true).unwrap();
     let e = inztap(&mut t, &again(Check::No, None)).unwrap_err();
     assert_eq!(e.message_id(), "CPF6768");
@@ -187,12 +228,29 @@ fn files_at_seqnbr_and_active_files() {
     inz(&mut t, "VOL001");
     let p = &mut NoMoreVolumes;
     for (i, id) in ["ONE", "TWO", "THREE"].iter().enumerate() {
-        let s = write(&mut t, p, wopts(SeqNbr::End, label(id, Expiry::None)), &data(10 * u8::try_from(i).unwrap(), 3, 500)).unwrap();
+        let s = write(
+            &mut t,
+            p,
+            wopts(SeqNbr::End, label(id, Expiry::None)),
+            &data(10 * u8::try_from(i).unwrap(), 3, 500),
+        )
+        .unwrap();
         assert_eq!(s.file_seq, u32::try_from(i).unwrap() + 1);
         assert_eq!(s.volumes, vec!["VOL001".to_string()]);
     }
     let l = labels(&mut t, None, EndOpt::Rewind).unwrap();
-    let ids: Vec<_> = l.files.iter().map(|f| (f.label.file_seq, f.label.file_id.clone(), f.label.block_count, f.trailer)).collect();
+    let ids: Vec<_> = l
+        .files
+        .iter()
+        .map(|f| {
+            (
+                f.label.file_seq,
+                f.label.file_id.clone(),
+                f.label.block_count,
+                f.trailer,
+            )
+        })
+        .collect();
     assert_eq!(
         ids,
         vec![
@@ -207,19 +265,40 @@ fn files_at_seqnbr_and_active_files() {
     let (lab, got, _) = read(&mut t, p, seq(2)).unwrap();
     assert_eq!(lab.file_id, "TWO");
     assert_eq!(got, data(10, 3, 500));
-    let by_label = ReadOptions { file_label: Some("THREE".into()), ..ReadOptions::default() };
+    let by_label = ReadOptions {
+        file_label: Some("THREE".into()),
+        ..ReadOptions::default()
+    };
     assert_eq!(read(&mut t, p, by_label).unwrap().1, data(20, 3, 500));
 
     // Overwriting file 2 loses file 3.
-    write(&mut t, p, wopts(SeqNbr::Number(2), label("NEW2", Expiry::Perm)), &data(99, 1, 10)).unwrap();
+    write(
+        &mut t,
+        p,
+        wopts(SeqNbr::Number(2), label("NEW2", Expiry::Perm)),
+        &data(99, 1, 10),
+    )
+    .unwrap();
     let l = labels(&mut t, None, EndOpt::Rewind).unwrap();
     assert_eq!(l.files.len(), 2);
     assert_eq!(l.files[1].label.file_id, "NEW2");
     assert_eq!(read(&mut t, p, seq(1)).unwrap().1, data(0, 3, 500));
     // A gap is refused; so is overwriting the protected file.
-    let e = write(&mut t, p, wopts(SeqNbr::Number(4), label("GAP", Expiry::None)), &[]).unwrap_err();
+    let e = write(
+        &mut t,
+        p,
+        wopts(SeqNbr::Number(4), label("GAP", Expiry::None)),
+        &[],
+    )
+    .unwrap_err();
     assert!(matches!(e, TapeError::FileNotFound { .. }));
-    let e = write(&mut t, p, wopts(SeqNbr::Number(1), label("X", Expiry::None)), &[]).unwrap_err();
+    let e = write(
+        &mut t,
+        p,
+        wopts(SeqNbr::Number(1), label("X", Expiry::None)),
+        &[],
+    )
+    .unwrap_err();
     assert!(matches!(e, TapeError::ActiveFile { seq: 2, .. }), "{e}");
     let mut allowed = wopts(SeqNbr::Number(1), label("X", Expiry::None));
     allowed.allow_active = true;
@@ -228,8 +307,14 @@ fn files_at_seqnbr_and_active_files() {
     // Wrong volume, file not found.
     let mut wrong = wopts(SeqNbr::End, label("Y", Expiry::None));
     wrong.vols = vec!["OTHER".into()];
-    assert!(matches!(write(&mut t, p, wrong, &[]), Err(TapeError::WrongVolume { .. })));
-    assert!(matches!(read(&mut t, p, seq(7)), Err(TapeError::FileNotFound { .. })));
+    assert!(matches!(
+        write(&mut t, p, wrong, &[]),
+        Err(TapeError::WrongVolume { .. })
+    ));
+    assert!(matches!(
+        read(&mut t, p, seq(7)),
+        Err(TapeError::FileNotFound { .. })
+    ));
 }
 
 #[test]
@@ -250,7 +335,11 @@ fn end_options() {
     write(&mut t, &mut NoMoreVolumes, o, &data(1, 2, 10)).unwrap();
     assert!(!t.status().unwrap().loaded);
     t.load();
-    let r = ReadOptions { seq: Some(3), end_opt: EndOpt::Leave, ..ReadOptions::default() };
+    let r = ReadOptions {
+        seq: Some(3),
+        end_opt: EndOpt::Leave,
+        ..ReadOptions::default()
+    };
     read(&mut t, &mut NoMoreVolumes, r).unwrap();
     assert!(!t.status().unwrap().bot);
     assert_eq!(labels(&mut t, None, EndOpt::Rewind).unwrap().files.len(), 3);
@@ -261,24 +350,65 @@ fn chktap_finds_files() {
     let mut t = volume("VOL001", 1 << 22);
     inz(&mut t, "VOL001");
     for id in ["A", "B"] {
-        write(&mut t, &mut NoMoreVolumes, wopts(SeqNbr::End, label(id, Expiry::None)), &data(1, 1, 10)).unwrap();
+        write(
+            &mut t,
+            &mut NoMoreVolumes,
+            wopts(SeqNbr::End, label(id, Expiry::None)),
+            &data(1, 1, 10),
+        )
+        .unwrap();
     }
-    let r = chktap(&mut t, &ChkOptions { vol: Some("VOL001".into()), ..ChkOptions::default() }).unwrap();
+    let r = chktap(
+        &mut t,
+        &ChkOptions {
+            vol: Some("VOL001".into()),
+            ..ChkOptions::default()
+        },
+    )
+    .unwrap();
     assert!(r.file.is_none());
-    let r = chktap(&mut t, &ChkOptions { file_label: Some("B".into()), ..ChkOptions::default() }).unwrap();
+    let r = chktap(
+        &mut t,
+        &ChkOptions {
+            file_label: Some("B".into()),
+            ..ChkOptions::default()
+        },
+    )
+    .unwrap();
     assert_eq!(r.file.unwrap().label.file_seq, 2);
-    let o = ChkOptions { seq: Some(SeqNbr::Number(1)), end_opt: EndOpt::Leave, ..ChkOptions::default() };
+    let o = ChkOptions {
+        seq: Some(SeqNbr::Number(1)),
+        end_opt: EndOpt::Leave,
+        ..ChkOptions::default()
+    };
     let r = chktap(&mut t, &o).unwrap();
     assert_eq!(r.file.unwrap().label.file_id, "A");
     assert!(!t.status().unwrap().bot);
-    let o = ChkOptions { seq: Some(SeqNbr::Number(2)), file_label: Some("A".into()), ..ChkOptions::default() };
+    let o = ChkOptions {
+        seq: Some(SeqNbr::Number(2)),
+        file_label: Some("A".into()),
+        ..ChkOptions::default()
+    };
     let e = chktap(&mut t, &o).unwrap_err();
     assert_eq!(e.message_id(), "CPF6790");
-    let o = ChkOptions { seq: Some(SeqNbr::End), end_opt: EndOpt::Unload, ..ChkOptions::default() };
+    let o = ChkOptions {
+        seq: Some(SeqNbr::End),
+        end_opt: EndOpt::Unload,
+        ..ChkOptions::default()
+    };
     chktap(&mut t, &o).unwrap();
     assert!(!t.status().unwrap().loaded);
     t.load();
-    assert!(chktap(&mut t, &ChkOptions { vol: Some("NOPE".into()), ..ChkOptions::default() }).is_err());
+    assert!(
+        chktap(
+            &mut t,
+            &ChkOptions {
+                vol: Some("NOPE".into()),
+                ..ChkOptions::default()
+            }
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -289,7 +419,13 @@ fn duptap_copies_files_and_labels() {
     inz(&mut b, "DST001");
     for (i, id) in ["F1", "F2", "F3"].iter().enumerate() {
         let n = u8::try_from(i).unwrap();
-        write(&mut a, &mut NoMoreVolumes, wopts(SeqNbr::End, label(id, Expiry::None)), &data(n, 4, 300 + usize::from(n))).unwrap();
+        write(
+            &mut a,
+            &mut NoMoreVolumes,
+            wopts(SeqNbr::End, label(id, Expiry::None)),
+            &data(n, 4, 300 + usize::from(n)),
+        )
+        .unwrap();
     }
     let o = DupOptions {
         from_vol: Some("SRC001".into()),
@@ -308,24 +444,50 @@ fn duptap_copies_files_and_labels() {
         assert_eq!(d.label, want);
     }
     for n in 1..=3 {
-        assert_eq!(read(&mut a, &mut NoMoreVolumes, seq(n)).unwrap().1, read(&mut b, &mut NoMoreVolumes, seq(n)).unwrap().1);
+        assert_eq!(
+            read(&mut a, &mut NoMoreVolumes, seq(n)).unwrap().1,
+            read(&mut b, &mut NoMoreVolumes, seq(n)).unwrap().1
+        );
     }
     // FROMSEQNBR(2 3) TOSEQNBR(*END) appends; TOSEQNBR(2) overwrites.
-    let o2 = DupOptions { from_seq: DupSeq::Range(2, 3), to_seq: ToSeq::End, ..o.clone() };
+    let o2 = DupOptions {
+        from_seq: DupSeq::Range(2, 3),
+        to_seq: ToSeq::End,
+        ..o.clone()
+    };
     duptap(&mut a, &mut NoMoreVolumes, &mut b, &mut NoMoreVolumes, &o2).unwrap();
-    let ids: Vec<_> = labels(&mut b, None, EndOpt::Rewind).unwrap().files.iter().map(|f| f.label.file_id.clone()).collect();
+    let ids: Vec<_> = labels(&mut b, None, EndOpt::Rewind)
+        .unwrap()
+        .files
+        .iter()
+        .map(|f| f.label.file_id.clone())
+        .collect();
     assert_eq!(ids, ["F1", "F2", "F3", "F2", "F3"]);
-    let o3 = DupOptions { from_seq: DupSeq::Range(3, 3), to_seq: ToSeq::Number(2), ..o.clone() };
+    let o3 = DupOptions {
+        from_seq: DupSeq::Range(3, 3),
+        to_seq: ToSeq::Number(2),
+        ..o.clone()
+    };
     duptap(&mut a, &mut NoMoreVolumes, &mut b, &mut NoMoreVolumes, &o3).unwrap();
-    let ids: Vec<_> = labels(&mut b, None, EndOpt::Rewind).unwrap().files.iter().map(|f| f.label.file_id.clone()).collect();
+    let ids: Vec<_> = labels(&mut b, None, EndOpt::Rewind)
+        .unwrap()
+        .files
+        .iter()
+        .map(|f| f.label.file_id.clone())
+        .collect();
     assert_eq!(ids, ["F1", "F3"]);
-    let o4 = DupOptions { from_seq: DupSeq::Range(8, 9), ..o };
+    let o4 = DupOptions {
+        from_seq: DupSeq::Range(8, 9),
+        ..o
+    };
     assert!(duptap(&mut a, &mut NoMoreVolumes, &mut b, &mut NoMoreVolumes, &o4).is_err());
 }
 
 #[test]
 fn records_through_tape_files() {
-    let recs: Vec<Vec<u8>> = (0..37u8).map(|i| vec![b'A' + i % 26; usize::from(i % 9) + 1]).collect();
+    let recs: Vec<Vec<u8>> = (0..37u8)
+        .map(|i| vec![b'A' + i % 26; usize::from(i % 9) + 1])
+        .collect();
     let refs = || recs.iter().map(Vec::as_slice);
 
     let f = records_to_blocks(refs(), RecordFormat::Fixed, 10, 40, 0x40).unwrap();
@@ -339,12 +501,18 @@ fn records_through_tape_files() {
     }
 
     let v = records_to_blocks(refs(), RecordFormat::Variable, 14, 64, 0).unwrap();
-    assert!(v.iter().all(|b| b.len() <= 64 && usize::from(u16::from_be_bytes([b[0], b[1]])) == b.len()));
+    assert!(
+        v.iter()
+            .all(|b| b.len() <= 64 && usize::from(u16::from_be_bytes([b[0], b[1]])) == b.len())
+    );
     let back = blocks_to_records(v.iter().map(Vec::as_slice), RecordFormat::Variable, 14).unwrap();
     assert_eq!(back, recs);
 
     let u = records_to_blocks(refs(), RecordFormat::Undefined, 9, 9, 0).unwrap();
-    assert_eq!(blocks_to_records(u.iter().map(Vec::as_slice), RecordFormat::Undefined, 9).unwrap(), recs);
+    assert_eq!(
+        blocks_to_records(u.iter().map(Vec::as_slice), RecordFormat::Undefined, 9).unwrap(),
+        recs
+    );
 
     assert!(records_to_blocks([&[0u8; 11][..]], RecordFormat::Fixed, 10, 40, 0).is_err());
     assert!(records_to_blocks([&[0u8; 11][..]], RecordFormat::Variable, 14, 64, 0).is_err());
@@ -360,40 +528,77 @@ fn records_through_tape_files() {
     };
     write(&mut t, &mut NoMoreVolumes, wopts(SeqNbr::End, l), &v).unwrap();
     let (got_label, blocks, _) = read(&mut t, &mut NoMoreVolumes, seq(1)).unwrap();
-    assert_eq!((got_label.record_format, got_label.record_length), (RecordFormat::Variable, 14));
-    let back = blocks_to_records(blocks.iter().map(Vec::as_slice), got_label.record_format, 14).unwrap();
+    assert_eq!(
+        (got_label.record_format, got_label.record_length),
+        (RecordFormat::Variable, 14)
+    );
+    let back = blocks_to_records(
+        blocks.iter().map(Vec::as_slice),
+        got_label.record_format,
+        14,
+    )
+    .unwrap();
     assert_eq!(back, recs);
 }
 
 #[test]
 fn unlabeled_volumes() {
     let mut t = volume("NL0001", 1 << 22);
-    inztap(&mut t, &InzOptions { check: Check::No, ..InzOptions::default() }).unwrap();
+    inztap(
+        &mut t,
+        &InzOptions {
+            check: Check::No,
+            ..InzOptions::default()
+        },
+    )
+    .unwrap();
     let mut nl = wopts(SeqNbr::End, FileLabel::default());
     nl.unlabeled = true;
     for n in 0..3 {
         let s = write(&mut t, &mut NoMoreVolumes, nl.clone(), &data(n, 2, 64)).unwrap();
         assert_eq!(s.file_seq, u32::from(n) + 1);
     }
-    let r = |s| ReadOptions { seq: Some(s), unlabeled: true, ..ReadOptions::default() };
-    assert_eq!(read(&mut t, &mut NoMoreVolumes, r(2)).unwrap().1, data(1, 2, 64));
-    assert_eq!(read(&mut t, &mut NoMoreVolumes, r(3)).unwrap().1, data(2, 2, 64));
+    let r = |s| ReadOptions {
+        seq: Some(s),
+        unlabeled: true,
+        ..ReadOptions::default()
+    };
+    assert_eq!(
+        read(&mut t, &mut NoMoreVolumes, r(2)).unwrap().1,
+        data(1, 2, 64)
+    );
+    assert_eq!(
+        read(&mut t, &mut NoMoreVolumes, r(3)).unwrap().1,
+        data(2, 2, 64)
+    );
     // Rewrite file 2: file 3 is gone.
     let mut two = nl.clone();
     two.seq = SeqNbr::Number(2);
     write(&mut t, &mut NoMoreVolumes, two, &data(50, 1, 8)).unwrap();
-    assert_eq!(read(&mut t, &mut NoMoreVolumes, r(2)).unwrap().1, data(50, 1, 8));
+    assert_eq!(
+        read(&mut t, &mut NoMoreVolumes, r(2)).unwrap().1,
+        data(50, 1, 8)
+    );
     assert!(read(&mut t, &mut NoMoreVolumes, r(3)).unwrap().1.is_empty());
     // Labeled operations refuse it, and *NL writes refuse labeled volumes.
-    assert!(matches!(read(&mut t, &mut NoMoreVolumes, seq(1)), Err(TapeError::NotLabeled)));
+    assert!(matches!(
+        read(&mut t, &mut NoMoreVolumes, seq(1)),
+        Err(TapeError::NotLabeled)
+    ));
     let mut l = volume("LAB001", 1 << 20);
     inz(&mut l, "LAB001");
-    assert!(matches!(write(&mut l, &mut NoMoreVolumes, nl, &[]), Err(TapeError::Labeled)));
+    assert!(matches!(
+        write(&mut l, &mut NoMoreVolumes, nl, &[]),
+        Err(TapeError::Labeled)
+    ));
     // DUPTAP of an *NL volume.
     let mut c = volume("NL0002", 1 << 22);
     let o = DupOptions::default();
     duptap(&mut t, &mut NoMoreVolumes, &mut c, &mut NoMoreVolumes, &o).unwrap();
-    assert_eq!(read(&mut c, &mut NoMoreVolumes, r(1)).unwrap().1, data(0, 2, 64));
+    assert_eq!(
+        read(&mut c, &mut NoMoreVolumes, r(1)).unwrap().1,
+        data(0, 2, 64)
+    );
 }
 
 fn library(tags: &[&str], capacity: u64) -> Lib {
@@ -432,7 +637,10 @@ fn multi_volume_write_and_read() {
     assert_eq!(l2.files[0].label.file_id, "BIGFILE");
     assert!(l2.files[0].label.continued);
     assert_eq!(l2.files[0].label.set_id, "MV0001");
-    assert_eq!(l2.files[0].label.volume_seq, u32::try_from(s.volumes.len()).unwrap());
+    assert_eq!(
+        l2.files[0].label.volume_seq,
+        u32::try_from(s.volumes.len()).unwrap()
+    );
     assert_eq!(l2.files[0].trailer, LabelSet::EndOfFile);
     mount_back(&mut lib, "MV0001");
     let l1 = labels(&mut lib, Some("MV0001"), EndOpt::Rewind).unwrap();
@@ -443,7 +651,11 @@ fn multi_volume_write_and_read() {
     }
 
     // Read it back across the volumes, by list.
-    let r = ReadOptions { vols: o.vols.clone(), seq: Some(1), ..ReadOptions::default() };
+    let r = ReadOptions {
+        vols: o.vols.clone(),
+        seq: Some(1),
+        ..ReadOptions::default()
+    };
     let mut p = LibraryProvider::default();
     let (_, got, vols) = read(&mut lib, &mut p, r).unwrap();
     assert_eq!(vols, s.volumes);
@@ -451,7 +663,10 @@ fn multi_volume_write_and_read() {
 
     // VOL(*MOUNTED) with the operator's choice of volumes.
     mount_back(&mut lib, "MV0001");
-    let mut p = LibraryProvider { spares: s.volumes[1..].to_vec(), ..LibraryProvider::default() };
+    let mut p = LibraryProvider {
+        spares: s.volumes[1..].to_vec(),
+        ..LibraryProvider::default()
+    };
     let (_, got, _) = read(&mut lib, &mut p, seq(1)).unwrap();
     assert_eq!(got, blocks);
 
@@ -466,9 +681,19 @@ fn multi_volume_write_and_read() {
     mount_back(&mut lib, "MV0001");
     write(&mut lib, &mut LibraryProvider::default(), o, &blocks).unwrap();
     mount_back(&mut lib, "MV0001");
-    let r = ReadOptions { vols: vec!["MV0001".into(), "MV0003".into()], seq: Some(1), ..ReadOptions::default() };
+    let r = ReadOptions {
+        vols: vec!["MV0001".into(), "MV0003".into()],
+        seq: Some(1),
+        ..ReadOptions::default()
+    };
     let e = read(&mut lib, &mut LibraryProvider::default(), r).unwrap_err();
-    assert!(matches!(e, TapeError::NotContinuation { .. } | TapeError::WrongVolume { .. }), "{e}");
+    assert!(
+        matches!(
+            e,
+            TapeError::NotContinuation { .. } | TapeError::WrongVolume { .. }
+        ),
+        "{e}"
+    );
 }
 
 /// Put `tag` in the drive, returning whatever is there to its slot.
@@ -503,7 +728,13 @@ fn volume_requests_say_what_is_wanted() {
     mount(&mut lib, "RQ0001");
     let mut o = wopts(SeqNbr::End, label("REQ", Expiry::None));
     o.vols = vec!["RQ0001".into()];
-    let mut rec = Recorder(Vec::new(), LibraryProvider { spares: vec!["RQ0002".into()], ..LibraryProvider::default() });
+    let mut rec = Recorder(
+        Vec::new(),
+        LibraryProvider {
+            spares: vec!["RQ0002".into()],
+            ..LibraryProvider::default()
+        },
+    );
     write(&mut lib, &mut rec, o, &data(3, 20, 4000)).unwrap();
     assert_eq!(
         rec.0[0],

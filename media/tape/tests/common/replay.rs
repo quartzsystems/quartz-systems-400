@@ -92,8 +92,10 @@ fn kv<'a>(result: &'a str, key: &str) -> Option<&'a str> {
 }
 
 fn num(s: &str) -> i64 {
-    s.strip_prefix("0x")
-        .map_or_else(|| s.parse().unwrap(), |h| i64::from_str_radix(h, 16).unwrap())
+    s.strip_prefix("0x").map_or_else(
+        || s.parse().unwrap(),
+        |h| i64::from_str_radix(h, 16).unwrap(),
+    )
 }
 
 impl Replay {
@@ -159,7 +161,9 @@ fn gstat(names: &str) -> u64 {
 impl StIoctl for Replay {
     fn mtop(&mut self, op: MtOp, count: i32) -> io::Result<()> {
         let s = self.next(&format!("mtop {} {count}", op.name()));
-        if let Some(e) = Self::err(&s.result) { Err(e) } else {
+        if let Some(e) = Self::err(&s.result) {
+            Err(e)
+        } else {
             assert_eq!(s.result, "ok", "line {}", s.line);
             Ok(())
         }
@@ -201,10 +205,7 @@ impl StIoctl for Replay {
 
     fn write(&mut self, data: &[u8]) -> io::Result<usize> {
         let s = self.next(&format!("write {}", data.len()));
-        Self::err(&s.result).map_or_else(
-            || Ok(usize::try_from(num(&s.result)).unwrap()),
-            Err,
-        )
+        Self::err(&s.result).map_or_else(|| Ok(usize::try_from(num(&s.result)).unwrap()), Err)
     }
 }
 

@@ -103,7 +103,11 @@ impl<'a, D: TapeTransport + ?Sized> FileWriter<'a, D> {
                 w.headers()?;
             }
             VolumeKind::Unlabeled | VolumeKind::Blank if w.opts.unlabeled => {
-                let have = if kind == VolumeKind::Blank { 0 } else { count_nl(w.t)? };
+                let have = if kind == VolumeKind::Blank {
+                    0
+                } else {
+                    count_nl(w.t)?
+                };
                 let seq = match w.opts.seq {
                     SeqNbr::End => have + 1,
                     SeqNbr::Number(n) if n >= 1 && n <= have + 1 => n,
@@ -213,11 +217,10 @@ impl<'a, D: TapeTransport + ?Sized> FileWriter<'a, D> {
 
     /// End this volume with EOV labels and continue on the next.
     fn switch(&mut self) -> Result<(), TapeError> {
-        self.trailers(LabelSet::EndOfVolume)
-            .map_err(|e| match e {
-                TapeError::Transport(TransportError::EndOfMedium) => TapeError::EndOfVolume,
-                e => e,
-            })?;
+        self.trailers(LabelSet::EndOfVolume).map_err(|e| match e {
+            TapeError::Transport(TransportError::EndOfMedium) => TapeError::EndOfVolume,
+            e => e,
+        })?;
         let n = self.volumes.len();
         let req = VolumeRequest {
             volume_seq: u32::try_from(n + 1).expect("volume count"),

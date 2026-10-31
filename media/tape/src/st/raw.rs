@@ -94,13 +94,21 @@ const SG_DXFER_TO_DEV: libc::c_int = -2;
 const SG_DXFER_FROM_DEV: libc::c_int = -3;
 
 /// The request number in the C library's type (`int` on musl).
-#[allow(clippy::cast_possible_wrap, clippy::cast_lossless, clippy::unnecessary_cast)]
+#[allow(
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless,
+    clippy::unnecessary_cast
+)]
 fn request(n: u32) -> libc::Ioctl {
     n as libc::Ioctl
 }
 
 fn check(r: libc::c_int) -> io::Result<()> {
-    if r < 0 { Err(io::Error::last_os_error()) } else { Ok(()) }
+    if r < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
 }
 
 fn open(path: &Path) -> io::Result<File> {

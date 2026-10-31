@@ -53,7 +53,12 @@ fn vol1_bytes() {
         volume_id: "VOL001".into(),
         owner: "QSECOFR".into(),
     };
-    let want = format!("VOL1VOL001 {}{}{}", pad("", 26), pad("QSECOFR", 14), pad("", 29));
+    let want = format!(
+        "VOL1VOL001 {}{}{}",
+        pad("", 26),
+        pad("QSECOFR", 14),
+        pad("", 29)
+    );
     assert_eq!(want.len(), 80);
     assert_eq!(v.encode(Code::Ascii).unwrap().to_vec(), want.as_bytes());
     assert_eq!(v.encode(Code::Ebcdic).unwrap().to_vec(), ebcdic(&want));
@@ -146,7 +151,11 @@ fn round_trips() {
                 let (got_set, got) = FileLabel::decode(&r1, &r2, code).unwrap();
                 assert_eq!(got_set, set);
                 let want = FileLabel {
-                    block_count: if set == LabelSet::Header { 0 } else { l.block_count },
+                    block_count: if set == LabelSet::Header {
+                        0
+                    } else {
+                        l.block_count
+                    },
                     ..l.clone()
                 };
                 assert_eq!(got, want);

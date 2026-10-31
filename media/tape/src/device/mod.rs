@@ -10,6 +10,6 @@ pub mod naming;
 
 pub use cartridge::{
     Allocation, Cartridge, Category, DriveResource, LibraryError, Location, MediaLibrary, Move,
-    Selection, execute,
+    Selection, cartridge_id, execute,
 };
 pub use naming::{Resource, ResourceKind, Scanned, assign, parse_hctl, tape_nodes};

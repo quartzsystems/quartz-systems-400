@@ -88,7 +88,10 @@ pub enum TapeError {
 /// The display form of an expiration for messages.
 #[must_use]
 pub fn expiry_text(d: Option<Date>) -> String {
-    d.map_or_else(|| "*PERM".to_string(), |d| format!("{}.{:03}", d.year, d.day))
+    d.map_or_else(
+        || "*PERM".to_string(),
+        |d| format!("{}.{:03}", d.year, d.day),
+    )
 }
 
 impl TapeError {

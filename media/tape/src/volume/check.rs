@@ -63,7 +63,10 @@ pub fn chktap<D: TapeTransport + ?Sized>(
             };
             let found = files.into_iter().find(|f| {
                 seq.is_none_or(|s| f.label.file_seq == s)
-                    && opts.file_label.as_ref().is_none_or(|l| &f.label.file_id == l)
+                    && opts
+                        .file_label
+                        .as_ref()
+                        .is_none_or(|l| &f.label.file_id == l)
             });
             let Some(f) = found else {
                 let what = match (seq, &opts.file_label) {
