@@ -1,0 +1,33 @@
+# Message line IDs: MAIN's own messages, each followed by Help on the
+# message line so Additional Message Information shows its identifier
+# (msgids-*.tn the lists, one session each). Read-only: nothing is typed but
+# options that are refused and keys that only move or are refused.
+wait "Main Menu"
+continue
+timeout 30000
+# A selection the menu does not have.
+type 99
+key enter
+settle 1500
+snap msgid-menu-selection
+cursor 24 2
+key help
+settle 1500
+snap msgid-menu-selection-help
+key f12
+settle 1000
+key reset
+key f15
+settle 1000
+snap msgid-menu-fkey
+cursor 24 2
+key help
+settle 1500
+snap msgid-menu-fkey-help
+key f12
+settle 1000
+key reset
+key f12
+settle 1000
+key reset
+wait "Main Menu"

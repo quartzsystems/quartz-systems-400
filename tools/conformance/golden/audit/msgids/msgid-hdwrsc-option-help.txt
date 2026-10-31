@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPI0B18       Severity . . . . . . . :   00         
+ Message type . . . . . :   Diagnostic                                          
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Option  9 not valid for specified resource.                
+ Cause . . . . . :   No configuration description can exist for this resource.  
+   Option  9 is not valid where no configuration description exists or cannot   
+   be created.                                                                  
+ Recovery  . . . :   Do not use option  9 on this resource.                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPD6A7C       Severity . . . . . . . :   30         
+ Message type . . . . . :   Diagnostic                                          
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Specified option number is not allowed.                    
+ Cause . . . . . :   The value that you specified is not an allowed option      
+   number for the action list.                                                  
+ Recovery  . . . :   Specify an allowed option number and try your request      
+   again.                                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

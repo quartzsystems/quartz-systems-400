@@ -1,0 +1,13 @@
+# Message line IDs: Page Up at the top of a list, then Help on it.
+wait "Main Menu"
+timeout 30000
+type wrkobj qgpl/*all
+key enter
+wait "Work with Objects"
+key pgup
+settle 1500
+snap msgid-list-top
+cursor 24 2
+key help
+settle 2000
+snap msgid-list-top-help

@@ -1,0 +1,15 @@
+# Message line IDs: Page Down at the bottom of a short list, then Help.
+wait "Main Menu"
+timeout 30000
+type dsplibl
+key enter
+wait "Display Library List"
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+snap msgid-list-bottom
+cursor 24 2
+key help
+settle 2000
+snap msgid-list-bottom-help

@@ -1,0 +1,14 @@
+# Message line IDs: an option a hardware resource does not take, then Help.
+wait "Main Menu"
+timeout 30000
+type wrkhdwrsc type(*prc)
+key enter
+settle 2500
+pick "CEC01" 9
+key enter
+settle 1500
+snap msgid-hdwrsc-option
+cursor 24 2
+key help
+settle 2000
+snap msgid-hdwrsc-option-help

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPD6A64       Severity . . . . . . . :   30         
+ Message type . . . . . :   Diagnostic                                          
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Specified menu selection is not correct.                   
+ Cause . . . . . :   The selection that you have specified is not correct for   
+   one of the following reasons:                                                
+     -- The number selected was not valid.                                      
+     -- Something other than a menu option was entered on the option line.      
+ Recovery  . . . :   Select a valid option and press the Enter or Help key      
+   again.                                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

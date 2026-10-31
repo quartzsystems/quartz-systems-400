@@ -1,0 +1,112 @@
+[[golden]]
+name = "msgid-menu-selection"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids"
+width = 80
+
+[[golden]]
+name = "msgid-menu-selection-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids"
+width = 80
+
+[[golden]]
+name = "msgid-menu-fkey"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids"
+width = 80
+
+[[golden]]
+name = "msgid-menu-fkey-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids"
+width = 80
+
+[[golden]]
+name = "msgid-list-option"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids2"
+width = 80
+
+[[golden]]
+name = "msgid-list-option-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids2"
+width = 80
+
+[[golden]]
+name = "msgid-list-fkey"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids3"
+width = 80
+
+[[golden]]
+name = "msgid-list-fkey-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids3"
+width = 80
+
+[[golden]]
+name = "msgid-list-top"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids-top"
+width = 80
+
+[[golden]]
+name = "msgid-list-top-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids-top"
+width = 80
+
+[[golden]]
+name = "msgid-list-bottom"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids-bottom"
+width = 80
+
+[[golden]]
+name = "msgid-list-bottom-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids-bottom"
+width = 80
+
+[[golden]]
+name = "msgid-hdwrsc-option"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids-hdwrsc"
+width = 80
+
+[[golden]]
+name = "msgid-hdwrsc-option-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "msgids-hdwrsc"
+width = 80
+

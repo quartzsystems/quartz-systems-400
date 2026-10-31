@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPD6A69       Severity . . . . . . . :   30         
+ Message type . . . . . :   Diagnostic                                          
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Already at bottom of area.                                 
+ Cause . . . . . :   You pressed a key to move forward in an area. However, you 
+   cannot move in that direction because you are already at the bottom of that  
+   area.                                                                        
+ Recovery  . . . :   If you want to move displayed information forward in       
+   another area, move the cursor to that area and press either the Page Down    
+   key or the Roll Up key again.                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                
