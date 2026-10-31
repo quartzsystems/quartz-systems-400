@@ -52,7 +52,7 @@ What logs a problem, and its symptoms:
 
 | Origin | Symptoms | Severity |
 |---|---|---|
-| A message of severity 80 or more to `QSYSOPR` | `MSG/msgid` | 1 at 99, else 2 |
+| A message of severity 80 or more to `QSYSOPR` | `MSG/msgid` (`MSG/*IMMED` for an impromptu one, a break message) | 1 at 99, else 2 |
 | A device failure (the product activity log) | `RSRC/name SRC/code` | 2 when attention, else 3 |
 | A dump (system, object, job, CL program) | `DUMP/name` | 2 |
 | `ANZPRB` | by area: `PGM/`, `MSG/`, `RSRC/`, `LIND/`, `PERF/` and the object | 1 when it stops work, else the area's |

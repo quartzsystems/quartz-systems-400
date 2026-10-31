@@ -42,6 +42,7 @@ mod qsh;
 mod savrst;
 pub mod rpg;
 mod servers;
+mod service;
 mod smallsvr;
 mod steps;
 mod tcp;

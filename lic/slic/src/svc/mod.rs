@@ -63,6 +63,8 @@ rclstg [*CHECK]      reclaim storage (*ALL default), or verify only
 chkstg               checksum sweep of every allocated page
 txn stats            transaction, WAL and cache counters
 ifs                  the IFS mount, its capacity and free space
+sysdump [take|list|show N|delete N]  system dumps (the main storage dump manager)
+liclog [MAJOR]       the storage service's LIC log, one major code or all
 ";
 
 /// Help for the database commands, after the general list.
@@ -171,6 +173,8 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("rclstg", rest) => storage::rclstg(system, rest),
         ("chkstg", _) => storage::chkstg(system),
         ("txn", ["stats"]) => storage::txn_stats(system),
+        ("sysdump", rest) => sysdump(system, rest),
+        ("liclog", rest) => liclog(rest),
         ("ifs", rest) => ifs::command(system, rest, line),
         _ => match db::command(system, cmd, &args, line) {
             Some(reply) => reply,
@@ -408,4 +412,42 @@ fn mode(system: &mut System, m: &str) -> String {
         Ok(()) => format!("Next IPL will be {mode:?}\n"),
         Err(e) => format!("Cannot set mode: {e}\n"),
     }
+}
+
+/// `sysdump`: the main storage dump manager's functions.
+fn sysdump(system: &mut System, rest: &[&str]) -> String {
+    let lines = |r: Result<Vec<String>, String>| match r {
+        Ok(v) => v.iter().fold(String::new(), |mut acc, l| {
+            acc.push_str(l);
+            acc.push('\n');
+            acc
+        }),
+        Err(e) => format!("{e}\n"),
+    };
+    match rest {
+        [] | ["take"] => match crate::stgsvc::dumps::take(system, "Taken from the service console") {
+            Ok(n) => format!("System dump {n} taken.\n"),
+            Err(e) => format!("{e}\n"),
+        },
+        ["list"] => lines(crate::stgsvc::dumps::list(system).map(|v| {
+            v.into_iter()
+                .map(|d| format!("{}  {:>8} bytes  {}", d.name, d.size, d.text))
+                .collect()
+        })),
+        ["show", n] => lines(crate::stgsvc::dumps::show(system, n)),
+        ["delete", n] => match crate::stgsvc::dumps::delete(system, n) {
+            Ok(()) => format!("System dump {n} deleted.\n"),
+            Err(e) => format!("{e}\n"),
+        },
+        _ => "Usage: sysdump [take|list|show NAME|delete NAME]\n".into(),
+    }
+}
+
+/// `liclog [MAJOR]`.
+fn liclog(rest: &[&str]) -> String {
+    let major = rest.first().and_then(|m| u16::from_str_radix(m, 16).ok()).unwrap_or(0);
+    crate::stgsvc::liclog::entries(major)
+        .iter()
+        .map(|e| crate::stgsvc::liclog::line(e) + "\n")
+        .collect()
 }

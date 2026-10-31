@@ -89,10 +89,18 @@ fn startup(c: &mut Console, link: &Shared) -> u16 {
     if code != 0 {
         // The IPL goes on to sign-on; the operator hears why.
         let escape = first_msgid(&out).unwrap_or("CPF9898");
-        let data = format!("{pgm:<10}{lib:<10}{escape:<7}");
-        c.line(&format!(
-            "SNDPGMMSG MSGID(CPF39DE) MSGF(QCPFMSG) MSGDTA('{data}') TOMSGQ(QSYSOPR) MSGTYPE(*INFO)"
-        ));
+        let m = wm::obj::msgq::QMsg {
+            kind: wm::obj::msgq::MsgKind::Info,
+            severity: 40,
+            msgid: "CPF39DE".into(),
+            msgf: ("QCPFMSG".into(), "QSYS".into()),
+            data: ccsid::to_ebcdic(&format!("{pgm:<10}{lib:<10}{escape:<7}")).unwrap_or_default(),
+            text: format!("Startup program {lib}/{pgm} ended with {escape}; the IPL went on."),
+            ..wm::obj::msgq::QMsg::default()
+        };
+        if let Err(e) = link.borrow_mut().with(|l| stg::Client::msgq_send(l, "*SYSOPR".into(), m)) {
+            eprintln!("qsjob: QSYSOPR: {e}");
+        }
     }
     code
 }

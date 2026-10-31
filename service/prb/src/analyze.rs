@@ -31,7 +31,7 @@ pub fn from_message(msgid: &str, severity: u8, text: &str) -> Option<Detected> {
         origin: Origin::Message(msgid.into()),
         severity: if severity >= 99 { 1 } else { 2 },
         text: text.chars().take(50).collect(),
-        symptoms: format!("MSG/{msgid}"),
+        symptoms: format!("MSG/{}", if msgid.is_empty() { "*IMMED" } else { msgid }),
     })
 }
 
