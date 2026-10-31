@@ -298,6 +298,9 @@ ui/           the display interface
                 (command menus from the inventories), sys/ task menus, pnlgrp/ generated
 devtools/     developer tools, pure logic (drivers in work/qsjob/src/devtools/): seu/, pdm/,
               sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/, edtf/ (EDTF, DSPF)
+service/      problems: prb/ the problem log, analysis, the report hook, contact information
+              (docs/SERVICE.md); the service side is lic/slic/src/stgsvc/ prblog.rs,
+              dumps.rs, trace.rs, liclog.rs, svcop.rs and lic/slic/src/cpp/svccmd.rs
 ifs/          the integrated file system
   ifs/          src/errno/ IBM errno values and messages, src/path/ paths and folding,
                 src/backend/ (MemBackend, LinuxBackend), src/meta/ the one metadata record
@@ -361,8 +364,9 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
-              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md,
-              LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, images/
+              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md, SERVICE.md,
+              LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, UPDATE_PROTOCOL.md,
+              CONSOLE.md, HARDWARE_NOTES.md, images/
 ```
 
 ## Commands
@@ -438,6 +442,7 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
 `txn stats`, `ifs` (the IFS mount at /run/qs400/ifs, capacity, free space),
+`sysdump [take|list|show N|delete N]` (system dumps), `liclog [MAJOR]` (the LIC log),
 `unit add|rmv`, `mirror start|stop|suspend|resume|replace|status`,
 `key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP); database:
 `xfer put|get|ls|rm` (named line buffers pushed over serial), `crtpf`, `crtlf`,
