@@ -10,6 +10,7 @@
 
 pub mod catalog;
 pub mod client;
+pub mod deliver;
 mod error;
 pub mod http;
 pub mod order;

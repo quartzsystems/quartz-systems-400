@@ -36,6 +36,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// The PTF database's user space.
 const DB: &str = "QSPTFDB";
+/// The PTF groups' user space.
+const GROUPS: &str = "QSPTFGRP";
 /// PTF loaded.
 const LOADED: &str = "CPC3604";
 /// PTF applied (or marked for the next IPL).
@@ -43,13 +45,13 @@ const APPLIED: &str = "CPC3606";
 /// PTF removed.
 const REMOVED: &str = "CPC3608";
 
-fn release_text() -> String {
+pub(super) fn release_text() -> String {
     let r = release::RELEASE;
     format!("V{}R{}M{}", r.v, r.r, r.m)
 }
 
-fn db_space(txn: &mut Txn<'_>, qsys: ObjectId, create: bool) -> Result<Option<ObjectId>, String> {
-    let name = qsname::Name::parse(DB).expect("name");
+fn space(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, text: &str, create: bool) -> Result<Option<ObjectId>, String> {
+    let name = qsname::Name::parse(name).expect("name");
     let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
     if let Some(id) = lib.lookup(txn, types::USRSPC, name).map_err(|e| e.to_string())? {
         return Ok(Some(id));
@@ -62,7 +64,7 @@ fn db_space(txn: &mut Txn<'_>, qsys: ObjectId, create: bool) -> Result<Option<Ob
         name,
         type_code: types::USRSPC,
         attribute: String::new(),
-        text: "PTF database".into(),
+        text: text.into(),
         owner: "QSYS".into(),
         system: String::new(),
         now: now_unix(),
@@ -73,31 +75,51 @@ fn db_space(txn: &mut Txn<'_>, qsys: ObjectId, create: bool) -> Result<Option<Ob
         .map_err(|e| e.to_string())
 }
 
-/// The PTF database.
-pub fn load_db(system: &mut System) -> Result<PtfDb, String> {
+/// The text a user space in `QSYS` keeps (a length, then the bytes);
+/// empty when there is none.
+pub(super) fn space_text(system: &mut System, name: &str) -> Result<String, String> {
     in_store(system, |txn, qsys, _| {
-        let Some(id) = db_space(txn, qsys, false)? else {
-            return Ok(PtfDb::default());
+        let Some(id) = space(txn, qsys, name, "", false)? else {
+            return Ok(String::new());
         };
         let len = usrspc::read(txn, id, 0, 8).map_err(|e| e.to_string())?;
         let len = u64::from_be_bytes(len.try_into().expect("8"));
         let text = usrspc::read(txn, id, 8, usize::try_from(len).unwrap_or(0))
             .map_err(|e| e.to_string())?;
-        Ok(PtfDb::decode(&String::from_utf8_lossy(&text)))
+        Ok(String::from_utf8_lossy(&text).into_owned())
     })
 }
 
-/// Keep the PTF database.
-pub fn store_db(system: &mut System, db: &PtfDb) -> Result<(), String> {
-    let text = db.encode();
+/// Keep `text` in user space `QSYS/name`, made when missing.
+pub(super) fn store_space_text(system: &mut System, name: &str, desc: &str, text: &str) -> Result<(), String> {
     in_store(system, |txn, qsys, _| {
-        let id = db_space(txn, qsys, true)?.expect("created");
+        let id = space(txn, qsys, name, desc, true)?.expect("created");
         usrspc::write(txn, id, 0, &(text.len() as u64).to_be_bytes()).map_err(|e| e.to_string())?;
         usrspc::write(txn, id, 8, text.as_bytes()).map_err(|e| e.to_string())
     })
 }
 
-fn list(parms: &Parms, kwd: &str) -> Vec<String> {
+/// The PTF database.
+pub fn load_db(system: &mut System) -> Result<PtfDb, String> {
+    space_text(system, DB).map(|t| PtfDb::decode(&t))
+}
+
+/// Keep the PTF database.
+pub fn store_db(system: &mut System, db: &PtfDb) -> Result<(), String> {
+    store_space_text(system, DB, "PTF database", &db.encode())
+}
+
+/// The PTF groups the system knows (user space `QSYS/QSPTFGRP`).
+pub(super) fn load_groups(system: &mut System) -> Result<ptf::grpdb::GroupDb, String> {
+    space_text(system, GROUPS).map(|t| ptf::grpdb::GroupDb::decode(&t))
+}
+
+/// Keep the PTF groups.
+pub(super) fn store_groups(system: &mut System, g: &ptf::grpdb::GroupDb) -> Result<(), String> {
+    store_space_text(system, GROUPS, "PTF groups", &g.encode())
+}
+
+pub(super) fn list(parms: &Parms, kwd: &str) -> Vec<String> {
     parms
         .list(kwd)
         .iter()
@@ -107,7 +129,7 @@ fn list(parms: &Parms, kwd: &str) -> Vec<String> {
 }
 
 /// The stream of a PTF's save file, `QGPL/QSnnnnn` unless named.
-fn read_ptf(system: &mut System, savf_q: &str) -> Result<Vec<u8>, String> {
+pub(super) fn read_ptf(system: &mut System, savf_q: &str) -> Result<Vec<u8>, String> {
     let (lib, name) = savf_q.split_once('/').unwrap_or(("QGPL", savf_q));
     let (lib, name) = (lib.to_string(), name.to_string());
     in_store(system, |txn, qsys, names| {
@@ -118,7 +140,7 @@ fn read_ptf(system: &mut System, savf_q: &str) -> Result<Vec<u8>, String> {
 }
 
 /// Every PTF save file in `QGPL` (`SELECT(*ALL)`).
-fn ptf_savfs(system: &mut System) -> Result<Vec<String>, String> {
+pub(super) fn ptf_savfs(system: &mut System) -> Result<Vec<String>, String> {
     in_store(system, |txn, qsys, _| {
         let l = ops::find_library(txn, qsys, qsname::Name::parse("QGPL").expect("name"))
             .map_err(|e| e.to_string())?;
@@ -131,11 +153,11 @@ fn ptf_savfs(system: &mut System) -> Result<Vec<String>, String> {
     })
 }
 
-fn require() -> Result<(), String> {
+pub(super) fn require() -> Result<(), String> {
     crate::stgsvc::security::require(sec::profile::SpecialAuth::ALLOBJ, "work with PTFs")
 }
 
-fn msg(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
+pub(super) fn msg(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
     CmdMsg {
         msgid: id.into(),
         kind,
@@ -194,7 +216,7 @@ fn chosen(db: &PtfDb, parms: &Parms, product: &str, want: &[Status]) -> Vec<Stri
     sel
 }
 
-fn ctx_run<T>(
+pub(super) fn ctx_run<T>(
     system: &mut System,
     f: impl FnOnce(&mut Ctx<'_>) -> T,
 ) -> Result<T, String> {
@@ -212,7 +234,7 @@ fn ctx_run<T>(
     Ok(sec::guard::as_system(|| f(&mut cx)))
 }
 
-fn package_of(system: &mut System, db: &PtfDb, ptf: &str) -> Result<(Package, Vec<u8>), String> {
+pub(super) fn package_of(system: &mut System, db: &PtfDb, ptf: &str) -> Result<(Package, Vec<u8>), String> {
     let r = db.get(ptf).ok_or_else(|| format!("CPF3606 PTF {ptf} is not loaded"))?;
     let bytes = read_ptf(system, &r.savf)?;
     let pkg = package::open(&bytes, &trusted_keys()).map_err(|e| format!("{} {e}", e.msgid()))?;

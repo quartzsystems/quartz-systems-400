@@ -342,6 +342,13 @@ pub const DIRECT: &[&str] = &[
     "DSPPTFCVR",
     "LODPTF",
     "RMVPTF",
+    // --- the update service (lic/slic/src/cpp/updcmd.rs)
+    "CHGCNTINF",
+    "QSCHGUPDA",
+    "QSCHKUPD",
+    "SNDPTFORD",
+    "SNDSRVRQS",
+    "WRKCNTINF",
     // --- save and restore (lic/slic/src/cpp/savcmd.rs)
     "CHGSAVF",
     "CLRSAVF",

@@ -12,8 +12,12 @@ pub mod apply;
 pub mod db;
 mod error;
 pub mod group;
+pub mod grpdb;
 pub mod header;
+pub mod install;
+pub mod manifest;
 pub mod package;
+pub mod slot;
 pub mod spec;
 pub mod status;
 

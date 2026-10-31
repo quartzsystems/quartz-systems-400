@@ -274,3 +274,64 @@ fn over_tls() {
     run.stop();
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Save files in memory.
+#[derive(Default)]
+struct MemSink(Vec<(String, Vec<u8>)>);
+
+impl ptf_update::deliver::Sink for MemSink {
+    fn put(&mut self, e: &ptf_update::CatalogPtf, bytes: &[u8]) -> ptf_update::Result<String> {
+        self.0.push((e.id.clone(), bytes.to_vec()));
+        Ok(format!("QGPL/{}", e.id))
+    }
+}
+
+#[test]
+fn sndptford_delivers_and_qschkupd_compares() {
+    use ptf::grpdb::GroupDb;
+    use ptf_update::deliver;
+    let dir = published("deliver");
+    let l = TcpListener::bind("127.0.0.1:0").unwrap();
+    let run = Server::new(&dir).spawn(l, "").unwrap();
+    let c = Client::new(&format!("http://{}", run.addr), "", None).unwrap();
+    let mut db = ptf::PtfDb::default();
+    let mut sink = MemSink::default();
+    let mut req = order(&["QS99001"]);
+    req.have = deliver::have(&db);
+    let d = deliver::send_order(&c, &trusted(), 0, &req, &mut sink).unwrap();
+    assert_eq!(sink.0.len(), 2);
+    for (id, savf) in &d.delivered {
+        deliver::record(&mut db, d.catalog.ptf(id).unwrap(), savf, false, NOW);
+    }
+    assert_eq!(db.get("QS00002").unwrap().status, ptf::Status::SaveFileOnly);
+    assert_eq!(db.get("QS00002").unwrap().prereqs[0].ptf, "QS00001");
+    let mut groups = GroupDb::default();
+    for (g, m) in &d.manifests {
+        groups.put(g, m);
+    }
+    // Ordered again, nothing new comes: the system has both.
+    let mut again = order(&["QS99001"]);
+    again.have = deliver::have(&db);
+    let mut sink2 = MemSink::default();
+    assert!(deliver::send_order(&c, &trusted(), 0, &again, &mut sink2).unwrap().delivered.is_empty());
+    // The check: the HIPER PTF is missing and the cumulative package is new.
+    let cat = c.catalog(&trusted(), 0).unwrap();
+    let f = deliver::compare(&cat, &db, &mut groups, "V1R0M0", &trusted());
+    assert_eq!(f.hiper, ["QS00003"]);
+    assert_eq!(f.cumulative.as_deref(), Some("C26303110"));
+    assert!(f.newer.is_empty());
+    // A lower level on the system is reported, and marked for WRKPTFGRP.
+    let old = ptf::group::Group {
+        name: "QS99001".into(),
+        level: 1,
+        text: "old".into(),
+        ptfs: vec!["QS00002".into()],
+        related: Vec::new(),
+    };
+    groups.put("QS99001", &ptf::group::sign_manifest(&ptf::group::manifest_text(&old), &key()));
+    let f = deliver::compare(&cat, &db, &mut groups, "V1R0M0", &trusted());
+    assert_eq!(f.newer, [("QS99001".to_string(), 1, 3)]);
+    assert_eq!(groups.rows(&db, &trusted())[0].newer, Some(3));
+    run.stop();
+    let _ = std::fs::remove_dir_all(&dir);
+}

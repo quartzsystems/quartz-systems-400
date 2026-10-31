@@ -9,7 +9,8 @@
 //! and carriers under TCP/IP's interfaces every few seconds (the state
 //! itself is the service's); `QSYSCOMM1` has the service check the
 //! certificate stores for expiry ten minutes after the IPL and then daily
-//! (warnings go to `QSYSOPR`); the others hold their place until their
+//! (warnings go to `QSYSOPR`) and hourly whether an update check is due
+//! (`QSCHGUPDA`); the others hold their place until their
 //! work exists (`MIGRATE(phase6)` device arbitration, `MIGRATE(phase10)`
 //! communications and alerts; the storage service rebuilds access
 //! paths itself at IPL).
@@ -36,12 +37,16 @@ const CERTCHK_FIRST: Duration = Duration::from_mins(10);
 /// How often `QSYSCOMM1` checks them after that.
 const CERTCHK: Duration = Duration::from_hours(24);
 
+/// How often `QSYSCOMM1` asks whether an update check is due.
+const UPDCHK: Duration = Duration::from_hours(1);
+
 /// Run system job `start.name` until it is ended. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let ending = ctl.try_clone();
     let mut c = Console::new(ctl, link, start);
     let mut next = Instant::now();
     let mut certchk = Instant::now() + CERTCHK_FIRST;
+    let mut updchk = Instant::now() + CERTCHK_FIRST;
     loop {
         if start.name == "QSYSCOMM1" && Instant::now() >= certchk {
             status(link, Status::Run, "CERTCHK");
@@ -49,6 +54,13 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 eprintln!("qsjob: QSYSCOMM1: {line}");
             }
             certchk = Instant::now() + CERTCHK;
+        }
+        if start.name == "QSYSCOMM1" && Instant::now() >= updchk {
+            status(link, Status::Run, "UPDCHK");
+            for line in link.borrow_mut().with(Client::upd_tick) {
+                eprintln!("qsjob: QSYSCOMM1: {line}");
+            }
+            updchk = Instant::now() + UPDCHK;
         }
         if start.name == "QSPLMAINT" && Instant::now() >= next {
             status(link, Status::Run, "SPLMAINT");

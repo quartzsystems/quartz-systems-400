@@ -33,6 +33,7 @@ mod stmfcmd;
 mod sysinfo;
 mod tcpcmd;
 mod uicmd;
+pub(crate) mod updcmd;
 
 use cmd::block::Parms;
 use stg::proto::{CmdMsg, CmdReply};
@@ -68,6 +69,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| direct::run(system, name, parms))
             .or_else(|| savcmd::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
+            .or_else(|| updcmd::run(system, name, parms))
             .or_else(|| prbcmd::run(system, name, parms))
             .or_else(|| lpcmd::run(system, name, parms))
             .or_else(|| ifscmd::run(system, name, parms))

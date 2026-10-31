@@ -637,6 +637,10 @@ ipc::rpc! {
     1241 => fn cert_panel / CertPanel (what: String, args: Vec<String>) -> Result<Sys2Data, String>;
     /// The expiry scan: warnings go to `QSYSOPR`; the lines for the log.
     1242 => fn cert_expiry / CertExpiry () -> Vec<String>;
+    // --- the update service (1250; lic/slic/src/cpp/updcmd.rs)
+    /// The hourly look at the update check schedule (`QSCHGUPDA`): the
+    /// check runs when it is due; the lines for the log.
+    1250 => fn upd_tick / UpdTick () -> Vec<String>;
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;

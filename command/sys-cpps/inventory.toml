@@ -901,6 +901,17 @@ note = "a panel at a display; the text form in the service otherwise"
 cpp = "QSZCCHK"
 note = "what QSYSCOMM1 runs daily: warnings to QSYSOPR at 30, 7 and 1 days and at expiry"
 
+# ------------------------------------------------------- update service
+# Quartz extensions beside IBM's SNDPTFORD (docs/UPDATE_PROTOCOL.md): the
+# service runs them (lic/slic/src/cpp/updcmd.rs over ptf/update).
+[cmd.QSCHGUPDA]
+cpp = "QSZUCHGA"
+note = "the service URL, a proxy and the check schedule in QSYS/QSUPDATTR"
+
+[cmd.QSCHKUPD]
+cpp = "QSZUCHK"
+note = "what QSYSCOMM1 runs on the QSCHGUPDA schedule: CPI3E01 to QSYSOPR, newer levels marked for WRKPTFGRP"
+
 # --- QSH and environment variables (work/qsjob/src/qsh/; the system-level
 # variables in the service, lic/slic/src/stgsvc/qsh.rs)
 [cmd.QSH]

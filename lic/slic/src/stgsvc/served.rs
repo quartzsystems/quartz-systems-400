@@ -1837,6 +1837,10 @@ impl Service for Served<'_> {
         super::certs::expiry_scan(self.system)
     }
 
+    fn upd_tick(&mut self) -> Vec<String> {
+        crate::cpp::updcmd::tick(self.system, crate::ipl::system::now_unix())
+    }
+
     // --- communications objects (1180-1189)
 
     fn cmn_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {

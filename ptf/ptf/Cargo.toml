@@ -13,6 +13,7 @@ store = { path = "../../storage/store", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+licpart = { path = "../../lic/licpart", version = "0.1.0" }
 thiserror.workspace = true
 serde.workspace = true
 toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }

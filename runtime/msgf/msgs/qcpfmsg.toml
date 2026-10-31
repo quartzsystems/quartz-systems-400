@@ -2838,6 +2838,57 @@ text = "An applied PTF needs this one: &1."
 help = "Remove the PTFs that name it as a requisite first."
 vars = ["*CHAR 50"]
 
+# PTF service.
+
+[[msg]]
+id = "CPF8C24"
+sev = 40
+text = "The update service could not be reached or answered badly: &1."
+help = "Check the URL and proxy QSCHGUPDA keeps and that the system can reach the service."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF8C32"
+sev = 40
+text = "What the update service sent does not verify: &1."
+help = "Catalogs, group manifests and PTFs are signed by a signer this system trusts. Nothing that fails the check is kept."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPZ8C38"
+sev = 0
+text = "PTF order &1 delivered, &2 PTF(s) received."
+help = "The PTFs are save files in QGPL named after them. LODPTF DEV(*SAVF) or INSPTF loads them."
+vars = ["*CHAR 10", "*CHAR 5"]
+
+[[msg]]
+id = "CPI3E01"
+sev = 10
+text = "Updates are available from the update service: &1 item(s)."
+help = "WRKPTFGRP marks the groups with a newer level. SNDPTFORD orders them."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "CPC3E02"
+sev = 0
+text = "This system has the newest fixes the update service offers."
+help = "QSCHKUPD compared the service's catalog with the PTFs and groups on this system."
+vars = []
+
+[[msg]]
+id = "CPC3E03"
+sev = 0
+text = "Update service attributes changed."
+help = "QSCHKUPD and SNDPTFORD use them from now on."
+vars = []
+
+[[msg]]
+id = "CPC3E04"
+sev = 0
+text = "Test request answered by the update service: &1."
+help = "The service received the request; the value is its ticket."
+vars = ["*CHAR 10"]
+
 # Problems.
 
 [[msg]]
