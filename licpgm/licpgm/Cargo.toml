@@ -1,0 +1,19 @@
+[package]
+name = "licpgm"
+description = "QS/400 licensed programs: product definitions and loads, the product directory, the QSZ* and QLZA* APIs, install planning, QSPKGPRD manifests, license keys and software agreements"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+release = { path = "../../lic/release", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+serde.workspace = true
+sha2.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+ed25519-dalek = "3.0.0"
+
+[lints]
+workspace = true

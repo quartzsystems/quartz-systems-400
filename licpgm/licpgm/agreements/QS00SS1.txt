@@ -1,0 +1,11 @@
+Quartz Systems/400 Operating System - Software Agreement
+
+1. This software is licensed under the MIT license. You may use, copy,
+   change and pass it on, as that license says.
+2. It comes as is. Quartz Systems gives no warranty and is not liable
+   for any loss its use causes.
+3. Product names that belong to others are used only so that programs
+   written for those systems find what they look for.
+
+Accept this agreement to install the product. Decline it and the
+product is not installed.

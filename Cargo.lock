@@ -1652,6 +1652,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "licpgm"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "ed25519-dalek",
+ "release",
+ "serde",
+ "sha2",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

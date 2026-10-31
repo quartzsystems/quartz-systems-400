@@ -102,6 +102,8 @@ members = [
     "qsh/qsh-utils",
     "qsh/qsh-job",
     "qsh/pase",
+    # Licensed programs: products, loads, license keys.
+    "licpgm/licpgm",
     # The PASE test fixture, built by the harness and never shipped.
     "tools/pase-probe",
     # Media: tape, optical, image catalogs.
