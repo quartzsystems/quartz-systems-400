@@ -122,6 +122,9 @@ fn golden_text_stays_in_the_golden_directory() {
         if f.starts_with(root.join("tools/conformance/golden"))
             || f.starts_with(root.join("command/cmd/tests/golden"))
             || f.starts_with(root.join("command/sys-cpps/tests/golden"))
+            // The renderer's panel goldens: its instruction lines are the
+            // panels' interface, as in the prompter's.
+            || f.starts_with(root.join("ui/uim/tests/golden"))
             || f.starts_with(root.join("tools/conformance/oracle/qdecimal"))
             || f.starts_with(root.join("tools/conformance/oracle/net"))
             || f.starts_with(root.join("tools/conformance/oracle/save"))
