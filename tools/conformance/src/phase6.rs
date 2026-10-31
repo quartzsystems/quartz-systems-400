@@ -497,9 +497,14 @@ impl Suite {
         let t1 = Instant::now();
         entry_wait(s, check, has(&["LEDGER", "exists"]))?;
         let cold = t1.elapsed();
+        // WRKACTJOB opens its panel with BOB's own job; F3 comes back.
         entry(s, "wrkactjob")?;
-        // The list's last row: the jobs above it no longer fit in one screen.
-        screen_wait(s, "SCPF")?;
+        let active = screen_wait(s, "Work with Active Jobs")?;
+        if !active.contains("QSCONSOLE") {
+            return Err(format!("WRKACTJOB lacks the console job:\n{active}"));
+        }
+        s.command("key f3", CMD)?;
+        screen_wait(s, "Command Entry")?;
         let t2 = Instant::now();
         entry_wait(s, check, has(&["LEDGER", "exists"]))?;
         let cached = t2.elapsed();
