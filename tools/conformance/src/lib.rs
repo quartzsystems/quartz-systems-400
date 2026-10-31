@@ -36,6 +36,7 @@ mod png;
 mod qemu;
 pub mod qir;
 mod qsh;
+mod savrst;
 pub mod rpg;
 mod servers;
 mod smallsvr;
