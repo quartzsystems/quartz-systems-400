@@ -363,6 +363,8 @@ pub const DIRECT: &[&str] = &[
     // --- IPL attributes (lic/slic/src/cpp/iplcmd.rs)
     "CHGIPLA",
     "DSPIPLA",
+    // --- object integrity (lic/slic/src/cpp/itgcmd.rs)
+    "CHKOBJITG",
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
     "QSCHGUPDA",
     "QSCHKUPD",

@@ -3673,3 +3673,17 @@ id = "CPFBC10"
 sev = 40
 text = "The image catalog's own file could not be read or written."
 help = "The catalog's directory holds QS400CLG.INF; check the file system."
+
+[[msg]]
+id = "CPC39E0"
+sev = 0
+text = "&1 objects checked; none damaged or with a signature that fails."
+help = "Every object CHKOBJITG selected verified against the keys this system trusts."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF39E1"
+sev = 30
+text = "&1 objects checked; &2 damaged or with a signature that fails."
+help = "The listing names each object and what is wrong with it. Restore a good copy, or apply the PTF that ships it."
+vars = ["*CHAR 10", "*CHAR 10"]

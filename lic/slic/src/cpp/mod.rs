@@ -22,6 +22,7 @@ mod ifscmd;
 pub(crate) mod lpapi;
 pub(crate) mod lpcmd;
 pub(crate) mod iplcmd;
+mod itgcmd;
 mod medcmd;
 mod msgfcmd;
 mod objcmd;
@@ -78,6 +79,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| updcmd::run(system, name, parms))
             .or_else(|| ptfsvc::run(system, name, parms))
             .or_else(|| iplcmd::run(system, name, parms))
+            .or_else(|| itgcmd::run(system, name, parms))
             .or_else(|| prbcmd::run(system, name, parms))
             .or_else(|| svccmd::run(system, name, parms))
             .or_else(|| lpcmd::run(system, name, parms))
