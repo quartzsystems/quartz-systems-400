@@ -1503,6 +1503,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "imgclg"
+version = "0.1.0"
+dependencies = [
+ "optical",
+ "thiserror",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

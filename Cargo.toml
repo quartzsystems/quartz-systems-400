@@ -103,6 +103,7 @@ members = [
     # Service: the problem log.
     "service/prb",
     "media/optical",
+    "media/imgclg",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",
