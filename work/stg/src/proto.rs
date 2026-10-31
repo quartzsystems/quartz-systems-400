@@ -660,6 +660,12 @@ ipc::rpc! {
     /// over its parameters' bytes: the receiver bytes, or the message
     /// ID and its data for the error code parameter.
     1321 => fn licpgm_api / LicpgmApi (api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)>;
+    // --- service: problems, dumps, traces, SST (1400-1419)
+    /// A service action (`docs/SERVICE.md`, `lic/slic/src/stgsvc/svcop.rs`):
+    /// `op` names it (`prb-analyze`, `prb-report`, `dump-system`,
+    /// `trace-point`, `sst-capacity`, ...), `args` its operands; the
+    /// answer's lines.
+    1400 => fn service_op / ServiceOp (op: String, args: Vec<String>) -> Result<Vec<String>, String>;
 }
 
 // --- certificate types

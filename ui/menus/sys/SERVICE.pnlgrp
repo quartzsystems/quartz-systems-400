@@ -1,0 +1,48 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* SERVICE: the task menu for servicing the system. No golden: pub400
+.* refuses GO SERVICE (tools/conformance/golden/phase11/menus).
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='SERVICE'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=SERVICE HELP=HLPSERVICE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Service
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKPRB'.Work with problems
+:MENUI OPTION=2 ACTION='CMD ANZPRB'.Analyze a new problem
+:MENUI OPTION=3 ACTION='CMD DSPSRVSTS'.Display service status
+:MENUI OPTION=4 ACTION='CMD WRKCNTINF'.Work with support contact information
+:MENUI OPTION=5 ACTION='CMD WRKSRVPVD'.Work with service providers
+:MENUI OPTION=6 ACTION='CMD STRSST'.Start system service tools
+:MENUI OPTION=7 ACTION='MENU PTF'.Program temporary fixes
+:MENUI OPTION=8 ACTION='MENU CMDDMP'.Dump commands
+:MENUI OPTION=9 ACTION='MENU CMDTRC'.Trace commands
+:MENUI OPTION=70 ACTION='MENU CMDSRV'.Related commands
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPSERVICE.Service - Help
+:P.Problems, the service provider, dumps and traces, and the system
+service tools.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

@@ -1,0 +1,24 @@
+                             Display Service Status
+                                                             System:   QS400
+ Job . . . . . . . . . . . :   000123/QSECOFR/QPADEV0001
+ Serviced by job . . . . . :   *NONE
+ Trace active  . . . . . . :   *YES
+ Trace sessions  . . . . . :   T1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ F3=Exit   F12=Cancel
+

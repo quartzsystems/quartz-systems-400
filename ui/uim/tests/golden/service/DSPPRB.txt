@@ -1,0 +1,24 @@
+                            Display Problem Details
+                                                             System:   QS400
+ Problem ID  . . . . . . . . :   2630300001
+ Status  . . . . . . . . . . :   READY
+ Problem type  . . . . . . . :   1
+ Severity  . . . . . . . . . :   2
+ Description . . . . . . . . :   Dump of QGPL/ORDERS *FILE requested
+ Reference code  . . . . . . :   DUMP
+ Resource name . . . . . . . :   *NONE
+ Origin system . . . . . . . :   QS400
+ Date opened . . . . . . . . :   10/30/26
+ Time opened . . . . . . . . :   14:02:11
+ Date last changed . . . . . :   10/30/26
+ Time last changed . . . . . :   14:05:40
+ Assigned to . . . . . . . . :   *NONE
+ Report prepared . . . . . . :   *NO
+ Symptom string  . . . . . . :   DUMP/QGPL/ORDERS *FILE
+ Notes
+ occurred again at 1793376131
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

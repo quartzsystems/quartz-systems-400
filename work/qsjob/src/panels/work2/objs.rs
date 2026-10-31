@@ -4,7 +4,7 @@
 
 //! Object displays: `WRKLIB` (`QUIWRKLIB`), `WRKOBJLCK` (`QGWCOLCK`),
 //! `WRKOBJPGP` (`QUIWRKOPGP`), `DSPOVR` (`QUIDSPOVR`), and the panels of
-//! functions to come: `DSPSAVF` (`QUIDSPSAVF`), `WRKPRB` (`QGSXPNLS`).
+//! functions to come: `DSPSAVF` (`QUIDSPSAVF`). `WRKPRB` is `service`'s.
 
 use cmd::Resolved;
 use mi::Job;
@@ -255,17 +255,4 @@ pub fn dspsavf(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
     load(&mut d, "OBJS", data);
     let mut reload = |_: &Host, _: &mut UimDialog| Ok(());
     display(host, surface, &mut d, "DSPSAVF", &mut reload)
-}
-
-/// `WRKPRB`: the problem log.
-pub fn wrkprb(host: &Host, surface: &mut Surface) -> Result<String, Fail> {
-    let mut d = dialog(host, "QGSXPNLS")?;
-    let data = fetch(host, "WRKPRB", &[])?;
-    load(&mut d, "PRBS", data);
-    let mut reload = |h: &Host, d: &mut UimDialog| {
-        let data = fetch(h, "WRKPRB", &[])?;
-        load(d, "PRBS", data);
-        Ok(())
-    };
-    display(host, surface, &mut d, "WRKPRB", &mut reload)
 }

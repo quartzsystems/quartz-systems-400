@@ -948,3 +948,25 @@ comp = "CPCA988"
 site = "job"
 cpp = "QP0ZWRKE"
 note = "a panel at a display; the list as text otherwise"
+
+# --- service: problems, contact information, dumps (work/qsjob/src/panels/work2/service.rs)
+[cmd.ANZPRB]
+site = "job"
+note = "guided analysis panels at a display; the service refuses it elsewhere"
+
+[cmd.WRKCNTINF]
+site = "job"
+
+[cmd.WRKSRVPVD]
+site = "job"
+
+[cmd.DSPSRVSTS]
+site = "job"
+
+[cmd.DMPJOB]
+site = "job"
+note = "the Phase 4 job dump (mi::dump) to QPSRVDMP; logs a problem"
+
+[cmd.DSPPRB]
+site = "job"
+note = "panels at a display; the problem log report with OUTPUT(*PRINT)"

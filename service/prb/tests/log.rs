@@ -57,3 +57,18 @@ fn a_problem_from_detection_to_deletion() {
     assert_eq!(n, 1);
     assert_eq!(log.problems.len(), 2);
 }
+
+#[test]
+fn a_report_is_kept_without_a_provider() {
+    let mut log = ProblemLog::default();
+    let d = analyze::from_dump("QSD0000001", "System dump taken");
+    let id = log.create(PrbType::Machine, &d, "QS400", NOW);
+    assert!(log.analyzed(&id, NOW + 1));
+    assert_eq!(log.get(&id).unwrap().status, PrbStatus::Ready);
+    let r = log.report(&id, &mut prb::Unconnected, NOW + 2).unwrap();
+    assert!(matches!(r, prb::Reported::Kept(_)));
+    assert_eq!(log.get(&id).unwrap().status, PrbStatus::Prepared);
+    let back = ProblemLog::decode(&log.encode());
+    assert!(back.reports[&id].contains("DUMP/QSD0000001"));
+    assert_eq!(back, log);
+}

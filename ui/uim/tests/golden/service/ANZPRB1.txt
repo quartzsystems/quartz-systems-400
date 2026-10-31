@@ -1,0 +1,24 @@
+                             Analyze a New Problem
+                                                             System:   QS400
+ Select the area the problem is in:
+
+      1. A job or program ended, looped or waited
+      2. A message was shown
+      3. A display, printer, tape, optical or disk device
+      4. Communications or a remote system
+      5. Performance
+
+
+
+
+
+
+
+
+
+
+ Selection
+
+
+ F3=Exit   F12=Cancel
+

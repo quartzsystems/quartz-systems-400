@@ -337,6 +337,19 @@ pub const DIRECT: &[&str] = &[
     "DLTPRB",
     "DSPPRB",
     "WRKPRB",
+    "ANZPRB",
+    "CHGCNTINF",
+    "WRKCNTINF",
+    "DSPSRVSTS",
+    "WRKSRVPVD",
+    // --- dumps and traces (lic/slic/src/cpp/svccmd.rs)
+    "DMPOBJ",
+    "DMPSYSOBJ",
+    "STRTRC",
+    "ENDTRC",
+    "PRTTRC",
+    "TRCJOB",
+    "TRCINT",
     // --- PTFs (lic/slic/src/cpp/ptfcmd.rs, ptfsvc.rs)
     "APYPTF",
     "CPYPTF",
@@ -350,12 +363,10 @@ pub const DIRECT: &[&str] = &[
     "CHGIPLA",
     "DSPIPLA",
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
-    "CHGCNTINF",
     "QSCHGUPDA",
     "QSCHKUPD",
     "SNDPTFORD",
     "SNDSRVRQS",
-    "WRKCNTINF",
     // --- save and restore (lic/slic/src/cpp/savcmd.rs)
     "CHGSAVF",
     "CLRSAVF",
@@ -476,6 +487,13 @@ pub const JOB_SITE: &[&str] = &[
     "WRKSBSD",
     "DSPSAVF",
     "WRKPRB",
+    "DSPPRB",
+    // --- service (panels/work2/service.rs)
+    "ANZPRB",
+    "WRKCNTINF",
+    "WRKSRVPVD",
+    "DSPSRVSTS",
+    "DMPJOB",
     // --- licensed programs (panels/licpgm.rs)
     "QSLICPGM",
     "WRKSFWAGR",

@@ -73,6 +73,82 @@ fn detail(out: &mut String, p: &Problem) {
     }
 }
 
+/// `mm/dd/yy` and `hh:mm:ss` of a Unix time.
+fn date_time(t: u64) -> (String, String) {
+    let (y, mo, d, hh, mm, ss) = crate::platform::rtc::unix_to_civil(t);
+    (
+        format!("{mo:02}/{d:02}/{:02}", y.rem_euclid(100)),
+        format!("{hh:02}:{mm:02}:{ss:02}"),
+    )
+}
+
+/// The reference code and resource of a problem, as the report shows.
+fn refcode(p: &Problem) -> (String, String) {
+    match &p.origin {
+        prb::Origin::Hardware { resource, src } => (format!("SRC{src}"), resource.clone()),
+        prb::Origin::Message(m) => (m.clone(), String::new()),
+        prb::Origin::Dump(_) => ("DUMP".into(), String::new()),
+        prb::Origin::Analysis => ("ANZPRB".into(), String::new()),
+    }
+}
+
+/// `DSPPRB OUTPUT(*PRINT)`: the problem log report.
+fn report(system: &mut System, probs: &[&Problem]) -> Result<String, String> {
+    let mut lines = vec![
+        "                            System                           Resource    Service  Problem".to_string(),
+        " Problem ID  Status         Ref Code     Date      Time      Name        Number   Description".into(),
+    ];
+    for p in probs {
+        let (d, t) = date_time(p.opened);
+        let (code, rsrc) = refcode(p);
+        let mut text = p.text.clone();
+        text.truncate(text.char_indices().nth(36).map_or(text.len(), |(i, _)| i));
+        lines.push(format!(
+            " {:<11} {:<14} {:<12} {d}  {t}  {rsrc:<11} {:<8} {text}",
+            p.id,
+            p.status.display(),
+            code,
+            ""
+        ));
+    }
+    crate::svc::security::print(system, "QPSXPRT", &lines)
+}
+
+/// The variables `DSPPRB`'s panel shows of one problem, and its notes.
+pub fn detail_data(system: &mut System, id: &str) -> Result<stg::proto::PanelData, String> {
+    let log = prblog::load(system)?;
+    let p = log
+        .get(id)
+        .ok_or_else(|| format!("CPF3925 Problem {id} not found in the problem log."))?;
+    let (od, ot) = date_time(p.opened);
+    let (cd, ct) = date_time(p.changed);
+    let (code, rsrc) = refcode(p);
+    let pair = |k: &str, v: String| (k.to_string(), v);
+    let vars = vec![
+        pair("PRBID", p.id.clone()),
+        pair("PRBSTS", p.status.display().to_string()),
+        pair("PRBTYPE", p.kind.number().to_string()),
+        pair("PRBSEV", p.severity.to_string()),
+        pair("PRBTEXT", p.text.clone()),
+        pair("PRBREF", code),
+        pair("PRBRSRC", if rsrc.is_empty() { "*NONE".into() } else { rsrc }),
+        pair("PRBSYS", p.system.clone()),
+        pair("PRBODATE", od),
+        pair("PRBOTIME", ot),
+        pair("PRBCDATE", cd),
+        pair("PRBCTIME", ct),
+        pair("PRBASGN", if p.assigned_to.is_empty() { "*NONE".into() } else { p.assigned_to.clone() }),
+        pair("PRBSYMP", p.symptoms.clone()),
+        pair("PRBRPT", if log.reports.contains_key(id) { "*YES".into() } else { "*NO".into() }),
+    ];
+    let rows = p
+        .notes
+        .iter()
+        .map(|n| vec![("NOTE".to_string(), n.clone())])
+        .collect();
+    Ok((vars, rows))
+}
+
 fn list(system: &mut System, parms: &Parms, details: bool) -> Result<String, String> {
     let log = prblog::load(system)?;
     let f = Filter {
@@ -80,6 +156,14 @@ fn list(system: &mut System, parms: &Parms, details: bool) -> Result<String, Str
         ..Filter::default()
     };
     let id = id_of(parms);
+    if details && parms.name("OUTPUT") == "*PRINT" {
+        let probs: Vec<&Problem> = log
+            .list(&f)
+            .into_iter()
+            .filter(|p| id.as_ref().is_none_or(|i| *i == p.id))
+            .collect();
+        return report(system, &probs);
+    }
     let mut out = String::new();
     for p in log.list(&f).into_iter().filter(|p| id.as_ref().is_none_or(|i| *i == p.id)) {
         if details {

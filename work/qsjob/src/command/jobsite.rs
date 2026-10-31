@@ -58,9 +58,15 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         return res;
     }
     match r.name.as_str() {
+        "DMPJOB" => return dmpjob(job, host, r),
         "CALL" => {
             // The job servicing this one may have orders for the call.
             crate::devtools::dbg::served(job, host);
+            let pgm = parms.text("PGM");
+            let _ = host
+                .link
+                .borrow_mut()
+                .with(|l| l.service_op("trace-point".into(), vec!["CALL".into(), pgm]));
             return call(job, host, &parms);
         }
         "STRSEU" => return crate::devtools::seu::run(job, host, r),
@@ -160,6 +166,28 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         return Ok(out);
     }
     classify(out)
+}
+
+/// `DMPJOB`: the job dump (`mi::dump`) spooled as `QPSRVDMP`; a problem
+/// is logged for it.
+fn dmpjob(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let full = !r
+        .get("PGMSTG")
+        .and_then(|b| b.value.as_ref())
+        .is_some_and(|v| v.source().eq_ignore_ascii_case("*NONE"));
+    let text = job.dump(full);
+    job.spool_text("QPSRVDMP", &text)
+        .map_err(|e| Fail::new("CPF3C46", format!("The job dump was not spooled: {e:?}")))?;
+    let s = &host.start;
+    let name = format!("{:06}/{}/{}", s.number, s.user, s.name);
+    let id = host
+        .link
+        .borrow_mut()
+        .with(|l| l.service_op("prb-dump".into(), vec![name, "Job dump requested".into()]))
+        .ok()
+        .and_then(|v| v.into_iter().next())
+        .unwrap_or_default();
+    Ok(format!("Job dump printed; problem {id} logged.\n"))
 }
 
 /// Output whose first line starts with a message identifier is the

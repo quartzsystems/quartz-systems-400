@@ -47,7 +47,7 @@ fn env(system: &mut System) -> Env<'_> {
 
 /// The signed-on user, holding `p` as the user IDs say now (a user
 /// disabled or changed meanwhile has what the change left).
-fn need(system: &mut System, job: u32, p: Privilege) -> Result<String, String> {
+pub(crate) fn need(system: &mut System, job: u32, p: Privilege) -> Result<String, String> {
     service()?;
     let Some(user) = sessions().get(&job).cloned() else {
         return Err("No service tools user is signed on in this job".into());

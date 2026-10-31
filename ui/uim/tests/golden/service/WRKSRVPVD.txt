@@ -1,0 +1,24 @@
+                          Work with Service Providers
+                                                             System:   QS400
+ Type options, press Enter.
+   5=Display   9=Send test request
+
+      Control
+ Opt  Point       Network ID  Connection  Description
+      QSERVICE    *NETATR     *NONE       Quartz Systems service
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F5=Refresh   F12=Cancel
+

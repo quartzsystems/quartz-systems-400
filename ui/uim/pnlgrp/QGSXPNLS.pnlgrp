@@ -2,10 +2,13 @@
 .* licensed under the terms of the MIT license which can be found in the
 .* root directory of this project.
 .*
-.* WRKPRB: the problem log. The system logs no problems yet, so the
-.* list is empty. No golden: pub400 refuses the command.
+.* The problem log: WRKPRB, its options (DSPPRB's details, Work with
+.* Problem, Enter text) and ANZPRB's guided analysis. No pub400 golden:
+.* pub400 refuses the commands; ours are under ui/uim/tests/golden/service.
 :PNLGRP.
 :CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=SELCL BASETYPE='CHAR 2'.
 :ECLASS.
 :CLASS NAME=IDCL BASETYPE='CHAR 10'.
 :ECLASS.
@@ -13,11 +16,39 @@
 :ECLASS.
 :CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
 :ECLASS.
+:CLASS NAME=NOTECL BASETYPE='CHAR 70'.
+:ECLASS.
+:CLASS NAME=SYMPCL BASETYPE='CHAR 60'.
+:ECLASS.
+:CLASS NAME=SHORTCL BASETYPE='CHAR 8'.
+:ECLASS.
+:CLASS NAME=YNCL BASETYPE='CHAR 1'.
+:ECLASS.
 :VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=OPTION CLASS=SELCL.
 :VAR NAME=PRBID CLASS=IDCL.
 :VAR NAME=PRBSTS CLASS=STSCL.
 :VAR NAME=PRBTEXT CLASS=TEXTCL.
+:VAR NAME=PRBTYPE CLASS=YNCL.
+:VAR NAME=PRBSEV CLASS=YNCL.
+:VAR NAME=PRBREF CLASS=IDCL.
+:VAR NAME=PRBRSRC CLASS=IDCL.
+:VAR NAME=PRBSYS CLASS=SHORTCL.
+:VAR NAME=PRBODATE CLASS=SHORTCL.
+:VAR NAME=PRBOTIME CLASS=SHORTCL.
+:VAR NAME=PRBCDATE CLASS=SHORTCL.
+:VAR NAME=PRBCTIME CLASS=SHORTCL.
+:VAR NAME=PRBASGN CLASS=IDCL.
+:VAR NAME=PRBSYMP CLASS=SYMPCL.
+:VAR NAME=PRBRPT CLASS=SHORTCL.
+:VAR NAME=NOTE CLASS=NOTECL.
+:VAR NAME=NEWNOTE CLASS=NOTECL.
+:VAR NAME=ANZMSGID CLASS=SHORTCL.
+:VAR NAME=ANZOBJ CLASS=IDCL.
+:VAR NAME=ANZSTOP CLASS=YNCL.
+:VAR NAME=ANZTEXT CLASS=TEXTCL.
 :LISTDEF NAME=PRBS VARS='OPT PRBID PRBSTS PRBTEXT'.
+:LISTDEF NAME=NOTES VARS='NOTE'.
 :KEYL NAME=PBKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
@@ -28,6 +59,20 @@
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Report prepared problems
 :EKEYL.
+:KEYL NAME=DSKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:KEYL NAME=MNKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
 :PANEL NAME=WRKPRB KEYL=PBKEYS HELP=WRKPRB ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Problems
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PRBS.(No problems logged)
@@ -36,14 +81,112 @@
 :LISTACT OPTION=5 ENTER='RETURN 5'.5=Display details
 :LISTACT OPTION=6 ENTER='RETURN 6'.6=Print details
 :LISTACT OPTION=8 ENTER='RETURN 8'.8=Work with problem
+:LISTACT OPTION=9 ENTER='RETURN 9'.9=Work with alerts
+:LISTACT OPTION=12 ENTER='RETURN 12'.12=Enter text
 :LISTCOL VAR=OPT USAGE=INPUT.Opt
 :LISTCOL VAR=PRBID USAGE=OUTPUT.Problem ID
 :LISTCOL VAR=PRBSTS USAGE=OUTPUT.Status
 :LISTCOL VAR=PRBTEXT USAGE=OUTPUT.Problem Description
 :ELIST.
 :EPANEL.
+:PANEL NAME=DSPPRB KEYL=DSKEYS HELP=DSPPRB ENTER='RETURN 0' TOPSEP=SYSNAM.Display Problem Details
+:DATA DEPTH=15.
+:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI VAR=PRBSTS USAGE=OUTPUT.Status
+:DATAI VAR=PRBTYPE USAGE=OUTPUT.Problem type
+:DATAI VAR=PRBSEV USAGE=OUTPUT.Severity
+:DATAI VAR=PRBTEXT USAGE=OUTPUT.Description
+:DATAI VAR=PRBREF USAGE=OUTPUT.Reference code
+:DATAI VAR=PRBRSRC USAGE=OUTPUT.Resource name
+:DATAI VAR=PRBSYS USAGE=OUTPUT.Origin system
+:DATAI VAR=PRBODATE USAGE=OUTPUT.Date opened
+:DATAI VAR=PRBOTIME USAGE=OUTPUT.Time opened
+:DATAI VAR=PRBCDATE USAGE=OUTPUT.Date last changed
+:DATAI VAR=PRBCTIME USAGE=OUTPUT.Time last changed
+:DATAI VAR=PRBASGN USAGE=OUTPUT.Assigned to
+:DATAI VAR=PRBRPT USAGE=OUTPUT.Report prepared
+:DATAI VAR=PRBSYMP USAGE=OUTPUT.Symptom string
+:EDATA.
+:LIST DEPTH='*' LISTDEF=NOTES.(No notes)
+:LISTCOL VAR=NOTE USAGE=OUTPUT.Notes
+:ELIST.
+:EPANEL.
+:PANEL NAME=WRKPRBW KEYL=MNKEYS HELP=WRKPRBW ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Problem
+:DATA DEPTH=3.
+:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI VAR=PRBSTS USAGE=OUTPUT.Status
+:DATAI VAR=PRBTEXT USAGE=OUTPUT.Problem
+:EDATA.
+:MENU DEPTH='*' OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='RETURN 101'.Analyze problem
+:MENUI OPTION=2 ACTION='RETURN 102'.Report problem
+:MENUI OPTION=3 ACTION='RETURN 103'.Display problem details
+:MENUI OPTION=4 ACTION='RETURN 104'.Enter text about the problem
+:MENUI OPTION=5 ACTION='RETURN 105'.Close problem
+:EMENU.
+:EPANEL.
+:PANEL NAME=PRBNOTE KEYL=MNKEYS HELP=PRBNOTE ENTER='RETURN 0' TOPSEP=SYSNAM.Enter Text About the Problem
+:DATA DEPTH=2.
+:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI VAR=PRBTEXT USAGE=OUTPUT.Problem
+:EDATA.
+:TOPINST.Type text, press Enter.
+:DATA DEPTH='*'.
+:DATAI VAR=NEWNOTE USAGE=INOUT CSRLOC.Text
+:EDATA.
+:EPANEL.
+:PANEL NAME=ANZPRB1 KEYL=MNKEYS HELP=ANZPRB1 ENTER='RETURN 1' TOPSEP=SYSNAM.Analyze a New Problem
+:MENU DEPTH='*' OPTIONS=OPTION.Select the area the problem is in:
+:MENUI OPTION=1 ACTION='RETURN 201'.A job or program ended, looped or waited
+:MENUI OPTION=2 ACTION='RETURN 202'.A message was shown
+:MENUI OPTION=3 ACTION='RETURN 203'.A display, printer, tape, optical or disk device
+:MENUI OPTION=4 ACTION='RETURN 204'.Communications or a remote system
+:MENUI OPTION=5 ACTION='RETURN 205'.Performance
+:EMENU.
+:EPANEL.
+:PANEL NAME=ANZPRB2 KEYL=MNKEYS HELP=ANZPRB2 ENTER='RETURN 0' TOPSEP=SYSNAM.Describe the Problem
+:TOPINST.Type choices, press Enter.
+:DATA DEPTH='*'.
+:DATAI VAR=ANZMSGID USAGE=INOUT CSRLOC.Message identifier
+:DATAI VAR=ANZOBJ USAGE=INOUT.Job, program, device or line
+:DATAI VAR=ANZSTOP USAGE=INOUT.Stops your work (Y, N)
+:DATAI VAR=ANZTEXT USAGE=INOUT.Description
+:EDATA.
+:EPANEL.
+:PANEL NAME=ANZPRB3 KEYL=MNKEYS HELP=ANZPRB3 ENTER='RETURN 0' TOPSEP=SYSNAM.Problem Analysis Complete
+:DATA DEPTH=3.
+:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI VAR=PRBSTS USAGE=OUTPUT.Status
+:DATAI VAR=PRBSYMP USAGE=OUTPUT.Symptom string
+:EDATA.
+:TOPINST.Press Enter to continue.
+:EPANEL.
 :HELP NAME=WRKPRB.Work with Problems - Help
-:P.The problems the system has logged, with their status. This
-release logs none, so the list is empty.
+:P.The problems the system logged on its own (severe operator messages,
+hardware failures, dumps) and the ones problem analysis created, newest
+first. Option 8 analyzes one or reports it to the service provider.
+:EHELP.
+:HELP NAME=DSPPRB.Display Problem Details - Help
+:P.Everything the problem log holds of one problem: where it came from,
+its status, the symptom string analysis built, and the notes added to it.
+:EHELP.
+:HELP NAME=WRKPRBW.Work with Problem - Help
+:P.Analysis marks an opened problem ready to report. Reporting prepares
+the report the service provider receives; with no connection to one, the
+report is kept and the problem stays prepared.
+:EHELP.
+:HELP NAME=PRBNOTE.Enter Text - Help
+:P.The text is added to the problem's notes and goes with its report.
+:EHELP.
+:HELP NAME=ANZPRB1.Analyze a New Problem - Help
+:P.Choose the area that best fits what went wrong. The next panel asks
+for what identifies it.
+:EHELP.
+:HELP NAME=ANZPRB2.Describe the Problem - Help
+:P.Give the message identifier when a message was shown, and the job,
+program, device or line involved. The description is the problem's text.
+:EHELP.
+:HELP NAME=ANZPRB3.Problem Analysis Complete - Help
+:P.The problem is in the problem log, ready to report. WRKPRB shows it.
 :EHELP.
 :EPNLGRP.

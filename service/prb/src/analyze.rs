@@ -75,6 +75,23 @@ pub enum Area {
     Performance,
 }
 
+impl Area {
+    /// The areas in the order `ANZPRB`'s first panel numbers them.
+    pub const ALL: [(Self, &'static str); 5] = [
+        (Self::Job, "A job or program ended, looped or waited"),
+        (Self::Message, "A message was shown"),
+        (Self::Device, "A display, printer, tape, optical or disk device"),
+        (Self::Communications, "Communications or a remote system"),
+        (Self::Performance, "Performance"),
+    ];
+
+    /// From the option number (1 to 5).
+    #[must_use]
+    pub fn from_choice(n: u8) -> Option<Self> {
+        Self::ALL.get(usize::from(n).checked_sub(1)?).map(|a| a.0)
+    }
+}
+
 /// `ANZPRB`'s answers.
 #[derive(Debug, Clone)]
 pub struct Answers {

@@ -1,0 +1,24 @@
+                               Work with Problem
+                                                             System:   QS400
+ Problem ID . . . . . :   2630300001
+ Status . . . . . . . :   READY
+ Problem  . . . . . . :   Dump of QGPL/ORDERS *FILE requested
+ Select one of the following:
+
+      1. Analyze problem
+      2. Report problem
+      3. Display problem details
+      4. Enter text about the problem
+      5. Close problem
+
+
+
+
+
+
+
+ Selection
+
+
+ F3=Exit   F12=Cancel
+

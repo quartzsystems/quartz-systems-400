@@ -2,6 +2,7 @@
 /* licensed under the terms of the MIT license which can be found in the  */
 /* root directory of this project.                                       */
 
-/* WRKCNTINF: the contact information the update service is given. */
+/* WRKCNTINF: the support contact information menu. */
              CMD        PROMPT('Work with Contact Information') +
-                          ALLOW(*ALL) HLPPNLGRP(QHSVCMD) HLPID(WRKCNTINF)
+                          MAXPOS(0) ALLOW(*ALL) +
+                          HLPPNLGRP(QHSXCMD) HLPID(WRKCNTINF)

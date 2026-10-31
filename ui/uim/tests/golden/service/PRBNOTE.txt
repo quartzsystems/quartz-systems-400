@@ -1,0 +1,24 @@
+                          Enter Text About the Problem
+                                                             System:   QS400
+ Problem ID . . . . . :   2630300001
+ Problem  . . . . . . :   Dump of QGPL/ORDERS *FILE requested
+ Type text, press Enter.
+ Text . . . . . . . . .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ F3=Exit   F12=Cancel
+

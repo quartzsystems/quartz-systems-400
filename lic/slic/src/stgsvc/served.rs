@@ -170,6 +170,7 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
     );
     if !quiet {
         *system.stats.aux_io.entry(ctx.job.number).or_default() += 1;
+        super::trace::request(ctx.job.number, &req);
     }
     let user = super::security::as_user(&req);
     let session = Rc::clone(&ctx.session);
@@ -222,6 +223,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         },
     );
     system.jobs.add(job.clone());
+    super::liclog::write(0x0300, 0x0001, job.number, &format!("{}/{}", job.user, job.name));
     super::security::js("S", (&job.name, &job.user, job.number), job.kind, &job.jobd);
     let who = (job.name.clone(), job.user.clone(), job.number);
     let data = wm::joblog::started_data(
@@ -283,6 +285,9 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
         code,
     );
     let who = (j.name.clone(), j.user.clone(), j.number);
+    let minor = if abnormal { 0x0003 } else { 0x0002 };
+    super::liclog::write(0x0300, minor, j.number, &format!("{}/{} end code {code}", j.user, j.name));
+    super::trace::job(j.number, "JOB", "ended");
     super::hist::system_message(system, "CPF1164", &data, "04", who.clone());
     for id in std::mem::take(&mut ctx.splfs) {
         let _ = super::spool::close(system, id, false);
@@ -1800,6 +1805,11 @@ impl Service for Served<'_> {
 
     fn licpgm_api(&mut self, api: String, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, (String, Vec<u8>)> {
         crate::cpp::lpapi::call(self.system, &api, &parms)
+    }
+
+    fn service_op(&mut self, op: String, args: Vec<String>) -> Result<Vec<String>, String> {
+        self.system.current_job = self.ctx.job.number;
+        super::svcop::run(self.system, &self.ctx.job, &op, &args)
     }
 
     fn sst_user_change(

@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The update service commands (`docs/UPDATE_PROTOCOL.md`): `SNDPTFORD`,
-//! `QSCHGUPDA`, `QSCHKUPD`, `SNDSRVRQS`, `WRKCNTINF` and `CHGCNTINF`.
+//! `QSCHGUPDA`, `QSCHKUPD` and `SNDSRVRQS`.
 //! The protocol is `ptf/update`; this is parameters, the save files in
 //! `QGPL`, the attributes in data areas and the messages.
 
@@ -33,8 +33,6 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "QSCHGUPDA" => chgupda(system, parms),
         "QSCHKUPD" => chkupd(system).map(|(reply, _)| reply),
         "SNDSRVRQS" => sndsrvrqs(system, parms),
-        "WRKCNTINF" => Ok(wrkcntinf(system)),
-        "CHGCNTINF" => chgcntinf(system, parms),
         _ => return None,
     };
     Some(r.unwrap_or_else(|e| failed(name, &e)))
@@ -42,8 +40,6 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// The update attributes' data area in `QSYS`.
 const ATTRS: &str = "QSUPDATTR";
-/// The contact information's data area in `QSYS`.
-const CONTACT: &str = "QSCNTINF";
 /// The service a new system talks to.
 pub const DEFAULT_URL: &str = "https://updates.quartz.systems/qs400";
 /// An order delivered.
@@ -422,9 +418,14 @@ pub fn tick(system: &mut System, now: u64) -> Vec<String> {
     }
 }
 
+/// Who the request is from: the contact information `CHGCNTINF` keeps.
 fn contact(system: &mut System) -> String {
-    let c = kv_load(system, CONTACT);
-    c.get("contact").cloned().unwrap_or_default()
+    let c = crate::stgsvc::prblog::contact(system).unwrap_or_default();
+    [c.company, c.contact, c.email]
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn sndsrvrqs(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -442,58 +443,3 @@ fn sndsrvrqs(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     ))
 }
 
-/// The contact information's keys and labels.
-const CONTACT_FIELDS: &[(&str, &str, &str)] = &[
-    ("CMPNY", "company", "Company"),
-    ("CONTACT", "contact", "Contact"),
-    ("TELNBR", "telephone", "Telephone number"),
-    ("EMAILADR", "email", "E-mail address"),
-    ("MEDPTF", "media", "Media for mailing PTFs"),
-];
-
-const ADDRESS: &[(&str, &str)] = &[
-    ("street", "Street address"),
-    ("city", "City or locality"),
-    ("state", "State or province"),
-    ("country", "Country or region"),
-    ("postal", "Postal code"),
-];
-
-fn wrkcntinf(system: &mut System) -> CmdReply {
-    let c = kv_load(system, CONTACT);
-    let mut text = String::from("Contact information\n");
-    for (_, key, label) in CONTACT_FIELDS.iter().take(4) {
-        let _ = writeln!(text, "  {label:<32} {}", c.get(*key).map_or("", String::as_str));
-    }
-    for (key, label) in ADDRESS {
-        let _ = writeln!(text, "  {label:<32} {}", c.get(*key).map_or("", String::as_str));
-    }
-    let _ = writeln!(text, "  {:<32} {}", CONTACT_FIELDS[4].2, c.get("media").map_or("*AUTOMATIC", String::as_str));
-    let a = attrs(system);
-    let _ = writeln!(text, "  {:<32} {}", "Update service", a.get("url").map_or(DEFAULT_URL, String::as_str));
-    CmdReply {
-        text,
-        ..CmdReply::default()
-    }
-}
-
-fn chgcntinf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    crate::stgsvc::security::require(sec::profile::SpecialAuth::IOSYSCFG, "change the contact information")?;
-    let mut c = kv_load(system, CONTACT);
-    for (kwd, key, _) in CONTACT_FIELDS {
-        let v = parms.text(kwd);
-        let v = v.trim();
-        if !v.is_empty() && v != "*SAME" {
-            c.insert((*key).into(), v.into());
-        }
-    }
-    if let Some(cmd::Value::Elems(e)) = parms.get("MAILADDR") {
-        for ((key, _), v) in ADDRESS.iter().zip(e) {
-            if let Some(t) = v.as_ref().and_then(cmd::Value::text) {
-                c.insert((*key).into(), t.trim().into());
-            }
-        }
-    }
-    kv_store(system, CONTACT, "Contact information", &c)?;
-    Ok(super::done(format!("{CHANGED} contact information changed\n"), CHANGED, &[]))
-}

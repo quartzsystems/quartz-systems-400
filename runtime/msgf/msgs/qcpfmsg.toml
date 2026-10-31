@@ -3193,3 +3193,116 @@ id = "CPD3768"
 sev = 30
 text = "ALWOBJDIF(*ALL) needs MBROPT(*ALL)."
 help = "Give MBROPT(*ALL) with ALWOBJDIF(*ALL)."
+
+# Service tools: problem analysis, contact information, dumps, traces,
+# the IPL's startup program (docs/SERVICE.md). Our identifiers in the
+# 39Dx block, which QCPFMSG leaves unused.
+[[msg]]
+id = "CPF39D0"
+sev = 40
+text = "Trace &1 is already active."
+help = "End it with ENDTRC first, or start the trace under another session name."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF39D1"
+sev = 40
+text = "Trace &1 not found."
+help = "No trace session of that name is active or held. DSPSRVSTS shows the traces on a job."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF39D2"
+sev = 40
+text = "System dump &1 not found."
+help = "The main storage dump manager in STRSST lists the dumps kept."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF39D3"
+sev = 40
+text = "No connection to service provider &1."
+help = "No service provider connection is configured. Problem reports are prepared and kept until one is."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC39D4"
+sev = 0
+text = "Contact information changed."
+help = "WRKCNTINF shows what the service provider has on record."
+
+[[msg]]
+id = "CPC39D5"
+sev = 0
+text = "Trace &1 started."
+help = "ENDTRC ends it; PRTTRC prints what it collected."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC39D6"
+sev = 0
+text = "Trace &1 ended with &2 records."
+help = "With DTAOPT(*LIB) the records are kept for PRTTRC."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC39D7"
+sev = 0
+text = "Trace data &1 printed."
+help = "The report is spooled file QPSRVTRCJ of this job."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC39D8"
+sev = 0
+text = "Dump of &1 printed."
+help = "The dump is spooled file QPSRVDMP of this job; a problem was logged for it."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "CPC39D9"
+sev = 0
+text = "Job dump printed."
+help = "The dump is spooled file QPSRVDMP of this job; a problem was logged for it."
+
+[[msg]]
+id = "CPF39DA"
+sev = 40
+text = "&1 needs a display."
+help = "The command asks its questions on panels. Run it from a display station."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF39DB"
+sev = 40
+text = "Trace data &1 in library &2 not found."
+help = "ENDTRC with DTAOPT(*LIB) keeps the data under the session name."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC39DC"
+sev = 0
+text = "Problem &1 created."
+help = "WRKPRB shows the problem; option 8 works with it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC39DD"
+sev = 0
+text = "Job trace set &1."
+help = "TRCJOB SET(*OFF) prints what was traced; SET(*END) discards it."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF39DE"
+sev = 40
+text = "Startup program &1 ended with &2; the IPL went on."
+help = "The system finished starting without the rest of the startup program. Its job log has the details."
+vars = ["*CHAR 20", "*CHAR 7"]
+
+[[msg]]
+id = "CPC39DF"
+sev = 0
+text = "Database cross-reference checked: &1 files."
+help = "The cross-reference files agree with the files in the libraries."
+vars = ["*CHAR 10"]

@@ -12,8 +12,12 @@
 #![deny(missing_docs)]
 
 pub mod analyze;
+pub mod contact;
 mod log;
 mod problem;
+pub mod report;
 
+pub use contact::{Contact, Provider};
 pub use log::{Filter, ProblemLog};
 pub use problem::{Origin, Problem, PrbStatus, PrbType};
+pub use report::{Reported, Sender, Unconnected};

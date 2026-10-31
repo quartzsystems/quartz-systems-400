@@ -9,6 +9,7 @@ use std::fmt::Write as _;
 
 use crate::analyze::Detected;
 use crate::problem::{Origin, PrbStatus, PrbType, Problem};
+use crate::report::{Reported, Sender};
 
 /// What `WRKPRB`, `DLTPRB` and `PRTERRLOG`-style lists select.
 #[derive(Debug, Clone, Default)]
@@ -42,6 +43,8 @@ pub struct ProblemLog {
     pub problems: BTreeMap<String, Problem>,
     /// The next sequence within the day.
     pub next_seq: u32,
+    /// Prepared reports kept for the service provider, by problem.
+    pub reports: BTreeMap<String, String>,
 }
 
 /// `yyddd` of a Unix time, UTC.
@@ -173,11 +176,44 @@ impl ProblemLog {
         Some(r)
     }
 
+    /// Analysis done: an opened problem becomes Ready. Whether it exists.
+    pub fn analyzed(&mut self, id: &str, now: u64) -> bool {
+        let Some(p) = self.problems.get_mut(id) else {
+            return false;
+        };
+        if p.status == PrbStatus::Opened {
+            p.status = PrbStatus::Ready;
+            p.changed = now;
+        }
+        true
+    }
+
+    /// "Report to the service provider": prepare the report, keep it,
+    /// hand it to `sender`. A sent problem becomes Sent; otherwise the
+    /// report is kept and the problem stays Prepared. `None` for no
+    /// such problem.
+    pub fn report(&mut self, id: &str, sender: &mut dyn Sender, now: u64) -> Option<Reported> {
+        let text = self.prepare(id, now)?;
+        self.reports.insert(id.to_string(), text.clone());
+        let p = self.problems.get_mut(id)?;
+        Some(match sender.send(id, &text) {
+            Ok(r) => {
+                p.status = PrbStatus::Sent;
+                p.notes.push(format!("sent to the service provider: {r}"));
+                Reported::Sent(r)
+            }
+            Err(why) => Reported::Kept(why),
+        })
+    }
+
     /// The stored text: a header line, then one line per problem with
     /// tab-separated fields.
     #[must_use]
     pub fn encode(&self) -> String {
         let mut out = format!("QS400PRB 1 {}\n", self.next_seq);
+        for (id, r) in &self.reports {
+            let _ = writeln!(out, "R\t{id}\t{}", esc(r));
+        }
         for p in self.problems.values() {
             let origin = match &p.origin {
                 Origin::Message(m) => format!("M:{m}"),
@@ -216,11 +252,15 @@ impl ProblemLog {
             .and_then(|n| n.parse().ok())
             .unwrap_or(0);
         let mut log = Self {
-            problems: BTreeMap::new(),
             next_seq,
+            ..Self::default()
         };
         for line in lines {
             let f: Vec<&str> = line.split('\t').collect();
+            if f.len() == 3 && f[0] == "R" {
+                log.reports.insert(f[1].into(), unesc(f[2]));
+                continue;
+            }
             if f.len() != 13 {
                 continue;
             }

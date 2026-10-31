@@ -1,0 +1,24 @@
+                      Display Service Contact Information
+                                                             System:   QS400
+ Company . . . . . . . . . . . . . . :   Quartz Systems
+ Contact . . . . . . . . . . . . . . :   Cody
+ Primary telephone . . . . . . . . . :
+ Alternative telephone . . . . . . . :
+ Primary fax . . . . . . . . . . . . :
+ Alternative fax . . . . . . . . . . :
+ Street address  . . . . . . . . . . :
+ City/State  . . . . . . . . . . . . :
+ Country or region . . . . . . . . . :
+ Postal code . . . . . . . . . . . . :
+ National language version . . . . . :   2924
+ Media for mailing fixes . . . . . . :   *AUTOMATIC
+ E-mail address  . . . . . . . . . . :
+
+
+
+
+
+
+
+ F3=Exit   F12=Cancel
+

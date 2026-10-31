@@ -25,6 +25,10 @@ mod joblog;
 mod pdm;
 mod dfu;
 mod sst;
+pub(crate) mod dumps;
+pub(crate) mod liclog;
+mod svcop;
+pub(crate) mod trace;
 pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;
@@ -226,6 +230,7 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
         ..JobInfo::default()
     };
     ipl_message(system);
+    liclog::write(0x0100, 0x0001, 0, "");
     cmn::start(system);
     // The descriptor relay between job processes (givedescriptor,
     // takedescriptor, the host server daemons and their prestart jobs).

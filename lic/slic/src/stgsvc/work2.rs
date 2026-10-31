@@ -58,6 +58,42 @@ pub fn data(
             };
             Ok((Vec::new(), rows.into_iter().map(row).collect()))
         }
+        "DSPPRB" => crate::cpp::problem_detail(system, arg(0)),
+        "CNTINF" => {
+            let c = super::prblog::contact(system)?;
+            let vars = c
+                .lines()
+                .into_iter()
+                .enumerate()
+                .map(|(i, (_, v))| (format!("CNT{:02}", i + 1), v))
+                .collect();
+            Ok((vars, Vec::new()))
+        }
+        "SRVPVD" => {
+            let c = super::prblog::contact(system)?;
+            let rows = c
+                .providers
+                .into_iter()
+                .map(|p| {
+                    vec![
+                        pair("CPNAME", p.cpname),
+                        pair("NETID", p.netid),
+                        pair("CNNTYPE", p.connection),
+                        pair("PVDTEXT", p.text),
+                    ]
+                })
+                .collect();
+            Ok((Vec::new(), rows))
+        }
+        "SRVSTS" => {
+            let n = arg(0).parse().unwrap_or(me.number);
+            let vars = crate::cpp::svccmd::service_status(system, n)
+                .into_iter()
+                .enumerate()
+                .map(|(i, (_, v))| (format!("SRV{:02}", i + 1), v))
+                .collect();
+            Ok((vars, Vec::new()))
+        }
         "DSPSAVF" => {
             let (desc, rows) = crate::cpp::savf_listing(system, arg(0), arg(1))?;
             let row = |r: Vec<String>| {
