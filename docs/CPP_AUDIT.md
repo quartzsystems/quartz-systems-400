@@ -82,14 +82,14 @@ menu's message line. A list panel of its own is still open for those
 
 | Command | Wired today | Reads from (after) | Panel | Golden | Fix |
 |---|---|---|---|---|---|
-| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD` | refused on pub400 | 554b33a4 |
-| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP` | refused on pub400 | 554b33a4 |
+| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD` | `verified/oracle71/audit/dspptf` (7.1) captured; no geometry test yet | 554b33a4 |
+| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP` | `verified/oracle71/audit/wrkptfgrp` (7.1) captured; no geometry test yet | 554b33a4 |
 | DSPIPLA | text (`cpp/iplcmd.rs`) | `sys2_panel IPLA` (the LIC record) | QUIIPLA new | `phase11/displays/dspipla`, row for row | 554b33a4 |
 | WRKMSGD | text: bridge word `wrkmsgd` | `msgf_list` | QUIDSPMSGD `WORK` | `audit/displays/wrkmsgd`, geometry | 554b33a4, this batch |
 | WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QUIRDBDIR new | `phase10/misc/wrkrdbdire`, geometry | 554b33a4 |
 | DSPPTFCVR | text (`cpp/ptfcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 554b33a4 |
 | DSPBCKSTS | text (`cpp/opacmd.rs`) | the service's CPP | report viewer | `audit/displays/dspbcksts` captured; panel open | 554b33a4 |
-| DSPLICKEY | text (`cpp/lpcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 554b33a4 |
+| DSPLICKEY | text (`cpp/lpcmd.rs`) | the service's CPP | report viewer | `verified/oracle71/audit/dsplickey` (7.1, key and serial masked); panel open | 554b33a4 |
 | DSPUDFS | text (`cpp/ifscmd.rs`) | the service's CPP | report viewer | none (needs a UDFS) | 554b33a4 |
 | DSPTAP | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no tape on pub400) | 554b33a4 |
 | DSPTAPCTG | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no library) | 554b33a4 |
@@ -137,3 +137,22 @@ escape; nothing else changed.
 The local console had no 5250 display, so every command above took
 the text path there. Owner: the console agent (console as a 5250
 device).
+
+## Step 82 (QEMU, `--only 82`)
+
+The step runs every display command of the shipped definitions from
+`MAIN` (134 with `GO`, `DSPMODSRC` and `DSPBKP` inside a `STRDBG`
+session; `DSPDTA` is not run: it needs a DFU program). Its setup makes
+the objects the parameter table names and runs `CHGDEVD`, `CHGNETA`,
+`CRTDEVDSP`, `VRYCFG` and, in a CL program, `RTVCFGSTS`, so every
+command of this audit has a harness invocation.
+
+Last run at b5c2fe68: one failure.
+
+| Command | Result | Owner |
+|---|---|---|
+| GO | `GO USER` from MAIN's command line shows no menu and no message (the job log has the request only); not diagnosed | open |
+
+`WRKHDWRSC`, `DSPHDWRSC`, `DSPMSG` and `WRKMSG` passed in this
+worktree through the class fix (a panel or the function check); their
+owners' changes replace the `hw` word and the message panels.

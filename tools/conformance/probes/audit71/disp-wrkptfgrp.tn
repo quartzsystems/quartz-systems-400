@@ -1,0 +1,16 @@
+# CPP audit on the 7.1 oracle: WRKPTFGRP from Command Entry, its first
+# display and F3. Read-only; a refusal is the snapshot.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type WRKPTFGRP
+key enter
+settle 3000
+snap wrkptfgrp
+key f3
+settle 2000

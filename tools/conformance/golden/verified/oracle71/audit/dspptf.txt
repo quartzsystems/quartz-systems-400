@@ -1,0 +1,24 @@
+                               Display PTF Status                               
+                                                             System:   SYSNAME  
+ Product ID  . . . . . . . . . . . . . :   5770999                              
+ IPL source  . . . . . . . . . . . . . :   ##MACH#B  ##SERV#P                   
+ Release of base option  . . . . . . . :   V7R1M0 L00                           
+                                                                                
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display PTF details   6=Print cover letter   8=Display cover letter        
+                                                                                
+      PTF                                                   IPL                 
+ Opt  ID       Status                                       Action              
+      RE16082  Permanently applied                          None                
+      RE16053  Permanently applied                          None                
+      RE16032  Permanently applied                          None                
+      RE15349  Permanently applied                          None                
+      RE15279  Permanently applied                          None                
+      RE15097  Permanently applied                          None                
+      RE14245  Permanently applied                          None                
+      RE14197  Permanently applied                          None                
+                                                                        More... 
+ F3=Exit   F11=Display alternate view   F17=Position to   F12=Cancel            
+                                                                                
+                                                                                

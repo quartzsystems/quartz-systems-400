@@ -1,0 +1,24 @@
+[[golden]]
+name = "dsplickey"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "disp-dsplickey"
+width = 80
+
+[[golden]]
+name = "dspptf"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "disp-dspptf"
+width = 80
+
+[[golden]]
+name = "wrkptfgrp"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "disp-wrkptfgrp"
+width = 80
+

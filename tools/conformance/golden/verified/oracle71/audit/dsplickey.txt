@@ -1,0 +1,24 @@
+                        Display License Key Information                SYSNAME  
+                                                             MM/DD/YY  HH:MM:SS 
+ Product identifier  . . . . :   5770SS1                                        
+ License term  . . . . . . . :   V7R1M0                                         
+ Feature . . . . . . . . . . :   5050                                           
+ Description . . . . . . . . :   IBM i                                          
+                                                                                
+ System serial number  . . . :    SERIAL1                                       
+                                                                                
+ Processor group . . . . . . :   *ANY                                           
+                                                                                
+ License Key . . . . . . . . :   XXXXXX XXXXXX XXXXXX                           
+                                                                                
+ Usage limit . . . . . . . . :   *NOMAX                                         
+                                                                                
+ Expiration date . . . . . . :   *NONE                                          
+                                                                                
+ Vendor data . . . . . . . . :   *NONE                                          
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            
