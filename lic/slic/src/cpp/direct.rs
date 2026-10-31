@@ -132,7 +132,15 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             plain(old(system, &format!("dtaara get {}/{n}", lib_or(&l))))
         }
         "CHGDTAARA" => {
-            let (n, l) = parms.qual("DTAARA");
+            // DTAARA is the data area and its substring.
+            let (n, l) = match parms.elems("DTAARA").first().copied().flatten() {
+                Some(cmd::Value::Qual(p)) => (
+                    p.first().map(cmd::Value::source).unwrap_or_default(),
+                    p.get(1).map(cmd::Value::source).filter(|l| l != "''").unwrap_or_default(),
+                ),
+                Some(v) => (v.source(), String::new()),
+                None => (String::new(), String::new()),
+            };
             let n = n.split_whitespace().next().unwrap_or("").to_string();
             let value = parms.text("VALUE");
             let out = old(system, &format!("dtaara set {}/{n} {value}", lib_or(&l)));
