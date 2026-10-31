@@ -62,6 +62,7 @@ fn literal_at(line: &str, at: usize) -> Option<&str> {
 const DIRS: &[&str] = &[
     "work/qsjob/src/command",
     "work/qsjob/src/panels",
+    "work/qsjob/src/devtools",
     "lic/slic/src/cpp",
 ];
 
@@ -140,4 +141,142 @@ fn message_lines_show_no_error_text() {
         }
     }
     assert!(wrong.is_empty(), "message lines with an error's text:\n  {}", wrong.join("\n  "));
+}
+
+/// Where the message lines' words are written: the job's displays
+/// (panels, menus, System Request, the developer tools' drivers), the
+/// UIM dialog, the UIM APIs and the developer tools.
+const LINE_DIRS: &[&str] = &[
+    "work/qsjob/src",
+    "ui/uim/src/engine",
+    "runtime/sysapi/src/uiapi",
+    "devtools",
+];
+
+/// Files allowed a literal on a message line, each with why. (The
+/// LIC's own screens, `lic/`, are not scanned: DST and the IPL console
+/// run before there are message files, as IBM's do.)
+const ALLOWED: &[(&str, &str)] = &[];
+
+/// A file's code: comment lines blank, test modules cut.
+fn code_of(text: &str) -> String {
+    let text = text.find("#[cfg(test)]").map_or(text, |i| &text[..i]);
+    text.lines()
+        .map(|l| if l.trim_start().starts_with("//") { "" } else { l })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// The identifier ending at `end` (letters, digits, `_`, `.`, `*`).
+fn ident_before(code: &str, end: usize) -> &str {
+    let head = code[..end].trim_end();
+    let start = head
+        .rfind(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '.' || c == '*'))
+        .map_or(0, |i| i + 1);
+    &head[start..]
+}
+
+/// Whether an expression starts with text of its own: a literal or a
+/// `format!`, under any `Some(` and `(`.
+fn starts_literal(rhs: &str) -> bool {
+    let mut r = rhs.trim_start();
+    loop {
+        if let Some(x) = r.strip_prefix("Some(") {
+            r = x.trim_start();
+        } else if let Some(x) = r.strip_prefix('(') {
+            r = x.trim_start();
+        } else {
+            break;
+        }
+    }
+    r.starts_with('"') || r.starts_with("format!(") || r.starts_with("String::from(\"")
+}
+
+/// Every message line's text in the scanned files: what is written
+/// to one that is not a message ID (`wrong`), and the IDs written.
+fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
+    let mut wrong = Vec::new();
+    let mut ids = Vec::new();
+    for d in LINE_DIRS {
+        let mut files = Vec::new();
+        sources(&root().join(d), &mut files);
+        for f in files {
+            let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
+            if name.contains("/tests/") || ALLOWED.iter().any(|(a, _)| *a == name) {
+                continue;
+            }
+            let code = code_of(&std::fs::read_to_string(&f).unwrap_or_default());
+            let at = |i: usize| format!("{name}:{}", code[..i].matches('\n').count() + 1);
+            // Assignments to a message: `message = "..."`, `d.message =
+            // Some((format!(..), true))`, `msg = ...`.
+            for (i, _) in code.match_indices('=') {
+                let b = code.as_bytes();
+                let prev = if i > 0 { b[i - 1] } else { b' ' };
+                let next = b.get(i + 1).copied().unwrap_or(b' ');
+                if matches!(prev, b'=' | b'!' | b'<' | b'>' | b'+' | b'-') || matches!(next, b'=' | b'>') {
+                    continue;
+                }
+                let id = ident_before(&code, i).to_ascii_lowercase();
+                let last = id.rsplit('.').next().unwrap_or("").trim_start_matches('*');
+                if (last.contains("message") || last == "msg") && starts_literal(&code[i + 1..]) {
+                    wrong.push(format!("{}: text assigned to {id}", at(i)));
+                }
+            }
+            // Text handed straight to a message line.
+            for pat in [".set_message(\"", ".error_line(\"", "Act::Say(\"", "Refused(\""] {
+                for (i, _) in code.match_indices(pat) {
+                    wrong.push(format!("{}: text given to {}", at(i), pat.trim_end_matches('"')));
+                }
+            }
+            // Messages by identifier: the literal must be one.
+            for pat in [".error(\"", ".info(\"", "LineMsg::error(\"", "LineMsg::info(\"", ".msg(\""] {
+                for (i, _) in code.match_indices(pat) {
+                    if let Some(lit) = literal_at(&code, i + pat.len() - 1) {
+                        ids.push((at(i), lit.to_string()));
+                    }
+                }
+            }
+            // The identifiers a module names as constants.
+            if name.ends_with("/msgid.rs") {
+                for (i, _) in code.match_indices(": &str = \"") {
+                    if let Some(lit) = literal_at(&code, i + 9) {
+                        ids.push((at(i), lit.to_string()));
+                    }
+                }
+            }
+            let said = code.match_indices("msgline::text(").chain(code.match_indices("msgline::say("));
+            for (i, _) in said {
+                // The identifier is the second argument: after the host.
+                let window = &code[i..(i + 120).min(code.len())];
+                if let Some(c) = window.find(',')
+                    && let Some(lit) = literal_at(window, c + 1)
+                {
+                    ids.push((at(i), lit.to_string()));
+                }
+            }
+        }
+    }
+    (wrong, ids)
+}
+
+#[test]
+fn message_lines_carry_message_ids() {
+    let described = described();
+    let (mut wrong, ids) = message_lines();
+    for (at, lit) in ids {
+        if !is_msgid(&lit) {
+            wrong.push(format!("{at}: literal {lit:?} where a message ID goes"));
+        } else if !described.contains(&lit) {
+            wrong.push(format!("{at}: {lit} is in no shipped message file"));
+        }
+    }
+    for (file, why) in ALLOWED {
+        assert!(!why.trim().is_empty(), "{file} is allowed with no reason");
+    }
+    assert!(
+        wrong.is_empty(),
+        "{} message line texts that are not message IDs:\n  {}",
+        wrong.len(),
+        wrong.join("\n  ")
+    );
 }
