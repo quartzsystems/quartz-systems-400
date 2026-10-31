@@ -1,0 +1,24 @@
+                       Display Tape Cartridge (DSPTAPCTG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library device . . . . . . . . . DEV                                           
+ Cartridge ID . . . . . . . . . . CTG            *ALL                           
+                           + for more values                                    
+ Category:                        CGY                                           
+   Category name  . . . . . . . .                *ALL                           
+   Category system  . . . . . . .                *CURRENT                       
+ Output . . . . . . . . . . . . . OUTPUT         *                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

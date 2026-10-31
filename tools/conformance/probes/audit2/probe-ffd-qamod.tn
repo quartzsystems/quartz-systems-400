@@ -1,0 +1,31 @@
+# CPP audit round 2: the record formats of DSPOPT's model outfiles
+# (DSPFFD's first page of each). Read-only.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QAMODVAF)
+key enter
+settle 3000
+snap ffd-qamodvaf
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QAMODPAF)
+key enter
+settle 3000
+snap ffd-qamodpaf
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QAMODFAF)
+key enter
+settle 3000
+snap ffd-qamodfaf
+key f3
+settle 2000

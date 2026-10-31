@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > DSPBCKSTS                                                                 
+    > DSPUDFS UDFS('/dev/QASP01/qsnone.udfs')                                   
+      Object not found.  Object is /dev/QASP01/qsnone.udfs.                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> DSPUDFS UDFS('/dev/QASP01/qsnone.udfs')                                   
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

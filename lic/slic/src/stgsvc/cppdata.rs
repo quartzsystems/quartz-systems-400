@@ -6,7 +6,8 @@
 //! (`docs/CPP_AUDIT.md`): the PTFs of a product and one PTF's detail
 //! (`DSPPTF`), the PTF groups (`WRKPTFGRP`) and the IPL attributes
 //! (`DSPIPLA`), the cover letters (`DSPPTFCVR`) and the license keys
-//! (`DSPLICKEY`) and the backup status (`DSPBCKSTS`). Answered through request 270 (`sys2_panel`) for the
+//! (`DSPLICKEY`), the backup status (`DSPBCKSTS`) and the media
+//! displays (`cppmedia.rs`). Answered through request 270 (`sys2_panel`) for the
 //! job's drivers in `work/qsjob/src/panels/info/`.
 
 use stg::proto::Sys2Data;
@@ -28,6 +29,10 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<
         "PTFCVR" => covers(system, args),
         "LICKEY" => lickeys(system, args),
         "BCKSTS" => backup_status(system),
+        "TAP" => super::cppmedia::tape(system, args),
+        "TAPCTG" => super::cppmedia::cartridges(system, args),
+        "OPT" => super::cppmedia::optical(system, args),
+        "OPTVOLS" => super::cppmedia::volumes(system, args),
         _ => return None,
     })
 }

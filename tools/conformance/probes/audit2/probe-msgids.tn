@@ -1,0 +1,19 @@
+# CPP audit round 2: DSPTAP's message ID with no tape device (F1 on
+# it). Read-only. Recreated from its captures (ids-dsptap-cmdentry,
+# ids-dsptap) after the original was lost; probe-msgid-opt.tn and
+# probe-msgid-more.tn do the same for DSPOPT and DSPTAPCTG.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP DEV(TAP01)
+key enter
+settle 3000
+snap ids-dsptap-cmdentry
+cursor 5 7
+key f1
+settle 2000
+snap ids-dsptap
+key f12
+settle 2000

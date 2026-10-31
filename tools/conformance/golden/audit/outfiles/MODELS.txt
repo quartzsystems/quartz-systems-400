@@ -1,0 +1,170 @@
+# The model outfiles of DSPTAP, DSPTAPCTG and DSPOPT on pub400 (V7R5M0,
+# 2026-10-31), from QSYS2.SYSTABLES and QSYS2.SYSCOLUMNS through STRSQL
+# (tools/conformance/probes/audit2/probe-sqlcols.tn). One line per field:
+# file, field, type, length, scale, the first 40 characters of its text.
+# lic/slic/src/cpp/medout.rs builds the same formats.
+
+## files
+QAMODFAF SYSTEM SUPPLIED OUTFILE FOR DSPOPT DATA(*FILATR).
+QAMODPAF System supplied outfile for DSPOPT DATA(*DIRATR).
+QAMODVAF System supplied outfile for DSPOPT DATA(*VOLATR).
+QATACOF System supplied outfile for DSPTAPCGY command.
+QATADOF System supplied outfile for DSPTAP command.
+QATAIOF System supplied outfile for DSPTAPSTS command.
+QATAIOF2 System supplied outfile for DSPTAPSTS command.
+QATAVOF System supplied outfile for DSPTAPCTG command.
+
+## fields
+QAMODFAF OFDCEN     CHAR     1 0 Display Century
+QAMODFAF OFDDAT     CHAR     6 0 Display Date
+QAMODFAF OFDTIM     CHAR     6 0 Display Time
+QAMODFAF OFFILE     CHAR     256 0 Path Name
+QAMODFAF OFVID      CHAR     32 0 Volume Name
+QAMODFAF OFLIB      CHAR     10 0 Optical Device
+QAMODFAF OFSIZE     DECIMAL  9 0 File Size
+QAMODFAF OFCRDT     CHAR     7 0 File Creation Date
+QAMODFAF OFCRTM     CHAR     6 0 File Creation Time
+QAMODFAF OFMDDT     CHAR     7 0 Last Modification Date
+QAMODFAF OFMDTM     CHAR     6 0 Last Modification Time
+QAMODFAF OFEXDT     CHAR     7 0 File Expiration Date
+QAMODFAF OFEXTM     CHAR     6 0 File Expiration Time
+QAMODFAF OFCNTP     CHAR     1 0 0=No 1=Yes
+QAMODFAF OFCNTN     CHAR     1 0 0=No 1=Yes
+QAMODFAF OFSVID     CHAR     32 0 Starting Volume
+QAMODFAF OFATNM     CHAR     25 0 Attribute Name
+QAMODFAF OFATDA     CHAR     75 0 Attribute Data
+QAMODFAF OFSIZE2    DECIMAL  15 0 File Size 2
+QAMODFAF OFRSVR     CHAR     17 0 Reserved area
+QAMODPAF OPDCEN     CHAR     1 0 Display Century
+QAMODPAF OPDDAT     CHAR     6 0 Display Date
+QAMODPAF OPDTIM     CHAR     6 0 Display Time
+QAMODPAF OPDIR      CHAR     256 0 Directory Name
+QAMODPAF OPVID      CHAR     32 0 Volume Name
+QAMODPAF OPLIB      CHAR     10 0 Optical Device
+QAMODPAF OPCRDT     CHAR     7 0 Directory Creation Date
+QAMODPAF OPCRTM     CHAR     6 0 Directory Creation Time
+QAMODPAF OPRSVR     CHAR     25 0 Reserved area
+QAMODVAF OVDCEN     CHAR     1 0 Display Century
+QAMODVAF OVDDAT     CHAR     6 0 Display Date
+QAMODVAF OVDTIM     CHAR     6 0 Display Time
+QAMODVAF OVNAME     CHAR     32 0 Volume Name
+QAMODVAF OVLIBR     CHAR     10 0 Optical Device
+QAMODVAF OVCSI      CHAR     8 0 Communications side information
+QAMODVAF OVCSIL     CHAR     10 0 CSI Library
+QAMODVAF OVALST     CHAR     10 0 Authorization List
+QAMODVAF OVIVID     CHAR     32 0 Internal Volume ID
+QAMODVAF OVSERN     DECIMAL  11 0 Volume Serial Number
+QAMODVAF OVTYPE     DECIMAL  3 0 (0=Primary 1=Backup 2=Container 4=Unform
+QAMODVAF OVCSID     CHAR     2 0 Hexadecimal value 01F4=EBCDIC(500) 0352=
+QAMODVAF OVMTYP     DECIMAL  3 0 (0=WORM 1=Erase 2=CD-ROM 4=DVD-RAM 9=Unk
+QAMODVAF OVMFMT     DECIMAL  3 0 (0=Unformatted 1=HPOFS 2=ISO9660 4=UDF .
+QAMODVAF OVVFTH     DECIMAL  5 0 Volume Full Threshold
+QAMODVAF OVVSQN     DECIMAL  9 0 Volume Sequence Number
+QAMODVAF OVCRDT     CHAR     7 0 Volume Creation Date
+QAMODVAF OVCRTM     CHAR     6 0 Volume Creation Time
+QAMODVAF OVTEXT     CHAR     50 0 Text
+QAMODVAF OVLRDT     CHAR     7 0 Last Reference Date
+QAMODVAF OVOPVN     CHAR     32 0 Volume on Opposite Side
+QAMODVAF OVBSIZ     DECIMAL  9 0 Block Size
+QAMODVAF OVVSIZ     DECIMAL  13 0 Volume Size
+QAMODVAF OVSPCA     DECIMAL  13 0 Space Available
+QAMODVAF OVVLOC     CHAR     1 0 0=Offline 1=Slot 2=Drive 3=Moving 4=Remo
+QAMODVAF OVSFID     CHAR     50 0 Shelf ID
+QAMODVAF OVVACC     CHAR     1 0 1=Read only 2=Write protected 3=Writeabl
+QAMODVAF OVDBLV     CHAR     1 0 0=No 1=Yes
+QAMODVAF OVDBLS     CHAR     1 0 0=No 1=Yes
+QAMODVAF OVIPL      CHAR     1 0 0=No 1=Yes
+QAMODVAF OVLSTV     CHAR     1 0 0=No 1=Yes
+QAMODVAF OVHELD     CHAR     8 0 Volume Held By
+QAMODVAF OVRSRV     CHAR     15 0 Reserved area
+QAMODVAF OVPNAM     CHAR     32 0 Volume ID for which this volume is a bac
+QAMODVAF OVPSER     DECIMAL  11 0 Serial number of primary volume
+QAMODVAF OVCSDT     CHAR     7 0 Backup starting date
+QAMODVAF OVCSTM     CHAR     6 0 Backup starting time
+QAMODVAF OVCEDT     CHAR     7 0 Backup ending date
+QAMODVAF OVCETM     CHAR     6 0 Backup ending time
+QAMODVAF OVCHDT     CHAR     7 0 Date of last backup
+QAMODVAF OVCHTM     CHAR     6 0 Time of last backup
+QAMODVAF OVAMDT     CHAR     7 0 Volume modification date
+QAMODVAF OVAMTM     CHAR     6 0 Volume modification time
+QAMODVAF OVAXDT     CHAR     7 0 Volume expiration date
+QAMODVAF OVAXTM     CHAR     6 0 Volume expiration time
+QAMODVAF OVAEDT     CHAR     7 0 Effective Date
+QAMODVAF OVAETM     CHAR     6 0 Effective Time
+QAMODVAF OVCPYR     CHAR     37 0 Copyright Information
+QAMODVAF OVABST     CHAR     37 0 Abstract Information
+QAMODVAF OVBIBL     CHAR     37 0 Bibliographic Information
+QAMODVAF OVKEY1     CHAR     1 0 0=Data 1=File name
+QAMODVAF OVPUBL     CHAR     128 0 Publisher
+QAMODVAF OVKEY2     CHAR     1 0 0=Data 1=File name
+QAMODVAF OVPREP     CHAR     128 0 Media Preparer
+QAMODVAF OVKEY3     CHAR     1 0 0=Data 1=File name
+QAMODVAF OVDATS     CHAR     128 0 Data Specification
+QAMODVAF OVCVOL     CHAR     32 0 Associated Container Volume ID
+QAMODVAF OVICLG     CHAR     256 0 IPL Image Catalog Directory
+QATACOF  RDSYSN     CHAR     8 0 System name
+QATACOF  RDDTTM     CHAR     13 0 System date/time - CYYMMDDHHMMSS
+QATACOF  RDCGY      CHAR     10 0 Category
+QATACOF  RDSYS      CHAR     8 0 Category system
+QATADOF  RDSYSN     CHAR     8 0 System name
+QATADOF  RDDTTM     CHAR     13 0 System date/time - CYYMMDDHHMMSS
+QATADOF  RDRECT     CHAR     1 0 Record type: 1=*LABELS
+QATADOF  RDDEVN     CHAR     10 0 Device name
+QATADOF  RDCTGI     CHAR     6 0 Cartridge ID
+QATADOF  RDVOLL     CHAR     80 0 Volume label
+QATADOF  RDDENS     CHAR     10 0 Density
+QATADOF  RDCODE     CHAR     1 0 Code: 0=*EBCDIC, 1=*ASCII
+QATADOF  RDTRL1     CHAR     80 0 Label 1 label
+QATADOF  RDTRL2     CHAR     80 0 Label 2 label
+QATADOF  RDLBID     CHAR     32 0 Logical block ID
+QATADOF  RDSLT      CHAR     1 0 *SL: 0=No, 1=Yes
+QATADOF  RDLTM      CHAR     1 0 *LTM: 0=No, 1=Yes
+QATADOF  RDLFSQ     CHAR     10 0 Sequence number
+QATADOF  RDLASQ     CHAR     10 0 Multi-volume sequence number
+QATADOF  RDFILT     CHAR     8 0 S/36 File type
+QATAIOF  RDSYSN     CHAR     8 0 System name
+QATAIOF  RDDTTM     CHAR     13 0 System date/time - CYYMMDDHHMMSS
+QATAIOF  RDLIB      CHAR     10 0 Library device
+QATAIOF  RDTOTS     NUMERIC  4 0 Total slots
+QATAIOF  RDAVAS     NUMERIC  4 0 Available slots
+QATAIOF  RDIOST     CHAR     1 0 Station status
+QATAIOF  RDNBRT     NUMERIC  2 0 Number of resources
+QATAIOF  RDTAPD     CHAR     80 0 Resource Name
+QATAIOF  RDDEVT     CHAR     32 0 Resource Type
+QATAIOF  RDDEVM     CHAR     32 0 Resource Model
+QATAIOF  RDMIDM     CHAR     48 0 Cartridge ID
+QATAIOF  RDCGYN     CHAR     10 0 Category
+QATAIOF  RDCGYS     CHAR     8 0 Category System
+QATAIOF  RDCTGO     CHAR     10 0 Cartridge Order
+QATAIOF  RDTGTC     CHAR     10 0 Target Category
+QATAIOF  RDTGTS     CHAR     8 0 Target System
+QATAIOF  RDTAP2     CHAR     240 0 Resource Name
+QATAIOF  RDTYP2     CHAR     96 0 Resource Type
+QATAIOF  RDMDL2     CHAR     96 0 Resource Model
+QATAIOF  RDMID2     CHAR     144 0 Cartridge ID
+QATAIOF  RDCGYM     CHAR     32 0 Category mounted: 0=No, 1=Yes
+QATAIOF  RDLEAV     CHAR     32 0 Leave processing: 0=No, 1=Yes
+QATAIOF  RDBARC     CHAR     1 0 Bar code reader: 0=No, 1=Yes
+QATAIOF  RDHIGH     NUMERIC  2 0 High capacity stations
+QATAVOF  RDSYSN     CHAR     8 0 System name
+QATAVOF  RDDTTM     CHAR     13 0 System date/time - CYYMMDDHHMMSS
+QATAVOF  RDMID      CHAR     6 0 Cartridge ID
+QATAVOF  RDVOL      CHAR     6 0 Volume ID
+QATAVOF  RDLIB      CHAR     10 0 Library device name
+QATAVOF  RDCGY      CHAR     10 0 Category
+QATAVOF  RDSYS      CHAR     8 0 Category system
+QATAVOF  RDDEN      CHAR     10 0 Density
+QATAVOF  RDCD       CHAR     7 0 Change date - CYYMMDD
+QATAVOF  RDCT       CHAR     6 0 Change time - HHMMSS
+QATAVOF  RDRD       CHAR     7 0 Reference date - CYYMMDD
+QATAVOF  RDRT       CHAR     6 0 Reference time - HHMMSS
+QATAVOF  RDLOC      CHAR     10 0 Location
+QATAVOF  RDLOCI     CHAR     1 0 Location Indicator
+QATAVOF  RDVSTS     CHAR     2 0 Volume status: 1=Avl, 2=Mnt, 3=NAvl, 4=E
+QATAVOF  RDOWN      CHAR     17 0 Owner ID
+QATAVOF  RDWPR      CHAR     1 0 Write protection: 0=No, 1=Yes
+QATAVOF  RDCODE     CHAR     1 0 Code: 0=Unknown, 1=EBCDIC, 2=ASCII
+QATAVOF  RDMGEN     CHAR     1 0 ID type: 0=Volume, 1=Generated, 2=Bar co
+QATAVOF  RDMIE      CHAR     1 0 Import/Export slot: 0=No, 1=Yes
+QATAVOF  RDMTYP     CHAR     2 0 Media type: blank=Unknown, 00=3490, 01=3
+QATAVOF  RDRSV      CHAR     2 0 Reserved

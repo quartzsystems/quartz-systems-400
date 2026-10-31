@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPF6718       Severity . . . . . . . :   40         
+ Message type . . . . . :   Escape                                              
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Cannot allocate device TAP01.                              
+ Cause . . . . . :   The device could not be allocated when trying to open the  
+   device file to do the command function. The device may be varied off, in use 
+   by another job, or in use by an open file in this job.                       
+ Recovery  . . . :   Use the Work with Configuration Status (WRKCFGSTS) command 
+   specifying the *DEV value for the CFGTYP parameter to verify that the device 
+   is varied on and to determine what job is using the device. Try the command  
+   again when the device is available.                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

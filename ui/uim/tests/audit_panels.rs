@@ -12,6 +12,7 @@
 //! (`QS400_UPDATE_GOLDEN=1` rewrites them).
 
 use std::collections::BTreeSet;
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use uim::render::{ListState, MapDialog, Options, Screen, render};
@@ -85,6 +86,11 @@ fn golden_fields(attr: &[String]) -> BTreeSet<(usize, usize, usize)> {
 /// screen, then its input fields; `skip` rows are left out (a row the
 /// capture's data has and ours does not, said where it is called).
 fn against(rel: &str, s: &Screen, skip: &[usize]) {
+    against_but(rel, s, skip, &[]);
+}
+
+/// `against`, with the input fields of rows `no_fields` left out too.
+fn against_but(rel: &str, s: &Screen, skip: &[usize], no_fields: &[usize]) {
     let want = read(&goldens().join(format!("{rel}.txt")));
     let ours = s.text_rows();
     let mut diff = String::new();
@@ -93,14 +99,16 @@ fn against(rel: &str, s: &Screen, skip: &[usize]) {
             continue;
         }
         if o.trim_end() != w.trim_end() {
-            diff.push_str(&format!("row {:>2}\n  want |{}|\n  got  |{}|\n", i + 1, w.trim_end(), o.trim_end()));
+            let _ = write!(diff, "row {:>2}\n  want |{}|\n  got  |{}|\n", i + 1, w.trim_end(), o.trim_end());
         }
     }
     assert!(diff.is_empty(), "{rel}:\n{diff}");
     let attr = read(&goldens().join(format!("{rel}.attr")));
     let fields: BTreeSet<(usize, usize, usize)> =
         s.fields.iter().filter(|f| f.usage.is_input()).map(|f| (f.row, f.col, f.len)).collect();
-    assert_eq!(fields, golden_fields(&attr), "{rel}: input fields");
+    let mut golden = golden_fields(&attr);
+    golden.retain(|f| !no_fields.contains(&f.0));
+    assert_eq!(fields, golden, "{rel}: input fields");
 }
 
 /// Our own rendering against `tests/golden/audit/NAME.txt`.
@@ -240,4 +248,123 @@ fn dspbcksts_with_backups() {
         list(vec![vec![("HSTEP", "SAVLIB completed")], vec![("HSTEP", "SAVCFG failed")], vec![("HSTEP", "SAV completed")]]),
     );
     ours("dspbckdtl", &render(&g, "DSPBCKDTL", &d, &opts(0)).unwrap());
+}
+
+// ------------------------------------------------- tape and optical
+
+/// `WRKOPTVOL` with no volumes against pub400's capture (which has no
+/// optical device either). Row 11 is IBM's add entry (an option and a
+/// volume field over the list); the renderer has no such row yet, so
+/// ours leaves it blank and its fields are not compared.
+#[test]
+fn wrkoptvol_matches_the_capture() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    d.set("WDEV", "*ALL").set("CSI", "*ALL");
+    d.set_list("VOLS", list(Vec::new()));
+    against_but("audit/displays/wrkoptvol", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(), &[], &[11]);
+}
+
+/// `WRKOPTVOL` with two volumes: IBM's columns, ours filled.
+#[test]
+fn wrkoptvol_with_volumes() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    d.set("WDEV", "*ALL").set("CSI", "*ALL");
+    d.set_list(
+        "VOLS",
+        list(vec![
+            vec![("VOL", "QS400V1R0M0"), ("DEV", "OPTVRT01"), ("VOLTYPE", "*PRIMARY"), ("MEDTYPE", "*CD-ROM"), ("AUTL", "*NONE")],
+            vec![("VOL", "BACKUP1"), ("DEV", "OPTVRT01"), ("VOLTYPE", "*PRIMARY"), ("MEDTYPE", "*DVD-RAM"), ("AUTL", "*NONE")],
+        ]),
+    );
+    ours("wrkoptvol", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap());
+}
+
+/// `DSPTAP`: no oracle has a tape (`CPF6718` on pub400,
+/// `audit/displays/ids-dsptap`); the labels, the volume label alone and
+/// the saves, from IBM's documentation.
+#[test]
+fn dsptap_views() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    for (k, v) in [("VOLID", "VOL001"), ("OWNER", "QS400"), ("VOLTYPE", "SL"), ("CODE", "*EBCDIC"), ("DEV", "TAPVRT01")] {
+        d.set(k, v);
+    }
+    d.set_list(
+        "FILES",
+        list(vec![
+            vec![("FSEQ", "1"), ("FLABEL", "QFILEA"), ("FVSEQ", "1"), ("FCRT", "10/31/26"), ("FEXP", "*PERM"), ("FBLK", "12"), ("FEND", "EOF")],
+            vec![("FSEQ", "2"), ("FLABEL", "QGPL"), ("FVSEQ", "1"), ("FCRT", "10/31/26"), ("FEXP", "*NONE"), ("FBLK", "340"), ("FEND", "EOF")],
+        ]),
+    );
+    ours("dsptap", &render(&g, "DSPTAP", &d, &opts(0)).unwrap());
+    ours("dsptapvol", &render(&g, "DSPTAPVOL", &d, &opts(0)).unwrap());
+    d.set_list(
+        "OBJS",
+        list(vec![
+            vec![("OSEQ", "2"), ("OBJ", "QGPL"), ("OTYPE", "*LIB"), ("OLIB", "QSYS"), ("OATTR", "PROD"), ("OSIZE", "65536"), ("OTEXT", "General purpose")],
+            vec![("OSEQ", "2"), ("OBJ", "QCLSRC"), ("OTYPE", "*FILE"), ("OLIB", "QGPL"), ("OATTR", "PF"), ("OSIZE", "28672")],
+        ]),
+    );
+    ours("dsptapsav", &render(&g, "DSPTAPSAV", &d, &opts(0)).unwrap());
+}
+
+/// `DSPTAPCTG`: one cartridge (no oracle has a library: `CPF9814`).
+#[test]
+fn dsptapctg_one_cartridge() {
+    let mut d = MapDialog::new();
+    for (k, v) in [
+        ("MLBDEV", "TAPMLB01"),
+        ("CTG", "VOL001"),
+        ("CTGVOL", "VOL001"),
+        ("CTGCGY", "*SHARE400"),
+        ("CTGSYS", "SYSNAME"),
+        ("CTGSTS", "Available"),
+        ("CTGLOC", "*SLOT"),
+        ("CTGHOME", "3"),
+    ] {
+        d.set(k, v);
+    }
+    ours("dsptapctg", &render(&group("QSMEDIA"), "DSPTAPCTG", &d, &opts(0)).unwrap());
+}
+
+/// `DSPOPT`'s four views (no oracle has a volume: `OPT1860`).
+#[test]
+fn dspopt_views() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    for (k, v) in [
+        ("VOLID", "QS400V1R0M0"),
+        ("DEV", "OPTVRT01"),
+        ("VOLTYPE", "*PRIMARY"),
+        ("MEDTYPE", "*CD-ROM"),
+        ("MEDFMT", "*ISO9660"),
+        ("WRTPTC", "Yes"),
+        ("CRTDTS", "10/31/26  12:00:00"),
+        ("VOLCAP", "734003200"),
+        ("VOLUSED", "512000000"),
+        ("VOLFREE", "222003200"),
+        ("BLKSIZ", "2048"),
+        ("SETSIZE", "1"),
+        ("SETSEQ", "1"),
+    ] {
+        d.set(k, v);
+    }
+    ours("dspoptvol", &render(&g, "DSPOPTVOL", &d, &opts(0)).unwrap());
+    d.set_list(
+        "DIRS",
+        list(vec![
+            vec![("DPATH", "/"), ("DFILES", "3"), ("DDIRS", "2"), ("DBYTES", "4096")],
+            vec![("DPATH", "/QSAVSYS"), ("DFILES", "1"), ("DDIRS", "0"), ("DBYTES", "512000000")],
+        ]),
+    );
+    ours("dspoptdir", &render(&g, "DSPOPTDIR", &d, &opts(0)).unwrap());
+    d.set_list("OFILES", list(vec![vec![("FPATH", "/QSAVSYS/SAVSYS.SAV"), ("FSIZE", "512000000")]]));
+    ours("dspoptfil", &render(&g, "DSPOPTFIL", &d, &opts(0)).unwrap());
+    d.set_list(
+        "OSAVS",
+        list(vec![vec![("OFILE", "/QSAVSYS/SAVSYS.SAV"), ("OBJ", "QSYS"), ("OTYPE", "*LIB"), ("OLIB", "QSYS"), ("OSIZE", "512000000"), ("OTEXT", "System library")]]),
+    );
+    ours("dspoptsav", &render(&g, "DSPOPTSAV", &d, &opts(0)).unwrap());
 }

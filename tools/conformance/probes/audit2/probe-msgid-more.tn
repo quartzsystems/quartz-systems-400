@@ -1,0 +1,16 @@
+# CPP audit round 2: DSPTAPCTG's message ID with no library (F1 on
+# it). Read-only. probe-udfs-hist.tn has DSPUDFS and DSPBCKSTS F22.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAPCTG DEV(TAPMLB01)
+key enter
+settle 3000
+cursor 5 7
+key f1
+settle 2000
+snap ids-dsptapctg
+key f12
+settle 2000

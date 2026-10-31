@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+      Command prompting ended when user pressed F12.                            
+    > DSPOBJD OBJ(QSYS/QAMO*) OBJTYPE(*FILE)                                    
+    > DSPFFD FILE(QSYS/QATAVOF)                                                 
+    > DSPFFD FILE(QSYS/QATAIOF)                                                 
+    > DSPFFD FILE(QSYS/QATADOF)                                                 
+    > DSPFFD FILE(QSYS/QATACOF)                                                 
+    > DSPTAP DEV(TAP01)                                                         
+      Cannot allocate device TAP01.                                             
+    > DSPTAPCTG DEV(TAPMLB01)                                                   
+      Device TAPMLB01 not found.                                                
+    > DSPOPT VOL(*MOUNTED) DEV(OPT01)                                           
+      Request to optical device OPT01 failed.                                   
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> DSPOPT VOL(*MOUNTED) DEV(OPT01)                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   OPT1860       Severity . . . . . . . :   40         
+ Message type . . . . . :   Escape                                              
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Request to optical device OPT01 failed.                    
+ Cause . . . . . :   The request to optical device OPT01 failed. Either the     
+   optical device is varied off, in vary on pending state, or unexpected errors 
+   occurred.                                                                    
+ Recovery  . . . :   Use the Work Configuration Status (WRKCFGSTS) CL command   
+   specifying CFGTYPE(*DEV) CFG(OPT01) to check the status and ensure that the  
+   device is active.                                                            
+     -- If the device is varied off, vary it on and try the request again.      
+     -- If the device is an NFS optical Device in vary on pending state, vary   
+   the device off, verify the device is configured correctly, then vary the     
+   device back on and try the request again.                                    
+     -- If the device is active, see the job log or QSYSOPR message queue for   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

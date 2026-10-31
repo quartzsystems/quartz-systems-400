@@ -98,8 +98,7 @@ pub fn dspptfcvr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
     }
     loop {
         match show(&mut d, surface, "SELCVR")? {
-            Response::Exit | Response::Gone => return Ok(String::new()),
-            Response::Cancel | Response::Return(0) => return Ok(String::new()),
+            Response::Exit | Response::Gone | Response::Cancel | Response::Return(0) => return Ok(String::new()),
             Response::Options(choices) => {
                 for c in &choices {
                     match c.option.trim() {

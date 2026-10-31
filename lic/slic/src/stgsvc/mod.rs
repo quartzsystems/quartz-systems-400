@@ -55,6 +55,7 @@ mod served;
 mod seu;
 pub(crate) mod sysdata;
 mod cppdata;
+mod cppmedia;
 mod system2;
 mod sysdsp;
 

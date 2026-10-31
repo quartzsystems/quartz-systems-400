@@ -1,0 +1,87 @@
+# CPP audit round 2: the prompts of the media and IFS displays with
+# OUTPUT(*OUTFILE) (where the command takes it), and the model files
+# QSYS holds for them. Read-only: prompts are cancelled, DSPOBJD lists.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP OUTPUT(*OUTFILE)
+key f4
+settle 3000
+snap dsptap-prompt
+key pagedown
+settle 1500
+snap dsptap-prompt2
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPOPT OUTPUT(*OUTFILE)
+key f4
+settle 3000
+snap dspopt-prompt
+key pagedown
+settle 1500
+snap dspopt-prompt2
+key f12
+settle 2000
+key reset
+key eraseinput
+type WRKOPTVOL
+key f4
+settle 3000
+snap wrkoptvol-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPTAPCTG
+key f4
+settle 3000
+snap dsptapctg-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPPTFCVR
+key f4
+settle 3000
+snap dspptfcvr-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPBCKSTS
+key f4
+settle 3000
+snap dspbcksts-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPUDFS
+key f4
+settle 3000
+snap dspudfs-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPOBJD OBJ(QSYS/QATA*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap qata-files
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPOBJD OBJ(QSYS/QAOP*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap qaop-files
+key pagedown
+settle 1500
+snap qaop-files2
+key f12
+settle 2000

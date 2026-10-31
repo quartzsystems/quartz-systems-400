@@ -1,0 +1,24 @@
+                        Display Tape Volume Information
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   VOL001
+ Owner identifier . . . . . . . :   QS400
+ Volume type  . . . . . . . . . :   SL
+ Code . . . . . . . . . . . . . :   *EBCDIC
+ Device . . . . . . . . . . . . :   TAPVRT01
+
+ File                         Volume    Creation  Expiration
+ Sequence  File Label         Sequence  Date         Date     Blocks    Ends
+ 1         QFILEA             1         10/31/26  *PERM       12        EOF
+ 2         QGPL               1         10/31/26  *NONE       340       EOF
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

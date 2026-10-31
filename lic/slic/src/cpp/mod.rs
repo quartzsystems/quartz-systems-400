@@ -25,6 +25,8 @@ pub(crate) mod lpcmd;
 pub(crate) mod iplcmd;
 mod itgcmd;
 pub(crate) mod medcmd;
+pub(crate) mod meddsp;
+mod medout;
 mod msgfcmd;
 mod objcmd;
 pub(crate) mod opacmd;

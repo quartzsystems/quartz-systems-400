@@ -3,14 +3,15 @@
 /* root directory of this project.                                       */
 
 /* WRKOPTVOL: work with the optical volumes the system knows.         */
-             CMD        PROMPT('Work with Optical Volumes') MAXPOS(2) +
+             CMD        PROMPT('Work with Optical Volumes') MAXPOS(3) +
                           ALLOW(*ALL) HLPPNLGRP(QHOPCMD) +
                           HLPID(WRKOPTVOL)
-             PARM       KWD(VOL) TYPE(*GENERIC) LEN(32) DFT(*ALL) +
-                          SPCVAL((*ALL)) PROMPT('Volume')
-             PARM       KWD(CSI) TYPE(*NAME) LEN(10) DFT(*ALL) +
-                          SPCVAL((*ALL)) PROMPT('Server')
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) DFT(*ALL) +
-                          SPCVAL((*ALL)) PROMPT('Device')
-             PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(6) RSTD(*YES) +
-                          DFT(*) VALUES(* *PRINT) PROMPT('Output')
+                          SPCVAL((*ALL)) PROMPT('Optical device')
+             PARM       KWD(VOL) TYPE(*GENERIC) LEN(32) DFT(*ALL) +
+                          SPCVAL((*ALL)) PROMPT('Volume identifier')
+             PARM       KWD(CSI) TYPE(*NAME) LEN(10) DFT(*ALL) +
+                          SPCVAL((*ALL) (*NONE)) PROMPT('Side information')
+             PARM       KWD(RTVEXTINFO) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+                          DFT(*NO) VALUES(*NO *YES) +
+                          PROMPT('Retrieve extended information')

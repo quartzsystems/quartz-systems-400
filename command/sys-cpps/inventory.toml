@@ -1024,25 +1024,25 @@ note = "a panel at a display; the service's text otherwise"
 
 [cmd.DSPBCKSTS]
 site = "job"
-note = "the report viewer at a display; the service's text otherwise"
+note = "a panel at a display; the service's text otherwise"
 
 [cmd.DSPLICKEY]
 site = "job"
-note = "the report viewer at a display; the service's text otherwise"
+note = "a panel at a display; the service's text otherwise"
 
 [cmd.DSPTAP]
 site = "job"
-note = "the report viewer at a display; the service's text otherwise"
+note = "a panel at a display; the service's text otherwise"
 
 [cmd.DSPTAPCTG]
 site = "job"
-note = "the report viewer at a display; the service's text otherwise"
+note = "a panel at a display; the service's text otherwise"
 
 [cmd.DSPOPT]
 site = "job"
-note = "the report viewer at a display; the service's text otherwise"
+note = "a panel at a display; the service's text otherwise"
 
 [cmd.WRKOPTVOL]
 site = "job"
-note = "the report viewer at a display; the service's text otherwise"
+note = "a panel at a display; the service's text otherwise"
 

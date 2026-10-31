@@ -1,0 +1,24 @@
+                         Display Tape Save Information
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   VOL001
+ Device . . . . . . . . . . . . :   TAPVRT01
+
+ Seq   Object      Type        Library     Attribute   Size        Text
+ 2     QGPL        *LIB        QSYS        PROD        65536       General purp
+ 2     QCLSRC      *FILE       QGPL        PF          28672
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

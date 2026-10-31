@@ -1,0 +1,24 @@
+                        Display Optical File Attributes
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   QS400V1R0M0
+ Optical device . . . . . . . . :   OPTVRT01
+
+ File                                                          Size
+ /QSAVSYS/SAVSYS.SAV                                           512000000
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

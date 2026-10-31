@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > DSPFFD FILE(QSYS/QATAVOF)                                                 
+    > DSPFFD FILE(QSYS/QATAIOF)                                                 
+    > DSPFFD FILE(QSYS/QATADOF)                                                 
+    > DSPFFD FILE(QSYS/QATACOF)                                                 
+    > DSPTAP DEV(TAP01)                                                         
+      Cannot allocate device TAP01.                                             
+    > DSPTAPCTG DEV(TAPMLB01)                                                   
+      Device TAPMLB01 not found.                                                
+    > DSPOPT VOL(*MOUNTED) DEV(OPT01)                                           
+      Request to optical device OPT01 failed.                                   
+    > DSPUDFS UDFS('/dev/QASP01/qsnone.udfs')                                   
+      Object not found.  Object is /dev/QASP01/qsnone.udfs.                     
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> DSPUDFS UDFS('/dev/QASP01/qsnone.udfs')                                   
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

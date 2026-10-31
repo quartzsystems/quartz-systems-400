@@ -57,3 +57,219 @@ date = "2026-10-31"
 script = "probe-udfs-hist"
 width = 80
 note = "DSPBCKSTS F22 with no history"
+
+[[golden]]
+name = "dsptap-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPTAP's prompt with OUTPUT(*OUTFILE): OUTFILE and OUTMBR"
+
+[[golden]]
+name = "dspopt-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPOPT's prompt with OUTPUT(*OUTFILE): OUTFILE and OUTMBR"
+
+[[golden]]
+name = "wrkoptvol-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "WRKOPTVOL's prompt: DEV, VOL, CSI, RTVEXTINFO; no OUTPUT"
+
+[[golden]]
+name = "dsptapctg-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPTAPCTG's prompt (QSYS/QATAVOF is its model outfile)"
+
+[[golden]]
+name = "dspudfs-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPUDFS's prompt: UDFS and OUTPUT; no OUTFILE"
+
+[[golden]]
+name = "qata-files"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPOBJD of QSYS/QATA*: the tape model outfiles"
+
+[[golden]]
+name = "qaop-files"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPOBJD of QSYS/QAOP*: QAOPOUFL, not a DSPOPT model"
+
+[[golden]]
+name = "qamo-files"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPOBJD of QSYS/QAMO*: DSPOPT's model outfiles QAMODVAF, QAMODPAF, QAMODFAF"
+
+[[golden]]
+name = "ffd-qatavof"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPFFD QSYS/QATAVOF page 1: DSPTAPCTG's model, format QTAVOUTF"
+
+[[golden]]
+name = "ffd-qataiof"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPFFD QSYS/QATAIOF page 1 (DSPTAPSTS, not one of ours)"
+
+[[golden]]
+name = "ffd-qatadof"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPFFD QSYS/QATADOF page 1: DSPTAP's model, format QTADOUTF"
+
+[[golden]]
+name = "ffd-qatacof"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPFFD QSYS/QATACOF page 1 (DSPTAPCGY, not one of ours)"
+
+[[golden]]
+name = "dsptap-nodev"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPTAP DEV(TAP01): pub400 has no tape device (CPF6718); the panel's layout is from IBM's documentation"
+
+[[golden]]
+name = "dsptapctg-nodev"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPTAPCTG DEV(TAPMLB01): pub400 has no media library (CPF9814); the panel's layout is from IBM's documentation"
+
+[[golden]]
+name = "dspopt-nodev"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPOPT DEV(OPT01): pub400 has no optical volume (OPT1860); the panels' layouts are from IBM's documentation"
+
+[[golden]]
+name = "dspudfs-none"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPUDFS of a UDFS that does not exist"
+
+[[golden]]
+name = "ids-dsptap-cmdentry"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-msgids"
+width = 80
+note = "DSPTAP with no device at Command Entry (script recreated)"
+
+[[golden]]
+name = "ids-dsptap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-msgids"
+width = 80
+note = "F1 on it: CPF6718 (script recreated)"
+
+[[golden]]
+name = "ids-dspopt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-msgid-opt"
+width = 80
+note = "F1 on DSPOPT with no volume: OPT1860"
+
+[[golden]]
+name = "ids-dsptapctg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-msgid-more"
+width = 80
+note = "F1 on DSPTAPCTG with no library: CPF9814"
+
+[[golden]]
+name = "ids-dspudfs-cmdentry"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-udfs-hist"
+width = 80
+note = "DSPUDFS of a missing UDFS at Command Entry"
+
+[[golden]]
+name = "ffd-qamodvaf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-ffd-qamod"
+width = 80
+note = "DSPFFD QSYS/QAMODVAF page 1: DSPOPT DATA(*VOLATR), format QAMODVA"
+
+[[golden]]
+name = "ffd-qamodpaf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-ffd-qamod"
+width = 80
+note = "DSPFFD QSYS/QAMODPAF page 1: DSPOPT DATA(*DIRATR), format QAMODPA"
+
+[[golden]]
+name = "ffd-qamodfaf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-ffd-qamod"
+width = 80
+note = "DSPFFD QSYS/QAMODFAF page 1: DSPOPT DATA(*FILATR), format QAMODFA"

@@ -1,0 +1,24 @@
+                      Display Optical Directory Attributes
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   QS400V1R0M0
+ Optical device . . . . . . . . :   OPTVRT01
+
+ Directory                                 Files     Directories  Bytes
+ /                                         3         2            4096
+ /QSAVSYS                                  1         0            512000000
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

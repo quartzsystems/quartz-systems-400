@@ -1,0 +1,93 @@
+# CPP audit round 2: DSPOPT's OUTFILE prompt, the DSPTAP model files'
+# first DSPFFD page, and the media and UDFS displays with no device
+# (what pub400 answers). Read-only.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPOPT VOL(X) OUTPUT(*OUTFILE)
+key f4
+settle 3000
+key f10
+settle 2000
+snap dspopt-prompt-f10
+key pagedown
+settle 1500
+snap dspopt-prompt-f10b
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPOBJD OBJ(QSYS/QAMO*) OBJTYPE(*FILE)
+key enter
+settle 3000
+snap qamo-files
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QATAVOF)
+key enter
+settle 3000
+snap ffd-qatavof
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QATAIOF)
+key enter
+settle 3000
+snap ffd-qataiof
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QATADOF)
+key enter
+settle 3000
+snap ffd-qatadof
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QSYS/QATACOF)
+key enter
+settle 3000
+snap ffd-qatacof
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01)
+key enter
+settle 3000
+snap dsptap-nodev
+key reset
+key eraseinput
+type DSPTAPCTG DEV(TAPMLB01)
+key enter
+settle 3000
+snap dsptapctg-nodev
+key reset
+key eraseinput
+type DSPOPT VOL(*MOUNTED) DEV(OPT01)
+key enter
+settle 3000
+snap dspopt-nodev
+key reset
+key eraseinput
+type DSPUDFS UDFS('/dev/QASP01/qsnone.udfs')
+key enter
+settle 3000
+snap dspudfs-none
+key reset
+key eraseinput
+type DSPBCKSTS
+key enter
+settle 3000
+key pagedown
+settle 1500
+snap dspbcksts-2
+key f3
+settle 2000

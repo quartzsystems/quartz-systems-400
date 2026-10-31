@@ -1,0 +1,24 @@
+                       Display Object Description - Basic                       
+                                                                 Library 1 of 1 
+ Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     
+                                          Library ASP group . . :   *SYSBAS     
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display full attributes   8=Display service attributes                     
+                                                                                
+ Opt  Object      Type      Attribute               Size  Text                  
+      QATACOF     *FILE     PF                     16384  System supplied outfi 
+      QATADOF     *FILE     PF                     16384  System supplied outfi 
+      QATAIOF     *FILE     PF                     20480  System supplied outfi 
+      QATAIOF2    *FILE     PF                     20480  System supplied outfi 
+      QATAVOF     *FILE     PF                     28672  System supplied outfi 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

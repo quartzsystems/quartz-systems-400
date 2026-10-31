@@ -1,0 +1,76 @@
+# CPP audit round 2: the fields of the DSPTAP and DSPOPT model outfiles
+# from QSYS2.SYSCOLUMNS, through STRSQL. Read-only (SELECT only).
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type STRSQL
+key enter
+settle 4000
+wait "Enter SQL Statements"
+type SELECT TABLE_NAME CONCAT ' ' CONCAT VARCHAR(TABLE_TEXT, 50) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSYS' AND TABLE_NAME IN ('QATAVOF','QATADOF','QATAIOF','QATAIOF2','QATACOF','QAMODVAF','QAMODPAF','QAMODFAF')
+key enter
+settle 5000
+snap sql-tables
+key f3
+settle 2000
+type SELECT SUBSTR(TABLE_NAME,1,8) CONCAT ' ' CONCAT SYSTEM_COLUMN_NAME CONCAT ' ' CONCAT SUBSTR(DATA_TYPE,1,8) CONCAT ' ' CONCAT VARCHAR(LENGTH) CONCAT ' ' CONCAT VARCHAR(COALESCE(NUMERIC_SCALE,0)) CONCAT ' ' CONCAT VARCHAR(COALESCE(COLUMN_TEXT,''),40) FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = 'QSYS' AND TABLE_NAME IN ('QATAVOF','QATADOF','QATAIOF','QATACOF','QAMODVAF','QAMODPAF','QAMODFAF') ORDER BY TABLE_NAME, ORDINAL_POSITION
+key enter
+settle 6000
+snap sql-cols-01
+key pagedown
+settle 1500
+snap sql-cols-02
+key pagedown
+settle 1500
+snap sql-cols-03
+key pagedown
+settle 1500
+snap sql-cols-04
+key pagedown
+settle 1500
+snap sql-cols-05
+key pagedown
+settle 1500
+snap sql-cols-06
+key pagedown
+settle 1500
+snap sql-cols-07
+key pagedown
+settle 1500
+snap sql-cols-08
+key pagedown
+settle 1500
+snap sql-cols-09
+key pagedown
+settle 1500
+snap sql-cols-10
+key pagedown
+settle 1500
+snap sql-cols-11
+key pagedown
+settle 1500
+snap sql-cols-12
+key pagedown
+settle 1500
+snap sql-cols-13
+key pagedown
+settle 1500
+snap sql-cols-14
+key pagedown
+settle 1500
+snap sql-cols-15
+key pagedown
+settle 1500
+snap sql-cols-16
+key pagedown
+settle 1500
+snap sql-cols-17
+key pagedown
+settle 1500
+snap sql-cols-18
+key f3
+settle 2000
+key f3
+settle 3000

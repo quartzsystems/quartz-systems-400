@@ -1,0 +1,24 @@
+                        Display Tape Volume Information
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   VOL001
+ Owner identifier . . . . . . . :   QS400
+ Volume type  . . . . . . . . . :   SL
+ Code . . . . . . . . . . . . . :   *EBCDIC
+ Device . . . . . . . . . . . . :   TAPVRT01
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Press Enter to continue.
+
+ F3=Exit   F12=Cancel
+

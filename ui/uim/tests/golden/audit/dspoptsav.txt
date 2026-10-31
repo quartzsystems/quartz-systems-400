@@ -1,0 +1,24 @@
+                        Display Optical Save Information
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   QS400V1R0M0
+ Optical device . . . . . . . . :   OPTVRT01
+
+ Optical File  Object      Type        Library     Size        Text
+ /QSAVSYS/SAV  QSYS        *LIB        QSYS        512000000   System library
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

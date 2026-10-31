@@ -1,0 +1,24 @@
+                       Display Optical Volume Attributes
+                                                             System:   SYSNAME
+ Volume identifier  . . . . . . :   QS400V1R0M0
+ Optical device . . . . . . . . :   OPTVRT01
+ Volume type  . . . . . . . . . :   *PRIMARY
+ Media type . . . . . . . . . . :   *CD-ROM
+ Media format . . . . . . . . . :   *ISO9660
+ Text . . . . . . . . . . . . . :
+ Write protected  . . . . . . . :   Yes
+
+ Created  . . . . . . . . . . . :   10/31/26  12:00:00
+ Last changed . . . . . . . . . :
+
+ Volume capacity (bytes)  . . . :   734003200
+ Space used (bytes) . . . . . . :   512000000
+ Space available (bytes)  . . . :   222003200
+ Block size . . . . . . . . . . :   2048
+
+ Volume set . . . . . . . . . . :
+                                                                        More...
+ Press Enter to continue.
+
+ F3=Exit   F12=Cancel
+

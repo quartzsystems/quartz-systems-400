@@ -1,0 +1,24 @@
+                             Display Tape Cartridge
+                                                             System:   SYSNAME
+ Library device . . . . . . . . :   TAPMLB01
+
+ Cartridge ID . . . . . . . . . :   VOL001
+ Volume ID  . . . . . . . . . . :   VOL001
+ Category . . . . . . . . . . . :   *SHARE400
+ Category system  . . . . . . . :   SYSNAME
+ Status . . . . . . . . . . . . :   Available
+ Location . . . . . . . . . . . :   *SLOT
+ Home location  . . . . . . . . :   3
+
+
+
+
+
+
+
+
+
+ Press Enter to continue.
+
+ F3=Exit   F12=Cancel
+

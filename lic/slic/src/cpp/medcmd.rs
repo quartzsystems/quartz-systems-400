@@ -17,15 +17,16 @@ use imgclg::ops::{AddImgClgE, AddVrtVol, ChgImgClgE, CrtImgClg, EntryOption, Fro
 use imgclg::ImgType;
 use medio::MediaError;
 use stg::proto::CmdReply;
-use tape::volume::{Check, ChkOptions, DupOptions, DupSeq, FileReader, InzOptions, ReadOptions, ToSeq, VolumeKind};
+use tape::volume::{Check, ChkOptions, DupOptions, DupSeq, InzOptions, ToSeq};
 use tape::device::Category;
-use tape::{MAX_BLOCK, SeqNbr, TapeTransport, VolumeProvider};
+use tape::{SeqNbr, TapeTransport, VolumeProvider};
 use wm::obj::devd::Devd;
 use wm::obj::devmed::{MediaDevice, MediaKind};
 
 use super::direct::failed;
 use super::done;
 use crate::ipl::system::{System, now_unix};
+use super::meddsp;
 use crate::stgsvc::media::drive::{self, TapeJob};
 use crate::stgsvc::media::{self, catalogs, devices, stream};
 
@@ -52,9 +53,10 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "DSPOPT" => dspopt(system, parms),
         "CHKOPT" => chkopt(system, parms),
         "DUPOPT" => dupopt(system, parms),
-        "WRKOPTVOL" => Ok(plain(wrkoptvol(system))),
+        "WRKOPTVOL" => wrkoptvol(system, parms).map(plain),
         "WRKMLBSTS" => Ok(plain(wrkmlbsts_text(system, &parms.name("MLB")))),
-        "DSPTAPCTG" | "WRKTAPCTG" | "ADDTAPCTG" | "RMVTAPCTG" | "CHGTAPCTG" => mlb_ctg(system, name, parms),
+        "DSPTAPCTG" => dsptapctg(system, parms),
+        "WRKTAPCTG" | "ADDTAPCTG" | "RMVTAPCTG" | "CHGTAPCTG" => mlb_ctg(system, name, parms),
         _ => return None,
     };
     Some(match r {
@@ -506,53 +508,8 @@ fn inztap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(ok(&format!("Volume {id} initialized on device {dev}.\n"), VOL_INITIALIZED, &[(&id, 6), (&dev, 10)]))
 }
 
-/// DSPTAP's job: the labels, and for `*SAVRST` each save's stream.
-struct Dsp {
-    vol: Option<String>,
-    label: Option<String>,
-    range: (u32, u32),
-    saves: bool,
-    end_opt: tape::EndOpt,
-}
-
-type DspOut = (tape::volume::VolumeLabels, Vec<(u32, String, Vec<u8>)>);
-
-impl TapeJob for Dsp {
-    type Out = DspOut;
-    fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, p: &mut dyn VolumeProvider<D>) -> Result<DspOut, MediaError> {
-        let l = tape::volume::labels(d, self.vol.as_deref(), tape::EndOpt::Rewind)?;
-        let mut out = Vec::new();
-        if self.saves {
-            let wanted: Vec<(u32, String)> = l
-                .files
-                .iter()
-                .filter(|f| f.label.volume_seq <= 1)
-                .filter(|f| (self.range.0..=self.range.1).contains(&f.label.file_seq))
-                .filter(|f| self.label.as_ref().is_none_or(|x| *x == f.label.file_id))
-                .map(|f| (f.label.file_seq, f.label.file_id.clone()))
-                .collect();
-            for (seq, id) in wanted {
-                let opts = ReadOptions {
-                    seq: Some(seq),
-                    ..ReadOptions::default()
-                };
-                let mut r = FileReader::open(&mut *d, &mut *p, opts)?;
-                let mut buf = vec![0u8; MAX_BLOCK];
-                let mut bytes = Vec::new();
-                while let Some(n) = r.read_block(&mut buf)? {
-                    bytes.extend_from_slice(&buf[..n]);
-                }
-                r.finish()?;
-                out.push((seq, id, bytes));
-            }
-        }
-        self.end_opt.apply(d)?;
-        Ok((l, out))
-    }
-}
-
-fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let dev = parms.name("DEV");
+/// The sequence range `SEQNBR` names.
+fn seq_range(parms: &Parms) -> (u32, u32) {
     let e = parms.elems("SEQNBR");
     let num = |i: usize, dft: i64| {
         e.get(i)
@@ -566,72 +523,70 @@ fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         0 => first,
         n => u32::try_from(n).unwrap_or(u32::MAX),
     };
-    let label = parms.text("LABEL").trim().to_ascii_uppercase();
-    let data = parms.name("DATA");
-    let mut job = Dsp {
-        vol: vol(parms, "VOL"),
-        label: (!label.is_empty() && label != "*ALL").then_some(label),
-        range: (first, last),
-        saves: data == "*SAVRST",
-        end_opt: stream::end_opt(&parms.name("ENDOPT")),
-    };
-    let vl: Vec<String> = job.vol.iter().cloned().collect();
-    let (l, saves) = drive::with_tape(system, &dev, &vl, false, &mut job)?;
-    let mut s = String::new();
-    match &l.kind {
-        VolumeKind::Labeled { vol1, code } => {
-            let _ = writeln!(s, "Volume identifier . . . . . : {}", vol1.volume_id);
-            let _ = writeln!(s, "Owner identifier  . . . . . : {}", vol1.owner);
-            let _ = writeln!(s, "Volume type . . . . . . . . : SL");
-            let _ = writeln!(s, "Code  . . . . . . . . . . . : {}", if *code == tape::label::Code::Ascii { "*ASCII" } else { "*EBCDIC" });
-        }
-        k => {
-            let _ = writeln!(s, "Volume identifier . . . . . : {}", k.id());
-        }
-    }
+    (first, last)
+}
+
+/// `DSPTAP`'s view of the volume its parameters name.
+pub(crate) fn tape_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::TapView, String> {
+    let (dev, vol, label, data, endopt) = (parms.name("DEV"), parms.text("VOL"), parms.text("LABEL"), parms.name("DATA"), parms.name("ENDOPT"));
+    meddsp::tape_view(
+        system,
+        &meddsp::TapAsk {
+            dev: &dev,
+            vol: &vol,
+            label: &label,
+            range: seq_range(parms),
+            data: &data,
+            end_opt: &endopt,
+        },
+    )
+}
+
+/// The text form, and the printed report, of `DSPTAP`.
+fn tape_lines(v: &meddsp::TapView, data: &str) -> Vec<String> {
+    let mut s = vec![
+        format!("Volume identifier . . . . . : {}", v.vol),
+        format!("Owner identifier  . . . . . : {}", v.owner),
+        format!("Volume type . . . . . . . . : {}", v.vol_type),
+        format!("Code  . . . . . . . . . . . : {}", v.code),
+        format!("Device  . . . . . . . . . . : {}", v.dev),
+    ];
     if data == "*VOLLBL" {
-        return Ok(plain(s));
+        return s;
     }
-    if job.saves {
-        for (seq, id, bytes) in &saves {
-            let _ = writeln!(s, "\nFile sequence {seq}, label {id}");
-            match super::savcmd::stream_listing(bytes) {
-                Ok((desc, rows)) => {
-                    for (k, v) in &desc {
-                        let _ = writeln!(s, "  {k:<24} {v}");
-                    }
-                    let _ = writeln!(s, "  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Object", "Type", "Library", "Attribute", "Size");
-                    for r in &rows {
-                        let _ = writeln!(s, "  {:<10} {:<10} {:<10} {:<10} {:>12}  {}", r[0], r[1], r[2], r[3], r[4], r[5]);
-                    }
-                }
-                Err(e) => {
-                    let _ = writeln!(s, "  not a save: {e}");
-                }
-            }
+    if data == "*SAVRST" {
+        s.push(String::new());
+        s.push(format!("{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Seq", "Object", "Type", "Library", "Attribute", "Size"));
+        for o in &v.objects {
+            let r = &o.row;
+            let c = |i: usize| r.get(i).map_or("", String::as_str);
+            s.push(format!("{:>4}  {:<10} {:<10} {:<10} {:<10} {:>12}  {}", o.seq, c(0), c(1), c(2), c(3), c(4), c(5)));
         }
-        return Ok(plain(s));
+        return s;
     }
-    let _ = writeln!(s, "Seq   Label              VolSeq  Created  Expires  Blocks  End");
-    for f in l.files.iter().filter(|f| (first..=last).contains(&f.label.file_seq)) {
-        let when = |d: Option<tape::label::Date>| d.map_or_else(|| "*NONE".to_string(), |d| format!("{}.{:03}", d.year, d.day));
-        let exp = match f.label.expires {
-            tape::label::Expiry::None => "*NONE".to_string(),
-            tape::label::Expiry::Perm => "*PERM".to_string(),
-            tape::label::Expiry::Date(d) => format!("{}.{:03}", d.year, d.day),
-        };
-        let end = match f.trailer {
-            tape::label::LabelSet::EndOfFile => "EOF",
-            tape::label::LabelSet::EndOfVolume => "EOV",
-            tape::label::LabelSet::Header => "*NONE",
-        };
-        let _ = writeln!(
-            s,
-            "{:>4}  {:<17}  {:>6}  {:<8} {:<8} {:>6}  {end}",
-            f.label.file_seq, f.label.file_id, f.label.volume_seq, when(f.label.created), exp, f.label.block_count
-        );
+    s.push(String::new());
+    s.push("Seq   Label              VolSeq  Created   Expires   Blocks  End".into());
+    for f in &v.files {
+        s.push(format!(
+            "{:>4}  {:<17}  {:>6}  {:<8}  {:<8} {:>6}  {}",
+            f.seq, f.label, f.volseq, f.created, f.expires, f.blocks, f.end
+        ));
     }
-    Ok(plain(s))
+    s
+}
+
+fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    let v = tape_view_of(system, parms)?;
+    match parms.name("OUTPUT").as_str() {
+        "*OUTFILE" => {
+            if parms.name("DATA") != "*LABELS" {
+                return Err("CPD0084 OUTPUT(*OUTFILE) is valid with DATA(*LABELS) only.".into());
+            }
+            super::medout::tape(system, parms, &v).map(plain)
+        }
+        "*PRINT" => crate::svc::security::print_as(system, "QSYSPRT", "DSPTAP", &tape_lines(&v, &parms.name("DATA")), false).map(plain),
+        _ => Ok(plain(tape_lines(&v, &parms.name("DATA")).join("\n") + "\n")),
+    }
 }
 
 struct Chk(ChkOptions);
@@ -796,61 +751,22 @@ fn inzopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(ok(&format!("Volume {new} initialized on device {}.\n", t.dev), VOL_INITIALIZED, &[(&new, 32), (&t.dev, 10)]))
 }
 
-fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let (_, volid) = optical(system, parms, "VOL", "DEV")?;
-    let set = media::volume_set();
-    let data = parms.name("DATA");
+/// `DSPOPT`'s view of the volume its parameters name.
+pub(crate) fn optical_view_of(system: &mut System, parms: &Parms) -> Result<meddsp::OptView, String> {
     let path = parms.text("PATH");
-    let path = if path.trim().is_empty() { "/".to_string() } else { path.trim().trim_matches('\'').to_string() };
-    let mut s = String::new();
-    let opt = |e: optical::Error| format!("{} {e}", e.msgid());
-    match data.as_str() {
-        "*DIRATR" => {
-            for d in set.with(&volid, |v| optical::volume::ops::dir_attrs(v, &path, true)).map_err(opt)? {
-                let _ = writeln!(s, "{:<40} files {:>6}  directories {:>6}  bytes {:>12}", d.path, d.files, d.dirs, d.bytes);
-            }
-        }
-        "*FILATR" => {
-            for f in set.with(&volid, |v| optical::volume::ops::file_attrs(v, &path)).map_err(opt)? {
-                let _ = writeln!(s, "{:<50} {:>12}", f.path, f.size);
-            }
-        }
-        "*SAVRST" => {
-            let mut files: Vec<String> = set
-                .with(&volid, |v| optical::volume::ops::file_attrs(v, "/"))
-                .map_err(opt)?
-                .into_iter()
-                .map(|f| f.path)
-                .collect();
-            if let Ok(sys) = set.with(&volid, |v| optical::volume::ops::file_attrs(v, "/QSAVSYS")) {
-                files.extend(sys.into_iter().map(|f| f.path));
-            }
-            // Install media: what it is, then its product loads too.
-            if let Some(c) = set.with(&volid, |v| Ok(instmedia::savsys::recognize_volume(v).ok().flatten())).map_err(opt)? {
-                s.push_str(&install_media_text(&c));
-                let lp = format!("/{}", instmedia::layout::LP_DIR);
-                if let Ok(l) = set.with(&volid, |v| optical::volume::ops::file_attrs(v, &lp)) {
-                    files.extend(l.into_iter().map(|f| f.path));
-                }
-            }
-            for f in files {
-                let bytes = set.with(&volid, |v| v.read_all(&f)).map_err(opt)?;
-                let Ok((desc, rows)) = super::savcmd::stream_listing(&bytes) else { continue };
-                let _ = writeln!(s, "Optical file {f}");
-                for (k, v) in &desc {
-                    let _ = writeln!(s, "  {k:<24} {v}");
-                }
-                let _ = writeln!(s, "  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Object", "Type", "Library", "Attribute", "Size");
-                for r in &rows {
-                    let _ = writeln!(s, "  {:<10} {:<10} {:<10} {:<10} {:>12}  {}", r[0], r[1], r[2], r[3], r[4], r[5]);
-                }
-            }
-        }
-        _ => {
-            let a = set.with(&volid, |v| optical::volume::ops::volume_attrs(v)).map_err(opt)?;
+    meddsp::optical_view(system, &parms.text("VOL"), &parms.name("DEV"), &parms.name("DATA"), &path)
+}
+
+/// The text form, and the printed report, of `DSPOPT`.
+fn optical_lines(v: &meddsp::OptView) -> Vec<String> {
+    let mut s = Vec::new();
+    match v {
+        meddsp::OptView::Volume(o) => {
+            let a = &o.attrs;
             let yn = |b: bool| if b { "*YES" } else { "*NO" };
             let rows = [
                 ("Volume identifier", a.volume_id.clone()),
+                ("Optical device", o.dev.clone()),
                 ("Text", a.text.clone()),
                 ("Media format", a.media_format.to_string()),
                 ("Writable volume", yn(a.writable_layout).to_string()),
@@ -864,11 +780,43 @@ fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
                 ("Sequence in set", a.sequence.to_string()),
             ];
             for (k, v) in rows {
-                let _ = writeln!(s, "{k:.<30} : {v}");
+                s.push(format!("{k:.<30} : {v}"));
+            }
+        }
+        meddsp::OptView::Dirs(_, _, dirs) => {
+            for d in dirs {
+                s.push(format!("{:<40} files {:>6}  directories {:>6}  bytes {:>12}", d.path, d.files, d.dirs, d.bytes));
+            }
+        }
+        meddsp::OptView::Files(_, _, files) => {
+            for f in files {
+                s.push(format!("{:<50} {:>12}", f.path, f.size));
+            }
+        }
+        meddsp::OptView::Saves(_, _, saves) => {
+            for (f, (desc, rows)) in saves {
+                s.push(format!("Optical file {f}"));
+                for (k, v) in desc {
+                    s.push(format!("  {k:<24} {v}"));
+                }
+                s.push(format!("  {:<10} {:<10} {:<10} {:<10} {:>12}  Text", "Object", "Type", "Library", "Attribute", "Size"));
+                for r in rows {
+                    let c = |i: usize| r.get(i).map_or("", String::as_str);
+                    s.push(format!("  {:<10} {:<10} {:<10} {:<10} {:>12}  {}", c(0), c(1), c(2), c(3), c(4), c(5)));
+                }
             }
         }
     }
-    Ok(plain(s))
+    s
+}
+
+fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    let v = optical_view_of(system, parms)?;
+    match parms.name("OUTPUT").as_str() {
+        "*OUTFILE" => super::medout::optical(system, parms, &v).map(plain),
+        "*PRINT" => crate::svc::security::print_as(system, "QSYSPRT", "DSPOPT", &optical_lines(&v), false).map(plain),
+        _ => Ok(plain(optical_lines(&v).join("\n") + "\n")),
+    }
 }
 
 fn chkopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -918,18 +866,22 @@ fn dupopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(ok(&format!("Volume {from} duplicated onto device {}.\n", t.dev), VOL_DUPLICATED, &[(&from, 32), (&t.dev, 10)]))
 }
 
-fn wrkoptvol(system: &mut System) -> String {
-    let mut s = String::from("Volume                            Device      Catalog     Protected\n");
-    let devs = devices::all(system).unwrap_or_default();
-    for (n, d) in devs.iter().filter(|(_, d)| d.media_kind() == Some(MediaKind::Optical)) {
-        let _ = d;
-        if let Some(c) = media::catalog_on(n)
-            && let Some(e) = c.mounted()
-        {
-            let _ = writeln!(s, "{:<32}  {:<10}  {:<10}  {}", e.volume, n, c.name, if e.write_protect { "*YES" } else { "*NO" });
-        }
+fn wrkoptvol(system: &mut System, parms: &Parms) -> Result<String, String> {
+    let rows = meddsp::optical_volumes(system, &parms.name("DEV"), &parms.text("VOL"))?;
+    let mut s = String::from("Volume                            Device      Volume Type  Media Type  Catalog     Protected\n");
+    for r in &rows {
+        let _ = writeln!(
+            s,
+            "{:<32}  {:<10}  {:<11}  {:<10}  {:<10}  {}",
+            r.vol,
+            r.dev,
+            r.vol_type,
+            r.media_type,
+            r.catalog,
+            if r.protected { "*YES" } else { "*NO" }
+        );
     }
-    s
+    Ok(s)
 }
 
 // ------------------------------------------------------------ media library
@@ -989,6 +941,30 @@ pub(crate) fn tapctg_rows(system: &mut System, dev: &str, ids: &[String], cgy: &
     media::library::rows(system, dev, ids, cgy)
 }
 
+/// `DSPTAPCTG`'s cartridges as text, printed, or in an outfile.
+fn dsptapctg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    let all = meddsp::cartridges(system, &parms.name("DEV"), &ctgs(parms), &cgy(parms))?;
+    if parms.name("OUTPUT") == "*OUTFILE" {
+        return super::medout::cartridges(system, parms, &all).map(plain);
+    }
+    let mut s = Vec::new();
+    for c in &all {
+        let r = &c.row;
+        s.push(format!("Library device  . . . : {}", c.dev));
+        s.push(format!("Cartridge ID  . . . . : {}", r.id));
+        s.push(format!("Volume ID . . . . . . : {}", r.volume));
+        s.push(format!("Category  . . . . . . : {}", r.category));
+        s.push(format!("Status  . . . . . . . : {}", r.status));
+        s.push(format!("Location  . . . . . . : {}", r.location));
+        s.push(format!("Home slot . . . . . . : {}", r.home));
+        s.push(String::new());
+    }
+    if parms.name("OUTPUT") == "*PRINT" {
+        return crate::svc::security::print_as(system, "QSYSPRT", "DSPTAPCTG", &s, false).map(plain);
+    }
+    Ok(plain(s.join("\n") + "\n"))
+}
+
 fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, String> {
     let dev = parms.name("DEV");
     let d = devices::read(system, &dev)?;
@@ -998,20 +974,9 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
     let ids = ctgs(parms);
     let cgy = cgy(parms);
     match name {
-        "WRKTAPCTG" | "DSPTAPCTG" => {
+        "WRKTAPCTG" => {
             let rows = tapctg_rows(system, &dev, &ids, &cgy)?;
             let mut s = format!("Library device  . . . : {dev}\n");
-            if name == "DSPTAPCTG" {
-                for r in &rows {
-                    let _ = writeln!(s, "\nCartridge ID  . . . . : {}", r.id);
-                    let _ = writeln!(s, "Volume ID . . . . . . : {}", r.volume);
-                    let _ = writeln!(s, "Category  . . . . . . : {}", r.category);
-                    let _ = writeln!(s, "Status  . . . . . . . : {}", r.status);
-                    let _ = writeln!(s, "Location  . . . . . . : {}", r.location);
-                    let _ = writeln!(s, "Home slot . . . . . . : {}", r.home);
-                }
-                return Ok(plain(s));
-            }
             let _ = writeln!(s, "Cartridge  Volume  Category    Status      Location");
             for r in &rows {
                 let _ = writeln!(s, "{:<9}  {:<6}  {:<10}  {:<10}  {}", r.id, r.volume, r.category, r.status, r.location);

@@ -5,8 +5,6 @@
 //! Displays whose data is a report: the command's own processing
 //! program runs in the storage service, and its lines show in the
 //! report viewer (`QUIRPTVW`), never on a menu's message line.
-//! `TODO(phase12)`: list panels of their own for the media displays
-//! (`DSPTAP`, `DSPTAPCTG`, `DSPOPT`, `WRKOPTVOL`).
 
 use cmd::Resolved;
 use mi::Job;
@@ -18,13 +16,6 @@ use crate::display::surface::Surface;
 /// The title of a command's report.
 fn title(name: &str) -> &'static str {
     match name {
-        "DSPPTFCVR" => "Display PTF Cover Letter",
-        "DSPBCKSTS" => "Display Backup Status",
-        "DSPLICKEY" => "Display License Key Information",
-        "DSPTAP" => "Display Tape Volume Information",
-        "DSPTAPCTG" => "Display Tape Cartridge",
-        "DSPOPT" => "Display Optical",
-        "WRKOPTVOL" => "Work with Optical Volumes",
         "DSPUDFS" => "Display User-Defined FS",
         _ => "Display Report",
     }
