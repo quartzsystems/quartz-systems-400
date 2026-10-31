@@ -146,6 +146,41 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
     }
 }
 
+/// What the operator picked on the menu while the operating system
+/// install is pending.
+pub enum Pending {
+    /// Option 1.
+    Ipl,
+    /// Option 2.
+    InstallOs,
+    /// Option 3.
+    Dst,
+}
+
+/// The menu F3 or F12 on the pending install's DST sign-on returns to:
+/// option 1 IPLs, 2 installs the operating system, 3 is DST again.
+pub fn pending(system: &mut System, rx: &Receiver<Event>) -> Pending {
+    let mut message: Option<(String, bool)> = None;
+    loop {
+        let mut s = screen(system);
+        if let Some((text, error)) = message.take() {
+            ui::message(&mut s, &text, error);
+        }
+        show(system, s);
+        let Some(answer) = read(system, rx) else {
+            return Pending::Dst;
+        };
+        match first_field(&answer).as_str() {
+            "1" => return Pending::Ipl,
+            "2" => return Pending::InstallOs,
+            "3" => return Pending::Dst,
+            "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
+            "" => {}
+            _ => message = Some((dst_text::INVALID_SELECTION.to_string(), true)),
+        }
+    }
+}
+
 /// Option 3: DST. True when it asks for the IPL to go on.
 fn service_tools(
     system: &mut System,

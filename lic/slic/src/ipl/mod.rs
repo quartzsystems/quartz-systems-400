@@ -369,12 +369,17 @@ fn pending_install(
             }
             dst::Outcome::AutoInstall => auto = true,
             dst::Outcome::PerformIpl => power::down(system, true),
-            dst::Outcome::Exit => {
-                system
-                    .out
-                    .both("slic: IPL halted; the operating system is not installed\n");
-                park();
-            }
+            // F3 or F12 on the sign-on: back to the IPL or Install the
+            // System menu, as IBM's does.
+            dst::Outcome::Exit => match menu::pending(system, rx) {
+                menu::Pending::Ipl => power::down(system, true),
+                menu::Pending::InstallOs => {
+                    if install::run_os(system, rx) {
+                        return Ok(());
+                    }
+                }
+                menu::Pending::Dst => {}
+            },
             _ => {}
         }
     }
