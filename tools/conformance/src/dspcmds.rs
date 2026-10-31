@@ -47,8 +47,10 @@ impl Suite {
         ] {
             run(&mut d, &mut ctx, &format!("type \"{cmd}\"\nkey enter\nsettle 1500\n{keys}"))?;
             report.push_str(&format!("--- {cmd}\n{}", screen(&d)));
-            run(&mut d, &mut ctx, "key f3\nsettle 800\nkey f3\nsettle 800\n")?;
-            if !d.term.contains("Main Menu") {
+            for _ in 0..3 {
+                if d.term.contains("Main Menu") {
+                    break;
+                }
                 run(&mut d, &mut ctx, "key f3\nsettle 800\n")?;
             }
         }
