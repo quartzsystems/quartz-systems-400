@@ -96,6 +96,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         release::full()
     );
     let epoch: u64 = SOURCE_DATE_EPOCH.parse()?;
+    let uki_check = uki_bytes.clone();
     let volume_id = format!("QS400_{release}");
     let b = compose(Parts {
         volume_id: &volume_id,
@@ -107,6 +108,8 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         readme,
     })?;
     let image = b.build()?;
+    let checked = validate(&image, &uki_check)?;
+    info!("iso: {checked}");
 
     let out = ctx
         .paths
@@ -121,6 +124,64 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         sha256_bytes(&image)
     );
     Ok(out)
+}
+
+/// Read the image back with our own readers and check that it boots
+/// all three ways: the El Torito entry is EFI and points at the boot
+/// image, the boot image holds the UKI, the tree holds the same bytes,
+/// partition 1 is exactly the boot image, and the MBR and both GPTs
+/// check out. Returns one line for the log.
+pub fn validate(image: &[u8], uki: &[u8]) -> Result<String> {
+    use optical::iso::{boot::PLATFORM_EFI, hybrid};
+    let img = optical::IsoImage::open(image).context("ISO does not read back")?;
+    let entry = img
+        .info()
+        .boot
+        .context("no El Torito boot entry")?;
+    ensure!(
+        entry.platform == PLATFORM_EFI && entry.bootable && entry.media == 0,
+        "El Torito entry is not a bootable EFI no-emulation entry: {entry:?}"
+    );
+    let efi = img.lookup(BOOT_IMAGE)?;
+    ensure!(
+        efi.extents.len() == 1 && efi.extents[0].0 == entry.lba,
+        "El Torito entry does not point at {BOOT_IMAGE}"
+    );
+    let efi_bytes = img.read_file(&efi)?;
+    let inner = fat::read_file(&efi_bytes, BOOT_FILE)
+        .with_context(|| format!("{BOOT_IMAGE} has no {BOOT_FILE}"))?;
+    ensure!(inner == uki, "{BOOT_IMAGE}'s {BOOT_FILE} is not the media UKI");
+    for path in [BOOT_FILE, LIC_FILE] {
+        let loose = img.read_file(&img.lookup(path)?)?;
+        ensure!(loose == inner, "{path} in the ISO tree differs from the boot image's");
+    }
+    let gpt = hybrid::verify(&image).context("partition table")?;
+    let p1 = gpt
+        .partitions
+        .iter()
+        .find(|p| p.index == 1)
+        .context("no partition 1")?;
+    let first = u64::from(entry.lba) * 4;
+    let last = first + efi.size.div_ceil(512) - 1;
+    ensure!(
+        p1.type_guid == hybrid::EFI_SYSTEM && p1.first_lba == first && p1.last_lba == last,
+        "partition 1 is LBAs {}..={}, the boot image {first}..={last}",
+        p1.first_lba,
+        p1.last_lba
+    );
+    let p2 = gpt
+        .partitions
+        .iter()
+        .find(|p| p.index == 2)
+        .context("no partition 2")?;
+    ensure!(
+        p2.type_guid == hybrid::QUARTZ_MEDIA && p2.first_lba == 64 && p2.last_lba + 1 == first,
+        "partition 2 does not cover the ISO 9660 payload"
+    );
+    Ok(format!(
+        "El Torito EFI at sector {}, ESP LBAs {first}..={last}, payload LBAs 64..={}, GPT and backup valid",
+        entry.lba, p2.last_lba
+    ))
 }
 
 #[cfg(test)]
@@ -143,6 +204,11 @@ mod tests {
     #[test]
     fn the_tree_carries_the_loose_efi_files() {
         let iso = compose(parts()).unwrap().build().unwrap();
+        validate(&iso, b"uki").unwrap();
+        assert!(validate(&iso, b"other").is_err());
+        let mut bad = iso.clone();
+        bad[1024 + 40] ^= 1;
+        assert!(validate(&bad, b"uki").is_err());
         assert_eq!(compose(parts()).unwrap().build().unwrap(), iso);
         let img = IsoImage::open(iso.as_slice()).unwrap();
         assert!(img.info().joliet && img.info().rock_ridge);

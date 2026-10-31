@@ -23,6 +23,8 @@ serde_json.workspace = true
 crc.workspace = true
 store = { path = "../../storage/store", version = "0.1.0" }
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
+optical = { path = "../../media/optical", version = "0.1.0" }
 db = { path = "../../database/db", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }
 sql = { path = "../../database/sql", version = "0.1.0" }

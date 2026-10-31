@@ -23,7 +23,8 @@ struct Cli {
     /// Installation ISO. Defaults to the orchestrator's latest.
     #[arg(long)]
     iso: Option<PathBuf>,
-    /// What to boot: `disk` (the six steps) or `iso` (the media steps).
+    /// What to boot: `disk` (the six steps), `iso` (the media steps),
+    /// `iso-raw` or `iso-fat` (the ISO as a raw disk or a FAT32 copy).
     #[arg(long, default_value = "disk")]
     media: Media,
     /// With `--media iso`: install onto a blank disk and boot it.

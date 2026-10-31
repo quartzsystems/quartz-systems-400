@@ -105,6 +105,30 @@ pub fn build(spec: &Spec, files: &[(&str, &[u8])]) -> Result<Vec<u8>, Error> {
     Ok(cur.into_inner())
 }
 
+/// A FAT32 volume of at least `payload` bytes of files, with room to
+/// spare: 2 KiB clusters, 256 MiB at the least, whole MiB.
+#[must_use]
+pub fn fat32_for(payload: u64) -> Spec {
+    const MIB: u64 = 1024 * 1024;
+    let need = (payload + payload / 4 + 64 * MIB).div_ceil(MIB) * MIB;
+    Spec {
+        bytes: need.max(256 * MIB),
+        fat: FatType::Fat32,
+        bytes_per_cluster: 2048,
+    }
+}
+
+/// One file's bytes (`"EFI/BOOT/BOOTX64.EFI"` style path).
+pub fn read_file(image: &[u8], path: &str) -> Result<Vec<u8>, Error> {
+    use std::io::Read;
+    let mut cur = Cursor::new(image.to_vec());
+    let fs = FileSystem::new(&mut cur, FsOptions::new()).map_err(fat_err("re-mount"))?;
+    let mut f = fs.root_dir().open_file(path).map_err(fat_err("open"))?;
+    let mut out = Vec::new();
+    f.read_to_end(&mut out).map_err(Error::io("read file"))?;
+    Ok(out)
+}
+
 /// Every path on a volume, directories with a trailing slash, sorted.
 pub fn list(image: &[u8]) -> Result<Vec<String>, Error> {
     let mut cur = Cursor::new(image.to_vec());
@@ -144,6 +168,9 @@ mod tests {
     #[test]
     fn media_image_is_fat16_with_the_boot_file() {
         let img = build(&MEDIA_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"uki")]).unwrap();
+        assert_eq!(read_file(&img, "EFI/BOOT/BOOTX64.EFI").unwrap(), b"uki");
+        assert!(read_file(&img, "EFI/NONE").is_err());
+        assert_eq!(fat32_for(1).bytes, 256 * 1024 * 1024);
         assert_eq!(img.len(), 31 * 1024 * 1024);
         assert_eq!(
             list(&img).unwrap(),

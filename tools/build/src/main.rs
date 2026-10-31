@@ -66,7 +66,8 @@ enum Command {
         #[arg(long)]
         release: bool,
     },
-    /// Boot under QEMU and run the suite: `--media disk` (default) or `iso`.
+    /// Boot under QEMU and run the suite: `--media disk` (default), `iso`,
+    /// `iso-raw` (the ISO as a raw disk) or `iso-fat` (its tree on FAT32).
     Test {
         /// What to boot.
         #[arg(long, default_value = "disk")]

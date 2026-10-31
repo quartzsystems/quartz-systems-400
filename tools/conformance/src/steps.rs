@@ -72,6 +72,10 @@ pub enum Media {
     /// The installation ISO: media IPL alone, then with the disk attached
     /// under both boot orders.
     Iso,
+    /// The ISO written raw onto a virtio disk.
+    IsoRaw,
+    /// The ISO's tree copied onto a FAT32 disk (the Rufus case).
+    IsoFat,
 }
 
 impl std::str::FromStr for Media {
@@ -81,7 +85,11 @@ impl std::str::FromStr for Media {
         match s {
             "disk" => Ok(Media::Disk),
             "iso" => Ok(Media::Iso),
-            other => Err(format!("unknown media `{other}` (disk or iso)")),
+            "iso-raw" => Ok(Media::IsoRaw),
+            "iso-fat" => Ok(Media::IsoFat),
+            other => Err(format!(
+                "unknown media `{other}` (disk, iso, iso-raw or iso-fat)"
+            )),
         }
     }
 }
@@ -107,7 +115,7 @@ pub struct Suite {
     pub(crate) bench: u64,
     /// Power pulls to run (0 skips the step).
     pub(crate) pulls: u32,
-    iso: Option<PathBuf>,
+    pub(crate) iso: Option<PathBuf>,
     /// Directory for the working image, the QMP socket and screenshots.
     pub out_dir: PathBuf,
     /// Time allowed for an IPL to reach completion.
@@ -143,8 +151,8 @@ impl Suite {
             None => None,
         };
         match (media, iso) {
-            (Media::Iso, None) => return Err(HarnessError::ImageMissing(out_dir.join("iso.path"))),
-            (Media::Iso, Some(iso)) if !iso.is_file() => {
+            (Media::Iso | Media::IsoRaw | Media::IsoFat, None) => return Err(HarnessError::ImageMissing(out_dir.join("iso.path"))),
+            (Media::Iso | Media::IsoRaw | Media::IsoFat, Some(iso)) if !iso.is_file() => {
                 return Err(HarnessError::ImageMissing(iso.to_path_buf()));
             }
             (Media::Disk, _) if work.is_none() => {
@@ -221,6 +229,8 @@ impl Suite {
             Media::Disk => self.run_disk(),
             Media::Iso if self.install => self.run_install(),
             Media::Iso => self.run_iso(),
+            Media::IsoRaw => self.run_media_disk(false),
+            Media::IsoFat => self.run_media_disk(true),
         }
     }
 
@@ -414,7 +424,7 @@ impl Suite {
 
     /// Media step 1: the D IPL sequence with C1001015, the attended IPL
     /// menu (answered with option 1 over serial), then the sign-on screen.
-    fn media_ipl(&self, s: &mut Session) -> Result<String, String> {
+    pub(crate) fn media_ipl(&self, s: &mut Session) -> Result<String, String> {
         s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
         s.expect("Selection", self.boot_timeout)?;
         s.send("1")?;

@@ -24,6 +24,7 @@ pub mod ftp;
 mod ftpsrv;
 mod ifs;
 mod load;
+pub mod media;
 mod nettools;
 mod phase2;
 mod phase5;
