@@ -125,7 +125,7 @@ were answered by hand during the capture, before every job got
 
 ## Bench
 
-Release builds on the development machine (WSL2, Ryzen, 64 GiB),
+Release builds on the development machine (WSL2 on an i9-12900K, 32 GiB),
 stores in memory unless noted.
 
 **Save and restore through a save stream**
