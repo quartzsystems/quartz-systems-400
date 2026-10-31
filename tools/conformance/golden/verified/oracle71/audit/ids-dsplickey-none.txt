@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPF9E58                                             
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   License key information not found.                         
+                                                                                
+ Cause . . . . . :   License key information for product 5770SS1 license term   
+   *ALL feature 5999 and system serial number *LOCAL was not found in the       
+   license repository. Some of the following parameters may be specified        
+   incorrectly: product, license term, feature, or system serial number. If     
+   this is an install, then you will need to get a license key from your        
+   software provider and add it to the license repository by using the Add      
+   License Key (ADDLICKEY) command.                                             
+ Recovery  . . . :   Specify the correct parameter values.  Then try the        
+   request again.                                                               
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F1=Help   F3=Exit   F6=Print      F9=Display message details                   
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

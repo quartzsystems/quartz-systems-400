@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `DSPPTF` and `WRKPTFGRP` over the PTF database (`QSYS/QSPTFDB`,
+//! `DSPPTF`, `WRKPTFGRP` and `DSPPTFCVR` over the PTF database (`QSYS/QSPTFDB`,
 //! `lic/slic/src/cpp/ptfcmd.rs`), through the service's panel data.
 
 use cmd::Resolved;
@@ -12,7 +12,7 @@ use super::{NO_PRINT, act, dialog, fetch, load, parm, parm_list, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
-use crate::display::uim::Response;
+use crate::display::uim::{Response, UimDialog};
 
 /// `DSPPTF LICPGM() SELECT()`: the product's PTFs; option 5 shows what
 /// the database holds for one.
@@ -72,10 +72,87 @@ pub fn wrkptfgrp(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
 }
 
 /// A list entry's value.
-fn cell(d: &crate::display::uim::UimDialog, list: &str, row: usize, var: &str) -> String {
+fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
     d.row(list, row)
         .into_iter()
         .find(|(v, _)| v == var)
         .map(|(_, x)| x.trim().to_string())
         .unwrap_or_default()
+}
+
+/// `DSPPTFCVR LICPGM() SELECT() CVRATR() STATUS()`: the cover letters
+/// that match, one shown at once when only one does; option 5 shows a
+/// letter, option 6 prints it.
+pub fn dspptfcvr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+    let args = [
+        parm(r, "LICPGM"),
+        parm_list(r, "SELECT").join(","),
+        parm_list(r, "CVRATR").join(","),
+        parm(r, "STATUS"),
+    ];
+    let mut d = dialog(host, "QUIDSPPTF")?;
+    load(&mut d, fetch(host, "PTFCVR", &args)?);
+    if d.list_mut("CVRS").rows.len() == 1 {
+        letter(host, surface, &d, 0)?;
+        return Ok(String::new());
+    }
+    loop {
+        match show(&mut d, surface, "SELCVR")? {
+            Response::Exit | Response::Gone => return Ok(String::new()),
+            Response::Cancel | Response::Return(0) => return Ok(String::new()),
+            Response::Options(choices) => {
+                for c in &choices {
+                    match c.option.trim() {
+                        "5" => {
+                            if letter(host, surface, &d, c.row)? {
+                                return Ok(String::new());
+                            }
+                        }
+                        "6" => {
+                            let line = format!(
+                                "DSPPTFCVR LICPGM({}) SELECT({}) OUTPUT(*PRINT)",
+                                cell(&d, &c.list, c.row, "PRODID"),
+                                cell(&d, &c.list, c.row, "PTFID")
+                            );
+                            let out = crate::command::run(job, host, &line);
+                            d.message = Some(match out.escape {
+                                Some(f) => (f.text.lines().last().unwrap_or("").trim().to_string(), true),
+                                None => (out.text.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("").to_string(), false),
+                            });
+                        }
+                        o => d.message = Some((format!("Option {o} is not valid here."), true)),
+                    }
+                }
+                d.list_mut("CVRS").options.clear();
+            }
+            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            _ => {}
+        }
+    }
+}
+
+/// One cover letter of the list; whether F3 asked to leave the command.
+fn letter(host: &Host, surface: &mut Surface, list: &UimDialog, row: usize) -> Result<bool, Fail> {
+    let mut p = dialog(host, "QUIDSPPTF")?;
+    for v in ["PTFID", "PRODID", "PTFRLS"] {
+        p.set(v, &cell(list, "CVRS", row, v));
+    }
+    let text = list
+        .row("CVRS", row)
+        .into_iter()
+        .find(|(v, _)| v == "LETTER")
+        .map(|(_, x)| x)
+        .unwrap_or_default();
+    p.clear_list("LINES");
+    for l in text.lines() {
+        p.add_row("LINES", vec![("CVRLINE".to_string(), l.to_string())]);
+    }
+    p.list_mut("LINES").complete = true;
+    loop {
+        match show(&mut p, surface, "DSPCVR")? {
+            Response::Exit | Response::Gone => return Ok(true),
+            Response::Cancel | Response::Return(_) => return Ok(false),
+            _ => {}
+        }
+    }
 }

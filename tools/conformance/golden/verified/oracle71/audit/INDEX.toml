@@ -22,3 +22,84 @@ date = "2026-10-31"
 script = "disp-wrkptfgrp"
 width = 80
 
+
+[[golden]]
+name = "dspptfcvr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71"
+width = 80
+note = "CPF6613 on Command Entry: the oracle has no cover letter"
+
+[[golden]]
+name = "ids-dspptfcvr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-ids71"
+width = 80
+note = "CPF6613"
+
+[[golden]]
+name = "dsplickey-none-cmdentry"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-lickey71"
+width = 80
+note = "CPF9E58 on Command Entry"
+
+[[golden]]
+name = "ids-dsplickey-none"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-lickey71"
+width = 80
+note = "CPF9E58"
+
+[[golden]]
+name = "dsptapctg-prompt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71"
+width = 80
+note = "DSPTAPCTG takes OUTPUT(*OUTFILE)"
+
+[[golden]]
+name = "wrkoptvol-prompt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71"
+width = 80
+note = "WRKOPTVOL's parameters"
+
+[[golden]]
+name = "wrkoptvol71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71"
+width = 80
+note = "WRKOPTVOL with no volume (OPT01 and OPTVRT01 empty)"
+
+[[golden]]
+name = "wrkdevd-opt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71"
+width = 80
+note = "the optical devices: none has a volume"
+
+[[golden]]
+name = "wrkdevd-tap"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71"
+width = 80
+note = "the tape device"

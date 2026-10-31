@@ -1,0 +1,20 @@
+# CPP audit round 2 on the 7.1 oracle: DSPLICKEY's message ID when no
+# key matches (F1 on it). Read-only.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPLICKEY PRDID(5770SS1) FEATURE(5999)
+key enter
+settle 5000
+snap dsplickey-none-cmdentry
+cursor 5 7
+key f1
+settle 2000
+snap ids-dsplickey-none
+key f12
+settle 2000

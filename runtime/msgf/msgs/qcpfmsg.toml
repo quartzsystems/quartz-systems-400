@@ -2539,6 +2539,12 @@ text = "The usage limit would be exceeded; the user was not added."
 help = "The product's compliance type is *OPRACTION. Raise the usage limit with CHGLICINF or release a use."
 
 [[msg]]
+id = "CPF9E58"
+sev = 40
+text = "No license key matched the selection."
+help = "The license repository has no key for the product, license term, feature and system serial number given. ADDLICKEY adds the key the software provider sent."
+
+[[msg]]
 id = "CPF9E71"
 sev = 40
 text = "The grace period has ended; the user was not added."
@@ -3354,6 +3360,12 @@ sev = 40
 text = "Device &1 is in use."
 help = "Vary the device off, and unload any image catalog on it, before deleting it."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6613"
+sev = 40
+text = "No PTF matched the selection."
+help = "No program temporary fix of the products named had the status, numbers and cover letter attributes asked for. DSPPTF shows the PTFs the system has."
 
 [[msg]]
 id = "CPF6708"

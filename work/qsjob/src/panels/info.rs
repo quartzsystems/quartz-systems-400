@@ -8,6 +8,7 @@
 //! report viewer (`reports`): `DSPPTFCVR`, `DSPBCKSTS`, `DSPLICKEY`,
 //! `DSPTAP`, `DSPTAPCTG`, `DSPOPT`, `WRKOPTVOL`, `DSPUDFS`.
 
+mod keys;
 mod lists;
 mod ptf;
 mod reports;
@@ -36,7 +37,9 @@ pub fn run(
         "DSPIPLA" => lists::dspipla(host, surface),
         "WRKMSGD" => lists::wrkmsgd(job, host, surface, r),
         "WRKRDBDIRE" => lists::wrkrdbdire(job, host, surface, r),
-        "DSPPTFCVR" | "DSPBCKSTS" | "DSPLICKEY" | "DSPTAP" | "DSPTAPCTG" | "DSPOPT" | "WRKOPTVOL"
+        "DSPPTFCVR" => ptf::dspptfcvr(job, host, surface, r),
+        "DSPLICKEY" => keys::dsplickey(job, host, surface, r),
+        "DSPBCKSTS" | "DSPTAP" | "DSPTAPCTG" | "DSPOPT" | "WRKOPTVOL"
         | "DSPUDFS" => reports::show(job, host, surface, r),
         _ => return None,
     })
@@ -163,6 +166,17 @@ fn act(
         d.list_mut(&c.list).options.clear();
     }
     Ok(())
+}
+
+/// The date and time of a `TOPSEP=DATETIME` display these commands
+/// show without the zone, as IBM's do.
+fn datetime(host: &Host) -> String {
+    let s = crate::panels::work::stamp(host);
+    let mut w = s.split_whitespace();
+    match (w.next(), w.next()) {
+        (Some(d), Some(t)) => format!("{d}  {t}"),
+        _ => s,
+    }
 }
 
 /// Print is not there yet.

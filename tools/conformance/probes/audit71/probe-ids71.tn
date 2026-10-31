@@ -1,0 +1,19 @@
+# CPP audit round 2 on the 7.1 oracle: DSPPTFCVR's message ID when no
+# PTF has a cover letter (F1 on it). Read-only.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPPTFCVR
+key enter
+settle 5000
+cursor 5 7
+key f1
+settle 2000
+snap ids-dspptfcvr
+key f12
+settle 2000

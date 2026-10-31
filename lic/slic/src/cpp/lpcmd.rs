@@ -723,23 +723,69 @@ fn rmvlickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     ))
 }
 
-fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let pid = all_or(&parms.text("PRDID"), product)?;
-    let term = all_or(&parms.text("LICTRM"), |t| Ok(t.to_string()))?;
-    let feature = all_or(&parms.text("FEATURE"), |f| Ok(f.to_string()))?;
+/// No license key matched.
+const NO_KEYS: &str = "CPF9E58";
+
+/// One license key as `DSPLICKEY` shows it.
+pub(crate) struct KeyView {
+    /// The fields.
+    pub row: licpgm::license::repo::KeyRow,
+    /// The product's description.
+    pub text: String,
+}
+
+/// The keys `PRDID`, `LICTRM`, `FEATURE` and `SERIAL` select, in key
+/// order; `CPF9E58` when none does.
+pub(crate) fn lickeys(system: &mut System, prdid: &str, lictrm: &str, feature: &str, serial: &str) -> Result<Vec<KeyView>, String> {
+    let pid = all_or(prdid, product)?;
+    let term = all_or(lictrm, |t| Ok(t.to_string()))?;
+    let feature = all_or(feature, |f| Ok(f.to_string()))?;
+    let serial = match serial.trim().to_ascii_uppercase().as_str() {
+        "*ALL" => None,
+        "" | "*LOCAL" => Some(system_info(system).serial),
+        s => Some(s.to_string()),
+    };
     let repo = lp::with(system, |p, _, _| Ok(p.licenses()))?;
-    let keys: Vec<_> = repo
-        .keys
-        .iter()
-        .filter(|k| {
-            pid.as_ref().is_none_or(|p| &k.fields.product == p)
-                && term.as_ref().is_none_or(|t| k.fields.term.as_str() == t)
-                && feature.as_ref().is_none_or(|f| k.fields.feature.as_str() == f)
+    let texts = sfwrsc_rows(system);
+    let keys: Vec<KeyView> = repo
+        .key_rows(None)
+        .into_iter()
+        .filter(|r| {
+            pid.as_ref().is_none_or(|p| r.product == p.as_str())
+                && term.as_ref().is_none_or(|t| &r.term == t)
+                && feature.as_ref().is_none_or(|f| &r.feature == f)
+                && serial.as_ref().is_none_or(|s| r.serial.eq_ignore_ascii_case(s) || r.serial == "*ANY")
+        })
+        .map(|row| {
+            let text = texts
+                .iter()
+                .find(|t| t[0] == row.product && t[2] == row.feature)
+                .or_else(|| texts.iter().find(|t| t[0] == row.product))
+                .map(|t| t[3].clone())
+                .unwrap_or_default();
+            KeyView { row, text }
         })
         .collect();
+    if keys.is_empty() {
+        return Err(format!("{NO_KEYS} No license key matched the selection."));
+    }
+    Ok(keys)
+}
+
+fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     if parms.text("OUTPUT") == "*LICKEYFILE" {
-        let recs: Vec<KeyRecord> = keys
+        let pid = all_or(&parms.text("PRDID"), product)?;
+        let term = all_or(&parms.text("LICTRM"), |t| Ok(t.to_string()))?;
+        let feature = all_or(&parms.text("FEATURE"), |f| Ok(f.to_string()))?;
+        let repo = lp::with(system, |p, _, _| Ok(p.licenses()))?;
+        let recs: Vec<KeyRecord> = repo
+            .keys
             .iter()
+            .filter(|k| {
+                pid.as_ref().is_none_or(|p| &k.fields.product == p)
+                    && term.as_ref().is_none_or(|t| k.fields.term.as_str() == t)
+                    && feature.as_ref().is_none_or(|f| k.fields.feature.as_str() == f)
+            })
             .map(|k| KeyRecord {
                 fields: k.fields.clone(),
                 key: k.key.clone(),
@@ -753,33 +799,40 @@ fn dsplickey(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             ..CmdReply::default()
         });
     }
-    let mut out = String::new();
-    for row in repo.key_rows(None).into_iter().filter(|r| {
-        pid.as_ref().is_none_or(|p| r.product == p.as_str())
-            && term.as_ref().is_none_or(|t| &r.term == t)
-            && feature.as_ref().is_none_or(|f| &r.feature == f)
-    }) {
-        let _ = writeln!(
-            out,
-            "Product {}  term {}  feature {}  serial {}  processor group {}",
-            row.product, row.term, row.feature, row.serial, row.processor_group
-        );
-        let _ = writeln!(
-            out,
-            "  usage limit {}  expiration {}  vendor data {}",
-            row.usage_limit, row.expiration, row.vendor_data
-        );
-        for l in row.key {
-            let _ = writeln!(out, "  {l}");
+    let keys = lickeys(system, &parms.text("PRDID"), &parms.text("LICTRM"), &parms.text("FEATURE"), &parms.text("SERIAL"))?;
+    let mut lines = Vec::new();
+    for k in &keys {
+        let r = &k.row;
+        lines.push(format!("Product identifier  . . . . :   {}", r.product));
+        lines.push(format!("License term  . . . . . . . :   {}", r.term));
+        lines.push(format!("Feature . . . . . . . . . . :   {}", r.feature));
+        lines.push(format!("Description . . . . . . . . :   {}", k.text));
+        lines.push(format!("System serial number  . . . :   {}", r.serial));
+        lines.push(format!("Processor group . . . . . . :   {}", r.processor_group));
+        for (i, l) in r.key.iter().enumerate() {
+            lines.push(if i == 0 { format!("License key . . . . . . . . :   {l}") } else { format!("                                {l}") });
         }
+        lines.push(format!("Usage limit . . . . . . . . :   {}", r.usage_limit));
+        lines.push(format!("Expiration date . . . . . . :   {}", r.expiration));
+        lines.push(format!("Vendor data . . . . . . . . :   {}", none(&r.vendor_data)));
+        lines.push(String::new());
     }
-    if out.is_empty() {
-        out = "No license keys match.\n".into();
+    if parms.text("OUTPUT") == "*PRINT" {
+        let note = crate::svc::security::print_as(system, "QSYSPRT", "DSPLICKEY", &lines, false)?;
+        return Ok(CmdReply {
+            text: note,
+            ..CmdReply::default()
+        });
     }
     Ok(CmdReply {
-        text: out,
+        text: lines.join("\n") + "\n",
         ..CmdReply::default()
     })
+}
+
+/// `*NONE` for an empty value.
+fn none(s: &str) -> String {
+    if s.trim().is_empty() { "*NONE".into() } else { s.to_string() }
 }
 
 fn chglicinf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {

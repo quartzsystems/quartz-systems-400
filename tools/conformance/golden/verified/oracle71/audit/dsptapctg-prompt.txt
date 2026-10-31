@@ -1,0 +1,24 @@
+                       Display Tape Cartridge (DSPTAPCTG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library device . . . . . . . . .                 Name, F4 for list             
+ Cartridge ID . . . . . . . . . .   *ALL          Character value, *ALL         
+                + for more values                                               
+ Category:                                                                      
+   Category name  . . . . . . . .   *ALL          *NOSHARE, *SHARE400, *IPL...  
+   Category system  . . . . . . .   *CURRENT      *CURRENT...                   
+ Output . . . . . . . . . . . . . > *OUTFILE      *, *PRINT, *OUTFILE           
+ File to receive output . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Output member options:                                                         
+   Member to receive output . . .   *FIRST        Name, *FIRST                  
+   Replace or add records . . . .   *REPLACE      *REPLACE, *ADD                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

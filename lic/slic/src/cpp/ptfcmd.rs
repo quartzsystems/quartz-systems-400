@@ -383,30 +383,109 @@ fn dspptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     })
 }
 
-fn dspptfcvr(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let product = parms.text("LICPGM").to_ascii_uppercase();
+/// One cover letter `DSPPTFCVR` shows.
+pub(crate) struct Cover {
+    /// `QSnnnnn`.
+    pub ptf: String,
+    /// The product.
+    pub product: String,
+    /// The release.
+    pub release: String,
+    /// The PTF's status as `DSPPTF` shows it.
+    pub status: &'static str,
+    /// `*SPCINST` when the letter has special instructions, else `*DFT`.
+    pub attr: &'static str,
+    /// The letter.
+    pub text: String,
+}
+
+/// Whether `status` is in the `STATUS` selection.
+fn status_wanted(sel: &str, s: Status) -> bool {
+    match sel {
+        "*NOTAPY" => matches!(s, Status::Loaded | Status::TempRemoved | Status::CoverLetterOnly | Status::SaveFileOnly),
+        "*APYPERM" => s == Status::PermApplied,
+        "*APYTEMP" => s == Status::TempApplied,
+        _ => true,
+    }
+}
+
+/// The cover letters `LICPGM`, `SELECT`, `CVRATR` and `STATUS` select;
+/// `CPF6613` when none does.
+pub(crate) fn cover_letters(system: &mut System, product: &str, select: &[String], cvratr: &[String], status: &str) -> Result<Vec<Cover>, String> {
     let db = load_db(system)?;
-    let sel = list(parms, "SELECT");
-    let mut text = String::new();
+    let product = product.trim().to_ascii_uppercase();
     let ids: Vec<String> = db
         .ptfs
         .values()
         .filter(|r| product.is_empty() || product == "*ALL" || r.product == product)
-        .filter(|r| sel.is_empty() || sel.contains(&r.ptf))
+        .filter(|r| select.is_empty() || select.contains(&r.ptf))
+        .filter(|r| status_wanted(status, r.status))
         .map(|r| r.ptf.clone())
         .collect();
+    let mut out = Vec::new();
     for p in ids {
-        if let Ok((pkg, _)) = package_of(system, &db, &p) {
-            let _ = writeln!(text, "PTF {p} {}\n{}\n", pkg.header.product, pkg.cover.trim_end());
+        let Ok((pkg, _)) = package_of(system, &db, &p) else { continue };
+        if pkg.cover.trim().is_empty() {
+            continue;
         }
+        let attr = if pkg.cover.to_ascii_uppercase().contains("SPECIAL INSTRUCTIONS") { "*SPCINST" } else { "*DFT" };
+        if !cvratr.is_empty() && !cvratr.iter().any(|a| a == attr) {
+            continue;
+        }
+        let r = db.get(&p).expect("selected from the database");
+        out.push(Cover {
+            ptf: p.clone(),
+            product: r.product.clone(),
+            release: r.release.clone(),
+            status: r.status.display(),
+            attr,
+            text: pkg.cover.trim_end().to_string(),
+        });
     }
-    if text.is_empty() {
-        text.push_str("No cover letters.\n");
+    if out.is_empty() {
+        return Err(format!("{NO_PTFS} No PTF matched the selection."));
+    }
+    Ok(out)
+}
+
+/// No PTF met the selection.
+const NO_PTFS: &str = "CPF6613";
+
+fn dspptfcvr(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    let covers = cover_letters(
+        system,
+        &parms.text("LICPGM"),
+        &list(parms, "SELECT"),
+        &list_all(parms, "CVRATR"),
+        &parms.name("STATUS"),
+    )?;
+    let mut lines = Vec::new();
+    for c in &covers {
+        lines.push(format!("PTF {}  Product {}  Release {}  Status {}", c.ptf, c.product, c.release, c.status));
+        lines.extend(c.text.lines().map(str::to_string));
+        lines.push(String::new());
+    }
+    if parms.name("OUTPUT") == "*PRINT" {
+        let note = crate::svc::security::print_as(system, "QSYSPRT", "DSPPTFCVR", &lines, false)?;
+        return Ok(CmdReply {
+            text: note,
+            ..CmdReply::default()
+        });
     }
     Ok(CmdReply {
-        text,
+        text: lines.join("\n") + "\n",
         ..CmdReply::default()
     })
+}
+
+/// Every value of a list parameter but `*ALL`, upper case.
+fn list_all(parms: &Parms, kwd: &str) -> Vec<String> {
+    parms
+        .list(kwd)
+        .iter()
+        .map(|v| v.source().trim().to_ascii_uppercase())
+        .filter(|v| !v.is_empty() && v != "*ALL")
+        .collect()
 }
 
 /// At IPL: apply the delayed PTFs and remove those marked for the next

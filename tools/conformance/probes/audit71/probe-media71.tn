@@ -1,0 +1,56 @@
+# CPP audit round 2 on the 7.1 oracle: DSPPTFCVR, the devices, and
+# the media displays with whatever the box has. Read-only.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPPTFCVR
+key enter
+settle 5000
+snap dspptfcvr
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPTAPCTG OUTPUT(*OUTFILE)
+key f4
+settle 3000
+snap dsptapctg-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type WRKOPTVOL
+key f4
+settle 3000
+snap wrkoptvol-prompt
+key f12
+settle 2000
+key reset
+key eraseinput
+type WRKDEVD DEVD(*OPT)
+key enter
+settle 3000
+snap wrkdevd-opt
+key f12
+settle 2000
+key reset
+key eraseinput
+type WRKDEVD DEVD(*TAP)
+key enter
+settle 3000
+snap wrkdevd-tap
+key f12
+settle 2000
+key reset
+key eraseinput
+type WRKOPTVOL
+key enter
+settle 5000
+snap wrkoptvol
+key f3
+settle 2000

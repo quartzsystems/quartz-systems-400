@@ -5,12 +5,13 @@
 //! Panel data for the displays that had only a text listing
 //! (`docs/CPP_AUDIT.md`): the PTFs of a product and one PTF's detail
 //! (`DSPPTF`), the PTF groups (`WRKPTFGRP`) and the IPL attributes
-//! (`DSPIPLA`). Answered through request 270 (`sys2_panel`) for the
+//! (`DSPIPLA`), the cover letters (`DSPPTFCVR`) and the license keys
+//! (`DSPLICKEY`). Answered through request 270 (`sys2_panel`) for the
 //! job's drivers in `work/qsjob/src/panels/info/`.
 
 use stg::proto::Sys2Data;
 
-use crate::cpp::{iplcmd, ptfcmd};
+use crate::cpp::{iplcmd, lpcmd, ptfcmd};
 use crate::ipl::system::System;
 
 type Vars = Vec<(String, String)>;
@@ -24,6 +25,8 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<
         "PTFD" => ptf_detail(system, &arg(0)),
         "PTFGRP" => groups(system, &arg(0)),
         "IPLA" => Ok(ipla(system)),
+        "PTFCVR" => covers(system, args),
+        "LICKEY" => lickeys(system, args),
         _ => return None,
     })
 }
@@ -132,4 +135,63 @@ fn ipla(system: &mut System) -> Sys2Data {
         .map(|at| (at.kwd.to_string(), a.get(at.kwd).unwrap_or(at.default).to_string()))
         .collect();
     (vars, Vec::new())
+}
+
+/// A comma-separated argument as a list, `*ALL` and blanks dropped.
+fn split(s: &str) -> Vec<String> {
+    s.split(',')
+        .map(|v| v.trim().to_ascii_uppercase())
+        .filter(|v| !v.is_empty() && v != "*ALL")
+        .collect()
+}
+
+/// `DSPPTFCVR LICPGM() SELECT() CVRATR() STATUS()`: one row per cover
+/// letter, its text in `LETTER`, one line per `|`-free line.
+fn covers(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
+    let arg = |i: usize| args.get(i).cloned().unwrap_or_default();
+    let all = ptfcmd::cover_letters(system, &arg(0), &split(&arg(1)), &split(&arg(2)), &arg(3).trim().to_ascii_uppercase())?;
+    let rows: Rows = all
+        .iter()
+        .map(|c| {
+            pairs(&[
+                ("OPT", String::new()),
+                ("PTFID", c.ptf.clone()),
+                ("PRODID", c.product.clone()),
+                ("PTFRLS", c.release.clone()),
+                ("PTFSTS", c.status.to_string()),
+                ("CVRATR", c.attr.to_string()),
+                ("LETTER", c.text.clone()),
+            ])
+        })
+        .collect();
+    Ok((Vec::new(), vec![("CVRS".into(), rows)]))
+}
+
+/// `DSPLICKEY PRDID() LICTRM() FEATURE() SERIAL()`: one row per key.
+fn lickeys(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
+    let arg = |i: usize| args.get(i).cloned().unwrap_or_default();
+    let keys = lpcmd::lickeys(system, &arg(0), &arg(1), &arg(2), &arg(3))?;
+    let rows: Rows = keys
+        .iter()
+        .map(|k| {
+            let r = &k.row;
+            let line = |i: usize| r.key.get(i).cloned().unwrap_or_default();
+            pairs(&[
+                ("PRDID", r.product.clone()),
+                ("LICTRM", r.term.clone()),
+                ("FEATURE", r.feature.clone()),
+                ("PRDTEXT", k.text.clone()),
+                // The serial ends where IBM's eight-character field does.
+                ("SERIAL", format!("{:>8}", r.serial)),
+                ("PRCGRP", r.processor_group.clone()),
+                ("LICKEY", line(0)),
+                ("LICKEY2", line(1)),
+                ("LICKEY3", line(2)),
+                ("USGLMT", r.usage_limit.clone()),
+                ("EXPDATE", r.expiration.clone()),
+                ("VNDDTA", if r.vendor_data.trim().is_empty() { "*NONE".into() } else { r.vendor_data.clone() }),
+            ])
+        })
+        .collect();
+    Ok((Vec::new(), vec![("KEYS".into(), rows)]))
 }
