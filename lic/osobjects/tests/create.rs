@@ -4,6 +4,8 @@
 
 //! The operating system's objects in an empty store, twice.
 
+#![allow(clippy::many_single_char_names)]
+
 use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
@@ -75,6 +77,15 @@ fn every_piece_is_made_once() {
                 .is_some(),
             "{name}"
         );
+    }
+    // Restores and PTFs are shipped *PUBLIC *EXCLUDE; ordinary commands are not.
+    for (name, excluded) in [("RSTLIB", true), ("LODPTF", true), ("CRTLIB", false)] {
+        let id = l
+            .lookup(&mut t, types::CMD, Name::parse(name).unwrap())
+            .unwrap()
+            .unwrap();
+        let (_, h) = ops::read_header(&mut t, id).unwrap();
+        assert_eq!(h.public_authority == store::obj::Authority::EXCLUDE, excluded, "{name}");
     }
     let again = osobjects::create(&mut t, qsys, &stamp).unwrap();
     t.commit().unwrap();

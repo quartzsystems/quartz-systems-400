@@ -49,6 +49,8 @@ pub struct Entry {
     pub note: String,
     /// `ALWLMTUSR(*YES)`: a limited user may type it.
     pub alwlmtusr: bool,
+    /// Shipped with `*PUBLIC *EXCLUDE` ([`PUBLIC_EXCLUDE`]).
+    pub exclude: bool,
 }
 
 #[derive(Deserialize, Default)]
@@ -120,6 +122,7 @@ pub fn all() -> &'static [Entry] {
                         .unwrap_or_else(|| name.to_ascii_lowercase()),
                     note: o.map(|o| o.note.clone()).unwrap_or_default(),
                     alwlmtusr: o.is_some_and(|o| o.alwlmtusr),
+                    exclude: PUBLIC_EXCLUDE.contains(name),
                 }
             })
             .collect()
@@ -148,6 +151,17 @@ pub fn orphans() -> Vec<String> {
         .cloned()
         .collect()
 }
+
+/// Commands shipped `*PUBLIC *EXCLUDE`: the save/restore, PTF, licensed
+/// program and service commands pub400 refuses an ordinary profile
+/// (`tools/conformance/golden/phase11/prompts/*-refused.txt`).
+pub const PUBLIC_EXCLUDE: &[&str] = &[
+    "ADDLICKEY", "ANZPRB", "APYPTF", "CHGIPLA", "CHGLICINF", "CHGPRB", "CPYPTF", "DLTLICPGM",
+    "DLTPRB", "DMPJOB", "DMPOBJ", "DMPSYSOBJ", "DSPPTF", "DSPPTFCVR", "ENDTRC", "INSPTF",
+    "LODPTF", "PRTSYSINF", "PRTTRC", "RCLDBXREF", "RMVPTF", "RST", "RSTAUT", "RSTCFG", "RSTLIB",
+    "RSTLICPGM", "RSTOBJ", "RSTUSRPRF", "SAVLICPGM", "SNDPTFORD", "SNDSRVRQS", "STRTRC", "TRCJOB",
+    "WRKCNTINF", "WRKLICINF", "WRKPRB", "WRKPTFGRP",
+];
 
 /// The commands `lic/slic/src/cpp/direct.rs` implements on the library
 /// functions directly (kept in step with its match by hand).

@@ -61,6 +61,7 @@ pub fn install(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> cmd::Result<Inst
         if let Some(id) = existing {
             let same = load(txn, id).is_ok_and(|o| o.source == *source);
             if same {
+                public(txn, id, name)?;
                 continue;
             }
         }
@@ -76,6 +77,9 @@ pub fn install(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> cmd::Result<Inst
             }
         };
         crtcmd(txn, ctx, qsys, n, &o, existing.is_some(), true)?;
+        if let Some(id) = lib.lookup(txn, types::CMD, n)? {
+            public(txn, id, name)?;
+        }
         if existing.is_some() {
             done.replaced.push((*name).to_string());
         } else {
@@ -83,4 +87,17 @@ pub fn install(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> cmd::Result<Inst
         }
     }
     Ok(done)
+}
+
+/// `*PUBLIC *EXCLUDE` on the commands the inventory ships that way.
+fn public(txn: &mut Txn<'_>, id: ObjectId, name: &str) -> cmd::Result<()> {
+    if !inventory::entry(name).is_some_and(|e| e.exclude) {
+        return Ok(());
+    }
+    let (page, mut h) = store::obj::ops::read_header(txn, id)?;
+    if h.public_authority != store::obj::Authority::EXCLUDE {
+        h.public_authority = store::obj::Authority::EXCLUDE;
+        store::obj::ops::write_header(txn, page, &h)?;
+    }
+    Ok(())
 }
