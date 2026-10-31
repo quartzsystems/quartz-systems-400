@@ -637,11 +637,20 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         return failed(name, "CPF3700 object store not initialized");
     };
     let hooks = SvcHooks { qsys, spool };
-    let mut w = match Writer::new(Vec::new(), &head) {
+    // A save of several libraries to media is a file per library, as
+    // IBM writes it; to a save file it is one stream.
+    let per_lib = media.as_ref().is_some_and(|m| m.label.is_empty()) && name != "SAVCFG" && libs.len() > 1;
+    let new_writer = || {
+        Writer::new(Vec::new(), &head).map(|mut w| {
+            let _ = w.parameters(&parms.to_line(name));
+            w
+        })
+    };
+    let mut w = match new_writer() {
         Ok(w) => w,
         Err(e) => return failed(name, &format!("CPF3793 {e}")),
     };
-    let _ = w.parameters(&parms.to_line(name));
+    let mut streams: Vec<(String, Vec<u8>)> = Vec::new();
     let mut reports: Vec<SaveReport> = Vec::new();
     let mut refused: Vec<CmdMsg> = Vec::new();
     for lib in &libs {
@@ -658,7 +667,20 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             ..base.clone()
         };
         match saverst::save_library(&mut storage.store, jobh, &hooks, qsys, lib, &opts, &mut w) {
-            Ok(r) => reports.push(r),
+            Ok(r) => {
+                let ns = r.not_saved();
+                reports.push(r);
+                if per_lib {
+                    let next = match new_writer() {
+                        Ok(n) => n,
+                        Err(e) => return failed(name, &format!("CPF3793 {e}")),
+                    };
+                    match std::mem::replace(&mut w, next).finish(u32::try_from(ns).unwrap_or(u32::MAX)) {
+                        Ok((_, b)) => streams.push((lib.clone(), b)),
+                        Err(e) => return failed(name, &format!("CPF3793 {e}")),
+                    }
+                }
+            }
             Err(saverst::Error::Refused { msgid, text }) => {
                 reports.push(SaveReport {
                     library: lib.clone(),
@@ -670,24 +692,41 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             Err(e) => return failed(name, &format!("CPF3793 {e}")),
         }
     }
-    let not_saved: usize = reports.iter().map(SaveReport::not_saved).sum();
-    let bytes = match w.finish(u32::try_from(not_saved).unwrap_or(u32::MAX)) {
-        Ok((_, b)) => b,
-        Err(e) => return failed(name, &format!("CPF3793 {e}")),
-    };
+    if !per_lib {
+        let not_saved: usize = reports.iter().map(SaveReport::not_saved).sum();
+        match w.finish(u32::try_from(not_saved).unwrap_or(u32::MAX)) {
+            Ok((_, b)) => streams.push((libs.first().cloned().unwrap_or_default(), b)),
+            Err(e) => return failed(name, &format!("CPF3793 {e}")),
+        }
+    }
     let mut written = String::new();
     if let Some(m) = &media {
-        let first = libs.first().cloned().unwrap_or_default();
-        let (label, target) = if name == "SAVCFG" {
-            ("QFILEIOC".to_string(), OptTarget::System("SAVCFG"))
-        } else {
-            (first.clone(), OptTarget::Library(&first))
-        };
-        match stream::save(system, m, &label, target, &bytes) {
-            Ok(w) => written = written_line(&w),
-            Err(e) => return failed(name, &e),
+        let mut cur = m.clone();
+        let n = streams.len();
+        for (i, (lib, bytes)) in streams.iter().enumerate() {
+            let mut each = cur.clone();
+            if i + 1 < n {
+                each.end_opt = tape::EndOpt::Leave;
+            }
+            let (label, target) = if name == "SAVCFG" {
+                ("QFILEIOC".to_string(), OptTarget::System("SAVCFG"))
+            } else {
+                (lib.clone(), OptTarget::Library(lib))
+            };
+            match stream::save(system, &each, &label, target, bytes) {
+                Ok(w) => {
+                    written.push_str(&written_line(&w));
+                    // The next library's file follows where this one ended.
+                    cur.seq = 0;
+                    if let Some(at) = w.volumes.last().and_then(|l| cur.vols.iter().position(|v| v == l)) {
+                        cur.vols = cur.vols[at..].to_vec();
+                    }
+                }
+                Err(e) => return failed(name, &e),
+            }
         }
     } else if let Some(savf_id) = savf_id {
+        let bytes = streams.pop().map(|(_, b)| b).unwrap_or_default();
         let wrote = in_store(system, |txn, _, _| {
             savf::write(txn, savf_id, &bytes).map_err(|e| match e {
                 store::StoreError::BadValue { .. } => format!("{SAVF_FULL} {e}"),
@@ -870,16 +909,24 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
             AllowRestore::from_value(if v.is_empty() { "*ALL" } else { &v })
         },
     };
-    let read = if let Some(m) = &media {
+    // A save of several libraries on media is a file per library.
+    let named: Vec<String> = saved.iter().filter(|l| !l.starts_with('*')).cloned().collect();
+    let reads: Vec<Result<Vec<u8>, String>> = if let Some(m) = &media {
         let first = saved.first().cloned().unwrap_or_default();
         if name == "RSTCFG" {
-            stream::restore(system, m, Some("QFILEIOC"), OptTarget::System("SAVCFG"))
+            vec![stream::restore(system, m, Some("QFILEIOC"), OptTarget::System("SAVCFG"))]
+        } else if name == "RSTLIB" && named.len() > 1 && m.label.is_empty() {
+            let each = Media { seq: 0, ..m.clone() };
+            named
+                .iter()
+                .map(|l| stream::restore(system, &each, Some(l), OptTarget::Library(l)))
+                .collect()
         } else {
             let label = (!first.starts_with('*')).then_some(first.as_str());
-            stream::restore(system, m, label, OptTarget::Library(&first))
+            vec![stream::restore(system, m, label, OptTarget::Library(&first))]
         }
     } else {
-        in_store(system, |txn, qsys, names| {
+        vec![in_store(system, |txn, qsys, names| {
             let id = find_savf(txn, qsys, names, &savf_name)?;
             if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
                 return Err(format!(
@@ -888,8 +935,35 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                 ));
             }
             savf::read(txn, id).map_err(|e| e.to_string())
-        })
+        })]
     };
+    let mut all: Option<CmdReply> = None;
+    for read in reads {
+        let one = restore_stream(system, name, parms, &opts, &savf_name, read);
+        all = Some(match all {
+            None => one,
+            Some(mut a) => {
+                a.text.push_str(&one.text);
+                a.messages.extend(one.messages);
+                if a.escape.is_none() {
+                    a.escape = one.escape;
+                }
+                a
+            }
+        });
+    }
+    all.unwrap_or_else(|| failed(name, "CPF3780 nothing to restore"))
+}
+
+/// Restore one save stream read from a save file or a medium.
+fn restore_stream(
+    system: &mut System,
+    name: &str,
+    parms: &Parms,
+    opts: &RestoreOptions,
+    savf_name: &(String, String),
+    read: Result<Vec<u8>, String>,
+) -> CmdReply {
     let stream = match read {
         Ok(s) => s,
         Err(e) => return failed(name, &e),
@@ -921,7 +995,7 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     // system so they keep their saved owners.
     let store = &mut storage.store;
     let res = sec::guard::as_system(|| {
-        saverst::restore(store, jobh, &hooks, qsys, &mut reader, &opts)
+        saverst::restore(store, jobh, &hooks, qsys, &mut reader, opts)
     });
     match res {
         Ok(r) => {
