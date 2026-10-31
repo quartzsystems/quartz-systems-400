@@ -576,6 +576,7 @@ impl Suite {
         reports.push(self.step(&mut s, "71 save and restore", Self::save_restore)?);
         reports.push(self.step(&mut s, "74 problems, dumps and traces", Self::service)?);
         reports.push(self.step(&mut s, "75 tape and optical", Self::tape_optical)?);
+        reports.push(self.step(&mut s, "76 media library and copies", Self::media_library)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

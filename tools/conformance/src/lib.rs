@@ -40,6 +40,7 @@ mod qemu;
 pub mod qir;
 mod qsh;
 mod savrst;
+mod medlib;
 mod tapeopt;
 pub mod rpg;
 mod servers;

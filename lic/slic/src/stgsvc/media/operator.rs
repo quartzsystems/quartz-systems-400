@@ -93,22 +93,29 @@ fn from_reply_list(system: &mut System, msgid: &str, data: &[u8], dft: &str) -> 
     }
 }
 
-/// An inquiry like this one already on `QSYSOPR`: answered by the
-/// operator with a reply not taken yet (the reply is taken: marked
-/// old), or still waiting.
-fn earlier(system: &mut System, msgid: &str, data: &[u8]) -> Option<Answer> {
+/// An inquiry like this one already on `QSYSOPR`.
+enum Earlier {
+    /// The operator answered it; the reply is taken (marked old).
+    Answered(String),
+    /// It still waits, under this key.
+    Waiting(u32),
+}
+
+/// The latest inquiry like this one on `QSYSOPR` with a reply not taken
+/// yet, or one still waiting.
+fn earlier(system: &mut System, msgid: &str, data: &[u8]) -> Option<Earlier> {
     crate::stgsvc::msgs::with_queue(system, "msgq.receive", "QSYS", "QSYSOPR", |q, _| {
         let same = |m: &QMsg| m.kind == MsgKind::Inq && m.msgid == msgid && m.data == data && m.from_pgm == OPERATOR_PGM;
         let mut found = None;
         let mut take = None;
         for m in q.msgs.iter().rev().filter(|m| same(m)) {
             if m.status == Status::Unanswered {
-                found = Some(Answer::Waiting);
+                found = Some(Earlier::Waiting(m.key));
                 break;
             }
             let fresh = q.msgs.iter().any(|r| r.key == m.reply_key && r.kind == MsgKind::Rpy && r.status == Status::New);
             if fresh {
-                found = Some(Answer::Reply(m.reply.trim().to_ascii_uppercase()));
+                found = Some(Earlier::Answered(m.reply.trim().to_ascii_uppercase()));
                 take = Some(m.reply_key);
                 break;
             }
@@ -125,21 +132,46 @@ fn earlier(system: &mut System, msgid: &str, data: &[u8]) -> Option<Answer> {
 /// The program the media inquiries come from.
 const OPERATOR_PGM: &str = "QTAERR";
 
+/// Answer inquiry `key` on `QSYSOPR` with `reply` for the job, the
+/// reply taken at once.
+fn answer(system: &mut System, key: u32, reply: &str) {
+    let from = crate::stgsvc::msgs::sender(system, system.current_job);
+    let _ = crate::stgsvc::msgs::with_queue(system, "msgq.reply", "QSYS", "QSYSOPR", |q, _| {
+        let rk = q.reply(key, reply, from, crate::stgsvc::msgs::now_micros()).map_err(|e| e.to_string())?;
+        let _ = q.receive(None, Some(rk), false);
+        Ok(((), true))
+    });
+}
+
 /// Ask the operator. A reply the operator already sent to the same
 /// inquiry (`SNDRPYMSG`) is taken first; otherwise the job's
 /// `INQMSGRPY` decides: `*DFT` takes the default, `*SYSRPYL` the reply
-/// list's entry, and `*RQD` (or no entry) leaves the inquiry waiting.
-/// An inquiry answered here shows its reply on `QSYSOPR`.
+/// list's entry, and `*RQD` (or no entry) leaves the inquiry waiting,
+/// the operation ended until it runs again after the reply. An inquiry
+/// answered here shows its reply on `QSYSOPR`.
 pub(crate) fn inquiry(system: &mut System, msgid: &str, data: &[(&str, usize)], dft: &str) -> Answer {
     let m = message(system, msgid, data);
-    if let Some(a) = earlier(system, msgid, &m.data) {
-        return a;
+    let before = earlier(system, msgid, &m.data);
+    if let Some(Earlier::Answered(r)) = before {
+        return Answer::Reply(r);
     }
     let reply = match inqmsgrpy(system).as_str() {
         "*DFT" => Some(dft.to_string()),
         "*SYSRPYL" => from_reply_list(system, msgid, &m.data, dft),
         _ => None,
-    };
+    }
+    .map(|r| r.trim().to_ascii_uppercase());
+    // The same inquiry still waiting: answered now when the job has a
+    // reply for it, else it waits on.
+    if let Some(Earlier::Waiting(key)) = before {
+        return match reply {
+            Some(r) => {
+                answer(system, key, &r);
+                Answer::Reply(r)
+            }
+            None => Answer::Waiting,
+        };
+    }
     let mut m = m;
     m.kind = MsgKind::Inq;
     m.severity = 99;
@@ -153,14 +185,7 @@ pub(crate) fn inquiry(system: &mut System, msgid: &str, data: &[(&str, usize)], 
         }
     };
     let Some(r) = reply else { return Answer::Waiting };
-    let from = crate::stgsvc::msgs::sender(system, system.current_job);
-    let r = r.trim().to_ascii_uppercase();
-    let rr = r.clone();
-    let _ = crate::stgsvc::msgs::with_queue(system, "msgq.reply", "QSYS", "QSYSOPR", |q, _| {
-        let rk = q.reply(key, &rr, from, crate::stgsvc::msgs::now_micros()).map_err(|e| e.to_string())?;
-        let _ = q.receive(None, Some(rk), false);
-        Ok(((), true))
-    });
+    answer(system, key, &r);
     Answer::Reply(r)
 }
 
