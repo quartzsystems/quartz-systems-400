@@ -202,13 +202,23 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     }
     // The IPL attributes (CHGIPLA): queues, writers, TCP/IP, restricted state.
     let ipla = crate::cpp::iplcmd::at_ipl(system);
-    let text = if ipla.is_empty() {
+    let mut text = if ipla.is_empty() {
         text
     } else {
         format!("{text}; {ipla}")
     };
+    // SRCs raised while opening (delayed PTFs) ride after a separator
+    // for slic to show; there is no reply to carry them yet.
+    let raised: Vec<&str> = std::mem::take(&mut system.raised).into_iter().map(|s| s.code).collect();
+    if !raised.is_empty() {
+        text.push(SRC_SEP);
+        text.push_str(&raised.join(","));
+    }
     Ok(text)
 }
+
+/// Separates the SRC codes from the text of the open reply.
+pub const SRC_SEP: char = '\u{1}';
 
 /// Bind the jobs' socket, replacing a stale one.
 fn listen(path: &Path) -> Result<UnixListener, String> {

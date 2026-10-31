@@ -62,10 +62,18 @@ pub fn start(system: &mut System) -> Result<(), String> {
     let opened: Result<String, String> = chan
         .recv()
         .map_err(|e| format!("starting the storage service: {e}"))?;
-    let text = opened?;
+    let opened = opened?;
+    let (text, raised) = opened
+        .split_once(crate::stgsvc::SRC_SEP)
+        .unwrap_or((opened.as_str(), ""));
     system
         .out
         .serial(&format!("slic: storage service {pid}: {text}\n"));
+    for code in raised.split(',').filter(|c| !c.is_empty()) {
+        if let Some(s) = src::lookup(code) {
+            system.emit(s);
+        }
+    }
     system.procs.stg = Some(StgProc {
         pid,
         chan,
