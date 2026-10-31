@@ -406,7 +406,7 @@ cargo test -p ptf -p prb          # PTFs, the problem log
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
-cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 76 steps
+cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 78 steps
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
