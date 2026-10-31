@@ -16,6 +16,9 @@ sec = { path = "../../security/sec", version = "0.1.0" }
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
 optical = { path = "../../media/optical", version = "0.1.0" }
+tape = { path = "../../media/tape", version = "0.1.0" }
+imgclg = { path = "../../media/imgclg", version = "0.1.0" }
+medio = { path = "../../media/medio", version = "0.1.0" }
 uuid.workspace = true
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 svctools = { path = "../../lic/svctools", version = "0.1.0" }

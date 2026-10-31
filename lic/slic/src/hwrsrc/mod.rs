@@ -39,6 +39,10 @@ pub enum Kind {
     Keyboard,
     /// Anything else: `OTHnn`.
     Other,
+    /// Tape drive: `TAPnn`, named by the tape crate.
+    Tape,
+    /// Tape media changer: `TAPMLBnn`, named by the tape crate.
+    TapeLibrary,
 }
 
 impl Kind {
@@ -52,6 +56,8 @@ impl Kind {
             Kind::Comm | Kind::Port => "CMN",
             Kind::Keyboard => "KBD",
             Kind::Other => "OTH",
+            Kind::Tape => "TAP",
+            Kind::TapeLibrary => "TAPMLB",
         }
     }
 
@@ -73,6 +79,8 @@ impl Kind {
             Kind::Comm | Kind::Port => 5,
             Kind::Keyboard => 6,
             Kind::Other => 7,
+            Kind::Tape => 8,
+            Kind::TapeLibrary => 9,
         }
     }
 }
@@ -126,7 +134,7 @@ impl ParityCapable for Table {
 pub struct Table {
     /// Rows in assignment order.
     pub resources: Vec<Resource>,
-    next: [u32; 8],
+    next: [u32; 10],
 }
 
 impl Table {
@@ -146,7 +154,63 @@ impl Table {
         for name in sorted_dir("/sys/class/input") {
             t.add_input(&name);
         }
+        t.add_tapes(Path::new("/sys"));
         t
+    }
+
+    /// Tape drives (`/sys/class/scsi_tape`) and changers (SCSI type 8
+    /// under `/sys/class/scsi_generic`), named `TAPnn` and `TAPMLBnn`
+    /// by `tape::device::naming` in SCSI address order.
+    pub fn add_tapes(&mut self, root: &Path) {
+        use tape::device::naming::{ResourceKind, Scanned, assign, parse_hctl, tape_nodes};
+        let class = |c: &str| root.join("class").join(c);
+        let hctl_of = |dev: &Path| {
+            fs::canonicalize(dev)
+                .ok()
+                .and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+                .and_then(|n| parse_hctl(&n))
+        };
+        let serial = |dev: &Path| {
+            let s = read_trim(&dev.join("wwid"));
+            (!s.is_empty()).then_some(s)
+        };
+        let mut scanned = Vec::new();
+        let entries = sorted_dir(&class("scsi_tape").to_string_lossy());
+        for node in tape_nodes(&entries) {
+            let dev = class("scsi_tape").join(&node).join("device");
+            if let Some(hctl) = hctl_of(&dev) {
+                scanned.push(Scanned { kind: ResourceKind::Tape, node, hctl, serial: serial(&dev) });
+            }
+        }
+        for node in sorted_dir(&class("scsi_generic").to_string_lossy()) {
+            let dev = class("scsi_generic").join(&node).join("device");
+            if read_trim(&dev.join("type")) != "8" {
+                continue;
+            }
+            if let Some(hctl) = hctl_of(&dev) {
+                scanned.push(Scanned { kind: ResourceKind::Library, node, hctl, serial: serial(&dev) });
+            }
+        }
+        for r in assign(&scanned, &[]) {
+            let kind = match r.device.kind {
+                ResourceKind::Tape => Kind::Tape,
+                ResourceKind::Library => Kind::TapeLibrary,
+            };
+            let sub = if kind == Kind::Tape { "scsi_tape" } else { "scsi_generic" };
+            let devpath = devpath_of(&class(sub).join(&r.device.node)).unwrap_or_default();
+            let [h, c, t, l] = r.device.hctl;
+            let what = if kind == Kind::Tape { "tape drive" } else { "tape media changer" };
+            self.resources.push(Resource {
+                name: r.name,
+                kind,
+                location: r.device.node.clone(),
+                description: format!("{what} {} at {h}:{c}:{t}:{l}", r.device.node),
+                devpath,
+                status: Status::Operational,
+                type_model: None,
+                port: None,
+            });
+        }
     }
 
     /// Apply a hotplug event. Returns a line describing what changed.

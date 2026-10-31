@@ -1767,6 +1767,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "medio"
+version = "0.1.0"
+dependencies = [
+ "optical",
+ "tape",
+ "thiserror",
+]
+
+[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2919,12 +2928,14 @@ dependencies = [
  "ifs",
  "ifscmd",
  "ile",
+ "imgclg",
  "ipc",
  "jrn",
  "libc",
  "licpart",
  "licpgm",
  "lpstore",
+ "medio",
  "menus",
  "mi",
  "msgf",
@@ -2958,6 +2969,7 @@ dependencies = [
  "sys-cpps",
  "sysapi",
  "sysval",
+ "tape",
  "tcpcfg",
  "tls",
  "tn5250",

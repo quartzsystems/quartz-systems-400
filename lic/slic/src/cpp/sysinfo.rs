@@ -148,7 +148,9 @@ fn dspdevd(system: &mut System, parms: &Parms) -> Result<String, String> {
     let name = parms.name("DEVD");
     in_store(system, |txn, qsys, _| {
         let (_, d) = device(txn, qsys, &name)?;
-        Ok(if d.is_display() {
+        Ok(if d.media.is_some() {
+            crate::stgsvc::media::devices::describe(&name, &d)
+        } else if d.is_display() {
             describe_display(&name, &d)
         } else if let Some(l) = &d.printer {
             describe(&name, &d) + &l.describe()
@@ -297,6 +299,12 @@ fn dltdevd(system: &mut System, parms: &Parms) -> Result<String, String> {
                 wm::obj::devd::DevStatus::Active | wm::obj::devd::DevStatus::SignonDisplay
             ) {
                 return Err(format!("CPF2653 device {n} is in use"));
+            }
+            if d.media.is_some() && !matches!(d.status, wm::obj::devd::DevStatus::VariedOff | wm::obj::devd::DevStatus::Failed) {
+                return Err(format!("CPF2653 device {n} is varied on"));
+            }
+            if crate::stgsvc::media::catalog_on(&n).is_some() {
+                return Err(format!("CPF2653 an image catalog is loaded on device {n}"));
             }
             if n == wm::obj::devd::CONSOLE || n == wm::obj::devd::CAPTURE {
                 return Err(format!("CPF2653 device {n} cannot be deleted"));

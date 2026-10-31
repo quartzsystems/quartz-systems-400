@@ -252,6 +252,8 @@ pub(crate) fn vary_dev(system: &mut System, name: &str, on: bool) -> Result<Vec<
     let network = lock().state.line_of_dev(&name).is_some();
     if network {
         lock().state.vary_dev(&name, on)?;
+    } else if super::media::devices::read(system, &name).is_ok() {
+        return super::media::devices::vary(system, &name, on);
     } else {
         objects::vary_plain_dev(system, &name, on)?;
     }

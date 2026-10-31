@@ -608,9 +608,14 @@ impl DstEnv for Env<'_> {
                     .map(|e| LogEntry {
                         time: e.time,
                         code: e.code_str(),
-                        text: src::lookup(&e.code_str())
-                            .map_or("", |s| s.text)
-                            .to_string(),
+                        text: {
+                            let t = src::lookup(&e.code_str()).map_or("", |s| s.text);
+                            if e.resource.is_empty() {
+                                t.to_string()
+                            } else {
+                                format!("{t}: {}", e.resource)
+                            }
+                        },
                     })
                     .collect()
             })

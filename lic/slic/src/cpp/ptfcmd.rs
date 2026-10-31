@@ -169,20 +169,35 @@ fn lodptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
     let product = parms.text("LICPGM").to_ascii_uppercase();
     let dev = parms.text("DEV").to_ascii_uppercase();
-    if dev != "*SAVF" {
+    let media = crate::stgsvc::media::stream::is_device(&dev).then(|| crate::stgsvc::media::stream::of(parms, &dev));
+    if media.is_none() && dev != "*SAVF" {
         return Err(format!("CPF9814 device {dev} not found"));
     }
     let omit = list(parms, "OMIT");
     let mut select = list(parms, "SELECT");
     if select.is_empty() {
-        select = ptf_savfs(system)?;
+        select = match &media {
+            Some(m) => crate::stgsvc::media::stream::file_labels(system, m)?
+                .into_iter()
+                .filter(|n| n.parse::<release::Ptf>().is_ok())
+                .collect(),
+            None => ptf_savfs(system)?,
+        };
     }
     let mut db = load_db(system)?;
     let keys = trusted_keys();
     let mut reply = CmdReply::default();
     let mut loaded = 0;
     for p in select.iter().filter(|p| !omit.contains(p)) {
-        let bytes = read_ptf(system, p)?;
+        let bytes = match &media {
+            Some(m) => crate::stgsvc::media::stream::restore(
+                system,
+                m,
+                Some(p),
+                optical::volume::layout::SaveTarget::Library(p),
+            )?,
+            None => read_ptf(system, p)?,
+        };
         let pkg = package::open(&bytes, &keys).map_err(|e| format!("{} {p}: {e}", e.msgid()))?;
         if pkg.header.product != product {
             continue;

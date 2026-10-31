@@ -456,7 +456,10 @@ fn kinds(ty: &str) -> (&'static [hwrsrc::Kind], &'static str) {
     use hwrsrc::Kind as K;
     match ty {
         "*CMN" => (&[K::Bridge, K::Lan, K::Comm, K::Port], "Communication"),
-        "*STG" => (&[K::Storage, K::Disk, K::Optical], "Storage"),
+        "*STG" => (
+            &[K::Storage, K::Disk, K::Optical, K::Tape, K::TapeLibrary],
+            "Storage",
+        ),
         "*LWS" => (&[K::Keyboard], "Local Work Station"),
         "*PRC" => (&[K::Bridge], "Processor"),
         _ => (
@@ -470,6 +473,8 @@ fn kinds(ty: &str) -> (&'static [hwrsrc::Kind], &'static str) {
                 K::Port,
                 K::Keyboard,
                 K::Other,
+                K::Tape,
+                K::TapeLibrary,
             ],
             "Hardware",
         ),
@@ -488,6 +493,8 @@ fn kind_code(k: hwrsrc::Kind) -> &'static str {
         K::Comm | K::Port => "CMN",
         K::Keyboard => "KBD",
         K::Other => "OTH",
+        K::Tape => "TAP",
+        K::TapeLibrary => "MLB",
     }
 }
 

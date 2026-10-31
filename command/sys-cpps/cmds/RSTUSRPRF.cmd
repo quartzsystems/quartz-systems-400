@@ -30,6 +30,8 @@
                           PROMPT('Save file')
              PARM       KWD(MEDDFN) TYPE(Q1) PMTCTL(P3) +
                           PROMPT('Media definition')
+             PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
+                          CASE(*MIXED) PMTCTL(P1) PROMPT('Optical file')
              PARM       KWD(ALWOBJDIF) TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *ALL) PMTCTL(*PMTRQS) +
                           PROMPT('Allow object differences')

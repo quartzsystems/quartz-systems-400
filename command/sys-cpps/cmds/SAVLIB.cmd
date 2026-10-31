@@ -30,6 +30,8 @@
                           PROMPT('Save file')
              PARM       KWD(MEDDFN) TYPE(Q1) PMTCTL(P3) +
                           PROMPT('Media definition')
+             PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
+                          CASE(*MIXED) PMTCTL(P1) PROMPT('Optical file')
              PARM       KWD(USEOPTBLK) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO) PMTCTL(P1) +
                           PROMPT('Use optimum block size')

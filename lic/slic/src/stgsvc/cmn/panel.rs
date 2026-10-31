@@ -47,8 +47,8 @@ fn wanted(cfgd: &str, name: &str, class: &str) -> bool {
 /// The status a stored object's text stands for, for `STATUS(...)`.
 fn as_status(text: &str) -> Status {
     match text {
-        "VARIED OFF" => Status::VariedOff,
-        "ACTIVE" => Status::Active,
+        "VARIED OFF" | "FAILED" => Status::VariedOff,
+        "ACTIVE" | "UNAVAILABLE" => Status::Active,
         "RCYPND" => Status::RcyPnd,
         _ => Status::VariedOn,
     }
@@ -56,7 +56,7 @@ fn as_status(text: &str) -> Status {
 
 /// A device that is not a line's: its status text.
 fn dev_text(d: &wm::obj::devd::Devd) -> &'static str {
-    if d.is_display() {
+    if d.is_display() || d.media.is_some() {
         d.status.text()
     } else if d.online {
         "VARIED ON"
@@ -67,7 +67,9 @@ fn dev_text(d: &wm::obj::devd::Devd) -> &'static str {
 
 /// A display's class for `CFGD`.
 fn dev_class(d: &wm::obj::devd::Devd) -> &'static str {
-    if d.is_network() {
+    if let Some(k) = d.media_kind() {
+        k.devcls()
+    } else if d.is_network() {
         "*NET"
     } else if d.is_printer() {
         "*PRT"

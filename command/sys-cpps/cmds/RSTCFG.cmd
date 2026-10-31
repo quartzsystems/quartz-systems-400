@@ -29,6 +29,8 @@
                           PROMPT('Save file')
              PARM       KWD(MEDDFN) TYPE(Q1) PMTCTL(P3) +
                           PROMPT('Media definition')
+             PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
+                          CASE(*MIXED) PMTCTL(P1) PROMPT('Optical file')
              PARM       KWD(SRM) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*ALL) VALUES(*ALL *NONE) PMTCTL(*PMTRQS) +
                           PROMPT('System Resource Management')

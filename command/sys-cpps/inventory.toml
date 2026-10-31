@@ -586,10 +586,6 @@ alwlmtusr = true
 
 # ------------------------------------------------------- later phases
 
-[cmd.CHKTAP]
-stub = "CPF3700"
-note = "tape is Phase 11"
-
 [cmd.STRSST]
 site = "job"
 note = "the SST menus at a display (devtools/sst), with a service tools sign-on and *SERVICE"
@@ -970,3 +966,10 @@ note = "the Phase 4 job dump (mi::dump) to QPSRVDMP; logs a problem"
 [cmd.DSPPRB]
 site = "job"
 note = "panels at a display; the problem log report with OUTPUT(*PRINT)"
+# ------------------------------------------------------------- media
+
+[cmd.LODIMGCLGE]
+cpp = "QCLODIMGCE"
+
+[cmd.WRKIMGCLGE]
+cpp = "QCWRKIMGCE"

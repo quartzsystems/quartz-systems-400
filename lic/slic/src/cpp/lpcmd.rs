@@ -34,6 +34,8 @@ use super::direct::{failed, in_store, lib_or};
 use super::done;
 use crate::ipl::system::{System, now_unix};
 use crate::stgsvc::licpgm::{self as lp, system_info};
+use crate::stgsvc::media::stream;
+use optical::volume::layout::SaveTarget as OptTarget;
 use crate::stgsvc::security::{actor, require};
 
 /// Run `name`, or `None` when it is not one of these.
@@ -161,17 +163,19 @@ fn objects_of(s: &str) -> Objects {
     }
 }
 
-/// The first `DEV` value; only save files until the media layer comes.
-fn device(parms: &Parms) -> Result<(), String> {
+/// The first `DEV` value: `None` for a save file, else the media
+/// parameters of the device (a product is a tape file labeled with its
+/// identifier, or the optical file of that name).
+fn device(parms: &Parms) -> Result<Option<stream::Media>, String> {
     let dev = parms
         .list("DEV")
         .first()
         .map_or_else(|| parms.text("DEV").to_ascii_uppercase(), |v| v.source().to_ascii_uppercase());
     if dev == "*SAVF" {
-        Ok(())
+        Ok(None)
+    } else if stream::is_device(&dev) {
+        Ok(Some(stream::of(parms, &dev)))
     } else {
-        // MIGRATE(phase11): optical and tape devices: open the medium
-        // and read its product loads as a `licpgm::plan::Media`.
         Err(format!("CPF9814 device {dev} not found"))
     }
 }
@@ -185,7 +189,7 @@ fn find_savf(system: &mut System, (name, lib): &(String, String)) -> Result<Obje
 
 fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require(SpecialAuth::ALLOBJ, "install licensed programs")?;
-    device(parms)?;
+    let media = device(parms)?;
     let pid = product(&parms.text("LICPGM"))?;
     let option = option_of(&parms.text("OPTION"))?.unwrap_or(OptionNo::BASE);
     let req = RstLicPgm {
@@ -195,8 +199,13 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         lng: lng_of(&parms.text("LNG"))?,
         objects: objects_of(&parms.text("RSTOBJ")),
     };
-    let savf_id = find_savf(system, &parms.qual("SAVF"))?;
-    let stream = in_store(system, |txn, _, _| savf::read(txn, savf_id).map_err(|e| e.to_string()))?;
+    let stream = if let Some(m) = &media {
+        let label = pid.as_str().to_string();
+        stream::restore(system, m, Some(&label), OptTarget::Library(&label))?
+    } else {
+        let savf_id = find_savf(system, &parms.qual("SAVF"))?;
+        in_store(system, |txn, _, _| savf::read(txn, savf_id).map_err(|e| e.to_string()))?
+    };
     if stream.is_empty() {
         return Err(format!("{NOT_RESTORED} the save file holds no licensed program"));
     }
@@ -362,7 +371,7 @@ fn to_savf(system: &mut System, file: &(String, String), clear: &str, bytes: &[u
 
 fn savlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require(SpecialAuth::SAVSYS, "save licensed programs").or_else(|_| require(SpecialAuth::ALLOBJ, "save licensed programs"))?;
-    device(parms)?;
+    let media = device(parms)?;
     let pid = product(&parms.text("LICPGM"))?;
     let tgt = parms.text("TGTRLS");
     if !matches!(tgt.as_str(), "" | "*CURRENT") && tgt != release::RELEASE.to_string() {
@@ -383,7 +392,12 @@ fn savlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         let b = save_product(cell, qsys, jobh, &AllowAll, &plan, &head, &line)?;
         Ok((b, plan.loads.len()))
     })?;
-    to_savf(system, &parms.qual("SAVF"), &parms.text("CLEAR"), &bytes)?;
+    if let Some(m) = &media {
+        let label = pid.as_str().to_string();
+        stream::save(system, m, &label, OptTarget::Library(&label), &bytes)?;
+    } else {
+        to_savf(system, &parms.qual("SAVF"), &parms.text("CLEAR"), &bytes)?;
+    }
     Ok(done(
         format!("{SAVED} {n} product load(s) of {pid} saved\n"),
         SAVED,

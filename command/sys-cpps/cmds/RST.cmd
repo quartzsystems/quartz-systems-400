@@ -30,6 +30,8 @@
                           PROMPT('Volume identifier')
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(17) DFT(*SEARCH) +
                           SPCVAL((*SEARCH)) EXPR(*YES) PROMPT('Label')
+             PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
+                          CASE(*MIXED) PROMPT('Optical file')
              PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*SEARCH) +
                           RANGE(1 16777215) SPCVAL((*SEARCH -1)) +
                           EXPR(*YES) PROMPT('Sequence number')

@@ -22,6 +22,7 @@ mod ifscmd;
 pub(crate) mod lpapi;
 pub(crate) mod lpcmd;
 pub(crate) mod iplcmd;
+mod medcmd;
 mod msgfcmd;
 mod objcmd;
 mod prbcmd;
@@ -72,6 +73,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
         Site::Job | Site::Service => tcpcmd::run(system, name, parms)
             .or_else(|| direct::run(system, name, parms))
             .or_else(|| savcmd::run(system, name, parms))
+            .or_else(|| medcmd::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
             .or_else(|| updcmd::run(system, name, parms))
             .or_else(|| ptfsvc::run(system, name, parms))

@@ -3306,3 +3306,370 @@ sev = 0
 text = "Database cross-reference checked: &1 files."
 help = "The cross-reference files agree with the files in the libraries."
 vars = ["*CHAR 10"]
+# Media.
+
+[[msg]]
+id = "CPC2618"
+sev = 0
+text = "Device description &1 is made."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2619"
+sev = 0
+text = "Device description &1 now has the new values."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2605"
+sev = 40
+text = "There is already a device description &1."
+help = "Pick another name, or change the device with its CHGDEVxxx command."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2702"
+sev = 40
+text = "There is no device description &1."
+help = "Check the name with WRKDEVD, or make the device first."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2653"
+sev = 40
+text = "Device &1 is in use."
+help = "Vary the device off, and unload any image catalog on it, before deleting it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6708"
+sev = 40
+text = "The tape operation on &1 ended because of an error."
+help = "The messages before this one say what went wrong."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6718"
+sev = 40
+text = "The end of the volume was reached and no further volume was available."
+help = "Add a volume to the VOL list or load one more entry in the image catalog, then run the command again."
+
+[[msg]]
+id = "CPF6720"
+sev = 40
+text = "The volume on device &1 is not the one asked for."
+help = "Mount the volume the VOL parameter names, or give VOL(*MOUNTED)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6721"
+sev = 40
+text = "Device &1 cannot be used now."
+help = "Vary the device on with VRYCFG, and check its status with WRKCFGSTS."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6745"
+sev = 40
+text = "The media library on &1 could not do what was asked."
+help = "Check the library and its cartridges with WRKMLBSTS and WRKTAPCTG."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6747"
+sev = 40
+text = "A cartridge on &1 is in use."
+help = "Wait for the operation using it to end."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6749"
+sev = 40
+text = "No drive of the media library &1 can be used."
+help = "Allocate a drive of the library, or wait for one to be free."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6760"
+sev = 40
+text = "Device &1 is not ready."
+help = "No volume is mounted. Load a volume, or load an image catalog on the virtual device with LODIMGCLG."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6768"
+sev = 40
+text = "The volume on device &1 cannot be written: it is protected."
+help = "Use another volume, or remove the write protection (CHGIMGCLGE WRTPTC(*NO) for an image catalog entry)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6772"
+sev = 40
+text = "The volume on device &1 could not be read as expected."
+help = "Its labels are damaged, or it is labeled where an unlabeled volume was needed, or the reverse. INZTAP makes it usable again."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF6790"
+sev = 40
+text = "The file asked for is not on the volume on &1."
+help = "DSPTAP DATA(*LABELS) lists the files with their sequence numbers and labels."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF67D2"
+sev = 40
+text = "The cartridge's category does not allow this on &1."
+help = "WRKTAPCTG shows each cartridge's category; ADDTAPCTG and CHGTAPCTG move them."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPA4036"
+sev = 99
+text = "A file on the volume on &1 has not expired. Overwrite it (C I)?"
+help = "Writing here would destroy a file whose expiration date has not passed. Reply I to write anyway, or C to end the operation."
+vars = ["*CHAR 10"]
+reply = { default = "C", valid = ["C", "I"] }
+
+[[msg]]
+id = "CPA4075"
+sev = 99
+text = "Mount volume &1 for file &2 on device &3, then reply (C G)."
+help = "The file continues on another volume (volume sequence &4). Mount it and reply G, or reply C to end the operation."
+vars = ["*CHAR 6", "*CHAR 17", "*CHAR 10", "*CHAR 4"]
+reply = { default = "C", valid = ["C", "G"] }
+
+[[msg]]
+id = "CPC6773"
+sev = 0
+text = "Volume &1 is initialized on device &2."
+vars = ["*CHAR 6", "*CHAR 10"]
+
+[[msg]]
+id = "CPC6774"
+sev = 0
+text = "Volume &1 on device &2 is checked."
+vars = ["*CHAR 6", "*CHAR 10"]
+
+[[msg]]
+id = "CPC6775"
+sev = 0
+text = "The files are copied from device &1 to device &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "OPT1115"
+sev = 40
+text = "The optical file or volume asked for is not there."
+help = "WRKOPTVOL lists the volumes; DSPOPT DATA(*FILATR) lists a volume's files."
+
+[[msg]]
+id = "OPT1203"
+sev = 40
+text = "The optical request does not fit what is on the volume."
+help = "A directory was named where a file was needed, or the reverse, or a directory is not empty."
+
+[[msg]]
+id = "OPT1210"
+sev = 40
+text = "That optical file is already on the volume."
+help = "Give CLEAR(*REPLACE) to replace it, or another OPTFILE."
+
+[[msg]]
+id = "OPT1260"
+sev = 99
+text = "Optical file &1 is already on volume &2. Replace it (C G)?"
+help = "Reply G to replace the file, or C to end the save."
+vars = ["*CHAR 64", "*CHAR 32"]
+reply = { default = "C", valid = ["C", "G"] }
+
+[[msg]]
+id = "OPT1317"
+sev = 40
+text = "That name cannot be used on an optical volume."
+help = "Names are at most 64 characters and hold none of * / : ; ? and backslash."
+
+[[msg]]
+id = "OPT1330"
+sev = 40
+text = "The optical volume holds files; it was not initialized."
+help = "Give CHECK(*NO) to initialize it anyway."
+
+[[msg]]
+id = "OPT1331"
+sev = 40
+text = "That volume identifier cannot be used."
+help = "A volume identifier is 1 to 32 of A-Z 0-9 $ # @ _ . - and starts with a letter, a digit, $, # or @."
+
+[[msg]]
+id = "OPT1335"
+sev = 40
+text = "The optical volume is full."
+help = "Use a volume with more room (IMGSIZ of ADDIMGCLGE), or remove files from this one."
+
+[[msg]]
+id = "OPT1520"
+sev = 40
+text = "The optical volume cannot be written."
+help = "It is write protected or can only be read. CHGIMGCLGE WRTPTC(*NO) lifts the protection of a writable image."
+
+[[msg]]
+id = "OPT1605"
+sev = 40
+text = "The optical volume could not be read."
+help = "The image is damaged. VFYIMGCLG and CHKOPT say more."
+
+[[msg]]
+id = "OPT1660"
+sev = 40
+text = "Optical device &1 has no volume."
+help = "Load an image catalog on the virtual device with LODIMGCLG, or mount an entry with LODIMGCLGE."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPCBC01"
+sev = 0
+text = "Image catalog &1 is made."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPCBC02"
+sev = 0
+text = "Image catalog &1 is gone."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPCBC03"
+sev = 0
+text = "Image catalog &1 has a new entry, &2."
+vars = ["*CHAR 10", "*CHAR 3"]
+
+[[msg]]
+id = "CPCBC04"
+sev = 0
+text = "Entry &2 is out of image catalog &1."
+vars = ["*CHAR 10", "*CHAR 3"]
+
+[[msg]]
+id = "CPCBC05"
+sev = 0
+text = "Entry &2 of image catalog &1 now has the new values."
+vars = ["*CHAR 10", "*CHAR 3"]
+
+[[msg]]
+id = "CPCBC06"
+sev = 0
+text = "Image catalog &1 is ready on device &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPCBC07"
+sev = 0
+text = "Image catalog &1 is no longer on a device."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPCBC08"
+sev = 0
+text = "Image catalog &1 checked out."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPCBC09"
+sev = 0
+text = "Entry &2 of image catalog &1 has its new status."
+vars = ["*CHAR 10", "*CHAR 3"]
+
+[[msg]]
+id = "CPFBC01"
+sev = 40
+text = "There is no image catalog &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPFBC02"
+sev = 40
+text = "There is already an image catalog &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPFBC03"
+sev = 40
+text = "Another image catalog uses that directory."
+help = "One directory holds one catalog. Give another DIR."
+
+[[msg]]
+id = "CPFBC04"
+sev = 40
+text = "The image catalog's directory is not there."
+help = "Give CRTDIR(*YES), or make the directory first."
+
+[[msg]]
+id = "CPFBC05"
+sev = 40
+text = "The image catalog has no entry at that index."
+help = "WRKIMGCLGE lists the entries."
+
+[[msg]]
+id = "CPFBC06"
+sev = 40
+text = "That image catalog index is taken."
+help = "Give IMGCLGIDX(*AVAIL), or REPLACE(*YES)."
+
+[[msg]]
+id = "CPFBC07"
+sev = 40
+text = "The image catalog is full."
+help = "A catalog holds 256 entries."
+
+[[msg]]
+id = "CPFBC08"
+sev = 40
+text = "The image file is not there."
+help = "Check the path; a name alone is a file in the catalog's directory."
+
+[[msg]]
+id = "CPFBC09"
+sev = 40
+text = "The file is not an image of the catalog's type."
+help = "An optical catalog holds ISO 9660 images, a tape catalog virtual tape volumes."
+
+[[msg]]
+id = "CPFBC0A"
+sev = 40
+text = "The image catalog is loaded on a device."
+help = "Unload it first with LODIMGCLG OPTION(*UNLOAD)."
+
+[[msg]]
+id = "CPFBC0B"
+sev = 40
+text = "The device cannot take that image catalog."
+help = "A catalog loads on a virtual device of its type, and a device holds one catalog."
+
+[[msg]]
+id = "CPFBC0C"
+sev = 40
+text = "That volume is already in the image catalog."
+
+[[msg]]
+id = "CPFBC0D"
+sev = 40
+text = "The image catalog did not check out."
+help = "The lines before this one list each problem."
+
+[[msg]]
+id = "CPFBC0E"
+sev = 40
+text = "That image can only be read."
+
+[[msg]]
+id = "CPFBC0F"
+sev = 40
+text = "A parameter value cannot be used with this image catalog."
+
+[[msg]]
+id = "CPFBC10"
+sev = 40
+text = "The image catalog's own file could not be read or written."
+help = "The catalog's directory holds QS400CLG.INF; check the file system."

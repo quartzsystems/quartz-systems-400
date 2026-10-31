@@ -229,6 +229,7 @@ impl System {
                 time: now_unix(),
                 code: src.bytes(),
                 severity,
+                resource: String::new(),
             });
             let _ = part.write(record);
         }

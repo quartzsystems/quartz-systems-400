@@ -11,6 +11,8 @@
 //! guard: the IFS decides authority itself, once. When the xfs is not
 //! mounted every request answers `ENOTSUP`. A job's descriptors, streams
 //! and locks are its connection's and go when it ends ([`release`]).
+//! `/QOPT` shows the optical volumes of the loaded image catalogs
+//! (`super::media`).
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -130,7 +132,9 @@ fn build(system: &mut System) -> Result<Ifs<LinuxBackend>, String> {
         return Err(format!("{ROOT} is not mounted"));
     }
     let b = LinuxBackend::open(ROOT).map_err(|e| format!("{ROOT}: {}", e.text()))?;
-    let ifs = Ifs::new(b, Box::new(StoreQsys::new(Lent)), Config::default());
+    // `/QOPT` is the optical volumes the image catalogs load.
+    let opt = ifs::vfs::optical::Volumes::new(super::media::volume_set());
+    let ifs = Ifs::with_optical(b, Box::new(StoreQsys::new(Lent)), Box::new(opt), Config::default());
     with_lent(system, JobHandle(0), || {
         ifs.ensure_layout(&StoreEnv::new(&Lent))
     })

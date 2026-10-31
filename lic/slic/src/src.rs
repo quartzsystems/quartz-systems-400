@@ -164,6 +164,10 @@ pub const DISK_NOT_CONFIGURED: Src = src("A6001260", "Disk unit not configured",
 pub const IFS_MISSING: Src = src("A6001270", "IFS partition missing", Phase::Attention);
 /// The IFS partition would not mount; the IPL goes on without it.
 pub const IFS_MOUNT_FAILED: Src = src("A6001275", "IFS mount failed", Phase::Attention);
+/// A tape or optical device failed; its resource is in the log entry.
+pub const DEVICE_ERROR: Src = src("A6006300", "Media device error", Phase::Attention);
+/// A volume could not be read or written.
+pub const MEDIA_ERROR: Src = src("A6006310", "Media error on a volume", Phase::Attention);
 /// slic panicked.
 pub const PANIC: Src = src("B1001000", "slic panic", Phase::Fatal);
 /// LIC partition not found.
@@ -246,6 +250,8 @@ pub const TABLE: &[Src] = &[
     MIRROR_FAILED,
     IFS_MISSING,
     IFS_MOUNT_FAILED,
+    DEVICE_ERROR,
+    MEDIA_ERROR,
     PANIC,
     LIC_NOT_FOUND,
     LIC_UNREADABLE,
