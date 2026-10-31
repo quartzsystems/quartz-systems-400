@@ -2910,6 +2910,13 @@ text = "PTF &1 created in save file &2."
 help = "Every object in it is signed with the key file named. A system loads it only when it trusts that key."
 vars = ["*CHAR 7", "*CHAR 21"]
 
+[[msg]]
+id = "CPC3E08"
+sev = 0
+text = "IPL attributes changed."
+help = "The next IPL uses them; DSPIPLA shows them."
+vars = []
+
 # Problems.
 
 [[msg]]

@@ -346,6 +346,9 @@ pub const DIRECT: &[&str] = &[
     "QSCRTPTF",
     "RMVPTF",
     "WRKPTFGRP",
+    // --- IPL attributes (lic/slic/src/cpp/iplcmd.rs)
+    "CHGIPLA",
+    "DSPIPLA",
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
     "CHGCNTINF",
     "QSCHGUPDA",

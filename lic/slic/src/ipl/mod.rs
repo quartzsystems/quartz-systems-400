@@ -125,6 +125,20 @@ pub fn run() -> ! {
     run_loop(&mut system, &rx, &tx)
 }
 
+/// `QIPLTYPE` 1 or 2 at a normal keylock: an attended IPL, which shows
+/// the IPL menu as a manual one does. 2 (console in debug mode) is 1
+/// here; the service console is the build's (`qs400.svc`).
+fn attended(system: &System) -> bool {
+    let Some((_, record)) = system.lic.as_ref() else {
+        return false;
+    };
+    let host = crate::ipl::sysvals::host_info();
+    sysval::SysVals::from_record(record, &host)
+        .ok()
+        .and_then(|v| v.get("QIPLTYPE").ok())
+        .is_some_and(|v| matches!(v.text().trim(), "1" | "2"))
+}
+
 /// C1001000 through C1001060, plus the manual-mode menu.
 fn lic_phase(
     system: &mut System,
@@ -172,7 +186,7 @@ fn lic_phase(
     }
     system.emit(&src::CLOCK_SET);
 
-    if system.mode == IplMode::Manual && !installing {
+    if (system.mode == IplMode::Manual || attended(system)) && !installing {
         menu::run(system, rx);
     }
     if system.boot.ipl_d && system.storage.is_none() {

@@ -52,7 +52,7 @@ pub fn with_jobq<T>(
 }
 
 /// Every job queue: `LIB/NAME` and its object.
-fn all_queues(system: &mut System) -> Result<Vec<(String, ObjectId)>, String> {
+pub(crate) fn all_queues(system: &mut System) -> Result<Vec<(String, ObjectId)>, String> {
     let s = system.storage.as_mut().ok_or("object store not open")?;
     let qsys = s.qsys.ok_or("object store not initialized")?;
     let mut txn = s.store.begin().map_err(|e| e.to_string())?;

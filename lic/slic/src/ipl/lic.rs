@@ -76,7 +76,8 @@ pub fn attach(system: &mut System) -> Result<(), &'static src::Src> {
         record.sequence, record.header.ipl_count, record.header.abnormal_count
     ));
 
-    // Keylock: cmdline wins, then the service console's override, then normal.
+    // Keylock: cmdline wins, then the service console's override, then
+    // CHGIPLA KEYLCKPOS(*MANUAL), then normal.
     if system.boot.mode.is_none()
         && let Some(next) = record.header.next_mode.take()
     {
@@ -84,6 +85,11 @@ pub fn attach(system: &mut System) -> Result<(), &'static src::Src> {
         system
             .out
             .serial(&format!("slic: mode {next:?} from LIC override\n"));
+    } else if system.boot.mode.is_none()
+        && licpart::ipla::IplAttrs::of(&record).get("KEYLCKPOS") == Some("*MANUAL")
+    {
+        system.mode = IplMode::Manual;
+        system.out.serial("slic: mode Manual from KEYLCKPOS\n");
     }
 
     if record.header.ipl_in_progress {

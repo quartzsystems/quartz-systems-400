@@ -81,6 +81,12 @@ Option 1 continues the IPL; 2 to 5 answer "Option not available in this
 release". The selection can be typed on the local keyboard (Enter) or on
 serial.
 
+The menu also appears at a normal keylock when `QIPLTYPE` is 1
+(attended IPL) or 2 (attended, console in debug mode; here the same as
+1, the service console being the build's `qs400.svc`), and when
+`CHGIPLA KEYLCKPOS(*MANUAL)` makes manual the keylock of every IPL that
+the command line and the service console's override leave alone.
+
 ### Hardware resources
 
 Coldplug walks `/sys/bus/pci/devices`, `/sys/class/block`, `/sys/class/net`,
@@ -156,7 +162,22 @@ final SRC as 8 ASCII bytes, outcome), at most 16 kept. `0x0004` holds one
 key slot (Phase 10: `slot_version u8` = 1, `purpose u8` (1 = the
 certificate stores' password stash), `generation u32`, `created u64`,
 `key` 32 bytes), at most one per purpose; see docs/CERTS.md. `0x0100`
-holds the system value overrides.
+holds the system value overrides. Phase 11: `0x0106` holds the IPL
+attributes (`licpart::ipla`, `KEYWORD=VALUE` lines: `CHGIPLA`,
+`DSPIPLA`), `0x0107` the LIC PTF slot state (`ptf::slot`, docs/PTF.md
+§5). The storage service writes these two, rereading the record first;
+`slic` rereads it before its own writes too.
+
+The IPL attributes the operating system's start honours (the service's
+`iplcmd::at_ipl`): `CLRJOBQ(*YES)` clears every job queue,
+`CLROUTQ(*YES)` every output queue, `STRPRTWTR(*NO)` sets `QSTRPRTWTR`
+to 0 for the IPL, `STRTCP(*NO)` and `STRRSTD(*YES)` reach `QSTRUP`
+through data area `QSYS/QSIPLA` (it skips `STRTCP`, or starts nothing:
+the controlling subsystem alone). `CLRINCJOB` has nothing to do (job
+logs waiting to print do not outlive an IPL), `HDWDIAG(*ALL)` is noted
+in the IPL message, `RESTART(*SYS)` and `*FULL` both restart the whole
+machine, and `CPRJOBTBL`, `CHKJOBTBL`, `RBDPRDDIR`, `MSFRCY`, `DSPSTS`
+and `SPLFRCY` are kept and shown with no effect yet.
 
 First boot: both copies invalid, `init` writes the defaults with
 `install_time`. A partition with one valid copy is never reinitialized.

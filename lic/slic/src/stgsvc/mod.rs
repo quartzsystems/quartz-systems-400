@@ -196,6 +196,13 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     {
         let _ = v.set_system("QIPLSTS", sysval::Value::Char(iplsts.to_string()));
     }
+    // The IPL attributes (CHGIPLA): queues, writers, TCP/IP, restricted state.
+    let ipla = crate::cpp::iplcmd::at_ipl(system);
+    let text = if ipla.is_empty() {
+        text
+    } else {
+        format!("{text}; {ipla}")
+    };
     Ok(text)
 }
 

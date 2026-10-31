@@ -21,6 +21,7 @@ mod direct;
 mod ifscmd;
 pub(crate) mod lpapi;
 pub(crate) mod lpcmd;
+pub(crate) mod iplcmd;
 mod msgfcmd;
 mod objcmd;
 mod prbcmd;
@@ -73,6 +74,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| ptfcmd::run(system, name, parms))
             .or_else(|| updcmd::run(system, name, parms))
             .or_else(|| ptfsvc::run(system, name, parms))
+            .or_else(|| iplcmd::run(system, name, parms))
             .or_else(|| prbcmd::run(system, name, parms))
             .or_else(|| lpcmd::run(system, name, parms))
             .or_else(|| ifscmd::run(system, name, parms))

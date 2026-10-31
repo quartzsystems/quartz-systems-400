@@ -18,6 +18,7 @@
 
 mod error;
 mod format;
+pub mod ipla;
 mod locate;
 mod part;
 

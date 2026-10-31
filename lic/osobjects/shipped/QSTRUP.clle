@@ -8,11 +8,15 @@
 /* subsystems; the interactive, batch and communications subsystems     */
 /* when QCTL controls; TCP/IP with the servers that start with it; the   */
 /* host servers; the capture printer's writer when QSTRPRTWTR is 1; and  */
-/* it releases the System/36 evoke queue.                                */
+/* it releases the System/36 evoke queue. QSYS/QSIPLA holds the IPL     */
+/* attributes it honours: STRTCP(*NO) and STRRSTD(*YES).               */
              PGM
              DCL        VAR(&CTLSBSD) TYPE(*CHAR) LEN(20)
              DCL        VAR(&WTR) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&IPLA) TYPE(*CHAR) LEN(2)
              MONMSG     MSGID(CPF0000)
+             RTVDTAARA  DTAARA(QSYS/QSIPLA) RTNVAR(&IPLA)
+             IF         COND(%SST(&IPLA 2 1) *EQ 'Y') THEN(RETURN)
              STRSBS     SBSD(QSYS/QSPL)
              STRSBS     SBSD(QSYS/QSERVER)
              STRSBS     SBSD(QSYS/QUSRWRK)
@@ -22,7 +26,7 @@
                STRSBS     SBSD(QSYS/QBATCH)
                STRSBS     SBSD(QSYS/QCMN)
              ENDDO
-             STRTCP
+             IF         COND(%SST(&IPLA 1 1) *NE 'N') THEN(STRTCP)
              STRHOSTSVR SERVER(*ALL)
              RTVSYSVAL  SYSVAL(QSTRPRTWTR) RTNVAR(&WTR)
              IF         COND(&WTR *EQ '1') THEN(STRPRTWTR DEV(QSCAPTURE))
