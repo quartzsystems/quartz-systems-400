@@ -364,7 +364,8 @@ fn save_in<W: Write>(
         let p = 2 * u32::try_from(i + 1).expect("objects");
         pos.insert(c.id.to_bytes(), p);
         if c.id.type_code == types::FILE {
-            let members = db::file::describe(txn, c.id)?.members;
+            // Display and printer files are files without members.
+            let members = db::file::describe(txn, c.id).map(|d| d.members).unwrap_or_default();
             for m in &members {
                 pos.insert(m.object.to_bytes(), p + 1);
             }

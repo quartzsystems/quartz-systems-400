@@ -1,0 +1,58 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00SS1 from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal.
+
+# QS00SS1 *BASE lists no objects here: they are what lic/osobjects makes.
+
+[product]
+id = "QS00SS1"
+ibm_alias = "5770SS1"
+text = "Quartz Systems/400 Operating System"
+library = "QSYS"
+first_copyright = 2026
+current_copyright = 2026
+ccsids = [37, 1208]
+
+[[option]]
+option = "*BASE"
+text = "Quartz Systems/400 Operating System"
+msgid = "QSZ0000"
+feature = "5050"
+libraries = [{ name = "QSYS" }, { name = "QSYS2" }, { name = "QUSRSYS" }, { name = "QGPL" }]
+
+[[option]]
+option = 12
+text = "Host servers"
+msgid = "QSZ0012"
+feature = "5050"
+
+[[option]]
+option = 18
+text = "Media and storage extensions"
+msgid = "QSZ0018"
+feature = "5050"
+
+[[option]]
+option = 30
+text = "Qshell"
+msgid = "QSZ0030"
+feature = "5050"
+directories = [{ path = "/QIBM/ProdData/qsh" }]
+
+[[option]]
+option = 33
+text = "Portable application environment"
+msgid = "QSZ0033"
+feature = "5050"
+directories = [{ path = "/QOpenSys" }]
+
+[[option]]
+option = 34
+text = "Digital certificate manager"
+msgid = "QSZ0034"
+feature = "5050"
+requires = ["QS00SS1:12"]
+directories = [{ path = "/QIBM/UserData/ICSS" }]

@@ -1,0 +1,27 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00ST1 from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal.
+
+[product]
+id = "QS00ST1"
+ibm_alias = "5770ST1"
+text = "Quartz Systems/400 SQL Database Utilities"
+library = "QSYS"
+first_copyright = 2026
+current_copyright = 2026
+
+[[option]]
+option = "*BASE"
+text = "Quartz Systems/400 SQL Database Utilities"
+msgid = "QSZ3000"
+feature = "5001"
+requires = ["QS00SS1:*BASE"]
+
+[[license]]
+feature = "5001"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"
+

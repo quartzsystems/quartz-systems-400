@@ -1,0 +1,60 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00WDS from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal.
+
+[product]
+id = "QS00WDS"
+ibm_alias = "5770WDS"
+text = "Quartz Systems/400 Application Development"
+library = "QSYS"
+first_copyright = 2026
+current_copyright = 2026
+
+[[option]]
+option = "*BASE"
+text = "Common compiler support"
+msgid = "QSZ1000"
+feature = "5001"
+requires = ["QS00SS1:*BASE"]
+
+[[option]]
+option = 21
+text = "Application development tools"
+msgid = "QSZ1021"
+feature = "5101"
+
+[[option]]
+option = 31
+text = "ILE RPG compiler"
+msgid = "QSZ1031"
+feature = "5102"
+
+[[option]]
+option = 61
+text = "SQL precompiler"
+msgid = "QSZ1061"
+feature = "5103"
+requires = ["QS00WDS:31"]
+
+[[license]]
+feature = "5001"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"
+
+[[license]]
+feature = "5101"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"
+
+[[license]]
+feature = "5102"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"
+
+[[license]]
+feature = "5103"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"

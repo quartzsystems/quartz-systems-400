@@ -57,6 +57,9 @@ enum Command {
     Iso,
     /// Write and sign the artifact manifest.
     Manifest,
+    /// Package each product of `licpgm/products/` into a signed product
+    /// load save file under `target/images/lp/`.
+    Lp,
     /// Run the whole pipeline.
     All {
         /// Omit the serial service console (`qs400.svc=1`).
@@ -120,6 +123,9 @@ fn main() -> Result<()> {
         }
         Command::Manifest => {
             image::manifest::manifest(&ctx)?;
+        }
+        Command::Lp => {
+            image::lp::lp(&ctx)?;
         }
         Command::All { release } => all(&ctx, release)?,
         Command::Test {

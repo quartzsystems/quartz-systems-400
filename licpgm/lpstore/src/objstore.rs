@@ -326,6 +326,8 @@ impl ObjectCheck for Products<'_, '_> {
             Ok(ops::list(txn, id, None)
                 .map_err(|e| err(&e))?
                 .into_iter()
+                // The product objects are the package, not its content.
+                .filter(|(k, _)| !matches!(k.type_code, types::PRDDFN | types::PRDLOD))
                 .filter_map(|(k, _)| {
                     types::type_by_code(k.type_code)
                         .map(|t| ObjEntry::new(lib, &k.name.to_string(), t.name))
