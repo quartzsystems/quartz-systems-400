@@ -103,3 +103,11 @@ date = "2026-10-31"
 script = "probe-media71"
 width = 80
 note = "the tape device"
+
+[[golden]]
+name = "dspautlobj"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "disp-dspautlobj"
+width = 80

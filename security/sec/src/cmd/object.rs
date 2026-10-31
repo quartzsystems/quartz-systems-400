@@ -613,12 +613,13 @@ pub struct SecuredObject {
     pub text: String,
 }
 
-/// The owner of list `name` and the objects it secures.
+/// The owner and primary group of list `name` and the objects it
+/// secures.
 pub fn secured_objects(
     txn: &mut Txn<'_>,
     env: &Env<'_>,
     name: &str,
-) -> Result<(String, Vec<SecuredObject>)> {
+) -> Result<(String, String, Vec<SecuredObject>)> {
     let list = autl::find(txn, env.qsys, name)?;
     let h = grant::header(txn, list)?;
     guard::check(txn, "obj.describe", &h)?;
@@ -633,12 +634,12 @@ pub fn secured_objects(
             text: text_of(&oh.text),
         });
     }
-    Ok((text_of(&h.owner), out))
+    Ok((text_of(&h.owner), none_if_empty(text_of(&h.primary_group)), out))
 }
 
 /// `DSPAUTLOBJ AUTL()`: the objects the list secures.
 pub fn dspautlobj(txn: &mut Txn<'_>, env: &Env<'_>, name: &str) -> Result<String> {
-    let (_, list) = secured_objects(txn, env, name)?;
+    let (_, _, list) = secured_objects(txn, env, name)?;
     let mut o = format!(" Authorization list {name}\n Object      Library     Type        Owner\n");
     for x in list {
         let _ = writeln!(o, " {:<10}  {:<10}  {:<10}  {}", x.name, x.lib, x.ty, x.owner);

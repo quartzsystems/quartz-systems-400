@@ -102,9 +102,10 @@ fn object_authorities(system: &mut System, lib: &str, name: &str, ty: &str) -> R
     Ok((vars, vec![("AUTS".into(), rows)]))
 }
 
-/// `AUTLOBJ LIST`: the list's owner and the objects it secures.
+/// `AUTLOBJ LIST`: the list's owner, primary group and the objects it
+/// secures.
 fn secured(system: &mut System, list: &str) -> Result<Sys2Data, String> {
-    let (owner, objs) =
+    let (owner, pgp, objs) =
         crate::svc::security::in_store(system, |txn, env| sec::cmd::object::secured_objects(txn, env, list))?;
     let rows = objs
         .into_iter()
@@ -119,7 +120,7 @@ fn secured(system: &mut System, list: &str) -> Result<Sys2Data, String> {
         })
         .collect();
     Ok((
-        pairs(&[("AUTL", list.to_string()), ("OWNER", owner)]),
+        pairs(&[("AUTL", list.to_string()), ("OWNER", owner), ("PGP", pgp)]),
         vec![("OBJS".into(), rows)],
     ))
 }

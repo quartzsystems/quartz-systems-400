@@ -661,26 +661,32 @@ fn dspmod_2() {
     );
 }
 
+/// Against the V7R1M0 capture (pub400 has no list the account may
+/// display): a shipped list that secures nothing. The empty list's
+/// line is ours in wording, the system's in place; the system hides
+/// the column headings (row 7) of an empty list, ours keeps them.
 #[test]
-#[ignore = "no golden: DSPPTF is not authorized to the pub400 account"]
-fn dspptf() {
-    title_and_keys(
-        "QUIDSPPTF",
-        "DSPPTF",
-        "Display PTF Status",
-        &["F3=Exit", "F11=Display alternate view", "F12=Cancel"],
-    );
-}
-
-#[test]
-#[ignore = "no golden: pub400 has no authorization list the account may display"]
 fn dspautlobj() {
-    title_and_keys(
-        "QUIAUTLOBJ",
-        "DSPAUTLOBJ",
-        "Display Authorization List Objects",
-        &["F3=Exit", "F12=Cancel", "F17=Top", "F18=Bottom"],
-    );
+    let g = shipped("QUIAUTLOBJ");
+    let mut d = vars(&[("AUTL", "QPWFSERVER"), ("OWNER", "QSYS")]);
+    d.set_list("OBJS", rows::<1>(&[]));
+    let o = Options {
+        copyright: "(C) COPYRIGHT IBM CORP. 1980, 2009.".into(),
+        ..opts()
+    };
+    let got = render(&g, "DSPAUTLOBJ", &d, &o).unwrap().text_rows();
+    let dir = common::golden_dir().join("../oracle71/audit");
+    let want = common::golden_rows_in(&dir, "dspautlobj");
+    for (i, w) in want.iter().enumerate() {
+        let ours = got.get(i).map_or("", String::as_str);
+        if i == 6 {
+            assert!(ours.trim_start().starts_with("Object"), "row 7: {ours}");
+        } else if w.trim_start().starts_with("(No ") {
+            assert_eq!(w.find('('), ours.find('('), "row {}: {ours}", i + 1);
+        } else {
+            assert_eq!(w.trim_end(), ours.trim_end(), "row {}:\n{}", i + 1, got.join("\n"));
+        }
+    }
 }
 
 #[test]
