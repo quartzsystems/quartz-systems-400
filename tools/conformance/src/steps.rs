@@ -48,19 +48,18 @@ pub const SRC_SEQUENCE: &[&str] = &[
     SRC_IPL_COMPLETE,
 ];
 
-/// The sequence of a D IPL from media with no LIC partition.
+/// The sequence of a D IPL from media with no LIC partition, up to the
+/// IPL menu. Without an installed disk it goes no further.
 pub const SRC_SEQUENCE_MEDIA: &[&str] = &[
     SRC_IPL_STARTED,
     SRC_MEDIA_IPL,
     "SRC C1001020",
     "SRC C1001030",
     "SRC C1001040",
-    "SRC C1001060",
-    "SRC C6001000",
-    "SRC C6001010",
-    "SRC C6001020",
-    SRC_IPL_COMPLETE,
 ];
+
+/// The code the media IPL stops at with no operating system installed.
+pub const SRC_MEDIA_LAST: &str = "C1001040";
 
 pub(crate) const CMD: Duration = Duration::from_secs(10);
 
@@ -278,7 +277,7 @@ impl Suite {
     /// re-IPLs; the second boot from the media installs the operating
     /// system without prompts and reaches sign-on.
     pub(crate) fn automatic_install(&self, s: &mut Session) -> Result<String, String> {
-        s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
+        s.expect_in_order(SRC_SEQUENCE_MEDIA, self.boot_timeout)?;
         s.expect("Selection", self.boot_timeout)?;
         s.send("4")?;
         s.expect("SRC C6004090", Duration::from_secs(120))?;
@@ -383,7 +382,7 @@ impl Suite {
         let iso = self.iso.clone().expect("checked in new");
         let mut reports = Vec::new();
 
-        // 1. The ISO alone: a D IPL without a LIC partition reaches sign-on.
+        // 1. The ISO alone: a D IPL with nothing installed stops at a panel.
         let alone = Launch {
             image: None,
             cdrom: Some(iso.clone()),
@@ -419,24 +418,65 @@ impl Suite {
         let mut s = Session::spawn(&disk_first)?;
         reports.push(self.step(&mut s, "3 disk first", Self::disk_chosen)?);
         s.kill();
+
+        // 4. ISO first again, option 1 this time: the disk's system IPLs.
+        let mut s = Session::spawn(&cd_first)?;
+        reports.push(self.step(&mut s, "4 media IPL of the disk", Self::media_installed)?);
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(20));
+        drop(s);
         Ok(reports)
     }
 
     /// Media step 1: the D IPL sequence with C1001015, the attended IPL
-    /// menu (answered with option 1 over serial), then the sign-on screen.
+    /// menu answered with option 1 over serial; with no disk there is no
+    /// operating system, so the panel that says so, never the OS phase.
     pub(crate) fn media_ipl(&self, s: &mut Session) -> Result<String, String> {
-        s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
+        s.expect_in_order(SRC_SEQUENCE_MEDIA, self.boot_timeout)?;
         s.expect("Selection", self.boot_timeout)?;
         s.send("1")?;
-        let seen = s.expect_in_order(&SRC_SEQUENCE_MEDIA[5..], self.boot_timeout)?;
-        s.expect(crate::PROMPT, CMD)?;
-        let dump = s.command("screen", CMD)?;
-        if !dump.contains("Sign On") {
-            return Err("sign-on display is not showing".into());
+        let out = s.expect("No Operating System Installed", CMD)?;
+        if out.contains("SRC C6001000") {
+            return Err("the OS phase started without an installed system".into());
         }
+        let dump = crate::phase5::screen_wait(s, "No Operating System Installed")?;
+        for want in [
+            SRC_MEDIA_LAST,
+            "(No disk units detected)",
+            "2. Install the operating system",
+            "3. Use Dedicated Service Tools (DST)",
+            "F3=Return to IPL menu",
+        ] {
+            if !dump.contains(want) {
+                return Err(format!("the panel lacks {want:?}:\n{dump}"));
+            }
+        }
+        self.snap("media-no-os");
+        s.send("key f3")?;
+        crate::phase5::screen_wait(s, "IPL or Install the System")?;
+        if s.command("svc.srcs", CMD)?.contains("C6001090") {
+            return Err("C6001090 was reached".into());
+        }
+        Ok(format!(
+            "C1001015 seen, option 1 shows No Operating System Installed at {SRC_MEDIA_LAST}, F3 returns"
+        ))
+    }
+
+    /// Media step 4: an installed disk and the media, the CD-ROM first:
+    /// option 1 IPLs from the disk to sign-on.
+    fn media_installed(&self, s: &mut Session) -> Result<String, String> {
+        s.expect(MEDIA_LINE, self.boot_timeout)?;
+        s.expect("Selection", self.boot_timeout)?;
+        s.send("1")?;
+        let seen = s.expect_in_order(
+            &["SRC C1001070", "SRC C6001000", SRC_IPL_COMPLETE],
+            self.boot_timeout,
+        )?;
+        s.expect(crate::PROMPT, CMD)?;
+        crate::phase5::screen_wait(s, "Sign On")?;
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
         Ok(format!(
-            "C1001015 seen, IPL menu answered, sign-on display at {last:.1}s"
+            "option 1 on the media IPLed the disk's ASP 1, sign-on at {last:.1}s"
         ))
     }
 

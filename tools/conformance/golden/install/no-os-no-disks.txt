@@ -1,0 +1,24 @@
+                         No Operating System Installed                          
+                                                                 System:  QS400 
+                                                                                
+ No disk unit holds an ASP 1 partition, so there is nothing to IPL.             
+                                                                                
+ Last SRC  . . . . . :   C1001040  Clock set from RTC                           
+                                                                                
+ Disk units detected:                                                           
+   Resource  Type Model          Size (MiB)                                     
+   (No disk units detected)                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Select one of the following:                                                   
+      2. Install the operating system                                           
+      3. Use Dedicated Service Tools (DST)                                      
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Return to IPL menu                                                          
+                                                                                

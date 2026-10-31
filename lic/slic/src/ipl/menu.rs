@@ -128,21 +128,90 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
         };
         let choice = first_field(&answer);
         match choice.as_str() {
-            "1" => return,
+            "1" => {
+                if perform_ipl(system, rx, &mut message) {
+                    return;
+                }
+            }
             "2" if system.boot.ipl_d => install::run_lic(system, rx),
             "4" if system.boot.ipl_d => install::run_auto(system),
-            "3" => match dst::run(system, rx) {
-                dst::Outcome::PerformIpl => return,
-                dst::Outcome::InstallOs if system.boot.ipl_d => install::run_lic(system, rx),
-                dst::Outcome::AutoInstall if system.boot.ipl_d => install::run_auto(system),
-                dst::Outcome::InstallOs | dst::Outcome::AutoInstall => {
-                    message = Some((NOT_AVAILABLE.to_string(), false));
+            "3" => {
+                if service_tools(system, rx, &mut message) {
+                    return;
                 }
-                _ => {}
-            },
+            }
             "2" | "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
             "" => {}
             other => message = Some((format!("Selection '{other}' is not valid"), true)),
         }
     }
+}
+
+/// Option 3: DST. True when it asks for the IPL to go on.
+fn service_tools(
+    system: &mut System,
+    rx: &Receiver<Event>,
+    message: &mut Option<(String, bool)>,
+) -> bool {
+    match dst::run(system, rx) {
+        dst::Outcome::PerformIpl => return perform_ipl(system, rx, message),
+        dst::Outcome::InstallOs if system.boot.ipl_d => install::run_lic(system, rx),
+        dst::Outcome::AutoInstall if system.boot.ipl_d => install::run_auto(system),
+        dst::Outcome::InstallOs | dst::Outcome::AutoInstall => {
+            *message = Some((NOT_AVAILABLE.to_string(), false));
+        }
+        _ => {}
+    }
+    false
+}
+
+/// Option 1. True when the IPL can go on: always from a disk, from the
+/// media only when some disk holds ASP 1. Otherwise the no operating
+/// system panel, whose options lead where the menu's do.
+fn perform_ipl(
+    system: &mut System,
+    rx: &Receiver<Event>,
+    message: &mut Option<(String, bool)>,
+) -> bool {
+    if !system.boot.ipl_d || os_installed() {
+        return true;
+    }
+    let mut note: Option<(String, bool)> = None;
+    loop {
+        let mut s = no_os_screen(system);
+        if let Some((text, error)) = note.take() {
+            ui::message(&mut s, &text, error);
+        }
+        show(system, s);
+        let Some(answer) = read(system, rx) else {
+            return false;
+        };
+        match (&answer, first_field(&answer).as_str()) {
+            (Answer::Function(3 | 12), _) => return false,
+            (_, "2") => {
+                install::run_lic(system, rx);
+                return false;
+            }
+            (_, "3") => return service_tools(system, rx, message),
+            (_, "") => {}
+            (_, other) => note = Some((format!("Selection '{other}' is not valid"), true)),
+        }
+    }
+}
+
+/// Whether any disk holds an ASP 1 partition.
+pub fn os_installed() -> bool {
+    !diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID)
+        .unwrap_or_default()
+        .is_empty()
+}
+
+/// `No Operating System Installed` with the last code and the disks.
+pub fn no_os_screen(system: &System) -> Screen {
+    let (code, text) = system
+        .log
+        .entries()
+        .last()
+        .map_or(("", ""), |e| (e.src.code, e.src.text));
+    svctools::install::noos::screen(&system.system_name(), (code, text), &dst::disks(system))
 }

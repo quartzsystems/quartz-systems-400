@@ -48,7 +48,7 @@ pub struct DiskUnit {
 }
 
 /// A disk the system sees that belongs to no ASP.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct NonConfigured {
     /// Device node.
     pub device: String,

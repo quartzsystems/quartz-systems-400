@@ -68,16 +68,47 @@ impl<'a> Env<'a> {
     }
 
     fn resource_for(&self, device: &str) -> String {
-        let name = device.rsplit('/').next().unwrap_or(device);
-        let disk = diskimg::locate::disk_of(std::path::Path::new(device))
-            .unwrap_or_else(|| name.to_string());
-        self.system
-            .hw
-            .resources
-            .iter()
-            .find(|r| r.kind == Kind::Disk && r.location == disk)
-            .map_or_else(|| "-----".to_string(), |r| r.name.clone())
+        resource_for(self.system, device)
     }
+}
+
+/// The disk resource name of a device node, or dashes.
+fn resource_for(system: &System, device: &str) -> String {
+    let name = device.rsplit('/').next().unwrap_or(device);
+    let disk =
+        diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
+    system
+        .hw
+        .resources
+        .iter()
+        .find(|r| r.kind == Kind::Disk && r.location == disk)
+        .map_or_else(|| "-----".to_string(), |r| r.name.clone())
+}
+
+/// Every disk the system sees, configured or not, for the installer.
+pub fn disks(system: &System) -> Vec<NonConfigured> {
+    let mut out = Vec::new();
+    let media = crate::ipl::media::disk_on_d_ipl(system.boot.ipl_d);
+    for disk in diskimg::locate::whole_disks().unwrap_or_default() {
+        if media.as_deref() == Some(disk.name.as_str()) {
+            continue;
+        }
+        let device = disk.dev.display().to_string();
+        let (type_model, serial) = diskimg::locate::identity(&disk.dev);
+        out.push(NonConfigured {
+            resource: resource_for(system, &device),
+            serial,
+            type_model: if type_model.is_empty() {
+                disk.model.clone()
+            } else {
+                type_model
+            },
+            size_mib: disk.bytes >> 20,
+            has_data: disk.has_qs400 || storage::has_unit_header(&disk.dev),
+            device,
+        });
+    }
+    out
 }
 
 fn loaded_none(env: &Env<'_>) -> bool {
@@ -296,28 +327,7 @@ impl DstEnv for Env<'_> {
     }
 
     fn disks(&mut self) -> Vec<NonConfigured> {
-        let mut out = Vec::new();
-        let media = crate::ipl::media::disk_on_d_ipl(self.system.boot.ipl_d);
-        for disk in diskimg::locate::whole_disks().unwrap_or_default() {
-            if media.as_deref() == Some(disk.name.as_str()) {
-                continue;
-            }
-            let device = disk.dev.display().to_string();
-            let (type_model, serial) = diskimg::locate::identity(&disk.dev);
-            out.push(NonConfigured {
-                resource: self.resource_for(&device),
-                serial,
-                type_model: if type_model.is_empty() {
-                    disk.model.clone()
-                } else {
-                    type_model
-                },
-                size_mib: disk.bytes >> 20,
-                has_data: disk.has_qs400 || storage::has_unit_header(&disk.dev),
-                device,
-            });
-        }
-        out
+        disks(self.system)
     }
 
     fn install_lic(

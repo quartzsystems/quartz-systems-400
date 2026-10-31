@@ -186,11 +186,20 @@ fn lic_phase(
     }
     system.emit(&src::CLOCK_SET);
 
-    if (system.mode == IplMode::Manual || attended(system)) && !installing {
+    // Media without an installed system has nothing to IPL: the menu
+    // shows even in normal mode, and option 1 says so.
+    let attended = system.mode == IplMode::Manual
+        || attended(system)
+        || system.boot.ipl_d && !menu::os_installed();
+    if attended && !installing {
         menu::run(system, rx);
     }
     if system.boot.ipl_d && system.storage.is_none() {
         storage::locate_and_open(system)?;
+        // The OS phase, and so the sign-on, needs ASP 1.
+        if system.storage.is_none() {
+            return Err(&src::ASP_NOT_FOUND);
+        }
     }
 
     match net::links() {
@@ -707,11 +716,9 @@ fn console_input(system: &mut System, input: ::console::Input, tx: &mpsc::Sender
     match (system.procs.console.as_mut(), input) {
         (Some(j), Input::Enter(fields)) => j.input(0, fields),
         (Some(j), Input::Function(n, fields)) => j.input(n, fields),
-        (None, Input::SignOn(fields)) if system.procs.stg.is_some() => {
+        // The console shows sign-on only after C6001090.
+        (None, Input::SignOn(fields)) => {
             procs::console::sign_on_entered(system, &fields, tx.clone());
-        }
-        (None, Input::SignOn(_)) => {
-            procs::console::sign_on(system, "Sign-on is not available until the IPL completes.");
         }
         (_, other) => system.out.serial(&format!("slic: console {other:?}\n")),
     }

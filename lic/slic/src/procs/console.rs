@@ -161,8 +161,11 @@ pub fn sign_on_entered(system: &mut System, fields: &[String], tx: Sender<Event>
     }
     let password = fields.get(1).map_or("", |f| f.trim()).to_string();
     let user_typed = user.clone();
+    // An IPL completes only with the storage service running; it ending
+    // is fatal, so this is never reached.
     let Some(stg) = system.procs.stg.as_mut() else {
-        sign_on(system, "Sign-on is not available until the IPL completes.");
+        system.out.serial("slic: console sign-on without the storage service\n");
+        sign_on(system, "");
         return;
     };
     let checked = stg

@@ -284,12 +284,19 @@ so two builds give identical images.
 The UKI on the ISO is the third one `build uki` produces, with
 `qs400.ipl=D qs400.media=iso qs400.mode=manual` added to the command line:
 installation media always IPLs attended, so the "IPL or Install the
-System" menu appears first (option 1 continues to sign-on). On a D IPL `slic`
+System" menu appears first. On a D IPL `slic`
 records IPL type D for this IPL, and when no LIC partition is found it
 emits `C1001015 Running from installation media` instead of halting with
 B1001010, runs with an in-memory LIC record, and continues to the console.
-In Phase 1 that ends at the sign-on display. Phase 2 made option 2 the
-installer (see PHASE2.md).
+Phase 2 made option 2 the installer (see PHASE2.md). Option 1 IPLs the
+disk's system when some disk holds a `QS400-ASP1` partition; when none
+does it shows `No Operating System Installed` (golden
+`install/no-os.txt`): the last SRC reached, the disks detected (resource,
+type and model, size), `2. Install the operating system`, `3. Use
+Dedicated Service Tools (DST)` and `F3=Return to IPL menu`. The OS phase
+never starts without ASP 1, and the console shows the sign-on display
+only after `C6001090`: until then it stays on the SRC display, so a slow
+IPL shows its progress.
 
 Write it to a USB stick (replace `sdX` with the stick, everything on it is
 lost):
@@ -306,13 +313,16 @@ Why FAT16: El Torito's sector count is a 16-bit count of 512-byte sectors,
 32 MiB at most, and a FAT32 volume cannot be made that small. The disk ESP
 stays FAT32.
 
-Testing: `build test --media iso` runs three steps. The ISO alone must
+Testing: `build test --media iso` runs four steps. The ISO alone must
 show the D sequence with C1001015, present the IPL menu (the harness
-answers 1 over serial) and reach the sign-on display. With the
+answers 1 over serial) and show `No Operating System Installed` with
+C1001040 and no disks; F3 returns to the menu and C6001090 is never
+reached. With the
 disk image attached and the CD-ROM first, the ISO must boot: slic prints
 `IPL type D from installation media`, then finds the disk's LIC partition
 (C1001010), because a D IPL uses a partition when one exists. With the disk
-first, the disk must boot: C1001010 without the media line. The harness
+first, the disk must boot: C1001010 without the media line. With the
+CD-ROM first again, option 1 must IPL the disk's system to sign-on. The harness
 chooses the order with `bootindex` properties on the virtio disk and the
 SATA CD-ROM (`-device virtio-blk-pci,...,bootindex=N` and `-device
 ide-cd,...,bootindex=M`), which OVMF honours through fw_cfg; `-boot
@@ -336,7 +346,7 @@ order=c` was found not to override a bootable CD-ROM with a virtio disk.
 ```
 cargo run -p build -- all          # dev build, service console on; disk and ISO
 cargo run -p build -- test         # the six-step suite
-cargo run -p build -- test --media iso   # the three media steps
+cargo run -p build -- test --media iso   # the four media steps
 cargo run -p build -- all --release
 QS400_QEMU=1 cargo test -p conformance
 ```

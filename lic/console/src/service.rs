@@ -20,6 +20,9 @@ use crate::screens;
 /// Input-inhibited indicator, bottom left.
 pub const INHIBITED: &str = "X II";
 
+/// The code after which the sign-on display may show.
+pub const IPL_COMPLETE: &str = "C6001090";
+
 /// What slic asks of the console.
 #[derive(Debug)]
 pub enum Command {
@@ -104,6 +107,10 @@ pub struct Console {
     term: Option<crate::terminal::ConsoleTerminal>,
     /// Where the terminal's records go.
     link: Option<Sender<Vec<u8>>>,
+    /// `C6001090` was shown: sign-on may show from now on.
+    complete: bool,
+    /// A sign-on asked for before that, shown when it comes.
+    pending: Option<Command>,
 }
 
 impl Console {
@@ -138,6 +145,8 @@ impl Console {
                 out: None,
                 term: None,
                 link: None,
+                complete: false,
+                pending: None,
             },
             status,
         )
@@ -178,6 +187,17 @@ impl Console {
                 self.screen = screens::src_screen(&self.system, &code, &text, &self.recent);
                 self.kind = Kind::Src;
                 self.locked = false;
+                if code == IPL_COMPLETE {
+                    self.complete = true;
+                    if let Some(sign_on) = self.pending.take() {
+                        return self.handle(sign_on);
+                    }
+                }
+            }
+            // Until the IPL completes the SRC display stays up.
+            cmd @ Command::ShowSignOn { .. } if !self.complete => {
+                self.pending = Some(cmd);
+                return;
             }
             Command::ShowScreen(screen) => {
                 self.screen = screen;
@@ -201,6 +221,7 @@ impl Console {
                 self.locked = false;
                 editor::home(&mut self.screen);
             }
+            Command::Message { .. } if self.pending.is_some() => return,
             Command::Message { text, error } => {
                 screens::set_message(&mut self.screen, &text, error);
             }
@@ -395,6 +416,8 @@ mod tests {
             out: None,
             term: None,
             link: None,
+            complete: false,
+            pending: None,
         }
     }
 
@@ -409,17 +432,57 @@ mod tests {
         }));
     }
 
+    fn sign_on() -> Command {
+        Command::ShowSignOn {
+            system: "QS400".into(),
+            subsystem: "QINTER".into(),
+            display: "QSCONSOLE".into(),
+            long_password: false,
+        }
+    }
+
+    fn src(c: &mut Console, code: &str) {
+        c.handle(Command::ShowSrc {
+            system: "QS400".into(),
+            code: code.into(),
+            text: "text".into(),
+        });
+    }
+
+    fn complete(c: &mut Console) {
+        src(c, IPL_COMPLETE);
+    }
+
+    #[test]
+    fn sign_on_waits_for_the_ipl_to_complete() {
+        let mut c = console();
+        src(&mut c, "C6001010");
+        c.handle(sign_on());
+        c.handle(Command::Message {
+            text: "early".into(),
+            error: true,
+        });
+        assert_eq!(c.kind, Kind::Src);
+        assert!(!c.screen().dump().contains("Sign On"));
+        assert!(!c.screen().dump().contains("early"));
+        src(&mut c, "C6001050");
+        assert_eq!(c.kind, Kind::Src);
+        complete(&mut c);
+        assert_eq!(c.kind, Kind::SignOn);
+        assert!(c.screen().dump().contains("Sign On"));
+        // From then on it shows at once.
+        src(&mut c, "C6001090");
+        c.handle(sign_on());
+        assert_eq!(c.kind, Kind::SignOn);
+    }
+
     #[test]
     fn sign_on_enter_sends_the_fields_and_locks() {
         let (tx, rx) = std::sync::mpsc::channel();
         let mut c = console();
         c.out = Some(tx);
-        c.handle(Command::ShowSignOn {
-            system: "QS400".into(),
-            subsystem: "QINTER".into(),
-            display: "QSCONSOLE".into(),
-            long_password: false,
-        });
+        complete(&mut c);
+        c.handle(sign_on());
         press(&mut c, 30); // a
         press(&mut c, 28); // Enter
         assert!(c.locked());
@@ -466,7 +529,7 @@ mod tests {
             Ok(Input::Enter(vec!["1".into(), "pw".into()]))
         );
         c.handle(Command::Virtual(Key::Function(12)));
-        assert_eq!(rx.try_recv(), Ok(Input::Function(12, Vec::new())));
+        assert_eq!(rx.try_recv(), Ok(Input::Function(12, vec!["1".into(), "pw".into()])));
         // No fields: Enter reports nothing.
         c.handle(Command::ShowScreen(Screen::new()));
         c.handle(Command::Virtual(Key::Enter));

@@ -97,4 +97,13 @@ fn install_screens_match_their_golden_files() {
         &mut e,
     );
     check("major-options", &r.screen(&mut e).dump());
+    let src = ("C1001040", "Clock set from RTC");
+    check(
+        "no-os",
+        &svctools::install::noos::screen("QS400", src, &e.spare).dump(),
+    );
+    check(
+        "no-os-no-disks",
+        &svctools::install::noos::screen("QS400", src, &[]).dump(),
+    );
 }

@@ -7,6 +7,7 @@
 //! the environment's; the panels here ask, confirm, and show progress.
 
 pub mod lic;
+pub mod noos;
 pub mod options;
 pub mod os;
 
