@@ -245,6 +245,12 @@ impl MediaLibrary {
         self.cartridges.get(id)
     }
 
+    /// Put back a cartridge as it was kept (its category, location and
+    /// home), before the next [`MediaLibrary::sync`].
+    pub fn restore(&mut self, c: Cartridge) {
+        self.cartridges.insert(c.id.clone(), c);
+    }
+
     /// Take in the changer's element status: new tags arrive in
     /// *INSERT (or *SYSGEN), locations follow the elements, and
     /// cartridges no longer present are dropped unless *EJECT.
@@ -281,10 +287,14 @@ impl MediaLibrary {
             };
             let c = self.cartridges.entry(tag.clone()).or_insert(Cartridge {
                 id: tag.clone(),
-                category: default,
+                category: default.clone(),
                 location,
                 home: None,
             });
+            // A cartridge that left the library comes back in *INSERT.
+            if c.location == Location::Outside {
+                c.category = default;
+            }
             c.location = location;
             match location {
                 Location::Slot(a) => c.home = Some(a),

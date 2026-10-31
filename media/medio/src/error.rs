@@ -24,6 +24,15 @@ pub enum MediaError {
     /// The file is there and the save may not replace it.
     #[error("{0} already exists on the volume")]
     Exists(String),
+    /// A media library refused a cartridge operation.
+    #[error(transparent)]
+    Library(#[from] tape::device::LibraryError),
+    /// A kept state file is damaged.
+    #[error("{0}")]
+    State(String),
+    /// The next volume of a save spanning optical volumes was refused.
+    #[error("{0}")]
+    Continuation(String),
 }
 
 impl MediaError {
@@ -33,8 +42,10 @@ impl MediaError {
         match self {
             Self::Tape(t) => t.message_id(),
             Self::Optical(o) => o.msgid(),
-            Self::NotFound(_) => "OPT1115",
+            Self::NotFound(_) | Self::Continuation(_) => "OPT1115",
             Self::Exists(_) => "OPT1210",
+            Self::Library(l) => l.message_id(),
+            Self::State(_) => "CPF6708",
         }
     }
 }

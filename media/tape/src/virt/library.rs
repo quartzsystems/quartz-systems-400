@@ -99,6 +99,37 @@ impl<B: Read + Write + Seek> VirtualLibrary<B> {
         Ok(addr)
     }
 
+    /// Put a volume back at element `addr` as a library kept it: in a
+    /// slot, a station or a drive (loaded), `source` its home slot.
+    pub fn put(&mut self, addr: u16, mut tape: VirtualTape<B>, source: u16) -> Result<(), ChangerError> {
+        let p = self.place(addr)?;
+        if self.cell(p).is_some() {
+            return Err(ChangerError::DestinationFull(addr));
+        }
+        if let Place::Drive(_) = p {
+            tape.load();
+        }
+        *self.cell(p) = Some(Loaded { tape, source });
+        Ok(())
+    }
+
+    /// Whether element `addr` is empty (and exists).
+    #[must_use]
+    pub fn is_empty_at(&self, addr: u16) -> bool {
+        match self.place(addr) {
+            Ok(Place::Slot(i)) => self.slots[i].is_none(),
+            Ok(Place::Station(i)) => self.stations[i].is_none(),
+            Ok(Place::Drive(i)) => self.drives[i].is_none(),
+            Err(_) => false,
+        }
+    }
+
+    /// The number of drives.
+    #[must_use]
+    pub fn drives(&self) -> usize {
+        self.drives.len()
+    }
+
     /// Take a volume out of an import/export station.
     pub fn take(&mut self, station: usize) -> Option<VirtualTape<B>> {
         self.stations.get_mut(station)?.take().map(|l| l.tape)

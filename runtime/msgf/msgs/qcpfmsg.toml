@@ -3459,6 +3459,42 @@ text = "The files are copied from device &1 to device &2."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
+id = "CPC6776"
+sev = 0
+text = "Cartridge &1 is now in category &2 of &3."
+vars = ["*CHAR 6", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC6777"
+sev = 0
+text = "Cartridge &1 is ejected from &2."
+vars = ["*CHAR 6", "*CHAR 10"]
+
+[[msg]]
+id = "CPC6778"
+sev = 0
+text = "&1 records went to tape file &2 on device &3."
+vars = ["*CHAR 10", "*CHAR 17", "*CHAR 10"]
+
+[[msg]]
+id = "CPC6779"
+sev = 0
+text = "&1 records came from tape file &2 into &3."
+vars = ["*CHAR 10", "*CHAR 17", "*CHAR 10"]
+
+[[msg]]
+id = "CPC7301"
+sev = 0
+text = "Tape file &1 in &2 is made."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC7302"
+sev = 0
+text = "Tape file &1 in &2 is changed."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
 id = "OPT1115"
 sev = 40
 text = "The optical file or volume asked for is not there."

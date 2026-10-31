@@ -149,25 +149,79 @@ fn job_name(system: &System) -> String {
         .map_or_else(|| "QSYS".to_string(), |j| j.name.clone())
 }
 
+/// The optical volumes after the first of a save on device `dev`: the
+/// `VOL` list's next one, else the catalog's next loaded entry after
+/// the one mounted; with none, the operator is asked.
+struct CatalogOptical<'a> {
+    system: &'a mut System,
+    dev: String,
+    vols: Vec<String>,
+    pick: medio::NextVolume,
+}
+
+impl<'a> CatalogOptical<'a> {
+    fn new(system: &'a mut System, dev: &str, vols: &[String], first: &str) -> Self {
+        Self {
+            pick: medio::NextVolume::new(drive::optical_volumes(dev), Some(first.to_string()), true),
+            system,
+            dev: dev.to_string(),
+            vols: vols.to_vec(),
+        }
+    }
+}
+
+impl medio::optfile::OpticalVolumes for CatalogOptical<'_> {
+    fn next_volume(&mut self, req: &tape::VolumeRequest) -> Option<String> {
+        let expected = usize::try_from(req.volume_seq).ok().and_then(|n| self.vols.get(n - 1)).cloned();
+        let req = tape::VolumeRequest { expected, ..req.clone() };
+        let (sys, dev) = (&mut *self.system, self.dev.clone());
+        let mut ask: medio::catalog::Asker<'_> = Box::new(|r| drive::ask_volume(sys, &dev, r));
+        let v = self.pick.next(&req, &mut ask)?;
+        drop(ask);
+        drive::mount_optical(&self.dev, &v).ok()?;
+        self.pick.used(&v);
+        Some(v)
+    }
+}
+
+/// Write a save to the mounted optical volume of `m.dev`, on to further
+/// volumes when it does not fit. An existing file is asked about
+/// (`OPT1260`): the reply I replaces it.
+fn save_optical(system: &mut System, m: &Media, target: SaveTarget<'_>, bytes: &[u8]) -> Result<Written, String> {
+    let (t, vol) = drive::optical(system, &m.dev, m.vols.first().map(String::as_str))?;
+    let path = save_path(&m.optfile, target);
+    let set = super::volume_set();
+    let mut replace = m.clear;
+    loop {
+        let wrote = {
+            let mut next = CatalogOptical::new(system, &m.dev, &m.vols, &vol);
+            OpticalWriter::new(&set, &vol, &path, replace).spanning(&mut next).write_stream(bytes)
+        };
+        match wrote {
+            Ok(w) => return Ok(w),
+            Err(MediaError::Exists(p)) if !replace => {
+                let a = operator::inquiry(system, "OPT1260", &[(&p, 64), (&vol, 32)], "C");
+                if a.is("G") {
+                    replace = true;
+                    // Start again on the first volume.
+                    drive::mount_optical(&m.dev, &vol)?;
+                    continue;
+                }
+                return Err(format!("{SAVE_ENDED} {p} is already on volume {vol}; {}", a.shown()));
+            }
+            Err(e) => return Err(drive::optical_failed(system, &t, &e)),
+        }
+    }
+}
+
 /// Write a save's stream to `m.dev`; `label` is the file label when
 /// `LABEL` is a special value, `target` names an optical file.
 pub(crate) fn save(system: &mut System, m: &Media, label: &str, target: SaveTarget<'_>, bytes: &[u8]) -> Result<Written, String> {
     let t = drive::target(system, &m.dev)?;
     if t.kind == MediaKind::Optical {
-        let (t, vol) = drive::optical(system, &m.dev, m.vols.first().map(String::as_str))?;
-        let path = save_path(&m.optfile, target);
-        let set = super::volume_set();
-        return OpticalWriter::new(&set, &vol, &path, m.clear)
-            .write_stream(bytes)
-            .map_err(|e| {
-                if let MediaError::Exists(p) = &e {
-                    operator::inquiry(system, "OPT1260", &[(p, 64), (&vol, 32)], "C");
-                    return format!("{SAVE_ENDED} {p} is already on volume {vol}; the reply was C");
-                }
-                drive::optical_failed(system, &t, &e)
-            });
+        return save_optical(system, m, target, bytes);
     }
-    let file = SaveFile {
+    let mut file = SaveFile {
         vols: m.vols.clone(),
         seq: u32::try_from(m.seq).ok().filter(|n| *n > 0).map_or(SeqNbr::End, SeqNbr::Number),
         label: if m.label.is_empty() { label.to_string() } else { m.label.clone() },
@@ -177,14 +231,20 @@ pub(crate) fn save(system: &mut System, m: &Media, label: &str, target: SaveTarg
         allow_active: m.clear,
         job: job_name(system),
     };
-    let mut job = SaveJob { file, bytes };
-    drive::with_tape(system, &m.dev, &m.vols, true, &mut job).map_err(|e| {
-        if e.starts_with(operator::ACTIVE_FILE) {
-            operator::inquiry(system, operator::ACTIVE_FILE, &[(&m.dev, 10)], "C");
-            return format!("{SAVE_ENDED} {e}; the reply was C");
+    loop {
+        let mut job = SaveJob { file: file.clone(), bytes };
+        match drive::with_tape(system, &m.dev, &m.vols, true, &mut job) {
+            Err(e) if e.starts_with(operator::ACTIVE_FILE) && !file.allow_active => {
+                let a = operator::inquiry(system, operator::ACTIVE_FILE, &[(&m.dev, 10)], "C");
+                if a.is("I") {
+                    file.allow_active = true;
+                    continue;
+                }
+                return Err(format!("{SAVE_ENDED} {e}; {}", a.shown()));
+            }
+            r => return r,
         }
-        e
-    })
+    }
 }
 
 /// Read a save's stream from `m.dev`: the tape file with `label` when
@@ -196,10 +256,11 @@ pub(crate) fn restore(system: &mut System, m: &Media, label: Option<&str>, targe
         let (t, vol) = drive::optical(system, &m.dev, m.vols.first().map(String::as_str))?;
         let path = save_path(&m.optfile, target);
         let set = super::volume_set();
-        return OpticalReader::new(&set, &vol, &path)
-            .read_stream()
-            .map(|(b, _)| b)
-            .map_err(|e| drive::optical_failed(system, &t, &e));
+        let r = {
+            let mut next = CatalogOptical::new(system, &m.dev, &m.vols, &vol);
+            OpticalReader::new(&set, &vol, &path).spanning(&mut next).read_stream()
+        };
+        return r.map(|(b, _)| b).map_err(|e| drive::optical_failed(system, &t, &e));
     }
     let file = RestoreFile {
         vols: m.vols.clone(),

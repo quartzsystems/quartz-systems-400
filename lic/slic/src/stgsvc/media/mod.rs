@@ -11,6 +11,7 @@
 pub(crate) mod catalogs;
 pub(crate) mod devices;
 pub(crate) mod drive;
+pub(crate) mod library;
 pub(crate) mod operator;
 pub(crate) mod stream;
 

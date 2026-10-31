@@ -18,6 +18,7 @@ use imgclg::ImgType;
 use medio::MediaError;
 use stg::proto::CmdReply;
 use tape::volume::{Check, ChkOptions, DupOptions, DupSeq, FileReader, InzOptions, ReadOptions, ToSeq, VolumeKind};
+use tape::device::Category;
 use tape::{MAX_BLOCK, SeqNbr, TapeTransport, VolumeProvider};
 use wm::obj::devd::Devd;
 use wm::obj::devmed::{MediaDevice, MediaKind};
@@ -52,7 +53,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHKOPT" => chkopt(system, parms),
         "DUPOPT" => dupopt(system, parms),
         "WRKOPTVOL" => Ok(plain(wrkoptvol(system))),
-        "WRKMLBSTS" => Ok(plain(wrkmlbsts(system))),
+        "WRKMLBSTS" => Ok(plain(wrkmlbsts_text(system, &parms.name("MLB")))),
         "DSPTAPCTG" | "WRKTAPCTG" | "ADDTAPCTG" | "RMVTAPCTG" | "CHGTAPCTG" => mlb_ctg(system, name, parms),
         _ => return None,
     };
@@ -906,16 +907,59 @@ fn wrkoptvol(system: &mut System) -> String {
 
 // ------------------------------------------------------------ media library
 
-fn wrkmlbsts(system: &mut System) -> String {
-    let mut s = String::from("Device/Resource   Status        Allocation\n");
+/// Cartridge added or changed, ejected.
+const CTG_CATEGORY: &str = "CPC6776";
+const CTG_EJECTED: &str = "CPC6777";
+
+/// `WRKMLBSTS`'s text form: each library, its status, and for a virtual
+/// one its drive resources with their allocation and cartridge.
+pub(crate) fn wrkmlbsts_text(system: &mut System, which: &str) -> String {
+    let mut s = String::from("Device/Resource   Status        Allocation     Cartridge\n");
     let devs = devices::all(system).unwrap_or_default();
     for (n, d) in devs.iter().filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary)) {
+        if !(which.is_empty() || which == "*ALL" || *n == which || which.strip_suffix('*').is_some_and(|p| n.starts_with(p))) {
+            continue;
+        }
         let _ = writeln!(s, "{n:<16}  {:<12}", d.status.text());
-        if let Some(m) = &d.media {
-            let _ = writeln!(s, "  {:<14}  {:<12}  *ALLOCATED", m.rsrcname, d.status.text());
+        let Some(m) = &d.media else { continue };
+        match media::library::drives(system, n) {
+            Ok(rows) => {
+                for r in rows {
+                    let _ = writeln!(s, "  {:<14}  {:<12}  {:<13}  {}", r.name, "OPERATIONAL", r.allocation, r.cartridge);
+                }
+            }
+            Err(_) => {
+                let _ = writeln!(s, "  {:<14}  {:<12}  *ALLOCATED", m.rsrcname, d.status.text());
+            }
         }
     }
     s
+}
+
+/// The `CTG` values, upper case.
+fn ctgs(parms: &Parms) -> Vec<String> {
+    parms
+        .list("CTG")
+        .iter()
+        .map(|v| v.source().trim().trim_matches('\'').to_ascii_uppercase())
+        .filter(|v| !v.is_empty())
+        .collect()
+}
+
+/// The category the `CGY` parameter names (its first element).
+fn cgy(parms: &Parms) -> String {
+    parms
+        .elems("CGY")
+        .first()
+        .copied()
+        .flatten()
+        .map(|v| v.source().trim().to_ascii_uppercase())
+        .unwrap_or_default()
+}
+
+/// `WRKTAPCTG` and `DSPTAPCTG`'s rows of library `dev`.
+pub(crate) fn tapctg_rows(system: &mut System, dev: &str, ids: &[String], cgy: &str) -> Result<Vec<media::library::CtgRow>, String> {
+    media::library::rows(system, dev, ids, cgy)
 }
 
 fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, String> {
@@ -924,8 +968,88 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
     if d.media_kind() != Some(MediaKind::TapeLibrary) {
         return Err(format!("CPF6745 device {dev} is not a tape media library"));
     }
-    let _ = name;
-    // MIGRATE(phase11): cartridges of a real library through its changer
-    // and of a virtual library over its image catalog.
-    Err(format!("CPF6745 device {dev}: cartridge operations on media libraries are not available in this release"))
+    let ids = ctgs(parms);
+    let cgy = cgy(parms);
+    match name {
+        "WRKTAPCTG" | "DSPTAPCTG" => {
+            let rows = tapctg_rows(system, &dev, &ids, &cgy)?;
+            let mut s = format!("Library device  . . . : {dev}\n");
+            if name == "DSPTAPCTG" {
+                for r in &rows {
+                    let _ = writeln!(s, "\nCartridge ID  . . . . : {}", r.id);
+                    let _ = writeln!(s, "Volume ID . . . . . . : {}", r.volume);
+                    let _ = writeln!(s, "Category  . . . . . . : {}", r.category);
+                    let _ = writeln!(s, "Status  . . . . . . . : {}", r.status);
+                    let _ = writeln!(s, "Location  . . . . . . : {}", r.location);
+                    let _ = writeln!(s, "Home slot . . . . . . : {}", r.home);
+                }
+                return Ok(plain(s));
+            }
+            let _ = writeln!(s, "Cartridge  Volume  Category    Status      Location");
+            for r in &rows {
+                let _ = writeln!(s, "{:<9}  {:<6}  {:<10}  {:<10}  {}", r.id, r.volume, r.category, r.status, r.location);
+            }
+            Ok(plain(s))
+        }
+        "ADDTAPCTG" | "CHGTAPCTG" => {
+            let to = if cgy.is_empty() || cgy == "*SAME" { None } else { Category::parse(&cgy) };
+            if name == "ADDTAPCTG" && to.is_none() {
+                return Err(format!("CPD0084 CGY({cgy}) is not a category"));
+            }
+            let check = name == "ADDTAPCTG" && parms.name("CHECK") != "*NO";
+            let all_inserted = ids.iter().any(|i| i == "*INSERT");
+            let ids = if all_inserted {
+                tapctg_rows(system, &dev, &[], "*INSERT")?.into_iter().map(|r| r.id).collect()
+            } else {
+                ids
+            };
+            if check {
+                for id in &ids {
+                    if let Some(v) = media::library::label_of(system, &dev, id)?
+                        && v != *id
+                        && !matches!(v.as_str(), "*NL" | "*BLANK" | "*UNKNOWN")
+                    {
+                        return Err(format!("CPF6720 cartridge {id} on {dev} carries volume {v}"));
+                    }
+                }
+            }
+            let Some(to) = to else {
+                return Ok(plain(format!("No cartridge of {dev} was changed.\n")));
+            };
+            media::library::with_library(system, &dev, |_, _, lib| {
+                for id in &ids {
+                    let r = if name == "ADDTAPCTG" { lib.add(id, to.clone()) } else { lib.change(id, to.clone()) };
+                    r.map_err(|e| media::library::refused(&e))?;
+                }
+                Ok(())
+            })?;
+            let mut text = String::new();
+            for id in &ids {
+                let _ = writeln!(text, "Cartridge {id} is now in category {} of {dev}.", to.name());
+            }
+            let first = ids.first().cloned().unwrap_or_default();
+            Ok(ok(&text, CTG_CATEGORY, &[(&first, 6), (to.name(), 10), (&dev, 10)]))
+        }
+        "RMVTAPCTG" => {
+            let moved = media::library::with_library(system, &dev, |_, _, lib| {
+                let mut out = Vec::new();
+                for id in &ids {
+                    let m = lib.remove(id).map_err(|e| media::library::refused(&e))?;
+                    out.push((id.clone(), !m.is_empty()));
+                }
+                Ok(out)
+            })?;
+            let mut text = String::new();
+            for (id, moved) in &moved {
+                let _ = writeln!(
+                    text,
+                    "Cartridge {id} is ejected from {dev}{}.",
+                    if *moved { " to an import/export station" } else { "; it stays in its slot" }
+                );
+            }
+            let first = ids.first().cloned().unwrap_or_default();
+            Ok(ok(&text, CTG_EJECTED, &[(&first, 6), (&dev, 10)]))
+        }
+        _ => Err(format!("CPF6745 {name} is not a cartridge command")),
+    }
 }

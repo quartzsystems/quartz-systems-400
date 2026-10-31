@@ -10,7 +10,10 @@
 //!   [`SAVE_BLOCK`], across volumes through a `VolumeProvider`.
 //! - [`optfile`]: the save's file on an optical volume (`OPTFILE`).
 //! - [`catalog`]: [`CatalogTapes`], the next volume of a virtual tape
-//!   device from its image catalog's loaded entries.
+//!   device from its image catalog's loaded entries; [`NextVolume`] the
+//!   choice optical devices share.
+//! - [`library`]: [`CatalogLibrary`], a virtual media library over a
+//!   `*TAP` catalog, its cartridges, categories and moves.
 //! - [`MediaWriter`] and [`MediaReader`]: what a save or restore
 //!   command holds, whichever medium it names.
 //!
@@ -20,10 +23,12 @@
 
 pub mod catalog;
 pub mod error;
+pub mod library;
 pub mod optfile;
 pub mod tapefile;
 
-pub use catalog::CatalogTapes;
+pub use catalog::{CatalogTapes, NextVolume};
+pub use library::{CatalogLibrary, LibraryState, LibraryVolumes};
 pub use error::{MediaError, Result};
 
 /// Bytes in each data block of a save on tape.

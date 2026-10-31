@@ -182,3 +182,54 @@ fn optical_save_files() {
     let e = OpticalReader::new(&set, "SAVE01", "/NONE").read_stream().unwrap_err();
     assert_eq!(e.msgid(), "OPT1115");
 }
+
+/// The next optical volumes of a test, in order.
+struct Spare(Vec<String>, Vec<u32>);
+
+impl medio::optfile::OpticalVolumes for Spare {
+    fn next_volume(&mut self, req: &tape::VolumeRequest) -> Option<String> {
+        self.1.push(req.volume_seq);
+        (!self.0.is_empty()).then(|| self.0.remove(0))
+    }
+}
+
+#[test]
+fn optical_saves_span_volumes() {
+    let set = VolumeSet::default();
+    for v in ["SPAN01", "SPAN02", "SPAN03"] {
+        let store = Arc::new(MemImage::new(Vec::new()));
+        set.insert(Volume::create(store, v, "", 1 << 20, 1).unwrap()).unwrap();
+    }
+    let data = stream(2_500_000);
+    // Without further volumes it does not fit.
+    let e = OpticalWriter::new(&set, "SPAN01", "/BIG", false).write_stream(&data).unwrap_err();
+    assert_eq!(e.msgid(), "OPT1335");
+    let mut next = Spare(vec!["SPAN02".into(), "SPAN03".into()], Vec::new());
+    let w = OpticalWriter::new(&set, "SPAN01", "/BIG", false)
+        .spanning(&mut next)
+        .write_stream(&data)
+        .unwrap();
+    assert_eq!(w.volumes, ["SPAN01", "SPAN02", "SPAN03"]);
+    assert_eq!(next.1, [2, 3]);
+    let label = set.with("SPAN01", |v| v.read_all("/BIG.QSPART")).unwrap();
+    let p = medio::optfile::Part::parse(&String::from_utf8_lossy(&label)).unwrap();
+    assert_eq!((p.part, p.more), (1, true));
+
+    // Read back across the three.
+    let mut next = Spare(vec!["SPAN02".into(), "SPAN03".into()], Vec::new());
+    let (back, vols) = OpticalReader::new(&set, "SPAN01", "/BIG").spanning(&mut next).read_stream().unwrap();
+    assert_eq!(vols, ["SPAN01", "SPAN02", "SPAN03"]);
+    assert_eq!(back, data);
+    // Without the next volumes, or from the second, it refuses.
+    assert!(OpticalReader::new(&set, "SPAN01", "/BIG").read_stream().is_err());
+    let e = OpticalReader::new(&set, "SPAN02", "/BIG").read_stream().unwrap_err();
+    assert!(e.to_string().contains("first volume"), "{e}");
+    // Out of volumes: the write ends.
+    set.insert(Volume::create(Arc::new(MemImage::new(Vec::new())), "SPAN04", "", 1 << 20, 1).unwrap()).unwrap();
+    let mut none = Spare(Vec::new(), Vec::new());
+    let e = OpticalWriter::new(&set, "SPAN04", "/BIG2", false)
+        .spanning(&mut none)
+        .write_stream(&data)
+        .unwrap_err();
+    assert!(matches!(e, medio::MediaError::Tape(TapeError::Cancelled)), "{e}");
+}
