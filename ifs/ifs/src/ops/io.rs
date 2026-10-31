@@ -34,6 +34,7 @@ impl<B: Backend> Ifs<B> {
             OpenKind::File(file) => file.stat()?.size,
             OpenKind::Dev(_) | OpenKind::Dir => 0,
             OpenKind::Member { data, .. } | OpenKind::Stream { data, .. } => data.len() as u64,
+            OpenKind::Opt { data: Some(d), .. } => d.len() as u64,
             OpenKind::Opt { size, .. } => *size,
         })
     }
@@ -43,7 +44,11 @@ impl<B: Backend> Ifs<B> {
         match &mut o.kind {
             OpenKind::File(file) => file.read_at(buf, pos),
             OpenKind::Dev(d) => d.read(buf),
-            OpenKind::Member { data, .. } | OpenKind::Stream { data, .. } => {
+            OpenKind::Member { data, .. }
+            | OpenKind::Stream { data, .. }
+            | OpenKind::Opt {
+                data: Some(data), ..
+            } => {
                 let Ok(p) = usize::try_from(pos) else {
                     return Ok(0);
                 };
@@ -85,6 +90,11 @@ impl<B: Backend> Ifs<B> {
             }
             | OpenKind::Stream {
                 data: buf, dirty, ..
+            }
+            | OpenKind::Opt {
+                data: Some(buf),
+                dirty,
+                ..
             } => {
                 let p = usize::try_from(pos).map_err(|_| Errno::EFBIG)?;
                 if buf.len() < p + data.len() {
@@ -246,7 +256,13 @@ impl<B: Backend> Ifs<B> {
         }
         match &mut o.kind {
             OpenKind::File(file) => file.set_len(len),
-            OpenKind::Member { data, dirty, .. } | OpenKind::Stream { data, dirty, .. } => {
+            OpenKind::Member { data, dirty, .. }
+            | OpenKind::Stream { data, dirty, .. }
+            | OpenKind::Opt {
+                data: Some(data),
+                dirty,
+                ..
+            } => {
                 data.resize(usize::try_from(len).map_err(|_| Errno::EFBIG)?, 0);
                 *dirty = true;
                 Ok(())

@@ -41,7 +41,7 @@ buffers), ends its directory streams and drops its locks.
 | `/dev` | 3 | character devices, one `QASPnn` directory per ASP with UDFS | fold |
 | `/QOpenSys/dev` | 4 | character devices | exact |
 | `/QSYS.LIB` | 5 | the object store through `QsysView` | IBM's object naming |
-| `/QOPT` | 6 | optical volumes through `OpticalView` (none until Phase 11), read-only | fold |
+| `/QOPT` | 6 | optical volumes through `OpticalView`; `Volumes` shows the loaded volumes of `optical::VolumeSet`, ISO images read-only, writable virtual volumes read-write (docs/MEDIA.md) | fold |
 | `/QNTC`, `/QFileSvr.400`, `/QDLS` | 7, 8, 9 | the directory exists; anything else is `ENOTSUP` (`CPFA0AD`) | |
 | a `MOUNT` point | 100 and up | a UDFS: backend `UDFS/QASPnn/NAME.udfs/` | as created |
 

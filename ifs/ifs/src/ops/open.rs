@@ -237,12 +237,20 @@ impl<B: Backend> Ifs<B> {
             Err(Errno::ENOENT) if creating => {
                 let (dir, name) = sys.resolve_parent(&cwd, path, Some(cx))?;
                 crate::path::check_name(&name)?;
-                let (dm, _) = sys.meta(&dir.node, Some(cx))?;
-                cx.require_dir(&dm, &dir.node, &dir.path(), Op::Create)?;
-                if Self::read_only(&sys, dir.node.fs()) {
+                if Self::read_only_node(&sys, &dir.node) {
                     return Err(Errno::EROFS);
                 }
+                let (dm, _) = sys.meta(&dir.node, Some(cx))?;
+                cx.require_dir(&dm, &dir.node, &dir.path(), Op::Create)?;
                 match &dir.node {
+                    Node::Opt { vol, path, .. } => {
+                        let mut p = path.clone();
+                        p.push(name.clone());
+                        self.opt.create(vol, &p)?;
+                        let r = sys.child(&dir, &name)?;
+                        let (m, _) = sys.meta(&r.node, Some(cx))?;
+                        (r, m)
+                    }
                     Node::Back { rel, .. } => {
                         let file_ccsid = if conv_given {
                             ccsid_from(a.conversion_id, codepage, cx.job_ccsid)?
@@ -302,6 +310,9 @@ impl<B: Backend> Ifs<B> {
             NodeType::Dir | NodeType::File | NodeType::Chr => {}
         }
         let truncate = a.oflag & f::O_TRUNC != 0;
+        if (access.write || truncate) && Self::read_only_node(&sys, &r.node) {
+            return Err(Errno::EROFS);
+        }
         if created.is_none() {
             let need_op = if r.node.is_dir() {
                 Op::Readdir
@@ -314,9 +325,6 @@ impl<B: Backend> Ifs<B> {
         }
         let writes = access.write || truncate;
         if writes {
-            if Self::read_only(&sys, r.node.fs()) {
-                return Err(Errno::EROFS);
-            }
             if m.flags.has(Flags::RDONLY) {
                 return Err(Errno::EROOBJ);
             }
@@ -463,13 +471,31 @@ impl<B: Backend> Ifs<B> {
                 }
             }
             Node::Opt { vol, path, entry } => {
-                if write {
+                let data = if !write && !truncate {
+                    None
+                } else if !self.opt.writable(vol) {
                     return Err(Errno::EROFS);
-                }
+                } else if truncate {
+                    Some(Vec::new())
+                } else {
+                    let len = usize::try_from(entry.size).map_err(|_| Errno::EFBIG)?;
+                    let mut d = vec![0u8; len];
+                    let mut done = 0;
+                    while done < len {
+                        let n = self.opt.read(vol, path, done as u64, &mut d[done..])?;
+                        if n == 0 {
+                            return Err(Errno::EIO);
+                        }
+                        done += n;
+                    }
+                    Some(d)
+                };
                 OpenKind::Opt {
                     vol: vol.clone(),
                     path: path.clone(),
                     size: entry.size,
+                    data,
+                    dirty: truncate,
                 }
             }
             _ => return Err(Errno::ENOTSUP),
@@ -512,6 +538,17 @@ impl<B: Backend> Ifs<B> {
                 dirty,
             } if *dirty => {
                 self.qsys.write_stream(lib, name, objtype, data)?;
+                *dirty = false;
+            }
+            OpenKind::Opt {
+                vol,
+                path,
+                data: Some(data),
+                dirty,
+                ..
+            } if *dirty => {
+                self.opt.put(vol, path, data)?;
+                self.opt.sync(vol)?;
                 *dirty = false;
             }
             _ => {}

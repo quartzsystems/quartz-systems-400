@@ -341,9 +341,13 @@ impl<B: Backend> Sys<'_, B> {
             FsKind::Qopt => match rest {
                 [] => Ok(Node::OptRoot),
                 [vol, path @ ..] => {
-                    if !self.opt.volumes().contains(vol) {
-                        return Err(Errno::ENOENT);
-                    }
+                    // Volume names fold like the rest of /QOPT.
+                    let vol = &self
+                        .opt
+                        .volumes()
+                        .into_iter()
+                        .find(|v| v.eq_ignore_ascii_case(vol))
+                        .ok_or(Errno::ENOENT)?;
                     let entry = if path.is_empty() {
                         OptEntry {
                             name: vol.clone(),
@@ -425,6 +429,10 @@ impl<B: Backend> Sys<'_, B> {
                 meta::read(self.b, &rel, st, ids)
             }
             Node::Dev { .. } => stored(virtual_meta("QSYS", RW)),
+            // A writable virtual volume: anyone may change it.
+            Node::Opt { vol, .. } if self.opt.writable(vol) => {
+                stored(virtual_meta("QSYS", Auth::ALL))
+            }
             Node::DevDir { .. }
             | Node::AspDir { .. }
             | Node::OptRoot

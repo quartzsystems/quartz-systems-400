@@ -106,11 +106,11 @@ impl<B: Backend> Ifs<B> {
             Err(Errno::ENOENT) => {}
             Err(e) => return Err(e),
         }
-        let (dm, _) = sys.meta(&dir.node, Some(cx))?;
-        cx.require_dir(&dm, &dir.node, &dir.path(), Op::Create)?;
-        if Self::read_only(sys, dir.node.fs()) {
+        if Self::read_only_node(sys, &dir.node) {
             return Err(Errno::EROFS);
         }
+        let (dm, _) = sys.meta(&dir.node, Some(cx))?;
+        cx.require_dir(&dm, &dir.node, &dir.path(), Op::Create)?;
         Ok((dir, dm, name))
     }
 
@@ -126,6 +126,12 @@ impl<B: Backend> Ifs<B> {
                 return Err(Errno::ENOTSUP);
             }
             return self.qsys.create_library(&lib, cx.principal);
+        }
+        if let Node::Opt { vol, path, .. } = &dir.node {
+            let mut p = path.clone();
+            p.push(name);
+            self.opt.mkdir(vol, &p)?;
+            return self.opt.sync(vol);
         }
         self.make_node(cx, &mut sys, rest, &dir, &dm, &name, Kind::Dir, mode, None)?;
         Ok(())
@@ -203,13 +209,13 @@ impl<B: Backend> Ifs<B> {
         if sys.mounts.all().iter().any(|mt| mt.at == r.comps) {
             return Err(Errno::EBUSY);
         }
+        if Self::read_only_node(sys, &r.node) {
+            return Err(Errno::EROFS);
+        }
         cx.require_dir(&dm, &dir.node, &dir.path(), op)?;
         cx.require(&m, &r.node, &r.path(), op)?;
         if !Self::sticky_ok(cx, &dm, &m) {
             return Err(Errno::EPERM);
-        }
-        if Self::read_only(sys, r.node.fs()) {
-            return Err(Errno::EROFS);
         }
         Ok((dir, dm, r, m))
     }
@@ -238,6 +244,10 @@ impl<B: Backend> Ifs<B> {
                 sys.index.removed(sys.b, drel, backend::last(rel));
             }
             (_, Node::Qsys(n, _)) => self.qsys.delete(n, cx.principal)?,
+            (_, Node::Opt { vol, path, .. }) => {
+                self.opt.remove(vol, path)?;
+                self.opt.sync(vol)?;
+            }
             _ => return Err(Errno::ENOTSUP),
         }
         cx.audit_always(
@@ -270,6 +280,10 @@ impl<B: Backend> Ifs<B> {
                 sys.index.drop_tree(rel);
             }
             (_, Node::Qsys(n @ QsysNode::Lib(_), _)) => self.qsys.delete(n, cx.principal)?,
+            (_, Node::Opt { vol, path, .. }) if !path.is_empty() => {
+                self.opt.remove(vol, path)?;
+                self.opt.sync(vol)?;
+            }
             _ => return Err(Errno::ENOTSUP),
         }
         cx.audit_always(

@@ -235,11 +235,14 @@ pub(crate) enum OpenKind<F> {
         data: Vec<u8>,
         dirty: bool,
     },
-    /// An optical file.
+    /// An optical file; opened for writing, its bytes are held here and
+    /// put back at close.
     Opt {
         vol: String,
         path: Vec<String>,
         size: u64,
+        data: Option<Vec<u8>>,
+        dirty: bool,
     },
     /// A directory opened for reading (for `openat`, `fchdir`, `fsync`).
     Dir,
@@ -561,6 +564,15 @@ impl<B: Backend> Ifs<B> {
     /// Whether the mount holding a node is read-only.
     pub(crate) fn read_only(sys: &Sys<'_, B>, fs: FsId) -> bool {
         sys.mounts.get(fs).is_some_and(|m| m.read_only)
+    }
+
+    /// Whether a node may not change: its mount is read-only, except
+    /// in a writable optical volume.
+    pub(crate) fn read_only_node(sys: &Sys<'_, B>, node: &Node) -> bool {
+        match node {
+            Node::Opt { vol, .. } => !sys.opt.writable(vol),
+            _ => Self::read_only(sys, node.fs()),
+        }
     }
 }
 
