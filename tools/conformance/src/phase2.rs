@@ -406,6 +406,7 @@ impl Suite {
         // Option 1: perform an IPL.
         s.send("1")?;
         s.expect("slic: DST ended: PerformIpl", CMD)?;
+        crate::dst::answer_ipl_options(s, self.boot_timeout)?;
         s.expect(SRC_SEQUENCE[SRC_SEQUENCE.len() - 1], self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         // The new password persists and the activity log recorded nothing.

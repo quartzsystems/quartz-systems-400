@@ -109,3 +109,50 @@ fn install_screens_match_their_golden_files() {
         &svctools::install::noos::screen("QS400", src, &[]).dump(),
     );
 }
+
+#[test]
+fn define_or_change_the_system_at_ipl() {
+    use svctools::Outcome;
+    use svctools::install::define::{AbnormalEnd, DefineSystem, reclaim_screen};
+    use svctools::panel::Runner;
+    let mut e = env();
+    e.sysvals = vec![
+        ("QDATE".into(), "103026".into(), "System date".into()),
+        ("QIPLTYPE".into(), "0".into(), "IPL type".into()),
+        ("QSTRUPPGM".into(), "QSTRUP     QSYS".into(), "Startup program".into()),
+    ];
+    // IPL Options with "define or change" Y and no major options.
+    let mut r = svctools::install::options::start();
+    r.enter(&f(&["2026-10-30", "12:00:00", "N", "Y", "N", "N", "N", "Y", "N"]), &mut e);
+    assert_eq!(r.top(), "ipl-define");
+    check("ipl-define", &r.screen(&mut e).dump());
+    for (sel, name) in [
+        ("1", "ipl-define-config"),
+        ("2", "ipl-define-datetime"),
+        ("3", "ipl-define-sysvals"),
+        ("4", "ipl-define-neta"),
+        ("5", "ipl-define-edtrbdap"),
+        ("6", "ipl-define-edtcpcst"),
+        ("7", "ipl-define-usrprf"),
+        ("8", "ipl-define-strup"),
+    ] {
+        let mut r = Runner::new(Box::new(DefineSystem::new()));
+        r.enter(&f(&[sel]), &mut e);
+        check(name, &r.screen(&mut e).dump());
+    }
+    // 2 beside QIPLTYPE, a new value.
+    let mut r = Runner::new(Box::new(DefineSystem::new()));
+    r.enter(&f(&["3"]), &mut e);
+    r.enter(&f(&["", "2", ""]), &mut e);
+    check("ipl-define-chgsysval", &r.screen(&mut e).dump());
+    r.enter(&f(&["1"]), &mut e);
+    assert!(e.actions.contains(&"sysval QIPLTYPE 1".to_string()));
+    assert!(r.screen(&mut e).dump().contains("System value QIPLTYPE changed"));
+    assert_eq!(r.function(3, &mut e), Some(Outcome::Continue));
+    // The abnormal end offer and the reclaim screens.
+    let mut r = Runner::new(Box::new(AbnormalEnd));
+    check("ipl-abnormal", &r.screen(&mut e).dump());
+    assert_eq!(r.enter(&f(&["2"]), &mut e), Some(Outcome::Dst));
+    check("rclstg-running", &reclaim_screen("QS400", None).dump());
+    check("rclstg-done", &reclaim_screen("QS400", Some("12 objects checked, 0 lost")).dump());
+}

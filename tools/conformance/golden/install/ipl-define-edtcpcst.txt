@@ -1,0 +1,24 @@
+                         Edit Check Pending Constraints                         
+                                                                 System:  QS400 
+                                                                                
+ Constraints the IPL verifies, in sequence.                                     
+                                                                                
+ Seq  Status      Constraint  File        Library     Verify time               
+   (No constraints are check pending)                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

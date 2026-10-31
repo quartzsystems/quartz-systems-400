@@ -195,7 +195,11 @@ impl Panel for IplOptionsPanel {
             return Flow::Error(e);
         }
         if options.set_major_options {
-            Flow::Replace(Box::new(MajorOptionsPanel))
+            Flow::Replace(Box::new(MajorOptionsPanel {
+                define: options.define_system,
+            }))
+        } else if options.define_system {
+            Flow::Replace(Box::new(super::define::DefineSystem::new()))
         } else {
             Flow::Exit(Outcome::Continue)
         }
@@ -209,8 +213,12 @@ impl Panel for IplOptionsPanel {
     }
 }
 
-/// `Set Major System Options`.
-pub struct MajorOptionsPanel;
+/// `Set Major System Options`; `define` goes on to `Define or Change
+/// the System at IPL`.
+pub struct MajorOptionsPanel {
+    /// Show the define menu next.
+    pub define: bool,
+}
 
 impl Panel for MajorOptionsPanel {
     fn name(&self) -> &'static str {
@@ -265,6 +273,7 @@ impl Panel for MajorOptionsPanel {
             special_environment: special,
         };
         match env.set_major_options(&o) {
+            Ok(()) if self.define => Flow::Replace(Box::new(super::define::DefineSystem::new())),
             Ok(()) => Flow::Exit(Outcome::Continue),
             Err(e) => Flow::Error(e),
         }

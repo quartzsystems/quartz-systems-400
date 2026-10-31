@@ -516,6 +516,35 @@ pub trait DstEnv {
     fn print_hardware(&mut self) -> Result<String, String> {
         Err(NOT_HERE.into())
     }
+    /// Every system value: name, value, description.
+    fn all_sysvals(&mut self) -> Vec<(String, String, String)> {
+        Vec::new()
+    }
+    /// Change a system value; the message.
+    fn set_sysval(&mut self, name: &str, value: &str) -> Result<String, String> {
+        let _ = (name, value);
+        Err(NOT_HERE.into())
+    }
+    /// The network attributes, name and value.
+    fn network_attributes(&mut self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+    /// The configuration objects: name, type, description.
+    fn config_objects(&mut self) -> Vec<(String, String, String)> {
+        Vec::new()
+    }
+    /// The user profiles: name, description.
+    fn user_profiles(&mut self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+    /// `EDTRBDAP`'s entries, one line each.
+    fn rebuild_paths(&mut self) -> Vec<String> {
+        Vec::new()
+    }
+    /// `EDTCPCST`'s entries, one line each.
+    fn pending_constraints(&mut self) -> Vec<String> {
+        Vec::new()
+    }
     /// The service tools device IDs: name, status, description.
     fn device_ids(&mut self) -> Vec<(String, String, String)> {
         vec![("QCONSOLE".into(), "Enabled".into(), "The system console".into())]
@@ -570,6 +599,8 @@ pub struct MemEnv {
     pub capacity: Vec<(String, String)>,
     /// Event log lines.
     pub events: Vec<String>,
+    /// System values: name, value, description.
+    pub sysvals: Vec<(String, String, String)>,
     seed: u64,
 }
 
@@ -810,5 +841,18 @@ impl DstEnv for MemEnv {
     fn print_hardware(&mut self) -> Result<String, String> {
         self.actions.push("print hardware".into());
         Ok("Configuration printed to QPCSMPRT.".into())
+    }
+    fn all_sysvals(&mut self) -> Vec<(String, String, String)> {
+        self.sysvals.clone()
+    }
+    fn set_sysval(&mut self, name: &str, value: &str) -> Result<String, String> {
+        self.actions.push(format!("sysval {name} {value}"));
+        Ok(format!("System value {name} changed"))
+    }
+    fn config_objects(&mut self) -> Vec<(String, String, String)> {
+        vec![("QCONSOLE".into(), "*DEVD".into(), "System console".into())]
+    }
+    fn user_profiles(&mut self) -> Vec<(String, String)> {
+        vec![("QSECOFR".into(), "Security officer".into())]
     }
 }

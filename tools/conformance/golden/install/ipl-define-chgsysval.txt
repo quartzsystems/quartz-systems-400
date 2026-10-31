@@ -1,0 +1,24 @@
+                              Change System Value                               
+                                                                 System:  QS400 
+                                                                                
+ New value . . . . . :                                                          
+                                                                                
+ System value QIPLTYPE: the value is checked as CHGSYSVAL checks it.            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -6,6 +6,7 @@
 //! then the operating system, then the IPL options. The work itself is
 //! the environment's; the panels here ask, confirm, and show progress.
 
+pub mod define;
 pub mod lic;
 pub mod noos;
 pub mod options;

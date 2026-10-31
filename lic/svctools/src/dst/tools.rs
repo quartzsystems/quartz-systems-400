@@ -24,7 +24,7 @@ pub struct Form {
     name: &'static str,
     title: &'static str,
     lines: Vec<FormLine>,
-    note: Vec<&'static str>,
+    note: Vec<String>,
     submit: Submit,
 }
 
@@ -35,14 +35,14 @@ impl Form {
         name: &'static str,
         title: &'static str,
         lines: Vec<FormLine>,
-        note: Vec<&'static str>,
+        note: impl IntoIterator<Item = impl Into<String>>,
         submit: Submit,
     ) -> Self {
         Self {
             name,
             title,
             lines,
-            note,
+            note: note.into_iter().map(Into::into).collect(),
             submit,
         }
     }

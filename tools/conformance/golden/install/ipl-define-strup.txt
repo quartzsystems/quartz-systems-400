@@ -1,0 +1,24 @@
+                         Work with the Startup Program                          
+                                                                 System:  QS400 
+                                                                                
+ Startup program (QSTRUPPGM) : QSTRUP     QSYS                                  
+                                                                                
+ Program and library, or *NONE. An escape from the program does not             
+ stop the IPL: the system goes on to sign-on and QSYSOPR is told.               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

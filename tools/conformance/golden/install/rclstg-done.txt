@@ -1,0 +1,24 @@
+                                Reclaim Storage                                 
+                                                                 System:  QS400 
+                                                                                
+ The object store was marked as needing a reclaim of storage. The IPL           
+ runs RCLSTG now: every object is checked against its library, lost             
+ objects go to QRCL, damaged ones are marked.                                   
+                                                                                
+ Reclaim storage in progress . . . . :  Complete                                
+                                                                                
+ 12 objects checked, 0 lost                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                

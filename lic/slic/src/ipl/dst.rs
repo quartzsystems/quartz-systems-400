@@ -67,6 +67,30 @@ impl<'a> Env<'a> {
             .ok_or_else(|| svctools::dst::disk::config::NO_LOAD_SOURCE.to_string())
     }
 
+    /// The objects of `types` in `QSYS`: name, `*TYPE`, text.
+    fn objects_of(&mut self, codes: &[u16]) -> Vec<(String, String, String)> {
+        let Some(s) = self.system.storage.as_mut() else {
+            return Vec::new();
+        };
+        let Some(qsys) = s.qsys else {
+            return Vec::new();
+        };
+        let r = crate::svc::db::with_txn(&mut s.store, |txn| {
+            let mut out = Vec::new();
+            for &code in codes {
+                let ty = store::obj::types::type_by_code(code).map_or("", |t| t.name);
+                for (key, id) in store::obj::ops::list(txn, qsys, Some(code)).map_err(|e| e.to_string())? {
+                    let text = store::obj::ops::describe(txn, id)
+                        .map(|h| ccsid::from_ebcdic(&h.text).trim_end().to_string())
+                        .unwrap_or_default();
+                    out.push((key.name.to_string().trim().to_string(), ty.to_string(), text));
+                }
+            }
+            Ok(out)
+        });
+        r.unwrap_or_default()
+    }
+
     fn resource_for(&self, device: &str) -> String {
         resource_for(self.system, device)
     }
@@ -640,6 +664,43 @@ impl DstEnv for Env<'_> {
     fn delete_dump(&mut self, name: &str) -> Result<(), String> {
         self.store()?;
         crate::stgsvc::dumps::delete(self.system, name)
+    }
+
+    fn all_sysvals(&mut self) -> Vec<(String, String, String)> {
+        let Some(vals) = self.system.sysvals.as_ref() else {
+            return Vec::new();
+        };
+        vals.catalog()
+            .entries()
+            .map(|e| {
+                let v = vals.get(&e.name).map(|v| v.text()).unwrap_or_default();
+                (e.name.clone(), v, e.text.clone())
+            })
+            .collect()
+    }
+
+    fn set_sysval(&mut self, name: &str, value: &str) -> Result<String, String> {
+        let name = name.trim().to_ascii_uppercase();
+        let vals = self.system.sysvals.as_mut().ok_or("system values not loaded")?;
+        vals.set_text(&name, value).map_err(|e| e.to_string())?;
+        crate::ipl::sysvals::save(self.system)?;
+        Ok(format!("System value {name} changed"))
+    }
+
+    fn network_attributes(&mut self) -> Vec<(String, String)> {
+        crate::stgsvc::sysdata::neta(self.system).unwrap_or_default()
+    }
+
+    fn config_objects(&mut self) -> Vec<(String, String, String)> {
+        // Device, controller and line descriptions.
+        self.objects_of(&[store::obj::types::DEVD, 0x001C, 0x001D])
+    }
+
+    fn user_profiles(&mut self) -> Vec<(String, String)> {
+        self.objects_of(&[store::obj::types::USRPRF])
+            .into_iter()
+            .map(|(n, _, d)| (n, d))
+            .collect()
     }
 
     fn lic_events(&mut self, major: u16) -> Vec<String> {

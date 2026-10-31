@@ -39,6 +39,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "PRTTRC" => prttrc(system, parms),
         "TRCJOB" => trcjob(system, parms),
         "TRCINT" => trcint(system, parms),
+        "RCLDBXREF" => rcldbxref(system, parms),
         _ => return None,
     };
     Some(r.unwrap_or_else(|e| failed(name, &e)))
@@ -234,6 +235,40 @@ fn dmpsysobj(system: &mut System, parms: &Parms) -> R {
         Ok(out)
     })?;
     printed(system, &what, &lines)
+}
+
+/// `RCLDBXREF`: the cross-reference is the files' own dependents
+/// tables, so checking walks every `*FILE` of the libraries chosen and
+/// reads its description; `*FIX` has nothing more to do than that.
+fn rcldbxref(system: &mut System, parms: &Parms) -> R {
+    let lib = parms.name("LIB");
+    let n = dumps::with_store(system, |txn, qsys| {
+        let libs: Vec<ObjectId> = match lib.as_str() {
+            "" | "*ALL" | "*ERR" => ops::libraries(txn, qsys)
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .map(|(_, id)| id)
+                .collect(),
+            l => {
+                let n = qsname::Name::parse(l).map_err(|e| e.to_string())?;
+                vec![ops::find_library(txn, qsys, n).map_err(|e| format!("CPF2110 Library {l} not found: {e}"))?.id]
+            }
+        };
+        let mut n = 0u64;
+        for l in libs {
+            for (_, id) in ops::list(txn, l, Some(types::FILE)).map_err(|e| e.to_string())? {
+                ops::describe(txn, id).map_err(|e| format!("CPF3294 File {id} is damaged: {e}"))?;
+                n += 1;
+            }
+        }
+        Ok(n)
+    })?;
+    let n = n.to_string();
+    Ok(done(
+        format!("Database cross-reference checked: {n} files.\n"),
+        "CPC39DF",
+        &[(&n, 10)],
+    ))
 }
 
 fn kib(parms: &Parms, kwd: &str, dft: u64) -> u64 {

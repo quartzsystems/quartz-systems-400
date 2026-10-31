@@ -1,0 +1,24 @@
+                       Define or Change the System at IPL                       
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Configuration commands                                                 
+      2. Date and time system values                                            
+      3. System value commands                                                  
+      4. Network attributes commands                                            
+      5. Edit rebuild of access paths                                           
+      6. Edit check pending constraints                                         
+      7. Work with user profiles                                                
+      8. Work with the startup program                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

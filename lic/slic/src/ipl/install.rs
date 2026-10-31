@@ -108,6 +108,12 @@ pub fn run_options(system: &mut System, rx: &Receiver<Event>) {
     let _ = drive(&mut env, svctools::install::options::start(), rx);
 }
 
+/// One panel and whatever it pushes, to its outcome.
+pub fn drive_panel(system: &mut System, panel: Box<dyn svctools::Panel>, rx: &Receiver<Event>) -> Outcome {
+    let mut env = Env::new(system);
+    drive(&mut env, svctools::Runner::new(panel), rx)
+}
+
 /// The installation stage recorded on the load source: `Some(auto)`
 /// when the LIC is installed and the operating system is still to come.
 pub fn pending(system: &System) -> Option<bool> {

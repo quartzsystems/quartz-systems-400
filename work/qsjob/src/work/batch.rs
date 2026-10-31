@@ -85,7 +85,27 @@ fn startup(c: &mut Console, link: &Shared) -> u16 {
     c.job()
         .log_request(&format!("CALL {lib}/{pgm}"), ("QWCSTRUP", "QSYS"));
     let out = c.line(&format!("call {lib}/{pgm}"));
-    end_code(&out)
+    let code = end_code(&out);
+    if code != 0 {
+        // The IPL goes on to sign-on; the operator hears why.
+        let escape = first_msgid(&out).unwrap_or("CPF9898");
+        let data = format!("{pgm:<10}{lib:<10}{escape:<7}");
+        c.line(&format!(
+            "SNDPGMMSG MSGID(CPF39DE) MSGF(QCPFMSG) MSGDTA('{data}') TOMSGQ(QSYSOPR) MSGTYPE(*INFO)"
+        ));
+    }
+    code
+}
+
+/// The first message identifier in a run's output.
+fn first_msgid(out: &str) -> Option<&str> {
+    out.split(|c: char| !c.is_ascii_alphanumeric()).find(|w| {
+        let b = w.as_bytes();
+        b.len() == 7
+            && b[..3].iter().all(u8::is_ascii_uppercase)
+            && b[3..].iter().all(u8::is_ascii_hexdigit)
+            && b[3..].iter().any(u8::is_ascii_digit)
+    })
 }
 
 /// The end code a run's output implies: 20 when the program could not

@@ -169,6 +169,12 @@ fn lic_phase(
         pending_install(system, rx)?;
     }
 
+    // An attended IPL after an abnormal end offers DST first; a manual
+    // one has the IPL menu for that.
+    if system.abnormal && !installing && system.mode != IplMode::Manual && attended(system) {
+        abnormal_offer(system, rx);
+    }
+
     // A D IPL may be about to install onto the disk, so its store opens
     // only after the menu.
     if !system.boot.ipl_d && !installing {
@@ -370,6 +376,7 @@ fn open_or_service(
 /// once the system values exist.
 fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<Event>) {
     system.emit(&src::OS_STARTED);
+    reclaim_if_required(system);
     if let Err(fatal) = storage::open_objects(system) {
         system.fatal(fatal);
     }
@@ -381,6 +388,10 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
             install::run_options(system, rx);
         }
         install::finish(system);
+    } else if system.mode == IplMode::Manual {
+        // An attended IPL: IPL Options, then what they ask for
+        // (major options, Define or Change the System at IPL).
+        install::run_options(system, rx);
     }
     // The IFS root's filesystem, mounted before the storage service
     // starts so the service inherits it.
@@ -424,6 +435,35 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         system.out.serial(
             "Service console: sign on with a service tools user ID: signon USER PASSWORD\n",
         );
+    }
+}
+
+/// The abnormal end offer: go on, or DST first.
+fn abnormal_offer(system: &mut System, rx: &mpsc::Receiver<Event>) {
+    let outcome = install::drive_panel(system, Box::new(svctools::install::define::AbnormalEnd), rx);
+    if outcome == dst::Outcome::Dst {
+        let o = dst::run(system, rx);
+        system.out.serial(&format!("slic: DST after an abnormal end: {o:?}\n"));
+    }
+}
+
+/// RCLSTG when the store is marked as needing it, with its screens.
+fn reclaim_if_required(system: &mut System) {
+    use store::asp::superblock::FLAG_RCLSTG_REQUIRED;
+    let required = system
+        .storage
+        .as_ref()
+        .is_some_and(|s| s.store.asp().superblock().flag(FLAG_RCLSTG_REQUIRED));
+    if !required {
+        return;
+    }
+    let name = system.system_name();
+    menu::show(system, svctools::install::define::reclaim_screen(&name, None));
+    let report = crate::svc::storage::rclstg(system, &[]);
+    system.out.serial(&format!("slic: reclaim at IPL:\n{report}"));
+    menu::show(system, svctools::install::define::reclaim_screen(&name, Some(&report)));
+    if !system.pace.is_zero() {
+        std::thread::sleep(system.pace);
     }
 }
 

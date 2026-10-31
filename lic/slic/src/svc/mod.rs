@@ -16,7 +16,7 @@ pub(crate) mod objects;
 mod sbs;
 pub(crate) mod security;
 mod spool;
-mod storage;
+pub(crate) mod storage;
 pub mod ui;
 pub(crate) mod work;
 

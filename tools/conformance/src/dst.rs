@@ -14,7 +14,7 @@ use std::time::Duration;
 use crate::error::HarnessError;
 use crate::qemu::Launch;
 use crate::qemu::session::Session;
-use crate::steps::{SRC_IPL_COMPLETE, SRC_SEQUENCE, StepReport, Suite};
+use crate::steps::{SRC_IPL_COMPLETE, StepReport, Suite};
 
 const CMD: Duration = Duration::from_secs(10);
 /// The DST password QSECOFR gets on first use.
@@ -26,6 +26,16 @@ fn sign_on(s: &mut Session, password: &str) -> Result<(), String> {
     s.send("type QSECOFR")?;
     s.send("key tab")?;
     s.send(&format!("type {password}"))?;
+    s.send("key enter")?;
+    Ok(())
+}
+
+/// An attended IPL's `IPL Options` and `Set Major System Options`,
+/// each taken as shown.
+pub(crate) fn answer_ipl_options(s: &mut Session, timeout: Duration) -> Result<(), String> {
+    s.expect("IPL Options", timeout)?;
+    s.send("key enter")?;
+    s.expect("Set Major System Options", CMD)?;
     s.send("key enter")?;
     Ok(())
 }
@@ -260,7 +270,8 @@ impl Suite {
         s.send("key f3")?;
         s.expect("Use Dedicated Service Tools (DST)", CMD)?;
         s.send("1")?;
-        s.expect_in_order(&SRC_SEQUENCE[7..], self.boot_timeout)?;
+        answer_ipl_options(s, self.boot_timeout)?;
+        s.expect(SRC_IPL_COMPLETE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         s.command("mode manual", CMD)?;
         Ok("A6001255; DST shows unit 2 Missing; IPL goes on from DST".into())
@@ -311,6 +322,7 @@ impl Suite {
         s.send("key f3")?;
         s.expect("Use Dedicated Service Tools (DST)", CMD)?;
         s.send("1")?;
+        answer_ipl_options(s, self.boot_timeout)?;
         s.expect(SRC_IPL_COMPLETE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         wait_resume(s)?;

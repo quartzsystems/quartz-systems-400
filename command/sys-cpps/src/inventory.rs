@@ -350,6 +350,7 @@ pub const DIRECT: &[&str] = &[
     "PRTTRC",
     "TRCJOB",
     "TRCINT",
+    "RCLDBXREF",
     // --- PTFs (lic/slic/src/cpp/ptfcmd.rs, ptfsvc.rs)
     "APYPTF",
     "CPYPTF",

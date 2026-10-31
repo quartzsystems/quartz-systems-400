@@ -1,0 +1,24 @@
+                                 User Profiles                                  
+                                                                 System:  QS400 
+                                                                                
+ User profile  Description                                                      
+ QSECOFR       Security officer                                                 
+                                                                                
+ CHGUSRPRF changes a profile once the system is running; a lost                 
+ QSECOFR password is reset from DST.                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

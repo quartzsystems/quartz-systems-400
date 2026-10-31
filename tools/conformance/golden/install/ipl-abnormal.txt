@@ -1,0 +1,24 @@
+                        Previous System End Was Abnormal                        
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Continue the IPL                                                       
+      2. Use Dedicated Service Tools (DST)                                      
+ The system did not end normally. The IPL recovers the object store and         
+ the journals; DST can look at the disk units first.                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                
