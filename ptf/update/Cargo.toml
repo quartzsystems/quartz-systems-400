@@ -1,0 +1,27 @@
+[package]
+name = "ptf-update"
+description = "QS/400 update service protocol: the signed catalog, orders, the HTTPS client and a reference server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ptf = { path = "../ptf", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+tls = { path = "../../net/tls", version = "0.1.0" }
+thiserror.workspace = true
+serde.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+sha2.workspace = true
+hex.workspace = true
+ed25519-dalek = "3.0.0"
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+certs = { path = "../../net/certs", version = "0.1.0" }
+
+[lints]
+workspace = true

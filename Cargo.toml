@@ -98,8 +98,9 @@ members = [
     # Save and restore: the save stream, the engine.
     "save/savfmt",
     "save/saverst",
-    # PTFs: the format, load, apply and remove, groups.
+    # PTFs: the format, load, apply and remove, groups; the update service.
     "ptf/ptf",
+    "ptf/update",
     # Service: the problem log.
     "service/prb",
     "media/optical",

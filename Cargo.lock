@@ -2088,6 +2088,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ptf-update"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "certs",
+ "ed25519-dalek",
+ "hex",
+ "ptf",
+ "qsname",
+ "release",
+ "serde",
+ "sha2",
+ "store",
+ "thiserror",
+ "tls",
+ "toml",
+]
+
+[[package]]
 name = "pwdsub"
 version = "0.1.0"
 dependencies = [

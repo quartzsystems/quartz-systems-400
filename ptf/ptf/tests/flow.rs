@@ -103,6 +103,7 @@ fn make(ptf: &str, value: &str, prereqs: &[&str], supersedes: &[&str]) -> Vec<u8
         cover: format!("{ptf}: sets the level to {value}."),
         objects: vec![("QSVCLIB".into(), "LEVEL".into(), types::DTAARA)],
         lic: None,
+        lic_b: None,
         key: &k,
         system: "QSBUILD".into(),
     };
@@ -257,11 +258,13 @@ fn delayed_ptfs_wait_for_the_ipl() {
         cover: String::new(),
         objects: vec![("QSVCLIB".into(), "LEVEL".into(), types::DTAARA)],
         lic: Some(b"new kernel image"),
+        lic_b: Some(b"new kernel image B"),
         key: &k,
         system: "QSBUILD".into(),
     };
     let bytes = package::build(&mut b, bq, &build, NOW).unwrap();
     let pkg = package::open(&bytes, &trusted()).unwrap();
+    assert_eq!(pkg.lic_b.as_deref(), Some(&b"new kernel image B"[..]));
     assert_eq!(pkg.lic.as_deref(), Some(&b"new kernel image"[..]));
     let (mut s, q) = system(15, "base");
     let mut db = PtfDb::default();

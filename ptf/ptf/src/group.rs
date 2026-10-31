@@ -77,11 +77,56 @@ pub fn sign_manifest(toml_text: &str, key: &SigningKey) -> String {
 /// Parse a signed manifest; `verified` is whether one of `trusted`
 /// signed it.
 pub fn parse(text: &str, trusted: &[[u8; 32]]) -> Result<(Group, bool)> {
+    let (body, verified) = verify_signed(text, trusted);
+    let g: Group = toml::from_str(body).map_err(|e| Error::NotPtf(format!("group manifest: {e}")))?;
+    Ok((g, verified))
+}
+
+/// A manifest's TOML text, the form [`sign_manifest`] signs.
+#[must_use]
+pub fn manifest_text(g: &Group) -> String {
+    let list = |v: &[String]| v.iter().map(|p| quote(p)).collect::<Vec<_>>().join(", ");
+    format!(
+        "name = {}\nlevel = {}\ntext = {}\nptfs = [{}]\nrelated = [{}]\n",
+        quote(&g.name),
+        g.level,
+        quote(&g.text),
+        list(&g.ptfs),
+        list(&g.related)
+    )
+}
+
+/// A TOML basic string.
+#[must_use]
+pub fn quote(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\t' => out.push_str("\\t"),
+            c if c.is_control() => {
+                use std::fmt::Write as _;
+                let _ = write!(out, "\\u{:04X}", u32::from(c));
+            }
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Split signed text (a body, then a line `# signature <hex>` signing
+/// the body) and check it: the body and whether one of `trusted`
+/// signed it. Catalogs and group manifests are signed this way.
+#[must_use]
+pub fn verify_signed<'a>(text: &'a str, trusted: &[[u8; 32]]) -> (&'a str, bool) {
     let (body, sig) = match text.rfind("\n# signature ") {
         Some(at) => (&text[..at], Some(text[at + 13..].trim())),
         None => (text, None),
     };
-    let g: Group = toml::from_str(body).map_err(|e| Error::NotPtf(format!("group manifest: {e}")))?;
     let verified = sig
         .and_then(|h| {
             let bytes: Vec<u8> = (0..h.len())
@@ -99,7 +144,7 @@ pub fn parse(text: &str, trusted: &[[u8; 32]]) -> Result<(Group, bool)> {
                 })
             })
         });
-    Ok((g, verified))
+    (body, verified)
 }
 
 /// A group's status from the PTF database.

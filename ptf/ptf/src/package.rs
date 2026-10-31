@@ -32,6 +32,8 @@ pub struct Build<'a> {
     pub objects: Vec<ObjRef>,
     /// A new UKI, for a LIC PTF.
     pub lic: Option<&'a [u8]>,
+    /// The slot B build of the same UKI; slot A's serves both when absent.
+    pub lic_b: Option<&'a [u8]>,
     /// The signing key.
     pub key: &'a SigningKey,
     /// The system name for the media header.
@@ -148,6 +150,9 @@ pub fn build(store: &mut Store, qsys: ObjectId, b: &Build<'_>, now: u64) -> Resu
     if let Some(uki) = b.lic {
         let mut parts = BTreeMap::new();
         parts.insert(Part::SPACE, uki.to_vec());
+        if let Some(other) = b.lic_b {
+            parts.insert(Part::typed(2), other.to_vec());
+        }
         pseudo(&mut w, b.key, LIC_TYPE, "LIC", &parts)?;
     }
     Ok(w.finish(0)?.1)
@@ -164,6 +169,8 @@ pub struct Package {
     pub objects: Vec<ObjRef>,
     /// The new UKI of a LIC PTF.
     pub lic: Option<Vec<u8>>,
+    /// Slot B's build, when the PTF carries one.
+    pub lic_b: Option<Vec<u8>>,
 }
 
 /// Open a PTF stream, checking that every object is signed by one of
@@ -177,6 +184,7 @@ pub fn open(bytes: &[u8], trusted: &[[u8; 32]]) -> Result<Package> {
     let mut cover = String::new();
     let mut objects = Vec::new();
     let mut lic = None;
+    let mut lic_b = None;
     while let Some(scan) = r.next_object()? {
         let Scan::Object(o) = scan else {
             return Err(Error::NotPtf("a damaged object".into()));
@@ -196,7 +204,11 @@ pub fn open(bytes: &[u8], trusted: &[[u8; 32]]) -> Result<Package> {
                 header = Some(PtfHeader::decode(o.part(Part::typed(0)))?);
                 cover = String::from_utf8_lossy(o.part(Part::typed(1))).into_owned();
             }
-            LIC_TYPE => lic = Some(o.part(Part::SPACE).to_vec()),
+            LIC_TYPE => {
+                lic = Some(o.part(Part::SPACE).to_vec());
+                let b = o.part(Part::typed(2));
+                lic_b = (!b.is_empty()).then(|| b.to_vec());
+            }
             _ if d.owner_index == savfmt::object::NO_OWNER => {
                 objects.push((d.library_name(), what, d.type_code));
             }
@@ -212,5 +224,24 @@ pub fn open(bytes: &[u8], trusted: &[[u8; 32]]) -> Result<Package> {
         cover,
         objects,
         lic,
+        lic_b,
     })
+}
+
+/// The header and cover letter of a PTF stream, signatures unchecked:
+/// for a publisher listing what it signed itself.
+pub fn peek(bytes: &[u8]) -> Result<(PtfHeader, String)> {
+    let mut r = Reader::new(Cursor::new(bytes))?;
+    if r.header().kind != SaveKind::Ptf {
+        return Err(Error::NotPtf("not a PTF stream".into()));
+    }
+    while let Some(scan) = r.next_object()? {
+        if let Scan::Object(o) = scan
+            && o.descriptor.type_code == HEADER_TYPE
+        {
+            let h = PtfHeader::decode(o.part(Part::typed(0)))?;
+            return Ok((h, String::from_utf8_lossy(o.part(Part::typed(1))).into_owned()));
+        }
+    }
+    Err(Error::NotPtf("no PTF header".into()))
 }
