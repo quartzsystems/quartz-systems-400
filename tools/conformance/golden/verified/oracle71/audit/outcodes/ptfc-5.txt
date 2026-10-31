@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   S                   Library  . . . . :   QTEMP            
+ Member . . . . . :   PTFA                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   313              
+ Find . . . . . . .                                                             
+ ..+....2...                                                                    
+                                                                                
+                                                                                
+ 50821131238                                                                    
+ 60215110746                                                                    
+ 10303112511                                                                    
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

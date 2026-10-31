@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   1                
+ Find . . . . . . .                                                             
+ * . . .  + . . .  . 1 . .  . . + .  . . . 2     *...+....1....+....2           
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+ F1F2F6F1 F0F3F1E2 F0F6F2C2 F1F7F5F2 40404040   *1261031S062B1752    *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

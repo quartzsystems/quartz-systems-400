@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   157              
+ Find . . . . . . .                                                             
+ ...6....+....7....+....8....+....9....+....0....+....1....+....2....+....3.... 
+                    None    QGPL      ##MACH#BS062B175NN0000       P160321I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P160222I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P160201I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P151207I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P150929I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P150407I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P140902I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P140721I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P140422I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P130917I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P130415I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P130114I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P120905I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P120305I COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P110809I COD 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

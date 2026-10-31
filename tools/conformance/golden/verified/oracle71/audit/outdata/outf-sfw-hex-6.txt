@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   101              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 1 . .  . . + .  . . . 2     ....+....1....+....2           
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+ C3D6D7E8 D9C9C7C8 E340C9C2 D440C3D6 D9D74B40   *COPYRIGHT IBM CORP. *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

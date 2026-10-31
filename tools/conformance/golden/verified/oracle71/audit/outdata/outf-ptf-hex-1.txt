@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   1                
+ Find . . . . . . .                                                             
+ * . . .  + . . .  . 1 . .  . . + .  . . . 2     *...+....1....+....2           
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+ F1F2F6F1 F0F3F1F0 F2F0F5F3 F440F0F6 F2C2F1F7   *1261031020534 062B17*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

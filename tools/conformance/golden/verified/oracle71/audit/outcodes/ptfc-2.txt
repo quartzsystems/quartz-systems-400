@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   S                   Library  . . . . :   QTEMP            
+ Member . . . . . :   PTFA                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   79               
+ Find . . . . . . .                                                             
+ .8....+....9....+....0....+....1....+....2....+....3....+....4....+....5....+. 
+ ed                                                             None            
+ ed                                                             None            
+ tly applied                  09/29/1510:23:32Delayed           None            
+ tly applied                  02/22/1611:18:42Delayed           None            
+ tly applied                  03/10/1107:40:15Immediate         None            
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

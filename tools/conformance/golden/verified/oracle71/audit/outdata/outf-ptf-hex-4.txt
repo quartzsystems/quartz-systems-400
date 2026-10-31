@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   61               
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 7 . .  . . + .  . . . 8     ....+....7....+....8           
+ F6F0F8F2 F9F9F9F9 F9F9D785 99948195 8595A393   *6082999999Permanentl*          
+ F6F0F5F3 F9F9F9F9 F9F9D785 99948195 8595A393   *6053999999Permanentl*          
+ F6F0F3F2 F9F9F9F9 F9F9D785 99948195 8595A393   *6032999999Permanentl*          
+ F5F3F4F9 F9F9F9F9 F9F9D785 99948195 8595A393   *5349999999Permanentl*          
+ F5F2F7F9 F9F9F9F9 F9F9D785 99948195 8595A393   *5279999999Permanentl*          
+ F5F0F9F7 F9F9F9F9 F9F9D785 99948195 8595A393   *5097999999Permanentl*          
+ F4F2F4F5 F9F9F9F9 F9F9D785 99948195 8595A393   *4245999999Permanentl*          
+ F4F1F9F7 F9F9F9F9 F9F9D785 99948195 8595A393   *4197999999Permanentl*          
+ F4F1F1F2 F9F9F9F9 F9F9D785 99948195 8595A393   *4112999999Permanentl*          
+ F3F2F6F0 F9F9F9F9 F9F9D785 99948195 8595A393   *3260999999Permanentl*          
+ F3F1F0F6 F9F9F9F9 F9F9D785 99948195 8595A393   *3106999999Permanentl*          
+ F3F0F1F5 F9F9F9F9 F9F9D785 99948195 8595A393   *3015999999Permanentl*          
+ F2F2F4F9 F9F9F9F9 F9F9D785 99948195 8595A393   *2249999999Permanentl*          
+ F2F0F6F6 F9F9F9F9 F9F9D785 99948195 8595A393   *2066999999Permanentl*          
+ F1F2F2F1 F9F9F9F9 F9F9D785 99948195 8595A393   *1221999999Permanentl*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

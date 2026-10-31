@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   141              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 5 . .  . . + .  . . . 6     ....+....5....+....6           
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+ D4C1E3C5 D9C9C1D3 406040D7 D9D6C7D9 C1D440D7   *MATERIAL - PROGRAM P*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

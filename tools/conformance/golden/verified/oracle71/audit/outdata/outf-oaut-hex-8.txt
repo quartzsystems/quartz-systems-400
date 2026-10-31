@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   OAUT                Library  . . . . :   QTEMP            
+ Member . . . . . :   OAUT                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   141              
+ Find . . . . . . .                                                             
+ . . . .  + . . .                                ....+...                       
+ E8E2C2C1 E2404040                              *YSBAS               *          
+ E8E2C2C1 E2404040                              *YSBAS               *          
+ E8E2C2C1 E2404040                              *YSBAS               *          
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   41               
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 5 . .  . . + .  . . . 6     ....+....5....+....6           
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+ D8C7D7D3 40404040 4040F5F7 F7F0F9F9 F9D9C5F1   *QGPL      5770999RE1*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

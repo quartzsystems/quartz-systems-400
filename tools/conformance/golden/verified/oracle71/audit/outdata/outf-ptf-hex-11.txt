@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   201              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 1 . .  . . + .  . . . 2     ....+....1....+....2           
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+ C2E2F0F6 F2C2F1F7 F5D5D5F0 F0F0F040 40404040   *BS062B175NN0000     *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

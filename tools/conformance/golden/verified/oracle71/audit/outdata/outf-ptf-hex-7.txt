@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   121              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 3 . .  . . + .  . . . 4     ....+....3....+....4           
+ 7AF2F4C9 94948584 8981A385 40404040 40404040   *:24Immediate        *          
+ 7AF4F6C9 94948584 8981A385 40404040 40404040   *:46Immediate        *          
+ 7AF4F0C9 94948584 8981A385 40404040 40404040   *:40Immediate        *          
+ 7AF1F2C9 94948584 8981A385 40404040 40404040   *:12Immediate        *          
+ 7AF3F1C9 94948584 8981A385 40404040 40404040   *:31Immediate        *          
+ 7AF2F9C9 94948584 8981A385 40404040 40404040   *:29Immediate        *          
+ 7AF3F6C9 94948584 8981A385 40404040 40404040   *:36Immediate        *          
+ 7AF4F7C9 94948584 8981A385 40404040 40404040   *:47Immediate        *          
+ 7AF0F6C9 94948584 8981A385 40404040 40404040   *:06Immediate        *          
+ 7AF3F3C9 94948584 8981A385 40404040 40404040   *:33Immediate        *          
+ 7AF0F6C9 94948584 8981A385 40404040 40404040   *:06Immediate        *          
+ 7AF5F4C9 94948584 8981A385 40404040 40404040   *:54Immediate        *          
+ 7AF1F5C9 94948584 8981A385 40404040 40404040   *:15Immediate        *          
+ 7AF5F5C9 94948584 8981A385 40404040 40404040   *:55Immediate        *          
+ 7AF1F3C9 94948584 8981A385 40404040 40404040   *:13Immediate        *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

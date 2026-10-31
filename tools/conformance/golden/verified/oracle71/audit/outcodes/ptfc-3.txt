@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   S                   Library  . . . . :   QTEMP            
+ Member . . . . . :   PTFA                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   157              
+ Find . . . . . . .                                                             
+ ...6....+....7....+....8....+....9....+....0....+....1....+....2....+....3.... 
+                    None    QGPL      ##MACH#BS062B175NN0000RE11221S        COD 
+                    None    QGPL      ##MACH#BS062B175NN0000MF61513S        COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P150929D COD 
+                    None    QGPL      ##MACH#BS062B175NN0000       P160222D COD 
+                    None    QSYS      ##MACH#BS062B175NN0000       P110310I COD 
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

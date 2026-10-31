@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   181              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 9 . .  . . + .  . . . 0     ....+....9....+....0           
+ 4040D3D6 C44040D8 E2E8E240 40404040 40404040   *  LOD  QSYS         *          
+ 4040D3D6 C44040D8 E2E8E240 40404040 40404040   *  LOD  QSYS         *          
+ 4040D3D6 C44040D8 E2E8E240 40404040 40404040   *  LOD  QSYS         *          
+ 4040D3D6 C44040D8 E2E8E2F2 40404040 40404040   *  LOD  QSYS2        *          
+ 4040D3D6 C44040D8 E2E8E2F2 40404040 40404040   *  LOD  QSYS2        *          
+ 4040D3D6 C44040D8 E2E8E2C4 C9D94040 40404040   *  LOD  QSYSDIR      *          
+ 4040D3D6 C44040D8 E2E8E2C4 C9D94040 40404040   *  LOD  QSYSDIR      *          
+ 4040D3D6 C44040D8 C9E6E240 40404040 40404040   *  LOD  QIWS         *          
+ 4040D3D6 C44040D8 C9E6E240 40404040 40404040   *  LOD  QIWS         *          
+ 4040D3D6 C44040D8 E2E8E2C9 D5C34040 40404040   *  LOD  QSYSINC      *          
+ 4040D3D6 C44040D8 E2C8C5D3 D3404040 40404040   *  LOD  QSHELL       *          
+ 4040D3D6 C44040D8 E2C8C5D3 D3404040 40404040   *  LOD  QSHELL       *          
+ 4040D3D6 C44040D8 D7C1E2C5 40404040 40404040   *  LOD  QPASE        *          
+ 4040D3D6 C44040D8 D7C1E2C5 40404040 40404040   *  LOD  QPASE        *          
+ 4040D3D6 C44040D8 D7E9F9F0 F66DF1F1 F0404040   *  LOD  QPZ906_110   *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

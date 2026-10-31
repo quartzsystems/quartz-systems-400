@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   235              
+ Find . . . . . . .                                                             
+ +....4....+....5....+....6....+....7....+....8....+....9....+....0....+....1.. 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+ E070100070100AJDG301No      0No             0V7R1M011000000       ##SERV#PN201 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

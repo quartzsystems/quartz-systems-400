@@ -1,0 +1,416 @@
+[[golden]]
+name = "outf-sfw-cmd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-sfw-hex-12"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-cmd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-ptf-hex-12"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-cmd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+
+[[golden]]
+name = "outf-oaut-hex-12"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-data"
+width = 80
+

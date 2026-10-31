@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   121              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 3 . .  . . + .  . . . 4     ....+....3....+....4           
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F1F9F8F0 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *1980, 2009 LICENSED *          
+ F2F0F0F5 6B40F2F0 F0F940D3 C9C3C5D5 E2C5C440   *2005, 2009 LICENSED *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   81               
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 9 . .  . . + .  . . . 0     ....+....9....+....0           
+ F1F0F040 40F8F0F5 F7F7F060 F9F9F940 4DC35D40   *100  805770-999 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F7F060 E2E2F140 4DC35D40   *100  805770-SS1 (C) *          
+ F1F0F040 40F8F0F5 F7F3F360 F9F0F640 4DC35D40   *100  805733-906 (C) *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

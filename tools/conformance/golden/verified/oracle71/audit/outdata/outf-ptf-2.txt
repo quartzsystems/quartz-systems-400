@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   79               
+ Find . . . . . . .                                                             
+ .8....+....9....+....0....+....1....+....2....+....3....+....4....+....5....+. 
+ tly applied                  03/21/1612:40:24Immediate         None            
+ tly applied                  02/22/1611:18:46Immediate         None            
+ tly applied                  02/01/1606:35:40Immediate         None            
+ tly applied                  12/07/1514:58:12Immediate         None            
+ tly applied                  09/29/1510:51:31Immediate         None            
+ tly applied                  04/07/1507:08:29Immediate         None            
+ tly applied                  09/02/1414:51:36Immediate         None            
+ tly applied                  07/21/1409:41:47Immediate         None            
+ tly applied                  04/22/1412:51:06Immediate         None            
+ tly applied                  09/17/1307:06:33Immediate         None            
+ tly applied                  04/15/1311:49:06Immediate         None            
+ tly applied                  01/14/1319:00:54Immediate         None            
+ tly applied                  09/05/1211:10:15Immediate         None            
+ tly applied                  03/05/1210:33:55Immediate         None            
+ tly applied                  08/09/1106:59:13Immediate         None            
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

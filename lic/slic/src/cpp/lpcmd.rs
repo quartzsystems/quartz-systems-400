@@ -46,7 +46,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "SAVLICPGM" => savlicpgm(system, parms),
         "CHKPRDOPT" => chkprdopt_cmd(system, parms),
         "DSPSFWRSC" if parms.name("OUTPUT") == "*OUTFILE" => {
-            let rows = sfwrsc_rows(system);
+            let rows = sfwrsc_full(system);
             super::dspout::sfwrsc(system, parms, &rows).map(|text| CmdReply {
                 text,
                 ..CmdReply::default()
@@ -522,24 +522,47 @@ fn chkprdopt_cmd(system: &mut System, parms: &Parms) -> Result<CmdReply, String>
 /// DSPSFWRSC rows: resource ID, option, feature, description, type,
 /// library, release; the Licensed Internal Code first.
 pub fn sfwrsc_rows(system: &mut System) -> Vec<Vec<String>> {
+    let mut rows = sfwrsc_full(system);
+    for r in &mut rows {
+        r.truncate(7);
+    }
+    rows
+}
+
+/// [`sfwrsc_rows`] with what the outfile adds: the load object, the
+/// option's message ID, its message file and library, and the
+/// copyright years.
+pub fn sfwrsc_full(system: &mut System) -> Vec<Vec<String>> {
     let rls = release::RELEASE.to_string();
     let mut rows = vec![
-        ["5770999", "*BASE", "5050", "Licensed Internal Code", "*CODE", "", &rls]
+        ["5770999", "*BASE", "5050", "Licensed Internal Code", "*CODE", "", &rls, "", "", "", "", ""]
             .iter()
             .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
     let res = lp::with(system, |p, _, _| {
         let loads = p.loads();
+        let defs = p.definitions();
         Ok(software_resources(p)
             .into_iter()
             .map(|r| {
-                let lib = loads
-                    .iter()
-                    .find(|(_, l)| {
-                        l.key.product == r.product && l.key.option == r.option && l.key.load_id == r.feature
-                    })
+                let load = loads.iter().find(|(_, l)| {
+                    l.key.product == r.product && l.key.option == r.option && l.key.load_id == r.feature
+                });
+                let lib = load
                     .and_then(|(_, l)| l.principal().map(|e| e.installed.clone()))
+                    .unwrap_or_default();
+                let def = defs.iter().map(|(_, d)| d).find(|d| d.product == r.product && d.release == r.release);
+                let msg = def.and_then(|d| d.option(r.option)).map(|o| o.msg_id.clone()).unwrap_or_default();
+                let (mf, ml) = def
+                    .and_then(|d| d.msgf.clone())
+                    .map_or((String::new(), String::new()), |q| (q.name, q.lib));
+                let years = def
+                    .and_then(|d| match (d.first_copyright, d.current_copyright) {
+                        (Some(a), Some(b)) if a != b => Some(format!("{a}, {b}")),
+                        (Some(a), _) | (None, Some(a)) => Some(a.to_string()),
+                        (None, None) => None,
+                    })
                     .unwrap_or_default();
                 vec![
                     r.product.to_string(),
@@ -549,6 +572,11 @@ pub fn sfwrsc_rows(system: &mut System) -> Vec<Vec<String>> {
                     r.load_type.name().to_string(),
                     lib,
                     r.release.to_string(),
+                    load.map(|(q, _)| q.name.clone()).unwrap_or_default(),
+                    msg,
+                    mf,
+                    ml,
+                    years,
                 ]
             })
             .collect::<Vec<_>>())

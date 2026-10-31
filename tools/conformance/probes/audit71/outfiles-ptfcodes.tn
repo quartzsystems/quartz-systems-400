@@ -1,0 +1,46 @@
+# CPP audit on the 7.1 oracle: the encoded fields of DSPPTF's outfile
+# for the statuses the system holds, a few records of each copied with
+# CPYF into QTEMP (the 7.1 box has no RUNSQL); the job ends with the
+# session, which deletes them.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPPTF LICPGM(*ALL) OUTPUT(*OUTFILE) OUTFILE(QTEMP/PTFA)
+key enter
+settle 20000
+type CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) CRTFILE(*YES) NBRRCDS(10) INCREL((*IF SCSTATUS *NE 'Permanently applied') (*AND SCSTATUS *NE 'Superseded'))
+key enter
+settle 8000
+type CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) NBRRCDS(2) INCREL((*IF SCSTATUS *EQ 'Superseded'))
+key enter
+settle 8000
+type CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) NBRRCDS(2) INCREL((*IF SCTYPE *EQ 'Delayed'))
+key enter
+settle 8000
+type CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) NBRRCDS(1) INCREL((*IF SCPPID *EQ '5770SS1'))
+key enter
+settle 8000
+snap ptfc-cmd
+type DSPPFM FILE(QTEMP/S)
+key enter
+settle 3000
+snap ptfc-1
+key f20
+settle 1000
+snap ptfc-2
+key f20
+settle 1000
+snap ptfc-3
+key f20
+settle 1000
+snap ptfc-4
+key f20
+settle 1000
+snap ptfc-5
+key f3
+settle 2000

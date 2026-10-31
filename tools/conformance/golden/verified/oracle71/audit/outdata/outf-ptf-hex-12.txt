@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   221              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 3 . .  . . + .  . . . 4     ....+....3....+....4           
+ 4040D7F1 F6F0F3F2 F1C940C3 D6C4C5F0 F7F0F1F0   *  P160321I CODE07010*          
+ 4040D7F1 F6F0F2F2 F2C940C3 D6C4C5F0 F7F0F1F0   *  P160222I CODE07010*          
+ 4040D7F1 F6F0F2F0 F1C940C3 D6C4C5F0 F7F0F1F0   *  P160201I CODE07010*          
+ 4040D7F1 F5F1F2F0 F7C940C3 D6C4C5F0 F7F0F1F0   *  P151207I CODE07010*          
+ 4040D7F1 F5F0F9F2 F9C940C3 D6C4C5F0 F7F0F1F0   *  P150929I CODE07010*          
+ 4040D7F1 F5F0F4F0 F7C940C3 D6C4C5F0 F7F0F1F0   *  P150407I CODE07010*          
+ 4040D7F1 F4F0F9F0 F2C940C3 D6C4C5F0 F7F0F1F0   *  P140902I CODE07010*          
+ 4040D7F1 F4F0F7F2 F1C940C3 D6C4C5F0 F7F0F1F0   *  P140721I CODE07010*          
+ 4040D7F1 F4F0F4F2 F2C940C3 D6C4C5F0 F7F0F1F0   *  P140422I CODE07010*          
+ 4040D7F1 F3F0F9F1 F7C940C3 D6C4C5F0 F7F0F1F0   *  P130917I CODE07010*          
+ 4040D7F1 F3F0F4F1 F5C940C3 D6C4C5F0 F7F0F1F0   *  P130415I CODE07010*          
+ 4040D7F1 F3F0F1F1 F4C940C3 D6C4C5F0 F7F0F1F0   *  P130114I CODE07010*          
+ 4040D7F1 F2F0F9F0 F5C940C3 D6C4C5F0 F7F0F1F0   *  P120905I CODE07010*          
+ 4040D7F1 F2F0F3F0 F5C940C3 D6C4C5F0 F7F0F1F0   *  P120305I CODE07010*          
+ 4040D7F1 F1F0F8F0 F9C940C3 D6C4C5F0 F7F0F1F0   *  P110809I CODE07010*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

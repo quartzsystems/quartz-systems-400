@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   OAUT                Library  . . . . :   QTEMP            
+ Member . . . . . :   OAUT                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   81               
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 9 . .  . . + .  . . . 0     ....+....9....+....0           
+ E2404040 404040E2 F0F6F2C2 F1F7F55C D5D6D5C5   *S      S062B175*NONE*          
+ E2404040 404040E2 F0F6F2C2 F1F7F55C D5D6D5C5   *S      S062B175*NONE*          
+ E2404040 404040E2 F0F6F2C2 F1F7F55C D5D6D5C5   *S      S062B175*NONE*          
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

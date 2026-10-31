@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   61               
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 7 . .  . . + .  . . . 8     ....+....7....+....8           
+ F9F94040 F0F040F5 F0F5F0F0 F0F0F0F0 F0F0F7F0   *99  00 5050000000070*          
+ E2F14040 F0F040F5 F0F5F0F0 F0F0F0F0 F0F0F7F0   *S1  00 5050000000070*          
+ E2F14040 F0F040F2 F9F2F4F0 F0F0F0F0 F0F0F7F0   *S1  00 2924000000070*          
+ E2F14040 404040F5 F0F5F0F0 F0F0F1F0 F0F0F7F0   *S1     5050000100070*          
+ E2F14040 404040F2 F9F2F4F0 F0F0F1F0 F0F0F7F0   *S1     2924000100070*          
+ E2F14040 404040F5 F0F5F0F0 F0F0F3F0 F0F0F7F0   *S1     5050000300070*          
+ E2F14040 404040F2 F9F2F4F0 F0F0F3F0 F0F0F7F0   *S1     2924000300070*          
+ E2F14040 404040F5 F0F5F0F0 F0F1F2F0 F0F0F7F0   *S1     5050001200070*          
+ E2F14040 404040F2 F9F2F4F0 F0F1F2F0 F0F0F7F0   *S1     2924001200070*          
+ E2F14040 404040F5 F0F5F0F0 F0F1F3F0 F0F0F7F0   *S1     5050001300070*          
+ E2F14040 404040F5 F0F5F0F0 F0F3F0F0 F0F0F7F0   *S1     5050003000070*          
+ E2F14040 404040F2 F9F2F4F0 F0F3F0F0 F0F0F7F0   *S1     2924003000070*          
+ E2F14040 404040F5 F1F1F1F0 F0F3F3F0 F0F0F7F0   *S1     5111003300070*          
+ E2F14040 404040F2 F9F2F4F0 F0F3F3F0 F0F0F7F0   *S1     2924003300070*          
+ F0F64040 404040F5 F0F5F0F0 F0F0F0F0 F0F0F1F0   *06     5050000000010*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

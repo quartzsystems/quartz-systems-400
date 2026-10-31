@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   PTF                 Library  . . . . :   QTEMP            
+ Member . . . . . :   PTF                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   181              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 9 . .  . . + .  . . . 0     ....+....9....+....0           
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+ 404040D8 C7D7D340 40404040 407B7BD4 C1C3C87B   *   QGPL      ##MACH#*          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

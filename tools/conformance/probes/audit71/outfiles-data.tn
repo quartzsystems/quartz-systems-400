@@ -1,7 +1,8 @@
 # CPP audit on the 7.1 oracle: what the system writes to the model
 # outfiles of DSPSFWRSC, DSPPTF and DSPOBJAUT. Each outfile goes to
 # QTEMP (the only library we may create in) and is shown with DSPPFM,
-# shifted right with F20; the job ends with the session.
+# shifted right with F20, then again in hex (F10); the job ends with
+# the session, which deletes QTEMP.
 wait "Sign On"
 signon
 settle 3000
@@ -32,6 +33,47 @@ settle 1000
 snap outf-sfw-5
 key f3
 settle 2000
+type DSPPFM FILE(QTEMP/SFW)
+key enter
+settle 3000
+key f10
+settle 1000
+snap outf-sfw-hex-1
+key f20
+settle 1000
+snap outf-sfw-hex-2
+key f20
+settle 1000
+snap outf-sfw-hex-3
+key f20
+settle 1000
+snap outf-sfw-hex-4
+key f20
+settle 1000
+snap outf-sfw-hex-5
+key f20
+settle 1000
+snap outf-sfw-hex-6
+key f20
+settle 1000
+snap outf-sfw-hex-7
+key f20
+settle 1000
+snap outf-sfw-hex-8
+key f20
+settle 1000
+snap outf-sfw-hex-9
+key f20
+settle 1000
+snap outf-sfw-hex-10
+key f20
+settle 1000
+snap outf-sfw-hex-11
+key f20
+settle 1000
+snap outf-sfw-hex-12
+key f3
+settle 2000
 type DSPPTF OUTPUT(*OUTFILE) OUTFILE(QTEMP/PTF)
 key enter
 settle 5000
@@ -54,6 +96,47 @@ settle 1000
 snap outf-ptf-5
 key f3
 settle 2000
+type DSPPFM FILE(QTEMP/PTF)
+key enter
+settle 3000
+key f10
+settle 1000
+snap outf-ptf-hex-1
+key f20
+settle 1000
+snap outf-ptf-hex-2
+key f20
+settle 1000
+snap outf-ptf-hex-3
+key f20
+settle 1000
+snap outf-ptf-hex-4
+key f20
+settle 1000
+snap outf-ptf-hex-5
+key f20
+settle 1000
+snap outf-ptf-hex-6
+key f20
+settle 1000
+snap outf-ptf-hex-7
+key f20
+settle 1000
+snap outf-ptf-hex-8
+key f20
+settle 1000
+snap outf-ptf-hex-9
+key f20
+settle 1000
+snap outf-ptf-hex-10
+key f20
+settle 1000
+snap outf-ptf-hex-11
+key f20
+settle 1000
+snap outf-ptf-hex-12
+key f3
+settle 2000
 type DSPOBJAUT OBJ(QSYS/QCMD) OBJTYPE(*PGM) OUTPUT(*OUTFILE) OUTFILE(QTEMP/OAUT)
 key enter
 settle 5000
@@ -68,5 +151,46 @@ snap outf-oaut-2
 key f20
 settle 1000
 snap outf-oaut-3
+key f3
+settle 2000
+type DSPPFM FILE(QTEMP/OAUT)
+key enter
+settle 3000
+key f10
+settle 1000
+snap outf-oaut-hex-1
+key f20
+settle 1000
+snap outf-oaut-hex-2
+key f20
+settle 1000
+snap outf-oaut-hex-3
+key f20
+settle 1000
+snap outf-oaut-hex-4
+key f20
+settle 1000
+snap outf-oaut-hex-5
+key f20
+settle 1000
+snap outf-oaut-hex-6
+key f20
+settle 1000
+snap outf-oaut-hex-7
+key f20
+settle 1000
+snap outf-oaut-hex-8
+key f20
+settle 1000
+snap outf-oaut-hex-9
+key f20
+settle 1000
+snap outf-oaut-hex-10
+key f20
+settle 1000
+snap outf-oaut-hex-11
+key f20
+settle 1000
+snap outf-oaut-hex-12
 key f3
 settle 2000

@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   OAUT                Library  . . . . :   QTEMP            
+ Member . . . . . :   OAUT                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   71               
+ Find . . . . . . .                                                             
+ ....+....8....+....9....+....0....+....1....+....2....+....3....+....4....+... 
+ PGM    QSYS      S062B175*NONE               X            *SYSBAS   *SYSBAS    
+ PGM    QSYS      S062B175*NONE               XXX          *SYSBAS   *SYSBAS    
+ PGM    QSYS      S062B175*NONE               X            *SYSBAS   *SYSBAS    
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+ End of record shown.                                                           

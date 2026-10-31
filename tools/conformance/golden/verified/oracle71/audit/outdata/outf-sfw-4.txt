@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   235              
+ Find . . . . . . .                                                             
+ +....4....+....5....+....6....+....7....+....8....+....9....+....0....+....1.  
+              0000001024          CPX0C00QCPFMSG   QSYS      10000000002000512  
+              0015679488          CPX0C0CQCPFMSG   QSYS      10000030624000512  
+              0000033792          CPX0C0CQCPFMSG   QSYS      30000000066000512  
+              0010207232          CPX0C02QCPFMSG   QSYS      10000019936000512  
+              0008044544          CPX0C02QCPFMSG   QSYS      30000015712000512  
+              0361660416          CPX0E27QCPFMSG   QSYS      10000706368000512  
+              0000122880          CPX0E27QCPFMSG   QSYS      30000000240000512  
+              0015958016          CPX0C2AQCPFMSG   QSYS      10000031168000512  
+              0000573440          CPX0C2AQCPFMSG   QSYS      30000001120000512  
+              0265293824          CPX0C17QCPFMSG   QSYS      10000518152000512  
+              0009940992          CPX0E42QCPFMSG   QSYS      10000019416000512  
+              0000098304          CPX0E42QCPFMSG   QSYS      30000000192000512  
+              0000831488          CPX0E51QCPFMSG   QSYS      10000001624000512  
+              0000053248          CPX0E51QCPFMSG   QSYS      30000000104000512  
+              0000024576          CPX0EBAQCPFMSG   QSYS      10000000048000512  
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

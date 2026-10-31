@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   157              
+ Find . . . . . . .                                                             
+ ...6....+....7....+....8....+....9....+....0....+....1....+....2....+....3.... 
+ AM PROPERTY0000QPZ0050    LOD  QSYS                                            
+ AM PROPERTY0000QSZ0050    LOD  QSYS                                            
+ AM PROPERTY0000QSZ0029    LOD  QSYS                                            
+ AM PROPERTY0000QLP0150    LOD  QSYS2                                           
+ AM PROPERTY0000QLP0129    LOD  QSYS2                                           
+ AM PROPERTY0000QLP0350    LOD  QSYSDIR                                         
+ AM PROPERTY0000QLP0329    LOD  QSYSDIR                                         
+ AM PROPERTY0000QHI1250    LOD  QIWS                                            
+ AM PROPERTY0000QHI1229    LOD  QIWS                                            
+ AM PROPERTY0000QXIC1350   LOD  QSYSINC                                         
+ AM PROPERTY0000QZSH3050   LOD  QSHELL                                          
+ AM PROPERTY0000QZSH3029   LOD  QSHELL                                          
+ AM PROPERTY0000QP23350    LOD  QPASE                                           
+ AM PROPERTY0000QP23329    LOD  QPASE                                           
+ AM PROPERTY0000Q906110    LOD  QPZ906_110                                      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

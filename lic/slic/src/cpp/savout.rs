@@ -149,6 +149,43 @@ fn type_name(t: u16) -> String {
     store::obj::type_by_code(t).map_or_else(String::new, |i| i.name.to_string())
 }
 
+/// The file definition of a model format's DDS source.
+fn model_def(src: &str) -> Result<dds::PfDefinition, String> {
+    let (source, _) = Source::from_text(src);
+    let c = compile_pf(&source, &NoRefs, &CompileOpts::default());
+    c.definition.ok_or_else(|| format!("CPF7302 {}", c.listing))
+}
+
+/// The record format of model `format` with `fields`.
+#[cfg(test)]
+pub(crate) fn model(format: &str, fields: &[Fld]) -> dds::RecordFormat {
+    model_def(&dds(format, fields)).expect("model format").format
+}
+
+/// One record of `row` in format `fmt`, as the database writes it:
+/// character fields padded with blanks, numbers zero when missing.
+pub(crate) fn encode(fmt: &dds::RecordFormat, row: &Row) -> Result<Vec<u8>, String> {
+    let mut rec = vec![0u8; usize::try_from(fmt.record_len).unwrap_or(0)];
+    for f in &fmt.fields {
+        let fname = f.name.to_string();
+        let v = row.iter().find(|(k, _)| *k == fname).map_or("", |(_, v)| v.as_str());
+        let val = if f.data_type.is_numeric() {
+            db::Value::Num(qdecimal::Decimal::parse(if v.is_empty() { "0" } else { v }).map_err(|e| e.to_string())?)
+        } else {
+            db::Value::Char(ccsid::to_ebcdic(v).unwrap_or_default())
+        };
+        db::record::write_field(f, &mut rec, &val).map_err(|e| e.to_string())?;
+        // IBM's outfiles carry a positive zoned number with the F sign.
+        if f.data_type == dds::DataType::Zoned {
+            let last = usize::try_from(f.offset + f.byte_len).unwrap_or(0) - 1;
+            if rec[last] >> 4 == 0xC {
+                rec[last] |= 0xF0;
+            }
+        }
+    }
+    Ok(rec)
+}
+
 /// Write `rows` to the outfile `OUTFILE`/`OUTMBR` names, creating it in
 /// the model format when it is missing.
 pub(super) fn write(
@@ -195,9 +232,7 @@ pub(crate) fn write_to(
         let fid = if let Some(id) = existing {
             id
         } else {
-            let (source, _) = Source::from_text(&src);
-            let c = compile_pf(&source, &NoRefs, &CompileOpts::default());
-            let def = c.definition.ok_or_else(|| format!("CPF7302 {}", c.listing))?;
+            let def = model_def(&src)?;
             note = format!("CPF9861 Output file {name} created in library {lib}.\n");
             file::create_pf(
                 txn,
@@ -218,19 +253,7 @@ pub(crate) fn write_to(
         }
         let fmt = m.format().format.clone();
         for row in rows {
-            let mut rec = vec![0u8; usize::try_from(fmt.record_len).unwrap_or(0)];
-            for (fname, f) in fmt.fields.iter().map(|f| (f.name.to_string(), f)) {
-                let v = row
-                    .iter()
-                    .find(|(k, _)| *k == fname)
-                    .map_or("", |(_, v)| v.as_str());
-                let val = if f.data_type.is_numeric() {
-                    db::Value::Num(qdecimal::Decimal::parse(if v.is_empty() { "0" } else { v }).map_err(|e| e.to_string())?)
-                } else {
-                    db::Value::Char(ccsid::to_ebcdic(v).unwrap_or_default())
-                };
-                db::record::write_field(f, &mut rec, &val).map_err(|e| e.to_string())?;
-            }
+            let rec = encode(&fmt, row)?;
             m.write_new(txn, &rec, &vec![0u8; m.core.null_map_len()])
                 .map_err(|e| e.to_string())?;
         }

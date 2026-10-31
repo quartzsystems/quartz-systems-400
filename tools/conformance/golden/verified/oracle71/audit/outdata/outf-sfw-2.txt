@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   79               
+ Find . . . . . . .                                                             
+ .8....+....9....+....0....+....1....+....2....+....3....+....4....+....5....+. 
+ 70100  805770-999 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 70100  805770-SS1 (C) COPYRIGHT IBM CORP. 1980, 2009 LICENSED MATERIAL - PROGR 
+ 10100  805733-906 (C) COPYRIGHT IBM CORP. 2005, 2009 LICENSED MATERIAL - PROGR 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,48 @@
+[[golden]]
+name = "ptfc-cmd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ptfcodes"
+width = 80
+
+[[golden]]
+name = "ptfc-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ptfcodes"
+width = 80
+
+[[golden]]
+name = "ptfc-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ptfcodes"
+width = 80
+
+[[golden]]
+name = "ptfc-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ptfcodes"
+width = 80
+
+[[golden]]
+name = "ptfc-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ptfcodes"
+width = 80
+
+[[golden]]
+name = "ptfc-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "outfiles-ptfcodes"
+width = 80
+

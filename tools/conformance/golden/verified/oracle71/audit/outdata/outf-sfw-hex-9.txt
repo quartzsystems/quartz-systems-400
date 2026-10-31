@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   SFW                 Library  . . . . :   QTEMP            
+ Member . . . . . :   SFW                 Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   161              
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 7 . .  . . + .  . . . 8     ....+....7....+....8           
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D7E9F0F0 F5F04040   *ROPERTY0000QPZ0050  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 E2E9F0F0 F5F04040   *ROPERTY0000QSZ0050  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 E2E9F0F0 F2F94040   *ROPERTY0000QSZ0029  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D3D7F0F1 F5F04040   *ROPERTY0000QLP0150  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D3D7F0F1 F2F94040   *ROPERTY0000QLP0129  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D3D7F0F3 F5F04040   *ROPERTY0000QLP0350  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D3D7F0F3 F2F94040   *ROPERTY0000QLP0329  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 C8C9F1F2 F5F04040   *ROPERTY0000QHI1250  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 C8C9F1F2 F2F94040   *ROPERTY0000QHI1229  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 E7C9C3F1 F3F5F040   *ROPERTY0000QXIC1350 *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 E9E2C8F3 F0F5F040   *ROPERTY0000QZSH3050 *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 E9E2C8F3 F0F2F940   *ROPERTY0000QZSH3029 *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D7F2F3F3 F5F04040   *ROPERTY0000QP23350  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 D7F2F3F3 F2F94040   *ROPERTY0000QP23329  *          
+ D9D6D7C5 D9E3E8F0 F0F0F0D8 F9F0F6F1 F1F04040   *ROPERTY0000Q906110  *          
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   OAUT                Library  . . . . :   QTEMP            
+ Member . . . . . :   OAUT                Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   61               
+ Find . . . . . . .                                                             
+ . . . .  + . . .  . 7 . .  . . + .  . . . 8     ....+....7....+....8           
+ E2E8E240 40404040 405CD7C7 D4404040 40D8E2E8   *SYS      *PGM    QSY*          
+ E2E8E240 40404040 405CD7C7 D4404040 40D8E2E8   *SYS      *PGM    QSY*          
+ E2E8E240 40404040 405CD7C7 D4404040 40D8E2E8   *SYS      *PGM    QSY*          
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+      Physical file S created in library QTEMP.                                 
+      Member PTFA added to file S in QTEMP.                                     
+      No records copied from file PTFA in QTEMP.                                
+    > CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) NBRRCDS(2) INCREL( 
+      (*IF SCSTATUS *EQ 'Superseded'))                                          
+      2 records copied from member PTFA.                                        
+    > CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) NBRRCDS(2) INCREL( 
+      (*IF SCTYPE *EQ 'Delayed'))                                               
+      2 records copied from member PTFA.                                        
+    > CPYF FROMFILE(QTEMP/PTFA) TOFILE(QTEMP/S) MBROPT(*ADD) NBRRCDS(1) INCREL( 
+      (*IF SCPPID *EQ '5770SS1'))                                               
+      1 records copied from member PTFA.                                        
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                
