@@ -462,6 +462,10 @@ pub const JOB_SITE: &[&str] = &[
     "WRKSBSD",
     "DSPSAVF",
     "WRKPRB",
+    // --- licensed programs (panels/licpgm.rs)
+    "QSLICPGM",
+    "WRKSFWAGR",
+    "WRKLICINF",
     // --- panels batch 2: programs, config, security, editors (panels/system2.rs)
     "DSPPGM",
     "DSPSRVPGM",

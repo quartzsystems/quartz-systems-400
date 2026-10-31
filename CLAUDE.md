@@ -111,6 +111,26 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   diskimg/      GPT layout (ESP, LIC, IFS, ASP1), FAT volumes, partition lookup, the IFS
                 partition and its RCLSTG migration (migrate.rs); build + installer
   blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
+  osobjects/    the OS objects of QS00SS1 *BASE (message files, work management objects,
+                display files, panel groups and menus, regfac, commands, QSTRUP from
+                shipped/QSTRUP.clle): one create() the first IPL and build lp both call
+licpgm/       licensed programs (docs/LICPGM.md)
+  licpgm/       the model: src/id.rs, src/model/ (definition, load, state), catalog.toml and
+                agreements/ (src/catalog.rs), src/payload/ *PRDDFN and *PRDLOD codecs and
+                spec layouts, src/directory/ installed status and CHKPRDOPT, src/api/ the
+                QSZ*/QLZA* APIs over bytes (dispatch.rs by name), src/plan/ RSTLICPGM,
+                DLTLICPGM, SAVLICPGM planning over the Media/Restorer/Remover traits,
+                src/pkg/ QSPKGPRD manifests, src/license/ keys, key files, the license
+                repository and use, agree.rs software agreements, store.rs ProductStore,
+                ObjectCheck, MemStore
+  lpstore/      ProductStore and ObjectCheck over the object store (QUSRSYS/QLZALIC,
+                QUSRSYS/QSZAGREE), product save streams (SavfMedia, SaveRestorer, save_product)
+  lpbuild/      build lp's work: a store in memory, the objects, signed, saved as a product load
+  products/     the QSPKGPRD manifests build lp packages (QS00SS1, QS00WDS, QS00TC1, QS00ST1).
+                The service side is lic/slic/src/stgsvc/licpgm.rs (seed, the product store,
+                the key at /qs400/keys/system.pub), cpp/lpcmd.rs (the commands) and
+                cpp/lpapi.rs (panel data, API calls); the job's runtime/sysapi/src/lp.rs and
+                work/qsjob/src/panels/licpgm.rs (GO LICPGM, QSZLICPGM)
 storage/      the object store and the names and code pages it holds
   store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
                 src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
@@ -311,7 +331,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
               SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md,
-              images/
+              LICPGM.md, SVC_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
@@ -327,6 +347,7 @@ cargo run -p build -- initramfs
 cargo run -p build -- uki
 cargo run -p build -- disk
 cargo run -p build -- manifest
+cargo run -p build -- lp          # signed product loads from licpgm/products/ into target/images/lp/
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
@@ -366,6 +387,8 @@ cargo test -p servers                     # the servers framework, CHGTELNA, the
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
 cargo test -p sys-cpps --test smallsvr    # CHGNTPA, CHGLPDA, CHGSMTPA, SNDTCPSPLF, LPR against the oracle
 cargo test -p sshd                        # the SSH server end to end in memory
+cargo test -p licpgm -p lpstore -p lpbuild -p osobjects   # products, payloads, APIs, keys; the store; build lp
+cargo test -p uim --test licpgm_panels    # GO LICPGM panels; QS400_UPDATE_GOLDEN=1 rewrites tests/golden/licpgm/
 cargo test -p sshd --test openssh -- --ignored   # real ssh/sftp/scp against the daemon
 wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
 ```

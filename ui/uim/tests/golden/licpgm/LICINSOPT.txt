@@ -1,0 +1,24 @@
+                                Install Options
+                                                             System:   QS400
+ Type choices, press Enter.
+ Installation device (save file) . . . . . .   QGPL/WDSLOAD
+ Objects to install  . . . . . . . . . . . .   1
+ Automatic IPL . . . . . . . . . . . . . . .   N
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Objects: 1=Programs and language objects, 2=Programs, 3=Language objects
+
+ F3=Exit   F12=Cancel
+

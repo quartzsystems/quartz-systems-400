@@ -1,0 +1,24 @@
+                           Install Licensed Programs
+                                                             System:   QS400
+ Type options, press Enter.
+   1=Install
+
+      Licensed  Product     Installed
+ Opt  Program   Option      Status       Description
+
+      QS00SS1   *BASE       *COMPATIBLE  Quartz Systems/400 Operating System
+      QS00SS1   30          *COMPATIBLE  Qshell
+      QS00WDS   31          *ERROR       ILE RPG compiler
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F11=Display release   F12=Cancel   F19=Display trademarks
+

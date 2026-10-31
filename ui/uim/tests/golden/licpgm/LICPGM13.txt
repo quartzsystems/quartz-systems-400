@@ -1,0 +1,24 @@
+                             Save Licensed Programs
+                                                             System:   QS400
+ Type options, press Enter.
+   1=Save
+
+      Licensed  Product
+ Opt  Program   Option      Description
+
+      QS00SS1   *BASE       Quartz Systems/400 Operating System
+      QS00SS1   30          Qshell
+      QS00WDS   31          ILE RPG compiler
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F11=Display release   F12=Cancel   F19=Display trademarks
+

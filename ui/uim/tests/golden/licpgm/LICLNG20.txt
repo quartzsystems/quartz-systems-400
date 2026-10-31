@@ -1,0 +1,24 @@
+                          Display Secondary Languages
+                                                             System:   QS400
+ Primary language . . . . . :   2924
+ Description  . . . . . . . :   English
+ Secondary
+ Language    Description
+
+
+   (No secondary languages are installed)
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+ Press Enter to continue.
+
+ F3=Exit   F12=Cancel
+

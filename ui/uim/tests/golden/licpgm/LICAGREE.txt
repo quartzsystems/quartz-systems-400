@@ -1,0 +1,24 @@
+                               Software Agreement
+                                                             System:   QS400
+ Licensed program . . . . . :   QS00WDS
+ Release  . . . . . . . . . :   V1R0M0
+ Description  . . . . . . . :   Quartz Systems/400 Application Development
+ Quartz Systems/400 Application Development - Software Agreement
+
+ 1. This software is licensed under the MIT license. You may use, copy,
+    change and pass it on, as that license says.
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+ F14 accepts the agreement; F15 declines it and the program is not installed.
+
+ F3=Exit   F12=Cancel   F14=Accept   F15=Decline
+

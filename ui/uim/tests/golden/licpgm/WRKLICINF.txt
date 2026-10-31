@@ -1,0 +1,24 @@
+                         Work with License Information
+                                                             System:   QS400
+ Type options, press Enter.
+   2=Change   5=Display license key
+
+      Product                                  Usage       Usage
+ Opt  ID       Term    Feature     Compliance  Limit       Count
+
+      QS00WDS  V1      5102        *WARNING    *NOMAX      0
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F5=Refresh   F12=Cancel
+

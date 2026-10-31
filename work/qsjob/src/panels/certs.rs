@@ -27,7 +27,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, _out
 }
 
 /// A parameter's value as typed or defaulted, quotes taken off.
-fn parm(r: &Resolved, kwd: &str) -> String {
+pub(super) fn parm(r: &Resolved, kwd: &str) -> String {
     r.get(kwd)
         .and_then(|b| b.value.as_ref())
         .map(Value::source)
@@ -57,7 +57,7 @@ fn dialog(host: &Host) -> Result<UimDialog, Fail> {
     Ok(d)
 }
 
-fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
+pub(super) fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
     d.show(surface, panel)
         .map_err(|e| Fail::new("CPF6A12", format!("panel {panel}: {e}")))
 }
@@ -80,7 +80,7 @@ fn fill(d: &mut UimDialog, data: &Sys2Data) {
     }
 }
 
-fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
+pub(super) fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
     d.row(list, row)
         .into_iter()
         .find(|(v, _)| v == var)
@@ -89,7 +89,7 @@ fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
 }
 
 /// Run a command from a panel: the line to show after it.
-fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
+pub(super) fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
     let out = crate::command::run(job, host, text);
     if let Some(f) = &out.escape {
         if f.msgid == "CPF6801" {
@@ -108,7 +108,7 @@ fn exec(job: &mut Job, host: &Host, text: &str) -> Option<(String, bool)> {
 
 /// Run the options typed: a `CMD` action with the entry's values, else
 /// what `special` does with it.
-fn options(
+pub(super) fn options(
     job: &mut Job,
     host: &Host,
     d: &mut UimDialog,

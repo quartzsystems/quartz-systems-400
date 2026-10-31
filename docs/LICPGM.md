@@ -636,8 +636,8 @@ the way keys are normally delivered (`docs/SVC_OPEN_QUESTIONS.md` 1).
   and `O` as `0`. A mistyped key fails the check (a typing error) before
   the signature is tried (a key for other fields).
 - **Public key**: the product definition's `license_key`, else the
-  system's Quartz key, which the integrator supplies (the build's
-  signing key; no key is embedded in this crate).
+  system's Quartz key: the build's signing key, `/qs400/keys/system.pub`
+  in the image (§9; no key is embedded in this crate).
 - **Generation**: `license::key::generate(signing_key, fields)` for the
   build pipeline and tests.
 
@@ -721,23 +721,69 @@ product and release (accepted or declined, by whom, when) is in
 (6), kind (1: 1 accepted, 2 declined), date (4), user (`u16` length +
 UTF-8).
 
-## 9. For the integrator
+## 9. In the system
 
-1. Register `*PRDDFN` (`0x002A`) and `*PRDLOD` (`0x002B`) in
-   `storage/store/src/obj/types.rs`; implement `ProductStore` and
-   `ObjectCheck` over the store (the license and agreement records in
-   `QUSRSYS`).
-2. At first IPL, create the shipped products' definitions and loads
-   from `catalog::shipped()` (state 90 for the shipped products; the
-   reserved ones get their definitions only) and their license
-   information.
-3. Install the APIs as natives of `QSYS`; replace `sysapi`'s
-   `QSZRTVPR` stub (`runtime/sysapi/src/job.rs`) with
-   `api::rtvpr::qszrtvpr`.
-4. Write the CPPs for DSPSFWRSC, CHKPRDOPT, RSTLICPGM, DLTLICPGM,
-   SAVLICPGM, PKGPRDOPT, ADDLICKEY (with `LICKEY` of 18 elements and
-   `LICKEYINP`/`LICKEYFILE`), RMVLICKEY, DSPLICKEY, WRKLICINF,
-   CHGLICINF, WRKSFWAGR and QSPKGPRD, and the GO LICPGM panels.
-5. Provide `Media` and `Restorer` from the save engine, and the
-   system's Quartz license public key; `build lp` packages manifests
-   with `pkg::parse` and signs keys with `license::key::generate`.
+- **Objects.** `*PRDDFN` is type `0x002A` and `*PRDLOD` `0x002B`
+  (`storage/store/src/obj/types.rs`); each holds its payload the way
+  the work management objects do (a `u32` length, then the bytes).
+  `licpgm/lpstore` implements `ProductStore` and `ObjectCheck` over the
+  store, one transaction per call: the license repository is the user
+  space `QUSRSYS/QLZALIC`, the agreement answers `QUSRSYS/QSZAGREE`.
+- **Every IPL** the service seeds the catalog (`lpstore::seed`, from
+  `lic/slic/src/stgsvc/licpgm.rs`): every product's `*PRDDFN` in
+  `QSYS`, the shipped products' loads there at 90, their license
+  information; reserved products get their definition only. What
+  exists is left alone.
+- **The key.** The build writes the public half of its signing key
+  (`QS400_SIGNING_KEY`, or the dev key under `target/keys/`) into the
+  initramfs as `/qs400/keys/system.pub`, 32 raw bytes. The save engine
+  trusts object signatures with it and ADDLICKEY checks Quartz license
+  keys with its first key.
+- **Commands** (`lic/slic/src/cpp/lpcmd.rs`): RSTLICPGM (`DEV(*SAVF)`;
+  optical and tape are the hook in `device()`, `MIGRATE(phase11)`),
+  DLTLICPGM, SAVLICPGM (a `SaveKind::LicPgm` stream into a save file),
+  CHKPRDOPT, DSPSFWRSC, WRKLICINF, ADDLICKEY (`LICKEY` of 18 elements,
+  or `LICKEYINP(*LICKEYFILE) LICKEYFILE(path)`, a stream file),
+  RMVLICKEY, DSPLICKEY (`OUTPUT(*LICKEYFILE)` writes a key file),
+  CHGLICINF, WRKSFWAGR, and Quartz's `QSPKGPRD MANIFEST(path)
+  [SAVF(lib/file)]`. RSTLICPGM records the agreement as accepted by the
+  user running it; GO LICPGM shows it first. The restore goes through
+  `lpstore::SaveRestorer` (the save engine); the save stream holds the
+  product objects, which the restorer leaves to `execute_restore`.
+  Exit programs are not called yet (`NoExits`).
+- **APIs.** `runtime/sysapi/src/lp.rs` installs QSZRTVPR, QSZCRTPD,
+  QSZCRTPL, QSZPKGPO, QSZDLTPD, QSZDLTPL, QSZSPTPR, QSZCHKTG, QLZAREQ
+  and QLZARLS as natives; each reads its parameters' bytes and asks the
+  provider (`Provider::licpgm`), which in a job is the service
+  (`licpgm_api`, request 1321, answered by `licpgm::api::dispatch`)
+  and elsewhere the shipped catalog. `*OPSYS` is `QS00SS1`.
+- **The LP matrix.** CRTBNDRPG and CRTRPGMOD need `QS00WDS` option 31
+  installed, CRTSQLRPGI options 31 and 61; otherwise they end with
+  `CPF0C1F`. After DLTLICPGM, RSTLICPGM from a SAVLICPGM save file
+  brings them back.
+- **GO LICPGM** (`ui/menus/sys/LICPGM.pnlgrp`, option 5 is
+  `LICPREP`): options 1 and 10 to 22 are `QSLICPGM OPTION(n)`, panels of
+  `QSZLICPGM` driven by `work/qsjob/src/panels/licpgm.rs` (data through
+  `licpgm_panel`, request 1320); 50 is DSPLOG, 70 the command menu.
+  Install takes the install options (the save file, the objects), the
+  list of what it holds, each product's agreement (F14 accepts, F15
+  declines), then RSTLICPGM per option, base first.
+
+## 10. Product loads at build time
+
+`build lp` (`tools/build/src/image/lp.rs`, the work in
+`licpgm/lpbuild`) packages each manifest of `licpgm/products/` into
+`target/images/lp/<ID>.savf`, the bytes a save file holds for
+`RSTLICPGM DEV(*SAVF)`: a store in memory with `QSYS` and the system
+libraries; for `QS00SS1` the objects `lic/osobjects` makes (message
+files, work management objects, display files, panel groups and menus,
+the registration facility, the commands, `QSTRUP`; user profiles,
+system values, network attributes and the TCP/IP configuration stay
+with the first IPL), which the base code load lists; the `*PRDDFN` and
+packaged `*PRDLOD`s; every object signed (ed25519 over its content
+digest, key ID the first 8 bytes of the public key's SHA-256, the
+descriptor flagged `SIGNED`); then SAVLICPGM's stream. The digests do
+not depend on the system, so two builds give the same digests. The
+manifests match `catalog.toml` (a test keeps them equal). The first
+IPL still makes the OS objects itself until the install flow restores
+the `QS00SS1` load instead.

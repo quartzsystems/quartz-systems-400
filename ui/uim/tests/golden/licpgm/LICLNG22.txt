@@ -1,0 +1,24 @@
+                           Delete Secondary Languages
+                                                             System:   QS400
+ Primary language . . . . . :   2924
+ Type options, press Enter.
+   4=Delete
+
+      Secondary
+ Opt  Language    Description
+
+
+   (No secondary languages are installed)
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F3=Exit   F12=Cancel
+

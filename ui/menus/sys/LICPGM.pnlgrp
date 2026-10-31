@@ -1,0 +1,59 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* LICPGM: GO LICPGM, the licensed program tasks, with IBM's option
+.* numbers (docs/LICPGM.md §9).
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='LICPGM'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=LICPGM HELP=HLPLICPGM KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Work with Licensed Programs
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUGRP.Manual Install
+:MENUI OPTION=1 ACTION='CMD QSLICPGM OPTION(1)'.Install all
+:EMENUGRP.
+:MENUGRP.Preparation
+:MENUI OPTION=5 ACTION='MENU LICPREP'.Prepare for install
+:EMENUGRP.
+:MENUGRP.Licensed Programs
+:MENUI OPTION=10 ACTION='CMD QSLICPGM OPTION(10)'.Display installed licensed programs
+:MENUI OPTION=11 ACTION='CMD QSLICPGM OPTION(11)'.Install licensed programs
+:MENUI OPTION=12 ACTION='CMD QSLICPGM OPTION(12)'.Delete licensed programs
+:MENUI OPTION=13 ACTION='CMD QSLICPGM OPTION(13)'.Save licensed programs
+:EMENUGRP.
+:MENUGRP.Secondary Languages
+:MENUI OPTION=20 ACTION='CMD QSLICPGM OPTION(20)'.Display secondary languages
+:MENUI OPTION=21 ACTION='CMD QSLICPGM OPTION(21)'.Install secondary languages
+:MENUI OPTION=22 ACTION='CMD QSLICPGM OPTION(22)'.Delete secondary languages
+:EMENUGRP.
+:MENUGRP.Completion Status
+:MENUI OPTION=50 ACTION='CMD DSPLOG'.Display log for messages
+:EMENUGRP.
+:MENUGRP.Related
+:MENUI OPTION=70 ACTION='MENU CMDLIC'.Licensed program commands
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPLICPGM.Work with Licensed Programs - Help
+:P.Install, display, delete and save the licensed programs, and their
+language features. An install shows each product's software agreement
+first; the product is installed once it is accepted.
+:EHELP.
+:EPNLGRP.

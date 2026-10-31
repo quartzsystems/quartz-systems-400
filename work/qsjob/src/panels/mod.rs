@@ -11,6 +11,7 @@
 
 pub mod certs;
 pub mod ifs;
+pub mod licpgm;
 pub mod objects;
 pub mod system;
 pub mod system2;
@@ -113,6 +114,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
     }
     // --- the certificate displays (certs.rs)
     if let Some(res) = certs::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
+    // --- the licensed program displays (licpgm.rs)
+    if let Some(res) = licpgm::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     // --- the IFS displays (ifs.rs)

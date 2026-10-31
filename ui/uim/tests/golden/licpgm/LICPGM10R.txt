@@ -1,0 +1,24 @@
+                      Display Installed Licensed Programs
+                                                             System:   QS400
+ Licensed  Installed  Product
+ Program    Release   Option
+
+ QS00SS1   V1R0M0     *BASE
+ QS00SS1   V1R0M0     30
+ QS00WDS   V1R0M0     31
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+ Press Enter to continue.
+
+ F3=Exit   F11=Display status   F12=Cancel   F19=Display trademarks
+

@@ -1,0 +1,24 @@
+                      Display Installed Licensed Programs
+                                                             System:   QS400
+ Licensed  Installed
+ Program   Status       Description
+
+ QS00SS1   *COMPATIBLE  Quartz Systems/400 Operating System
+ QS00SS1   *COMPATIBLE  Qshell
+ QS00WDS   *ERROR       ILE RPG compiler
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+ Press Enter to continue.
+
+ F3=Exit   F11=Display release   F12=Cancel   F19=Display trademarks
+

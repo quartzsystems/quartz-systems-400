@@ -216,6 +216,20 @@ note = "a panel only: no text form outside a display"
 site = "job"
 note = "a panel only: no text form outside a display"
 
+# --- licensed programs (panels/licpgm.rs)
+
+[cmd.QSLICPGM]
+site = "job"
+note = "GO LICPGM's panels: a panel only"
+
+[cmd.WRKSFWAGR]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKLICINF]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
 
 # --- panels batch 2: programs, config, security, editors (panels/system2.rs)
 
