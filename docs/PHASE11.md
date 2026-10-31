@@ -15,8 +15,10 @@ state. It grows with the phase.
 | Save format and engine | `SAVE_FORMAT.md` | `save/savfmt`, `save/saverst` |
 | Tape, optical, image catalogs | `MEDIA.md` | `media/tape`, `media/optical`, `media/imgclg` |
 | Licensed programs | `LICPGM.md` | `licpgm/licpgm`, `licpgm/lpstore`, `licpgm/lpbuild`, `lic/osobjects` |
-| PTFs | `PTF.md` | `ptf/ptf` |
-| Problem log, service tools | `SERVICE.md` | `service/prb` |
+| PTFs, the update service | `PTF.md`, `UPDATE_PROTOCOL.md` | `ptf/ptf`, `ptf/update` |
+| Problem log, service tools | `SERVICE.md` | `service/prb`, `devtools/sst` |
+| Media in the system | `MEDIA.md` | `media/medio` |
+| Console scaling, storage controllers | `CONSOLE.md`, `HARDWARE_NOTES.md` | `lic/console`, `lic/slic` |
 | Open questions | `SVC_OPEN_QUESTIONS.md` | |
 
 ## Oracles
@@ -54,13 +56,24 @@ were answered by hand during the capture, before every job got
 | `d69c3015`..`c861fa85` | licensed programs in the system, `lic/osobjects`, `build lp`, `GO LICPGM` |
 | `1a9442ce`..`88b7a10c` | optical, the hybrid install ISO, image catalogs, `/QOPT` |
 | `7ccb4096` | `OUTPUT(*OUTFILE)` in `QSRSAV` and `QSRRST` |
+| `62e9bb06`, `56924c4b` | the outfile layouts checked by the spec; the save and restore bench |
+| `b1473ab2`..`a44fa665` | the update service (protocol, client, reference server), `SNDPTFORD`, `QSCHKUPD`, `INSPTF`, `CPYPTF`, `WRKPTFGRP`, `QSCRTPTF`, trusted signers, LIC PTFs through the A/B slots, `CHGIPLA`/`DSPIPLA` |
+| `5095fbe9`..`012660c0` | no sign-on from the install media, the console scaler, SAS/RAID controllers and `DCnn`, scaled screendumps |
+| `48e99af1`..`30ce91bb` | `WRKPRB` options, `ANZPRB`, contact information, `GO SERVICE`, dumps, traces, the LIC log, STRSST completion, Define or Change the System at IPL, `RCLSTG` at IPL |
+| `94c25bbf` | the restore matrix: every `OPTION` x `MBROPT` x `ALWOBJDIF` |
+| `576e1bee`, `95cf2820`, `d5bb97d8` | the product directory states against the spec, the Phase 11 tripwire, the PTF bench |
+| `987700f7`..`bd9b2ea9` | media devices, image catalogs, saves and restores on virtual tape and optical, multi-volume tape |
 
 ## QEMU
 
 | Step | Proves |
 |---|---|
 | 71 | `CRTSAVF`, `SAVLIB` to a save file, a non-empty save file refused without `CLEAR`, `RSTLIB` to a new name, `SAVOBJ`/`RSTOBJ` of one object, `OUTPUT(*OUTFILE)` |
+| 72, 73 | the console scaled at 1920x1080 and 1024x768, screendump against the scaler's rendering |
+| 74 | problems from QSYSOPR messages, `WRKPRB`/`DSPPRB`, `DMPOBJ`, a system dump, `STRTRC`/`ENDTRC`/`PRTTRC`, the LIC log |
+| 75 | `INZTAP`, `SAVLIB`/`RSTLIB` on virtual tape across two volumes, `DSPTAP`; `INZOPT`, `DSPOPT`, `/QOPT` on virtual optical |
 | `--media iso`, `iso-raw`, `iso-fat` | the hybrid install image as a CD, written raw to a disk, and copied onto FAT32 |
+| `--media iso` 1, 4 | the media IPL without an installed system shows No Operating System Installed; with one, option 1 IPLs the disk |
 
 ## Deviations
 
