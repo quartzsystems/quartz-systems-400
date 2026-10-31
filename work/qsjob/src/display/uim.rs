@@ -19,7 +19,7 @@ use uim::render::{Attr, Field, Screen};
 
 use super::surface::Surface;
 
-pub use uim::engine::{CMDLINE_VAR, Choice, Response};
+pub use uim::engine::{CMDLINE_VAR, Choice, LineMsg, Response};
 
 /// The dialog of one panel group.
 pub type UimDialog = uim::engine::Engine;
@@ -121,8 +121,16 @@ impl Terminal for Surface {
         crate::command::uiapi::search_index(self.host(), lib, name)
     }
 
-    fn print(&mut self, title: &str, rows: &[String]) -> Result<String, String> {
+    fn print(&mut self, title: &str, rows: &[String]) -> Result<LineMsg, LineMsg> {
         crate::command::uiapi::print_rows(self.host(), title, rows)
+    }
+
+    fn message_text(&mut self, m: &LineMsg) -> Option<String> {
+        Some(super::msgline::text_of(self.host(), m))
+    }
+
+    fn message_help(&mut self, m: &LineMsg) -> bool {
+        super::msgline::help(self, m)
     }
 }
 

@@ -198,9 +198,9 @@ impl Terminal for Script {
         })
     }
 
-    fn print(&mut self, _title: &str, rows: &[String]) -> Result<String, String> {
+    fn print(&mut self, _title: &str, rows: &[String]) -> Result<LineMsg, LineMsg> {
         self.printed.push(rows.to_vec());
-        Ok("Printed.".into())
+        Ok(LineMsg::info(super::msgid::PRINTED, &[]))
     }
 }
 
@@ -459,7 +459,8 @@ fn print_about_and_popups() {
     assert_eq!(d.show(&mut t, "WRK").unwrap(), Response::Exit);
     assert_eq!(t.printed.len(), 1);
     assert!(t.printed[0][0].contains("Work with Things"));
-    assert!(t.rows(1)[23].contains("Printed."));
+    // No message file here: the identifier shows.
+    assert!(t.rows(1)[23].contains(super::msgid::PRINTED));
     assert!(t.rows(2).iter().any(|r| r.contains("About")));
     // A pop-up panel over the list.
     let mut t = Script::default();

@@ -14,7 +14,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 use sysapi::uiapi::{SharedUimHost, UimHost};
-use uim::engine::{IndexEntry, Terminal};
+use uim::engine::{IndexEntry, LineMsg, Terminal};
 
 use super::{Fail, parms_of};
 use crate::console::host::Host;
@@ -77,12 +77,12 @@ pub fn search_index(host: &Host, lib: &str, name: &str) -> Option<Vec<IndexEntry
 
 /// Rows printed into a new spooled file of `QSYSPRT`: the message the
 /// display shows.
-pub fn print_rows(host: &Host, _title: &str, rows: &[String]) -> Result<String, String> {
+pub fn print_rows(host: &Host, _title: &str, rows: &[String]) -> Result<LineMsg, LineMsg> {
     use mi::io::spool::{PrinterState, SpoolSink};
     let mut sink = stg::remote::spool::RemoteSpool::new(host.link.clone());
     let open = sink
         .open("QSYSPRT", "*LIBL", "*DFTACTGRP")
-        .map_err(|e| format!("{} ended the print.", e.msgid))?;
+        .map_err(|e| LineMsg::error(&e.msgid, &[]))?;
     let mut p = PrinterState::new(open);
     for line in rows {
         let rec: Vec<u8> = line
@@ -90,11 +90,11 @@ pub fn print_rows(host: &Host, _title: &str, rows: &[String]) -> Result<String, 
             .map(|c| ccsid::byte_of(c).unwrap_or(0x40))
             .collect();
         p.write(&mut sink, "", &rec)
-            .map_err(|e| format!("{} ended the print.", e.msgid))?;
+            .map_err(|e| LineMsg::error(&e.msgid, &[]))?;
     }
     p.close(&mut sink)
-        .map_err(|e| format!("{} ended the print.", e.msgid))?;
-    Ok("Display printed to QSYSPRT.".into())
+        .map_err(|e| LineMsg::error(&e.msgid, &[]))?;
+    Ok(LineMsg::info(uim::engine::msgid::PRINTED, &[]))
 }
 
 /// `CRTSCHIDX` and `ADDSCHIDXE`.

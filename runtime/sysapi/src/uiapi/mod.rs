@@ -22,7 +22,7 @@ use std::rc::Rc;
 
 use mi::Job;
 use uim::PanelGroup;
-use uim::engine::{Engine, IndexEntry, Input, Terminal};
+use uim::engine::{Engine, IndexEntry, Input, LineMsg, Terminal, msgid};
 use uim::render::Screen;
 
 use crate::param::{Args, ErrCode};
@@ -243,11 +243,20 @@ impl Terminal for ApiTerm<'_> {
         self.inner.search_index(lib, name)
     }
 
-    fn print(&mut self, _title: &str, rows: &[String]) -> Result<String, String> {
+    fn print(&mut self, _title: &str, rows: &[String]) -> Result<LineMsg, LineMsg> {
         self.job
             .spool_text("QSYSPRT", &rows.join("\n"))
-            .map(|_| "Display printed to QSYSPRT.".to_string())
-            .map_err(|e| format!("{} ended the print.", e.msgid))
+            .map(|_| LineMsg::info(msgid::PRINTED, &[]))
+            .map_err(|e| LineMsg::error(&e.msgid, &[]))
+    }
+
+    fn message_text(&mut self, m: &LineMsg) -> Option<String> {
+        let d = self.job.msgs.describe(&m.id, crate::param::file_of(&m.id), "*LIBL")?;
+        Some(d.format(&d.data_of(&m.data)))
+    }
+
+    fn message_help(&mut self, m: &LineMsg) -> bool {
+        self.inner.message_help(m)
     }
 }
 

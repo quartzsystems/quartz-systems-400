@@ -10,7 +10,7 @@
 //! `QUIPRTP` prints, `QUIDSPH`, `QUHDSPH` and `QUHPRTH` are help.
 
 use mi::Job;
-use uim::engine::{Event, Response};
+use uim::engine::{Event, LineMsg, Response, msgid};
 use uim::model::Action;
 
 use super::{ApiTerm, App, Kind, SharedUimHost, fail, put, take, with_app};
@@ -47,9 +47,16 @@ fn run_command(j: &mut Job, text: &str) -> Result<(), ApiFail> {
     }
 }
 
-/// The message a failed command leaves on the next display.
-fn failed(e: &ApiFail) -> (String, bool) {
-    (format!("{} ended the command.", e.msgid), true)
+/// The message a failed command leaves on the next display: its own,
+/// the data rendered as the description's variables.
+fn failed(j: &mut Job, e: &ApiFail) -> LineMsg {
+    let data = j
+        .msgs
+        .describe(&e.msgid, crate::param::file_of(&e.msgid), "*LIBL")
+        .map(|d| d.render_vars(&e.data))
+        .unwrap_or_default();
+    let data: Vec<&str> = data.iter().map(String::as_str).collect();
+    LineMsg::error(&e.msgid, &data)
 }
 
 /// `QUIDSPP(handle, function requested out, panel, redisplay option,
@@ -114,21 +121,16 @@ fn dialog(j: &mut Job, host: &SharedUimHost, app: &mut App, panel: &str) -> Resu
             Response::Panel(p) => current = p,
             Response::Command(c) => {
                 if let Err(e) = run_command(j, &c) {
-                    app.engine.message = Some(failed(&e));
+                    app.engine.send(failed(j, &e));
                 }
             }
             Response::Menu(m) => {
                 if let Err(e) = run_command(j, &format!("GO MENU({m})")) {
-                    app.engine.message = Some(failed(&e));
+                    app.engine.send(failed(j, &e));
                 }
             }
-            Response::Retrieve => {
-                app.engine.message = Some(("There is no command to retrieve.".into(), true));
-            }
-            Response::Print => {
-                app.engine.message =
-                    Some(("Printing is not available for this display.".into(), true));
-            }
+            Response::Retrieve => app.engine.error(msgid::NO_RETRIEVE, &[]),
+            Response::Print => app.engine.error(msgid::NO_PRINT, &[]),
             Response::Options(choices) => {
                 let mut ret = None;
                 for c in &choices {
@@ -136,7 +138,7 @@ fn dialog(j: &mut Job, host: &SharedUimHost, app: &mut App, panel: &str) -> Resu
                         Some(Action::Cmd(text)) => {
                             let cmd = app.engine.substitute(text, Some((&c.list, c.row)));
                             if let Err(e) = run_command(j, &cmd) {
-                                app.engine.message = Some(failed(&e));
+                                app.engine.send(failed(j, &e));
                             }
                             app.engine.list_mut(&c.list).options.remove(&c.row);
                         }

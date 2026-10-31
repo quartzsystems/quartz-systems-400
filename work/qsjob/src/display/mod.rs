@@ -8,6 +8,7 @@
 //! Display files (`dds`) and UIM (`uim`) write through the model.
 
 pub mod dds;
+pub mod msgline;
 pub mod surface;
 pub mod uim;
 

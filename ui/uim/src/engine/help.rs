@@ -10,7 +10,7 @@
 use std::collections::BTreeSet;
 use std::rc::Rc;
 
-use super::{Engine, IndexEntry, Terminal};
+use super::{Engine, IndexEntry, LineMsg, Terminal, msgid};
 use crate::model::{Area, DataNode, Document, Key, ListColNode, Panel, PanelGroup, Span};
 use crate::render::{HelpPart, HelpView, HelpWindow, Screen, help_lines, help_title, render_view};
 
@@ -37,7 +37,7 @@ struct Frame {
 const SEARCH_GROUP: &str = "QUHSCHIDX";
 
 /// The message when nothing has help.
-const NO_HELP: &str = "No help is available for this display.";
+const NO_HELP: &str = msgid::NO_HELP;
 
 impl Engine {
     /// A help module by name: this group's, an import's, or a qualified
@@ -85,14 +85,14 @@ impl Engine {
         under: &Screen,
     ) -> Option<()> {
         let Some(module) = module else {
-            self.message = Some((NO_HELP.into(), true));
+            self.error(NO_HELP, &[]);
             return Some(());
         };
         if self.cursor.0 == 1 || panel.help.as_deref() == Some(module.as_str()) {
             return self.extended_help(term, panel);
         }
         let Some(part) = self.resolve(term, &module) else {
-            self.message = Some((NO_HELP.into(), true));
+            self.error(NO_HELP, &[]);
             return Some(());
         };
         let frame = Frame {
@@ -173,7 +173,7 @@ impl Engine {
         let names = extended_modules(&self.group, panel);
         let parts: Vec<Part> = names.iter().filter_map(|n| self.resolve(term, n)).collect();
         if parts.is_empty() {
-            self.message = Some((NO_HELP.into(), true));
+            self.error(NO_HELP, &[]);
             return Some(());
         }
         let title = panel
@@ -230,7 +230,7 @@ impl Engine {
     ) -> Option<()> {
         let mut stack = vec![first];
         let mut more_keys = false;
-        let mut message: Option<(String, bool)> = None;
+        let mut message: Option<LineMsg> = None;
         while let Some(frame) = stack.last_mut() {
             let wide = term.wide();
             let (rows, cols) = if wide { (27, 132) } else { (24, 80) };
@@ -251,7 +251,12 @@ impl Engine {
                 })
                 .collect();
             let mut opts = self.options(wide);
-            opts.message = message.take();
+            opts.message = message
+                .take()
+                .map(|m| {
+                    let text = m.text.clone().or_else(|| term.message_text(&m));
+                    (text.unwrap_or_else(|| m.fallback()), m.error)
+                });
             let screen = render_view(&parts, &view, &opts, rows, cols, Some(under));
             let input = term.exchange(&screen)?;
             let Some(key) = input.key else {
@@ -292,28 +297,28 @@ impl Engine {
                 Key::F(10) => frame.page = 0,
                 Key::PageDown => {
                     if at_bottom {
-                        message = Some(("Already at the bottom of the help.".into(), true));
+                        message = Some(LineMsg::error(msgid::AT_BOTTOM, &[]));
                     } else {
                         frame.page += 1;
                     }
                 }
                 Key::PageUp => {
                     if frame.page == 0 {
-                        message = Some(("Already at the top of the help.".into(), true));
+                        message = Some(LineMsg::error(msgid::AT_TOP, &[]));
                     } else {
                         frame.page -= 1;
                     }
                 }
                 Key::F(2) if !frame.extended => {
                     let Some(panel) = panel else {
-                        message = Some((NO_HELP.into(), true));
+                        message = Some(LineMsg::error(NO_HELP, &[]));
                         continue;
                     };
                     let names = extended_modules(&self.group, panel);
                     let parts: Vec<Part> =
                         names.iter().filter_map(|n| self.resolve(term, n)).collect();
                     if parts.is_empty() {
-                        message = Some((NO_HELP.into(), true));
+                        message = Some(LineMsg::error(NO_HELP, &[]));
                     } else {
                         let title = panel
                             .helptitle
@@ -335,19 +340,17 @@ impl Engine {
                 }
                 Key::F(13) => {
                     if !self.assistant(term)? {
-                        message =
-                            Some(("The Information Assistant is not available.".into(), true));
+                        message = Some(LineMsg::error(msgid::NO_ASSISTANT, &[]));
                     }
                 }
                 Key::F(14) => {
                     let mut lines = vec![frame.title.clone(), String::new()];
                     lines.extend(help_lines(&parts, &opts, cols));
                     message = Some(match term.print(&frame.title, &lines) {
-                        Ok(m) => (m, false),
-                        Err(e) => (e, true),
+                        Ok(m) | Err(m) => m,
                     });
                 }
-                _ => message = Some(("Function key not allowed.".into(), true)),
+                _ => message = Some(LineMsg::error(msgid::FKEY_NOT_ALLOWED, &[])),
             }
         }
         Some(())
@@ -378,7 +381,7 @@ impl Engine {
         let name = self.group.schidx.clone().unwrap_or_default();
         let (lib, idx) = split_qualified(&name);
         let Some(entries) = term.search_index(&lib, &idx) else {
-            self.message = Some((format!("Search index {idx} was not found."), true));
+            self.error("CPF9801", &[&idx, &lib]);
             return Some(());
         };
         let Some(g) = search_group() else {

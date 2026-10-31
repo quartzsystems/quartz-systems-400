@@ -8,7 +8,7 @@
 use std::collections::BTreeSet;
 use std::rc::Rc;
 
-use super::{CMDLINE_VAR, Choice, Engine, EngineError, Response, Terminal};
+use super::{CMDLINE_VAR, Choice, Engine, EngineError, Response, Terminal, msgid};
 use crate::model::{Action, Area, DataNode, Key, KeyItem, ListArea, MenuOption, Panel};
 use crate::render::{Field, Screen, Target};
 
@@ -23,7 +23,7 @@ pub enum Event {
 }
 
 /// The message for options no `:LISTACT.` has.
-pub const OPTION_NOT_VALID: &str = "Option not valid for this list.";
+pub const OPTION_NOT_VALID: &str = msgid::OPTION_NOT_VALID;
 
 impl Engine {
     /// Show a panel and take the operator's answer.
@@ -54,6 +54,7 @@ impl Engine {
         loop {
             self.subsets(panel);
             let wide = term.wide();
+            self.resolve_message(term);
             let screen = self.screen(panel_name, wide)?;
             let Some(input) = term.exchange(&screen) else {
                 return Ok(Event::Response(Response::Gone));
@@ -81,7 +82,7 @@ impl Engine {
                 continue;
             };
             let Some(action) = self.action_of(panel, key) else {
-                self.message = Some(("Function key not allowed.".into(), true));
+                self.error(msgid::FKEY_NOT_ALLOWED, &[]);
                 continue;
             };
             let action = if action == Action::Enter {
@@ -158,7 +159,7 @@ impl Engine {
                         .map(|r| r.trim_end().to_string())
                         .collect::<Vec<_>>();
                     match term.print(title.trim(), &rows) {
-                        Ok(m) => self.message = Some((m, false)),
+                        Ok(m) => self.send(m),
                         Err(_) => return Ok(Event::Response(Response::Print)),
                     }
                 }
@@ -181,6 +182,9 @@ impl Engine {
                     self.key_set += 1;
                 }
                 Action::Help | Action::FldHelp => {
+                    if self.message_help(term, &screen) {
+                        continue;
+                    }
                     let module = help_at(&screen, self.cursor).or_else(|| panel.help.clone());
                     if self.contextual_help(term, panel, module, &screen).is_none() {
                         return Ok(Event::Response(Response::Gone));
@@ -225,10 +229,16 @@ impl Engine {
     }
 
     fn not_available(&mut self) {
-        self.message = Some((
-            "That function is not available in this release.".into(),
-            true,
-        ));
+        self.error(msgid::NOT_AVAILABLE, &[]);
+    }
+
+    /// Help with the cursor on the message line: the shown message's
+    /// help. False when there is none to show.
+    fn message_help<T: Terminal + ?Sized>(&mut self, term: &mut T, screen: &Screen) -> bool {
+        match self.shown.clone() {
+            Some(m) if self.cursor.0 == screen.rows && !m.id.is_empty() => term.message_help(&m),
+            _ => false,
+        }
     }
 
     /// Render a panel: a pop-up panel over the screen shown before it.
@@ -406,7 +416,7 @@ impl Engine {
             }
         }
         if !ok {
-            self.message = Some((OPTION_NOT_VALID.into(), true));
+            self.error(OPTION_NOT_VALID, &[]);
         }
         ok
     }
@@ -461,6 +471,7 @@ impl Engine {
             .panel(name)
             .ok_or_else(|| crate::RenderError::NoPanel(name.to_string()))?;
         loop {
+            self.resolve_message(term);
             let screen = self.screen(name, term.wide())?;
             let Some(input) = term.exchange(&screen) else {
                 return Ok(Response::Gone);
@@ -495,13 +506,16 @@ impl Engine {
                     self.page(panel, &screen, false);
                 }
                 Some(Action::Help | Action::FldHelp | Action::ExtHelp) => {
+                    if self.message_help(term, &screen) {
+                        continue;
+                    }
                     let module = help_at(&screen, self.cursor).or_else(|| panel.help.clone());
                     if self.contextual_help(term, panel, module, &screen).is_none() {
                         return Ok(Response::Gone);
                     }
                 }
                 Some(_) => self.not_available(),
-                None => self.message = Some(("Function key not allowed.".into(), true)),
+                None => self.error(msgid::FKEY_NOT_ALLOWED, &[]),
             }
         }
     }
@@ -584,7 +598,7 @@ impl Engine {
                 list.top = pos;
             } else {
                 list.top = visible.len().saturating_sub(1);
-                self.message = Some((format!("No entry at or after {want}."), true));
+                self.error(msgid::NO_ENTRY_AT, &[&want]);
             }
         }
         any
@@ -604,6 +618,7 @@ impl Engine {
             .panel(name)
             .ok_or_else(|| crate::RenderError::NoPanel(name.to_string()))?;
         loop {
+            self.resolve_message(term);
             let screen = self.screen(name, term.wide())?;
             let Some(input) = term.exchange(&screen) else {
                 return Ok(Some(Response::Gone));
@@ -633,13 +648,16 @@ impl Engine {
                 Some(Action::Cancel) => return Ok(None),
                 Some(Action::Exit) => return Ok(Some(Response::Exit)),
                 Some(Action::Help | Action::FldHelp | Action::ExtHelp) => {
+                    if self.message_help(term, &screen) {
+                        continue;
+                    }
                     let module = help_at(&screen, self.cursor).or_else(|| panel.help.clone());
                     if self.contextual_help(term, panel, module, &screen).is_none() {
                         return Ok(Some(Response::Gone));
                     }
                 }
                 Some(_) => self.not_available(),
-                None => self.message = Some(("Function key not allowed.".into(), true)),
+                None => self.error(msgid::FKEY_NOT_ALLOWED, &[]),
             }
         }
     }
@@ -666,7 +684,7 @@ impl Engine {
             .into_iter()
             .find(|i| matches!(i.option, MenuOption::Number(k) if k == n));
         let Some(i) = item else {
-            self.message = Some((format!("Selection {n} is not valid."), true));
+            self.error(msgid::SELECTION_NOT_VALID, &[]);
             return None;
         };
         Some(match &i.action {
@@ -736,15 +754,7 @@ impl Engine {
             }
         }
         if !moved {
-            self.message = Some((
-                if down {
-                    "Already at the bottom of the area."
-                } else {
-                    "Already at the top of the area."
-                }
-                .into(),
-                true,
-            ));
+            self.error(if down { msgid::AT_BOTTOM } else { msgid::AT_TOP }, &[]);
         }
         None
     }

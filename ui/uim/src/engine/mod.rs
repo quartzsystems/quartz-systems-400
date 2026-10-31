@@ -11,6 +11,7 @@
 //! `docs/UIM.md` §8 describes it.
 
 mod help;
+pub mod msgid;
 mod show;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -269,13 +270,76 @@ pub trait Terminal {
         None
     }
     /// Print rows to `QSYSPRT`: the message to show, or why not.
-    fn print(&mut self, _title: &str, _rows: &[String]) -> Result<String, String> {
-        Err(PRINT_UNAVAILABLE.to_string())
+    fn print(&mut self, _title: &str, _rows: &[String]) -> Result<LineMsg, LineMsg> {
+        Err(LineMsg::error(PRINT_UNAVAILABLE, &[]))
+    }
+    /// A message's first-level text with its data, from the job's
+    /// message files; `None` when none describes it.
+    fn message_text(&mut self, _m: &LineMsg) -> Option<String> {
+        None
+    }
+    /// Show a message's second-level text (Additional Message
+    /// Information); false when the terminal cannot.
+    fn message_help(&mut self, _m: &LineMsg) -> bool {
+        false
+    }
+}
+
+/// A message for the message line by its identifier: the terminal
+/// gives its text from the message file, and its help when Help is
+/// pressed on it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LineMsg {
+    /// The identifier, `CPF9801`.
+    pub id: String,
+    /// The replacement values, `&1` first.
+    pub data: Vec<String>,
+    /// Shown as an error.
+    pub error: bool,
+    /// The first-level text as its sender already worded it (a
+    /// command's message); `None` takes the message file's.
+    pub text: Option<String>,
+}
+
+impl LineMsg {
+    /// An error message.
+    #[must_use]
+    pub fn error(id: &str, data: &[&str]) -> Self {
+        Self {
+            id: id.to_string(),
+            data: data.iter().map(ToString::to_string).collect(),
+            error: true,
+            text: None,
+        }
+    }
+
+    /// An informational message.
+    #[must_use]
+    pub fn info(id: &str, data: &[&str]) -> Self {
+        Self {
+            error: false,
+            ..Self::error(id, data)
+        }
+    }
+
+    /// The text when no message file is at hand: the sender's, else
+    /// the identifier and the values.
+    #[must_use]
+    pub fn fallback(&self) -> String {
+        if let Some(t) = &self.text {
+            return t.clone();
+        }
+        let mut s = self.id.clone();
+        for d in &self.data {
+            s.push(' ');
+            s.push_str(d.trim());
+        }
+        s
     }
 }
 
 /// The message when the terminal cannot print.
-pub const PRINT_UNAVAILABLE: &str = "Printing is not available for this display.";
+pub const PRINT_UNAVAILABLE: &str = msgid::NO_PRINT;
 
 /// The command line's value when `:CMDLINE.` names no variable.
 pub const CMDLINE_VAR: &str = "*CMDLINE";
@@ -297,8 +361,13 @@ pub struct Engine {
     /// How many times `F24` was pressed: the key set that shows, for a
     /// key list with more than two.
     pub key_set: usize,
-    /// The message for the message line, and whether it is an error.
+    /// The message line's text and whether it is an error, as the next
+    /// show draws it; set it with [`Engine::error`] or [`Engine::info`].
     pub message: Option<(String, bool)>,
+    /// The message by identifier waiting for the next show.
+    pub(crate) pending: Option<LineMsg>,
+    /// The message the screen showing now carries, for Help on it.
+    pub(crate) shown: Option<LineMsg>,
     /// The system name for `TOPSEP=SYSNAM`.
     pub system: String,
     /// Show the group's copyright on the message line when no message.
@@ -381,6 +450,8 @@ impl Engine {
             more_keys: false,
             key_set: 0,
             message: None,
+            pending: None,
+            shown: None,
             system: system.to_string(),
             copyright: false,
             cursor: (1, 1),
@@ -389,6 +460,55 @@ impl Engine {
             cursor_field: None,
             under: None,
             redisplay: false,
+        }
+    }
+
+    /// Put a message on the message line by identifier.
+    pub fn send(&mut self, m: LineMsg) {
+        self.message = Some((m.fallback(), m.error));
+        self.pending = Some(m);
+    }
+
+    /// An error message for the message line: `id` in the message
+    /// file, `data` its values.
+    pub fn error(&mut self, id: &str, data: &[&str]) {
+        self.send(LineMsg::error(id, data));
+    }
+
+    /// An informational message for the message line.
+    pub fn info(&mut self, id: &str, data: &[&str]) {
+        self.send(LineMsg::info(id, data));
+    }
+
+    /// The message by identifier waiting for the next show.
+    #[must_use]
+    pub fn line_msg(&self) -> Option<&LineMsg> {
+        self.pending.as_ref()
+    }
+
+    /// The message for the next show, or none.
+    pub fn set_message(&mut self, m: Option<LineMsg>) {
+        match m {
+            Some(m) => self.send(m),
+            None => self.clear_message(),
+        }
+    }
+
+    /// No message on the next show.
+    pub fn clear_message(&mut self) {
+        self.message = None;
+        self.pending = None;
+    }
+
+    /// The waiting message's text from the terminal, before a show;
+    /// it becomes the shown one.
+    pub(crate) fn resolve_message<T: Terminal + ?Sized>(&mut self, term: &mut T) {
+        self.shown = self.pending.take();
+        if let Some(m) = &self.shown
+            && m.text.is_none()
+            && let Some(text) = term.message_text(m)
+        {
+            self.message = Some((text, m.error));
         }
     }
 
