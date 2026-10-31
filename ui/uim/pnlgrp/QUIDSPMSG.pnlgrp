@@ -1,5 +1,8 @@
-.* DSPMSG and WRKMSG: a message queue's messages, and the
-.* Additional Message Information panel shown for one of them.
+.* DSPMSG and WRKMSG: a message queue's messages at the intermediate
+.* assistance level (Display Messages, a reply field under each
+.* inquiry that waits) and at the basic level (Work with Messages,
+.* the inquiries that wait apart from the rest), and the Additional
+.* Message Information panels shown for one message.
 :PNLGRP.
 :COPYR.(C) Quartz Systems 2026
 :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
@@ -8,13 +11,19 @@
 :ECLASS.
 :CLASS NAME=LINECL BASETYPE='CHAR 77'.
 :ECLASS.
+:CLASS NAME=WLINECL BASETYPE='CHAR 72'.
+:ECLASS.
 :CLASS NAME=TYPECL BASETYPE='CHAR 13'.
 :ECLASS.
 :CLASS NAME=DATECL BASETYPE='CHAR 8'.
 :ECLASS.
 :CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
 :ECLASS.
-:CLASS NAME=RPYCL BASETYPE='CHAR 76'.
+:CLASS NAME=RPYCL BASETYPE='CHAR 60'.
+:ECLASS.
+:CLASS NAME=LRPYCL BASETYPE='CHAR 61'.
+:ECLASS.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
 :ECLASS.
 :VAR NAME=SYSNM CLASS=NAMECL.
 :VAR NAME=MSGQ CLASS=NAMECL.
@@ -23,33 +32,79 @@
 :VAR NAME=PGMLIB CLASS=NAMECL.
 :VAR NAME=SEV CLASS=SEVCL VALUE='00'.
 :VAR NAME=DLVRY CLASS=NAMECL.
-:VAR NAME=MORE CLASS=FLAGCL VALUE='N'.
+:VAR NAME=KSET CLASS=FLAGCL VALUE='0'.
 :VAR NAME=LINE CLASS=LINECL.
+:VAR NAME=RPY CLASS=LRPYCL.
+:VAR NAME=RPYOK CLASS=FLAGCL.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=FIRST CLASS=FLAGCL.
+:VAR NAME=WLINE CLASS=WLINECL.
+:VAR NAME=WHEAD CLASS=WLINECL.
 :VAR NAME=FROMUSR CLASS=NAMECL.
 :VAR NAME=MSGSEV CLASS=SEVCL.
 :VAR NAME=MSGTYPE CLASS=TYPECL.
 :VAR NAME=SNTDATE CLASS=DATECL.
 :VAR NAME=SNTTIME CLASS=DATECL.
 :VAR NAME=REPLY CLASS=RPYCL.
-:LISTDEF NAME=MSGS VARS='LINE'.
+:LISTDEF NAME=MSGS VARS='LINE RPY RPYOK'.
+:LISTDEF NAME=WMSGS VARS='OPT FIRST WLINE WHEAD'.
 :LISTDEF NAME=INFO VARS='LINE'.
-:COND NAME=FIRSTSET EXPR='&MORE. EQ "N"'.
-:COND NAME=OTHERSET EXPR='&MORE. EQ "Y"'.
+:COND NAME=SET0 EXPR='&KSET. EQ "0"'.
+:COND NAME=SET1 EXPR='&KSET. EQ "1"'.
 .* The key rows are laid out at fixed columns, as the display shows
 .* them: one item carries each row's text, the others act unseen.
 :KEYL NAME=MSGKEYS HELP=KEYSHLP.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION='RETURN 1'.
 :KEYI KEY=F1 ACTION='RETURN 1'.
-:KEYI KEY=F3 ACTION=EXIT.F3=Exit              F11=Remove a message                 F12=Cancel
-:KEYI KEY=F5 ACTION='RETURN 5' COND=OTHERSET.F5=Refresh           F17=Top             F18=Bottom          F24=More keys
+:KEYI KEY=F3 ACTION=EXIT COND=SET0.F3=Exit              F11=Remove a message                 F12=Cancel
+:KEYI KEY=F3 ACTION=EXIT COND=SET1.F10=Display all            F21=Select assistance level
+:KEYI KEY=F5 ACTION='RETURN 5'.
+:KEYI KEY=F10 ACTION='RETURN 10'.
 :KEYI KEY=F11 ACTION='RETURN 11'.
 :KEYI KEY=F12 ACTION=CANCEL.
-:KEYI KEY=F13 ACTION='RETURN 13' COND=FIRSTSET.F13=Remove all       F16=Remove all except unanswered     F24=More keys
+:KEYI KEY=F13 ACTION='RETURN 13' COND=SET0.F13=Remove all       F16=Remove all except unanswered     F24=More keys
+:KEYI KEY=F13 ACTION='RETURN 13' COND=SET1.F22=Display list details   F24=More keys
 :KEYI KEY=F16 ACTION='RETURN 16'.
 :KEYI KEY=F17 ACTION=TOP.
 :KEYI KEY=F18 ACTION=BOTTOM.
+:KEYI KEY=F21 ACTION='RETURN 21'.
+:KEYI KEY=F22 ACTION='RETURN 22'.
 :KEYI KEY=F24 ACTION='RETURN 24'.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=WRKKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP COND=SET0.F1=Help   F3=Exit   F5=Refresh   F6=Display system operator messages
+:KEYI KEY=F1 ACTION=HELP COND=SET1.F12=Cancel   F18=Bottom    F21=Select assistance level
+:KEYI KEY=F3 ACTION=EXIT.
+:KEYI KEY=F5 ACTION='RETURN 5'.
+:KEYI KEY=F6 ACTION='RETURN 6'.
+:KEYI KEY=F12 ACTION=CANCEL.
+:KEYI KEY=F16 ACTION='RETURN 16' COND=SET0.F16=Remove messages not needing a reply   F17=Top   F24=More keys
+:KEYI KEY=F16 ACTION='RETURN 16' COND=SET1.F22=Display list details   F24=More keys
+:KEYI KEY=F17 ACTION=TOP.
+:KEYI KEY=F18 ACTION=BOTTOM.
+:KEYI KEY=F21 ACTION='RETURN 21'.
+:KEYI KEY=F22 ACTION='RETURN 22'.
+:KEYI KEY=F24 ACTION='RETURN 24'.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=OPRKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help   F3=Exit      F5=Refresh   F6=Display your messages   F12=Cancel
+:KEYI KEY=F3 ACTION=EXIT.
+:KEYI KEY=F5 ACTION='RETURN 5'.
+:KEYI KEY=F6 ACTION='RETURN 6'.
+:KEYI KEY=F12 ACTION=CANCEL.
+:KEYI KEY=F17 ACTION=TOP.F17=Top   F18=Bottom   F22=Display list details
+:KEYI KEY=F18 ACTION=BOTTOM.
+:KEYI KEY=F21 ACTION='RETURN 21'.
+:KEYI KEY=F22 ACTION='RETURN 22'.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
@@ -89,6 +144,34 @@
 :TOPINST.Type reply (if required), press Enter.
 :LIST DEPTH='*' LISTDEF=MSGS SCROLL=YES.
 :LISTCOL VAR=LINE USAGE=OUTPUT.
+:LISTCOL VAR=RPY USAGE=INOUT ATCOL=20 IFVAR=RPYOK.
+:ELIST.
+:EPANEL.
+:PANEL NAME=WRKMSG KEYL=WRKKEYS HELP=WRKMSGH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with Messages
+:DATA DEPTH=2.
+:DATACOL WIDTH=78.
+:DATAC.Messages for:   &MSGQ.
+:EDATA.
+:TOPINST.Type options below, then press Enter.
+:LIST DEPTH='*' LISTDEF=WMSGS SCROLL=YES ACTLEN=1 HELP=WRKOPTH.
+:LISTACT OPTION=4 ENTER='RETURN 4' HELP=WRKOPTH.4=Remove
+:LISTACT OPTION=5 ENTER='RETURN 5' HELP=WRKOPTH.5=Display details and reply
+:LISTCOL VAR=OPT USAGE=INPUT IFVAR=FIRST.Opt
+:LISTCOL VAR=WLINE USAGE=OUTPUT ATCOL=8.Message
+:LISTCOL VAR=WHEAD USAGE=OUTPUT ATCOL=8 HILITE.
+:ELIST.
+:EPANEL.
+:PANEL NAME=WRKOPR KEYL=OPRKEYS HELP=WRKMSGH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with Messages
+:DATA DEPTH=2.
+:DATACOL WIDTH=78.
+:DATAC.Messages for:   &MSGQ.
+:EDATA.
+:TOPINST.Type options below, then press Enter.
+:LIST DEPTH='*' LISTDEF=WMSGS SCROLL=YES ACTLEN=1 HELP=WRKOPTH.
+:LISTACT OPTION=5 ENTER='RETURN 5' HELP=WRKOPTH.5=Display details and reply
+:LISTCOL VAR=OPT USAGE=INPUT IFVAR=FIRST.Opt
+:LISTCOL VAR=WLINE USAGE=OUTPUT ATCOL=8.Message
+:LISTCOL VAR=WHEAD USAGE=OUTPUT ATCOL=8 HILITE.
 :ELIST.
 :EPANEL.
 :PANEL NAME=ADDMSGI KEYL=INFOKEYS HELP=ADDMSGH ENTER='RETURN 0' TOPSEP=SPACE.Additional Message Information
@@ -121,17 +204,55 @@
 :LIST DEPTH='*' LISTDEF=INFO SCROLL=YES.
 :LISTCOL VAR=LINE USAGE=OUTPUT.
 :ELIST.
-:TOPINST.Type the reply below, then press Enter.
+:TOPINST.Type reply below, then press Enter.
 :DATA DEPTH=1.
+:DATACOL WIDTH=14.
+:DATACOL WIDTH=78.
 :DATAI VAR=REPLY USAGE=INPUT CSRLOC.Reply
 :EDATA.
 :EPANEL.
+:PANEL NAME=ADDMSGA KEYL=INFOKEYS HELP=ADDMSGH ENTER='RETURN 0' TOPSEP=SPACE.Additional Message Information
+:DATA DEPTH=4.
+:DATACOL WIDTH=41.
+:DATAI VAR=FROMUSR USAGE=OUTPUT.From
+:DATAI VAR=MSGTYPE USAGE=OUTPUT.Message type
+:DATAI VAR=SNTDATE USAGE=OUTPUT.Date sent
+:DATACOL WIDTH=37.
+:DATAC.Severity . . . . . . . :   &MSGSEV.
+:DATAC.
+:DATAC.Time sent  . . . . . . :   &SNTTIME.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=INFO SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:DATA DEPTH=1.
+:DATACOL WIDTH=14.
+:DATACOL WIDTH=78.
+:DATAI VAR=REPLY USAGE=OUTPUT.Reply
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
 :HELP NAME=DSPMSGH.Display Messages - Help
-:P.The messages on a message queue, oldest first. An inquiry
-waits for its reply: place the cursor on it and press F1 to see
-the whole message and type the reply.
+:P.The messages on a message queue, oldest first. An inquiry that
+waits has a reply field under it: type the reply there and press
+Enter. F1 on a message shows the whole of it.
 :P.F11 removes the message under the cursor, F13 every message, F16
-every message but the inquiries that still wait for a reply.
+every message but the inquiries that still wait for a reply. F21
+switches to the basic assistance level.
+:EHELP.
+:HELP NAME=WRKMSGH.Work with Messages - Help
+:P.The messages on a message queue, newest first: the inquiries that
+wait for a reply, then the rest. Type 5 by one to see all of it and
+answer it, 4 to remove it.
+:P.F6 shows the system operator's messages, F16 removes every message
+that does not need a reply, F21 switches to the intermediate
+assistance level.
+:EHELP.
+:HELP NAME=WRKOPTH.Options - Help
+:P.Type an option by a message and press Enter.
+:P.4 removes the message from its queue.
+:P.5 shows the message whole, with what its description says, and
+takes the reply when it is an inquiry that waits for one.
 :EHELP.
 :HELP NAME=ADDMSGH.Additional Message Information - Help
 :P.The whole message: who sent it and when, its text and what the

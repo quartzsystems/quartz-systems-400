@@ -305,6 +305,9 @@ wire_struct!(ListColumn {
     dspcol,
     nogui,
     autoskip,
+    atcol,
+    ifvar,
+    hilite,
     heading,
     line
 });

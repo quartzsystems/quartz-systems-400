@@ -2,35 +2,21 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The message displays: `DSPMSG`/`WRKMSG` and Additional Message
-//! Information (`QUIDSPMSG`), `DSPMSGD`, `WRKRPYLE`, `DSPLOG`.
+//! The message displays: Additional Message Information (`QUIDSPMSG`,
+//! for `DSPMSG` in `dspmsg`), `DSPMSGD`, `WRKRPYLE`, `DSPLOG`.
 
 use cmd::Resolved;
 use mi::Job;
 use msgf::MsgDesc;
 use stg::Client;
-use wm::obj::msgq::{MsgKind, MsgQ, QMsg, Status};
+use wm::obj::msgq::{MsgKind, QMsg, Status};
 
-use super::{act, at_cursor, common, entry, fill, parm, qual, show, user, wrap};
+use super::{act, at_cursor, common, entry, fill, parm, qual, show, wrap};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
 use crate::display::uim::{Response, UimDialog};
 use crate::panels::dialog;
-
-/// The row of `DSPMSG`'s first message line, and the lines a page.
-const MSG_ROW: usize = 8;
-const MSG_ROWS: usize = 13;
-
-/// The queue `MSGQ` names, `LIB/NAME`.
-fn queue_of(host: &Host, r: &Resolved) -> String {
-    let (name, lib) = qual(r, "MSGQ", "*LIBL");
-    match name.as_str() {
-        "" | "*WRKUSR" | "*USRPRF" | "*WRKSTN" | "*ALLWS" => format!("QUSRSYS/{}", user(host)),
-        "*SYSOPR" => "QSYS/QSYSOPR".into(),
-        n => format!("{lib}/{n}"),
-    }
-}
 
 /// A message type as the displays name it.
 fn kind_text(k: MsgKind) -> &'static str {
@@ -42,135 +28,6 @@ fn kind_text(k: MsgKind) -> &'static str {
         MsgKind::Diag => "Diagnostic",
         MsgKind::Notify => "Notify",
         MsgKind::Escape => "Escape",
-    }
-}
-
-/// The display lines of the queue's messages, with the message each
-/// belongs to.
-fn message_lines(msgs: &[QMsg]) -> (Vec<String>, Vec<usize>) {
-    let mut lines = Vec::new();
-    let mut owner = Vec::new();
-    for (i, m) in msgs.iter().enumerate() {
-        if m.kind == MsgKind::Rpy {
-            continue;
-        }
-        let (date, time) = wm::joblog::stamp_of(m.time);
-        lines.push(format!(
-            "  From . . . :   {:<10}   {date}   {}",
-            m.job.1,
-            &time[..8]
-        ));
-        owner.push(i);
-        for row in wrap(&m.text, 72) {
-            lines.push(format!("    {row}"));
-            owner.push(i);
-        }
-        match m.status {
-            Status::Unanswered => {
-                lines.push("      Reply . . . :   (press F1 here to reply)".into());
-                owner.push(i);
-            }
-            Status::Answered => {
-                lines.push(format!("      Reply . . . :   {}", m.reply));
-                owner.push(i);
-            }
-            _ => {}
-        }
-    }
-    if lines.is_empty() {
-        lines.push("  (No messages available)".into());
-    }
-    (lines, owner)
-}
-
-/// `DSPMSG`, `WRKMSG`: the queue's messages; F1 on one shows it whole.
-pub fn dspmsg(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
-    let queue = queue_of(host, r);
-    let (qlib, qname) = wm::obj::params::qualified(&queue);
-    let sev_filter: u8 = parm(r, "SEV").and_then(|s| s.parse().ok()).unwrap_or(0);
-    let mut d = dialog(host, "QUIDSPMSG")?;
-    let system = d.system.clone();
-    d.set("SYSNM", &system);
-    loop {
-        let msgs: Vec<QMsg> = host
-            .link
-            .borrow_mut()
-            .with(|l| l.msgq_list(queue.clone()))
-            .map_err(|e| Fail::new("CPF2403", e))?
-            .into_iter()
-            .filter(|m| m.severity >= sev_filter || m.kind == MsgKind::Rpy)
-            .collect();
-        let attrs = host
-            .link
-            .borrow_mut()
-            .with(|l| l.wm_object(queue.clone(), "*MSGQ".into()))
-            .ok()
-            .and_then(|b| MsgQ::decode(&b).ok())
-            .unwrap_or_default();
-        d.set("MSGQ", &qname);
-        d.set("MSGQLIB", &qlib);
-        d.set("SEV", &format!("{:02}", attrs.severity));
-        d.set("DLVRY", &attrs.delivery);
-        d.set("PGM", &attrs.brkpgm.0);
-        d.set("PGMLIB", &attrs.brkpgm.1);
-        let (lines, owner) = message_lines(&msgs);
-        fill(
-            &mut d,
-            "MSGS",
-            lines.into_iter().map(|l| entry(&[("LINE", l)])).collect(),
-        );
-        let under = |d: &mut UimDialog| {
-            at_cursor(d, "MSGS", MSG_ROW, MSG_ROWS).and_then(|i| owner.get(i).copied())
-        };
-        match show(&mut d, surface, "DSPMSG")? {
-            Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
-            Response::Return(1) => match under(&mut d) {
-                Some(i) => {
-                    if !info(host, surface, &mut d, &queue, &msgs[i])? {
-                        return Ok(String::new());
-                    }
-                }
-                None => {
-                    d.message = Some((
-                        "Place the cursor on a message to see all of it.".into(),
-                        true,
-                    ));
-                }
-            },
-            Response::Return(11) => match under(&mut d) {
-                Some(i) => remove(host, &queue, &[msgs[i].key]),
-                None => {
-                    d.message = Some(("Place the cursor on the message to remove.".into(), true));
-                }
-            },
-            Response::Return(13) => {
-                let keys: Vec<u32> = msgs.iter().map(|m| m.key).collect();
-                remove(host, &queue, &keys);
-            }
-            Response::Return(16) => {
-                let keys: Vec<u32> = msgs
-                    .iter()
-                    .filter(|m| m.status != Status::Unanswered)
-                    .map(|m| m.key)
-                    .collect();
-                remove(host, &queue, &keys);
-            }
-            Response::Return(24) => {
-                let other = d.get("MORE") == "Y";
-                d.set("MORE", if other { "N" } else { "Y" });
-            }
-            _ => {}
-        }
-    }
-}
-
-/// Remove messages from a queue by key.
-fn remove(host: &Host, queue: &str, keys: &[u32]) {
-    for k in keys {
-        let _ = host
-            .link
-            .borrow_mut()
-            .with(|l| l.msgq_receive(queue.into(), None, Some(*k), true));
     }
 }
 
@@ -235,16 +92,12 @@ pub fn info_lines(host: &Host, m: &QMsg, details: bool) -> Vec<String> {
         lines.push(String::new());
         labelled("Cause . . . . .", &help, &mut lines);
     }
-    if m.status == Status::Answered {
-        lines.push(String::new());
-        labelled("Reply . . . . .", &m.reply, &mut lines);
-    }
     lines
 }
 
 /// Additional Message Information for `m`, a reply taken for an
 /// inquiry waiting for one; false when F3 asked to leave everything.
-fn info(
+pub(super) fn info(
     host: &Host,
     surface: &mut Surface,
     d: &mut UimDialog,
@@ -257,11 +110,20 @@ fn info(
     d.set("MSGTYPE", kind_text(m.kind));
     d.set("SNTDATE", &date);
     d.set("SNTTIME", &time[..8]);
-    d.set("REPLY", "");
-    let waiting = m.status == Status::Unanswered;
-    let panel = if waiting { "ADDMSGR" } else { "ADDMSGI" };
+    let inquiry = m.kind == MsgKind::Inq;
+    let mut waiting = inquiry && m.status == Status::Unanswered;
+    let mut answered = inquiry && m.status == Status::Answered;
+    d.set("REPLY", if answered { &m.reply } else { "" });
     let mut details = false;
+    d.list_mut("INFO").top = 0;
     loop {
+        let panel = if waiting {
+            "ADDMSGR"
+        } else if answered {
+            "ADDMSGA"
+        } else {
+            "ADDMSGI"
+        };
         let lines = info_lines(host, m, details);
         let top = d.list_mut("INFO").top;
         fill(
@@ -275,7 +137,10 @@ fn info(
             Response::Cancel => return Ok(true),
             Response::Return(9) => details = !details,
             Response::Return(21) => {
-                d.message = Some(("This release has one assistance level.".into(), false));
+                d.message = Some((
+                    "Choose the assistance level from the message list (F21 there).".into(),
+                    false,
+                ));
             }
             Response::Print => {
                 d.message = Some(("Printing is not available in this release.".into(), true));
@@ -298,8 +163,11 @@ fn info(
                     .with(|l| l.msgq_reply(queue.into(), m.key, reply.clone()))
                 {
                     Ok(_) => {
-                        d.message = Some((format!("Reply {reply} sent."), false));
-                        return Ok(true);
+                        // The message stays up, answered.
+                        d.message = Some(("The reply was sent.".into(), false));
+                        waiting = false;
+                        answered = true;
+                        d.set("REPLY", &reply);
                     }
                     Err(e) => d.message = Some((e, true)),
                 }

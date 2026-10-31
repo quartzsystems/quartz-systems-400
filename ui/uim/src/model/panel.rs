@@ -542,6 +542,16 @@ pub struct ListColumn {
     pub nogui: bool,
     /// `AUTOSKIP`.
     pub autoskip: bool,
+    /// `ATCOL` (ours): the screen column the column starts at, its
+    /// field free to reach the last column (DSPMSG's reply fields).
+    pub atcol: Option<u32>,
+    /// `IFVAR` (ours): the entry variable that must not be blank for
+    /// the column to show on an entry (an option or a reply field on
+    /// one row of a message only).
+    pub ifvar: Option<String>,
+    /// `HILITE` (ours): the entries show in high intensity (the
+    /// section headings of Work with Messages).
+    pub hilite: bool,
     /// The heading.
     pub heading: Vec<Span>,
     /// Source line.

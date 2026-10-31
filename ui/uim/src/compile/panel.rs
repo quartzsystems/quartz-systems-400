@@ -515,6 +515,8 @@ impl Build {
         let help = self.upper(el, "HELP");
         self.refer_opt("Help module", help.as_ref(), el.line);
         let name = self.upper(el, "NAME").unwrap_or_else(|| var.clone());
+        let ifvar = self.upper(el, "IFVAR");
+        self.refer_opt("Variable", ifvar.as_ref(), el.line);
         Some(ListColumn {
             var,
             usage,
@@ -526,6 +528,9 @@ impl Build {
             dspcol: self.u32(el, "DSPCOL"),
             nogui: self.flag(el, "NOGUI"),
             autoskip: self.flag(el, "AUTOSKIP"),
+            atcol: self.u32(el, "ATCOL"),
+            ifvar,
+            hilite: self.flag(el, "HILITE"),
             heading: self.spans(&el.children),
             line: line_u32(el.line),
         })

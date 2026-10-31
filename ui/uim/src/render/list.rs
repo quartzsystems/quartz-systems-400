@@ -93,13 +93,23 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
     for (i, entry) in state.rows.iter().take(entries).enumerate() {
         let r = row + i;
         let index = state.top + i;
-        for c in &cols {
-            let raw = entry
+        let value = |var: &str| {
+            entry
                 .iter()
-                .find(|(v, _)| *v == c.column.var)
+                .find(|(v, _)| v == var)
                 .map(|(_, val)| val.clone())
-                .unwrap_or_default();
-            let end = (c.start + c.width - 1).min(limit);
+                .unwrap_or_default()
+        };
+        for c in &cols {
+            if let Some(var) = &c.column.ifvar
+                && value(var).trim().is_empty()
+            {
+                continue;
+            }
+            let raw = value(&c.column.var);
+            // An `ATCOL` field may reach the last column.
+            let last = if c.column.atcol.is_some() { s.cols } else { limit };
+            let end = (c.start + c.width - 1).min(last);
             if c.option {
                 let col = c.start + (c.width - c.field) / 2;
                 let typed = ctx.dialog.option(&area.listdef, index);
@@ -143,12 +153,17 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
                 ));
             } else {
                 let text = ctx.translate(&c.column.var, &raw);
+                let attr = if c.column.hilite {
+                    Attr::HighIntensity
+                } else {
+                    Attr::Normal
+                };
                 if c.numeric {
                     let t = text.trim();
                     let col = c.start + c.field.saturating_sub(t.chars().count());
-                    put_cut(s, r, col, end, Attr::Normal, t);
+                    put_cut(s, r, col, end, attr, t);
                 } else {
-                    put_cut(s, r, c.start, end, Attr::Normal, text.trim_end());
+                    put_cut(s, r, c.start, end, attr, text.trim_end());
                 }
             }
         }
@@ -321,6 +336,9 @@ fn columns<'a>(ctx: &Ctx, area: &'a ListArea, limit: usize) -> Vec<Col<'a>> {
         }
         if let Some(m) = c.minwidth {
             field = field.max(m as usize);
+        }
+        if let Some(a) = c.atcol {
+            start = a as usize;
         }
         let text = ctx.text(&c.heading);
         // Blanks only: a non-breaking blank at an end holds a heading row

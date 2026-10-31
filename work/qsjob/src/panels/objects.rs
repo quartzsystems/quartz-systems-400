@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Message and object displays: `DSPMSG`/`WRKMSG` with Additional
+//! Message and object displays: `DSPMSG`/`WRKMSG` (`dspmsg`), Additional
 //! Message Information, `DSPMSGD`, `WRKRPYLE`, `DSPLOG` (`msgs`);
 //! `DSPLIBL`, `WRKOBJ`, `DSPLIB`, `DSPOBJD`, `DSPOBJAUT`, `WRKBNDDIR`
 //! (`libs`); `DSPFD`, `DSPFFD`, `DSPDBR`, `DSPDTAARA`, `WRKOBJOWN`
@@ -11,6 +11,7 @@
 // Throughout: `d` the dialog, `r` the command, `l` the link.
 #![allow(clippy::many_single_char_names)]
 
+mod dspmsg;
 mod files;
 mod libs;
 mod msgs;
@@ -34,7 +35,7 @@ pub fn run(
     _out: &mut Outcome,
 ) -> Option<Result<String, Fail>> {
     Some(match r.name.as_str() {
-        "DSPMSG" | "WRKMSG" => msgs::dspmsg(host, surface, r),
+        "DSPMSG" | "WRKMSG" => dspmsg::dspmsg(host, surface, r),
         "DSPMSGD" => msgs::dspmsgd(host, surface, r),
         "WRKRPYLE" => msgs::wrkrpyle(job, host, surface),
         "DSPLOG" => msgs::dsplog(host, surface, r),

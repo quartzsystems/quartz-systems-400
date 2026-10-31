@@ -294,7 +294,7 @@ pub static TAGS: &[TagDef] = &[
         Leaf,
         [
             "VAR", "USAGE", "MAXWIDTH", "HELP", "NAME", "DISPLAY", "DSPCOL", "NOGUI", "AUTOSKIP",
-            "MINWIDTH"
+            "MINWIDTH", "ATCOL", "IFVAR", "HILITE"
         ],
         ["VAR", "USAGE"],
         &["LIST", "LISTGRP"],
