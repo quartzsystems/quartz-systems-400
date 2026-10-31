@@ -98,9 +98,9 @@ impl Suite {
     /// Step 85: DSPMSG's queues and an inquiry answered in its field.
     pub(crate) fn display_messages(&self, s: &mut Session) -> Result<String, String> {
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
-        for (user, extra) in [(OWN, ""), (OPR, " MSGQ(QSYS/QSYSOPR)")] {
+        for (user, extra) in [(OWN, ""), (OPR, "MSGQ(QSYS/QSYSOPR)")] {
             let out = s.command(
-                &format!("crtusrprf USRPRF({user}) PASSWORD({PASSWORD}) PWDEXP(*NO){extra}"),
+                &format!("crtusrprf USRPRF({user}) PASSWORD({PASSWORD}) PWDEXP(*NO) {extra}"),
                 CMD,
             )?;
             if !out.contains("created") && !out.contains("CPF2214") {

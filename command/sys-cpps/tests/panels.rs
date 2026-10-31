@@ -81,17 +81,13 @@ fn every_display_has_a_driver() {
     assert!(missing.is_empty(), "displays with no panel driver:\n  {}", missing.join("\n  "));
 }
 
-/// Bridged to `hw` until the hardware resource service answers them
-/// (the hwrsrc agent's change removes them from this list).
-const HWRSRC: &[&str] = &["DSPHDWRSC", "WRKHDWRSC"];
-
 #[test]
 fn no_command_bridges_to_a_console_word() {
     let words = console_words();
     assert!(words.iter().any(|w| w == "hw"), "LOCAL read: {words:?}");
     let wrong: Vec<String> = all()
         .iter()
-        .filter(|e| words.contains(&e.word) && !HWRSRC.contains(&e.name.as_str()))
+        .filter(|e| words.contains(&e.word))
         .map(|e| format!("{} (word {})", e.name, e.word))
         .collect();
     assert!(wrong.is_empty(), "commands bridged to the console process:\n  {}", wrong.join("\n  "));
