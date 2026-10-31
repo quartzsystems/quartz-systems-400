@@ -132,3 +132,28 @@ The V7R1M0 oracle settled 27 restore rules
    library's drive with `LibraryProvider`.
 21. **CPYTOTAP and CPYFRMTAP.** Not defined: they need tape file
    (`*TAPF`) device files, which this release does not have.
+
+## Cleanup and backup
+
+22. **Cleanup and backup message IDs.** `CPC1E20` to `CPC1E23`,
+    `CPF1E24`, `CPF1E25` (cleanup), `CPC1E30`, `CPC1E31`, `CPF1E32`,
+    `CPF1E33` (backup), `CPC1E35` (`PRTSYSINF`) and `CPF1E36` (an option
+    that ends the subsystems run from inside one) are chosen, not
+    captured: pub400 lets an ordinary profile prompt `CHGCLNUP` and
+    `CHGBCKUP` but run neither.
+23. **`STRTIME('HH:MM:SS')`.** pub400's `CHGCLNUP` prompt shows the
+    literal `'HH:MM:SS'` as the start time; whether that is how IBM's
+    prompt override shows a cleanup with no time set, or the account's
+    own value, is not known. QS/400 ships `22:00:00`.
+24. **`JRNRCVSIZ` on the `F10` display.** IBM shows it above
+    "Additional Parameters", not under it; our prompter puts every
+    `PMTCTL(*PMTRQS)` parameter under the title. The test compares the
+    labels of that display, not their order.
+25. **`+ for more values`.** IBM's text starts four columns right of
+    where our prompter puts it (column 28 against 24); the cleanup and
+    backup prompt tests compare it by its words. A fix belongs in
+    `command/cmd/src/prompt/session.rs` with every prompt golden
+    regenerated.
+26. **Cleanup job and schedule entry names.** `QEZCLNUP` (the schedule
+    entry, the cleanup job) and `QEZBCKUP` (a submitted backup) follow
+    IBM's `QEZ` prefix; IBM's own names are not captured.

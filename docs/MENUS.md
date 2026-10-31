@@ -238,7 +238,7 @@ network attributes a 5250 client meets.
 | `PTF` | Program Temporary Fix | 1-13, 70 (two pages) |
 | `RECOVERY` | Optical Backup/Recovery | 1-8 |
 | `RESTORE` | Restore | groups: 1-9, 21-23, 30-32, 40-42, 50, 70 |
-| `SAVE` | Save | groups: 1-8, 10, 11, 20-23, 30-33, 40-42, 50, 70 |
+| `SAVE` | Save | groups: 1-8, 10, 11, 20-23, 30-33, 40-43, 50, 70 |
 | `SECURITY` | Security | 1-5, 8, 70 |
 | `SOFTWARE` | Software Resources | 1, 2 |
 | `STATUS` | Status | 1-10 |

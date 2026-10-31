@@ -250,7 +250,10 @@ work/         work management: jobs, spooling, process messages
                 the library list; joblog.rs; table.rs the active job table; pools.rs activity
                 levels; stats.rs the /proc, cgroup and block parsers; wtr.rs; src/obj/ the
                 objects' payloads (*JOBD, *CLS, *MSGQ, the reply list, *SBSD and its
-                commands, *JOBQ, *JOBSCD, *OUTQ, *SPLF, *PRTF, *DEVD) and shipped.rs; spec.rs
+                commands, *JOBQ, *JOBSCD, *OUTQ, *SPLF, *PRTF, *DEVD) and shipped.rs; spec.rs;
+                src/opa/ the cleanup and backup options, the backup history, GO SAVE 20 to 23
+                (docs/BACKUP.md; the service side lic/slic/src/cpp/opacmd.rs, the job's
+                work/qsjob/src/panels/backup.rs)
   qsjob/        the job process: start.rs (control channel, hello, the role); src/console/
                 QSVCJOB and every job's runtime (line dispatch, call, debug session, the job
                 commands, job log, breaks); src/work/ the roles: monitor, batch (QCMD,
@@ -373,7 +376,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
               SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md, SERVICE.md,
               LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, UPDATE_PROTOCOL.md,
-              CONSOLE.md, HARDWARE_NOTES.md, images/
+              CONSOLE.md, HARDWARE_NOTES.md, BACKUP.md, images/
 ```
 
 ## Commands

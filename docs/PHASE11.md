@@ -19,6 +19,7 @@ state. It grows with the phase.
 | Problem log, service tools | `SERVICE.md` | `service/prb`, `devtools/sst` |
 | Media in the system | `MEDIA.md` | `media/medio` |
 | Console scaling, storage controllers | `CONSOLE.md`, `HARDWARE_NOTES.md` | `lic/console`, `lic/slic` |
+| Cleanup, backup, `GO SAVE`/`RESTORE` 20 to 23 | `BACKUP.md` | `work/wm` (`opa`) |
 | Open questions | `SVC_OPEN_QUESTIONS.md` | |
 
 ## Oracles
@@ -63,6 +64,8 @@ were answered by hand during the capture, before every job got
 | `94c25bbf` | the restore matrix: every `OPTION` x `MBROPT` x `ALWOBJDIF` |
 | `576e1bee`, `95cf2820`, `d5bb97d8` | the product directory states against the spec, the Phase 11 tripwire, the PTF bench |
 | `987700f7`..`bd9b2ea9` | media devices, image catalogs, saves and restores on virtual tape and optical, multi-volume tape |
+| `d0431e78` | cleanup (`CHGCLNUP`, `STRCLNUP`, `ENDCLNUP`), backup options (`CHGBCKUP`, `DSPBCKUP`, `DSPBCKSTS`), `PRTSYSINF` |
+| `c14cf97f` | `GO SAVE` 20 to 23, `GO RESTORE` 21 to 23, `RUNBCKUP`, the `DSPBCKUP` panels, prompt override values |
 
 ## QEMU
 
@@ -104,11 +107,15 @@ were answered by hand during the capture, before every job got
 | `GO POWER` scheduling, remote journaling, IASP save/restore | not in scope; `ASPDEV` is `*SYSBAS` |
 | Physical tape validation | the procedure is in `MEDIA.md`, Cody runs it on hardware |
 | UDF read support | read-only ISO 9660 only |
+| The backup list (`DSPBCKUPL`, `EDTBCKUPL`), `RTVCLNUP`, `RTVBCKUP` | `*BCKUPL` is every user library (`BACKUP.md`) |
+| A panel for "IPL after the backup" | kept in the options, acted on by `RUNBCKUP` |
 
 ## Blocked
 
 | Item | Where | Waits for |
 |---|---|---|
+| `SAVSYS` in `GO SAVE` 21 and 22 | `work/wm/src/opa/gosave.rs` | the install agent's `SAVSYS`; the options run without it until the command exists |
+| The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | an exemption in the subsystem monitor; the options run from `QSVCJOB` |
 
 ## Bench
 
