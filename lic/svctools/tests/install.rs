@@ -85,7 +85,7 @@ fn env() -> MemEnv {
             location: "/dev/vdd".into(),
             media: "Install media V0R9M0 (QS00SS1)".into(),
             action: "Downgrade from V1R0M0".into(),
-            refused: Some("the media holds V0R9M0, older than the installed V1R0M0; downgrade is not allowed".into()),
+            refused: Some(svctools::dst::upgrade_refused("V0R9M0", "V1R0M0")),
         },
     ];
     e

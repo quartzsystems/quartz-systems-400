@@ -23,6 +23,25 @@ use crate::ipl::system::{System, now_unix};
 use crate::ipl::{Event, storage};
 use crate::src;
 
+/// A failure the service tools show: what was being done; the reason
+/// goes to the console log, never to the screen.
+pub(crate) fn fail<E: std::fmt::Display>(what: &'static str) -> impl FnOnce(E) -> String {
+    move |e| {
+        eprintln!("slic: {what}: {e}");
+        svctools::dst::failed(what)
+    }
+}
+
+/// A service failure as the service tools show it: a message the
+/// service worded (`CPFnnnn text`) as it is, anything else as [`fail`].
+fn kept_or_fail(what: &'static str) -> impl FnOnce(String) -> String {
+    move |e| {
+        let id = e.split(' ').next().unwrap_or("");
+        let worded = id.len() == 7 && id[..3].bytes().all(|b| b.is_ascii_uppercase());
+        if worded { e } else { fail(what)(e) }
+    }
+}
+
 /// The service tools' view of this system.
 pub struct Env<'a> {
     pub(crate) system: &'a mut System,
@@ -80,7 +99,7 @@ impl<'a> Env<'a> {
             let mut out = Vec::new();
             for &code in codes {
                 let ty = store::obj::types::type_by_code(code).map_or("", |t| t.name);
-                for (key, id) in store::obj::ops::list(txn, qsys, Some(code)).map_err(|e| e.to_string())? {
+                for (key, id) in store::obj::ops::list(txn, qsys, Some(code)).map_err(fail("Listing the objects"))? {
                     let text = store::obj::ops::describe(txn, id)
                         .map(|h| ccsid::from_ebcdic(&h.text).trim_end().to_string())
                         .unwrap_or_default();
@@ -189,8 +208,8 @@ impl DstEnv for Env<'_> {
         let Some((part, record)) = self.system.lic.as_mut() else {
             return Ok(()); // no partition: the defaults live for this IPL only
         };
-        self.users.store(record).map_err(|e| e.to_string())?;
-        part.write(record).map(|_| ()).map_err(|e| e.to_string())
+        self.users.store(record).map_err(fail("Saving the service tools user IDs"))?;
+        part.write(record).map(|_| ()).map_err(fail("Saving the service tools user IDs"))
     }
 
     fn disk_units(&mut self) -> Vec<DiskUnit> {
@@ -292,7 +311,7 @@ impl DstEnv for Env<'_> {
         let store = self.store()?;
         let n = store
             .add_unit(dev, storage::fresh_uuid(), &serial)
-            .map_err(|e| e.to_string())?;
+            .map_err(fail("Adding the disk unit"))?;
         if let Some(s) = self.system.storage.as_mut() {
             s.devices.push(std::path::PathBuf::from(device));
         }
@@ -300,7 +319,7 @@ impl DstEnv for Env<'_> {
     }
 
     fn remove_unit(&mut self, unit: u16) -> Result<(), String> {
-        self.store()?.remove_unit(unit).map_err(|e| e.to_string())?;
+        self.store()?.remove_unit(unit).map_err(fail("Removing the disk unit"))?;
         if let Some(s) = self.system.storage.as_mut()
             && usize::from(unit) < s.devices.len()
         {
@@ -317,8 +336,8 @@ impl DstEnv for Env<'_> {
                 .position(|d| d.display().to_string() == device)
         });
         if let Some(n) = configured {
-            let n = u16::try_from(n).map_err(|_| "unit number".to_string())?;
-            self.store()?.remove_unit(n).map_err(|e| e.to_string())?;
+            let n = u16::try_from(n).map_err(fail("Starting mirrored protection"))?;
+            self.store()?.remove_unit(n).map_err(fail("Starting mirrored protection"))?;
             if let Some(s) = self.system.storage.as_mut() {
                 s.devices.remove(usize::from(n));
             }
@@ -327,7 +346,7 @@ impl DstEnv for Env<'_> {
         let store = self.store()?;
         let new = store
             .start_mirror(unit, dev, storage::fresh_uuid(), &serial)
-            .map_err(|e| e.to_string())?;
+            .map_err(fail("Starting mirrored protection"))?;
         if let Some(s) = self.system.storage.as_mut() {
             s.devices.push(std::path::PathBuf::from(device));
         }
@@ -338,16 +357,16 @@ impl DstEnv for Env<'_> {
         self.store()?
             .stop_mirror(keep)
             .map(|_| ())
-            .map_err(|e| e.to_string())
+            .map_err(fail("Stopping mirrored protection"))
     }
 
     fn suspend(&mut self, unit: u16) -> Result<(), String> {
-        self.store()?.suspend_unit(unit).map_err(|e| e.to_string())
+        self.store()?.suspend_unit(unit).map_err(fail("Suspending the mirrored unit"))
     }
 
     fn resume(&mut self, unit: u16) -> Result<(), String> {
         self.store()?;
-        storage::start_resume(self.system, unit).map(|_| ())
+        storage::start_resume(self.system, unit).map(|_| ()).map_err(fail("Resuming mirrored protection"))
     }
 
     fn replace(&mut self, unit: u16, device: &str) -> Result<(), String> {
@@ -355,7 +374,7 @@ impl DstEnv for Env<'_> {
         let store = self.store()?;
         store
             .replace_unit(unit, dev, storage::fresh_uuid(), &serial)
-            .map_err(|e| e.to_string())
+            .map_err(fail("Replacing the mirrored unit"))
     }
 
     fn parity_capable(&mut self) -> Vec<String> {
@@ -456,7 +475,7 @@ impl DstEnv for Env<'_> {
         if unix.abs_diff(now_unix()) < 300 {
             return Ok(());
         }
-        crate::ipl::clock::set(unix)?;
+        crate::ipl::clock::set(unix).map_err(fail("Setting the clock"))?;
         self.system
             .out
             .serial(&format!("slic: clock set to {unix} UTC by the operator\n"));
@@ -482,8 +501,8 @@ impl DstEnv for Env<'_> {
         };
         record
             .set_tlv(TAG_CONSOLE_MODE, mode.encode())
-            .map_err(|e| e.to_string())?;
-        part.write(record).map_err(|e| e.to_string())?;
+            .map_err(fail("Changing the console mode"))?;
+        part.write(record).map_err(fail("Changing the console mode"))?;
         self.system
             .out
             .serial(&format!("slic: console mode {mode:?} from the next IPL\n"));
@@ -524,8 +543,8 @@ impl DstEnv for Env<'_> {
         if let Some((part, record)) = self.system.lic.as_mut() {
             record
                 .set_tlv(TAG_IPL_OPTIONS, options.encode())
-                .map_err(|e| e.to_string())?;
-            part.write(record).map_err(|e| e.to_string())?;
+                .map_err(fail("Changing the IPL options"))?;
+            part.write(record).map_err(fail("Changing the IPL options"))?;
         }
         if let Some(vals) = self.system.sysvals.as_mut() {
             let writers = if options.start_print_writers {
@@ -534,8 +553,8 @@ impl DstEnv for Env<'_> {
                 "0"
             };
             vals.set_text("QSTRPRTWTR", writers)
-                .map_err(|e| e.to_string())?;
-            crate::ipl::sysvals::save(self.system)?;
+                .map_err(fail("Changing the IPL options"))?;
+            crate::ipl::sysvals::save(self.system).map_err(fail("Changing the IPL options"))?;
         }
         Ok(())
     }
@@ -557,12 +576,12 @@ impl DstEnv for Env<'_> {
             return Err("System values are not loaded yet".into());
         };
         let auto = if options.auto_configure { "1" } else { "0" };
-        vals.set_text("QAUTOCFG", auto).map_err(|e| e.to_string())?;
+        vals.set_text("QAUTOCFG", auto).map_err(fail("Changing the major system options"))?;
         vals.set_text("QDEVNAMING", &options.device_naming)
-            .map_err(|e| e.to_string())?;
+            .map_err(fail("Changing the major system options"))?;
         vals.set_text("QSPCENV", &options.special_environment)
-            .map_err(|e| e.to_string())?;
-        crate::ipl::sysvals::save(self.system)
+            .map_err(fail("Changing the major system options"))?;
+        crate::ipl::sysvals::save(self.system).map_err(fail("Changing the major system options"))
     }
 
     fn lic_sysvals(&mut self) -> Vec<(String, String)> {
@@ -592,23 +611,23 @@ impl DstEnv for Env<'_> {
         if !IPL_NAMES.contains(&name) {
             return Err(format!("{name} is not a system value the LIC keeps"));
         }
-        let mut vals = SysVals::from_record(record, &host).map_err(|e| e.to_string())?;
-        vals.set_text(name, value).map_err(|e| e.to_string())?;
-        vals.store_ipl(record).map_err(|e| e.to_string())?;
-        part.write(record).map(|_| ()).map_err(|e| e.to_string())
+        let mut vals = SysVals::from_record(record, &host).map_err(fail("Changing the system value"))?;
+        vals.set_text(name, value).map_err(|_| svctools::dst::value_not_valid(name, value))?;
+        vals.store_ipl(record).map_err(fail("Changing the system value"))?;
+        part.write(record).map(|_| ()).map_err(fail("Changing the system value"))
     }
 
     fn read_page(&mut self, unit: u16, lba: u64) -> Result<Vec<u8>, String> {
         self.store()?
             .read_unit_page(unit, lba)
-            .map_err(|e| e.to_string())
+            .map_err(fail("Reading the page"))
     }
 
     fn object_header(&mut self, id: &str) -> Result<Vec<u8>, String> {
-        let id: store::obj::ObjectId = id.parse()?;
+        let id: store::obj::ObjectId = id.parse().map_err(fail("Reading the object header"))?;
         self.store()?
             .object_header_page(id)
-            .map_err(|e| e.to_string())
+            .map_err(fail("Reading the object header"))
     }
 
     fn security_flags(&mut self) -> SecurityFlags {
@@ -627,8 +646,8 @@ impl DstEnv for Env<'_> {
         };
         record
             .set_tlv(TAG_SECURITY, vec![encode_flags(flags)])
-            .map_err(|e| e.to_string())?;
-        part.write(record).map(|_| ()).map_err(|e| e.to_string())
+            .map_err(fail("Changing the security options"))?;
+        part.write(record).map(|_| ()).map_err(fail("Changing the security options"))
     }
 
     fn activity_log(&mut self) -> Vec<LogEntry> {
@@ -679,7 +698,7 @@ impl DstEnv for Env<'_> {
 
     fn dumps(&mut self) -> Result<Vec<svctools::env::DumpRow>, String> {
         self.store()?;
-        Ok(crate::stgsvc::dumps::list(self.system)?
+        Ok(crate::stgsvc::dumps::list(self.system).map_err(kept_or_fail("Listing the system dumps"))?
             .into_iter()
             .map(|d| svctools::env::DumpRow {
                 name: d.name,
@@ -692,17 +711,17 @@ impl DstEnv for Env<'_> {
 
     fn take_dump(&mut self, why: &str) -> Result<String, String> {
         self.store()?;
-        crate::stgsvc::dumps::take(self.system, why)
+        crate::stgsvc::dumps::take(self.system, why).map_err(kept_or_fail("Taking the system dump"))
     }
 
     fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
         self.store()?;
-        crate::stgsvc::dumps::show(self.system, name)
+        crate::stgsvc::dumps::show(self.system, name).map_err(kept_or_fail("Showing the system dump"))
     }
 
     fn delete_dump(&mut self, name: &str) -> Result<(), String> {
         self.store()?;
-        crate::stgsvc::dumps::delete(self.system, name)
+        crate::stgsvc::dumps::delete(self.system, name).map_err(kept_or_fail("Deleting the system dump"))
     }
 
     fn all_sysvals(&mut self) -> Vec<(String, String, String)> {
@@ -720,9 +739,9 @@ impl DstEnv for Env<'_> {
 
     fn set_sysval(&mut self, name: &str, value: &str) -> Result<String, String> {
         let name = name.trim().to_ascii_uppercase();
-        let vals = self.system.sysvals.as_mut().ok_or("system values not loaded")?;
-        vals.set_text(&name, value).map_err(|e| e.to_string())?;
-        crate::ipl::sysvals::save(self.system)?;
+        let vals = self.system.sysvals.as_mut().ok_or_else(|| svctools::dst::NOT_LOADED.to_string())?;
+        vals.set_text(&name, value).map_err(|_| svctools::dst::value_not_valid(&name, value))?;
+        crate::ipl::sysvals::save(self.system).map_err(fail("Changing the system value"))?;
         Ok(format!("System value {name} changed"))
     }
 
@@ -768,7 +787,7 @@ impl DstEnv for Env<'_> {
 /// Open a device node for a new unit, with its serial from sysfs.
 fn open_unit(device: &str) -> Result<(Box<dyn blockdev::BlockDev>, String), String> {
     let p = std::path::Path::new(device);
-    let dev = blockdev::LinuxBlockDev::open(p).map_err(|e| format!("open {device}: {e}"))?;
+    let dev = blockdev::LinuxBlockDev::open(p).map_err(fail("Opening the disk unit"))?;
     let (_, serial) = diskimg::locate::identity(p);
     Ok((Box::new(dev), serial))
 }

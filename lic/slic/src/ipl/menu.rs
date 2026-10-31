@@ -10,6 +10,7 @@
 use std::sync::mpsc::Receiver;
 
 use console::{Input, Key, Screen};
+use svctools::dst as dst_text;
 use svctools::ui;
 
 use crate::ipl::display::Command;
@@ -28,7 +29,7 @@ pub const OPTIONS: [(u8, &str); 5] = [
 ];
 
 /// Message for an option that does nothing yet.
-pub const NOT_AVAILABLE: &str = "Option not available in this release";
+pub const NOT_AVAILABLE: &str = dst_text::NOT_AVAILABLE;
 
 /// What the operator did on an application screen.
 pub enum Answer {
@@ -140,7 +141,7 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
             }
             "2" | "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
             "" => {}
-            other => message = Some((format!("Selection '{other}' is not valid"), true)),
+            _ => message = Some((dst_text::INVALID_SELECTION.to_string(), true)),
         }
     }
 }
@@ -192,7 +193,7 @@ fn perform_ipl(
             }
             (_, "3") => return service_tools(system, rx, message),
             (_, "") => {}
-            (_, other) => note = Some((format!("Selection '{other}' is not valid"), true)),
+            (_, _) => note = Some((dst_text::INVALID_SELECTION.to_string(), true)),
         }
     }
 }

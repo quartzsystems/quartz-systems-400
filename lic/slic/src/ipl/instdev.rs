@@ -137,7 +137,10 @@ fn action(store_release: Option<release::Release>, c: &Contents) -> (String, Opt
     match release::check_upgrade(have, c.release) {
         Ok(InstallKind::Slip) => (format!("Slip install of {} over {have}", c.release), None),
         Ok(InstallKind::Upgrade { from, to }) => (format!("Upgrade from {from} to {to}"), None),
-        Err(e) => (format!("Not allowed over {have}"), Some(e.to_string())),
+        Err(_) => (
+            format!("Not allowed over {have}"),
+            Some(svctools::dst::upgrade_refused(&c.release.to_string(), &have.to_string())),
+        ),
     }
 }
 

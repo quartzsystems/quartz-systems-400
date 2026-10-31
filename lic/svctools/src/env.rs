@@ -258,8 +258,7 @@ pub trait DstEnv {
         self.users()
             .change_password(user, old, new, now, salt)
             .map_err(|e| message(&e))?;
-        self.save_users()
-            .map_err(|e| format!("Password changed but not saved: {e}"))?;
+        self.save_users()?;
         Ok(self
             .users()
             .get(user)
@@ -279,7 +278,6 @@ pub trait DstEnv {
             self.audit("DS", "R", name);
         }
         self.save_users()
-            .map_err(|e| format!("Change made but not saved: {e}"))
     }
 
     /// The configured disk units.
