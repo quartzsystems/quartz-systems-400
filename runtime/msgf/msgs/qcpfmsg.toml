@@ -5341,6 +5341,13 @@ text = "The serviced job stopped at line &1 of &2."
 help = "Press F10 to step, F12 to go on, or F11 to show a variable."
 vars = ["*CHAR 10", "*CHAR *VARY 2"]
 
+[[msg]]
+id = "CPI9BE9"
+sev = 0
+text = "Every option is already shown."
+help = "This display lists all of its options at once; F23 has no more to show."
+vars = []
+
 # The developer tools' command escapes (meanings read with DSPMSGD on
 # pub400, V7R5M0).
 

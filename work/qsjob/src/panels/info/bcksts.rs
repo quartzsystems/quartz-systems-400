@@ -40,7 +40,7 @@ fn history(host: &Host, surface: &mut Surface, d: &mut UimDialog) -> Result<bool
             Response::Options(choices) => {
                 for c in &choices {
                     if c.option.trim() != "5" {
-                        d.message = Some((format!("Option {} is not valid here.", c.option.trim()), true));
+                        d.error("CPD6A7C", &[c.option.trim()]);
                         continue;
                     }
                     let row = d.row("HIST", c.row);

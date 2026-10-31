@@ -7,7 +7,7 @@
 
 use cmd::Resolved;
 
-use super::{NO_PRINT, dialog, fill, show};
+use super::{dialog, fill, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -30,7 +30,7 @@ pub fn dspudfs(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Strin
     fill(&mut d, "MOUNTS", rows);
     loop {
         match show(&mut d, surface, "DSPUDFS")? {
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(String::new()),
             _ => {}
         }

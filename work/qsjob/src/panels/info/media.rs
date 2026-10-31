@@ -11,7 +11,7 @@
 use cmd::Resolved;
 use mi::Job;
 
-use super::{NO_PRINT, act, dialog, exec, fetch, load, parm, parm_list, show};
+use super::{act, dialog, exec, fetch, load, parm, parm_list, show};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -22,7 +22,7 @@ fn until_left(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<S
     loop {
         match show(d, surface, panel)? {
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(String::new()),
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
@@ -125,14 +125,14 @@ pub fn wrkoptvol(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Options(choices) => {
                 act(job, host, &mut d, &choices, &mut |d, c| {
-                    d.message = Some((format!("Option {} is not available in this release.", c.option.trim()), true));
+                    d.error("CPD9B89", &[c.option.trim()]);
                     Ok(())
                 })?;
                 read = true;
             }
             Response::Command(text) => {
                 last = text.trim_start_matches('?').to_string();
-                d.message = exec(job, host, &text);
+                d.set_message(exec(job, host, &text));
                 d.set(CMDLINE_VAR, "");
                 read = true;
             }
@@ -145,12 +145,12 @@ pub fn wrkoptvol(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                     read = true;
                 }
             }
-            Response::Print | Response::Return(6) => d.message = Some((NO_PRINT.into(), true)),
-            Response::Return(4) => d.message = Some(("Type a command on the command line to prompt it.".into(), false)),
+            Response::Print | Response::Return(6) => d.error("CPD9B84", &[]),
+            Response::Return(4) => d.error("CPD9B86", &[]),
             Response::Return(11 | 14) => {
-                d.message = Some(("This release has one view of the optical volumes.".into(), false));
+                d.error("CPD9B8B", &[]);
             }
-            Response::Return(23) => d.message = Some(("All options are shown.".into(), false)),
+            Response::Return(23) => d.info("CPI9BE9", &[]),
             Response::Return(_) | Response::Menu(_) | Response::Panel(_) => {}
         }
     }

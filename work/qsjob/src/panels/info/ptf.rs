@@ -113,18 +113,14 @@ pub fn dspptfcvr(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
                                 cell(&d, &c.list, c.row, "PRODID"),
                                 cell(&d, &c.list, c.row, "PTFID")
                             );
-                            let out = crate::command::run(job, host, &line);
-                            d.message = Some(match out.escape {
-                                Some(f) => (f.text.lines().last().unwrap_or("").trim().to_string(), true),
-                                None => (out.text.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("").to_string(), false),
-                            });
+                            d.set_message(crate::panels::exec(job, host, &line));
                         }
-                        o => d.message = Some((format!("Option {o} is not valid here."), true)),
+                        o => d.error("CPD6A7C", &[o]),
                     }
                 }
                 d.list_mut("CVRS").options.clear();
             }
-            Response::Print => d.message = Some((NO_PRINT.into(), true)),
+            Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
