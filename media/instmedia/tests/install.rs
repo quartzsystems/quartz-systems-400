@@ -79,6 +79,7 @@ fn count(store: &mut Store, qsys: ObjectId, lib_name: &str) -> usize {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)] // one scenario
 fn the_os_installs_fresh_and_again_as_a_slip() {
     let key = SigningKey::from_bytes(&[42; 32]);
     let public = key.verifying_key().to_bytes();

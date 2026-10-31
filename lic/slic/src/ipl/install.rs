@@ -463,7 +463,9 @@ impl Env<'_> {
         if self.system.storage.is_none() {
             let _ = storage::locate_and_open(self.system);
         }
-        let s = self.system.storage.as_ref()?;
+        let Some(s) = self.system.storage.as_ref() else {
+            return storage::refused_release();
+        };
         s.qsys?;
         Some(s.store.asp_release())
     }

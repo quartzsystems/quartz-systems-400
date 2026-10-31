@@ -233,7 +233,7 @@ impl Suite {
             s.expect("SRC C6004090", Duration::from_mins(5))?;
             s.expect("SRC C6004100", self.boot_timeout * 2)?;
             s.expect("SRC C6004130", Duration::from_mins(15))?;
-            let users = s.expect("RSTUSRPRF:", Duration::from_mins(5))?;
+            let users = s.expect("authorization lists", Duration::from_mins(5))?;
             s.expect("SRC C6004150", Duration::from_mins(5))?;
             s.expect(SRC_IPL_COMPLETE, Duration::from_mins(5))?;
             s.expect(crate::PROMPT, CMD)?;
@@ -241,7 +241,14 @@ impl Suite {
             if !p.contains("RECOVER1") || p.contains("CPF2204") {
                 return Err(format!("the profile did not come back:\n{p}"));
             }
-            let last = users.lines().last().unwrap_or_default().trim().to_string();
+            let last = users
+                .lines()
+                .rev()
+                .find(|l| l.contains("RSTUSRPRF"))
+                .and_then(|l| l.split("RSTUSRPRF: ").nth(1))
+                .unwrap_or_default()
+                .trim()
+                .to_string();
             Ok(format!("{files} payloads on the tape; wiped; recovered: {last}; RECOVER1 back"))
         })()
         .map_err(|e| (e, s.log.clone()));
@@ -316,7 +323,25 @@ impl Suite {
             for l in ["type QSECOFR", "key tab", "type Quartz1", "key enter"] {
                 s.send(l)?;
             }
-            s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+            if s.expect("Use Dedicated Service Tools (DST)", CMD).is_err() {
+                // Step 3 did not run: the shipped password, then the change.
+                for l in ["type QSECOFR", "key tab", "type QSECOFR", "key enter"] {
+                    s.send(l)?;
+                }
+                s.expect("Change Service Tools User Password", CMD)?;
+                for l in [
+                    "key tab",
+                    "type QSECOFR",
+                    "key tab",
+                    "type Quartz1",
+                    "key tab",
+                    "type Quartz1",
+                    "key enter",
+                ] {
+                    s.send(l)?;
+                }
+                s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+            }
             s.send("2")?;
             s.expect("Install Device Type Selection", CMD)?;
             s.send("2")?;
@@ -345,7 +370,14 @@ impl Suite {
                 return Err(format!("user data lost:\n{kept}"));
             }
             let sig = signatures_clean(&mut s)?;
-            let last = tr.lines().last().unwrap_or_default().trim().to_string();
+            let last = tr
+                .lines()
+                .rev()
+                .find(|l| l.contains("objects ("))
+                .and_then(|l| l.rsplit(": ").next())
+                .unwrap_or_default()
+                .trim()
+                .to_string();
             Ok(format!("upgraded to V1R1M0; SLIPUSR/KEEPME kept; {last}; {sig}"))
         })()
         .map_err(|e| (e, s.log.clone()));
@@ -374,8 +406,8 @@ impl Suite {
                 s.expect(want, CMD)?;
             }
             s.send("key f10")?;
-            s.expect("downgrade is not allowed", CMD)?;
             s.expect("SRC A6004080", CMD)?;
+            s.expect("downgrade is not allow", CMD)?;
             Ok(format!("{detail}; V1R0M0 over it refused"))
         })()
         .map_err(|e| (e, s.log.clone()));

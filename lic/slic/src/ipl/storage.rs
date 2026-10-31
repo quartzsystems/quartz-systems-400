@@ -217,6 +217,9 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         match Store::open(devs, config()) {
             Ok((s, r)) => (s, r, false),
             Err(StoreError::ReleaseMismatch { store, running }) => {
+                if let Ok(mut g) = MISMATCH.lock() {
+                    *g = store.parse().ok();
+                }
                 system.out.serial(&format!(
                     "slic: ASP 1 was created by {store}; this is {running}\n"
                 ));
@@ -621,6 +624,16 @@ pub fn bootstrap(store: &mut Store, now: u64, system_name: &str) -> store::Resul
     store.asp_superblock_set_qsys(qsys);
     store.checkpoint()?;
     Ok(qsys)
+}
+
+/// The release of an ASP 1 this release could not open, for the
+/// installer's release rule.
+static MISMATCH: std::sync::Mutex<Option<release::Release>> = std::sync::Mutex::new(None);
+
+/// The release recorded by an ASP 1 that was refused as another
+/// release's, if one was.
+pub fn refused_release() -> Option<release::Release> {
+    MISMATCH.lock().ok().and_then(|g| *g)
 }
 
 /// The temporary ASP with QTEMP, fresh every IPL. The storage service

@@ -178,6 +178,20 @@ pub fn install(store: &mut Store, qsys: ObjectId, req: &Request<'_>) -> Result<R
         p.save_agreements(&book)
             .map_err(|e| Error::Install(e.to_string()))?;
     }
+    // An upgrade's definition takes the place of the older release's,
+    // which has the same name.
+    for step in &plan.steps {
+        let m = &step.media;
+        let older = p.definitions().into_iter().find(|(q, d)| {
+            *q == m.definition_name
+                && d.product == m.definition.product
+                && d.release != m.definition.release
+        });
+        if let Some((q, _)) = older {
+            p.delete_definition(&q)
+                .map_err(|e| Error::Install(e.to_string()))?;
+        }
+    }
     // What the installed loads had, for the replacement.
     let old: BTreeSet<(String, String, String)> = plan
         .steps
