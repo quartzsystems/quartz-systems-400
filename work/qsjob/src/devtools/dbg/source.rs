@@ -35,7 +35,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
         .session
         .stopped
         .as_ref()
-        .map(|s| stop_text(st, s.stmt, s.reason));
+        .map(|s| stop_text(host, st, s.stmt, s.reason));
     let mut cmdline = String::new();
     loop {
         let screen = {
@@ -144,7 +144,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                     message = Some(st.session.toggle(l).unwrap_or_else(|e| e.to_string()));
                     super::sync(job, host, st);
                 }
-                None => message = Some(no_source_or("Put the cursor on a source line first.", st)),
+                None => message = Some(no_source_or(host, "CPD9BD2", st)),
             },
             Key::F(9) => cmdline.clone_from(&st.last),
             Key::F(10 | 22) => {
@@ -157,8 +157,8 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                 });
             }
             Key::F(11) => match (stopped, cursor_word) {
-                (false, _) => message = Some("The program is not stopped; no variable to show.".into()),
-                (true, None) => message = Some("Put the cursor on a variable first.".into()),
+                (false, _) => message = Some(crate::display::msgline::say(host, "CPD9BE2", &[])),
+                (true, None) => message = Some(crate::display::msgline::say(host, "CPD9BE3", &[])),
                 (true, Some(w)) => {
                     let effect = Effect::Eval {
                         expr: w.clone(),
@@ -187,7 +187,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
             }
             Key::F(13) => {
                 if st.session.view.as_ref().is_none_or(dbg::SourceView::is_empty) {
-                    message = Some(no_source_or("", st));
+                    message = Some(no_source_or(host, "CPD9BE5", st));
                 } else if lists::wrkmodbkp(job, host, surface, st).is_none() {
                     return Exit::Gone;
                 }
@@ -217,8 +217,8 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                 .filter(|m| !m.is_empty());
             }
             Key::F(17) => match (stopped, cursor_word) {
-                (false, _) => message = Some("The program is not stopped; nothing to watch.".into()),
-                (true, None) => message = Some("Put the cursor on a variable first.".into()),
+                (false, _) => message = Some(crate::display::msgline::say(host, "CPD9BE2", &[])),
+                (true, None) => message = Some(crate::display::msgline::say(host, "CPD9BE3", &[])),
                 (true, Some(w)) => {
                     let r = st.session.apply(Command::Watch { expr: w, len: None }, cursor_line);
                     message = Some(match r {
@@ -263,7 +263,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
             Key::PageDown => {
                 let at_bottom = st.session.view.as_ref().is_none_or(|v| v.is_empty() || v.at_bottom());
                 if at_bottom {
-                    message = Some("The last page is already shown.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
                 } else {
                     st.session.key_scroll(true);
                 }
@@ -271,12 +271,12 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
             Key::PageUp => {
                 let at_top = st.session.view.as_ref().is_none_or(|v| v.top <= 1);
                 if at_top {
-                    message = Some("The first page is already shown.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A66", &[]));
                 } else {
                     st.session.key_scroll(false);
                 }
             }
-            Key::F(_) | Key::Other => message = Some("That key does nothing here.".into()),
+            Key::F(_) | Key::Other => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -309,7 +309,7 @@ fn effect_of(
             len,
         } => {
             if assign.is_some() {
-                *message = Some("Assigning to a variable is not supported yet.".into());
+                *message = Some(crate::display::msgline::say(host, "CPD9B81", &[]));
                 return None;
             }
             let suffix = match format {
@@ -345,14 +345,14 @@ fn effect_of(
                     .into_iter()
                     .find(|(n, _)| n.eq_ignore_ascii_case(name))
                     .map_or_else(
-                        || format!("{v} is not a variable of the stopped procedure."),
-                        |(n, t)| format!("{n}: {t}"),
+                        || crate::display::msgline::say(host, "CPD9C94", &[&v]),
+                        |(n, t)| crate::display::msgline::say(host, "CPI9BE5", &[&n, &t]),
                     ),
             );
         }
         Effect::ShowModule(name) => {
             if !st.session.show_named(&name) {
-                *message = Some(format!("Module {name} is not in the module list."));
+                *message = Some(crate::display::msgline::say(host, "CPD9BE4", &[&name]));
             }
         }
         Effect::Help => {
@@ -377,11 +377,8 @@ fn effect_of(
                     .get_or_insert_with(mi::debug::Debugger::default)
                     .updprod = v;
             }
-            *message = Some(if v {
-                "Production files may now be changed.".into()
-            } else {
-                "Production files may no longer be changed.".into()
-            });
+            let id = if v { "CPI9BE6" } else { "CPI9BE7" };
+            *message = Some(crate::display::msgline::say(host, id, &[]));
         }
     }
     None
@@ -398,12 +395,8 @@ fn failed(text: &str) -> String {
 }
 
 /// The message a stop shows.
-fn stop_text(st: &State, stmt: u32, reason: dbg::session::StopReason) -> String {
-    let line = st
-        .session
-        .module()
-        .and_then(|m| m.map.line_of(stmt))
-        .map_or_else(|| format!("statement {stmt}"), |l| format!("line {l}"));
+fn stop_text(host: &Host, st: &State, stmt: u32, reason: dbg::session::StopReason) -> String {
+    let line = st.session.module().and_then(|m| m.map.line_of(stmt)).map_or_else(|| stmt.to_string(), |l| l.to_string());
     let program = st
         .session
         .stopped
@@ -411,17 +404,18 @@ fn stop_text(st: &State, stmt: u32, reason: dbg::session::StopReason) -> String 
         .map(|s| s.program.clone())
         .unwrap_or_default();
     match reason {
-        dbg::session::StopReason::Breakpoint => format!("Stopped at the breakpoint on {line} of {program}."),
-        dbg::session::StopReason::Step => format!("Step done: stopped before {line} of {program}."),
-        dbg::session::StopReason::Watch(n) => format!("Watch {n} changed; stopped before {line} of {program}."),
+        dbg::session::StopReason::Breakpoint => crate::display::msgline::say(host, "CPI9BE1", &[&line, &program]),
+        dbg::session::StopReason::Step => crate::display::msgline::say(host, "CPI9BE2", &[&line, &program]),
+        dbg::session::StopReason::Watch(n) => crate::display::msgline::say(host, "CPI9BE3", &[&n, &line, &program]),
     }
 }
 
-/// `msg`, or the no-source message when the module has no source.
-fn no_source_or(msg: &str, st: &State) -> String {
+/// Message `id`, or the no-source message when the module has no
+/// source.
+fn no_source_or(host: &Host, id: &str, st: &State) -> String {
     if st.session.view.as_ref().is_none_or(dbg::SourceView::is_empty) {
-        "The module has no source view; that needs one.".into()
+        crate::display::msgline::say(host, "CPD9BE5", &[])
     } else {
-        msg.to_string()
+        crate::display::msgline::say(host, id, &[])
     }
 }

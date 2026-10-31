@@ -14,6 +14,7 @@ use cmd::prompt::{Prompter, Step};
 use seu::Session;
 use seu::session::{Item, Target};
 use seu::srctype::Family;
+use uim::engine::LineMsg;
 
 use super::Ctx;
 use crate::command::prompt::panel;
@@ -24,7 +25,7 @@ pub fn analyze(ctx: &mut Ctx<'_>, command: &str, definition: bool) -> Result<(),
     if definition {
         return cmd::source::statements(command)
             .map(|_| ())
-            .map_err(|d| d.first().map_or_else(|| "The statement is not valid.".into(), diag_text));
+            .map_err(|d| d.first().map_or_else(|| "*N".into(), diag_text));
     }
     // A CL statement the compiler knows that no command defines.
     let verb = command.split_whitespace().next().unwrap_or("").to_ascii_uppercase();
@@ -53,12 +54,21 @@ pub fn analyze(ctx: &mut Ctx<'_>, command: &str, definition: bool) -> Result<(),
     }
 }
 
+/// A diagnostic as a syntax error's value: its identifier and detail.
 fn diag_text(d: &cmd::Diag) -> String {
     if d.detail.is_empty() {
-        format!("{} The statement is not valid.", d.msgid)
+        d.msgid.clone()
     } else {
         format!("{} {}", d.msgid, d.detail)
     }
+}
+
+fn diag_msg(d: &cmd::Diag) -> LineMsg {
+    let mut m = LineMsg::error(&d.msgid, &[]);
+    if !d.detail.is_empty() {
+        m.text = Some(d.detail.clone());
+    }
+    m
 }
 
 /// Prompt the command a line belongs to; the records it spans are
@@ -85,7 +95,7 @@ pub fn prompt(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
         .map(|x| (x.label.clone(), x.command.clone(), x.comment.clone()))
         .unwrap_or_default();
     if command.trim().is_empty() {
-        s.message = Some("Type a command on the line, then prompt it.".into());
+        s.message = Some(LineMsg::error("CPD9B86", &[]));
         return;
     }
     let text = if label.is_empty() {
@@ -105,7 +115,7 @@ pub fn prompt(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
     let r = match resolved {
         Ok(r) => r,
         Err(e) => {
-            s.message = Some(diag_text(e.diags.first().unwrap_or(&e.escape)));
+            s.message = Some(diag_msg(e.diags.first().unwrap_or(&e.escape)));
             return;
         }
     };
@@ -146,7 +156,7 @@ pub fn prompt(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
                 s.reveal(&Item::Rec(*id));
             }
         }
-        Err(e) => s.message = Some(format!("{e}: resequence the member first.")),
+        Err(e) => s.message = Some(e.msg()),
     }
     super::check(ctx, s);
 }

@@ -27,7 +27,7 @@ fn choose(
     let per = page(which);
     let mut msg = note;
     if entries.is_empty() {
-        msg = Some("There is nothing to list.".into());
+        msg = Some(crate::display::msgline::say(surface.host(), "CPD9BEF", &[]));
     }
     loop {
         let screen = lists::list(which, &entries, top, sql, msg.take().as_deref());
@@ -48,7 +48,7 @@ fn choose(
             Key::Enter => {
                 let picked: Vec<Entry> = chosen(&entries).into_iter().cloned().collect();
                 if picked.is_empty() {
-                    msg = Some("Type a sequence number beside at least one entry.".into());
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF0", &[]));
                     continue;
                 }
                 return Some(picked);
@@ -58,7 +58,7 @@ fn choose(
                     e.seq.clear();
                 }
             }
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }

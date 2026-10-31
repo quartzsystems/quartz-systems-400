@@ -160,7 +160,7 @@ fn repeat_shift_overlay() {
 fn bad_line_command() {
     let mut s = session(2);
     line_cmd(&mut s, &[(5, "q")]);
-    assert!(s.message.as_deref().unwrap().contains("not valid"));
+    assert_eq!(s.message.as_ref().unwrap().id, "CPD9BC0");
     assert_eq!(s.buf.len(), 2);
 }
 
@@ -190,11 +190,12 @@ fn command_line() {
         ..Input::default()
     };
     s.key(Key::Enter, &input("find F25"));
-    assert_eq!(s.message.as_deref(), Some("Found F25."));
+    let m = s.message.clone().unwrap();
+    assert_eq!((m.id.as_str(), m.data.as_slice()), ("CPI9BC2", &["F25".to_string()][..]));
     let v = s.view();
     assert!(v.rows.iter().any(|r| r.data.contains("F25")));
     s.key(Key::Enter, &input("find zzzz"));
-    assert!(s.message.as_deref().unwrap().contains("ZZZZ"));
+    assert_eq!(s.message.as_ref().unwrap().data, ["ZZZZ"]);
     s.key(Key::Enter, &input("bottom"));
     let v = s.view();
     assert!(v.rows[16].data.contains("End of data"));

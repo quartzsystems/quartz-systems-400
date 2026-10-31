@@ -7,6 +7,7 @@
 //! position to, `+n`/`-n` to roll. Each command has its short form
 //! (`F`, `C`, `T`, `B`, `CAN`).
 
+use uim::engine::LineMsg;
 use crate::find::{Direction, Scope};
 
 /// One `SET` option.
@@ -89,6 +90,18 @@ pub enum CmdError {
     /// A quoted string with no end.
     #[error("a quoted string has no closing quote")]
     Quote,
+}
+
+impl CmdError {
+    /// The message for the message line.
+    #[must_use]
+    pub fn msg(&self) -> LineMsg {
+        match self {
+            Self::Unknown(c) => LineMsg::error("CPD9BC3", &[c]),
+            Self::Operands(c) => LineMsg::error("CPD9BC4", &[c]),
+            Self::Quote => LineMsg::error("CPD9BC5", &[]),
+        }
+    }
 }
 
 /// The words of a command line; quoted strings keep their blanks and

@@ -97,7 +97,7 @@ fn select(surface: &mut Surface, mut t: Target<'_>, head: &Head, groups: &[Group
             }
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[]));
                 continue;
             }
         }

@@ -7,6 +7,8 @@
 //! and block ends with block ends. A command whose partner is not on
 //! the display yet stays pending until it comes.
 
+use uim::engine::LineMsg;
+
 /// What a line command does.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
@@ -87,6 +89,27 @@ pub struct LineCmd {
     pub format: Option<String>,
     /// The text as typed, upper-cased, as a pending command shows it.
     pub text: String,
+}
+
+impl LineError {
+    /// The message for the message line.
+    #[must_use]
+    pub fn msg(&self) -> LineMsg {
+        match self {
+            Self::Unknown(c) => LineMsg::error("CPD9BC0", &[c]),
+        }
+    }
+}
+
+impl PlanError {
+    /// The message for the message line.
+    #[must_use]
+    pub fn msg(&self) -> LineMsg {
+        match self {
+            Self::Conflict(c) => LineMsg::error("CPD9BC1", &[c]),
+            Self::Mismatch(a, b) => LineMsg::error("CPD9BC2", &[a, b]),
+        }
+    }
 }
 
 /// Why a typed command is no command.

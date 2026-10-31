@@ -155,7 +155,7 @@ impl Session {
             rows,
             prompt,
             keyset: (!self.defaults.full || self.prompt.is_some()).then_some(self.keyset),
-            message: self.message.clone(),
+            message: self.message.as_ref().map(|m| m.text.clone().unwrap_or_else(|| m.fallback())),
             copyright: self.copyright,
             cursor,
         }

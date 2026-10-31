@@ -151,12 +151,8 @@ pub fn take_stop(job: &mut Job, host: &Host, st: &mut State) -> Option<String> {
                         StopReason::Step
                     },
                 });
-                let line = st
-                    .session
-                    .module()
-                    .and_then(|m| m.map.line_of(stmt))
-                    .map_or_else(|| format!("statement {stmt}"), |l| format!("line {l}"));
-                return Some(format!("The serviced job stopped at {line} of {program}."));
+                let line = st.session.module().and_then(|m| m.map.line_of(stmt)).map_or_else(|| stmt.to_string(), |l| l.to_string());
+                return Some(crate::display::msgline::say(host, "CPI9BE8", &[&line, &program]));
             }
             DbgEvent::Running => st.session.resumed(),
             DbgEvent::Answer { text } => return Some(text),

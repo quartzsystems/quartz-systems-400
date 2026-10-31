@@ -5,6 +5,8 @@
 //! The Exit display (`F3`): save or not, where to, resequencing,
 //! printing, back to editing, the member list.
 
+use uim::engine::LineMsg;
+
 /// The Exit display's values as shown and typed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExitForm {
@@ -59,19 +61,19 @@ pub struct ExitChoice {
 /// A refused value: the field's index (0 = Change/create member) and
 /// why.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-#[error("{text}")]
+#[error("{}", msg.id)]
 pub struct ExitError {
     /// The field.
     pub field: usize,
     /// What is wrong.
-    pub text: String,
+    pub msg: LineMsg,
 }
 
 /// `nnnn.nn`-style numbers of the start and increment fields.
-fn number(field: usize, s: &str, max_whole: u32, what: &str) -> Result<u32, ExitError> {
+fn number(field: usize, s: &str, max_whole: u32, _what: &str) -> Result<u32, ExitError> {
     let bad = || ExitError {
         field,
-        text: format!("Type the {what} as a number with up to two decimal places."),
+        msg: LineMsg::error("CPD9BDA", &[]),
     };
     let t = s.trim();
     let (w, f) = t.split_once('.').unwrap_or((t, ""));
@@ -99,7 +101,7 @@ fn yes_no(field: usize, s: &str) -> Result<bool, ExitError> {
         "N" => Ok(false),
         _ => Err(ExitError {
             field,
-            text: "Type Y or N.".into(),
+            msg: LineMsg::error("CPD9B98", &[]),
         }),
     }
 }
@@ -129,7 +131,7 @@ impl ExitForm {
     /// Check the values.
     pub fn choice(&self) -> Result<ExitChoice, ExitError> {
         let save = yes_no(0, &self.change)?;
-        let name = |field: usize, s: &str, what: &str| -> Result<String, ExitError> {
+        let name = |field: usize, s: &str, _what: &str| -> Result<String, ExitError> {
             let n = s.trim().to_ascii_uppercase();
             let ok = !n.is_empty()
                 && n.len() <= 10
@@ -143,7 +145,7 @@ impl ExitForm {
             } else {
                 Err(ExitError {
                     field,
-                    text: format!("{what} name is not valid."),
+                    msg: LineMsg::error("CPD9BDB", &[&n]),
                 })
             }
         };

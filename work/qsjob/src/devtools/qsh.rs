@@ -130,13 +130,13 @@ pub fn session(job: &mut Job, host: &Host) -> Result<String, Fail> {
             Action::Print => {
                 let lines = term.lines();
                 let m = crate::qsh::cmd::print(host, "QPRINT", &lines)
-                    .unwrap_or_else(|e| format!("Nothing was printed: {e}"));
+                    .unwrap_or_else(|e| crate::display::msgline::text_of(host, &crate::panels::line(&e)));
                 term.set_message(&m);
             }
             Action::ClEntry => {
                 let line = typed.trim().to_string();
                 if line.is_empty() {
-                    term.set_message("Type a CL command on the command line, then press F21.");
+                    term.set_message(&crate::display::msgline::say(host, "CPD9BFB", &[]));
                 } else {
                     term.set_input("");
                     let o = crate::command::run(side.job, host, &line);
@@ -157,14 +157,14 @@ pub fn session(job: &mut Job, host: &Host) -> Result<String, Fail> {
 pub fn show_output(host: &Host, text: &str) {
     let mut term = Term::new();
     term.output(text.as_bytes());
-    term.set_message("Press Enter to end the terminal session.");
+    term.set_message(&crate::display::msgline::say(host, "CPI9BDB", &[]));
     let mut surface = Surface::new(host.clone());
     loop {
         match show(&mut surface, &term, true, &mut || false) {
             Some((Some(Key::Enter | Key::F(3 | 12)), _)) | None => return,
             Some((Some(k), typed)) => {
                 let _ = term.key(k, &typed);
-                term.set_message("Press Enter to end the terminal session.");
+                term.set_message(&crate::display::msgline::say(host, "CPI9BDB", &[]));
             }
             Some((None, _)) => {}
         }

@@ -47,19 +47,7 @@ enum Left {
 
 /// Run a command line: its first line of output or its error.
 fn exec(job: &mut Job, host: &Host, text: &str) -> Option<String> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        return Some(if line.is_empty() {
-            format!("The command ended with {}.", f.msgid)
-        } else {
-            line
-        });
-    }
-    out.text
-        .lines()
-        .find(|l| !l.trim().is_empty())
-        .map(|l| l.trim().to_string())
+    crate::panels::exec(job, host, text).map(|m| crate::display::msgline::text_of(host, &m))
 }
 
 /// The menu until F3 or F12; `option` starts at one of its options.
@@ -93,7 +81,7 @@ pub fn strdfu(job: &mut Job, host: &Host, surface: &mut Surface, option: &str, m
                 }
                 Key::Enter => a.cmdline.clone(),
                 _ => {
-                    message = Some("That function key cannot be used here.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                     continue;
                 }
             }
@@ -106,7 +94,7 @@ pub fn strdfu(job: &mut Job, host: &Host, surface: &mut Surface, option: &str, m
             "4" => delete(host, surface, &mut v, &mut message),
             "5" => temporary(host, surface, &mut v, &mut message),
             n if n.parse::<u32>().is_ok() => {
-                message = Some(format!("Selection {n} is not on the menu."));
+                message = Some(crate::display::msgline::say(host, "CPD6A64", &[&n]));
                 continue;
             }
             cmd => {
@@ -293,17 +281,12 @@ fn general(surface: &mut Surface, p: &mut Program, keyed: bool) -> Left {
             Key::F(12) if warned => return Left::Back,
             Key::F(12) => {
                 warned = true;
-                message = Some("The definition is not stored yet: F12 again leaves it.".into());
+                message = Some(crate::display::msgline::say(surface.host(), "CPD9BE7", &[]));
             }
             Key::F(14) => {
-                message = Some(format!(
-                    "Over file {}/{}, display format {}.",
-                    p.file_lib,
-                    p.file,
-                    p.format.code()
-                ));
+                message = Some(crate::display::msgline::say(surface.host(), "CPI9BD4", &[&p.file_lib, &p.file, &p.format.code()]));
             }
-            _ => message = Some("That function key cannot be used here.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -320,7 +303,7 @@ fn delete(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
         let lib = blank_to(&v.get("PGMLIB"), "*CURLIB");
         match data::delete_program(host, &lib, &name) {
             Ok(()) => {
-                *msg = Some(format!("DFU program {name} was deleted."));
+                *msg = Some(crate::display::msgline::say(host, "CPI9BD5", &[&name]));
                 return Left::Back;
             }
             Err(e) => m = Some(e),

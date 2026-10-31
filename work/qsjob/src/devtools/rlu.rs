@@ -59,14 +59,14 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         .link
         .borrow_mut()
         .with(|l| l.pdm_read(real.clone(), file.clone(), member.clone()))
-        .map_err(|e| Fail::new("CPF9898", e))?
+        .map_err(|e| Fail::read("STRRLU", &e))?
         .unwrap_or_default();
     let (src, _) = Source::from_text(&lines.join("\n"));
     let comp = dds::compile_prtf(&src, &NoRefs, &CompileOpts::default());
     let mut message = None;
     let def = comp.definition.unwrap_or_else(|| {
         if !lines.is_empty() {
-            message = Some("The member's DDS has errors; only what could be read is shown.".to_string());
+            message = Some(crate::display::msgline::say(host, "CPD9BFC", &[]));
         }
         dds::prtf::PrtfDefinition::default()
     });
@@ -84,10 +84,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         return Ok(print(&s));
     }
     if !shows_panels(host, r) {
-        return Err(Fail::new(
-            "CPF9898",
-            "STRRLU needs a display; it cannot run in this job.",
-        ));
+        return Err(Fail::no_display("STRRLU"));
     }
     let mut surface = Surface::new(host.clone());
     edit(job, host, &mut surface, &mut s, message);
@@ -189,7 +186,7 @@ fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, mut 
                 "I" => s.image.insert_after(at),
                 "D" => s.image.delete(at),
                 "DR" => add_format(s, at),
-                other => message = Some(format!("Line command {other} is not one RLU knows.")),
+                other => message = Some(crate::display::msgline::say(host, "CPD9BFD", &[&other])),
             }
         }
         match a.key {
@@ -201,7 +198,7 @@ fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, mut 
                     return;
                 }
                 "CANCEL" => return,
-                other => message = Some(format!("RLU does not know the command {other}.")),
+                other => message = Some(crate::display::msgline::say(host, "CPD9BFE", &[&other])),
             },
             Key::F(3) => {
                 if exit(job, host, surface, s) {
@@ -217,7 +214,7 @@ fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, mut 
                 }
             }
             Key::PageUp => top = top.saturating_sub(IMAGE_ROWS),
-            _ => message = Some("That function is not in this RLU.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD9B81", &[])),
         }
     }
 }
@@ -300,7 +297,7 @@ fn exit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> b
             Key::F(5) => continue,
             Key::Enter => {}
             _ => {
-                message = Some("That function key cannot be used here.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -316,7 +313,7 @@ fn exit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> b
                     continue;
                 }
                 if v.get("PROTO").map(String::as_str) == Some("Y") {
-                    message = Some("This RLU makes no prototype report; type N.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD9B81", &[]));
                     continue;
                 }
                 if v.get("CRTPRTF").map(String::as_str) == Some("Y") {
@@ -328,7 +325,7 @@ fn exit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> b
                     );
                     let out = crate::command::run(job, host, &cmd);
                     if let Some(f) = out.escape {
-                        message = Some(format!("The printer file was not created ({}).", f.msgid));
+                        message = Some(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &f)));
                         continue;
                     }
                 }
@@ -336,7 +333,7 @@ fn exit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> b
             }
             "2" => return true,
             "3" => return false,
-            _ => message = Some("Type 1, 2 or 3.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD9B98", &[])),
         }
     }
 }

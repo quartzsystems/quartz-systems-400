@@ -95,10 +95,7 @@ fn qual(r: &Resolved, kwd: &str) -> (Option<String>, Option<String>) {
 pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let _ = out;
     if !shows_panels(host, r) {
-        return Err(Fail::new(
-            "CPF9898",
-            "STRSDA needs a display; it cannot run in this job.",
-        ));
+        return Err(Fail::no_display("STRSDA"));
     }
     let mut surface = Surface::new(host.clone());
     let mut s = Session {
@@ -175,7 +172,7 @@ fn menu(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> F
                 continue;
             }
             Key::F(1) | Key::Help => {
-                message = Some("Choose an option, or type a command and press Enter.".into());
+                message = Some(crate::display::msgline::say(host, "CPD9C93", &[]));
                 continue;
             }
             Key::Enter => match a.cmdline.as_str() {
@@ -190,7 +187,7 @@ fn menu(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> F
                 }
             },
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         };
@@ -202,32 +199,14 @@ fn menu(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session) -> F
 
 /// Run a command line: the first line of its output, or its error.
 pub fn exec(job: &mut Job, host: &Host, text: &str) -> Option<String> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        return Some(if line.is_empty() {
-            format!("The command ended with {}.", f.msgid)
-        } else {
-            line
-        });
-    }
-    out.text
-        .lines()
-        .find(|l| !l.trim().is_empty())
-        .map(|l| l.trim().to_string())
+    crate::panels::exec(job, host, text).map(|m| crate::display::msgline::text_of(host, &m))
 }
 
 /// Run a command; its error text when it failed.
 pub fn must(job: &mut Job, host: &Host, text: &str) -> Result<(), String> {
     let out = crate::command::run(job, host, text);
     match out.escape {
-        Some(f) => Err(f
-            .text
-            .lines()
-            .last()
-            .map(|l| l.trim().to_string())
-            .filter(|l| !l.is_empty())
-            .unwrap_or_else(|| format!("{} ended with {}.", out.name, f.msgid))),
+        Some(f) => Err(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &f))),
         None => Ok(()),
     }
 }

@@ -33,14 +33,11 @@ use crate::panels::shows_panels;
 pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let _ = (job, out);
     if !shows_panels(host, r) {
-        return Err(Fail::new(
-            "CPF9898",
-            "STRSST needs a display; it cannot run in this job.",
-        ));
+        return Err(Fail::no_display("STRSST"));
     }
     let me = host.link.borrow_mut().with(Client::whoami);
     me.require(sec::profile::SpecialAuth::SERVICE, "use the system service tools")
-        .map_err(|e| Fail::new("CPF2222", e.to_string()))?;
+        .map_err(|e| Fail::read("STRSST", &e.to_string()))?;
     let mut surface = Surface::new(host.clone());
     let mut env = SstEnv::new(host);
     let mut runner = sst::start();

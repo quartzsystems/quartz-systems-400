@@ -11,6 +11,7 @@
 mod apply;
 mod view;
 
+use uim::engine::LineMsg;
 use std::collections::HashSet;
 
 use crate::buffer::Buffer;
@@ -185,8 +186,9 @@ pub struct Session {
     pub find: FindOptions,
     /// The last match.
     pub hit: Option<Hit>,
-    /// The message for the message line.
-    pub message: Option<String>,
+    /// The message for the message line, by identifier: the driver
+    /// gives it its text from the message file.
+    pub message: Option<LineMsg>,
     /// The copyright line shows until the first key that does work.
     pub copyright: bool,
     /// The cursor to set.
@@ -261,7 +263,7 @@ impl Session {
 
     /// The session's source type changed (`F13`): upper case follows
     /// it. The message to show, when the case was forced.
-    pub fn set_srctype(&mut self, name: &str) -> Option<String> {
+    pub fn set_srctype(&mut self, name: &str) -> Option<LineMsg> {
         let st = SourceType::new(name);
         let changed = st.name != self.defaults.srctype;
         self.defaults.srctype.clone_from(&st.name);
@@ -270,11 +272,7 @@ impl Session {
         }
         let up = st.upper().unwrap_or(self.defaults.upper_unknown);
         let msg = (up != self.defaults.upper).then(|| {
-            if up {
-                "Input is now upper case only, as the source type asks.".to_string()
-            } else {
-                "Input now keeps lower case, as the source type allows.".to_string()
-            }
+            LineMsg::info(if up { "CPI9BC3" } else { "CPI9BC4" }, &[])
         });
         self.defaults.upper = up;
         self.left = st.first_column();
@@ -387,7 +385,7 @@ impl Session {
         let last = self.items().len().saturating_sub(1);
         let top = i64::try_from(self.top).unwrap_or(0) + lines;
         if top < 0 && self.top == 0 || top > i64::try_from(last).unwrap_or(0) && self.top == last {
-            self.message = Some("The display is already at the end of the member.".into());
+            self.message = Some(LineMsg::error("CPD9BCF", &[]));
             return;
         }
         self.top = usize::try_from(top.max(0)).unwrap_or(0).min(last);
@@ -432,7 +430,7 @@ impl Session {
     /// `F9`: the previous command into the command line.
     pub fn retrieve(&mut self) {
         if self.history.is_empty() {
-            self.message = Some("No command to retrieve.".into());
+            self.message = Some(LineMsg::error("CPD9B85", &[]));
             return;
         }
         self.retrieve = if self.retrieve == 0 {
@@ -538,7 +536,7 @@ impl Session {
         let ids = self
             .buf
             .insert(after_idx, &[text.to_string()], inc, self.today)
-            .map_err(|e| self.message = Some(format!("{e}: resequence the member to insert.")))
+            .map_err(|e| self.message = Some(e.msg()))
             .ok()?;
         let id = ids[0];
         // Insert lines still waiting after the same record now follow
@@ -603,7 +601,7 @@ impl Session {
                 });
                 self.reveal(&Item::Rec(id));
             }
-            None => self.message = Some("There is no record before this one.".into()),
+            None => self.message = Some(LineMsg::error("CPD9BD0", &[])),
         }
     }
 
@@ -640,7 +638,7 @@ impl Session {
     /// message, the cursor on the line.
     pub fn syntax_error(&mut self, id: u64, text: &str) {
         self.errors.insert(id);
-        self.message = Some(text.to_string());
+        self.message = Some(LineMsg::error("CPD9BE0", &[text]));
         self.reveal(&Item::Rec(id));
         if let Some(row) = self.row_of(&Item::Rec(id)) {
             self.cursor = Some((row, DATA_COL));

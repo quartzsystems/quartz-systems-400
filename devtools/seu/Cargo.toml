@@ -13,6 +13,7 @@ display = ["dep:dspf", "dep:dds", "dep:tn5250", "dep:ccsid"]
 
 [dependencies]
 thiserror.workspace = true
+uim = { path = "../../ui/uim", version = "0.1.0" }
 rpgspecs = { path = "../../rpg/specs", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }

@@ -89,7 +89,7 @@ fn pick_statement(surface: &mut Surface, s: &mut Session) -> Option<Kind> {
                     .and_then(|n| n.checked_sub(1))
                     .and_then(|i| STATEMENTS.get(i))
                 else {
-                    msg = Some(format!("Selection {sel} is not valid."));
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD6A64", &[&sel]));
                     continue;
                 };
                 if let Some(k) = assemble::kind_of(word) {
@@ -99,7 +99,7 @@ fn pick_statement(surface: &mut Surface, s: &mut Session) -> Option<Kind> {
                 s.h.set_text(&format!("{word} "));
                 return None;
             }
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -129,7 +129,7 @@ fn display(
                     values.remove(n);
                 }
             }
-            Key::F(4) => msg = Some("Type the name; this release has no list here.".into()),
+            Key::F(4) => msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF1", &[])),
             Key::Enter => {
                 let all = prompt::gather(p, values);
                 match check(&all) {
@@ -137,7 +137,7 @@ fn display(
                     Err(e) => msg = Some(e),
                 }
             }
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }

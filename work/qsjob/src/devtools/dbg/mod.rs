@@ -201,10 +201,7 @@ pub fn run(
     let serving = remote::serving(host);
     if !display && serving.is_none() {
         return match r.name.as_str() {
-            "DSPMODSRC" => Some(Err(Fail::new(
-                "CPF9898",
-                "Display Module Source needs a display; use the debug commands at this console.",
-            ))),
+            "DSPMODSRC" => Some(Err(Fail::no_display("DSPMODSRC"))),
             _ => None,
         };
     }

@@ -34,29 +34,9 @@ pub enum Flow {
     Gone,
 }
 
-/// Run a command line: the first line of its output, or its error.
+/// Run a command line: the message it leaves, by its identifier.
 pub fn exec(job: &mut Job, host: &Host, text: &str) -> Option<String> {
-    let out = crate::command::run(job, host, text);
-    if let Some(f) = &out.escape {
-        let line = f.text.lines().last().unwrap_or("").trim().to_string();
-        return Some(if line.is_empty() {
-            format!(
-                "{} ended with {}.",
-                if out.name.is_empty() {
-                    "The command"
-                } else {
-                    &out.name
-                },
-                f.msgid
-            )
-        } else {
-            line
-        });
-    }
-    out.text
-        .lines()
-        .find(|l| !l.trim().is_empty())
-        .map(|l| l.trim().to_string())
+    crate::panels::exec(job, host, text).map(|m| crate::display::msgline::text_of(host, &m))
 }
 
 /// What a command line's keys do on every PDM display that has one:
@@ -79,14 +59,14 @@ pub fn command_keys(
         }
         Key::F(9) => {
             if s.last.is_empty() {
-                *message = Some("There is no command to retrieve.".into());
+                *message = Some(crate::display::msgline::say(host, "CPD9B85", &[]));
             } else {
                 cmdline.clone_from(&s.last);
             }
             true
         }
         Key::F(10) => {
-            *message = Some("Use CALL QCMD from the menu for Command Entry.".into());
+            *message = Some(crate::display::msgline::say(host, "CPD9BF5", &[]));
             true
         }
         _ => false,
@@ -116,7 +96,7 @@ pub fn strpdm(
             Key::F(3 | 12) => return Ok(()),
             Key::F(18) => defaults(surface, host, s),
             Key::F(4) => {
-                message = Some("Type a command to prompt on the command line.".into());
+                message = Some(crate::display::msgline::say(host, "CPD9B86", &[]));
                 continue;
             }
             Key::Help => help(surface, s),
@@ -127,7 +107,7 @@ pub fn strpdm(
                 "3" => specify_mbrs(job, host, surface, s),
                 "9" => specify_optfile(job, host, surface, s),
                 n if n.parse::<u32>().is_ok() => {
-                    message = Some(format!("Selection {n} is not valid."));
+                    message = Some(crate::display::msgline::say(host, "CPD6A64", &[&n]));
                     continue;
                 }
                 cmd => {
@@ -137,7 +117,7 @@ pub fn strpdm(
                 }
             },
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         };
@@ -220,9 +200,9 @@ fn specify(
             Key::F(5) => vals.clone_from(start),
             Key::Enter => return Ok(a),
             Key::F(4) => {
-                *message = Some("Type a name; there is no list to choose from here.".into());
+                *message = Some(crate::display::msgline::say(surface.host(), "CPD9BF1", &[]));
             }
-            _ => *message = Some("Function key not allowed.".into()),
+            _ => *message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -318,7 +298,7 @@ fn specify_mbrs(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Sessi
         };
         let file = a.up("FILE");
         if file.is_empty() {
-            message = Some("Type the name of a source file.".into());
+            message = Some(crate::display::msgline::say(host, "CPD9BF8", &[]));
             continue;
         }
         let spec = MbrSpec {
@@ -397,7 +377,7 @@ pub fn defaults(surface: &mut Surface, host: &Host, s: &mut Session) -> Flow {
             Key::PageDown if page == 0 => page = 1,
             Key::PageUp if page == 1 => page = 0,
             Key::PageDown | Key::PageUp => {
-                message = Some("There are no more values to show.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
             }
             Key::Enter => {
                 let mut d = s.defaults.clone();
@@ -417,7 +397,7 @@ pub fn defaults(surface: &mut Surface, host: &Host, s: &mut Session) -> Flow {
                     }
                 }
             }
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -473,7 +453,7 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                 if s.options != saved
                     && let Err(e) = write(s)
                 {
-                    message = Some(format!("The options were not saved: {e}"));
+                    message = Some(crate::display::msgline::text_of(surface.host(), &crate::panels::line(&e)));
                     continue;
                 }
                 return if a.key == Key::F(3) {
@@ -506,7 +486,7 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                 if top + OPTIONS_PAGE < rows.len() {
                     top += OPTIONS_PAGE;
                 } else {
-                    message = Some("Already at the bottom of the list.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
                 }
             }
             Key::PageUp => top = top.saturating_sub(OPTIONS_PAGE),
@@ -546,7 +526,7 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                                 return Flow::Gone;
                             }
                         }
-                        other => message = Some(format!("Option {other} is not valid here.")),
+                        other => message = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
                     }
                 }
                 if !deletes.is_empty() {
@@ -560,13 +540,13 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                         Some(Key::Enter) => {
                             s.options
                                 .retain(|o| !deletes.iter().any(|d| d.code == o.code));
-                            message = Some(format!("{} options deleted.", deletes.len()));
+                            message = Some(crate::display::msgline::say(host, "CPI9BDA", &[&deletes.len()]));
                         }
                         Some(_) => {}
                     }
                 }
             }
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -618,7 +598,7 @@ fn edit_option(
                 };
                 let command = vals["CMD"].trim().to_string();
                 if command.is_empty() {
-                    message = Some("Type the command the option runs.".into());
+                    message = Some(crate::display::msgline::say(surface.host(), "CPD9BF9", &[]));
                     continue;
                 }
                 let replacing = from.filter(|_| change).map(|o| o.code.clone());
@@ -626,7 +606,7 @@ fn edit_option(
                     .iter()
                     .any(|o| o.code == code && Some(&o.code) != replacing.as_ref())
                 {
-                    message = Some(format!("Option {code} already exists."));
+                    message = Some(crate::display::msgline::say(surface.host(), "CPD9BFA", &[&code]));
                     continue;
                 }
                 if let Some(old) = replacing {
@@ -641,7 +621,7 @@ fn edit_option(
                     "Option {code} kept; it is written when you leave the list."
                 ));
             }
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }

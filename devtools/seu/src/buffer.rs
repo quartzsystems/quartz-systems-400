@@ -8,6 +8,8 @@
 //! so a line command typed on a row still finds its record after the
 //! rows above it changed.
 
+use uim::engine::LineMsg;
+
 /// The highest sequence number, `9999.99`.
 pub const MAX_SEQ: u32 = 999_999;
 
@@ -30,6 +32,16 @@ pub enum BufferError {
     /// No sequence numbers are left: the member must be resequenced.
     #[error("no sequence numbers are left between {0} and {1}")]
     NoRoom(u32, u32),
+}
+
+impl BufferError {
+    /// The message for the message line: resequence the member.
+    #[must_use]
+    pub fn msg(&self) -> LineMsg {
+        match self {
+            Self::NoRoom(a, b) => LineMsg::error("CPD9BC6", &[&a.to_string(), &b.to_string()]),
+        }
+    }
 }
 
 /// The member's records in order.

@@ -357,7 +357,7 @@ fn work(
                 s.last.clone_from(&a.cmdline);
                 l.message = exec(job, host, &format!("?{}", a.cmdline));
             }
-            Key::F(4) => l.message = Some("Type an option or a command to prompt.".into()),
+            Key::F(4) => l.message = Some(crate::display::msgline::say(host, "CPD9B86", &[])),
             Key::F(6) => {
                 let cmd = match &l.source {
                     Source::Libs(_) => "?CRTLIB".to_string(),
@@ -369,13 +369,13 @@ fn work(
             }
             Key::F(9) => {
                 if s.last.is_empty() {
-                    l.message = Some("There is no command to retrieve.".into());
+                    l.message = Some(crate::display::msgline::say(host, "CPD9B85", &[]));
                 } else {
                     l.cmdline.clone_from(&s.last);
                 }
             }
             Key::F(10) => {
-                l.message = Some("Use CALL QCMD from the menu for Command Entry.".into());
+                l.message = Some(crate::display::msgline::say(host, "CPD9BF5", &[]));
             }
             Key::F(11) => {
                 l.view = if l.view == View::Names {
@@ -430,12 +430,12 @@ fn work(
                 if l.top + page < l.items.len() {
                     l.top += page;
                 } else {
-                    l.message = Some("Already at the bottom of the list.".into());
+                    l.message = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
                 }
             }
             Key::PageUp => {
                 if l.top == 0 {
-                    l.message = Some("Already at the top of the list.".into());
+                    l.message = Some(crate::display::msgline::say(host, "CPD6A66", &[]));
                 }
                 l.top = l.top.saturating_sub(page);
             }
@@ -451,7 +451,7 @@ fn work(
                     let names = l.items.iter().map(|i| i.name.as_str());
                     match at.or_else(|| position(names, &to)) {
                         Some(i) => l.top = i,
-                        None => l.message = Some(format!("Nothing at or after {to}.")),
+                        None => l.message = Some(crate::display::msgline::say(host, "CPD9B80", &[&to])),
                     }
                     continue;
                 }
@@ -468,7 +468,7 @@ fn work(
                     return Ok(Flow::Back);
                 }
             }
-            _ => l.message = Some("Function key not allowed.".into()),
+            _ => l.message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -512,7 +512,7 @@ fn header_changed(host: &Host, l: &mut List, a: &Answer) -> bool {
                         l.top = 0;
                         l.load(host);
                     }
-                    None => l.message = Some(format!("File {f} in library {lb} not found.")),
+                    None => l.message = Some(crate::display::msgline::say(host, "CPF9812", &[&f, &lb])),
                 }
                 return true;
             }
@@ -586,7 +586,7 @@ fn subset(surface: &mut Surface, l: &mut List) -> Flow {
                     n.ty = up("MBRTYPE");
                     let v = |k: &str| vals.get(k).cloned().unwrap_or_default();
                     let (Ok(f), Ok(t)) = (date(&v("FROMDATE")), date(&v("TODATE"))) else {
-                        message = Some("Type a date as MM/DD/YY.".into());
+                        message = Some(crate::display::msgline::say(surface.host(), "CPD9BF6", &[&"MM/DD/YY"]));
                         continue;
                     };
                     n.from_date = f.filter(|d| *d != 20_000_101);
@@ -603,7 +603,7 @@ fn subset(surface: &mut Surface, l: &mut List) -> Flow {
                 l.top = 0;
                 return Flow::Back;
             }
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -791,10 +791,10 @@ fn ask(
             Key::F(3) => return Err(Flow::Exit),
             Key::F(12) => return Ok(None),
             Key::Enter if !text && value.is_empty() => {
-                message = Some("Type the new name.".into());
+                message = Some(crate::display::msgline::say(surface.host(), "CPD9BF7", &[]));
             }
             Key::Enter => return Ok(Some(value)),
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -853,10 +853,10 @@ fn find_panel(
                 }
             }
             Key::Enter if vals["STRING"].trim().is_empty() => {
-                message = Some("Type the string to find.".into());
+                message = Some(crate::display::msgline::say(host, "CPD9BCC", &[]));
             }
             Key::Enter => break a,
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     };
     let _ = a;

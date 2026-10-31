@@ -5,6 +5,7 @@
 //! What the keys do: the typed changes, the line commands, the command
 //! line, the function keys.
 
+use uim::engine::LineMsg;
 use super::{Action, BEGIN_ID, DATA_COL, END_ID, Input, Item, Mode, PromptState, Session, Target};
 use crate::cmdline::{self, Command, SetOpt};
 use crate::defaults::Roll;
@@ -88,8 +89,8 @@ impl Session {
             Key::F(12) => Action::Exit,
             Key::F(4) => match row_target {
                 Some(t) if self.mode == Mode::Edit => self.start_prompt(t, None),
-                Some(_) => self.refuse("Records cannot be prompted in browse mode."),
-                None => self.refuse("Put the cursor on a record to prompt it."),
+                Some(_) => self.refuse(LineMsg::error("CPD9BD1", &[])),
+                None => self.refuse(LineMsg::error("CPD9BD2", &[])),
             },
             Key::F(11) => {
                 self.toggle();
@@ -111,9 +112,9 @@ impl Session {
             Key::F(21) => Action::SystemCommand,
             Key::F(23) => match row_target {
                 Some(t) if self.mode == Mode::Edit => Action::SelectPrompt(t),
-                _ => self.refuse("Put the cursor on a record to select its prompt."),
+                _ => self.refuse(LineMsg::error("CPD9BD2", &[])),
             },
-            Key::F(_) => self.refuse("That key is not used here."),
+            Key::F(_) => self.refuse(LineMsg::error("CPD6A60", &[])),
         };
         if self.cursor.is_none() {
             self.cursor = Some((2, DATA_COL));
@@ -121,8 +122,8 @@ impl Session {
         action
     }
 
-    fn refuse(&mut self, text: &str) -> Action {
-        self.message = Some(text.to_string());
+    fn refuse(&mut self, m: LineMsg) -> Action {
+        self.message = Some(m);
         Action::Show
     }
 
@@ -153,7 +154,7 @@ impl Session {
                 match line::parse(&t) {
                     Ok(c) => cmds.push((ri.row, Placed { id, cmd: c })),
                     Err(e) => {
-                        self.message = Some(format!("{e}."));
+                        self.message = Some(e.msg());
                         self.cursor = Some((ri.row, 1));
                         return None;
                     }
@@ -220,7 +221,7 @@ impl Session {
         match cmdline::parse(&cmd_text) {
             Ok(c) => c,
             Err(e) => {
-                self.message = Some(format!("{}.", capital(&e.to_string())));
+                self.message = Some(e.msg());
                 self.cmdline = cmd_text;
                 self.cursor = Some((2, DATA_COL));
                 None
@@ -285,20 +286,20 @@ impl Session {
         if self.mode == Mode::Browse
             && let Some(p) = all.iter().find(|p| modifies(p.cmd.kind))
         {
-            self.message = Some(format!("Line command {} is not allowed in browse mode.", p.cmd.text));
+            self.message = Some(LineMsg::error("CPD9BC7", &[&p.cmd.text]));
             return;
         }
         let plan = match line::plan(&all) {
             Ok(p) => p,
             Err(e) => {
-                self.message = Some(format!("{}.", capital(&e.to_string())));
+                self.message = Some(e.msg());
                 self.pending = all;
                 return;
             }
         };
         self.pending.clone_from(&plan.pending);
         if !self.pending.is_empty() {
-            self.message = Some("A line command waits for its other end.".into());
+            self.message = Some(LineMsg::info("CPD9BC8", &[]));
         }
         if let Some(t) = &plan.transfer {
             self.transfer(t);
@@ -373,14 +374,14 @@ impl Session {
                     && at >= a
                     && at < b
                 {
-                    self.message = Some("The target is inside the lines moved.".into());
+                    self.message = Some(LineMsg::error("CPD9BC9", &[]));
                     return;
                 }
                 let inc = self.defaults.increment;
                 match self.buf.insert(after, &lines, inc, self.today) {
                     Ok(ids) => self.touched.extend(ids),
                     Err(e) => {
-                        self.message = Some(format!("{e}: resequence the member first."));
+                        self.message = Some(e.msg());
                         return;
                     }
                 }
@@ -460,7 +461,7 @@ impl Session {
             let room = self.buf.width.saturating_sub(chars.len());
             let k = n.min(room);
             if k < n {
-                self.message = Some("A shift stopped where data would be lost.".into());
+                self.message = Some(LineMsg::error("CPD9BCA", &[]));
             }
             let mut out = vec![' '; k];
             out.append(&mut chars);
@@ -469,7 +470,7 @@ impl Session {
             let lead = chars.iter().take_while(|c| **c == ' ').count();
             let k = n.min(lead);
             if k < n {
-                self.message = Some("A shift stopped where data would be lost.".into());
+                self.message = Some(LineMsg::error("CPD9BCA", &[]));
             }
             chars.drain(..k);
         }
@@ -582,7 +583,7 @@ impl Session {
             _ => None,
         });
         let Some(ids) = group else {
-            self.message = Some("Show commands go on an excluded line.".into());
+            self.message = Some(LineMsg::error("CPD9BCB", &[]));
             return;
         };
         let k = c.count.unwrap_or(1).max(1) as usize;
@@ -623,13 +624,13 @@ impl Session {
             Command::Exit => return Action::Exit,
             Command::Save(t) => {
                 if self.mode == Mode::Browse {
-                    return self.refuse("A member cannot be saved in browse mode.");
+                    return self.refuse(LineMsg::error("CPD9BD3", &[]));
                 }
                 return Action::Save(t);
             }
             Command::File(t) => {
                 if self.mode == Mode::Browse {
-                    return self.refuse("A member cannot be saved in browse mode.");
+                    return self.refuse(LineMsg::error("CPD9BD3", &[]));
                 }
                 return Action::File(t);
             }
@@ -640,7 +641,7 @@ impl Session {
             }
             Command::Change(s, new) => {
                 if self.mode == Mode::Browse {
-                    return self.refuse("Records cannot be changed in browse mode.");
+                    return self.refuse(LineMsg::error("CPD9BD4", &[]));
                 }
                 self.search_opts(&s);
                 self.find.change = self.cased(&new);
@@ -691,21 +692,21 @@ impl Session {
 
     fn do_find(&mut self, cursor: (usize, usize), change: bool) -> Action {
         if self.find.find.is_empty() {
-            return self.refuse("Type the string to find first (F14 or FIND).");
+            return self.refuse(LineMsg::error("CPD9BCC", &[]));
         }
         let what = self.find.find.clone();
         if change && self.find.dir == Direction::All {
             let n = find::change_all(&mut self.buf, &self.find, &self.excluded, self.today);
             self.message = Some(if n == 0 {
-                format!("No record holds {what}.")
+                LineMsg::error("CPD9BCD", &[&what])
             } else {
-                format!("{what} changed in {n} records.")
+                LineMsg::info("CPI9BC0", &[&what, &n.to_string()])
             });
             return Action::Show;
         }
         let from = self.search_from(cursor);
         let Some(h) = find::find(&self.buf, &self.find, &self.excluded, from) else {
-            self.message = Some(format!("No more of {} in the member.", what.to_ascii_uppercase()));
+            self.message = Some(LineMsg::error("CPD9BCE", &[&what.to_ascii_uppercase()]));
             return Action::Show;
         };
         if change {
@@ -724,11 +725,7 @@ impl Session {
         if let Some(r) = self.row_of(&Item::Rec(id)) {
             self.cursor = Some((r, DATA_COL + h.col - self.left));
         }
-        self.message = Some(if change {
-            format!("{} changed.", what.to_ascii_uppercase())
-        } else {
-            format!("Found {}.", what.to_ascii_uppercase())
-        });
+        self.message = Some(LineMsg::info(if change { "CPI9BC1" } else { "CPI9BC2" }, &[&what.to_ascii_uppercase()]));
         Action::Show
     }
 
@@ -794,7 +791,7 @@ impl Session {
                 self.prompt_done(made);
                 Action::Show
             }
-            _ => self.refuse("That key is not used here."),
+            _ => self.refuse(LineMsg::error("CPD6A60", &[])),
         }
     }
 }
@@ -823,11 +820,4 @@ fn item_id(i: &Item) -> Option<u64> {
         Item::Begin => Some(BEGIN_ID),
         Item::End => Some(END_ID),
     }
-}
-
-fn capital(s: &str) -> String {
-    let mut c = s.chars();
-    c.next()
-        .map(|f| f.to_uppercase().collect::<String>() + c.as_str())
-        .unwrap_or_default()
 }

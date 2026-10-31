@@ -35,8 +35,7 @@ fn run_cmdline(job: &mut Job, host: &Host, text: &str) -> Option<String> {
     if text.trim().is_empty() {
         return None;
     }
-    let o = crate::command::run(job, host, text);
-    o.text.lines().next().map(str::to_string)
+    crate::panels::exec(job, host, text).map(|m| crate::display::msgline::text_of(host, &m))
 }
 
 /// Work with Module Breakpoints for the module shown.
@@ -87,10 +86,10 @@ pub fn wrkmodbkp(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Sta
                         ("4", i) => {
                             if let Some(r) = rows.get(i) {
                                 st.session.bkpts.clear(&m.program, &m.module, r.line);
-                                msg = Some(format!("Breakpoint removed from line {}.", r.line));
+                                msg = Some(crate::display::msgline::say(host, "CPI9BD0", &[&r.line]));
                             }
                         }
-                        (other, _) => msg = Some(format!("Option {other} is not valid here.")),
+                        (other, _) => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
                     }
                 }
                 if a.options.is_empty() {
@@ -171,7 +170,7 @@ pub fn wrkmodlst(
                                 st.session.view = None;
                             }
                             super::sync(job, host, st);
-                            msg = Some(format!("{program} removed from debug."));
+                            msg = Some(crate::display::msgline::say(host, "CPI9BD1", &[&program]));
                         }
                         ("5", Some((_, Some(m)))) => {
                             st.session.show(*m);
@@ -187,7 +186,7 @@ pub fn wrkmodlst(
                             st.session.show(*m);
                             wrkmodbkp(job, host, surface, st)?;
                         }
-                        (other, _) => msg = Some(format!("Option {other} is not valid on that entry.")),
+                        (other, _) => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
                     }
                 }
             }
@@ -199,7 +198,7 @@ pub fn wrkmodlst(
 /// Option 1 on the module list: one more program under debug.
 fn add(job: &mut Job, host: &Host, st: &mut State, lib: &str, name: &str) -> String {
     if name.is_empty() {
-        return "Type the program's name.".into();
+        return crate::display::msgline::say(host, "CPD9BE6", &[]);
     }
     if st.serving.is_some() {
         if let Err(e) = super::remote::order(
@@ -209,17 +208,17 @@ fn add(job: &mut Job, host: &Host, st: &mut State, lib: &str, name: &str) -> Str
                 updprod: st.session.updprod,
             },
         ) {
-            return e.text;
+            return crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &e));
         }
     } else if let Err(e) = job.strdbg(name, lib) {
-        return e;
+        return crate::display::msgline::text_of(host, &crate::panels::line(&e));
     }
     match super::load(host, lib, name) {
         Ok(m) => {
             super::add_program(st, m);
-            format!("{lib}/{name} added to debug.")
+            crate::display::msgline::say(host, "CPI9BE4", &[&lib, &name])
         }
-        Err(e) => e,
+        Err(e) => crate::display::msgline::text_of(host, &crate::panels::line(&e)),
     }
 }
 
@@ -235,13 +234,13 @@ pub fn select_view(surface: &mut Surface, st: &mut State) -> Option<()> {
     let current = names.first().cloned().unwrap_or_default();
     let mut msg = None;
     loop {
-        let a = ui::show(surface, &eval::select_view(&current, &names, msg))?;
+        let a = ui::show(surface, &eval::select_view(&current, &names, msg.as_deref()))?;
         match a.key {
             Key::F(12 | 3) => return Some(()),
             Key::Enter if a.options.is_empty() => return Some(()),
             Key::Enter => {
                 if a.options.values().any(|o| o != "1") {
-                    msg = Some("Type 1 to select a view.");
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD9BE1", &[]));
                     continue;
                 }
                 return Some(());
@@ -281,7 +280,7 @@ pub fn wrkwatch(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Stat
                     match o.as_str() {
                         "4" => {
                             st.session.watches.remove(w.n);
-                            msg = Some(format!("Watch {} removed.", w.n));
+                            msg = Some(crate::display::msgline::say(host, "CPI9BD2", &[&w.n]));
                         }
                         "5" => {
                             msg = Some(match job.eval(&w.variable) {
@@ -289,7 +288,7 @@ pub fn wrkwatch(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Stat
                                 Err(e) => e,
                             });
                         }
-                        other => msg = Some(format!("Option {other} is not valid here.")),
+                        other => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
                     }
                 }
             }
@@ -311,7 +310,7 @@ pub fn threads(job: &mut Job, host: &Host, surface: &mut Surface, stopped: bool)
         msg = None;
         match a.key {
             Key::Enter if !a.options.is_empty() => {
-                msg = Some("A job here runs one thread; it is always the current one.".into());
+                msg = Some(crate::display::msgline::say(host, "CPI9BD3", &[]));
             }
             Key::Enter if !a.cmdline.is_empty() => msg = run_cmdline(job, host, &a.cmdline),
             Key::F(3 | 12) | Key::Enter => return Some(()),

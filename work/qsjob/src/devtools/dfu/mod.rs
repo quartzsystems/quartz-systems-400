@@ -27,10 +27,7 @@ use crate::panels::shows_panels;
 pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let _ = out;
     if !shows_panels(host, r) {
-        return Err(Fail::new(
-            "CPF9898",
-            format!("{} needs a display; it cannot run in this job.", r.name),
-        ));
+        return Err(Fail::no_display(&r.name));
     }
     let mut surface = Surface::new(host.clone());
     match r.name.as_str() {
@@ -61,7 +58,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             let pgm = pgm.ok_or_else(|| Fail::new("CPD0071", "A DFU program is needed."))?;
             let pgmlib = pgmlib.unwrap_or_else(|| "*LIBL".into());
             let (_, p) = data::program(host, &pgmlib, &pgm)
-                .map_err(|m| Fail::new("CPF9898", m))?
+                .map_err(|m| Fail::read("STRDFU", &m))?
                 .ok_or_else(|| {
                     Fail::new(
                         "CPF9801",
@@ -78,7 +75,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 .map_err(|m| Fail::new("CPF4101", m))?;
             Ok(String::new())
         }
-        other => Err(Fail::new("CPF9898", format!("{other} is not a DFU command."))),
+        other => Err(Fail::check(other, "not a DFU command")),
     }
 }
 

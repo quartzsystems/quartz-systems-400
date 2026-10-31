@@ -2869,6 +2869,7 @@ dependencies = [
  "seu",
  "thiserror",
  "tn5250",
+ "uim",
 ]
 
 [[package]]

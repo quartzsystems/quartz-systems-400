@@ -41,7 +41,7 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
                 Key::F(12) => return Flow::Back,
                 Key::Enter => {}
                 _ => {
-                    message = Some("Function key not allowed.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                     continue;
                 }
             }
@@ -84,28 +84,25 @@ fn functions(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
             Key::F(12) => return Flow::Back,
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
         if a.up("HELP") == "Y" {
-            message = Some(format!(
-                "Write the menu's help in a panel group named {}; SDA keeps no help member.",
-                w.member
-            ));
+            message = Some(crate::display::msgline::say(host, "CPI9BDE", &[&w.member]));
         }
         if a.up("IMAGE") != "Y" {
             continue;
         }
         let Some(ri) = w.m.record(&w.member) else {
-            message = Some(format!("Member {} has no record {}.", w.member, w.member));
+            message = Some(crate::display::msgline::say(host, "CPD9C8B", &[&w.member]));
             continue;
         };
         if super::image::edit(job, host, surface, s, &mut w.m, ri) == Flow::Gone {
             return Flow::Gone;
         }
         if menu::has_fields(&w.m.records[ri]) {
-            message = Some("A menu shows constants only: its fields are not used.".into());
+            message = Some(crate::display::msgline::say(host, "CPD9C8C", &[]));
         }
         let options = menu::options(&w.m.records[ri]);
         if define_commands(surface, &w.member, &options, commands) == Flow::Gone {
@@ -141,8 +138,8 @@ fn define_commands(surface: &mut Surface, name: &str, options: &[u8], commands: 
             Key::F(3 | 12) | Key::Enter => return Flow::Back,
             Key::PageDown if top + mscreen::PAGE < rows.len() => top += mscreen::PAGE,
             Key::PageUp => top = top.saturating_sub(mscreen::PAGE),
-            Key::F(4) => message = Some("Type the command; prompt it from a command line.".into()),
-            _ => message = Some("Function key not allowed.".into()),
+            Key::F(4) => message = Some(crate::display::msgline::say(surface.host(), "CPD9C8D", &[])),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -174,7 +171,7 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work, command
             Key::F(3) => return Flow::Exit,
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -184,12 +181,12 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work, command
             return Flow::Exit;
         }
         if create && !save {
-            message = Some("The menu is made from the saved members: type Y to save them.".into());
+            message = Some(crate::display::msgline::say(host, "CPD9C87", &[]));
             continue;
         }
         let (file, lib) = (vals["SRCFILE"].clone(), vals["SRCLIB"].clone());
         let Some(real) = file_library(host, &lib, &file) else {
-            message = Some(format!("File {file} in library {lib} not found."));
+            message = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
             continue;
         };
         let lines = w.lines(host);

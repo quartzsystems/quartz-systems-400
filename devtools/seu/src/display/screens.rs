@@ -15,6 +15,7 @@ use crate::defaults::{Defaults, Page1, Page2, date_text, parse_date};
 use crate::exit::ExitForm;
 use crate::find::{DateCmp, Direction, FindOptions, Scope};
 use crate::session::Mode;
+use uim::engine::LineMsg;
 
 /// The open display files of one session.
 pub struct Screens {
@@ -262,7 +263,7 @@ impl Screens {
     }
 
     /// The find options as typed; the message of a refused value.
-    pub fn read_find(m: &ScreenModel, mode: Mode, old: &FindOptions) -> Result<FindOptions, String> {
+    pub fn read_find(m: &ScreenModel, mode: Mode, old: &FindOptions) -> Result<FindOptions, LineMsg> {
         let f = |r, c| field_text(m, r, c);
         let rows: [usize; 7] = if mode == Mode::Edit {
             [7, 8, 9, 11, 13, 17, 18]
@@ -276,11 +277,11 @@ impl Screens {
             o.shift = match f(15, 38).to_ascii_uppercase().as_str() {
                 "Y" => true,
                 "N" => false,
-                _ => return Err("Type Y or N for the data shift.".into()),
+                _ => return Err(LineMsg::error("CPD9B98", &[])),
             };
         }
-        let num = |s: String, what: &str| -> Result<usize, String> {
-            s.trim().parse::<usize>().map_err(|_| format!("Type a number for the {what}."))
+        let num = |s: String, _what: &str| -> Result<usize, LineMsg> {
+            s.trim().parse::<usize>().map_err(|_| LineMsg::error("CPD9BDD", &[]))
         };
         o.from = num(f(rows[0], 38), "first column")?.max(1);
         let to = f(rows[1], 38);
@@ -291,18 +292,18 @@ impl Screens {
             "3" => Direction::Previous,
             "4" => Direction::First,
             "5" => Direction::Last,
-            _ => return Err("Type 1, 2, 3, 4 or 5 for the occurrences.".into()),
+            _ => return Err(LineMsg::error("CPD9B98", &[])),
         };
         o.scope = match f(rows[3], 38).trim() {
             "1" => Scope::All,
             "2" => Scope::Excluded,
             "3" => Scope::NotExcluded,
-            _ => return Err("Type 1, 2 or 3 for the records to search.".into()),
+            _ => return Err(LineMsg::error("CPD9B98", &[])),
         };
         o.same_case = match f(rows[4], 38).trim() {
             "1" => true,
             "2" => false,
-            _ => return Err("Type 1 or 2 for the kind of match.".into()),
+            _ => return Err(LineMsg::error("CPD9B98", &[])),
         };
         let date = f(rows[5], 38);
         let cmp = f(rows[6], 38);
@@ -311,8 +312,8 @@ impl Screens {
             (Some(Some(d)), "1") => Some((d, DateCmp::Less)),
             (Some(Some(d)), "2") => Some((d, DateCmp::Equal)),
             (Some(Some(d)), "3") => Some((d, DateCmp::Greater)),
-            (None, _) => return Err("Type the date as YY/MM/DD or YYMMDD.".into()),
-            _ => return Err("Type 1, 2 or 3 for the comparison.".into()),
+            (None, _) => return Err(LineMsg::error("CPD9BD9", &[])),
+            _ => return Err(LineMsg::error("CPD9B98", &[])),
         };
         Ok(o)
     }

@@ -12,6 +12,7 @@ use seu::exit::ExitForm;
 use seu::session::{Action, Key, Target};
 use seu::{Buffer, Mode, Session};
 use stg::Client;
+use uim::engine::LineMsg;
 use tn5250::ds::attr;
 
 use super::{Ctx, key_of};
@@ -23,7 +24,7 @@ pub fn exit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<bool, Fail> {
     let reseq = !matches!(s.defaults.reseq, Reseq::No);
     let errors = s.has_errors();
     let mut form = ExitForm::new(&ctx.at.2, &ctx.at.1, &ctx.at.0, &s.text, changed, reseq, errors);
-    let mut message: Option<String> = errors.then(|| "Records of the member are in error; it can be saved as it is.".to_string());
+    let mut message: Option<String> = errors.then(|| crate::display::msgline::text(ctx.host, "CPD9BDC", &[]));
     loop {
         let shown = form.clone();
         let msg = message.take();
@@ -40,7 +41,7 @@ pub fn exit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<bool, Fail> {
             Some(Key::F(5)) => continue,
             Some(Key::Enter | Key::F(3)) => {}
             _ => {
-                message = Some("That key is not used here.".into());
+                message = Some(crate::display::msgline::text(ctx.host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -48,7 +49,7 @@ pub fn exit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<bool, Fail> {
         let choice = match form.choice() {
             Ok(c) => c,
             Err(e) => {
-                message = Some(e.text);
+                message = Some(crate::display::msgline::text_of(ctx.host, &e.msg));
                 continue;
             }
         };
@@ -57,25 +58,25 @@ pub fn exit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<bool, Fail> {
             if let Some((start, inc)) = choice.reseq
                 && let Err(e) = s.buf.resequence(start, inc)
             {
-                message = Some(format!("{e}: choose a smaller start or increment."));
+                message = Some(crate::display::msgline::text_of(ctx.host, &e.msg()));
                 continue;
             }
             if let Err(e) = ctx.save(s, (&choice.lib, &choice.file, &choice.member)) {
-                message = Some(e);
+                message = Some(crate::display::msgline::text_of(ctx.host, &crate::panels::line(&e)));
                 continue;
             }
         }
         if choice.print
             && let Err(e) = super::print::records(ctx, &choice.member, &s.records())
         {
-            message = Some(e.text);
+            message = Some(crate::display::msgline::text_of(ctx.host, &crate::display::msgline::of_fail(ctx.host, &e)));
             continue;
         }
         if choice.ret {
             s.message = Some(if choice.save {
-                format!("Member {} saved.", choice.member)
+                LineMsg::info("CPI9BC6", &[&choice.member])
             } else {
-                "Back to editing; nothing was saved.".into()
+                LineMsg::info("CPI9BC7", &[])
             });
             return Ok(false);
         }
@@ -117,7 +118,7 @@ pub fn defaults(ctx: &mut Ctx<'_>, s: &mut Session) {
             s.defaults.set_page2(&p)
         };
         if let Err(e) = taken {
-            message = Some(e.text);
+            message = Some(crate::display::msgline::text_of(ctx.host, &e.msg));
             continue;
         }
         let after = std::mem::replace(&mut s.defaults.srctype, before);
@@ -165,7 +166,7 @@ pub fn find(ctx: &mut Ctx<'_>, s: &mut Session) {
         match ctx.read(|m| Screens::read_find(m, mode, &o)) {
             Ok(n) => s.set_find(n),
             Err(e) => {
-                message = Some(e);
+                message = Some(crate::display::msgline::text_of(ctx.host, &e));
                 continue;
             }
         }
@@ -205,13 +206,13 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
             Some(Key::F(14)) => return find(ctx, s),
             Some(Key::Enter) => {}
             _ => {
-                message = Some("That key is not used here.".into());
+                message = Some(crate::display::msgline::text(ctx.host, "CPD6A60", &[]));
                 continue;
             }
         }
         form = ctx.read(|m| Screens::read_browse(m, mode));
         if form.selection.trim() != "1" {
-            message = Some("Spooled files and output queues are browsed from WRKSPLF and WRKOUTQ.".into());
+            message = Some(crate::display::msgline::text(ctx.host, "CPD9BDE", &[]));
             continue;
         }
         let (lib, file, member) = (
@@ -241,7 +242,7 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
         let (records, srctype, width) = match other {
             Ok(x) => x,
             Err(e) => {
-                message = Some(e);
+                message = Some(crate::display::msgline::text_of(ctx.host, &crate::panels::line(&e)));
                 continue;
             }
         };
@@ -250,8 +251,8 @@ pub fn browse(ctx: &mut Ctx<'_>, s: &mut Session) {
             let n = lines.len();
             let after = s.buf.len().checked_sub(1);
             match s.buf.insert(after, &lines, s.defaults.increment.max(100), s.today) {
-                Ok(_) => s.message = Some(format!("{n} records copied from {member}.")),
-                Err(e) => s.message = Some(format!("{e}: resequence the member first.")),
+                Ok(_) => s.message = Some(LineMsg::info("CPI9BC8", &[&n.to_string(), &member])),
+                Err(e) => s.message = Some(e.msg()),
             }
             return;
         }
@@ -306,7 +307,7 @@ pub fn command(ctx: &mut Ctx<'_>, s: &mut Session) {
             }
             Some(Key::Enter | Key::F(4)) => {}
             _ => {
-                message = Some("That key is not used here.".into());
+                message = Some(crate::display::msgline::text(ctx.host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -321,7 +322,7 @@ pub fn command(ctx: &mut Ctx<'_>, s: &mut Session) {
         let out = crate::command::run(ctx.job, ctx.host, &text);
         cmd = typed;
         match out.escape {
-            Some(f) => message = Some(if f.text.is_empty() { f.msgid } else { f.text }),
+            Some(f) => message = Some(crate::display::msgline::text_of(ctx.host, &crate::display::msgline::of_fail(ctx.host, &f))),
             None => return,
         }
     }
@@ -342,7 +343,7 @@ pub fn select(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
             Some(Key::F(3 | 12)) => return,
             Some(Key::Enter) => {}
             _ => {
-                message = Some("That key is not used here.".into());
+                message = Some(crate::display::msgline::text(ctx.host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -351,7 +352,7 @@ pub fn select(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
             return;
         }
         if !st.prompt_formats().contains(&fmt.as_str()) {
-            message = Some(format!("{fmt} is not a prompt of source type {}.", st.name));
+            message = Some(crate::display::msgline::text(ctx.host, "CPD9BDF", &[&fmt, &st.name]));
             continue;
         }
         if let Action::ClPrompt(t, _) = s.start_prompt(t, Some(&fmt)) {

@@ -132,10 +132,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         if r.name == "FNDSTRPDM" {
             return fndstrpdm_text(host, r);
         }
-        return Err(Fail::new(
-            "CPF9898",
-            format!("{} needs a display; it cannot run in this job.", r.name),
-        ));
+        return Err(Fail::no_display(&r.name));
     }
     let mut surface = Surface::new(host.clone());
     let mut s = Session::open(host);
@@ -173,10 +170,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 job, host, &mut s, &search, &option, prompt, print,
             ))
         }
-        other => Err(Fail::new(
-            "CPF9898",
-            format!("{other} is not a PDM command."),
-        )),
+        other => Err(Fail::check(other, "not a PDM command")),
     };
     s.save(host);
     res

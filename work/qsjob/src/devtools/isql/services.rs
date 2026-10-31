@@ -50,9 +50,9 @@ pub fn services(host: &Host, surface: &mut Surface, s: &mut Session) {
                         return;
                     }
                 }
-                other => msg = Some(format!("Selection {other} is not valid.")),
+                other => msg = Some(crate::display::msgline::say(host, "CPD6A64", &[&other])),
             },
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -92,7 +92,7 @@ fn attributes(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
             Key::F(3) => return true,
             Key::F(12) => return false,
             Key::F(5) => work = s.attrs.clone(),
-            Key::F(4) => msg = Some("The choices are listed beside each field.".into()),
+            Key::F(4) => msg = Some(crate::display::msgline::say(host, "CPI9BD9", &[])),
             Key::PageDown if page + 1 < ATTR_PAGES => page += 1,
             Key::PageUp if page > 0 => page -= 1,
             Key::Enter if msg.is_none() => {
@@ -147,7 +147,7 @@ pub fn exit(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
                         .borrow_mut()
                         .with(|l| l.isql_session_put(Some(text)))
                     {
-                        msg = Some(format!("The session was not saved: {e}"));
+                        msg = Some(crate::display::msgline::text_of(host, &crate::panels::line(&e)));
                         continue;
                     }
                     end(host, s, true);
@@ -166,9 +166,9 @@ pub fn exit(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
                         return true;
                     }
                 }
-                _ => msg = Some("Type 1, 2, 3 or 4.".into()),
+                _ => msg = Some(crate::display::msgline::say(host, "CPD9B98", &[])),
             },
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -198,7 +198,7 @@ fn save_source(host: &Host, surface: &mut Surface, s: &Session) -> Option<String
             Key::F(3 | 12) => return None,
             Key::Enter => {
                 if file.is_empty() || lib.is_empty() || member.is_empty() {
-                    msg = Some("Type a file, a library and a member.".into());
+                    msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[]));
                     continue;
                 }
                 let lines = source_lines(&s.h.entries);
@@ -218,7 +218,7 @@ fn save_source(host: &Host, surface: &mut Surface, s: &Session) -> Option<String
                     Err(e) => format!("The session was not saved in a source file: {e}"),
                 });
             }
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }

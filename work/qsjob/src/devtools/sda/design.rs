@@ -75,12 +75,12 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
                 Key::F(3) => return Flow::Exit,
                 Key::F(12) => return Flow::Back,
                 Key::F(4) => {
-                    message = Some("Type the name; the list of names is not available here.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD9BF1", &[]));
                     continue;
                 }
                 Key::Enter => {}
                 _ => {
-                    message = Some("Function key not allowed.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                     continue;
                 }
             }
@@ -107,23 +107,23 @@ pub fn start(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session,
 /// one when missing), its type checked.
 pub fn open(host: &Host, file: &str, lib: &str, member: &str, want: &str, message: &mut Option<String>) -> Option<Work> {
     if file.is_empty() || !valid_name(file) {
-        *message = Some("Type a source file name.".into());
+        *message = Some(crate::display::msgline::say(host, "CPD9BF8", &[]));
         return None;
     }
     if member.is_empty() || !valid_name(member) {
-        *message = Some("Type a member name.".into());
+        *message = Some(crate::display::msgline::say(host, "CPD9BFF", &[]));
         return None;
     }
     let lib = if lib.is_empty() { "*LIBL" } else { lib };
     let Some(real) = file_library(host, lib, file) else {
-        *message = Some(format!("File {file} in library {lib} not found."));
+        *message = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
         return None;
     };
     let existing = read_member(host, &real, file, member);
     let (srctype, text, date) = member_info(host, &real, file, member).unwrap_or_default();
     let srctype = if srctype.trim().is_empty() {
         if existing.is_some() {
-            *message = Some(format!("Member {member} has no source type; SDA needs {want}."));
+            *message = Some(crate::display::msgline::say(host, "CPD9C80", &[&member, &"*NONE", &want]));
             return None;
         }
         want.to_string()
@@ -135,7 +135,7 @@ pub fn open(host: &Host, file: &str, lib: &str, member: &str, want: &str, messag
         _ => srctype == "MNUDDS",
     };
     if !ok {
-        *message = Some(format!("Member {member} is of type {srctype}; SDA needs {want}."));
+        *message = Some(crate::display::msgline::say(host, "CPD9C80", &[&member, &srctype, &want]));
         return None;
     }
     let lines = existing.unwrap_or_default();
@@ -272,12 +272,12 @@ fn records_loop(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Sessi
                 if view.top + records::PAGE < rows.len() {
                     view.top += records::PAGE;
                 } else {
-                    message = Some("You are at the bottom of the list.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
                 }
             }
             Key::PageUp => {
                 if view.top == 0 {
-                    message = Some("You are at the top of the list.".into());
+                    message = Some(crate::display::msgline::say(host, "CPD6A66", &[]));
                 } else {
                     view.top = view.top.saturating_sub(records::PAGE);
                 }
@@ -307,7 +307,7 @@ fn records_loop(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Sessi
                     }
                 }
             }
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -368,7 +368,7 @@ fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
             }
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -377,15 +377,15 @@ fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
         vals.insert("NAME".into(), n.clone());
         vals.insert("TYPE".into(), t.clone());
         if !valid_name(&n) {
-            message = Some("Type a valid record name.".into());
+            message = Some(crate::display::msgline::say(host, "CPD9C81", &[]));
             continue;
         }
         if w.m.record(&n).is_some() {
-            message = Some(format!("Record {n} is already in the member."));
+            message = Some(crate::display::msgline::say(host, "CPD9C82", &[&n]));
             continue;
         }
         let Some(ty) = RecordType::from_word(&t) else {
-            message = Some(format!("Type {t} is not one of the record types shown."));
+            message = Some(crate::display::msgline::say(host, "CPD9C83", &[&t]));
             continue;
         };
         let mut r = Record::new(&n, ty);
@@ -464,7 +464,7 @@ fn option(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w:
             }
             Ok(None)
         }
-        other => Ok(Some(format!("Option {other} is not valid."))),
+        other => Ok(Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))),
     }
 }
 
@@ -477,7 +477,8 @@ fn r_name(taken: &[String]) -> String {
 
 /// A record name for copy or rename, on Add New Record's display.
 fn ask_name(w: &Work, surface: &mut Surface, from: &str, what: &str) -> Result<Option<String>, ()> {
-    let mut message = Some(format!("Type the {what} for record {from}."));
+    let id = if what == "copy" { "CPI9BDF" } else { "CPI9BE0" };
+    let mut message = Some(crate::display::msgline::say(surface.host(), id, &[&from]));
     let ty = w.m.record(from).map_or("RECORD", |i| w.m.records[i].ty.word());
     loop {
         let head = (w.file.as_str(), w.lib.as_str(), w.member.as_str(), w.srctype.as_str());
@@ -492,9 +493,9 @@ fn ask_name(w: &Work, surface: &mut Surface, from: &str, what: &str) -> Result<O
         }
         let n = a.up("NAME");
         if !valid_name(&n) {
-            message = Some("Type a valid record name.".into());
+            message = Some(crate::display::msgline::say(surface.host(), "CPD9C81", &[]));
         } else if w.m.record(&n).is_some() {
-            message = Some(format!("Record {n} is already in the member."));
+            message = Some(crate::display::msgline::say(surface.host(), "CPD9C82", &[&n]));
         } else {
             return Ok(Some(n));
         }
@@ -561,7 +562,7 @@ pub fn comments_display(surface: &mut Surface, what: &str, name: &str, lines: &[
             Key::Enter => {
                 lines = typed;
                 if lines.len() >= comments::LINES - 1 {
-                    message = Some("The display holds no more lines.".into());
+                    message = Some(crate::display::msgline::say(surface.host(), "CPD9C85", &[]));
                 } else {
                     lines.push(format!("{:5}A*", ""));
                 }
@@ -579,7 +580,7 @@ pub fn comments_display(surface: &mut Surface, what: &str, name: &str, lines: &[
                 }
             }
             Key::F(12) => return Ok(None),
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -599,7 +600,7 @@ fn subset_display(surface: &mut Surface, w: &Work, cur: &Subset) -> Option<Subse
             Key::F(5) => continue,
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[]));
                 continue;
             }
         }
@@ -607,7 +608,7 @@ fn subset_display(surface: &mut Surface, w: &Work, cur: &Subset) -> Option<Subse
         let ok = matches!(ty.as_str(), "*ALL" | "SFL*" | "SFLCTL" | "GRDRCD") || RecordType::from_word(&ty).is_some();
         if !ok {
             vals.insert("TYPE".into(), ty);
-            message = Some("Type a record type the display lists.".into());
+            message = Some(crate::display::msgline::say(surface.host(), "CPD9C84", &[]));
             continue;
         }
         return Some(Subset {
@@ -638,9 +639,9 @@ fn defaults(surface: &mut Surface, s: &mut Session) -> Flow {
                     s.flddef = false;
                     return Flow::Back;
                 }
-                _ => message = Some("Type Y or N.".into()),
+                _ => message = Some(crate::display::msgline::say(surface.host(), "CPD9B98", &[])),
             },
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
@@ -689,7 +690,7 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
             Key::F(3) => return Saved::Done(Some(format!("Member {} was not saved.", w.member))),
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -699,12 +700,12 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
             return Saved::Done(Some(format!("Member {} was not saved.", w.member)));
         }
         if create && !save {
-            message = Some("The file is created from the saved member: type Y to save it.".into());
+            message = Some(crate::display::msgline::say(host, "CPD9C86", &[]));
             continue;
         }
         let (file, lib, mbr) = (vals["SRCFILE"].clone(), vals["SRCLIB"].clone(), vals["SRCMBR"].clone());
         let Some(real) = file_library(host, &lib, &file) else {
-            message = Some(format!("File {file} in library {lib} not found."));
+            message = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
             continue;
         };
         let lines = w.lines(host);

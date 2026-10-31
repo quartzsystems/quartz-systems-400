@@ -5,6 +5,8 @@
 //! The session defaults (`F13`): two pages of choices, checked as the
 //! display checks them, and what they mean to the session.
 
+use uim::engine::LineMsg;
+
 /// `Amount to roll`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Roll {
@@ -170,12 +172,12 @@ pub struct Page2 {
 /// A value the display refuses: which field (by its order on the
 /// page, 0-based) and why.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
-#[error("{text}")]
+#[error("{}", msg.id)]
 pub struct Invalid {
     /// The field's index on its page.
     pub field: usize,
     /// What is wrong.
-    pub text: String,
+    pub msg: LineMsg,
 }
 
 fn yes_no(field: usize, s: &str) -> Result<bool, Invalid> {
@@ -184,7 +186,7 @@ fn yes_no(field: usize, s: &str) -> Result<bool, Invalid> {
         "N" => Ok(false),
         _ => Err(Invalid {
             field,
-            text: "Type Y or N.".into(),
+            msg: LineMsg::error("CPD9B98", &[]),
         }),
     }
 }
@@ -193,7 +195,7 @@ fn yes_no(field: usize, s: &str) -> Result<bool, Invalid> {
 fn increment(field: usize, s: &str) -> Result<u32, Invalid> {
     let bad = || Invalid {
         field,
-        text: "The increment is a number from 0.01 to 999.99.".into(),
+        msg: LineMsg::error("CPD9BD5", &[]),
     };
     let t = s.trim();
     let (w, f) = t.split_once('.').unwrap_or((t, ""));
@@ -282,7 +284,7 @@ impl Defaults {
     pub fn set_page1(&mut self, p: &Page1) -> Result<(), Invalid> {
         let roll = Roll::parse(&p.roll).ok_or(Invalid {
             field: 0,
-            text: "Type H, F, C, D or a number of lines from 1 to 999.".into(),
+            msg: LineMsg::error("CPD9B98", &[]),
         })?;
         let upper = yes_no(1, &p.upper)?;
         let tabs = yes_no(2, &p.tabs)?;
@@ -292,7 +294,7 @@ impl Defaults {
         if srctype.len() > 10 {
             return Err(Invalid {
                 field: 5,
-                text: "A source type has at most 10 characters.".into(),
+                msg: LineMsg::error("CPD9BD6", &[]),
             });
         }
         let syntax = yes_no(6, &p.syntax)?;
@@ -302,7 +304,7 @@ impl Defaults {
             }
             crate::parse_seq(s).map(Some).ok_or(Invalid {
                 field,
-                text: "Type a sequence number from 0000.00 to 9999.99.".into(),
+                msg: LineMsg::error("CPD9BD7", &[]),
             })
         };
         let from = seq(7, &p.from)?;
@@ -312,12 +314,12 @@ impl Defaults {
         {
             return Err(Invalid {
                 field: 8,
-                text: "The last sequence number is before the first.".into(),
+                msg: LineMsg::error("CPD9BD8", &[]),
             });
         }
         let date = parse_date(&p.date).ok_or(Invalid {
             field: 9,
-            text: "Type the date as YY/MM/DD or YYMMDD.".into(),
+            msg: LineMsg::error("CPD9BD9", &[]),
         })?;
         self.roll = roll;
         self.upper = upper;
@@ -341,7 +343,7 @@ impl Defaults {
             _ => {
                 return Err(Invalid {
                     field: 0,
-                    text: "Type Y, N or P.".into(),
+                    msg: LineMsg::error("CPD9B98", &[]),
                 });
             }
         };
@@ -350,7 +352,7 @@ impl Defaults {
         if exit_pgm.is_empty() {
             return Err(Invalid {
                 field: 2,
-                text: "Type *REGFAC, *NONE or a program name.".into(),
+                msg: LineMsg::error("CPD9B98", &[]),
             });
         }
         let filter = p.filter.trim().to_string();

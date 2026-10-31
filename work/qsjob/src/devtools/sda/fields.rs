@@ -83,7 +83,7 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
             }
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[]));
                 continue;
             }
         }
@@ -101,7 +101,7 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                 if valid_name(&v) {
                     *name = v;
                 } else {
-                    message = Some(format!("Name {v} is not valid."));
+                    message = Some(crate::display::msgline::say(surface.host(), "CPD9BDB", &[&v]));
                 }
             }
         }
@@ -132,11 +132,11 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                 continue;
             }
             let Some((len, dec)) = length(&a.up(&format!("{name}LEN"))) else {
-                message = Some(format!("Type a length for field {n}."));
+                message = Some(crate::display::msgline::say(surface.host(), "CPD9C88", &[&n]));
                 continue;
             };
             if !valid_name(&n) || taken.contains(&n) || r.elements.iter().any(|e| e.name() == Some(&n)) {
-                message = Some(format!("Field name {n} is not valid or is already used."));
+                message = Some(crate::display::msgline::say(surface.host(), "CPD9C89", &[&n]));
                 continue;
             }
             r.elements.push(Element::field(&n, usage, dec.is_some(), len, dec.unwrap_or(0), None));
@@ -175,7 +175,7 @@ pub fn work_with(surface: &mut Surface, r: &mut Record, taken: &[String]) -> Flo
                     r.elements.remove(i);
                     r.changed = true;
                 }
-                other => message = Some(format!("Option {other} is not valid.")),
+                other => message = Some(crate::display::msgline::say(surface.host(), "CPD6A7C", &[&other])),
             }
         }
     }

@@ -94,10 +94,7 @@ fn start_sql(host: &Host, s: &mut Session) -> Result<(), String> {
 /// `STRSQL`: Enter SQL Statements until the session ends.
 pub fn run(host: &Host, r: &Resolved) -> Result<String, Fail> {
     if !shows_panels(host, r) {
-        return Err(Fail::new(
-            "CPF9898",
-            "STRSQL needs a display; use RUNSQLSTM in a batch job.",
-        ));
+        return Err(Fail::no_display("STRSQL"));
     }
     let mut surface = Surface::new(host.clone());
     let mut s = open(host, r);
@@ -236,18 +233,18 @@ fn main_loop(host: &Host, surface: &mut Surface, s: &mut Session) {
             Key::F(24) => s.page = (s.page + 1) % 2,
             Key::PageUp => {
                 if s.h.top == 0 {
-                    msg = Some("This is the start of the session.".into());
+                    msg = Some(crate::display::msgline::say(host, "CPD6A66", &[]));
                 }
                 s.h.page_up();
             }
             Key::PageDown => {
                 if s.h.at_end() {
-                    msg = Some("This is the end of the session.".into());
+                    msg = Some(crate::display::msgline::say(host, "CPD6A69", &[]));
                 }
                 s.h.page_down();
             }
             Key::Help => run::help(host, surface, s, a.cursor),
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }

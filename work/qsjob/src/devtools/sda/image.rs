@@ -42,7 +42,7 @@ pub fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
     let mut show_with = true;
     let mut db: Vec<DbField> = Vec::new();
     let mut show_db = true;
-    let mut message = Some(format!("Designing record {}: Help lists the keys.", work.name));
+    let mut message = Some(crate::display::msgline::say(host, "CPI9BDC", &[&work.name]));
     let mut cursor = (2, 2);
     loop {
         let others: Vec<&Record> = if show_with {
@@ -136,12 +136,9 @@ pub fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
             Key::F(11) => show_db = !show_db,
             Key::F(21) => show_with = !show_with,
             Key::F(1) | Key::Help => {
-                message = Some(
-                    "F3 end, F4 fields, F9 records, F10 database, F11 list, F12 keep, F14 ruler, F17 print, F20 hidden, F21"
-                        .into(),
-                );
+                message = Some(crate::display::msgline::say(host, "CPI9BDD", &[]));
             }
-            _ => message = Some("Function key not allowed.".into()),
+            _ => message = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
         }
     }
 }
@@ -159,7 +156,7 @@ fn exit_display(surface: &mut Surface) -> Option<u8> {
             "1" => return Some(1),
             "2" => return Some(2),
             "3" => return Some(3),
-            _ => message = Some("Type 1, 2 or 3.".into()),
+            _ => message = Some(crate::display::msgline::say(surface.host(), "CPD9B98", &[])),
         }
     }
 }
@@ -277,7 +274,7 @@ fn db_files(host: &Host, surface: &mut Surface, db: &mut Vec<DbField>) -> Result
                 "3" => Usage::Output,
                 "1" | "4" => Usage::Both,
                 _ => {
-                    message = Some(format!("Option {opt} is not valid."));
+                    message = Some(crate::display::msgline::say(host, "CPD6A7C", &[&opt]));
                     break;
                 }
             };
@@ -290,7 +287,7 @@ fn db_files(host: &Host, surface: &mut Surface, db: &mut Vec<DbField>) -> Result
                 .iter()
                 .find(|f| rcd.is_empty() || f.name == rcd)
             else {
-                message = Some(format!("File {file} in library {lib} has no record {rcd}."));
+                message = Some(crate::display::msgline::say(host, "CPD9C8A", &[&file, &lib, &rcd]));
                 break;
             };
             for fi in &f.fields {

@@ -27,6 +27,7 @@ use stg::Client;
 use stg::proto::SrcMember;
 use tn5250::ds::aid;
 use tn5250::screen::{Read, ScreenModel};
+use uim::engine::LineMsg;
 
 use crate::command::Fail;
 use crate::console::host::Host;
@@ -185,7 +186,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
         t => t.trim_matches('\'').to_string(),
     };
     if !opened.exists {
-        s.message = Some(format!("Member {} is new; it is added when saved.", opened.member));
+        s.message = Some(LineMsg::info("CPI9BC5", &[&opened.member]));
     }
     let r = edit(&mut ctx, &mut s);
     ctx.close();
@@ -219,22 +220,19 @@ fn target(r: &Resolved) -> Result<(String, String, String), Fail> {
 
 /// A service refusal as a failure: its identifier leads the text.
 fn fail_of(e: &str) -> Fail {
-    let (id, text) = match e.split_once(' ') {
-        Some((id, rest)) if id.len() == 7 && id.chars().all(|c| c.is_ascii_alphanumeric()) => (id, rest),
-        _ => ("CPF9898", e),
-    };
-    Fail::new(id, text.to_string())
+    Fail::read("STRSEU", e)
 }
 
 /// The edit or browse display until the session ends.
 fn edit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<String, Fail> {
     loop {
+        crate::display::msgline::word(ctx.host, &mut s.message);
         let v = s.view();
         let Some((a, cursor)) = ctx.exchange(|sc, m, env| show_session(sc, m, env, &v)) else {
             return Ok(String::new());
         };
         let Some(key) = key_of(a) else {
-            s.message = Some("That key is not used here.".into());
+            s.message = Some(LineMsg::error("CPD6A60", &[]));
             continue;
         };
         let input = ctx.read(|m| read_session(m, &v, cursor));
@@ -255,8 +253,8 @@ fn edit(ctx: &mut Ctx<'_>, s: &mut Session) -> Result<String, Fail> {
                 let member = if to.member.is_empty() { ctx.at.2.clone() } else { to.member };
                 match ctx.save(s, (&lib, &file, &member)) {
                     Ok(()) if file_too => return Ok(String::new()),
-                    Ok(()) => s.message = Some(format!("Member {member} saved.")),
-                    Err(e) => s.message = Some(e),
+                    Ok(()) => s.message = Some(LineMsg::info("CPI9BC6", &[&member])),
+                    Err(e) => s.message = Some(crate::panels::line(&e)),
                 }
             }
             Action::ClPrompt(t, _) => clprompt::prompt(ctx, s, t),

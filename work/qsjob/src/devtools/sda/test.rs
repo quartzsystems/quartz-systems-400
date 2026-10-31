@@ -40,7 +40,7 @@ pub fn start(host: &Host, surface: &mut Surface, s: &mut Session) -> Flow {
             Key::F(12) => return Flow::Back,
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -54,7 +54,7 @@ pub fn start(host: &Host, surface: &mut Surface, s: &mut Session) -> Flow {
         let df = match opened.map(|(p, _)| dspf::decode(&p)) {
             Ok(Ok(df)) => df,
             Ok(Err(_)) => {
-                message = Some(format!("Display file {file} cannot be read."));
+                message = Some(crate::display::msgline::say(host, "CPD9C8E", &[&file]));
                 continue;
             }
             Err(e) => {
@@ -63,11 +63,11 @@ pub fn start(host: &Host, surface: &mut Surface, s: &mut Session) -> Flow {
             }
         };
         if record.is_empty() || df.record(&record).is_none() {
-            message = Some(format!("Type a record of display file {file}."));
+            message = Some(crate::display::msgline::say(host, "CPD9C8F", &[&file]));
             continue;
         }
         if !more.is_empty() && df.record(&more).is_none() {
-            message = Some(format!("Record {more} is not in display file {file}."));
+            message = Some(crate::display::msgline::say(host, "CPD9C90", &[&more, &file]));
             continue;
         }
         match test(host, surface, &file, &df, &record, &more) {
@@ -152,7 +152,7 @@ fn test(host: &Host, surface: &mut Surface, file: &str, df: &dspf::DisplayFile, 
             }
             Key::Enter => {}
             _ => {
-                message = Some("Function key not allowed.".into());
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
                 continue;
             }
         }
@@ -193,7 +193,9 @@ fn test(host: &Host, surface: &mut Surface, file: &str, df: &dspf::DisplayFile, 
             rt.write(m, &env, record, &out, &indara)
         });
         if let Err(e) = wrote {
-            message = Some(format!("Record {record} cannot be shown: {e}"));
+            // The detail goes to the job log.
+            let _ = crate::panels::line(&e.to_string());
+            message = Some(crate::display::msgline::say(host, "CPD9C91", &[&record]));
             continue;
         }
         let input = loop {
@@ -208,7 +210,7 @@ fn test(host: &Host, surface: &mut Surface, file: &str, df: &dspf::DisplayFile, 
             }
         };
         let Some(input) = input else {
-            message = Some(format!("Record {record} was not shown."));
+            message = Some(crate::display::msgline::say(host, "CPD9C92", &[&record]));
             continue;
         };
         let back_on: Vec<u8> = if df.file.indara {

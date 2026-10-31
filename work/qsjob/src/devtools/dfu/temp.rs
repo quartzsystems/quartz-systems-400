@@ -41,6 +41,7 @@ struct Run<'a> {
     typed: BTreeMap<String, String>,
     page: usize,
     message: Option<String>,
+    host: Host,
     copyright: bool,
 }
 
@@ -68,6 +69,7 @@ pub fn run(
         typed: BTreeMap::new(),
         page: 0,
         message: None,
+        host: host.clone(),
         copyright: true,
     };
     r.main(surface);
@@ -190,7 +192,7 @@ impl Run<'_> {
                 Key::PageDown => 100,
                 Key::PageUp => 101,
                 Key::Help | Key::Other => {
-                    self.message = Some("Help is not available for this display.".into());
+                    self.message = Some(crate::display::msgline::say(surface.host(), "CPD9B82", &[]));
                     continue;
                 }
             };
@@ -211,7 +213,7 @@ impl Run<'_> {
                     Some(false) => {}
                 },
                 Step::Invalid => {
-                    self.message = Some("That function key cannot be used here.".into());
+                    self.message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[]));
                 }
             }
         }
@@ -285,11 +287,11 @@ impl Run<'_> {
         let fmt = self.fmt().name.clone();
         let r = self.open.update(&rec, &fmt);
         if r.status >= 1000 {
-            self.message = Some(failed(r.msgid.as_deref(), "changed"));
+            self.message = Some(failed(&self.host, r.msgid.as_deref(), "CPD9BEC"));
             return false;
         }
         self.s.changed += 1;
-        self.message = Some("The record was changed.".into());
+        self.message = Some(crate::display::msgline::say(&self.host, "CPI9BD6", &[]));
         if let Some(sh) = &mut self.shown {
             sh.rec = rec;
         }
@@ -316,7 +318,7 @@ impl Run<'_> {
         } else {
             let t = typed.get("*RECNBR").map_or("", |s| s.trim());
             let Ok(n) = t.parse::<u64>() else {
-                self.message = Some("Type a record number.".into());
+                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BE8", &[]));
                 return;
             };
             self.open.chain(KeyRef::Rrn(n), nolock)
@@ -328,13 +330,13 @@ impl Run<'_> {
                 self.page = 0;
             }
             _ if r.status >= 1000 && r.status != 1211 && r.status != 1218 => {
-                self.message = Some(format!("No record with that key in member {}.", self.member));
+                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BE9", &[&self.member]));
             }
             _ if r.status == 1218 => {
-                self.message = Some("The record is in use by another job.".into());
+                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BEA", &[]));
             }
             _ => {
-                self.message = Some(format!("No record with that key in member {}.", self.member));
+                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BE9", &[&self.member]));
             }
         }
     }
@@ -344,7 +346,7 @@ impl Run<'_> {
         if self.shown.is_none() {
             // Forward from the start of the member; nothing comes before it.
             if back {
-                self.message = Some("There are no more records in that direction.".into());
+                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BEB", &[]));
                 return;
             }
             let _ = self.open.position(KeyRef::None, false);
@@ -358,7 +360,7 @@ impl Run<'_> {
             Some(rec) if !r.eof => self.shown = Some(Shown { rec, rrn: r.rrn }),
             _ => {
                 self.shown = None;
-                self.message = Some("There are no more records in that direction.".into());
+                self.message = Some(crate::display::msgline::say(&self.host, "CPD9BEB", &[]));
             }
         }
     }
@@ -378,25 +380,25 @@ impl Run<'_> {
         };
         let r = self.open.write(&rec, &fmt.name);
         if r.status >= 1000 {
-            self.message = Some(failed(r.msgid.as_deref(), "added"));
+            self.message = Some(failed(&self.host, r.msgid.as_deref(), "CPD9BED"));
             return;
         }
         self.s.added += 1;
         self.typed.clear();
         self.page = 0;
-        self.message = Some("The record was added.".into());
+        self.message = Some(crate::display::msgline::say(&self.host, "CPI9BD7", &[]));
     }
 
     fn delete(&mut self) {
         let r = self.open.delete();
         if r.status >= 1000 {
-            self.message = Some(failed(r.msgid.as_deref(), "deleted"));
+            self.message = Some(failed(&self.host, r.msgid.as_deref(), "CPD9BEE"));
             return;
         }
         self.s.deleted += 1;
         self.shown = None;
         self.typed.clear();
-        self.message = Some("The record was deleted.".into());
+        self.message = Some(crate::display::msgline::say(&self.host, "CPI9BD8", &[]));
     }
 
     fn formats(&mut self, surface: &mut Surface) {
@@ -440,18 +442,17 @@ impl Run<'_> {
                     "N" => return Some(false),
                     other => {
                         answer = other.to_string();
-                        message = Some("Type Y or N.".to_string());
+                        message = Some(crate::display::msgline::say(surface.host(), "CPD9B98", &[]));
                     }
                 },
-                _ => message = Some("That function key cannot be used here.".into()),
+                _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
             }
         }
     }
 }
 
-fn failed(msgid: Option<&str>, what: &str) -> String {
-    format!(
-        "The record was not {what} ({}).",
-        msgid.unwrap_or("an error")
-    )
+/// The record was not changed, added or deleted (`id`): the message
+/// the database sent as its value.
+fn failed(host: &Host, msgid: Option<&str>, id: &str) -> String {
+    crate::display::msgline::say(host, id, &[&msgid.unwrap_or("*N")])
 }

@@ -108,30 +108,30 @@ pub fn display(surface: &mut Surface, d: &Data, note: Option<&str>) {
             Key::F(3 | 12) => return,
             Key::PageDown => {
                 if p.at_bottom(rows) {
-                    msg = Some("This is the end of the data.".into());
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD6A69", &[]));
                 }
                 p.down(rows);
             }
             Key::PageUp => {
                 if p.top == 0 {
-                    msg = Some("This is the start of the data.".into());
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD6A66", &[]));
                 }
                 p.up();
             }
             Key::F(19) => p.left(),
             Key::F(20) => p.right(width),
             Key::F(21) => {
-                msg = Some("The split display is not available in this release.".into());
+                msg = Some(crate::display::msgline::say(surface.host(), "CPD9B81", &[]));
             }
             Key::Enter => {
                 if !p.position(&a.get("POSITION"), rows) {
-                    msg = Some("Type a line number, T for the top or B for the bottom.".into());
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF2", &[]));
                 }
                 if !p.shift_to(&a.get("SHIFT"), width) {
-                    msg = Some(format!("Type a column from 1 to {width}."));
+                    msg = Some(crate::display::msgline::say(surface.host(), "CPD9BF3", &[&width]));
                 }
             }
-            _ => msg = Some("That function key is not used on this display.".into()),
+            _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
     }
 }
