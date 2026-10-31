@@ -25,39 +25,6 @@ use super::{done, escape};
 use crate::ipl::system::{System, now_unix};
 use crate::svc::ile::StoreProvider;
 
-/// A shipped CL program compiled against the shipped definitions
-/// alone: the IR text, for `ship_program`.
-pub fn compile_shipped(name: &str, source: &str) -> Result<String, String> {
-    let mut mem = MemSource::default();
-    for (n, _) in sys_cpps::defs::DEFS {
-        if let Ok(o) = sys_cpps::install::object(n, 0) {
-            mem.put(o.def);
-        }
-    }
-    let mut env = Env::new(&mut mem);
-    env.setting = Setting {
-        interactive: false,
-        program: true,
-        exec: false,
-        module: false,
-        syntax_only: false,
-    };
-    let opts = cl::Options {
-        name: name.to_string(),
-        srcfile: "QCLSRC".into(),
-        srclib: "QSYS".into(),
-        srcmbr: name.to_string(),
-        text: "Startup program".into(),
-        ..cl::Options::default()
-    };
-    let c = cl::compile(source, &opts, &mut env, &mut cl::NoFiles);
-    if !c.created {
-        let why: Vec<String> = c.diags.iter().map(ToString::to_string).collect();
-        return Err(why.join("; "));
-    }
-    Ok(c.qir)
-}
-
 /// Run one of the CL commands.
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     match name {

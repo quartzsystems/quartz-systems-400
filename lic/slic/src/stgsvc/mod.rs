@@ -143,22 +143,11 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
-    made += install_commands(system);
     let ptfs = crate::cpp::ptfcmd::ipl_pending(system);
     made += usize::from(licpgm::seed(system));
     jobqs::load(system);
     spool::load(system);
     wtr::clear_queues(system);
-    // The startup program: CL source compiled here, against the shipped
-    // definitions.
-    let strup = include_str!("shipped/QSTRUP.clle");
-    match crate::cpp::clpgm::compile_shipped("QSTRUP", strup).and_then(|qir| {
-        crate::svc::ile::commands::ship_program(system, "QSYS", &qir, "Startup program")
-    }) {
-        Ok(true) => made += 1,
-        Ok(false) => {}
-        Err(e) => eprintln!("qsstg: QSYS/QSTRUP: {e}"),
-    }
     let text = if made > 0 {
         format!("{text}; {made} work management object(s) created")
     } else {
@@ -318,41 +307,6 @@ fn wait_ready(listener: &UnixListener, conns: &[Conn], wait: Duration) -> (bool,
     (accept, ready)
 }
 
-/// The system command set: every `*CMD` of `QSYS` created or, when its
-/// shipped definition changed, replaced. How many were made.
-fn install_commands(system: &mut System) -> usize {
-    let Some(s) = system.storage.as_mut() else {
-        return 0;
-    };
-    let Some(qsys) = s.qsys else {
-        return 0;
-    };
-    let ctx = cmd::store::Ctx {
-        now: crate::ipl::system::now_unix(),
-        owner: "QSYS".into(),
-        system: "QS400".into(),
-    };
-    let Ok(mut txn) = s.store.begin() else {
-        return 0;
-    };
-    match sys_cpps::install::install(&mut txn, &ctx, qsys) {
-        Ok(done) => {
-            for (name, why) in &done.failed {
-                eprintln!("qsstg: command {name}: {why}");
-            }
-            if txn.commit().is_err() {
-                return 0;
-            }
-            done.created.len() + done.replaced.len()
-        }
-        Err(e) => {
-            eprintln!("qsstg: installing the commands: {e}");
-            txn.abort();
-            0
-        }
-    }
-}
-
 /// The shipped work management objects that are missing.
 fn install(system: &mut System) -> Result<usize, String> {
     let Some(s) = system.storage.as_mut() else {
@@ -367,11 +321,17 @@ fn install(system: &mut System) -> Result<usize, String> {
         now: crate::ipl::system::now_unix(),
     };
     let mut txn = s.store.begin().map_err(|e| e.to_string())?;
-    let mut made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
+    // The operating system's objects (the QS00SS1 load's content), then
+    // the system's own configuration.
+    let r = osobjects::create(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
+    for (name, why) in &r.failed_commands {
+        eprintln!("qsstg: command {name}: {why}");
+    }
+    for p in &r.problems {
+        eprintln!("qsstg: {p}");
+    }
+    let mut made = r.made + r.commands_replaced;
     made += usize::from(crate::svc::neta::ensure(&mut txn, qsys, stamp.now)?);
-    made += crate::svc::db::dspf::install_shipped(&mut txn, qsys, &stamp)?;
-    made += crate::svc::ui::install_shipped(&mut txn, qsys, &stamp)?;
-    made += self::regfac::install(&mut txn, qsys, &stamp)?;
     made += tcp::store::install(&mut txn, qsys, &stamp)?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)

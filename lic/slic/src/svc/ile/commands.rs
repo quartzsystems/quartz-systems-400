@@ -114,40 +114,6 @@ fn find(system: &mut System, qual: &str, type_code: u16) -> Result<(ObjectId, bo
     .map(|id| (id, lib.eq_ignore_ascii_case("QTEMP")))
 }
 
-/// Create program `lib/name` from QIR text when it does not exist yet:
-/// a module, bound into the program, then dropped. Whether it was made.
-pub fn ship_program(
-    system: &mut System,
-    lib: &str,
-    qir_text: &str,
-    text: &str,
-) -> Result<bool, String> {
-    let module = qir::parse(qir_text).map_err(|e| format!("{e}"))?;
-    let name = module.name.clone();
-    if find(system, &format!("{lib}/{name}"), types::PGM).is_ok() {
-        return Ok(false);
-    }
-    let n = Name::parse(&name).map_err(|e| e.to_string())?;
-    let create = CreateData {
-        compiler: "qirc".into(),
-        ..CreateData::default()
-    };
-    let object = ModuleObject::compile(module, create, now_unix()).map_err(|e| e.to_string())?;
-    let mut options = BindOptions::new(&name, PgmKind::Pgm);
-    options.attr.actgrp = ActGrpAttr::Caller;
-    let spec = ObjSpec {
-        lib: LibSpec::Name(Name::parse(lib).map_err(|e| e.to_string())?),
-        name: n,
-    };
-    in_store(system, lib, |txn, c, library| {
-        let m = ile::store::crtmod(txn, c, library, n, &object, text).map_err(|e| e.to_string())?;
-        ile::store::crtpgm(txn, c, library, &[spec], &[], options, text)
-            .map_err(|e| e.to_string())?;
-        ops::delete(txn, store::obj::JobHandle(0), m).map_err(|e| e.to_string())
-    })?;
-    Ok(true)
-}
-
 /// A `LIB/NAME` list of a keyword, space separated.
 fn spec_list(p: &Params, kw: &str) -> Result<Vec<ObjSpec>, String> {
     let Some(v) = p.kw(kw) else {

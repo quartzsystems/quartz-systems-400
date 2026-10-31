@@ -9,7 +9,7 @@
 
 use std::fmt::Write as _;
 
-use dspf::{CompileOpts, compile_dspf};
+use osobjects::display::compile;
 use qsname::Name;
 use store::obj::{JobHandle, ObjectId, ops, types};
 use store::txn::Txn;
@@ -21,8 +21,7 @@ use crate::ipl::system::System;
 use crate::stgsvc::prtf::PrtOverride;
 use crate::svc::db::SqlContext;
 
-/// The object attribute of a display file.
-pub const ATTR: &str = "DSPF";
+pub use osobjects::display::ATTR;
 
 /// Whether `id` is a display file.
 pub fn is_dspf(txn: &mut Txn<'_>, id: ObjectId) -> bool {
@@ -33,24 +32,6 @@ pub fn is_dspf(txn: &mut Txn<'_>, id: ObjectId) -> bool {
 
 fn err(e: &wm::Error) -> String {
     format!("{} {e}", e.msgid().unwrap_or("CPD0084"))
-}
-
-/// Compile DDS text into a display file's payload: the payload and a
-/// note for the completion text, or the listing.
-fn compile(src: &dspf::Source, refs: &dspf::MapRefs, name: &str) -> Result<(Vec<u8>, String, usize), String> {
-    let comp = compile_dspf(
-        src,
-        refs,
-        &CompileOpts {
-            file: Some(name.to_string()),
-            ..CompileOpts::default()
-        },
-    );
-    let Some(df) = comp.definition else {
-        return Err(format!("File {name} not created.\n{}", comp.listing));
-    };
-    let n = df.records.len();
-    Ok((dspf::encode(&df), comp.listing, n))
 }
 
 /// `crtdspf LIB/FILE SRCFILE(LIB/SRC) [SRCMBR(M)] [TEXT('..')]`.
@@ -248,36 +229,3 @@ pub fn open(
     })
 }
 
-/// The shipped display files that are missing from `QSYS`, compiled
-/// from their DDS and created; how many.
-pub fn install_shipped(
-    txn: &mut Txn<'_>,
-    qsys: ObjectId,
-    stamp: &wm::obj::Stamp,
-) -> Result<usize, String> {
-    let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
-    let mut made = 0;
-    for (name, text) in dspf::sys::FILES {
-        let n = Name::parse(name).map_err(|e| format!("{name}: {e}"))?;
-        if lib
-            .lookup(txn, types::FILE, n)
-            .map_err(|e| e.to_string())?
-            .is_some()
-        {
-            continue;
-        }
-        let (src, _) = dspf::Source::from_text(text);
-        let (payload, _, _) = compile(&src, &dspf::MapRefs::default(), name)?;
-        wm::obj::create_attr(
-            txn,
-            qsys,
-            (n, types::FILE, ATTR),
-            &format!("Shipped display file {name}"),
-            stamp,
-            &payload,
-        )
-        .map_err(|e| err(&e))?;
-        made += 1;
-    }
-    Ok(made)
-}

@@ -12,6 +12,7 @@ members = [
     "lic/console",
     "lic/svctools",
     "lic/diskimg",
+    "lic/osobjects",
     "lic/blockdev",
     # Object store and the names and code pages it holds.
     "storage/store",

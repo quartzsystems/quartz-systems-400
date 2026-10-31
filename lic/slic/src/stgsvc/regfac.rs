@@ -17,15 +17,8 @@ use cmd::block::Parms;
 use sec::auth::principal::Principal;
 use sec::profile::SpecialAuth;
 use stg::proto::{CmdMsg, CmdReply};
-use store::obj::ObjectId;
-use store::txn::Txn;
 
 use crate::ipl::system::System;
-
-/// Make the repository, or add the shipped points it lacks.
-pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Result<usize, String> {
-    repo::install(txn, qsys, stamp).map_err(|e| e.to_string())
-}
 
 fn refused(e: &sec::SecError) -> RegFail {
     RegFail::id(e.msgid().unwrap_or("CPF2222"), e.to_string())
