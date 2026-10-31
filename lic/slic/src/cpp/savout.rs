@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn stamps_and_lengths() {
-        assert_eq!(stamp(1_793_349_915), "1261030072515");
+        assert_eq!(stamp(1_793_349_915), "1261030084515");
         let len = |f: &[Fld]| -> usize {
             f.iter()
                 .map(|(_, t, l, _)| match t {
