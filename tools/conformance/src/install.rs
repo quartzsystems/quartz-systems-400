@@ -202,12 +202,43 @@ impl Suite {
             if made.contains("CPF") {
                 return Err(format!("CRTUSRPRF: {made}"));
             }
-            s.command("svc.vrtdev TAPVRT01 /dev/vdb", CMD)?;
-            let out = s.command("SAVSYS DEV(TAPVRT01)", Duration::from_mins(15))?;
-            if !out.contains("CPC3703") {
-                return Err(format!("SAVSYS:\n{out}"));
+            // User data for the recovery's RSTLIB and RST.
+            s.command("crtlib LIB(RCVUSR) TEXT('user data')", CMD)?;
+            s.command("crtdtaara DTAARA(RCVUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')", CMD)?;
+            s.command("svc.ifs mkdir /rcvdata", CMD)?;
+            s.command("svc.ifs put /rcvdata/note.txt kept in the IFS", CMD)?;
+            // A virtual tape over an image catalog, as any save uses.
+            let long = Duration::from_mins(15);
+            for (line, want) in [
+                ("CRTDEVTAP DEVD(TAPVRT01) RSRCNAME(*VRT)", "CPC2618"),
+                ("CRTIMGCLG IMGCLG(SAVSYS) DIR('/savsys') TYPE(*TAP)", "CPCBC01"),
+                ("ADDIMGCLGE IMGCLG(SAVSYS) FROMFILE(*NEW) TOFILE(SYS001) VOLNAM(SYS001) IMGSIZ(900)", "CPCBC03"),
+                ("LODIMGCLG IMGCLG(SAVSYS) DEV(TAPVRT01)", "CPCBC06"),
+                ("VRYCFG CFGOBJ(TAPVRT01) CFGTYPE(*DEV) STATUS(*ON)", "CPC2605"),
+                ("SAVSYS DEV(TAPVRT01)", "CPC3703"),
+                ("CHKTAP DEV(TAPVRT01)", "system save (SAVSYS)"),
+                ("SAVLIB LIB(*NONSYS) DEV(TAPVRT01)", "CPC3722"),
+                ("SAV DEV('/QSYS.LIB/TAPVRT01.DEVD') OBJ(('/*') ('/QSYS.LIB' *OMIT) ('/savsys' *OMIT))", "objects saved, 0 not saved"),
+                ("svc.vrtout TAPVRT01 /dev/vdb", "bytes copied"),
+            ] {
+                let out = s.command(line, long)?;
+                if !out.contains(want) {
+                    return Err(format!("{line}: no {want}:\n{out}"));
+                }
             }
-            Ok(out.lines().filter(|l| l.contains(" bytes")).count().to_string())
+            let labels = s.command("DSPTAP DEV(TAPVRT01) DATA(*LABELS)", CMD)?;
+            for want in ["QS400MANIFEST", "RCVUSR", "QSAVIFS"] {
+                if !labels.contains(want) {
+                    return Err(format!("DSPTAP: no {want}:\n{labels}"));
+                }
+            }
+            // The file rows of the system save: the manifest and its payloads.
+            let rows = labels
+                .lines()
+                .filter(|l| l.trim_start().starts_with(|c: char| c.is_ascii_digit()))
+                .filter(|l| ["QS400", "QSAVSECDTA", "QSAVCFG"].iter().any(|w| l.contains(w)))
+                .count();
+            Ok(rows.to_string())
         })();
         let files = match r {
             Ok(n) => n,
@@ -234,12 +265,24 @@ impl Suite {
             s.expect("SRC C6004100", self.boot_timeout * 2)?;
             s.expect("SRC C6004130", Duration::from_mins(15))?;
             let users = s.expect("authorization lists", Duration::from_mins(5))?;
+            s.expect("user data: ", Duration::from_mins(5))?;
             s.expect("SRC C6004150", Duration::from_mins(5))?;
+            // The storage service restores the user data from the tape.
+            s.expect("recovery: user data from TAPVRT01", self.boot_timeout * 2)?;
+            let restores = s.expect("qsstg: RSTAUT:", Duration::from_mins(15))?;
             s.expect(SRC_IPL_COMPLETE, Duration::from_mins(5))?;
             s.expect(crate::PROMPT, CMD)?;
             let p = s.command("DSPUSRPRF USRPRF(RECOVER1)", CMD)?;
             if !p.contains("RECOVER1") || p.contains("CPF2204") {
                 return Err(format!("the profile did not come back:\n{p}"));
+            }
+            let lib = s.command("svc.dtaara get RCVUSR/KEEPME", CMD)?;
+            if !lib.contains("kept value") {
+                return Err(format!("RSTLIB did not bring RCVUSR back:\n{lib}\n{restores}"));
+            }
+            let ifs = s.command("svc.ifs cat /rcvdata/note.txt", CMD)?;
+            if !ifs.contains("kept in the IFS") {
+                return Err(format!("RST did not bring /rcvdata back:\n{ifs}\n{restores}"));
             }
             let last = users
                 .lines()
@@ -249,7 +292,20 @@ impl Suite {
                 .unwrap_or_default()
                 .trim()
                 .to_string();
-            Ok(format!("{files} payloads on the tape; wiped; recovered: {last}; RECOVER1 back"))
+            let rst = |w: &str| {
+                restores
+                    .lines()
+                    .find_map(|l| l.split(&format!("qsstg: {w}: ")).nth(1))
+                    .unwrap_or_default()
+                    .trim()
+                    .to_string()
+            };
+            Ok(format!(
+                "SAVSYS, SAVLIB *NONSYS and SAV on TAPVRT01 over an image catalog ({files} system save files); \
+                 wiped; recovered: {last}; RSTLIB: {}; RST: {}; RECOVER1, RCVUSR and /rcvdata back",
+                rst("RSTLIB"),
+                rst("RST")
+            ))
         })()
         .map_err(|e| (e, s.log.clone()));
         s.command("pwrdwn", CMD).ok();
