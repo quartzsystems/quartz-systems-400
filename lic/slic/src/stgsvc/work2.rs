@@ -106,6 +106,10 @@ pub fn data(
             Ok((desc, rows.into_iter().map(row).collect()))
         }
         "SHRPOOL" => Ok(shrpools(system)),
+        "IMGCLG" => Ok(crate::cpp::medcmd::imgclg_panel(system, arg(0), arg(1))),
+        "IMGCLGE" => crate::cpp::medcmd::imgclge_panel(arg(0)),
+        "TAPCTG" => crate::cpp::medcmd::tapctg_panel(system, arg(0), &[], arg(1)),
+        "MLBSTS" => Ok(crate::cpp::medcmd::mlbsts_panel(system, arg(0))),
         "SYSSTS" => Ok(super::stats::syssts_panel(system, arg(0) == "*YES")),
         "DSKSTS" => Ok(super::stats::dsksts_panel(system, arg(0) == "*YES")),
         "SYSACT" => Ok(super::stats::sysact_panel(system)),

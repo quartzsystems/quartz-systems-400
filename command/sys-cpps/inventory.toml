@@ -990,3 +990,17 @@ note = "the service's plan run in the job; ENDSBS and STRSBS around a restricted
 [cmd.DSPBCKUP]
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"
+site = "job"
+note = "panels at a display; the text form in the service without one"
+
+[cmd.WRKIMGCLG]
+site = "job"
+note = "panels at a display; the text form in the service without one"
+
+[cmd.WRKTAPCTG]
+site = "job"
+note = "panels at a display; the text form in the service without one"
+
+[cmd.WRKMLBSTS]
+site = "job"
+note = "panels at a display; the text form in the service without one"

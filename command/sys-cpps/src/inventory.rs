@@ -553,6 +553,11 @@ pub const JOB_SITE: &[&str] = &[
     "DSPSAVF",
     "WRKPRB",
     "DSPPRB",
+    // --- media (panels/work2/media.rs)
+    "WRKIMGCLG",
+    "WRKIMGCLGE",
+    "WRKTAPCTG",
+    "WRKMLBSTS",
     // --- service (panels/work2/service.rs)
     "ANZPRB",
     "WRKCNTINF",

@@ -154,10 +154,14 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         }
     }
 
-    // An empty list shows its `:LIST.` text on the second entry row.
-    if state.rows.is_empty() && state.complete && entries > 1 {
+    // An empty list shows its `:LIST.` text on the second entry row; a
+    // list holding only the blank row option 1 types on, on the row
+    // after the next.
+    let blank = |r: &Vec<(String, String)>| r.iter().all(|(_, v)| v.trim().is_empty());
+    let placeholders = state.rows.len();
+    if state.complete && state.rows.iter().all(blank) && placeholders <= 1 && entries > placeholders + 1 {
         let empty = ctx.text(&area.title);
-        put_cut(s, row + 1, 4, limit, Attr::Normal, empty.trim());
+        put_cut(s, row + placeholders + 1, 4, limit, Attr::Normal, empty.trim());
     }
 
     // R10: lists always say where they stand.

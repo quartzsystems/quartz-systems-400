@@ -1,0 +1,24 @@
+                            Work with Image Catalogs
+                                                             System:   SYSNAME
+ Type options, press Enter.
+   1=Create   2=Change   4=Delete   8=Load   9=Unload   10=Verify
+   12=Work with entries
+
+      Image
+ Opt  Catalog     Text
+      QS76TAP     Cartridges of the test library
+      QS76OPT     Optical saves
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+ F3=Exit   F5=Refresh   F11=View status and devices   F12=Cancel
+
+

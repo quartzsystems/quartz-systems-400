@@ -8,7 +8,8 @@
 //! `WRKLIB`, `WRKOBJLCK`, `WRKOBJPGP`, `DSPOVR`, `DSPSAVF`, `WRKPRB`
 //! (`objs`); `DSPPFM` (`pfm`); `WRKJRN`, `WRKJRNA`, `DSPJRN`,
 //! `DSPJRNRCVA` (`jrn`); the service displays `WRKPRB`, `DSPPRB`, `ANZPRB`,
-//! `WRKCNTINF`, `WRKSRVPVD`, `DSPSRVSTS` (`service`). Their data comes through `panel2_data`, named
+//! `WRKCNTINF`, `WRKSRVPVD`, `DSPSRVSTS` (`service`); `WRKIMGCLG`,
+//! `WRKIMGCLGE`, `WRKTAPCTG`, `WRKMLBSTS` (`media`). Their data comes through `panel2_data`, named
 //! as the panel groups' variables; `viewer` is the window the two
 //! viewers share.
 
@@ -17,6 +18,7 @@
 
 mod jobs;
 mod jrn;
+mod media;
 mod objs;
 mod pfm;
 mod service;
@@ -57,6 +59,10 @@ pub fn run(
         "DSPOVR" => objs::dspovr(host, surface),
         "DSPSAVF" => objs::dspsavf(host, surface, r),
         "WRKPRB" | "DSPPRB" => service::wrkprb(job, host, surface, r),
+        "WRKIMGCLG" => media::wrkimgclg(job, host, surface, r),
+        "WRKIMGCLGE" => media::wrkimgclge(job, host, surface, &parm(r, "IMGCLG").unwrap_or_default()),
+        "WRKTAPCTG" => media::wrktapctg(job, host, surface, r),
+        "WRKMLBSTS" => media::wrkmlbsts(job, host, surface, r),
         "ANZPRB" => service::anzprb(host, surface),
         "WRKCNTINF" => service::wrkcntinf(job, host, surface),
         "WRKSRVPVD" => service::wrksrvpvd(job, host, surface, r),

@@ -23,7 +23,7 @@ pub(crate) mod lpapi;
 pub(crate) mod lpcmd;
 pub(crate) mod iplcmd;
 mod itgcmd;
-mod medcmd;
+pub(crate) mod medcmd;
 mod msgfcmd;
 mod objcmd;
 mod opacmd;

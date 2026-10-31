@@ -1053,3 +1053,155 @@ fn mlb_ctg(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, S
         _ => Err(format!("CPF6745 {name} is not a cartridge command")),
     }
 }
+
+// ------------------------------------------------------------------ panels
+
+/// A panel variable.
+#[allow(clippy::needless_pass_by_value)]
+fn var(k: &str, v: impl ToString) -> (String, String) {
+    (k.to_string(), v.to_string())
+}
+
+/// `*READY` as the panels show it.
+fn ready(s: &str) -> &'static str {
+    if s == "*READY" { "Ready" } else { "Not ready" }
+}
+
+/// `WRKIMGCLG`'s panel data: one row per catalog `which` and `ty`
+/// select, with its device and the device's status.
+pub(crate) fn imgclg_panel(system: &mut System, which: &str, ty: &str) -> stg::proto::PanelData {
+    let rows = media::with_catalogs(|r| Ok(r.wrkimgclg())).unwrap_or_default();
+    let mut out = Vec::new();
+    for c in rows {
+        let pass = (which.is_empty() || which == "*ALL" || c.name == which || which.strip_suffix('*').is_some_and(|p| c.name.starts_with(p)))
+            && (ty.is_empty() || ty == "*ALL" || ty == c.kind);
+        if !pass {
+            continue;
+        }
+        let dev = media::with_catalogs(|r| r.wrkimgclge(&c.name)).map(|d| d.device).unwrap_or_default();
+        let dev = if dev == "*NONE" { String::new() } else { dev };
+        let sts = if dev.is_empty() {
+            String::new()
+        } else {
+            devices::read(system, &dev).map(|d| d.status.text().to_string()).unwrap_or_default()
+        };
+        out.push(vec![
+            var("CLG", &c.name),
+            var("CLGSTS", ready(c.status)),
+            var("CLGTYPE", c.kind),
+            var("CLGASP", "*NONE"),
+            var("CLGDEV", dev),
+            var("DEVSTS", sts),
+            var("CLGTEXT", &c.text),
+        ]);
+    }
+    (Vec::new(), out)
+}
+
+/// `WRKIMGCLGE`'s panel data.
+pub(crate) fn imgclge_panel(name: &str) -> Result<stg::proto::PanelData, String> {
+    let d = media::with_catalogs(|r| r.wrkimgclge(name))?;
+    let word = |s: &str| match s {
+        "*MOUNTED" => "Mounted",
+        "*LOADED" => "Loaded",
+        _ => "Available",
+    };
+    let vars = vec![
+        var("CLG", &d.name),
+        var("CLGSTS", ready(d.status)),
+        var("CLGTYPE", d.kind),
+        var("CLGDEV", &d.device),
+        var("CLGDIR", &d.dir),
+    ];
+    let rows = d
+        .entries
+        .iter()
+        .map(|e| {
+            vec![
+                var("IDX", e.index),
+                var("ENTSTS", word(e.status)),
+                var("WRTPTC", if e.write_protect == "*YES" { "Y" } else { "N" }),
+                var("VOLNAM", &e.volume),
+                var("IMGFILE", &e.file),
+            ]
+        })
+        .collect();
+    Ok((vars, rows))
+}
+
+/// `WRKTAPCTG`'s panel data.
+pub(crate) fn tapctg_panel(system: &mut System, dev: &str, ids: &[String], cgy: &str) -> Result<stg::proto::PanelData, String> {
+    let rows = tapctg_rows(system, dev, ids, cgy)?
+        .into_iter()
+        .map(|r| {
+            vec![
+                var("CTG", r.id),
+                var("CTGVOL", r.volume),
+                var("CTGCGY", r.category),
+                var("CTGSTS", r.status),
+                var("CTGLOC", r.location),
+            ]
+        })
+        .collect();
+    Ok((vec![var("MLBDEV", dev)], rows))
+}
+
+/// `WRKMLBSTS`'s panel data: each library, then its drives indented.
+pub(crate) fn mlbsts_panel(system: &mut System, which: &str) -> stg::proto::PanelData {
+    let mut out = Vec::new();
+    let devs = devices::all(system).unwrap_or_default();
+    for (n, d) in devs.iter().filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary)) {
+        if !(which.is_empty() || which == "*ALL" || *n == which || which.strip_suffix('*').is_some_and(|p| n.starts_with(p))) {
+            continue;
+        }
+        out.push(vec![var("RSRC", n), var("RSRCSTS", d.status.text()), var("RSRCLIB", n)]);
+        let drives = media::library::drives(system, n).unwrap_or_default();
+        for r in drives {
+            out.push(vec![
+                var("RSRC", format!("  {}", r.name)),
+                var("RSRCSTS", "OPERATIONAL"),
+                var("ALLOC", r.allocation),
+                var("RSRCCTG", r.cartridge),
+                var("RSRCLIB", n),
+            ]);
+        }
+    }
+    (Vec::new(), out)
+}
+
+/// The panels' library actions (`service_op`): `mlb-mount DEV CTG`,
+/// `mlb-demount DEV CTG`, `mlb-alloc DEV DRIVE ALLOCATION`. A line for
+/// the message line.
+pub(crate) fn mlb_op(system: &mut System, op: &str, args: &[String]) -> Result<Vec<String>, String> {
+    let arg = |i: usize| args.get(i).map_or("", |s| s.trim()).to_ascii_uppercase();
+    let (dev, what) = (arg(0), arg(1));
+    media::library::with_library(system, &dev, |_, _, lib| {
+        let line = match op {
+            "mlb-mount" => {
+                let i = lib.mount(&what).map_err(|e| media::library::refused(&e))?;
+                format!("Cartridge {what} mounted in {}.", lib.model.drives[i].name)
+            }
+            "mlb-demount" => {
+                let i = lib
+                    .model
+                    .drives
+                    .iter()
+                    .position(|d| d.cartridge.as_deref() == Some(what.as_str()))
+                    .ok_or_else(|| format!("CPF6747 cartridge {what} is not mounted"))?;
+                lib.demount(i).map_err(|e| media::library::refused(&e))?;
+                format!("Cartridge {what} demounted.")
+            }
+            "mlb-alloc" => {
+                let a = match arg(2).as_str() {
+                    "*UNPROTECTED" => tape::device::Allocation::Unprotected,
+                    "*DEALLOCATED" => tape::device::Allocation::Deallocated,
+                    _ => tape::device::Allocation::Allocated,
+                };
+                lib.allocate(&what, a).map_err(|e| media::library::refused(&e))?;
+                format!("Resource {what} is {}.", a.name())
+            }
+            _ => return Err(format!("CPF9899 no library action {op}")),
+        };
+        Ok(vec![line])
+    })
+}

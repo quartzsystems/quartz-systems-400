@@ -6,7 +6,8 @@
 //! for. `prb-*` work on the problem log (`ANZPRB`, `WRKPRB` options 8
 //! and 12), `trace-point` records a job's own trace point, and `sst-*`
 //! are SST's newer functions, each needing the signed-on service tools
-//! user's privilege as the older SST requests do.
+//! user's privilege as the older SST requests do. `mlb-*` are the media
+//! library panels' cartridge moves and drive allocation.
 
 use prb::analyze::{Answers, Area};
 use prb::{PrbStatus, PrbType, Reported};
@@ -27,6 +28,7 @@ pub fn run(system: &mut System, me: &JobInfo, op: &str, args: &[String]) -> Resu
         return sst_op(system, job, sst, args);
     }
     match op {
+        "mlb-mount" | "mlb-demount" | "mlb-alloc" => crate::cpp::medcmd::mlb_op(system, op, args),
         "prb-analyze" => analyze(system, args),
         "prb-ready" => change(system, arg(args, 0), |l, id, now| {
             l.analyzed(id, now);
