@@ -8,8 +8,7 @@
                           HLPPNLGRP(QHSECMD) HLPID(CHKOBJITG)
              PARM       KWD(USRPRF) TYPE(*NAME) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('User profile')
-             PARM       KWD(OBJ) TYPE(Q1) DFT(*ALL) SNGVAL((*ALL)) +
-                          PROMPT('Object')
+             PARM       KWD(OBJ) TYPE(Q1) PROMPT('Object')
              PARM       KWD(OBJTYPE) TYPE(*CHAR) LEN(10) DFT(*ALL) +
                           PROMPT('Object type')
              PARM       KWD(CHKSIG) TYPE(*CHAR) LEN(7) RSTD(*YES) +
