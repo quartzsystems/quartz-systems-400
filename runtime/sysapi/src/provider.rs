@@ -866,7 +866,7 @@ impl Provider for MemProvider {
                         idx.entries[i] = e;
                         n += 1;
                     } else {
-                        return Err(ApiFail::id("CPF3C52").bin4(i32::try_from(n).unwrap_or(0)));
+                        return Err(ApiFail::id("CPF3C74"));
                     }
                 }
                 Ok(i) | Err(i) => {
@@ -959,7 +959,7 @@ impl Provider for MemProvider {
             Self::find_key(&self.dtaqs, lib, name).ok_or_else(|| ApiFail::not_found(name, lib))?;
         let q = self.dtaqs.get_mut(&k).expect("found");
         if data.len() > q.info.max_len as usize {
-            return Err(ApiFail::id("CPF9506").text(name, 10).text(&k.0, 10));
+            return Err(ApiFail::id("CPF9514"));
         }
         let e = DtaqEntry {
             key: key.to_vec(),

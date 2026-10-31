@@ -73,7 +73,7 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
 }
 
 fn err(e: &wm::Error) -> String {
-    format!("{} {e}", e.msgid().unwrap_or("CPF1691"))
+    format!("{} {e}", e.msgid().unwrap_or("CPD9D07"))
 }
 
 /// The description named first on the line: `LIB/NAME`, else `QSYS`.

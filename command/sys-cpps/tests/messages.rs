@@ -152,35 +152,26 @@ fn ids_in(code: &str) -> Vec<String> {
     out
 }
 
-/// Identifiers sent before this check that no shipped file describes
-/// yet: the list may only shrink. One per line; `#` comments.
-const UNDESCRIBED: &str = include_str!("undescribed.txt");
+/// Whether a generic identifier (`CPA0700`, the last two digits zero,
+/// as a reply list entry or a monitor names a range) covers a described
+/// message.
+fn generic_covers(id: &str, described: &BTreeSet<String>) -> bool {
+    id.ends_with("00") && described.iter().any(|d| d.starts_with(&id[..5]))
+}
 
 #[test]
 fn every_sent_identifier_is_described() {
     let described = described();
-    let owed: BTreeSet<&str> = UNDESCRIBED
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with('#'))
-        .collect();
     let mut seen = BTreeSet::new();
     let mut wrong = Vec::new();
     for f in system_sources() {
         let code = code_of(&std::fs::read_to_string(&f).unwrap_or_default());
         let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
         for id in ids_in(&code) {
-            if described.contains(&id) || !seen.insert(id.clone()) {
+            if described.contains(&id) || generic_covers(&id, &described) || !seen.insert(id.clone()) {
                 continue;
             }
-            if !owed.contains(id.as_str()) {
-                wrong.push(format!("{name}: {id} is sent but no shipped message file describes it"));
-            }
-        }
-    }
-    for id in &owed {
-        if described.contains(*id) || !seen.contains(*id) {
-            wrong.push(format!("undescribed.txt: {id} is described or no longer sent; take it off"));
+            wrong.push(format!("{name}: {id} is sent but no shipped message file describes it"));
         }
     }
     assert!(wrong.is_empty(), "{}:\n  {}", wrong.len(), wrong.join("\n  "));

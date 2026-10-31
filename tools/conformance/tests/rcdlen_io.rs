@@ -89,7 +89,7 @@ fn update_open_of_a_program_described_file() {
     }
     let _ = job.call_program("CHECKER", "QGPL", &[]);
     assert!(
-        job.raised.iter().any(|e| e.msgid == "CPF4188"),
+        job.raised.iter().any(|e| e.msgid == "CPD9D0B"),
         "raised {:?}",
         job.raised.iter().map(|e| e.msgid.clone()).collect::<Vec<_>>()
     );

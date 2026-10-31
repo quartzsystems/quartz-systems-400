@@ -43,11 +43,11 @@ pub fn qszchktg(
     supported: &[String],
 ) -> Result<CheckedTarget, ApiError> {
     if supported.is_empty() {
-        return Err(ApiError::new("CPF0C36"));
+        return Err(ApiError::new("CPD9D00"));
     }
     let sav = supported.iter().any(|s| s == "*SAV");
     if sav && supported.len() != 1 {
-        return Err(ApiError::new("CPF0C36"));
+        return Err(ApiError::new("CPD9D00"));
     }
     let validated = match target {
         "*CURRENT" => sys.release,
@@ -69,9 +69,9 @@ pub fn qszchktg(
     }
     let mut list = Vec::new();
     for s in supported {
-        let r = id::parse_release(s).map_err(|_| ApiError::new("CPF0C36").text(s, 6))?;
+        let r = id::parse_release(s).map_err(|_| ApiError::new("CPD9D00").text(s, 6))?;
         if list.last().is_some_and(|p| *p >= r) {
-            return Err(ApiError::new("CPF0C36").text(s, 6));
+            return Err(ApiError::new("CPD9D00").text(s, 6));
         }
         list.push(r);
     }

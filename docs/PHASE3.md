@@ -141,8 +141,8 @@ with a lock level. Opens under it journal every change with the cycle
 identifier that the first `C BC` entry's sequence number gives; record
 locks are held to the commit boundary per `LCKLVL(*CHG|*CS|*ALL)`;
 `COMMIT` writes `C CM`, `ROLLBCK` undoes the cycle from the before
-images and writes `C RB`; `ENDCMTCTL` with files open is `CPF8356`. A
-journaled file is required (`CPF8351`). At IPL, after the store is
+images and writes `C RB`; `ENDCMTCTL` with files open is `CPF8367`. A
+journaled file is required (`CPF4328`). At IPL, after the store is
 open, slic rolls back every cycle any journal left open and reports
 `C1001082` with the count (`db::journal::recover_all`).
 

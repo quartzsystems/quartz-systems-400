@@ -173,9 +173,9 @@ driver shows a library's own wording or an error value's text
 driver words and hands back), the LIC's screens show no internal
 reason (`lic_screens_show_no_error_text`), and every identifier any
 crate sends has a description in a shipped message file
-(`every_sent_identifier_is_described`; the identifiers owed before
-this check are listed in `tests/undescribed.txt`, which may only
-shrink).
+(`every_sent_identifier_is_described`, with no exceptions since round
+4; a generic identifier such as the reply list's `CPA0700` passes when a
+described message falls in its range).
 
 The LIC's screens (the IPL menu, DST, the installer and SST's panels)
 are exempt from identifiers: they run before the object store and its
@@ -218,3 +218,39 @@ ours is `QEDTMSG`. SEU's save and exit messages, the debugger's stops and
 the DSPTAPCTG answer were not reproduced on an oracle (calling a
 program and a tape library are not available read-only); their IDs come
 from the message texts read with DSPMSGD.
+
+## Every sent identifier described (round 4)
+
+The 133 identifiers round 3 left in `tests/undescribed.txt` were read
+with WRKMSGD on pub400 (V7R5M0) and described in our words; the list
+and its allowance are gone. Where IBM's message means something else,
+the sender moved to IBM's identifier for the case, or to ours
+(`CPD9D00` to `CPD9D0B`, `CPI9C00`, `CPI9C01`) where IBM has none:
+
+| Where | Was | Now |
+|---|---|---|
+| MOVOBJ, CRTDTAQ, CHGOBJD, CLRLIB | CPC2196, CPC2101, CPC2101, CPC2170 | CPC2193, CPC9801, CPC2103, CPC2199 |
+| CHGSYSVAL; CHGCMD, CHGCMDDFT, CHGPRXCMD | CPC1601; CPC0203 | CPI9C01; CPI9C00 |
+| RNMOBJ | CPC2192 with two fields | the new name and type too |
+| ADDMSGD; MRGMSGF; QMHSNDPM with no description | CPF2499 | CPF2412; CPD9D07; CPF2419 |
+| QWCRSVAL, QWCRNETA, QWCRTVTZ | CPF1853, CPF1848, CPF1844 | CPF1842, CPF1844, CPF9801 |
+| QWCCVTDT input, output format | CPF1846 | CPF1060, CPF3C3C |
+| QUSADDUI duplicate key; QSNDDTAQ too long; QUSLFLD format | CPF3C52; CPF9506; CPF5C06 | CPF3C74; CPF9514; CPF3C28 |
+| QTNRCMTI with no commitment definition | CPF83E4 | CPF8350 |
+| QSZCHKTG supported releases | CPF0C36 (not in QCPFMSG) | CPD9D00 |
+| Security APIs; authority words of the commands | CPF2209 | CPF3C3C; CPD0084 |
+| Host server exit program refusal | CPF2234 | CPD9D04 |
+| Store: no space; locks stop RCLSTG | CPF3202; CPF8201 | CPD9D01; CPF8209 |
+| Work management object that does not decode | CPF8100 (not in QCPFMSG) | CPD9D02 |
+| Fallbacks: CHGJOB, DSPSBSD, subsystems, SNDJRNE | CPF1317, CPF1619, CPF1691, CPF7010 | CPD9D07 |
+| Printer file MAXRCDS; format not found | CPF4072 (not in QCPFMSG); CPF5054 | CPF5156; CPF5157 |
+| DDM file not open | CPF4132 | CPF4520 |
+| Production file under UPDPROD(*NO) | CPF4188 | CPD9D0B |
+| Display file runtime; subfile update before a read | CPF5123; CPF5034 | CPD9D08; CPD9D09 |
+| Journal: no receiver; receiver used | CPF7006; CPF7010 | CPD9D0A; CPF701A |
+| Commitment: no journal; active; files open | CPF8351; CPF8355; CPF8356 | CPF4328; CPF8351; CPF8367 |
+| QAUTOVRT reached (to QSYSOPR) | CPF8955 (not in QCPFMSG) | CPF8940 |
+| IFS escapes | CPFA0DC, CPFA0DE (never produced) | removed |
+
+The reply list's generic `CPA0700` passes because `CPA0701`, the
+inquiry it answers, is described.

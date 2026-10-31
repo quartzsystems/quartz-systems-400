@@ -256,7 +256,7 @@ pub fn chgjob(
     for (kw, v) in changes {
         super::security::check_priority(kw, v)?;
         a.change(kw, v)
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF1317")))?;
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD9D07")))?;
     }
     *attrs = a;
     if let Some(j) = system.jobs.get(number) {

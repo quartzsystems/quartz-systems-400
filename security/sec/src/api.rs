@@ -350,7 +350,7 @@ pub fn answer(
         Query::Special { user, auths } => {
             let p = Principal::load(txn, qsys, &who(user), me.qsecurity)?;
             let refs: Vec<&str> = auths.iter().map(String::as_str).collect();
-            let want = SpecialAuth::parse(&refs).map_err(|e| SecError::msg("CPF2209", e))?;
+            let want = SpecialAuth::parse(&refs).map_err(|e| SecError::msg("CPF3C3C", e))?;
             Answer::Yes {
                 yes: p.special().has(want),
             }
@@ -373,7 +373,7 @@ pub fn answer(
             } else {
                 Need::Bits(
                     Auth::parse(&refs, id.type_code == types::AUTL)
-                        .map_err(|e| SecError::msg("CPF2209", e))?,
+                        .map_err(|e| SecError::msg("CPF3C3C", e))?,
                 )
             };
             Answer::Yes {

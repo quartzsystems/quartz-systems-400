@@ -48,7 +48,7 @@ impl MsgFile {
             .map(|i| &self.msgs[i])
     }
 
-    /// Add a description; an existing identifier is `CPF2499`.
+    /// Add a description; an existing identifier is `CPF2412`.
     pub fn add(&mut self, d: MsgDesc) -> Result<()> {
         if !MsgDesc::valid_id(&d.id) {
             return Err(MsgfError::Id(d.id));

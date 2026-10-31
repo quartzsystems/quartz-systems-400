@@ -210,7 +210,7 @@ fn quslfld(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         .find(|(i, r)| wanted == "*FIRST" || wanted.is_empty() && *i == 0 || r.name == wanted)
         .map(|(_, r)| r)
     else {
-        errc.fail(j, &ApiFail::id("CPF5C06").text(&wanted, 10));
+        errc.fail(j, &ApiFail::id("CPF3C28").text(&file, 10).text(&lib, 10).text(&wanted, 10));
         return;
     };
     let entries: Vec<Vec<u8>> = rf.fields.iter().map(fldl0100).collect();

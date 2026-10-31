@@ -407,7 +407,7 @@ fn sndjrne(system: &mut System, parms: &Parms) -> Result<String, String> {
         let mut j = jrn::Journal::load(txn, id).map_err(|e| e.to_string())?;
         let seq = j
             .sndjrne(txn, job, &kind, &data)
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF7010")))?;
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD9D07")))?;
         Ok(format!("Entry {seq} sent to journal {}.\n", q.0))
     })
 }

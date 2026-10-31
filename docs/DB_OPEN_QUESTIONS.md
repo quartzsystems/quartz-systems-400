@@ -321,9 +321,9 @@ day as `yymmdd` and numbers from 1.00 in steps of 1.00. Test: `SEU` or
 
 ## Journaling
 
-**Entry message IDs.** `ReceiverUsed` carries CPF7010, `ReceiverAttached`
+**Entry message IDs.** `ReceiverUsed` carries CPF701A, `ReceiverAttached`
 CPF7022, `AlreadyJournaled` CPF7030, `NotJournaled` CPF7032,
-`ObjectsJournaled` CPF7021, `NoReceiver` CPF7006 and a bad range CPF7054,
+`ObjectsJournaled` CPF7021, `NoReceiver` CPD9D0A (ours) and a bad range CPF7054,
 all as placeholders. Test: provoke each on the machine and note the
 escape message.
 
@@ -374,7 +374,7 @@ undoing an update writes `R BR` and `R UR`, undoing a delete writes
 flag what they write (bit 3) and skip flagged entries when run again.
 Test: `DSPJRN` after `ROLLBCK` and after `RMVJRNCHG` on the machine.
 
-**`ENDCMTCTL` with files open.** Refused with CPF8356 while a path opened
+**`ENDCMTCTL` with files open.** Refused with CPF8367 while a path opened
 with `COMMIT(*YES)` is open; with nothing open an unfinished cycle is
 rolled back first. Test: `ENDCMTCTL` from a program with the file open.
 
@@ -382,7 +382,7 @@ rolled back first. Test: `ENDCMTCTL` from a program with the file open.
 ones to the boundary; `*CS` locks every record read until the next read
 and changed ones to the boundary; `*ALL` keeps every record read. The
 record a path still holds at `COMMIT` is released too. Message IDs
-CPF4293, CPF8350, CPF8351 and CPF8355 are placeholders. Test: `*CS` with
+CPF4293, CPF4328, CPF8350, CPF8351 and CPF8367 are placeholders. Test: `*CS` with
 two jobs reading the same record.
 
 **Recovery.** After an abnormal end every journal in every library is

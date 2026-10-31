@@ -141,7 +141,7 @@ fn qtnrcmti(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         return;
     }
     let Some(c) = p.commit_info() else {
-        errc.fail(j, &ApiFail::id("CPF83E4"));
+        errc.fail(j, &ApiFail::id("CPF8350"));
         return;
     };
     let mut out = Out::new();

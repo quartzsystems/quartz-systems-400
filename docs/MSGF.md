@@ -106,7 +106,7 @@ records and `dump_count` 2-byte variable numbers.
 ## 4. Commands
 
 `CRTMSGF` creates an empty file. `ADDMSGD` adds a description; an
-existing identifier is `CPF2499`. `CHGMSGD` replaces one and `RMVMSGD`
+existing identifier is `CPF2412`. `CHGMSGD` replaces one and `RMVMSGD`
 removes one; a missing identifier is `CPF2419`. `MRGMSGF` copies the
 descriptions of one file into another, replacing existing ones only
 when asked. `RTVMSG` resolves the file through the library list and

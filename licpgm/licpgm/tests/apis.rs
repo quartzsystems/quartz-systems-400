@@ -338,7 +338,7 @@ fn chktg() {
         qszchktg(&s, "V1R0M0", &list(&["V1R1M0", "V1R0M0"]))
             .unwrap_err()
             .id,
-        "CPF0C36"
+        "CPD9D00"
     );
     let r = qszchktg(&s, "V1R0M0", &list(&["*SAV"])).unwrap();
     assert_eq!(r.equivalent, "V1R0M0");
@@ -346,6 +346,6 @@ fn chktg() {
         qszchktg(&s, "V1R0M0", &list(&["*SAV", "V1R0M0"]))
             .unwrap_err()
             .id,
-        "CPF0C36"
+        "CPD9D00"
     );
 }

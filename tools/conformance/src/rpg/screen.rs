@@ -78,7 +78,7 @@ fn not_open(format: &str) -> IoFail {
 }
 
 fn bad(format: &str) -> IoFail {
-    IoFail::new(1299, "CPF5123", &[format, "QGPL"])
+    IoFail::new(1299, "CPD9D08", &[format, "QGPL"])
 }
 
 /// A read's result for the program.
@@ -200,7 +200,7 @@ impl DisplaySource for KitDisplay {
         let rt = s.files.get_mut(&handle).ok_or_else(|| not_open(format))?;
         match rt.sfl_update(format, record, indicators) {
             Ok(true) => Ok(()),
-            Ok(false) => Err(IoFail::new(1221, "CPF5034", &[format, "QGPL"])),
+            Ok(false) => Err(IoFail::new(1221, "CPD9D09", &[format, "QGPL"])),
             Err(_) => Err(bad(format)),
         }
     }

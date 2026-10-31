@@ -341,7 +341,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         && spec.usage != qir::FileUsage::Input
         && !spec.lib.eq_ignore_ascii_case("QTEMP")
     {
-        let f = IoFail::new(1299, "CPF4188", &[&fr.file, &fr.lib]);
+        let f = IoFail::new(1299, "CPD9D0B", &[&fr.file, &fr.lib]);
         escape(j, &f);
         return i32::from(f.status);
     }

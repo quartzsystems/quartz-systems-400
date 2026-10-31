@@ -243,7 +243,7 @@ pub fn allocate(
         let text = format!(
             "A session asked for a virtual display beyond QAUTOVRT({autovrt}); none was created."
         );
-        to_qsysopr(system, "CPF8955", &text);
+        to_qsysopr(system, "CPF8940", &text);
     }
     r
 }

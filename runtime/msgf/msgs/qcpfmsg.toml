@@ -6829,3 +6829,858 @@ sev = 30
 text = "&1 can be used only while the program is stopped."
 help = "Set a breakpoint, call the program, and use the command when it stops."
 vars = ["*CHAR *VARY 2"]
+
+# Identifiers sent before the round-3 check that no file described
+# (round 4). Meanings and severities read with WRKMSGD on pub400
+# (V7R5M0); where IBM's meaning did not fit, the sender was moved to
+# IBM's identifier for the case or to ours (CPD9D00 to CPD9D3F, CPI9C00
+# to CPI9C3F). The texts are ours.
+
+[[msg]]
+id = "CPA0701"
+sev = 99
+text = "Program &1 in &2 did not handle message &3 at statement &4. Reply C, D, I or R."
+help = "An escape message reached the program and no monitor took it. C cancels the program, D cancels it and dumps it, I ignores the message and R tries the failing statement again. The shipped reply list answers CPA07xx inquiries with D."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
+reply = { default = "C", valid = ["C", "D", "I", "R"] }
+
+[[msg]]
+id = "CPA5305"
+sev = 99
+text = "Member &1 has no room for another record. Reply C, I or 9999."
+help = "The member holds as many records as its size allows. C ends the program, I goes on without the record, and 9999 lets the member grow by its increment whenever it fills."
+vars = ["*CHAR 10"]
+reply = { default = "C", valid = ["C", "I", "9999"] }
+
+[[msg]]
+id = "CPC0202"
+sev = 0
+text = "Command &1 was made in library &2."
+help = "The command definition was compiled and the *CMD object stored. It can be run or prompted at once."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC0904"
+sev = 0
+text = "Data area &1 now exists in library &2."
+help = "The data area holds the type, length and initial value given."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC2103"
+sev = 0
+text = "The description of &1 in &2, type &3, was updated."
+help = "The object's text or other description attributes now hold the values given."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC2192"
+sev = 0
+text = "&1 in &2, an object of type *&4, is now called &3."
+help = "Only the name changed: the object keeps its library, owner, authorities and contents."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC2193"
+sev = 0
+text = "&1, an object of type *&4, went from library &2 to library &3."
+help = "The object keeps its name, owner and authorities in the library it moved to."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC2199"
+sev = 0
+text = "Every object in library &1 is gone; the library is empty."
+help = "CLRLIB deleted the library's objects and kept the library itself."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC9801"
+sev = 0
+text = "&1 in library &2, an object of type *&3, was made."
+help = "The object exists now with the attributes given."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9C00"
+sev = 0
+text = "Command &1 in library &2 has its new attributes."
+help = "The command object took the values given. Jobs see them the next time they run the command."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9C01"
+sev = 0
+text = "System value &1 has its new value."
+help = "Some system values take effect at once and others at the next IPL; DSPSYSVAL shows the value kept."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0045"
+sev = 30
+text = "Parameter &1 has more name parts than it takes."
+help = "A qualified name has as many parts as the parameter defines, separated by slashes. Remove the extra qualifier."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0047"
+sev = 30
+text = "Parameter &1 takes neither a list nor an expression here."
+help = "The value has a level of parentheses the parameter does not define, or reads as an expression the parameter cannot evaluate. Give a single value."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0048"
+sev = 30
+text = "Parameter &1 takes no list of values here."
+help = "The value has one level of parentheses too many for this parameter. Remove the extra parentheses."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0049"
+sev = 30
+text = "Parameter &1 takes a name with no library in front."
+help = "This parameter does not take LIBRARY/NAME. Give the name alone."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0065"
+sev = 30
+text = "Value &1 comes after the last parameter that can be given by position."
+help = "The command takes only so many values without keywords. Give the rest as KEYWORD(value)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0072"
+sev = 30
+text = "Parameter &1 is missing an element it needs."
+help = "One element of the parameter's list or group must have a value. Give it, or prompt the command with F4 to see the elements."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0075"
+sev = 30
+text = "The value of parameter &1 is not of the length it must be."
+help = "A message identifier is seven characters: three letters, then four digits or the letters A to F."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0079"
+sev = 30
+text = "Parameter &1 needs a name or a generic name ending in an asterisk."
+help = "A special value is not allowed here. Give a name, or the start of names followed by *."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0081"
+sev = 30
+text = "Parameter &1 takes the name of a CL variable."
+help = "Give the variable as &NAME. The variable must be declared in the program."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0082"
+sev = 30
+text = "The value of parameter &1 is not a date."
+help = "Give the date in the job's date format, with or without its separators, and a day that exists in the month."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0083"
+sev = 30
+text = "The value of parameter &1 is not a time of day."
+help = "Give the time as hhmmss or hh:mm:ss, with hours 00 to 23 and minutes and seconds 00 to 59."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0086"
+sev = 30
+text = "Parameter &1 needs a value above its lower limit."
+help = "The command defines a limit the value must be greater than. Prompt with F4 to see the values allowed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0087"
+sev = 30
+text = "The value of parameter &1 does not stand in the relation the command requires."
+help = "The parameter's definition compares the value with a fixed value. Prompt with F4 to see the values allowed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0088"
+sev = 30
+text = "Parameter &1 needs a value at or above its lower limit."
+help = "The value is smaller than the least value the command allows. Prompt with F4 to see the values allowed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0102"
+sev = 30
+text = "Parameter &1 hands back a value and needs a CL variable to hold it."
+help = "The parameter returns a value. Give a CL variable of the right type; the command can then be run only in a CL program."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0103"
+sev = 30
+text = "A variable cannot be given for parameter &1 here."
+help = "Variables are for CL programs, where they are declared. On a command line, give the value itself."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0104"
+sev = 30
+text = "Parameter &1 takes no expression."
+help = "Give a single value. A date or time with separators must be quoted, so that it is not read as an expression."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0105"
+sev = 30
+text = "A built-in function cannot be given for parameter &1."
+help = "The parameter needs the name of a CL variable, not %SST, %BIN or another built-in function."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0C16"
+sev = 30
+text = "An object named &1 is in library &2 already."
+help = "The API does not replace an existing product object. Delete it first, or name another object."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0C34"
+sev = 30
+text = "&1 is not a release of the operating system the API knows."
+help = "Give *CURRENT, *PRV or a release in the form VxRyMz that this system can name."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0C35"
+sev = 30
+text = "None of the product's supported releases runs on target release &1."
+help = "Every release in the list of supported releases is later than the target. Choose a later target or add an earlier release to the list."
+vars = ["*CHAR 6"]
+
+[[msg]]
+id = "CPF0C4A"
+sev = 30
+text = "No product definition exists for &1 at release &2."
+help = "A product load needs the product definition of its product and release. Create the definition with QSZCRTPD first."
+vars = ["*CHAR 7", "*CHAR 6"]
+
+[[msg]]
+id = "CPF0C4D"
+sev = 30
+text = "The product object could not be stored: &1"
+help = "The object store refused the product definition or load. The text tells why; correct it and call the API again."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPF0C86"
+sev = 30
+text = "The registration type given is not one the API takes."
+help = "Use *PHONE, *SAME, *CODE or *REPLACE as the product's registration type."
+vars = []
+
+[[msg]]
+id = "CPF0C8A"
+sev = 30
+text = "&1 is not a product option number."
+help = "An option is four digits from 0000 to 0099; 0000 is the base option."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF0C9B"
+sev = 30
+text = "&1 is not an authority value the API takes."
+help = "Give *USE, *CHANGE, *ALL, *EXCLUDE or the name of an authorization list."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0CAA"
+sev = 30
+text = "The base option must be first in the list of options."
+help = "List option 0000 first, then the other options."
+vars = []
+
+[[msg]]
+id = "CPF0CAB"
+sev = 30
+text = "Language load &1 cannot be used for that option."
+help = "The base option takes the national language loads, and the other options take *BASEOPT or a language load of their own."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "CPF0CAD"
+sev = 30
+text = "Language load &1 appears twice in the list."
+help = "Each language load is listed once for each option. Remove the repeated entry."
+vars = ["*CHAR 8"]
+
+[[msg]]
+id = "CPF0CAE"
+sev = 30
+text = "A language load names option &1, which the product does not have."
+help = "Every language load belongs to an option in the list of options. Add the option or correct the load."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF0CAF"
+sev = 30
+text = "Option &1 appears twice in the list of options."
+help = "Each option is listed once. Remove the repeated entry."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF0CB0"
+sev = 30
+text = "The first copyright year is later than the current one."
+help = "The year of the first copyright must be the same as or earlier than the current copyright year."
+vars = []
+
+[[msg]]
+id = "CPF0CB1"
+sev = 30
+text = "The registration value does not match its type."
+help = "The registration type and value of the product information do not fit together. Correct one of them."
+vars = []
+
+[[msg]]
+id = "CPF0CB2"
+sev = 30
+text = "&1 is not a product identifier."
+help = "A product identifier is seven characters: a digit, then letters and digits."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPF0CB3"
+sev = 30
+text = "A reserved field holds something other than blanks."
+help = "Fields the format reserves must be blank. Clear them and call the API again."
+vars = []
+
+[[msg]]
+id = "CPF0CB5"
+sev = 30
+text = "A copyright year is neither four digits nor *NONE."
+help = "Give the copyright years as four-digit years, *CURRENT or *NONE."
+vars = []
+
+[[msg]]
+id = "CPF0CB6"
+sev = 30
+text = "The field that allows several releases holds neither *YES nor *NO."
+help = "Give *YES to let more than one release of the product be installed, *NO otherwise."
+vars = []
+
+[[msg]]
+id = "CPF0CB7"
+sev = 30
+text = "The field that allows dynamic naming holds neither *YES nor *NO."
+help = "Give *YES to let the product's libraries be renamed at install, *NO otherwise."
+vars = []
+
+[[msg]]
+id = "CPF0CB8"
+sev = 30
+text = "The language load field of option &1 is not valid."
+help = "Give a national language feature, *BASEOPT or *IBMLNG as the language load."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF0CB9"
+sev = 30
+text = "The count of language loads is outside the range allowed."
+help = "Give at least one language load, at most 40 for the base option and 139 in all."
+vars = []
+
+[[msg]]
+id = "CPF0CBA"
+sev = 30
+text = "The count of options is outside the range allowed."
+help = "A product has from 1 to 100 options, the base option included."
+vars = []
+
+[[msg]]
+id = "CPF0CBB"
+sev = 30
+text = "The release date is not a valid date."
+help = "Give the release date as CYYMMDD, with a month and day that exist."
+vars = []
+
+[[msg]]
+id = "CPF0CBD"
+sev = 30
+text = "&1 is not a code load identifier."
+help = "A code load is *CODE or a four-character feature code."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPF0CBE"
+sev = 30
+text = "The century digit of the release date is not 0 or 1."
+help = "0 is the 1900s and 1 the 2000s."
+vars = []
+
+[[msg]]
+id = "CPD9D00"
+sev = 30
+text = "The list of supported releases is not valid at &1."
+help = "The list must not be empty, must hold *SAV alone when it holds *SAV, and otherwise names releases as VxRyMz in rising order."
+vars = ["*CHAR 6"]
+
+[[msg]]
+id = "CPF1060"
+sev = 40
+text = "The date given cannot be read."
+help = "The value does not hold a date in the input format named, or the day does not exist. Correct the value or the format."
+vars = []
+
+[[msg]]
+id = "CPF1089"
+sev = 40
+text = "The substring reaches outside data area &1."
+help = "The starting position and length must lie within the data area's length. Correct them, or use *ALL."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF1842"
+sev = 30
+text = "System value &1 cannot be retrieved."
+help = "The name is not a system value this system has. Check the spelling against WRKSYSVAL."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF1844"
+sev = 30
+text = "Network attribute &1 cannot be retrieved."
+help = "The name is not a network attribute this system has. Check the spelling against DSPNETA."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2132"
+sev = 40
+text = "There is an object named &1 in library &2 already."
+help = "The object cannot take a name another object of its type holds in that library. Choose another name, or delete or rename the other object."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2412"
+sev = 40
+text = "Message file &2 in &3 holds a description for &1 already."
+help = "ADDMSGD adds new identifiers only. Use CHGMSGD to change the description, or RMVMSGD and then ADDMSGD."
+vars = ["*CHAR 7", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF24A3"
+sev = 40
+text = "The call stack counter &1 is not valid."
+help = "The counter must be 0 or more and must not reach past the oldest entry of the call stack."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF24B3"
+sev = 40
+text = "&1 is not a message type this API takes."
+help = "Give one of the types the API lists, such as *INFO, *INQ, *COMP, *DIAG, *ESCAPE, *NOTIFY or *STATUS."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3113"
+sev = 10
+text = "The data of a member or object is damaged."
+help = "Part of the data could not be read as it was written. Restore the object from a save, or run RCLSTG."
+vars = []
+
+[[msg]]
+id = "CPF358A"
+sev = 40
+text = "&1 is not a valid release."
+help = "Give a release as VxRyMz, or one of the special values the parameter allows."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3C14"
+sev = 30
+text = "Starting at &1 for &2 bytes goes past the end of the space."
+help = "The starting position and the length together must stay within the user space. Make the space larger or correct the values."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "CPF3C26"
+sev = 40
+text = "The file has no member &1."
+help = "The file has no members at all, or none of the name given. Use DSPFD to list its members."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3C28"
+sev = 40
+text = "File &1 in &2 has no record format &3."
+help = "Use DSPFD to see the record formats the file has."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3C29"
+sev = 30
+text = "&1 is not a valid name for an object."
+help = "A name is up to ten characters: a letter, $, # or @ first, then letters, digits, $, #, @, _ or a period."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3C3C"
+sev = 30
+text = "The value &1 given for a parameter is not valid."
+help = "Check the value against the parameter's description and call the API again."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3C4D"
+sev = 40
+text = "The length given for key &1 is not valid."
+help = "The length of the key's data does not match what the key needs."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF3C53"
+sev = 40
+text = "No job &3/&2/&1 could be found."
+help = "The job name, user and number do not name an active or recent job. Use * for the job calling the API."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "CPF3C58"
+sev = 40
+text = "The job name given cannot be used here."
+help = "Only * (the job calling the API) is accepted for this request."
+vars = []
+
+[[msg]]
+id = "CPF3C74"
+sev = 40
+text = "The user index has that entry already."
+help = "The index is keyed and an entry with that key is in it. Insert with the replace option, or remove the entry first."
+vars = []
+
+[[msg]]
+id = "CPF3CF1"
+sev = 40
+text = "The error code parameter is not valid."
+help = "The bytes-provided field must be 0, or 8 or more. Correct the error code structure."
+vars = []
+
+[[msg]]
+id = "CPF4128"
+sev = 40
+text = "The objects the file needs could not be allocated."
+help = "Another job holds a lock on the file or its member that conflicts with this request. Try again when it ends, or see WRKOBJLCK."
+vars = []
+
+[[msg]]
+id = "CPF4293"
+sev = 50
+text = "The member cannot be opened under commitment control."
+help = "COMMIT(*YES) was asked for, but the job has no commitment definition. Start commitment control with STRCMTCTL first."
+vars = []
+
+[[msg]]
+id = "CPF4328"
+sev = 50
+text = "The member is not journaled; commitment control needs a journal."
+help = "Files opened under commitment control must be journaled. Start journaling the file with STRJRNPF."
+vars = []
+
+[[msg]]
+id = "CPF5001"
+sev = 20
+text = "The read reached the end of the file."
+help = "There are no more records in the direction of the read. Position the file again to read more."
+vars = []
+
+[[msg]]
+id = "CPF5006"
+sev = 30
+text = "No record matches the request."
+help = "No record has the key or record number given, or the record was deleted."
+vars = []
+
+[[msg]]
+id = "CPF501B"
+sev = 30
+text = "The operation is out of sequence for the member."
+help = "An update or delete needs a record read for update first, and the job holds none."
+vars = []
+
+[[msg]]
+id = "CPF5026"
+sev = 30
+text = "The key of the record is already in the member's unique access path."
+help = "The file allows each key once. Change the key, or update the record that has it."
+vars = []
+
+[[msg]]
+id = "CPF5027"
+sev = 30
+text = "Another job or transaction holds the record locked."
+help = "The wait for the record ran out. Try again later, or see WRKOBJLCK for the holder."
+vars = []
+
+[[msg]]
+id = "CPF5029"
+sev = 30
+text = "Field data could not be moved between the program and the record."
+help = "A field holds data that does not fit its type, such as decimal data that is not valid. Correct the data."
+vars = []
+
+[[msg]]
+id = "CPF5032"
+sev = 30
+text = "This job holds the record locked already."
+help = "The job read the record for update through another open and has not released it."
+vars = []
+
+[[msg]]
+id = "CPF5090"
+sev = 30
+text = "Duplicate keys in a unique access path stop changes to the member."
+help = "The access path is not valid for its unique keys. Correct the duplicate records and rebuild the path."
+vars = []
+
+[[msg]]
+id = "CPF5129"
+sev = 50
+text = "Format &1 of the display file does not allow this operation."
+help = "The display file's support does not include the operation asked for on this format."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF5156"
+sev = 40
+text = "The printer file reached the most records it may hold."
+help = "The file's MAXRCDS limit was met and the output was ended. Raise MAXRCDS with CHGPRTF or OVRPRTF and run the program again."
+vars = []
+
+[[msg]]
+id = "CPF5157"
+sev = 50
+text = "Record format &1 is not one the file has."
+help = "The program named a record format the file's description does not hold. Check the file with DSPFD."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF5812"
+sev = 40
+text = "The file has a member of that name already."
+help = "Choose another member name, or remove the existing member first."
+vars = []
+
+[[msg]]
+id = "CPF5D01"
+sev = 30
+text = "The binding directory could not be changed."
+help = "The entries could not be read or written. The job log tells why."
+vars = []
+
+[[msg]]
+id = "CPF5D12"
+sev = 40
+text = "The program or service program could not be made."
+help = "The binder or the code generator stopped. The messages before this one tell why."
+vars = []
+
+[[msg]]
+id = "CPF701A"
+sev = 40
+text = "The receiver cannot be used for this journal."
+help = "The journal receiver belongs to another journal, or was attached before. Name a new receiver."
+vars = []
+
+[[msg]]
+id = "CPF7021"
+sev = 40
+text = "The journal still has objects journaled to it and cannot be deleted."
+help = "End journaling for every object first, with ENDJRNPF and the other ENDJRN commands."
+vars = []
+
+[[msg]]
+id = "CPF7022"
+sev = 40
+text = "The receiver is attached to its journal and cannot be deleted."
+help = "Attach a new receiver with CHGJRN first; then the old one can be deleted."
+vars = []
+
+[[msg]]
+id = "CPF7030"
+sev = 40
+text = "The object is being journaled already."
+help = "Journaling was started for it before. End journaling first to journal it elsewhere."
+vars = []
+
+[[msg]]
+id = "CPF7032"
+sev = 40
+text = "Journaling could not be ended: the object is not journaled."
+help = "Only objects being journaled can have journaling ended. Check with DSPFD or WRKJRNA."
+vars = []
+
+[[msg]]
+id = "CPF7054"
+sev = 40
+text = "The starting and ending values of the range do not fit together."
+help = "The range must name entries that exist, with the start before the end."
+vars = []
+
+[[msg]]
+id = "CPF8209"
+sev = 40
+text = "Storage cannot be reclaimed in the system's present state."
+help = "Jobs hold locks on objects. End them, or end the subsystems to the restricted state, and run RCLSTG again."
+vars = []
+
+[[msg]]
+id = "CPF8350"
+sev = 40
+text = "The job has no commitment definition."
+help = "Commitment control is not started. Start it with STRCMTCTL."
+vars = []
+
+[[msg]]
+id = "CPF8351"
+sev = 40
+text = "Commitment control is started for the job already."
+help = "STRCMTCTL was run while a commitment definition exists. End it with ENDCMTCTL to start another."
+vars = []
+
+[[msg]]
+id = "CPF8367"
+sev = 40
+text = "The commitment control operation could not be done."
+help = "Files are open under commitment control. Close them before ending commitment control."
+vars = []
+
+[[msg]]
+id = "CPF8940"
+sev = 40
+text = "No virtual display device could be chosen for the session."
+help = "Every virtual device is in use and the system value QAUTOVRT does not allow more to be created. Raise QAUTOVRT or create devices."
+vars = []
+
+[[msg]]
+id = "CPF9514"
+sev = 40
+text = "The data length given for the data queue is not valid."
+help = "The entry is longer than the data queue's maximum entry length. Send less data or create the queue with a larger MAXLEN."
+vars = []
+
+[[msg]]
+id = "CPF9803"
+sev = 40
+text = "The object could not be allocated."
+help = "Another job holds a lock on it that conflicts with this request. Try again later, or see WRKOBJLCK."
+vars = []
+
+[[msg]]
+id = "CPF9820"
+sev = 40
+text = "You are not authorized to use library &1."
+help = "Using an object in a library needs *EXECUTE authority to the library. Ask its owner or the security officer for it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9838"
+sev = 40
+text = "The user profile's storage limit was reached."
+help = "The profile owns as much storage as its MAXSTG allows. Delete objects it owns or raise MAXSTG with CHGUSRPRF."
+vars = []
+
+[[msg]]
+id = "CPF9870"
+sev = 40
+text = "An object named &1 is in library &2 already."
+help = "Choose another name, or delete or rename the existing object."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9E13"
+sev = 40
+text = "Product &1 has more than one release installed."
+help = "Name the release the request is for."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CPF9E1C"
+sev = 40
+text = "The license user list is not valid."
+help = "The offsets or counts of the list point outside the data passed. Correct the structure."
+vars = []
+
+[[msg]]
+id = "CPF9E1E"
+sev = 40
+text = "The length given for a license user is wrong."
+help = "Each license user entry must have the length the format defines."
+vars = []
+
+[[msg]]
+id = "CPI2284"
+sev = 50
+text = "Auditing is off: QAUDCTL is now *NONE because journal &1 in &2 could not take entries."
+help = "QAUDENDACN(*PWRDWNSYS) ended the system when the audit journal's receiver filled; it restarted with auditing off. Attach a new receiver and set QAUDCTL again."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9D01"
+sev = 40
+text = "The auxiliary storage pool has no space left."
+help = "Every page of the pool is in use. Delete objects you no longer need, run RCLSTG, or add a disk unit."
+vars = []
+
+[[msg]]
+id = "CPD9D02"
+sev = 40
+text = "The object's contents cannot be read: it is damaged."
+help = "The work management object did not decode. Delete it and create it again, or restore it from a save."
+vars = []
+
+[[msg]]
+id = "CPD9D04"
+sev = 40
+text = "The exit program registered for this server turned the request down."
+help = "An exit program of the server's exit point decided against the request. Ask the security administrator about the program's rules."
+vars = []
+
+[[msg]]
+id = "CPD9D07"
+sev = 40
+text = "The object store could not complete the request."
+help = "The job log holds the reason. If the problem repeats, run RCLSTG and report it."
+vars = []
+
+[[msg]]
+id = "CPD9D08"
+sev = 40
+text = "Format &1 of the display file in &2 could not be shown or read."
+help = "The display file's runtime refused the operation for this format. Check the format against the file's DDS."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9D09"
+sev = 40
+text = "No subfile record of format &1 in &2 was read before the update."
+help = "Read a changed record of the subfile, with READC or CHAIN, before updating it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9D0A"
+sev = 40
+text = "The journal has no receiver attached."
+help = "Attach a receiver to the journal with CHGJRN JRNRCV(name), then try again."
+vars = []
+
+[[msg]]
+id = "CPD9D0B"
+sev = 40
+text = "File &1 in &2 cannot be changed while debugging with UPDPROD(*NO)."
+help = "The file is in a production library. Start debug with UPDPROD(*YES), or work on a copy in a test library."
+vars = ["*CHAR 10", "*CHAR 10"]

@@ -139,7 +139,7 @@ fn addmsgd(system: &mut System, name: &str, parms: &Parms) -> Result<String, Str
         let id = find(txn, qsys, names, &q)?;
         let msgid = d.id.clone();
         if adding {
-            msgf::store::addmsgd(txn, id, d).map_err(|e| format!("CPF2499 {e}"))?;
+            msgf::store::addmsgd(txn, id, d).map_err(|e| format!("CPF2412 {e}"))?;
             Ok(format!("Message {msgid} added to message file {}.\n", q.0))
         } else {
             msgf::store::chgmsgd(txn, id, d).map_err(|e| format!("CPF2419 {e}"))?;
@@ -165,7 +165,7 @@ fn mrgmsgf(system: &mut System, parms: &Parms) -> Result<String, String> {
     in_store(system, |txn, qsys, names| {
         let f = find(txn, qsys, names, &from)?;
         let t = find(txn, qsys, names, &to)?;
-        let n = msgf::store::mrgmsgf(txn, f, t, replace).map_err(|e| format!("CPF2499 {e}"))?;
+        let n = msgf::store::mrgmsgf(txn, f, t, replace).map_err(|e| format!("CPD9D07 {e}"))?;
         Ok(format!(
             "{n} message description(s) merged from {} into {}.\n",
             from.0, to.0

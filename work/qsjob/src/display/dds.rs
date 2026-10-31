@@ -209,7 +209,7 @@ impl DisplaySource for DdsDisplay {
             .with_model(|m| open.rt.write(m, &env, format, record, indicators));
         let lib = open.lib.clone();
         self.files.insert(handle, open);
-        r.map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))?;
+        r.map_err(|_| IoFail::new(1299, "CPD9D08", &[format, &lib]))?;
         self.surface.flush(Read::None);
         Ok(())
     }
@@ -252,7 +252,7 @@ impl DisplaySource for DdsDisplay {
                     });
                 }
                 Err(Problem::NotShown(_)) => {
-                    break Err(IoFail::new(1299, "CPF5123", &[format, &open.lib]));
+                    break Err(IoFail::new(1299, "CPD9D08", &[format, &open.lib]));
                 }
                 Err(p) => self.surface.with_model(|m| open.rt.show_problem(m, &p)),
             }
@@ -273,7 +273,7 @@ impl DisplaySource for DdsDisplay {
         let lib = open.lib.clone();
         open.rt
             .sfl_write(format, rrn as usize, record, indicators)
-            .map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))
+            .map_err(|_| IoFail::new(1299, "CPD9D08", &[format, &lib]))
     }
 
     fn sfl_chain(&mut self, handle: u32, format: &str, rrn: u32) -> Result<Option<DisplayInput>, IoFail> {
@@ -282,7 +282,7 @@ impl DisplaySource for DdsDisplay {
         let got = open
             .rt
             .sfl_chain(format, rrn as usize)
-            .map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))?;
+            .map_err(|_| IoFail::new(1299, "CPD9D08", &[format, &lib]))?;
         Ok(got.map(|i| sfl_input(format, i)))
     }
 
@@ -292,8 +292,8 @@ impl DisplaySource for DdsDisplay {
         match open.rt.sfl_update(format, record, indicators) {
             Ok(true) => Ok(()),
             // No record was read first.
-            Ok(false) => Err(IoFail::new(1221, "CPF5034", &[format, &lib])),
-            Err(_) => Err(IoFail::new(1299, "CPF5123", &[format, &lib])),
+            Ok(false) => Err(IoFail::new(1221, "CPD9D09", &[format, &lib])),
+            Err(_) => Err(IoFail::new(1299, "CPD9D08", &[format, &lib])),
         }
     }
 
@@ -303,7 +303,7 @@ impl DisplaySource for DdsDisplay {
         let got = open
             .rt
             .sfl_readc(format)
-            .map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))?;
+            .map_err(|_| IoFail::new(1299, "CPD9D08", &[format, &lib]))?;
         Ok(got.map(|i| sfl_input(format, i)))
     }
 

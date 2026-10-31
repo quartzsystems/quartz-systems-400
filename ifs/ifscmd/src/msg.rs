@@ -102,8 +102,8 @@ impl Msg {
         match id {
             "CPFA0D4" => m.bin4(i64::from(e.code())),
             "CPFA0D0" => m.bin4(0).bin4(0).bin4(0),
-            "CPFA0A3" | "CPFA0A7" | "CPFA0AD" | "CPFA0B2" | "CPFA0DB" | "CPFA0DC"
-            | "CPFA0DE" | "CPFA0E0" => m.vary(path),
+            "CPFA0A3" | "CPFA0A7" | "CPFA0AD" | "CPFA0B2" | "CPFA0DB"
+            | "CPFA0E0" => m.vary(path),
             _ if e.command_message_names_object() => m.vary(path),
             _ => m,
         }

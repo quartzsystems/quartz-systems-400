@@ -105,9 +105,9 @@ impl JrnError {
         Some(match self {
             Self::Store(e) => return e.msgid(),
             Self::NotAJournal { .. } | Self::NotAReceiver { .. } => "CPF9801",
-            Self::NoReceiver { .. } => "CPF7006",
+            Self::NoReceiver { .. } => "CPD9D0A",
             Self::ReceiverAttached { .. } => "CPF7022",
-            Self::ReceiverUsed { .. } => "CPF7010",
+            Self::ReceiverUsed { .. } => "CPF701A",
             Self::AlreadyJournaled { .. } => "CPF7030",
             Self::NotJournaled { .. } => "CPF7032",
             Self::ObjectsJournaled { .. } => "CPF7021",

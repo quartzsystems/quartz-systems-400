@@ -256,8 +256,8 @@ fn commit_and_rollback() {
     p.set_commit(std::rc::Rc::clone(s.commit_def().unwrap()));
     let e = p.write(&mut t, &record(1, "X"), &[0]).unwrap_err();
     assert!(matches!(e, DbError::CommitNeedsJournal { .. }));
-    assert_eq!(e.msgid(), Some("CPF8351"));
-    assert_eq!(p.fb.msgid, Some("CPF8351"));
+    assert_eq!(e.msgid(), Some("CPF4328"));
+    assert_eq!(p.fb.msgid, Some("CPF4328"));
     p.close(&mut t);
     s.end(&mut t);
     t.commit().unwrap();

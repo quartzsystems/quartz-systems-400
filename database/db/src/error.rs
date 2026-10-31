@@ -260,11 +260,11 @@ impl DbError {
             Self::NoLockedRecord { .. } => "CPF501B",
             Self::ShareMismatch { .. } => "CPF4123",
             Self::Copy { .. } => "CPF2817",
-            Self::CommitNeedsJournal { .. } => "CPF8351",
+            Self::CommitNeedsJournal { .. } => "CPF4328",
             Self::CommitOpen => "CPF4293",
             Self::CommitNotActive => "CPF8350",
-            Self::CommitActive => "CPF8355",
-            Self::CommitFilesOpen => "CPF8356",
+            Self::CommitActive => "CPF8351",
+            Self::CommitFilesOpen => "CPF8367",
             Self::Corrupt { .. } => "CPF3113",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }

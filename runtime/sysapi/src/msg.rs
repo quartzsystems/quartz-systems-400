@@ -79,7 +79,7 @@ fn qmhsndpm(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         return;
     };
     if !msgid.is_empty() && j.msgs.describe(&msgid, &msgf, &lib).is_none() {
-        errc.fail(j, &ApiFail::id("CPF2499").text(&msgid, 7));
+        errc.fail(j, &ApiFail::id("CPF2419").text(&msgid, 7).text(&msgf, 10).text(&lib, 10));
         return;
     }
     match j.send_message(&msgid, &msgf, &lib, data, ty, to) {

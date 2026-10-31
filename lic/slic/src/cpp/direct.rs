@@ -74,6 +74,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         "RNMOBJ" => {
             let (n, l) = parms.qual("OBJ");
+            let (new, ty) = (parms.name("NEWOBJ"), parms.name("OBJTYPE"));
             let out = old(
                 system,
                 &format!(
@@ -83,10 +84,16 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
                     parms.name("NEWOBJ")
                 ),
             );
-            finish(out, name, "CPC2192", &[(&n, 10), (&l, 10)])
+            finish(
+                out,
+                name,
+                "CPC2192",
+                &[(&n, 10), (&l, 10), (&new, 10), (ty.trim_start_matches('*'), 10)],
+            )
         }
         "MOVOBJ" => {
             let (n, l) = parms.qual("OBJ");
+            let (to, ty) = (parms.name("TOLIB"), parms.name("OBJTYPE"));
             let out = old(
                 system,
                 &format!(
@@ -96,7 +103,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
                     parms.name("TOLIB")
                 ),
             );
-            finish(out, name, "CPC2196", &[(&n, 10), (&l, 10)])
+            finish(
+                out,
+                name,
+                "CPC2193",
+                &[(&n, 10), (&l, 10), (&to, 10), (ty.trim_start_matches('*'), 10)],
+            )
         }
         "DSPOBJD" | "WRKOBJ" => {
             let (n, l) = parms.qual("OBJ");
@@ -162,7 +174,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             let out = crate::svc::objects::crt_dtaq(system, &qual, &text, order, num("MAXLEN", 1024), sender)
                 .unwrap_or_else(|e| format!("CPF9898 {e}
 "));
-            finish(out, name, "CPC2101", &[(&n, 10), (&l, 10)])
+            finish(out, name, "CPC9801", &[(&n, 10), (&l, 10), ("DTAQ", 10)])
         }
         "DLTDTAQ" => {
             let (n, l) = parms.qual("DTAQ");
@@ -175,7 +187,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHGSYSVAL" => {
             let sv = parms.name("SYSVAL");
             let out = old(system, &format!("sysval {sv} {}", parms.text("VALUE")));
-            finish(out, name, "CPC1601", &[(&sv, 10)])
+            finish(out, name, "CPI9C01", &[(&sv, 10)])
         }
         "WRKSYSVAL" => wrksysval(system, &parms.name("SYSVAL")),
         "GO" => {
@@ -301,7 +313,7 @@ fn clrlib(system: &mut System, lib: &str) -> CmdReply {
     match r {
         Ok(n) => done(
             format!("Library {lib} cleared: {n} object(s) deleted.\n"),
-            "CPC2170",
+            "CPC2199",
             &[(&lib, 10)],
         ),
         Err(e) => failed("CLRLIB", &e),
@@ -326,7 +338,7 @@ fn chgobjd(system: &mut System, parms: &Parms) -> CmdReply {
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2189")))
     });
     match r {
-        Ok(()) => done(String::new(), "CPC2101", &[(&n, 10), (&l, 10)]),
+        Ok(()) => done(String::new(), "CPC2103", &[(&n, 10), (&l, 10), (&ty, 10)]),
         Err(e) => failed("CHGOBJD", &e),
     }
 }
@@ -593,7 +605,7 @@ fn chgcmd(system: &mut System, parms: &Parms) -> CmdReply {
         Ok((n, l))
     });
     match r {
-        Ok((n, l)) => done(String::new(), "CPC0203", &[(&n, 10), (&l, 10)]),
+        Ok((n, l)) => done(String::new(), "CPI9C00", &[(&n, 10), (&l, 10)]),
         Err(e) => failed("CHGCMD", &e),
     }
 }
@@ -639,7 +651,7 @@ fn chgcmddft(system: &mut System, parms: &Parms) -> CmdReply {
     match r {
         Ok((n, l, k)) => done(
             format!("{k} default(s) of {n} changed.\n"),
-            "CPC0203",
+            "CPI9C00",
             &[(&n, 10), (&l, 10)],
         ),
         Err(e) => failed("CHGCMDDFT", &e),
@@ -685,7 +697,7 @@ fn chgprxcmd(system: &mut System, parms: &Parms) -> CmdReply {
         Ok((n, l))
     });
     match r {
-        Ok((n, l)) => done(String::new(), "CPC0203", &[(&n, 10), (&l, 10)]),
+        Ok((n, l)) => done(String::new(), "CPI9C00", &[(&n, 10), (&l, 10)]),
         Err(e) => failed("CHGPRXCMD", &e),
     }
 }

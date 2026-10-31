@@ -242,9 +242,9 @@ impl StoreError {
             Self::Damaged { .. } => "CPF3113",
             Self::StaleReference { .. } => "MCH3402",
             Self::InvalidName { .. } => "CPF0001",
-            Self::NoSpace { .. } => "CPF3202",
+            Self::NoSpace { .. } => "CPD9D01",
             Self::ReleaseMismatch { .. } => "CPF3294",
-            Self::Busy { .. } => "CPF8201",
+            Self::Busy { .. } => "CPF8209",
             _ => return None,
         })
     }

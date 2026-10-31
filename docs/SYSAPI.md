@@ -226,14 +226,15 @@ name, user, number, internal id, status, type, subtype (54 bytes).
 `QWCRSVAL` and `QWCRNETA` receivers: count `bin4` at 0, an offset
 `bin4` per value, and at each offset the name `char(10)`, type
 `char(1)` (`C` character, `B` binary), status `char(1)`, length
-`bin4` and the data. A name that is not a system value is `CPF1853`,
-not a network attribute `CPF1848`.
+`bin4` and the data. A name that is not a system value is `CPF1842`,
+not a network attribute `CPF1844`.
 
 `QWCCVTDT` formats: `*CURRENT`, `*SYSVAL`, `*JOB` (the clock),
 `*DTS` (8 bytes: microseconds since 1928-08-23 12:03:06.314752 UTC,
 shifted 12 bits), `*YYMD` `YYYYMMDDHHMMSSmmm`, `*YMD` `CYYMMDD...`,
 `*MDYY`, `*MDY`, `*DMYY`, `*DMY`, `*JUL` `CYYDDD...`, `*LONGJUL`
-`YYYYDDD...`; a bad format or value is `CPF1846`.
+`YYYYDDD...`; an input that does not read is `CPF1060`, an output format
+not known `CPF3C3C`.
 
 `RTVC0100` (*QS/400 reading*): job name 8, user 18, number 28,
 current library 34, user profile 44. `RTMZ0100` (*QS/400 reading*):
@@ -246,7 +247,7 @@ fields fixed. `QLGCNVCS` request block: type `bin4` (1), CCSID
 `CMTI0100`
 (*QS/400 reading*): commitment definition 8, lock level 18, pending
 changes `char(1)` 28, journal 29 and library 39; no commitment
-definition is `CPF83E4`. `SBSI0100`: name 8, library 18, status 28
+definition is `CPF8350`. `SBSI0100`: name 8, library 18, status 28
 (`*INACTIVE`), jobs `bin4` 38, storage pools 42. `JBST0100`: status
 `char(10)` at 8. `QUSLSPL` lists nothing; `QCMDEXC`, `QCMDCHK` and
 `QCAPCMD` hand the command to the job's analyzer hook, else to the

@@ -51,7 +51,7 @@ impl Error {
     pub fn msgid(&self) -> Option<&'static str> {
         match self {
             Self::Store(e) => e.msgid(),
-            Self::Corrupt(_) => Some("CPF8100"),
+            Self::Corrupt(_) => Some("CPD9D02"),
             Self::Value { msgid, .. } => Some(msgid),
             Self::NotFound { .. } => Some("CPF9801"),
         }

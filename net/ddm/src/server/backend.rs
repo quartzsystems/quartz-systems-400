@@ -237,7 +237,7 @@ impl FileBackend for Nothing {
 
 fn not_open() -> FileError {
     FileError {
-        id: "CPF4132".into(),
+        id: "CPF4520".into(),
         text: "No file is open under that name.".into(),
     }
 }

@@ -133,7 +133,7 @@ fn user_files_are_edited_and_merged() {
         addmsgd(&mut t, a, desc("USR0001", "again"))
             .unwrap_err()
             .to_string()
-            .contains("CPF2499")
+            .contains("CPF2412")
     );
     assert!(addmsgd(&mut t, a, desc("BAD", "x")).is_err());
     chgmsgd(&mut t, a, desc("USR0001", "Hi &1")).unwrap();

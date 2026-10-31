@@ -114,13 +114,13 @@ impl PrinterState {
         record: &[u8],
     ) -> Result<bool, IoFail> {
         if self.prtf.maxrcds > 0 && self.printer.records >= self.prtf.maxrcds {
-            return Err(IoFail::new(1299, "CPF4072", &[fmt]));
+            return Err(IoFail::new(1299, "CPF5156", &[]));
         }
         let over = match &self.def {
             Some(def) => {
                 let f = def
                     .format(fmt)
-                    .ok_or_else(|| IoFail::new(1299, "CPF5054", &[fmt]))?;
+                    .ok_or_else(|| IoFail::new(1299, "CPF5157", &[fmt]))?;
                 ddsprt::print_format(&mut self.printer, f, def.indara, &[], record, &clock())
             }
             None if self.prtf.fcfc => self.printer.write_fcfc(record),
@@ -142,7 +142,7 @@ impl PrinterState {
         ctl: spool::printer::Control,
     ) -> Result<bool, IoFail> {
         if self.prtf.maxrcds > 0 && self.printer.records >= self.prtf.maxrcds {
-            return Err(IoFail::new(1299, "CPF4072", &[]));
+            return Err(IoFail::new(1299, "CPF5156", &[]));
         }
         // A program's first line starts at line 1: spacing before it
         // counts from there.

@@ -60,7 +60,7 @@ fn auth_words(k: &Keywords, kw: &str, default: &str) -> Vec<String> {
 
 fn parse_auth(words: &[String], autl: bool) -> Result<Auth> {
     let refs: Vec<&str> = words.iter().map(String::as_str).collect();
-    Auth::parse(&refs, autl).map_err(|e| SecError::msg("CPF2209", format!("{e}.")))
+    Auth::parse(&refs, autl).map_err(|e| SecError::msg("CPD0084", format!("{e}.")))
 }
 
 fn users(k: &Keywords) -> Result<Vec<String>> {

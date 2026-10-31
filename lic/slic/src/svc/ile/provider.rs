@@ -238,7 +238,18 @@ impl Provider for StoreProvider {
                 Ok(())
             })
         };
-        r.map_err(|e| ApiFail::id("CPF2132").text(&e, 50))?;
+        r.map_err(|e| {
+            if e.contains("exist") {
+                let to = if new_lib == "*SAME" || new_lib.is_empty() {
+                    found.as_str()
+                } else {
+                    new_lib
+                };
+                ApiFail::id("CPF2132").text(new_name, 10).text(to, 10)
+            } else {
+                ApiFail::id("CPF9899").text(&e, 50)
+            }
+        })?;
         Ok(found)
     }
 

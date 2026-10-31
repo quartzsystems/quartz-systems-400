@@ -387,7 +387,7 @@ cargo test -p store                       # unit, property and crash tests
   empties.
 - Locks are in-process and per caller-supplied job handle.
 - RCLSTG quiesces the store for a rebuild (`Store::quiesce`: refused
-  with `CPF8201`, a placeholder identifier, while any job holds an
+  with `CPF8209` while any job holds an
   object lock; `begin` fails with `Quiesced` until `release`), and
   treats a valid header on a free page as a deleted object. The storage
   service's own quiesce ahead of the command, holding the jobs' requests

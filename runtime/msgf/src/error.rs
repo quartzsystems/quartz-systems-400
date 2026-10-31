@@ -26,8 +26,8 @@ pub enum MsgfError {
     #[error("{0:?} is not a message identifier")]
     Id(String),
 
-    /// The description already exists (`CPF2499`).
-    #[error("CPF2499: message {0} already exists")]
+    /// The description already exists (`CPF2412`).
+    #[error("CPF2412: message {0} already exists")]
     Exists(String),
 
     /// The description does not exist (`CPF2419`).

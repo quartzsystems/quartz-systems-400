@@ -255,7 +255,7 @@ impl<A: Auth, C: Commands, X: Exits> RmtCmd<A, C, X> {
 /// The message an exit program's refusal leaves.
 pub fn refused() -> JobMessage {
     JobMessage {
-        id: "CPF2234".into(),
+        id: "CPD9D04".into(),
         kind: 15,
         severity: 40,
         file: ("QCPFMSG".into(), "QSYS".into()),

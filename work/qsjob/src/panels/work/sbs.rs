@@ -77,7 +77,7 @@ pub fn dspsbsd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         .borrow_mut()
         .with(|l| l.wm_object(format!("{lib}/{name}"), "*SBSD".into()))
         .map_err(|e| {
-            let (id, text) = e.split_once(' ').unwrap_or(("CPF1619", e.as_str()));
+            let (id, text) = e.split_once(' ').unwrap_or(("CPD9D07", e.as_str()));
             Fail::new(id, text)
         })?;
     let sbsd = Sbsd::decode(&payload).map_err(|e| crate::panels::failed(e.to_string()))?;

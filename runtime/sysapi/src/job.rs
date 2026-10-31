@@ -215,7 +215,7 @@ fn qwcrsval(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         .map(ccsid::decode_trimmed)
         .collect();
     if let Some(bad) = names.iter().find(|n| p.sysval(n).is_none()) {
-        errc.fail(j, &ApiFail::id("CPF1853").text(bad, 10));
+        errc.fail(j, &ApiFail::id("CPF1842").text(bad, 10));
         return;
     }
     let out = values_image(&names, |n| p.sysval(n));
@@ -256,7 +256,7 @@ fn qwcrneta(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         .map(ccsid::decode_trimmed)
         .collect();
     if let Some(bad) = names.iter().find(|n| p.netattr(n).is_none()) {
-        errc.fail(j, &ApiFail::id("CPF1848").text(bad, 10));
+        errc.fail(j, &ApiFail::id("CPF1844").text(bad, 10));
         return;
     }
     let out = values_image(&names, |n| p.netattr(n));
@@ -477,7 +477,7 @@ fn qwccvtdt(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         }
     };
     let Some(c) = input else {
-        errc.fail(j, &ApiFail::id("CPF1846").text(&in_fmt, 10));
+        errc.fail(j, &ApiFail::id("CPF1060"));
         return;
     };
     match out_fmt.as_str() {
@@ -485,7 +485,7 @@ fn qwccvtdt(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         f => match render_format(f, c) {
             Some(s) => a.put_char(3, s.len(), &s),
             None => {
-                errc.fail(j, &ApiFail::id("CPF1846").text(&out_fmt, 10));
+                errc.fail(j, &ApiFail::id("CPF3C3C").text(&out_fmt, 10));
                 return;
             }
         },
@@ -530,7 +530,7 @@ fn qwcrtvtz(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         wanted
     };
     let Some(z) = sysval::tz::find(&zone) else {
-        errc.fail(j, &ApiFail::id("CPF1844").text(&zone, 10));
+        errc.fail(j, &ApiFail::id("CPF9801").text(&zone, 10).text("QSYS", 10));
         return;
     };
     let mut out = Out::new();

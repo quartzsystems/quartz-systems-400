@@ -103,7 +103,7 @@ fn receivers_entries_and_the_chain() {
     // The same receiver cannot start a second journal.
     let e = crtjrn(&mut t, lib, name("OTHER"), rcv1, &CrtJrnOpts::default()).unwrap_err();
     assert!(matches!(e, JrnError::ReceiverUsed { .. }));
-    assert_eq!(e.msgid(), Some("CPF7010"));
+    assert_eq!(e.msgid(), Some("CPF701A"));
     let mut j = Journal::load(&mut t, jid).unwrap();
     assert_eq!(j.attr.attached, rcv1);
     assert_eq!(j.attr.next_seq, 1);

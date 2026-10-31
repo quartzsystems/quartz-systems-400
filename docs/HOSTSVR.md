@@ -972,7 +972,7 @@ Every server asks its exit points (`Exits`, `regfac::call_exit` in a
 job) before it acts, with the formats `net/regfac` builds; a refusal
 answers the request as not authorized in the server's own terms (data
 queue `0xF009`, file 13, network print 27, database SQLCODE -551,
-remote command `CPF2234`).
+remote command `CPD9D04`).
 
 The servers present themselves as IBM i 7.1 (`SERVER_VRM`
 `0x00070100`, datastream level 10, database functional level
