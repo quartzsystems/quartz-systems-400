@@ -128,7 +128,7 @@ pub fn program(host: &Host, lib: &str, name: &str) -> Result<Option<(String, dfu
         None => Ok(None),
         Some((real, text)) => dfu::Program::decode(&text)
             .map(|p| Some((real, p)))
-            .map_err(|e| e.to_string()),
+            .map_err(|_| format!("CPD9CDC Program {name} is not a DFU program.")),
     }
 }
 

@@ -243,7 +243,8 @@ impl Run<'_> {
                 .get(&f.name)
                 .filter(|v| v.trim() != f.shown(base).trim())
             {
-                f.encode(v, &mut rec).map_err(|e| e.to_string())?;
+                f.encode(v, &mut rec)
+                    .map_err(|e| crate::display::msgline::text_of(&self.host, &e.msg()))?;
             }
         }
         Ok(rec)
@@ -309,7 +310,7 @@ impl Run<'_> {
                 if let Some(v) = typed.get(&f.name)
                     && let Err(e) = f.encode(v, &mut rec)
                 {
-                    self.message = Some(e.to_string());
+                    self.message = Some(crate::display::msgline::text_of(&self.host, &e.msg()));
                     return;
                 }
             }

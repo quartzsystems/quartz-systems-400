@@ -16,7 +16,7 @@ use crate::command::Fail;
 /// Print an opened member.
 pub fn member(ctx: &mut Ctx<'_>, m: &SrcMember) -> Result<String, Fail> {
     records(ctx, &m.member, &m.records)?;
-    Ok(format!("Member {} printed.", m.member))
+    Ok(crate::display::msgline::say(ctx.host, "CPI9BFF", &[&m.member]))
 }
 
 /// Print records under a heading naming the member.

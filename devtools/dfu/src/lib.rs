@@ -41,3 +41,18 @@ pub enum DfuError {
     #[error("The program is not a DFU program.")]
     NotDfu,
 }
+
+impl DfuError {
+    /// The message the message line shows for it.
+    #[must_use]
+    pub fn msg(&self) -> uim::engine::LineMsg {
+        use uim::engine::LineMsg;
+        match self {
+            Self::NotNumeric(f) => LineMsg::error("CPD9CD8", &[f]),
+            Self::TooLarge(f) => LineMsg::error("CPD9CD9", &[f]),
+            Self::BadData(f) => LineMsg::error("CPD9CDA", &[f]),
+            Self::Layout(f) => LineMsg::error("CPD9CDB", &[f]),
+            Self::NotDfu => LineMsg::error("CPD9CDC", &[]),
+        }
+    }
+}

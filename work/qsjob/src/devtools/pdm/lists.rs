@@ -665,7 +665,7 @@ fn options(
                     let cmd = substitute(&u.command, &item, &ctx);
                     last = run_one(job, host, &cmd, &parms, prompt).or(last);
                 }
-                None => last = Some(format!("Option {opt} is not valid here.")),
+                None => last = Some(crate::display::msgline::say(host, "CPD9CE3", &[&opt])),
             }
             continue;
         }
@@ -704,7 +704,7 @@ fn options(
                 match objects(job, host, surface, s, spec) {
                     Ok(Flow::Back) => {}
                     Ok(f) => return Some(f),
-                    Err(e) => last = Some(e.text),
+                    Err(e) => last = Some(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &e))),
                 }
             }
             Ok(Outcome::WorkWith(_)) => {
@@ -717,11 +717,11 @@ fn options(
                 match members(job, host, surface, s, spec) {
                     Ok(Flow::Back) => {}
                     Ok(f) => return Some(f),
-                    Err(e) => last = Some(e.text),
+                    Err(e) => last = Some(crate::display::msgline::text_of(host, &crate::display::msgline::of_fail(host, &e))),
                 }
             }
             Ok(Outcome::Find) => finds.push(item),
-            Err(e) => last = Some(e.to_string()),
+            Err(e) => last = Some(crate::display::msgline::text_of(host, &e.msg())),
         }
     }
     if !deletes.is_empty() {
@@ -936,7 +936,7 @@ fn find_panel(
                     if let Some(u) = pdm::uopt::lookup(&s.options, &option) {
                         vec![substitute(&u.command, &m.item, &ctx)]
                     } else {
-                        last = Some(format!("Option {option} is not valid here."));
+                        last = Some(crate::display::msgline::say(host, "CPD9CE3", &[&option]));
                         break;
                     }
                 }

@@ -335,7 +335,7 @@ fn specify_optfile(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Se
             .and_then(|()| d.set("OPTLIB", &or(&a.up("OPTLIB"), "QGPL")))
             .and_then(|()| d.set("OPTMBR", &or(&a.up("OPTMBR"), "QAUOOPT")));
         if let Err(e) = set {
-            message = Some(e.to_string());
+            message = Some(crate::display::msgline::text_of(host, &e.msg()));
             continue;
         }
         s.defaults = d;
@@ -383,7 +383,7 @@ pub fn defaults(surface: &mut Surface, host: &Host, s: &mut Session) -> Flow {
                 let mut d = s.defaults.clone();
                 let bad = vals.iter().find_map(|(k, x)| d.set(k, x).err());
                 if let Some(e) = bad {
-                    message = Some(e.to_string());
+                    message = Some(crate::display::msgline::text_of(host, &e.msg()));
                 } else {
                     {
                         let file_changed = d.option_file != s.defaults.option_file
@@ -592,7 +592,7 @@ fn edit_option(
                 let code = match check_code(&vals["CODE"]) {
                     Ok(c) => c,
                     Err(e) => {
-                        message = Some(e.to_string());
+                        message = Some(crate::display::msgline::text_of(surface.host(), &e.msg()));
                         continue;
                     }
                 };
@@ -617,9 +617,7 @@ fn edit_option(
                     command,
                 });
                 s.options.sort_by(|a, b| a.code.cmp(&b.code));
-                return Some(format!(
-                    "Option {code} kept; it is written when you leave the list."
-                ));
+                return Some(crate::display::msgline::say(surface.host(), "CPI9B8A", &[&code]));
             }
             _ => message = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
@@ -635,7 +633,7 @@ pub fn print(host: &Host, lines: &[String]) -> String {
         .with(|l| l.prt_open("QSYSPRT".into(), "*LIBL".into(), "*DFTACTGRP".into()));
     let (id, prtf) = match opened {
         Ok(o) => o,
-        Err(e) => return format!("The list was not printed: {e}"),
+        Err(e) => return crate::display::msgline::of_error(host, &e),
     };
     let mut p = Printer::new(PageFormat {
         len: prtf.page_len,
@@ -656,7 +654,7 @@ pub fn print(host: &Host, lines: &[String]) -> String {
     let closed = host.link.borrow_mut().with(|l| l.splf_close(id, prtf.hold));
     let r = put.and(closed);
     match r {
-        Ok(()) => "The list was printed to QSYSPRT.".into(),
-        Err(e) => format!("The list was not printed: {e}"),
+        Ok(()) => crate::display::msgline::say(host, "CPI9BF6", &[]),
+        Err(e) => crate::display::msgline::of_error(host, &e),
     }
 }

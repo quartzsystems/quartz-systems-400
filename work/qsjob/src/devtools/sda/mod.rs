@@ -287,7 +287,7 @@ pub fn print(host: &Host, lines: &[String]) -> String {
         .with(|l| l.prt_open("QSYSPRT".into(), "*LIBL".into(), "*DFTACTGRP".into()));
     let (id, prtf) = match opened {
         Ok(o) => o,
-        Err(e) => return format!("The image was not printed: {e}"),
+        Err(e) => return crate::display::msgline::of_error(host, &e),
     };
     let mut p = Printer::new(PageFormat {
         len: prtf.page_len,
@@ -307,7 +307,7 @@ pub fn print(host: &Host, lines: &[String]) -> String {
         .with(|l| l.splf_put(id, bytes, p.pages, p.records));
     let closed = host.link.borrow_mut().with(|l| l.splf_close(id, prtf.hold));
     match put.and(closed) {
-        Ok(()) => "The image was printed to QSYSPRT.".into(),
-        Err(e) => format!("The image was not printed: {e}"),
+        Ok(()) => crate::display::msgline::say(host, "CPI9BF5", &[]),
+        Err(e) => crate::display::msgline::of_error(host, &e),
     }
 }

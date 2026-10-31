@@ -174,7 +174,7 @@ fn text(surface: &mut Surface, t: &mut Target<'_>, g: &Group) -> Flow {
                 }
                 return Flow::Back;
             }
-            Err(e) => message = Some(e),
+            Err(e) => message = Some(crate::display::msgline::text_of(surface.host(), &e)),
         }
     }
 }

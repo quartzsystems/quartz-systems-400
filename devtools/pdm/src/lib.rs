@@ -57,3 +57,18 @@ pub enum PdmError {
         value: String,
     },
 }
+
+impl PdmError {
+    /// The message the message line shows for it.
+    #[must_use]
+    pub fn msg(&self) -> uim::engine::LineMsg {
+        use uim::engine::LineMsg;
+        match self {
+            Self::NoOption(o) => LineMsg::error("CPD9CE3", &[o]),
+            Self::NotForType { option, what, ty } => LineMsg::error("CPD9CE4", &[option, what, ty]),
+            Self::NotInstalled(t) => LineMsg::error("CPD9CE5", &[t]),
+            Self::BadCode(c) => LineMsg::error("CPD9CE6", &[c]),
+            Self::BadValue { field, value } => LineMsg::error("CPD9CE7", &[value, field]),
+        }
+    }
+}

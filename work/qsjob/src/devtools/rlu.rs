@@ -257,9 +257,9 @@ fn save(host: &Host, s: &mut Session) -> String {
     match r {
         Ok(()) => {
             s.image.changed = false;
-            format!("Member {} was saved in {}/{}.", s.member, s.lib, s.file)
+            crate::display::msgline::say(host, "CPI9BF4", &[&s.member, &s.lib, &s.file])
         }
-        Err(e) => e,
+        Err(e) => crate::display::msgline::of_error(host, &e),
     }
 }
 

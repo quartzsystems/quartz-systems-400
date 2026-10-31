@@ -135,6 +135,19 @@ pub enum PlaceError {
     },
 }
 
+impl PlaceError {
+    /// The message the message line shows for it.
+    #[must_use]
+    pub fn msg(&self) -> uim::engine::LineMsg {
+        use uim::engine::LineMsg;
+        match self {
+            Self::BadField { text, row, col } => LineMsg::error("CPD9CE8", &[text, &row.to_string(), &col.to_string()]),
+            Self::BadCode { code, row, col } => LineMsg::error("CPD9CE9", &[code, &row.to_string(), &col.to_string()]),
+            Self::NoTarget { row, col } => LineMsg::error("CPD9CEA", &[&row.to_string(), &col.to_string()]),
+            Self::NoSource { row, col } => LineMsg::error("CPD9CEB", &[&row.to_string(), &col.to_string()]),
+        }
+    }
+}
 #[allow(clippy::too_many_lines)] // one pass over the image
 /// The changes in `typed` against the image `shown` of `record`.
 ///

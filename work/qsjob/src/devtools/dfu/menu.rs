@@ -173,7 +173,7 @@ fn run_menu(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, m
                     *msg = None;
                     break;
                 }
-                Err(e) => m = Some(e),
+                Err(e) => m = Some(crate::display::msgline::of_error(host, &e)),
             }
         }
     }
@@ -211,24 +211,24 @@ fn create(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
         }
         let name = v.get("PGM");
         if name.is_empty() {
-            m = Some("Type the name of the DFU program.".into());
+            m = Some(crate::display::msgline::say(host, "CPD9CDD", &[]));
             continue;
         }
         let lib = blank_to(&v.get("PGMLIB"), if change { "*LIBL" } else { "*CURLIB" });
         let found = match data::program(host, &lib, &name) {
             Ok(f) => f,
             Err(e) => {
-                m = Some(e);
+                m = Some(crate::display::msgline::of_error(host, &e));
                 continue;
             }
         };
         let mut p = match (found, change) {
             (Some(_), false) => {
-                m = Some(format!("DFU program {name} already exists in library {lib}."));
+                m = Some(crate::display::msgline::say(host, "CPD9CDE", &[&name, &lib]));
                 continue;
             }
             (None, true) => {
-                m = Some(format!("DFU program {name} in library {lib} not found."));
+                m = Some(crate::display::msgline::say(host, "CPF9811", &[&name, &lib]));
                 continue;
             }
             (Some((_, p)), true) => p,
@@ -240,11 +240,11 @@ fn create(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
             p.file_lib = blank_to(&v.get("FILELIB"), "*LIBL");
         }
         if p.file.is_empty() {
-            m = Some("Type the name of the data file.".into());
+            m = Some(crate::display::msgline::say(host, "CPD9CDF", &[]));
             continue;
         }
         let Some(f) = data::file(host, &p.file_lib, &p.file) else {
-            m = Some(format!("Data file {} in library {} not found.", p.file, p.file_lib));
+            m = Some(crate::display::msgline::say(host, "CPF9812", &[&p.file, &p.file_lib]));
             continue;
         };
         match general(surface, &mut p, f.keyed) {
@@ -253,8 +253,8 @@ fn create(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
             Left::Enter => {}
         }
         *msg = Some(match data::save_program(host, &lib, &name, &p) {
-            Ok(real) => format!("DFU program {name} was stored in library {real}."),
-            Err(e) => e,
+            Ok(real) => crate::display::msgline::say(host, "CPI9BF3", &[&name, &real]),
+            Err(e) => crate::display::msgline::of_error(host, &e),
         });
         return Left::Back;
     }
@@ -272,7 +272,7 @@ fn general(surface: &mut Surface, p: &mut Program, keyed: bool) -> Left {
         };
         let value = |k: &str| a.vars.get(k).map(|v| v.trim().to_string()).unwrap_or_default();
         if let Err(e) = define::apply(p, &value) {
-            message = Some(e);
+            message = Some(crate::display::msgline::text_of(surface.host(), &e));
             continue;
         }
         match a.key {
@@ -306,7 +306,7 @@ fn delete(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
                 *msg = Some(crate::display::msgline::say(host, "CPI9BD5", &[&name]));
                 return Left::Back;
             }
-            Err(e) => m = Some(e),
+            Err(e) => m = Some(crate::display::msgline::of_error(host, &e)),
         }
     }
 }
@@ -322,7 +322,7 @@ fn temporary(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Optio
         let file = v.get("FILE");
         let lib = blank_to(&v.get("FILELIB"), "*LIBL");
         let Some(f) = data::file(host, &lib, &file) else {
-            m = Some(format!("Data file {file} in library {lib} not found."));
+            m = Some(crate::display::msgline::say(host, "CPF9812", &[&file, &lib]));
             continue;
         };
         let mbr = Some(v.get("MBR")).filter(|x| !x.is_empty() && x != "*FIRST");
@@ -331,7 +331,7 @@ fn temporary(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Optio
                 *msg = None;
                 return Left::Back;
             }
-            Err(e) => m = Some(e),
+            Err(e) => m = Some(crate::display::msgline::of_error(host, &e)),
         }
     }
 }

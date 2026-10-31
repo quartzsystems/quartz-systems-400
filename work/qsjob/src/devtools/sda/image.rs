@@ -97,7 +97,7 @@ pub fn edit(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
         let asked = match place::parse(&work, &rows, &typed) {
             Ok(edits) => place::apply(&mut work, &edits, &taken),
             Err(e) => {
-                message = Some(e.to_string());
+                message = Some(crate::display::msgline::text_of(host, &e.msg()));
                 continue;
             }
         };
@@ -222,7 +222,7 @@ fn additional(surface: &mut Surface, m: &Member, this: &str, with: &mut Vec<Stri
         .map(|r| (r.name.clone(), r.ty.word().to_string()))
         .collect();
     if names.is_empty() {
-        return Ok(Some("The member has no other records to show with this one.".into()));
+        return Ok(Some(crate::display::msgline::say(surface.host(), "CPI9BFE", &[])));
     }
     let items: Vec<(&str, &str)> = names.iter().map(|(n, t)| (n.as_str(), t.as_str())).take(14).collect();
     let chosen = with.clone();

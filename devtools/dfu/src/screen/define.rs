@@ -6,6 +6,7 @@
 //! definition, its choices read back into the program.
 
 use uim::Screen;
+use uim::engine::LineMsg;
 use uim::render::Attr;
 
 use super::{blank, bottom_line, keys, leader, out, put, var};
@@ -79,13 +80,13 @@ pub fn general(p: &Program, indexed: bool, message: Option<&str>) -> Screen {
 ///
 /// # Errors
 /// The field's name and why.
-pub fn apply(p: &mut Program, value: &dyn Fn(&str) -> String) -> Result<(), String> {
-    let flag = |key: &str, label: &str| -> Result<Option<bool>, String> {
+pub fn apply(p: &mut Program, value: &dyn Fn(&str) -> String) -> Result<(), LineMsg> {
+    let flag = |key: &str, label: &str| -> Result<Option<bool>, LineMsg> {
         match value(key).trim() {
             "" => Ok(None),
             "Y" | "y" => Ok(Some(true)),
             "N" | "n" => Ok(Some(false)),
-            _ => Err(format!("Type Y or N for {label}.")),
+            _ => Err(LineMsg::error("CPD9CE0", &[label])),
         }
     };
     let t = value("TITLE");
@@ -94,7 +95,7 @@ pub fn apply(p: &mut Program, value: &dyn Fn(&str) -> String) -> Result<(), Stri
     }
     match value("DSPFMT").trim() {
         "" => {}
-        c => p.format = Format::from_code(c).ok_or("Type 1, 2, 3 or 4 for the display format.")?,
+        c => p.format = Format::from_code(c).ok_or_else(|| LineMsg::error("CPD9CE1", &[]))?,
     }
     for (key, label, slot) in [
         ("AUDIT", "audit report", &mut p.audit),
@@ -118,7 +119,7 @@ pub fn apply(p: &mut Program, value: &dyn Fn(&str) -> String) -> Result<(), Stri
         "" => {}
         "1" => p.sequential = false,
         "2" => p.sequential = true,
-        _ => return Err("Type 1 or 2 for processing.".into()),
+        _ => return Err(LineMsg::error("CPD9CE2", &[])),
     }
     Ok(())
 }

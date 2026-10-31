@@ -8,6 +8,7 @@
 //! displays; every other group is edited as keyword text.
 
 use dds::lex::Keyword;
+use uim::engine::LineMsg;
 pub use dds::lex::keyword::CONSTANT;
 
 use crate::source::{Element, Kind, Usage};
@@ -235,7 +236,7 @@ pub fn replace(
     group: &str,
     keywords: &mut Vec<Keyword>,
     lines: &[String],
-) -> Result<(), String> {
+) -> Result<(), LineMsg> {
     let mut new = Vec::new();
     for l in lines.iter().map(|l| l.trim()).filter(|l| !l.is_empty()) {
         new.extend(parse_keywords(l)?);
@@ -269,7 +270,7 @@ pub fn replace(
 /// # Errors
 ///
 /// Text the keyword grammar does not take.
-pub fn parse_keywords(text: &str) -> Result<Vec<Keyword>, String> {
+pub fn parse_keywords(text: &str) -> Result<Vec<Keyword>, LineMsg> {
     let lines: Vec<String> = crate::source::write::function_lines(text)
         .iter()
         .map(crate::source::Line::text)
@@ -278,8 +279,8 @@ pub fn parse_keywords(text: &str) -> Result<Vec<Keyword>, String> {
 "));
     let mut diags = dds::diag::Diagnostics::default();
     let specs = dds::lex::lex(&source, &mut diags);
-    if let Some(d) = diags.as_slice().iter().find(|d| d.severity >= dds::Severity::Error) {
-        return Err(d.text.clone());
+    if diags.as_slice().iter().any(|d| d.severity >= dds::Severity::Error) {
+        return Err(LineMsg::error("CPD9CEC", &[text.trim()]));
     }
     Ok(specs
         .into_iter()

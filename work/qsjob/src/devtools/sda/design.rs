@@ -347,7 +347,7 @@ fn reorder(m: &mut Member, shown: &[usize], a: &ui::Answer) {
 /// when the display is gone.
 fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w: &mut Work, opt: &str, name: &str) -> Option<String> {
     if opt != "1" {
-        return Some(format!("Option {opt} needs a record from the list."));
+        return Some(crate::display::msgline::say(host, "CPD9CED", &[&opt]));
     }
     let mut vals = BTreeMap::new();
     vals.insert("NAME".to_string(), name.to_string());
@@ -396,7 +396,7 @@ fn add_line(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, 
         if super::image::edit(job, host, surface, s, &mut w.m, ri) == Flow::Gone {
             return Some(String::new());
         }
-        return Some(format!("Record {n} added; it is kept when you save the member."));
+        return Some(crate::display::msgline::say(host, "CPI9BF9", &[&n]));
     }
 }
 
@@ -440,17 +440,17 @@ fn option(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut Session, w:
                     }
                 }
                 w.m.records.insert(ri + 1, r);
-                Ok(Some(format!("Record {name} copied to {n}.")))
+                Ok(Some(crate::display::msgline::say(host, "CPI9BFA", &[&name, &n])))
             } else {
                 let r = &mut w.m.records[ri];
                 r.name.clone_from(&n);
                 r.changed = true;
-                Ok(Some(format!("Record {name} renamed to {n}.")))
+                Ok(Some(crate::display::msgline::say(host, "CPI9BFB", &[&name, &n])))
             }
         }
         "4" => {
             w.m.records.remove(ri);
-            Ok(Some(format!("Record {name} deleted; save the member to keep this.")))
+            Ok(Some(crate::display::msgline::say(host, "CPI9BFC", &[&name])))
         }
         "8" => {
             if kw::record(surface, &mut w.m.records[ri]) == Flow::Gone {
@@ -686,8 +686,8 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
         }
         vals.insert("TEXT".into(), a.raw("TEXT").trim().to_string());
         match a.key() {
-            Key::F(12) => return Saved::Back(Some(format!("Member {} was not saved.", w.member))),
-            Key::F(3) => return Saved::Done(Some(format!("Member {} was not saved.", w.member))),
+            Key::F(12) => return Saved::Back(Some(crate::display::msgline::say(host, "CPI9BFD", &[&w.member]))),
+            Key::F(3) => return Saved::Done(Some(crate::display::msgline::say(host, "CPI9BFD", &[&w.member]))),
             Key::Enter => {}
             _ => {
                 message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
@@ -697,7 +697,7 @@ fn save(job: &mut Job, host: &Host, surface: &mut Surface, w: &mut Work) -> Save
         let save = vals["SAVE"] == "Y";
         let create = vals["CREATE"] == "Y";
         if !save && !create {
-            return Saved::Done(Some(format!("Member {} was not saved.", w.member)));
+            return Saved::Done(Some(crate::display::msgline::say(host, "CPI9BFD", &[&w.member])));
         }
         if create && !save {
             message = Some(crate::display::msgline::say(host, "CPD9C86", &[]));
