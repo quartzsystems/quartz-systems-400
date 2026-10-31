@@ -708,3 +708,48 @@ sev = 40
 text = "Certificate &1 in store &2 has expired."
 help = "Servers assigned it use the system's own certificate until a valid one is assigned."
 vars = ["*CHAR 64", "*CHAR 256"]
+
+# The host print transform's writers (work/print): the connection and
+# send failures, IBM's identifiers (messages-tcp.txt), our texts.
+
+[[msg]]
+id = "TCP3409"
+sev = 0
+text = "The connection to the remote host could not be made."
+help = "The remote system did not answer at the address and port, or the secure session could not be set up. Check that the printer or server is up and reachable."
+vars = []
+
+[[msg]]
+id = "TCP3427"
+sev = 10
+text = "The remote host refused the connection."
+help = "Nothing listens at the port named, or the host turned the connection away. Check the remote port and the server on the host."
+vars = []
+
+[[msg]]
+id = "TCP3430"
+sev = 10
+text = "The remote host closed the connection."
+help = "The connection ended before the transfer was complete. The writer tries again when the file is released."
+vars = []
+
+[[msg]]
+id = "TCP3436"
+sev = 10
+text = "The remote host did not answer in time."
+help = "No reply came before the time-out ran out. Check the network path to the host."
+vars = []
+
+[[msg]]
+id = "TCP3701"
+sev = 40
+text = "Spooled file &1 could not be sent."
+help = "The remote system did not accept the print job, or the exchange broke its protocol. The job log holds the remote system's answer."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP370A"
+sev = 10
+text = "Host name &1 cannot be resolved to an address."
+help = "The name is not in the host table and the name server does not know it. Check the remote system name or the TCP/IP domain settings."
+vars = ["*CHAR 24"]
