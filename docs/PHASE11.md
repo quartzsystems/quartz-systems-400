@@ -79,6 +79,8 @@ were answered by hand during the capture, before every job got
 | 74 | problems from QSYSOPR messages, `WRKPRB`/`DSPPRB`, `DMPOBJ`, a system dump, `STRTRC`/`ENDTRC`/`PRTTRC`, the LIC log |
 | 75 | `INZTAP`, `SAVLIB`/`RSTLIB` on virtual tape across two volumes, `DSPTAP`; `INZOPT`, `DSPOPT`, `/QOPT` on virtual optical |
 | 76 | a virtual media library (cartridges inserted, added, mounted by a save, demounted by `ENDOPT(*UNLOAD)`, ejected; `WRKMLBSTS`), `SAVLIB` of two libraries as a tape file each, a save across two virtual optical volumes and back, `CRTTAPF`/`CPYTOTAP`/`CPYFRMTAP`, `ENDOPT(*UNLOAD)` on virtual tape, the next-volume inquiry answered `G` from the reply list |
+| 80 | `SAVLICPGM`/`DLTLICPGM QS00WDS`: `CRTBNDRPG` ends `CPF0C1F`; `RSTLICPGM` *BASE and option 31 bring it back; a vendor product packaged by `QSPKGPRD`, installed with `RSTLICPGM`, keyed with `ADDLICKEY` (a key for other limits refused), shown by `WRKLICINF`, deleted |
+| 81 | `QSCRTPTF` with the build's key, `LODPTF`, `APYPTF *TEMP`, `RMVPTF`, a prerequisite refused, `DELAYED(*YES)` applied by the IPL (`C6004501`), `APYPTF *PERM`, `DSPPTFCVR`, `CHKOBJITG` clean then after a change |
 | `--media iso`, `iso-raw`, `iso-fat` | the hybrid install image as a CD, written raw to a disk, and copied onto FAT32 |
 | `--media iso` 1, 4 | the media IPL without an installed system shows No Operating System Installed; with one, option 1 IPLs the disk |
 
