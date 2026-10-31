@@ -191,59 +191,109 @@ pub fn rvkobjaut(txn: &mut Txn<'_>, env: &Env<'_>, id: ObjectId, k: &Keywords) -
     Ok(format!("Authority removed for {what}."))
 }
 
-/// `DSPOBJAUT`: owner, primary group, list, and each user's authority.
-/// A user without `*OBJMGT` (and not the owner) sees only its own.
-pub fn dspobjaut(txn: &mut Txn<'_>, env: &Env<'_>, id: ObjectId) -> Result<String> {
+/// One user's authority to an object, as `DSPOBJAUT` lists it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AuthRow {
+    /// The user, `*PUBLIC` last.
+    pub user: String,
+    /// The group the authority comes through; blank for the user's own.
+    pub group: String,
+    /// The authority as shown: `*ALL`, `USER DEF`, `*AUTL`.
+    pub shown: String,
+    /// The single authorities.
+    pub bits: Auth,
+}
+
+/// An object's owner, primary group, list and its users' authorities.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ObjectAuthorities {
+    /// The object.
+    pub name: String,
+    /// Its library.
+    pub lib: String,
+    /// Its type, `*FILE`.
+    pub ty: String,
+    /// The owner.
+    pub owner: String,
+    /// The primary group, `*NONE` when it has none.
+    pub pgp: String,
+    /// The authorization list, `*NONE` when it has none.
+    pub autl: String,
+    /// The users the actor may see: owner, group, private, `*PUBLIC`.
+    pub rows: Vec<AuthRow>,
+}
+
+/// The authorities of object `id`. A user without `*OBJMGT` (and not
+/// the owner) sees only its own.
+pub fn authorities(txn: &mut Txn<'_>, env: &Env<'_>, id: ObjectId) -> Result<ObjectAuthorities> {
     let h = grant::header(txn, id)?;
     guard::check(txn, "obj.describe", &h)?;
     let autl = id.type_code == types::AUTL;
     let everyone = text_of(&h.owner) == env.actor.user
         || search::check(txn, env.qsys, env.actor, &h, Need::Bits(Auth(A::OBJMGT)))?.allowed;
-    let lib = library_of(txn, &h);
-    let pgp = none_if_empty(text_of(&h.primary_group));
-    let list = none_if_empty(text_of(&h.autl));
-    let mut o = String::new();
-    let _ = writeln!(
-        o,
-        " Object . . . . . . . :   {:<10}   Owner  . . . . . . . :   {}",
-        h.name,
-        text_of(&h.owner)
-    );
-    let _ = writeln!(
-        o,
-        "   Library  . . . . . :   {lib:<10}   Primary group  . . . :   {pgp}"
-    );
-    let _ = writeln!(
-        o,
-        " Object type  . . . . :   {:<10}   Authorization list . :   {list}",
-        type_name(id)
-    );
-    let _ = writeln!(o, "                          Object");
-    let _ = writeln!(o, " User        Group       Authority");
-    let row = |o: &mut String, user: &str, group: &str, bits: Auth| {
-        let _ = writeln!(o, " {user:<10}  {group:<10}  {}", bits.display(autl));
-    };
     let owner = text_of(&h.owner);
+    let pgp = none_if_empty(text_of(&h.primary_group));
     let shown = |u: &str| everyone || u == env.actor.user;
+    let row = |user: &str, bits: Auth| AuthRow {
+        user: user.to_string(),
+        group: String::new(),
+        shown: bits.display(autl).to_string(),
+        bits,
+    };
+    let mut rows = Vec::new();
     if shown(&owner) {
-        row(&mut o, &owner, "", Auth::of(h.owner_authority));
+        rows.push(row(&owner, Auth::of(h.owner_authority)));
     }
     if pgp != "*NONE" && shown(&pgp) {
-        row(&mut o, &pgp, "", Auth::of(h.group_authority));
+        rows.push(row(&pgp, Auth::of(h.group_authority)));
     }
     for pa in auth::private_list(txn, &h)? {
         let u = text_of(&pa.profile);
         if shown(&u) {
-            row(&mut o, &u, "", Auth::of(pa.bits));
+            rows.push(row(&u, Auth::of(pa.bits)));
         }
     }
     if everyone {
-        let public = if h.public_authority.0 & A::FROM_AUTL != 0 {
-            "*AUTL"
-        } else {
-            Auth::of(h.public_authority).display(autl)
-        };
-        let _ = writeln!(o, " {:<10}  {:<10}  {public}", "*PUBLIC", "");
+        let mut public = row("*PUBLIC", Auth::of(h.public_authority));
+        if h.public_authority.0 & A::FROM_AUTL != 0 {
+            public.shown = "*AUTL".into();
+        }
+        rows.push(public);
+    }
+    Ok(ObjectAuthorities {
+        name: h.name.to_string(),
+        lib: library_of(txn, &h),
+        ty: type_name(id).into(),
+        owner,
+        pgp,
+        autl: none_if_empty(text_of(&h.autl)),
+        rows,
+    })
+}
+
+/// `DSPOBJAUT`: owner, primary group, list, and each user's authority.
+pub fn dspobjaut(txn: &mut Txn<'_>, env: &Env<'_>, id: ObjectId) -> Result<String> {
+    let a = authorities(txn, env, id)?;
+    let mut o = String::new();
+    let _ = writeln!(
+        o,
+        " Object . . . . . . . :   {:<10}   Owner  . . . . . . . :   {}",
+        a.name, a.owner
+    );
+    let _ = writeln!(
+        o,
+        "   Library  . . . . . :   {:<10}   Primary group  . . . :   {}",
+        a.lib, a.pgp
+    );
+    let _ = writeln!(
+        o,
+        " Object type  . . . . :   {:<10}   Authorization list . :   {}",
+        a.ty, a.autl
+    );
+    let _ = writeln!(o, "                          Object");
+    let _ = writeln!(o, " User        Group       Authority");
+    for r in &a.rows {
+        let _ = writeln!(o, " {:<10}  {:<10}  {}", r.user, r.group, r.shown);
     }
     Ok(o)
 }
@@ -372,11 +422,29 @@ pub fn grtusraut(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
     ))
 }
 
+/// An object of a user's index: name, library, type and authority.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserObject {
+    /// The object.
+    pub name: String,
+    /// Its library.
+    pub lib: String,
+    /// Its type.
+    pub ty: String,
+    /// The user's authority to it, as shown.
+    pub aut: String,
+}
+
 /// The objects a user owns (`Kind::Owned`), holds a private authority
-/// to (`Kind::Private`) or is the primary group of (`Kind::Group`):
-/// `WRKOBJOWN` and `DSPUSRPRF TYPE(*OBJOWN|*OBJAUT|*OBJPGP)`.
-pub fn objects_of(txn: &mut Txn<'_>, env: &Env<'_>, user: &str, kind: Kind) -> Result<String> {
-    let user = if user.eq_ignore_ascii_case("*CURRENT") {
+/// to (`Kind::Private`) or is the primary group of (`Kind::Group`),
+/// with the user (`*CURRENT` resolved).
+pub fn user_objects(
+    txn: &mut Txn<'_>,
+    env: &Env<'_>,
+    user: &str,
+    kind: Kind,
+) -> Result<(String, Vec<UserObject>)> {
+    let user = if user.is_empty() || user.eq_ignore_ascii_case("*CURRENT") {
         env.actor.user.clone()
     } else {
         user.to_ascii_uppercase()
@@ -385,21 +453,29 @@ pub fn objects_of(txn: &mut Txn<'_>, env: &Env<'_>, user: &str, kind: Kind) -> R
         let (pid, _) = objects::read(txn, env.qsys, &user)?;
         guard::check_id(txn, "usrprf.display", pid)?;
     }
-    let mut o = format!(" User profile {user}\n Object      Library     Type        Authority\n");
+    let mut out = Vec::new();
     for (id, bits) in index::list(txn, env.qsys, &user, kind)? {
         let h = grant::header(txn, id)?;
         let bits = match kind {
             Kind::Owned => Auth::of(h.owner_authority),
             _ => Auth(u32::try_from(bits).unwrap_or(0)),
         };
-        let lib = library_of(txn, &h);
-        let _ = writeln!(
-            o,
-            " {:<10}  {lib:<10}  {:<10}  {}",
-            h.name.to_string(),
-            type_name(id),
-            bits.display(id.type_code == types::AUTL)
-        );
+        out.push(UserObject {
+            name: h.name.to_string(),
+            lib: library_of(txn, &h),
+            ty: type_name(id).into(),
+            aut: bits.display(id.type_code == types::AUTL).into(),
+        });
+    }
+    Ok((user, out))
+}
+
+/// `WRKOBJOWN` and `DSPUSRPRF TYPE(*OBJOWN|*OBJAUT|*OBJPGP)` as text.
+pub fn objects_of(txn: &mut Txn<'_>, env: &Env<'_>, user: &str, kind: Kind) -> Result<String> {
+    let (user, list) = user_objects(txn, env, user, kind)?;
+    let mut o = format!(" User profile {user}\n Object      Library     Type        Authority\n");
+    for x in list {
+        let _ = writeln!(o, " {:<10}  {:<10}  {:<10}  {}", x.name, x.lib, x.ty, x.aut);
     }
     Ok(o)
 }
@@ -516,22 +592,50 @@ pub fn dspautl(txn: &mut Txn<'_>, env: &Env<'_>, name: &str) -> Result<String> {
     Ok(o)
 }
 
-/// `DSPAUTLOBJ AUTL()`: the objects the list secures.
-pub fn dspautlobj(txn: &mut Txn<'_>, env: &Env<'_>, name: &str) -> Result<String> {
+/// An object an authorization list secures.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SecuredObject {
+    /// The object.
+    pub name: String,
+    /// Its library.
+    pub lib: String,
+    /// Its type.
+    pub ty: String,
+    /// Its owner.
+    pub owner: String,
+    /// Its text.
+    pub text: String,
+}
+
+/// The owner of list `name` and the objects it secures.
+pub fn secured_objects(
+    txn: &mut Txn<'_>,
+    env: &Env<'_>,
+    name: &str,
+) -> Result<(String, Vec<SecuredObject>)> {
     let list = autl::find(txn, env.qsys, name)?;
     let h = grant::header(txn, list)?;
     guard::check(txn, "obj.describe", &h)?;
-    let mut o = format!(" Authorization list {name}\n Object      Library     Type        Owner\n");
+    let mut out = Vec::new();
     for id in autl::secured(txn, env.qsys, name)? {
         let oh = grant::header(txn, id)?;
-        let lib = library_of(txn, &oh);
-        let _ = writeln!(
-            o,
-            " {:<10}  {lib:<10}  {:<10}  {}",
-            oh.name.to_string(),
-            type_name(id),
-            text_of(&oh.owner)
-        );
+        out.push(SecuredObject {
+            name: oh.name.to_string(),
+            lib: library_of(txn, &oh),
+            ty: type_name(id).into(),
+            owner: text_of(&oh.owner),
+            text: text_of(&oh.text),
+        });
+    }
+    Ok((text_of(&h.owner), out))
+}
+
+/// `DSPAUTLOBJ AUTL()`: the objects the list secures.
+pub fn dspautlobj(txn: &mut Txn<'_>, env: &Env<'_>, name: &str) -> Result<String> {
+    let (_, list) = secured_objects(txn, env, name)?;
+    let mut o = format!(" Authorization list {name}\n Object      Library     Type        Owner\n");
+    for x in list {
+        let _ = writeln!(o, " {:<10}  {:<10}  {:<10}  {}", x.name, x.lib, x.ty, x.owner);
     }
     Ok(o)
 }

@@ -13,7 +13,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{cell, dashed, dialog, exec, parm, qual, service_text, show};
+use super::{cell, dashed, dialog, exec, fetch, list_of, parm, qual, set_vars, show, var_of};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -137,64 +137,6 @@ const BITS: [(&str, &str); 10] = [
     ("EXE", "*EXECUTE"),
 ];
 
-/// Where `DSPOBJAUT AUTFMT(*DETAIL)` puts each authority's `X`.
-const BIT_COLS: [usize; 10] = [14, 18, 23, 29, 34, 39, 43, 47, 51, 55];
-
-/// The value after `label` on the lines of a text display.
-fn after(text: &str, label: &str) -> String {
-    text.lines()
-        .find_map(|l| {
-            let at = l.find(label)?;
-            let rest = l[at + label.len()..].split_once(':')?.1;
-            Some(
-                rest.split("   ")
-                    .map(str::trim)
-                    .find(|s| !s.is_empty())
-                    .unwrap_or("")
-                    .to_string(),
-            )
-        })
-        .unwrap_or_default()
-}
-
-/// `(user, group, authority)` rows of a `DSPOBJAUT` report.
-fn auth_rows(text: &str) -> Vec<(String, String, String)> {
-    text.lines()
-        .skip_while(|l| !l.trim_start().starts_with("User"))
-        .skip(1)
-        .filter(|l| !l.trim().is_empty())
-        .map(|l| {
-            let cut = |a: usize, b: usize| {
-                l.get(a..b.min(l.len()))
-                    .unwrap_or("")
-                    .trim()
-                    .to_string()
-            };
-            (cut(1, 11), cut(13, 23), cut(25, l.len()))
-        })
-        .collect()
-}
-
-/// A user's single authorities from the detail report, `X` or blank in
-/// `BITS` order.
-fn bits_of(detail: &str, user: &str) -> Vec<String> {
-    let line = detail
-        .lines()
-        .skip(1)
-        .find(|l| l.get(1..11).is_some_and(|u| u.trim() == user))
-        .unwrap_or("");
-    BIT_COLS
-        .iter()
-        .map(|&c| {
-            if line.get(c..=c) == Some("X") {
-                "X".to_string()
-            } else {
-                String::new()
-            }
-        })
-        .collect()
-}
-
 /// An entry of the editor: user, group, authority and its bits.
 fn entry(user: &str, group: &str, aut: &str, bits: &[String]) -> Vec<(String, String)> {
     let mut row = vec![
@@ -305,48 +247,50 @@ pub fn edtobjaut(
 ) -> Option<Result<String, Fail>> {
     let (name, lib) = qual(r, "OBJ");
     let ty = parm(r, "OBJTYPE");
-    let found = host
-        .link
-        .borrow_mut()
-        .with(|l| l.object(lib.clone(), name.clone(), ty.clone()))?;
-    let obj = format!(
-        "OBJ({}/{}) OBJTYPE({})",
-        found.lib, found.name, found.ty
-    );
     let mut d = match dialog(host, "QUIEDTAUT") {
         Ok(d) => d,
         Err(e) => return Some(Err(e)),
     };
-    d.set("OBJ", &found.name);
-    d.set("OBJLIB", &found.lib);
-    d.set("OBJTYPE", &found.ty);
-    d.set("OWNER", &found.owner);
     d.set("OBJHEAD", &dashed("Object", 27));
     d.set("DTAHEAD", &dashed("Data", 37));
     d.set("AUTVIEW", "OBJ");
     loop {
-        let text = match service_text(host, &format!("DSPOBJAUT {obj}")) {
-            Ok(t) => t,
-            Err(e) => return Some(Err(e)),
+        let data = match fetch(host, "OBJAUT", &[&lib, &name, &ty]) {
+            Ok(x) => x,
+            Err(e) => return Some(Err(Fail::read("EDTOBJAUT", &e))),
         };
-        let detail =
-            service_text(host, &format!("DSPOBJAUT {obj} AUTFMT(*DETAIL)")).unwrap_or_default();
-        let pgp = after(&text, "Primary group");
-        let autl = after(&text, "Authorization list");
-        let autl = if autl.is_empty() { "*NONE".to_string() } else { autl };
-        d.set("PGP", if pgp.is_empty() { "*NONE" } else { &pgp });
-        d.set("AUTL", &autl);
-        let orig: Vec<(String, String, Vec<String>)> = auth_rows(&text)
-            .into_iter()
-            .map(|(u, _, a)| {
-                let b = bits_of(&detail, &u);
-                (u, a, b)
+        set_vars(&mut d, &data);
+        let obj = format!(
+            "OBJ({}/{}) OBJTYPE({})",
+            var_of(&data, "OBJLIB"),
+            var_of(&data, "OBJ"),
+            var_of(&data, "OBJTYPE")
+        );
+        let autl = var_of(&data, "AUTL");
+        let found = list_of(&data, "AUTS");
+        let orig: Vec<(String, String, Vec<String>)> = found
+            .iter()
+            .map(|row| {
+                let get = |k: &str| {
+                    row.iter()
+                        .find(|(v, _)| v == k)
+                        .map(|(_, x)| x.clone())
+                        .unwrap_or_default()
+                };
+                let bits = BITS.iter().map(|(v, _)| get(v)).collect();
+                (get("USER"), get("AUT"), bits)
             })
             .collect();
-        let rows = auth_rows(&text)
+        let rows = found
             .iter()
             .zip(&orig)
-            .map(|((u, g, a), (_, _, b))| entry(u, g, a, b))
+            .map(|(row, (u, a, b))| {
+                let group = row
+                    .iter()
+                    .find(|(v, _)| v == "GROUP")
+                    .map_or("", |(_, x)| x.as_str());
+                entry(u, group, a, b)
+            })
             .collect();
         super::fill(&mut d, "AUTS", rows);
         'show: loop {
@@ -632,40 +576,5 @@ mod tests {
         assert_eq!(rows[2][1].1, "QTEMP");
         assert_eq!(rows[0][2].1, "150");
         assert_eq!(rows[14][4].1, "440");
-    }
-
-    #[test]
-    fn detail_bits_by_column() {
-        let line = |u: &str, xs: &[usize]| {
-            let mut l: Vec<char> = format!(" {u:<10}").chars().collect();
-            l.resize(56, ' ');
-            for &c in xs {
-                l[c] = 'X';
-            }
-            l.into_iter().collect::<String>()
-        };
-        let detail = format!(
-            " User
-{}
-{}
-",
-            line("QPGMR", &BIT_COLS),
-            line("*PUBLIC", &[14, 39, 55])
-        );
-        assert!(bits_of(&detail, "QPGMR").iter().all(|b| b == "X"));
-        let p = bits_of(&detail, "*PUBLIC");
-        assert_eq!(p[0], "X");
-        assert_eq!(p[1], "");
-        assert_eq!(p[5], "X");
-        assert_eq!(p[9], "X");
-    }
-
-    #[test]
-    fn report_rows_and_labels() {
-        let text = " Object . . . . . . . :   X            Owner  . . . . . . . :   QPGMR\n   Library  . . . . . :   QGPL         Primary group  . . . :   *NONE\n Object type  . . . . :   *JOBD        Authorization list . :   *NONE\n                          Object\n User        Group       Authority\n QPGMR                   *ALL\n *PUBLIC                 *USE\n";
-        assert_eq!(after(text, "Primary group"), "*NONE");
-        let rows = auth_rows(text);
-        assert_eq!(rows[0], ("QPGMR".into(), String::new(), "*ALL".into()));
-        assert_eq!(rows[1].2, "*USE");
     }
 }

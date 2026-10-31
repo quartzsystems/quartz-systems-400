@@ -54,6 +54,7 @@ pub use jobs::chgjob;
 mod served;
 mod seu;
 pub(crate) mod sysdata;
+mod authdata;
 mod cppdata;
 mod cppmedia;
 mod system2;

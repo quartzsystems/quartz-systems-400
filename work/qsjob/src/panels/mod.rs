@@ -168,6 +168,34 @@ pub fn exec(job: &mut Job, host: &Host, text: &str) -> Option<uim::engine::LineM
     m
 }
 
+/// Panel data `what` from the storage service (request 270); a failed
+/// read is command `cmd`'s escape ([`Fail::read`]).
+pub fn panel_data(host: &Host, cmd: &str, what: &str, args: &[&str]) -> Result<stg::proto::Sys2Data, Fail> {
+    let args: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
+    host.link
+        .borrow_mut()
+        .with(|l| l.sys2_panel(what.into(), args))
+        .map_err(|e| Fail::read(cmd, &e))
+}
+
+/// The entries of list `name` in panel data, empty when it has none.
+pub fn data_list(data: &stg::proto::Sys2Data, name: &str) -> Vec<Vec<(String, String)>> {
+    data.1
+        .iter()
+        .find(|(n, _)| n == name)
+        .map(|(_, rows)| rows.clone())
+        .unwrap_or_default()
+}
+
+/// A variable of panel data, blank when missing.
+pub fn data_var(data: &stg::proto::Sys2Data, name: &str) -> String {
+    data.0
+        .iter()
+        .find(|(k, _)| k == name)
+        .map(|(_, v)| v.clone())
+        .unwrap_or_default()
+}
+
 /// Whether the job shows panels: it is interactive and the command
 /// did not ask for printed output or an outfile.
 #[must_use]

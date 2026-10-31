@@ -153,23 +153,9 @@ pub fn wrkobjown(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
     d.set("USRPRF", &user);
     let mut last = String::new();
     loop {
-        let text = text_form(host, r)?;
-        let rows = text
-            .lines()
-            .skip_while(|l| !l.trim_start().starts_with("Object"))
-            .skip(1)
-            .filter(|l| !l.trim().is_empty())
-            .map(|l| {
-                let at = |a: usize, b: usize| l.get(a..b.min(l.len())).unwrap_or("").trim().to_string();
-                entry(&[
-                    ("OBJ", at(1, 11)),
-                    ("OBJLIB", at(13, 23)),
-                    ("OBJTYPE", at(25, 35)),
-                    ("OBJAUT", l.get(37..).unwrap_or("").trim().to_string()),
-                ])
-            })
-            .collect();
-        fill(&mut d, "OBJS", rows);
+        let data = crate::panels::panel_data(host, "WRKOBJOWN", "OBJOWN", &[&user])?;
+        d.set("USRPRF", &crate::panels::data_var(&data, "USRPRF"));
+        fill(&mut d, "OBJS", crate::panels::data_list(&data, "OBJS"));
         let resp = show(&mut d, surface, "WRKOBJOWN")?;
         let Some(resp) = common(job, host, &mut d, resp, &mut last) else {
             continue;

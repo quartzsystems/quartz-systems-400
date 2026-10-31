@@ -493,86 +493,19 @@ pub fn dsplib(
     Ok(String::new())
 }
 
-/// One user's row of `DSPOBJAUT`: user, group, authority.
-fn auth_rows(text: &str) -> Vec<(String, String, String)> {
-    let mut rows = Vec::new();
-    let mut table = false;
-    for l in text.lines() {
-        if l.trim_start().starts_with("User") {
-            table = true;
-            continue;
-        }
-        if !table || l.trim().is_empty() {
-            continue;
-        }
-        let user = l.get(1..11).unwrap_or("").trim().to_string();
-        let group = l.get(13..23).unwrap_or("").trim().to_string();
-        let auth = l.get(25..).unwrap_or("").trim().to_string();
-        rows.push((user, group, auth));
-    }
-    rows
-}
-
-/// The value after `label` on the lines of the text form.
-fn after(text: &str, label: &str) -> String {
-    text.lines()
-        .find_map(|l| {
-            let at = l.find(label)?;
-            let rest = &l[at + label.len()..];
-            let rest = rest.split_once(':')?.1;
-            Some(
-                rest.split("   ")
-                    .map(str::trim)
-                    .find(|s| !s.is_empty())
-                    .unwrap_or("")
-                    .to_string(),
-            )
-        })
-        .unwrap_or_default()
-}
-
 /// `DSPOBJAUT`: who may use the object and how; F11 shows the
 /// authorities one by one.
 pub fn dspobjaut(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let (name, lib) = qual(r, "OBJ", "*LIBL");
     let ty = parm(r, "OBJTYPE").unwrap_or_default();
-    let found = object(host, &lib, &name, &ty).ok_or_else(|| {
-        Fail::new(
-            "CPF9801",
-            format!("Object {name} in library {lib} not found."),
-        )
-    })?;
-    let line = format!(
-        "dspobjaut OBJ({}/{}) OBJTYPE({})",
-        found.lib, found.name, found.ty
-    );
     let mut d = dialog(host, "QUIDSPOAUT")?;
     d.copyright = true;
-    d.set("OBJ", &found.name);
-    d.set("OBJLIB", &found.lib);
-    d.set("OBJTYPE", &found.ty);
-    d.set("OWNER", &found.owner);
     loop {
-        let text = host.exec(&line).text;
-        if crate::command::jobsite::leading_msgid(text.trim()).is_some() {
-            return Err(Fail::new(&text[..7], text.trim().to_string()));
+        let data = crate::panels::panel_data(host, "DSPOBJAUT", "OBJAUT", &[&lib, &name, &ty])?;
+        for (k, v) in &data.0 {
+            d.set(k, v);
         }
-        d.set("PGP", &after(&text, "Primary group"));
-        let autl = after(&text, "Authorization list");
-        d.set("AUTL", if autl.is_empty() { "*NONE" } else { &autl });
-        let detail = host.exec(&format!("{line} AUTFMT(*DETAIL)")).text;
-        let rows: Vec<Vec<(String, String)>> = auth_rows(&text)
-            .into_iter()
-            .map(|(u, g, a)| {
-                let bits = detail
-                    .lines()
-                    .find(|l| l.get(1..11).is_some_and(|x| x.trim() == u))
-                    .map(|l| l.get(13..).unwrap_or("").to_string())
-                    .unwrap_or_default();
-                entry(&[("USER", u), ("GROUP", g), ("AUT", a), ("BITS", bits)])
-            })
-            .collect();
-        fill(&mut d, "AUTS", rows);
+        fill(&mut d, "AUTS", crate::panels::data_list(&data, "AUTS"));
         match show(&mut d, surface, "DSPOBJAUT")? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(11) => d.view = 1 - d.view.min(1),

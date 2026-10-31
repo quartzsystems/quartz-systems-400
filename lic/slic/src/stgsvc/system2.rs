@@ -40,7 +40,8 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Sys2Dat
         "DEVD" => devds(system),
         "HDWRSC" => hardware(&arg(0)),
         "UPRF" => user_objects(system, &arg(0), &arg(1)),
-        other => super::cppdata::panel(system, other, args)
+        other => super::authdata::panel(system, other, args)
+            .or_else(|| super::cppdata::panel(system, other, args))
             .unwrap_or_else(|| Err(format!("CPF9899 no panel data named {other}"))),
     }
 }
