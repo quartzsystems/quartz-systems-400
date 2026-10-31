@@ -9,6 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use svctools::env::{MemEnv, NonConfigured};
+use svctools::install::os::{DeviceKind, InstallDevice};
 use svctools::install::{LIC_STEPS, OS_STEPS, Progress, disk_status};
 
 fn golden_dir() -> PathBuf {
@@ -61,6 +62,32 @@ fn env() -> MemEnv {
             controller: "DC02".into(),
         },
     ];
+    e.devices = vec![
+        InstallDevice {
+            name: "OPT01".into(),
+            kind: DeviceKind::Optical,
+            location: "/dev/sr0".into(),
+            media: "Install media V1R0M0 (QS00SS1 QS00WDS QS00TC1 QS00ST1)".into(),
+            action: "Fresh install of V1R0M0".into(),
+            refused: None,
+        },
+        InstallDevice {
+            name: "TAPVRT01".into(),
+            kind: DeviceKind::Virtual,
+            location: "/dev/vdc".into(),
+            media: "SAVSYS media V1R0M0 (QS00SS1)".into(),
+            action: "Slip install of V1R0M0 over V1R0M0".into(),
+            refused: None,
+        },
+        InstallDevice {
+            name: "OPTVRT01".into(),
+            kind: DeviceKind::Virtual,
+            location: "/dev/vdd".into(),
+            media: "Install media V0R9M0 (QS00SS1)".into(),
+            action: "Downgrade from V1R0M0".into(),
+            refused: Some("the media holds V0R9M0, older than the installed V1R0M0; downgrade is not allowed".into()),
+        },
+    ];
     e
 }
 
@@ -80,18 +107,44 @@ fn install_screens_match_their_golden_files() {
     p.done(0);
     p.done(1);
     check("lic-status", &svctools::install::lic_status(&e, &p).dump());
+    let mut r = svctools::install::lic::start();
+    r.enter(&f(&["1"]), &mut e);
+    r.enter(&f(&["3"]), &mut e);
+    check("recover-source", &r.screen(&mut e).dump());
+    r.enter(&f(&["1"]), &mut e);
+    check("recover-confirm", &r.screen(&mut e).dump());
+    let mut r = svctools::install::lic::start();
+    r.enter(&f(&["1"]), &mut e);
+    r.enter(&f(&["4"]), &mut e);
+    check("restore-source", &r.screen(&mut e).dump());
+    r.enter(&f(&["1"]), &mut e);
+    check("restore-confirm", &r.screen(&mut e).dump());
     let mut r = svctools::install::os::start();
     check("device-type", &r.screen(&mut e).dump());
+    r.enter(&f(&["3"]), &mut e);
+    check("install-device", &r.screen(&mut e).dump());
+    r.enter(&f(&["", "1"]), &mut e);
+    check("os-confirm-refused", &r.screen(&mut e).dump());
+    let mut r = svctools::install::os::start();
     r.enter(&f(&["2"]), &mut e);
     check("os-confirm", &r.screen(&mut e).dump());
     r.function(10, &mut e);
     check("language", &r.screen(&mut e).dump());
     r.enter(&f(&["1"]), &mut e);
     check("language-confirm", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    check("install-os", &r.screen(&mut e).dump());
+    r.enter(&f(&["2", "2026-01-01", "00:00:00"]), &mut e);
+    check("install-options", &r.screen(&mut e).dump());
     let mut p = Progress::new(&OS_STEPS);
     p.done(0);
-    p.note = "Language feature 2924".into();
+    p.done(1);
+    p.note = "Install device OPT01, language feature 2924".into();
     check("os-status", &svctools::install::os_status(&e, &p).dump());
+    let mut r = svctools::install::os::start();
+    r.enter(&f(&["3"]), &mut e);
+    r.enter(&f(&["1", ""]), &mut e);
+    check("os-confirm-upgrade", &r.screen(&mut e).dump());
     let mut r = svctools::install::options::start();
     check("ipl-options", &r.screen(&mut e).dump());
     r.enter(

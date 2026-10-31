@@ -1,0 +1,24 @@
+                           Select Load Source Device                            
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the installed load source, then press Enter.                     
+                                                                                
+ Opt  Resource  Serial Number     Type Model    Size (MiB) Ctl   Device         
+     DD001     QM00001           QEMU HARDDISK       4096 DC01  vda (has data)  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

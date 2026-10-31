@@ -1,0 +1,24 @@
+                            Specify Install Options                             
+                                                                 System:  QS400 
+                                                                                
+ Licensed programs . . : 1                                                      
+ Job and output queues : 1                                                      
+                                                                                
+     Licensed programs:                                                         
+       1=Install the operating system only                                      
+       2=Then install every licensed program on the media                       
+     Job and output queues of a replaced system:                                
+       1=Keep   2=Clear                                                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

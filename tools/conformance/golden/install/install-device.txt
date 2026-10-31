@@ -1,0 +1,24 @@
+                             Select Install Device                              
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the device to install from, then press Enter.                    
+                                                                                
+ Opt  Device     Media                                                          
+     TAPVRT01   SAVSYS media V1R0M0 (QS00SS1)                                   
+     OPTVRT01   Install media V0R9M0 (QS00SS1)                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -89,12 +89,32 @@ pub const LIC_STEPS: [&str; 5] = [
     "Write the LIC record",
 ];
 
-/// The steps of the operating system install, in order.
-pub const OS_STEPS: [&str; 3] = [
-    "Initialize ASP 1",
-    "Create the system libraries",
-    "Create the system values",
+/// The stages of the operating system install, in order: the status
+/// display ticks them off as the `QS00SS1` load goes in.
+pub const OS_STEPS: [&str; 6] = [
+    "Stage 1  Prepare ASP 1 and create the system libraries",
+    "Stage 2  Restore the operating system's code into QSYS",
+    "Stage 3  Restore the language objects",
+    "Stage 4  Check signatures and translate programs again",
+    "Stage 5  Create the system values, profiles and configuration",
+    "Stage 6  Complete the operating system install",
 ];
+
+/// The stage of [`OS_STEPS`] each report names.
+pub mod stage {
+    /// ASP 1 and the libraries.
+    pub const LIBRARIES: usize = 0;
+    /// The code load restored.
+    pub const CODE: usize = 1;
+    /// The language load restored.
+    pub const LANGUAGE: usize = 2;
+    /// Signatures and retranslation.
+    pub const CHECK: usize = 3;
+    /// System values and the recovery's data.
+    pub const VALUES: usize = 4;
+    /// Done.
+    pub const DONE: usize = 5;
+}
 
 /// Render the LIC status screen.
 pub fn lic_status(env: &dyn DstEnv, p: &Progress) -> Screen {

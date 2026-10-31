@@ -1,14 +1,14 @@
                      Install the Operating System - Status                      
                                                                  System:  QS400 
                                                                                 
-   X  Initialize ASP 1                                                          
-      Create the system libraries                                               
-      Create the system values                                                  
+   X  Stage 1  Prepare ASP 1 and create the system libraries                    
+   X  Stage 2  Restore the operating system's code into QSYS                    
+      Stage 3  Restore the language objects                                     
+      Stage 4  Check signatures and translate programs again                    
+      Stage 5  Create the system values, profiles and configuration             
+      Stage 6  Complete the operating system install                            
                                                                                 
- Language feature 2924                                                          
-                                                                                
-                                                                                
-                                                                                
+ Install device OPT01, language feature 2924                                    
                                                                                 
                                                                                 
                                                                                 

@@ -1,0 +1,24 @@
+                    Confirm Install of the Operating System                     
+                                                                 System:  QS400 
+                                                                                
+ Install device . . . :  OPTVRT01  /dev/vdd                                     
+ Media  . . . . . . . :  Install media V0R9M0 (QS00SS1)                         
+ Install action . . . :  Downgrade from V1R0M0                                  
+                                                                                
+ The operating system cannot be installed from this media:                      
+ the media holds V0R9M0, older than the installed V1R0M0; downgrade is not al   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

@@ -1,0 +1,24 @@
+              Install LIC and Recover Configuration - Confirmation              
+                                                                 System:  QS400 
+                                                                                
+ The Licensed Internal Code will be installed on this load source.              
+ ASP 1, its disk configuration and every object on it are kept.                 
+                                                                                
+   DD001     QM00001           QEMU HARDDISK       4096 DC01  vda (has data)    
+                                                                                
+ The system re-IPLs from the load source when the install completes.            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

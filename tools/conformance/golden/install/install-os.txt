@@ -1,0 +1,24 @@
+                          Install the Operating System                          
+                                                                 System:  QS400 
+                                                                                
+ Install option . . . : 1                                                       
+ Date (YYYY-MM-DD) . :  2026-01-01                                              
+ Time (HH:MM:SS) . . :  00:00:00                                                
+                                                                                
+     1=Take the defaults (no other prompts)                                     
+     2=Change the install options                                               
+                                                                                
+ Install device  . . . :  OPT01                                                 
+ Language feature  . . :  2924                                                  
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

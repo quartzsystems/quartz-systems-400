@@ -11,8 +11,9 @@
 use console::Screen;
 
 use crate::dst::console_mode::ConsoleMode;
-use crate::install::lic::LicEvent;
+use crate::install::lic::{LicEvent, LicKind};
 use crate::install::options::{IplOptions, MajorOptions};
+use crate::install::os::{DeviceKind, InstallDevice, OsOptions};
 use crate::dst::signon::message;
 use crate::users::{Privilege, SignOnError, UserDb};
 
@@ -346,11 +347,48 @@ pub trait DstEnv {
         let _ = (device, auto, report);
         Err("not available".into())
     }
+    /// Install the Licensed Internal Code as `kind` asks: initialize
+    /// (option 2, [`DstEnv::install_lic`]), keep ASP 1 and its
+    /// configuration (option 3), or restore the load source from its
+    /// mirrored partner (option 4).
+    fn install_lic_as(
+        &mut self,
+        device: &str,
+        kind: LicKind,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        match kind {
+            LicKind::Initialize => self.install_lic(device, auto, report),
+            _ => Err("not available".into()),
+        }
+    }
     /// Initialize ASP 1 and create the system libraries and values;
-    /// `report` is called with each step of `OS_STEPS` as it completes.
+    /// `report` is called with each stage of `OS_STEPS` as it completes.
     fn install_os(&mut self, report: &mut dyn FnMut(usize, &mut dyn DstEnv)) -> Result<(), String> {
         let _ = report;
         Err("not available".into())
+    }
+    /// The devices holding install media of `kind`.
+    fn install_devices(&mut self, kind: DeviceKind) -> Vec<InstallDevice> {
+        let _ = kind;
+        Vec::new()
+    }
+    /// Install the operating system from `device` with `options`;
+    /// `report` is called with each stage of `OS_STEPS`.
+    fn install_os_from(
+        &mut self,
+        device: &InstallDevice,
+        options: &OsOptions,
+        report: &mut dyn FnMut(usize, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        let _ = (device, options);
+        self.install_os(report)
+    }
+    /// `Define or Change the System at IPL`, when the system has it:
+    /// shown after the IPL options when they ask for it.
+    fn define_system(&mut self) -> Option<Box<dyn crate::panel::Panel>> {
+        None
     }
     /// The clock as `YYYY-MM-DD` and `HH:MM:SS`.
     fn clock(&mut self) -> (String, String) {
@@ -601,6 +639,8 @@ pub struct MemEnv {
     pub events: Vec<String>,
     /// System values: name, value, description.
     pub sysvals: Vec<(String, String, String)>,
+    /// Install devices to report.
+    pub devices: Vec<InstallDevice>,
     seed: u64,
 }
 
@@ -719,8 +759,47 @@ impl DstEnv for MemEnv {
         }
         Ok(())
     }
+    fn install_lic_as(
+        &mut self,
+        device: &str,
+        kind: LicKind,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        if kind == LicKind::Initialize {
+            return self.install_lic(device, auto, report);
+        }
+        self.actions
+            .push(format!("install-lic {device} {kind:?} auto={auto}"));
+        for i in 0..crate::install::LIC_STEPS.len() {
+            report(LicEvent::StepDone(i), self);
+        }
+        Ok(())
+    }
     fn install_os(&mut self, report: &mut dyn FnMut(usize, &mut dyn DstEnv)) -> Result<(), String> {
         self.actions.push("install-os".into());
+        for i in 0..crate::install::OS_STEPS.len() {
+            report(i, self);
+        }
+        Ok(())
+    }
+    fn install_devices(&mut self, kind: DeviceKind) -> Vec<InstallDevice> {
+        self.devices
+            .iter()
+            .filter(|d| d.kind == kind)
+            .cloned()
+            .collect()
+    }
+    fn install_os_from(
+        &mut self,
+        device: &InstallDevice,
+        options: &OsOptions,
+        report: &mut dyn FnMut(usize, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        self.actions.push(format!(
+            "install-os {} {} lp={} clear={}",
+            device.name, options.language, options.licpgm_all, options.clear_queues
+        ));
         for i in 0..crate::install::OS_STEPS.len() {
             report(i, self);
         }

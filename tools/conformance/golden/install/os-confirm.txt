@@ -1,12 +1,12 @@
                     Confirm Install of the Operating System                     
                                                                  System:  QS400 
                                                                                 
- The operating system will be installed from the optical device onto            
- the load source. ASP 1 is initialized: any data on it is lost.                 
+ Install device . . . :  OPT01  /dev/sr0                                        
+ Media  . . . . . . . :  Install media V1R0M0 (QS00SS1 QS00WDS QS00TC1 QS00     
+ Install action . . . :  Fresh install of V1R0M0                                
                                                                                 
-                                                                                
-                                                                                
-                                                                                
+ ASP 1 is initialized for the operating system: any objects                     
+ left on it are lost.                                                           
                                                                                 
                                                                                 
                                                                                 
