@@ -402,7 +402,12 @@ pub fn tick(system: &mut System, now: u64) -> Vec<String> {
             Some(h * 3600 + m * 60)
         })
         .unwrap_or(0);
-    if now.saturating_sub(last) + 3600 < period || (now % 86_400) < at {
+    // Due once the period (less the tick's hour) has passed and the time
+    // of day (UTC) is reached; a check missed by more than an hour runs
+    // at the next tick.
+    let since = now.saturating_sub(last);
+    let late = since >= period + 3600;
+    if !late && (since + 3600 < period || (now % 86_400) < at) {
         return Vec::new();
     }
     match chkupd(system) {

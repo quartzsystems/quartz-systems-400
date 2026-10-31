@@ -24,7 +24,8 @@ proxy or plain HTTP cannot change what a system installs:
 - every **group manifest** is signed as `docs/PTF.md` §4 describes.
 
 The transport is HTTPS (TLS through `net/tls`, the server checked
-against the shipped roots and the trusted CAs of `*SYSTEM`). `http://`
+against the shipped root set, by name; the trusted CAs of `*SYSTEM` are
+not added yet). `http://`
 URLs are accepted for local mirrors and tests; the signatures still
 hold.
 
@@ -184,7 +185,7 @@ later phase; the request exists so the connection can be tested.
 | `url` | `URL` | the service URL |
 | `proxy` | `PROXY` | `host:port`, or empty |
 | `schedule` | `SCHEDULE` | `*NONE`, `*DAILY` or `*WEEKLY` |
-| `time` | `SCDTIME` | `HHMMSS` of the scheduled check |
+| `time` | `SCDTIME` | `HHMMSS` of the scheduled check, UTC |
 | `last` | | Unix seconds of the last check |
 | `sequence` | | the highest catalog sequence seen |
 
@@ -210,3 +211,14 @@ server speaks plain HTTP or TLS (a `rustls::ServerConfig` from
 `net/tls`), keeps an order counter, and answers service requests with a
 ticket. It is a library, not a product: the tests and the harness run
 it on loopback.
+
+## 8. Limits of this release
+
+- The commands run in the storage service, and a request blocks it
+  while it lasts (each connection has a 30-second timeout): an order of
+  large PTFs holds every job's requests that long.
+- `SNDPTFORD DLVRYFMT(*IMAGE)` is refused (`CPF9814`) until image
+  catalogs exist; `RMTCPNAME` other than `*IBMSRV` is refused
+  (`CPF8C24`); `CHKPTF` is accepted and not acted on.
+- `SNDSRVRQS ACTION(*REPORT)` is refused (`CPF3700`); only `*TEST`
+  reaches the service.
