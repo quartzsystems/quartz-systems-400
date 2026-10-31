@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770PT1   2        2933    Performance Tools - Agent Feature                   
+ 5770PT1   2        2937    Performance Tools - Agent Feature                   
+ 5770PT1   2        2938    Performance Tools - Agent Feature                   
+ 5770PT1   2        2939    Performance Tools - Agent Feature                   
+ 5770PT1   2        2940    Performance Tools - Agent Feature                   
+ 5770PT1   2        2942    Performance Tools - Agent Feature                   
+ 5770PT1   2        2954    Performance Tools - Agent Feature                   
+ 5770PT1   2        2956    Performance Tools - Agent Feature                   
+ 5770PT1   2        2957    Performance Tools - Agent Feature                   
+ 5770PT1   2        2958    Performance Tools - Agent Feature                   
+ 5770PT1   2        2961    Performance Tools - Agent Feature                   
+ 5770PT1   2        2962    Performance Tools - Agent Feature                   
+ 5770PT1   2        2963    Performance Tools - Agent Feature                   
+ 5770PT1   2        2966    Performance Tools - Agent Feature                   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770PT1   *BASE    2975    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2976    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2978    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2979    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2980    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2981    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2984    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2986    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2987    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2989    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2992    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2994    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2995    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2996    IBM Performance Tools for i - Base                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

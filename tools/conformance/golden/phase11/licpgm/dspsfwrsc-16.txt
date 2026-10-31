@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   12       2912    Host Servers                                        
+ 5770SS1   12       2913    Host Servers                                        
+ 5770SS1   12       2914    Host Servers                                        
+ 5770SS1   12       2922    Host Servers                                        
+ 5770SS1   12       2923    Host Servers                                        
+ 5770SS1   12       2924    Host Servers                                        
+ 5770SS1   12       2925    Host Servers                                        
+ 5770SS1   12       2926    Host Servers                                        
+ 5770SS1   12       2928    Host Servers                                        
+ 5770SS1   12       2929    Host Servers                                        
+ 5770SS1   12       2930    Host Servers                                        
+ 5770SS1   12       2931    Host Servers                                        
+ 5770SS1   12       2932    Host Servers                                        
+ 5770SS1   12       2933    Host Servers                                        
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5722IP1   *BASE    2992    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2994    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2995    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2996    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2998    IBM Infoprint Server for iSeries                    
+ 5733ARE   *BASE    5050    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2902    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2903    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2904    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2905    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2909    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2912    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2913    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2914    IBM Application Runtime Expert for i                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

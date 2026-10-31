@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   USERNAMEB                                      
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Attribute   Owner          Size (K)  Data           
+      QRES10      *FILE     PF          USERNAME             32  YES            
+      QRES11      *FILE     PF          USERNAME             32  YES            
+      QRES12      *FILE     PF          USERNAME             32  YES            
+      QSQLSRC     *FILE     PF          USERNAME             32  YES            
+      RLALOG      *FILE     PF          USERNAME             32  YES            
+      TYPES       *FILE     PF          USERNAME            128  YES            
+      QSTRCV0001  *JRNRCV               USERNAME           3396  YES            
+      QSTRCV0002  *JRNRCV               USERNAME           3396  YES            
+      QSTRCV0003  *JRNRCV               USERNAME           3396  YES            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                

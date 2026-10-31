@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   3        2904    Extended Base Directory Support                     
+ 5770SS1   3        2905    Extended Base Directory Support                     
+ 5770SS1   3        2909    Extended Base Directory Support                     
+ 5770SS1   3        2912    Extended Base Directory Support                     
+ 5770SS1   3        2913    Extended Base Directory Support                     
+ 5770SS1   3        2914    Extended Base Directory Support                     
+ 5770SS1   3        2922    Extended Base Directory Support                     
+ 5770SS1   3        2923    Extended Base Directory Support                     
+ 5770SS1   3        2924    Extended Base Directory Support                     
+ 5770SS1   3        2925    Extended Base Directory Support                     
+ 5770SS1   3        2926    Extended Base Directory Support                     
+ 5770SS1   3        2928    Extended Base Directory Support                     
+ 5770SS1   3        2929    Extended Base Directory Support                     
+ 5770SS1   3        2930    Extended Base Directory Support                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

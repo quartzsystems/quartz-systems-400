@@ -1,0 +1,24 @@
+                        Save Changed Objects (SAVCHGOBJ)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Label  . . . . . . . . . . . . . LABEL          *LIB                           
+ File expiration date . . . . . . EXPDATE        *PERM                          
+ End of media option  . . . . . . ENDOPT         *REWIND                        
+ Starting library . . . . . . . . STRLIB         *FIRST                         
+ Save file  . . . . . . . . . . . SAVF                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Media definition . . . . . . . . MEDDFN                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Optical file . . . . . . . . . . OPTFILE        '*'                            
+                                                                                
+ Use optimum block  . . . . . . . USEOPTBLK      *YES                           
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Target release . . . . . . . . . TGTRLS         *CURRENT                       
+ Update history . . . . . . . . . UPDHST         *YES                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

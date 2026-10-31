@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770UME   *BASE    2979    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2980    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2981    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2984    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2986    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2987    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2989    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2992    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2994    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2995    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2996    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2998    IBM Universal Manageability Enablement              
+ 5770WDS   *BASE    5050    IBM Rational Development Studio for i               
+ 5770WDS   *BASE    2902    IBM Rational Development Studio for i               
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

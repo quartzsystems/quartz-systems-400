@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770XW1   *BASE    2961    IBM i Access Family                                 
+ 5770XW1   *BASE    2962    IBM i Access Family                                 
+ 5770XW1   *BASE    2963    IBM i Access Family                                 
+ 5770XW1   *BASE    2966    IBM i Access Family                                 
+ 5770XW1   *BASE    2972    IBM i Access Family                                 
+ 5770XW1   *BASE    2974    IBM i Access Family                                 
+ 5770XW1   *BASE    2975    IBM i Access Family                                 
+ 5770XW1   *BASE    2976    IBM i Access Family                                 
+ 5770XW1   *BASE    2978    IBM i Access Family                                 
+ 5770XW1   *BASE    2979    IBM i Access Family                                 
+ 5770XW1   *BASE    2980    IBM i Access Family                                 
+ 5770XW1   *BASE    2981    IBM i Access Family                                 
+ 5770XW1   *BASE    2984    IBM i Access Family                                 
+ 5770XW1   *BASE    2986    IBM i Access Family                                 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+      Command prompting ended when user pressed F12.                            
+    > SAVSYS                                                                    
+      Command prompting ended when user pressed F12.                            
+    > SAVSECDTA                                                                 
+      Command prompting ended when user pressed F12.                            
+    > SAVCFG                                                                    
+      Command prompting ended when user pressed F12.                            
+    > SAVSAVFDTA                                                                
+      Command prompting ended when user pressed F12.                            
+    > savlicpgm                                                                 
+      Not authorized to command SAVLICPGM in library *LIBL.                     
+      Error found on SAVLICPGM command.                                         
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> savlicpgm                                                                 
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

@@ -1,0 +1,24 @@
+ CMDTRC                          Trace Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Display Trace Data                                          DSPTRCDTA  
+     15. End Communications Trace                                    ENDCMNTRC  
+     16. End Job Trace                                               ENDJOBTRC  
+     17. End Performance Trace                                       ENDPFRTRC  
+     18. End Trace                                                   ENDTRC     
+     19. Print Communications Trace                                  PRTCMNTRC  
+     20. Print Job Trace                                             PRTJOBTRC  
+     21. Print trace data                                            PRTTRC     
+     22. Print Job Trace Report                                      PRTTRCRPT  
+     23. Remove Trace                                                RMVTRC     
+     24. Remove Trace Filter                                         RMVTRCFTR  
+     25. Start Communications Trace                                  STRCMNTRC  
+     26. Start Job Trace                                             STRJOBTRC  
+     27. Start Performance Trace                                     STRPFRTRC  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5761CM1   *BASE    2994    Communications Utilities                            
+ 5761CM1   *BASE    2995    Communications Utilities                            
+ 5761CM1   *BASE    2996    Communications Utilities                            
+ 5761CM1   *BASE    2998    Communications Utilities                            
+ 5770AF1   *BASE    5050    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2903    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2904    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2909    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2912    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2913    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2922    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2923    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2924    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2925    IBM AFP Utilities                                   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

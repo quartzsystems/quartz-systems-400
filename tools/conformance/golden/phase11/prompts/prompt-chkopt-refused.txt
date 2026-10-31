@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > DSPTAP                                                                    
+      Command prompting ended when user pressed F12.                            
+    > DSPOPT                                                                    
+      Command prompting ended when user pressed F12.                            
+    > CHKTAP                                                                    
+      Command prompting ended when user pressed F12.                            
+    > chkopt                                                                    
+      Command CHKOPT in library *LIBL not found.                                
+      Error found on CHKOPT command.                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> chkopt                                                                    
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   52       2979    Compiler - ILE C++                                  
+ 5770WDS   52       2980    Compiler - ILE C++                                  
+ 5770WDS   52       2981    Compiler - ILE C++                                  
+ 5770WDS   52       2984    Compiler - ILE C++                                  
+ 5770WDS   52       2986    Compiler - ILE C++                                  
+ 5770WDS   52       2987    Compiler - ILE C++                                  
+ 5770WDS   52       2989    Compiler - ILE C++                                  
+ 5770WDS   52       2992    Compiler - ILE C++                                  
+ 5770WDS   52       2994    Compiler - ILE C++                                  
+ 5770WDS   52       2995    Compiler - ILE C++                                  
+ 5770WDS   52       2996    Compiler - ILE C++                                  
+ 5770WDS   52       2998    Compiler - ILE C++                                  
+ 5770WDS   56       5101    IXLC for C/C++                                      
+ 5770WDS   60       5050    Workstation Tools - Base                            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

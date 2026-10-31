@@ -1,0 +1,24 @@
+ CMDRST                         Restore Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     29. Save and Restore Commands                                   CMDSAVRST  
+     30. Tape Commands                                               CMDTAP     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

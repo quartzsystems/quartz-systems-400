@@ -1,0 +1,24 @@
+                        Save Changed Objects (SAVCHGOBJ)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ ASP device . . . . . . . . . . . ASPDEV         *                              
+ Output . . . . . . . . . . . . . OUTPUT         *NONE                          
+ File to receive output . . . . . OUTFILE                                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Output member options:           OUTMBR                                        
+   Member to receive output . . .                *FIRST                         
+   Replace or add records . . . .                *REPLACE                       
+ Type of output information . . . INFTYPE        *OBJ                           
+ Command user space . . . . . . . CMDUSRSPC                                     
+   Library  . . . . . . . . . . .                  *LIBL                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

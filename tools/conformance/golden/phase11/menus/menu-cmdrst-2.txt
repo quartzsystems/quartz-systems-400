@@ -1,0 +1,24 @@
+ CMDRST                         Restore Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     17. Restore Performance Collection                              RSTPFRCOL  
+     18. Restore S/36 File                                           RSTS36F    
+     19. Restore S/36 Library Members                                RSTS36LIBM 
+     20. Restore User Profiles                                       RSTUSRPRF  
+     21. Restore System Information                                  RSTSYSINF  
+     22. Save Restore                                                SAVRST     
+     23. Save Restore Configuration                                  SAVRSTCFG  
+     24. Save Restore Changed Objects                                SAVRSTCHG  
+     25. Save Restore Doc/Lib Object                                 SAVRSTDLO  
+     26. Save Restore Library                                        SAVRSTLIB  
+     27. Save Restore Object                                         SAVRSTOBJ  
+                                                                                
+   Related Command Menus                                                        
+     28. Optical Commands                                            CMDOPT     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

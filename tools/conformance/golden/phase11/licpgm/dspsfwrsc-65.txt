@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770AF1   *BASE    2975    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2976    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2978    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2979    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2992    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2994    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2995    IBM AFP Utilities                                   
+ 5770AF1   *BASE    2998    IBM AFP Utilities                                   
+ 5770DFH   *BASE    5050    CICS TS for i                                       
+ 5770DFH   *BASE    2902    CICS TS for i                                       
+ 5770DFH   *BASE    2903    CICS TS for i                                       
+ 5770DFH   *BASE    2904    CICS TS for i                                       
+ 5770DFH   *BASE    2905    CICS TS for i                                       
+ 5770DFH   *BASE    2909    CICS TS for i                                       
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Duplicate Optical (DUPOPT)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From volume identifier . . . . . FROMVOL                                       
+                                                                                
+ To volume identifier . . . . . . TOVOL                                         
+                                                                                
+ New volume identifier  . . . . . NEWVOL         *TOVOL                         
+                                                                                
+ Clear  . . . . . . . . . . . . . CLEAR          *NO                            
+ From device  . . . . . . . . . . FROMDEV                                       
+ To device  . . . . . . . . . . . TODEV                                         
+ Allow media errors . . . . . . . ALWMEDERR      *NONE                          
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ From end of media option . . . . FROMENDOPT     *LEAVE                         
+ To end of media option . . . . . TOENDOPT       *LEAVE                         
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FROMVOL required.                                                  + 

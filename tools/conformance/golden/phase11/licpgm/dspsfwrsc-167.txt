@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770XW1   *BASE    2987    IBM i Access Family                                 
+ 5770XW1   *BASE    2989    IBM i Access Family                                 
+ 5770XW1   *BASE    2992    IBM i Access Family                                 
+ 5770XW1   *BASE    2994    IBM i Access Family                                 
+ 5770XW1   *BASE    2995    IBM i Access Family                                 
+ 5770XW1   *BASE    2996    IBM i Access Family                                 
+ 5770XW1   *BASE    2998    IBM i Access Family                                 
+ 5770XW1   1        5101    IBM i Access Enablement Support                     
+ AJDGP01   *BASE    5050    Licensed Internal Code - AJDGP01 9400DGP            
+ AJDG301   *BASE    5050    Licensed Internal Code - AJDG301 9400DG3            
+ AJDG401   *BASE    5050    Licensed Internal Code - AJDG401 9400DG4            
+ AJEAA01   *BASE    5050    Licensed Internal Code - AJEAA01 9400EAA            
+ AJEAR01   *BASE    5050    Licensed Internal Code - AJEAR01 9400EAR            
+ AJEAZ01   *BASE    5050    Licensed Internal Code - AJEAZ01 9400EAZ            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

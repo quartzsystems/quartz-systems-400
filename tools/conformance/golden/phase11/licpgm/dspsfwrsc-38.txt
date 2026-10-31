@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   33       2925    Portable App Solutions Environment                  
+ 5770SS1   33       2926    Portable App Solutions Environment                  
+ 5770SS1   33       2928    Portable App Solutions Environment                  
+ 5770SS1   33       2929    Portable App Solutions Environment                  
+ 5770SS1   33       2930    Portable App Solutions Environment                  
+ 5770SS1   33       2931    Portable App Solutions Environment                  
+ 5770SS1   33       2932    Portable App Solutions Environment                  
+ 5770SS1   33       2933    Portable App Solutions Environment                  
+ 5770SS1   33       2937    Portable App Solutions Environment                  
+ 5770SS1   33       2938    Portable App Solutions Environment                  
+ 5770SS1   33       2939    Portable App Solutions Environment                  
+ 5770SS1   33       2940    Portable App Solutions Environment                  
+ 5770SS1   33       2942    Portable App Solutions Environment                  
+ 5770SS1   33       2954    Portable App Solutions Environment                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

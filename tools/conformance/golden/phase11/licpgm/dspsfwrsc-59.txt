@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5733SC1   *BASE    2984    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2986    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2987    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2989    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2992    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2994    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2995    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2996    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2998    IBM Portable Utilities for i                        
+ 5733SC1   1        5050    OpenSSH, OpenSSL, zlib                              
+ 5761CM1   *BASE    5050    Communications Utilities                            
+ 5761CM1   *BASE    2902    Communications Utilities                            
+ 5761CM1   *BASE    2903    Communications Utilities                            
+ 5761CM1   *BASE    2904    Communications Utilities                            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                               Check Tape (CHKTAP)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device . . . . . . . . . . . . . DEV                                           
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+ Sequence number  . . . . . . . . SEQNBR         *NONE                          
+ File label . . . . . . . . . . . LABEL          *NONE                          
+ Creation date  . . . . . . . . . CRTDATE        *NONE                          
+ End of tape option . . . . . . . ENDOPT         *LEAVE                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

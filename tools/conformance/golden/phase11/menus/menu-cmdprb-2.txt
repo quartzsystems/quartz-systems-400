@@ -1,0 +1,24 @@
+ CMDPRB                         Problem Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Start Copy Screen                                           STRCPYSCN  
+     15. Work with Problem                                           WRKPRB     
+                                                                                
+   Related Command Menus                                                        
+     16. Action Entry Commands                                       CMDACNE    
+     17. Filter Commands                                             CMDFTR     
+     18. Problem Management Commands                                 CMDPRBMGT  
+     19. Program Temporary Fix Commands                              CMDPTF     
+     20. Selection Entry Commands                                    CMDSLTE    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

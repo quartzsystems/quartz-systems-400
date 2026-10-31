@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770DG1   *BASE    2924    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2925    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2926    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2928    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2929    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2931    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2932    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2937    IBM HTTP Server for i                               
+ 5770JV1   *BASE    5050    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2902    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2903    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2904    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2905    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2909    IBM Developer Kit for Java                          
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770UME   *BASE    2923    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2924    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2925    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2926    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2928    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2929    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2930    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2931    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2932    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2933    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2937    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2938    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2939    IBM Universal Manageability Enablement              
+ 5770UME   *BASE    2940    IBM Universal Manageability Enablement              
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

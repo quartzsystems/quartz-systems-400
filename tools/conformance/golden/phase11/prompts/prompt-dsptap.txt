@@ -1,0 +1,24 @@
+                              Display Tape (DSPTAP)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device . . . . . . . . . . . . . DEV                                           
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+ File label . . . . . . . . . . . LABEL          *ALL                           
+ Sequence number:                 SEQNBR                                        
+   Starting file sequence number                 *FIRST                         
+   Ending file sequence number  .                *LAST                          
+ Data type  . . . . . . . . . . . DATA           *LABELS                        
+ Output . . . . . . . . . . . . . OUTPUT         *                              
+ End of tape option . . . . . . . ENDOPT         *REWIND                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

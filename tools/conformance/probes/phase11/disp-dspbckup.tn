@@ -1,0 +1,17 @@
+# Phase 11: DSPBCKUP. A display command: shown, paged with Page Down and
+# left with F3; the only option typed is 5 (display). No `continue`:
+# a refused command ends the run and the refusal is the snapshot.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type dspbckup bckupopt(*daily)
+key enter
+settle 3000
+snap dspbckup
+key pgdn
+settle 1000
+snap dspbckup-2
+key f3
+wait "Command Entry"

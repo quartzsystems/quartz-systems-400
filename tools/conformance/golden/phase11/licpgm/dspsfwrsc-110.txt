@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770TS1   *BASE    2972    IBM Transform Services for i                        
+ 5770TS1   *BASE    2974    IBM Transform Services for i                        
+ 5770TS1   *BASE    2975    IBM Transform Services for i                        
+ 5770TS1   *BASE    2976    IBM Transform Services for i                        
+ 5770TS1   *BASE    2978    IBM Transform Services for i                        
+ 5770TS1   *BASE    2979    IBM Transform Services for i                        
+ 5770TS1   *BASE    2980    IBM Transform Services for i                        
+ 5770TS1   *BASE    2981    IBM Transform Services for i                        
+ 5770TS1   *BASE    2984    IBM Transform Services for i                        
+ 5770TS1   *BASE    2986    IBM Transform Services for i                        
+ 5770TS1   *BASE    2987    IBM Transform Services for i                        
+ 5770TS1   *BASE    2989    IBM Transform Services for i                        
+ 5770TS1   *BASE    2992    IBM Transform Services for i                        
+ 5770TS1   *BASE    2994    IBM Transform Services for i                        
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

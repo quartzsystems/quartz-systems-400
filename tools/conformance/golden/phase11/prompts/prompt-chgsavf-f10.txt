@@ -1,0 +1,24 @@
+                           Change Save File (CHGSAVF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Save file  . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Maximum records  . . . . . . . . MAXRCDS        *SAME                          
+ Text 'description' . . . . . . . TEXT           *SAME                          
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Maximum file wait time . . . . . WAITFILE       *SAME                          
+ Share open data path . . . . . . SHARE          *SAME                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FILE required.                                                       

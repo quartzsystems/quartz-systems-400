@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ AJEDA00   *BASE    5050    Licensed Internal Code - AJEDA00 9400EDA            
+ AJEHL00   *BASE    5050    Licensed Internal Code - AJEHL00 9400EHL            
+ AJEMM01   *BASE    5050    Licensed Internal Code - AJEMM01 9400EMM            
+ AJENV00   *BASE    5050    Licensed Internal Code - AJENV00 9400ENV            
+ AJEPO00   *BASE    5050    Licensed Internal Code - AJEPO00 9400EPO            
+ AJEQU00   *BASE    5050    Licensed Internal Code - AJEQU00 9400EQU            
+ AJER101   *BASE    5050    Licensed Internal Code - AJER101 9400ER1            
+ AJGAK01   *BASE    5050    Licensed Internal Code - AJGAK01 9400GAK            
+ AJGAW01   *BASE    5050    Licensed Internal Code - AJGAW01 9400GAW            
+ AJGAX01   *BASE    5050    Licensed Internal Code - AJGAX01 9400GAX            
+ AJGDF01   *BASE    5050    Licensed Internal Code - AJGDF01 9400GDF            
+ AJGJH01   *BASE    5050    Licensed Internal Code - AJGJH01 9400GJH            
+ AJGJR01   *BASE    5050    Licensed Internal Code - AJGJR01 9400GJR            
+ AJGJS01   *BASE    5050    Licensed Internal Code - AJGJS01 9400GJS            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   51       2932    Compiler - ILE C                                    
+ 5770WDS   51       2933    Compiler - ILE C                                    
+ 5770WDS   51       2937    Compiler - ILE C                                    
+ 5770WDS   51       2938    Compiler - ILE C                                    
+ 5770WDS   51       2939    Compiler - ILE C                                    
+ 5770WDS   51       2940    Compiler - ILE C                                    
+ 5770WDS   51       2942    Compiler - ILE C                                    
+ 5770WDS   51       2954    Compiler - ILE C                                    
+ 5770WDS   51       2956    Compiler - ILE C                                    
+ 5770WDS   51       2957    Compiler - ILE C                                    
+ 5770WDS   51       2958    Compiler - ILE C                                    
+ 5770WDS   51       2961    Compiler - ILE C                                    
+ 5770WDS   51       2962    Compiler - ILE C                                    
+ 5770WDS   51       2963    Compiler - ILE C                                    
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

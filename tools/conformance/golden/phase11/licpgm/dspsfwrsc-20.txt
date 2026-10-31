@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   14       2925    GDDM                                                
+ 5770SS1   14       2926    GDDM                                                
+ 5770SS1   14       2928    GDDM                                                
+ 5770SS1   14       2929    GDDM                                                
+ 5770SS1   14       2930    GDDM                                                
+ 5770SS1   14       2931    GDDM                                                
+ 5770SS1   14       2932    GDDM                                                
+ 5770SS1   14       2933    GDDM                                                
+ 5770SS1   14       2937    GDDM                                                
+ 5770SS1   14       2938    GDDM                                                
+ 5770SS1   14       2939    GDDM                                                
+ 5770SS1   14       2940    GDDM                                                
+ 5770SS1   14       2942    GDDM                                                
+ 5770SS1   14       2954    GDDM                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

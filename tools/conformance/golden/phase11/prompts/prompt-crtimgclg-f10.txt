@@ -1,0 +1,24 @@
+                        Create Image Catalog (CRTIMGCLG)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Image catalog  . . . . . . . . . IMGCLG                                        
+ Directory  . . . . . . . . . . . DIR                                           
+                                                                                
+ Image catalog type . . . . . . . TYPE           *OPT                           
+ Create directory . . . . . . . . CRTDIR         *YES                           
+ Import image catalog . . . . . . IMPORT         *NO                            
+ Catalog ASP threshold  . . . . . CLGASPTHLD     *CALC                          
+ Add virtual volumes  . . . . . . ADDVRTVOL      *NONE                          
+ Reference image catalog  . . . . REFIMGCLG                                     
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+ Authority  . . . . . . . . . . . AUT            *EXCLUDE                       
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter IMGCLG required.                                                   + 

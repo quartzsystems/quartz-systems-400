@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5733ARE   *BASE    2940    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2942    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2954    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2956    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2957    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2958    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2961    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2962    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2963    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2966    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2972    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2974    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2975    IBM Application Runtime Expert for i                
+ 5733ARE   *BASE    2976    IBM Application Runtime Expert for i                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

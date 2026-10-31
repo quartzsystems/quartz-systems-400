@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ AJGJT01   *BASE    5050    Licensed Internal Code - AJGJT01 9400GJT            
+ AJGJZ01   *BASE    5050    Licensed Internal Code - AJGJZ01 9400GJZ            
+ AJGJ601   *BASE    5050    Licensed Internal Code - AJGJ601 9400GJ6            
+ AJGLD01   *BASE    5050    Licensed Internal Code - AJGLD01 9400GLD            
+ AJGW701   *BASE    5050    Licensed Internal Code - AJGW701 9400GW7            
+ AJLAF01   *BASE    5050    Licensed Internal Code - AJLAF01 9400LAF            
+ AJLAG01   *BASE    5050    Licensed Internal Code - AJLAG01 9400LAG            
+ AJLAN01   *BASE    5050    Licensed Internal Code - AJLAN01 9400LAN            
+ AJLXC01   *BASE    5050    Licensed Internal Code - AJLXC01 9400LXC            
+ AJLYC01   *BASE    5050    Licensed Internal Code - AJLYC01 9400LYC            
+ AJLYD01   *BASE    5050    Licensed Internal Code - AJLYD01 9400LYD            
+ AJLYE01   *BASE    5050    Licensed Internal Code - AJLYE01 9400LYE            
+ AJLYF01   *BASE    5050    Licensed Internal Code - AJLYF01 9400LYF            
+ AJLYG01   *BASE    5050    Licensed Internal Code - AJLYG01 9400LYG            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

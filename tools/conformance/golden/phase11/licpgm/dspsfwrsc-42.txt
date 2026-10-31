@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   34       2932    Digital Certificate Manager                         
+ 5770SS1   34       2933    Digital Certificate Manager                         
+ 5770SS1   34       2937    Digital Certificate Manager                         
+ 5770SS1   34       2938    Digital Certificate Manager                         
+ 5770SS1   34       2939    Digital Certificate Manager                         
+ 5770SS1   34       2940    Digital Certificate Manager                         
+ 5770SS1   34       2942    Digital Certificate Manager                         
+ 5770SS1   34       2954    Digital Certificate Manager                         
+ 5770SS1   34       2956    Digital Certificate Manager                         
+ 5770SS1   34       2957    Digital Certificate Manager                         
+ 5770SS1   34       2958    Digital Certificate Manager                         
+ 5770SS1   34       2961    Digital Certificate Manager                         
+ 5770SS1   34       2962    Digital Certificate Manager                         
+ 5770SS1   34       2963    Digital Certificate Manager                         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

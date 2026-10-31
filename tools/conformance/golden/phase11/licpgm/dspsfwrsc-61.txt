@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5761CM1   *BASE    2932    Communications Utilities                            
+ 5761CM1   *BASE    2933    Communications Utilities                            
+ 5761CM1   *BASE    2937    Communications Utilities                            
+ 5761CM1   *BASE    2938    Communications Utilities                            
+ 5761CM1   *BASE    2939    Communications Utilities                            
+ 5761CM1   *BASE    2940    Communications Utilities                            
+ 5761CM1   *BASE    2942    Communications Utilities                            
+ 5761CM1   *BASE    2954    Communications Utilities                            
+ 5761CM1   *BASE    2956    Communications Utilities                            
+ 5761CM1   *BASE    2957    Communications Utilities                            
+ 5761CM1   *BASE    2958    Communications Utilities                            
+ 5761CM1   *BASE    2961    Communications Utilities                            
+ 5761CM1   *BASE    2962    Communications Utilities                            
+ 5761CM1   *BASE    2963    Communications Utilities                            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

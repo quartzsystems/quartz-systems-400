@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770DFH   1        2925    CICS Sample Programs                                
+ 5770DFH   1        2926    CICS Sample Programs                                
+ 5770DFH   1        2928    CICS Sample Programs                                
+ 5770DFH   1        2929    CICS Sample Programs                                
+ 5770DFH   1        2930    CICS Sample Programs                                
+ 5770DFH   1        2931    CICS Sample Programs                                
+ 5770DFH   1        2932    CICS Sample Programs                                
+ 5770DFH   1        2933    CICS Sample Programs                                
+ 5770DFH   1        2937    CICS Sample Programs                                
+ 5770DFH   1        2938    CICS Sample Programs                                
+ 5770DFH   1        2939    CICS Sample Programs                                
+ 5770DFH   1        2940    CICS Sample Programs                                
+ 5770DFH   1        2942    CICS Sample Programs                                
+ 5770DFH   1        2954    CICS Sample Programs                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   34       2994    Digital Certificate Manager                         
+ 5770SS1   34       2995    Digital Certificate Manager                         
+ 5770SS1   34       2996    Digital Certificate Manager                         
+ 5770SS1   34       2998    Digital Certificate Manager                         
+ 5770SS1   35       5050    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2902    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2903    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2904    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2905    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2909    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2912    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2913    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2914    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2922    CCA Cryptographic Service Provider                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

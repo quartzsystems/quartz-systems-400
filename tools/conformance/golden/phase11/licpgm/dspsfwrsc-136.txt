@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   34       2994    Compiler - RPG/400                                  
+ 5770WDS   34       2995    Compiler - RPG/400                                  
+ 5770WDS   34       2996    Compiler - RPG/400                                  
+ 5770WDS   34       2998    Compiler - RPG/400                                  
+ 5770WDS   35       5101    Compiler - ILE RPG IV *PRV                          
+ 5770WDS   41       5101    Compiler - ILE COBOL                                
+ 5770WDS   41       2902    Compiler - ILE COBOL                                
+ 5770WDS   41       2903    Compiler - ILE COBOL                                
+ 5770WDS   41       2904    Compiler - ILE COBOL                                
+ 5770WDS   41       2905    Compiler - ILE COBOL                                
+ 5770WDS   41       2909    Compiler - ILE COBOL                                
+ 5770WDS   41       2912    Compiler - ILE COBOL                                
+ 5770WDS   41       2913    Compiler - ILE COBOL                                
+ 5770WDS   41       2914    Compiler - ILE COBOL                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

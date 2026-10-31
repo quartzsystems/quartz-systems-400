@@ -1,0 +1,24 @@
+ CMDTAP                          Tape Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Display Tape Category                                       DSPTAPCGY  
+     15. Display Tape Cartridge                                      DSPTAPCTG  
+     16. Display Tape Status                                         DSPTAPSTS  
+     17. Duplicate Tape                                              DUPTAP     
+     18. Initialize Tape                                             INZTAP     
+     19. Remove Tape Cartridge                                       RMVTAPCTG  
+     20. Set Tape Category                                           SETTAPCGY  
+     21. Verify Tape                                                 VFYTAP     
+     22. Work with Tape Cartridge                                    WRKTAPCTG  
+                                                                                
+   Related Command Menus                                                        
+     23. Category Commands                                           CMDCGY     
+     24. Cartridge Commands                                          CMDCTG     
+     25. Media Library Commands                                      CMDMLB     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

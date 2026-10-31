@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > go licpgm                                                                 
+      Not authorized to object LICPGM in QSYS.                                  
+      Menu LICPGM in library *LIBL not displayed.                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> go licpgm                                                                 
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

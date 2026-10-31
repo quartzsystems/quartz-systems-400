@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   41       2940    Compiler - ILE COBOL                                
+ 5770WDS   41       2942    Compiler - ILE COBOL                                
+ 5770WDS   41       2954    Compiler - ILE COBOL                                
+ 5770WDS   41       2956    Compiler - ILE COBOL                                
+ 5770WDS   41       2957    Compiler - ILE COBOL                                
+ 5770WDS   41       2958    Compiler - ILE COBOL                                
+ 5770WDS   41       2961    Compiler - ILE COBOL                                
+ 5770WDS   41       2962    Compiler - ILE COBOL                                
+ 5770WDS   41       2963    Compiler - ILE COBOL                                
+ 5770WDS   41       2966    Compiler - ILE COBOL                                
+ 5770WDS   41       2972    Compiler - ILE COBOL                                
+ 5770WDS   41       2974    Compiler - ILE COBOL                                
+ 5770WDS   41       2975    Compiler - ILE COBOL                                
+ 5770WDS   41       2976    Compiler - ILE COBOL                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

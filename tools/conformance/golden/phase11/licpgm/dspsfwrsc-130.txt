@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   33       2925    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2926    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2928    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2929    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2930    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2931    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2932    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2933    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2937    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2938    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2939    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2940    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2942    Compiler - System/38 Compatible RPG III             
+ 5770WDS   33       2954    Compiler - System/38 Compatible RPG III             
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   21       2914    Application Development ToolSet                     
+ 5770WDS   21       2922    Application Development ToolSet                     
+ 5770WDS   21       2923    Application Development ToolSet                     
+ 5770WDS   21       2924    Application Development ToolSet                     
+ 5770WDS   21       2925    Application Development ToolSet                     
+ 5770WDS   21       2926    Application Development ToolSet                     
+ 5770WDS   21       2928    Application Development ToolSet                     
+ 5770WDS   21       2929    Application Development ToolSet                     
+ 5770WDS   21       2930    Application Development ToolSet                     
+ 5770WDS   21       2931    Application Development ToolSet                     
+ 5770WDS   21       2932    Application Development ToolSet                     
+ 5770WDS   21       2933    Application Development ToolSet                     
+ 5770WDS   21       2937    Application Development ToolSet                     
+ 5770WDS   21       2938    Application Development ToolSet                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

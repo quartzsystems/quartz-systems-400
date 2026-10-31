@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   2        2954    Online Information                                  
+ 5770SS1   2        2956    Online Information                                  
+ 5770SS1   2        2957    Online Information                                  
+ 5770SS1   2        2958    Online Information                                  
+ 5770SS1   2        2961    Online Information                                  
+ 5770SS1   2        2962    Online Information                                  
+ 5770SS1   2        2963    Online Information                                  
+ 5770SS1   2        2966    Online Information                                  
+ 5770SS1   2        2972    Online Information                                  
+ 5770SS1   2        2974    Online Information                                  
+ 5770SS1   2        2975    Online Information                                  
+ 5770SS1   2        2976    Online Information                                  
+ 5770SS1   2        2978    Online Information                                  
+ 5770SS1   2        2979    Online Information                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

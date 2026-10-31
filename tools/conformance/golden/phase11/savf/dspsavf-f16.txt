@@ -1,0 +1,24 @@
+                              Display Save Header                               
+                                                                                
+ Save file  . . . . . . . . . . . . . . :   QSSAVF                              
+   Library  . . . . . . . . . . . . . . :     USERNAMEB                         
+   Records  . . . . . . . . . . . . . . :     11688                             
+ Save operation:                                                                
+   Save command . . . . . . . . . . . . :   SAVLIB                              
+   Save date/time . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS                  
+   Save while active  . . . . . . . . . :   *NO                                 
+   Data compressed  . . . . . . . . . . :   No                                  
+   Release level  . . . . . . . . . . . :   V7R5M0                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

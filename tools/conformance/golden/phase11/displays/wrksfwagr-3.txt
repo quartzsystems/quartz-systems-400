@@ -1,0 +1,24 @@
+                         Work with Software Agreements                          
+                                                             System:   SYSNAME  
+ Currently selected language :   English                                        
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display   6=Print                                                          
+                                                                                
+      Licensed  Product                                                         
+ Opt  Program   Option   Description                                            
+      5733SC1    *BASE   IBM Portable Utilities for i                           
+      5770SM1    *BASE   IBM System Manager for i                               
+      5770ST1    *BASE   IBM DB2 Query Manager and SQL Development Kit          
+      5770TC1    *BASE   IBM TCP/IP Connectivity Utilities for i                
+      5770TS1    *BASE   IBM Transform Services for i                           
+      5770UME    *BASE   IBM Universal Manageability Enablement                 
+      5770WDS    *BASE   IBM Rational Development Studio for i                  
+      5770XE1    *BASE   IBM i Access for Windows                               
+      5770XH2    *BASE   IBM i Access for Web                                   
+      5770XW1    *BASE   IBM i Access Family                                    
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F11=Display release   F12=Cancel   F13=Select language               
+ F19=Display trademarks          F22=Restore software agreements                
+                                                                                

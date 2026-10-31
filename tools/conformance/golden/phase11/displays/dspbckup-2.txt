@@ -1,0 +1,24 @@
+                          Display Daily Backup Options                          
+                                                             System:   SYSNAME  
+ How to back up:                                                                
+   Submit backup as a batch job . . . . . :   Yes                               
+   Save changed objects only  . . . . . . :   Yes                               
+   Print detailed report  . . . . . . . . :   Yes                               
+   User exit program  . . . . . . . . . . :   *NONE                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue                                                        
+                                                                                
+ F1=Help   F3=Exit   F12=Cancel   F16=Display library backup list               
+ F17=Display folder backup list                                                 
+                                                                                

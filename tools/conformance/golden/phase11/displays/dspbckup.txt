@@ -1,0 +1,24 @@
+                          Display Daily Backup Options                          
+                                                             System:   SYSNAME  
+ Last backup date . . . . . . . . . . . . :                                     
+ Last tape set used . . . . . . . . . . . :                                     
+                                                                                
+ Where to back up:                                                              
+   Backup device  . . . . . . . . . . . . :                                     
+   Tape sets to rotate  . . . . . . . . . :   DAYA                              
+                                              DAYB                              
+                                              DAYC                              
+   Erase tape before backup . . . . . . . :   Yes                               
+                                                                                
+ What to back up:                                                               
+   User libraries . . . . . . . . . . . . :   From list                         
+   Folders  . . . . . . . . . . . . . . . :   From list                         
+   User directories . . . . . . . . . . . :   All                               
+   Security data  . . . . . . . . . . . . :   No                                
+   Configuration  . . . . . . . . . . . . :   No                                
+                                                                        More... 
+ Press Enter to continue                                                        
+                                                                                
+ F1=Help   F3=Exit   F12=Cancel   F16=Display library backup list               
+ F17=Display folder backup list                                                 
+                                                                                

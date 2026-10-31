@@ -1,0 +1,24 @@
+ CMDPRB                         Problem Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Problem Action Entry                                    ADDPRBACNE 
+      2. Add Problem Selection Entry                                 ADDPRBSLTE 
+      3. Analyze Problem                                             ANZPRB     
+      4. Change Problem                                              CHGPRB     
+      5. Change Problem Action Entry                                 CHGPRBACNE 
+      6. Change Problem Selection Entry                              CHGPRBSLTE 
+      7. Delete APAR Data                                            DLTAPARDTA 
+      8. Delete Problem                                              DLTPRB     
+      9. Display Problems                                            DSPPRB     
+     10. End Copy Screen                                             ENDCPYSCN  
+     11. Query Problem Status                                        QRYPRBSTS  
+     12. Restore APAR Data                                           RSTAPARDTA 
+     13. Save APAR Data                                              SAVAPARDTA 
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

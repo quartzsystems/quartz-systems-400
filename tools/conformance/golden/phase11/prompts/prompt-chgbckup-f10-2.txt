@@ -1,0 +1,24 @@
+                        Change Backup Options (CHGBCKUP)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ User exit program  . . . . . . . EXITPGM        *SAME                          
+   Library  . . . . . . . . . . .                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

@@ -1,0 +1,24 @@
+ PTF                         Program Temporary Fix                              
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Load a program temporary fix                                           
+      2. Apply a program temporary fix                                          
+      3. Copy a program temporary fix                                           
+      4. Remove a program temporary fix                                         
+      5. Display a program temporary fix                                        
+      6. Order a program temporary fix                                          
+      7. Install a program temporary fix from a list                            
+      8. Install program temporary fix package                                  
+      9. Copy PTF Cover Letter                                                  
+     10. Display PTF Cover Letter                                               
+     11. Delete a program temporary fix                                         
+     12. Work with PTF groups                                                   
+     13. Copy PTF group                                                         
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

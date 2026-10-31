@@ -49,7 +49,7 @@ inquiry (`CPA4067`) shows as a sender copy with its default reply.
 | Before | `QSTEST` held no objects; `/home/QSTEST` held the 2026-10-22 kit folders `data`, `dds`, `oracle`, `out` (`00-survey.txt`) |
 | Objects | built by `01-build.txt`: DDS PFs `CUST`, `ORD` (journaled to `JRN`, receivers `RCV0001`, `RCV0002`), `FMTA`, `FREEPF`, multi-member `MPF` (`M1`..`M3`); LFs `CUSTK` (keyed), `CUSTSO` (select/omit), `CUSORD` (join); source PFs `QSRC`, `QDDSSRC`; SQL table `SQLT` with index `SQLTIX`; data areas `DTAC` (*CHAR), `DTAD` (*DEC, owner `OWNA`, *PUBLIC *EXCLUDE), `DTAL` (*LGL, group `GRPA`); `DQ1` with one entry; `USRSPC`, `USRIDX`; `QSTMSGF`; CL `PGM1`, modules `MOD1`/`MOD2`, `SRV1` from binder source, `PGM2` bound to it; `QSTCMD` over `PGM1`; `QSTJOBD`; `QSTOUTQ` with two spooled files; private authorities for `USRA` on `CUST` (*CHANGE), `DTAC` (*USE), `PGM1` (*EXCLUDE). `ZZ*` objects are the tool's (omitted from every save but the first) |
 | Save file | `ZZFULL`: `SAVLIB QSTEST OMITOBJ(ZZ*) UPDHST(*YES)` from case 02, used by every restore |
-| After | see the top-level README |
+| After | `QSTEST` empty again (`CLRLIB`, journal and receivers deleted first), `/home/QSTEST` holding only its four kit folders, every spooled file these jobs made deleted (`40-final.txt`) |
 
 ## Cases
 
@@ -73,6 +73,7 @@ inquiry (`CPA4067`) shows as a sender copy with its default reply.
 | `17-errors.txt` | objects not in the save file, the wrong library or type, an empty or missing save file, a file that is not a save file, `OMITOBJ`; `RSTOBJ OUTPUT(*OUTFILE)` (the `QASRRSTO` format) and `OUTPUT(*PRINT)` |
 | `18-dependents.txt` | logical files restored without their physical file and in one request with it; an SQL index |
 | `19-ifs.txt` | `SAV` and `RST` of `/home/QSTEST` and a subtree: counts, `OPTION(*NEW/*OLD/*ALL)`, a new name, an omitted subtree, not found, `OUTPUT(*PRINT)`, a QSYS path on `RST` |
+| `40-final.txt` | `SPLFDTA(*ALL)` on an output queue and `RSTOBJ SPLFDTA(*NEW)`, then the cleanup |
 | `30`..`35` | Part D, read-only: `DSPSFWRSC`, `DSPPTF` (all products, 5770SS1, 5770999, one PTF), `DSPPTFCVR`, PTF groups, `DSPIPLA`, `DSPBCKUP`, `DSPBCKUPL`, `WRKCFGSTS *DEV`, `DSPDEVD` of the tape and optical devices, `DSPTAP`, `DSPOPT`, the image catalog, `DSPPRB`, `WRKLICINF`, `DSPLICKEY` |
 
 ## Restore rules settled
@@ -211,7 +212,11 @@ Save files:
     not move it (`05`, `06`).
 27. On V7R1M0 with this PTF level `SPLFDTA(*ALL)` and `QDTA(*DTAQ)` are
     accepted; `TGTRLS(V6R1M0)` is accepted, `V5R1M0` refused (`CPD0084`)
-    (`04`, `07`).
+    (`04`, `07`). An output queue saved with `SPLFDTA(*ALL)` and
+    restored with `SPLFDTA(*NEW)` after `CLROUTQ` brings its spooled
+    files back with their original job, number, date and time; restored
+    again, they are skipped with `CPI3733` "2 existing spooled files not
+    restored" (`40`).
 
 ## Not settled
 
@@ -219,9 +224,6 @@ Save files:
   as `QSECOFR` (`*ALLOBJ`), and no other profile may be signed on.
 - An owner profile that does not exist on the target (needs a profile
   deleted or a save from another system).
-- Whether `SPLFDTA(*ALL)` actually saved the two spooled files of
-  `QSTOUTQ` (the save file was cleared before `DSPSAVF`; see the
-  top-level README for the last run).
 - `RSTAUT`, `RSTUSRPRF`, `SAVSECDTA`, `SAVSYS`, `SAVCFG`, tape and
   optical media: forbidden or not loaded (`DSPTAP`: `CPF6760` device
   not ready; both optical devices empty, `OPT1660`).

@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   USERNAMEB                                      
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Attribute   Owner          Size (K)  Data           
+      ORDALL      *FILE     LF          USERNAME            120  YES            
+      ORDJOIN     *FILE     LF          USERNAME            200  YES            
+      PRODUCT     *FILE     PF          USERNAME            112  YES            
+      PRDBYDESC   *FILE     LF          USERNAME            104  YES            
+      QRES01      *FILE     PF          USERNAME             44  YES            
+      QRES02      *FILE     PF          USERNAME             32  YES            
+      QRES03      *FILE     PF          USERNAME             32  YES            
+      QRES04      *FILE     PF          USERNAME             32  YES            
+      QRES05      *FILE     PF          USERNAME             32  YES            
+      QRES06      *FILE     PF          USERNAME             32  YES            
+      QRES07      *FILE     PF          USERNAME             32  YES            
+      QRES08      *FILE     PF          USERNAME             40  YES            
+      QRES09      *FILE     PF          USERNAME             44  YES            
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                

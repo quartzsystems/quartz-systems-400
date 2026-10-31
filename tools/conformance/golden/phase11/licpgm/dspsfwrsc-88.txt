@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770PT1   1        2926    Performance Tools - Manager Feature                 
+ 5770PT1   1        2928    Performance Tools - Manager Feature                 
+ 5770PT1   1        2929    Performance Tools - Manager Feature                 
+ 5770PT1   1        2930    Performance Tools - Manager Feature                 
+ 5770PT1   1        2931    Performance Tools - Manager Feature                 
+ 5770PT1   1        2932    Performance Tools - Manager Feature                 
+ 5770PT1   1        2933    Performance Tools - Manager Feature                 
+ 5770PT1   1        2937    Performance Tools - Manager Feature                 
+ 5770PT1   1        2938    Performance Tools - Manager Feature                 
+ 5770PT1   1        2939    Performance Tools - Manager Feature                 
+ 5770PT1   1        2940    Performance Tools - Manager Feature                 
+ 5770PT1   1        2942    Performance Tools - Manager Feature                 
+ 5770PT1   1        2954    Performance Tools - Manager Feature                 
+ 5770PT1   1        2956    Performance Tools - Manager Feature                 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

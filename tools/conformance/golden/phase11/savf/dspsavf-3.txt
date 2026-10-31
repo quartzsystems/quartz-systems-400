@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   USERNAMEB                                      
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Attribute   Owner          Size (K)  Data           
+      INVENTORY   *FILE     PF          USERNAME             36  YES            
+      JRN         *FILE     PF          USERNAME             32  YES            
+      LOGHIST     *FILE     PF          USERNAME             40  YES            
+      LVLID       *FILE     PF          USERNAME             32  YES            
+      NOTES       *FILE     PF          USERNAME            112  YES            
+      CUSTOMER    *FILE     PF          USERNAME            128  YES            
+      CUSBYNAME   *FILE     LF          USERNAME            120  YES            
+      ACTIVE      *FILE     LF          USERNAME            120  YES            
+      ORDERS      *FILE     PF          USERNAME            128  YES            
+      CUSORD      *FILE     LF          USERNAME            120  YES            
+      BIGORD      *FILE     LF          USERNAME            120  YES            
+      ORDLINE     *FILE     PF          USERNAME            112  YES            
+      ORDBYCUS    *FILE     LF          USERNAME            120  YES            
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                

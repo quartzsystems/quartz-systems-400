@@ -1,0 +1,24 @@
+ CMDSRV                         Service Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     28. Start Service Job                                           STRSRVJOB  
+     29. Trace Connection                                            TRCCNN     
+     30. Trace Internal                                              TRCINT     
+     31. Trace Job                                                   TRCJOB     
+     32. Trace TCP/IP Application                                    TRCTCPAPP  
+     33. Verify Communications                                       VFYCMN     
+     34. Verify Link supporting LPDA-2                               VFYLNKLPDA 
+     35. Verify Printer                                              VFYPRT     
+     36. Verify Service Agent                                        VFYSRVAGT  
+     37. Verify Service Configuration                                VFYSRVCFG  
+     38. Verify Tape                                                 VFYTAP     
+     39. Work with Active Jobs                                       WRKACTJOB  
+     40. Work with Service Agent                                     WRKSRVAGT  
+     41. Work with Service Providers                                 WRKSRVPVD  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+                              Save Object (SAVOBJ)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Objects  . . . . . . . . . . . . OBJ                                           
+                           + for more values                                    
+ Library  . . . . . . . . . . . . LIB                                           
+                           + for more values                                    
+ Device . . . . . . . . . . . . . DEV                                           
+                           + for more values                                    
+ Object types . . . . . . . . . . OBJTYPE        *ALL                           
+                           + for more values                                    
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+                                                                                
+                           + for more values                                    
+                                                                                
+ Sequence number  . . . . . . . . SEQNBR         *END                           
+ Label  . . . . . . . . . . . . . LABEL          *LIB                           
+ File expiration date . . . . . . EXPDATE        *PERM                          
+ End of media option  . . . . . . ENDOPT         *REWIND                        
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter OBJ required.                                                      + 

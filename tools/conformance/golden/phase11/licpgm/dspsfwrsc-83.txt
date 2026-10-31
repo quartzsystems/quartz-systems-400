@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770NAE   *BASE    2987    Network Authentication Enablement                   
+ 5770NAE   *BASE    2989    Network Authentication Enablement                   
+ 5770NAE   *BASE    2992    Network Authentication Enablement                   
+ 5770NAE   *BASE    2994    Network Authentication Enablement                   
+ 5770NAE   *BASE    2995    Network Authentication Enablement                   
+ 5770NAE   *BASE    2996    Network Authentication Enablement                   
+ 5770NAE   *BASE    2998    Network Authentication Enablement                   
+ 5770PT1   *BASE    5050    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2902    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2903    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2904    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2905    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2909    IBM Performance Tools for i - Base                  
+ 5770PT1   *BASE    2912    IBM Performance Tools for i - Base                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

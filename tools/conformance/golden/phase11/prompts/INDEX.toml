@@ -1,0 +1,1008 @@
+[[golden]]
+name = "prompt-savlib"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savlib-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savlib-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savlib-f10-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savlib-f10-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savlib-f10-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj-f10-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj-f10-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj-f10-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savobj-f10-6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savchgobj"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savchgobj-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savchgobj-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savchgobj-f10-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savchgobj-f10-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savchgobj-f10-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-sav"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-sav-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-sav-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsys"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsys-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsys-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsecdta"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsecdta-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsecdta-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savcfg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savcfg-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savcfg-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsavfdta"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsavfdta-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savsavfdta-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-savlicpgm-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rstlib-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rstobj-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rst-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rstusrprf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rstaut-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rstcfg-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-rstlicpgm-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-dltlicpgm-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-crtsavf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-crtsavf-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-chgsavf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-chgsavf-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-clrsavf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-dspsavf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-save"
+width = 80
+
+[[golden]]
+name = "prompt-dsptap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-dspopt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-chktap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-chkopt-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-inztap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-inzopt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-inzopt-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-inzopt-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-duptap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-duptap-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-duptap-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-dupopt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-dupopt-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-cpytotap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-cpytotap-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-cpytotap-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-cpyfrmtap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-cpyfrmtap-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-cpyfrmtap-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtimgclg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtimgclg-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-addimgclge"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-addimgclge-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-lodimgclg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-vfyimgclg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-wrkimgclg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevtap"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevtap-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevtap-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevopt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevopt-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevmlb"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevmlb-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevmlb-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-media"
+width = 80
+
+[[golden]]
+name = "prompt-dspptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-wrkptfgrp-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-lodptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-apyptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-rmvptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-sndptford-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-cpyptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-insptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspptfcvr-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspsfwrsc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspipla"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgipla-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgclnup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgclnup-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-strclnup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgbckup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgbckup-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgbckup-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-runbckup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-runbckup-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspbckup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-wrkprb-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-anzprb-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspprb"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspprb-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dspprb-f10-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chgprb-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dltprb-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-sndsrvrqs-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dmpobj-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dmpsysobj-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-dmpjob-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-strtrc-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-endtrc-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-prttrc-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-trcjob-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-addlickey-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-wrklicinf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-chglicinf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-wrksfwagr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-prtsysinf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-rcldbxref-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+
+[[golden]]
+name = "prompt-wrkcntinf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "prompts-svc"
+width = 80
+

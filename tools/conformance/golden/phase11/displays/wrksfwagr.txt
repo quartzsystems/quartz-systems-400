@@ -1,0 +1,24 @@
+                         Work with Software Agreements                          
+                                                             System:   SYSNAME  
+ Currently selected language :   English                                        
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display   6=Print                                                          
+                                                                                
+      Licensed  Product                                                         
+ Opt  Program   Option   Description                                            
+      *MCHCOD            Machine Code                                           
+      5770SS1    *BASE   IBM i                                                  
+      5770SS1    18      Media and Storage Extensions                           
+      5770SS1    26      DB2 Symmetric Multiprocessing                          
+      5770SS1    27      DB2 Multisystem                                        
+      5770SS1    36      PSF for IBM i 1-55 IPM Printer Support                 
+      5770SS1    37      PSF for IBM i 1-100 IPM Printer Support                
+      5770SS1    38      PSF for IBM i Any Speed Printer Support                
+      5770SS1    41      HA Switchable Resources                                
+      5770SS1    42      HA Journal Performance                                 
+      5770SS1    48      Db2 Data Mirroring                                     
+                                                                        More... 
+ F3=Exit   F11=Display release   F12=Cancel   F13=Select language               
+ F19=Display trademarks          F22=Restore software agreements                
+                                                                                

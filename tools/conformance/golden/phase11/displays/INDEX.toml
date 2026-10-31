@@ -1,0 +1,96 @@
+[[golden]]
+name = "dspbckup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-dspbckup"
+width = 80
+
+[[golden]]
+name = "dspbckup-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-dspbckup"
+width = 80
+
+[[golden]]
+name = "dspipla"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-dspipla"
+width = 80
+
+[[golden]]
+name = "dspptf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-dspptf"
+width = 80
+
+[[golden]]
+name = "wrkcntinf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkcntinf"
+width = 80
+
+[[golden]]
+name = "wrkimgclg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkimgclg"
+width = 80
+
+[[golden]]
+name = "wrklicinf-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrklicinf"
+width = 80
+
+[[golden]]
+name = "wrkprb-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkprb"
+width = 80
+
+[[golden]]
+name = "wrkptfgrp-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkptfgrp"
+width = 80
+
+[[golden]]
+name = "wrksfwagr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrksfwagr"
+width = 80
+
+[[golden]]
+name = "wrksfwagr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrksfwagr"
+width = 80
+
+[[golden]]
+name = "wrksfwagr-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrksfwagr"
+width = 80
+

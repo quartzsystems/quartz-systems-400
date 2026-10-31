@@ -1,0 +1,24 @@
+                              Save Library (SAVLIB)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library  . . . . . . . . . . . . LIB                                           
+                           + for more values                                    
+ Device . . . . . . . . . . . . . DEV                                           
+                           + for more values                                    
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+                                                                                
+                           + for more values                                    
+                                                                                
+ Sequence number  . . . . . . . . SEQNBR         *END                           
+ Label  . . . . . . . . . . . . . LABEL          *LIB                           
+ File expiration date . . . . . . EXPDATE        *PERM                          
+ End of media option  . . . . . . ENDOPT         *REWIND                        
+ Starting library . . . . . . . . STRLIB         *FIRST                         
+ Save file  . . . . . . . . . . . SAVF                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter LIB required.                                                      + 

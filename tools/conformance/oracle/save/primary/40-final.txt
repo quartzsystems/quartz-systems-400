@@ -1,0 +1,133 @@
+# SPLFDTA, then QSTEST and /home/QSTEST put back as found
+# primary oracle (V7R1M0), 2026-10-30
+# SPLFDTA(*ALL): the two spooled files of QSTOUTQ saved and restored with the output queue
+
+> SAVOBJ OBJ(QSTOUTQ) LIB(QSTEST) OBJTYPE(*OUTQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) CLEAR(*ALL) UPDHST(*NO) SPLFDTA(*ALL)
+  -> ok
+  CPC3722 Completion 00 QSRSOCP2->QSQRUN4 | 1 objects saved from library QSTEST.
+
+> DSPSAVF FILE(QSTEST/ZZS1) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf-splfdta)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R1M0  100423                                                                            {host}  10/30/26  07:52:02 EST
+ Save file  . . . . . . . . . . . . . . :   ZZS1
+   Library  . . . . . . . . . . . . . . :     QSTEST
+   Records  . . . . . . . . . . . . . . :     128
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVOBJ
+   Save date/time . . . . . . . . . . . :   10/30/26  07:52:01
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R1M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   QSTEST
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   {host}
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ QSTOUTQ      *OUTQ                   QSECOFR               48   YES        Save kit output queue
+                                                           Spooled Files
+ Spooled      File                                                   Creation   Creation   Output
+ File         Number   Job          User         Number   System     Date       Time       Queue        Library      ASP
+ QPDSPLIB     000308   QPRTJOB      QSECOFR      007117   {host}   10/30/26   07:21:11   QSTOUTQ      QSTEST       1
+ QPRTOBJD     000310   QPRTJOB      QSECOFR      007117   {host}   10/30/26   07:21:12   QSTOUTQ      QSTEST       1
+                                                              Summary
+ Number of objects saved  . . . . . . . :   1
+ Members  . . . . . . . . . . . . . . . :   0
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   2
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> CLROUTQ OUTQ(QSTEST/QSTOUTQ)
+  -> ok
+  CPF3417 Completion 10 QSPCLSPQ->QSQRUN4 | 2 entries deleted. 0 entries not deleted.
+
+> RSTOBJ OBJ(QSTOUTQ) SAVLIB(QSTEST) OBJTYPE(*OUTQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) SPLFDTA(*NEW)
+  -> ok
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+
+> WRKOUTQ OUTQ(QSTEST/QSTOUTQ) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (wrkoutq-after)
+ 5770SS1 V7R1M0 100423         Work With Output Queue        QSTOUTQ     in  QSTEST     10/30/26  7:52:04 EST            Page    1
+ File       User       User Data  Status Pages Copies Form Type  Pty File Number   Job        Number Date     Time
+ QPDSPLIB   QSECOFR                RDY       1     1  *STD        5        308     QPRTJOB    007117 10/30/26 07:21:11
+ QPRTOBJD   QSECOFR                RDY       1     1  *STD        5        310     QPRTJOB    007117 10/30/26 07:21:12
+         * * * * *   E N D   O F   L I S T I N G   * * * * *
+
+> RSTOBJ OBJ(QSTOUTQ) SAVLIB(QSTEST) OBJTYPE(*OUTQ) DEV(*SAVF) SAVF(QSTEST/ZZS1) SPLFDTA(*NEW)
+  -> ok
+  CPI3733 Information 00 QSRRLCP2->QSRADOPT | 2 existing spooled files not restored.
+  CPC3703 Completion 00 QSRROCPR->QSQRUN4 | 1 objects restored from QSTEST to QSTEST.
+# cleanup
+
+> DLTSPLF FILE(QPRTSPLF) JOB(007117/QSECOFR/QPRTJOB) SPLNBR(873)
+  -> FAILED [CPF3344] File QPRTSPLF number 873 no longer in the system.
+
+> CLROUTQ OUTQ(QSTEST/QSTOUTQ)
+  -> ok
+  CPF3344 Escape 40 QSPCNSPF->QSQRUN4 | File QPRTSPLF number 873 no longer in the system.
+  CPF3417 Completion 10 QSPCLSPQ->QSQRUN4 | 2 entries deleted. 0 entries not deleted.
+
+-- receivers and journals left: SELECT OBJNAME, OBJTYPE FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*JRN *JRNRCV')) X
+OBJNAME|OBJTYPE
+JRN|*JRN
+RCV0001|*JRNRCV
+RCV0002|*JRNRCV
+RCV1002|*JRNRCV
+(4 rows)
+
+> ENDJRNPF FILE(*ALL) JRN(QSTEST/JRN)
+  -> ok
+  CPC7033 Completion 00 QJOENDJN->QSQRUN4 | 1 of 1 files have ended journaling.
+
+> DLTJRN JRN(QSTEST/JRN)
+  -> ok
+  CPF7020 Information 00 QJODLTJN->QLIDLOBJ | Journal receivers RCV1002 and *N detached.
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object JRN in QSTEST type *JRN deleted.
+
+> DLTJRNRCV JRNRCV(QSTEST/RCV0001) DLTOPT(*IGNINQMSG)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object RCV0001 in QSTEST type *JRNRCV deleted.
+
+> DLTJRNRCV JRNRCV(QSTEST/RCV0002) DLTOPT(*IGNINQMSG)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object RCV0002 in QSTEST type *JRNRCV deleted.
+
+> DLTJRNRCV JRNRCV(QSTEST/RCV1002) DLTOPT(*IGNINQMSG)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object RCV1002 in QSTEST type *JRNRCV deleted.
+
+> DLTJRNRCV JRNRCV(QSTEST/RCV1003) DLTOPT(*IGNINQMSG)
+  -> FAILED [CPF2105] Object RCV1003 in QSTEST type *JRNRCV not found.
+  CPF2105 Escape 40 QLIDLOBJ->QSQRUN4 | Object RCV1003 in QSTEST type *JRNRCV not found.
+
+$ ls -la /home/QSTEST; ls -R /home/QSTEST | wc -l
+total: 68 kilobytes
+drwxrwsrwx  6 QSECOFR  0                  8192 Oct 30 07:52 .
+drwxrwsrwx  4 QSYS     0                  8192 Oct 22 07:45 ..
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:45 data
+drwxrwsrwx  2 QSECOFR  0                 24576 Oct 22 07:45 dds
+drwxrwsrwx  2 QSECOFR  0                  8192 Oct 22 07:53 oracle
+drwxrwsrwx  4 QSECOFR  0                  8192 Oct 22 07:54 out
+-rw-rw-rw-  1 QSECOFR  0                     0 Oct 30 07:52 zz.out
+      84
+exit=0
+
+> DSPMSG MSGQ(QSYSOPR) OUTPUT(*PRINT)
+  -> ok
+  QSH0005 Completion 00 QZSHRUNC->QSQRUN4 | Command ended normally with exit status 0.
+  CPCA081 Completion 00 QP0LCCMN->QSQRUN4 | Stream file copied to object.
+  CPCA089 Completion 00 QP0LCCFN->QSQRUN4 | Link removed.
+  CPC9802 Completion 00 QMHDSMSS->QSQRUN4 | Printer output created.
+-- spooled file (qsysopr): not kept; every inquiry these jobs sent (CPA4067, CPA0702) shows a default reply C, the two sent before INQMSGRPY(*DFT) was set were answered by hand (see the top-level README)
+
+> CLRLIB LIB(QSTEST)
+  -> ok
+
+-- QSTEST objects after the session: SELECT OBJNAME, OBJTYPE FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*ALL')) X
+OBJNAME|OBJTYPE
+(0 rows)

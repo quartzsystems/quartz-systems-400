@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   31       2958    Compiler - ILE RPG IV                               
+ 5770WDS   31       2961    Compiler - ILE RPG IV                               
+ 5770WDS   31       2962    Compiler - ILE RPG IV                               
+ 5770WDS   31       2963    Compiler - ILE RPG IV                               
+ 5770WDS   31       2966    Compiler - ILE RPG IV                               
+ 5770WDS   31       2972    Compiler - ILE RPG IV                               
+ 5770WDS   31       2974    Compiler - ILE RPG IV                               
+ 5770WDS   31       2975    Compiler - ILE RPG IV                               
+ 5770WDS   31       2976    Compiler - ILE RPG IV                               
+ 5770WDS   31       2978    Compiler - ILE RPG IV                               
+ 5770WDS   31       2979    Compiler - ILE RPG IV                               
+ 5770WDS   31       2980    Compiler - ILE RPG IV                               
+ 5770WDS   31       2981    Compiler - ILE RPG IV                               
+ 5770WDS   31       2984    Compiler - ILE RPG IV                               
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

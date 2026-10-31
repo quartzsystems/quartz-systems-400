@@ -1,0 +1,24 @@
+                           Save Configuration (SAVCFG)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Clear  . . . . . . . . . . . . . CLEAR          *NONE                          
+ Object pre-check . . . . . . . . PRECHK         *NO                            
+ Data compression . . . . . . . . DTACPR         *DEV                           
+ Data compaction  . . . . . . . . COMPACT        *DEV                           
+ Output . . . . . . . . . . . . . OUTPUT         *NONE                          
+ File to receive output . . . . . OUTFILE                                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Output member options:           OUTMBR                                        
+   Member to receive output . . .                *FIRST                         
+   Replace or add records . . . .                *REPLACE                       
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter DEV required.                                                        

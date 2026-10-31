@@ -1,0 +1,24 @@
+                              Save Object (SAVOBJ)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Command user space . . . . . . . CMDUSRSPC                                     
+   Library  . . . . . . . . . . .                  *LIBL                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

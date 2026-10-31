@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   31       2912    Domain Name System                                  
+ 5770SS1   31       2913    Domain Name System                                  
+ 5770SS1   31       2914    Domain Name System                                  
+ 5770SS1   31       2922    Domain Name System                                  
+ 5770SS1   31       2923    Domain Name System                                  
+ 5770SS1   31       2924    Domain Name System                                  
+ 5770SS1   31       2925    Domain Name System                                  
+ 5770SS1   31       2926    Domain Name System                                  
+ 5770SS1   31       2928    Domain Name System                                  
+ 5770SS1   31       2929    Domain Name System                                  
+ 5770SS1   31       2930    Domain Name System                                  
+ 5770SS1   31       2931    Domain Name System                                  
+ 5770SS1   31       2932    Domain Name System                                  
+ 5770SS1   31       2933    Domain Name System                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

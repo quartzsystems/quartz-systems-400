@@ -1,0 +1,24 @@
+                           Copy From Tape (CPYFRMTAP)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Volume identifier  . . . . . . . FROMVOL        *TAPF                          
+                           + for more values                                    
+ Block length . . . . . . . . . . FROMBLKLEN     *TAPF                          
+ Record block type  . . . . . . . FROMRCDBLK     *TAPF                          
+ Number of records to copy  . . . NBRRCDS        *END                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FROMFILE required.                                                   

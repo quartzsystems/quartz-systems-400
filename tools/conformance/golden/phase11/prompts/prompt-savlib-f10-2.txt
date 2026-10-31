@@ -1,0 +1,24 @@
+                              Save Library (SAVLIB)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Media definition . . . . . . . . MEDDFN                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Optical file . . . . . . . . . . OPTFILE        '*'                            
+                                                                                
+ Use optimum block  . . . . . . . USEOPTBLK      *YES                           
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Target release . . . . . . . . . TGTRLS         *CURRENT                       
+ Update history . . . . . . . . . UPDHST         *YES                           
+ Clear  . . . . . . . . . . . . . CLEAR          *NONE                          
+ Object pre-check . . . . . . . . PRECHK         *NO                            
+ Save active  . . . . . . . . . . SAVACT         *NO                            
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

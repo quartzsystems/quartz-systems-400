@@ -1,0 +1,96 @@
+# Phase 11: DSPSAVF over the save file of the account library's
+# SAVLIB (made and deleted over the host servers in the same session,
+# see oracle/save/pub400/). The list and its pages and F11 views, the
+# header (F16), option 5 on the journal (not valid: only files take it),
+# a physical file and a source file (their saved members), the help. Only option 5 is typed; every
+# display is left with F12 or F3. No `continue`.
+wait "Main Menu"
+timeout 30000
+mask userlib (?i)\b{user}B\b => USERNAMEB
+type call qcmd
+key enter
+wait "Command Entry"
+type dspsavf file({user}b/qssavf)
+key enter
+settle 3000
+snap dspsavf-1
+key pgdn
+settle 1000
+snap dspsavf-2
+key pgdn
+settle 1000
+snap dspsavf-3
+key pgdn
+settle 1000
+snap dspsavf-4
+key pgdn
+settle 1000
+snap dspsavf-5
+key pgdn
+settle 1000
+snap dspsavf-6
+key pgup
+key pgup
+key pgup
+key pgup
+key pgup
+settle 1000
+key f11
+settle 1500
+snap dspsavf-f11
+key f11
+settle 1500
+snap dspsavf-f11-f11
+key f11
+settle 1500
+snap dspsavf-f11-f11-f11
+key f16
+settle 1500
+snap dspsavf-f16
+key pgdn
+settle 1000
+snap dspsavf-f16-2
+key f12
+settle 1500
+seek "CUSTOMER" 8
+pick "CUSTOMER" 5
+key enter
+settle 2000
+snap dspsavf-5-file
+key pgdn
+settle 1000
+snap dspsavf-5-file-2
+key f12
+settle 1500
+seek "QSQLSRC" 8
+pick "QSQLSRC" 5
+key enter
+settle 2000
+snap dspsavf-5-srcfile
+key pgdn
+settle 1000
+snap dspsavf-5-srcfile-2
+key f12
+settle 1500
+key f1
+settle 2000
+snap dspsavf-help
+key f3
+settle 1500
+snap dspsavf-after-help
+key pgup
+key pgup
+key pgup
+key pgup
+key pgup
+key pgup
+key pgup
+key pgup
+settle 1000
+pick "QSTJRN" 5
+key enter
+settle 2000
+snap dspsavf-5-jrn
+key reset
+key f12
+wait "Command Entry"

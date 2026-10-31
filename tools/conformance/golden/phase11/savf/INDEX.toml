@@ -1,0 +1,104 @@
+[[golden]]
+name = "dspsavf-1"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-f16"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-f16-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-5-file"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-5-srcfile"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-after-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+
+[[golden]]
+name = "dspsavf-5-jrn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "savf"
+width = 80
+

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   *BASE    2989    IBM Rational Development Studio for i               
+ 5770WDS   *BASE    2992    IBM Rational Development Studio for i               
+ 5770WDS   *BASE    2994    IBM Rational Development Studio for i               
+ 5770WDS   *BASE    2995    IBM Rational Development Studio for i               
+ 5770WDS   *BASE    2996    IBM Rational Development Studio for i               
+ 5770WDS   *BASE    2998    IBM Rational Development Studio for i               
+ 5770WDS   21       5103    Application Development ToolSet                     
+ 5770WDS   21       2902    Application Development ToolSet                     
+ 5770WDS   21       2903    Application Development ToolSet                     
+ 5770WDS   21       2904    Application Development ToolSet                     
+ 5770WDS   21       2905    Application Development ToolSet                     
+ 5770WDS   21       2909    Application Development ToolSet                     
+ 5770WDS   21       2912    Application Development ToolSet                     
+ 5770WDS   21       2913    Application Development ToolSet                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

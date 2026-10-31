@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770DFH   *BASE    2937    CICS TS for i                                       
+ 5770DFH   *BASE    2938    CICS TS for i                                       
+ 5770DFH   *BASE    2939    CICS TS for i                                       
+ 5770DFH   *BASE    2940    CICS TS for i                                       
+ 5770DFH   *BASE    2942    CICS TS for i                                       
+ 5770DFH   *BASE    2954    CICS TS for i                                       
+ 5770DFH   *BASE    2956    CICS TS for i                                       
+ 5770DFH   *BASE    2957    CICS TS for i                                       
+ 5770DFH   *BASE    2958    CICS TS for i                                       
+ 5770DFH   *BASE    2961    CICS TS for i                                       
+ 5770DFH   *BASE    2962    CICS TS for i                                       
+ 5770DFH   *BASE    2963    CICS TS for i                                       
+ 5770DFH   *BASE    2966    CICS TS for i                                       
+ 5770DFH   *BASE    2972    CICS TS for i                                       
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

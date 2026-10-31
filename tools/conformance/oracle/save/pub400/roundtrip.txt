@@ -1,0 +1,246 @@
+# SAVLIB and RSTLIB of the account library on pub400
+# pub400, 2026-10-30
+# ZZ* are the capture tool's work files, created for this run and deleted after it
+
+> CRTSAVF FILE({user}B/QSSAVF) TEXT('Phase 11 round trip')
+  -> ok
+  CPC7301 Completion 00 QDDCDF->QSQRUN4 | File QSSAVF created in library {user}B. -=* https://pub400.com *=-
+
+> SAVLIB LIB({user}B) DEV(*SAVF) SAVF({user}B/QSSAVF) OMITOBJ(({user}B/ZZ*) ({user}B/QSSAVF))
+  -> ok
+  CPF7080 Information 00 QJOSAVRC->QSRSVPST | Receiver QSTRCV0003 in {user}B saved while attached.
+  CPC3722 Completion 00 QSRSLCP2->QSQRUN4 | 61 objects saved from library {user}B.
+
+> DSPSAVF FILE({user}B/QSSAVF) OUTPUT(*PRINT)
+  -> ok
+-- spooled file (dspsavf)
+                                              Saved Object Information                                                  Page     1
+5770SS1 V7R5M0  220415                                                                            PUB400    26-10-31  00:45:01 UTC
+ Save file  . . . . . . . . . . . . . . :   QSSAVF
+   Library  . . . . . . . . . . . . . . :     {user}B
+   Records  . . . . . . . . . . . . . . :     11688
+ Save operation:
+   Save command . . . . . . . . . . . . :   SAVLIB
+   Save date/time . . . . . . . . . . . :   26-10-31  00:45:00
+   Save while active  . . . . . . . . . :   *NO
+   Data compressed  . . . . . . . . . . :   No
+   Release level  . . . . . . . . . . . :   V7R5M0
+ Data saved:
+   Library  . . . . . . . . . . . . . . :   {user}B
+   ASP  . . . . . . . . . . . . . . . . :   1
+   System name  . . . . . . . . . . . . :   PUB400
+   System serial number . . . . . . . . :   {serial}
+   Private authorities  . . . . . . . . :   No
+                                                              Objects
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ {user}B    *LIB       PROD         {user}             256   YES        {user} (for backup data)
+ QSTJRN       *JRN                    {user}              12   YES
+ DCL001       *PGM       RPGLE        {user}             204   YES
+ DCL002       *PGM       RPGLE        {user}             200   YES
+ DCL003       *PGM       RPGLE        {user}             188   YES
+ DCL004       *PGM       RPGLE        {user}             200   YES
+ DCL005       *PGM       RPGLE        {user}             200   YES
+ DCL006       *PGM       RPGLE        {user}             192   YES
+ DCL007       *PGM       RPGLE        {user}             192   YES
+ DCL008       *PGM       RPGLE        {user}             200   YES
+ DCL010       *PGM       RPGLE        {user}             200   YES
+ DCL011       *PGM       RPGLE        {user}             196   YES
+ DCL012       *PGM       RPGLE        {user}             200   YES
+ DCL013       *PGM       RPGLE        {user}             192   YES
+ DCL014       *PGM       RPGLE        {user}             204   YES
+ DCL015       *PGM       RPGLE        {user}             136   YES
+ DCL016       *PGM       RPGLE        {user}             120   YES
+ DCL017       *PGM       RPGLE        {user}             108   YES
+ DCL018       *PGM       RPGLE        {user}             108   YES
+ DCL019       *PGM       RPGLE        {user}              96   YES
+ DCL020       *PGM       RPGLE        {user}              96   YES
+ DCL022       *PGM       RPGLE        {user}             100   YES
+ FEX010       *PGM       RPGLE        {user}             120   YES
+ RLATEST      *PGM       RPGLE        {user}             596   YES
+ EVENTS       *FILE      PF           {user}             128   YES
+ FFD          *FILE      PF           {user}             228   YES        Output file for DSPFFD
+ INVENTORY    *FILE      PF           {user}              36   YES
+ JRN          *FILE      PF           {user}              32   YES        OUTFILE created by DSPJRN command.
+ LOGHIST      *FILE      PF           {user}              40   YES
+ LVLID        *FILE      PF           {user}              32   YES        Output file for DSPFD TYPE(*RCDFMT)
+ NOTES        *FILE      PF           {user}             112   YES
+ CUSTOMER     *FILE      PF           {user}             128   YES
+ CUSBYNAME    *FILE      LF           {user}             120   YES
+ ACTIVE       *FILE      LF           {user}             120   YES
+ ORDERS       *FILE      PF           {user}             128   YES
+ CUSORD       *FILE      LF           {user}             120   YES
+ BIGORD       *FILE      LF           {user}             120   YES
+                                                   -=* https://pub400.com *=-
+                                              Saved Object Information                                                  Page     2
+5770SS1 V7R5M0  220415                                                                            PUB400    26-10-31  00:45:01 UTC
+ Object       Type       Attribute    Owner           Size (K)   Data       Text
+ ORDLINE      *FILE      PF           {user}             112   YES
+ ORDBYCUS     *FILE      LF           {user}             120   YES
+ ORDALL       *FILE      LF           {user}             120   YES
+ ORDJOIN      *FILE      LF           {user}             200   YES
+ PRODUCT      *FILE      PF           {user}             112   YES
+ PRDBYDESC    *FILE      LF           {user}             104   YES
+ QRES01       *FILE      PF           {user}              44   YES
+ QRES02       *FILE      PF           {user}              32   YES
+ QRES03       *FILE      PF           {user}              32   YES
+ QRES04       *FILE      PF           {user}              32   YES
+ QRES05       *FILE      PF           {user}              32   YES
+ QRES06       *FILE      PF           {user}              32   YES
+ QRES07       *FILE      PF           {user}              32   YES
+ QRES08       *FILE      PF           {user}              40   YES
+ QRES09       *FILE      PF           {user}              44   YES
+ QRES10       *FILE      PF           {user}              32   YES
+ QRES11       *FILE      PF           {user}              32   YES
+ QRES12       *FILE      PF           {user}              32   YES
+ QSQLSRC      *FILE      PF           {user}              32   YES
+ RLALOG       *FILE      PF           {user}              32   YES
+ TYPES        *FILE      PF           {user}             128   YES
+ QSTRCV0001   *JRNRCV                 {user}            3396   YES
+ QSTRCV0002   *JRNRCV                 {user}            3396   YES
+ QSTRCV0003   *JRNRCV                 {user}            3396   YES
+                                                       Database File Members
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ EVENTS       PF                    1   EVENTS
+ FFD          PF                    1   FFD
+ INVENTORY    PF                    1   INVENTORY
+ JRN          PF                    1   JRN
+ LOGHIST      PF                    1   LOGHIST
+ LVLID        PF                    1   LVLID
+ NOTES        PF                    1   NOTES
+ CUSTOMER     PF                    1   CUSTOMER
+ CUSBYNAME    LF                    1   CUSBYNAME
+ ACTIVE       LF                    1   ACTIVE
+ ORDERS       PF                    1   ORDERS
+ CUSORD       LF                    1   CUSORD
+ BIGORD       LF                    1   BIGORD
+ ORDLINE      PF                    1   ORDLINE
+ ORDBYCUS     LF                    1   ORDBYCUS
+ ORDALL       LF                    1   ORDALL
+ ORDJOIN      LF                    1   ORDJOIN
+ PRODUCT      PF                    1   PRODUCT
+ PRDBYDESC    LF                    1   PRDBYDESC
+ QRES01       PF                    1   QRES01
+ QRES02       PF                    1   QRES02
+ QRES03       PF                    1   QRES03
+ QRES04       PF                    1   QRES04
+ QRES05       PF                    1   QRES05
+ QRES06       PF                    1   QRES06
+                                                   -=* https://pub400.com *=-
+                                              Saved Object Information                                                  Page     3
+5770SS1 V7R5M0  220415                                                                            PUB400    26-10-31  00:45:01 UTC
+              File            Members
+ File         Type             Saved    Member       Member       Member       Member       Member       Member       Member
+ QRES07       PF                    1   QRES07
+ QRES08       PF                    1   QRES08
+ QRES09       PF                    1   QRES09
+ QRES10       PF                    1   QRES10
+ QRES11       PF                    1   QRES11
+ QRES12       PF                    1   QRES12
+ QSQLSRC      PF                    1   QRESULTS
+ RLALOG       PF                    1   RLALOG
+ TYPES        PF                    1   TYPES
+                                                              Summary
+ Number of objects saved  . . . . . . . :   61
+ Members  . . . . . . . . . . . . . . . :   34
+ Access paths . . . . . . . . . . . . . :   0
+ Spooled files  . . . . . . . . . . . . :   0
+                                        * * * * *   E N D   O F   L I S T I N G   * * * * *
+                                                   -=* https://pub400.com *=-
+
+> RSTLIB SAVLIB({user}B) DEV(*SAVF) SAVF({user}B/QSSAVF)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0032 Diagnostic 30 QCARULE->QSQRUN4 | Not authorized to command RSTLIB in library *LIBL.
+  CPF0001 Escape 30 QCADRV2->QCMDEXC | Error found on RSTLIB command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> DLTF FILE({user}B/QSSAVF)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object QSSAVF in {user}B type *FILE deleted. -=* https://pub400.com *=-
+
+-- the account library after the round trip: SELECT OBJNAME, OBJTYPE FROM TABLE(QSYS2.OBJECT_STATISTICS('{user}B', '*ALL')) X ORDER BY 1, 2
+OBJNAME|OBJTYPE
+ACTIVE|*FILE
+BIGORD|*FILE
+CUSBYNAME|*FILE
+CUSORD|*FILE
+CUSTOMER|*FILE
+DCL001|*PGM
+DCL002|*PGM
+DCL003|*PGM
+DCL004|*PGM
+DCL005|*PGM
+DCL006|*PGM
+DCL007|*PGM
+DCL008|*PGM
+DCL010|*PGM
+DCL011|*PGM
+DCL012|*PGM
+DCL013|*PGM
+DCL014|*PGM
+DCL015|*PGM
+DCL016|*PGM
+DCL017|*PGM
+DCL018|*PGM
+DCL019|*PGM
+DCL020|*PGM
+DCL022|*PGM
+EVENTS|*FILE
+FEX010|*PGM
+FFD|*FILE
+INVENTORY|*FILE
+JRN|*FILE
+LOGHIST|*FILE
+LVLID|*FILE
+NOTES|*FILE
+ORDALL|*FILE
+ORDBYCUS|*FILE
+ORDERS|*FILE
+ORDJOIN|*FILE
+ORDLINE|*FILE
+PRDBYDESC|*FILE
+PRODUCT|*FILE
+QRES01|*FILE
+QRES02|*FILE
+QRES03|*FILE
+QRES04|*FILE
+QRES05|*FILE
+QRES06|*FILE
+QRES07|*FILE
+QRES08|*FILE
+QRES09|*FILE
+QRES10|*FILE
+QRES11|*FILE
+QRES12|*FILE
+QSQLSRC|*FILE
+QSTJRN|*JRN
+QSTRCV0001|*JRNRCV
+QSTRCV0002|*JRNRCV
+QSTRCV0003|*JRNRCV
+RLALOG|*FILE
+RLATEST|*PGM
+TYPES|*FILE
+ZZJLOG|*PGM
+ZZSPL|*FILE
+ZZSPLF|*PGM
+ZZSRC|*FILE
+(64 rows)
+
+-- spooled files of the account created today: SELECT SPOOLED_FILE_NAME, JOB_NAME, FILE_NUMBER, CREATE_TIMESTAMP, OUTPUT_QUEUE_NAME FROM QSYS2.OUTPUT_QUEUE_ENTRIES_BASIC WHERE USER_NAME = CURRENT USER AND CREATE_TIMESTAMP > CURRENT TIMESTAMP - 4 HOURS ORDER BY CREATE_TIMESTAMP
+SPOOLED_FILE_NAME|JOB_NAME|FILE_NUMBER|CREATE_TIMESTAMP|OUTPUT_QUEUE_NAME
+QPJOBLOG|181925/{user}/QPADEV001T|1|2026-10-31 00:28:43.181124|QEZJOBLOG
+QPJOBLOG|181936/{user}/QPADEV0023|1|2026-10-31 00:29:25.878363|QEZJOBLOG
+QPJOBLOG|181955/{user}/QPADEV001T|1|2026-10-31 00:29:51.107032|QEZJOBLOG
+QPJOBLOG|181968/{user}/QPADEV0024|1|2026-10-31 00:31:10.279594|QEZJOBLOG
+QPJOBLOG|182047/{user}/QPADEV001G|1|2026-10-31 00:36:39.598938|QEZJOBLOG
+ZZSPLF|989066/{user}/QPRTJOB|7865|2026-10-31 00:44:57.625666|{user}
+ZZJLOG|989066/{user}/QPRTJOB|7866|2026-10-31 00:44:57.951151|{user}
+QPJOBLOG|182920/{user}/QPADEV000F|1|2026-10-31 00:56:03.673196|QEZJOBLOG
+QPJOBLOG|183433/{user}/QPADEV000F|1|2026-10-31 01:07:48.623930|QEZJOBLOG
+QPJOBLOG|183963/{user}/QPADEV000F|1|2026-10-31 01:33:24.542747|QEZJOBLOG
+QPJOBLOG|186082/{user}/QPADEV000F|1|2026-10-31 01:34:34.563463|QEZJOBLOG
+QPJOBLOG|186190/{user}/QPADEV000F|1|2026-10-31 01:35:50.274435|QEZJOBLOG
+QPJOBLOG|186279/{user}/QPADEV000S|1|2026-10-31 01:37:08.237671|QEZJOBLOG
+QPJOBLOG|186382/{user}/QPADEV000S|1|2026-10-31 01:38:49.712134|QEZJOBLOG
+(14 rows)
+  SQL0462 Information 10 QSQRUN2->QSQRUN2 | Procedure or user-defined function OUTPUT_QUEUE_ENTRIES in QSYS2 returned a warning SQLSTATE.

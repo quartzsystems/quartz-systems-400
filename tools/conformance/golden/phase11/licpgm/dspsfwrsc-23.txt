@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   22       2904    ObjectConnect                                       
+ 5770SS1   22       2905    ObjectConnect                                       
+ 5770SS1   22       2909    ObjectConnect                                       
+ 5770SS1   22       2912    ObjectConnect                                       
+ 5770SS1   22       2913    ObjectConnect                                       
+ 5770SS1   22       2914    ObjectConnect                                       
+ 5770SS1   22       2922    ObjectConnect                                       
+ 5770SS1   22       2923    ObjectConnect                                       
+ 5770SS1   22       2924    ObjectConnect                                       
+ 5770SS1   22       2925    ObjectConnect                                       
+ 5770SS1   22       2926    ObjectConnect                                       
+ 5770SS1   22       2928    ObjectConnect                                       
+ 5770SS1   22       2929    ObjectConnect                                       
+ 5770SS1   22       2930    ObjectConnect                                       
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

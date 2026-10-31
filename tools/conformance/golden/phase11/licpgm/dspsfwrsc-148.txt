@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   44       2926    Compiler - OPM COBOL                                
+ 5770WDS   44       2928    Compiler - OPM COBOL                                
+ 5770WDS   44       2929    Compiler - OPM COBOL                                
+ 5770WDS   44       2930    Compiler - OPM COBOL                                
+ 5770WDS   44       2931    Compiler - OPM COBOL                                
+ 5770WDS   44       2932    Compiler - OPM COBOL                                
+ 5770WDS   44       2933    Compiler - OPM COBOL                                
+ 5770WDS   44       2937    Compiler - OPM COBOL                                
+ 5770WDS   44       2938    Compiler - OPM COBOL                                
+ 5770WDS   44       2939    Compiler - OPM COBOL                                
+ 5770WDS   44       2940    Compiler - OPM COBOL                                
+ 5770WDS   44       2942    Compiler - OPM COBOL                                
+ 5770WDS   44       2954    Compiler - OPM COBOL                                
+ 5770WDS   44       2956    Compiler - OPM COBOL                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

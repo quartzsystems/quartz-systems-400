@@ -1,0 +1,24 @@
+ CMDTAP                          Tape Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Tape Cartridge                                          ADDTAPCTG  
+      2. Change Ctl Desc (Tape)                                      CHGCTLTAP  
+      3. Change Device Desc (Tape)                                   CHGDEVTAP  
+      4. Change Tape Cartridge                                       CHGTAPCTG  
+      5. Check Tape                                                  CHKTAP     
+      6. Copy From Tape                                              CPYFRMTAP  
+      7. Copy To Tape                                                CPYTOTAP   
+      8. Create Ctl Desc (Tape)                                      CRTCTLTAP  
+      9. Create Device Desc (Tape)                                   CRTDEVTAP  
+     10. Create Tape Category                                        CRTTAPCGY  
+     11. Delete Tape Category                                        DLTTAPCGY  
+     12. Dump Tape                                                   DMPTAP     
+     13. Display Tape                                                DSPTAP     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

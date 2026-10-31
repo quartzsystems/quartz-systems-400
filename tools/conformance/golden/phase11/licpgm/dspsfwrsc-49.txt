@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5722IP1   *BASE    2904    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2905    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2909    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2912    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2913    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2914    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2922    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2923    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2924    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2925    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2926    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2928    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2929    IBM Infoprint Server for iSeries                    
+ 5722IP1   *BASE    2930    IBM Infoprint Server for iSeries                    
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

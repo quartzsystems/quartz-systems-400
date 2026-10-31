@@ -1,0 +1,24 @@
+ RESTORE                            Restore                                     
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+   Restore from Different Systems                                               
+     50. Restore from System/36 format                                          
+                                                                                
+   Related Commands                                                             
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+                                                                                

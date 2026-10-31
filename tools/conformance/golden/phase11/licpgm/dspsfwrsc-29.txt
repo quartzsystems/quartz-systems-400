@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   23       2979    OptiConnect                                         
+ 5770SS1   23       2980    OptiConnect                                         
+ 5770SS1   23       2981    OptiConnect                                         
+ 5770SS1   23       2984    OptiConnect                                         
+ 5770SS1   23       2986    OptiConnect                                         
+ 5770SS1   23       2987    OptiConnect                                         
+ 5770SS1   23       2989    OptiConnect                                         
+ 5770SS1   23       2992    OptiConnect                                         
+ 5770SS1   23       2994    OptiConnect                                         
+ 5770SS1   23       2995    OptiConnect                                         
+ 5770SS1   23       2996    OptiConnect                                         
+ 5770SS1   23       2998    OptiConnect                                         
+ 5770SS1   26       5107    DB2 Symmetric Multiprocessing                       
+ 5770SS1   27       5108    DB2 Multisystem                                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

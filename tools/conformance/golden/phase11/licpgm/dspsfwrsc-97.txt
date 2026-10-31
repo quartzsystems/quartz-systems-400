@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770QU1   *BASE    2976    IBM Query for i                                     
+ 5770QU1   *BASE    2978    IBM Query for i                                     
+ 5770QU1   *BASE    2979    IBM Query for i                                     
+ 5770QU1   *BASE    2980    IBM Query for i                                     
+ 5770QU1   *BASE    2981    IBM Query for i                                     
+ 5770QU1   *BASE    2984    IBM Query for i                                     
+ 5770QU1   *BASE    2986    IBM Query for i                                     
+ 5770QU1   *BASE    2987    IBM Query for i                                     
+ 5770QU1   *BASE    2989    IBM Query for i                                     
+ 5770QU1   *BASE    2992    IBM Query for i                                     
+ 5770QU1   *BASE    2994    IBM Query for i                                     
+ 5770QU1   *BASE    2995    IBM Query for i                                     
+ 5770QU1   *BASE    2996    IBM Query for i                                     
+ 5770QU1   *BASE    2998    IBM Query for i                                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

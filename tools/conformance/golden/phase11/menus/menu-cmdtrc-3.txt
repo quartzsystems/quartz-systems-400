@@ -1,0 +1,24 @@
+ CMDTRC                          Trace Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     28. Start Service Job                                           STRSRVJOB  
+     29. Start Trace                                                 STRTRC     
+     30. Trace TCP/IP Route                                          TRACEROUTE 
+     31. Trace ASP Balance                                           TRCASPBAL  
+     32. Trace Connection                                            TRCCNN     
+     33. Trace CPI Communications                                    TRCCPIC    
+     34. Trace ICF                                                   TRCICF     
+     35. Trace Internal                                              TRCINT     
+     36. Trace Job                                                   TRCJOB     
+     37. Trace REXX                                                  TRCREX     
+     38. Trace TCP/IP Application                                    TRCTCPAPP  
+     39. Trace TCP/IP Route                                          TRCTCPRTE  
+     40. Work with Traces                                            WRKTRC     
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

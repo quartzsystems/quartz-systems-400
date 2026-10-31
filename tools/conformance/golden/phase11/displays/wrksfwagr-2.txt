@@ -1,0 +1,24 @@
+                         Work with Software Agreements                          
+                                                             System:   SYSNAME  
+ Currently selected language :   English                                        
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display   6=Print                                                          
+                                                                                
+      Licensed  Product                                                         
+ Opt  Program   Option   Description                                            
+      5770AF1    *BASE   IBM AFP Utilities                                      
+      5733ARE    *BASE   IBM Application Runtime Expert for i                   
+      5761CM1    *BASE   Communications Utilities                               
+      5770DFH    *BASE   CICS TS for i                                          
+      5770DG1    *BASE   IBM HTTP Server for i                                  
+      5722IP1    *BASE   IBM Infoprint Server for iSeries                       
+      5770JV1    *BASE   IBM Developer Kit for Java                             
+      5770MG1    *BASE   IBM Managed System Services for i                      
+      5770NAE    *BASE   Network Authentication Enablement                      
+      5770PT1    *BASE   IBM Performance Tools for i - Base                     
+      5770QU1    *BASE   IBM Query for i                                        
+                                                                        More... 
+ F3=Exit   F11=Display release   F12=Cancel   F13=Select language               
+ F19=Display trademarks          F22=Restore software agreements                
+                                                                                

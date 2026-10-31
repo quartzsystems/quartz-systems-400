@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770ST1   *BASE    2938    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2939    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2940    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2942    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2954    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2956    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2957    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2958    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2961    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2962    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2963    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2966    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2972    IBM DB2 Query Manager and SQL Development Kit for i 
+ 5770ST1   *BASE    2974    IBM DB2 Query Manager and SQL Development Kit for i 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

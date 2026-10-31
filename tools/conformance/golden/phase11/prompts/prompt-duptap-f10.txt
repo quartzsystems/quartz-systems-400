@@ -1,0 +1,24 @@
+                             Duplicate Tape (DUPTAP)                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From device  . . . . . . . . . . FROMDEV                                       
+ To device  . . . . . . . . . . . TODEV                                         
+ From sequence number:            FROMSEQNBR                                    
+   Starting file sequence number                 *FIRST                         
+   Ending file sequence number  .                *LAST                          
+ To sequence number . . . . . . . TOSEQNBR       *FROMSEQ                       
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ From volume identifier . . . . . FROMVOL        *MOUNTED                       
+                           + for more values                                    
+ To volume identifier . . . . . . TOVOL          *MOUNTED                       
+                           + for more values                                    
+ Tape density . . . . . . . . . . TODENSITY      *DEVTYPE                       
+ Data compaction  . . . . . . . . COMPACT        *FROMFILE                      
+ Files to duplicate . . . . . . . FILES          *ALL                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FROMDEV required.                                                  + 

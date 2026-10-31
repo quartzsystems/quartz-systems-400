@@ -1,0 +1,23 @@
+# Phase 11: WRKPTFGRP. A display command: shown, paged with Page Down and
+# left with F3; the only option typed is 5 (display). No `continue`:
+# a refused command ends the run and the refusal is the snapshot.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrkptfgrp
+key enter
+settle 3000
+snap wrkptfgrp
+key pgdn
+settle 1000
+snap wrkptfgrp-2
+key pgdn
+settle 1000
+snap wrkptfgrp-3
+key pgdn
+settle 1000
+snap wrkptfgrp-4
+key f3
+wait "Command Entry"

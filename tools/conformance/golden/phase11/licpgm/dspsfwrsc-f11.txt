@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                   Feature                                             
+    ID     Option  Feature   Type    Library     Release                        
+ AJSCB01   *BASE    5050     *CODE   ##MACH#B    V7R5M0 L00                     
+ AJSDH00   *BASE    5050     *CODE   ##MACH#B    V7R5M0 L00                     
+ AJSDJ01   *BASE    5050     *CODE   ##MACH#B    V7R5M0 L00                     
+ AJSGK01   *BASE    5050     *CODE   ##MACH#B    V7R5M0 L00                     
+ AJSGM01   *BASE    5050     *CODE   ##MACH#B    V7R5M0 L00                     
+ AJSLP01   *BASE    5050     *CODE   ##MACH#B    V7R5M0 L00                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display descriptions   F12=Cancel   F19=Display trademarks       
+                                                                                
+                                                                                

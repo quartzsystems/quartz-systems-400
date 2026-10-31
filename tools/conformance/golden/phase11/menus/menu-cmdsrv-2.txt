@@ -1,0 +1,24 @@
+ CMDSRV                         Service Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Display Service Attributes                                  DSPSRVA    
+     15. Display Service Agent                                       DSPSRVAGT  
+     16. Display Service Status                                      DSPSRVSTS  
+     17. End Agent Services                                          ENDAGTSRV  
+     18. End Service Agent                                           ENDSRVAGT  
+     19. End Service Job                                             ENDSRVJOB  
+     20. Print Error Log                                             PRTERRLOG  
+     21. Print Internal Data                                         PRTINTDTA  
+     22. Remove Service Table Entry                                  RMVSRVTBLE 
+     23. Retrieve Service Agent                                      RTVSRVAGT  
+     24. Send Service Request                                        SNDSRVRQS  
+     25. Start Agent Services                                        STRAGTSRV  
+     26. Start Debug                                                 STRDBG     
+     27. Start Service Agent                                         STRSRVAGT  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   32       2912    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2913    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2914    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2922    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2923    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2924    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2925    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2926    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2928    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2929    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2930    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2931    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2932    Compiler - System/36 Compatible RPG II              
+ 5770WDS   32       2933    Compiler - System/36 Compatible RPG II              
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

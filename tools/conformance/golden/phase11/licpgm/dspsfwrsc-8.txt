@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   1        2995    Extended Base Support                               
+ 5770SS1   1        2996    Extended Base Support                               
+ 5770SS1   1        2998    Extended Base Support                               
+ 5770SS1   2        5050    Online Information                                  
+ 5770SS1   2        2902    Online Information                                  
+ 5770SS1   2        2903    Online Information                                  
+ 5770SS1   2        2904    Online Information                                  
+ 5770SS1   2        2905    Online Information                                  
+ 5770SS1   2        2909    Online Information                                  
+ 5770SS1   2        2912    Online Information                                  
+ 5770SS1   2        2913    Online Information                                  
+ 5770SS1   2        2914    Online Information                                  
+ 5770SS1   2        2922    Online Information                                  
+ 5770SS1   2        2923    Online Information                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

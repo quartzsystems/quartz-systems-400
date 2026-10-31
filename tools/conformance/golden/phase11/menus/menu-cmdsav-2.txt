@@ -1,0 +1,24 @@
+ CMDSAV                          Save Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     17. Save Object                                                 SAVOBJ     
+                                                                                
+     20. Save Performance Collection                                 SAVPFRCOL  
+     21. Save Restore                                                SAVRST     
+     22. Save Restore Configuration                                  SAVRSTCFG  
+     23. Save Restore Changed Objects                                SAVRSTCHG  
+     24. Save Restore Doc/Lib Object                                 SAVRSTDLO  
+     25. Save Restore Library                                        SAVRSTLIB  
+     26. Save Restore Object                                         SAVRSTOBJ  
+                                                                                
+     28. Save Save File Data                                         SAVSAVFDTA 
+     29. Save Security Data                                          SAVSECDTA  
+     30. Save System                                                 SAVSYS     
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

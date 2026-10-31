@@ -1,0 +1,24 @@
+                           Display Saved File Members                           
+                                                                                
+ File  . . . . . . . . :   CUSTOMER                                             
+ File type . . . . . . :   PF                                                   
+ Members saved . . . . :   1                                                    
+                                                                                
+ Member       Member       Member       Member       Member       Member        
+ CUSTOMER                                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

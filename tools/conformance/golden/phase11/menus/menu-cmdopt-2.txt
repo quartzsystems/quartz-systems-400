@@ -1,0 +1,24 @@
+ CMDOPT                         Optical Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Display Optical Server                                      DSPOPTSVR  
+     15. Duplicate Optical                                           DUPOPT     
+     16. Initialize Optical                                          INZOPT     
+     17. Load Optical Firmware                                       LODOPTFMW  
+     18. Reclaim Optical                                             RCLOPT     
+     19. Remove Optical Cartridge                                    RMVOPTCTG  
+     20. Remove Optical Server                                       RMVOPTSVR  
+     21. Verify Optical                                              VFYOPT     
+     22. Work with Held Optical Files                                WRKHLDOPTF 
+     23. Work with Media Library Status                              WRKMLBSTS  
+     24. Work with Optical Directories                               WRKOPTDIR  
+     25. Work with Optical Files                                     WRKOPTF    
+     26. Work with Optical Volumes                                   WRKOPTVOL  
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   34       2966    Compiler - RPG/400                                  
+ 5770WDS   34       2972    Compiler - RPG/400                                  
+ 5770WDS   34       2974    Compiler - RPG/400                                  
+ 5770WDS   34       2975    Compiler - RPG/400                                  
+ 5770WDS   34       2976    Compiler - RPG/400                                  
+ 5770WDS   34       2978    Compiler - RPG/400                                  
+ 5770WDS   34       2979    Compiler - RPG/400                                  
+ 5770WDS   34       2980    Compiler - RPG/400                                  
+ 5770WDS   34       2981    Compiler - RPG/400                                  
+ 5770WDS   34       2984    Compiler - RPG/400                                  
+ 5770WDS   34       2986    Compiler - RPG/400                                  
+ 5770WDS   34       2987    Compiler - RPG/400                                  
+ 5770WDS   34       2989    Compiler - RPG/400                                  
+ 5770WDS   34       2992    Compiler - RPG/400                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+ CMDPTF                  Program Temporary Fix Commands                         
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Apply Program Temporary Fix                                 APYPTF     
+      2. Copy Program Temporary Fix                                  CPYPTF     
+      3. Copy PTF Cover Letter                                       CPYPTFCVR  
+      4. Copy PTF Group                                              CPYPTFGRP  
+      5. Copy PTF to Save File                                       CPYPTFSAVF 
+      6. Create Firmware Product                                     CRTFMWPRD  
+      7. Create Program Temporary Fix                                CRTPTF     
+      8. Create PTF Package                                          CRTPTFPKG  
+      9. Delete Program Temporary Fix                                DLTPTF     
+     10. Display Firmware Status                                     DSPFMWSTS  
+     11. Display Program Temporary Fix                               DSPPTF     
+     12. Display PTF Apply Information                               DSPPTFAPYI 
+     13. Display PTF Cover Letter                                    DSPPTFCVR  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

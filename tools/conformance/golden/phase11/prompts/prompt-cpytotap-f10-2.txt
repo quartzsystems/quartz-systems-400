@@ -1,0 +1,24 @@
+                             Copy To Tape (CPYTOTAP)                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Volume identifier  . . . . . . . TOVOL          *TAPF                          
+                           + for more values                                    
+ Block length . . . . . . . . . . TOBLKLEN       *TAPF                          
+ Record block type  . . . . . . . TORCDBLK       *TAPF                          
+ File expiration date . . . . . . TOEXPDATE      *TAPF                          
+ Number of records to copy  . . . NBRRCDS        *END                           
+ Data compaction  . . . . . . . . COMPACT        *TAPF                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FROMFILE required.                                                   

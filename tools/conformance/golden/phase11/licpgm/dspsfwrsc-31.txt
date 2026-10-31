@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   30       2928    Qshell                                              
+ 5770SS1   30       2929    Qshell                                              
+ 5770SS1   30       2930    Qshell                                              
+ 5770SS1   30       2931    Qshell                                              
+ 5770SS1   30       2932    Qshell                                              
+ 5770SS1   30       2933    Qshell                                              
+ 5770SS1   30       2937    Qshell                                              
+ 5770SS1   30       2938    Qshell                                              
+ 5770SS1   30       2939    Qshell                                              
+ 5770SS1   30       2940    Qshell                                              
+ 5770SS1   30       2942    Qshell                                              
+ 5770SS1   30       2954    Qshell                                              
+ 5770SS1   30       2956    Qshell                                              
+ 5770SS1   30       2957    Qshell                                              
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -145,6 +145,16 @@ public class Save {
                         sqlx(q.toString(), p[0].equals("sqlx"));
                         break;
                     }
+                    case "dltsplf": {
+                        StringBuilder q = new StringBuilder();
+                        while (!lines.get(++i).strip().equals(";;")) q.append(sub(lines.get(i))).append(' ');
+                        List<String> cmds = new ArrayList<>();
+                        try (Statement st = db.createStatement(); ResultSet r = st.executeQuery(q.toString())) {
+                            while (r.next()) cmds.add("DLTSPLF FILE(" + r.getString(1).strip() + ") JOB(" + r.getString(2).strip() + ") SPLNBR(" + r.getString(3).strip() + ")");
+                        }
+                        for (String c : cmds) xcl(db, c, true, "");
+                        break;
+                    }
                     case "splf":
                         splf(p[1], p[2]);
                         break;

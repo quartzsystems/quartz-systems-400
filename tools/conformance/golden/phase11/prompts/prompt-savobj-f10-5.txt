@@ -1,0 +1,24 @@
+                              Save Object (SAVOBJ)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Select:                          SELECT                                        
+   Include or omit  . . . . . . .                                               
+   Object . . . . . . . . . . . .                *ALL                           
+     Library  . . . . . . . . . .                  *ALL                         
+   Object type  . . . . . . . . .                *ALL                           
+   Object attribute . . . . . . .                *ALL                           
+   File member  . . . . . . . . .                *ALL                           
+                           + for more values                                    
+ ASP device . . . . . . . . . . . ASPDEV         *                              
+ Output . . . . . . . . . . . . . OUTPUT         *NONE                          
+ File to receive output . . . . . OUTFILE                                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Output member options:           OUTMBR                                        
+   Member to receive output . . .                *FIRST                         
+   Replace or add records . . . .                *REPLACE                       
+ Type of output information . . . INFTYPE        *OBJ                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

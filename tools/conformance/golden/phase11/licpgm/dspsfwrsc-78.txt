@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770MG1   *BASE    2922    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2923    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2924    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2925    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2926    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2928    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2929    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2931    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2932    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2933    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2937    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2939    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2940    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2942    IBM Managed System Services for i                   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

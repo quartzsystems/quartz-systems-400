@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770DFH   1        2981    CICS Sample Programs                                
+ 5770DFH   1        2984    CICS Sample Programs                                
+ 5770DFH   1        2986    CICS Sample Programs                                
+ 5770DFH   1        2987    CICS Sample Programs                                
+ 5770DFH   1        2989    CICS Sample Programs                                
+ 5770DFH   1        2992    CICS Sample Programs                                
+ 5770DFH   1        2994    CICS Sample Programs                                
+ 5770DFH   1        2995    CICS Sample Programs                                
+ 5770DFH   1        2996    CICS Sample Programs                                
+ 5770DFH   1        2998    CICS Sample Programs                                
+ 5770DG1   *BASE    5050    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2909    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2922    IBM HTTP Server for i                               
+ 5770DG1   *BASE    2923    IBM HTTP Server for i                               
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

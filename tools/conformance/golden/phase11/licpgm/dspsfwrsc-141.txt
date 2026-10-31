@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   42       2929    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2930    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2931    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2932    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2933    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2937    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2938    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2939    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2940    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2942    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2954    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2956    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2957    Compiler - System/36 Compatible COBOL               
+ 5770WDS   42       2958    Compiler - System/36 Compatible COBOL               
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+ CMDOPT                         Optical Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Optical Cartridge                                       ADDOPTCTG  
+      2. Add Optical Server                                          ADDOPTSVR  
+      3. Change Device Desc (Media Lib)                              CHGDEVMLB  
+      4. Change Device Desc (Optical)                                CHGDEVOPT  
+      5. Change Optical Attributes                                   CHGOPTA    
+      6. Change Optical Volume                                       CHGOPTVOL  
+      7. Check Optical Volume                                        CHKOPTVOL  
+      8. Copy Optical                                                CPYOPT     
+      9. Create Device Desc (Media Lib)                              CRTDEVMLB  
+     10. Create Device Desc (Optical)                                CRTDEVOPT  
+     11. Convert Optical Backup                                      CVTOPTBKU  
+     12. Display Optical                                             DSPOPT     
+     13. Display Optical Locks                                       DSPOPTLCK  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

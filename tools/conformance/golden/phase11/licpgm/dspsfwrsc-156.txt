@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770WDS   52       2942    Compiler - ILE C++                                  
+ 5770WDS   52       2954    Compiler - ILE C++                                  
+ 5770WDS   52       2956    Compiler - ILE C++                                  
+ 5770WDS   52       2957    Compiler - ILE C++                                  
+ 5770WDS   52       2958    Compiler - ILE C++                                  
+ 5770WDS   52       2961    Compiler - ILE C++                                  
+ 5770WDS   52       2962    Compiler - ILE C++                                  
+ 5770WDS   52       2963    Compiler - ILE C++                                  
+ 5770WDS   52       2966    Compiler - ILE C++                                  
+ 5770WDS   52       2972    Compiler - ILE C++                                  
+ 5770WDS   52       2974    Compiler - ILE C++                                  
+ 5770WDS   52       2975    Compiler - ILE C++                                  
+ 5770WDS   52       2976    Compiler - ILE C++                                  
+ 5770WDS   52       2978    Compiler - ILE C++                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

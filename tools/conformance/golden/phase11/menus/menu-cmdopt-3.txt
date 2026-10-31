@@ -1,0 +1,24 @@
+ CMDOPT                         Optical Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Related Command Menus                                                        
+     27. Media Library Commands                                      CMDMLB     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+                           Save Configuration (SAVCFG)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device . . . . . . . . . . . . . DEV                                           
+                           + for more values                                    
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+                                                                                
+                           + for more values                                    
+                                                                                
+ Sequence number  . . . . . . . . SEQNBR         *END                           
+ File expiration date . . . . . . EXPDATE        *PERM                          
+ End of media option  . . . . . . ENDOPT         *REWIND                        
+ Use optimum block  . . . . . . . USEOPTBLK      *YES                           
+ Save file  . . . . . . . . . . . SAVF                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Optical file . . . . . . . . . . OPTFILE        '*'                            
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter DEV required.                                                        

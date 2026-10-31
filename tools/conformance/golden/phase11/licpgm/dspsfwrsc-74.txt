@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770JV1   *BASE    2912    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2913    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2914    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2922    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2923    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2924    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2925    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2926    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2928    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2929    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2930    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2931    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2932    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2933    IBM Developer Kit for Java                          
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

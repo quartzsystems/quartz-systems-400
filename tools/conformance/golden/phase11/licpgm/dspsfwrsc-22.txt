@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   14       2981    GDDM                                                
+ 5770SS1   14       2984    GDDM                                                
+ 5770SS1   14       2986    GDDM                                                
+ 5770SS1   14       2987    GDDM                                                
+ 5770SS1   14       2989    GDDM                                                
+ 5770SS1   14       2992    GDDM                                                
+ 5770SS1   14       2994    GDDM                                                
+ 5770SS1   14       2995    GDDM                                                
+ 5770SS1   14       2996    GDDM                                                
+ 5770SS1   14       2998    GDDM                                                
+ 5770SS1   18       5103    Media and Storage Extensions                        
+ 5770SS1   21       5050    Extended NLS Support                                
+ 5770SS1   22       5050    ObjectConnect                                       
+ 5770SS1   22       2903    ObjectConnect                                       
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

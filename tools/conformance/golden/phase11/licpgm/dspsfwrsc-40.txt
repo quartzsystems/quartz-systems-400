@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   33       2981    Portable App Solutions Environment                  
+ 5770SS1   33       2984    Portable App Solutions Environment                  
+ 5770SS1   33       2986    Portable App Solutions Environment                  
+ 5770SS1   33       2987    Portable App Solutions Environment                  
+ 5770SS1   33       2989    Portable App Solutions Environment                  
+ 5770SS1   33       2992    Portable App Solutions Environment                  
+ 5770SS1   33       2994    Portable App Solutions Environment                  
+ 5770SS1   33       2995    Portable App Solutions Environment                  
+ 5770SS1   33       2996    Portable App Solutions Environment                  
+ 5770SS1   33       2998    Portable App Solutions Environment                  
+ 5770SS1   34       5050    Digital Certificate Manager                         
+ 5770SS1   34       2902    Digital Certificate Manager                         
+ 5770SS1   34       2903    Digital Certificate Manager                         
+ 5770SS1   34       2904    Digital Certificate Manager                         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

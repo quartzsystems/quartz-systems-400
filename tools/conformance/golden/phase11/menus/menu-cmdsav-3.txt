@@ -1,0 +1,24 @@
+ CMDSAV                          Save Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     32. Save System Information                                     SAVSYSINF  
+     33. Save S/36 File                                              SAVS36F    
+     34. Save S/36 Library Members                                   SAVS36LIBM 
+     35. Start Save Synchronization                                  STRSAVSYNC 
+                                                                                
+   Related Command Menus                                                        
+     36. Optical Commands                                            CMDOPT     
+     37. Save File Commands                                          CMDSAVF    
+     38. Save and Restore Commands                                   CMDSAVRST  
+     39. Tape Commands                                               CMDTAP     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

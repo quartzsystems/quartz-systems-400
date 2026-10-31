@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   USERNAMEB                                      
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Text                                                
+      QRES10      *FILE                                                         
+      QRES11      *FILE                                                         
+      QRES12      *FILE                                                         
+      QSQLSRC     *FILE                                                         
+      RLALOG      *FILE                                                         
+      TYPES       *FILE                                                         
+      QSTRCV0001  *JRNRCV                                                       
+      QSTRCV0002  *JRNRCV                                                       
+      QSTRCV0003  *JRNRCV                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                

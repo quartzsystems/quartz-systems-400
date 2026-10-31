@@ -1,0 +1,24 @@
+                           Initialize Optical (INZOPT)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+                                                                                
+ New volume identifier  . . . . . NEWVOL         *VOL                           
+                                                                                
+ Device . . . . . . . . . . . . . DEV                                           
+ Volume full threshold  . . . . . THRESHOLD      *CALC                          
+ Check for an active volume . . . CHECK          *YES                           
+ End of media option  . . . . . . ENDOPT         *LEAVE                         
+ Clear  . . . . . . . . . . . . . CLEAR          *NO                            
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Volume type  . . . . . . . . . . TYPE           *PRIMARY                       
+ Coded character set ID . . . . . CCSID          *CALC                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

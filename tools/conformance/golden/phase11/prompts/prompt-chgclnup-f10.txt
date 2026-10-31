@@ -1,0 +1,24 @@
+                            Change Cleanup (CHGCLNUP)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Allow cleanup  . . . . . . . . . ALWCLNUP       *YES                           
+ Time cleanup starts each day . . STRTIME        'HH:MM:SS'                     
+ Number of days to keep:          USRMSG                                        
+   User messages  . . . . . . . .                31                             
+   System and workstation msgs  . SYSMSG         31                             
+   Critical system messages . . . CRITSYSMSG     *KEEP                          
+   Job logs and system output . . SYSPRT         14                             
+   System journals and logs . . . SYSLOG         14                             
+ Job queue  . . . . . . . . . . . JOBQ           QCTL                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Journal receiver size  . . . . . JRNRCVSIZ      0000100000                     
+                                                                                
+                            Additional Parameters                               
+                                                                                
+   Office calendar items  . . . . CALITM         30                             
+ Run priority . . . . . . . . . . RUNPTY         55                             
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

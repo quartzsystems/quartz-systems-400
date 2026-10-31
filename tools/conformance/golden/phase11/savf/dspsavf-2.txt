@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   USERNAMEB                                      
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Attribute   Owner          Size (K)  Data           
+      DCL013      *PGM      RPGLE       USERNAME            192  YES            
+      DCL014      *PGM      RPGLE       USERNAME            204  YES            
+      DCL015      *PGM      RPGLE       USERNAME            136  YES            
+      DCL016      *PGM      RPGLE       USERNAME            120  YES            
+      DCL017      *PGM      RPGLE       USERNAME            108  YES            
+      DCL018      *PGM      RPGLE       USERNAME            108  YES            
+      DCL019      *PGM      RPGLE       USERNAME             96  YES            
+      DCL020      *PGM      RPGLE       USERNAME             96  YES            
+      DCL022      *PGM      RPGLE       USERNAME            100  YES            
+      FEX010      *PGM      RPGLE       USERNAME            120  YES            
+      RLATEST     *PGM      RPGLE       USERNAME            596  YES            
+      EVENTS      *FILE     PF          USERNAME            128  YES            
+      FFD         *FILE     PF          USERNAME            228  YES            
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                

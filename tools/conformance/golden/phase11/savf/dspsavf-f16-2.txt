@@ -1,0 +1,24 @@
+                              Display Save Header                               
+                                                                                
+ Data saved:                                                                    
+   Library  . . . . . . . . . . . . . . :   USERNAMEB                           
+   ASP  . . . . . . . . . . . . . . . . :   1                                   
+   System name  . . . . . . . . . . . . :   PUB400                              
+   System serial number . . . . . . . . :   SERIAL                              
+   Private authorities  . . . . . . . . :   No                                  
+   Number of objects saved  . . . . . . :   61                                  
+   Members  . . . . . . . . . . . . . . :   34                                  
+   Access paths . . . . . . . . . . . . :   0                                   
+   Spooled files  . . . . . . . . . . . :   0                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

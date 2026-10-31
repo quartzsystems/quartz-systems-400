@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > go save                                                                   
+    > go restore                                                                
+    > go backup                                                                 
+    > go cleanup                                                                
+    > go problem                                                                
+    > go problem2                                                               
+    > go ptf                                                                    
+    > go service                                                                
+      Not authorized to object SERVICE in QSYS.                                 
+      Menu SERVICE in library *LIBL not displayed.                              
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> go service                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

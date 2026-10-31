@@ -1,0 +1,24 @@
+                        Save Changed Objects (SAVCHGOBJ)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Clear  . . . . . . . . . . . . . CLEAR          *NONE                          
+ Object pre-check . . . . . . . . PRECHK         *NO                            
+ Save active  . . . . . . . . . . SAVACT         *NO                            
+ Save active wait time:           SAVACTWAIT                                    
+   Object locks . . . . . . . . .                120                            
+   Pending record changes . . . .                *LOCKWAIT                      
+   Other pending changes  . . . .                *LOCKWAIT                      
+ Save active message queue  . . . SAVACTMSGQ     *NONE                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Synchronization ID . . . . . . . SYNCID         *NONE                          
+ Save access paths  . . . . . . . ACCPTH         *SYSVAL                        
+ Save file data . . . . . . . . . SAVFDTA        *YES                           
+ Spooled file data  . . . . . . . SPLFDTA        *NONE                          
+ Queue data . . . . . . . . . . . QDTA           *NONE                          
+ Private authorities  . . . . . . PVTAUT         *NO                            
+ Data compression . . . . . . . . DTACPR         *DEV                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

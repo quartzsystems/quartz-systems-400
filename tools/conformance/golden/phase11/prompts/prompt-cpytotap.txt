@@ -1,0 +1,24 @@
+                             Copy To Tape (CPYTOTAP)                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From file  . . . . . . . . . . . FROMFILE                                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Tape file  . . . . . . . . . . . TOFILE                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ From member  . . . . . . . . . . FROMMBR        *FIRST                         
+ File sequence number . . . . . . TOSEQNBR       *TAPF                          
+ Tape label . . . . . . . . . . . TOLABEL        *FROMMBR                       
+ Device . . . . . . . . . . . . . TODEV          *TAPF                          
+                           + for more values                                    
+ Copy to reels:                   TOREELS                                       
+   Label processing type  . . . .                *TAPF                          
+ Record length  . . . . . . . . . TORCDLEN       *FROMFILE                      
+ End of tape option . . . . . . . TOENDOPT       *TAPF                          
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

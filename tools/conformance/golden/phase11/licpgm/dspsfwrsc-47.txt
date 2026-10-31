@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   35       2979    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2980    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2981    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2984    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2986    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2987    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2989    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2992    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2994    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2995    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2996    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2998    CCA Cryptographic Service Provider                  
+ 5770SS1   36       5112    PSF for IBM i 1-55 IPM Printer Support              
+ 5770SS1   37       5113    PSF for IBM i 1-100 IPM Printer Support             
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

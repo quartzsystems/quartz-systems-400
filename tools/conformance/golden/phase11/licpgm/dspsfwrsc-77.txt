@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770JV1   *BASE    2996    IBM Developer Kit for Java                          
+ 5770JV1   *BASE    2998    IBM Developer Kit for Java                          
+ 5770JV1   16       5116    Java SE 8 32 bit                                    
+ 5770JV1   17       5117    Java SE 8 64 bit                                    
+ 5770JV1   19       5119    Java SE 11 64 bit                                   
+ 5770JV1   20       5120    Java SE 17 64 bit                                   
+ 5770MG1   *BASE    5050    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2902    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2903    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2904    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2909    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2912    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2913    IBM Managed System Services for i                   
+ 5770MG1   *BASE    2914    IBM Managed System Services for i                   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

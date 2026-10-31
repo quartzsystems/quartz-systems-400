@@ -1,0 +1,24 @@
+                              Save Object (SAVOBJ)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Save active wait time:           SAVACTWAIT                                    
+   Object locks . . . . . . . . .                120                            
+   Pending record changes . . . .                *LOCKWAIT                      
+   Other pending changes  . . . .                *LOCKWAIT                      
+ Save active message queue  . . . SAVACTMSGQ     *NONE                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Synchronization ID . . . . . . . SYNCID         *NONE                          
+ File member:                     FILEMBR                                       
+   File . . . . . . . . . . . . .                *ALL                           
+   Member . . . . . . . . . . . .                *ALL                           
+                           + for more values                                    
+                           + for more values                                    
+ Save access paths  . . . . . . . ACCPTH         *SYSVAL                        
+ Save file data . . . . . . . . . SAVFDTA        *YES                           
+ Spooled file data  . . . . . . . SPLFDTA        *NONE                          
+ Queue data . . . . . . . . . . . QDTA           *NONE                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

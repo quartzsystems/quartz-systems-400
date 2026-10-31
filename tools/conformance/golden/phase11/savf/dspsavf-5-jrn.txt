@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   USERNAMEB                                      
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Text                                                
+      USERNAMEB   *LIB      USERNAME (for backup data)                          
+  5   QSTJRN      *JRN                                                          
+      DCL001      *PGM                                                          
+      DCL002      *PGM                                                          
+      DCL003      *PGM                                                          
+      DCL004      *PGM                                                          
+      DCL005      *PGM                                                          
+      DCL006      *PGM                                                          
+      DCL007      *PGM                                                          
+      DCL008      *PGM                                                          
+      DCL010      *PGM                                                          
+      DCL011      *PGM                                                          
+      DCL012      *PGM                                                          
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+ Option 5 not valid for specified entry.                                        

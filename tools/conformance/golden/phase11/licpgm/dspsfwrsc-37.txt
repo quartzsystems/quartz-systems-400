@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   31       2996    Domain Name System                                  
+ 5770SS1   31       2998    Domain Name System                                  
+ 5770SS1   33       5111    Portable App Solutions Environment                  
+ 5770SS1   33       2902    Portable App Solutions Environment                  
+ 5770SS1   33       2903    Portable App Solutions Environment                  
+ 5770SS1   33       2904    Portable App Solutions Environment                  
+ 5770SS1   33       2905    Portable App Solutions Environment                  
+ 5770SS1   33       2909    Portable App Solutions Environment                  
+ 5770SS1   33       2912    Portable App Solutions Environment                  
+ 5770SS1   33       2913    Portable App Solutions Environment                  
+ 5770SS1   33       2914    Portable App Solutions Environment                  
+ 5770SS1   33       2922    Portable App Solutions Environment                  
+ 5770SS1   33       2923    Portable App Solutions Environment                  
+ 5770SS1   33       2924    Portable App Solutions Environment                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

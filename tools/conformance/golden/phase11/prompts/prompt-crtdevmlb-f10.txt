@@ -1,0 +1,24 @@
+                   Create Device Desc (Media Lib) (CRTDEVMLB)                   
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device description . . . . . . . DEVD                                          
+ Device class . . . . . . . . . . DEVCLS                                        
+ Resource name  . . . . . . . . . RSRCNAME                                      
+ Device type  . . . . . . . . . . TYPE           *RSRCNAME                      
+ Online at IPL  . . . . . . . . . ONLINE         *YES                           
+ Unload wait time . . . . . . . . UNLOADWAIT     *SYSGEN                        
+ Maximum device wait time . . . . MAXDEVTIME     *SYSGEN                        
+ Resource allocation priority . . RSCALCPTY      *JOB                           
+ Initial mount wait time  . . . . INLMNTWAIT     *JOB                           
+ End of volume mount wait time  . EOVMNTWAIT     *JOB                           
+ Generate cartridge ids . . . . . GENCTGID       *VOLID                         
+ Robot device descriptions  . . . ROBOTDEV       *NONE                          
+                                                                                
+ Robot host . . . . . . . . . . . ROBOTHOST      *NONE                          
+                                                                                
+ Local internet address . . . . . LCLINTNETA     *NONE                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter DEVD required.                                                     + 

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SM1   *BASE    5050    IBM System Manager for i                            
+ 5770SM1   *BASE    2902    IBM System Manager for i                            
+ 5770SM1   *BASE    2903    IBM System Manager for i                            
+ 5770SM1   *BASE    2904    IBM System Manager for i                            
+ 5770SM1   *BASE    2909    IBM System Manager for i                            
+ 5770SM1   *BASE    2912    IBM System Manager for i                            
+ 5770SM1   *BASE    2913    IBM System Manager for i                            
+ 5770SM1   *BASE    2914    IBM System Manager for i                            
+ 5770SM1   *BASE    2922    IBM System Manager for i                            
+ 5770SM1   *BASE    2923    IBM System Manager for i                            
+ 5770SM1   *BASE    2924    IBM System Manager for i                            
+ 5770SM1   *BASE    2925    IBM System Manager for i                            
+ 5770SM1   *BASE    2926    IBM System Manager for i                            
+ 5770SM1   *BASE    2928    IBM System Manager for i                            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

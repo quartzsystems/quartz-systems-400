@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   12       2996    Host Servers                                        
+ 5770SS1   12       2998    Host Servers                                        
+ 5770SS1   13       5050    System Openness Includes                            
+ 5770SS1   14       5050    GDDM                                                
+ 5770SS1   14       2903    GDDM                                                
+ 5770SS1   14       2904    GDDM                                                
+ 5770SS1   14       2905    GDDM                                                
+ 5770SS1   14       2909    GDDM                                                
+ 5770SS1   14       2912    GDDM                                                
+ 5770SS1   14       2913    GDDM                                                
+ 5770SS1   14       2914    GDDM                                                
+ 5770SS1   14       2922    GDDM                                                
+ 5770SS1   14       2923    GDDM                                                
+ 5770SS1   14       2924    GDDM                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

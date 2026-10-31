@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ AJSCB01   *BASE    5050    Licensed Internal Code - AJSCB01 9400SCB            
+ AJSDH00   *BASE    5050    Licensed Internal Code - AJSDH00 9400SDH            
+ AJSDJ01   *BASE    5050    Licensed Internal Code - AJSDJ01 9400SDJ            
+ AJSGK01   *BASE    5050    Licensed Internal Code - AJSGK01 9400SGK            
+ AJSGM01   *BASE    5050    Licensed Internal Code - AJSGM01 9400SGM            
+ AJSLP01   *BASE    5050    Licensed Internal Code - AJSLP01 9400SLP            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

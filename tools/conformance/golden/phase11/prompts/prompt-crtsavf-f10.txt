@@ -1,0 +1,24 @@
+                           Create Save File (CRTSAVF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Save file  . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *CURLIB                      
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Maximum records  . . . . . . . . MAXRCDS        *NOMAX                         
+ ASP number . . . . . . . . . . . ASP            *LIBASP                        
+ Maximum file wait time . . . . . WAITFILE       *IMMED                         
+ Share open data path . . . . . . SHARE          *NO                            
+ Authority  . . . . . . . . . . . AUT            *EXCLUDE                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FILE required.                                                       

@@ -1,0 +1,24 @@
+                            Initialize Tape (INZTAP)                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device . . . . . . . . . . . . . DEV                                           
+ New volume identifier  . . . . . NEWVOL         *NONE                          
+ New owner identifier . . . . . . NEWOWNID       *BLANK                         
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+ Check for active files . . . . . CHECK          *YES                           
+ Tape density . . . . . . . . . . DENSITY        *DEVTYPE                       
+ Code . . . . . . . . . . . . . . CODE           *EBCDIC                        
+ End of tape option . . . . . . . ENDOPT         *REWIND                        
+ Clear  . . . . . . . . . . . . . CLEAR          *NO                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

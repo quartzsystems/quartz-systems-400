@@ -1,0 +1,24 @@
+                            Display Problems (DSPPRB)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Resource name  . . . . . . . . . RESOURCE       *ALL                           
+ Product:                         LICPGM                                        
+   Program identifier . . . . . .                *ALL                           
+   Release  . . . . . . . . . . .                *ALL                           
+   Modification level . . . . . .                *ALL                           
+ Function . . . . . . . . . . . . FUNCTION       *ALL                           
+ Program  . . . . . . . . . . . . PGM            *ALL                           
+ Message identifier . . . . . . . MSGID          *ALL                           
+ Origin:                          ORIGIN                                        
+   Network identifier . . . . . .                *ALL                           
+   Control point name . . . . . .                *ALL                           
+ Service number . . . . . . . . . SRVID          *ALL                           
+ Branch number  . . . . . . . . . BRANCH         *ALL                           
+ Country or region number . . . . COUNTRY        *ALL                           
+ User assigned  . . . . . . . . . ASNUSER        *ALL                           
+ Group assigned . . . . . . . . . GROUP          *ALL                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

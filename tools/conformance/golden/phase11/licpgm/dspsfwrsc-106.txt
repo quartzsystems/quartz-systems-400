@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770TC1   *BASE    2957    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2958    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2961    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2962    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2963    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2966    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2972    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2974    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2975    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2976    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2978    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2979    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2980    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2981    IBM TCP/IP Connectivity Utilities for i             
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

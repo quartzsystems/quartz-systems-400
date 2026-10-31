@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   35       2923    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2924    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2925    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2926    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2928    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2929    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2930    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2931    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2932    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2933    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2937    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2938    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2939    CCA Cryptographic Service Provider                  
+ 5770SS1   35       2940    CCA Cryptographic Service Provider                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

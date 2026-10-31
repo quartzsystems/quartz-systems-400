@@ -1,0 +1,24 @@
+                      Add Image Catalog Entry (ADDIMGCLGE)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Image catalog  . . . . . . . . . IMGCLG                                        
+ From optical device, or  . . . . FROMDEV                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

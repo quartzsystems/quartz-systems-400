@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770NAE   *BASE    2929    Network Authentication Enablement                   
+ 5770NAE   *BASE    2930    Network Authentication Enablement                   
+ 5770NAE   *BASE    2931    Network Authentication Enablement                   
+ 5770NAE   *BASE    2932    Network Authentication Enablement                   
+ 5770NAE   *BASE    2933    Network Authentication Enablement                   
+ 5770NAE   *BASE    2937    Network Authentication Enablement                   
+ 5770NAE   *BASE    2938    Network Authentication Enablement                   
+ 5770NAE   *BASE    2939    Network Authentication Enablement                   
+ 5770NAE   *BASE    2940    Network Authentication Enablement                   
+ 5770NAE   *BASE    2942    Network Authentication Enablement                   
+ 5770NAE   *BASE    2954    Network Authentication Enablement                   
+ 5770NAE   *BASE    2956    Network Authentication Enablement                   
+ 5770NAE   *BASE    2957    Network Authentication Enablement                   
+ 5770NAE   *BASE    2958    Network Authentication Enablement                   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5733SC1   *BASE    2957    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2958    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2961    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2962    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2963    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2966    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2972    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2974    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2975    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2976    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2978    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2979    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2980    IBM Portable Utilities for i                        
+ 5733SC1   *BASE    2981    IBM Portable Utilities for i                        
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

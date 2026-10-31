@@ -1,0 +1,24 @@
+                        Save Changed Objects (SAVCHGOBJ)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Data compaction  . . . . . . . . COMPACT        *DEV                           
+ Libraries to omit  . . . . . . . OMITLIB        *NONE                          
+                           + for more values                                    
+ Objects to omit:                 OMITOBJ                                       
+   Object . . . . . . . . . . . .                                               
+     Library  . . . . . . . . . .                  *ALL                         
+   Object type  . . . . . . . . .                *ALL                           
+                           + for more values                                    
+ Select:                          SELECT                                        
+   Include or omit  . . . . . . .                                               
+   Object . . . . . . . . . . . .                *ALL                           
+     Library  . . . . . . . . . .                  *ALL                         
+   Object type  . . . . . . . . .                *ALL                           
+   Object attribute . . . . . . .                *ALL                           
+   File member  . . . . . . . . .                *ALL                           
+                           + for more values                                    
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

@@ -1,0 +1,24 @@
+                           Copy From Tape (CPYFRMTAP)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Tape file  . . . . . . . . . . . FROMFILE                                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ To file  . . . . . . . . . . . . TOFILE                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Sequence number  . . . . . . . . FROMSEQNBR     *TAPF                          
+ Tape label . . . . . . . . . . . FROMLABEL      *TAPF                          
+ Member . . . . . . . . . . . . . TOMBR          *FROMLABEL                     
+ Device . . . . . . . . . . . . . FROMDEV        *TAPF                          
+                           + for more values                                    
+ Copy from reels:                 FROMREELS                                     
+   Label processing type  . . . .                *TAPF                          
+   Number of reels  . . . . . . .                *TAPF                          
+ Record length  . . . . . . . . . FROMRCDLEN     *TAPF                          
+ End of tape option . . . . . . . FROMENDOPT     *TAPF                          
+ Replace or add records . . . . . MBROPT         *NONE                          
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

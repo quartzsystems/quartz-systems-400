@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770PT1   *BASE    2998    IBM Performance Tools for i - Base                  
+ 5770PT1   1        5101    Performance Tools - Manager Feature                 
+ 5770PT1   1        2902    Performance Tools - Manager Feature                 
+ 5770PT1   1        2903    Performance Tools - Manager Feature                 
+ 5770PT1   1        2904    Performance Tools - Manager Feature                 
+ 5770PT1   1        2905    Performance Tools - Manager Feature                 
+ 5770PT1   1        2909    Performance Tools - Manager Feature                 
+ 5770PT1   1        2912    Performance Tools - Manager Feature                 
+ 5770PT1   1        2913    Performance Tools - Manager Feature                 
+ 5770PT1   1        2914    Performance Tools - Manager Feature                 
+ 5770PT1   1        2922    Performance Tools - Manager Feature                 
+ 5770PT1   1        2923    Performance Tools - Manager Feature                 
+ 5770PT1   1        2924    Performance Tools - Manager Feature                 
+ 5770PT1   1        2925    Performance Tools - Manager Feature                 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                             Duplicate Tape (DUPTAP)                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From device  . . . . . . . . . . FROMDEV                                       
+ To device  . . . . . . . . . . . TODEV                                         
+ From sequence number:            FROMSEQNBR                                    
+   Starting file sequence number                 *FIRST                         
+   Ending file sequence number  .                *LAST                          
+ To sequence number . . . . . . . TOSEQNBR       *FROMSEQ                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

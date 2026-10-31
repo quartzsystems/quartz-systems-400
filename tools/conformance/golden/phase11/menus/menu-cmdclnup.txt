@@ -1,0 +1,24 @@
+ CMDCLNUP                       Cleanup Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Change Cleanup                                              CHGCLNUP   
+      2. End Cleanup                                                 ENDCLNUP   
+      3. Retrieve Cleanup                                            RTVCLNUP   
+      4. Start Cleanup                                               STRCLNUP   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

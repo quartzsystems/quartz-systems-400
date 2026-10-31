@@ -1,0 +1,24 @@
+ CMDSAVF                       Save File Commands                               
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Change Save File                                            CHGSAVF    
+      2. Clear Save File                                             CLRSAVF    
+      3. Copy PTF to Save File                                       CPYPTFSAVF 
+      4. Create Save File                                            CRTSAVF    
+      5. Display Save File                                           DSPSAVF    
+      6. Override with Save File                                     OVRSAVF    
+                                                                                
+      8. Save Save File Data                                         SAVSAVFDTA 
+                                                                                
+   Related Command Menus                                                        
+     10. Save Commands                                               CMDSAV     
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

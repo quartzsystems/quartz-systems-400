@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770TC1   *BASE    2984    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2986    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2987    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2989    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2992    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2994    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2995    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2996    IBM TCP/IP Connectivity Utilities for i             
+ 5770TC1   *BASE    2998    IBM TCP/IP Connectivity Utilities for i             
+ 5770TS1   *BASE    5050    IBM Transform Services for i                        
+ 5770TS1   *BASE    2902    IBM Transform Services for i                        
+ 5770TS1   *BASE    2903    IBM Transform Services for i                        
+ 5770TS1   *BASE    2904    IBM Transform Services for i                        
+ 5770TS1   *BASE    2905    IBM Transform Services for i                        
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

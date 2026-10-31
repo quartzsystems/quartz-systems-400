@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770999   *BASE    5050    Licensed Internal Code                              
+ 5770SS1   *BASE    5050    IBM i                                               
+ 5770SS1   *BASE    2902    IBM i                                               
+ 5770SS1   *BASE    2903    IBM i                                               
+ 5770SS1   *BASE    2904    IBM i                                               
+ 5770SS1   *BASE    2905    IBM i                                               
+ 5770SS1   *BASE    2909    IBM i                                               
+ 5770SS1   *BASE    2912    IBM i                                               
+ 5770SS1   *BASE    2913    IBM i                                               
+ 5770SS1   *BASE    2914    IBM i                                               
+ 5770SS1   *BASE    2922    IBM i                                               
+ 5770SS1   *BASE    2923    IBM i                                               
+ 5770SS1   *BASE    2924    IBM i                                               
+ 5770SS1   *BASE    2925    IBM i                                               
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

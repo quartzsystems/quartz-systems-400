@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770XE1   *BASE    2931    IBM i Access for Windows                            
+ 5770XE1   *BASE    2932    IBM i Access for Windows                            
+ 5770XE1   *BASE    2933    IBM i Access for Windows                            
+ 5770XE1   *BASE    2937    IBM i Access for Windows                            
+ 5770XE1   *BASE    2956    IBM i Access for Windows                            
+ 5770XE1   *BASE    2957    IBM i Access for Windows                            
+ 5770XE1   *BASE    2958    IBM i Access for Windows                            
+ 5770XE1   *BASE    2961    IBM i Access for Windows                            
+ 5770XE1   *BASE    2963    IBM i Access for Windows                            
+ 5770XE1   *BASE    2966    IBM i Access for Windows                            
+ 5770XE1   *BASE    2974    IBM i Access for Windows                            
+ 5770XE1   *BASE    2975    IBM i Access for Windows                            
+ 5770XE1   *BASE    2976    IBM i Access for Windows                            
+ 5770XE1   *BASE    2978    IBM i Access for Windows                            
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

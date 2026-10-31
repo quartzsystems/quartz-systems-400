@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770PT1   2        2995    Performance Tools - Agent Feature                   
+ 5770PT1   2        2996    Performance Tools - Agent Feature                   
+ 5770PT1   2        2998    Performance Tools - Agent Feature                   
+ 5770PT1   3        5103    Performance Tools - Job Watcher                     
+ 5770PT1   4        5104    Performance Tools - Reserved                        
+ 5770PT1   5        5105    Performance Tools - Reserved                        
+ 5770QU1   *BASE    5050    IBM Query for i                                     
+ 5770QU1   *BASE    2902    IBM Query for i                                     
+ 5770QU1   *BASE    2903    IBM Query for i                                     
+ 5770QU1   *BASE    2904    IBM Query for i                                     
+ 5770QU1   *BASE    2905    IBM Query for i                                     
+ 5770QU1   *BASE    2909    IBM Query for i                                     
+ 5770QU1   *BASE    2912    IBM Query for i                                     
+ 5770QU1   *BASE    2913    IBM Query for i                                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

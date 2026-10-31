@@ -1,0 +1,24 @@
+                            Display Problems (DSPPRB)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Problem identifier . . . . . . . PRBID          *ALL                           
+ Status type  . . . . . . . . . . STATUS         *ALL                           
+                           + for more values                                    
+ Severity . . . . . . . . . . . . SEV            *ALL                           
+                           + for more values                                    
+ Period:                          PERIOD                                        
+   Start time and date:                                                         
+   Start time . . . . . . . . . .                *AVAIL                         
+   Start date . . . . . . . . . .                *BEGIN                         
+   End time and date:                                                           
+   End time . . . . . . . . . . .                *AVAIL                         
+   End date . . . . . . . . . . .                *END                           
+ Hardware:                        HARDWARE                                      
+   Device type  . . . . . . . . .                *ALL                           
+   Model number . . . . . . . . .                *ALL                           
+   Serial number  . . . . . . . .                *ALL                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

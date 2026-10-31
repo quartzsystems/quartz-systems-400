@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770SS1   *BASE    2984    IBM i                                               
+ 5770SS1   *BASE    2986    IBM i                                               
+ 5770SS1   *BASE    2987    IBM i                                               
+ 5770SS1   *BASE    2989    IBM i                                               
+ 5770SS1   *BASE    2992    IBM i                                               
+ 5770SS1   *BASE    2994    IBM i                                               
+ 5770SS1   *BASE    2995    IBM i                                               
+ 5770SS1   *BASE    2996    IBM i                                               
+ 5770SS1   *BASE    2998    IBM i                                               
+ 5770SS1   1        5050    Extended Base Support                               
+ 5770SS1   1        2902    Extended Base Support                               
+ 5770SS1   1        2903    Extended Base Support                               
+ 5770SS1   1        2904    Extended Base Support                               
+ 5770SS1   1        2905    Extended Base Support                               
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

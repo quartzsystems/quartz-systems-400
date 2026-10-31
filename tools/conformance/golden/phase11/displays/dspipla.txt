@@ -1,0 +1,24 @@
+                             Display IPL Attributes                             
+                                                             System:   SYSNAME  
+ System Features:                                                               
+   Restart type  . . . . . . . . . . . . . . . . . :   *SYS                     
+   Keylock position  . . . . . . . . . . . . . . . :   *NORMAL                  
+                                                                                
+ Hardware Functions:                                                            
+   Hardware diagnostics  . . . . . . . . . . . . . :   *MIN                     
+                                                                                
+ Operating System Functions:                                                    
+   Compress job tables . . . . . . . . . . . . . . :   *NONE                    
+   Check job tables  . . . . . . . . . . . . . . . :   *ALL                     
+   Rebuild product directory . . . . . . . . . . . :   *NORMAL                  
+   Mail Server Framework recovery  . . . . . . . . :   *NONE                    
+   Display status  . . . . . . . . . . . . . . . . :   *ALL                     
+   Start TCP/IP  . . . . . . . . . . . . . . . . . :   *YES                     
+   Spooled file recovery . . . . . . . . . . . . . :   *REMOVE                  
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel                                              
+                                                                                

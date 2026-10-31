@@ -1,0 +1,24 @@
+                                Save Object (SAV)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device . . . . . . . . . . . . . DEV                                           
+                                                                                
+                           + for more values                                    
+                                                                                
+ Objects:                         OBJ                                           
+   Name . . . . . . . . . . . . .                '*'                            
+                                                                                
+   Include or omit  . . . . . . .                *INCLUDE                       
+                           + for more values                                    
+ Name pattern:                    PATTERN                                       
+   Pattern  . . . . . . . . . . .                '*'                            
+                                                                                
+   Include or omit  . . . . . . .                *INCLUDE                       
+                           + for more values                                    
+ Directory subtree  . . . . . . . SUBTREE        *ALL                           
+ Save active  . . . . . . . . . . SAVACT         *NO                            
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter DEV required.                                                        

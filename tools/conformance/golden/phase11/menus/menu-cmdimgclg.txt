@@ -1,0 +1,24 @@
+ CMDIMGCLG                   Image Catalog Commands                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Image Catalog Entry                                     ADDIMGCLGE 
+      2. Change Image Catalog                                        CHGIMGCLG  
+      3. Change Image Catalog Entry                                  CHGIMGCLGE 
+      4. Create Image Catalog                                        CRTIMGCLG  
+      5. Delete Image Catalog                                        DLTIMGCLG  
+      6. Load or Unload Image Catalog                                LODIMGCLG  
+      7. Load/Unload/Mount IMGCLG Entry                              LODIMGCLGE 
+      8. Remove Image Catalog Entry                                  RMVIMGCLGE 
+      9. Retrieve Image Catalog                                      RTVIMGCLG  
+     10. Verify Image Catalog                                        VFYIMGCLG  
+     11. Work with Image Catalogs                                    WRKIMGCLG  
+     12. Work with Catalog Entries                                   WRKIMGCLGE 
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

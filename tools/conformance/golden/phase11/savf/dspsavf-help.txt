@@ -1,0 +1,24 @@
+ Help                              Opt - Help                                   
+                                                                                
+     Type the number of the option you want.                                    
+                                                                                
+ Options you can select                                                         
+                                                                                
+     5=Display                                                                  
+         Shows the list of members saved if you select a database file.         
+         Shows the list of spooled files saved if you select an output          
+         queue.                                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F2=Extended help   F3=Exit help   F10=Move to top   F12=Cancel                 
+ F13=Information Assistant         F14=Print help                               
+                                                                                

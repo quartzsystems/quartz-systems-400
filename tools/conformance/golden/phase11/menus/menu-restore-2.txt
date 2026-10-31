@@ -1,0 +1,24 @@
+ RESTORE                            Restore                                     
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+     22. System data only                                                       
+     23. All user data                                                          
+                                                                                
+   Restore Office Data                                                          
+     30. All documents, folders, and mail                                       
+     31. Documents and folders                                                  
+     32. Mail only                                                              
+                                                                                
+   Restore Libraries                                                            
+     40. All libraries other than system library                                
+     41. All IBM libraries other than system library                            
+     42. All user libraries                                                     
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+                                                                                

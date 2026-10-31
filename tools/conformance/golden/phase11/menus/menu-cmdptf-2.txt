@@ -1,0 +1,24 @@
+ CMDPTF                  Program Temporary Fix Commands                         
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Display PTF Group                                           DSPPTFGRP  
+     15. Hold Program Temporary Fix                                  HLDPTF     
+     16. Install Program Temporary Fix                               INSPTF     
+     17. Load Program Temporary Fix                                  LODPTF     
+     18. Release Program Temporary Fix                               RLSPTF     
+     19. Remove Program Temporary Fix                                RMVPTF     
+     20. Send PTF Order                                              SNDPTFORD  
+     21. Update PTF Information                                      UPDPTFINF  
+     22. Work with PTF                                               WRKPTF     
+     23. Work with PTF Groups                                        WRKPTFGRP  
+     24. Work with PTF Order                                         WRKPTFORD  
+                                                                                
+   Related Command Menus                                                        
+     25. Problem Management Commands                                 CMDPRBMGT  
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                
