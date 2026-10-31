@@ -49,7 +49,7 @@ leaves text on the menu.
 
 | Command | Wired today | Should read from | Panel | Fix |
 |---|---|---|---|---|
-| DSPSFWRSC | panel/fallback; service text when the read failed | `sfwrsc_panel` (licpgm directory) | QUISFWRSC | b1da8ba2 (class fix) |
+| DSPSFWRSC | panel/fallback; service text when the read failed | `sfwrsc_panel` (licpgm directory); `OUTPUT(*OUTFILE)` as `QSYS/QARZLCOF` format `QARZLCGD` (`cpp/dspout.rs`, fields from `verified/oracle71/audit/outfiles/dspffd-qarzlcof-*`) | QUISFWRSC | b1da8ba2 (class fix), 07b5ed85 |
 | WRKCFGSTS | panel/fallback for `CFGTYPE` other than `*LIN`/`*CTL`/`*DEV` | `cmn_panel CFGSTS` (cmncfg) | QUICFG | b1da8ba2 (class fix) |
 | DSPDEVD | panel/fallback (`.ok()?` on `devd_panel`) | `devd_panel` (`*DEVD` objects) | QUICFG | b1da8ba2 (class fix) |
 | CHGDEVD | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | 9750760c (step 82 setup runs it) |
@@ -88,8 +88,8 @@ compared with goldens of our own (`ui/uim/tests/golden/audit/`).
 
 | Command | Wired today | Reads from (after) | Panel | Golden | Fix |
 |---|---|---|---|---|---|
-| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD` | `verified/oracle71/audit/dspptf` (7.1) captured; no geometry test yet | 46aec2dd |
-| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP` | `verified/oracle71/audit/wrkptfgrp` (7.1) captured; no geometry test yet | 46aec2dd |
+| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD`; `OUTPUT(*OUTFILE)` as `QSYS/QADSPPTF` format `QSCPTF` (`cpp/dspout.rs`, fields from `verified/oracle71/audit/outfiles/dspffd-qadspptf-*`) | `verified/oracle71/audit/dspptf` (7.1) row for row and input fields (`ui/uim/tests/ptf_panels.rs`) | 46aec2dd, b1aaa415, 07b5ed85 |
+| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP`, F11 the text view | `verified/oracle71/audit/wrkptfgrp` (7.1) row for row and input fields (`ui/uim/tests/ptf_panels.rs`) | 46aec2dd, b1aaa415 |
 | DSPIPLA | text (`cpp/iplcmd.rs`) | `sys2_panel IPLA` (the LIC record) | QUIIPLA new | `phase11/displays/dspipla`, row for row | 46aec2dd |
 | WRKMSGD | text: bridge word `wrkmsgd` | `msgf_list` | QUIDSPMSGD `WORK` | `audit/displays/wrkmsgd`, geometry | 46aec2dd, this batch |
 | WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QUIRDBDIR new | `phase10/misc/wrkrdbdire`, geometry | 46aec2dd |
@@ -105,12 +105,12 @@ compared with goldens of our own (`ui/uim/tests/golden/audit/`).
 
 ## Panels filled by parsing the service's text
 
-| Command | Wired today | Should read from | Panel | Fix |
+| Command | Wired today | Reads from (after) | Panel | Fix |
 |---|---|---|---|---|
-| DSPOBJAUT | text parse of `dspobjaut` | the object's authorities | QUIDSPOAUT | open |
-| EDTOBJAUT | text parse of `DSPOBJAUT` | the object's authorities | QUIEDTAUT | open |
-| DSPAUTLOBJ | text parse of `DSPAUTLOBJ` | the list's objects | QUIAUTLOBJ | open |
-| WRKOBJOWN | text parse of `wrkobjown` | the owner index | QUIWRKOOWN | open |
+| DSPOBJAUT | text parse of `dspobjaut` | `sys2_panel OBJAUT` (`stgsvc/authdata.rs` over `sec::cmd::object::authorities`); `OUTPUT(*OUTFILE)` as `QSYS/QAOBJAUT` format `QSYDSAUT` (`cpp/dspout.rs`, fields from `verified/oracle71/audit/outfiles/dspffd-qaobjaut-*`) | QUIDSPOAUT; golden `verified/pub400/dspobjaut` (its test stays ignored: the golden centers a two-row heading, the renderer's R9 left-aligns it) | 8b89ef72, 07b5ed85 |
+| EDTOBJAUT | text parse of `DSPOBJAUT` | `sys2_panel OBJAUT`, the single authorities from the bits | QUIEDTAUT; goldens `verified/pub400/edtobjaut`, `-f11`, `-f6` row for row | 8b89ef72 |
+| DSPAUTLOBJ | text parse of `DSPAUTLOBJ` | `sys2_panel AUTLOBJ` (`sec::cmd::object::secured_objects`) | QUIAUTLOBJ; golden `verified/oracle71/audit/dspautlobj` (7.1; pub400 has no list the account may display) row for row, except the column headings the system hides on an empty list | 8b89ef72, 6b046a9f |
+| WRKOBJOWN | text parse of `wrkobjown` | `sys2_panel OBJOWN` (the owner index, `sec::cmd::object::user_objects`) | QUIWRKOOWN, F11 the text view; goldens `verified/pub400/wrkobjown`, `-f11` row for row | 8b89ef72, 780a18ae |
 | DSPFD, DSPFFD, DSPDBR | report view of the service's report | the file description | QUIDSPFD (`SPLF`) | correct as wired |
 | DSPPGMREF, DSPAUDJRNE | report view of the service's report | program references, `QAUDJRN` | report viewer | correct as wired |
 
