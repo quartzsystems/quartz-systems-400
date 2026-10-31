@@ -70,6 +70,7 @@ were answered by hand during the capture, before every job got
 | `a21359ce`, `460a59a3` | `CHKOBJITG` over the trusted keys |
 | `9886d385`..`b0a7d038` | every Phase 11 golden inventoried (`golden/phase11/COVERAGE.md`); prompts, menus and panels compared with pub400's; the prompter's field widths and `PMTCTL` timing |
 | `4918d9fb`, `8e98e32e` | `DLTLICPGM` of a product whose records live in its library; the commands pub400 refuses shipped `*PUBLIC *EXCLUDE` |
+| `8204a2a4`..`759f52fe` | install media and flow: LIC options 3 and 4, the operating system from media, the response file, upgrades and slip installs, `SAVSYS` and the recovery, the install matrix (docs/INSTALL.md, docs/RECOVERY.md) |
 
 ## QEMU
 
@@ -85,6 +86,25 @@ were answered by hand during the capture, before every job got
 | `--media iso`, `iso-raw`, `iso-fat` | the hybrid install image as a CD, written raw to a disk, and copied onto FAT32 |
 | `--media iso` 1, 4 | the media IPL without an installed system shows No Operating System Installed; with one, option 1 IPLs the disk |
 | `--media iso --install` 1, 3, 8 to 11 | the install matrix: automatic install with the signatures checked, every panel over serial, a response file with two mirrored disks, `SAVSYS` to virtual tape and the recovery, the slip install of V1R1M0 with the downgrade refused, a power pull mid-install (docs/INSTALL.md section 5) |
+
+Install suite, 2026-10-31, QEMU with KVM on the development host,
+`--media iso --install` whole: PASS 11 steps. 1 automatic install 34 s,
+2 boot installed disk 10 s, 3 interactive install 34 s, 4 to 7 the DST
+mirror steps, 8 response file with two mirrored disks 43 s, 9 `SAVSYS`
+to virtual tape, wipe and recovery 61 s (8 payloads on the tape, 55
+profiles restored, the profile made before the save back), 10 slip
+install of V1R1M0 over V1R0M0 70 s (1828 objects replaced, 18 removed,
+1845 signatures verified, the user library kept, the V1R0M0 media
+refused afterwards), 11 power pull mid-install 53 s. `--media iso-raw`
+(the D IPL from the USB image), `iso-fat` and `iso` pass. `CHKOBJITG`
+is not in this worktree; the steps report it as not run until the
+merge brings it.
+
+Two earlier-phase bugs the matrix found, fixed in their own commits: a
+store formatted over units another store had used replayed that store's
+WAL (`Asp::format` now zeroes the WAL; `storage/store/tests/wal_reuse.rs`),
+and a mirror resume started in DST was lost when the store passed to the
+storage service (the IPL now finishes it first).
 
 ## Deviations
 
