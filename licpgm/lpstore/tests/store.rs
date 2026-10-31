@@ -178,3 +178,93 @@ fn seed_save_delete_restore() {
     assert_eq!(back.len(), 4);
     assert!(back.iter().all(|(_, s)| *s == LoadState::Installed));
 }
+
+/// Records, at each library deletion, whether the product's loads were
+/// already gone: they live in its principal library.
+struct LoadsFirst<'c, 's> {
+    cell: &'c RefCell<&'s mut Store>,
+    qsys: ObjectId,
+    product: ProductId,
+    libraries: Vec<(String, bool)>,
+}
+
+impl Remover for LoadsFirst<'_, '_> {
+    fn delete_library(&mut self, lib: &str) -> Result<(), String> {
+        let p = Products::new(self.cell, self.qsys, stamp(NOW));
+        let gone = p.loads().iter().all(|(_, l)| l.key.product != self.product);
+        self.libraries.push((lib.to_string(), gone));
+        Ok(())
+    }
+    fn delete_object(&mut self, _: &ObjEntry) -> Result<(), String> {
+        Ok(())
+    }
+    fn delete_path(&mut self, _: &str) -> Result<(), String> {
+        Ok(())
+    }
+}
+
+#[test]
+fn dltlicpgm_drops_the_records_before_the_libraries() {
+    let (mut store, qsys) = system();
+    lpstore::seed(&mut store, qsys, NOW).unwrap();
+    let mut t = store.begin().unwrap();
+    ops::create(
+        &mut t,
+        &CreateParams {
+            library: qsys,
+            name: Name::parse("VNDLIB").unwrap(),
+            type_code: types::LIB,
+            attribute: String::new(),
+            text: String::new(),
+            owner: "QSYS".into(),
+            system: "QS400".into(),
+            now: NOW,
+            by_system: true,
+        },
+    )
+    .unwrap();
+    t.commit().unwrap();
+    let pkg = licpgm::pkg::parse(
+        r#"
+[product]
+id = "1AB7001"
+text = "Vendor product"
+library = "VNDLIB"
+
+[[option]]
+option = "*BASE"
+text = "Vendor product base"
+msgid = "VND0001"
+libraries = [{ name = "VNDLIB" }]
+"#,
+        licpgm::pkg::Options::default(),
+    )
+    .unwrap();
+    let cell = RefCell::new(&mut store);
+    let mut p = Products::new(&cell, qsys, stamp(NOW));
+    licpgm::api::crtpd::create_definition(&mut p, &pkg.definition_name, &pkg.definition).unwrap();
+    for (q, l) in &pkg.loads {
+        let mut l = l.clone();
+        l.state = LoadState::Installed;
+        licpgm::api::crtpl::create_load(&mut p, q, &l).unwrap();
+    }
+    let product: ProductId = "1AB7001".parse().unwrap();
+    let d = plan_delete(
+        &p,
+        &DltLicPgm {
+            product: product.clone(),
+            option: None,
+            release: None,
+            lng: None,
+        },
+    )
+    .unwrap();
+    let mut rm = LoadsFirst {
+        cell: &cell,
+        qsys,
+        product,
+        libraries: Vec::new(),
+    };
+    execute_delete(&d, &mut p, &mut rm, &mut NoExits).unwrap();
+    assert_eq!(rm.libraries, [("VNDLIB".to_string(), true)]);
+}

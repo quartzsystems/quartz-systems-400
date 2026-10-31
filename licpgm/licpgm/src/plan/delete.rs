@@ -198,15 +198,11 @@ pub fn execute_delete(
     for o in &plan.objects {
         r = r.and_then(|()| remover.delete_object(o));
     }
-    for lib in &plan.libraries {
-        r = r.and_then(|()| remover.delete_library(lib));
-    }
-    for p in plan.paths.iter().chain(&plan.directories) {
-        r = r.and_then(|()| remover.delete_path(p));
-    }
     if let Err(why) = r {
         return Err(fail(store, why));
     }
+    // The product's own records go before its libraries: the *PRDDFN
+    // and *PRDLODs usually live in the principal library.
     for (q, _) in &plan.loads {
         store.delete_load(q)?;
     }
@@ -221,5 +217,11 @@ pub fn execute_delete(
     }
     store.save_agreements(&book)?;
     store.save_licenses(&lic)?;
-    Ok(())
+    for lib in &plan.libraries {
+        r = r.and_then(|()| remover.delete_library(lib));
+    }
+    for p in plan.paths.iter().chain(&plan.directories) {
+        r = r.and_then(|()| remover.delete_path(p));
+    }
+    r.map_err(|why| PlanError::Restore(plan.loads[0].1.key.clone(), why))
 }
