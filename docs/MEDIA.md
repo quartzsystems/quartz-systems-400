@@ -801,17 +801,22 @@ The `CPFBC` identifiers are Quartz's choice; optical errors keep their
 ## In the storage service
 
 `lic/slic/src/stgsvc/media/` puts the three crates to work; the command
-processors are `lic/slic/src/cpp/medcmd.rs` (devices, catalogs, tape
-and optical commands) and the save and restore commands of
-`savcmd.rs`, `lpcmd.rs` and `ptfcmd.rs`.
+processors are `lic/slic/src/cpp/medcmd.rs` (devices, catalogs, tape,
+optical and cartridge commands, the panels' data), `tapcpy.rs` (tape
+files, `CPYTOTAP`, `CPYFRMTAP`) and the save and restore commands of
+`savcmd.rs`, `lpcmd.rs` and `ptfcmd.rs`. The `medio` crate holds the
+parts that need no service: save streams on tape and optical
+(`tapefile`, `optfile`), the catalog's next volume (`catalog`), the
+virtual library (`library`) and tape files (`tapf`).
 
 | Module | Does |
 |---|---|
 | `devices` | the `*DEVD` objects of class `*TAP`, `*OPT` and `*TAPMLB` (the `MediaDevice` section, `docs/WORKMGMT.md`), vary on and off, `QAUTOCFG`, `DSPDEVD` |
 | `catalogs` | the `*IMGCLG` objects in `QUSRSYS` and the `imgclg::Registry` over the IFS root; `VirtTapes`, the `TapeImages` of virtual tape volumes |
-| `drive` | a device opened for one operation: virtual tape over its catalog, `/dev/nstN` for a real drive, the mounted optical volume |
-| `stream` | the media parameters of the save and restore commands, and the one call that writes or reads a save's stream |
-| `operator` | inquiries and attention messages to `QSYSOPR`, product activity log entries and problems for device and media errors |
+| `drive` | a device opened for one operation: virtual tape over its catalog, a virtual library's drive, `/dev/nstN` for a real drive, the mounted optical volume |
+| `library` | virtual media libraries: the catalog's entries as cartridges, kept in `QS400MLB.INF` |
+| `stream` | the media parameters of the save and restore commands, and the one call that writes or reads a save's stream (across optical volumes too) |
+| `operator` | inquiries (with the replies of "Operator replies") and attention messages to `QSYSOPR`, product activity log entries and problems for device and media errors |
 
 ### Devices
 
@@ -866,28 +871,39 @@ then writes it to the device `DEV` names, and `stream::restore` reads it
 back before the restore starts (the `medio` crate does the writing and
 reading: `MediaWriter`, `MediaReader`).
 
-- **Tape**: one standard-labeled file per command, record format U in
-  64 KiB blocks. `LABEL(*LIB)` is the first library saved (`SAVLIB`,
-  `SAVOBJ`, `SAVCHGOBJ`), `QFILEIOC` for `SAVCFG`, `QFILEUPR` for
-  `SAVSECDTA`, `QSAVIFS` for `SAV`, the product identifier for
-  `SAVLICPGM`, the PTF's name for `LODPTF`. `SEQNBR(*END)` appends;
-  `EXPDATE` defaults to `*PERM`; `CLEAR` other than `*NONE` lets the
-  save overwrite files that have not expired, else the inquiry
-  `CPA4036` takes its default reply and the save ends (`CPF3794`).
-  `SEQNBR(*SEARCH)` with `LABEL(*SAVLIB)` finds the first file with the
-  library's label. IBM writes a file per library; QS/400 writes one
-  stream holding them all.
+- **Tape**: a standard-labeled file per library, record format U in
+  64 KiB blocks: a `SAVLIB` (`SAVOBJ`, `SAVCHGOBJ`) of several libraries
+  with `LABEL(*LIB)` writes one save stream per library, each labeled
+  with its library's name, at `SEQNBR` and the sequence numbers after it
+  (the files before the last end with `ENDOPT(*LEAVE)`, the last with
+  the command's; each starts on the volume the one before ended on).
+  `RSTLIB` of several libraries reads each library's file by its label.
+  `QFILEIOC` labels `SAVCFG`, `QFILEUPR` `SAVSECDTA`, `QSAVIFS` `SAV`,
+  the product identifier `SAVLICPGM`, the PTF's name `LODPTF`.
+  `SEQNBR(*END)` appends; `EXPDATE` defaults to `*PERM`; `CLEAR` other
+  than `*NONE` lets the save overwrite files that have not expired,
+  else the inquiry `CPA4036` is asked: `I` overwrites, anything else
+  ends the save (`CPF3794`). `SEQNBR(*SEARCH)` with `LABEL(*SAVLIB)`
+  finds the first file with the library's label. A save to a save file
+  stays one stream.
 - **Multi-volume**: on a virtual device the next volume is the `VOL`
   list's next one, or for `VOL(*MOUNTED)` the catalog's next loaded
   entry after the mounted one (`medio::CatalogTapes`); the last volume
-  used stays mounted. When there is none the inquiry `CPA4075` goes to
-  `QSYSOPR` and takes its default reply, cancel. A real drive has no
-  next volume.
+  used stays mounted. When there is none the inquiry `CPA4075` is
+  asked (see "Operator replies"): `G` looks again over every loaded
+  entry not used yet in the operation, anything else cancels. On a real
+  drive `G` means the operator has put the next volume in.
 - **Optical**: the file `OPTFILE` names on the mounted volume of the
   device's catalog (`'*'` the generated name of the Optical section);
   an existing file is replaced only with `CLEAR`, else the inquiry
-  `OPT1260` takes its default reply. A save does not span optical
-  volumes.
+  `OPT1260` is asked: `G` replaces it. A save larger than the volume's
+  room continues on the next volume, chosen as for tape (the `VOL`
+  list, else the catalog's next loaded entry, else the operator); see
+  "Optical saves across volumes".
+- **ENDOPT(*UNLOAD)** on a virtual tape device returns the entry in use
+  to `*LOADED` and mounts the next loaded entry after it (or the first
+  one before it); with no other loaded entry it stays mounted.
+  `*REWIND` and `*LEAVE` keep it mounted.
 - `SAV` and `RST` take `DEV('/QSYS.LIB/TAP01.DEVD')` or the name alone.
 - `DSPTAP DATA(*SAVRST)` reads every file in the `SEQNBR` range (and
   `LABEL`) and lists it as `DSPSAVF` does (`savcmd::stream_listing`);
@@ -907,13 +923,142 @@ reading: `MediaWriter`, `MediaReader`).
 | `CHKOPT` | `ops::chkopt` (a QS/400 command; IBM i has none) |
 | `DUPOPT` | `ops::dupopt` onto another catalog entry's image |
 | `WRKOPTVOL` | the mounted volumes of the optical devices |
-| `WRKMLBSTS` | the library devices and their resources |
+| `WRKMLBSTS` | the library devices; for a virtual one its drives, their allocation and cartridges |
+| `WRKTAPCTG`, `DSPTAPCTG` | a library's cartridges: identifier, label volume, category, status (`Inserted`, `Available`, `Mounted`, `Ejected`), place, home slot |
+| `ADDTAPCTG` | `CTG` (or `*INSERT` for all of them) from `*INSERT` into `CGY`; `CHECK(*YES)` refuses a cartridge whose label names another volume (`CPF6720`) |
+| `CHGTAPCTG` | between assignable categories (`*SAME` changes nothing) |
+| `RMVTAPCTG` | to `*EJECT` and an empty import/export station (it stays in its slot when there is none) |
+| `CPYTOTAP`, `CPYFRMTAP` | see "Tape files and copies" |
 
-`DSPTAPCTG`, `WRKTAPCTG`, `ADDTAPCTG`, `RMVTAPCTG` and `CHGTAPCTG` are
-defined and refuse with `CPF6745` in this release: cartridges of a real
-library need its changer and drives wired, and a virtual library its
-cartridges' categories kept (the `device::MediaLibrary` model is ready
-for both).
+### Virtual media libraries
+
+`CRTDEVMLB RSRCNAME(*VRT)` makes a virtual library: its resource is a
+`TAPVRTnn` name, and the `*TAP` image catalog `LODIMGCLG` loads on it
+holds its cartridges (`stgsvc::media::library`, over
+`medio::library::CatalogLibrary` and the tape crate's
+`VirtualLibrary` and `MediaLibrary`). Every entry not `*AVAILABLE` is a
+cartridge; its identifier is its volume tag (the entry's volume name).
+The library has 256 storage slots (the entry at index `n` arrives in
+slot `n`), 4 import/export stations and 2 drives, `<rsrc>D1` and
+`<rsrc>D2`, all `*ALLOCATED` at first.
+
+- **Insert**: an entry added or loaded into the catalog arrives in
+  `*INSERT`; `ADDTAPCTG` makes it usable.
+- **Mount**: a command on the library with `VOL(x)` checks every
+  volume of the list is in a usable category (`CPF67D2`), then
+  `MediaLibrary::select` picks the drive and the changer moves the
+  cartridge in (the drive's cartridge goes home first). `VOL(*MOUNTED)`
+  uses the cartridge in the first drive holding one (`CPF6760` when
+  none does). Further volumes of a multi-volume file are moved in
+  (`medio::LibraryVolumes`): a volume the list names, or for
+  `*MOUNTED` the next spare cartridge in a usable category once the
+  operator answers `CPA4075` with `G`.
+- **Demount**: a cartridge stays in its drive after the command unless
+  the command unloaded it (`ENDOPT(*UNLOAD)`); then it goes home (a
+  `*CNV` cartridge goes to a station as `*EJECT`). `WRKTAPCTG` option 8
+  demounts by hand, option 6 mounts.
+- **Eject**: `RMVTAPCTG`. A cartridge in a station leaves the library
+  when its catalog entry is unloaded (`LODIMGCLGE OPTION(*UNLOAD)`);
+  loaded again it arrives in `*INSERT`.
+- **Allocation**: `WRKMLBSTS` options 4, 5 and 6 make a drive
+  `*ALLOCATED`, `*UNPROTECTED` or `*DEALLOCATED`; a deallocated drive
+  is never chosen.
+
+Between commands the library is kept in `QS400MLB.INF` in the catalog's
+directory (the library is built again from the entries and this file
+for every command). Text, LF line ends: the line `QS400-MLB 1`, then one
+line per drive and one per cartridge, fields tab separated:
+
+| Line | Fields |
+|---|---|
+| `drive` | number from 1, allocation (`*ALLOCATED`, `*UNPROTECTED`, `*DEALLOCATED`) |
+| `ctg` | cartridge identifier, category, place (`slot:A`, `drive:A`, `station:A` with the element address, or `outside`), home slot's element address or `-` |
+
+Unknown lines are skipped. A real library's changer (`SgChanger`) is
+not driven by the commands in this release: they refuse with `CPF6745`
+on a library with a real resource.
+
+### Optical saves across volumes
+
+When a save does not fit on the volume, `medio::optfile::OpticalWriter`
+writes as much as fits (whole 2048-byte sectors, 32 KiB kept free for
+the directory records) as part 1 under the save's path, with the part's
+label beside it at `<path>.QSPART`, asks its `OpticalVolumes` for the
+next volume (`volume_seq` the part wanted), and goes on with part 2
+under the same path there, until the last part. A save on one volume
+has no label, so its file stays the bare stream. The label is text, LF
+line ends:
+
+| Line | Value |
+|---|---|
+| `QS400-OPTPART 1` | the first line |
+| `save` | the save's identifier, the same on every part (FNV-1a 64 of the stream and its length, hex) |
+| `part` | the part's number, from 1 |
+| `more` | `1` when another part follows, else `0` |
+| `bytes` | bytes in this part |
+
+Reading starts on the volume holding part 1 (another part is refused,
+`OPT1115`) and follows `more` through the same next-volume choice; each
+next part must carry the same save identifier and the next number.
+
+### Tape files and copies
+
+A tape file is a `*FILE` with attribute `TAPF` (`CRTTAPF`, `CHGTAPF`,
+`DLTF`, `DSPFD`; `stgsvc` and `cpp/tapcpy.rs`). Its payload is
+`medio::tapf::TapeFileDef` as text: the line `QS400-TAPF 1`, then
+`key<TAB>value` lines `dev` (device names, blank separated), `vol`,
+`reels` (`*SL`, `*NL`), `seqnbr` (a number or `*END`), `label`, `rcdlen`
+and `blklen` (0 for `*CALC`), `rcdblktyp` (`*F`, `*FB`, `*V`, `*VB`,
+`*U`), `code` (`*EBCDIC`, `*ASCII`), `expdate` (`*NONE`, `*PERM` or
+`year.day`), `endopt`, `text`. Unknown keys are skipped.
+
+`CPYTOTAP` writes a member's records (a source member's data part) as
+one tape file; `CPYFRMTAP` reads one back into a member (added when it
+is missing; `MBROPT(*NONE)` refuses a member with records, `*ADD`
+appends, `*REPLACE` clears) or lists it with `TOFILE(*PRINT)`
+(`OUTFMT(*HEX)` adds the hexadecimal). Every parameter whose value is
+`*TAPF` takes the tape file's. The records become blocks by the record
+format (`tape::volume::records_to_blocks`, "HDR2" above); `*CALC`
+lengths are the longest record (plus 4 for `V`) and, for blocked
+records, the largest multiple of the record length up to 32760 bytes
+(32760 for `VB`). `CODE(*ASCII)` writes and reads the data in ASCII.
+`TOLABEL(*FROMMBR)` labels the file with the member's name. An active
+file in the way asks `CPA4036` as a save does. `OVRTAPF` is not
+provided.
+
+### Operator replies
+
+Media inquiries (`CPA4075` next volume, `CPA4036` active file,
+`OPT1260` optical file exists) go to `QSYSOPR` from program `QTAERR`.
+The reply comes from, in order:
+
+1. a reply the operator already sent (`SNDRPYMSG`, `WRKMSG`) to the
+   same inquiry (same identifier and data) that is still waiting or was
+   answered and not yet taken: the reply is taken (the reply message is
+   marked old);
+2. the job's `INQMSGRPY`: `*DFT` takes the default; `*SYSRPYL` the
+   system reply list's entry (`ADDRPYLE`; `*DFT` there is the default);
+   the inquiry is then shown answered with that reply;
+3. otherwise (`*RQD`, or no reply list entry) the inquiry is left
+   waiting on `QSYSOPR` and the operation ends as for cancel. Running
+   it again after the operator's reply takes that reply (step 1).
+
+The service answers its requests one at a time, so it cannot wait for
+a reply in the middle of a command; the third case is how a job that
+needs the operator gets the reply.
+
+### Displays
+
+At a display `WRKIMGCLG` (F11 switches status and texts; options 1, 4,
+8, 9, 10 run their commands, 12 shows the entries), `WRKIMGCLGE`
+(options 2, 4, 6, 8, 9; F6 adds an entry), `WRKTAPCTG` (options 1, 2,
+4, 5; 6 and 8 mount and demount) and `WRKMLBSTS` (options 1 and 2 vary
+the library, 4 to 6 set a drive's allocation, 8 its cartridges) are
+the panels of `QSMEDIA` (`work/qsjob/src/panels/work2/media.rs`; data
+through `panel2_data`, moves and allocation through `service_op`
+`mlb-*`). Without a display the service answers with the text forms.
+`WRKIMGCLG` follows pub400's capture row for row; the others' geometry
+is Quartz's (no capture).
 
 ### Errors
 
@@ -922,8 +1067,9 @@ for both).
 | wrong volume, not ready, write protected, end of volume, unlabeled where labels are needed | attention message (`CPF6720`, `CPF6760`, `CPF6768`, `CPF6718`, `CPF6772`, `OPT1520`, `OPT1335`) | |
 | drive or changer failure | attention message (`CPF6708`, `CPF6745`) | product activity log `A6006300` with the resource, a problem |
 | damaged labels, frames or image | attention message (`CPF6772`, `OPT1605`) | product activity log `A6006310` with the resource, a problem |
-| next volume needed | inquiry `CPA4075`, default reply C | |
-| active file in the way | inquiry `CPA4036`, default reply C | |
+| next volume needed | inquiry `CPA4075` (C cancel, G look again), default C | |
+| active file in the way | inquiry `CPA4036` (C cancel, I overwrite), default C | |
+| optical file exists | inquiry `OPT1260` (C cancel, G replace), default C | |
 
 A product activity log entry of a device carries its resource name (ten
 bytes after the entry's 17; the Phase 1 entries have none) and shows it

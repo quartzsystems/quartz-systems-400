@@ -99,39 +99,53 @@ The V7R1M0 oracle settled 27 restore rules
 15. **Operator inquiries.** The next-volume inquiry is `CPA4075` with
    replies C and G (unsure; IBM's tape volume request may be a CPA40xx
    or CPA67xx neighbour); the optical file-exists inquiry is `OPT1260`
-   (Quartz's choice in the OPT range). Nobody answers an inquiry at
-   once in the service, so each takes its default reply (cancel) and is
-   kept answered on `QSYSOPR`; a job that waits for the operator's reply
-   comes with an interactive reply path.
+   (Quartz's choice in the OPT range). Replies are real now
+   (`docs/MEDIA.md`, "Operator replies"): a reply the operator already
+   sent to the same inquiry, else the job's `INQMSGRPY` (`*DFT`, the
+   reply list for `*SYSRPYL`); with `*RQD` the inquiry waits on
+   `QSYSOPR` and the operation ends until it is run again after the
+   reply, since the service cannot wait inside a command. Still open:
+   whether IBM keeps a save waiting in `MSGW` for an interactive job's
+   operator (it does for batch); settle by a job-side reply path when
+   the service can suspend a command.
 16. **Completion messages.** Quartz's choices, to check against the
    oracle: `CPC2618`/`CPC2619` device description made and changed,
    `CPF2605` device description exists, `CPF2702` device description not
    found (fairly sure of this one), `CPF2653` device in use,
    `CPC6773`/`CPC6774`/`CPC6775` volume initialized, checked, files
-   duplicated, `CPCBC01` to `CPCBC09` the image catalog completions
-   (the `CPFBC` escapes are `imgclg`'s, also Quartz's).
-17. **One file per save.** IBM's `SAVLIB` of several libraries writes a
-   tape file per library (`LABEL` each library's name); QS/400 writes
-   one stream holding them all, labeled after the first. `RSTLIB` of any
-   one of them with `LABEL(*SAVLIB)` therefore finds it only when it was
-   saved first. Settle by writing a file per library once the save
-   engine can end a stream per library.
-18. **Virtual tape `ENDOPT(*UNLOAD)`.** IBM's virtual tape device unloads
-   the image and mounts the next loaded one; QS/400 treats it as
-   `*REWIND` for virtual devices (the entry stays mounted).
+   duplicated, `CPC6776`/`CPC6777` cartridge category set and ejected,
+   `CPC6778`/`CPC6779` records copied to and from tape, `CPC7301`/
+   `CPC7302` tape file made and changed, `CPCBC01` to `CPCBC09` the image
+   catalog completions (the `CPFBC` escapes are `imgclg`'s, also
+   Quartz's).
+17. **One file per save.** Resolved: a `SAVLIB` of several libraries to
+   tape or optical writes a file per library, labeled with its name
+   (as IBM does), and `RSTLIB` of several libraries reads each one's
+   file by its label. A save file still holds one stream.
+18. **Virtual tape `ENDOPT(*UNLOAD)`.** Resolved: the entry in use goes
+   back to `*LOADED` and the next loaded entry is mounted, as IBM's
+   virtual tape does. Open: what IBM mounts when no other entry is
+   loaded; QS/400 keeps the entry mounted (the catalog always mounts a
+   loaded entry).
 19. **Real device types.** A real drive's type and model are Quartz's
    generic ones (`3580 004`, `632C 002`, `3573 001`) rather than what
    the drive reports in its inquiry data (IBM shows e.g. `5746 001`,
    `6337 003`). Settle with the physical tape acceptance in
    `docs/MEDIA.md`.
-20. **Media library cartridges.** `WRKTAPCTG`, `ADDTAPCTG`,
-   `RMVTAPCTG`, `CHGTAPCTG` and `DSPTAPCTG` are defined and refuse; a
-   save to a `TAPMLBnn` device refuses (`CPF6745`). Wiring them means
-   keeping the cartridges' categories per library (the
-   `tape::device::MediaLibrary` model) and running jobs on the
-   library's drive with `LibraryProvider`.
-21. **CPYTOTAP and CPYFRMTAP.** Not defined: they need tape file
-   (`*TAPF`) device files, which this release does not have.
+20. **Media library cartridges.** Resolved for virtual libraries
+   (`CRTDEVMLB RSRCNAME(*VRT)` over a `*TAP` catalog): `WRKTAPCTG`,
+   `DSPTAPCTG`, `ADDTAPCTG`, `CHGTAPCTG`, `RMVTAPCTG`, `WRKMLBSTS` and
+   saves and restores mounting cartridges through the library. IBM i
+   has no virtual tape library; this one is Quartz's, so its drive
+   names (`<rsrc>D1`, `<rsrc>D2`), its slot count and the `Inserted`/
+   `Available`/`Mounted`/`Ejected` statuses are Quartz's choices. Open:
+   a real library's changer (`SgChanger`) behind the same commands,
+   settled with the physical tape acceptance.
+21. **CPYTOTAP and CPYFRMTAP.** Resolved: both, over `*FILE TAPF` tape
+   files (`CRTTAPF`, `CHGTAPF`). Open: `OVRTAPF`; IBM's message
+   identifiers for the copies; `CPYFRMTAP OUTFMT` shown on the first
+   page of the prompt from the start (pub400 shows it once the prompt
+   has been entered once; the prompter has no rule for that).
 
 ## Cleanup and backup
 

@@ -156,10 +156,17 @@ media/        save media (docs/MEDIA.md)
   imgclg/       *IMGCLG catalogs over a CatalogFs: model.rs, ops.rs the Registry (every
                 command), fs.rs, tape.rs TapeImages
   medio/        a save stream to and from media: tapefile.rs (labeled file, 64 KiB blocks),
-                optfile.rs (OPTFILE), catalog.rs CatalogTapes (the next virtual volume).
+                optfile.rs (OPTFILE, saves across optical volumes with .QSPART labels),
+                catalog.rs CatalogTapes and NextVolume (the next virtual volume),
+                library.rs CatalogLibrary (a virtual *TAPMLB over a *TAP catalog,
+                QS400MLB.INF), tapf.rs (*FILE TAPF, the CPYTOTAP/CPYFRMTAP records).
                 The service side is lic/slic/src/stgsvc/media/ (devices, catalogs over the
-                IFS root, drive, stream, operator: QSYSOPR, PAL, problems) and
-                cpp/medcmd.rs (the device, catalog, tape and optical commands)
+                IFS root, drive, library, stream, operator: QSYSOPR with the replies, PAL,
+                problems), cpp/medcmd.rs (the device, catalog, tape, optical and cartridge
+                commands, the panels' data) and cpp/tapcpy.rs (CRTTAPF, CHGTAPF, CPYTOTAP,
+                CPYFRMTAP); the panels are ui/uim/pnlgrp/QSMEDIA and
+                work/qsjob/src/panels/work2/media.rs (WRKIMGCLG, WRKIMGCLGE, WRKTAPCTG,
+                WRKMLBSTS)
 ptf/          PTFs (docs/PTF.md)
   ptf/          header.rs the PTF header, status.rs the states, package.rs build and open a
                 signed PTF stream, db.rs the PTF database, apply.rs LODPTF/APYPTF/RMVPTF
@@ -399,7 +406,7 @@ cargo test -p ptf -p prb          # PTFs, the problem log
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
-cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 75 steps
+cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 76 steps
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
@@ -432,6 +439,7 @@ cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 cargo test -p ftp                         # FTP sessions in memory, the client against the server over loopback
 cargo test -p tape -p optical -p imgclg -p medio   # tape, optical, image catalogs, saves on media
+cargo test --release -p saverst --test media_bench -- --ignored --nocapture   # save/restore MiB/s to virtual tape and optical
 cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sessions; report in target/conformance-ftp/
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
