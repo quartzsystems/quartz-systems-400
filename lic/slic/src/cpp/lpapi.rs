@@ -21,6 +21,23 @@ fn arg(args: &[String], i: usize) -> &str {
     args.get(i).map_or("", String::as_str)
 }
 
+/// The stream of save file `lib/name` for the install displays:
+/// `*USE` to it, as `RSTLICPGM` would need.
+pub(super) fn media_savf(
+    txn: &mut store::txn::Txn<'_>,
+    qsys: store::obj::ObjectId,
+    names: &store::obj::ops::NameContext,
+    lib: &str,
+    name: &str,
+) -> Result<Vec<u8>, String> {
+    let id = wm::obj::find(txn, qsys, names, &lib_or(lib), name, types::SAVF)
+        .map_err(|_| format!("CPF9812 save file {lib}/{name} not found"))?;
+    if !sec::guard::allowed(txn, qsys, "savf.read", id) {
+        return Err(format!("CPF2189 not authorized to save file {name}"));
+    }
+    savf::read(txn, id).map_err(|e| e.to_string())
+}
+
 /// `licpgm_panel`.
 pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec<String>>, String> {
     match what {
@@ -55,11 +72,7 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec
             let streams = if arg(args, 0).contains('/') {
                 let (lib, name) = arg(args, 0).split_once('/').unwrap_or(("*LIBL", arg(args, 0)));
                 let (lib, name) = (lib.to_string(), name.to_string());
-                vec![in_store(system, |txn, qsys, names| {
-                    let id = wm::obj::find(txn, qsys, names, &lib_or(&lib), &name, types::SAVF)
-                        .map_err(|_| format!("CPF9812 save file {lib}/{name} not found"))?;
-                    savf::read(txn, id).map_err(|e| e.to_string())
-                })?]
+                vec![in_store(system, |txn, qsys, names| media_savf(txn, qsys, names, &lib, &name))?]
             } else {
                 // An install device: every product on its media.
                 super::lpcmd::media_streams(arg(args, 0), None)?

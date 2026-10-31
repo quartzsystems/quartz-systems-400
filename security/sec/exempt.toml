@@ -12,8 +12,8 @@ reason = "called by CHGPF/CHGLF after they check the file (file.change)"
 fns = ["change_attr", "replace_formats"]
 
 [file."database/db/src/file/mod.rs"]
-reason = "creation is checked by the store's create (lib.create-in on the library); describe and dependents are called after the caller's check"
-fns = ["create_pf", "create_pf_rcdlen", "create_pf_fields", "create_srcpf", "describe", "add_lf_member", "add_dependent"]
+reason = "creation is checked by the store's create (lib.create-in on the library); describe and dependents are called after the caller's check; prune_dependents only from RSTOBJ/RSTLIB on a file the restore just made, after the hooks allowed it (obj.restore or lib.create-in)"
+fns = ["create_pf", "create_pf_rcdlen", "create_pf_fields", "create_srcpf", "describe", "add_lf_member", "add_dependent", "prune_dependents"]
 
 [file."database/db/src/journal/mod.rs"]
 reason = "journal entries written on behalf of an operation already checked"
@@ -94,6 +94,10 @@ fns = ["load", "save", "lookup", "add", "remove", "list", "free_dir"]
 [file."storage/store/src/obj/ops.rs"]
 reason = "headers, bootstrap and attributes: internal, or checked by the caller"
 fns = ["read_header", "write_header", "bootstrap", "bootstrap_root", "find_library", "create_owned", "set_tree_root", "libraries", "all_extents", "read_attr", "write_attr"]
+
+[file."storage/store/src/obj/savf.rs"]
+reason = "callers check: create through the store's create (lib.create-in); CHGSAVF savf.change; CLRSAVF savf.clear; SAVxxx savf.write and RSTxxx, DSPSAVF and the GO LICPGM list savf.read, *SAVSYS standing in as for the objects; SAVSECDTA and SAVLICPGM need *SAVSYS, RSTLICPGM and the PTF commands *ALLOBJ; DSPPTFCVR reads the system's own PTF save files; /QSYS.LIB is checked at open (*R, *W)"
+fns = ["create", "attr", "set_attr", "len", "read", "write", "clear"]
 
 [file."storage/store/src/obj/space.rs"]
 reason = "an object's space, reached through an object the caller checked"

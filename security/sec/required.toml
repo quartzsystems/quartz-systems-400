@@ -56,6 +56,10 @@ ibm = "saving to a save file: *USE and *ADD to it"
 need = ["*USE"]
 ibm = "restoring from or displaying a save file: *USE"
 
+[op."savf.change"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "CHGSAVF: *OBJOPR and *OBJMGT"
+
 [op."savf.clear"]
 need = ["*OBJOPR", "*OBJMGT"]
 ibm = "CLRSAVF: *OBJOPR and *OBJMGT"

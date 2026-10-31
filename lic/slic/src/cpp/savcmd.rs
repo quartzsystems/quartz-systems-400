@@ -250,32 +250,55 @@ fn crtsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(CmdReply::default())
 }
 
+/// What `CHGSAVF` changes: -1, -2 and `*SAME` keep a value.
+struct SavfChange {
+    max: i64,
+    wait: i64,
+    share: String,
+    text: String,
+}
+
 fn chgsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let file = parms.qual("FILE");
-    let max = parms.int("MAXRCDS").unwrap_or(-1);
-    let wait = parms.int("WAITFILE").unwrap_or(-2);
-    let share = parms.text("SHARE");
-    let text = parms.text("TEXT");
+    let ch = SavfChange {
+        max: parms.int("MAXRCDS").unwrap_or(-1),
+        wait: parms.int("WAITFILE").unwrap_or(-2),
+        share: parms.text("SHARE"),
+        text: parms.text("TEXT"),
+    };
     let now = now_unix();
-    in_store(system, |txn, qsys, names| {
-        let id = find_savf(txn, qsys, names, &file)?;
-        let mut a = savf::attr(txn, id).map_err(|e| e.to_string())?;
-        if max >= 0 {
-            a.max_records = u32::try_from(max).unwrap_or(u32::MAX);
-        }
-        if wait != -2 {
-            a.wait_file = i32::try_from(wait).unwrap_or(0);
-        }
-        if share != "*SAME" {
-            a.share = share == "*YES";
-        }
-        savf::set_attr(txn, id, a).map_err(|e| e.to_string())?;
-        if text != "*SAME" {
-            ops::change_text(txn, id, &text, now).map_err(|e| e.to_string())?;
-        }
-        Ok(())
-    })?;
+    in_store(system, |txn, qsys, names| change_savf(txn, qsys, names, &file, &ch, now))?;
     Ok(CmdReply::default())
+}
+
+/// `CHGSAVF` in the store: `*OBJOPR` and `*OBJMGT` to the save file.
+fn change_savf(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    names: &ops::NameContext,
+    file: &(String, String),
+    ch: &SavfChange,
+    now: u64,
+) -> Result<(), String> {
+    let id = find_savf(txn, qsys, names, file)?;
+    if !sec::guard::allowed(txn, qsys, "savf.change", id) {
+        return Err(format!("CPF2189 not authorized to save file {}", file.0));
+    }
+    let mut a = savf::attr(txn, id).map_err(|e| e.to_string())?;
+    if ch.max >= 0 {
+        a.max_records = u32::try_from(ch.max).unwrap_or(u32::MAX);
+    }
+    if ch.wait != -2 {
+        a.wait_file = i32::try_from(ch.wait).unwrap_or(0);
+    }
+    if ch.share != "*SAME" {
+        a.share = ch.share == "*YES";
+    }
+    savf::set_attr(txn, id, a).map_err(|e| e.to_string())?;
+    if ch.text != "*SAME" {
+        ops::change_text(txn, id, &ch.text, now).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 fn clrsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -1951,5 +1974,149 @@ mod sav_tests {
         assert_eq!(expand("/", &names, "*", &omit), vec!["/QOpenSys", "/home", "/rcvdata"]);
         assert_eq!(expand("/", &names, "Q*", &omit), vec!["/QOpenSys"]);
         assert_eq!(expand("/home", &["a.txt".into(), "b.log".into()], "*.TXT", &[]), vec!["/home/a.txt"]);
+    }
+}
+
+#[cfg(test)]
+mod auth_tests {
+    use std::cell::RefCell;
+    use std::rc::Rc;
+    use std::sync::Arc;
+
+    use blockdev::{BlockDev, MemBlockDev};
+    use sec::auth::bits::Auth;
+    use sec::auth::cache::Session;
+    use sec::auth::grant;
+    use sec::auth::principal::Principal;
+    use sec::cmd::{Env, Keywords, usrprf};
+    use sec::guard::{SecGuard, as_job};
+    use sec::profile::shipped;
+    use store::{FormatParams, Store, StoreConfig};
+
+    use super::*;
+
+    const NOW: u64 = 1_767_225_600;
+
+    fn sysval(n: &str) -> String {
+        if n == "QSECURITY" { "40".into() } else { String::new() }
+    }
+
+    fn create(t: &mut Txn<'_>, lib: ObjectId, name: &str, type_code: u16) -> ObjectId {
+        ops::create(
+            t,
+            &ops::CreateParams {
+                library: lib,
+                name: qsname::Name::parse(name).unwrap(),
+                type_code,
+                attribute: String::new(),
+                text: String::new(),
+                owner: "QSECOFR".into(),
+                system: "QS400".into(),
+                now: NOW,
+                by_system: true,
+            },
+        )
+        .unwrap()
+    }
+
+    /// A guarded store with APPLIB/SF (`*PUBLIC *USE`) and the sessions
+    /// of BOB and QSECOFR.
+    fn setup() -> (Store, ObjectId, ObjectId, Rc<RefCell<Session>>, Rc<RefCell<Session>>) {
+        let d = Arc::new(MemBlockDev::with_seed(16384, 7));
+        let params = FormatParams {
+            asp_number: 1,
+            asp_uuid: [4; 16],
+            unit_uuids: vec![[5; 16]],
+            unit_serials: Vec::new(),
+            wal_pages: 128,
+            now: NOW,
+        };
+        let mut store =
+            Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+        let qsys = {
+            let mut t = store.begin().unwrap();
+            let q = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
+            t.commit().unwrap();
+            q
+        };
+        let g = SecGuard::new(Some(qsys));
+        g.set_sysval("QCRTAUT", "*USE");
+        store.set_guard(Some(g));
+        let mut t = store.begin().unwrap();
+        let app = create(&mut t, qsys, "APPLIB", types::LIB);
+        let sf = savf::create(
+            &mut t,
+            &ops::CreateParams {
+                library: app,
+                name: qsname::Name::parse("SF").unwrap(),
+                type_code: types::SAVF,
+                attribute: String::new(),
+                text: "before".into(),
+                owner: "QSECOFR".into(),
+                system: "QS400".into(),
+                now: NOW,
+                by_system: true,
+            },
+            SavfAttr::default(),
+        )
+        .unwrap();
+        savf::write(&mut t, sf, b"stream").unwrap();
+        shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
+        let secofr = Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
+        let env = Env {
+            qsys,
+            actor: &secofr,
+            now: NOW,
+            sysval: &sysval,
+        };
+        usrprf::crtusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB")])).unwrap();
+        grant::set_public(&mut t, app, Some(Auth::USE)).unwrap();
+        grant::set_public(&mut t, sf, Some(Auth::USE)).unwrap();
+        let bob = Rc::new(RefCell::new(Session::new(Principal::load(&mut t, qsys, "BOB", 40).unwrap())));
+        let secofr = Rc::new(RefCell::new(Session::new(secofr)));
+        t.commit().unwrap();
+        (store, qsys, app, bob, secofr)
+    }
+
+    fn change() -> SavfChange {
+        SavfChange {
+            max: 99,
+            wait: -2,
+            share: "*SAME".into(),
+            text: "after".into(),
+        }
+    }
+
+    #[test]
+    fn chgsavf_needs_objmgt() {
+        let (mut store, qsys, app, bob, secofr) = setup();
+        let names = ops::NameContext {
+            curlib: Some(app),
+            libl: vec![qsys, app],
+        };
+        let file = ("SF".to_string(), "APPLIB".to_string());
+        let mut t = store.begin().unwrap();
+        let e = as_job(&bob, || change_savf(&mut t, qsys, &names, &file, &change(), NOW)).unwrap_err();
+        assert!(e.starts_with("CPF2189"), "{e}");
+        let id = find_savf(&mut t, qsys, &names, &file).unwrap();
+        assert_eq!(savf::attr(&mut t, id).unwrap().max_records, 0);
+        as_job(&secofr, || change_savf(&mut t, qsys, &names, &file, &change(), NOW)).unwrap();
+        assert_eq!(savf::attr(&mut t, id).unwrap().max_records, 99);
+    }
+
+    #[test]
+    fn the_licpgm_list_needs_use() {
+        let (mut store, qsys, app, bob, _) = setup();
+        let names = ops::NameContext {
+            curlib: Some(app),
+            libl: vec![qsys, app],
+        };
+        let mut t = store.begin().unwrap();
+        let read = |t: &mut Txn<'_>| super::super::lpapi::media_savf(t, qsys, &names, "APPLIB", "SF");
+        assert_eq!(as_job(&bob, || read(&mut t)).unwrap(), b"stream");
+        let id = find_savf(&mut t, qsys, &names, &("SF".into(), "APPLIB".into())).unwrap();
+        grant::set_public(&mut t, id, Some(Auth::EXCLUDE)).unwrap();
+        let e = as_job(&bob, || read(&mut t)).unwrap_err();
+        assert!(e.starts_with("CPF2189"), "{e}");
     }
 }
