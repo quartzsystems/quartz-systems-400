@@ -745,7 +745,7 @@ id = "TCP3701"
 sev = 40
 text = "Spooled file &1 could not be sent."
 help = "The remote system did not accept the print job, or the exchange broke its protocol. The job log holds the remote system's answer."
-vars = ["*CHAR 10"]
+vars = ["*CHAR 10", "*BIN 2", "*CHAR 10", "*CHAR 10", "*CHAR 6"]
 
 [[msg]]
 id = "TCP370A"

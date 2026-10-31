@@ -312,16 +312,26 @@ pub fn failed(
         a.writer.clear();
         Ok(())
     })?;
-    let file = system
+    let (file, number, owner) = system
         .spool
         .files
         .get(&id)
-        .map(|e| e.attrs.name.clone())
+        .map(|e| (e.attrs.name.clone(), e.attrs.number, e.attrs.job.clone()))
         .unwrap_or_default();
+    // TCP3701's data: the file, its number, then its job.
+    let data = if msgid == "TCP3701" {
+        let mut d = cmd::error::data(&[(&file, 10)]);
+        d.extend_from_slice(&u16::try_from(number).unwrap_or(u16::MAX).to_be_bytes());
+        d.extend(cmd::error::data(&[(&owner.0, 10), (&owner.1, 10), (&format!("{:06}", owner.2), 6)]));
+        d
+    } else {
+        Vec::new()
+    };
     let m = wm::obj::msgq::QMsg {
         msgid: msgid.into(),
         msgf: ("QTCPMSGF".into(), "QTCP".into()),
         severity: 40,
+        data,
         text: format!("Writer {name} could not send spooled file {file}: {text}"),
         job: (name.to_string(), "QSPLJOB".into(), job),
         from_pgm: "QSPWTR".into(),
