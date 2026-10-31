@@ -1,0 +1,24 @@
+                            Specify Command Defaults
+                                                             System:   SYSNAME
+ Type choices, press Enter.
+ Devices  . . . . . . . . . . . . . .   TAP01
+ Prompt for commands  . . . . . . . .   Y
+ Check for active files . . . . . . .   Y
+ Message queue delivery . . . . . . .   *BREAK
+ Start time . . . . . . . . . . . . .   *CURRENT
+ Vary off network servers . . . . . .   *ALL
+ Unmount file systems . . . . . . . .   N
+ Print system information . . . . . .   N
+ Use system reply list  . . . . . . .   N
+ Spooled file data  . . . . . . . . .   *NONE
+
+
+
+
+
+
+
+ Y=Yes, N=No; delivery *BREAK or *NOTIFY; start time *CURRENT or HHMM
+
+ F1=Help   F3=Exit   F12=Cancel
+

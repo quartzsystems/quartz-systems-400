@@ -1,0 +1,39 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* SETUPBCKUP: the task menu that sets up the backups.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='SETUPBCKUP'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=SETUPBCKUP HELP=HLPSETUPBCKUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Set Up Backup
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='CMD ?CHGBCKUP BCKUPOPT(*DAILY)'.Change daily backup options
+:MENUI OPTION=2 ACTION='CMD ?CHGBCKUP BCKUPOPT(*WEEKLY)'.Change weekly backup options
+:MENUI OPTION=3 ACTION='CMD ?CHGBCKUP BCKUPOPT(*MONTHLY)'.Change monthly backup options
+:MENUI OPTION=10 ACTION='CMD DSPBCKUP BCKUPOPT(*DAILY)'.Display daily backup options
+:MENUI OPTION=20 ACTION='CMD ?ADDJOBSCDE JOB(QEZBCKUP) CMD(RUNBCKUP BCKUPOPT(*DAILY)) FRQ(*WEEKLY) SCDDAY(*ALL)'.Schedule the daily backup
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPSETUPBCKUP.Set Up Backup - Help
+:P.Options 1 to 3 change what each backup saves, where it goes and how it
+runs. Option 10 shows the daily options; option 20 adds a job schedule
+entry that runs the daily backup each day.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:EPNLGRP.

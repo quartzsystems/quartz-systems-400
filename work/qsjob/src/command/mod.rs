@@ -209,7 +209,8 @@ fn prompt(
     if !host.has_display() {
         return Err(Fail::new("CPF6802", ""));
     }
-    prompt::session(job, host, r)
+    let over = prompt::override_values(job, host, r);
+    prompt::session(job, host, over.as_ref().unwrap_or(r))
 }
 
 /// Run a resolved command where its processing program lives.

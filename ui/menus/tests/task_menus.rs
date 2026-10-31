@@ -27,7 +27,11 @@ fn check(golden: &str, menu: &str, page: usize) {
 
 /// `title_words`: the title row matches by its words only.
 fn compare(golden: &str, menu: &str, page: usize, title_words: bool) {
-    let path = golden_dir().join(format!("{golden}.txt"));
+    let path = if let Some(g) = golden.strip_prefix("phase11/") {
+        golden_dir().join("../../phase11/menus").join(format!("{g}.txt"))
+    } else {
+        golden_dir().join(format!("{golden}.txt"))
+    };
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     let theirs: Vec<&str> = text.lines().collect();
     let source = menus::shipped::source(menu).unwrap_or_else(|| panic!("{menu} is not shipped"));
@@ -121,6 +125,15 @@ menu_test! {
     menu_techhelp: "menu-techhelp", "TECHHELP", 0;
     information_assistant: "information-assistant", "INFO", 0;
     main_menu: "main-menu", "MAIN", 0;
+    // The Phase 11 captures.
+    p11_save: "phase11/menu-save", "SAVE", 0;
+    p11_save_2: "phase11/menu-save-2", "SAVE", 1;
+    p11_save_3: "phase11/menu-save-3", "SAVE", 2;
+    p11_restore: "phase11/menu-restore", "RESTORE", 0;
+    p11_restore_2: "phase11/menu-restore-2", "RESTORE", 1;
+    p11_restore_3: "phase11/menu-restore-3", "RESTORE", 2;
+    p11_backup: "phase11/menu-backup", "BACKUP", 0;
+    p11_cleanup: "phase11/menu-cleanup", "CLEANUP", 0;
 }
 
 /// IBM's ASSIST is a display-file menu whose title sits one column right

@@ -1,0 +1,38 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* RUNBCKUP: the task menu that runs a backup.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='RUNBCKUP'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=RUNBCKUP HELP=HLPRUNBCKUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Run Backup
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='CMD RUNBCKUP BCKUPOPT(*DAILY)'.Run daily backup
+:MENUI OPTION=2 ACTION='CMD RUNBCKUP BCKUPOPT(*WEEKLY)'.Run weekly backup
+:MENUI OPTION=3 ACTION='CMD RUNBCKUP BCKUPOPT(*MONTHLY)'.Run monthly backup
+:MENUI OPTION=11 ACTION='CMD QSMNSAVE OPTION(21)'.Back up the entire system
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPRUNBCKUP.Run Backup - Help
+:P.Options 1 to 3 run a backup now with the options set up for it (GO
+BACKUP option 10). Option 11 saves the whole system the way GO SAVE
+option 21 does.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:EPNLGRP.

@@ -70,6 +70,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             return call(job, host, &parms);
         }
         "STRSEU" => return crate::devtools::seu::run(job, host, r),
+        // --- GO SAVE, GO RESTORE and RUNBCKUP (panels/backup.rs)
+        "QSMNSAVE" | "QSMNRST" | "RUNBCKUP" => return crate::panels::backup::command(job, host, r),
         "RTVSYSVAL" => return rtvsysval(host, r, out),
         "RTVJOBA" => return rtvjoba(host, r, out),
         "RTVOBJD" => return rtvobjd(host, r, out),

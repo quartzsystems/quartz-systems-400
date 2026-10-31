@@ -98,3 +98,86 @@ pub fn panel(s: &Screen) -> Panel {
     }
     p
 }
+
+/// Split a keyword form into its `KWD(value)` words, at depth zero.
+fn words(form: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let (mut cur, mut depth, mut quoted) = (String::new(), 0i32, false);
+    for c in form.chars() {
+        match c {
+            '\'' => quoted = !quoted,
+            '(' if !quoted => depth += 1,
+            ')' if !quoted => depth -= 1,
+            c if c.is_whitespace() && depth == 0 && !quoted => {
+                if !cur.is_empty() {
+                    out.push(std::mem::take(&mut cur));
+                }
+                continue;
+            }
+            _ => {}
+        }
+        cur.push(c);
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out
+}
+
+/// A definition with `PMTOVRPGM`: the current values the service gives
+/// (`QSPMTOVR`), under what the caller typed. `None` keeps `r`: no
+/// override, a key parameter not given yet, or nothing came back.
+pub fn override_values(job: &mut Job, host: &Host, r: &Resolved) -> Option<Resolved> {
+    r.def.pmtovrpgm.as_ref()?;
+    let is_key = |k: &str| r.def.parms.iter().any(|p| p.kwd == k && p.keyparm);
+    let has_keys = r.def.parms.iter().any(|p| p.keyparm);
+    let given: Vec<String> = r
+        .parms
+        .iter()
+        .filter(|b| b.specified)
+        .filter_map(|b| b.value.as_ref().map(|v| format!("{}({})", b.kwd, v.parm_source())))
+        .collect();
+    let keys: Vec<&String> = given
+        .iter()
+        .filter(|g| is_key(g.split('(').next().unwrap_or("")))
+        .collect();
+    if has_keys && keys.is_empty() {
+        return None;
+    }
+    let key = keys.iter().map(|k| k.replace('\'', "''")).collect::<Vec<_>>().join(" ");
+    let out = super::run(job, host, &format!("QSPMTOVR CMD({}) KEY('{key}')", r.name));
+    if out.escape.is_some() || out.text.trim().is_empty() {
+        return None;
+    }
+    let typed: Vec<&str> = given.iter().map(|g| g.split('(').next().unwrap_or("")).collect();
+    let mut line = format!("?{}", r.name);
+    for w in words(out.text.trim()) {
+        if !typed.contains(&w.split('(').next().unwrap_or("")) {
+            line.push(' ');
+            line.push_str(&w);
+        }
+    }
+    for g in &given {
+        line.push(' ');
+        line.push_str(g);
+    }
+    let mut cmds = host.cmds.borrow_mut();
+    let mut env = Env::new(&mut *cmds);
+    env.setting = Setting {
+        interactive: host.interactive(),
+        ..Setting::default()
+    };
+    env.limited = host.limited();
+    analyze(&mut env, &line).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn keyword_words() {
+        assert_eq!(
+            super::words("A(1) B('x y') C((P Q) R)"),
+            ["A(1)", "B('x y')", "C((P Q) R)"]
+        );
+    }
+}

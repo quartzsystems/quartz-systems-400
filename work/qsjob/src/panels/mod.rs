@@ -9,6 +9,7 @@
 //! CL program's `OUTPUT(*PRINT)`) keeps the text path the storage
 //! service answers with.
 
+pub mod backup;
 pub mod certs;
 pub mod ifs;
 pub mod licpgm;
@@ -120,9 +121,19 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
     if let Some(res) = licpgm::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
+    // --- the backup display (backup.rs)
+    if let Some(res) = backup::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
     // --- the IFS displays (ifs.rs)
     if let Some(res) = ifs::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     None
+}
+
+/// Whether the job shows panels at all: interactive, with a 5250 device.
+#[must_use]
+pub fn shows_host_panels(host: &Host) -> bool {
+    host.interactive() && host.display.borrow().is_some()
 }

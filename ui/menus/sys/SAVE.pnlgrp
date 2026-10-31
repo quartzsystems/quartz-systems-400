@@ -37,10 +37,10 @@
 :MENUI OPTION=11 ACTION='CMD ?SAV'.Objects in directories
 :EMENUGRP.
 :MENUGRP.Save System and User Data
-:MENUI OPTION=20 ACTION='CMD ?CHGBCKUP'.Define save system and user data defaults
-:MENUI OPTION=21 ACTION='CMD ?SAVSYS'.Entire system
-:MENUI OPTION=22 ACTION='CMD ?SAVSYS'.System data only
-:MENUI OPTION=23 ACTION='CMD ?SAVLIB LIB(*ALLUSR)'.All user data
+:MENUI OPTION=20 ACTION='CMD QSMNSAVE OPTION(20)'.Define save system and user data defaults
+:MENUI OPTION=21 ACTION='CMD QSMNSAVE OPTION(21)'.Entire system
+:MENUI OPTION=22 ACTION='CMD QSMNSAVE OPTION(22)'.System data only
+:MENUI OPTION=23 ACTION='CMD QSMNSAVE OPTION(23)'.All user data
 :EMENUGRP.
 :MENUGRP.Save Document Library Objects
 :MENUI OPTION=30 ACTION='CMD ?SAVDLO DLO(*ALL)'.All documents, folders, and mail
@@ -53,11 +53,12 @@
 :MENUI OPTION=40 ACTION='CMD ?SAVLIB LIB(*NONSYS)'.All libraries other than system library
 :MENUI OPTION=41 ACTION='CMD ?SAVLIB LIB(*IBM)'.All IBM libraries other than system library
 :MENUI OPTION=42 ACTION='CMD ?SAVLIB LIB(*ALLUSR)'.All user libraries
+:MENUI OPTION=43 ACTION='CMD ?SAVCHGOBJ OBJ(*ALL) LIB(*ALLUSR)'.All changed objects in user libraries
 :EMENUGRP.
 :MENUGRP.Save for Different Systems
 :MENUI OPTION=50 ACTION='MENU SAVS36FMT'.Save in System/36 format
 :EMENUGRP.
-:MENUGRP.
+:MENUGRP.Related Commands
 :MENUI OPTION=70 ACTION='MENU CMDSAV'.Related commands
 :EMENUGRP.
 :EMENU.

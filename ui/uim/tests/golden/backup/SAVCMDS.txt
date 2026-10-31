@@ -1,0 +1,24 @@
+                                Commands to Run
+                                                             System:   SYSNAME
+ These commands run in order. Press Enter to start them, F12 to return.
+ ENDSBS SBS(*ALL) OPTION(*IMMED)
+ CHGMSGQ MSGQ(QSYSOPR) DLVRY(*BREAK) SEV(60)
+ SAVLIB LIB(*NONSYS) DEV(TAP01) ACCPTH(*YES) SPLFDTA(*NONE)
+ STRSBS SBSD(QSYS/QCTL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+
+ F1=Help   F3=Exit   F12=Cancel
+

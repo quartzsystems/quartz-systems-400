@@ -72,21 +72,19 @@ pub(super) fn render(
     } else {
         (body, false)
     };
-    let pages = if per == 0 {
-        1
-    } else {
-        longest.div_ceil(per).max(1)
-    };
+    // A separator that would open a later page is left out (dspbckup-2).
+    let by_column: Vec<Vec<Vec<&Row<'_>>>> = columns.iter().map(|c| pages_of(c, per)).collect();
+    let pages = by_column.iter().map(Vec::len).max().unwrap_or(1).max(1);
     let page = ctx.opts.page.min(pages - 1);
     let single = columns.len() == 1;
-    for c in &columns {
+    for (c, cp) in columns.iter().zip(&by_column) {
         let mut colon = colon_of(ctx, c);
         if single && let Some(sh) = shared {
             colon = colon.max(sh);
         }
         let end = (c.start + c.width - 1).min(limit);
-        let visible = c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..)));
-        for (i, r) in visible.skip(page * per).take(per).enumerate() {
+        let none = Vec::new();
+        for (i, r) in cp.get(page).unwrap_or(&none).iter().copied().enumerate() {
             put_row(ctx, s, row + i, c.start, end, colon, r);
             s.help(row + i, c.start, end, area.help.as_deref());
             let help = match r {
@@ -517,4 +515,21 @@ fn walk<'a>(
             }
         }
     }
+}
+
+/// A column's shown rows, `per` to a page; a blank row that would open
+/// a page after the first is dropped.
+fn pages_of<'a, 'b>(c: &'b Column<'a>, per: usize) -> Vec<Vec<&'b Row<'a>>> {
+    let mut out: Vec<Vec<&Row<'a>>> = vec![Vec::new()];
+    for r in c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..))) {
+        if per > 0 && out.last().is_some_and(|p| p.len() >= per) {
+            out.push(Vec::new());
+        }
+        let page = out.last_mut().expect("a page");
+        if page.is_empty() && out.len() > 1 && matches!(r, Row::Blank) {
+            continue;
+        }
+        out.last_mut().expect("a page").push(r);
+    }
+    out
 }

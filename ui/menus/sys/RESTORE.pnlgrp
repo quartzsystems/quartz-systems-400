@@ -36,9 +36,9 @@
 :MENUI OPTION=9 ACTION='CMD ?RST'.Objects in directories
 :EMENUGRP.
 :MENUGRP.Restore System and User Data
-:MENUI OPTION=21 ACTION='CMD ?RSTLIB SAVLIB(*NONSYS)'.System and user data
-:MENUI OPTION=22 ACTION='CMD ?RSTUSRPRF'.System data only
-:MENUI OPTION=23 ACTION='CMD ?RSTLIB SAVLIB(*ALLUSR)'.All user data
+:MENUI OPTION=21 ACTION='CMD QSMNRST OPTION(21)'.System and user data
+:MENUI OPTION=22 ACTION='CMD QSMNRST OPTION(22)'.System data only
+:MENUI OPTION=23 ACTION='CMD QSMNRST OPTION(23)'.All user data
 :EMENUGRP.
 :MENUGRP.Restore Office Data
 :MENUI OPTION=30 ACTION='CMD ?RSTDLO DLO(*ALL)'.All documents, folders, and mail
@@ -50,10 +50,10 @@
 :MENUI OPTION=41 ACTION='CMD ?RSTLIB SAVLIB(*IBM)'.All IBM libraries other than system library
 :MENUI OPTION=42 ACTION='CMD ?RSTLIB SAVLIB(*ALLUSR)'.All user libraries
 :EMENUGRP.
-:MENUGRP.Restore for Different Systems
+:MENUGRP.Restore from Different Systems
 :MENUI OPTION=50 ACTION='MENU RSTS36FMT'.Restore from System/36 format
 :EMENUGRP.
-:MENUGRP.
+:MENUGRP.Related Commands
 :MENUI OPTION=70 ACTION='MENU CMDRST'.Related commands
 :EMENUGRP.
 :EMENU.
