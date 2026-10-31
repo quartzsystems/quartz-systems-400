@@ -9,15 +9,17 @@
              PARM       KWD(MAXRCDS) TYPE(*INT4) DFT(*SAME) +
                           RANGE(1 2147483647) SPCVAL((*SAME -1) +
                           (*NOMAX 0)) PROMPT('Maximum records')
-             PARM       KWD(WAITFILE) TYPE(*INT4) DFT(*SAME) +
-                          RANGE(1 32767) SPCVAL((*SAME -2) (*IMMED 0) +
-                          (*CLS -1)) PROMPT('Maximum file wait time')
-             PARM       KWD(SHARE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
-                          DFT(*SAME) VALUES(*SAME *NO *YES) +
-                          PROMPT('Share open data path')
              PARM       KWD(TEXT) TYPE(*CHAR) LEN(50) DFT(*SAME) +
                           SPCVAL((*SAME) (*BLANK '')) +
                           PROMPT('Text ''description''')
+             PARM       KWD(WAITFILE) TYPE(*INT2) DFT(*SAME) +
+                          RANGE(1 32767) SPCVAL((*SAME -2) (*IMMED 0) +
+                          (*CLS -1)) PMTCTL(*PMTRQS) +
+                          PROMPT('Maximum file wait time')
+             PARM       KWD(SHARE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
+                          DFT(*SAME) VALUES(*SAME *NO *YES) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('Share open data path')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

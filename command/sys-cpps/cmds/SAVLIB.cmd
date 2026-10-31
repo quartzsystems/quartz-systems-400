@@ -10,7 +10,7 @@
                           PROMPT('Library')
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MIN(1) MAX(4) +
                           SNGVAL((*SAVF) (*MEDDFN)) PROMPT('Device')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) MAX(75) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(32) MAX(75) +
                           DFT(*MOUNTED) SNGVAL((*MOUNTED)) +
                           PMTCTL(P1) PROMPT('Volume identifier')
              PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*END) +
@@ -25,7 +25,8 @@
                           DFT(*REWIND) VALUES(*REWIND *LEAVE *UNLOAD) +
                           PMTCTL(P1) PROMPT('End of media option')
              PARM       KWD(STRLIB) TYPE(*NAME) LEN(10) DFT(*FIRST) +
-                          SPCVAL((*FIRST)) PROMPT('Starting library')
+                          SPCVAL((*FIRST)) PMTCTL(P1) +
+                          PROMPT('Starting library')
              PARM       KWD(SAVF) TYPE(Q1) PMTCTL(P2) +
                           PROMPT('Save file')
              PARM       KWD(MEDDFN) TYPE(Q1) PMTCTL(P3) +
@@ -35,45 +36,32 @@
              PARM       KWD(USEOPTBLK) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO) PMTCTL(P1) +
                           PROMPT('Use optimum block size')
-             PARM       KWD(SAVACT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
-                          DFT(*NO) VALUES(*NO *LIB *SYNCLIB *SYSDFN) +
-                          PROMPT('Save active')
-             PARM       KWD(SAVACTWAIT) TYPE(E1) +
-                          PROMPT('Save active wait time')
-             PARM       KWD(SAVACTMSGQ) TYPE(Q2) DFT(*NONE) +
-                          SNGVAL((*NONE) (*WRKSTN)) +
-                          PROMPT('Save active message queue')
-             PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*) +
-                          SPCVAL((*) (*SYSBAS) (*CURASPGRP)) +
-                          PROMPT('ASP device')
-             PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
-                          DFT(*NONE) VALUES(*NONE *PRINT *OUTFILE) +
-                          PMTCTL(*PMTRQS) PROMPT('Output')
-             PARM       KWD(OUTFILE) TYPE(Q1) PMTCTL(*PMTRQS) +
-                          PROMPT('File to receive output')
-             PARM       KWD(OUTMBR) TYPE(E2) PMTCTL(*PMTRQS) +
-                          PROMPT('Output member options')
-             PARM       KWD(INFTYPE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
-                          DFT(*OBJ) VALUES(*OBJ *LIB *MBR *ERR) +
-                          PMTCTL(*PMTRQS) PROMPT('Type of output information')
              PARM       KWD(TGTRLS) TYPE(*CHAR) LEN(8) DFT(*CURRENT) +
                           SPCVAL((*CURRENT) (*PRV)) PMTCTL(*PMTRQS) +
                           PROMPT('Target release')
              PARM       KWD(UPDHST) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO) PMTCTL(*PMTRQS) +
                           PROMPT('Update history')
-             PARM       KWD(OMITLIB) TYPE(*GENERIC) LEN(10) MAX(300) +
-                          DFT(*NONE) SNGVAL((*NONE)) PMTCTL(*PMTRQS) +
-                          PROMPT('Libraries to omit')
-             PARM       KWD(OMITOBJ) TYPE(E3) MAX(300) DFT(*NONE) +
-                          SNGVAL((*NONE)) PMTCTL(*PMTRQS) +
-                          PROMPT('Objects to omit')
              PARM       KWD(CLEAR) TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *ALL *AFTER +
                           *REPLACE) PMTCTL(*PMTRQS) PROMPT('Clear')
              PARM       KWD(PRECHK) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*NO) VALUES(*NO *YES) PMTCTL(*PMTRQS) +
                           PROMPT('Object pre-check')
+             PARM       KWD(SAVACT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+                          DFT(*NO) VALUES(*NO *LIB *SYNCLIB *SYSDFN) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('Save active')
+             PARM       KWD(SAVACTWAIT) TYPE(E1) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('Save active wait time')
+             PARM       KWD(SAVACTMSGQ) TYPE(Q2) DFT(*NONE) +
+                          SNGVAL((*NONE) (*WRKSTN)) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('Save active message queue')
+             PARM       KWD(ACCPTH) TYPE(*CHAR) LEN(7) RSTD(*YES) +
+                          DFT(*SYSVAL) VALUES(*SYSVAL *NO *YES) +
+                          PMTCTL(*PMTRQS) PROMPT('Save access paths')
              PARM       KWD(SAVFDTA) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO) PMTCTL(*PMTRQS) +
                           PROMPT('Save file data')
@@ -89,9 +77,26 @@
              PARM       KWD(COMPACT) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*DEV) VALUES(*DEV *NO *YES) PMTCTL(*PMTRQS) +
                           PROMPT('Data compaction')
-             PARM       KWD(ACCPTH) TYPE(*CHAR) LEN(7) RSTD(*YES) +
-                          DFT(*SYSVAL) VALUES(*SYSVAL *NO *YES) +
-                          PMTCTL(*PMTRQS) PROMPT('Save access paths')
+             PARM       KWD(OMITLIB) TYPE(*GENERIC) LEN(10) MAX(300) +
+                          DFT(*NONE) SNGVAL((*NONE)) PMTCTL(*PMTRQS) +
+                          PROMPT('Libraries to omit')
+             PARM       KWD(OMITOBJ) TYPE(E3) MAX(300) DFT(*NONE) +
+                          SNGVAL((*NONE)) PMTCTL(*PMTRQS) +
+                          PROMPT('Objects to omit')
+             PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*) +
+                          SPCVAL((*) (*SYSBAS) (*CURASPGRP)) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('ASP device')
+             PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+                          DFT(*NONE) VALUES(*NONE *PRINT *OUTFILE) +
+                          PMTCTL(*PMTRQS) PROMPT('Output')
+             PARM       KWD(OUTFILE) TYPE(Q1) PMTCTL(*PMTRQS) +
+                          PROMPT('File to receive output')
+             PARM       KWD(OUTMBR) TYPE(E2) PMTCTL(*PMTRQS) +
+                          PROMPT('Output member options')
+             PARM       KWD(INFTYPE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+                          DFT(*OBJ) VALUES(*OBJ *LIB *MBR *ERR) +
+                          PMTCTL(*PMTRQS) PROMPT('Type of output information')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

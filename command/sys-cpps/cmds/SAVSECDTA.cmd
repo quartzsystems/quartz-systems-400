@@ -8,7 +8,7 @@
                           ALLOW(*ALL) HLPPNLGRP(QHSRCMD) HLPID(SAVSECDTA)
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MIN(1) MAX(4) +
                           SNGVAL((*SAVF) (*MEDDFN)) PROMPT('Device')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) MAX(75) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(32) MAX(75) +
                           DFT(*MOUNTED) SNGVAL((*MOUNTED)) +
                           PMTCTL(P1) PROMPT('Volume identifier')
              PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*END) +
@@ -22,22 +22,19 @@
              PARM       KWD(ENDOPT) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*REWIND) VALUES(*REWIND *LEAVE *UNLOAD) +
                           PMTCTL(P1) PROMPT('End of media option')
+             PARM       KWD(USEOPTBLK) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+                          DFT(*YES) VALUES(*YES *NO) PMTCTL(P1) +
+                          PROMPT('Use optimum block size')
              PARM       KWD(SAVF) TYPE(Q1) PMTCTL(P2) +
                           PROMPT('Save file')
              PARM       KWD(MEDDFN) TYPE(Q1) PMTCTL(P3) +
                           PROMPT('Media definition')
              PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
                           CASE(*MIXED) PMTCTL(P1) PROMPT('Optical file')
-             PARM       KWD(USEOPTBLK) TYPE(*CHAR) LEN(4) RSTD(*YES) +
-                          DFT(*YES) VALUES(*YES *NO) PMTCTL(P1) +
-                          PROMPT('Use optimum block size')
-             PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
-                          DFT(*NONE) VALUES(*NONE *PRINT *OUTFILE) +
-                          PMTCTL(*PMTRQS) PROMPT('Output')
-             PARM       KWD(OUTFILE) TYPE(Q1) PMTCTL(*PMTRQS) +
-                          PROMPT('File to receive output')
-             PARM       KWD(OUTMBR) TYPE(E2) PMTCTL(*PMTRQS) +
-                          PROMPT('Output member options')
+             PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*ALLAVL) +
+                          SPCVAL((*ALLAVL) (*SYSBAS) (*CURASPGRP)) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('ASP device')
              PARM       KWD(CLEAR) TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *ALL *AFTER +
                           *REPLACE) PMTCTL(*PMTRQS) PROMPT('Clear')
@@ -47,9 +44,13 @@
              PARM       KWD(COMPACT) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*DEV) VALUES(*DEV *NO *YES) PMTCTL(*PMTRQS) +
                           PROMPT('Data compaction')
-             PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*) +
-                          SPCVAL((*) (*SYSBAS) (*CURASPGRP)) +
-                          PROMPT('ASP device')
+             PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+                          DFT(*NONE) VALUES(*NONE *PRINT *OUTFILE) +
+                          PMTCTL(*PMTRQS) PROMPT('Output')
+             PARM       KWD(OUTFILE) TYPE(Q1) PMTCTL(*PMTRQS) +
+                          PROMPT('File to receive output')
+             PARM       KWD(OUTMBR) TYPE(E2) PMTCTL(*PMTRQS) +
+                          PROMPT('Output member options')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

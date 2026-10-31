@@ -15,6 +15,30 @@
              PARM       KWD(SUBTREE) TYPE(*INT4) RSTD(*YES) DFT(*ALL) +
                           SPCVAL((*ALL -1) (*DIR -2) (*NONE -4) +
                           (*OBJ -3) (*STG -5)) PROMPT('Directory subtree')
+             PARM       KWD(SAVACT) TYPE(*INT4) RSTD(*YES) DFT(*NO) +
+                          SPCVAL((*NO 0) (*YES 1) (*SYNC -1)) +
+                          PROMPT('Save active')
+             PARM       KWD(OUTPUT) TYPE(*PNAME) LEN(5000) DFT(*NONE) +
+                          SPCVAL((*NONE) (*PRINT)) EXPR(*YES) +
+                          PROMPT('Output')
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(32) DFT(*MOUNTED) +
+                          SNGVAL((*MOUNTED)) MAX(75) EXPR(*YES) +
+                          PMTCTL(P1) +
+                          PROMPT('Volume identifier')
+             PARM       KWD(LABEL) TYPE(*CHAR) LEN(17) DFT(*GEN) +
+                          SPCVAL((*GEN)) EXPR(*YES) PMTCTL(P1) +
+                          PROMPT('Label')
+             PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
+                          CASE(*MIXED) PMTCTL(P1) +
+                          PROMPT('Optical file')
+             PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*END) +
+                          RANGE(1 16777215) SPCVAL((*END -3)) +
+                          EXPR(*YES) PMTCTL(P1) +
+                          PROMPT('Sequence number')
+             PARM       KWD(ENDOPT) TYPE(*CHAR) LEN(7) RSTD(*YES) +
+                          DFT(*REWIND) VALUES(*REWIND *LEAVE *UNLOAD) +
+                          PMTCTL(P1) +
+                          PROMPT('End of media option')
              PARM       KWD(SYSTEM) TYPE(*INT4) RSTD(*YES) DFT(*LCL) +
                           SPCVAL((*ALL -1) (*LCL -2) (*RMT -3)) +
                           PMTCTL(*PMTRQS) PROMPT('Save from system')
@@ -28,19 +52,6 @@
                           SPCVAL((*SYS -1) (*PC -2)) SNGVAL((*NO 0) +
                           (*YES 1)) MAX(2) PMTCTL(*PMTRQS) +
                           PROMPT('Update history')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(32) DFT(*MOUNTED) +
-                          SNGVAL((*MOUNTED)) MAX(75) EXPR(*YES) +
-                          PROMPT('Volume identifier')
-             PARM       KWD(LABEL) TYPE(*CHAR) LEN(17) DFT(*GEN) +
-                          SPCVAL((*GEN)) EXPR(*YES) PROMPT('Label')
-             PARM       KWD(OPTFILE) TYPE(*PNAME) LEN(256) DFT('*') +
-                          CASE(*MIXED) PROMPT('Optical file')
-             PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*END) +
-                          RANGE(1 16777215) SPCVAL((*END -3)) +
-                          EXPR(*YES) PROMPT('Sequence number')
-             PARM       KWD(ENDOPT) TYPE(*CHAR) LEN(7) RSTD(*YES) +
-                          DFT(*REWIND) VALUES(*REWIND *LEAVE *UNLOAD) +
-                          PROMPT('End of media option')
              PARM       KWD(CLEAR) TYPE(*INT4) RSTD(*YES) DFT(*NONE) +
                           SPCVAL((*NONE 0) (*ALL -1) (*AFTER -2) +
                           (*REPLACE -3)) PMTCTL(*PMTRQS) +
@@ -49,12 +60,6 @@
                           SPCVAL((*YES 1) (*NO 0) (*DEV -1) (*LOW -2) +
                           (*MEDIUM -3) (*HIGH -4) (*ZLIB -5)) +
                           PMTCTL(*PMTRQS) PROMPT('Data compression')
-             PARM       KWD(SAVACT) TYPE(*INT4) RSTD(*YES) DFT(*NO) +
-                          SPCVAL((*NO 0) (*YES 1) (*SYNC -1)) +
-                          PROMPT('Save active')
-             PARM       KWD(OUTPUT) TYPE(*PNAME) LEN(5000) DFT(*NONE) +
-                          SPCVAL((*NONE) (*PRINT)) EXPR(*YES) +
-                          PROMPT('Output')
  E1:         ELEM       TYPE(*PNAME) LEN(5000) DFT('*') EXPR(*YES) +
                           PROMPT('Name')
              ELEM       TYPE(*CHAR) LEN(1) RSTD(*YES) DFT(*INCLUDE) +
@@ -65,3 +70,4 @@
              ELEM       TYPE(*CHAR) LEN(1) RSTD(*YES) DFT(*INCLUDE) +
                           SPCVAL((*INCLUDE I) (*OMIT O)) +
                           PROMPT('Include or omit')
+ P1:         PMTCTL     CTL(DEV) COND((*NE *NONE))
