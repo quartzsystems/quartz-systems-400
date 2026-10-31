@@ -1,0 +1,67 @@
+# Addendum: an inquiry answered in its reply field on Display
+# Messages, every key set, Select Assistance Level and the basic
+# display's F6; the messages removed and the intermediate level put
+# back at the end.
+wait "Main Menu"
+timeout 20000
+continue
+type sndmsg msg('Capture inquiry two: answer Y or N.') tomsgq(qusrsys/{user}) msgtype(*inq)
+key enter
+settle 3000
+show
+key f24
+settle 800
+show
+key f24
+settle 800
+show
+key f24
+settle 800
+show
+field 10 20 Y
+key enter
+settle 2000
+show
+show
+key f3
+settle 1000
+type dspmsg msgq(*usrprf) astlvl(*intermed)
+key enter
+settle 1500
+snap dspmsg-usrprf
+key f21
+settle 1500
+snap dspmsg-f21
+key f12
+settle 1000
+key f13
+settle 1500
+show
+key f3
+settle 1000
+type dspmsg msgq(*wrkstn) astlvl(*intermed)
+key enter
+settle 1500
+key f13
+settle 1500
+show
+key f3
+settle 1000
+type dspmsg astlvl(*basic)
+key enter
+settle 1500
+key f6
+settle 2000
+snap dspmsg-basic-f6
+key f3
+settle 1000
+key f3
+settle 1000
+show
+type dspmsg astlvl(*intermed)
+key enter
+settle 1500
+show
+key f3
+settle 1000
+show

@@ -1,0 +1,93 @@
+# Addendum: DSPMSG at both assistance levels, an inquiry with its
+# reply field, Additional Message Information, QSYSOPR and *WRKUSR.
+# The inquiry goes to the user's own queue and is answered and
+# removed before the session ends; no object is created.
+wait "Main Menu"
+timeout 20000
+continue
+type dspmsg astlvl(*intermed)
+key enter
+settle 1500
+show
+key f3
+settle 1000
+type sndmsg msg('Capture inquiry: answer Y or N.') tomsgq(qusrsys/{user}) msgtype(*inq)
+key enter
+settle 3000
+snap dspmsg-inquiry
+show
+key f12
+settle 1500
+show
+type sndmsg msg('Capture information message.') tomsgq(qusrsys/{user})
+key enter
+settle 3000
+show
+key f12
+settle 1500
+type dspmsg astlvl(*intermed)
+key enter
+settle 1500
+snap dspmsg-wrkstn-copy
+key f24
+settle 800
+snap dspmsg-f24
+key f24
+settle 800
+cursor 9 5
+key f1
+settle 1500
+show
+key f12
+settle 1000
+key f3
+settle 1000
+type dspmsg astlvl(*basic)
+key enter
+settle 1500
+snap dspmsg-basic
+key f24
+settle 800
+snap dspmsg-basic-f24
+key f24
+settle 800
+key f1
+settle 1500
+show
+key f3
+settle 1000
+show
+pick "Capture inquiry" 5
+key enter
+settle 1500
+snap dspmsg-basic-5
+type N
+key enter
+settle 1500
+snap dspmsg-basic-replied
+key f3
+settle 1000
+key f3
+settle 1000
+type dspmsg astlvl(*intermed)
+key enter
+settle 1500
+show
+key f13
+settle 1500
+show
+key f3
+settle 1000
+type dspmsg qsysopr
+key enter
+settle 2000
+snap dspmsg-qsysopr
+key f3
+settle 1000
+type dspmsg msgq(*wrkusr)
+key enter
+settle 2000
+snap dspmsg-wrkusr
+key f3
+settle 1000
+show

@@ -1,0 +1,24 @@
+                                Display Messages                                
+                                                       System:   SYSNAME        
+ Queue . . . . . :   QPADEV001T              Program . . . . :   *DSPMSG        
+   Library . . . :     QSYS                    Library . . . :                  
+ Severity  . . . :   00                      Delivery  . . . :   *NOTIFY        
+                                                                                
+ Type reply (if required), press Enter.                                         
+   From  . . . :   USERNAME       MM/DD/YY   HH:MM:SS                           
+   Capture inquiry: answer Y or N.                                              
+     Reply . . :                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit              F11=Remove a message                 F12=Cancel           
+ F13=Remove all       F16=Remove all except unanswered     F24=More keys        
+                                                                                

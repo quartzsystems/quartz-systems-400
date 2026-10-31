@@ -1,0 +1,24 @@
+                               Work with Messages                               
+                                                             System:   SYSNAME  
+ Messages for:   System Operator                                                
+                                                                                
+ Type options below, then press Enter.                                          
+   5=Display details and reply                                                  
+                                                                                
+ Opt   Message                                                                  
+                            Messages needing a reply                            
+       MCH3601 received by procedure DUMMYMSGW. (C D I R)                       
+       CPF0818 received by procedure PRIMENUM. (C D I R)                        
+       CPF0818 received by procedure PRIMENUM. (C D I R)                        
+       MCH3601 received by procedure DUMMYMSGW. (C D I R)                       
+       CPF0001 received by procedure GLD27W. (C D I R)                          
+       CPF0001 received by GLD25E at 300. (C D I R)                             
+       CPF0001 received by procedure GLD25D. (C D I R)                          
+       CPF0001 received by procedure GLD25D. (C D I R)                          
+       CPF180C received by procedure MTLDA. (C D I R)                           
+                                                                                
+                          Messages not needing a reply                          
+                                                                        More... 
+ F1=Help   F3=Exit      F5=Refresh   F6=Display your messages   F12=Cancel      
+ F17=Top   F18=Bottom   F22=Display list details                                
+                                                                                

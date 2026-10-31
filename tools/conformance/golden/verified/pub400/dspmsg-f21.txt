@@ -1,0 +1,24 @@
+                                Display Messages                                
+ ................................................................ UB400         
+ :                   Select Assistance Level                    : DSPMSG        
+ :                                                              :               
+ :  Current assistance level  . :   Intermediate                : BREAK         
+ :                                                              :               
+ :                                                              :               
+ :  Type choice below, then press Enter.                        :               
+ :                                                              :               
+ :    Assistance level  . . . . .   2   1=Basic                 :               
+ :                                      2=Intermediate          :               
+ :                                                              :               
+ :                                                              :               
+ :                                                              :               
+ :  F1=Help   F12=Cancel                                        :               
+ :                                                              :               
+ :..............................................................:               
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit              F11=Remove a message                 F12=Cancel           
+ F13=Remove all       F16=Remove all except unanswered     F24=More keys        
+                                                                                

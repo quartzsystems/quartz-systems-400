@@ -1,0 +1,44 @@
+# Addendum: the capture's messages removed (the user's queue comes up
+# at sign-on while it holds them), the basic display of an empty
+# queue, the intermediate assistance level put back.
+continue
+timeout 8000
+wait "Display Messages"
+key f13
+settle 1500
+show
+key f3
+settle 1500
+timeout 20000
+wait "Main Menu"
+type dspmsg msgq(*wrkstn) astlvl(*intermed)
+key enter
+settle 1500
+show
+key f13
+settle 1500
+show
+key f3
+settle 1000
+type dspmsg msgq(*usrprf) astlvl(*intermed)
+key enter
+settle 1500
+show
+key f13
+settle 1500
+show
+key f3
+settle 1000
+type dspmsg astlvl(*basic)
+key enter
+settle 1500
+snap dspmsg-basic-empty
+key f3
+settle 1000
+type dspmsg astlvl(*intermed)
+key enter
+settle 1500
+show
+key f3
+settle 1000
+show

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ From . . . . . . . . . :   USERNAME      Severity . . . . . . . :   99         
+ Message type . . . . . :   Inquiry                                             
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Capture inquiry: answer Y or N.                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Reply  . . . :   N                                                             
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details   F12=Cancel                   
+ F21=Select assistance level                                                    
+ Reply sent to message.                                                         

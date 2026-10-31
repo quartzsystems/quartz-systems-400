@@ -1,0 +1,24 @@
+                               Work with Messages                               
+                                                             System:   SYSNAME  
+ Messages for:   USERNAME                                                       
+                                                                                
+ Type options below, then press Enter.                                          
+   4=Remove   5=Display details and reply                                       
+                                                                                
+ Opt   Message                                                                  
+                            Messages needing a reply                            
+       Capture inquiry: answer Y or N.                                          
+         From  . . :   USERNAME       MM/DD/YY   HH:MM:SS                       
+                                                                                
+                          Messages not needing a reply                          
+       Capture information message.                                             
+         From  . . :   USERNAME       MM/DD/YY   HH:MM:SS                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F1=Help   F3=Exit   F5=Refresh   F6=Display system operator messages           
+ F16=Remove messages not needing a reply   F17=Top   F24=More keys              
+                                                                                

@@ -4929,3 +4929,107 @@ date = "2026-10-23"
 script = "sda"
 width = 80
 
+
+[[golden]]
+name = "dspmsg-inquiry"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-wrkstn-copy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-basic"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-basic-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-basic-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-basic-replied"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-qsysopr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-wrkusr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg"
+width = 80
+
+[[golden]]
+name = "dspmsg-basic-empty"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg-clean"
+width = 80
+
+[[golden]]
+name = "dspmsg-usrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg-reply"
+width = 80
+
+[[golden]]
+name = "dspmsg-basic-f6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg-reply"
+width = 80
+
+[[golden]]
+name = "dspmsg-f21"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "addendum/dspmsg-reply"
+width = 80

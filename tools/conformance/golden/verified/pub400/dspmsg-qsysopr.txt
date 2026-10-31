@@ -1,0 +1,24 @@
+                                Display Messages                                
+                                                       System:   SYSNAME        
+ Queue . . . . . :   QSYSOPR                 Program . . . . :   *DSPMSG        
+   Library . . . :     QSYS                    Library . . . :                  
+ Severity  . . . :   99                      Delivery  . . . :   *HOLD          
+                                                                                
+ Type reply (if required), press Enter.                                         
+   Cleanup of user messages successfully completed.                             
+   Cleanup has completed.                                                       
+   Job message queue for 936029/JOBMANAGER/QSECURITY has been wrapped.          
+   Job message queue for 936029/JOBMANAGER/QSECURITY has been wrapped.          
+   Subsystem #SYSLOAD ending in progress.                                       
+   Subsystem #SYSLOAD ended.                                                    
+   Subsystem #SYSLOAD in library #SYSLOADX starting.                            
+   Subsystem #SYSLOAD started.                                                  
+   From  . . . :   #SYSLOAD       MM/DD/YY   HH:MM:SS                           
+   * Start WA7CONTROL_3.08b (c) RZKH GmbH 2001-2026                             
+   Job message queue for 936029/JOBMANAGER/QSECURITY has been wrapped.          
+   Job message queue for 146361/QUSER/QZRCSRVS has been wrapped.                
+   Job message queue for 936029/JOBMANAGER/QSECURITY has been wrapped.          
+                                                                         Bottom 
+ F3=Exit              F11=Remove a message                 F12=Cancel           
+ F13=Remove all       F16=Remove all except unanswered     F24=More keys        
+                                                                                

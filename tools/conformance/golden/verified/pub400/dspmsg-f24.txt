@@ -1,0 +1,24 @@
+                                Display Messages                                
+                                                       System:   SYSNAME        
+ Queue . . . . . :   QPADEV001T              Program . . . . :   *DSPMSG        
+   Library . . . :     QSYS                    Library . . . :                  
+ Severity  . . . :   00                      Delivery  . . . :   *NOTIFY        
+                                                                                
+ Type reply (if required), press Enter.                                         
+   From  . . . :   USERNAME       MM/DD/YY   HH:MM:SS                           
+   Capture inquiry: answer Y or N.                                              
+     Reply . . :                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F10=Display all            F21=Select assistance level                         
+ F22=Display list details   F24=More keys                                       
+                                                                                
