@@ -193,7 +193,8 @@ impl Suite {
     /// One size: the display line of `svc.hw`, then the screendump
     /// against the golden, both written beside the suite's output.
     fn scaled(&self, s: &mut Session, (w, h): (u32, u32)) -> Result<String, String> {
-        s.expect_in_order(crate::steps::SRC_SEQUENCE, self.boot_timeout)?;
+        // After the main session the startup program can take a while.
+        s.expect(crate::steps::SRC_IPL_COMPLETE, 4 * self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         let text = crate::phase5::screen_wait(s, "Sign On")?;
         let hw = s.command("hw", CMD)?;
