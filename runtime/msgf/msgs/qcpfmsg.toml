@@ -2889,6 +2889,27 @@ text = "Test request answered by the update service: &1."
 help = "The service received the request; the value is its ticket."
 vars = ["*CHAR 10"]
 
+[[msg]]
+id = "CPC3E05"
+sev = 0
+text = "PTFs installed: &1 loaded, &2 applied, &3 to apply at the next IPL."
+help = "DSPPTF shows each PTF's state. Delayed PTFs take effect when the system is next IPLed."
+vars = ["*CHAR 5", "*CHAR 5", "*CHAR 5"]
+
+[[msg]]
+id = "CPC3E06"
+sev = 0
+text = "&1 PTF save file(s) copied."
+help = "Each copy is a save file that LODPTF DEV(*SAVF) reads on this or another system."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "CPC3E07"
+sev = 0
+text = "PTF &1 created in save file &2."
+help = "Every object in it is signed with the key file named. A system loads it only when it trusts that key."
+vars = ["*CHAR 7", "*CHAR 21"]
+
 # Problems.
 
 [[msg]]

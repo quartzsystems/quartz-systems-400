@@ -136,3 +136,69 @@ IPL finishes leaves the old slot bootable, so the next IPL retries.
 | `C6004502` | removing PTFs marked for the next IPL |
 | `C6004503` | a LIC PTF took effect from the other slot |
 | `C6004504` | a delayed PTF failed to apply; it is Damaged |
+
+## 6. Trusted signers
+
+`LODPTF`, `INSPTF`, the save engine's signature checks, group manifests
+and the update service's catalog all verify against one file,
+`/qs400/keys/system.pub` in the initramfs: the ed25519 public keys of
+the signers the system trusts for its own objects, 32 raw bytes each,
+back to back, read on every check. `build initramfs` writes the build
+key's first (`QS400_SIGNING_KEY`, or the dev key under `target/keys/`),
+then each key of the file `QS400_TRUSTED_KEYS` names.
+
+A third party that ships PTFs (built with `QSCRTPTF` and its own key)
+is trusted this way:
+
+1. the vendor sends its public key as 64 hex digits (the ed25519
+   public key of its seed);
+2. the security officer checks its key ID (the first eight bytes of its
+   SHA-256, which every save stream it signs carries) with the vendor
+   out of band;
+3. the key goes on a line of the `QS400_TRUSTED_KEYS` file (`#` starts
+   a comment), and the image is built again: `build all`, or a LIC PTF
+   whose UKI carries the new list.
+
+Removing a key is the same with its line deleted. The list is part of
+the signed image on purpose: nothing a running system can write widens
+whom it trusts.
+
+## 7. `QSCRTPTF` manifests
+
+`QSCRTPTF MANIFEST('/home/me/ptf.toml') KEYFILE('/home/me/key.hex')`
+builds a PTF from objects on this system. The key file is the build's
+form: the 32-byte ed25519 seed as 64 hex digits (or the 32 raw bytes).
+The save file is `QGPL/QSnnnnn` unless `TOSAVF` names another. The
+manifest (`ptf::manifest`):
+
+```toml
+ptf = "QS00042"              # required
+product = "5770SS1"          # required
+option = "0000"              # default *BASE
+release = "V1R0M0"           # default: this system's
+target_release = "V1R0M0"    # default: release
+load = "5050"                # default
+kind = "immediate"           # or "delayed"
+prereqs = ["QS00041"]        # same product
+coreqs = []
+supersedes = ["QS00030"]
+cover = "What the PTF corrects."     # or cover_file = "/path/cover.txt"
+lic = "/path/uki-a.efi"      # a LIC PTF: slot A's build of the UKI
+lic_b = "/path/uki-b.efi"    # and slot B's (else slot A's serves both)
+store_format = 0             # the format a migration program brings
+
+[[object]]                   # each replacement object
+library = "QSYS"
+name = "QWCSTRUP"
+type = "*PGM"
+
+[[exit]]                     # exit and data migration programs
+library = "QSYS"
+program = "QSMIG42"
+when = "migration"           # before-apply, after-apply, before-remove,
+                             # after-remove, migration
+```
+
+Unknown keys are refused, so a misspelt field does not build a PTF that
+silently lacks it. The objects are signed where they are (their headers
+carry the signature they are saved with) and saved in library order.

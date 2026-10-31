@@ -25,6 +25,7 @@ mod msgfcmd;
 mod objcmd;
 mod prbcmd;
 pub(crate) mod ptfcmd;
+mod ptfsvc;
 mod rpg;
 mod savcmd;
 mod savout;
@@ -70,6 +71,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| savcmd::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
             .or_else(|| updcmd::run(system, name, parms))
+            .or_else(|| ptfsvc::run(system, name, parms))
             .or_else(|| prbcmd::run(system, name, parms))
             .or_else(|| lpcmd::run(system, name, parms))
             .or_else(|| ifscmd::run(system, name, parms))

@@ -7,6 +7,8 @@
 //! `/qs400/keys/system.pub`, the public half of the build's signing key
 //! (32 bytes), which checks signed objects and license keys
 //! (`docs/LICPGM.md` §7).
+//! `/qsjob` (the job process), mount points, a console node and the
+//! public keys of the signers the system trusts.
 
 use std::fs;
 use std::path::PathBuf;
@@ -34,6 +36,8 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         .verifying_key()
         .to_bytes()
         .to_vec();
+    let keys = trusted_keys(ctx)?;
+
     // The kernel does not auto-mount devtmpfs for an initramfs, so a static
     // console node lets it open the initial console before slic runs.
     let entries = vec![
@@ -44,6 +48,7 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         Entry::dir("qs400"),
         Entry::dir("qs400/keys"),
         Entry::file("qs400/keys/system.pub", public),
+        Entry::file("qs400/keys/system.pub", keys),
         Entry::file("qsjob", job),
         Entry::dir("run"),
         Entry::dir("sys"),
@@ -59,5 +64,31 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         bytes.len(),
         sha256_bytes(&bytes)
     );
+    Ok(out)
+}
+
+/// Third-party signers the image trusts: a file of ed25519 public keys,
+/// 64 hex digits each, one per line (`#` comments).
+const TRUSTED_ENV: &str = "QS400_TRUSTED_KEYS";
+
+/// `/qs400/keys/system.pub` (docs/PTF.md section 6): the build key's
+/// public key, then each key `QS400_TRUSTED_KEYS` lists; 32 bytes each.
+fn trusted_keys(ctx: &Ctx) -> Result<Vec<u8>> {
+    let mut out = crate::image::manifest::signing_key(ctx)?
+        .verifying_key()
+        .to_bytes()
+        .to_vec();
+    if let Some(path) = std::env::var_os(TRUSTED_ENV) {
+        let text = fs::read_to_string(&path)
+            .with_context(|| format!("cannot read {TRUSTED_ENV}={}", PathBuf::from(&path).display()))?;
+        for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+            let k = hex::decode(line).with_context(|| format!("{TRUSTED_ENV}: {line:?} is not hex"))?;
+            ensure!(k.len() == 32, "{TRUSTED_ENV}: {line:?} is not a 32-byte key");
+            if !out.chunks(32).any(|c| c == k.as_slice()) {
+                out.extend_from_slice(&k);
+            }
+        }
+    }
+    info!("initramfs: {} trusted signer(s)", out.len() / 32);
     Ok(out)
 }

@@ -912,6 +912,10 @@ note = "the service URL, a proxy and the check schedule in QSYS/QSUPDATTR"
 cpp = "QSZUCHK"
 note = "what QSYSCOMM1 runs on the QSCHGUPDA schedule: CPI3E01 to QSYSOPR, newer levels marked for WRKPTFGRP"
 
+[cmd.QSCRTPTF]
+cpp = "QSZPCRT"
+note = "a PTF save file from a TOML manifest in the IFS (docs/PTF.md section 7), signed with the key file named"
+
 # --- QSH and environment variables (work/qsjob/src/qsh/; the system-level
 # variables in the service, lic/slic/src/stgsvc/qsh.rs)
 [cmd.QSH]

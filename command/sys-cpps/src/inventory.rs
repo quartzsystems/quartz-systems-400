@@ -337,11 +337,15 @@ pub const DIRECT: &[&str] = &[
     "DLTPRB",
     "DSPPRB",
     "WRKPRB",
-    // --- PTFs (lic/slic/src/cpp/ptfcmd.rs)
+    // --- PTFs (lic/slic/src/cpp/ptfcmd.rs, ptfsvc.rs)
     "APYPTF",
+    "CPYPTF",
     "DSPPTFCVR",
+    "INSPTF",
     "LODPTF",
+    "QSCRTPTF",
     "RMVPTF",
+    "WRKPTFGRP",
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
     "CHGCNTINF",
     "QSCHGUPDA",
