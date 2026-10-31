@@ -104,6 +104,14 @@ fn refuse(out: &str, needle: &str, what: &str) -> Result<(), String> {
 
 /// Type a line at Command Entry and press Enter.
 pub(crate) fn entry(s: &mut Session, line: &str) -> Result<(), String> {
+    // Keys typed while input is inhibited are lost: wait for the unlock.
+    for _ in 0..80 {
+        let screen = s.command("screen", CMD)?;
+        if !screen.lines().any(|l| l.starts_with("X II")) {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
     s.command(&format!("type {line}"), CMD)?;
     s.command("key enter", CMD)?;
     Ok(())
