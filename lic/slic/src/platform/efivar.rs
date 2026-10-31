@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 
 use diskimg::efi::{self, EspLocation};
 use licpart::Slot;
+use rustix::fs::{IFlags, ioctl_getflags, ioctl_setflags};
 use rustix::mount::{MountFlags, mount};
 
 /// Where efivarfs is mounted.
@@ -48,6 +49,12 @@ impl EfiFirmware {
     /// The firmware, with efivarfs mounted, for the ESP beside the LIC
     /// partition.
     pub fn open() -> Result<Self, String> {
+        Self::open_for(licpart::locate().ok().as_deref())
+    }
+
+    /// The firmware, for the ESP beside LIC partition `lic` (the disk a
+    /// LIC install just wrote).
+    pub fn open_for(lic: Option<&Path>) -> Result<Self, String> {
         if !Path::new("/sys/firmware/efi").is_dir() {
             return Err("not booted through UEFI".into());
         }
@@ -57,8 +64,7 @@ impl EfiFirmware {
                 Err(e) => return Err(format!("efivarfs: {e}")),
             }
         }
-        let lic = licpart::locate().ok();
-        let (_, esp) = diskimg::locate::esp(lic.as_deref()).map_err(|e| e.to_string())?;
+        let (_, esp) = diskimg::locate::esp(lic).map_err(|e| e.to_string())?;
         Ok(Self {
             dir: PathBuf::from(EFIVARS),
             esp,
@@ -66,7 +72,22 @@ impl EfiFirmware {
     }
 
     fn write(&self, name: &str, data: &[u8]) -> Result<(), String> {
-        fs::write(var(&self.dir, name), efi::file_bytes(data)).map_err(|e| format!("{name}: {e}"))
+        let path = var(&self.dir, name);
+        // efivarfs marks the firmware's own variables (`BootOrder`,
+        // `Boot####`) immutable; the flag comes off before a write.
+        if let Ok(f) = fs::File::open(&path)
+            && let Ok(flags) = ioctl_getflags(&f)
+            && flags.contains(IFlags::IMMUTABLE)
+        {
+            ioctl_setflags(&f, flags - IFlags::IMMUTABLE).map_err(|e| format!("{name}: {e}"))?;
+        }
+        fs::write(&path, efi::file_bytes(data)).map_err(|e| format!("{name}: {e}"))
+    }
+
+    /// Slot A's entry first in `BootOrder`, both slots' entries made: a
+    /// newly installed disk boots without the firmware's setup.
+    pub fn register_install(&mut self) -> Result<(), String> {
+        ptf::slot::Firmware::boot_default(self, Slot::A)
     }
 
     /// Both slots' `Boot####` entries, written when missing or changed.

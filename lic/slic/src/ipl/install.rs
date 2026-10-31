@@ -580,6 +580,15 @@ impl Env<'_> {
         drop(part_lic);
         self.system.emit(&src::INSTALL_LIC_RECORD);
         report(LicEvent::StepDone(4), self);
+        // The firmware's boot entry for the new disk: firmware that only
+        // boots what BootOrder names (a Dell's UEFI) would not find it.
+        let lic_path = std::path::PathBuf::from(format!("/dev/{}", part_name(&name, 2)));
+        match crate::platform::efivar::EfiFirmware::open_for(Some(&lic_path)).and_then(|mut fw| fw.register_install()) {
+            Ok(()) => self.system.out.serial("slic: install: boot entry QS/400 slot A first in BootOrder\n"),
+            Err(e) => self.system.out.serial(&format!(
+                "slic: install: boot entry not set ({e}); the firmware must boot EFI/BOOT/BOOTX64.EFI\n"
+            )),
+        }
         self.system.emit(&src::INSTALL_LIC_COMPLETE);
         Ok(())
     }
