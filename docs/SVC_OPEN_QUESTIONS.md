@@ -44,3 +44,38 @@ what QS/400 does now and how to settle each.
    release names (`TGTRLS(V7R4M0)`) are refused. Whether QS/400 should
    map IBM target releases onto its own is a compiler question for the
    CRT* commands.
+
+## Save and restore
+
+The V7R1M0 oracle settled 27 restore rules
+(`tools/conformance/oracle/save/primary/README.md`); these are left.
+
+7. **`QALWOBJRST` and `QVFYOBJRST` refusals.** The messages a restore
+   sends when `QALWOBJRST` refuses a system-state or adopting program,
+   and when a signature is missing or does not verify, are `CPF3846` and
+   `CPF3847` here. The oracle could not show them without changing the
+   system values.
+8. **An owner that does not exist.** A restored object whose saved owner
+   is not on the system goes to `QDFTOWN` with `CPI3722`; the oracle has
+   no profile it may delete to show IBM's message.
+9. **`*USE` on a save file.** Restoring from a save file needs `*USE` on
+   it here (`savf.read`); every oracle job ran as `QSECOFR`.
+10. **Several libraries with failures.** `SAVLIB LIB(A B)` with objects
+    not saved ends with `CPF3777` here; the oracle saved one library.
+11. **`*AUTL` differences.** An authorization list that differs is
+    refused under `ALWOBJDIF(*NONE)` with the owner's message
+    (`CPF3766`) and kept under `*AUTL`; IBM's message for the refusal
+    is not captured.
+12. **Damaged saves.** An object whose records do not verify is not
+    restored with `CPF3782`, the message IBM sends for a file that is
+    not a save file; IBM's message for a damaged save is not captured.
+
+## PTFs
+
+13. **PTF message IDs.** `CPC3604` (loaded), `CPC3606` (applied),
+    `CPC3608` (removed), `CPF3612` (requisite missing), `CPF3613`
+    (superseded), `CPF3618` (needed by another), `CPF3606` (not loaded),
+    `CPF3601` (already in that state), `CPF3586` (not signed), `CPF3598`
+    (wrong product) are chosen, not captured: pub400 refuses every PTF
+    command's prompt to an ordinary profile and the primary may not run
+    them.
