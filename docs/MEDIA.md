@@ -3,9 +3,9 @@
 Save and restore write to three classes of media: tape (real drives and
 media libraries, and virtual volumes in image catalogs), optical, and the
 image catalogs that hold virtual volumes as stream files. This document
-specifies the on-disk formats and the models; the commands that use them
-(INZTAP, SAVLIB, WRKTAPCTG, ...) are wired in by `slic` and the command
-processing programs.
+specifies the on-disk formats and the models, and how the storage
+service wires them to the devices and the commands ("In the storage
+service" at the end).
 
 The tape class is the `media/tape` crate. The optical part and the image
 catalog part have their own sections below.
@@ -358,8 +358,10 @@ for drives and `TAPMLB01`, ... for changers.
 | cartridge in use | CPF6747 |
 | no drive available | CPF6749 |
 
-The identifiers other than CPF6760 and CPF6720 are provisional until
-checked against the oracle's message file.
+CPF6760 ("Device TAP01 not ready") is the oracle's own answer to
+`DSPTAP` with no volume; the others are provisional until checked
+against the oracle's message file (`docs/SVC_OPEN_QUESTIONS.md`,
+Media).
 
 ## Tape: physical tape acceptance
 
@@ -795,3 +797,134 @@ An `entry` line is `entry` and these fields, tab separated:
 
 The `CPFBC` identifiers are Quartz's choice; optical errors keep their
 `OPT` identifiers.
+
+## In the storage service
+
+`lic/slic/src/stgsvc/media/` puts the three crates to work; the command
+processors are `lic/slic/src/cpp/medcmd.rs` (devices, catalogs, tape
+and optical commands) and the save and restore commands of
+`savcmd.rs`, `lpcmd.rs` and `ptfcmd.rs`.
+
+| Module | Does |
+|---|---|
+| `devices` | the `*DEVD` objects of class `*TAP`, `*OPT` and `*TAPMLB` (the `MediaDevice` section, `docs/WORKMGMT.md`), vary on and off, `QAUTOCFG`, `DSPDEVD` |
+| `catalogs` | the `*IMGCLG` objects in `QUSRSYS` and the `imgclg::Registry` over the IFS root; `VirtTapes`, the `TapeImages` of virtual tape volumes |
+| `drive` | a device opened for one operation: virtual tape over its catalog, `/dev/nstN` for a real drive, the mounted optical volume |
+| `stream` | the media parameters of the save and restore commands, and the one call that writes or reads a save's stream |
+| `operator` | inquiries and attention messages to `QSYSOPR`, product activity log entries and problems for device and media errors |
+
+### Devices
+
+`CRTDEVTAP`, `CRTDEVOPT` and `CRTDEVMLB` make a device description in
+`QSYS`. `RSRCNAME(*VRT)` makes a virtual device: its resource is the
+next free `TAPVRTnn` or `OPTVRTnn`, its type and model IBM's for
+virtual devices (`63B0 001` tape, `632B 001` optical). A real resource
+is a name of the hardware table: `TAPnn` and `TAPMLBnn` from
+`tape::device::naming` over `/sys/class/scsi_tape` and the type-8
+`scsi_generic` nodes, `OPTnn` from the block devices; a real device's
+type and model are Quartz's generic ones (`3580 004` tape, `632C 002`
+optical, `3573 001` library) since the drive's own are not read.
+`CHGDEVxxx` changes what was given; a new `RSRCNAME` needs the device
+varied off.
+
+`VRYCFG CFGTYPE(*DEV)` of a media device sets its status:
+
+| Status | When |
+|---|---|
+| `VARIED OFF` | varied off, and after IPL for `ONLINE(*NO)` |
+| `VARIED ON` | a tape or library device varied on |
+| `ACTIVE` | an optical device varied on |
+| `UNAVAILABLE` | varied on while another varied-on device has the resource |
+| `FAILED` | varied on and the resource is not in the hardware table (`CPD26D4`) |
+
+At service start every media device described `ONLINE(*YES)` is varied
+on, and with `QAUTOCFG` on a description named as the resource is made
+for each tape drive, changer and `sr` optical drive no description
+names (text "Created by automatic configuration"). A device is deleted
+only varied off and with no catalog loaded on it. Commands that use a
+device need it varied on (`CPF6721`).
+
+### Image catalogs over the IFS
+
+An `*IMGCLG` object in `QUSRSYS` holds the line `QS400-IMGCLG-OBJ 1`
+and the catalog's directory; the catalog itself is the metadata file
+there. At service start the registry is rebuilt from the objects whose
+directories still hold their metadata file. The catalogs reach the IFS
+root's xfs directly (`imgclg::StdFs` at `/run/qs400/ifs`), as the
+service that owns it; their files carry no IFS metadata of their own.
+`ADDIMGCLGE FROMFILE(*NEW)` in a `*TAP` catalog makes a virtual tape
+volume of `IMGSIZ` MiB and labels it with its volume name. A catalog
+loads (`LODIMGCLG`) on a virtual device of its type, varied on or not.
+After every catalog command the volume set `/QOPT` shows is brought in
+line (`Registry::sync_volumes`); the IFS is built with
+`Ifs::with_optical` over that set.
+
+### Save and restore on media
+
+Every save builds its stream in memory as before; `stream::save`
+then writes it to the device `DEV` names, and `stream::restore` reads it
+back before the restore starts (the `medio` crate does the writing and
+reading: `MediaWriter`, `MediaReader`).
+
+- **Tape**: one standard-labeled file per command, record format U in
+  64 KiB blocks. `LABEL(*LIB)` is the first library saved (`SAVLIB`,
+  `SAVOBJ`, `SAVCHGOBJ`), `QFILEIOC` for `SAVCFG`, `QFILEUPR` for
+  `SAVSECDTA`, `QSAVIFS` for `SAV`, the product identifier for
+  `SAVLICPGM`, the PTF's name for `LODPTF`. `SEQNBR(*END)` appends;
+  `EXPDATE` defaults to `*PERM`; `CLEAR` other than `*NONE` lets the
+  save overwrite files that have not expired, else the inquiry
+  `CPA4036` takes its default reply and the save ends (`CPF3794`).
+  `SEQNBR(*SEARCH)` with `LABEL(*SAVLIB)` finds the first file with the
+  library's label. IBM writes a file per library; QS/400 writes one
+  stream holding them all.
+- **Multi-volume**: on a virtual device the next volume is the `VOL`
+  list's next one, or for `VOL(*MOUNTED)` the catalog's next loaded
+  entry after the mounted one (`medio::CatalogTapes`); the last volume
+  used stays mounted. When there is none the inquiry `CPA4075` goes to
+  `QSYSOPR` and takes its default reply, cancel. A real drive has no
+  next volume.
+- **Optical**: the file `OPTFILE` names on the mounted volume of the
+  device's catalog (`'*'` the generated name of the Optical section);
+  an existing file is replaced only with `CLEAR`, else the inquiry
+  `OPT1260` takes its default reply. A save does not span optical
+  volumes.
+- `SAV` and `RST` take `DEV('/QSYS.LIB/TAP01.DEVD')` or the name alone.
+- `DSPTAP DATA(*SAVRST)` reads every file in the `SEQNBR` range (and
+  `LABEL`) and lists it as `DSPSAVF` does (`savcmd::stream_listing`);
+  `DSPOPT DATA(*SAVRST)` does the same for the files in the volume's
+  root and `/QSAVSYS`.
+
+### Tape and optical commands
+
+| Command | Does |
+|---|---|
+| `INZTAP` | `tape::volume::inztap`; `NEWVOL(*CTGID)` takes `VOL` |
+| `DSPTAP` | `DATA(*LABELS)` every file's labels, `*SAVRST` the saves, `*VOLLBL` the volume label |
+| `CHKTAP` | `tape::volume::chktap`; `SEQNBR(*END)`, `*ONLY`, a number |
+| `DUPTAP` | `tape::volume::duptap` between two virtual tape devices |
+| `INZOPT` | `optical::volume::ops::inzopt` on the entry's image; the entry is put back in the catalog under its new identifier |
+| `DSPOPT` | `*VOLATR`, `*DIRATR`, `*FILATR`, `*SAVRST` |
+| `CHKOPT` | `ops::chkopt` (a QS/400 command; IBM i has none) |
+| `DUPOPT` | `ops::dupopt` onto another catalog entry's image |
+| `WRKOPTVOL` | the mounted volumes of the optical devices |
+| `WRKMLBSTS` | the library devices and their resources |
+
+`DSPTAPCTG`, `WRKTAPCTG`, `ADDTAPCTG`, `RMVTAPCTG` and `CHGTAPCTG` are
+defined and refuse with `CPF6745` in this release: cartridges of a real
+library need its changer and drives wired, and a virtual library its
+cartridges' categories kept (the `device::MediaLibrary` model is ready
+for both).
+
+### Errors
+
+| Event | Operator | Logged |
+|---|---|---|
+| wrong volume, not ready, write protected, end of volume, unlabeled where labels are needed | attention message (`CPF6720`, `CPF6760`, `CPF6768`, `CPF6718`, `CPF6772`, `OPT1520`, `OPT1335`) | |
+| drive or changer failure | attention message (`CPF6708`, `CPF6745`) | product activity log `A6006300` with the resource, a problem |
+| damaged labels, frames or image | attention message (`CPF6772`, `OPT1605`) | product activity log `A6006310` with the resource, a problem |
+| next volume needed | inquiry `CPA4075`, default reply C | |
+| active file in the way | inquiry `CPA4036`, default reply C | |
+
+A product activity log entry of a device carries its resource name (ten
+bytes after the entry's 17; the Phase 1 entries have none) and shows it
+in DST's log.

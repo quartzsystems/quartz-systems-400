@@ -145,14 +145,21 @@ save/         save and restore (docs/SAVE_FORMAT.md)
                 the security layer's questions, msg.rs the message IDs. The commands are
                 lic/slic/src/cpp/savcmd.rs (save files, SAV*/RST*, DSPSAVF) and savout.rs
                 (OUTPUT(*OUTFILE) in QSRSAV and QSRRST)
-media/        removable media (docs/MEDIA.md)
-  tape/         TapeTransport and Changer, VirtualTape and VirtualLibrary (src/virt/),
-                StTransport and SgChanger with st/raw.rs the ioctls, IBM standard labels
-                (src/label/), volume operations INZTAP/CHKTAP/DUPTAP and multi-volume files
-                (src/volume/), TAPnn/TAPMLBnn naming and cartridges (src/device/)
-  optical/      ISO 9660 writer and reader with Joliet and Rock Ridge, the hybrid install
-                image (MBR, GPT), writable virtual volumes, OPTnn naming, VolumeSet
-  imgclg/       image catalogs (*IMGCLG) for optical and tape over CatalogFs
+media/        save media (docs/MEDIA.md)
+  tape/         TapeTransport and Changer, VirtualTape and VirtualLibrary, Linux st/sg
+                (src/st/, raw.rs the one unsafe file), IBM standard labels (src/label/),
+                src/volume/ INZTAP, CHKTAP, DUPTAP, DSPTAP, FileWriter/FileReader across
+                volumes, src/device/ TAPnn naming and the *TAPMLB cartridge model
+  optical/      ISO 9660 with Joliet and Rock Ridge (src/iso/), the hybrid install image,
+                the media manifest, writable virtual volumes (src/volume/), device naming,
+                VolumeSet (what /QOPT shows)
+  imgclg/       *IMGCLG catalogs over a CatalogFs: model.rs, ops.rs the Registry (every
+                command), fs.rs, tape.rs TapeImages
+  medio/        a save stream to and from media: tapefile.rs (labeled file, 64 KiB blocks),
+                optfile.rs (OPTFILE), catalog.rs CatalogTapes (the next virtual volume).
+                The service side is lic/slic/src/stgsvc/media/ (devices, catalogs over the
+                IFS root, drive, stream, operator: QSYSOPR, PAL, problems) and
+                cpp/medcmd.rs (the device, catalog, tape and optical commands)
 ptf/          PTFs (docs/PTF.md)
   ptf/          header.rs the PTF header, status.rs the states, package.rs build and open a
                 signed PTF stream, db.rs the PTF database, apply.rs LODPTF/APYPTF/RMVPTF
@@ -389,7 +396,8 @@ cargo test -p ptf -p prb          # PTFs, the problem log
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
-cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 73 steps
+cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 75 steps
+cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
@@ -420,6 +428,7 @@ cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFR
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 cargo test -p ftp                         # FTP sessions in memory, the client against the server over loopback
+cargo test -p tape -p optical -p imgclg -p medio   # tape, optical, image catalogs, saves on media
 cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sessions; report in target/conformance-ftp/
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
