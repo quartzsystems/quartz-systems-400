@@ -131,6 +131,46 @@ fn ipl_now() -> Result<(), String> {
     rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1).map_err(|e| e.to_string())
 }
 
+/// The PTF save files in `QGPL` an `INSPTF` takes: of the group's
+/// members when one is named, of the products, not omitted, not
+/// applied or waiting already.
+fn items(
+    system: &mut System,
+    db: &ptf::PtfDb,
+    members: Option<&[String]>,
+    omit: &[String],
+    products: &[String],
+    lic_only: bool,
+) -> Result<Vec<Item>, String> {
+    let mut items = Vec::new();
+    for p in ptfcmd::ptf_savfs(system)? {
+        if members.is_some_and(|m| !m.contains(&p)) || omit.contains(&p) {
+            continue;
+        }
+        let done = db.get(&p).is_some_and(|r| {
+            r.status.applied() || r.status == Status::Superseded || r.action != Action::None
+        });
+        if done {
+            continue;
+        }
+        let savf = db
+            .get(&p)
+            .map(|r| r.savf.clone())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| format!("QGPL/{p}"));
+        let bytes = ptfcmd::read_ptf(system, &savf)?;
+        let Ok((h, _)) = package::peek(&bytes) else { continue };
+        if (!products.is_empty() && !products.contains(&h.product)) || (lic_only && !h.lic) {
+            continue;
+        }
+        items.push(Item { savf, bytes });
+    }
+    if items.is_empty() {
+        return Err("CPF3606 no PTFs to install from the save files in QGPL".into());
+    }
+    Ok(items)
+}
+
 fn insptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
     let dev = parms.text("DEV").to_ascii_uppercase();
@@ -159,37 +199,29 @@ fn insptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         }
         Some(g.ptfs)
     };
-    let mut items = Vec::new();
-    for p in ptfcmd::ptf_savfs(system)? {
-        if members.as_ref().is_some_and(|m| !m.contains(&p)) || omit.contains(&p) {
-            continue;
-        }
-        let done = db.get(&p).is_some_and(|r| {
-            r.status.applied() || r.status == Status::Superseded || r.action != Action::None
-        });
-        if done {
-            continue;
-        }
-        let savf = db
-            .get(&p)
-            .map(|r| r.savf.clone())
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| format!("QGPL/{p}"));
-        let bytes = ptfcmd::read_ptf(system, &savf)?;
-        let Ok((h, _)) = package::peek(&bytes) else { continue };
-        if (!products.is_empty() && !products.contains(&h.product)) || (lic_only && !h.lic) {
-            continue;
-        }
-        items.push(Item { savf, bytes });
-    }
-    if items.is_empty() {
-        return Err("CPF3606 no PTFs to install from the save files in QGPL".into());
-    }
+    let items = items(system, &db, members.as_deref(), &omit, &products, lic_only)?;
     let rel = release_text();
     let rep = ptfcmd::ctx_run(system, |cx| install::install(cx, &mut db, &items, &keys, &rel, ins, &omit))?
         .map_err(|e| format!("{} {e}", e.msgid()))?;
-    ptfcmd::store_db(system, &db)?;
     let mut reply = CmdReply::default();
+    // One LIC image per IPL: the newest goes to the other slot.
+    if let Some(newest) = rep.lic.iter().max().cloned() {
+        for p in rep.lic.iter().filter(|p| **p != newest) {
+            if let Some(r) = db.ptfs.get_mut(p) {
+                r.action = Action::None;
+            }
+            let _ = writeln!(reply.text, "PTF {p} left loaded: {newest} brings the newer LIC image");
+        }
+        match super::ptflic::stage(system, &mut db, &newest) {
+            Ok(s) => {
+                let _ = writeln!(reply.text, "PTF {newest}: its LIC image is in slot {s:?}; the next IPL boots it");
+            }
+            Err(e) => {
+                let _ = writeln!(reply.text, "{e}");
+            }
+        }
+    }
+    ptfcmd::store_db(system, &db)?;
     for p in &rep.loaded {
         let _ = writeln!(reply.text, "PTF {p} loaded");
     }

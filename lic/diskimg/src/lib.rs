@@ -10,6 +10,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod efi;
 mod error;
 pub mod fat;
 pub mod iso9660;

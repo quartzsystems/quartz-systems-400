@@ -319,7 +319,7 @@ fn strsbs(host: &Host, p: &Params) -> Result<String, String> {
 }
 
 /// `PWRDWNSYS OPTION(*CNTRLD|*IMMED) DELAY(n|*NOLIMIT) RESTART(*NO|*YES)
-/// IPLSRC(*PANEL) CONFIRM(...)`: `slic` ends the subsystems, the system
+/// IPLSRC(*PANEL|A|B) CONFIRM(...)`: `slic` ends the subsystems, the system
 /// jobs and the storage service, then powers down.
 fn pwrdwnsys(host: &Host, p: &Params) -> Result<String, String> {
     let me = host.link.borrow_mut().with(stg::Client::whoami);
@@ -345,20 +345,24 @@ fn pwrdwnsys(host: &Host, p: &Params) -> Result<String, String> {
         Some("*YES") => true,
         Some(r) => return Err(format!("CPD0084 RESTART({r}) is not valid")),
     };
-    match p.upper("IPLSRC").as_deref() {
-        None | Some("*PANEL") => {}
+    // A and B are the LIC slots; the firmware boots the one named once.
+    let iplsrc = match p.upper("IPLSRC").as_deref() {
+        None | Some("*PANEL") => 0,
+        Some("A") => 1,
+        Some("B") => 2,
         Some(s) => {
             return Err(format!(
-                "CPD0084 IPLSRC({s}): the IPL source is chosen at the panel (*PANEL)"
+                "CPD0084 IPLSRC({s}): the IPL source is slot A, slot B or the panel's (*PANEL)"
             ));
         }
-    }
+    };
     host.ctl
         .borrow_mut()
         .send(&wm::ctl::FromJob::PowerDown {
             immediate,
             delay,
             restart,
+            iplsrc,
         })
         .map_err(|e| e.to_string())?;
     Ok(format!(

@@ -209,3 +209,67 @@ fn types_on(dev: &Path) -> io::Result<Vec<Uuid>> {
     }
     Ok(Vec::new())
 }
+
+/// The EFI system partition's type GUID.
+pub const ESP_TYPE_GUID: Uuid = uuid::uuid!("c12a7328-f81f-11d2-ba4b-00a0c93ec93b");
+
+/// The ESP on the disk of `beside` (the LIC partition), else the first
+/// one: its node and where it is for a boot entry.
+pub fn esp(beside: Option<&Path>) -> Result<(PathBuf, crate::efi::EspLocation), Error> {
+    let home = beside.and_then(disk_of);
+    let mut found = None;
+    for name in disk_names()? {
+        if home.as_ref().is_some_and(|h| *h != name) {
+            continue;
+        }
+        let sys = Path::new(SYS_BLOCK).join(&name);
+        let Ok(entries) = entries_on(&Path::new("/dev").join(&name)) else {
+            continue;
+        };
+        for (i, (t, guid, first, last)) in entries.iter().enumerate() {
+            let index = u32::try_from(i + 1).expect("index");
+            if *t == ESP_TYPE_GUID
+                && let Some(part) = child_partition(&sys, index)
+            {
+                found.get_or_insert((
+                    Path::new("/dev").join(part),
+                    crate::efi::EspLocation {
+                        index,
+                        first_lba: *first,
+                        sectors: last + 1 - first,
+                        guid: *guid,
+                    },
+                ));
+            }
+        }
+    }
+    found.ok_or(Error::NotFound(ESP_TYPE_GUID))
+}
+
+/// Partition entries of a disk in table order: type, unique GUID, first
+/// and last LBA, at a 512-byte sector size.
+fn entries_on(dev: &Path) -> io::Result<Vec<(Uuid, Uuid, u64, u64)>> {
+    let mut f = fs::File::open(dev)?;
+    let mut hdr = [0u8; 92];
+    f.seek(SeekFrom::Start(512))?;
+    f.read_exact(&mut hdr)?;
+    if &hdr[..8] != b"EFI PART" {
+        return Ok(Vec::new());
+    }
+    let entries_lba = u64::from_le_bytes(hdr[72..80].try_into().expect("8"));
+    let count = u32::from_le_bytes(hdr[80..84].try_into().expect("4")).min(1024);
+    let size = u32::from_le_bytes(hdr[84..88].try_into().expect("4")).max(128);
+    f.seek(SeekFrom::Start(entries_lba * 512))?;
+    let mut entry = vec![0u8; size as usize];
+    let mut out = Vec::with_capacity(count as usize);
+    for _ in 0..count {
+        f.read_exact(&mut entry)?;
+        out.push((
+            Uuid::from_bytes_le(entry[..16].try_into().expect("16")),
+            Uuid::from_bytes_le(entry[16..32].try_into().expect("16")),
+            u64::from_le_bytes(entry[32..40].try_into().expect("8")),
+            u64::from_le_bytes(entry[40..48].try_into().expect("8")),
+        ));
+    }
+    Ok(out)
+}

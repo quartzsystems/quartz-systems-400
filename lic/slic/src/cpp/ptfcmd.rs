@@ -265,10 +265,21 @@ fn apyptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
                 ctx_run(system, |cx| apply::apply_temp(cx, &mut db, &pkg, &bytes, &batch, false))?
                     .map_err(|e| format!("{} {e}", e.msgid()))?;
             }
+            // A LIC PTF's image goes to the other slot now.
+            if super::ptflic::is_lic(&db, p) && db.get(p).is_some_and(|r| r.action == Action::ApplyAtIpl) {
+                let s = super::ptflic::stage(system, &mut db, p);
+                store_db(system, &db)?;
+                let s = s?;
+                let _ = writeln!(reply.text, "PTF {p}: its LIC image is in slot {s:?}; the next IPL boots it");
+            }
         }
         if perm && db.get(p).is_some_and(|r| r.status == Status::TempApplied) {
-            ctx_run(system, |cx| apply::apply_perm(cx, &mut db, p))?
-                .map_err(|e| format!("{} {e}", e.msgid()))?;
+            if super::ptflic::is_lic(&db, p) {
+                super::ptflic::make_permanent(system, &mut db, p)?;
+            } else {
+                ctx_run(system, |cx| apply::apply_perm(cx, &mut db, p))?
+                    .map_err(|e| format!("{} {e}", e.msgid()))?;
+            }
         }
         let state = db.get(p).map_or("", |r| {
             if r.action == Action::None {
@@ -292,6 +303,13 @@ fn rmvptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let batch = chosen(&db, parms, &product, &[Status::TempApplied]);
     let mut reply = CmdReply::default();
     for p in &batch {
+        // A LIC PTF goes by an IPL back to the slot with the old image.
+        if super::ptflic::is_lic(&db, p) && db.get(p).is_some_and(|r| r.status == Status::TempApplied) {
+            let s = super::ptflic::remove(system, &mut db, p)?;
+            let _ = writeln!(reply.text, "{REMOVED} PTF {p} {product}: Remove at next IPL, from slot {s:?}");
+            reply.messages.push(msg(REMOVED, 4, &[(p, 7), (&product, 7)]));
+            continue;
+        }
         ctx_run(system, |cx| apply::remove(cx, &mut db, p, perm))?
             .map_err(|e| format!("{} {e}", e.msgid()))?;
         if perm && let Some(r) = db.get(p) {
@@ -316,13 +334,14 @@ fn dspptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let db = load_db(system)?;
     let sel = list(parms, "SELECT");
     let mut text = format!(
-        "Product {} release {}  IPL source ##MACH#A\n",
+        "Product {} release {}  IPL source ##MACH#{:?}\n",
         if product.is_empty() || product == "*ALL" {
             release::PRODUCT_ID.to_string()
         } else {
             product.clone()
         },
-        release_text()
+        release_text(),
+        system.boot.slot
     );
     let rows: Vec<_> = db
         .ptfs
@@ -382,12 +401,18 @@ pub fn ipl_pending(system: &mut System) -> String {
     let Ok(mut db) = load_db(system) else {
         return String::new();
     };
+    // LIC PTFs first: the slot this IPL came up on settles them.
+    let lic = super::ptflic::at_ipl(system, &mut db);
+    if !lic.is_empty() {
+        let _ = store_db(system, &db);
+    }
+    let lic = lic.join("; ");
     let pending: Vec<(String, Action)> = apply::pending(&db)
         .into_iter()
         .filter(|(p, _)| db.get(p).is_some_and(|r| !r.lic))
         .collect();
     if pending.is_empty() {
-        return String::new();
+        return lic;
     }
     let (mut applied, mut removed, mut failed_n) = (0, 0, 0);
     for (p, action) in &pending {
@@ -424,5 +449,10 @@ pub fn ipl_pending(system: &mut System) -> String {
         }
     }
     let _ = store_db(system, &db);
-    format!("{applied} PTF(s) applied, {removed} removed, {failed_n} failed at IPL")
+    let done = format!("{applied} PTF(s) applied, {removed} removed, {failed_n} failed at IPL");
+    if lic.is_empty() {
+        done
+    } else {
+        format!("{lic}; {done}")
+    }
 }

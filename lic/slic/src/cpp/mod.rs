@@ -25,6 +25,7 @@ mod msgfcmd;
 mod objcmd;
 mod prbcmd;
 pub(crate) mod ptfcmd;
+pub(crate) mod ptflic;
 mod ptfsvc;
 mod rpg;
 mod savcmd;

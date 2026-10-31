@@ -506,11 +506,11 @@ impl Service for Served<'_> {
         super::devices::set_status(self.system, &device, status)
     }
 
-    fn power_down(&mut self, immediate: bool, delay: u32, restart: bool) -> Result<(), String> {
+    fn power_down(&mut self, immediate: bool, delay: u32, restart: bool, iplsrc: u8) -> Result<(), String> {
         // slic reads the options and powers down on SIGUSR1.
         std::fs::write(
             crate::ipl::power::REQUEST_FILE,
-            format!("{} {delay} {}\n", u8::from(immediate), u8::from(restart)),
+            format!("{} {delay} {} {iplsrc}\n", u8::from(immediate), u8::from(restart)),
         )
         .map_err(|e| e.to_string())?;
         rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)

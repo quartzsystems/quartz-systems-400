@@ -6,6 +6,7 @@
 
 pub mod blk;
 pub mod console;
+pub mod efivar;
 pub mod ifs;
 pub mod mounts;
 pub mod power;

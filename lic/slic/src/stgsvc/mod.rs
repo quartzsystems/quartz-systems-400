@@ -143,6 +143,19 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
+    made += install_commands(system);
+    if let Ok(path) = licpart::locate()
+        && let Ok(f) = fs::OpenOptions::new().read(true).write(true).open(&path)
+    {
+        let dev: Box<dyn licpart::Device> = Box::new(f);
+        let mut part = licpart::LicPart::open(dev);
+        if let Ok(record) = part.read() {
+            // The record is slic's: the service writes only the TLVs it
+            // owns (the LIC PTF slots, the IPL attributes), refreshed
+            // first, and the resume journal.
+            system.lic = Some((part, record));
+        }
+    }
     let ptfs = crate::cpp::ptfcmd::ipl_pending(system);
     made += usize::from(licpgm::seed(system));
     jobqs::load(system);
@@ -182,16 +195,6 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         && let Some(v) = system.sysvals.as_mut()
     {
         let _ = v.set_system("QIPLSTS", sysval::Value::Char(iplsts.to_string()));
-    }
-    if let Ok(path) = licpart::locate()
-        && let Ok(f) = fs::OpenOptions::new().read(true).write(true).open(&path)
-    {
-        let dev: Box<dyn licpart::Device> = Box::new(f);
-        let mut part = licpart::LicPart::open(dev);
-        if let Ok(record) = part.read() {
-            // Only the resume journal is used; the record is slic's.
-            system.lic = Some((part, record));
-        }
     }
     Ok(text)
 }

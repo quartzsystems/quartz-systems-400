@@ -125,6 +125,9 @@ pub fn complete(system: &mut System) {
     let entry = history_entry(system, Outcome::Normal, &src::IPL_COMPLETE);
     let slot = system.boot.slot;
     if let Some((part, record)) = system.lic.as_mut() {
+        // The storage service may have written its TLVs (LIC PTF slots,
+        // IPL attributes) during this IPL.
+        part.refresh(record);
         record.header.ipl_in_progress = false;
         record.header.last_good_slot = slot;
         record.push_history(entry);

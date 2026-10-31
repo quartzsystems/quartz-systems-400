@@ -109,7 +109,8 @@ closes when the machine's answer is recorded here and the code agrees.
     writers when `QSTRPRTWTR` is 1; `QGPL/QS36EVOKE` released. Test:
     `RTVCLSRC QSYS/QSTRUP` on the machine.
 
-15. **`PWRDWNSYS IPLSRC`.** Implemented: only `*PANEL`; the slot the
-    next IPL uses is the panel's (`qs400.slot`, DST). The machine
-    switches the IPL source; here that needs the firmware's `BootNext`
-    and the Work with Licensed Internal Code tools (`MIGRATE(phase11)`).
+15. **`PWRDWNSYS IPLSRC`.** Implemented: `*PANEL`, `A` and `B`; `A`
+    and `B` set the firmware's `BootNext` to that slot's boot entry for
+    one IPL (`docs/PTF.md` §5), `*PANEL` keeps the default slot. `D`
+    and `*IMGCLG` are refused. Test: `PWRDWNSYS RESTART(*YES)
+    IPLSRC(B)` on the machine, then `DSPPTF` shows `##MACH#B`.

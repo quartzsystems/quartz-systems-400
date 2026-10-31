@@ -1625,9 +1625,10 @@ fn run_job(
                     immediate,
                     delay,
                     restart,
+                    iplsrc,
                 },
             ) => {
-                let _ = link.power_down(immediate, delay, restart);
+                let _ = link.power_down(immediate, delay, restart, iplsrc);
             }
             Ev::Job(_, FromJob::Output { text }) => eprint!("{text}"),
             Ev::Release | Ev::Job(..) => {}

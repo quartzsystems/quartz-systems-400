@@ -339,7 +339,8 @@ pub fn from_job(system: &mut System, m: FromJob) {
             immediate,
             delay,
             restart,
-        } => crate::ipl::power::down_ending(system, restart, immediate, delay),
+            iplsrc,
+        } => crate::ipl::power::down_ending(system, restart, immediate, delay, iplsrc),
         FromJob::Disconnect => disconnect(system),
         // Secondary and group jobs need a TN5250 session; the old
         // console has none.

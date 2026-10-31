@@ -137,6 +137,49 @@ IPL finishes leaves the old slot bootable, so the next IPL retries.
 | `C6004503` | a LIC PTF took effect from the other slot |
 | `C6004504` | a delayed PTF failed to apply; it is Damaged |
 
+### How the slots are switched
+
+`ptf::slot` is the logic, over two traits a test fakes: the ESP
+(`lic/slic/src/cpp/ptflic.rs` writes the slot file through
+`diskimg::fat::write_file`, a new file renamed over the old, then
+`fsync`) and the firmware (`lic/slic/src/platform/efivar.rs`: efivarfs,
+mounted on first use). The state is IPL state, so it is in the LIC
+record, TLV `0x0107`: the slot IPLs boot by default, the PTF waiting
+for its slot, a removal waiting, and each temporarily applied LIC PTF
+with the slot that holds it.
+
+- `APYPTF` of a LIC PTF writes its image (slot A's build, or slot B's
+  when the PTF carries one, `Package::lic_b`) into the slot not booted
+  and records it pending only once the write is durable.
+- At power down `slic` sets `BootNext` to that slot's entry
+  (`Boot5141` slot A, `EFI/BOOT/BOOTX64.EFI`; `Boot5142` slot B,
+  `EFI/QS400/B.EFI`; both written when missing). `BootNext` is used
+  once, so an IPL that dies before it ends leaves the next power-on on
+  the default slot, which still holds the old image; the PTF stays
+  Apply at next IPL and the next power down arms it again.
+- The IPL that comes up on the pending slot (the service's
+  `ipl_pending`) makes the PTF Temporarily applied, puts the slot's
+  entry first in `BootOrder` (IPLs boot it from now on) and emits
+  `C6004503`. `DSPPTF` shows the slot as the IPL source (`##MACH#B`).
+- A power loss while the image was written leaves no pending slot; the
+  IPL finds the PTF Apply at next IPL without one and writes it again.
+- `RMVPTF` of it records the removal; the next IPL boots the old slot
+  once, and coming up there makes it Temporarily removed and the old
+  slot the default.
+- `APYPTF APY(*PERM)` writes the image into the other slot too.
+- One LIC PTF at a time: while one is temporarily applied the other
+  slot holds the image before it, so a second waits for the first to
+  be made permanent (`CPF3601`); `INSPTF` stages the newest LIC PTF of
+  a package and leaves older ones loaded.
+- `PWRDWNSYS IPLSRC(A|B)` sets `BootNext` to that slot for one IPL;
+  `*PANEL` leaves the default (or a pending LIC PTF's slot).
+  `IPLSRC(D)` and `*IMGCLG` are refused.
+
+Without UEFI variables (no efivarfs, or firmware that keeps none, as
+QEMU's OVMF without a variable store) the image is still written and
+the state kept; the boot choice is reported on the serial console as
+not set, and the slot is chosen at the firmware's boot menu.
+
 ## 6. Trusted signers
 
 `LODPTF`, `INSPTF`, the save engine's signature checks, group manifests

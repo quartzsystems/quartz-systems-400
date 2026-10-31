@@ -561,7 +561,8 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
             immediate,
             delay,
             restart,
-        } => power::down_ending(system, restart, immediate, delay),
+            iplsrc,
+        } => power::down_ending(system, restart, immediate, delay, iplsrc),
         FromJob::Ready { .. }
         | FromJob::Show { .. }
         | FromJob::Disconnect

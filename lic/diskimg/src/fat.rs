@@ -6,7 +6,7 @@
 //! and the ISO's El Torito boot image. Deterministic: fixed volume id and
 //! label, 1980 timestamps (no `chrono`), files in the order given.
 
-use std::io::{Cursor, Write};
+use std::io::{Cursor, Read as _, Write};
 
 use fatfs::{Dir, FatType, FileSystem, FormatVolumeOptions, FsOptions, ReadWriteSeek};
 
@@ -129,6 +129,48 @@ pub fn read_file(image: &[u8], path: &str) -> Result<Vec<u8>, Error> {
     Ok(out)
 }
 
+/// A file's bytes on a mounted volume (`dev` is the partition).
+pub fn read_file<T: ReadWriteSeek>(mut dev: T, path: &str) -> Result<Vec<u8>, Error> {
+    dev.seek(std::io::SeekFrom::Start(0)).map_err(Error::io("seek"))?;
+    let fs = FileSystem::new(dev, FsOptions::new()).map_err(fat_err("mount"))?;
+    let mut f = fs.root_dir().open_file(path).map_err(fat_err("open"))?;
+    let mut out = Vec::new();
+    f.read_to_end(&mut out).map_err(Error::io("read file"))?;
+    drop(f);
+    fs.unmount().map_err(fat_err("unmount"))?;
+    Ok(out)
+}
+
+/// Replace a file on a volume: the bytes go to a new file beside it
+/// first, which is then renamed over the old one, so a torn write
+/// leaves the old file whole. Directories are created as needed.
+pub fn write_file<T: ReadWriteSeek>(mut dev: T, path: &str, data: &[u8]) -> Result<(), Error> {
+    dev.seek(std::io::SeekFrom::Start(0)).map_err(Error::io("seek"))?;
+    let fs = FileSystem::new(dev, FsOptions::new()).map_err(fat_err("mount"))?;
+    {
+        let (dirs, name) = path.rsplit_once('/').unwrap_or(("", path));
+        let mut dir = fs.root_dir();
+        for part in dirs.split('/').filter(|p| !p.is_empty()) {
+            dir = match dir.open_dir(part) {
+                Ok(d) => d,
+                Err(_) => dir.create_dir(part).map_err(fat_err("mkdir"))?,
+            };
+        }
+        let tmp = "QS400NEW.TMP";
+        let _ = dir.remove(tmp);
+        {
+            let mut f = dir.create_file(tmp).map_err(fat_err("create"))?;
+            f.truncate().map_err(fat_err("truncate"))?;
+            f.write_all(data).map_err(Error::io("write file"))?;
+            f.flush().map_err(Error::io("flush file"))?;
+        }
+        let _ = dir.remove(name);
+        dir.rename(tmp, &dir, name).map_err(fat_err("rename"))?;
+    }
+    fs.unmount().map_err(fat_err("unmount"))?;
+    Ok(())
+}
+
 /// Every path on a volume, directories with a trailing slash, sorted.
 pub fn list(image: &[u8]) -> Result<Vec<String>, Error> {
     let mut cur = Cursor::new(image.to_vec());
@@ -185,6 +227,21 @@ mod tests {
         assert_eq!(
             build(&MEDIA_ESP, &[]).unwrap(),
             build(&MEDIA_ESP, &[]).unwrap()
+        );
+    }
+
+    #[test]
+    fn slot_files_are_replaced_in_place() {
+        let img = build(&MEDIA_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"slot a"), ("EFI/QS400/B.EFI", b"slot b")]).unwrap();
+        let mut cur = Cursor::new(img);
+        write_file(&mut cur, "EFI/QS400/B.EFI", b"new slot b, longer than before").unwrap();
+        assert_eq!(read_file(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"new slot b, longer than before");
+        assert_eq!(read_file(&mut cur, "EFI/BOOT/BOOTX64.EFI").unwrap(), b"slot a");
+        write_file(&mut cur, "EFI/QS400/B.EFI", b"short").unwrap();
+        assert_eq!(read_file(&mut cur, "EFI/QS400/B.EFI").unwrap(), b"short");
+        assert_eq!(
+            list(cur.get_ref()).unwrap(),
+            vec!["EFI/", "EFI/BOOT/", "EFI/BOOT/BOOTX64.EFI", "EFI/QS400/", "EFI/QS400/B.EFI"]
         );
     }
 }

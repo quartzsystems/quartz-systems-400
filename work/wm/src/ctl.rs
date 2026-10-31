@@ -163,6 +163,8 @@ pub enum FromJob {
         delay: u32,
         /// `RESTART(*YES)`.
         restart: bool,
+        /// `IPLSRC`: 0 `*PANEL`, 1 slot A, 2 slot B.
+        iplsrc: u8,
     },
     /// `DSCJOB`: leave the job, keep it, free the display.
     Disconnect,
@@ -200,7 +202,7 @@ wire_enum!(FromJob {
     2 => Done { prompt, srcs, sysvals },
     3 => Ending { reason },
     4 => Show { panel },
-    5 => PowerDown { immediate, delay, restart },
+    5 => PowerDown { immediate, delay, restart, iplsrc },
     6 => Disconnect,
     7 => SecondaryJob,
     8 => GroupTransfer { job },

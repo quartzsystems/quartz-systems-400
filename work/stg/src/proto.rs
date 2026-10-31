@@ -353,7 +353,7 @@ ipc::rpc! {
     133 => fn device_status / DeviceStatus (device: String, status: u8) -> Result<(), String>;
     /// `PWRDWNSYS` from a job that is not at the console: the service
     /// hands it to `slic`.
-    134 => fn power_down / PowerDown (immediate: bool, delay: u32, restart: bool) -> Result<(), String>;
+    134 => fn power_down / PowerDown (immediate: bool, delay: u32, restart: bool, iplsrc: u8) -> Result<(), String>;
     /// Sign on with an RFC 4777 substitute instead of a password.
     135 => fn sign_on_substitute / SignOnSubstitute (user: String, device: String, proof: sec::signon::Substitute) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
     /// Open display file `lib/file` from activation group `actgrp`, the
