@@ -70,7 +70,7 @@ fn detail(bits: Auth) -> String {
 /// (`BITS`) and each single authority (`OPR` .. `EXE`).
 fn object_authorities(system: &mut System, lib: &str, name: &str, ty: &str) -> Result<Sys2Data, String> {
     let lib = if lib.is_empty() { "*LIBL" } else { lib };
-    let p = Params::parse(&format!("OBJ({lib}/{name}) OBJTYPE({ty})"));
+    let p = Params::parse(&format!("DSPOBJAUT OBJ({lib}/{name}) OBJTYPE({ty})"));
     let a = crate::svc::security::in_store(system, |txn, env| {
         let id = crate::svc::security::object(txn, env.qsys, &p)?;
         sec::cmd::object::authorities(txn, env, id)

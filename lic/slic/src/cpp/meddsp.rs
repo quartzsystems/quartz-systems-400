@@ -315,6 +315,8 @@ pub(crate) fn cartridges(system: &mut System, dev: &str, ids: &[String], cgy: &s
     if d.media_kind() != Some(MediaKind::TapeLibrary) {
         return Err(format!("CPF6745 device {dev} is not a tape media library"));
     }
+    // `CGY(*ALL *CURRENT)`: the category, not its system qualifier.
+    let cgy = cgy.split_whitespace().next().unwrap_or("");
     let rows = media::library::rows(system, &dev, ids, cgy)?;
     if rows.is_empty() {
         // Nothing matched: the cartridge asked for, else the category.
