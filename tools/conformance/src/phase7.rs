@@ -82,10 +82,17 @@ impl Suite {
         if !after.contains("F1") || !after.contains("created") {
             return Err(format!("CRTPF from the prompt did not run:\n{after}"));
         }
-        let log = entry_wait(s, "dspjoblog", has(&[">>", "crtlib CLTEST"]))?;
+        // The console is a display: DSPJOBLOG opens its panel.
+        entry(s, "dspjoblog")?;
+        let log = screen_wait(s, "Display Job Log")?;
+        if !log.contains(">>") || !log.contains("crtlib CLTEST") {
+            return Err(format!("the job log lacks the requests:\n{log}"));
+        }
         if !log.contains("crtpf FILE(CLTEST/F1)") && !log.contains("CRTPF FILE(CLTEST/F1)") {
             return Err(format!("the prompted CRTPF is not a request in the job log:\n{log}"));
         }
+        key(s, "enter")?;
+        screen_wait(s, "Command Entry")?;
         key(s, "f9")?;
         let retrieved = screen_wait(s, "===> dspjoblog")?;
         key(s, "f9")?;
@@ -132,7 +139,14 @@ impl Suite {
             "sbmjob CMD(CALL PGM(CLTEST/HELLO) PARM('batch')) JOB(HELLOB)",
             has(&["HELLOB", "submitted"]),
         )?;
-        let active = entry_wait(s, "wrkactjob", has(&["SCPF", "RUN"]))?;
+        // WRKACTJOB opens its panel; F3 comes back.
+        entry(s, "wrkactjob")?;
+        let active = screen_wait(s, "Work with Active Jobs")?;
+        if !active.contains("QSCONSOLE") || !active.contains("RUN") {
+            return Err(format!("WRKACTJOB lacks the console job:\n{active}"));
+        }
+        key(s, "f3")?;
+        screen_wait(s, "Command Entry")?;
         entry_wait(
             s,
             "rtvclsrc PGM(CLTEST/HELLO) SRCFILE(QGPL/QCLSRC) SRCMBR(HELLO2)",
