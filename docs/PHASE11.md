@@ -147,8 +147,11 @@ stores in memory unless noted.
 | Virtual tape | 252 MiB/s | 200 MiB/s |
 | Virtual optical | 312 MiB/s | 349 MiB/s |
 
-**PTFs** (`cargo test --release -p ptf --test bench -- --ignored --nocapture`):
-see the acceptance run below for the measured times.
+**PTFs** (`cargo test --release -p ptf --test bench -- --ignored --nocapture`,
+200 replacement objects of 64 KiB, 12.5 MiB, a 6.7 MiB stream): build
+and sign 0.13 s, open (every signature checked) and `LODPTF` 0.02 s,
+`APYPTF *TEMP` 0.06 s, `RMVPTF` 0.01 s, `APYPTF *PERM` under 0.01 s. Under
+QEMU, step 81's whole cycle with an IPL takes 13 s.
 
 **Install** (`--media iso --install`): see `INSTALL.md`.
 
