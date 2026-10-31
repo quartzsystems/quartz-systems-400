@@ -3,9 +3,9 @@
  Type options, press Enter.
    5=Display cover letter   6=Print cover letter
 
- Opt  PTF ID      Product     Release     Status                     Attribute
-      QS00001     5770QS1     V1R0M0      Loaded                     *SPCINST
-      QS00002     5770QS1     V1R0M0      Temporarily applied        *DFT
+ Opt  PTF ID   Product     Release     Status                     Attribute
+      QS00001  5770QS1     V1R0M0      Loaded                     *SPCINST
+      QS00002  5770QS1     V1R0M0      Temporarily applied        *DFT
 
 
 
