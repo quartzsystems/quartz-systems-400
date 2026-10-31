@@ -412,3 +412,172 @@ stream, rewrites each object's references through that map or by name,
 and rebuilds what it zeroed: the library directory, access paths after
 their members (rebuilt from the records when a tree image is absent),
 a user index's tree from its entries.
+
+## 7. Outfiles
+
+`OUTPUT(*OUTFILE)` of the save and restore commands writes IBM's model
+formats, because programs read them by field name and position: the
+formats are an interface, not part of the save stream. Each table's
+Notes give the DDS type, length and decimals; varying fields hold a
+two-byte length then the data.
+
+### `QSRSAV` (3732 bytes)
+
+Record format of `QASAVOBJ`, the save outfile, as IBM i V7R1M0's `DSPFFD` shows it.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | SROCMD | CHAR 10 |
+| 10 | 10 | SROINF | CHAR 10 |
+| 20 | 8 | SROSYS | CHAR 8 |
+| 28 | 6 | SROSRL | CHAR 6 |
+| 34 | 10 | SROLIB | CHAR 10 |
+| 44 | 2 | SROASP | ZONED 2 0 |
+| 46 | 6 | SROSAV | ZONED 6 0 |
+| 52 | 6 | SROERR | ZONED 6 0 |
+| 58 | 4 | SROSEQ | ZONED 4 0 |
+| 62 | 17 | SROLBL | CHAR 17 |
+| 79 | 60 | SROVOL | CHAR 60 |
+| 139 | 13 | SROSVT | CHAR 13 |
+| 152 | 10 | SRONAM | CHAR 10 |
+| 162 | 10 | SROMNM | CHAR 10 |
+| 172 | 8 | SROTYP | CHAR 8 |
+| 180 | 10 | SROATT | CHAR 10 |
+| 190 | 15 | SROSIZ | ZONED 15 0 |
+| 205 | 10 | SROOWN | CHAR 10 |
+| 215 | 1 | SROSTA | CHAR 1 |
+| 216 | 7 | SROMSG | CHAR 7 |
+| 223 | 13 | SROSWA | CHAR 13 |
+| 236 | 50 | SROTXT | CHAR 50 |
+| 286 | 40 | SRODEV | CHAR 40 |
+| 326 | 10 | SROSVF | CHAR 10 |
+| 336 | 10 | SROSFL | CHAR 10 |
+| 346 | 6 | SROTRL | CHAR 6 |
+| 352 | 1 | SROSTF | CHAR 1 |
+| 353 | 1 | SROACP | CHAR 1 |
+| 354 | 1 | SROSFD | CHAR 1 |
+| 355 | 1 | SROCMP | CHAR 1 |
+| 356 | 1 | SROCOM | CHAR 1 |
+| 357 | 7 | SRORFD | CHAR 7 |
+| 364 | 6 | SRORFT | CHAR 6 |
+| 370 | 7 | SROEXP | CHAR 7 |
+| 377 | 392 | SROXVM | VARCHAR 390 |
+| 769 | 10 | SROPGP | CHAR 10 |
+| 779 | 10 | SROSQ2 | ZONED 10 0 |
+| 789 | 1 | SROMIT | CHAR 1 |
+| 790 | 1 | SROFMT | CHAR 1 |
+| 791 | 3 | SROMFN | ZONED 3 0 |
+| 794 | 3 | SROTMF | ZONED 3 0 |
+| 797 | 10 | SROMDN | CHAR 10 |
+| 807 | 10 | SROMDL | CHAR 10 |
+| 817 | 3 | SROVLC | ZONED 3 0 |
+| 820 | 3 | SROVLL | ZONED 3 0 |
+| 823 | 2402 | SROVLD | VARCHAR 2400 |
+| 3225 | 258 | SROOPT | VARCHAR 256 |
+| 3483 | 10 | SROAS1 | CHAR 10 |
+| 3493 | 5 | SROAS2 | ZONED 5 0 |
+| 3498 | 11 | SROTSZ | PACKED 21 0 |
+| 3509 | 1 | SROPRT | CHAR 1 |
+| 3510 | 10 | SROJN | CHAR 10 |
+| 3520 | 10 | SROJL | CHAR 10 |
+| 3530 | 10 | SROJRN | CHAR 10 |
+| 3540 | 10 | SROJRL | CHAR 10 |
+| 3550 | 10 | SROJRA | CHAR 10 |
+| 3560 | 10 | SROPFL | CHAR 10 |
+| 3570 | 6 | SROPFN | ZONED 6 0 |
+| 3576 | 10 | SROPJB | CHAR 10 |
+| 3586 | 10 | SROPUN | CHAR 10 |
+| 3596 | 6 | SROPJN | CHAR 6 |
+| 3602 | 8 | SROPJS | CHAR 8 |
+| 3610 | 7 | SROPCD | CHAR 7 |
+| 3617 | 6 | SROPCT | CHAR 6 |
+| 3623 | 10 | SROPQN | CHAR 10 |
+| 3633 | 10 | SROPQL | CHAR 10 |
+| 3643 | 10 | SROPUD | CHAR 10 |
+| 3653 | 10 | SROPFT | CHAR 10 |
+| 3663 | 6 | SROPPG | PACKED 11 0 |
+| 3669 | 3 | SROPCP | ZONED 3 0 |
+| 3672 | 8 | SROPSZ | PACKED 15 0 |
+| 3680 | 7 | SROPXD | CHAR 7 |
+| 3687 | 1 | SROPVA | CHAR 1 |
+| 3688 | 10 | SROSYN | CHAR 10 |
+| 3698 | 2 | SROSYO | ZONED 2 0 |
+| 3700 | 32 | SROPSN | CHAR 32 |
+
+### `QSRRST` (4411 bytes)
+
+Record format of `QASRRSTO`, the restore outfile, as IBM i V7R1M0's `DSPFFD` shows it.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | RSRECR | CHAR 1 |
+| 1 | 1 | RSOSTA | CHAR 1 |
+| 2 | 7 | RSOMSG | CHAR 7 |
+| 9 | 1 | RSOSEC | CHAR 1 |
+| 10 | 10 | RSNAME | CHAR 10 |
+| 20 | 10 | RSMNAM | CHAR 10 |
+| 30 | 8 | RSTYPE | CHAR 8 |
+| 38 | 10 | RSATTR | CHAR 10 |
+| 48 | 15 | RSSIZE | ZONED 15 0 |
+| 63 | 10 | RSOOWN | CHAR 10 |
+| 73 | 50 | RSOTXT | CHAR 50 |
+| 123 | 706 | RSRPLV | VARCHAR 704 |
+| 829 | 10 | RSOLIB | CHAR 10 |
+| 839 | 2 | RSOASP | ZONED 2 0 |
+| 841 | 4 | RSOSEQ | ZONED 4 0 |
+| 845 | 17 | RSLABL | CHAR 17 |
+| 862 | 13 | RSSVDT | CHAR 13 |
+| 875 | 13 | RSRSDT | CHAR 13 |
+| 888 | 452 | RSVLID | VARCHAR 450 |
+| 1340 | 40 | RSODEV | CHAR 40 |
+| 1380 | 10 | RSOSVF | CHAR 10 |
+| 1390 | 10 | RSOSFL | CHAR 10 |
+| 1400 | 10 | RSOCMD | CHAR 10 |
+| 1410 | 8 | RSSYSN | CHAR 8 |
+| 1418 | 6 | RSORRL | CHAR 6 |
+| 1424 | 6 | RSOSRL | CHAR 6 |
+| 1430 | 10 | RSOPGP | CHAR 10 |
+| 1440 | 10 | RSOSQ2 | ZONED 10 0 |
+| 1450 | 10 | RSONLB | CHAR 10 |
+| 1460 | 1 | RSOFMT | CHAR 1 |
+| 1461 | 3 | RSOMFN | ZONED 3 0 |
+| 1464 | 3 | RSOTMF | ZONED 3 0 |
+| 1467 | 10 | RSOMDN | CHAR 10 |
+| 1477 | 10 | RSOMDL | CHAR 10 |
+| 1487 | 3 | RSOVLC | ZONED 3 0 |
+| 1490 | 3 | RSOVLL | ZONED 3 0 |
+| 1493 | 2402 | RSOVLD | VARCHAR 2400 |
+| 3895 | 258 | RSOOPT | VARCHAR 256 |
+| 4153 | 10 | RSOAS1 | CHAR 10 |
+| 4163 | 5 | RSOAS2 | ZONED 5 0 |
+| 4168 | 1 | RSOPRT | CHAR 1 |
+| 4169 | 10 | RSOJN | CHAR 10 |
+| 4179 | 10 | RSOJL | CHAR 10 |
+| 4189 | 10 | RSOJRN | CHAR 10 |
+| 4199 | 10 | RSOJRL | CHAR 10 |
+| 4209 | 10 | RSOJRA | CHAR 10 |
+| 4219 | 10 | RSOPFL | CHAR 10 |
+| 4229 | 6 | RSOPFN | ZONED 6 0 |
+| 4235 | 10 | RSOPJB | CHAR 10 |
+| 4245 | 10 | RSOPUN | CHAR 10 |
+| 4255 | 6 | RSOPJN | CHAR 6 |
+| 4261 | 8 | RSOPJS | CHAR 8 |
+| 4269 | 7 | RSOPCD | CHAR 7 |
+| 4276 | 6 | RSOPCT | CHAR 6 |
+| 4282 | 10 | RSOPQN | CHAR 10 |
+| 4292 | 10 | RSOPQL | CHAR 10 |
+| 4302 | 10 | RSOPUD | CHAR 10 |
+| 4312 | 10 | RSOPFT | CHAR 10 |
+| 4322 | 6 | RSOPPG | PACKED 11 0 |
+| 4328 | 3 | RSOPCP | ZONED 3 0 |
+| 4331 | 8 | RSOPSZ | PACKED 15 0 |
+| 4339 | 7 | RSOPXD | CHAR 7 |
+| 4346 | 7 | RSOPDR | CHAR 7 |
+| 4353 | 6 | RSOPTR | CHAR 6 |
+| 4359 | 10 | RSOPQR | CHAR 10 |
+| 4369 | 10 | RSOPLR | CHAR 10 |
+| 4379 | 1 | RSOPVA | CHAR 1 |
+| 4380 | 10 | RSOPVS | ZONED 10 0 |
+| 4390 | 10 | RSOPVR | ZONED 10 0 |
+| 4400 | 1 | RSODFR | CHAR 1 |
+| 4401 | 10 | RSODFI | CHAR 10 |

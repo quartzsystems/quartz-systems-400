@@ -14,6 +14,7 @@ mod digest;
 mod error;
 pub mod header;
 pub mod object;
+pub mod outfile;
 mod read;
 pub mod record;
 pub mod spec;
