@@ -200,6 +200,7 @@ dependencies = [
  "getrandom 0.4.3",
  "hex",
  "lpbuild",
+ "optical",
  "release",
  "reqwest",
  "rustls-graviola",
@@ -1889,6 +1890,13 @@ name = "openssl-probe"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
+
+[[package]]
+name = "optical"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "osobjects"

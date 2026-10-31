@@ -1,0 +1,13 @@
+[package]
+name = "optical"
+description = "QS/400 optical media: ISO 9660 with Joliet and Rock Ridge, hybrid images, virtual volumes, devices"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[lints]
+workspace = true

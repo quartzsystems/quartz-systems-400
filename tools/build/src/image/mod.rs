@@ -7,7 +7,6 @@
 pub mod cpio;
 pub mod disk;
 pub mod initramfs;
-pub mod iso;
 pub mod lp;
 pub mod manifest;
 pub mod media;

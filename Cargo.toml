@@ -102,6 +102,7 @@ members = [
     "ptf/ptf",
     # Service: the problem log.
     "service/prb",
+    "media/optical",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",
