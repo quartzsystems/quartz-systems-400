@@ -4,6 +4,9 @@
 
 //! `CHKOBJITG`: object signatures checked against the keys the system
 //! trusts (`/qs400/keys/system.pub`), one line per violation and a count.
+//! As on IBM i only the types whose content does not change in use are
+//! checked for signatures (programs, service programs, modules,
+//! commands); every type is checked for damage.
 
 use std::fmt::Write as _;
 
@@ -29,6 +32,9 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 const CLEAN: &str = "CPC39E0";
 /// Objects checked, some with violations.
 const VIOLATIONS: &str = "CPF39E1";
+
+/// The types whose signatures are checked.
+const SIGNABLE: &[u16] = &[types::PGM, types::SRVPGM, types::MODULE, types::CMD];
 
 /// A name against `*ALL`, a generic `ABC*` or an exact name.
 fn matches(pattern: &str, name: &str) -> bool {
@@ -77,7 +83,7 @@ fn chkobjitg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
                 checked += 1;
                 let what = if h.damaged {
                     Some("damaged")
-                } else if !signatures {
+                } else if !signatures || !SIGNABLE.contains(&k.type_code) {
                     None
                 } else {
                     match sign::check(txn, id, &keys).map_err(|e| e.to_string())? {

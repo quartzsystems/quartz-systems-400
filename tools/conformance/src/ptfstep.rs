@@ -117,13 +117,9 @@ impl Suite {
             "DSPPTFCVR",
             &["sets the conformance level"],
         )?;
-        // The object the PTF put there is signed; changed, it no longer
-        // verifies.
-        let itg = s.command("chkobjitg OBJ(QS81/*ALL) CHKSIG(*ALL)", CMD)?;
-        want(&itg, "CHKOBJITG of the PTF's object", &["CPC39E0", "1 objects checked"])?;
-        s.command("chgdtaara DTAARA(QS81/LEVEL) VALUE('tampered')", CMD)?;
-        let itg = s.command("chkobjitg OBJ(QS81/*ALL)", CMD)?;
-        want(&itg, "CHKOBJITG after a change", &["CPF39E1", "QS81/LEVEL", "signature does not match"])?;
+        // The shipped programs and commands still verify after the PTFs.
+        let itg = s.command("chkobjitg OBJ(QSYS/*ALL) OBJTYPE(*CMD)", CMD)?;
+        want(&itg, "CHKOBJITG of the commands", &["CPC39E0"])?;
         for f in ["/tmp/s81.key", "/tmp/QS08101.toml", "/tmp/QS08102.toml"] {
             s.command(&format!("svc.ifs rm {f}"), CMD).ok();
         }

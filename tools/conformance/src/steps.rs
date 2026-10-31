@@ -488,10 +488,10 @@ impl Suite {
         s.expect(MEDIA_LINE, self.boot_timeout)?;
         s.expect("Selection", self.boot_timeout)?;
         s.send("1")?;
-        let seen = s.expect_in_order(
-            &["SRC C1001070", "SRC C6001000", SRC_IPL_COMPLETE],
-            self.boot_timeout,
-        )?;
+        s.expect_in_order(&["SRC C1001070", "SRC C6001000"], self.boot_timeout)?;
+        // Option 1 of the IPL menu is an attended IPL.
+        crate::dst::answer_ipl_options(s, self.boot_timeout)?;
+        let seen = s.expect_in_order(&[SRC_IPL_COMPLETE], self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         crate::phase5::screen_wait(s, "Sign On")?;
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
