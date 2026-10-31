@@ -318,7 +318,7 @@ mod tests {
         t.apply(&Record::new(out.opcode, out.data)).unwrap();
         let rows = t.text_rows();
         assert_eq!(&rows[0][35..42], "Sign On");
-        assert_eq!(&rows[3][67..77], "QPADEV0001");
+        assert_eq!(&rows[3][69..79], "QPADEV0001");
         assert_eq!(t.fields().len(), 5);
         assert_eq!(t.cursor(), (6, 53));
         t.type_str("QSECOFR");

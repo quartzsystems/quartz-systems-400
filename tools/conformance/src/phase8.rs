@@ -90,10 +90,10 @@ impl Suite {
             run(&mut d, &mut ctx, "wait \"Sign On\"\n")?;
         }
         let rows = d.term.text_rows();
-        // `DEVNAME` of QDSIGNON: row 4, column 68.
+        // `DEVNAME` of QDSIGNON: row 4, column 70.
         let device = rows
             .get(3)
-            .and_then(|r| r.get(67..77))
+            .and_then(|r| r.get(69..79))
             .map(str::trim)
             .unwrap_or_default()
             .to_string();

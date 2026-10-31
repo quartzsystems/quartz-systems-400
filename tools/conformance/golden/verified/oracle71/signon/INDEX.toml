@@ -1,0 +1,16 @@
+[[golden]]
+name = "sign-on"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "sign-on"
+width = 80
+
+[[golden]]
+name = "change-password"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "chgpwd"
+width = 80
+

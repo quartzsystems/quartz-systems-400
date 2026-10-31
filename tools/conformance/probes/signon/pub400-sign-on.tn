@@ -1,0 +1,3 @@
+# pub400 shows its own sign-on display; captured and left without signing on.
+wait "Password"
+snap sign-on

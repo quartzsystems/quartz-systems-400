@@ -40,3 +40,16 @@ fn panels_match() {
     );
     golden("main-interim.txt", &panels::main_menu("QS400", "", ""));
 }
+
+/// The interim sign-on agrees with the console's at both levels.
+#[test]
+fn sign_on_matches_the_console() {
+    golden(
+        "signon/sign-on.txt",
+        &panels::sign_on("QS400", "QBASE", "QSCONSOLE", false, ""),
+    );
+    golden(
+        "signon/sign-on-pwdlvl2.txt",
+        &panels::sign_on("QS400", "QBASE", "QSCONSOLE", true, ""),
+    );
+}

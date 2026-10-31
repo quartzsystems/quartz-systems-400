@@ -11,6 +11,10 @@ use crate::screen::{Attr, Screen};
 pub const COPYRIGHT: &str = "(C) COPYRIGHT QUARTZ SYSTEMS 2026.";
 /// Column of the copyright line: it ends at column 76.
 pub const COPYRIGHT_COL: usize = 43;
+/// Column of the sign-on's copyright line (IBM's starts at 41).
+pub const SIGN_ON_COPYRIGHT_COL: usize = 41;
+/// Column of the sign-on's system, subsystem and display names.
+pub const SIGN_ON_VALUE_COL: usize = 70;
 /// Row of the message line.
 pub const MESSAGE_ROW: usize = 23;
 
@@ -38,27 +42,32 @@ pub fn sign_on(system: &str, subsystem: &str, display: &str, long_password: bool
     let mut s = Screen::new();
     s.put(1, 36, "Sign On", Attr::WHITE);
     s.put(2, 48, "System  . . . . . :", Attr::GREEN);
-    s.put(2, 68, system, Attr::GREEN);
+    s.put(2, SIGN_ON_VALUE_COL, system, Attr::GREEN);
     s.put(3, 48, "Subsystem . . . . :", Attr::GREEN);
-    s.put(3, 68, subsystem, Attr::GREEN);
+    s.put(3, SIGN_ON_VALUE_COL, subsystem, Attr::GREEN);
     s.put(4, 48, "Display . . . . . :", Attr::GREEN);
-    s.put(4, 68, display, Attr::GREEN);
+    s.put(4, SIGN_ON_VALUE_COL, display, Attr::GREEN);
     s.put(6, 17, "User  . . . . . . . . . . . . . .", Attr::GREEN);
     s.field(6, 53, 10, false);
     s.put(7, 17, "Password  . . . . . . . . . . . .", Attr::GREEN);
-    if long_password {
-        // QDSIGNON2: 128 characters, nothing shown, no underline.
+    let row = if long_password {
+        // QDSIGNON2: 128 characters, nothing shown, no underline. On a
+        // 5250 the field runs on through rows 8 and 9; here its cells
+        // end at the row's end and the rest is kept unseen, and the
+        // rows below start at 10 as IBM's do.
         s.field_secret(7, 53, 28, 128);
+        10
     } else {
         s.field(7, 53, 10, true);
-    }
-    s.put(8, 17, "Program/procedure . . . . . . . .", Attr::GREEN);
-    s.field(8, 53, 10, false);
-    s.put(9, 17, "Menu  . . . . . . . . . . . . . .", Attr::GREEN);
-    s.field(9, 53, 10, false);
-    s.put(10, 17, "Current library . . . . . . . . .", Attr::GREEN);
-    s.field(10, 53, 10, false);
-    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
+        8
+    };
+    s.put(row, 17, "Program/procedure . . . . . . . .", Attr::GREEN);
+    s.field(row, 53, 10, false);
+    s.put(row + 1, 17, "Menu  . . . . . . . . . . . . . .", Attr::GREEN);
+    s.field(row + 1, 53, 10, false);
+    s.put(row + 2, 17, "Current library . . . . . . . . .", Attr::GREEN);
+    s.field(row + 2, 53, 10, false);
+    s.put(24, SIGN_ON_COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
     s.cursor = (5, 52);
     s
 }
@@ -98,15 +107,30 @@ mod tests {
         };
         at(1, 36, "Sign On");
         at(2, 48, "System  . . . . . :");
-        at(2, 68, "QS400");
-        at(3, 68, "QINTER");
-        at(4, 68, "QSCONSOLE");
+        at(2, 70, "QS400");
+        at(3, 70, "QINTER");
+        at(4, 70, "QSCONSOLE");
         at(6, 17, "User  . . . . . . . . . . . . . .");
+        at(7, 17, "Password  . . . . . . . . . . . .");
+        at(8, 17, "Program/procedure . . . . . . . .");
         at(10, 17, "Current library . . . . . . . . .");
-        at(24, 43, COPYRIGHT);
+        at(24, 41, COPYRIGHT);
         assert_eq!(s.fields.len(), 5);
         assert!(s.fields[1].nondisplay);
         assert!(s.fields.iter().all(|f| f.col == 53 && f.len == 10));
+    }
+
+    #[test]
+    fn long_password_moves_the_rows_below_down_two() {
+        let s = sign_on("QS400", "QINTER", "QSCONSOLE", true);
+        let d = s.dump();
+        let lines: Vec<&str> = d.lines().collect();
+        assert!(lines[7].trim().is_empty() && lines[8].trim().is_empty());
+        assert!(lines[9][16..].starts_with("Program/procedure"));
+        assert!(lines[11][16..].starts_with("Current library"));
+        let rows: Vec<usize> = s.fields.iter().map(|f| f.row).collect();
+        assert_eq!(rows, [6, 7, 10, 11, 12]);
+        assert_eq!(s.fields[1].capacity, 128);
     }
 
     #[test]

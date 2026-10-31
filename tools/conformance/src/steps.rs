@@ -857,7 +857,8 @@ pub fn free_port() -> u16 {
 
 /// Rows 1 to 12 of the sign-on display, built from the layout in the Phase 1
 /// specification (independently of the console crate). The shipped
-/// `QPWDLVL` is 3, so it is `QDSIGNON2`: the long password takes rows 7-8.
+/// `QPWDLVL` is 3, so it is `QDSIGNON2`: the long password runs through
+/// rows 7-9, as in IBM's.
 pub fn expected_sign_on_rows() -> Vec<String> {
     let mut rows = vec![" ".repeat(80); 12];
     let mut put = |row: usize, col: usize, text: &str| {
@@ -866,11 +867,11 @@ pub fn expected_sign_on_rows() -> Vec<String> {
     };
     put(1, 36, "Sign On");
     put(2, 48, "System  . . . . . :");
-    put(2, 68, "QS400");
+    put(2, 70, "QS400");
     put(3, 48, "Subsystem . . . . :");
-    put(3, 68, "QBASE");
+    put(3, 70, "QBASE");
     put(4, 48, "Display . . . . . :");
-    put(4, 68, "QSCONSOLE");
+    put(4, 70, "QSCONSOLE");
     put(6, 17, "User  . . . . . . . . . . . . . .");
     put(7, 17, "Password  . . . . . . . . . . . .");
     put(10, 17, "Program/procedure . . . . . . . .");
@@ -889,6 +890,6 @@ mod tests {
         assert_eq!(rows.len(), 12);
         assert!(rows.iter().all(|r| r.chars().count() == 80));
         assert_eq!(&rows[0][35..42], "Sign On");
-        assert_eq!(&rows[1][67..72], "QS400");
+        assert_eq!(&rows[1][69..74], "QS400");
     }
 }

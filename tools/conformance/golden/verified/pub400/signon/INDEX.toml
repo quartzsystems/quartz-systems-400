@@ -1,0 +1,16 @@
+[[golden]]
+name = "change-password"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "chgpwd"
+width = 80
+
+[[golden]]
+name = "sign-on"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "pub400-sign-on"
+width = 80
+

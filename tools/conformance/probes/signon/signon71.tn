@@ -1,0 +1,5 @@
+# 7.1: sign on first, then CHGPWD shown and left with F12.
+wait "Sign On"
+signon
+settle 3000
+show

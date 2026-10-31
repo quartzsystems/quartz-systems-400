@@ -97,10 +97,12 @@ pub const MAIN_OPTIONS: &[&str] = &[
     "QS/400 Access tasks",
 ];
 
-/// The sign-on display as the display file `QDSIGNON` lays it out:
+/// The sign-on display as the display files `QDSIGNON` and
+/// `QDSIGNON2` lay it out:
 /// the system, subsystem and device at the top right, the five entry
 /// fields, the copyright line. `long_password` is password level 2
-/// and 3 (128 characters, nondisplay).
+/// and 3 (`QDSIGNON2`: 128 characters, nondisplay, the rows below
+/// moved down two).
 #[must_use]
 pub fn sign_on(
     system: &str,
@@ -112,22 +114,24 @@ pub fn sign_on(
     let mut p = Panel::default();
     p.text(1, 36, 1, "Sign On");
     p.text(2, 48, 0, "System  . . . . . :");
-    p.text(2, 68, 0, system);
+    p.text(2, 70, 0, system);
     p.text(3, 48, 0, "Subsystem . . . . :");
-    p.text(3, 68, 0, subsystem);
+    p.text(3, 70, 0, subsystem);
     p.text(4, 48, 0, "Display . . . . . :");
-    p.text(4, 68, 0, device);
+    p.text(4, 70, 0, device);
     p.text(6, 17, 0, "User  . . . . . . . . . . . . . .");
     p.field(6, 53, 10, "");
     p.text(7, 17, 0, "Password  . . . . . . . . . . . .");
     p.hidden(7, 53, if long_password { 128 } else { 10 });
-    p.text(8, 17, 0, "Program/procedure . . . . . . . .");
-    p.field(8, 53, 10, "");
-    p.text(9, 17, 0, "Menu  . . . . . . . . . . . . . .");
-    p.field(9, 53, 10, "");
-    p.text(10, 17, 0, "Current library . . . . . . . . .");
-    p.field(10, 53, 10, "");
-    p.text(24, 43, 1, "(C) COPYRIGHT QUARTZ SYSTEMS 2026.");
+    // A 128-character password runs on through rows 8 and 9.
+    let row = if long_password { 10 } else { 8 };
+    p.text(row, 17, 0, "Program/procedure . . . . . . . .");
+    p.field(row, 53, 10, "");
+    p.text(row + 1, 17, 0, "Menu  . . . . . . . . . . . . . .");
+    p.field(row + 1, 53, 10, "");
+    p.text(row + 2, 17, 0, "Current library . . . . . . . . .");
+    p.field(row + 2, 53, 10, "");
+    p.text(24, 41, 1, "(C) COPYRIGHT QUARTZ SYSTEMS 2026.");
     p.cursor = Some((6, 53));
     p.message = message.into();
     p.error = !message.is_empty();

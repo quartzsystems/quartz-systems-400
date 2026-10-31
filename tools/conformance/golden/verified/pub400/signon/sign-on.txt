@@ -1,0 +1,24 @@
+         Welcome to PUB400.COM * your public IBM i server                       
+                                               Server name . . . :   PUB400     
+                                               Subsystem . . . . :   QINTER2    
+                                               Display name. . . :   QPADEV000S 
+Your user name:                                                                 
+Password (max. 128):                                                            
+                                                                                
+=============================================================================== 
+        ***** Welcome to IBM i 7.5 *****                                        
+                                                                                
+* IPL scheduled again for sunday 10:00 UTC - for PTF loading.                   
+                                                                                
+*** PUB400.COM is now 25 years old. Time to progress...                         
+                                                                                
+* Test IBM Navigator for i: https://pub400.com:2003/Navigator/login             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+- Check out https://pub400.com for news, tools, chat, forum                     
+connect with SSH to port 2222 -> ssh username  -p 2222                          
+                                                                                
+                                                                                
+                                        (C) COPYRIGHT IBM CORP. 1980, 2021.     

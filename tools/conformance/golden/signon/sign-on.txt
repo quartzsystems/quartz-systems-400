@@ -1,7 +1,7 @@
                                    Sign On                                      
-                                               System  . . . . . : QS400        
-                                               Subsystem . . . . : QBASE        
-                                               Display . . . . . : QSCONSOLE    
+                                               System  . . . . . :   QS400      
+                                               Subsystem . . . . :   QBASE      
+                                               Display . . . . . :   QSCONSOLE  
                                                                                 
                 User  . . . . . . . . . . . . . .                               
                 Password  . . . . . . . . . . . .                               
@@ -21,4 +21,4 @@
                                                                                 
                                                                                 
                                                                                 
-                                          (C) COPYRIGHT QUARTZ SYSTEMS 2026.    
+                                        (C) COPYRIGHT QUARTZ SYSTEMS 2026.      

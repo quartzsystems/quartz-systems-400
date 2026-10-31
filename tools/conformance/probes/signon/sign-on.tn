@@ -1,0 +1,4 @@
+# The sign-on display as the system first shows it; nobody signs on.
+wait "Sign On"
+snap sign-on
+show

@@ -1,0 +1,11 @@
+# CHGPWD shown and left with F12; no password changes.
+wait "Main Menu"
+timeout 20000
+type chgpwd
+key enter
+settle 2000
+snap change-password
+show
+key f12
+settle 1000
+show

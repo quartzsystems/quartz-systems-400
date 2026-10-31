@@ -6,11 +6,11 @@
      A                                  1 36'Sign On'
      A                                      DSPATR(HI)
      A                                  2 48'System  . . . . . :'
-     A            QSYSNAME       8A  O  2 68
+     A            QSYSNAME       8A  O  2 70
      A                                  3 48'Subsystem . . . . :'
-     A            SBSNAME       10A  O  3 68
+     A            SBSNAME       10A  O  3 70
      A                                  4 48'Display . . . . . :'
-     A            DEVNAME       10A  O  4 68
+     A            DEVNAME       10A  O  4 70
      A                                  6 17'User  . . . . . . . . . . . . . .'
      A            USERID        10A  I  6 53DSPATR(UL)
      A                                  7 17'Password  . . . . . . . . . . . .'
@@ -21,5 +21,5 @@
      A            MENU          10A  I  9 53DSPATR(UL)
      A                                 10 17'Current library . . . . . . . . .'
      A            CURLIB        10A  I 10 53DSPATR(UL)
-     A                                 24 43'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
+     A                                 24 41'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
      A            UBUFFER      128A  H
