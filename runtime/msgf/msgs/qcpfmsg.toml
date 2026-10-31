@@ -2578,3 +2578,31 @@ sev = 40
 text = "&1 was not restored: the system value QALWOBJRST does not allow it."
 help = "QALWOBJRST names which system-state, adopting or otherwise sensitive objects may be restored."
 vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPC370C"
+sev = 0
+text = "&1 objects saved."
+help = "Every link the save named was saved."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC370D"
+sev = 0
+text = "&1 objects restored."
+help = "Every link the restore selected was restored."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3837"
+sev = 40
+text = "&1 objects saved. &2 not saved."
+help = "The messages before this one name the links that were not saved and why."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3838"
+sev = 40
+text = "&1 objects restored. &2 not restored."
+help = "The messages before this one name the links that were not restored and why."
+vars = ["*CHAR 10", "*CHAR 10"]

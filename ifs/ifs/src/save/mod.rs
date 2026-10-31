@@ -244,6 +244,129 @@ impl<B: Backend> Ifs<B> {
     }
 }
 
+/// `RST`'s choices for one link.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct RestoreOpts {
+    /// `OPTION(*NEW)`: only links not on the system.
+    pub new_only: bool,
+    /// `OPTION(*OLD)`: only links already on the system.
+    pub old_only: bool,
+    /// `PVTAUT(*YES)`: private authorities come back too.
+    pub private_auth: bool,
+}
+
+/// What `RST` did with one link.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Restored {
+    /// Created.
+    New,
+    /// Replaced the link that was there.
+    Replaced,
+    /// Left alone by `OPTION`, or a type the save cannot bring back.
+    Skipped,
+}
+
+impl<B: Backend> Ifs<B> {
+    /// Restore one saved link at `to` (the saved path, or where `RST`'s
+    /// `OBJ` renames it), with `data` for a stream file. `hard_to` is
+    /// where the first link of a hard-linked inode went. A new link
+    /// takes the saved metadata (owner `QDFTOWN` when the saved owner is
+    /// not here; private authorities only with `PVTAUT(*YES)`); a link
+    /// that exists keeps its owner and authorities and takes the rest.
+    pub fn restore(
+        &self,
+        cx: &Ctx<'_>,
+        d: &Descriptor,
+        data: &[u8],
+        to: &str,
+        hard_to: Option<&str>,
+        opts: RestoreOpts,
+    ) -> Result<Restored> {
+        let old = self.resolve_meta(cx, to, false).ok().map(|(_, m)| m);
+        if (opts.new_only && old.is_some()) || (opts.old_only && old.is_none()) {
+            return Ok(Restored::Skipped);
+        }
+        let saved = codec::decode(&d.meta).map_err(|_| Errno::EINVAL)?;
+        match d.objtype.as_str() {
+            "*DIR" => {
+                if old.is_none() {
+                    self.mkdir(cx, to, 0o700)?;
+                }
+            }
+            "*SYMLNK" => {
+                if old.is_some() {
+                    self.unlink(cx, to)?;
+                }
+                let target = d.link_target.as_deref().ok_or(Errno::EINVAL)?;
+                self.symlink(cx, target, to)?;
+            }
+            "*STMF" => {
+                if let Some(first) = hard_to.or(d.hard_link_of.as_deref()) {
+                    if old.is_some() {
+                        self.unlink(cx, to)?;
+                    }
+                    self.link(cx, first, to)?;
+                } else {
+                    use crate::ops::flags::{O_CREAT, O_TRUNC, O_WRONLY};
+                    let fd = self.open(
+                        cx,
+                        to,
+                        crate::ops::OpenArgs::new(O_WRONLY | O_CREAT | O_TRUNC).mode(0o600),
+                    )?;
+                    let mut at = 0;
+                    let res = (|| {
+                        while at < data.len() {
+                            at += self.write(cx, fd, &data[at..])?;
+                        }
+                        Ok(())
+                    })();
+                    self.close(cx, fd)?;
+                    res?;
+                }
+            }
+            _ => return Ok(Restored::Skipped),
+        }
+        let mut m = saved;
+        if let Some(o) = &old {
+            m.owner.clone_from(&o.owner);
+            m.owner_auth = o.owner_auth;
+            m.group.clone_from(&o.group);
+            m.group_auth = o.group_auth;
+            m.public = o.public;
+            m.public_from_autl = o.public_from_autl;
+            m.private.clone_from(&o.private);
+            m.autl.clone_from(&o.autl);
+            m.generation = o.generation;
+        } else {
+            if !cx.env.profile_exists(&m.owner) {
+                m.owner = crate::meta::DEFAULT_OWNER.to_string();
+            }
+            if m.group
+                .as_deref()
+                .is_some_and(|g| !cx.env.profile_exists(g))
+            {
+                m.group = None;
+            }
+            if opts.private_auth {
+                m.private.retain(|(p, _)| cx.env.profile_exists(p));
+            } else {
+                m.private.clear();
+            }
+        }
+        if d.objtype != "*SYMLNK" {
+            let (res, cur) = self.resolve_meta(cx, to, false)?;
+            m.generation = cur.generation;
+            self.put_meta(cx, &res.node, &m)?;
+            self.utime(cx, to, Some((d.atime, d.mtime)))?;
+        }
+        Ok(if old.is_some() {
+            Restored::Replaced
+        } else {
+            Restored::New
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

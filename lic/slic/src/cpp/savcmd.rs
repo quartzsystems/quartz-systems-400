@@ -39,6 +39,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "SAVSECDTA" => return Some(savsecdta(system, parms)),
         "RSTUSRPRF" => return Some(rstusrprf(system, parms)),
         "RSTAUT" => return Some(rstaut(system, parms)),
+        "SAV" => return Some(sav(system, parms)),
+        "RST" => return Some(rst_ifs(system, parms)),
         _ => return None,
     };
     Some(match r {
@@ -1075,6 +1077,278 @@ fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
     }
     if partial {
         reply.escape = Some(message(AUTH_NOT_RESTORED, 7, &[]));
+    }
+    reply
+}
+
+/// IFS saves completed.
+const SAVED_LINKS: &str = "CPC370C";
+/// IFS saves with links not saved.
+const SAVED_LINKS_PARTIAL: &str = "CPF3837";
+/// IFS restores completed.
+const RESTORED_LINKS: &str = "CPC370D";
+/// IFS restores with links not restored.
+const RESTORED_LINKS_PARTIAL: &str = "CPF3838";
+
+/// `OBJ((path *INCLUDE|*OMIT [new]) ...)`: (path, include, new name).
+fn ifs_objects(parms: &Parms) -> Vec<(String, bool, Option<String>)> {
+    let mut out = Vec::new();
+    for v in parms.list("OBJ") {
+        let part = |e: &[Option<Value>], i: usize| {
+            e.get(i)
+                .and_then(Option::as_ref)
+                .map(|x| x.source().trim().trim_matches('\'').to_string())
+        };
+        let (path, inc, new) = match v {
+            Value::Elems(e) => (
+                part(e, 0).unwrap_or_default(),
+                part(e, 1).is_none_or(|x| !matches!(x.as_str(), "O" | "*OMIT")),
+                part(e, 2).filter(|n| !n.is_empty() && n != "*SAME"),
+            ),
+            other => (other.source().trim().trim_matches('\'').to_string(), true, None),
+        };
+        out.push((if path.is_empty() { ".".into() } else { path }, inc, new));
+    }
+    if out.is_empty() {
+        out.push((".".into(), true, None));
+    }
+    out
+}
+
+/// Whether `path` is `pattern` or below it (a trailing `*` matches a
+/// prefix of the last part).
+fn path_under(path: &str, pattern: &str) -> bool {
+    if let Some(prefix) = pattern.strip_suffix('*') {
+        return path.starts_with(prefix);
+    }
+    path == pattern || path.starts_with(&format!("{}/", pattern.trim_end_matches('/')))
+}
+
+/// The save file a `DEV('/QSYS.LIB/LIB.LIB/NAME.FILE')` names.
+fn savf_path(dev: &str) -> Option<(String, String)> {
+    let comps: Vec<&str> = dev.trim_matches('\'').split('/').filter(|s| !s.is_empty()).collect();
+    match comps.as_slice() {
+        [q, lib, file] if q.eq_ignore_ascii_case("QSYS.LIB") => {
+            let lib = lib.strip_suffix(".LIB").or_else(|| lib.strip_suffix(".lib"))?;
+            let file = file.strip_suffix(".FILE").or_else(|| file.strip_suffix(".file"))?;
+            Some((file.to_ascii_uppercase(), lib.to_ascii_uppercase()))
+        }
+        _ => None,
+    }
+}
+
+/// The save stream side of `Ifs::save`: one object per link.
+struct LinkSink<'w> {
+    w: &'w mut Writer<Vec<u8>>,
+    omit: Vec<String>,
+    open_data: u64,
+    skipping: bool,
+    saved: usize,
+    failed: Option<savfmt::Error>,
+}
+
+impl LinkSink<'_> {
+    fn fail(&mut self, e: savfmt::Error) -> ifs::Errno {
+        self.failed = Some(e);
+        ifs::Errno::EIO
+    }
+}
+
+impl ifs::save::SaveSink for LinkSink<'_> {
+    fn descriptor(&mut self, d: &ifs::save::Descriptor) -> ifs::Result<()> {
+        self.skipping = self.omit.iter().any(|o| path_under(&d.path, o));
+        if self.skipping {
+            return Ok(());
+        }
+        let meta = d.encode();
+        let desc = savfmt::ObjectDescriptor {
+            flags: savfmt::object::flags::IFS,
+            size_bytes: meta.len() as u64 + d.size,
+            part_count: if d.size > 0 { 2 } else { 1 },
+            ..savfmt::ObjectDescriptor::default()
+        };
+        let r = (|| {
+            self.w.begin_object(desc, d.path.as_bytes())?;
+            self.w.part(savfmt::Part::IFS_META, &meta)?;
+            if d.size > 0 {
+                self.w.begin_part(savfmt::Part::IFS_DATA, d.size)?;
+            } else {
+                self.w.end_object()?;
+            }
+            Ok(())
+        })();
+        r.map_err(|e| self.fail(e))?;
+        self.open_data = d.size;
+        self.saved += 1;
+        Ok(())
+    }
+
+    fn data(&mut self, chunk: &[u8]) -> ifs::Result<()> {
+        if self.skipping {
+            return Ok(());
+        }
+        let r = self.w.write_part(chunk).and_then(|()| {
+            self.open_data = self.open_data.saturating_sub(chunk.len() as u64);
+            if self.open_data == 0 {
+                self.w.end_object().map(|_| ())
+            } else {
+                Ok(())
+            }
+        });
+        r.map_err(|e| self.fail(e))
+    }
+}
+
+/// `SAV` to a save file.
+fn sav(system: &mut System, parms: &Parms) -> CmdReply {
+    const NAME: &str = "SAV";
+    let dev = values(parms, "DEV");
+    let Some(savf_name) = dev.first().and_then(|d| savf_path(d)) else {
+        return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" ")));
+    };
+    let savf_id = match in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, &savf_name)?;
+        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.write", id) {
+            return Err(format!("CPF2189 not authorized to save file {}", savf_name.0));
+        }
+        Ok(id)
+    }) {
+        Ok(id) => id,
+        Err(e) => return failed(NAME, &e),
+    };
+    let objs = ifs_objects(parms);
+    let head = header(system, NAME, parms, SaveKind::Ifs);
+    let mut w = match Writer::new(Vec::new(), &head) {
+        Ok(w) => w,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    let _ = w.parameters(&parms.to_line(NAME));
+    let omit: Vec<String> = objs.iter().filter(|o| !o.1).map(|o| o.0.clone()).collect();
+    let mut sink = LinkSink {
+        w: &mut w,
+        omit,
+        open_data: 0,
+        skipping: false,
+        saved: 0,
+        failed: None,
+    };
+    let walked = crate::stgsvc::ifs::with_job_ifs(system, |ifs, cx| {
+        let mut errs = Vec::new();
+        for (path, inc, _) in &objs {
+            if *inc && let Err(e) = ifs.save(cx, path, &mut sink) {
+                errs.push(format!("{path}: {e}"));
+            }
+        }
+        errs
+    });
+    let Some(errs) = walked else {
+        return failed(NAME, "CPF3700 the integrated file system is not available");
+    };
+    if let Some(e) = sink.failed.take() {
+        return failed(NAME, &format!("CPF3793 {e}"));
+    }
+    let saved = sink.saved;
+    let bytes = match w.finish(u32::try_from(errs.len()).unwrap_or(0)) {
+        Ok((_, b)) => b,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    if let Err(e) = in_store(system, |txn, _, _| {
+        savf::write(txn, savf_id, &bytes).map_err(|e| format!("{SAVF_FULL} {e}"))
+    }) {
+        return failed(NAME, &e);
+    }
+    let mut reply = CmdReply::default();
+    for e in &errs {
+        let _ = writeln!(reply.text, "{SAVED_LINKS_PARTIAL} not saved: {e}");
+    }
+    let n = saved.to_string();
+    let not = errs.len().to_string();
+    let _ = writeln!(reply.text, "{n} objects saved, {not} not saved");
+    if errs.is_empty() {
+        reply.messages.push(message(SAVED_LINKS, 4, &[(&n, 10)]));
+    } else {
+        reply.escape = Some(message(SAVED_LINKS_PARTIAL, 7, &[(&n, 10), (&not, 10)]));
+    }
+    reply
+}
+
+/// `RST` from a save file.
+fn rst_ifs(system: &mut System, parms: &Parms) -> CmdReply {
+    const NAME: &str = "RST";
+    let dev = values(parms, "DEV");
+    let Some(savf_name) = dev.first().and_then(|d| savf_path(d)) else {
+        return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" ")));
+    };
+    let stream = match in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, &savf_name)?;
+        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
+            return Err(format!("CPF2189 not authorized to save file {}", savf_name.0));
+        }
+        savf::read(txn, id).map_err(|e| e.to_string())
+    }) {
+        Ok(s) => s,
+        Err(e) => return failed(NAME, &e),
+    };
+    let objs = ifs_objects(parms);
+    let option = parms.text("OPTION");
+    let opts = ifs::save::RestoreOpts {
+        new_only: option == "*NEW",
+        old_only: option == "*OLD",
+        private_auth: parms.text("PVTAUT") == "*YES",
+    };
+    let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
+        Ok(r) => r,
+        Err(e) => return failed(NAME, &format!("CPF3743 {e}")),
+    };
+    let mut links = Vec::new();
+    loop {
+        match reader.next_object() {
+            Ok(Some(savfmt::Scan::Object(o))) if o.descriptor.has(savfmt::object::flags::IFS) => {
+                links.push(*o);
+            }
+            Ok(Some(_)) => {}
+            Ok(None) => break,
+            Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+        }
+    }
+    let done = crate::stgsvc::ifs::with_job_ifs(system, |ifs, cx| {
+        let mut moved: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let (mut ok, mut not) = (0usize, Vec::new());
+        for o in &links {
+            let Ok(d) = ifs::save::Descriptor::decode(o.part(savfmt::Part::IFS_META)) else {
+                not.push("a damaged link".to_string());
+                continue;
+            };
+            let pick = objs.iter().filter(|(p, _, _)| path_under(&d.path, p)).max_by_key(|(p, _, _)| p.len());
+            let Some((from, true, new)) = pick else { continue };
+            let to = new
+                .as_ref()
+                .map_or_else(|| d.path.clone(), |n| d.path.replacen(from.as_str(), n, 1));
+            let hard = d.hard_link_of.as_ref().and_then(|h| moved.get(h).cloned());
+            match ifs.restore(cx, &d, o.part(savfmt::Part::IFS_DATA), &to, hard.as_deref(), opts) {
+                Ok(ifs::save::Restored::Skipped) => {}
+                Ok(_) => {
+                    ok += 1;
+                    moved.insert(d.path.clone(), to);
+                }
+                Err(e) => not.push(format!("{to}: {e}")),
+            }
+        }
+        (ok, not)
+    });
+    let Some((ok, not)) = done else {
+        return failed(NAME, "CPF3700 the integrated file system is not available");
+    };
+    let mut reply = CmdReply::default();
+    for e in &not {
+        let _ = writeln!(reply.text, "{RESTORED_LINKS_PARTIAL} not restored: {e}");
+    }
+    let (n, k) = (ok.to_string(), not.len().to_string());
+    let _ = writeln!(reply.text, "{n} objects restored, {k} not restored");
+    if not.is_empty() {
+        reply.messages.push(message(RESTORED_LINKS, 4, &[(&n, 10)]));
+    } else {
+        reply.escape = Some(message(RESTORED_LINKS_PARTIAL, 7, &[(&n, 10), (&k, 10)]));
     }
     reply
 }

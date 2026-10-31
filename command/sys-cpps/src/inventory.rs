@@ -336,6 +336,7 @@ pub const DIRECT: &[&str] = &[
     "CHGSAVF",
     "CLRSAVF",
     "CRTSAVF",
+    "RST",
     "RSTAUT",
     "RSTLIB",
     "RSTOBJ",

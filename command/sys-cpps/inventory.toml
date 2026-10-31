@@ -736,11 +736,7 @@ site = "job"
 note = "the job's current directory through its link"
 
 [cmd.SAV]
-note = "walks the objects, then CPF3700: save media are Phase 11"
-
-[cmd.RST]
-stub = "CPF3700"
-note = "restore media are Phase 11"
+note = "to a save file (DEV('/QSYS.LIB/lib.LIB/name.FILE')); lic/slic/src/cpp/savcmd.rs"
 
 [cmd.STRJRN]
 note = "IFS objects: the journaling attributes are stored, no entries written"

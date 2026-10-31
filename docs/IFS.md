@@ -528,7 +528,17 @@ the data. A descriptor is `QSVD`, version 1, the path and type
 (u32-length text), the metadata record (u32 length), access and
 modification times and the data size (i64, i64, u64 LE), and the link
 target and hard-link source (a presence byte, then u32-length text).
-Phase 11 writes them to media and restores from them.
+
+`SAV` writes each link as one object of the save stream
+(`docs/SAVE_FORMAT.md`): the descriptor flagged IFS with the path as its
+tail, the `QSVD` descriptor as the `ifsmeta` part and the data as the
+`ifsdata` part. `Ifs::restore` brings one link back: it creates the
+directory, the stream file with its data, the symbolic link or the hard
+link (to where the first link of the inode went), then writes the
+metadata record. A new link takes the saved record, with `QDFTOWN` for
+an owner that is not on the system and private authorities only with
+`PVTAUT(*YES)`; a link that exists keeps its owner and authorities as
+IBM i's restore does, and `OPTION(*NEW)`/`*OLD` choose between them.
 
 ## In the storage service
 
@@ -1186,8 +1196,8 @@ gets the service's text forms (`ifscmd::text`).
 | `MOUNT`/`ADDMFS`, `UNMOUNT`/`RMVMFS` | service | `TYPE(*UDFS)` only (`ro` in `OPTIONS` mounts read-only); `*NFS` and `*NETWORK` are `CPFA0AD` | `CPCA1B0`, `CPCA1B1` |
 | `DSPUDFS` | service | text | |
 | `RCLLNK` | service | `rcllnk` over all the metadata, whatever `OBJ` names | text; `CPFA0F1` when problems are left |
-| `SAV` | service | the objects walked and counted; nothing is written | `CPF3700` (media are Phase 11) |
-| `RST` | stub | | `CPF3700` |
+| `SAV` | service | the links into a save stream (`docs/SAVE_FORMAT.md`), to a save file named by its `/QSYS.LIB` path | `CPC370C`, `CPF3837` |
+| `RST` | service | links back from a save file, `OBJ` renames, `OPTION`, `PVTAUT` | `CPC370D`, `CPF3838` |
 | `WRKLNK`, `DSPLNK` | job | panels `QUIWRKLNK` (`WRKLNK1`..`3` for the option rows F23 cycles, `DSPLNK`, the Display Attributes pages `DSPATRF`/`DSPATRD`) | |
 | `WRKAUT`, `DSPAUT` | job | panels `QUIWRKAUT` | |
 | `EDTF`, `DSPF` | job | `devtools/edtf`; `DSPF` without a display is the service's text | `CPDB6xx`, `CPFB6xx`, `CPIB6xx` |

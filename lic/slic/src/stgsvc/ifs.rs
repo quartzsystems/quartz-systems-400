@@ -192,6 +192,31 @@ pub fn with_client<T>(
     })
 }
 
+/// Run `f` against the file system itself as the job whose request
+/// this is (`SAV`, `RST`); `None` when there is no IFS.
+pub fn with_job_ifs<T>(
+    system: &mut System,
+    f: impl FnOnce(&Ifs<LinuxBackend>, &Ctx<'_>) -> T,
+) -> Option<T> {
+    let ifs = get()?;
+    let number = system.current_job;
+    let handle = u64::from(number);
+    let principal = crate::svc::ifs::principal();
+    let job_ccsid = job_ccsid(system, number);
+    Some(with_lent(system, JobHandle(handle), || {
+        let access = Lent;
+        let env = StoreEnv::new(&access);
+        let cx = Ctx {
+            owner: owner_of(handle),
+            principal: &principal,
+            env: &env,
+            audit: &JournalAudit,
+            job_ccsid,
+        };
+        f(ifs, &cx)
+    }))
+}
+
 /// The job's CCSID, as text conversion uses it (its default CCSID for
 /// `*HEX`).
 pub fn job_ccsid(system: &System, number: u32) -> u16 {
