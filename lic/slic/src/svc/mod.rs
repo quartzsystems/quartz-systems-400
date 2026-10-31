@@ -88,16 +88,17 @@ pub fn handle(system: &mut System, line: &str) {
     system.out.serial(db::prompt(system));
 }
 
-/// `dbgkill JOB(name|number)`: the debug hook that kills a job's
-/// process as a crash would (`SIGKILL`), for the harness to see the
-/// storage service clean up after it.
-/// `vrtdev DEV [PATH]`: bind a virtual device to a volume (dev builds).
-fn vrtdev(dev: &str, path: &str) -> String {
-    match crate::cpp::savsys::bind(dev, path) {
+/// `vrtout DEV PATH`: copy the volume mounted on a virtual device onto
+/// a disk (dev builds), so a recovery can boot with it attached.
+fn vrtout(dev: &str, path: &str) -> String {
+    match crate::cpp::savsys::export(dev, path) {
         Ok(m) | Err(m) => format!("{m}\n"),
     }
 }
 
+/// `dbgkill JOB(name|number)`: the debug hook that kills a job's
+/// process as a crash would (`SIGKILL`), for the harness to see the
+/// storage service clean up after it.
 fn dbgkill(system: &mut System, line: &str) -> String {
     let p = wm::cmd::Params::parse(line);
     let Ok(want) = p.pos_or(0, "JOB") else {
@@ -167,8 +168,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("key", [name]) => key(system, name),
         ("type", _) => type_text(system, line),
         ("dbgkill", _) => dbgkill(system, line),
-        ("vrtdev", [dev, path]) => vrtdev(dev, path),
-        ("vrtdev", [dev]) => vrtdev(dev, ""),
+        ("vrtout", [dev, path]) => vrtout(dev, path),
         ("pwrdwn", []) => power::down(system, false),
         ("pwrdwn", ["restart"]) => power::down(system, true),
         ("asp", _) => storage::asp(system),

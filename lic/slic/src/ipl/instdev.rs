@@ -12,8 +12,10 @@
 //!   volume (`QSTAPVOL`, `TAPVRTnn`) or an ISO 9660 image (`OPTVRTnn`)
 //!   holding the install media layout, such as `SAVSYS` output copied
 //!   out of an image catalog.
-//! - **Tape**: `BLOCKED(phase11)`: physical drives come with the device
-//!   layer; none are listed yet.
+//! - **Tape**: the tape drives the hardware table names (`TAPnn`, by
+//!   `tape::device::naming` over `/sys/class/scsi_tape`), read through
+//!   the `st` driver's no-rewind node, with a cartridge of install media
+//!   or `SAVSYS` output loaded.
 //!
 //! The disks found here are never offered as load sources or units.
 
@@ -26,7 +28,9 @@ use instmedia::layout::{Contents, Payload};
 use instmedia::savsys::{DirSource, IsoSource, Source, TapeSource};
 use release::InstallKind;
 use svctools::install::os::{DeviceKind, InstallDevice};
+use tape::TapeTransport;
 
+use crate::cpp::savsys::{Medium, Pending};
 use crate::ipl::media;
 
 /// What carries a medium.
@@ -38,6 +42,61 @@ pub enum Carrier {
     Tape(PathBuf),
     /// An ISO 9660 image on a disk.
     Iso(PathBuf),
+    /// A tape drive: its `st` node (`/dev/nstN`).
+    Drive(PathBuf),
+}
+
+/// The tape drives under the sysfs root `sys`: resource name and
+/// no-rewind node, in the hardware table's order.
+pub fn tape_drives(sys: &Path) -> Vec<(String, PathBuf)> {
+    let mut t = crate::hwrsrc::Table::default();
+    t.add_tapes(sys);
+    t.resources
+        .iter()
+        .filter(|r| r.kind == crate::hwrsrc::Kind::Tape)
+        .map(|r| (r.name.clone(), PathBuf::from(format!("/dev/n{}", r.location))))
+        .collect()
+}
+
+/// Install media on a tape, or `None` (no cartridge, unlabeled, or
+/// another kind of data).
+fn probe<D: TapeTransport + ?Sized>(t: &mut D) -> Option<Contents> {
+    instmedia::savsys::recognize_tape(t).ok().flatten()
+}
+
+/// A drive's node opened as a transport.
+fn open_drive(node: &Path) -> Result<tape::st::StTransport<tape::st::LinuxSt>, String> {
+    tape::st::LinuxSt::open(node)
+        .map(tape::st::StTransport::new)
+        .map_err(|e| format!("{}: {e}", node.display()))
+}
+
+/// How many files follow the system save on a tape.
+fn user_count<D: TapeTransport + ?Sized>(t: &mut D) -> usize {
+    instmedia::savsys::user_files(t).map_or(0, |f| f.len())
+}
+
+/// The user data after a system save on `found`, for the storage
+/// service to restore once the install is done: `None` when nothing
+/// follows the save, or the medium is not a tape.
+pub fn user_data(found: &Found) -> Option<Pending> {
+    let (medium, files) = match &found.carrier {
+        Carrier::Tape(dev) => {
+            let f = OpenOptions::new().read(true).write(true).open(dev).ok()?;
+            let mut t = tape::VirtualTape::open(f).ok()?;
+            (Medium::Disk(dev.clone()), user_count(&mut t))
+        }
+        Carrier::Drive(node) => {
+            let mut t = open_drive(node).ok()?;
+            (Medium::Drive(found.device.name.clone()), user_count(&mut t))
+        }
+        Carrier::Boot(_) | Carrier::Iso(_) => return None,
+    };
+    (files > 0).then(|| Pending {
+        device: found.device.name.clone(),
+        medium,
+        files,
+    })
 }
 
 /// A device with install media.
@@ -113,6 +172,24 @@ pub fn scan(store_release: Option<release::Release>, rescan: bool) -> Vec<Found>
             contents: c,
         });
     }
+    for (name, node) in tape_drives(Path::new("/sys")) {
+        let Some(c) = open_drive(&node).ok().as_mut().and_then(probe) else {
+            continue;
+        };
+        let (act, refused) = action(store_release, &c);
+        out.push(Found {
+            device: InstallDevice {
+                name,
+                kind: DeviceKind::Tape,
+                location: node.display().to_string(),
+                media: c.describe(),
+                action: act,
+                refused,
+            },
+            carrier: Carrier::Drive(node),
+            contents: c,
+        });
+    }
     let boot = media::locate().ok().map(|f| f.disk);
     let (mut tapes, mut opts) = (0u8, 0u8);
     for d in diskimg::locate::whole_disks().unwrap_or_default() {
@@ -163,7 +240,7 @@ pub fn media_disks() -> Vec<String> {
                     Carrier::Tape(p) | Carrier::Iso(p) => {
                         p.file_name().map(|n| n.to_string_lossy().into_owned())
                     }
-                    Carrier::Boot(_) => None,
+                    Carrier::Boot(_) | Carrier::Drive(_) => None,
                 })
                 .collect()
         })
@@ -199,6 +276,10 @@ pub fn read(found: &Found, p: &Payload) -> Result<Vec<u8>, String> {
             let iso = optical::device::open_media(std::sync::Arc::new(f)).map_err(|e| e.to_string())?;
             IsoSource::open(iso).and_then(|mut s| s.read(p))
         }
+        Carrier::Drive(node) => {
+            let mut t = open_drive(node)?;
+            TapeSource::open(&mut t).and_then(|mut s| s.read(p))
+        }
     };
     r.map_err(|e| e.to_string())
 }
@@ -218,4 +299,128 @@ pub fn savsys(store_release: Option<release::Release>) -> Option<Found> {
     scan(store_release, false)
         .into_iter()
         .find(|f| f.contents.savsys)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use instmedia::savsys::{Image, TapeWrite, write_tape};
+    use tape::label::{Date, FileLabel, RecordFormat};
+    use tape::volume::{Check, FileWriter, InzOptions, NoMoreVolumes, WriteOptions, inztap};
+    use tape::{EndOpt, SeqNbr, VirtualTape, VolumeOptions};
+
+    use super::*;
+
+    fn today() -> Date {
+        Date::from_ymd(2026, 10, 31).unwrap()
+    }
+
+    /// A labeled tape in memory holding a system save.
+    fn saved() -> VirtualTape<Cursor<Vec<u8>>> {
+        let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(4, "SYS001")).unwrap();
+        inztap(
+            &mut t,
+            &InzOptions {
+                new_vol: Some("SYS001".into()),
+                check: Check::No,
+                ..InzOptions::default()
+            },
+        )
+        .unwrap();
+        let img = Image::new(
+            release::RELEASE,
+            "SYS001",
+            true,
+            vec![
+                (Payload::LicA, vec![1; 100]),
+                (Payload::LicB, vec![2; 100]),
+                (Payload::Product("QS00SS1".into()), vec![3; 1000]),
+            ],
+            None,
+        );
+        write_tape(&mut t, &img, &TapeWrite::new(today())).unwrap();
+        t
+    }
+
+    fn append(t: &mut VirtualTape<Cursor<Vec<u8>>>, label: &str) {
+        let opts = WriteOptions {
+            vols: Vec::new(),
+            seq: SeqNbr::End,
+            label: FileLabel {
+                file_id: label.into(),
+                created: Some(today()),
+                record_format: RecordFormat::Undefined,
+                block_length: 512,
+                record_length: 512,
+                ..FileLabel::default()
+            },
+            unlabeled: false,
+            today: Some(today()),
+            allow_active: false,
+            end_opt: EndOpt::Rewind,
+        };
+        let mut more = NoMoreVolumes;
+        let mut w = FileWriter::open(t, &mut more, opts).unwrap();
+        w.write_block(&[9; 512]).unwrap();
+        w.finish().unwrap();
+    }
+
+    #[test]
+    fn a_tape_of_savsys_media_is_found_with_its_user_data() {
+        let mut t = saved();
+        let c = probe(&mut t).unwrap();
+        assert!(c.savsys && c.has_os());
+        assert_eq!(user_count(&mut t), 0);
+        append(&mut t, "PAYROLL");
+        append(&mut t, "QSAVIFS");
+        assert_eq!(user_count(&mut t), 2);
+        // Still install media with the files after it.
+        assert!(probe(&mut t).is_some());
+        let (act, refused) = action(Some(release::RELEASE), &c);
+        assert!(act.starts_with("Slip install") && refused.is_none());
+    }
+
+    #[test]
+    fn a_tape_of_other_data_is_not_install_media() {
+        let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(4, "DATA01")).unwrap();
+        assert!(probe(&mut t).is_none());
+        inztap(
+            &mut t,
+            &InzOptions {
+                new_vol: Some("DATA01".into()),
+                check: Check::No,
+                ..InzOptions::default()
+            },
+        )
+        .unwrap();
+        append(&mut t, "PAYROLL");
+        assert!(probe(&mut t).is_none());
+    }
+
+    #[test]
+    fn drives_are_named_from_sysfs() {
+        let root = std::env::temp_dir().join(format!("qs400-instdev-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let class = root.join("class/scsi_tape");
+        for (node, hctl) in [("st1", "3:0:2:0"), ("st0", "2:0:0:0")] {
+            let dev = root.join("devices").join(hctl);
+            std::fs::create_dir_all(&dev).unwrap();
+            std::fs::create_dir_all(class.join(node)).unwrap();
+            std::os::unix::fs::symlink(&dev, class.join(node).join("device")).unwrap();
+            // The no-rewind and mode nodes are not drives of their own.
+            std::fs::create_dir_all(class.join(format!("n{node}"))).unwrap();
+            std::fs::create_dir_all(class.join(format!("{node}a"))).unwrap();
+        }
+        let d = tape_drives(&root);
+        let _ = std::fs::remove_dir_all(&root);
+        assert_eq!(
+            d,
+            vec![
+                ("TAP01".to_string(), PathBuf::from("/dev/nst0")),
+                ("TAP02".to_string(), PathBuf::from("/dev/nst1")),
+            ]
+        );
+        assert!(tape_drives(Path::new("/nonexistent-sysfs")).is_empty());
+    }
 }

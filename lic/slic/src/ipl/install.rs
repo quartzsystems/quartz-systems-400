@@ -189,6 +189,7 @@ pub fn run_os_auto(system: &mut System) -> Result<(), String> {
             [
                 svctools::install::os::DeviceKind::Optical,
                 svctools::install::os::DeviceKind::Virtual,
+                svctools::install::os::DeviceKind::Tape,
             ]
             .into_iter()
             .find_map(|k| env.install_devices(k).into_iter().next())
@@ -852,7 +853,8 @@ impl Env<'_> {
                 .contains(&Payload::Config)
                 .then(|| instdev::read(&found, &Payload::Config))
                 .transpose()?;
-            for line in crate::cpp::savsys::recover(self.system, sec.as_deref(), cfg.as_deref()) {
+            let user = instdev::user_data(&found);
+            for line in crate::cpp::savsys::recover(self.system, sec.as_deref(), cfg.as_deref(), user.as_ref()) {
                 self.system.out.serial(&format!("slic: install: {line}\n"));
             }
             self.system.emit(&src::INSTALL_RECOVERY);

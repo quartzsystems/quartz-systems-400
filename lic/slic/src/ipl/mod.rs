@@ -418,6 +418,7 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     storage::open_temp(system);
     sysvals::load(system);
     system.emit(&src::SYSVALS_LOADED);
+    let installed = install::pending(system).is_some();
     if let Some(auto) = install::pending(system) {
         if auto {
             install::apply_answers(system);
@@ -432,7 +433,7 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     }
     // The IFS root's filesystem, mounted before the storage service
     // starts so the service inherits it.
-    ifs::mount(system);
+    ifs::mount(system, installed);
     // The storage service takes the store over; from here on the jobs
     // and the console reach it through the service.
     if system.storage.is_some()

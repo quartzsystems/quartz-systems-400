@@ -35,10 +35,13 @@ fn partition() -> Option<PathBuf> {
 }
 
 /// Mount the IFS (C6001012), or record why not (A6001270, A6001275).
-pub fn mount(system: &mut System) {
+/// `installed`: this IPL has just installed the operating system.
+pub fn mount(system: &mut System, installed: bool) {
     // A D IPL runs from the media and may repartition the disk, which
-    // the kernel refuses while a partition on it is mounted.
-    if system.boot.ipl_d || plat::mounted(MOUNT_POINT).is_some() {
+    // the kernel refuses while a partition on it is mounted; once it has
+    // installed the operating system the disk is laid out, and a
+    // recovery restores the IFS before the IPL ends.
+    if (system.boot.ipl_d && !installed) || plat::mounted(MOUNT_POINT).is_some() {
         return;
     }
     let Some(dev) = partition() else {

@@ -261,6 +261,11 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
             None
         }
     };
+    // A recovery's user libraries and IFS, from the files after the
+    // system save it installed from.
+    for line in crate::cpp::savsys::restore_user_data(system) {
+        eprintln!("qsstg: {line}");
+    }
     let mut conns = vec![Conn::new(slic, ctx)];
     loop {
         let wait = if storage::busy(system) {
