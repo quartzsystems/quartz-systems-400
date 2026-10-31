@@ -2,12 +2,13 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The processes `slic` starts once the IPL has the store ready: the
-//! storage service, which takes the store over, the system jobs and the
-//! IPL's subsystems, and the service console job `QSVCJOB`, which runs
-//! the console's commands.
+//! The processes `slic` starts: first the hardware resource service,
+//! then, once the IPL has the store ready, the storage service, which
+//! takes the store over, the system jobs and the IPL's subsystems, and
+//! the service console job `QSVCJOB`, which runs the console's commands.
 
 pub mod console;
+pub mod hwr;
 pub mod spawn;
 pub mod stg;
 pub mod svcjob;
@@ -16,6 +17,8 @@ pub mod sysjobs;
 /// The children `slic` talks to.
 #[derive(Default)]
 pub struct Procs {
+    /// The hardware resource service.
+    pub hwr: Option<hwr::HwrProc>,
     /// The storage service.
     pub stg: Option<stg::StgProc>,
     /// The service console job.

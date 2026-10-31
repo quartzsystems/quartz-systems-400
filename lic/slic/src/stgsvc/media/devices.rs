@@ -16,7 +16,7 @@ use store::txn::Txn;
 use wm::obj::devd::{DevStatus, Devd};
 use wm::obj::devmed::{MediaDevice, MediaKind, virtual_rsrc};
 
-use crate::hwrsrc::{Kind, Status};
+use hwrsrc::{Kind, Status};
 use crate::ipl::system::{System, now_unix};
 
 /// Device description not found.
@@ -122,23 +122,23 @@ pub(crate) fn real_type(kind: MediaKind) -> (&'static str, &'static str) {
 }
 
 /// Whether hardware resource `rsrc` of `kind` is there now.
-fn present(system: &System, kind: MediaKind, rsrc: &str) -> bool {
+fn present(system: &mut System, kind: MediaKind, rsrc: &str) -> bool {
     let want = match kind {
         MediaKind::Tape => Kind::Tape,
         MediaKind::Optical => Kind::Optical,
         MediaKind::TapeLibrary => Kind::TapeLibrary,
     };
     system
-        .hw
+        .hw()
         .resources
         .iter()
         .any(|r| r.kind == want && r.name == rsrc && r.status == Status::Operational)
 }
 
 /// The host node of a real resource: `st0`, `sg3`, `sr0`.
-pub(crate) fn node_of(system: &System, rsrc: &str) -> Option<String> {
+pub(crate) fn node_of(system: &mut System, rsrc: &str) -> Option<String> {
     system
-        .hw
+        .hw()
         .resources
         .iter()
         .find(|r| r.name == rsrc)
@@ -212,7 +212,7 @@ pub(crate) fn autoconfigure(system: &mut System) -> usize {
     }
     let devs = all(system).unwrap_or_default();
     let found: Vec<(String, MediaKind)> = system
-        .hw
+        .hw()
         .resources
         .iter()
         .filter(|r| r.status == Status::Operational)

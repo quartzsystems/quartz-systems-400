@@ -2,21 +2,14 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Kernel hotplug events over `NETLINK_KOBJECT_UEVENT`.
-
-use std::sync::mpsc::Sender;
-use std::thread;
-
-use rustix::net::netlink::{KOBJECT_UEVENT, SocketAddrNetlink};
-use rustix::net::{AddressFamily, RecvFlags, SocketType, bind, recv, socket};
-
-use crate::ipl::Event;
+//! Kernel hotplug events as `NETLINK_KOBJECT_UEVENT` delivers them. The
+//! socket itself is the service's (`lic/slic/src/hwsvc/`).
 
 /// Kernel multicast group for uevents.
-const UEVENT_GROUP: u32 = 1;
+pub const UEVENT_GROUP: u32 = 1;
 
 /// One parsed event.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Uevent {
     /// `add`, `remove`, `change`, ...
     pub action: String,
@@ -28,6 +21,8 @@ pub struct Uevent {
 
 impl Uevent {
     /// Parse the kernel wire format: `action@devpath\0KEY=VALUE\0...`.
+    /// `None` for udev's own messages and anything malformed.
+    #[must_use]
     pub fn parse(raw: &[u8]) -> Option<Self> {
         let mut parts = raw.split(|b| *b == 0).filter(|p| !p.is_empty());
         let head = String::from_utf8_lossy(parts.next()?).into_owned();
@@ -47,38 +42,6 @@ impl Uevent {
     }
 }
 
-/// Bind the uevent socket and forward events for the life of PID 1.
-/// Returns false when the socket cannot be opened.
-pub fn spawn_listener(tx: Sender<Event>) -> bool {
-    let Ok(sock) = socket(
-        AddressFamily::NETLINK,
-        SocketType::RAW,
-        Some(KOBJECT_UEVENT),
-    ) else {
-        return false;
-    };
-    if bind(&sock, &SocketAddrNetlink::new(0, UEVENT_GROUP)).is_err() {
-        return false;
-    }
-    thread::spawn(move || {
-        let mut buf = vec![0u8; 8192];
-        loop {
-            match recv(&sock, &mut buf[..], RecvFlags::empty()) {
-                Ok((n, _)) => {
-                    if let Some(ev) = Uevent::parse(&buf[..n])
-                        && tx.send(Event::Uevent(ev)).is_err()
-                    {
-                        break;
-                    }
-                }
-                Err(rustix::io::Errno::INTR) => {}
-                Err(_) => break,
-            }
-        }
-    });
-    true
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,5 +53,6 @@ mod tests {
         assert_eq!(ev.action, "add");
         assert_eq!(ev.devpath, "/devices/pci0000:00/0000:00:04.0");
         assert_eq!(ev.subsystem, "pci");
+        assert!(Uevent::parse(b"libudev\0junk").is_none());
     }
 }

@@ -14,7 +14,6 @@ use cmncfg::link::{BondMode, LinkPlan};
 use netlink::route::{BondMode as NlBond, BondSpec, LinkEvents, Rtnl};
 
 use super::Shared;
-use crate::hwrsrc;
 use crate::ipl::system::{System, now_unix};
 
 /// The kernel's boot-time bond (`BONDING=y` makes one; the baked
@@ -25,14 +24,11 @@ fn nl(e: &netlink::Error) -> String {
     e.to_string()
 }
 
-/// The Ethernet ports: resource name and interface, read from sysfs
-/// the first time.
+/// The Ethernet ports: resource name and interface, from the hardware
+/// resource service.
 pub(super) fn ports(system: &mut System) -> Vec<(String, String)> {
-    if system.hw.resources.is_empty() {
-        system.hw = hwrsrc::Table::coldplug();
-    }
     system
-        .hw
+        .hw()
         .resources
         .iter()
         .filter(|r| r.kind == hwrsrc::Kind::Port && r.status == hwrsrc::Status::Operational)

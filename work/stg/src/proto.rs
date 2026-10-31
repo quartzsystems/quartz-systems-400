@@ -666,6 +666,14 @@ ipc::rpc! {
     /// `trace-point`, `sst-capacity`, ...), `args` its operands; the
     /// answer's lines.
     1400 => fn service_op / ServiceOp (op: String, args: Vec<String>) -> Result<Vec<String>, String>;
+    // --- hardware resources (1420-1429)
+    /// The hardware resource table, from the hardware resource service
+    /// (`lic/hwrsrc`, `lic/slic/src/hwsvc/`); with `refresh`, the ports'
+    /// link state read again.
+    1420 => fn hw_table / HwTable (refresh: bool) -> Result<hwrsrc::Table, String>;
+    /// The configuration descriptions that name resource `name`:
+    /// `(description, *LIND|*DEVD|*CTLD)`.
+    1421 => fn hw_cfgds / HwCfgds (name: String) -> Vec<(String, String)>;
 }
 
 // --- certificate types

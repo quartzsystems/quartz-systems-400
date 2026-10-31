@@ -6,7 +6,8 @@
 
 use std::path::Path;
 
-use crate::hwrsrc::{Kind, devpath_in, read_trim, sorted_dir, storage};
+use crate::scan::{devpath_in, read_trim, sorted_dir, storage};
+use crate::table::Kind;
 
 /// One PCI function.
 pub struct PciDevice {
@@ -23,21 +24,18 @@ pub struct PciDevice {
 }
 
 /// Every PCI function under a sysfs root, in address order.
+#[must_use]
 pub fn scan_in(root: &Path) -> Vec<PciDevice> {
     let dir = root.join("bus/pci/devices");
-    sorted_dir(&dir.to_string_lossy())
+    sorted_dir(&dir)
         .iter()
         .filter_map(|addr| scan_one_in(root, &dir.join(addr)))
         .collect()
 }
 
-/// One PCI function from its sysfs directory.
-pub fn scan_one(sys: &Path) -> Option<PciDevice> {
-    scan_one_in(Path::new("/sys"), sys)
-}
-
 /// One PCI function from its directory under a sysfs root. Storage
 /// controllers are named from the ID table, board before chip.
+#[must_use]
 pub fn scan_one_in(root: &Path, sys: &Path) -> Option<PciDevice> {
     let devpath = devpath_in(root, sys)?;
     let address = sys.file_name()?.to_string_lossy().into_owned();
@@ -74,6 +72,7 @@ pub fn scan_one_in(root: &Path, sys: &Path) -> Option<PciDevice> {
 
 /// The PCI address embedded in a sysfs device path, if any (the last one,
 /// which is the function closest to the device).
+#[must_use]
 pub fn address_in(devpath: &str) -> Option<String> {
     devpath
         .split('/')

@@ -312,7 +312,7 @@ pub(crate) fn dsplind_rows(
     let mac = (l.adptadr == "*ADPT")
         .then(|| {
             system
-                .hw
+                .hw()
                 .resources
                 .iter()
                 .find(|r| r.name == l.rsrcname)

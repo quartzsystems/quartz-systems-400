@@ -4,7 +4,8 @@
 
 //! slic: QS/400 PID 1. It runs the IPL, then starts itself again as the
 //! storage service (`/init qsstg`), which owns the object store for the
-//! rest of the IPL, and the job processes that reach it.
+//! rest of the IPL, as the hardware resource service (`/init qshwr`),
+//! which owns the hardware resource table, and the job processes.
 //!
 //! `unsafe` is denied everywhere except `platform::sys`, which holds the
 //! signal plumbing. (`forbid` cannot be scoped, so `deny` is used.)
@@ -14,7 +15,7 @@
 #[cfg(target_os = "linux")]
 mod cpp;
 #[cfg(target_os = "linux")]
-mod hwrsrc;
+mod hwsvc;
 #[cfg(target_os = "linux")]
 mod ipl;
 #[cfg(target_os = "linux")]
@@ -32,8 +33,10 @@ mod svc;
 
 #[cfg(target_os = "linux")]
 fn main() {
-    if std::env::args().nth(1).as_deref() == Some("qsstg") {
-        stgsvc::run()
+    match std::env::args().nth(1).as_deref() {
+        Some("qsstg") => stgsvc::run(),
+        Some("qshwr") => hwsvc::run(),
+        _ => {}
     }
     ipl::run()
 }

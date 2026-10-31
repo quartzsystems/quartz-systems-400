@@ -243,9 +243,6 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
     ipl_message(system);
     liclog::write(0x0100, 0x0001, 0, "");
     cmn::start(system);
-    if system.hw.resources.is_empty() {
-        system.hw = crate::hwrsrc::Table::coldplug();
-    }
     eprintln!("qsstg: {}", media::start(system));
     // The descriptor relay between job processes (givedescriptor,
     // takedescriptor, the host server daemons and their prestart jobs).

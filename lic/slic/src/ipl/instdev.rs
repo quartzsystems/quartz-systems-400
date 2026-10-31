@@ -46,14 +46,12 @@ pub enum Carrier {
     Drive(PathBuf),
 }
 
-/// The tape drives under the sysfs root `sys`: resource name and
-/// no-rewind node, in the hardware table's order.
-pub fn tape_drives(sys: &Path) -> Vec<(String, PathBuf)> {
-    let mut t = crate::hwrsrc::Table::default();
-    t.add_tapes(sys);
+/// The tape drives of the hardware table: resource name and no-rewind
+/// node, in the table's order.
+pub fn tape_drives(t: &hwrsrc::Table) -> Vec<(String, PathBuf)> {
     t.resources
         .iter()
-        .filter(|r| r.kind == crate::hwrsrc::Kind::Tape)
+        .filter(|r| r.kind == hwrsrc::Kind::Tape && r.operational())
         .map(|r| (r.name.clone(), PathBuf::from(format!("/dev/n{}", r.location))))
         .collect()
 }
@@ -172,7 +170,7 @@ pub fn scan(store_release: Option<release::Release>, rescan: bool) -> Vec<Found>
             contents: c,
         });
     }
-    for (name, node) in tape_drives(Path::new("/sys")) {
+    for (name, node) in tape_drives(&hwrsrc::client::table(false).unwrap_or_default()) {
         let Some(c) = open_drive(&node).ok().as_mut().and_then(probe) else {
             continue;
         };
@@ -412,7 +410,9 @@ mod tests {
             std::fs::create_dir_all(class.join(format!("n{node}"))).unwrap();
             std::fs::create_dir_all(class.join(format!("{node}a"))).unwrap();
         }
-        let d = tape_drives(&root);
+        let mut t = hwrsrc::Table::default();
+        t.add_tapes(&root);
+        let d = tape_drives(&t);
         let _ = std::fs::remove_dir_all(&root);
         assert_eq!(
             d,
@@ -421,6 +421,6 @@ mod tests {
                 ("TAP02".to_string(), PathBuf::from("/dev/nst1")),
             ]
         );
-        assert!(tape_drives(Path::new("/nonexistent-sysfs")).is_empty());
+        assert!(tape_drives(&hwrsrc::Table::default()).is_empty());
     }
 }

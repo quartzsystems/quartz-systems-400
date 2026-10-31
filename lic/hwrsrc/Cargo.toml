@@ -1,0 +1,14 @@
+[package]
+name = "hwrsrc"
+description = "QS/400 hardware resources: the sysfs scan, resource names, the packaging and logical trees, hotplug events and the service's protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+tape = { path = "../../media/tape", version = "0.1.0" }
+
+[lints]
+workspace = true

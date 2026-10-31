@@ -19,7 +19,6 @@ use store::obj::library::Library;
 use store::obj::{ObjectId, ops, types};
 use store::txn::Txn;
 
-use crate::hwrsrc;
 use crate::ipl::system::System;
 use crate::svc::db::with_txn;
 
@@ -39,7 +38,7 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Sys2Dat
         "BNDDIR" => bnddir(system, &arg(0), &arg(1)),
         "CMD" => command(system, &arg(0), &arg(1)),
         "DEVD" => devds(system),
-        "HDWRSC" => Ok(hardware(system, &arg(0))),
+        "HDWRSC" => hardware(&arg(0)),
         "UPRF" => user_objects(system, &arg(0), &arg(1)),
         other => Err(format!("CPF9899 no panel data named {other}")),
     }
@@ -450,142 +449,39 @@ fn devds(system: &mut System) -> Result<Sys2Data, String> {
     })
 }
 
-/// The kinds of resource a `TYPE` of `WRKHDWRSC`/`DSPHDWRSC` takes, and
-/// the word for them in the title.
-fn kinds(ty: &str) -> (&'static [hwrsrc::Kind], &'static str) {
-    use hwrsrc::Kind as K;
-    match ty {
-        "*CMN" => (&[K::Bridge, K::Lan, K::Comm, K::Port], "Communication"),
-        "*STG" => (
-            &[K::Storage, K::Disk, K::Optical, K::Tape, K::TapeLibrary],
-            "Storage",
-        ),
-        "*LWS" => (&[K::Keyboard], "Local Work Station"),
-        "*PRC" => (&[K::Bridge], "Processor"),
-        _ => (
-            &[
-                K::Bridge,
-                K::Lan,
-                K::Storage,
-                K::Disk,
-                K::Optical,
-                K::Comm,
-                K::Port,
-                K::Keyboard,
-                K::Other,
-                K::Tape,
-                K::TapeLibrary,
-            ],
-            "Hardware",
-        ),
-    }
-}
-
-/// A resource's type as the list shows it.
-fn kind_code(k: hwrsrc::Kind) -> &'static str {
-    use hwrsrc::Kind as K;
-    match k {
-        K::Bridge => "BRDG",
-        K::Lan => "LAN",
-        K::Storage => "STG",
-        K::Disk => "DISK",
-        K::Optical => "OPT",
-        K::Comm | K::Port => "CMN",
-        K::Keyboard => "KBD",
-        K::Other => "OTH",
-        K::Tape => "TAP",
-        K::TapeLibrary => "MLB",
-    }
-}
-
-/// `WRKHDWRSC`/`DSPHDWRSC`: the resources of a kind; the table is
-/// read from sysfs the first time the service is asked.
-fn hardware(system: &mut System, ty: &str) -> Sys2Data {
-    if system.hw.resources.is_empty() {
-        system.hw = hwrsrc::Table::coldplug();
-    }
-    let (want, word) = kinds(ty);
-    let mut picked: Vec<&hwrsrc::Resource> = system
-        .hw
-        .resources
-        .iter()
-        .filter(|r| want.contains(&r.kind))
-        .collect();
-    if ty == "*CMN" {
-        // A bridge shows only above the adapters and ports under it.
-        let leaves: Vec<String> = picked
-            .iter()
-            .filter(|r| r.kind != hwrsrc::Kind::Bridge)
-            .map(|r| r.devpath.clone())
-            .collect();
-        picked.retain(|r| {
-            r.kind != hwrsrc::Kind::Bridge || leaves.iter().any(|l| under(l, &r.devpath))
-        });
-    }
-    let paths: Vec<&str> = picked.iter().map(|r| r.devpath.as_str()).collect();
-    let rows = tree_order(&paths)
+/// `WRKHDWRSC`/`DSPHDWRSC`: the resources of a type, from the hardware
+/// resource service, in the tree order of `hwrsrc::view`.
+fn hardware(ty: &str) -> Result<Sys2Data, String> {
+    let spec = hwrsrc::view::spec(ty).ok_or_else(|| format!("CPD0084 {ty} is not a type of resource."))?;
+    let t = hwrsrc::client::table(false).map_err(|e| format!("CPF9898 hardware resource service: {e}"))?;
+    let rows = hwrsrc::view::list(&t, spec)
         .into_iter()
-        .map(|(i, depth)| (picked[i], depth))
-        .map(|(r, depth)| {
+        .map(|r| {
             vars(&[
-                ("RSCNAME", format!("{}{}", "  ".repeat(depth), r.name)),
-                (
-                    "RSCTYPE",
-                    r.type_model
-                        .map_or_else(|| kind_code(r.kind).to_string(), |(t, _)| t.to_string()),
-                ),
-                (
-                    "RSCSTS",
-                    match r.status {
-                        hwrsrc::Status::Operational => "Operational",
-                        hwrsrc::Status::NotDetected => "Not detected",
-                    }
-                    .into(),
-                ),
-                ("RSCTEXT", r.description.clone()),
+                ("RSCNAME", r.indented()),
+                ("RSCTYPE", r.type_col.clone()),
+                ("RSCSTS", r.status.clone()),
+                ("RSCTEXT", r.text.clone()),
             ])
         })
         .collect();
-    (
-        vars(&[("RSCKIND", word.to_string())]),
+    Ok((
+        vars(&[("RSCKIND", spec.word.to_string())]),
         vec![("RSCS".into(), rows)],
-    )
+    ))
 }
 
-/// Whether `parent` is an ancestor of `child` in sysfs.
-fn under(child: &str, parent: &str) -> bool {
-    !parent.is_empty()
-        && child.len() > parent.len()
-        && child.starts_with(parent)
-        && child.as_bytes()[parent.len()] == b'/'
-}
-
-/// Resources as `WRKHDWRSC` lists them: each after the nearest listed
-/// resource above it in sysfs, indented a level under it (pub400's
-/// `CMB09`, `  LIN03`, `    CMN01`); `(index, depth)`.
-fn tree_order(paths: &[&str]) -> Vec<(usize, usize)> {
-    fn walk(i: usize, depth: usize, kids: &[Vec<usize>], out: &mut Vec<(usize, usize)>) {
-        out.push((i, depth));
-        for &k in &kids[i] {
-            walk(k, depth + 1, kids, out);
+/// The configuration descriptions that name resource `rsrc`: lines,
+/// then devices, `(name, *LIND|*DEVD)`.
+pub fn cfg_descriptions(system: &mut System, rsrc: &str) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = super::cmn::lines_on(system, rsrc)
+        .into_iter()
+        .map(|n| (n, "*LIND".to_string()))
+        .collect();
+    for (n, d) in super::media::devices::all(system).unwrap_or_default() {
+        if d.media.as_ref().is_some_and(|m| m.rsrcname.eq_ignore_ascii_case(rsrc)) {
+            out.push((n, "*DEVD".into()));
         }
-    }
-    let parent = |i: usize| {
-        (0..paths.len())
-            .filter(|&j| j != i && under(paths[i], paths[j]))
-            .max_by_key(|&j| paths[j].len())
-    };
-    let mut kids = vec![Vec::new(); paths.len()];
-    let mut roots = Vec::new();
-    for i in 0..paths.len() {
-        match parent(i) {
-            Some(p) => kids[p].push(i),
-            None => roots.push(i),
-        }
-    }
-    let mut out = Vec::new();
-    for r in roots {
-        walk(r, 0, &kids, &mut out);
     }
     out
 }
@@ -689,25 +585,3 @@ fn user_objects(system: &mut System, user: &str, ty: &str) -> Result<Sys2Data, S
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::tree_order;
-
-    #[test]
-    fn resources_nest_by_sysfs_path() {
-        // A bridge, its adapter and the adapter's port, a second
-        // adapter's port listed before its adapter, a serial port.
-        let paths = [
-            "devices/pci0000:00/0000:00:02.0",
-            "devices/pci0000:00/0000:00:02.0/0000:01:00.0",
-            "devices/pci0000:00/0000:00:02.0/0000:01:00.0/net/eth0",
-            "devices/pci0000:00/0000:00:03.0/virtio1/net/eth1",
-            "devices/pci0000:00/0000:00:03.0",
-            "devices/platform/serial8250/tty/ttyS0",
-        ];
-        assert_eq!(
-            tree_order(&paths),
-            [(0, 0), (1, 1), (2, 2), (4, 0), (3, 1), (5, 0)]
-        );
-    }
-}

@@ -29,7 +29,6 @@ use std::time::Duration;
 
 use licpart::IplMode;
 
-use crate::hwrsrc;
 use crate::net;
 use crate::platform::{console, mounts, serial, sys};
 use crate::procs;
@@ -44,8 +43,6 @@ pub enum Event {
     Signal(i32),
     /// A line was typed on the serial port.
     Line(String),
-    /// A kernel hotplug event.
-    Uevent(hwrsrc::uevent::Uevent),
     /// A message from the service console job.
     Job(wm::ctl::FromJob),
     /// The service console job's channel closed.
@@ -148,15 +145,9 @@ fn lic_phase(
 ) -> Result<(), &'static src::Src> {
     lic::attach(system)?;
 
-    system.hw = hwrsrc::Table::coldplug();
-    system.out.serial(&format!(
-        "slic: {} hardware resources\n",
-        system.hw.resources.len()
-    ));
-    if !hwrsrc::uevent::spawn_listener(tx.clone()) {
-        system
-            .out
-            .serial("slic: uevent socket unavailable; no hotplug\n");
+    // The one walk of sysfs: everything after asks the service.
+    if let Err(e) = procs::hwr::start(system) {
+        system.out.serial(&format!("slic: {e}\n"));
     }
     system.emit(&src::HW_ENUMERATED);
 
@@ -688,6 +679,7 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
             system.fatal(&src::STG_ENDED);
         }
         procs::console::gone(system, pid);
+        procs::hwr::reaped(system, pid);
         if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
             system.procs.svcjob = None;
             system
@@ -733,11 +725,6 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                 }
             }
             Ok(Event::Job(m)) => job_message(system, m),
-            Ok(Event::Uevent(ev)) => {
-                if let Some(msg) = system.hw.apply_uevent(&ev) {
-                    system.out.serial(&format!("{msg}\n"));
-                }
-            }
             Ok(Event::Console(input)) => console_input(system, input, tx),
             Ok(Event::ConsoleJob(m)) => procs::console::from_job(system, m),
             Ok(Event::ConsoleGone(pid)) => procs::console::gone(system, pid),

@@ -70,11 +70,8 @@ pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
                 system.show(Command::Virtual(Key::Enter));
             }
             Ok(Event::Signal(s)) if s == sys::HANDLED[0] => {
-                sys::reap();
-            }
-            Ok(Event::Uevent(ev)) => {
-                if let Some(msg) = system.hw.apply_uevent(&ev) {
-                    system.out.serial(&format!("{msg}\n"));
+                for pid in sys::reap() {
+                    crate::procs::hwr::reaped(system, pid);
                 }
             }
             Ok(

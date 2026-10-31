@@ -16,6 +16,13 @@ pub fn run(system: &mut System, line: &str) -> String {
         return reply;
     }
     let word = line.split_whitespace().next().unwrap_or("");
+    if word == "hw" {
+        // The table is the hardware resource service's, here as in slic.
+        return match hwrsrc::client::table(true) {
+            Ok(t) => t.dump(),
+            Err(e) => format!("CPF9898 hardware resource service: {e}\n"),
+        };
+    }
     if LOCAL.contains(&word) {
         return format!("{word} is answered by the console, not the storage service\n");
     }

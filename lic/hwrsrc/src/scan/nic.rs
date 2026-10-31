@@ -9,7 +9,7 @@
 use std::fs;
 use std::path::Path;
 
-use crate::hwrsrc::{pci, read_trim};
+use crate::scan::{pci, read_trim};
 
 /// A driver family and the type it reports as.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -85,6 +85,7 @@ pub const OTHER: Family = Family {
 };
 
 /// The family of a driver.
+#[must_use]
 pub fn family(driver: &str) -> Family {
     FAMILIES
         .iter()
@@ -120,6 +121,7 @@ pub struct NetPort {
 
 impl NetPort {
     /// Description for the resource table.
+    #[must_use]
     pub fn description(&self) -> String {
         let link = match (self.carrier, self.speed) {
             (Some(true), Some(s)) => format!("link up {s} Mb/s"),
@@ -162,6 +164,7 @@ fn speed(net: &Path) -> Option<u32> {
 
 /// One interface under `root` (`/sys`). `None` for virtual interfaces
 /// (no `device`) and non-Ethernet links.
+#[must_use]
 pub fn scan_one(root: &Path, ifname: &str) -> Option<NetPort> {
     let net = root.join("class/net").join(ifname);
     let dev = fs::canonicalize(net.join("device")).ok()?;
@@ -202,6 +205,7 @@ pub fn scan_one(root: &Path, ifname: &str) -> Option<NetPort> {
 /// Every Ethernet port under `root`, in PCI address then port order,
 /// so names stay the same from boot to boot whatever the kernel calls
 /// the interfaces.
+#[must_use]
 pub fn scan(root: &Path) -> Vec<NetPort> {
     let mut names: Vec<String> = fs::read_dir(root.join("class/net"))
         .map(|rd| {
@@ -230,6 +234,7 @@ pub fn sort(ports: &mut [NetPort]) {
 }
 
 #[cfg(test)]
+/// A fake sysfs for the table's tests too.
 pub mod tests {
     use std::os::unix::fs::symlink;
     use std::path::PathBuf;

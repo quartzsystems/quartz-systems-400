@@ -132,7 +132,7 @@ pub fn hctl(devpath: &str) -> Option<[u32; 4]> {
 /// last), the SCSI address (none first), the kernel name.
 #[must_use]
 pub fn disk_key(devpath: &str, name: &str) -> (bool, String, [u32; 4], String) {
-    let pci = crate::hwrsrc::pci::address_in(devpath);
+    let pci = crate::scan::pci::address_in(devpath);
     (
         pci.is_none(),
         pci.unwrap_or_default(),

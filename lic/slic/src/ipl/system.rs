@@ -13,7 +13,6 @@ use sysval::SysVals;
 
 use console::Command;
 
-use crate::hwrsrc::Table;
 use crate::ipl::cmdline::Boot;
 use crate::ipl::log::IplLog;
 use crate::ipl::storage::{Storage, Temp};
@@ -58,8 +57,6 @@ pub struct System {
     pub abnormal: bool,
     /// Set once C6001090 has been written.
     pub complete: bool,
-    /// Hardware resource table.
-    pub hw: Table,
     /// Network links as enumerated at IPL.
     pub links: Vec<Link>,
     /// Unix time the clock was set to from the RTC, if it was.
@@ -140,6 +137,21 @@ pub struct System {
 }
 
 impl System {
+    /// The hardware resource table, from the service (`hwsvc`); empty,
+    /// with a note on the serial line, when it cannot be reached.
+    pub fn hw(&mut self) -> hwrsrc::Table {
+        self.hw_refreshed(false)
+    }
+
+    /// [`System::hw`] with the ports' link state read again.
+    pub fn hw_refreshed(&mut self, refresh: bool) -> hwrsrc::Table {
+        hwrsrc::client::table(refresh).unwrap_or_else(|e| {
+            self.out
+                .serial(&format!("slic: hardware resource service: {e}\n"));
+            hwrsrc::Table::default()
+        })
+    }
+
     /// Fresh state before the LIC is attached.
     pub fn new(out: Outputs, boot: Boot) -> Self {
         let mode = boot.mode.unwrap_or(IplMode::Normal);
@@ -154,7 +166,6 @@ impl System {
             start_time: now_unix(),
             abnormal: false,
             complete: false,
-            hw: Table::default(),
             links: Vec::new(),
             clock: None,
             sysvals: None,

@@ -17,7 +17,7 @@ use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
 use svctools::{DstEnv, UserDb};
 use sysval::{IPL_NAMES, SysVals};
 
-use crate::hwrsrc::{Kind, ParityCapable};
+use hwrsrc::{Kind, ParityCapable};
 use crate::ipl::menu::{self, Answer};
 use crate::ipl::system::{System, now_unix};
 use crate::ipl::{Event, storage};
@@ -98,12 +98,11 @@ impl<'a> Env<'a> {
 }
 
 /// The disk resource name of a device node, or dashes.
-fn resource_for(system: &System, device: &str) -> String {
+fn resource_for(_system: &System, device: &str) -> String {
     let name = device.rsplit('/').next().unwrap_or(device);
     let disk =
         diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
-    system
-        .hw
+    hw()
         .resources
         .iter()
         .find(|r| r.kind == Kind::Disk && r.location == disk)
@@ -112,14 +111,18 @@ fn resource_for(system: &System, device: &str) -> String {
 
 /// The storage controller resource a device node's disk is attached
 /// through, or dashes.
-fn controller_for(system: &System, device: &str) -> String {
+fn controller_for(_system: &System, device: &str) -> String {
     let name = device.rsplit('/').next().unwrap_or(device);
     let disk =
         diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
-    system
-        .hw
-        .controller_of(&disk)
+    hw().controller_of(&disk)
         .map_or_else(|| "-----".to_string(), |r| r.name.clone())
+}
+
+/// The hardware resource table from the service; empty when it cannot
+/// be reached (the screens then show dashes).
+fn hw() -> hwrsrc::Table {
+    hwrsrc::client::table(false).unwrap_or_default()
 }
 
 /// Every disk the system sees, configured or not, for the installer.
@@ -356,7 +359,7 @@ impl DstEnv for Env<'_> {
     }
 
     fn parity_capable(&mut self) -> Vec<String> {
-        self.system.hw.parity_capable()
+        hw().parity_capable()
     }
 
     fn show(&mut self, screen: console::Screen) {
@@ -748,7 +751,7 @@ impl DstEnv for Env<'_> {
 
     fn resources(&mut self) -> Vec<ResourceRow> {
         self.system
-            .hw
+            .hw()
             .resources
             .iter()
             .map(|r| ResourceRow {

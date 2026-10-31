@@ -152,10 +152,10 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("srcs", ["table"]) => src_table(),
         ("hist", _) => hist(system),
         ("hw", _) => {
-            system.hw.refresh_ports(std::path::Path::new("/sys"));
+            let hw = system.hw_refreshed(true);
             format!(
                 "{}\n{}\nDisplay: {}\n",
-                system.hw.dump(),
+                hw.dump(),
                 crate::net::dump(&system.links),
                 crate::ipl::display::describe(system)
             )

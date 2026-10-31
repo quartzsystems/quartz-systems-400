@@ -1812,6 +1812,16 @@ impl Service for Served<'_> {
         super::svcop::run(self.system, &self.ctx.job, &op, &args)
     }
 
+    // --- hardware resources (1420-1429)
+    fn hw_table(&mut self, refresh: bool) -> Result<hwrsrc::Table, String> {
+        hwrsrc::client::table(refresh).map_err(|e| format!("CPF9898 hardware resource service: {e}"))
+    }
+
+    fn hw_cfgds(&mut self, name: String) -> Vec<(String, String)> {
+        self.system.current_job = self.ctx.job.number;
+        super::system2::cfg_descriptions(self.system, &name)
+    }
+
     fn sst_user_change(
         &mut self,
         op: String,

@@ -360,6 +360,16 @@ pub(crate) fn line_names(
         .collect())
 }
 
+/// The line descriptions whose resource is `rsrc`, in name order.
+pub(crate) fn lines_on(system: &mut System, rsrc: &str) -> Vec<String> {
+    objects::lines(system)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(_, l)| l.rsrcname.eq_ignore_ascii_case(rsrc))
+        .map(|(n, _)| n)
+        .collect()
+}
+
 /// `DSPLIND` of line `name` as text, `CPF2601` when there is none.
 pub(crate) fn read_and_show(system: &mut System, name: &str) -> Result<String, String> {
     let l = objects::read_lind(system, name)?;

@@ -93,8 +93,9 @@ tools/        host-side tools
                 src/qir/ the IR kit runner (cases, the in-memory job with CUST, *LDA,
                 COUNTER, Q1 and the APIs); qir/ the kit: programs/*.qir, expected/*.out
 lic/          Licensed Internal Code: IPL, platform, console, DST, disks
-  slic/         PID 1 and, as `/init qsstg`, the storage service: src/ipl/ state machine,
-                src/hwrsrc/, src/net/, src/procs/ (spawn, the storage service handover and
+  slic/         PID 1, as `/init qsstg` the storage service and as `/init qshwr` the hardware
+                resource service (src/hwsvc/: the one sysfs walk, uevents, its socket): src/ipl/,
+                src/net/, src/procs/ (spawn, hwr.rs, the storage service handover and
                 close, QSVCJOB line routing), src/stgsvc/ (the service: open, serve loop,
                 per-job contexts answering stg requests, exec of console commands,
                 ifs.rs the one Ifs over the xfs and its requests),
@@ -110,6 +111,9 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
                 src/dst/ (disk/, environment, tools, security), src/install/, src/users/
   diskimg/      GPT layout (ESP, LIC, IFS, ASP1), FAT volumes, partition lookup, the IFS
                 partition and its RCLSTG migration (migrate.rs); build + installer
+  hwrsrc/       hardware resources: src/scan/ (pci, nic, storage), src/table/ names, rescans,
+                packaging and logical trees, uevent.rs, proto.rs and client.rs the service's
+                socket (/run/qs400/hwrsrc.sock), view.rs what WRKHDWRSC/DSPHDWRSC and QGYRHR* show
   blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
   osobjects/    the OS objects of QS00SS1 *BASE (message files, work management objects,
                 display files, panel groups and menus, regfac, commands, QSTRUP from

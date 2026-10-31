@@ -204,9 +204,6 @@ pub fn logs(system: &mut System, job: u32) -> Result<(Vec<LogEntry>, Vec<String>
 /// The hardware resource table and the processor count.
 pub fn resources(system: &mut System, job: u32) -> Result<(Vec<ResourceRow>, u32), String> {
     need(system, job, Privilege::NONE)?;
-    if system.hw.resources.is_empty() {
-        system.hw = crate::hwrsrc::Table::coldplug();
-    }
     let rows = env(system).resources();
     let cpus = std::thread::available_parallelism()
         .map_or(1, |n| u32::try_from(n.get()).unwrap_or(u32::MAX));
