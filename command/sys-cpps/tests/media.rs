@@ -144,6 +144,39 @@ fn optical() {
     check("prompt-dupopt-f10", "?DUPOPT", &[10]);
 }
 
+/// `ADDOPTCTG` against the 7.1 oracle's prompt (pub400 has no optical
+/// device to add to).
+#[test]
+fn add_optical_cartridge() {
+    check("prompt-addoptctg", "?ADDOPTCTG", &[]);
+}
+
+/// `WRKOPTVOL`'s option 1 on the add entry runs a command the analyzer
+/// knows, whose prompt is `ADDOPTCTG`'s (`audit/displays/
+/// wrkoptvol-add-prompt71`, the oracle's prompt after option 1).
+#[test]
+fn wrkoptvol_option_1_prompts_addoptctg() {
+    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../ui/uim/pnlgrp/QSMEDIA.pnlgrp");
+    let src = std::fs::read_to_string(&p).unwrap();
+    let panel = src.split(":PANEL NAME=WRKOPTVOL ").nth(1).expect("WRKOPTVOL panel");
+    let line = panel.lines().find(|l| l.starts_with(":LISTACT OPTION=1 ")).expect("option 1");
+    let cmd = line.split("ENTER='CMD ").nth(1).and_then(|s| s.split('\'').next()).expect("its command");
+    assert_eq!(cmd, "?ADDOPTCTG");
+    let mut s = source();
+    let r = {
+        let mut env = Env::new(&mut s);
+        env.setting.interactive = true;
+        analyze(&mut env, cmd).unwrap_or_else(|e| panic!("{cmd}: {e}"))
+    };
+    let got = Prompter::new(&r).screen().rows;
+    let want = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/conformance/golden/audit/displays/wrkoptvol-add-prompt71.txt");
+    let want = std::fs::read_to_string(&want).unwrap().replace("\r\n", "\n");
+    let want: Vec<&str> = want.lines().collect();
+    assert_eq!(got[0].trim(), want[0].trim(), "the title");
+    check("prompt-addoptctg", cmd, &[]);
+}
+
 #[test]
 fn tape_copies() {
     check("prompt-cpytotap", "?CPYTOTAP", &[]);

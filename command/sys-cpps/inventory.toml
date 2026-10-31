@@ -975,6 +975,9 @@ cpp = "QCWRKIMGCE"
 site = "job"
 note = "panels at a display; the text form in the service without one"
 
+[cmd.ADDOPTCTG]
+note = "no optical media library in this release: OPT1652 for an optical device, OPT1530 for any other"
+
 # ------------------------------------- cleanup and backup (panels/backup.rs)
 
 [cmd.QSMNSAVE]

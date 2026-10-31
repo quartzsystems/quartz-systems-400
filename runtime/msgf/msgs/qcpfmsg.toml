@@ -3577,6 +3577,20 @@ text = "The optical volume cannot be written."
 help = "It is write protected or can only be read. CHGIMGCLGE WRTPTC(*NO) lifts the protection of a writable image."
 
 [[msg]]
+id = "OPT1530"
+sev = 40
+text = "Device &1 is not an optical device."
+help = "WRKDEVD DEVD(*OPT) lists the optical device descriptions."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "OPT1652"
+sev = 40
+text = "Optical device &1 is a single drive, not a library."
+help = "Cartridges are added to an optical media library. This release has stand-alone and virtual optical devices only; load a volume with LODIMGCLG or LODIMGCLGE instead."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "OPT1605"
 sev = 40
 text = "The optical volume could not be read."
@@ -4040,6 +4054,13 @@ id = "CPD9B89"
 sev = 30
 text = "Option &1 is not available in this release."
 help = "The option is listed for compatibility; what it does arrives in a later release. Nothing was done."
+vars = ["*CHAR 4"]
+
+[[msg]]
+id = "CPD9D40"
+sev = 30
+text = "Option &1 cannot be used on the saved library's own entry."
+help = "The library's entry describes the save as a whole. F16 shows the save's header; type the option beside one of its objects instead."
 vars = ["*CHAR 4"]
 
 [[msg]]

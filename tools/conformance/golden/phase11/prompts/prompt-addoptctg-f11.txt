@@ -1,0 +1,24 @@
+                        Add Optical Cartridge (ADDOPTCTG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Optical device . . . . . . . . . MLB                                           
+ Authorization list . . . . . . . AUTL           *PRV                           
+ Rebuild directory index  . . . . DIR            *NO                            
+ Media location . . . . . . . . . MEDLOC         *IOSTATION                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

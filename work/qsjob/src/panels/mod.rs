@@ -342,8 +342,10 @@ mod tests {
         assert_eq!(ext_command(&d, &c, text), "?CRTCLS CLS(*CURLIB/MINE)");
         let (d, c) = entry(&[]);
         assert_eq!(ext_command(&d, &c, text), "?CRTCLS");
+        // WRKOPTVOL's option 1: ADDOPTCTG names no volume, so the one
+        // typed is not passed (7.1's prompt shows none).
         let (d, c) = entry(&[("VOL", "VOL01")]);
-        assert_eq!(ext_command(&d, &c, "?ADDOPTCTG ?-VOL(&VOL.)"), "?ADDOPTCTG ?-VOL(VOL01)");
+        assert_eq!(ext_command(&d, &c, "?ADDOPTCTG"), "?ADDOPTCTG");
         let (d, c) = entry(&[]);
         assert_eq!(ext_command(&d, &c, "?ADDTCPHTE INTNETADR('&HTEADR.')"), "?ADDTCPHTE");
     }

@@ -441,6 +441,7 @@ pub const DIRECT: &[&str] = &[
     "CHKOPT",
     "DUPOPT",
     "WRKOPTVOL",
+    "ADDOPTCTG",
     "WRKMLBSTS",
     "WRKTAPCTG",
     "ADDTAPCTG",

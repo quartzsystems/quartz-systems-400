@@ -54,6 +54,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHKOPT" => chkopt(system, parms),
         "DUPOPT" => dupopt(system, parms),
         "WRKOPTVOL" => wrkoptvol(system, parms).map(plain),
+        "ADDOPTCTG" => Ok(addoptctg(system, parms)),
         "WRKMLBSTS" => Ok(plain(wrkmlbsts_text(system, &parms.name("MLB")))),
         "DSPTAPCTG" => dsptapctg(system, parms),
         "WRKTAPCTG" | "ADDTAPCTG" | "RMVTAPCTG" | "CHGTAPCTG" => mlb_ctg(system, name, parms),
@@ -83,6 +84,35 @@ const CLGE_LOADED: &str = "CPCBC09";
 const VOL_INITIALIZED: &str = "CPC6773";
 const VOL_CHECKED: &str = "CPC6774";
 const VOL_DUPLICATED: &str = "CPC6775";
+
+/// Not an optical device; an optical device that is not a library.
+const OPT_NOT_DEVICE: &str = "OPT1530";
+const OPT_NOT_LIBRARY: &str = "OPT1652";
+
+/// `ADDOPTCTG`: IBM moves a cartridge from an optical media library's
+/// I/O station or magazine into the library. QS/400 has stand-alone and
+/// virtual optical devices only (`CRTDEVMLB DEVCLS(*OPT)` is `CPF9B70`),
+/// so an optical device is refused as no library (`OPT1652`, what IBM
+/// sends for a stand-alone drive) and any other name as no optical
+/// device (`OPT1530`). Nothing is changed.
+fn addoptctg(system: &mut System, parms: &Parms) -> CmdReply {
+    let dev = parms.name("MLB").to_ascii_uppercase();
+    let id = match devices::read(system, &dev) {
+        Ok(d) if d.media.as_ref().is_some_and(|m| m.kind == MediaKind::Optical) => OPT_NOT_LIBRARY,
+        Ok(_) => OPT_NOT_DEVICE,
+        Err(e) if e.starts_with(devices::NOT_FOUND) => OPT_NOT_DEVICE,
+        Err(e) => return failed("ADDOPTCTG", &e),
+    };
+    CmdReply {
+        text: format!("{id} device {dev}: no optical media library to add a cartridge to\n"),
+        escape: Some(stg::proto::CmdMsg {
+            msgid: id.into(),
+            kind: 7,
+            data: cmd::error::data(&[(&dev, 10)]),
+        }),
+        ..CmdReply::default()
+    }
+}
 
 /// A completion: its message, and the text led by its identifier.
 fn ok(text: &str, msgid: &str, fields: &[(&str, usize)]) -> CmdReply {

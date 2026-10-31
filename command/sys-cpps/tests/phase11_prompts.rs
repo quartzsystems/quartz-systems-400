@@ -453,6 +453,8 @@ fn media_prompts() {
         // NEWOWNID holds the label's 14 characters; pub400's field is 17.
         Case { known: &["NEWOWNID"], ..case("prompt-inztap", "?INZTAP", &[]) },
         case("prompt-inzopt", "?INZOPT", &[]),
+        // The 7.1 oracle's (pub400 has no optical device).
+        case("prompt-addoptctg-f11", "?ADDOPTCTG", &[]),
         Case { known: &["TYPE", "CCSID"], ..case("prompt-inzopt-f10", "?INZOPT", &[0, 10]) },
         case("prompt-duptap", "?DUPTAP", &[]),
         case("prompt-duptap-f10", "?DUPTAP", &[10]),

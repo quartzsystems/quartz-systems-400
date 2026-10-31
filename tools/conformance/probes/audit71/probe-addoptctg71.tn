@@ -1,0 +1,31 @@
+# CPP audit round 4 on the 7.1 oracle: ADDOPTCTG's prompt with F11 (the
+# keywords), left with F12 and never run; and the identifier of DSPTAP's
+# refusal of DATA(*SAVRST) with OUTPUT(*OUTFILE), which reads no tape.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type ADDOPTCTG
+key f4
+settle 3000
+snap prompt-addoptctg
+key f11
+settle 2000
+snap prompt-addoptctg-f11
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01) DATA(*SAVRST) OUTPUT(*OUTFILE) OUTFILE(QTEMP/TAPSAV)
+key enter
+settle 3000
+cursor 6 7
+key help
+settle 2000
+snap dsptap71-outf-sav-id
+key f12
+settle 2000
