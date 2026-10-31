@@ -427,3 +427,117 @@ fn deleting_through_a_pair_frees_on_both_halves() {
     assert_eq!(report.problems(), 0, "{report}");
     assert_halves_agree(&mut store);
 }
+
+/// Put a device back as it was at `image`, except its header pages
+/// when `keep_header`: a crash after the headers were rewritten.
+fn roll_back(d: &MemBlockDev, image: &[u8], keep_header: bool) {
+    let bs = PAGE_SIZE;
+    let last = d.blocks() - 1;
+    for lba in 0..d.blocks() {
+        if keep_header && (lba == 0 || lba == last) {
+            continue;
+        }
+        let at = usize::try_from(lba).unwrap() * bs;
+        d.write(lba, &image[at..at + bs]).unwrap();
+    }
+    d.flush().unwrap();
+}
+
+#[test]
+fn configured_units_holding_data_pair_with_each_other() {
+    // Four units, all holding data: 1 pairs with 4 and 2 with 3, each
+    // partner's data moving onto the others first.
+    let d: Vec<Arc<MemBlockDev>> = (0..4).map(|i| dev(1024, 40 + i)).collect();
+    let mut p = params();
+    p.unit_uuids = (1..=4).map(|i| [i; 16]).collect();
+    p.unit_serials = (0..4).map(|i| format!("UNIT{i}")).collect();
+    let all: Vec<&Arc<MemBlockDev>> = d.iter().collect();
+    let mut store = Store::format(boxed(&all), &p, config()).unwrap();
+    let qsys = {
+        let mut txn = store.begin().unwrap();
+        let q = ops::bootstrap(&mut txn, NOW, "QS400").unwrap();
+        txn.commit().unwrap();
+        q
+    };
+    add_spaces(&mut store, qsys, 0, 12, 20);
+    let used: Vec<u64> = store.units().iter().map(|u| u.used_pages).collect();
+    assert!(used.iter().all(|&n| n > 0), "every unit holds data: {used:?}");
+
+    // Unit 4 (3 from 0) leaves; then a crash before the pair forms.
+    let dev3 = store.remove_unit(3).unwrap();
+    drop(dev3);
+    drop(store);
+    let (mut store, _) = Store::open(boxed(&all), config()).unwrap();
+    assert_eq!(store.units().len(), 3, "the removal was durable");
+    assert_eq!(read_marker(&mut store, qsys, "S11"), "space 11");
+    store
+        .start_mirror(0, Box::new(d[3].clone()), [9; 16], "UNIT3")
+        .unwrap();
+    let mut journal = MemJournal::default();
+    resume_all(&mut store, 3, &mut journal, 100);
+
+    // Unit 3 (2 from 0) backs the last span though the new half follows
+    // it in the table. Crash after its data moved and the half's header
+    // was renumbered, before the table without it was written.
+    store.drain_unit(2).unwrap();
+    store.close().unwrap();
+    let images: Vec<Vec<u8>> = d.iter().map(|x| x.flushed_image()).collect();
+    let (mut store, _) = Store::open(boxed(&all), config()).unwrap();
+    store.remove_unit(2).unwrap();
+    drop(store);
+    assert_eq!(superblock_on(&d[0]).units.len(), 3);
+    roll_back(&d[0], &images[0], false);
+    roll_back(&d[1], &images[1], false);
+    roll_back(&d[2], &images[2], false);
+    roll_back(&d[3], &images[3], true);
+    let (mut store, _) = Store::open(boxed(&all), config()).unwrap();
+    assert_eq!(store.units().len(), 4, "the old table wins");
+    assert_eq!(store.units()[0].entry.mirror_partner, 3);
+    assert_eq!(read_marker(&mut store, qsys, "S11"), "space 11");
+
+    // Again, to the end: the half is renumbered, the pair forms.
+    store.remove_unit(2).unwrap();
+    let units = store.units();
+    assert_eq!(units.len(), 3);
+    assert_eq!(units[0].entry.mirror_partner, 2);
+    assert_eq!(units[2].entry.mirror_partner, 0);
+    let new = store
+        .start_mirror(1, Box::new(d[2].clone()), [10; 16], "UNIT2")
+        .unwrap();
+    assert_eq!(new, 3);
+    resume_all(&mut store, 3, &mut journal, 100);
+    assert_halves_agree(&mut store);
+    let sb = assert_tables_agree(&all);
+    let partners: Vec<u16> = sb.units.iter().map(|u| u.mirror_partner).collect();
+    assert_eq!(partners, vec![2, 3, 0, 1]);
+    assert!(sb.units.iter().all(|u| u.state == UnitState::Active));
+    store.close().unwrap();
+    // Every object survives on the first halves, and on the second.
+    for keep in [[0usize, 1], [3, 2]] {
+        let halves: Vec<&Arc<MemBlockDev>> = keep.iter().map(|&i| &d[i]).collect();
+        let (mut s, _) = Store::open(boxed(&halves), config()).unwrap();
+        for i in 0..12 {
+            assert_eq!(read_marker(&mut s, qsys, &format!("S{i}")), format!("space {i}"));
+        }
+        drop(s);
+    }
+}
+
+#[test]
+fn a_unit_before_the_last_span_cannot_leave() {
+    let d: Vec<Arc<MemBlockDev>> = (0..3).map(|i| dev(1024, 50 + i)).collect();
+    let mut p = params();
+    p.unit_uuids = (1..=3).map(|i| [i; 16]).collect();
+    p.unit_serials = (0..3).map(|i| format!("UNIT{i}")).collect();
+    let all: Vec<&Arc<MemBlockDev>> = d.iter().collect();
+    let mut store = Store::format(boxed(&all), &p, config()).unwrap();
+    assert!(matches!(
+        store.remove_unit(1),
+        Err(StoreError::UnitInUse { unit: 1, .. })
+    ));
+    assert!(matches!(
+        store.remove_unit(0),
+        Err(StoreError::UnitInUse { unit: 0, .. })
+    ));
+    store.remove_unit(2).unwrap();
+}

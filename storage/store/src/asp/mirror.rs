@@ -572,7 +572,7 @@ impl Asp {
 
     /// Take a unit out of the table, renumbering the ones after it and
     /// every reference to them. Spans are unchanged. Returns the device.
-    fn drop_unit_entry(&mut self, unit: u16) -> Result<Option<Box<dyn BlockDev>>> {
+    pub(crate) fn drop_unit_entry(&mut self, unit: u16) -> Result<Option<Box<dyn BlockDev>>> {
         let dev = self.io.remove_unit_slot(unit);
         self.sb.units.remove(usize::from(unit));
         for e in &mut self.sb.units {
@@ -608,7 +608,7 @@ impl Asp {
 }
 
 /// Rewrite a unit's header pages without touching its superblock slots.
-fn rewrite_unit_header(
+pub(crate) fn rewrite_unit_header(
     io: &mut crate::asp::io::AspIo,
     unit: u16,
     header: &mut UnitHeader,

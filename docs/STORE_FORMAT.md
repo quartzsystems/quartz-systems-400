@@ -151,7 +151,7 @@ At offset 0 of the body.
 | 16 | 16 | unit_uuid | |
 | 32 | 16 | asp_uuid | |
 | 48 | 2 | asp_number | 1 for SYSBAS |
-| 50 | 2 | unit_number | position in the unit table, from 0 |
+| 50 | 2 | unit_number | position in the unit table, from 0; the table wins when they differ |
 | 52 | 4 | reserved | 0 |
 | 56 | 8 | pages | unit size in pages (the device size) |
 | 64 | 16 | mirror_of | unit UUID of the other half of the pair, zero when unprotected |
@@ -248,6 +248,18 @@ At offset 0 of the body.
 The unit table follows at body offset 256: `unit_count` entries, one
 per unit in unit-number order. Units are added, removed and paired only
 through the service tools; the table never changes on its own.
+
+Only the unit backing the last span can leave the configuration; halves
+paired later may follow it in the table and move down one number. Its
+pages move to other spans and are checkpointed first; then the table
+without it is checkpointed; only then is its header wiped. A crash
+before that checkpoint leaves the old table, which opens: a unit header
+whose `unit_number` was already rewritten is matched by UUID and
+corrected at open. A crash after it leaves a device with a stale header
+of this ASP, not in the table, which is ignored. Starting mirrored
+protection on units that hold data is this removal once per partner,
+each followed by forming the pair, so every state in between is a valid
+configuration.
 
 ### `UnitEntry` (80 bytes)
 

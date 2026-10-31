@@ -160,8 +160,10 @@ impl Store {
         Ok(unit)
     }
 
-    /// Remove the last unit, which must be unprotected: everything on it
-    /// is moved to the other units first.
+    /// Remove the unit of the last span, which must be unprotected:
+    /// everything on it is moved to the other units first. Each step
+    /// is checkpointed; the device is wiped only once the table without
+    /// it is durable.
     pub fn remove_unit(&mut self, unit: u16) -> Result<Box<dyn BlockDev>> {
         self.check()?;
         self.asp.check_removable(unit)?;
@@ -172,6 +174,7 @@ impl Store {
         }
         let dev = removed?;
         self.checkpoint()?;
+        crate::asp::wipe_unit(dev.as_ref())?;
         Ok(dev)
     }
 

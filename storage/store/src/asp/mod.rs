@@ -23,7 +23,7 @@ use crate::page::{Page, PageType};
 use crate::{Result, StoreError};
 use io::{AspIo, UnitDev};
 use layout::{Layout, MAX_UNITS, RESERVED_HEAD};
-use superblock::{Superblock, UnitEntry};
+use superblock::{NO_PARTNER, Superblock, UnitEntry};
 use unit::{UnitHeader, UnitState};
 
 /// What `format` needs beyond the devices.
@@ -226,6 +226,9 @@ impl Asp {
         }
         // Match the devices to the table.
         let mut units: Vec<UnitDev> = Vec::with_capacity(sb.units.len());
+        // Units whose header number lags the table: a crash while units
+        // were renumbered. The table wins; the headers are rewritten.
+        let mut renumbered: Vec<u16> = Vec::new();
         for (i, entry) in sb.units.iter().enumerate() {
             let unit = u16::try_from(i).expect("table size");
             let at = found
@@ -234,11 +237,14 @@ impl Asp {
             let dev = match at {
                 Some(at) => {
                     let (h, dev) = found.remove(at);
-                    if h.unit_number != unit || h.pages != entry.pages || dev.blocks() != h.pages {
+                    if h.pages != entry.pages || dev.blocks() != h.pages {
                         return Err(StoreError::Corrupt {
                             page: 0,
                             what: format!("unit table disagrees with the header of unit {unit}"),
                         });
+                    }
+                    if h.unit_number != unit {
+                        renumbered.push(unit);
                     }
                     Some(dev)
                 }
@@ -258,6 +264,22 @@ impl Asp {
         let layout = Layout::from_table(&sb.units)?;
         let events = resolve_states(&layout, &mut units, &mut sb)?;
         let mut io = AspIo::with_units(units, layout.clone());
+        for unit in renumbered {
+            let e = &sb.units[usize::from(unit)];
+            warn!("asp: unit {unit} header carried another number; rewritten");
+            let mut h = UnitHeader {
+                unit_uuid: e.unit_uuid,
+                asp_uuid: sb.asp_uuid,
+                asp_number: sb.asp_number,
+                unit_number: unit,
+                pages: e.pages,
+                mirror_of: (e.mirror_partner != NO_PARTNER)
+                    .then(|| sb.units[usize::from(e.mirror_partner)].unit_uuid),
+            };
+            if let Err(e) = mirror::rewrite_unit_header(&mut io, unit, &mut h) {
+                warn!("asp: unit {unit} header not rewritten: {e}");
+            }
+        }
         let alloc = Allocator::load(&mut io, layout, sb.alloc_root, sb.free_log_head)?;
         debug!(
             "asp {}: opened at generation {}, {} free pages",
@@ -361,14 +383,14 @@ impl Asp {
         Ok(())
     }
 
-    /// Whether a unit may leave the configuration: the last one, not
-    /// unit 0, not half of a pair.
+    /// Whether a unit may leave the configuration: it alone backs the
+    /// last span (halves of pairs formed later may follow it in the
+    /// table), it is not unit 0 and not half of a pair.
     pub fn check_removable(&self, unit: u16) -> Result<()> {
-        let last = self.io.unit_count() - 1;
-        if unit != last || unit == 0 {
-            return Err(StoreError::UnitInUse {
+        if self.sb.units.get(usize::from(unit)).is_none() {
+            return Err(StoreError::UnitMissing {
                 unit,
-                what: "only the last unit can be removed".into(),
+                what: "no such unit".into(),
             });
         }
         if self.sb.units[usize::from(unit)].mirrored() {
@@ -377,12 +399,21 @@ impl Asp {
                 what: "the unit is half of a mirrored pair".into(),
             });
         }
+        let last = self.layout().spans().last().map(|s| s.primary);
+        if last != Some(unit) || unit == 0 {
+            return Err(StoreError::UnitInUse {
+                unit,
+                what: "only the unit of the last span can be removed".into(),
+            });
+        }
         Ok(())
     }
 
-    /// Remove the last unit. It must be unprotected and hold nothing;
-    /// its header is wiped so the device is no longer configured. The
-    /// caller checkpoints.
+    /// Remove the unit of the last span. It must be unprotected,
+    /// attached and hold nothing; units after it in the table are
+    /// renumbered. The caller checkpoints, then wipes the device
+    /// ([`wipe_unit`]) so a crash in between leaves it a stale,
+    /// ignored unit rather than a missing one.
     pub fn remove_unit(&mut self, unit: u16) -> Result<Box<dyn BlockDev>> {
         self.check_removable(unit)?;
         let span = self.span_of(unit)?;
@@ -393,19 +424,18 @@ impl Asp {
                 what: format!("{used} page(s) are in use"),
             });
         }
-        self.alloc.pop_unit()?;
-        let mut layout = self.layout().clone();
-        layout.pop();
-        self.io.set_layout(layout);
-        self.sb.units.pop();
-        let dev = self.io.pop_unit().expect("unit exists").dev;
-        let Some(dev) = dev else {
+        if !self.io.unit_attached(unit) {
             return Err(StoreError::UnitMissing {
                 unit,
                 what: "unit is not attached".into(),
             });
-        };
-        wipe_unit(dev.as_ref())?;
+        }
+        self.alloc.pop_unit()?;
+        let mut layout = self.layout().clone();
+        layout.pop();
+        self.io.set_layout(layout.clone());
+        self.alloc.set_layout(layout);
+        let dev = self.drop_unit_entry(unit)?.expect("checked attached");
         info!("asp {}: unit {unit} removed", self.sb.asp_number);
         Ok(dev)
     }
@@ -657,8 +687,9 @@ pub(crate) fn write_unit_header(io: &mut AspIo, unit: u16, header: &UnitHeader) 
     io.flush_unit(unit)
 }
 
-/// Zero a device's header pages and superblock slots: no longer a unit.
-pub(crate) fn wipe_unit(dev: &dyn BlockDev) -> Result<()> {
+/// Zero a device's header pages and superblock slots: no longer a
+/// unit. For a removed unit, call after the checkpoint that dropped it.
+pub fn wipe_unit(dev: &dyn BlockDev) -> Result<()> {
     let zero = Page::zeroed();
     for lba in [0, 1, 2, dev.blocks() - 1] {
         dev.write(lba, zero.bytes())?;
