@@ -62,8 +62,8 @@ fn ptfs(system: &mut System, product: &str, select: &str) -> Result<Sys2Data, St
             pairs(&[
                 ("OPT", String::new()),
                 ("PTFID", r.ptf.clone()),
-                ("PTFSTS", r.status.display().to_string()),
-                ("PTFACT", r.action.display().to_string()),
+                ("PSTS", r.status.display().to_string()),
+                ("PACT", ipl_action(r.action)),
             ])
         })
         .collect();
@@ -73,6 +73,14 @@ fn ptfs(system: &mut System, product: &str, select: &str) -> Result<Sys2Data, St
         ("IPLSRC", format!("##MACH#{:?}", system.boot.slot)),
     ]);
     Ok((vars, vec![("PTFS".into(), rows)]))
+}
+
+/// The list's IPL action: `None` when the next IPL leaves it.
+fn ipl_action(a: ptf::Action) -> String {
+    match a.display() {
+        "" => "None".into(),
+        t => t.into(),
+    }
 }
 
 /// One PTF's detail.

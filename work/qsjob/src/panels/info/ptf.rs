@@ -51,13 +51,15 @@ pub fn dspptf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -
             Response::Return(11) => {
                 d.error("CPD9B8B", &[]);
             }
+            Response::Return(17) => d.error("CPD9B8A", &["17"]),
             Response::Print => d.error("CPD9B84", &[]),
             _ => {}
         }
     }
 }
 
-/// `WRKPTFGRP PTFGRP()`: the PTF groups, their levels and statuses.
+/// `WRKPTFGRP PTFGRP()`: the PTF groups, their levels and statuses;
+/// F11 shows their descriptions.
 pub fn wrkptfgrp(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let pattern = parm(r, "PTFGRP");
     let mut d = dialog(host, "QUIDSPPTF")?;
@@ -65,7 +67,18 @@ pub fn wrkptfgrp(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
         load(&mut d, fetch(host, "PTFGRP", std::slice::from_ref(&pattern))?);
         match show(&mut d, surface, "WRKPTFGRP")? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
-            Response::Print => d.error("CPD9B84", &[]),
+            Response::Return(11) => d.view = 1 - d.view.min(1),
+            Response::Print | Response::Return(6) => d.error("CPD9B84", &[]),
+            Response::Return(22) => d.info("CPI9B81", &[]),
+            // Groups come with PTF orders, which this release does not take.
+            Response::Options(choices) => {
+                for c in &choices {
+                    d.list_mut(&c.list).options.clear();
+                }
+                if let Some(c) = choices.first() {
+                    d.error("CPD9B89", &[c.option.trim()]);
+                }
+            }
             _ => {}
         }
     }
