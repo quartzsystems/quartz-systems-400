@@ -148,7 +148,6 @@ storage service (the IPL now finishes it first).
 
 | Item | Where | Waits for |
 |---|---|---|
-| `SAVSYS` in `GO SAVE` 21 and 22 | `work/wm/src/opa/gosave.rs` | the install agent's `SAVSYS`; the options run without it until the command exists |
 | The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | an exemption in the subsystem monitor; the options run from `QSVCJOB` |
 | Virtual devices for `SAVSYS` are bound with `svc.vrtdev`, not resolved through a loaded image catalog | `lic/slic/src/cpp/savsys.rs` | the device layer (`LODIMGCLG` on `TAPVRTnn`/`OPTVRTnn`) |
 | `CHKTAP` and `DSPOPT DATA(*SAVRST)` showing install media | `media/instmedia/src/savsys.rs` (the recognition and its tests) | the device layer's commands |

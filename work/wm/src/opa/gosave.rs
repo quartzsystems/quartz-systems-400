@@ -233,8 +233,8 @@ pub fn sequence(menu: Menu, option: u8, d: &Defaults, ctl: &str, have: &dyn Fn(&
                 v.push("PRTSYSINF".into());
             }
             let mut s = Vec::new();
-            // BLOCKED(phase11): SAVSYS is the install agent's; until it is on
-            // the system, options 21 and 22 save everything after it.
+            // SAVSYS first when the system has it (a system without it
+            // saves everything after).
             if have("SAVSYS") {
                 s.push(format!("SAVSYS DEV({dev})"));
             }
