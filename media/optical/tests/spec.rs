@@ -75,3 +75,41 @@ fn manifest_table() {
         assert!(md.contains(f), "{f}");
     }
 }
+
+#[test]
+fn writable_volume_tables() {
+    use optical::volume::layout::{
+        LABEL_FILE, LABEL_KEYS, LABEL_MAGIC, SaveTarget, generated_save_path,
+    };
+    let md = doc();
+    let keys = table_with(&md, "### Writable virtual volumes", "Key");
+    let keys: Vec<&str> = keys.iter().map(|r| r[0].as_str()).collect();
+    assert_eq!(keys, LABEL_KEYS);
+    assert!(md.contains(LABEL_MAGIC));
+    let paths = table_with(&md, "### Writable virtual volumes", "Path");
+    assert_eq!(paths[0][0], format!("/{LABEL_FILE}"));
+    assert_eq!(paths[1][0], "/<LIB>");
+    assert_eq!(generated_save_path(SaveTarget::Library("LIB")), "/LIB");
+    assert_eq!(paths[2][0], "/QSAVIFS.nnn");
+    assert_eq!(generated_save_path(SaveTarget::Ifs(1)), "/QSAVIFS.001");
+    assert_eq!(paths[3][0], "/QSAVSYS/<KIND>");
+    let errors = table_with(&md, "### Devices and /QOPT", "Error");
+    let samples = [
+        optical::Error::Malformed(String::new()),
+        optical::Error::NotFound(String::new()),
+        optical::Error::Exists(String::new()),
+        optical::Error::NotDir(String::new()),
+        optical::Error::BadName(String::new()),
+        optical::Error::BadVolumeId(String::new()),
+        optical::Error::VolumeFull {
+            need: 0,
+            capacity: 0,
+        },
+        optical::Error::WriteProtected,
+        optical::Error::ActiveFiles,
+    ];
+    let ids: Vec<&str> = errors.iter().map(|r| r[1].as_str()).collect();
+    for (e, id) in samples.iter().zip(&ids) {
+        assert_eq!(e.msgid(), *id, "{e}");
+    }
+}

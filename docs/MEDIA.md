@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Media: tape, optical, image catalogs
 
 Save and restore write to three classes of media: tape (real drives and
@@ -461,16 +460,6 @@ Record for each step what the screen showed, and attach the appliance's
 
 ## Optical
 
-(Written with the optical crate.)
-
-## Image catalogs
-
-(Written with the image catalog support.)
-=======
-# QS/400 removable media: tape, optical and image catalogs
-
-## Optical
-
 The crate `media/optical` (package `optical`) is everything QS/400 knows
 about optical media: an ISO 9660 writer and reader with Joliet and Rock
 Ridge, the hybrid install image, the install media manifest, writable
@@ -609,5 +598,200 @@ the manifest. The disk holding the media is never offered as a load
 source. The kernel carries `ISO9660_FS`, `JOLIET`, `BLK_DEV_SR` and
 `USB_STORAGE`, and not `ZISOFS`.
 
+### Writable virtual volumes
+
+IBM i makes a writable image with `ADDIMGCLGE FROMFILE(*NEW)` and
+formats it as UDF. QS/400 keeps ISO 9660 (with Joliet and Rock Ridge,
+as above) and adds a Quartz layout, so any ISO reader can still read a
+volume QS/400 wrote. A volume is writable when its root holds the label;
+every other ISO 9660 image is read only.
+
+| Path | Kind | Holds |
+|---|---|---|
+| `/QS400VOL.LBL` | file | the volume label; hidden from listings, `/QOPT` and `DSPOPT` |
+| `/<LIB>` | file | a save of library `LIB` with `OPTFILE(*)` (`SAVLIB`, `SAVOBJ`, `SAVCHGOBJ`) |
+| `/QSAVIFS.nnn` | file | the `nnn`th `SAV` with `OPTFILE(*)` |
+| `/QSAVSYS/<KIND>` | file | a system save (`SAVSYS`, `SAVSECDTA`, `SAVCFG`) |
+| anything else | either | files and directories written by name (`OPTFILE('/path')`, `/QOPT`) |
+
+The save names follow IBM's rule as far as it is documented: with
+`OPTFILE(*)` a save goes to a file in the volume's root named after the
+library. The `SAV` and system names are Quartz's choice. The bytes of a
+save file are the save stream; this layout does not look inside them.
+
+The label is text, LF line ends: the line `QS400-OPTVOL 1`, then one
+`key<TAB>value` line per key in this order. Values escape `\` as `\\`,
+tab as `\t`, newline as `\n` and carriage return as `\r`. Unknown keys
+are ignored.
+
+| Key | Value |
+|---|---|
+| `volid` | the volume identifier |
+| `text` | the text description, 50 characters at most |
+| `capacity` | the image may grow to this many bytes (`IMGSIZ`) |
+| `created` | Unix time of `INZOPT` or the `*NEW` image |
+| `changed` | Unix time of the last write; every timestamp in the image is this one |
+
+A volume identifier is 1 to 32 characters of `A-Z 0-9 $ # @ _ . -`,
+upper-cased, starting with a letter, a digit, `$`, `#` or `@` (Quartz's
+reading of IBM's rules). The primary descriptor carries it as
+d-characters (others become `_`), Joliet the first 16 characters; the
+label carries it whole and wins. File and directory names are Joliet's:
+64 characters, none of `* / : ; ? \`; they match without regard to case.
+
+Writing is a session (`optical::Volume`): unchanged files stay extents
+of the image, changed files are held in memory, and `flush` rewrites the
+whole image through `ImageStore::replace` (a file image is written beside
+the old one and renamed over it). The same tree and the same `changed`
+time give the same bytes. Each change is checked against the capacity
+first and refused whole (`OPT1335`) when the rewritten image would not
+fit; a write-protected volume refuses every change (`OPT1520`).
+
+| Command | Operation |
+|---|---|
+| `INZOPT NEWVOL CHECK CLEAR TEXT` | `volume::ops::inzopt`: `CHECK(*YES)` refuses a volume holding files (`OPT1330`); `CLEAR(*YES)` overwrites the old image with zeros first; capacity kept from the old label |
+| `DSPOPT DATA(*VOLATR)` | `ops::volume_attrs`: identifier, text, `*ISO9660`, capacity, used, free, block size 2048, dates, set, protection |
+| `DSPOPT DATA(*DIRATR)` | `ops::dir_attrs`: each directory with its file, directory and byte counts |
+| `DSPOPT DATA(*FILATR)` | `ops::file_attrs`: each file with its size |
+| `CHKOPT` | `ops::chkopt`: reads every file to its end; problems listed with their message |
+| `DUPOPT FROMVOL TOVOL NEWVOL` | `ops::dupopt`: every file and directory into another image, as a writable volume |
+
+### Devices and /QOPT
+
+`device::scan` lists `sr*` drives and removable USB disks from a
+`/sys/class/block` style directory; `device::name_resources` names them
+`OPT01`, `OPT02` ... drives first, then USB disks, each in natural
+kernel-name order (`sr2` before `sr10`, `sdb` before `sdaa`), so the
+same devices always get the same names. `device::open_media` finds the
+ISO 9660 volume on a device: at its start (a disc, the hybrid image
+written raw), else at the start of a GPT or MBR partition. A FAT copy of
+the media is not an optical volume; the D-IPL locator above reads it.
+
+`mount::VolumeSet` holds the loaded volumes by identifier. The IFS shows
+it as `/QOPT/<volume>/...` through `ifs::vfs::optical::Volumes`: ISO
+images read only (`EROFS`), writable volumes read-write. A file opened
+for writing is held whole and put back at close or `fsync`, which also
+flushes the volume; `mkdir`, `unlink` and `rmdir` flush at once. Names
+fold. A writable volume grants `*PUBLIC *ALL`; a read-only one `*RX`.
+
+| Error | Message | `errno` |
+|---|---|---|
+| damaged image, I/O | `OPT1605` | `EIO` |
+| not found | `OPT1115` | `ENOENT` |
+| already there | `OPT1210` | `EEXIST` |
+| not a directory, a directory, not empty, bad request | `OPT1203` | `ENOTDIR`, `EISDIR`, `ENOTEMPTY`, `EINVAL` |
+| name not allowed | `OPT1317` | `ENAMETOOLONG` |
+| volume identifier not allowed | `OPT1331` | `EINVAL` |
+| volume full | `OPT1335` | `ENOSPC` |
+| write protected, read only | `OPT1520` | `EROFS` |
+| `INZOPT CHECK(*YES)` found files | `OPT1330` | `EINVAL` |
+
+The message identifiers are Quartz's choice in IBM's `OPT` range; IBM's
+texts for them are not reproduced.
+
 ## Image catalogs
->>>>>>> 8490bda7 (docs: MEDIA.md hybrid install image, checked by a test)
+
+The crate `media/imgclg` (package `imgclg`) is the `*IMGCLG` object:
+catalogs of virtual optical images (`TYPE(*OPT)`) and virtual tape
+volumes (`TYPE(*TAP)`) kept in a directory, over the small file-system
+trait `CatalogFs` (`StdFs` over a host directory, `MemFs` in memory, the
+IFS later). Tape volume files belong to the tape crate: a `*TAP` catalog
+makes and reads them through the `TapeImages` trait.
+
+| Module | Does |
+|---|---|
+| `model` | `Catalog`, `Entry`, the statuses, the metadata file |
+| `ops` | `Registry`: every command, the panels' data, what `/QOPT` presents |
+| `fs` | `CatalogFs`, `StdFs`, `MemFs` |
+| `tape` | `TapeImages`, `NoTape` |
+
+### States
+
+A catalog is `*READY` when `LODIMGCLG OPTION(*LOAD)` has loaded it on a
+virtual device, else `*NOTREADY`. One device holds one catalog, and a
+loaded catalog is on one device. An entry is:
+
+| Status | Meaning |
+|---|---|
+| `*MOUNTED` | loaded, and the volume the device presents; one per catalog at most |
+| `*LOADED` | in the device, ready to be mounted |
+| `*AVAILABLE` | in the catalog only; `LODIMGCLGE OPTION(*LOAD)` makes it usable |
+
+A new entry is `*LOADED`. Whenever a `*READY` catalog has no mounted
+entry (it was just loaded, the mounted entry was unloaded or removed),
+the lowest-index `*LOADED` entry is mounted. `LODIMGCLGE OPTION(*MOUNT)`
+mounts an entry and returns the old one to `*LOADED`; `*UNLOAD` makes it
+`*AVAILABLE`. Statuses are kept while the catalog is not ready. `/QOPT`
+shows the mounted entry of each `*READY` `*OPT` catalog
+(`Registry::sync_volumes` brings a `VolumeSet` in line, leaving volumes
+it did not add alone).
+
+### Commands
+
+| Command | Parameters | Does |
+|---|---|---|
+| `CRTIMGCLG` | `IMGCLG DIR TYPE CRTDIR ADDVRTVOL TEXT` | a catalog over a directory no other catalog uses; `ADDVRTVOL(*DIR)` adds the images already there (in `VOLUME_LIST` order when that file exists, one name a line, `#` comments; else by name), `ADDVRTVOL(n)` makes `n` new volumes of `IMGSIZ` |
+| `DLTIMGCLG` | `IMGCLG KEEP` | not while `*READY`; `KEEP(*NO)` deletes the images and the directory |
+| `ADDIMGCLGE` | `IMGCLG FROMFILE TOFILE IMGCLGIDX IMGSIZ VOLNAM WRTPTC TEXT` | `FROMFILE(name)` takes a file in the directory, `FROMFILE('/path')` copies it in (`TOFILE(*FROMFILE)`, a name, or `*GEN`: `<catalog><nnn>`, `.ISO` for optical); `FROMFILE(*NEW)` makes an empty writable volume of `IMGSIZ` MiB (optical) or calls the tape constructor; `IMGCLGIDX(*AVAIL)` takes the lowest free index; volumes are unique in a catalog; a read-only image is always write protected |
+| `RMVIMGCLGE` | `IMGCLG IMGCLGIDX KEEP` | `KEEP(*NO)` deletes the image |
+| `CHGIMGCLGE` | `IMGCLG IMGCLGIDX WRTPTC TEXT` | `WRTPTC(*NO)` only for a writable image |
+| `LODIMGCLGE` | `IMGCLG IMGCLGIDX OPTION` | `*LOAD`, `*UNLOAD`, `*MOUNT` as above |
+| `LODIMGCLG` | `IMGCLG DEV OPTION` | `*LOAD` on a device, `*UNLOAD` |
+| `VFYIMGCLG` | `IMGCLG TYPE SORT` | every image is there, reads and still carries its volume; for `TYPE(*PTF)`, `*LIC` and `*UPGRADE` the optical volumes also form one set (one volume set identifier and size), complete (as many entries as the set size), each sequence number once and in order; for `*LIC` and `*UPGRADE` volume 1 holds the install manifest; `SORT(*YES)` renumbers the entries in sequence order instead of reporting them out of order |
+| `WRKIMGCLG` | | `Registry::wrkimgclg`: name, status, type, text |
+| `WRKIMGCLGE` | `IMGCLG` | `Registry::wrkimgclge`: the catalog's status, type, device, directory, and per entry index, status, write protection, volume, file, text |
+
+`IMGSIZ` is a number of MiB or `*CD650`, `*DVD2600`, `*DVD4700`. A
+catalog holds 256 entries.
+
+### Catalog metadata file
+
+Each catalog keeps `QS400CLG.INF` in its directory, rewritten whole on
+every change. Text, LF line ends: the line `QS400-IMGCLG 1`, then the
+catalog's `key<TAB>value` lines in this order, then one `entry` line per
+entry in index order. Values escape as the volume label's do.
+
+| Key | Value |
+|---|---|
+| `name` | the catalog name |
+| `type` | `*OPT` or `*TAP` |
+| `dir` | the directory, absolute |
+| `text` | the text description |
+| `status` | `*READY` or `*NOTREADY` |
+| `device` | the device it is loaded on, empty when not |
+| `created` | Unix time of `CRTIMGCLG` |
+
+An `entry` line is `entry` and these fields, tab separated:
+
+| Field | Value |
+|---|---|
+| `index` | 1 to 256 |
+| `file` | the image file's name in the directory |
+| `volume` | the volume identifier |
+| `status` | `*MOUNTED`, `*LOADED` or `*AVAILABLE` |
+| `wrtptc` | `*YES` or `*NO` |
+| `text` | the entry's text |
+
+`Registry::load` rebuilds the catalogs from these files.
+
+| Error | Message |
+|---|---|
+| catalog not found | `CPFBC01` |
+| catalog already exists | `CPFBC02` |
+| directory belongs to another catalog | `CPFBC03` |
+| directory missing (`CRTDIR(*NO)`) | `CPFBC04` |
+| no entry at the index | `CPFBC05` |
+| index in use | `CPFBC06` |
+| catalog full | `CPFBC07` |
+| image file missing | `CPFBC08` |
+| not an image of the catalog's type | `CPFBC09` |
+| catalog loaded | `CPFBC0A` |
+| device in use | `CPFBC0B` |
+| volume already in the catalog | `CPFBC0C` |
+| verification failed | `CPFBC0D` |
+| image can only be read | `CPFBC0E` |
+| parameter not allowed | `CPFBC0F` |
+| metadata file damaged, file system | `CPFBC10` |
+
+The `CPFBC` identifiers are Quartz's choice; optical errors keep their
+`OPT` identifiers.
