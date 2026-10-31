@@ -34,6 +34,7 @@ impl Client for StgProc {
 /// service reopens them; the checkpoint just taken leaves it nothing
 /// to replay.
 pub fn start(system: &mut System) -> Result<(), String> {
+    crate::ipl::storage::finish_resume(system);
     let storage = system
         .storage
         .take()

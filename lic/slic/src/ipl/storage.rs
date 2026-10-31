@@ -477,6 +477,17 @@ fn report_io_events(system: &mut System) {
     }
 }
 
+/// Run a background resume to its end before the store changes hands:
+/// the storage service does not carry one on.
+pub fn finish_resume(system: &mut System) {
+    if busy(system) {
+        system
+            .out
+            .serial("slic: finishing the resume before the storage service starts\n");
+    }
+    while resume_step(system) {}
+}
+
 /// Whether the run loop should come back soon: a resume is running.
 pub fn busy(system: &System) -> bool {
     system.storage.as_ref().is_some_and(|s| s.resume.is_some())
