@@ -577,6 +577,8 @@ impl Suite {
         reports.push(self.step(&mut s, "74 problems, dumps and traces", Self::service)?);
         reports.push(self.step(&mut s, "75 tape and optical", Self::tape_optical)?);
         reports.push(self.step(&mut s, "76 media library and copies", Self::media_library)?);
+        reports.push(self.step(&mut s, "80 licensed programs", Self::licensed_programs)?);
+        reports.push(self.step(&mut s, "81 PTFs", Self::ptfs)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

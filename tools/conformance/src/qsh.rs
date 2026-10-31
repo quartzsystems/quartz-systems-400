@@ -70,7 +70,7 @@ fn probe() -> Result<Vec<u8>, String> {
 }
 
 /// Push bytes into the console's xfer area as hex lines.
-fn push_hex(s: &mut Session, name: &str, bytes: &[u8]) -> Result<(), String> {
+pub(crate) fn push_hex(s: &mut Session, name: &str, bytes: &[u8]) -> Result<(), String> {
     let hex = bytes.iter().fold(String::new(), |mut h, b| {
         let _ = write!(h, "{b:02X}");
         h

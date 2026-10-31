@@ -26,6 +26,7 @@ pub mod ftp;
 mod ftpsrv;
 mod ifs;
 mod load;
+mod lpstep;
 pub mod media;
 mod nettools;
 mod phase2;
@@ -36,6 +37,7 @@ mod phase8;
 mod phase9;
 #[cfg(unix)]
 mod png;
+mod ptfstep;
 mod qemu;
 pub mod qir;
 mod qsh;
