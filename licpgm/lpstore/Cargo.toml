@@ -1,0 +1,23 @@
+[package]
+name = "lpstore"
+description = "QS/400 licensed programs over the object store: the *PRDDFN and *PRDLOD objects, the license and agreement records, product save files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+licpgm = { path = "../licpgm", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+wm = { path = "../../work/wm", version = "0.1.0" }
+savfmt = { path = "../../save/savfmt", version = "0.1.0" }
+saverst = { path = "../../save/saverst", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+thiserror.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true

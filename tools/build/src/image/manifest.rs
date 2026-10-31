@@ -156,7 +156,7 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
 
 /// Load the signing key from `QS400_SIGNING_KEY`, else a dev key under
 /// `target/keys/`, generating it when absent.
-fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
+pub(crate) fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
     let (path, from_env) = match env::var_os(KEY_ENV) {
         Some(p) => (PathBuf::from(p), true),
         None => (ctx.paths.keys().join("dev.ed25519"), false),

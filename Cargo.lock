@@ -1694,6 +1694,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "lpstore"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "licpgm",
+ "qsname",
+ "release",
+ "saverst",
+ "savfmt",
+ "store",
+ "thiserror",
+ "wm",
+]
+
+[[package]]
 name = "lz4_flex"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2828,6 +2843,8 @@ dependencies = [
  "jrn",
  "libc",
  "licpart",
+ "licpgm",
+ "lpstore",
  "menus",
  "mi",
  "msgf",

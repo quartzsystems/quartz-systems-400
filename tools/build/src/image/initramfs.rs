@@ -3,7 +3,9 @@
 // root directory of this project.
 
 //! The initramfs: `/init` (slic, which is also the storage service),
-//! `/qsjob` (the job process), mount points and a console node.
+//! `/qsjob` (the job process), mount points, a console node and
+//! `/etc/qs400/license.pub`, the hex of the public half of the build's
+//! signing key, which checks license keys (`docs/LICPGM.md` §7).
 
 use std::fs;
 use std::path::PathBuf;
@@ -29,9 +31,20 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
 
     // The kernel does not auto-mount devtmpfs for an initramfs, so a static
     // console node lets it open the initial console before slic runs.
+    let license = format!(
+        "{}\n",
+        hex::encode(
+            crate::image::manifest::signing_key(ctx)?
+                .verifying_key()
+                .to_bytes()
+        )
+    );
     let entries = vec![
         Entry::dir("dev"),
         Entry::chardev("dev/console", 5, 1),
+        Entry::dir("etc"),
+        Entry::dir("etc/qs400"),
+        Entry::file("etc/qs400/license.pub", license.into_bytes()),
         Entry::file("init", init),
         Entry::dir("proc"),
         Entry::file("qsjob", job),

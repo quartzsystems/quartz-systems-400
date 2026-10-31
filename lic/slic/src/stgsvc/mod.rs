@@ -28,6 +28,7 @@ mod sst;
 pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;
+pub(crate) mod licpgm;
 pub(crate) mod msgs;
 pub(crate) mod prtf;
 pub(crate) mod prtdev;
@@ -144,6 +145,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
     made += install_commands(system);
     let ptfs = crate::cpp::ptfcmd::ipl_pending(system);
+    made += usize::from(licpgm::seed(system));
     jobqs::load(system);
     spool::load(system);
     wtr::clear_queues(system);

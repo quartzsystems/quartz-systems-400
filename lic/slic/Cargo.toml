@@ -23,6 +23,8 @@ savfmt = { path = "../../save/savfmt", version = "0.1.0" }
 saverst = { path = "../../save/saverst", version = "0.1.0" }
 ptf = { path = "../../ptf/ptf", version = "0.1.0" }
 prb = { path = "../../service/prb", version = "0.1.0" }
+licpgm = { path = "../../licpgm/licpgm", version = "0.1.0" }
+lpstore = { path = "../../licpgm/lpstore", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }
 sql = { path = "../../database/sql", version = "0.1.0" }
 dds = { path = "../../database/dds", version = "0.1.0" }

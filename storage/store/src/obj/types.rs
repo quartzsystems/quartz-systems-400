@@ -125,6 +125,10 @@ pub const MBR: u16 = 0x00FE;
 pub const SYSVAL: u16 = 0x00FF;
 /// Code of `*EXITRG`: the registration facility repository.
 pub const EXITRG: u16 = 0x0029;
+/// Code of `*PRDDFN`: a product definition (`docs/LICPGM.md`).
+pub const PRDDFN: u16 = 0x002A;
+/// Code of `*PRDLOD`: a product load.
+pub const PRDLOD: u16 = 0x002B;
 
 /// Every type, in code order.
 pub static TYPES: &[TypeInfo] = &[
@@ -189,6 +193,8 @@ pub static TYPES: &[TypeInfo] = &[
     t(WSCST, "*WSCST", true, true, false, false, Module::Opaque),
     t(SPLF, "*SPLF", false, false, false, false, Module::Opaque),
     t(EXITRG, "*EXITRG", false, false, false, true, Module::Opaque),
+    t(PRDDFN, "*PRDDFN", true, false, false, false, Module::Opaque),
+    t(PRDLOD, "*PRDLOD", true, false, false, false, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
 ];
@@ -215,7 +221,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 39);
+        assert_eq!(TYPES.len(), 41);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);
