@@ -448,6 +448,7 @@ pub const DIRECT: &[&str] = &[
     "CPYFRMTAP",
     "CRTTAPF",
     "CHGTAPF",
+    "SAVSYS",
     // --- licensed programs (lic/slic/src/cpp/lpcmd.rs)
     "RSTLICPGM",
     "DLTLICPGM",

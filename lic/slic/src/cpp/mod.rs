@@ -35,6 +35,7 @@ mod rpg;
 mod savcmd;
 mod savout;
 pub(crate) mod svccmd;
+pub(crate) mod savsys;
 pub(crate) mod stmf;
 mod stmfcmd;
 mod sysinfo;
@@ -78,6 +79,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| savcmd::run(system, name, parms))
             .or_else(|| medcmd::run(system, name, parms))
             .or_else(|| tapcpy::run(system, name, parms))
+            .or_else(|| savsys::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
             .or_else(|| updcmd::run(system, name, parms))
             .or_else(|| ptfsvc::run(system, name, parms))

@@ -291,7 +291,7 @@ fn clrsavf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 }
 
 /// Text values of a list parameter, uppercase.
-fn values(parms: &Parms, kwd: &str) -> Vec<String> {
+pub(super) fn values(parms: &Parms, kwd: &str) -> Vec<String> {
     parms
         .list(kwd)
         .iter()
@@ -338,7 +338,7 @@ fn type_code(ty: &str) -> Option<u16> {
 }
 
 /// The configuration object types `SAVCFG` saves and `RSTCFG` restores.
-const CFG_TYPES: &[u16] = &[types::DEVD, 0x001C, 0x001D];
+pub(super) const CFG_TYPES: &[u16] = &[types::DEVD, 0x001C, 0x001D];
 
 /// `REFDATE`/`REFTIME` as Unix seconds, `None` for `*SAVLIB`. Dates
 /// arrive as `CYYMMDD`, times as `HHMMSS`.
@@ -435,6 +435,16 @@ fn compression(parms: &Parms) -> Compression {
 }
 
 fn header(system: &System, command: &str, parms: &Parms, kind: SaveKind) -> MediaHeader {
+    header_with(system, command, compression(parms), kind)
+}
+
+/// A stream's media header for `command`.
+pub(super) fn header_with(
+    system: &System,
+    command: &str,
+    compression: Compression,
+    kind: SaveKind,
+) -> MediaHeader {
     let now = now_unix();
     let mut id = [0u8; 16];
     id[..8].copy_from_slice(&now.to_be_bytes());
@@ -444,7 +454,7 @@ fn header(system: &System, command: &str, parms: &Parms, kind: SaveKind) -> Medi
     MediaHeader {
         release: (r.v, r.r, r.m),
         target: (r.v, r.r, r.m),
-        compression: compression(parms),
+        compression,
         kind,
         created: now,
         stream_id: id,

@@ -2956,6 +2956,7 @@ dependencies = [
  "ifscmd",
  "ile",
  "imgclg",
+ "instmedia",
  "ipc",
  "jrn",
  "libc",

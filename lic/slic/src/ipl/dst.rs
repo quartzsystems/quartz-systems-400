@@ -11,7 +11,8 @@ pub use svctools::Outcome;
 use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
 use svctools::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow, SecurityFlags};
-use svctools::install::lic::LicEvent;
+use svctools::install::lic::{LicEvent, LicKind};
+use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
 use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
 use svctools::{DstEnv, UserDb};
 use sysval::{IPL_NAMES, SysVals};
@@ -125,8 +126,9 @@ fn controller_for(system: &System, device: &str) -> String {
 pub fn disks(system: &System) -> Vec<NonConfigured> {
     let mut out = Vec::new();
     let media = crate::ipl::media::disk_on_d_ipl(system.boot.ipl_d);
+    let others = crate::ipl::instdev::media_disks();
     for disk in diskimg::locate::whole_disks().unwrap_or_default() {
-        if media.as_deref() == Some(disk.name.as_str()) {
+        if media.as_deref() == Some(disk.name.as_str()) || others.contains(&disk.name) {
             continue;
         }
         let device = disk.dev.display().to_string();
@@ -377,11 +379,36 @@ impl DstEnv for Env<'_> {
         auto: bool,
         report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
     ) -> Result<(), String> {
-        self.write_lic(device, auto, report)
+        self.write_lic(device, auto, 1, report)
+    }
+
+    fn install_lic_as(
+        &mut self,
+        device: &str,
+        kind: LicKind,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        self.write_lic_as(device, kind, auto, report)
     }
 
     fn install_os(&mut self, report: &mut dyn FnMut(usize, &mut dyn DstEnv)) -> Result<(), String> {
         self.write_os(report)
+    }
+
+    fn install_devices(&mut self, kind: DeviceKind) -> Vec<InstallDevice> {
+        let rel = self.store_release();
+        crate::ipl::instdev::scan(rel, true);
+        crate::ipl::instdev::devices(rel, kind)
+    }
+
+    fn install_os_from(
+        &mut self,
+        device: &InstallDevice,
+        options: &OsOptions,
+        report: &mut dyn FnMut(usize, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        self.write_os_from(device, options, report)
     }
 
     fn clock(&mut self) -> (String, String) {

@@ -52,15 +52,27 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Vec<Vec
             Ok(Vec::new())
         }
         "MEDIA" => {
-            let (lib, name) = arg(args, 0).split_once('/').unwrap_or(("*LIBL", arg(args, 0)));
-            let (lib, name) = (lib.to_string(), name.to_string());
-            let stream = in_store(system, |txn, qsys, names| {
-                let id = wm::obj::find(txn, qsys, names, &lib_or(&lib), &name, types::SAVF)
-                    .map_err(|_| format!("CPF9812 save file {lib}/{name} not found"))?;
-                savf::read(txn, id).map_err(|e| e.to_string())
-            })?;
-            let media = SavfMedia::read(stream).map_err(|e| format!("CPF3D94 {e}"))?;
-            Ok(licpgm::plan::Media::loads(&media)
+            let streams = if arg(args, 0).contains('/') {
+                let (lib, name) = arg(args, 0).split_once('/').unwrap_or(("*LIBL", arg(args, 0)));
+                let (lib, name) = (lib.to_string(), name.to_string());
+                vec![in_store(system, |txn, qsys, names| {
+                    let id = wm::obj::find(txn, qsys, names, &lib_or(&lib), &name, types::SAVF)
+                        .map_err(|_| format!("CPF9812 save file {lib}/{name} not found"))?;
+                    savf::read(txn, id).map_err(|e| e.to_string())
+                })?]
+            } else {
+                // An install device: every product on its media.
+                super::lpcmd::media_streams(arg(args, 0), None)?
+                    .into_iter()
+                    .map(|(_, s)| s)
+                    .collect()
+            };
+            let mut loads = Vec::new();
+            for stream in streams {
+                let media = SavfMedia::read(stream).map_err(|e| format!("CPF3D94 {e}"))?;
+                loads.extend(licpgm::plan::Media::loads(&media));
+            }
+            Ok(loads
                 .into_iter()
                 .map(|m| {
                     let k = m.load.key;

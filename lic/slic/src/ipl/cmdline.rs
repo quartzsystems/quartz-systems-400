@@ -5,7 +5,8 @@
 //! Boot parameters from `/proc/cmdline`: `qs400.slot=A|B`,
 //! `qs400.mode=normal|manual`, `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`,
 //! `qs400.pace=MS` (how long each IPL code and install step stays up),
-//! `qs400.console.scale=auto|N` (the console scale, a development aid).
+//! `qs400.console.scale=auto|N` (the console scale, a development aid),
+//! `qs400.rsp=PATH` (the response file of an automatic install).
 
 use std::fs;
 
@@ -34,6 +35,8 @@ pub struct Boot {
     pub ip: Option<String>,
     /// The console scale (`qs400.console.scale=auto|N`); auto when absent.
     pub console_scale: console::Scale,
+    /// The response file (`qs400.rsp=`): a path on the media, or a URL.
+    pub rsp: Option<String>,
 }
 
 impl Boot {
@@ -55,6 +58,7 @@ impl Boot {
             pace: None,
             ip: None,
             console_scale: console::Scale::Auto,
+            rsp: None,
         };
         for word in text.split_whitespace() {
             let Some((key, value)) = word.split_once('=') else {
@@ -83,6 +87,7 @@ impl Boot {
                 "qs400.pace" => boot.pace = value.parse().ok(),
                 "qs400.ip" => boot.ip = Some(value.to_string()),
                 "qs400.console.scale" => boot.console_scale = console::Scale::parse(value),
+                "qs400.rsp" => boot.rsp = Some(value.to_string()),
                 _ => {}
             }
         }
@@ -110,6 +115,9 @@ mod tests {
         let m = Boot::parse("qs400.ipl=D qs400.media=iso");
         assert!(m.ipl_d);
         assert_eq!(m.media.as_deref(), Some("iso"));
+        assert_eq!(m.rsp, None);
+        let r = Boot::parse("qs400.ipl=D qs400.rsp=QS400/TWO.RSP");
+        assert_eq!(r.rsp.as_deref(), Some("QS400/TWO.RSP"));
         assert_eq!(d.console_scale, console::Scale::Auto);
     }
 

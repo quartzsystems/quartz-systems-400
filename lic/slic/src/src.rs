@@ -130,7 +130,29 @@ pub const INSTALL_OS_PENDING: Src = src("C6004100", "Operating system install pe
 pub const INSTALL_ASP: Src = src("C6004110", "ASP 1 initialized by the installer", Phase::Os);
 /// QSYS and the system libraries created by the installer.
 pub const INSTALL_LIBRARIES: Src = src("C6004120", "System libraries created", Phase::Os);
-/// Delayed PTFs being applied (`docs/PTF.md` §5).
+/// A LIC install over an installed system wrote the slot it did not boot.
+pub const INSTALL_LIC_SLOT: Src = src(
+    "C6004060",
+    "Licensed Internal Code written to the inactive slot",
+    Phase::Os,
+);
+/// Option 4: ASP 1 is being copied onto the new load source.
+pub const INSTALL_RESTORE_UNITS: Src = src(
+    "C6004070",
+    "Load source restored from its mirrored partner",
+    Phase::Os,
+);
+/// The release rule refused the install (docs/INSTALL.md).
+pub const INSTALL_REFUSED: Src = src("A6004080", "Install refused by the release rule", Phase::Attention);
+/// The operating system's load is restored into QSYS.
+pub const INSTALL_OS_LOAD: Src = src("C6004130", "Operating system load restored", Phase::Os);
+/// Programs translated again after an upgrade.
+pub const INSTALL_RETRANSLATED: Src = src("C6004140", "Programs translated again", Phase::Os);
+/// The recovery's security data and configuration restored.
+pub const INSTALL_RECOVERY: Src = src("C6004150", "System save data restored", Phase::Os);
+/// Licensed programs installed after the operating system.
+pub const INSTALL_LICPGMS: Src = src("C6004160", "Licensed programs installed", Phase::Os);
+/// Delayed PTFs being applied.
 pub const PTF_APPLY: Src = src("C6004501", "Applying delayed PTFs", Phase::Os);
 /// PTFs marked for the next IPL being removed.
 pub const PTF_REMOVE: Src = src("C6004502", "Removing PTFs", Phase::Os);
@@ -235,10 +257,17 @@ pub const TABLE: &[Src] = &[
     INSTALL_SLOT_A,
     INSTALL_SLOT_B,
     INSTALL_LIC_RECORD,
+    INSTALL_LIC_SLOT,
+    INSTALL_RESTORE_UNITS,
+    INSTALL_REFUSED,
     INSTALL_LIC_COMPLETE,
     INSTALL_OS_PENDING,
     INSTALL_ASP,
     INSTALL_LIBRARIES,
+    INSTALL_OS_LOAD,
+    INSTALL_RETRANSLATED,
+    INSTALL_RECOVERY,
+    INSTALL_LICPGMS,
     PTF_APPLY,
     PTF_REMOVE,
     PTF_LIC,

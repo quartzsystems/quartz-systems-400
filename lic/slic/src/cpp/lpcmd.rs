@@ -163,14 +163,19 @@ fn objects_of(s: &str) -> Objects {
     }
 }
 
+/// The first `DEV` value.
+fn dev_name(parms: &Parms) -> String {
+    parms
+        .list("DEV")
+        .first()
+        .map_or_else(|| parms.text("DEV").to_ascii_uppercase(), |v| v.source().to_ascii_uppercase())
+}
+
 /// The first `DEV` value: `None` for a save file, else the media
 /// parameters of the device (a product is a tape file labeled with its
 /// identifier, or the optical file of that name).
 fn device(parms: &Parms) -> Result<Option<stream::Media>, String> {
-    let dev = parms
-        .list("DEV")
-        .first()
-        .map_or_else(|| parms.text("DEV").to_ascii_uppercase(), |v| v.source().to_ascii_uppercase());
+    let dev = dev_name(parms);
     if dev == "*SAVF" {
         Ok(None)
     } else if stream::is_device(&dev) {
@@ -178,6 +183,63 @@ fn device(parms: &Parms) -> Result<Option<stream::Media>, String> {
     } else {
         Err(format!("CPF9814 device {dev} not found"))
     }
+}
+
+/// The product streams install media on `dev` holds (`OPT01`, a
+/// virtual device the installer sees, docs/INSTALL.md): one, or every
+/// product's when `product` is `None`.
+pub(crate) fn media_streams(dev: &str, product: Option<&str>) -> Result<Vec<(String, Vec<u8>)>, String> {
+    let found = crate::ipl::instdev::scan(None, true);
+    let f = found
+        .iter()
+        .find(|f| f.device.name.eq_ignore_ascii_case(dev))
+        .ok_or_else(|| format!("CPF9814 device {dev} not found or holds no install media"))?;
+    let mut out = Vec::new();
+    for id in f.contents.products() {
+        if product.is_some_and(|p| !p.eq_ignore_ascii_case(&id)) {
+            continue;
+        }
+        let s = crate::ipl::instdev::read(f, &instmedia::Payload::Product(id.clone()))
+            .map_err(|e| format!("{NOT_RESTORED} {e}"))?;
+        out.push((id, s));
+    }
+    if out.is_empty() {
+        return Err(format!("{NOT_RESTORED} the media on {dev} holds no such product"));
+    }
+    Ok(out)
+}
+
+/// The SAVLICPGM stream of every installed load of `pid` (SAVSYS).
+pub(crate) fn product_stream(system: &mut System, pid: &str) -> Result<Vec<u8>, String> {
+    let pid = product(pid)?;
+    let req = SavLicPgm {
+        product: pid,
+        option: None,
+        release: None,
+        lng: None,
+        objects: Objects::All,
+    };
+    let head = header(system, SaveKind::LicPgm);
+    let jobh = job(system);
+    lp::with(system, |p, cell, qsys| {
+        let plan = plan_save(p, &req).map_err(|e| format!("{NOT_SAVED} {e}"))?;
+        save_product(cell, qsys, jobh, &AllowAll, &plan, &head, "SAVSYS")
+    })
+}
+
+/// The installed products, by ID.
+pub(crate) fn installed_products(system: &mut System) -> Vec<String> {
+    let mut v: Vec<String> = lp::with(system, |p, _, _| {
+        Ok(p.loads()
+            .into_iter()
+            .filter(|(_, l)| l.state.is_installed())
+            .map(|(_, l)| l.key.product.to_string())
+            .collect())
+    })
+    .unwrap_or_default();
+    v.sort();
+    v.dedup();
+    v
 }
 
 fn find_savf(system: &mut System, (name, lib): &(String, String)) -> Result<ObjectId, String> {
@@ -189,7 +251,6 @@ fn find_savf(system: &mut System, (name, lib): &(String, String)) -> Result<Obje
 
 fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require(SpecialAuth::ALLOBJ, "install licensed programs")?;
-    let media = device(parms)?;
     let pid = product(&parms.text("LICPGM"))?;
     let option = option_of(&parms.text("OPTION"))?.unwrap_or(OptionNo::BASE);
     let req = RstLicPgm {
@@ -199,12 +260,18 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         lng: lng_of(&parms.text("LNG"))?,
         objects: objects_of(&parms.text("RSTOBJ")),
     };
-    let stream = if let Some(m) = &media {
-        let label = pid.as_str().to_string();
-        stream::restore(system, m, Some(&label), OptTarget::Library(&label))?
-    } else {
+    let dev = dev_name(parms);
+    let label = pid.as_str().to_string();
+    let stream = if dev == "*SAVF" {
         let savf_id = find_savf(system, &parms.qual("SAVF"))?;
         in_store(system, |txn, _, _| savf::read(txn, savf_id).map_err(|e| e.to_string()))?
+    } else if let Some((_, s)) = media_streams(&dev, Some(&label)).ok().and_then(|mut v| v.pop()) {
+        // The install media's product loads.
+        s
+    } else if let Some(m) = device(parms)? {
+        stream::restore(system, &m, Some(&label), OptTarget::Library(&label))?
+    } else {
+        return Err(format!("CPF9814 device {dev} not found"));
     };
     if stream.is_empty() {
         return Err(format!("{NOT_RESTORED} the save file holds no licensed program"));

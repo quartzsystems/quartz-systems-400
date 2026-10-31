@@ -1,5 +1,5 @@
 // Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
-// licensed under the terms o the MIT license which can be found in the
+// licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
 //! The installation media locator. Whatever carries the media (an ISO
@@ -161,6 +161,39 @@ pub fn read_payload(f: &Found) -> Result<(Vec<u8>, Vec<u8>), String> {
     with_mount(&f.device, f.fstype, |at| {
         Ok((read(at, manifest::SLOT_A)?, read(at, manifest::SLOT_B)?))
     })?
+}
+
+/// Run `f` over the media's file system, mounted read-only.
+pub fn with_media<T>(f: &Found, g: impl FnOnce(&Path) -> T) -> Result<T, String> {
+    with_mount(&f.device, f.fstype, g)
+}
+
+/// The response file of an automatic install: the file `qs400.rsp=`
+/// names on the media, else `QS400/INSTALL.RSP` when the media has one.
+/// `None` when there is none; an error for one that does not parse.
+pub fn response(cmdline: Option<&str>) -> Result<Option<(String, instmedia::Response)>, String> {
+    use instmedia::rsp::Source;
+    let path = match cmdline.map(Source::of) {
+        Some(Source::Url(u)) => {
+            // BLOCKED(phase11): fetching a response file over the
+            // network waits for the PXE boot.
+            return Err(format!("qs400.rsp={u}: response files over the network are not available yet"));
+        }
+        Some(Source::Media(p)) => Some(p),
+        None => None,
+    };
+    let Ok(f) = locate() else {
+        return Ok(None);
+    };
+    let want = path.clone().unwrap_or_else(|| manifest::RESPONSE.to_string());
+    let text = with_mount(&f.device, f.fstype, |at| fs::read_to_string(at.join(&want)).ok())?;
+    match (text, path) {
+        (Some(t), _) => instmedia::Response::parse(&t)
+            .map(|r| Some((t, r)))
+            .map_err(|e| e.to_string()),
+        (None, Some(p)) => Err(format!("qs400.rsp={p}: not found on the media")),
+        (None, None) => Ok(None),
+    }
 }
 
 /// On a D IPL, the disk the media is on (a raw ISO, a stick), so it is

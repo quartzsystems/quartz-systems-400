@@ -11,6 +11,7 @@ pub mod display;
 pub mod dst;
 pub mod ifs;
 pub mod install;
+pub mod instdev;
 pub mod lic;
 pub mod media;
 pub mod link;
@@ -197,6 +198,9 @@ fn lic_phase(
     let attended = system.mode == IplMode::Manual
         || attended(system)
         || system.boot.ipl_d && !menu::os_installed();
+    if system.boot.ipl_d && !installing && automatic(system) {
+        install::run_auto(system);
+    }
     if attended && !installing {
         menu::run(system, rx);
     }
@@ -284,6 +288,31 @@ fn net_address(system: &mut System) {
     }
 }
 
+/// A D IPL with a response file installs without the menu: onto a
+/// system with no operating system yet, or over one when the answers
+/// ask for option 3 and the media's release is not the installed one
+/// (a slip install of the same release, or media left in the drive,
+/// shows the menu instead of installing again).
+fn automatic(system: &mut System) -> bool {
+    let Ok(Some((_, rsp))) = media::response(system.boot.rsp.as_deref()) else {
+        return false;
+    };
+    if !menu::os_installed() {
+        return true;
+    }
+    if rsp.lic_option != instmedia::rsp::LicOption::Recover {
+        return false;
+    }
+    let media_rel = media::locate()
+        .ok()
+        .and_then(|f| f.manifest.release.parse::<release::Release>().ok());
+    if storage::locate_and_open(system).is_err() {
+        return false;
+    }
+    let have = system.storage.as_ref().map(|s| s.store.asp_release());
+    media_rel.is_some() && media_rel != have
+}
+
 /// C6004100: the operating system install the LIC install left
 /// pending. Without prompts when the LIC install was automatic;
 /// otherwise through DST, where option 2 installs and option 1 IPLs.
@@ -307,10 +336,16 @@ fn pending_install(
     }
     if !auto {
         let media = media::disk_on_d_ipl(system.boot.ipl_d);
+        instdev::scan(None, true);
+        let others = instdev::media_disks();
         let spare = diskimg::locate::whole_disks()
             .unwrap_or_default()
             .iter()
-            .filter(|d| !d.has_qs400 && media.as_deref() != Some(d.name.as_str()))
+            .filter(|d| {
+                !d.has_qs400
+                    && media.as_deref() != Some(d.name.as_str())
+                    && !others.contains(&d.name)
+            })
             .count();
         if spare > 0 {
             system.emit(&src::DISK_NOT_CONFIGURED);
@@ -384,7 +419,9 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     sysvals::load(system);
     system.emit(&src::SYSVALS_LOADED);
     if let Some(auto) = install::pending(system) {
-        if !auto {
+        if auto {
+            install::apply_answers(system);
+        } else {
             install::run_options(system, rx);
         }
         install::finish(system);

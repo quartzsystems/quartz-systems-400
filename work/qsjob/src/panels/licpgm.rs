@@ -125,8 +125,15 @@ fn install_options(host: &Host, surface: &mut Surface) -> Result<Option<(String,
                         continue;
                     }
                 };
-                if dev.is_empty() || !dev.contains('/') {
-                    d.message = Some(("Type the save file that holds the products as LIBRARY/FILE.".into(), true));
+                // A save file as LIBRARY/FILE, or an install device (OPT01).
+                let device = !dev.contains('/')
+                    && (1..=10).contains(&dev.len())
+                    && dev.bytes().all(|b| b.is_ascii_alphanumeric());
+                if dev.is_empty() || !(dev.contains('/') || device) {
+                    d.message = Some((
+                        "Type the install device, or the save file that holds the products as LIBRARY/FILE.".into(),
+                        true,
+                    ));
                     continue;
                 }
                 return Ok(Some((dev, objs)));
@@ -223,7 +230,12 @@ fn install(job: &mut Job, host: &Host, surface: &mut Surface, all: bool) -> Resu
                 continue;
             }
         }
-        let cmd = format!("RSTLICPGM LICPGM({p}) OPTION({o}) DEV(*SAVF) SAVF({savf}) RSTOBJ({objs})");
+        let from = if savf.contains('/') {
+            format!("DEV(*SAVF) SAVF({savf})")
+        } else {
+            format!("DEV({savf})")
+        };
+        let cmd = format!("RSTLICPGM LICPGM({p}) OPTION({o}) {from} RSTOBJ({objs})");
         if let Some((m, true)) = exec(job, host, &cmd) {
             return Err(Fail::new("CPF3D94", m));
         }
