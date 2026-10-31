@@ -398,6 +398,37 @@ const USER_Q: &[&str] = &[
     "QGPL", "QUSRSYS", "QSYS2", "QRCL", "QS36F", "QUSER38", "QPFRDATA", "QUSRBRM",
 ];
 
+/// The files on a medium that hold the libraries `wanted` names
+/// (`*NONSYS`, `*ALLUSR`, `*IBM`): each file labeled with a library's
+/// name, once, without the labels of the other saves (configuration,
+/// security data, IFS, install media) and `omit`.
+pub(super) fn library_files(labels: &[String], wanted: &[String], omit: &[String]) -> Vec<String> {
+    let other = |l: &str| {
+        matches!(l, "QFILEIOC" | "QFILEUPR" | IFS_LABEL | instmedia::layout::MANIFEST_LABEL)
+            || instmedia::Payload::from_label(l).is_some()
+    };
+    let mut out: Vec<String> = Vec::new();
+    for l in labels.iter().map(|l| l.trim().to_ascii_uppercase()) {
+        if other(&l) || NEVER.contains(&l.as_str()) || qsname::Name::parse(&l).is_err() || out.contains(&l) {
+            continue;
+        }
+        if omit.iter().any(|o| saverst::select::generic(o, &l)) {
+            continue;
+        }
+        let user = !l.starts_with('Q') || USER_Q.contains(&l.as_str());
+        let take = wanted.iter().any(|s| match s.as_str() {
+            "*NONSYS" => true,
+            "*ALLUSR" => user,
+            "*IBM" => !user,
+            lib => *lib == l,
+        });
+        if take {
+            out.push(l);
+        }
+    }
+    out
+}
+
 /// The libraries `*NONSYS`, `*ALLUSR` and `*IBM` mean.
 pub(super) fn expand_libs(system: &mut System, libs: &[String]) -> Result<Vec<String>, String> {
     let special = |l: &str| matches!(l, "*NONSYS" | "*ALLUSR" | "*IBM");
@@ -931,6 +962,22 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
                 .iter()
                 .map(|l| stream::restore(system, &each, Some(l), OptTarget::Library(l)))
                 .collect()
+        } else if name == "RSTLIB" && named.is_empty() && m.label.is_empty() {
+            // *NONSYS, *ALLUSR, *IBM: every library file on the medium.
+            match stream::file_labels(system, m) {
+                Ok(labels) => {
+                    let each = Media { seq: 0, ..m.clone() };
+                    let libs = library_files(&labels, &saved, &values(parms, "OMITLIB"));
+                    if libs.is_empty() {
+                        vec![Err(format!("CPF3780 no library saves on device {}", m.dev))]
+                    } else {
+                        libs.iter()
+                            .map(|l| stream::restore(system, &each, Some(l), OptTarget::Library(l)))
+                            .collect()
+                    }
+                }
+                Err(e) => vec![Err(e)],
+            }
         } else {
             let label = (!first.starts_with('*')).then_some(first.as_str());
             vec![stream::restore(system, m, label, OptTarget::Library(&first))]
@@ -1448,6 +1495,26 @@ fn ifs_objects(parms: &Parms) -> Vec<(String, bool, Option<String>)> {
     out
 }
 
+/// The entries `names` of directory `dir` that the last part `pattern`
+/// of a `SAV` object matches (`*` any characters, case ignored), as
+/// paths, without the omitted ones.
+fn expand(dir: &str, names: &[String], pattern: &str, omit: &[String]) -> Vec<String> {
+    let pat = pattern.to_ascii_uppercase();
+    let (head, tail) = pat.split_once('*').unwrap_or((pat.as_str(), ""));
+    let tail = tail.trim_end_matches('*');
+    let mut out: Vec<String> = names
+        .iter()
+        .filter(|n| {
+            let u = n.to_ascii_uppercase();
+            u.len() >= head.len() + tail.len() && u.starts_with(head) && u.ends_with(tail)
+        })
+        .map(|n| format!("{}/{n}", dir.trim_end_matches('/')))
+        .filter(|p| !omit.iter().any(|o| path_under(&p.to_ascii_uppercase(), &o.to_ascii_uppercase())))
+        .collect();
+    out.sort();
+    out
+}
+
 /// Whether `path` is `pattern` or below it (a trailing `*` matches a
 /// prefix of the last part).
 fn path_under(path: &str, pattern: &str) -> bool {
@@ -1587,9 +1654,30 @@ fn sav(system: &mut System, parms: &Parms) -> CmdReply {
     };
     let walked = crate::stgsvc::ifs::with_job_ifs(system, |ifs, cx| {
         let mut errs = Vec::new();
-        for (path, inc, _) in &objs {
-            if *inc && let Err(e) = ifs.save(cx, path, &mut sink) {
-                errs.push(format!("{path}: {e}"));
+        let omitted: Vec<String> = objs.iter().filter(|o| !o.1).map(|o| o.0.clone()).collect();
+        for (path, _, _) in objs.iter().filter(|o| o.1) {
+            // A pattern in the last part (`'/*'`) names the directory's
+            // matching entries.
+            let paths = match path.rsplit_once('/').filter(|(_, last)| last.contains('*')) {
+                Some((dir, last)) => {
+                    let dir = if dir.is_empty() { "/" } else { dir };
+                    match ifs.read_dir(cx, dir) {
+                        Ok(ents) => {
+                            let names: Vec<String> = ents.into_iter().map(|e| e.name).collect();
+                            expand(dir, &names, last, &omitted)
+                        }
+                        Err(e) => {
+                            errs.push(format!("{path}: {e}"));
+                            continue;
+                        }
+                    }
+                }
+                None => vec![path.clone()],
+            };
+            for p in paths {
+                if let Err(e) = ifs.save(cx, &p, &mut sink) {
+                    errs.push(format!("{p}: {e}"));
+                }
             }
         }
         errs
@@ -1816,5 +1904,52 @@ fn dspsavf(system: &mut System, parms: &Parms) -> CmdReply {
             }
         }
         Err(e) => failed("DSPSAVF", &e),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn s(v: &[&str]) -> Vec<String> {
+        v.iter().map(|x| (*x).to_string()).collect()
+    }
+
+    #[test]
+    fn library_files_after_a_system_save() {
+        let tape = s(&[
+            "QS400MANIFEST",
+            "QS400LICA",
+            "QS400LICB",
+            "QS400LPQS00SS1",
+            "QSAVSECDTA",
+            "QSAVCFG",
+            "QGPL",
+            "QUSRSYS",
+            "PAYROLL",
+            "QSYS",
+            "QSAVIFS",
+            "PAYROLL",
+            "QSYS2",
+            "QFILEIOC",
+        ]);
+        assert_eq!(library_files(&tape, &s(&["*NONSYS"]), &[]), s(&["QGPL", "QUSRSYS", "PAYROLL", "QSYS2"]));
+        assert_eq!(library_files(&tape, &s(&["*ALLUSR"]), &s(&["PAY*"])), s(&["QGPL", "QUSRSYS", "QSYS2"]));
+        assert!(library_files(&tape, &s(&["*IBM"]), &[]).is_empty());
+        assert_eq!(library_files(&s(&["QS400LPQS00WDS", "QDEVTOOLS"]), &s(&["*IBM"]), &[]), s(&["QDEVTOOLS"]));
+    }
+}
+
+#[cfg(test)]
+mod sav_tests {
+    use super::*;
+
+    #[test]
+    fn a_pattern_names_the_directory_entries() {
+        let names: Vec<String> = ["QSYS.LIB", "home", "QOpenSys", "savsys", "rcvdata"].iter().map(|s| (*s).to_string()).collect();
+        let omit = vec!["/QSYS.LIB".to_string(), "/savsys".to_string()];
+        assert_eq!(expand("/", &names, "*", &omit), vec!["/QOpenSys", "/home", "/rcvdata"]);
+        assert_eq!(expand("/", &names, "Q*", &omit), vec!["/QOpenSys"]);
+        assert_eq!(expand("/home", &["a.txt".into(), "b.log".into()], "*.TXT", &[]), vec!["/home/a.txt"]);
     }
 }
