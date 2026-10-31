@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/13          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   ID           
+      Field text  . . . . . . . . . . . . . . . :  Logical block ID             
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDSLT      CHAR            1       1       322        Both     Standard     
+                                                                   label        
+      Field text  . . . . . . . . . . . . . . . :  *SL: 0=No, 1=Yes             
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDLTM      CHAR            1       1       323        Both     Leading      
+                                                                   Tape         
+                                                                   Mark         
+      Field text  . . . . . . . . . . . . . . . :  *LTM: 0=No, 1=Yes            
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDLFSQ     CHAR           10      10       324        Both     Sequence     
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  Sequence number              
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

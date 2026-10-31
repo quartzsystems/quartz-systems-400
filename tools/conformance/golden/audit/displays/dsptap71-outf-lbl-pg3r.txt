@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   TAPLBL              Library  . . . . :   QTEMP            
+ Member . . . . . :   TAPLBL              Record . . . . . :   31               
+ Control  . . . . .                       Column . . . . . :   79               
+ Find . . . . . . .                                                             
+ .8....+....9....+....0....+....1....+....2....+....3....+....4....+....5....+. 
+                                         *ULTRIUM4 0EOF1Q5770SS1710240005FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710240006FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710240007FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710240090FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710240091FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710M.0090FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710M.0091FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710M.0092FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710M.0093FULL01 
+                                         *ULTRIUM4 0EOF1Q5770SS1710M.0094FULL01 
+                                         *ULTRIUM4 0EOF1QFILEUPR         FULL01 
+                                         *ULTRIUM4 0EOF1QFILEIOC         FULL01 
+                                         *ULTRIUM4 0EOF1QFILE            FULL01 
+                                         *ULTRIUM4 0EOF1QSYS2            FULL01 
+                                         *ULTRIUM4 0EOF1QGPL             FULL01 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

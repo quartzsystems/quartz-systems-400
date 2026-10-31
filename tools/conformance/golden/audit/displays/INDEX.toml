@@ -354,3 +354,246 @@ date = "2026-10-31"
 script = "probe-optadd71"
 width = 80
 note = "F12 back: the option blank, the volume kept"
+
+[[golden]]
+name = "dsptap-prompt71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-labels"
+width = 80
+note = "the prompt: DATA *LABELS or *SAVRST, OUTPUT *, *PRINT, *OUTFILE"
+
+[[golden]]
+name = "dsptap71-lbl-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-labels"
+width = 80
+note = "DATA(*LABELS): one display per file, its first page (FULL01, a SAVSYS volume)"
+
+[[golden]]
+name = "dsptap71-lbl-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-labels"
+width = 80
+note = "the same file, page down: the second page"
+
+[[golden]]
+name = "dsptap71-lbl-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-labels"
+width = 80
+note = "page down at the bottom"
+
+[[golden]]
+name = "dsptap71-lbl-next1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-labels"
+width = 80
+note = "Enter: the next file, F14 now shown"
+
+[[golden]]
+name = "dsptap71-lbl-f14"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savrst"
+width = 80
+note = "F14 from the second file: the first again"
+
+[[golden]]
+name = "dsptap71-sav-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savrst"
+width = 80
+note = "DATA(*SAVRST) on a file that is not a save: Display File Information"
+
+[[golden]]
+name = "dsptap71-sav-next1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savrst"
+width = 80
+note = "Enter: the next file"
+
+[[golden]]
+name = "dsptap71-obj-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savobj"
+width = 80
+note = "DATA(*SAVRST) on sequence 11 (QSYS of SAVSYS): Display Saved Objects"
+
+[[golden]]
+name = "dsptap71-obj-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savobj"
+width = 80
+note = "page down"
+
+[[golden]]
+name = "dsptap71-obj-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savobj"
+width = 80
+note = "F11: the text view"
+
+[[golden]]
+name = "dsptap71-obj-opt5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savopt"
+width = 80
+note = "option 5 on the *LIB row: not valid"
+
+[[golden]]
+name = "dsptap71-obj-f16"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savopt"
+width = 80
+note = "F16: Display Save Header, first page"
+
+[[golden]]
+name = "dsptap71-obj-f16-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savopt"
+width = 80
+note = "Display Save Header, second page"
+
+[[golden]]
+name = "dsptap71-outf-lbl-cmd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "OUTPUT(*OUTFILE) to QTEMP: the completion messages"
+
+[[golden]]
+name = "dsptap71-outf-lbl-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "the QTADOUTF records with DSPPFM, columns 1-78"
+
+[[golden]]
+name = "dsptap71-outf-lbl-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "columns 79-156"
+
+[[golden]]
+name = "dsptap71-outf-lbl-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "columns 157-234"
+
+[[golden]]
+name = "dsptap71-outf-lbl-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "columns 235-312"
+
+[[golden]]
+name = "dsptap71-outf-lbl-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "columns 274-351, the end"
+
+[[golden]]
+name = "dsptap71-outf-lbl-ffd-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "DSPFFD of the outfile: QTADOUTF, 16 fields, 351 bytes"
+
+[[golden]]
+name = "dsptap71-outf-lbl-ffd-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "DSPFFD: RDDEVN to RDDENS"
+
+[[golden]]
+name = "dsptap71-outf-lbl-ffd-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "DSPFFD: RDCODE to RDLBID"
+
+[[golden]]
+name = "dsptap71-outf-lbl-ffd-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "DSPFFD: RDSLT to RDLFSQ"
+
+[[golden]]
+name = "dsptap71-outf-lbl-ffd-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-outfile"
+width = 80
+note = "DSPFFD: RDLASQ, RDFILT"
+
+[[golden]]
+name = "dsptap71-outf-lbl-pg3r"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savobj"
+width = 80
+note = "records 31-45, columns 79-156: the library saves"
+
+[[golden]]
+name = "dsptap71-outf-sav-err"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "dsptap71-savopt"
+width = 80
+note = "DATA(*SAVRST) with OUTPUT(*OUTFILE): refused"

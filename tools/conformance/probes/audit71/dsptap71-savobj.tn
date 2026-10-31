@@ -1,0 +1,90 @@
+# CPP audit round 4 on the 7.1 oracle: DSPTAP DATA(*SAVRST) on a file of
+# TAP01's cartridge that holds saved objects (sequence 11), its pages and
+# keys, and the same file to an outfile in QTEMP shown with DSPPFM.
+# Read-only on the tape.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 900000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP DEV(TAP01) SEQNBR(11 11) DATA(*SAVRST)
+key enter
+settle 5000
+snap dsptap71-obj-1
+key f24
+settle 1000
+snap dsptap71-obj-f24
+key enter
+settle 3000
+snap dsptap71-obj-2
+key pagedown
+settle 2000
+snap dsptap71-obj-3
+key pagedown
+settle 2000
+snap dsptap71-obj-4
+key pageup
+settle 2000
+snap dsptap71-obj-3up
+key f11
+settle 2000
+snap dsptap71-obj-f11
+key enter
+settle 3000
+snap dsptap71-obj-5
+key f12
+settle 3000
+snap dsptap71-obj-f12
+key f3
+settle 3000
+snap dsptap71-obj-f3
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01) SEQNBR(11 11) DATA(*SAVRST) OUTPUT(*OUTFILE) OUTFILE(QTEMP/TAPSAV)
+key enter
+settle 5000
+snap dsptap71-outf-sav-cmd
+key reset
+key eraseinput
+type DSPPFM FILE(QTEMP/TAPSAV)
+key enter
+settle 3000
+snap dsptap71-outf-sav-1
+key f20
+settle 1000
+snap dsptap71-outf-sav-2
+key f20
+settle 1000
+snap dsptap71-outf-sav-3
+key f20
+settle 1000
+snap dsptap71-outf-sav-4
+key f20
+settle 1000
+snap dsptap71-outf-sav-5
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01) OUTPUT(*OUTFILE) OUTFILE(QTEMP/TAPLBL)
+key enter
+settle 5000
+key reset
+key eraseinput
+type DSPPFM FILE(QTEMP/TAPLBL)
+key enter
+settle 3000
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-pg2
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-pg3
+key f20
+settle 1000
+snap dsptap71-outf-lbl-pg3r
+key f3
+settle 2000

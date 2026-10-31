@@ -1,0 +1,24 @@
+                        Display Tape Volume Information                         
+                                                                                
+ Device . . . . . . :   TAP01             Volume ID  . . . . :   FULL01         
+ Owner ID . . . . . :                     Density  . . . . . :   *ULTRIUM4      
+ Type . . . . . . . :   *SL               Code . . . . . . . :   *EBCDIC        
+                                                                                
+                                                                                
+ Multivolume indicator  . . . . . . :                                           
+ Multivolume sequence . . . . . . . :   0000000001                              
+                                                                                
+ Date created . . . . . . . . . . . :   MM/DD/YY                                
+ Expiration date  . . . . . . . . . :   *PERM                                   
+                                                                                
+ File type  . . . . . . . . . . . . :                                           
+ Data compacted . . . . . . . . . . :   *YES                                    
+ System where created . . . . . . . :   IBMOS400                                
+                                                                                
+                                                                         Bottom 
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                
+                                                                                

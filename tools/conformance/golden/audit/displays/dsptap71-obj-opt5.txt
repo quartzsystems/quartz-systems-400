@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   QSYS                                           
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Attribute   Owner          Size (K)  Data           
+  5   QSYS        *LIB      PROD        QSYS              13152  YES            
+      DLTPRBENT   *PGM      CPPLE       QSYS                 60  YES            
+      PNLTEST     *PGM                  QSYS                144  YES            
+      QACCLOSE    *PGM                  QSYS                132  YES            
+      QACDEVSL    *PGM                  QSYS                 44  YES            
+      QACEFEVH    *PGM                  QSYS                 40  YES            
+      QACERP1     *PGM                  QSYS                120  YES            
+      QACERP2     *PGM                  QSYS                 60  YES            
+      QACFMH7     *PGM                  QSYS                152  YES            
+      QACGET      *PGM                  QSYS                220  YES            
+      QACINASP    *PGM                  QSYS                 44  YES            
+      QACIOCMP    *PGM                  QSYS                144  YES            
+      QACNFEVH    *PGM                  QSYS                 36  YES            
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+ Option 5 not valid for specified entry.                                        

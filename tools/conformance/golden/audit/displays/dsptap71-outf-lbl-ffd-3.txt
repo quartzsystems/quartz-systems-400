@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/44          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Record type: 1=*LABELS       
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDDEVN     CHAR           10      10        23        Both     Device       
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  Device name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDCTGI     CHAR            6       6        33        Both     Cartridge    
+                                                                   ID           
+      Field text  . . . . . . . . . . . . . . . :  Cartridge ID                 
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDVOLL     CHAR           80      80        39        Both     Volume       
+                                                                   label        
+      Field text  . . . . . . . . . . . . . . . :  Volume label                 
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDDENS     CHAR           10      10       119        Both     Density      
+      Field text  . . . . . . . . . . . . . . . :  Density                      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

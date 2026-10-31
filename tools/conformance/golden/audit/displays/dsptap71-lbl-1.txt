@@ -1,0 +1,24 @@
+                        Display Tape Volume Information                         
+                                                                                
+ Device . . . . . . :   TAP01             Volume ID  . . . . :   FULL01         
+ Owner ID . . . . . :                     Density  . . . . . :   *ULTRIUM4      
+ Type . . . . . . . :   *SL               Code . . . . . . . :   *EBCDIC        
+                                                                                
+                                                                                
+ Data file label  . . . . . . . . . :   QFILEIML                                
+ File sequence  . . . . . . . . . . :   0000000001                              
+                                                                                
+ Record format  . . . . . . . . . . :   U                                       
+ Block attribute  . . . . . . . . . :                                           
+ Record length  . . . . . . . . . . :   00000                                   
+ Block length . . . . . . . . . . . :   032760                                  
+ File length  . . . . . . . . . . . :   0000009286                              
+ Buffer offset  . . . . . . . . . . :                                           
+ Control character  . . . . . . . . :                                           
+                                                                        More... 
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            
+                                                                                

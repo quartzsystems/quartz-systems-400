@@ -1,0 +1,57 @@
+# CPP audit round 4 on the 7.1 oracle: DSPTAP DATA(*SAVRST) on TAP01's
+# cartridge (a SAVSYS volume, FULL01), its pages and function keys, and
+# F14 back on the labels view. Read-only on the tape.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 600000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP DEV(TAP01) DATA(*SAVRST)
+key enter
+settle 5000
+snap dsptap71-sav-1
+key pagedown
+settle 2000
+snap dsptap71-sav-2
+key pagedown
+settle 2000
+snap dsptap71-sav-3
+key pageup
+settle 2000
+snap dsptap71-sav-2up
+key f24
+settle 1000
+snap dsptap71-sav-f24
+key enter
+settle 5000
+snap dsptap71-sav-next1
+key pagedown
+settle 2000
+snap dsptap71-sav-next2
+key enter
+settle 5000
+snap dsptap71-sav-next3
+key f14
+settle 3000
+snap dsptap71-sav-f14
+key f12
+settle 3000
+snap dsptap71-sav-f12
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01) SEQNBR(1 3)
+key enter
+settle 5000
+snap dsptap71-lbl-seq1
+key enter
+settle 3000
+snap dsptap71-lbl-seq2
+key f14
+settle 3000
+snap dsptap71-lbl-f14
+key f12
+settle 3000
+snap dsptap71-lbl-f12

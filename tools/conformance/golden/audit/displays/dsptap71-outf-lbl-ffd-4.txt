@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/63          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDCODE     CHAR            1       1       129        Both     Code         
+      Field text  . . . . . . . . . . . . . . . :  Code: 0=*EBCDIC, 1=*ASCII    
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDTRL1     CHAR           80      80       130        Both     Label        
+                                                                   1            
+                                                                   label        
+      Field text  . . . . . . . . . . . . . . . :  Label 1 label                
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDTRL2     CHAR           80      80       210        Both     Label        
+                                                                   2            
+                                                                   label        
+      Field text  . . . . . . . . . . . . . . . :  Label 2 label                
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDLBID     CHAR           32      32       290        Both     Logical      
+                                                                   block        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,59 @@
+# CPP audit round 4 on the 7.1 oracle: DSPTAP on the cartridge Cody put
+# in TAP01. Read-only on the tape: only DSPTAP, which loads the volume and
+# reads its labels. The prompt with F10, then the default view
+# (DATA(*LABELS)) with its pages and its function keys.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 180000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP
+key f4
+settle 3000
+snap dsptap-prompt71
+key f10
+settle 2000
+snap dsptap-prompt71-f10
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01)
+key enter
+settle 5000
+snap dsptap71-lbl-1
+key f24
+settle 1000
+snap dsptap71-lbl-1-f24
+key f24
+settle 1000
+key pagedown
+settle 2000
+snap dsptap71-lbl-2
+key pagedown
+settle 2000
+snap dsptap71-lbl-3
+key pagedown
+settle 2000
+snap dsptap71-lbl-4
+key pageup
+settle 2000
+snap dsptap71-lbl-3up
+key enter
+settle 3000
+snap dsptap71-lbl-next1
+key pagedown
+settle 2000
+snap dsptap71-lbl-next2
+key enter
+settle 3000
+snap dsptap71-lbl-next3
+key enter
+settle 3000
+snap dsptap71-lbl-next4
+key f3
+settle 3000
+snap dsptap71-lbl-f3

@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/22          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    Number of fields  . . . . . . . . . . . . . :     16                        
+    Record length . . . . . . . . . . . . . . . :    351                        
+    Format text . . . . . . . . . . . . . . . . :  DSPTAP        output file    
+  Field Level Information                                                       
+               Data        Field  Buffer    Buffer        Field    Column       
+    Field      Type       Length  Length  Position        Usage    Heading      
+    RDSYSN     CHAR            8       8         1        Both     System       
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  System name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDDTTM     CHAR           13      13         9        Both     System       
+                                                                   date/time    
+      Field text  . . . . . . . . . . . . . . . :  System date/time - CYYMMDDHH 
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDRECT     CHAR            1       1        22        Both     Record       
+                                                                   Type         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

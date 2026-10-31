@@ -1,0 +1,24 @@
+                            Display File Information                            
+                                                                                
+ Device file:                                                                   
+   Device . . . . . . . . . . . . . . . :   TAP01                               
+   Volume . . . . . . . . . . . . . . . :   FULL01                              
+   File sequence  . . . . . . . . . . . :   1                                   
+   File label . . . . . . . . . . . . . :   QFILEIML                            
+   Expiration date  . . . . . . . . . . :   *PERM                               
+                                                                                
+                                                                                
+ (Installation file for Licensed Internal Code)                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

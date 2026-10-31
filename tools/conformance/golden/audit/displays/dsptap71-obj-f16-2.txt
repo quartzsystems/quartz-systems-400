@@ -1,0 +1,24 @@
+                              Display Save Header                               
+                                                                                
+ Data saved:                                                                    
+   Library  . . . . . . . . . . . . . . :   QSYS                                
+   ASP  . . . . . . . . . . . . . . . . :   1                                   
+   System name  . . . . . . . . . . . . :   S062B175                            
+   System serial number . . . . . . . . :   06-2B175                            
+   Private authorities  . . . . . . . . :   No                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

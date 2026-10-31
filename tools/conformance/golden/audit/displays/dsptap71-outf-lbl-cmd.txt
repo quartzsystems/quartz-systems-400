@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > DSPTAP DEV(TAP01) OUTPUT(*OUTFILE) OUTFILE(QTEMP/TAPLBL)                  
+      Output file TAPLBL created in library QTEMP.                              
+      Member TAPLBL added to output file TAPLBL in library QTEMP.               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

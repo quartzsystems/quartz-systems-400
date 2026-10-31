@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/31          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    RDLASQ     CHAR           10      10       334        Both     Multi-volume 
+                                                                   sequence     
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  Multi-volume sequence number 
+      Coded Character Set Identifier  . . . . . :     37                        
+    RDFILT     CHAR            8       8       344        Both     S/36 File    
+                                                                   type         
+      Field text  . . . . . . . . . . . . . . . :  S/36 File type               
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                              Display Save Header                               
+                                                                                
+ Device file:                                                                   
+   Device . . . . . . . . . . . . . . . :   TAP01                               
+   Volume . . . . . . . . . . . . . . . :   FULL01                              
+   File sequence  . . . . . . . . . . . :   11                                  
+   File label . . . . . . . . . . . . . :   Q5770SS1710M.0001                   
+   Expiration date  . . . . . . . . . . :   *PERM                               
+ Save operation:                                                                
+   Save command . . . . . . . . . . . . :   SAVSYS                              
+   Save date/time . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS                  
+   Data compressed  . . . . . . . . . . :   No                                  
+   Data compacted . . . . . . . . . . . :   Yes                                 
+   Release level  . . . . . . . . . . . :   V7R1M0                              
+   Save format  . . . . . . . . . . . . :   Serial                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   QSYS                                           
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Attribute   Owner          Size (K)  Data           
+      QDBDLFUN    *PGM                  QSYS                 68  YES            
+      QDBDLGRP    *PGM                  QSYS                 80  YES            
+      QDBDLLNK    *PGM                  QSYS                188  YES            
+      QDBDLMGR    *PGM                  QSYS                 80  YES            
+      QDBDLPAN    *PGM                  QSYS                132  YES            
+      QDBDLPDD    *PGM                  QSYS                 44  YES            
+      QDBDLTFI    *PGM                  QSYS                300  YES            
+      QDBDLTFS    *PGM                  QSYS                 56  YES            
+      QDBDLTME    *PGM                  QSYS                148  YES            
+      QDBDLTOM    *PGM      CPPLE       QSYS                100  YES            
+      QDBDLWRK    *PGM                  QSYS                 72  YES            
+      QDBDMGMB    *PGM                  QSYS                 36  YES            
+      QDBDMPFI    *PGM                  QSYS                 44  YES            
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                

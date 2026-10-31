@@ -1,0 +1,48 @@
+# CPP audit round 4 on the 7.1 oracle: Display Saved Objects' option 5 and
+# F16 on TAP01's sequence 11, and the message ID IBM sends for
+# DATA(*SAVRST) with OUTPUT(*OUTFILE). Read-only on the tape.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 900000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP DEV(TAP01) SEQNBR(11 11) DATA(*SAVRST)
+key enter
+settle 5000
+cursor 10 2
+type 5
+key enter
+settle 3000
+snap dsptap71-obj-opt5
+key pagedown
+settle 2000
+snap dsptap71-obj-opt5-2
+key enter
+settle 3000
+snap dsptap71-obj-opt5-back
+key f16
+settle 3000
+snap dsptap71-obj-f16
+key pagedown
+settle 2000
+snap dsptap71-obj-f16-2
+key enter
+settle 3000
+snap dsptap71-obj-f16-back
+key f12
+settle 3000
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01) DATA(*SAVRST) OUTPUT(*OUTFILE) OUTFILE(QTEMP/TAPSAV)
+key enter
+settle 3000
+snap dsptap71-outf-sav-err
+cursor 5 7
+key help
+settle 2000
+snap dsptap71-outf-sav-err-help
+key f12
+settle 2000

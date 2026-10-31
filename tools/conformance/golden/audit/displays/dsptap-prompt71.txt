@@ -1,0 +1,24 @@
+                              Display Tape (DSPTAP)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device . . . . . . . . . . . . .                 Name                          
+ Volume identifier  . . . . . . .   *MOUNTED      Character value, *MOUNTED     
+ File label . . . . . . . . . . .   *ALL                                        
+ Sequence number:                                                               
+   Starting file sequence number    *FIRST        1-16777215, *FIRST            
+   Ending file sequence number  .   *LAST         1-16777215, *ONLY, *LAST      
+ Data type  . . . . . . . . . . .   *LABELS       *LABELS, *SAVRST              
+ Output . . . . . . . . . . . . .   *             *, *PRINT, *OUTFILE           
+ End of tape option . . . . . . .   *REWIND       *REWIND, *UNLOAD              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

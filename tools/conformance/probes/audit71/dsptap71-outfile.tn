@@ -1,0 +1,64 @@
+# CPP audit round 4 on the 7.1 oracle: DSPTAP OUTPUT(*OUTFILE) on TAP01's
+# cartridge into QTEMP, for the labels and for the saves, each outfile
+# shown with DSPPFM and shifted right with F20. Read-only on the tape.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 900000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPTAP DEV(TAP01) OUTPUT(*OUTFILE) OUTFILE(QTEMP/TAPLBL)
+key enter
+settle 5000
+snap dsptap71-outf-lbl-cmd
+key reset
+key eraseinput
+type DSPPFM FILE(QTEMP/TAPLBL)
+key enter
+settle 3000
+snap dsptap71-outf-lbl-1
+key f20
+settle 1000
+snap dsptap71-outf-lbl-2
+key f20
+settle 1000
+snap dsptap71-outf-lbl-3
+key f20
+settle 1000
+snap dsptap71-outf-lbl-4
+key f20
+settle 1000
+snap dsptap71-outf-lbl-5
+key f20
+settle 1000
+snap dsptap71-outf-lbl-6
+key f20
+settle 1000
+snap dsptap71-outf-lbl-7
+key f3
+settle 2000
+key reset
+key eraseinput
+type DSPFFD FILE(QTEMP/TAPLBL)
+key enter
+settle 3000
+snap dsptap71-outf-lbl-ffd-1
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-ffd-2
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-ffd-3
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-ffd-4
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-ffd-5
+key pagedown
+settle 1000
+snap dsptap71-outf-lbl-ffd-6
+key f3
+settle 2000

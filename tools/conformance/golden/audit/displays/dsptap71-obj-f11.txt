@@ -1,0 +1,24 @@
+                             Display Saved Objects                              
+                                                                                
+ Library saved . . . . . . . :   QSYS                                           
+                                                                                
+ Type Options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Object      Type      Text                                                
+      QDBDLFUN    *PGM                                                          
+      QDBDLGRP    *PGM                                                          
+      QDBDLLNK    *PGM                                                          
+      QDBDLMGR    *PGM                                                          
+      QDBDLPAN    *PGM                                                          
+      QDBDLPDD    *PGM                                                          
+      QDBDLTFI    *PGM                                                          
+      QDBDLTFS    *PGM                                                          
+      QDBDLTME    *PGM                                                          
+      QDBDLTOM    *PGM                                                          
+      QDBDLWRK    *PGM                                                          
+      QDBDMGMB    *PGM                                                          
+      QDBDMPFI    *PGM                                                          
+                                                                        More... 
+ F3=Exit   F11=Alternate view   F12=Cancel   F16=Display header                 
+                                                                                
