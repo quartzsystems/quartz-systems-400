@@ -1,0 +1,18 @@
+[package]
+name = "savfmt"
+description = "QS/400 save format: the self-describing save stream, its records, compression and integrity"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+crc.workspace = true
+sha2.workspace = true
+lz4_flex = { version = "=0.14.0", default-features = false, features = ["safe-encode", "safe-decode", "std"] }
+ruzstd = { version = "=0.9.1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

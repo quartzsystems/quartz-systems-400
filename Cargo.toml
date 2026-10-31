@@ -94,6 +94,8 @@ members = [
     "net/lpd",
     "net/mail",
     "net/ftp",
+    # Save and restore: the save stream, the engine.
+    "save/savfmt",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",
