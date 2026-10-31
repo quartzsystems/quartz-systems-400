@@ -137,11 +137,37 @@ impl Source for (Image, Contents) {
 
 // ---------------------------------------------------------------- tape
 
-fn file_label(id: &str, today: Date) -> FileLabel {
+/// How `SAVSYS` writes its files on a tape.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TapeWrite {
+    /// The creation date in the labels.
+    pub today: Date,
+    /// `EXPDATE`.
+    pub expires: Expiry,
+    /// Files that have not expired may be overwritten (`CLEAR`).
+    pub allow_active: bool,
+    /// `ENDOPT` once the last file is written.
+    pub end_opt: EndOpt,
+}
+
+impl TapeWrite {
+    /// Files that never expire, over anything, rewound after.
+    #[must_use]
+    pub fn new(today: Date) -> Self {
+        Self {
+            today,
+            expires: Expiry::None,
+            allow_active: true,
+            end_opt: EndOpt::Rewind,
+        }
+    }
+}
+
+fn file_label(id: &str, w: &TapeWrite) -> FileLabel {
     FileLabel {
         file_id: id.into(),
-        created: Some(today),
-        expires: Expiry::None,
+        created: Some(w.today),
+        expires: w.expires,
         record_format: RecordFormat::Undefined,
         block_length: u32::try_from(BLOCK).expect("small"),
         record_length: u32::try_from(BLOCK).expect("small"),
@@ -155,15 +181,16 @@ fn write_file<D: TapeTransport + ?Sized>(
     seq: u32,
     id: &str,
     data: &[u8],
-    today: Date,
+    w: &TapeWrite,
 ) -> Result<()> {
     let opts = WriteOptions {
         vols: Vec::new(),
         seq: SeqNbr::Number(seq),
-        label: file_label(id, today),
+        label: file_label(id, w),
         unlabeled: false,
-        today: Some(today),
-        allow_active: false,
+        today: Some(w.today),
+        // Only the first file can be in the way: the rest follow it.
+        allow_active: w.allow_active || seq > 1,
         end_opt: EndOpt::Leave,
     };
     let mut more = NoMoreVolumes;
@@ -176,23 +203,35 @@ fn write_file<D: TapeTransport + ?Sized>(
 }
 
 /// Write `img` onto a labeled tape from file 1 on: what `SAVSYS` does.
-/// Files after them are lost, as a save at sequence 1 loses them.
-pub fn write_tape<D: TapeTransport + ?Sized>(t: &mut D, img: &Image, today: Date) -> Result<u32> {
+/// Files after them are lost, as a save at sequence 1 loses them. An
+/// unlabeled or blank volume is refused (`TapeError::NotLabeled`):
+/// `INZTAP` it first, as IBM i requires.
+pub fn write_tape<D: TapeTransport + ?Sized>(t: &mut D, img: &Image, w: &TapeWrite) -> Result<u32> {
     let kind = tape::volume::identify(t)?;
     if !matches!(kind, VolumeKind::Labeled { .. }) {
-        return Err(Error::media(format!(
-            "the volume is {}; initialize it with INZTAP first",
-            kind.id()
-        )));
+        return Err(tape::TapeError::NotLabeled.into());
     }
-    write_file(t, 1, MANIFEST_LABEL, img.manifest.to_text().as_bytes(), today)?;
+    write_file(t, 1, MANIFEST_LABEL, img.manifest.to_text().as_bytes(), w)?;
     let mut seq = 1;
     for (p, d) in &img.files {
         seq += 1;
-        write_file(t, seq, &p.label(), d, today)?;
+        write_file(t, seq, &p.label(), d, w)?;
     }
-    t.rewind().map_err(tape::TapeError::from)?;
+    w.end_opt.apply(t)?;
     Ok(seq)
+}
+
+/// The files on a tape of install media after its manifest and
+/// payloads: a `SAVLIB` or `SAV` written after a `SAVSYS`. Sequence
+/// number and label of each, first volume only.
+pub fn user_files<D: TapeTransport + ?Sized>(t: &mut D) -> Result<Vec<(u32, String)>> {
+    let l = labels(t, None, EndOpt::Rewind)?;
+    Ok(l.files
+        .iter()
+        .filter(|f| f.label.volume_seq <= 1)
+        .map(|f| (f.label.file_seq, f.label.file_id.trim().to_string()))
+        .filter(|(_, id)| id != MANIFEST_LABEL && Payload::from_label(id).is_none())
+        .collect())
 }
 
 fn read_file<D: TapeTransport + ?Sized>(t: &mut D, seq: u32, id: &str) -> Result<Vec<u8>> {
@@ -312,6 +351,17 @@ pub fn recognize_iso<R: ReadAt>(iso: &IsoImage<R>) -> Result<Option<Contents>> {
     Contents::of(m).map(Some)
 }
 
+/// The install media on a mounted optical volume, or `None` (`DSPOPT
+/// DATA(*SAVRST)` on a volume of an image catalog).
+pub fn recognize_volume(v: &Volume) -> Result<Option<Contents>> {
+    if v.stat(manifest::PATH).is_err() {
+        return Ok(None);
+    }
+    let text = v.read_all(manifest::PATH)?;
+    let m = Manifest::parse(&String::from_utf8_lossy(&text))?;
+    Contents::of(m).map(Some)
+}
+
 /// Install media on an ISO 9660 image.
 pub struct IsoSource<R: ReadAt> {
     iso: IsoImage<R>,
@@ -414,7 +464,10 @@ mod tests {
         let mut t = VirtualTape::create(Cursor::new(Vec::new()), &opts).unwrap();
         let img = image(true);
         // Unlabeled volumes are refused.
-        assert!(write_tape(&mut t, &img, today()).is_err());
+        assert!(matches!(
+            write_tape(&mut t, &img, &TapeWrite::new(today())),
+            Err(Error::Tape(tape::TapeError::NotLabeled))
+        ));
         assert!(recognize_tape(&mut t).unwrap_or(None).is_none());
         inztap(
             &mut t,
@@ -427,7 +480,8 @@ mod tests {
         )
         .unwrap();
         assert!(recognize_tape(&mut t).unwrap().is_none());
-        assert_eq!(write_tape(&mut t, &img, today()).unwrap(), 6);
+        assert_eq!(write_tape(&mut t, &img, &TapeWrite::new(today())).unwrap(), 6);
+        assert!(user_files(&mut t).unwrap().is_empty());
         let c = recognize_tape(&mut t).unwrap().unwrap();
         assert!(c.savsys && c.has_os());
         assert_eq!(c.release, release::RELEASE);
@@ -458,6 +512,73 @@ mod tests {
         let other = Arc::new(MemImage::default());
         Volume::create(other.clone(), "DATA01", "", 1 << 20, 1).unwrap();
         assert!(recognize_iso(&IsoImage::open(other).unwrap()).unwrap().is_none());
+        // The same, read on the mounted volume.
+        let c = recognize_volume(&v).unwrap().unwrap();
+        assert!(c.savsys && c.has_os());
+        let plain = Volume::create(Arc::new(MemImage::default()), "DATA02", "", 1 << 20, 1).unwrap();
+        assert!(recognize_volume(&plain).unwrap().is_none());
+    }
+
+    fn labeled(vol: &str) -> VirtualTape<Cursor<Vec<u8>>> {
+        let mut t = VirtualTape::create(Cursor::new(Vec::new()), &VolumeOptions::imgsiz(8, vol)).unwrap();
+        inztap(
+            &mut t,
+            &InzOptions {
+                new_vol: Some(vol.into()),
+                check: Check::No,
+                ..InzOptions::default()
+            },
+        )
+        .unwrap();
+        t
+    }
+
+    #[test]
+    fn files_after_a_system_save_are_the_users() {
+        let mut t = labeled("SAV002");
+        write_tape(&mut t, &image(true), &TapeWrite::new(today())).unwrap();
+        // A SAVLIB and a SAV appended, as the recovery's saves are.
+        for (id, data) in [("MYLIB", vec![7u8; 70_000]), ("QSAVIFS", vec![8u8; 10])] {
+            let opts = WriteOptions {
+                vols: Vec::new(),
+                seq: SeqNbr::End,
+                label: file_label(id, &TapeWrite::new(today())),
+                unlabeled: false,
+                today: Some(today()),
+                allow_active: false,
+                end_opt: EndOpt::Rewind,
+            };
+            let mut more = NoMoreVolumes;
+            let mut w = FileWriter::open(&mut t, &mut more, opts).unwrap();
+            for c in data.chunks(BLOCK) {
+                w.write_block(c).unwrap();
+            }
+            w.finish().unwrap();
+        }
+        let u = user_files(&mut t).unwrap();
+        assert_eq!(u, vec![(7, "MYLIB".to_string()), (8, "QSAVIFS".to_string())]);
+        // Still install media, and its payloads still read.
+        assert!(recognize_tape(&mut t).unwrap().unwrap().savsys);
+        assert_eq!(TapeSource::open(&mut t).unwrap().read(&Payload::SecData).unwrap(), vec![4; 5]);
+    }
+
+    #[test]
+    fn active_files_are_kept_unless_cleared() {
+        let mut t = labeled("SAV003");
+        let perm = TapeWrite {
+            expires: Expiry::Perm,
+            allow_active: false,
+            ..TapeWrite::new(today())
+        };
+        write_tape(&mut t, &image(true), &perm).unwrap();
+        let again = write_tape(&mut t, &image(true), &perm);
+        assert!(matches!(again, Err(Error::Tape(tape::TapeError::ActiveFile { .. }))));
+        let clear = TapeWrite {
+            allow_active: true,
+            ..perm
+        };
+        assert_eq!(write_tape(&mut t, &image(false), &clear).unwrap(), 6);
+        assert!(!recognize_tape(&mut t).unwrap().unwrap().savsys);
     }
 
     #[test]
