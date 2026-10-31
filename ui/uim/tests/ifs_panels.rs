@@ -198,14 +198,15 @@ fn wrklnk_home() {
 }
 
 /// The option refused on an entry: the option stays typed, the message
-/// on the message line.
-fn refused(dir: &str, rows: &[(&str, &str)], complete: bool, at: usize) -> (MapDialog, Options) {
+/// on the message line. The message's text is the system's, so it is
+/// read off the golden's row 24.
+fn refused(golden: &str, dir: &str, rows: &[(&str, &str)], complete: bool, at: usize) -> (MapDialog, Options) {
     let mut d = wrklnk(dir, rows, complete);
     let mut l = links(rows, complete);
     l.rows[at].push(("OPT".into(), "12".into()));
     d.set_list("LNKS", l);
     let o = Options {
-        message: Some(("Specified option number is not allowed.".into(), true)),
+        message: Some((golden_rows(golden)[23].trim().to_string(), true)),
         ..opts()
     };
     (d, o)
@@ -214,14 +215,14 @@ fn refused(dir: &str, rows: &[(&str, &str)], complete: bool, at: usize) -> (MapD
 #[test]
 fn wrklnk_12_root_refused() {
     let g = shipped("QUIWRKLNK");
-    let (d, o) = refused("", &[("/", "DIR")], true, 0);
+    let (d, o) = refused("wrklnk-12-root-refused", "", &[("/", "DIR")], true, 0);
     compare("wrklnk-12-root-refused", &render(&g, "WRKLNK1", &d, &o).unwrap());
 }
 
 #[test]
 fn wrklnk_12_dir_refused() {
     let g = shipped("QUIWRKLNK");
-    let (d, o) = refused("/", ROOT_1, false, 5);
+    let (d, o) = refused("wrklnk-12-dir-refused", "/", ROOT_1, false, 5);
     compare("wrklnk-12-dir-refused", &render(&g, "WRKLNK1", &d, &o).unwrap());
 }
 

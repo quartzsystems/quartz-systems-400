@@ -200,6 +200,16 @@ fn wrkimgclg_matches_the_71_capture() {
 
 /// Rows 1 to 23 of a capture under `audit/displays/` against the
 /// screen, `skip` rows aside, then every row's input fields.
+/// An empty list's text, `(...)`, at the same column on both rows: the
+/// words are IBM's in the capture and ours in the panel.
+fn same_empty_text(golden: &str, ours: &str) -> bool {
+    let paren = |r: &str| {
+        let t = r.trim();
+        (t.len() > 2 && t.starts_with('(') && t.ends_with(')')).then(|| r.len() - r.trim_start().len())
+    };
+    paren(golden).is_some() && paren(golden) == paren(ours)
+}
+
 fn against71(name: &str, s: &uim::Screen, skip: &[usize]) {
     let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../tools/conformance/golden/audit/displays/{name}.txt"));
     let want: Vec<String> = std::fs::read_to_string(&path)
@@ -212,7 +222,7 @@ fn against71(name: &str, s: &uim::Screen, skip: &[usize]) {
     let mut diff = String::new();
     for (i, w) in want.iter().enumerate().take(23) {
         let g = got.get(i).map_or("", |r| r.trim_end());
-        if !skip.contains(&(i + 1)) && g != w {
+        if !skip.contains(&(i + 1)) && g != w && !same_empty_text(w, g) {
             let _ = writeln!(diff, "row {}:\n  want |{w}|\n  got  |{g}|", i + 1);
         }
     }

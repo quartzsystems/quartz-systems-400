@@ -82,6 +82,16 @@ fn golden_fields(attr: &[String]) -> BTreeSet<(usize, usize, usize)> {
     out
 }
 
+/// An empty list's text, `(...)`, at the same column on both rows: the
+/// words are IBM's in the capture and ours in the panel.
+fn same_empty_text(golden: &str, ours: &str) -> bool {
+    let paren = |r: &str| {
+        let t = r.trim();
+        (t.len() > 2 && t.starts_with('(') && t.ends_with(')')).then(|| r.len() - r.trim_start().len())
+    };
+    paren(golden).is_some() && paren(golden) == paren(ours)
+}
+
 /// Rows 1 to 23 of capture `rel` (under the golden root) against the
 /// screen, then its input fields; `skip` rows are left out (a row the
 /// capture's data has and ours does not, said where it is called).
@@ -93,7 +103,7 @@ fn against(rel: &str, s: &Screen, skip: &[usize]) {
         if skip.contains(&(i + 1)) {
             continue;
         }
-        if o.trim_end() != w.trim_end() {
+        if o.trim_end() != w.trim_end() && !same_empty_text(w, o) {
             let _ = write!(diff, "row {:>2}\n  want |{}|\n  got  |{}|\n", i + 1, w.trim_end(), o.trim_end());
         }
     }
