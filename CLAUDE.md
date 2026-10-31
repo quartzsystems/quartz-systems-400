@@ -131,6 +131,37 @@ licpgm/       licensed programs (docs/LICPGM.md)
                 the key at /qs400/keys/system.pub), cpp/lpcmd.rs (the commands) and
                 cpp/lpapi.rs (panel data, API calls); the job's runtime/sysapi/src/lp.rs and
                 work/qsjob/src/panels/licpgm.rs (GO LICPGM, QSZLICPGM)
+save/         save and restore (docs/SAVE_FORMAT.md)
+  savfmt/       the save stream: media header, records (src/record.rs), object descriptors,
+                parts, refs, index and trailer (src/object.rs), chunk compression (codec.rs),
+                the content digest (digest.rs), Writer and Reader with read_index and
+                descriptor_at; tests/ spec tables and torn, truncated and damaged streams
+  saverst/      the engine: image.rs objects as parts (refs zeroed in the stream, typed
+                exports), ids.rs references found on save and patched on restore, save.rs
+                save_library in IBM's save order (order.rs) under save locks with history,
+                restore.rs OPTION/MBROPT/ALWOBJDIF and the rules the oracle settled
+                (tools/conformance/oracle/save/primary/README.md), secdta.rs SAVSECDTA,
+                RSTUSRPRF and RSTAUT, sign.rs signatures and CHKOBJITG's check, hooks.rs
+                the security layer's questions, msg.rs the message IDs. The commands are
+                lic/slic/src/cpp/savcmd.rs (save files, SAV*/RST*, DSPSAVF) and savout.rs
+                (OUTPUT(*OUTFILE) in QSRSAV and QSRRST)
+media/        removable media (docs/MEDIA.md)
+  tape/         TapeTransport and Changer, VirtualTape and VirtualLibrary (src/virt/),
+                StTransport and SgChanger with st/raw.rs the ioctls, IBM standard labels
+                (src/label/), volume operations INZTAP/CHKTAP/DUPTAP and multi-volume files
+                (src/volume/), TAPnn/TAPMLBnn naming and cartridges (src/device/)
+  optical/      ISO 9660 writer and reader with Joliet and Rock Ridge, the hybrid install
+                image (MBR, GPT), writable virtual volumes, OPTnn naming, VolumeSet
+  imgclg/       image catalogs (*IMGCLG) for optical and tape over CatalogFs
+ptf/          PTFs (docs/PTF.md)
+  ptf/          header.rs the PTF header, status.rs the states, package.rs build and open a
+                signed PTF stream, db.rs the PTF database, apply.rs LODPTF/APYPTF/RMVPTF
+                with QRPLOBJ, group.rs signed PTF groups. The service's commands are
+                lic/slic/src/cpp/ptfcmd.rs (the database in QSYS/QSPTFDB, delayed PTFs at IPL)
+service/      service: the problem log (docs/SERVICE.md)
+  prb/          problem entries and statuses, the log (create, list, delete, report) and
+                analyze.rs (QSYSOPR messages, hardware, dumps, ANZPRB). The service side is
+                lic/slic/src/stgsvc/prblog.rs and cpp/prbcmd.rs
 storage/      the object store and the names and code pages it holds
   store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
                 src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
@@ -331,7 +362,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
               SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md,
-              LICPGM.md, SVC_OPEN_QUESTIONS.md, images/
+              LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, images/
 ```
 
 ## Commands
@@ -348,6 +379,9 @@ cargo run -p build -- uki
 cargo run -p build -- disk
 cargo run -p build -- manifest
 cargo run -p build -- lp          # signed product loads from licpgm/products/ into target/images/lp/
+cargo test -p savfmt -p saverst   # the save stream and the save/restore engine
+cargo test -p tape -p optical -p imgclg   # tape, optical, image catalogs
+cargo test -p ptf -p prb          # PTFs, the problem log
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
@@ -461,7 +495,7 @@ otherwise logs go to `target/logs/`.
   `runtime/mi/src/act.rs` (calling into generated code: entries and handlers),
   `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler),
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
-  `AF_PACKET`) and
+  `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls) and
   `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
