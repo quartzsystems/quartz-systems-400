@@ -66,6 +66,9 @@ were answered by hand during the capture, before every job got
 | `987700f7`..`bd9b2ea9` | media devices, image catalogs, saves and restores on virtual tape and optical, multi-volume tape |
 | `d0431e78` | cleanup (`CHGCLNUP`, `STRCLNUP`, `ENDCLNUP`), backup options (`CHGBCKUP`, `DSPBCKUP`, `DSPBCKSTS`), `PRTSYSINF` |
 | `c14cf97f` | `GO SAVE` 20 to 23, `GO RESTORE` 21 to 23, `RUNBCKUP`, the `DSPBCKUP` panels, prompt override values |
+| `a21359ce`, `460a59a3` | `CHKOBJITG` over the trusted keys |
+| `9886d385`..`b0a7d038` | every Phase 11 golden inventoried (`golden/phase11/COVERAGE.md`); prompts, menus and panels compared with pub400's; the prompter's field widths and `PMTCTL` timing |
+| `4918d9fb`, `8e98e32e` | `DLTLICPGM` of a product whose records live in its library; the commands pub400 refuses shipped `*PUBLIC *EXCLUDE` |
 
 ## QEMU
 
