@@ -7,7 +7,7 @@
 
 use super::ctx::Ctx;
 use super::layout;
-use super::screen::{Attr, Field, Screen, Target};
+use super::screen::{Attr, EXT_ENTRY, Field, Screen, Target};
 use crate::model::{BaseType, Display, ListArea, ListColNode, ListColumn, PanelGroup, Shift};
 
 /// A column as laid out.
@@ -86,6 +86,13 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         }
     }
     row += head_rows + usize::from(area.headsep);
+
+    // The extended action entry: the option and the `EXTACT` columns
+    // as input fields on the first row under the headings.
+    if area.extact && row < last {
+        extended_entry(ctx, area, &cols, s, row);
+        row += 1;
+    }
 
     // The entries.
     let entries = last.saturating_sub(row);
@@ -184,6 +191,47 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
     s.list_shown.insert(area.listdef.clone(), entries);
     let more = state.top + entries < state.count() || (!state.complete && shown >= entries);
     super::indicator(s, last, !more);
+}
+
+/// R27: the extended action entry's row: the option field where the
+/// entries have theirs, and each `EXTACT` column's field at its start,
+/// as wide as its field; the values are the dialog's.
+fn extended_entry(ctx: &Ctx, area: &ListArea, cols: &[Col], s: &mut Screen, row: usize) {
+    let limit = s.limit();
+    let values = ctx.dialog.ext_entry(&area.listdef);
+    let value = |var: &str| {
+        values
+            .iter()
+            .find(|(v, _)| v.eq_ignore_ascii_case(var))
+            .map(|(_, x)| x.clone())
+            .unwrap_or_default()
+    };
+    for c in cols {
+        let raw = value(&c.column.var);
+        if c.option {
+            let raw = ctx.dialog.option(&area.listdef, EXT_ENTRY).unwrap_or(raw);
+            let col = c.start + (c.width - c.field) / 2;
+            let target = Target::ListOption {
+                list: area.listdef.clone(),
+                row_index: EXT_ENTRY,
+            };
+            let mut f = field(row, col, c.field, raw, target, c.column);
+            if ctx.dialog.ext_error(&area.listdef) {
+                f.attr = Attr::Reverse;
+            }
+            s.field(f);
+        } else if c.column.extact && c.start <= limit {
+            let len = c.field.min(limit + 1 - c.start);
+            let target = Target::ListCell {
+                list: area.listdef.clone(),
+                row_index: EXT_ENTRY,
+                var: c.column.var.clone(),
+            };
+            let mut f = field(row, c.start, len, raw, target, c.column);
+            f.usage = crate::model::Usage::Inout;
+            s.field(f);
+        }
+    }
 }
 
 /// R9: the heading rows from `head_top`, a group's heading over its

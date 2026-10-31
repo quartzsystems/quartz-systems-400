@@ -196,6 +196,37 @@ pub fn data_var(data: &stg::proto::Sys2Data, name: &str) -> String {
         .unwrap_or_default()
 }
 
+/// The command of an option typed on a list's extended action entry,
+/// with the entry's values: a parameter the entry left blank (`KWD()`,
+/// `KWD(/)`) is left out for the prompt to ask, and a name typed
+/// without its library goes to `*CURLIB`, as a create command's
+/// default.
+#[must_use]
+pub fn ext_command(d: &UimDialog, c: &uim::engine::Choice, text: &str) -> String {
+    let full = d.substitute(text, Some((&c.list, c.row)));
+    let mut out = String::new();
+    for word in full.split(' ') {
+        if let Some(open) = word.find('(')
+            && word.ends_with(')')
+        {
+            let value = &word[open + 1..word.len() - 1];
+            if value.is_empty() || value == "/" {
+                continue;
+            }
+            if let Some(name) = value.strip_prefix('/') {
+                out.push_str(&word[..open]);
+                out.push_str("(*CURLIB/");
+                out.push_str(name);
+                out.push_str(") ");
+                continue;
+            }
+        }
+        out.push_str(word);
+        out.push(' ');
+    }
+    out.trim_end().to_string()
+}
+
 /// Whether the job shows panels: it is interactive and the command
 /// did not ask for printed output or an outfile.
 #[must_use]
@@ -275,4 +306,43 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
 #[must_use]
 pub fn shows_host_panels(host: &Host) -> bool {
     host.interactive() && host.display.borrow().is_some()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use uim::engine::Choice;
+    use uim::render::EXT_ENTRY;
+
+    use super::ext_command;
+    use crate::display::uim::UimDialog;
+
+    fn entry(values: &[(&str, &str)]) -> (UimDialog, Choice) {
+        let c = uim::compile(":PNLGRP.\n:EPNLGRP.\n", &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let mut d = UimDialog::new(Rc::new(c.group.expect("a group")), "QS400");
+        for (k, v) in values {
+            d.list_mut("L").set_ext(k, v);
+        }
+        let c = Choice {
+            list: "L".into(),
+            row: EXT_ENTRY,
+            option: "1".into(),
+            action: None,
+        };
+        (d, c)
+    }
+
+    #[test]
+    fn add_entry_commands() {
+        let text = "?CRTCLS CLS(&LIB./&CLS.) TEXT(&TEXT.)";
+        let (d, c) = entry(&[("CLS", "MINE"), ("LIB", "QGPL")]);
+        assert_eq!(ext_command(&d, &c, text), "?CRTCLS CLS(QGPL/MINE)");
+        let (d, c) = entry(&[("CLS", "MINE")]);
+        assert_eq!(ext_command(&d, &c, text), "?CRTCLS CLS(*CURLIB/MINE)");
+        let (d, c) = entry(&[]);
+        assert_eq!(ext_command(&d, &c, text), "?CRTCLS");
+        let (d, c) = entry(&[("VOL", "VOL01")]);
+        assert_eq!(ext_command(&d, &c, "?ADDOPTCTG ?-VOL(&VOL.)"), "?ADDOPTCTG ?-VOL(VOL01)");
+    }
 }

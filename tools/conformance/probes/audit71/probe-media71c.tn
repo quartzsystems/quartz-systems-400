@@ -1,0 +1,20 @@
+# CPP audit round 3 on the 7.1 oracle: the entries of the one image
+# catalog. The first run also took ids-dsptap-notready71 (DSPTAP of
+# TAP01, F1 on its message). Read-only.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+key reset
+key eraseinput
+cursor 18 7
+type WRKIMGCLGE IMGCLG(JAVA8)
+key enter
+settle 5000
+snap wrkimgclge71
+key f3
+settle 2000

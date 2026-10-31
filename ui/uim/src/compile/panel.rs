@@ -499,7 +499,8 @@ impl Build {
             help,
             confirm,
             usrexit: self.action(el, "USREXIT"),
-            actfor: self.choice(el, "ACTFOR", &["LIST", "ALL"]),
+            actfor: self.choice(el, "ACTFOR", &["BOTH", "LISTE", "EXTACT"]),
+            extenter: self.action(el, "EXTENTER"),
             ret: self.u32(el, "RETURN"),
             varupd: self.varupd(el, "VARUPD"),
             entermsg: self.upper(el, "ENTERMSG"),
@@ -531,6 +532,7 @@ impl Build {
             atcol: self.u32(el, "ATCOL"),
             ifvar,
             hilite: self.flag(el, "HILITE"),
+            extact: self.flag(el, "EXTACT"),
             heading: self.spans(&el.children),
             line: line_u32(el.line),
         })

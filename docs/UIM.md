@@ -83,8 +83,8 @@ is a diagnostic, never a panic.
 | `:DATASLT.` | `:EDATASLT.` | **VAR** HELP USAGE NAME DISPLAY REQUIRED CSRLOC SLTTYPE NOCHECK | model |
 | `:DATASLTC.` | leaf | **VALUE** HELP COND DISPLAY | model |
 | `:LIST.` | `:ELIST.` | **DEPTH LISTDEF** VIEWS ACTOR EXTACT MAXHEAD PARMS SCROLL BOTINST ENTER LAYOUT SELECT ACTLEN HELP COMPACT HEADSEP | model (`COMPACT` and `HEADSEP` are ours) |
-| `:LISTACT.` | leaf | OPTION ENTER HELP CONFIRM USREXIT ACTFOR RETURN VARUPD ENTERMSG | model |
-| `:LISTCOL.` | leaf | **VAR USAGE** MAXWIDTH HELP NAME DISPLAY DSPCOL NOGUI AUTOSKIP MINWIDTH ATCOL IFVAR HILITE | model (`ATCOL`, `IFVAR` and `HILITE` are ours) |
+| `:LISTACT.` | leaf | OPTION ENTER HELP CONFIRM USREXIT ACTFOR RETURN VARUPD ENTERMSG EXTENTER | model (`ACTFOR` `BOTH`, `LISTE`, `EXTACT`) |
+| `:LISTCOL.` | leaf | **VAR USAGE** MAXWIDTH HELP NAME DISPLAY DSPCOL NOGUI AUTOSKIP MINWIDTH ATCOL IFVAR HILITE EXTACT | model (`ATCOL`, `IFVAR` and `HILITE` are ours) |
 | `:LISTGRP.` | `:ELISTGRP.` | COL HELP NOGUI | model |
 | `:LISTVIEW.` | empty | **COLS** LAYOUT | model |
 | `:MENU.` | `:EMENU.` | **DEPTH** SCROLL BOTSEP TOPSEP OPTIONS HELP | model |
@@ -280,6 +280,13 @@ source lines (`ipc::Wire`: `Vec<SourceLine>`, each `seq` u32, `text`,
 field by field, enums as a one-byte tag; `ui/uim/src/payload/codec.rs`
 fixes the tags). A reader skips tags it does not know.
 
+Record 2 follows the model field for field, so a model field changes
+the record: the extended action entry (R27) added `extenter` after
+`actfor` in `ListAction` and `extact` after `hilite` in `ListColumn`,
+as `headsep` was added to `ListArea` before it. A `*PNLGRP` made by an
+older build is made again from its source (the shipped groups are
+created from theirs by `osobjects` and `build lp`).
+
 ### `PnlgrpHdr` (64 bytes)
 
 | Offset | Size | Field | Notes |
@@ -347,6 +354,7 @@ or 132) and the last usable column is `W-1`.
 | R24 | A pop-up panel (`DEPTH` under 24 or `WIDTH` under 80) is laid out at its own size and drawn in a box over the panel under it: top border row 2, the box centered, a row of dots above, colons at the sides, `:` dots `:` below; one attribute column inside each side, so panel column `c` is screen column `left + 1 + c` and panel row `r` screen row `2 + r`. The panel under it keeps its texts outside the box. | uim-position-window (a 10 by 74 panel: borders at columns 2 and 79, rows 2 and 13) |
 | R25 | In a pop-up window an input data item has no colon: its leaders end on the dot before the colon column and its field starts two columns past it (`C+2`; an output value is at `C+4`). On a full panel R14 holds: the leaders end in a dot at the colon column and the field is at `C+4` (wrkdevd, edtobjaut). | uim-position-window `Position to` 32, `Type` 34 |
 | R26 | An option no `:LISTACT.` has: the field shows underlined and reversed and the message line says so; every such entry is marked, and the page shows the first. | uim-option-not-valid (attribute 0x25 on both fields) |
+| R27 | The extended action entry (`:LIST EXTACT=YES`): the first row under the headings (and under `HEADSEP`'s blank row) holds the option field where the entries have theirs and, for each `:LISTCOL EXTACT=YES`, an input field at the column's start as wide as its field; nothing else. The entries start on the row after it, so an empty list's text is two rows below it. The cursor starts on its option. | wrkoptvol 11 (option 2 wide at 2, volume 12 at 7), wrkoptvol71, wrkoptvol-ext71, wrkimgclg71 9, wrkimgclge71 12 (`*AVAIL` in its index field), wrkcls 7, wrkjobd 8, wrkbnddir 9, wrklib 10, wrksbsd 8, uim-wrkusrprf 9 |
 
 Three additions of ours serve the TCP/IP configuration displays
 (`ui/uim/tests/tcp_panels.rs`): `:LIST HEADSEP` puts a blank row
@@ -435,6 +443,17 @@ dialog and `show(&mut impl Terminal, panel)` runs it; the job's
 - `TOP`/`BOTTOM` (F17/F18 where a key list binds them) move every list.
 - A menu item with `ACTION='HELP module'` shows that module and the
   menu stays.
+- The extended action entry (R27) is a pseudo entry of its list
+  (`UimList::ext`, `ext_option`): what is typed on it stays there, not
+  in the entries. Its option comes back first among the `Options`, as a
+  `Choice` whose `row` is `EXT_ENTRY` (`is_ext`), with the `:LISTACT.`'s
+  `EXTENTER` action, else its `ENTER`; `Engine::row` and `substitute`
+  with `EXT_ENTRY` give the entry's values. `ACTFOR=LISTE` options are
+  refused on it and `ACTFOR=EXTACT` options on the entries, both as
+  R26. The option is blanked as the choices are returned; the values
+  stay, as IBM's do after F12 on the prompt an option opened. A value
+  left blank drops its parameter from the command, and a name without
+  its library goes to `*CURLIB` (`work/qsjob/src/panels::ext_command`).
 - With `incomplete_returns`, paging past the end of a list that is not
   complete (`QUISETLA ... MORE`) returns `Event::More(list)` to the
   caller (the APIs' -6) instead of stopping.

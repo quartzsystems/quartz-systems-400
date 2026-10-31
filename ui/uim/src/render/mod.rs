@@ -28,7 +28,7 @@ pub use print::render_print;
 pub use window::{frame, is_window, place, place_popup, render_window};
 pub use layout::options_prompt;
 pub use list::{position_columns, position_var};
-pub use screen::{Attr, Field, HelpArea, More, Screen, Target, Text};
+pub use screen::{Attr, EXT_ENTRY, Field, HelpArea, More, Screen, Target, Text};
 
 use ctx::Ctx;
 

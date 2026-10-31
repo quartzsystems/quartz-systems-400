@@ -7,6 +7,9 @@
 //! row), and every panel against goldens of our own rendering under
 //! `tests/golden/media/` (`QS400_UPDATE_GOLDEN=1` rewrites them).
 
+#[path = "wmcommon/mod.rs"]
+mod wmcommon;
+
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -76,8 +79,8 @@ fn wrkimgclg_matches_the_capture() {
         .map(|l| l.trim_end().to_string())
         .collect();
     let mut d = MapDialog::new();
-    // The blank row option 1 creates from.
-    d.set_list("CLGS", list(&[&[("OPT", ""), ("CLG", "")]]));
+    // Option 1 creates from the add entry on row 9 (R27).
+    d.set_list("CLGS", list(&[]));
     let s = render(&group(), "WRKIMGCLG", &d, &opts()).unwrap();
     let got = s.text_rows();
     let mut diff = String::new();
@@ -159,4 +162,38 @@ fn cartridges_and_library_status() {
     let rows = golden("WRKMLBSTS", &d);
     has(&rows, "Work with Media Library Status");
     has(&rows, "6=Deallocate resource");
+}
+
+/// `WRKIMGCLG` with the 7.1 oracle's one catalog
+/// (`audit/displays/wrkimgclg71`): the add entry on row 9, the
+/// catalog under it. Row 10's text is left out: 7.1 shows the ASP
+/// threshold (`*CALC`) two columns into its column, where every other
+/// list puts a value at the column's start, and pub400 lists no
+/// catalog to show what 7.5 does; its fields are compared.
+#[test]
+fn wrkimgclg_matches_the_71_capture() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/golden/audit/displays/wrkimgclg71.txt");
+    let want: Vec<String> = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("\r\n", "\n")
+        .lines()
+        .map(|l| l.trim_end().to_string())
+        .collect();
+    let mut d = MapDialog::new();
+    d.set_list(
+        "CLGS",
+        list(&[&[("CLG", "JAVA8"), ("CLGSTS", "Not ready"), ("CLGTYPE", "Optical"), ("CLGASP", "*CALC")]]),
+    );
+    let s = render(&group(), "WRKIMGCLG", &d, &opts()).unwrap();
+    let got = s.text_rows();
+    let mut diff = String::new();
+    for (i, w) in want.iter().enumerate().take(23).filter(|(i, _)| *i != 9) {
+        let g = got.get(i).map_or("", |r| r.trim_end());
+        if g != w {
+            let _ = writeln!(diff, "row {}:\n  want |{w}|\n  got  |{g}|", i + 1);
+        }
+    }
+    assert!(diff.is_empty(), "wrkimgclg71 differs:\n{diff}");
+    wmcommon::fields_on_row("audit/displays/wrkimgclg71", &s, 9);
+    wmcommon::fields_on_row("audit/displays/wrkimgclg71", &s, 10);
 }

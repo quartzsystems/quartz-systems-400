@@ -273,3 +273,84 @@ date = "2026-10-31"
 script = "probe-ffd-qamod"
 width = 80
 note = "DSPFFD QSYS/QAMODFAF page 1: DSPOPT DATA(*FILATR), format QAMODFA"
+
+[[golden]]
+name = "wrkmlbsts71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71b"
+width = 80
+note = "WRKMLBSTS: the box has no media library"
+
+[[golden]]
+name = "wrkimgclg71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71b"
+width = 80
+note = "WRKIMGCLG with one optical catalog, not ready; the add entry on row 9"
+
+[[golden]]
+name = "wrkdevd-tapmlb71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71b"
+width = 80
+note = "WRKDEVD *TAPMLB: none"
+
+[[golden]]
+name = "wrklnk-qasp01"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71b"
+width = 80
+note = "/dev/QASP01 holds no UDFS, so no DSPUDFS capture"
+
+[[golden]]
+name = "ids-dsptap-notready71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71c"
+width = 80
+note = "DSPTAP DEV(TAP01) with no cartridge: CPF6760 (first run of the script)"
+
+[[golden]]
+name = "wrkimgclge71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-media71c"
+width = 80
+note = "WRKIMGCLGE of the one catalog: the add entry with *AVAIL in its index field"
+
+[[golden]]
+name = "wrkoptvol-ext71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-optadd71"
+width = 80
+note = "WRKOPTVOL with 1 and a volume typed on the add entry"
+
+[[golden]]
+name = "wrkoptvol-add-prompt71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-optadd71"
+width = 80
+note = "F4 on it: ADDOPTCTG's prompt, the volume not shown"
+
+[[golden]]
+name = "wrkoptvol-add-back71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-10-31"
+script = "probe-optadd71"
+width = 80
+note = "F12 back: the option blank, the volume kept"

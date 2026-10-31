@@ -8,7 +8,7 @@
 
 mod wmcommon;
 
-use wmcommon::{compare, golden, shipped};
+use wmcommon::{compare, fields_on_row, golden, shipped};
 use uim::render::{ListState, MapDialog, Options, render};
 
 /// A complete list from rows of `(variable, value)` pairs.
@@ -499,16 +499,12 @@ fn dspsbsd_7_rtge() {
     compare(&golden("dspsbsd-7-rtge"), &sbsd_screen("RTGES", &d));
 }
 
-/// An object list whose first entry is the blank line option 1 types
-/// a new name on.
+/// An object list; option 1 types a new name on its add entry (R27).
 fn objects(var: &'static str, items: &[(&'static str, &'static str)]) -> Vec<Vec<(&'static str, &'static str)>> {
-    let mut rows = vec![vec![(var, ""), ("LIB", ""), ("TEXT", "")]];
-    rows.extend(
-        items
-            .iter()
-            .map(|(n, t)| vec![(var, *n), ("LIB", "QGPL"), ("TEXT", *t)]),
-    );
-    rows
+    items
+        .iter()
+        .map(|(n, t)| vec![(var, *n), ("LIB", "QGPL"), ("TEXT", *t)])
+        .collect()
 }
 
 #[test]
@@ -532,6 +528,7 @@ fn wrkjobd() {
     d.set_list("JOBDS", partial(&rows));
     let s = render(&shipped("QUIWRKJOBD"), "WRKJOBD", &d, &opts("SYSNAME")).expect("render");
     compare(&golden("wrkjobd"), &s);
+    fields_on_row("verified/pub400/wrkjobd", &s, 8);
 }
 
 fn jobd_dialog() -> MapDialog {
@@ -605,6 +602,7 @@ fn wrkcls() {
     d.set_list("CLASSES", partial(&rows));
     let s = render(&shipped("QUIWRKCLS"), "WRKCLS", &d, &opts("SYSNAME")).expect("render");
     compare(&golden("wrkcls"), &s);
+    fields_on_row("verified/pub400/wrkcls", &s, 7);
 }
 
 #[test]

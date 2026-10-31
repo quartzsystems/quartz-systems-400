@@ -49,6 +49,15 @@ pub trait Dialog {
     fn option_error(&self, _list: &str, _index: usize) -> bool {
         false
     }
+    /// The values on a list's extended action entry (`:LIST EXTACT`),
+    /// the option column's included; blank when empty.
+    fn ext_entry(&self, _list: &str) -> Vec<(String, String)> {
+        Vec::new()
+    }
+    /// Whether the option on the extended action entry is not valid.
+    fn ext_error(&self, _list: &str) -> bool {
+        false
+    }
 }
 
 /// A dialog from maps, for tests and simple callers.
@@ -57,6 +66,7 @@ pub struct MapDialog {
     vars: BTreeMap<String, String>,
     lists: BTreeMap<String, ListState>,
     conds: BTreeMap<String, bool>,
+    exts: BTreeMap<String, Vec<(String, String)>>,
 }
 
 impl MapDialog {
@@ -76,6 +86,18 @@ impl MapDialog {
     /// Set a list.
     pub fn set_list(&mut self, name: &str, list: ListState) -> &mut Self {
         self.lists.insert(name.to_ascii_uppercase(), list);
+        self
+    }
+
+    /// Set a list's extended action entry.
+    pub fn set_ext(&mut self, list: &str, values: &[(&str, &str)]) -> &mut Self {
+        self.exts.insert(
+            list.to_ascii_uppercase(),
+            values
+                .iter()
+                .map(|(k, v)| (k.to_ascii_uppercase(), (*v).to_string()))
+                .collect(),
+        );
         self
     }
 
@@ -100,5 +122,12 @@ impl Dialog for MapDialog {
             .get(&name.to_ascii_uppercase())
             .copied()
             .unwrap_or(false)
+    }
+
+    fn ext_entry(&self, list: &str) -> Vec<(String, String)> {
+        self.exts
+            .get(&list.to_ascii_uppercase())
+            .cloned()
+            .unwrap_or_default()
     }
 }

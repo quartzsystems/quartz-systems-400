@@ -1,0 +1,28 @@
+# CPP audit round 3 on the 7.1 oracle: WRKOPTVOL's extended action
+# entry. Option 1 and a volume typed on it, then F4: the command the
+# option prompts. F12 leaves the prompt without running it. The box has
+# no optical media library, so nothing could be added either way.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type WRKOPTVOL
+key enter
+settle 5000
+cursor 11 2
+type 1
+cursor 11 7
+type QSTESTVOL
+snap wrkoptvol-ext71
+key f4
+settle 3000
+snap wrkoptvol-add-prompt71
+key f12
+settle 2000
+snap wrkoptvol-add-back71
+key f3
+settle 2000

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   CPF6760                                             
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Device TAP01 not ready.                                    
+                                                                                
+ Cause . . . . . :                                                              
+     -- The tape may not be loaded.                                             
+     -- The tape may have been a cleaning cartridge.                            
+     -- If the device is a tape media library device, then the cartridge may    
+   not have loaded successfully.                                                
+     -- A virtual volume could not be automatically mounted because it is       
+   already mounted in a different device.                                       
+ Recovery  . . . :   Do one of the following:                                   
+     -- If the device is a reel tape drive, make sure the tape is loaded and    
+   the online light is on.                                                      
+     -- If the tape device is a cartridge tape drive, make sure that the drive  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F1=Help   F3=Exit   F6=Print      F9=Display message details                   
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

@@ -18,7 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
 use crate::model::{Key, PanelGroup, SearchTopic};
-use crate::render::{Dialog, ListState, Options, Screen};
+use crate::render::{Dialog, EXT_ENTRY, ListState, Options, Screen};
 
 pub use show::Event;
 
@@ -45,9 +45,42 @@ pub struct UimList {
     pub subset: Vec<(String, String)>,
     /// The entry the API's `SAME` positioning refers to.
     pub current: Option<usize>,
+    /// The extended action entry's values (`:LIST EXTACT`), by column
+    /// variable.
+    pub ext: Vec<(String, String)>,
+    /// The option typed on the extended action entry.
+    pub ext_option: Option<String>,
+    /// The extended action entry's option is not valid.
+    pub ext_error: bool,
 }
 
 impl UimList {
+    /// Blank the extended action entry: its option and its values.
+    pub fn clear_ext(&mut self) {
+        self.ext.clear();
+        self.ext_option = None;
+        self.ext_error = false;
+    }
+
+    /// One value of the extended action entry, blank when unset.
+    #[must_use]
+    pub fn ext_value(&self, var: &str) -> String {
+        self.ext
+            .iter()
+            .find(|(v, _)| v.eq_ignore_ascii_case(var))
+            .map(|(_, x)| x.clone())
+            .unwrap_or_default()
+    }
+
+    /// Set one value of the extended action entry.
+    pub fn set_ext(&mut self, var: &str, value: &str) {
+        let var = var.to_ascii_uppercase();
+        match self.ext.iter_mut().find(|(v, _)| *v == var) {
+            Some(cell) => cell.1 = value.to_string(),
+            None => self.ext.push((var, value.to_string())),
+        }
+    }
+
     /// Give every entry a handle.
     pub fn sync_handles(&mut self) {
         if self.next_handle == 0 {
@@ -168,6 +201,15 @@ pub struct Choice {
     pub option: String,
     /// The `:LISTACT.` it matched, with its action.
     pub action: Option<crate::model::Action>,
+}
+
+impl Choice {
+    /// Whether the option was typed on the extended action entry
+    /// (`row` is then [`EXT_ENTRY`]).
+    #[must_use]
+    pub fn is_ext(&self) -> bool {
+        self.row == EXT_ENTRY
+    }
 }
 
 /// What the operator did that the caller must act on.
@@ -418,6 +460,9 @@ impl Dialog for Engine {
 
     fn option(&self, list: &str, index: usize) -> Option<String> {
         let l = self.lists.get(&list.to_ascii_uppercase())?;
+        if index == EXT_ENTRY {
+            return l.ext_option.clone();
+        }
         let real = *l.visible().get(index)?;
         l.options.get(&real).cloned()
     }
@@ -427,6 +472,19 @@ impl Dialog for Engine {
             .get(&list.to_ascii_uppercase())
             .and_then(|l| l.visible().get(index).map(|r| l.errors.contains(r)))
             .unwrap_or(false)
+    }
+
+    fn ext_entry(&self, list: &str) -> Vec<(String, String)> {
+        self.lists
+            .get(&list.to_ascii_uppercase())
+            .map(|l| l.ext.clone())
+            .unwrap_or_default()
+    }
+
+    fn ext_error(&self, list: &str) -> bool {
+        self.lists
+            .get(&list.to_ascii_uppercase())
+            .is_some_and(|l| l.ext_error)
     }
 }
 
@@ -563,12 +621,19 @@ impl Engine {
         self.list_mut(name).rows.push(row);
     }
 
-    /// A list entry's variables.
+    /// A list entry's variables; [`EXT_ENTRY`] is the extended action
+    /// entry's.
     #[must_use]
     pub fn row(&self, list: &str, index: usize) -> Vec<(String, String)> {
         self.lists
             .get(&list.to_ascii_uppercase())
-            .and_then(|l| l.rows.get(index).cloned())
+            .and_then(|l| {
+                if index == EXT_ENTRY {
+                    Some(l.ext.clone())
+                } else {
+                    l.rows.get(index).cloned()
+                }
+            })
             .unwrap_or_default()
     }
 

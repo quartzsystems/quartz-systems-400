@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use super::{CMDLINE_VAR, Choice, Engine, EngineError, Response, Terminal, msgid};
 use crate::model::{Action, Area, DataNode, Key, KeyItem, ListArea, MenuOption, Panel};
-use crate::render::{Field, Screen, Target};
+use crate::render::{EXT_ENTRY, Field, Screen, Target};
 
 /// What a show ends with: a response, or a request for more entries of
 /// an incomplete list (only with `incomplete_returns`).
@@ -102,6 +102,13 @@ impl Engine {
                         continue;
                     }
                     let choices = self.choices(panel);
+                    // The add entry's option is the caller's now; its
+                    // values stay for the next show.
+                    for l in Self::list_areas(panel) {
+                        if let Some(list) = self.lists.get_mut(&l.listdef) {
+                            list.ext_option = None;
+                        }
+                    }
                     if !choices.is_empty() {
                         match self.confirm(term, panel, &choices)? {
                             Some(Response::Cancel) => continue,
@@ -284,6 +291,19 @@ impl Engine {
                         self.set(name, value);
                     }
                 }
+                Target::ListOption { list, row_index } if *row_index == EXT_ENTRY => {
+                    let l = self.list_mut(list);
+                    l.ext_error = false;
+                    let typed = value.trim();
+                    l.ext_option = (!typed.is_empty()).then(|| typed.to_string());
+                }
+                Target::ListCell {
+                    list,
+                    row_index,
+                    var,
+                } if *row_index == EXT_ENTRY => {
+                    self.list_mut(list).set_ext(var, value);
+                }
                 Target::ListOption { list, row_index } => {
                     let l = self.list_mut(list);
                     let Some(real) = l.visible().get(*row_index).copied() else {
@@ -357,6 +377,28 @@ impl Engine {
             let Some(list) = self.list_ref(&l.listdef) else {
                 continue;
             };
+            // The extended action entry's option comes first, with its
+            // `EXTENTER` action.
+            if l.extact
+                && let Some(option) = &list.ext_option
+            {
+                let action = l
+                    .actions
+                    .iter()
+                    .find(|a| {
+                        a.for_ext()
+                            && a.option
+                                .as_deref()
+                                .is_some_and(|o| o.eq_ignore_ascii_case(option))
+                    })
+                    .and_then(|a| a.ext_action().cloned());
+                out.push(Choice {
+                    list: l.listdef.clone(),
+                    row: EXT_ENTRY,
+                    option: option.clone(),
+                    action,
+                });
+            }
             let visible: BTreeSet<usize> = list.visible().into_iter().collect();
             for (row, option) in &list.options {
                 if !visible.contains(row) {
@@ -386,15 +428,27 @@ impl Engine {
     fn validate(&mut self, panel: &Panel) -> bool {
         let mut ok = true;
         for l in Self::list_areas(panel) {
-            let known: Vec<String> = l
-                .actions
-                .iter()
-                .filter_map(|a| a.option.as_ref().map(|o| o.to_ascii_uppercase()))
-                .collect();
-            if known.is_empty() {
+            let options = |pick: fn(&crate::model::ListAction) -> bool| -> Vec<String> {
+                l.actions
+                    .iter()
+                    .filter(|a| pick(a))
+                    .filter_map(|a| a.option.as_ref().map(|o| o.to_ascii_uppercase()))
+                    .collect()
+            };
+            let known = options(crate::model::ListAction::for_entries);
+            let known_ext = options(crate::model::ListAction::for_ext);
+            if known.is_empty() && known_ext.is_empty() {
                 continue;
             }
             let list = self.list_mut(&l.listdef);
+            // R27: an option not valid on the extended action entry.
+            if l.extact
+                && let Some(o) = &list.ext_option
+                && !known_ext.contains(&o.to_ascii_uppercase())
+            {
+                list.ext_error = true;
+                ok = false;
+            }
             let bad: Vec<usize> = list
                 .options
                 .iter()
@@ -437,7 +491,7 @@ impl Engine {
                 };
                 let rows: BTreeSet<usize> = choices
                     .iter()
-                    .filter(|c| c.list == l.listdef && c.option.eq_ignore_ascii_case(opt))
+                    .filter(|c| !c.is_ext() && c.list == l.listdef && c.option.eq_ignore_ascii_case(opt))
                     .map(|c| c.row)
                     .collect();
                 if rows.is_empty() || self.group.panel(confirm).is_none() {

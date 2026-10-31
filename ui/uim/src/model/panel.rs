@@ -416,7 +416,8 @@ pub struct ListArea {
     pub views: Option<u32>,
     /// `ACTOR`: `UIM` or `CALLER`.
     pub actor: Option<String>,
-    /// `EXTACT`: extended action entry.
+    /// `EXTACT`: the extended action entry, a blank entry under the
+    /// headings to type an option and the `EXTACT` columns on.
     pub extact: bool,
     /// `MAXHEAD`: lines of column headings.
     pub maxhead: Option<u32>,
@@ -479,8 +480,12 @@ pub struct ListAction {
     pub confirm: Option<String>,
     /// `USREXIT`: the exit program called first.
     pub usrexit: Option<Action>,
-    /// `ACTFOR`: `LIST` or `ALL`.
+    /// `ACTFOR`: `BOTH` (when absent), `LISTE` (list entries only) or
+    /// `EXTACT` (the extended action entry only).
     pub actfor: Option<String>,
+    /// `EXTENTER`: the action on the extended action entry; `ENTER`
+    /// when absent.
+    pub extenter: Option<Action>,
     /// `RETURN`: the number returned.
     pub ret: Option<u32>,
     /// `VARUPD`.
@@ -491,6 +496,26 @@ pub struct ListAction {
     pub text: Vec<Span>,
     /// Source line.
     pub line: u32,
+}
+
+impl ListAction {
+    /// Whether the option may be typed on a list entry.
+    #[must_use]
+    pub fn for_entries(&self) -> bool {
+        self.actfor.as_deref() != Some("EXTACT")
+    }
+
+    /// Whether the option may be typed on the extended action entry.
+    #[must_use]
+    pub fn for_ext(&self) -> bool {
+        self.actfor.as_deref() != Some("LISTE")
+    }
+
+    /// The action of the option typed on the extended action entry.
+    #[must_use]
+    pub fn ext_action(&self) -> Option<&Action> {
+        self.extenter.as_ref().or(self.enter.as_ref())
+    }
 }
 
 /// A column or a group of columns.
@@ -520,6 +545,7 @@ pub struct ListGroup {
 }
 
 /// `:LISTCOL.`.
+#[allow(clippy::struct_excessive_bools)] // the tag's flags
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ListColumn {
     /// `VAR`.
@@ -552,6 +578,9 @@ pub struct ListColumn {
     /// `HILITE` (ours): the entries show in high intensity (the
     /// section headings of Work with Messages).
     pub hilite: bool,
+    /// `EXTACT`: the column has an input field on the list's extended
+    /// action entry.
+    pub extact: bool,
     /// The heading.
     pub heading: Vec<Span>,
     /// Source line.

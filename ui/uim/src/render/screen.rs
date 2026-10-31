@@ -38,6 +38,10 @@ pub struct Text {
     pub text: String,
 }
 
+/// The entry index of a list's extended action entry (`:LIST EXTACT`)
+/// in [`Target::ListOption`] and [`Target::ListCell`].
+pub const EXT_ENTRY: usize = usize::MAX;
+
 /// What an input field belongs to.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Target {

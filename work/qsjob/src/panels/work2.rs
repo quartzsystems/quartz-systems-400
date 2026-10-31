@@ -262,7 +262,11 @@ fn work(
                 let mut step = Step::Reload;
                 for c in &choices {
                     if let Some(Action::Cmd(t)) = &c.action {
-                        let text = d.substitute(t, Some((&c.list, c.row)));
+                        let text = if c.is_ext() {
+                            crate::panels::ext_command(d, c, t)
+                        } else {
+                            d.substitute(t, Some((&c.list, c.row)))
+                        };
                         exec(job, host, d, &text);
                     } else if let Step::Leave =
                         keys(job, host, surface, d, Response::Options(vec![c.clone()]))?

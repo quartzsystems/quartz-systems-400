@@ -280,6 +280,7 @@ wire_struct!(ListAction {
     confirm,
     usrexit,
     actfor,
+    extenter,
     ret,
     varupd,
     entermsg,
@@ -308,6 +309,7 @@ wire_struct!(ListColumn {
     atcol,
     ifvar,
     hilite,
+    extact,
     heading,
     line
 });

@@ -283,7 +283,7 @@ pub static TAGS: &[TagDef] = &[
         Leaf,
         [
             "OPTION", "ENTER", "HELP", "CONFIRM", "USREXIT", "ACTFOR", "RETURN", "VARUPD",
-            "ENTERMSG"
+            "ENTERMSG", "EXTENTER"
         ],
         [],
         &["LIST"],
@@ -294,7 +294,7 @@ pub static TAGS: &[TagDef] = &[
         Leaf,
         [
             "VAR", "USAGE", "MAXWIDTH", "HELP", "NAME", "DISPLAY", "DSPCOL", "NOGUI", "AUTOSKIP",
-            "MINWIDTH", "ATCOL", "IFVAR", "HILITE"
+            "MINWIDTH", "ATCOL", "IFVAR", "HILITE", "EXTACT"
         ],
         ["VAR", "USAGE"],
         &["LIST", "LISTGRP"],

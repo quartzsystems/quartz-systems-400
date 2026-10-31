@@ -1,0 +1,24 @@
+                         Work with Media Library Status                         
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   1=Vary on   2=Vary off   3=Reset resource        4=Allocate resource         
+   5=Allocate unprotected   6=Deallocate resource   8=Work with description     
+                                                                                
+       Device/                                                      Job         
+ Opt     Resource     Status                 Allocation             name        
+                                                                                
+   (Cannot find object to match specified name.)                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel   F17=Position to  
+ F23=More options                                                               
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

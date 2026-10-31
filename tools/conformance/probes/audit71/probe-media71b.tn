@@ -1,0 +1,49 @@
+# CPP audit round 3 on the 7.1 oracle: the media libraries, image
+# catalogs, the tape device's volume and the UDFS of ASP 1. Read-only:
+# nothing is loaded, mounted, varied or created.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type WRKMLBSTS
+key enter
+settle 5000
+snap wrkmlbsts71
+key f3
+settle 2000
+key reset
+key eraseinput
+type WRKIMGCLG
+key enter
+settle 5000
+snap wrkimgclg71
+key f3
+settle 2000
+key reset
+key eraseinput
+type WRKDEVD DEVD(*TAPMLB)
+key enter
+settle 3000
+snap wrkdevd-tapmlb71
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPTAP DEV(TAP01)
+key enter
+settle 20000
+snap dsptap71
+key f3
+settle 2000
+key reset
+key eraseinput
+type WRKLNK OBJ('/dev/QASP01/*')
+key enter
+settle 3000
+snap wrklnk-qasp01
+key f3
+settle 2000

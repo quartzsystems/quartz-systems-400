@@ -7,6 +7,8 @@
 //! (`objcommon::compare`). One test per golden, named after it.
 
 mod objcommon;
+#[path = "wmcommon/mod.rs"]
+mod wmcommon;
 
 use objcommon::{compare, shipped};
 use uim::{ListState, MapDialog, Options, render};
@@ -264,7 +266,6 @@ fn wrkbnddir() {
     let g = shipped("QUIWRKBNDD");
     let mut d = MapDialog::new();
     let dirs = [
-        ("", "", ""),
         ("QCBLLE", "QSYS", ""),
         ("QCLLE", "QSYS", "ILE CL BINDING DIRECTORY"),
         ("QC2LE", "QSYS", ""),
@@ -284,7 +285,9 @@ fn wrkbnddir() {
     l.total = None;
     l.complete = false;
     d.set_list("DIRS", l);
-    compare("wrkbnddir", &render(&g, "WRKBNDDIR", &d, &opts()).unwrap());
+    let s = render(&g, "WRKBNDDIR", &d, &opts()).unwrap();
+    compare("wrkbnddir", &s);
+    wmcommon::fields_on_row("verified/pub400/wrkbnddir", &s, 9);
 }
 
 fn msgd_header(d: &mut MapDialog) {

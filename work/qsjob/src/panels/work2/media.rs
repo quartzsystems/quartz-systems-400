@@ -44,11 +44,8 @@ pub fn wrkimgclg(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
         let mut flip = false;
         {
             let mut reload = |h: &Host, d: &mut UimDialog| -> Result<(), Fail> {
-                let (vars, rows) = fetch(h, "IMGCLG", &[&which, &ty])?;
-                // The blank row option 1 creates from comes first.
-                let mut all = vec![vec![("OPT".to_string(), String::new()), ("CLG".to_string(), String::new())]];
-                all.extend(rows);
-                load(d, "CLGS", (vars, all));
+                // Option 1 creates from the list's add entry (`EXTACT`).
+                load(d, "CLGS", fetch(h, "IMGCLG", &[&which, &ty])?);
                 Ok(())
             };
             let mut keys = |job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, resp: Response| {

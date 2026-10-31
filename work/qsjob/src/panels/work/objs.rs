@@ -65,11 +65,11 @@ fn work(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved, k: &Kin
             .link
             .borrow_mut()
             .with(|l| l.list_objects(lib.clone(), name.clone(), k.ty.into()));
-        // The first line is where option 1 types a new name.
-        let mut rows = vec![entry(&[(k.var, String::new()), ("LIB", String::new())])];
-        rows.extend(objs.into_iter().map(|o| {
-            entry(&[(k.var, o.name), ("LIB", o.lib), ("TEXT", o.text)])
-        }));
+        // Option 1 types a new name on the list's add entry (`EXTACT`).
+        let rows = objs
+            .into_iter()
+            .map(|o| entry(&[(k.var, o.name), ("LIB", o.lib), ("TEXT", o.text)]))
+            .collect();
         refill(&mut d, k.list, rows);
         loop {
             let flow = match d.show(surface, k.panel).map_err(|e| render_fail(&e))? {

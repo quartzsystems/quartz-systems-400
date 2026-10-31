@@ -108,7 +108,9 @@ pub fn dspopt(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
 }
 
 /// `WRKOPTVOL DEV VOL CSI`: the volumes, read again on F5 and when the
-/// device asked for changes.
+/// device asked for changes. Option 1 on the add entry above the list
+/// prompts `ADDOPTCTG` for the volume typed beside it, as the 7.1
+/// oracle's does (`audit/displays/wrkoptvol-add-prompt71`).
 pub fn wrkoptvol(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     let vol = parm(r, "VOL");
     let csi = parm(r, "CSI");

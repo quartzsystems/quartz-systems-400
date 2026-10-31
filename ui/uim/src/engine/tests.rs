@@ -7,6 +7,7 @@
 use std::collections::VecDeque;
 
 use super::*;
+use crate::model::Action;
 use crate::render::{Attr, Target};
 
 const MENU: &str = "\
@@ -598,4 +599,87 @@ fn the_search_index_finds_a_topic() {
         "{:?}",
         shown[3]
     );
+}
+
+const EXT: &str = "\
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=OBJ CLASS=NAMECL.
+:VAR NAME=TYPE CLASS=NAMECL.
+:LISTDEF NAME=OBJS VARS='OPT OBJ TYPE'.
+:KEYL NAME=KEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:EKEYL.
+:PANEL NAME=WRK KEYL=KEYS ENTER='RETURN 1'.Work with Things
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=OBJS EXTACT=YES.(No things)
+:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD CRTTHING OBJ(&OBJ.)'.1=Create
+:LISTACT OPTION=3 ENTER='CMD CPYTHING OBJ(&OBJ.)' EXTENTER='CMD ?CPYTHING'.3=Copy
+:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD DLTTHING OBJ(&OBJ.)'.4=Delete
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=OBJ USAGE=OUTPUT EXTACT=YES.Object
+:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
+:ELIST.
+:EPANEL.
+:EPNLGRP.
+";
+
+#[test]
+fn extended_action_entry() {
+    let g = compile(EXT);
+    let mut d = Engine::new(g, "QS400");
+    d.add_row("OBJS", vec![("OBJ".into(), "ONE".into()), ("TYPE".into(), "*FILE".into())]);
+    d.list_mut("OBJS").complete = true;
+    let first = crate::render(&d.group, "WRK", &d, &Options::default()).unwrap();
+    // R27: the entry under the headings, an option and the object field;
+    // the list's entries follow it and the cursor starts on it.
+    let ext: Vec<_> = first.fields.iter().filter(|f| f.row == 7).map(|f| (f.col, f.len)).collect();
+    assert_eq!(ext, vec![(2, 2), (7, 10)]);
+    assert_eq!(first.cursor, Some((7, 2)));
+    assert!(first.text_rows()[7].contains("ONE"), "{:?}", first.text_rows());
+    let entry = option_at(&first, 1);
+    assert_eq!(entry.0, 8);
+
+    // Option 1 and a name on the entry: the choice comes back with the
+    // entry's values for the command.
+    let mut t = Script::default();
+    t.step(Key::Enter, (7, 2), &[((7, 2), "1"), ((7, 7), "NEW")]);
+    let Response::Options(c) = d.show(&mut t, "WRK").unwrap() else {
+        panic!("options expected");
+    };
+    assert_eq!(c.len(), 1);
+    assert!(c[0].is_ext());
+    assert_eq!(c[0].action, Some(Action::Cmd("CRTTHING OBJ(&OBJ.)".into())));
+    assert_eq!(d.substitute("CRTTHING OBJ(&OBJ.)", Some(("OBJS", c[0].row))), "CRTTHING OBJ(NEW)");
+    assert_eq!(d.list_ref("OBJS").unwrap().ext_value("OBJ"), "NEW");
+
+    // `EXTENTER` is the entry's action; an entry option keeps `ENTER`.
+    d.list_mut("OBJS").ext_option = None;
+    let mut t = Script::default();
+    t.step(Key::Enter, (7, 2), &[((7, 2), "3"), (entry, "3")]);
+    let Response::Options(c) = d.show(&mut t, "WRK").unwrap() else {
+        panic!("options expected");
+    };
+    assert_eq!(c[0].action, Some(Action::Cmd("?CPYTHING".into())));
+    assert_eq!(c[1].action, Some(Action::Cmd("CPYTHING OBJ(&OBJ.)".into())));
+    assert_eq!(c[1].row, 0);
+
+    // `ACTFOR`: 4 is not valid on the entry, 1 not on a list entry.
+    let l = d.list_mut("OBJS");
+    l.ext_option = None;
+    l.options.clear();
+    let mut t = Script::default();
+    t.step(Key::Enter, (7, 2), &[((7, 2), "4"), (entry, "1")])
+        .step(Key::F(3), (1, 1), &[]);
+    assert_eq!(d.show(&mut t, "WRK").unwrap(), Response::Exit);
+    let again = &t.shown[1];
+    for at in [(7, 2), entry] {
+        let f = again.fields.iter().find(|f| (f.row, f.col) == at).unwrap();
+        assert_eq!(f.attr, Attr::Reverse, "{at:?}");
+    }
 }

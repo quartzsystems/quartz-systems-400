@@ -140,3 +140,39 @@ pub fn compare(golden: &str, screen: &Screen) {
     }
     assert!(diffs.is_empty(), "{} row(s) differ:\n{}", diffs.len(), diffs.join("\n"));
 }
+
+/// The input fields the `.attr` grid of capture `rel` (under the golden
+/// root, `verified/pub400/wrkcls`) has on `row`, as (column, length),
+/// against the screen's (the extended action entry, R27).
+pub fn fields_on_row(rel: &str, screen: &Screen, row: usize) {
+    let path = golden_dir().join("../..").join(format!("{rel}.attr"));
+    let attr = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    let line: Vec<char> = attr
+        .lines()
+        .nth(row - 1)
+        .map(|l| l.trim_end_matches('\r').chars().collect())
+        .unwrap_or_default();
+    // An input attribute: underlined (bit 2), not hidden (0x27).
+    let input = |c: char| {
+        let a = u32::from(c).checked_sub(u32::from('0')).map_or(0, |d| d + 0x20);
+        (0x20..=0x3f).contains(&a) && a & 0x04 != 0 && a & 0x07 != 0x07
+    };
+    let mut want = Vec::new();
+    let mut i = 0;
+    while i + 1 < line.len() {
+        if line[i] == '#' && input(line[i + 1]) {
+            let n = line[i + 1..].iter().take_while(|c| input(**c)).count();
+            want.push((i + 2, n));
+            i += n + 1;
+        } else {
+            i += 1;
+        }
+    }
+    let got: Vec<(usize, usize)> = screen
+        .fields
+        .iter()
+        .filter(|f| f.row == row && f.usage.is_input())
+        .map(|f| (f.col, f.len))
+        .collect();
+    assert_eq!(got, want, "{rel}: the input fields of row {row}");
+}

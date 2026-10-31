@@ -1,0 +1,24 @@
+                        Work with Image Catalog Entries                         
+                                                             System:   SYSNAME  
+ Catalog  . . :   JAVA8                   Status . . . :   Not ready            
+ Type . . . . :   Optical                 Device . . . :                        
+ Directory  . :   /images/java8                                                 
+                                                                                
+ Type options, press Enter.                                                     
+   1=Add   2=Change       4=Remove   6=Mount   8=Load   9=Unload                
+   10=Initialize volume   12=Work with volume                                   
+                                                                                
+ Opt   Index  Status      Image File Name                                       
+      *AVAIL                                                                    
+           1  Mounted     5761-JV1_opt17.iso                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Load/Unload image catalog   F7=Verify image catalog  
+ F8=Reorder by index    F12=Cancel   F24=More keys                              
+                                                                                

@@ -86,11 +86,6 @@ fn golden_fields(attr: &[String]) -> BTreeSet<(usize, usize, usize)> {
 /// screen, then its input fields; `skip` rows are left out (a row the
 /// capture's data has and ours does not, said where it is called).
 fn against(rel: &str, s: &Screen, skip: &[usize]) {
-    against_but(rel, s, skip, &[]);
-}
-
-/// `against`, with the input fields of rows `no_fields` left out too.
-fn against_but(rel: &str, s: &Screen, skip: &[usize], no_fields: &[usize]) {
     let want = read(&goldens().join(format!("{rel}.txt")));
     let ours = s.text_rows();
     let mut diff = String::new();
@@ -106,9 +101,7 @@ fn against_but(rel: &str, s: &Screen, skip: &[usize], no_fields: &[usize]) {
     let attr = read(&goldens().join(format!("{rel}.attr")));
     let fields: BTreeSet<(usize, usize, usize)> =
         s.fields.iter().filter(|f| f.usage.is_input()).map(|f| (f.row, f.col, f.len)).collect();
-    let mut golden = golden_fields(&attr);
-    golden.retain(|f| !no_fields.contains(&f.0));
-    assert_eq!(fields, golden, "{rel}: input fields");
+    assert_eq!(fields, golden_fields(&attr), "{rel}: input fields");
 }
 
 /// Our own rendering against `tests/golden/audit/NAME.txt`.
@@ -253,16 +246,35 @@ fn dspbcksts_with_backups() {
 // ------------------------------------------------- tape and optical
 
 /// `WRKOPTVOL` with no volumes against pub400's capture (which has no
-/// optical device either). Row 11 is IBM's add entry (an option and a
-/// volume field over the list); the renderer has no such row yet, so
-/// ours leaves it blank and its fields are not compared.
+/// optical device either) and the 7.1 oracle's (two empty devices),
+/// every input field included: row 11 is the extended action entry, an
+/// option and a volume field over the list.
 #[test]
-fn wrkoptvol_matches_the_capture() {
+fn wrkoptvol_matches_the_captures() {
     let g = group("QSMEDIA");
     let mut d = MapDialog::new();
     d.set("WDEV", "*ALL").set("CSI", "*ALL");
     d.set_list("VOLS", list(Vec::new()));
-    against_but("audit/displays/wrkoptvol", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(), &[], &[11]);
+    let s = render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap();
+    against("audit/displays/wrkoptvol", &s, &[]);
+    against("verified/oracle71/audit/wrkoptvol71", &s, &[]);
+    // The cursor starts on the add entry's option.
+    assert_eq!(s.cursor, Some((11, 2)));
+}
+
+/// `WRKOPTVOL`'s add entry with option 1 and a volume typed (7.1), and
+/// as the oracle shows it after F12 on `ADDOPTCTG`'s prompt: the
+/// option blank, the volume kept.
+#[test]
+fn wrkoptvol_add_entry_typed() {
+    let g = group("QSMEDIA");
+    let mut d = MapDialog::new();
+    d.set("WDEV", "*ALL").set("CSI", "*ALL");
+    d.set_list("VOLS", list(Vec::new()));
+    d.set_ext("VOLS", &[("OPT", "1"), ("VOL", "QSTESTVOL")]);
+    against("audit/displays/wrkoptvol-ext71", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(), &[]);
+    d.set_ext("VOLS", &[("VOL", "QSTESTVOL")]);
+    against("audit/displays/wrkoptvol-add-back71", &render(&g, "WRKOPTVOL", &d, &opts(0)).unwrap(), &[]);
 }
 
 /// `WRKOPTVOL` with two volumes: IBM's columns, ours filled.

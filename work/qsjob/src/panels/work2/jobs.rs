@@ -8,7 +8,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{Step, choice, dialog, exec, fetch, fill, load, others, qual, work};
+use super::{Step, cell, choice, dialog, exec, fetch, fill, load, others, qual, work};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -44,8 +44,8 @@ pub fn wrksbmjob(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<St
 
 const SBSDS: &str = "SBSDS";
 
-/// `WRKSBSD SBSD(lib/name)`: the descriptions a name selects, a blank
-/// first entry for option 1; F17 positions the list at the command
+/// `WRKSBSD SBSD(lib/name)`: the descriptions a name selects; option 1
+/// on the add entry creates one; F17 positions the list at the command
 /// line's name, F16 again.
 pub fn wrksbsd(
     job: &mut Job,
@@ -69,7 +69,7 @@ pub fn wrksbsd(
             }
             other => vec![other.to_string()],
         };
-        let mut rows = vec![Vec::new()];
+        let mut rows = Vec::new();
         for l in libs {
             let objs = host
                 .link
@@ -89,14 +89,19 @@ pub fn wrksbsd(
     let mut position = String::new();
     let mut keys =
         |job: &mut Job, host: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
-            // Option 1 on the blank entry: the name comes from the command line.
-            if choice(&resp).is_some_and(|c| c.option == "1") {
-                let typed = d.get(CMDLINE_VAR).trim().to_ascii_uppercase();
-                d.set(CMDLINE_VAR, "");
-                let cmd = if typed.is_empty() {
-                    "?CRTSBSD".to_string()
-                } else {
-                    format!("?CRTSBSD SBSD({typed})")
+            // Option 1 on the add entry: its name and library, else the
+            // command line's name.
+            if let Some(c) = choice(&resp).filter(|c| c.option == "1").cloned() {
+                let mut sbsd = cell(d, &c.list, c.row, "SBSD").trim().to_ascii_uppercase();
+                if sbsd.is_empty() {
+                    sbsd = d.get(CMDLINE_VAR).trim().to_ascii_uppercase();
+                    d.set(CMDLINE_VAR, "");
+                }
+                let lib = cell(d, &c.list, c.row, "SBSDLIB").trim().to_ascii_uppercase();
+                let cmd = match (sbsd.is_empty(), lib.is_empty()) {
+                    (true, _) => "?CRTSBSD".to_string(),
+                    (false, true) => format!("?CRTSBSD SBSD({sbsd})"),
+                    (false, false) => format!("?CRTSBSD SBSD({lib}/{sbsd})"),
                 };
                 exec(job, host, d, &cmd);
                 return Ok(Step::Reload);

@@ -41,8 +41,8 @@ fn position_to(d: &mut UimDialog, list: &str, var: &str, n: u32, position: &mut 
 
 const LIBS: &str = "LIBS";
 
-/// `WRKLIB LIB(name)`: the libraries a name selects, a blank first
-/// entry for option 1.
+/// `WRKLIB LIB(name)`: the libraries a name selects; option 1 on the
+/// add entry creates one.
 pub fn wrklib(
     job: &mut Job,
     host: &Host,
@@ -89,15 +89,17 @@ pub fn wrklib(
                 })
                 .collect()
         };
-        let mut rows = vec![Vec::new()];
-        rows.extend(objs.into_iter().map(|o| {
-            vec![
-                ("LIB".to_string(), o.name),
-                ("LIBATR".to_string(), o.attr),
-                ("ASPDEV".to_string(), String::new()),
-                ("LIBTEXT".to_string(), o.text),
-            ]
-        }));
+        let rows = objs
+            .into_iter()
+            .map(|o| {
+                vec![
+                    ("LIB".to_string(), o.name),
+                    ("LIBATR".to_string(), o.attr),
+                    ("ASPDEV".to_string(), String::new()),
+                    ("LIBTEXT".to_string(), o.text),
+                ]
+            })
+            .collect();
         fill(d, LIBS, rows);
         Ok(())
     };

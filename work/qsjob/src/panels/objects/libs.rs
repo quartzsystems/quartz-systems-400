@@ -530,15 +530,11 @@ pub fn wrkbnddir(
     let mut d = dialog(host, "QUIWRKBNDD")?;
     let mut last = String::new();
     loop {
-        let mut rows = vec![entry(&[
-            ("BNDDIR", String::new()),
-            ("BNDLIB", String::new()),
-        ])];
-        rows.extend(
-            objects(host, &lib, &name, "*BNDDIR")
-                .into_iter()
-                .map(|o| entry(&[("BNDDIR", o.name), ("BNDLIB", o.lib), ("BNDTEXT", o.text)])),
-        );
+        // Option 1 types a new name on the list's add entry (`EXTACT`).
+        let rows = objects(host, &lib, &name, "*BNDDIR")
+            .into_iter()
+            .map(|o| entry(&[("BNDDIR", o.name), ("BNDLIB", o.lib), ("BNDTEXT", o.text)]))
+            .collect();
         fill(&mut d, "DIRS", rows);
         let resp = show(&mut d, surface, "WRKBNDDIR")?;
         let Some(resp) = common(job, host, &mut d, resp, &mut last) else {
