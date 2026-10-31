@@ -98,6 +98,19 @@ pub fn queues(name: &str, lib: &str, own: &str, device: &str, all_ws: &[String])
     }
 }
 
+/// A queue named through the library list, with the library it is in.
+fn resolved(host: &Host, queue: &str) -> String {
+    let (lib, name) = wm::obj::params::qualified(queue);
+    if !lib.starts_with('*') {
+        return queue.to_string();
+    }
+    host.link
+        .borrow_mut()
+        .with(|l| l.object(lib.clone(), name.clone(), "*MSGQ".into()))
+        .map_or_else(|| queue.to_string(), |o| format!("{}/{name}", o.lib))
+}
+
+
 /// The job user's profile: its `MSGQ` and `ASTLVL`.
 fn profile(host: &Host) -> ((String, String), String) {
     let user = host.start.user.clone();
@@ -289,7 +302,10 @@ pub fn dspmsg(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
         Vec::new()
     };
     let lib = if lib == "*LIBL" { String::new() } else { lib };
-    let list = queues(&name, &lib, &own, &host.start.device, &all_ws);
+    let list: Vec<String> = queues(&name, &lib, &own, &host.start.device, &all_ws)
+        .into_iter()
+        .map(|q| resolved(host, &q))
+        .collect();
     let sysval = host
         .link
         .borrow_mut()

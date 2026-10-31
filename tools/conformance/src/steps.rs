@@ -599,6 +599,7 @@ impl Suite {
         reports.push(self.step(&mut s, "80 licensed programs", Self::licensed_programs)?);
         reports.push(self.step(&mut s, "81 PTFs", Self::ptfs)?);
         reports.push(self.step(&mut s, "82 display commands", Self::display_commands)?);
+        reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

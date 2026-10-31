@@ -20,6 +20,7 @@ pub mod ossnet;
 #[cfg(unix)]
 mod display;
 mod dspcmds;
+mod dspmsgs;
 mod dst;
 mod error;
 mod hostsvr;
