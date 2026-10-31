@@ -179,6 +179,7 @@ impl Suite {
                 memory_mb: 1024,
                 cpus: 2,
                 display: None,
+                scsi: false,
             },
             media,
             install: false,
@@ -606,6 +607,8 @@ impl Suite {
         // Each in its own guest; with `--only` when named.
         #[cfg(unix)]
         reports.extend(self.display_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.hw_steps()?);
         if self.only.is_some() {
             return Ok(reports);
         }

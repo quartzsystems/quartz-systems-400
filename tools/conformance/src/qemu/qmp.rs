@@ -72,6 +72,25 @@ impl Qmp {
         .map(|_| ())
     }
 
+    /// Hot-add raw image `file` as a SCSI disk on controller `scsi0`
+    /// (`blockdev-add`, then `device_add scsi-hd`), as `id`.
+    pub fn hot_add_scsi_disk(&mut self, file: &Path, id: &str) -> Result<(), String> {
+        let node = format!("{id}-node");
+        self.execute(&json!({
+            "execute": "blockdev-add",
+            "arguments": {
+                "driver": "raw",
+                "node-name": node,
+                "file": {"driver": "file", "filename": file.to_string_lossy()}
+            }
+        }))?;
+        self.execute(&json!({
+            "execute": "device_add",
+            "arguments": {"driver": "scsi-hd", "bus": "scsi0.0", "drive": node, "id": id, "serial": "QS400HOT0"}
+        }))
+        .map(|_| ())
+    }
+
     /// A human monitor command (`hostfwd_add ...`); its output.
     pub fn hmp(&mut self, line: &str) -> Result<String, String> {
         let v = self.execute(&json!({

@@ -59,6 +59,9 @@ pub struct Launch {
     /// A virtio VGA display at this size instead of the standard VGA:
     /// the firmware's GOP mode follows the device's preferred size.
     pub display: Option<(u32, u32)>,
+    /// A virtio SCSI controller (`scsi0`) with no disk on it, for a disk
+    /// hot-added through QMP (step 83).
+    pub scsi: bool,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -137,6 +140,10 @@ pub fn args(l: &Launch) -> Vec<OsString> {
             OsString::from(format!("virtio-vga,xres={w},yres={h}")),
         ]),
         None => a.extend(["-vga", "std"].iter().map(OsString::from)),
+    }
+    if l.scsi {
+        a.push(OsString::from("-device"));
+        a.push(OsString::from("virtio-scsi-pci,id=scsi0"));
     }
     a.extend(
         [

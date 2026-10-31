@@ -21,6 +21,8 @@ pub mod ossnet;
 mod display;
 mod dspcmds;
 mod dspmsgs;
+#[cfg(unix)]
+mod hwrsrc;
 mod dst;
 mod error;
 mod hostsvr;

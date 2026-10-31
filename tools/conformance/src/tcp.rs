@@ -18,7 +18,7 @@ use crate::steps::{CMD, Suite};
 
 /// The address step 61 configures as a virtual IP on the guest; QEMU's
 /// user network reaches it as it reaches the guest's own address.
-const VIP: &str = "10.0.2.16";
+pub(crate) const VIP: &str = "10.0.2.16";
 /// The address it puts on the NIC's line.
 const LINE_ADDR: &str = "10.0.2.17";
 
