@@ -637,9 +637,11 @@ fn dsptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 struct Chk(ChkOptions);
 
 impl TapeJob for Chk {
-    type Out = tape::volume::ChkResult;
+    type Out = (tape::volume::ChkResult, Option<instmedia::layout::Contents>);
     fn run<D: TapeTransport + ?Sized>(&mut self, d: &mut D, _: &mut dyn VolumeProvider<D>) -> Result<Self::Out, MediaError> {
-        Ok(tape::volume::chktap(d, &self.0)?)
+        // Install media or a system save says so; the check follows.
+        let media = instmedia::savsys::recognize_tape(d).ok().flatten();
+        Ok((tape::volume::chktap(d, &self.0)?, media))
     }
 }
 
@@ -657,13 +659,30 @@ fn chktap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         end_opt: stream::end_opt(&parms.name("ENDOPT")),
     };
     let vl: Vec<String> = opts.vol.iter().cloned().collect();
-    let r = drive::with_tape(system, &dev, &vl, false, &mut Chk(opts))?;
+    let (r, media) = drive::with_tape(system, &dev, &vl, false, &mut Chk(opts))?;
     let id = r.kind.id();
     let mut text = format!("Volume {id} on device {dev} checked.\n");
     if let Some(f) = &r.file {
         let _ = writeln!(text, "File sequence {}, label {} found.", f.label.file_seq, f.label.file_id);
     }
+    if let Some(c) = &media {
+        text.push_str(&install_media_text(c));
+    }
     Ok(ok(&text, VOL_CHECKED, &[(&id, 6), (&dev, 10)]))
+}
+
+/// What install media holds, as `CHKTAP` and `DSPOPT DATA(*SAVRST)`
+/// show it: the kind and release, then the payload files.
+pub(crate) fn install_media_text(c: &instmedia::layout::Contents) -> String {
+    let mut s = String::new();
+    let kind = if c.savsys { "system save (SAVSYS)" } else { "distribution media" };
+    let _ = writeln!(s, "Install media . . . . . . . : {kind}, release {}", c.release);
+    let _ = writeln!(s, "Volume in the manifest  . . : {}", c.manifest.volume);
+    let _ = writeln!(s, "Products  . . . . . . . . . : {}", c.products().join(" "));
+    for f in &c.manifest.files {
+        let _ = writeln!(s, "  {:<32} {:>12} bytes", f.path, f.size);
+    }
+    s
 }
 
 fn duptap(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
@@ -805,6 +824,14 @@ fn dspopt(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
                 .collect();
             if let Ok(sys) = set.with(&volid, |v| optical::volume::ops::file_attrs(v, "/QSAVSYS")) {
                 files.extend(sys.into_iter().map(|f| f.path));
+            }
+            // Install media: what it is, then its product loads too.
+            if let Some(c) = set.with(&volid, |v| Ok(instmedia::savsys::recognize_volume(v).ok().flatten())).map_err(opt)? {
+                s.push_str(&install_media_text(&c));
+                let lp = format!("/{}", instmedia::layout::LP_DIR);
+                if let Ok(l) = set.with(&volid, |v| optical::volume::ops::file_attrs(v, &lp)) {
+                    files.extend(l.into_iter().map(|f| f.path));
+                }
             }
             for f in files {
                 let bytes = set.with(&volid, |v| v.read_all(&f)).map_err(opt)?;
