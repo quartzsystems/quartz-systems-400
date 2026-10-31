@@ -1,0 +1,24 @@
+                         Work with Message Descriptions                         
+                                                             System:   SYSNAME  
+ Message file:   QCPFMSG        Library:   QSYS                                 
+                                                                                
+ Position to . . . . . . .             Message ID                               
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   4=Delete   5=Display details   6=Print                            
+                                                                                
+ Opt  Message ID  Severity  Message Text                                        
+       CAE0002       40     New level of CSP/AE required for application.       
+       CAE0005       30     &1 Date entered must be in the format &2.           
+       CAE0009       40     Overflow occurred. Target item is too short.        
+       CAE0014       40     REPLACE attempted without preceding UPDATE on &1.   
+       CAE0020       40     Application and file record lengths not equal.      
+       CAE0023       40     Allocation of table &1 failed.                      
+       CAE0024       40     Subscript value for operand &1 is not valid.        
+       CAE0025       40     Subscript value &1 is not valid for operand &2.     
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F6=Add   F12=Cancel   F24=More keys                     
+                                                                                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

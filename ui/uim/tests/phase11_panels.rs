@@ -344,3 +344,30 @@ fn wrkrdbdire() {
     let s = render(&group("QUIRDBDIR"), "WRKRDBDIRE", &d, &opts).unwrap();
     assert_eq!(differing("../phase10/misc", "wrkrdbdire", &s, &[9]), set(&["fields", "more"]));
 }
+
+/// `WRKMSGD MSGF(QSYS/QCPFMSG)` against pub400's first page
+/// (`tools/conformance/golden/audit/displays/wrkmsgd`): the option
+/// numbers, the file line and `Position to`. Ours has no severity
+/// column, two-character option fields, the keys a row lower and no
+/// F24 (`docs/CPP_AUDIT.md`).
+#[test]
+fn wrkmsgd() {
+    let ids = [
+        ("CAE0002", "New level of CSP/AE required for application."),
+        ("CAE0005", "&1 Date entered must be in the format &2."),
+        ("CAE0009", "Overflow occurred. Target item is too short."),
+    ];
+    let rows = ids.iter().map(|(i, t)| vec![("WID", *i), ("IDTEXT", *t)]).collect();
+    let mut d = MapDialog::new();
+    d.set("MSGF", "QCPFMSG").set("MSGFLIB", "QSYS");
+    d.set_list("WIDS", list(rows));
+    let opts = Options {
+        system: "SYSNAME".into(),
+        ..Options::default()
+    };
+    let s = render(&group("QUIDSPMSGD"), "WORK", &d, &opts).unwrap();
+    assert_eq!(
+        differing("../audit/displays", "wrkmsgd", &s, &[10]),
+        set(&["fields", "headings 10", "keys", "more"])
+    );
+}

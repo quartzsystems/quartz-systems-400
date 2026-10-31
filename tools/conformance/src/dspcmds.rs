@@ -104,6 +104,8 @@ const SETUP: &[&str] = &[
     "crtsavf FILE(Q82LIB/Q82SAVF)",
     "crtsrcpf FILE(Q82LIB/QCLSRC)",
     "crtdevdsp DEVD(Q82DSP) DEVCLS(*VRT) TYPE(3179) MODEL(2)",
+    "chgdevd DEVD(Q82DSP) TEXT('Step 82 display')",
+    "chgneta MAXHOP(16)",
     "crtusrprf USRPRF(Q82GRP) PASSWORD(*NONE) TEXT('Step 82 group')",
     "crtudfs UDFS('/dev/QASP01/q82.udfs')",
     "crtjrnrcv JRNRCV(QSYS/AUDRCV0)",
@@ -132,8 +134,9 @@ const SETUP: &[&str] = &[
     "addtapctg DEV(Q82MLB) CTG(Q82A) CGY(*SHARE400)",
 ];
 
-/// A CL module for `DSPMOD`, `DSPPGM`, `DSPSRVPGM` and the debugger.
-const MODULE_SRC: &str = "PGM\n  DCL VAR(&N) TYPE(*DEC) LEN(5 0) VALUE(82)\n  CHGVAR VAR(&N) VALUE(&N + 1)\nENDPGM\n";
+/// A CL module for `DSPMOD`, `DSPPGM`, `DSPSRVPGM` and the debugger;
+/// its program runs `RTVCFGSTS`.
+const MODULE_SRC: &str = "PGM\n  DCL VAR(&N) TYPE(*DEC) LEN(5 0) VALUE(82)\n  DCL VAR(&S) TYPE(*DEC) LEN(5 0)\n  RTVCFGSTS CFGD(Q82DSP) CFGTYPE(*DEV) STSCDE(&S)\n  CHGVAR VAR(&N) VALUE(&N + &S)\nENDPGM\n";
 
 /// The screen as text, one row a line.
 fn screen(d: &tn5250_driver::session::Session) -> String {
@@ -196,6 +199,7 @@ fn setup(s: &mut Session) -> String {
             "crtclmod MODULE(Q82LIB/Q82MOD) SRCFILE(Q82LIB/QCLSRC) DBGVIEW(*SOURCE)",
             "crtpgm PGM(Q82LIB/Q82PGM) MODULE(Q82LIB/Q82MOD)",
             "crtsrvpgm SRVPGM(Q82LIB/Q82SRV) MODULE(Q82LIB/Q82MOD) EXPORT(*ALL)",
+            "call PGM(Q82LIB/Q82PGM)",
         ] {
             if let Ok(out) = s.command(line, CMD)
                 && out.contains("CPF")

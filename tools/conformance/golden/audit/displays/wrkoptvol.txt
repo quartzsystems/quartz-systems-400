@@ -1,0 +1,24 @@
+                           Work with Optical Volumes                            
+                                                             System:   SYSNAME  
+ Device . . . . . . . . . . . . .   *ALL                                        
+ Side information . . . . . . . :   *ALL                                        
+ Type options, press Enter.                                                     
+   1=Add   2=Change   3=Copy   4=Remove   5=Display   8=Work with directories   
+   10=Initialize      11=Work with object links       12=Duplicate ...          
+                                                                                
+                                Volume        Media     Authorization           
+ Opt  Volume        Device      Type          Type          List                
+                                                                                
+                                                                                
+   (Cannot find object to match specified name.)                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F6=Print list   F9=Retrieve   F11=View 2    
+ F12=Cancel   F14=Show extended information         F24=More keys               
+                                                                                

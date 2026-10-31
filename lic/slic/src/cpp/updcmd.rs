@@ -430,7 +430,7 @@ fn contact(system: &mut System) -> String {
 
 fn sndsrvrqs(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     if parms.text("ACTION") == "*REPORT" {
-        return Err("CPF3700 problem reports to the update service arrive in a later release".into());
+        return Err("CPF9B70 problem reports to the update service arrive in a later release".into());
     }
     let who = contact(system);
     let (c, _) = client(system)?;

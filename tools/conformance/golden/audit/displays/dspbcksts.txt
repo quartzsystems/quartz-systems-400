@@ -1,0 +1,24 @@
+                             Display Backup Status                     PUB400   
+                                                             MM/DD/YY  HH:MM:SS 
+                                              Last                              
+                                              Backup         Tape               
+ What Was Backed Up                           Date           Set                
+ User libraries:                                                                
+   All  . . . . . . . . . . . . . . . . . :                                     
+   All (changes only) . . . . . . . . . . :                                     
+   From list  . . . . . . . . . . . . . . :                                     
+   From list (changes only) . . . . . . . :                                     
+ Folders:                                                                       
+   All  . . . . . . . . . . . . . . . . . :                                     
+   All (changes only) . . . . . . . . . . :                                     
+   From list  . . . . . . . . . . . . . . :                                     
+ User directories:                                                              
+   All  . . . . . . . . . . . . . . . . . :                                     
+   All (changes only) . . . . . . . . . . :                                     
+ Security data  . . . . . . . . . . . . . :                                     
+ Configuration  . . . . . . . . . . . . . :                                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F1=Help   F3=Exit   F12=Cancel   F22=Display backup history                    
+                                                                                

@@ -1,0 +1,13 @@
+# CPP audit: DSPBCKSTS from Command Entry, its first display and F3.
+# Read-only; a refusal is the snapshot.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPBCKSTS
+key enter
+settle 3000
+snap dspbcksts
+key f3
+settle 2000

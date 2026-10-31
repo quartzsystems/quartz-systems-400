@@ -282,7 +282,7 @@ fn vrycfg(system: &mut System, parms: &Parms) -> CmdReply {
         "*OFF" => false,
         s => {
             return refused(
-                &format!("CPD0084 STATUS({s}) is not available in this release; *ON and *OFF are"),
+                &format!("CPF9B70 STATUS({s}) is not available in this release; *ON and *OFF are"),
                 &ty,
                 Some(msgs::VARY_NOT_PROCESSED),
             );

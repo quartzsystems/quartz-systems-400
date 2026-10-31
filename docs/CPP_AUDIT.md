@@ -49,16 +49,16 @@ leaves text on the menu.
 
 | Command | Wired today | Should read from | Panel | Fix |
 |---|---|---|---|---|
-| DSPSFWRSC | panel/fallback; service text when the read failed | `sfwrsc_panel` (licpgm directory) | QUISFWRSC | class fix |
-| WRKCFGSTS | panel/fallback for `CFGTYPE` other than `*LIN`/`*CTL`/`*DEV` | `cmn_panel CFGSTS` (cmncfg) | QUICFG | class fix |
-| DSPDEVD | panel/fallback (`.ok()?` on `devd_panel`) | `devd_panel` (`*DEVD` objects) | QUICFG | class fix |
-| CHGDEVD | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | harness only |
-| VRYCFG | service CPP (`cpp/cmncmd.rs`) over cmncfg | cmncfg status table | none (action) | harness only |
-| DSPPTF | panel showing a fixed empty list (`sfwrsc_panel`), "none in this release" | the PTF database `QSYS/QSPTFDB` (`cpp/ptfcmd.rs`) | QUIDSPPTF | operator batch |
-| RTVCFGSTS | job CPP over `cfg_status` | cmncfg status table | none (retrieve) | harness only |
-| CRTDEVDSP | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | harness only |
-| DSPNETA | panel/fallback (`.ok()?` on `neta_panel`) | `neta_panel` (network attributes) | QUIDSPNETA | class fix |
-| CHGNETA | service CPP over the store (`cpp/sysinfo.rs`) | the network attributes | none (action) | harness only |
+| DSPSFWRSC | panel/fallback; service text when the read failed | `sfwrsc_panel` (licpgm directory) | QUISFWRSC | 0f564e8f (class fix) |
+| WRKCFGSTS | panel/fallback for `CFGTYPE` other than `*LIN`/`*CTL`/`*DEV` | `cmn_panel CFGSTS` (cmncfg) | QUICFG | 0f564e8f (class fix) |
+| DSPDEVD | panel/fallback (`.ok()?` on `devd_panel`) | `devd_panel` (`*DEVD` objects) | QUICFG | 0f564e8f (class fix) |
+| CHGDEVD | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | b370c63d (step 82 setup runs it) |
+| VRYCFG | service CPP (`cpp/cmncmd.rs`) over cmncfg | cmncfg status table | none (action) | b370c63d (step 82 setup runs it) |
+| DSPPTF | panel showing a fixed empty list (`sfwrsc_panel`), "none in this release" | the PTF database `QSYS/QSPTFDB` (`cpp/ptfcmd.rs`) | QUIDSPPTF | 554b33a4 |
+| RTVCFGSTS | job CPP over `cfg_status` | cmncfg status table | none (retrieve) | b370c63d (step 82 setup runs it) |
+| CRTDEVDSP | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | b370c63d (step 82 setup runs it) |
+| DSPNETA | panel/fallback (`.ok()?` on `neta_panel`) | `neta_panel` (network attributes) | QUIDSPNETA | 0f564e8f (class fix) |
+| CHGNETA | service CPP over the store (`cpp/sysinfo.rs`) | the network attributes | none (action) | b370c63d (step 82 setup runs it) |
 | WRKHDWRSC | console word `hw` ("answered by the console") behind a panel/fallback | the hwrsrc service | QUIHDWRSC | hwrsrc agent |
 | DSPHDWRSC | console word `hw` behind a panel/fallback | the hwrsrc service | QUIHDWRSC | hwrsrc agent |
 
@@ -68,27 +68,34 @@ leaves text on the menu.
 |---|---|---|---|---|
 | DSPMSG | panel/fallback to bridge word `dspmsg` | message queues over the link | QUIDSPMSG | DSPMSG agent |
 | WRKMSG | panel/fallback to bridge word `dspmsg` | message queues over the link | QUIDSPMSG | DSPMSG agent |
-| WRKMSGD | text: bridge word `wrkmsgd`, no panel | `msgf_list` / message file payload | QUIDSPMSGD (WRKMSGD panel) new | messages batch |
-| DSPMSGD | panel/fallback | message file over the link | QUIDSPMSGD | class fix |
-| DSPLOG | panel/fallback | `QHST` over the link | QUIDSPLOG | class fix |
-| WRKRPYLE | panel/fallback | the reply list | QUIWRKRPYL | class fix |
+| WRKMSGD | text: bridge word `wrkmsgd`, no panel | `msgf_list` / message file payload | QUIDSPMSGD (WRKMSGD panel) new | 554b33a4 |
+| DSPMSGD | panel/fallback | message file over the link | QUIDSPMSGD | 0f564e8f (class fix) |
+| DSPLOG | panel/fallback | `QHST` over the link | QUIDSPLOG | 0f564e8f (class fix) |
+| WRKRPYLE | panel/fallback | the reply list | QUIWRKRPYL | 0f564e8f (class fix) |
 
 ## Display commands with only the service's text
 
-| Command | Wired today | Should read from | Panel | Fix |
-|---|---|---|---|---|
-| DSPPTFCVR | text (`cpp/ptfcmd.rs`) | PTF packages in the PTF database | QSPTF new | service batch |
-| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | PTF groups (`ptf::group`) | QSPTF new | service batch |
-| DSPIPLA | text (`cpp/iplcmd.rs`) | IPL attributes (system values, licpart) | QSIPLA new | service batch |
-| DSPBCKSTS | text (`cpp/opacmd.rs`) | the backup history (`wm::opa`) | QEZBCKUP (status panel) new | service batch |
-| DSPLICKEY | text (`cpp/lpcmd.rs`) | the license repository (`QUSRSYS/QLZALIC`) | QSZLICPGM (key panel) new | service batch |
-| DSPUDFS | text (`cpp/ifscmd.rs`) | the IFS (`ifscmd::udfs`) | QUIWRKLNK (UDFS panel) new | media/IFS batch |
-| DSPTAP | text (`cpp/medcmd.rs`) | the tape device (`tape::volume`) | QSMEDIA (DSPTAP panel) new | media/IFS batch |
-| DSPTAPCTG | text (`cpp/medcmd.rs`) | the `*TAPMLB` cartridges | QSMEDIA (DSPTAPCTG panel) new | media/IFS batch |
-| DSPOPT | text (`cpp/medcmd.rs`) | the optical volume (`optical::volume`) | QSMEDIA (DSPOPT panel) new | media/IFS batch |
-| WRKOPTVOL | text (`cpp/medcmd.rs`) | optical volume set (`/QOPT`) | QSMEDIA (WRKOPTVOL panel) new | media/IFS batch |
-| WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QSRDBDIR new | service batch |
-| GO | the service answers `CPF0901`; menus and Command Entry intercept `GO` | `*MENU` objects | the menu | correct as wired |
+"Report viewer" is `QUIRPTVW`: the command's own processing program
+runs in the storage service and its lines show on a panel, never on a
+menu's message line. A list panel of its own is still open for those
+(`TODO(phase12)` in `work/qsjob/src/panels/info/reports.rs`).
+
+| Command | Wired today | Reads from (after) | Panel | Golden | Fix |
+|---|---|---|---|---|---|
+| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD` | refused on pub400 | 554b33a4 |
+| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP` | refused on pub400 | 554b33a4 |
+| DSPIPLA | text (`cpp/iplcmd.rs`) | `sys2_panel IPLA` (the LIC record) | QUIIPLA new | `phase11/displays/dspipla`, row for row | 554b33a4 |
+| WRKMSGD | text: bridge word `wrkmsgd` | `msgf_list` | QUIDSPMSGD `WORK` | `audit/displays/wrkmsgd`, geometry | 554b33a4, this batch |
+| WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QUIRDBDIR new | `phase10/misc/wrkrdbdire`, geometry | 554b33a4 |
+| DSPPTFCVR | text (`cpp/ptfcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 554b33a4 |
+| DSPBCKSTS | text (`cpp/opacmd.rs`) | the service's CPP | report viewer | `audit/displays/dspbcksts` captured; panel open | 554b33a4 |
+| DSPLICKEY | text (`cpp/lpcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 554b33a4 |
+| DSPUDFS | text (`cpp/ifscmd.rs`) | the service's CPP | report viewer | none (needs a UDFS) | 554b33a4 |
+| DSPTAP | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no tape on pub400) | 554b33a4 |
+| DSPTAPCTG | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no library) | 554b33a4 |
+| DSPOPT | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no volume) | 554b33a4 |
+| WRKOPTVOL | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | `audit/displays/wrkoptvol` captured; panel open | 554b33a4 |
+| GO | the service answers `CPF0901`; menus and Command Entry intercept `GO` | `*MENU` objects | the menu | phase 8 | correct as wired |
 
 ## Panels filled by parsing the service's text
 

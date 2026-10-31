@@ -1,0 +1,32 @@
+[[golden]]
+name = "dspbcksts"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-dspbcksts"
+width = 80
+
+[[golden]]
+name = "dsplickey-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-dsplickey"
+width = 80
+
+[[golden]]
+name = "wrkmsgd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkmsgd"
+width = 80
+
+[[golden]]
+name = "wrkoptvol"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "disp-wrkoptvol"
+width = 80
+

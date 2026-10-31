@@ -132,7 +132,7 @@ fn kind_of(cmd: &str) -> MediaKind {
 fn crtdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, String> {
     let kind = kind_of(cmd);
     if kind == MediaKind::TapeLibrary && parms.name("DEVCLS") == "*OPT" {
-        return Err("CPD0084 DEVCLS(*OPT): optical media libraries are not available in this release".into());
+        return Err("CPF9B70 DEVCLS(*OPT): optical media libraries are not available in this release".into());
     }
     let name = parms.name("DEVD");
     let rsrc_in = parms.name("RSRCNAME");
@@ -229,7 +229,7 @@ fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
 fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let name = parms.name("IMGCLG");
     if parms.yes("IMPORT") {
-        return Err("CPD0084 IMPORT(*YES) is not available in this release".into());
+        return Err("CPF9B70 IMPORT(*YES) is not available in this release".into());
     }
     let kind = if parms.name("TYPE") == "*TAP" { ImgType::Tap } else { ImgType::Opt };
     let add = match parms.int("ADDVRTVOL").unwrap_or(0) {
@@ -285,7 +285,7 @@ fn index_of(parms: &Parms) -> Option<u16> {
 fn addimgclge(parms: &Parms) -> Result<CmdReply, String> {
     let name = parms.name("IMGCLG");
     if parms.specified("FROMDEV") {
-        return Err("CPD0084 FROMDEV: images from an optical device are not available in this release; give FROMFILE".into());
+        return Err("CPF9B70 FROMDEV: images from an optical device are not available in this release; give FROMFILE".into());
     }
     let from = parms.text("FROMFILE");
     let from = from.trim().trim_matches('\'');

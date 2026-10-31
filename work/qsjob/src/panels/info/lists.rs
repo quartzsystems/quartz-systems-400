@@ -54,17 +54,31 @@ pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
             .borrow_mut()
             .with(|l| l.msgf_list(msgf.clone(), real.clone()))
             .map_err(|e| crate::panels::failed(&e))?;
-        let rows = all
+        let ids: Vec<(String, String)> = all
             .into_iter()
             .filter(|(id, _)| from.is_empty() || from.starts_with('*') || id.as_str() >= from.as_str())
-            .map(|(id, t)| vec![("ID".to_string(), id), ("IDTEXT".to_string(), t)])
             .collect();
-        fill(&mut d, "IDS", rows);
+        // `Position to`: the list starts at the first identifier from it.
+        let pos = d.get("POSTO").trim().to_ascii_uppercase();
+        let at = ids.iter().position(|(id, _)| !pos.is_empty() && id.as_str() >= pos.as_str());
+        let rows = ids
+            .into_iter()
+            .map(|(id, t)| vec![("WID".to_string(), id), ("IDTEXT".to_string(), t)])
+            .collect();
+        fill(&mut d, "WIDS", rows);
+        if !pos.is_empty() {
+            d.list_mut("WIDS").top = at.unwrap_or(0);
+            d.set("POSTO", "");
+        }
         match show(&mut d, surface, "WORK")? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Options(choices) => {
                 act(job, host, &mut d, &choices, &mut |d, c| {
-                    d.message = Some((format!("Option {} is not valid here.", c.option.trim()), true));
+                    d.message = Some(if c.option.trim() == "6" {
+                        (NO_PRINT.into(), true)
+                    } else {
+                        (format!("Option {} is not valid here.", c.option.trim()), true)
+                    });
                     Ok(())
                 })?;
             }
@@ -74,6 +88,9 @@ pub fn wrkmsgd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                 d.set(CMDLINE_VAR, "");
             }
             Response::Retrieve => d.set(CMDLINE_VAR, &last),
+            Response::Return(6) => {
+                d.message = exec(job, host, &format!("?ADDMSGD MSGF({real}/{msgf})"));
+            }
             Response::Print => d.message = Some((NO_PRINT.into(), true)),
             _ => {}
         }
