@@ -199,6 +199,7 @@ dependencies = [
  "ed25519-dalek",
  "getrandom 0.4.3",
  "hex",
+ "instmedia",
  "lpbuild",
  "optical",
  "release",
@@ -1532,6 +1533,27 @@ checksum = "3b5cf4372d022092674a83b8febf5865f7a573cc0c5baec5e49c879b6a20978f"
 dependencies = [
  "block-padding",
  "hybrid-array",
+]
+
+[[package]]
+name = "instmedia"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ed25519-dalek",
+ "hex",
+ "licpgm",
+ "lpbuild",
+ "lpstore",
+ "optical",
+ "qsname",
+ "release",
+ "saverst",
+ "savfmt",
+ "sha2",
+ "store",
+ "tape",
+ "thiserror",
 ]
 
 [[package]]

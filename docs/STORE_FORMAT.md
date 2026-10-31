@@ -198,7 +198,12 @@ suspended halves included, so a torn write can only damage the copy
 that was already stale and every unit carries the same table. On open
 the newest copy whose page verifies, across all units, wins. Opening a
 store whose creating release differs in V or R from the running build
-is refused (CPF3294); M may differ.
+is refused (CPF3294); M may differ. The one exception is an older
+release the running one may upgrade (`release::store_may_open`, the
+upgrade rule of docs/INSTALL.md): the store opens, and the operating
+system install records the running release in the superblock once the
+upgrade is done (`Store::asp_superblock_set_release`), so the field is
+the release that created or last upgraded the ASP.
 
 Logical page numbers: the first span is pages `0..usable_0`, the next
 continues at `usable_0`, and so on (`start` in the unit table; both

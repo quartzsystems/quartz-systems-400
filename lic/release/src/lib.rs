@@ -14,13 +14,39 @@
 #![forbid(unsafe_code)]
 
 mod ptf;
+pub mod upgrade;
 mod version;
 
 pub use ptf::{Cumulative, Ptf};
+pub use upgrade::{InstallKind, UpgradeError, check_upgrade, previous, store_may_open};
 pub use version::Release;
 
-/// The current development stream.
-pub const RELEASE: Release = Release { v: 1, r: 0, m: 0 };
+/// The current development stream. A test build may claim another
+/// with `QS400_RELEASE` at build time (the upgrade path's test).
+pub const RELEASE: Release = Release {
+    v: num(env!("QS400_RELEASE_V")),
+    r: num(env!("QS400_RELEASE_R")),
+    m: num(env!("QS400_RELEASE_M")),
+};
+
+/// Every release Quartz has defined, ascending: what `*PRV` and the
+/// upgrade rule look in.
+pub const KNOWN: &[Release] = &[
+    Release { v: 1, r: 0, m: 0 },
+    Release { v: 1, r: 1, m: 0 },
+];
+
+/// A decimal number of at most three digits, at compile time.
+const fn num(s: &str) -> u8 {
+    let b = s.as_bytes();
+    let mut i = 0;
+    let mut n: u8 = 0;
+    while i < b.len() {
+        n = n * 10 + (b[i] - b'0');
+        i += 1;
+    }
+    n
+}
 
 /// The operating system's product identifier, IBM's for the operating
 /// system so that software checking for it finds it (`DSPSFWRSC`,
@@ -84,9 +110,10 @@ mod tests {
 
     #[test]
     fn stream_and_banner() {
-        assert_eq!(RELEASE.to_string(), "V1R0M0");
-        assert!(full().starts_with("V1R0M0 build "));
-        assert!(banner().starts_with("QS/400 V1R0M0 build "));
+        let r = RELEASE.to_string();
+        assert!(KNOWN.contains(&RELEASE), "{r}");
+        assert!(full().starts_with(&format!("{r} build ")));
+        assert!(banner().starts_with(&format!("QS/400 {r} build ")));
         assert!(!build_id().is_empty());
         for word in ["alpha", "beta", "rc"] {
             assert!(!full().to_lowercase().contains(word));

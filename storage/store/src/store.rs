@@ -682,6 +682,18 @@ impl Store {
         self.asp.superblock_mut().qsys = qsys;
     }
 
+    /// The release that created the ASP or last upgraded it.
+    #[must_use]
+    pub fn asp_release(&self) -> release::Release {
+        self.asp.superblock().release
+    }
+
+    /// Record the running release in the superblock: an upgrade install
+    /// is done (published at the next checkpoint).
+    pub fn asp_superblock_set_release(&mut self) {
+        self.asp.superblock_mut().release = release::RELEASE;
+    }
+
     /// Record the `*SYSVAL` object in the superblock.
     pub fn asp_superblock_set_sysval(&mut self, id: ObjectId) {
         self.asp.superblock_mut().sysval = id;

@@ -69,7 +69,7 @@ fn manifest_table() {
     let md = doc();
     let rows = table_with(&md, "### Install media manifest", "Line");
     let keys: Vec<&str> = rows.iter().map(|r| r[0].as_str()).collect();
-    assert_eq!(keys, [manifest::MAGIC, "release", "volume", "file"]);
+    assert_eq!(keys, [manifest::MAGIC, "release", "volume", "kind", "file", "signature"]);
     assert!(md.contains(manifest::PATH));
     for f in [manifest::SLOT_A, manifest::SLOT_B, manifest::BOOT_UKI] {
         assert!(md.contains(f), "{f}");

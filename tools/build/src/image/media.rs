@@ -8,6 +8,9 @@
 //! tree onto a FAT stick boots too. The image is a hybrid: its GPT
 //! makes the boot image an EFI System partition when the ISO is
 //! written raw to a disk (docs/MEDIA.md, "Hybrid install image").
+//! The product loads `build lp` makes go under `QS400/LP/`, a response
+//! file named by `QS400_INSTALL_RSP` goes to `QS400/INSTALL.RSP`, and
+//! the manifest is signed with the build key (docs/INSTALL.md).
 
 use std::fs;
 use std::path::PathBuf;
@@ -54,24 +57,49 @@ pub struct Parts<'a> {
     pub slot_b: Vec<u8>,
     /// The readme.
     pub readme: String,
+    /// Product loads: ID and SAVLICPGM stream.
+    pub lp: Vec<(String, Vec<u8>)>,
+    /// A response file for an automatic install.
+    pub rsp: Option<String>,
+    /// The key the manifest is signed with.
+    pub key: Option<ed25519_dalek::SigningKey>,
 }
 
 /// The image's tree and options.
 pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     let mut b = IsoBuilder::new(p.volume_id, p.epoch);
     // The marker the media locator looks for, with the payload.
-    let files = [(SLOT_A_FILE, &p.slot_a), (SLOT_B_FILE, &p.slot_b), (BOOT_FILE, &p.uki)]
+    let mut files: Vec<ManifestFile> = [(SLOT_A_FILE, &p.slot_a), (SLOT_B_FILE, &p.slot_b), (BOOT_FILE, &p.uki)]
         .map(|(path, data)| ManifestFile {
             path: path.to_string(),
             size: data.len() as u64,
             sha256: sha256_bytes(data),
+        })
+        .to_vec();
+    for (id, data) in &p.lp {
+        files.push(ManifestFile {
+            path: instmedia::Payload::Product(id.clone()).path(),
+            size: data.len() as u64,
+            sha256: sha256_bytes(data),
         });
-    let m = Manifest {
+    }
+    let mut m = Manifest {
         release: p.release.to_string(),
         volume: p.volume_id.to_string(),
-        files: files.to_vec(),
+        kind: manifest::KIND_INSTALL.into(),
+        files,
+        signature: None,
     };
+    if let Some(k) = &p.key {
+        instmedia::sign::sign(&mut m, k);
+    }
     b.add_file(manifest::PATH, m.to_text().into_bytes())?;
+    for (id, data) in p.lp {
+        b.add_file(&instmedia::Payload::Product(id).path(), data)?;
+    }
+    if let Some(r) = p.rsp {
+        b.add_file(manifest::RESPONSE, r.into_bytes())?;
+    }
     b.add_file(BOOT_IMAGE, p.efi)?;
     b.add_file(BOOT_FILE, p.uki)?;
     b.add_link(LIC_FILE, BOOT_FILE)?;
@@ -113,6 +141,35 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     );
     let epoch: u64 = SOURCE_DATE_EPOCH.parse()?;
     let uki_check = uki_bytes.clone();
+    // The product loads: built when missing.
+    let lp_dir = ctx.paths.images().join("lp");
+    if !lp_dir.join("QS00SS1.savf").is_file() {
+        crate::image::lp::lp(ctx)?;
+    }
+    let mut lp = Vec::new();
+    let mut names: Vec<_> = fs::read_dir(&lp_dir)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "savf"))
+        .collect();
+    names.sort();
+    for path in names {
+        let id = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_ascii_uppercase())
+            .unwrap_or_default();
+        lp.push((id, fs::read(&path)?));
+    }
+    let rsp = match std::env::var_os("QS400_INSTALL_RSP") {
+        Some(p) => {
+            let text = fs::read_to_string(&p)
+                .with_context(|| format!("QS400_INSTALL_RSP={}", PathBuf::from(&p).display()))?;
+            instmedia::Response::parse(&text).context("the response file")?;
+            info!("iso: response file {}", PathBuf::from(&p).display());
+            Some(text)
+        }
+        None => None,
+    };
+    let key = crate::image::manifest::signing_key(ctx)?;
     let volume_id = format!("QS400_{release}");
     let b = compose(Parts {
         volume_id: &volume_id,
@@ -123,6 +180,9 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         slot_a,
         slot_b,
         readme,
+        lp,
+        rsp,
+        key: Some(key),
     })?;
     let image = b.build()?;
     let checked = validate(&image, &uki_check)?;
@@ -216,6 +276,9 @@ mod tests {
             slot_a: b"slot a".to_vec(),
             slot_b: b"slot b".to_vec(),
             readme: "readme\n".into(),
+            lp: vec![("QS00SS1".into(), b"os".to_vec())],
+            rsp: Some("language = 2924\n".into()),
+            key: Some(ed25519_dalek::SigningKey::from_bytes(&[5; 32])),
         }
     }
 
@@ -243,6 +306,14 @@ mod tests {
         let m = Manifest::parse(std::str::from_utf8(&m).unwrap()).unwrap();
         assert_eq!(m.file(SLOT_A_FILE).unwrap().size, 6);
         assert_eq!(m.release, "V1R0M0");
+        let public = ed25519_dalek::SigningKey::from_bytes(&[5; 32]).verifying_key().to_bytes();
+        instmedia::sign::verify(&m, &public).unwrap();
+        let c = instmedia::Contents::of(m.clone()).unwrap();
+        assert_eq!(c.products(), vec!["QS00SS1".to_string()]);
+        let lp = img.lookup("QS400/LP/QS00SS1.SAVF").unwrap();
+        assert_eq!(img.read_file(&lp).unwrap(), b"os");
+        let r = img.read_file(&img.lookup(manifest::RESPONSE).unwrap()).unwrap();
+        assert_eq!(r, b"language = 2924\n");
         let boot = img.info().boot.unwrap();
         assert_eq!(img.lookup(BOOT_IMAGE).unwrap().extents[0].0, boot.lba);
         let gpt = optical::iso::hybrid::verify(&img.source().to_vec()).unwrap();

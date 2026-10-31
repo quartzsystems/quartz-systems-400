@@ -1,0 +1,29 @@
+[package]
+name = "instmedia"
+description = "QS/400 install media: the layout on optical, tape and SAVSYS volumes, the signed manifest, the response file, the operating system install over a store"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+optical = { path = "../optical", version = "0.1.0" }
+tape = { path = "../tape", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+licpgm = { path = "../../licpgm/licpgm", version = "0.1.0" }
+lpstore = { path = "../../licpgm/lpstore", version = "0.1.0" }
+savfmt = { path = "../../save/savfmt", version = "0.1.0" }
+saverst = { path = "../../save/saverst", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+ed25519-dalek = "3.0.0"
+sha2.workspace = true
+hex.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+lpbuild = { path = "../../licpgm/lpbuild", version = "0.1.0" }
+
+[lints]
+workspace = true

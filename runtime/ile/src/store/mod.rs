@@ -119,6 +119,43 @@ pub fn load_program(txn: &mut Txn<'_>, id: ObjectId) -> Result<ProgramObject> {
     Ok(p)
 }
 
+/// Translate a program's, service program's or module's native code
+/// again from the IR it keeps: every module when `all` (an upgrade to
+/// a new release), else only what an older code generator made. The
+/// number of modules translated.
+pub fn retranslate(txn: &mut Txn<'_>, id: ObjectId, all: bool) -> Result<u32> {
+    let stale = |m: &ModuleObject| all || m.code.version != codegen::CODEGEN_VERSION;
+    let again = |m: &mut ModuleObject| -> Result<()> {
+        m.code = codegen::compile(&m.ir)?;
+        if m.debug_code.is_some() {
+            m.debug_code = Some(codegen::compile_debug(&m.ir)?);
+        }
+        Ok(())
+    };
+    if id.type_code == types::MODULE {
+        let mut m = load_module(txn, id)?;
+        if !stale(&m) {
+            return Ok(0);
+        }
+        again(&mut m)?;
+        write_payload(txn, id, &m.encode())?;
+        return Ok(1);
+    }
+    let mut p = load_program(txn, id)?;
+    let mut n = 0;
+    for bm in &mut p.modules {
+        if stale(&bm.module) {
+            again(&mut bm.module)?;
+            n += 1;
+        }
+    }
+    if n > 0 {
+        p.attr.codegen_version = codegen::CODEGEN_VERSION;
+        write_payload(txn, id, &p.encode())?;
+    }
+    Ok(n)
+}
+
 /// Read a `*BNDDIR`.
 pub fn load_bnddir(txn: &mut Txn<'_>, id: ObjectId) -> Result<BndDir> {
     if id.type_code != types::BNDDIR {

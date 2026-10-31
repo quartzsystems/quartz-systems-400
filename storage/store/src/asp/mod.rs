@@ -200,7 +200,7 @@ impl Asp {
             .expect("not empty");
         found.retain(|(h, _)| h.asp_uuid == asp_uuid);
         let mut sb = newest_superblock(found.iter().map(|(_, d)| d.as_ref()))?;
-        if !release::RELEASE.is_compatible_store(sb.release) {
+        if !release::store_may_open(sb.release) {
             return Err(StoreError::ReleaseMismatch {
                 store: sb.release.to_string(),
                 running: release::RELEASE.to_string(),

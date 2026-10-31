@@ -119,6 +119,8 @@ members = [
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",
+    # Install media: layout, SAVSYS volumes, response file, OS install.
+    "media/instmedia",
 ]
 
 [workspace.package]

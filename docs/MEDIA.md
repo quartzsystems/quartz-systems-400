@@ -584,10 +584,15 @@ they read the same through every name form and FAT.
 | `QS400-MEDIA 1` | the first line, always |
 | `release` | the release, `V1R0M0` |
 | `volume` | the ISO volume identifier |
+| `kind` | `install` (distribution media) or `savsys` (a `SAVSYS` copy of a system); absent means `install` |
 | `file` | path, size in bytes, SHA-256 in lower-case hex; one line per payload file |
+| `signature` | key ID (the first 8 bytes of the public key's SHA-256) and the ed25519 signature of every line before it, both hex; last |
 
-The payload files are `QS400A.EFI`, `QS400B.EFI` and
-`EFI/BOOT/BOOTX64.EFI`.
+The payload files are `QS400A.EFI`, `QS400B.EFI`,
+`EFI/BOOT/BOOTX64.EFI` and the product loads `QS400/LP/<ID>.SAVF`
+(`QS00SS1`, the operating system, and the licensed programs); see
+docs/INSTALL.md for how the installer reads them and the response file
+`QS400/INSTALL.RSP`.
 
 On a D IPL, `slic` looks for the manifest on every block device in this
 order: optical drives (`sr*`), removable disks, then the other disks,
