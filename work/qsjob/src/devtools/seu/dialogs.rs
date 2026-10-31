@@ -352,7 +352,7 @@ pub fn select(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
             return;
         }
         if !st.prompt_formats().contains(&fmt.as_str()) {
-            message = Some(crate::display::msgline::text(ctx.host, "CPD9BDF", &[&fmt, &st.name]));
+            message = Some(crate::display::msgline::text(ctx.host, "EDT1023", &[&fmt, &st.name]));
             continue;
         }
         if let Action::ClPrompt(t, _) = s.start_prompt(t, Some(&fmt)) {

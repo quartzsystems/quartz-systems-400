@@ -1,0 +1,104 @@
+# QEDTMSG: the source entry utility's messages (SEU). Identifiers are the
+# EDTnnnn IBM shows with F1 on SEU's message line (pub400, V7R5M0); the
+# file's name was not readable there (it is not on the library list), so
+# QEDTMSG is ours. Every text is ours.
+name = "QEDTMSG"
+text = "Source entry utility messages"
+
+[[msg]]
+id = "EDT0001"
+sev = 30
+text = "Prompting is not possible while browsing."
+help = "The member is open for browse only. Edit the member to prompt and change its records."
+vars = []
+
+[[msg]]
+id = "EDT0100"
+sev = 30
+text = "SEU has no command &1."
+help = "The SEU command line takes FIND, CHANGE, TOP, BOTTOM, SAVE, FILE, CANCEL and the other commands its help lists."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT0102"
+sev = 30
+text = "The member cannot be saved while browsing."
+help = "The member is open for browse only. Nothing was saved."
+vars = []
+
+[[msg]]
+id = "EDT0120"
+sev = 30
+text = "A quoted string on the command line is not closed."
+help = "End the string with an apostrophe and press Enter again."
+vars = []
+
+[[msg]]
+id = "EDT1002"
+sev = 30
+text = "That line command cannot be used on this line."
+help = "Show commands go beside an excluded line, and nothing that changes records can be used while browsing."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT1005"
+sev = 10
+text = "A line command is waiting for its other end."
+help = "A move, copy or block command needs its target or its closing command. Type it and press Enter."
+vars = []
+
+[[msg]]
+id = "EDT1020"
+sev = 30
+text = "The line commands typed do not go together."
+help = "A move or copy takes one source and one target, outside the records moved. Remove or move the commands and press Enter."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT1021"
+sev = 30
+text = "The shift stopped before data would be lost."
+help = "A record holds data where the shift would cut it off. Use a smaller shift, or the hard shift commands."
+vars = []
+
+[[msg]]
+id = "EDT1023"
+sev = 30
+text = "Source type &2 has no prompt &1."
+help = "Type a prompt format the source type has, or blank the field to take the record's own."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT1103"
+sev = 30
+text = "The cursor is not on a record."
+help = "Move the cursor to the record to work with and press the key again."
+vars = []
+
+[[msg]]
+id = "EDT1618"
+sev = 30
+text = "No record contains &1."
+help = "Check the search string and its options: the columns searched, the case and the direction."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT1619"
+sev = 0
+text = "&1 was found."
+help = "The cursor is on the occurrence. Press F16 to find the next one."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT1626"
+sev = 0
+text = "&1 was changed."
+help = "The occurrence found was changed. Press F16 to change the next one."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "EDT1646"
+sev = 0
+text = "&1 was changed in &2 records."
+help = "Every occurrence in the range searched was changed."
+vars = ["*CHAR *VARY 2", "*CHAR 10"]

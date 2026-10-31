@@ -89,8 +89,8 @@ impl Session {
             Key::F(12) => Action::Exit,
             Key::F(4) => match row_target {
                 Some(t) if self.mode == Mode::Edit => self.start_prompt(t, None),
-                Some(_) => self.refuse(LineMsg::error("CPD9BD1", &[])),
-                None => self.refuse(LineMsg::error("CPD9BD2", &[])),
+                Some(_) => self.refuse(LineMsg::error("EDT0001", &[])),
+                None => self.refuse(LineMsg::error("EDT1103", &[])),
             },
             Key::F(11) => {
                 self.toggle();
@@ -112,7 +112,7 @@ impl Session {
             Key::F(21) => Action::SystemCommand,
             Key::F(23) => match row_target {
                 Some(t) if self.mode == Mode::Edit => Action::SelectPrompt(t),
-                _ => self.refuse(LineMsg::error("CPD9BD2", &[])),
+                _ => self.refuse(LineMsg::error("EDT1103", &[])),
             },
             Key::F(_) => self.refuse(LineMsg::error("CPD6A60", &[])),
         };
@@ -286,7 +286,7 @@ impl Session {
         if self.mode == Mode::Browse
             && let Some(p) = all.iter().find(|p| modifies(p.cmd.kind))
         {
-            self.message = Some(LineMsg::error("CPD9BC7", &[&p.cmd.text]));
+            self.message = Some(LineMsg::error("EDT1002", &[&p.cmd.text]));
             return;
         }
         let plan = match line::plan(&all) {
@@ -299,7 +299,7 @@ impl Session {
         };
         self.pending.clone_from(&plan.pending);
         if !self.pending.is_empty() {
-            self.message = Some(LineMsg::info("CPD9BC8", &[]));
+            self.message = Some(LineMsg::info("EDT1005", &[]));
         }
         if let Some(t) = &plan.transfer {
             self.transfer(t);
@@ -374,7 +374,7 @@ impl Session {
                     && at >= a
                     && at < b
                 {
-                    self.message = Some(LineMsg::error("CPD9BC9", &[]));
+                    self.message = Some(LineMsg::error("EDT1020", &[]));
                     return;
                 }
                 let inc = self.defaults.increment;
@@ -461,7 +461,7 @@ impl Session {
             let room = self.buf.width.saturating_sub(chars.len());
             let k = n.min(room);
             if k < n {
-                self.message = Some(LineMsg::error("CPD9BCA", &[]));
+                self.message = Some(LineMsg::error("EDT1021", &[]));
             }
             let mut out = vec![' '; k];
             out.append(&mut chars);
@@ -470,7 +470,7 @@ impl Session {
             let lead = chars.iter().take_while(|c| **c == ' ').count();
             let k = n.min(lead);
             if k < n {
-                self.message = Some(LineMsg::error("CPD9BCA", &[]));
+                self.message = Some(LineMsg::error("EDT1021", &[]));
             }
             chars.drain(..k);
         }
@@ -583,7 +583,7 @@ impl Session {
             _ => None,
         });
         let Some(ids) = group else {
-            self.message = Some(LineMsg::error("CPD9BCB", &[]));
+            self.message = Some(LineMsg::error("EDT1002", &[]));
             return;
         };
         let k = c.count.unwrap_or(1).max(1) as usize;
@@ -624,13 +624,13 @@ impl Session {
             Command::Exit => return Action::Exit,
             Command::Save(t) => {
                 if self.mode == Mode::Browse {
-                    return self.refuse(LineMsg::error("CPD9BD3", &[]));
+                    return self.refuse(LineMsg::error("EDT0102", &[]));
                 }
                 return Action::Save(t);
             }
             Command::File(t) => {
                 if self.mode == Mode::Browse {
-                    return self.refuse(LineMsg::error("CPD9BD3", &[]));
+                    return self.refuse(LineMsg::error("EDT0102", &[]));
                 }
                 return Action::File(t);
             }
@@ -698,9 +698,9 @@ impl Session {
         if change && self.find.dir == Direction::All {
             let n = find::change_all(&mut self.buf, &self.find, &self.excluded, self.today);
             self.message = Some(if n == 0 {
-                LineMsg::error("CPD9BCD", &[&what])
+                LineMsg::error("EDT1618", &[&what])
             } else {
-                LineMsg::info("CPI9BC0", &[&what, &n.to_string()])
+                LineMsg::info("EDT1646", &[&what, &n.to_string()])
             });
             return Action::Show;
         }
@@ -725,7 +725,7 @@ impl Session {
         if let Some(r) = self.row_of(&Item::Rec(id)) {
             self.cursor = Some((r, DATA_COL + h.col - self.left));
         }
-        self.message = Some(LineMsg::info(if change { "CPI9BC1" } else { "CPI9BC2" }, &[&what.to_ascii_uppercase()]));
+        self.message = Some(LineMsg::info(if change { "EDT1626" } else { "EDT1619" }, &[&what.to_ascii_uppercase()]));
         Action::Show
     }
 

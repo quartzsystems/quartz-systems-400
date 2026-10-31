@@ -63,6 +63,18 @@ thread_local! {
     static STATE: RefCell<Option<State>> = const { RefCell::new(None) };
 }
 
+/// A session message's text, from the job's message files.
+fn say(host: &Host, m: &dbg::Msg) -> String {
+    let data: Vec<&str> = m.data.iter().map(String::as_str).collect();
+    crate::display::msgline::text(host, m.id, &data)
+}
+
+/// What `EVAL` could not show: not a variable of the stopped
+/// procedure.
+fn eval_failed(host: &Host, expr: &str) -> String {
+    crate::display::msgline::say(host, "CPF7E12", &[&expr])
+}
+
 /// The debugger's state, taken out while a display runs.
 fn take() -> State {
     STATE

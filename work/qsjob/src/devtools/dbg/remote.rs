@@ -174,7 +174,7 @@ pub fn eval(host: &Host, expr: &str) -> Result<String, String> {
             }
         }
         if let Some(a) = answer {
-            return a.strip_prefix('!').map_or(Ok(a.clone()), |e| Err(e.to_string()));
+            return a.strip_prefix('!').map_or(Ok(a.clone()), |_| Err(String::new()));
         }
         std::thread::sleep(POLL);
     }
@@ -208,7 +208,7 @@ fn apply(job: &mut Job, host: &Host, o: DbgOrder) -> Option<Resume> {
                     }
                     format!("{k} is under debug in the serviced job.")
                 }
-                Err(e) => format!("!{e}"),
+                Err(_) => "!".to_string(),
             };
             let _ = host
                 .link
@@ -243,7 +243,7 @@ fn apply(job: &mut Job, host: &Host, o: DbgOrder) -> Option<Resume> {
         DbgOrder::Eval { expr } => {
             let text = match job.eval(&expr) {
                 Ok(v) => v,
-                Err(e) => format!("!{e}"),
+                Err(_) => "!".to_string(),
             };
             let _ = host
                 .link

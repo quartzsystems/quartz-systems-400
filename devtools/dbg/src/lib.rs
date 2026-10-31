@@ -15,11 +15,13 @@
 pub mod bkpt;
 pub mod command;
 pub mod cond;
+pub mod msgid;
 pub mod screen;
 pub mod session;
 pub mod view;
 
 pub use command::{Command, parse};
+pub use msgid::Msg;
 pub use session::{Effect, Session};
 pub use view::SourceView;
 
@@ -50,4 +52,22 @@ pub enum DbgError {
     /// The module has no source to search or show.
     #[error("The module's source is not available.")]
     NoSource,
+}
+
+impl DbgError {
+    /// The message the message line shows for it.
+    #[must_use]
+    pub fn msg(&self) -> Msg {
+        use msgid as m;
+        match self {
+            Self::Empty => Msg::new(m::EMPTY, &[]),
+            Self::Unknown(w) => Msg::new(m::UNKNOWN, &[w]),
+            Self::Operand(o) => Msg::new(m::OPERAND, &[o]),
+            Self::Missing(c) => Msg::new(m::MISSING, &[c]),
+            Self::NoLine(n) => Msg::new(m::NO_LINE, &[n]),
+            Self::NoStatement(n) => Msg::new(m::NO_STMT, &[n]),
+            Self::NotStopped(c) => Msg::new(m::NOT_STOPPED, &[c]),
+            Self::NoSource => Msg::new(m::NO_SOURCE, &[]),
+        }
+    }
 }

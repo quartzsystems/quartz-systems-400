@@ -191,7 +191,7 @@ fn command_line() {
     };
     s.key(Key::Enter, &input("find F25"));
     let m = s.message.clone().unwrap();
-    assert_eq!((m.id.as_str(), m.data.as_slice()), ("CPI9BC2", &["F25".to_string()][..]));
+    assert_eq!((m.id.as_str(), m.data.as_slice()), ("EDT1619", &["F25".to_string()][..]));
     let v = s.view();
     assert!(v.rows.iter().any(|r| r.data.contains("F25")));
     s.key(Key::Enter, &input("find zzzz"));

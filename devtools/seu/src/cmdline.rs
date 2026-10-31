@@ -97,9 +97,9 @@ impl CmdError {
     #[must_use]
     pub fn msg(&self) -> LineMsg {
         match self {
-            Self::Unknown(c) => LineMsg::error("CPD9BC3", &[c]),
+            Self::Unknown(c) => LineMsg::error("EDT0100", &[c]),
             Self::Operands(c) => LineMsg::error("CPD9BC4", &[c]),
-            Self::Quote => LineMsg::error("CPD9BC5", &[]),
+            Self::Quote => LineMsg::error("EDT0120", &[]),
         }
     }
 }

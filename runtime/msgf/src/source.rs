@@ -24,6 +24,8 @@ pub const QRNXMSG: &str = include_str!("../msgs/qrnxmsg.toml");
 pub const QTCPMSG: &str = include_str!("../msgs/qtcpmsg.toml");
 /// The source of `QZSHMSGF`, the Qshell messages.
 pub const QZSHMSGF: &str = include_str!("../msgs/qzshmsgf.toml");
+/// The source of `QEDTMSG`, the source entry utility's messages.
+pub const QEDTMSG: &str = include_str!("../msgs/qedtmsg.toml");
 
 /// A message file: its name, text and descriptions.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -176,7 +178,7 @@ impl MsgToml {
 /// The system message files, parsed from their sources.
 #[must_use]
 pub fn builtin() -> Vec<MsgFile> {
-    [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF]
+    [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG]
         .iter()
         .map(|s| parse(s).expect("the built-in sources parse"))
         .collect()
@@ -189,7 +191,7 @@ mod tests {
     #[test]
     fn builtin_sources_parse_and_look_up() {
         let files = builtin();
-        assert_eq!(files.len(), 7);
+        assert_eq!(files.len(), 8);
         let cpf = &files[0];
         assert_eq!(cpf.name, "QCPFMSG");
         let m = cpf.find("MCH1211").unwrap();

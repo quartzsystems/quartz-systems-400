@@ -9,6 +9,7 @@
 //! the job's driver.
 
 use crate::DbgError;
+use crate::msgid::{self as m, Msg};
 use crate::bkpt::{Breakpoint, Breakpoints, StmtMap, Watch, Watches};
 use crate::command::{
     self, Amount, ClearWhat, Command, DisplayWhat, Equates, Format, Place, SetOption,
@@ -70,7 +71,7 @@ pub enum Effect {
     /// Nothing more; show the view again.
     None,
     /// A message on the message line.
-    Message(String),
+    Message(Msg),
     /// Resume the program: `count` statements, into calls, or to the
     /// next breakpoint when `step` is false.
     Resume {
@@ -268,16 +269,16 @@ impl Session {
     }
 
     /// F6: a breakpoint on the line, or off when there is one.
-    pub fn toggle(&mut self, line: usize) -> Result<String, DbgError> {
+    pub fn toggle(&mut self, line: usize) -> Result<Msg, DbgError> {
         let (p, md) = self
             .module()
             .map(|m| (m.program.clone(), m.module.clone()))
             .ok_or(DbgError::NoSource)?;
         if self.bkpts.clear(&p, &md, line) {
-            return Ok(format!("Breakpoint removed from line {line}."));
+            return Ok(Msg::new(m::BKP_REMOVED, &[&line]));
         }
         let at = self.add_break(line, None, None)?;
-        Ok(format!("Breakpoint set on line {at}."))
+        Ok(Msg::new(m::BKP_SET, &[&at]))
     }
 
     /// Run a debug command line; `cursor` is the source line the cursor
@@ -296,30 +297,29 @@ impl Session {
                 let line = Self::line_of(&at, cursor)?;
                 let set = self.add_break(line, when.clone(), None)?;
                 Effect::Message(match when {
-                    Some(_) => format!("Conditional breakpoint set on line {set}."),
-                    None => format!("Breakpoint set on line {set}."),
+                    Some(_) => Msg::new(m::BKP_COND, &[&set]),
+                    None => Msg::new(m::BKP_SET, &[&set]),
                 })
             }
             Command::TBreak { at, when } => {
                 let line = Self::line_of(&at, cursor)?;
                 let set = self.add_break(line, when, Some(self.thread))?;
-                Effect::Message(format!(
-                    "Thread breakpoint set on line {set} for thread {}.",
-                    self.thread
-                ))
+                Effect::Message(Msg::new(m::BKP_THREAD, &[&set, &self.thread]))
             }
             Command::Clear(what) => self.clear(what, cursor)?,
             Command::Display(what) => match what {
-                DisplayWhat::Breakpoints => Effect::Message(self.breakpoint_text()),
+                DisplayWhat::Breakpoints => Effect::Message(self.breakpoint_msg()),
                 DisplayWhat::Equates => Effect::Message(if self.equates.defs.is_empty() {
-                    "No equates are defined.".into()
+                    Msg::new(m::EQU_NONE, &[])
                 } else {
-                    self.equates
+                    let list = self
+                        .equates
                         .defs
                         .iter()
                         .map(|(k, v)| format!("{k} = {v}"))
                         .collect::<Vec<_>>()
-                        .join("; ")
+                        .join("; ");
+                    Msg::new(m::EQU_LIST, &[&list])
                 }),
                 DisplayWhat::Watch => Effect::WatchList,
                 DisplayWhat::Module(m) => Effect::ShowModule(m),
@@ -355,10 +355,8 @@ impl Session {
                     procedure: st.procedure,
                 };
                 match self.watches.add(w) {
-                    Some(n) => Effect::Message(format!("Watch {n} set on {expr}.")),
-                    None => Effect::Message(format!(
-                        "{expr} is already watched, or no more watches fit."
-                    )),
+                    Some(n) => Effect::Message(Msg::new(m::WATCH_SET, &[&n, &expr])),
+                    None => Effect::Message(Msg::new(m::WATCH_FULL, &[&expr])),
                 }
             }
             Command::Step { count, into } => {
@@ -372,7 +370,7 @@ impl Session {
             Command::Qual(n) => {
                 self.view_mut()?;
                 self.qual = Some(n);
-                Effect::Message(format!("Variables are now looked up at line {n}."))
+                Effect::Message(Msg::new(m::QUAL_SET, &[&n]))
             }
             Command::Find { what, back } => {
                 let v = self.view_mut()?;
@@ -380,8 +378,8 @@ impl Session {
                     return Err(DbgError::NoSource);
                 }
                 match v.find(&what, back) {
-                    Some(l) => Effect::Message(format!("Found on line {l}.")),
-                    None => Effect::Message(format!("{} was not found.", v.last_find)),
+                    Some(l) => Effect::Message(Msg::new(m::FOUND, &[&what, &l])),
+                    None => Effect::Message(Msg::new(m::NOT_FOUND, &[&v.last_find])),
                 }
             }
             Command::Up(a) => self.scroll(|v| v.up(a))?,
@@ -409,7 +407,7 @@ impl Session {
                         self.view_mut()?.show_line(l);
                         Effect::None
                     }
-                    None => Effect::Message("No breakpoint in that direction.".into()),
+                    None => Effect::Message(Msg::new(m::BKP_NONE_DIR, &[])),
                 }
             }
             Command::Help => Effect::Help,
@@ -424,26 +422,23 @@ impl Session {
                         v.match_case = m;
                     }
                     Effect::Message(if m {
-                        "FIND now matches case.".into()
+                        Msg::new(m::CASE_ON, &[])
                     } else {
-                        "FIND now ignores case.".into()
+                        Msg::new(m::CASE_OFF, &[])
                     })
                 }
                 SetOption::OpmSrc(v) => {
                     self.opmsrc = v;
-                    Effect::Message(format!(
-                        "OPM source debug {}.",
-                        if v { "on" } else { "off" }
-                    ))
+                    Effect::Message(Msg::new(if v { m::OPMSRC_ON } else { m::OPMSRC_OFF }, &[]))
                 }
             },
             Command::Equate { name, def } => {
                 let gone = def.is_none();
                 self.equates.set(&name, def);
                 Effect::Message(if gone {
-                    format!("{name} is no longer an equate.")
+                    Msg::new(m::EQU_GONE, &[&name])
                 } else {
-                    format!("{name} is now an equate.")
+                    Msg::new(m::EQU_SET, &[&name])
                 })
             }
         })
@@ -478,39 +473,39 @@ impl Session {
                     .and_then(|m| m.map.at_or_after(line))
                     .map_or(line, |(l, _)| l);
                 if self.bkpts.clear(&p, &md, line) {
-                    Effect::Message(format!("Breakpoint removed from line {line}."))
+                    Effect::Message(Msg::new(m::BKP_REMOVED, &[&line]))
                 } else {
-                    Effect::Message(format!("No breakpoint on line {line}."))
+                    Effect::Message(Msg::new(m::BKP_NONE_AT, &[&line]))
                 }
             }
             ClearWhat::Pgm => {
                 let n = self.bkpts.clear_program(&p);
-                Effect::Message(format!("{n} breakpoint(s) removed from the program."))
+                Effect::Message(Msg::new(m::BKP_CLEARED, &[&p, &n]))
             }
             ClearWhat::Watch(n) => Effect::Message(if self.watches.remove(n) {
-                format!("Watch {n} removed.")
+                Msg::new(m::WATCH_REMOVED, &[&n])
             } else {
-                format!("There is no watch {n}.")
+                Msg::new(m::WATCH_NONE, &[&n])
             }),
             ClearWhat::WatchAll => {
                 self.watches.clear();
-                Effect::Message("Every watch removed.".into())
+                Effect::Message(Msg::new(m::WATCH_CLEARED, &[]))
             }
         })
     }
 
     /// The shown module's breakpoints as one message.
     #[must_use]
-    pub fn breakpoint_text(&self) -> String {
-        let Some(m) = self.module() else {
-            return "No breakpoints.".into();
+    pub fn breakpoint_msg(&self) -> Msg {
+        let Some(md) = self.module() else {
+            return Msg::new(m::BKP_NONE, &[]);
         };
-        let lines = self.bkpts.lines(&m.program, &m.module);
+        let lines = self.bkpts.lines(&md.program, &md.module);
         if lines.is_empty() {
-            return "No breakpoints are set in this module.".into();
+            return Msg::new(m::BKP_NONE, &[]);
         }
         let list: Vec<String> = lines.iter().map(ToString::to_string).collect();
-        format!("Breakpoints on lines {}.", list.join(", "))
+        Msg::new(m::BKP_LIST, &[&list.join(", ")])
     }
 
     /// Page keys and shifts from the keyboard.
@@ -550,14 +545,14 @@ mod tests {
         let mut s = session();
         assert_eq!(
             s.line("break 4", None).unwrap(),
-            Effect::Message("Breakpoint set on line 5.".into())
+            Effect::Message(Msg::new(m::BKP_SET, &[&5]))
         );
         assert_eq!(s.core_breakpoints(), vec![("QGPL/P".to_string(), 3)]);
-        assert_eq!(s.toggle(5).unwrap(), "Breakpoint removed from line 5.");
+        assert_eq!(s.toggle(5).unwrap(), Msg::new(m::BKP_REMOVED, &[&5]));
         assert!(s.core_breakpoints().is_empty());
         s.line("br", Some(7)).unwrap();
         s.line("br 9", None).unwrap();
-        assert_eq!(s.breakpoint_text(), "Breakpoints on lines 7, 9.");
+        assert_eq!(s.breakpoint_msg(), Msg::new(m::BKP_LIST, &[&"7, 9"]));
         s.line("clear 8", None).unwrap();
         assert_eq!(s.core_breakpoints().len(), 1);
         s.line("clear pgm", None).unwrap();
@@ -597,7 +592,7 @@ mod tests {
         );
         assert_eq!(
             s.line("watch &x", None).unwrap(),
-            Effect::Message("Watch 1 set on &x.".into())
+            Effect::Message(Msg::new(m::WATCH_SET, &[&1, &"&x"]))
         );
         s.resumed();
         assert!(s.view.as_ref().unwrap().current.is_none());

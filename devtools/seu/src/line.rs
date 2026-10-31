@@ -106,7 +106,7 @@ impl PlanError {
     #[must_use]
     pub fn msg(&self) -> LineMsg {
         match self {
-            Self::Conflict(c) => LineMsg::error("CPD9BC1", &[c]),
+            Self::Conflict(c) => LineMsg::error("EDT1020", &[c]),
             Self::Mismatch(a, b) => LineMsg::error("CPD9BC2", &[a, b]),
         }
     }

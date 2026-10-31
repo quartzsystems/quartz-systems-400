@@ -79,14 +79,14 @@ pub fn wrkmodbkp(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Sta
                             let cond = a.vars.get("COND").map(|c| c.trim().to_string());
                             let cond = cond.filter(|c| !c.is_empty());
                             msg = Some(match st.session.add_break(line, cond, None) {
-                                Ok(l) => format!("Breakpoint set on line {l}."),
-                                Err(e) => e.to_string(),
+                                Ok(l) => super::say(host, &dbg::Msg::new(dbg::msgid::BKP_SET, &[&l])),
+                                Err(e) => super::say(host, &e.msg()),
                             });
                         }
                         ("4", i) => {
                             if let Some(r) = rows.get(i) {
                                 st.session.bkpts.clear(&m.program, &m.module, r.line);
-                                msg = Some(crate::display::msgline::say(host, "CPI9BD0", &[&r.line]));
+                                msg = Some(crate::display::msgline::say(host, "CPF9C17", &[&r.line]));
                             }
                         }
                         (other, _) => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
@@ -170,7 +170,7 @@ pub fn wrkmodlst(
                                 st.session.view = None;
                             }
                             super::sync(job, host, st);
-                            msg = Some(crate::display::msgline::say(host, "CPI9BD1", &[&program]));
+                            msg = Some(crate::display::msgline::say(host, "CPF9C26", &[&program]));
                         }
                         ("5", Some((_, Some(m)))) => {
                             st.session.show(*m);
@@ -216,7 +216,7 @@ fn add(job: &mut Job, host: &Host, st: &mut State, lib: &str, name: &str) -> Str
     match super::load(host, lib, name) {
         Ok(m) => {
             super::add_program(st, m);
-            crate::display::msgline::say(host, "CPI9BE4", &[&lib, &name])
+            crate::display::msgline::say(host, "CPF9C20", &[&lib, &name])
         }
         Err(e) => crate::display::msgline::text_of(host, &crate::panels::line(&e)),
     }
@@ -280,12 +280,12 @@ pub fn wrkwatch(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut Stat
                     match o.as_str() {
                         "4" => {
                             st.session.watches.remove(w.n);
-                            msg = Some(crate::display::msgline::say(host, "CPI9BD2", &[&w.n]));
+                            msg = Some(crate::display::msgline::say(host, "CPF9C10", &[&w.n]));
                         }
                         "5" => {
                             msg = Some(match job.eval(&w.variable) {
                                 Ok(v) => format!("{} = {v}", w.variable),
-                                Err(e) => e,
+                                Err(_) => super::eval_failed(host, &w.variable),
                             });
                         }
                         other => msg = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other])),
@@ -329,9 +329,9 @@ pub fn evaluate(surface: &mut Surface, st: &mut State) -> Option<()> {
             Key::PageUp => first = first.saturating_sub(eval::PAGE),
             Key::Enter if !a.cmdline.is_empty() => {
                 let answer = match st.session.line(&a.cmdline, None) {
-                    Ok(Effect::Message(m)) => m,
+                    Ok(Effect::Message(m)) => super::say(surface.host(), &m),
                     Ok(_) => String::new(),
-                    Err(e) => e.to_string(),
+                    Err(e) => super::say(surface.host(), &e.msg()),
                 };
                 st.evals.extend(eval::history_entry(&a.cmdline, &answer));
                 first = eval::last_page(st.evals.len());
