@@ -20,8 +20,18 @@ pub fn ppm_to_png(ppm: &Path, png: &Path) -> Result<(), String> {
     fs::write(png, encode_png(w, h, pixels)).map_err(|e| format!("write {}: {e}", png.display()))
 }
 
+/// An RGB image as a PNG file.
+pub(crate) fn write_png(path: &Path, image: &crate::display::Image) -> Result<(), String> {
+    let (w, h) = (
+        u32::try_from(image.w).map_err(|_| "width")?,
+        u32::try_from(image.h).map_err(|_| "height")?,
+    );
+    fs::write(path, encode_png(w, h, &image.rgb))
+        .map_err(|e| format!("write {}: {e}", path.display()))
+}
+
 /// Header `P6 <w> <h> 255` then raw RGB.
-fn parse_ppm(data: &[u8]) -> Result<(u32, u32, &[u8]), String> {
+pub(crate) fn parse_ppm(data: &[u8]) -> Result<(u32, u32, &[u8]), String> {
     let mut fields = Vec::new();
     let mut pos = 0;
     while fields.len() < 4 {

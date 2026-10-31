@@ -56,6 +56,9 @@ pub struct Launch {
     pub memory_mb: u32,
     /// Guest CPUs.
     pub cpus: u32,
+    /// A virtio VGA display at this size instead of the standard VGA:
+    /// the firmware's GOP mode follows the device's preferred size.
+    pub display: Option<(u32, u32)>,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -88,7 +91,8 @@ pub fn kvm_available() -> bool {
             .is_ok()
 }
 
-/// The QEMU argument list. `q35`, standard VGA (pinned), a virtio keyboard,
+/// The QEMU argument list. `q35`, standard VGA (pinned) unless a display
+/// size is asked for, a virtio keyboard,
 /// serial on stdio, no reboot suppression (restart tests need it), QMP on a
 /// Unix socket.
 pub fn args(l: &Launch) -> Vec<OsString> {
@@ -125,14 +129,21 @@ pub fn args(l: &Launch) -> Vec<OsString> {
             "ide-cd,drive=cd,bus=ide.0,bootindex={cd_index}"
         )));
     }
+    match l.display {
+        Some((w, h)) => a.extend([
+            OsString::from("-vga"),
+            OsString::from("none"),
+            OsString::from("-device"),
+            OsString::from(format!("virtio-vga,xres={w},yres={h}")),
+        ]),
+        None => a.extend(["-vga", "std"].iter().map(OsString::from)),
+    }
     a.extend(
         [
             "-rtc",
             "base=utc",
             "-uuid",
             GUEST_UUID,
-            "-vga",
-            "std",
             "-device",
             "virtio-keyboard-pci",
             "-nographic",

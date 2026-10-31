@@ -17,6 +17,8 @@ mod cmn;
 pub mod db;
 pub mod ifsapi;
 pub mod ossnet;
+#[cfg(unix)]
+mod display;
 mod dst;
 mod error;
 mod hostsvr;

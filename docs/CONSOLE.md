@@ -86,7 +86,18 @@ resume from.
 `cargo test -p console` covers the scale for each common mode and for
 27×132, the clamped override, the centering, the packing of each depth
 and channel order, and the dirty-row spans (a cell, a cursor move
-across rows and along one, a resize). The QEMU harness boots at
-1920×1080 and 1024×768 and compares the screendump with the same
-scaler's rendering of the `svc.screen` text: see PHASE1.md and
-`tools/conformance/src/display.rs`.
+across rows and along one, a resize).
+
+The QEMU suite's steps 71 and 72 (`tools/conformance/src/display.rs`)
+boot the disk on a `virtio-vga` device with `xres`/`yres` of 1920×1080
+and 1024×768 (OVMF takes the device's size as its GOP mode; the baked
+command line has no `video=`). At sign-on they check `svc.hw`'s
+`Display:` line for the mode and the expected scale and origin, take a
+QMP screendump (PPM) and compare it with the scaler's rendering of the
+`screen` text at the same size, cell by cell: every glyph pixel an s×s
+block of one color, lit where the golden is lit (the inverse for
+reverse image; the underline and cursor scanlines may be lit besides),
+every pixel outside the grid dark. Both images are written beside the
+suite's output as `display-WxH.png` and `display-WxH-golden.png`. First
+run (2026-10-30, KVM): scale 2 at 1920×1080 and 1 at 1024×768, 1880
+cells exact and 40 underlined (the input fields) of 1920 each.

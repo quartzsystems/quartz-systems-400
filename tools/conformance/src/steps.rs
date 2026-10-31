@@ -178,6 +178,7 @@ impl Suite {
                 host_ports: crate::hostsvr::forwards(Some(telnet_port)),
                 memory_mb: 1024,
                 cpus: 2,
+                display: None,
             },
             media,
             install: false,
@@ -576,6 +577,9 @@ impl Suite {
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
+        // Each in its own guest; with `--only` when named.
+        #[cfg(unix)]
+        reports.extend(self.display_steps()?);
         if self.only.is_some() {
             return Ok(reports);
         }

@@ -426,6 +426,7 @@ dependencies = [
  "cl",
  "clap",
  "cmd",
+ "console",
  "crc",
  "db",
  "dds",

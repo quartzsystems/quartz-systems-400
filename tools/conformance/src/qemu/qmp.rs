@@ -53,6 +53,15 @@ impl Qmp {
         Ok("ppm")
     }
 
+    /// Take a screenshot as PPM, the format every QEMU writes.
+    pub fn screendump_ppm(&mut self, file: &Path) -> Result<(), String> {
+        self.execute(&json!({
+            "execute": "screendump",
+            "arguments": {"filename": file.to_string_lossy(), "format": "ppm"}
+        }))
+        .map(|_| ())
+    }
+
     /// Set a network device's link up or down (`set_link`): the guest
     /// sees its carrier come and go, as with a pulled cable.
     pub fn set_link(&mut self, name: &str, up: bool) -> Result<(), String> {
