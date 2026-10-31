@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   5/56          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORUA3     CHAR            4       4       307        Both     Unit         
+                                                                   address      
+                                                                   field 3      
+      Field text  . . . . . . . . . . . . . . . :  Unit address field 3         
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORUA4     CHAR            4       4       311        Both     Unit         
+                                                                   address      
+                                                                   field 4      
+      Field text  . . . . . . . . . . . . . . . :  Unit address field 4         
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORUA5     CHAR            4       4       315        Both     Unit         
+                                                                   address      
+                                                                   field 5      
+      Field text  . . . . . . . . . . . . . . . :  Unit address field 5         
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

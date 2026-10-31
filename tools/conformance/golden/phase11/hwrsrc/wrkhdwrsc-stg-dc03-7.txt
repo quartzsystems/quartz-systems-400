@@ -1,0 +1,24 @@
+                            Display Resource Detail                             
+                                                             System:   SYSNAME  
+ Resource name  . . . . . . . :   DC03                                          
+ Text . . . . . . . . . . . . :   Storage Controller                            
+ Type-model . . . . . . . . . :   298A-001                                      
+ Serial number  . . . . . . . :   00-00000                                      
+ Part number  . . . . . . . . :                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Location :                                                                     
+                                                                                
+ Logical address:                                                               
+  SPD bus:                                                                      
+   System bus                       4095                                        
+   System board                     0                                           
+   System card                      0                                           
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

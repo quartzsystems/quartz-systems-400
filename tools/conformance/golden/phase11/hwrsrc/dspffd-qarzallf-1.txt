@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/1           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                              Display File Field Description                    
+  Input parameters                                                              
+    File  . . . . . . . . . . . . . . . . . . . :  QARZALLF                     
+      Library . . . . . . . . . . . . . . . . . :  QSYS                         
+  File Information                                                              
+    File  . . . . . . . . . . . . . . . . . . . :  QARZALLF                     
+      Library . . . . . . . . . . . . . . . . . :  QSYS                         
+    File location . . . . . . . . . . . . . . . :  *LCL                         
+    Externally described  . . . . . . . . . . . :  Yes                          
+    Number of record formats  . . . . . . . . . :      1                        
+    Type of file  . . . . . . . . . . . . . . . :  Physical                     
+    File creation date  . . . . . . . . . . . . :  MM/DD/YY                     
+    Text 'description'. . . . . . . . . . . . . :  DSPHDWRSC *TYPE2 output file 
+  Record Format Information                                                     
+    Record format . . . . . . . . . . . . . . . :  QRZALL                       
+    Format level identifier . . . . . . . . . . :  28ED02DE51C35                
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

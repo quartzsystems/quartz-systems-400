@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   4/21          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSSRN     CHAR           10      10       211        Both     Coupled      
+                                                                   system       
+                                                                   serial numbe 
+      Field text  . . . . . . . . . . . . . . . :  Coupled system serial number 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSVA     CHAR            8       8       221        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORKBD     CHAR            3       3       229        Both     Keyboard     
+                                                                   code         
+      Field text  . . . . . . . . . . . . . . . :  Keyboard country or region c 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORCOL     CHAR            1       1       232        Both     Color        
+                                                                   display      
+      Field text  . . . . . . . . . . . . . . . :  Color-capable display: 0=No, 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

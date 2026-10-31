@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   4/58          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Switch setting: 00-06        
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSVL     CHAR            8       8       239        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORMSZ     PACKED      10  0       6       247        Both     Main         
+                                                                   storage      
+                                                                   capacity     
+      Field text  . . . . . . . . . . . . . . . :  Main storage card capacity i 
+    DORSVP     CHAR            8       8       253        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORAFI     CHAR            4       4       261        Both     Alternate    
+                                                                   frame        
+                                                                   identificati 
+      Field text  . . . . . . . . . . . . . . . :  Alternate frame identificati 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

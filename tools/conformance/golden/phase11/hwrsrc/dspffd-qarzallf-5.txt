@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/13          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    DORSVF     CHAR            2       2        82        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOCRPF     CHAR            1       1        84        Both     *CRP         
+                                                                   function     
+      Field text  . . . . . . . . . . . . . . . :  Cryptographic  function: 0=N 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOCSAF     CHAR            1       1        85        Both     *CSA         
+                                                                   function     
+      Field text  . . . . . . . . . . . . . . . :  Coupled System Adapter funct 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOCMNF     CHAR            1       1        86        Both     *CMN         
+                                                                   function     
+      Field text  . . . . . . . . . . . . . . . :  Communications function: 0=N 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOLWSF     CHAR            1       1        87        Both     *LWS         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

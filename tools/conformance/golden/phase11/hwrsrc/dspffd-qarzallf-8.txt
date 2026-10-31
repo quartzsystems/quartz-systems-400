@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/5           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    DORMOD     CHAR            3       3       117        Both     Resource     
+                                                                   model        
+      Field text  . . . . . . . . . . . . . . . :  Resource model number        
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORPRT     CHAR           12      12       120        Both     Resource     
+                                                                   part         
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  Resource part number         
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSER     CHAR           10      10       132        Both     Resource     
+                                                                   serial       
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  Resource serial number       
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORDSA     CHAR            4       4       142        Both     Resource     
+                                                                   direct       
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

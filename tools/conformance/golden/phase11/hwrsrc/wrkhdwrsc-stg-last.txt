@@ -1,0 +1,24 @@
+                          Work with Storage Resources                           
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   7=Display resource detail   9=Work with resource                             
+                                                                                
+ Opt  Resource        Type-model  Status                Text                    
+      CMB07            6B25-001   Operational           Storage Controller      
+        DC07           6B25-001   Operational           Storage Controller      
+      CMB08            6B25-001   Operational           Storage Controller      
+        DC08           6B25-001   Operational           Storage Controller      
+      CMB12            268C-001   Operational           Combined function IOP   
+        DC09           6B02-001   Operational           Storage Controller      
+      CMB13            290A-001   Operational           Storage Controller      
+        DC10           290A-001   Operational           Storage Controller      
+      CMB14            6B25-001   Operational           Storage Controller      
+        DC11           6B25-001   Operational           Storage Controller      
+        TAPMLB06       3573-020   Operational           Tape Library            
+      CMB15            6B25-001   Operational           Storage Controller      
+        DC12           6B25-001   Operational           Storage Controller      
+      CMB16            6B25-001   Operational           Storage Controller      
+        DC13           6B25-001   Operational           Storage Controller      
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

@@ -1,0 +1,165 @@
+# Hardware resources: WRKHDWRSC of each type with its detail displays,
+# DSPHDWRSC (refused to the account at the time of Phase 10) and the
+# DSPFFD of the outfile model QARZALLF. Display options only.
+continue
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrkhdwrsc type(*stg)
+key enter
+settle 2500
+snap wrkhdwrsc-stg
+key f11
+settle 1000
+snap wrkhdwrsc-stg-f11
+key f11
+settle 1000
+seek "Bottom" 6
+snap wrkhdwrsc-stg-last
+key f5
+settle 2000
+key home
+type 7
+key enter
+settle 1500
+snap wrkhdwrsc-stg-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-stg-7-2
+key f12
+settle 1500
+pick "re:DD0\d\d" 7
+key enter
+settle 1500
+snap wrkhdwrsc-stg-dd-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-stg-dd-7-2
+key f12
+settle 1500
+pick "re:DC0\d" 9
+key enter
+settle 1500
+snap wrkhdwrsc-stg-dc-9
+key f12
+settle 1500
+pick "re:DC0\d" 5
+key enter
+settle 1500
+snap wrkhdwrsc-stg-dc-5
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type wrkhdwrsc type(*prc)
+key enter
+settle 2500
+snap wrkhdwrsc-prc
+key f11
+settle 1000
+snap wrkhdwrsc-prc-f11
+key f11
+settle 1000
+key home
+type 7
+key enter
+settle 1500
+snap wrkhdwrsc-prc-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-prc-7-2
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type wrkhdwrsc type(*lws)
+key enter
+settle 2500
+snap wrkhdwrsc-lws
+key f11
+settle 1000
+snap wrkhdwrsc-lws-f11
+key f12
+wait "Command Entry"
+type wrkhdwrsc type(*ahw)
+key enter
+settle 3000
+snap wrkhdwrsc-ahw
+key pgdn
+settle 1000
+snap wrkhdwrsc-ahw-2
+key f11
+settle 1000
+snap wrkhdwrsc-ahw-f11
+key f12
+wait "Command Entry"
+type wrkhdwrsc type(*crp)
+key enter
+settle 2500
+snap wrkhdwrsc-crp
+key f12
+wait "Command Entry"
+type wrkhdwrsc type(*csa)
+key enter
+settle 2500
+snap wrkhdwrsc-csa
+key f12
+wait "Command Entry"
+type wrkhdwrsc type(*cmn)
+key enter
+settle 2500
+key f11
+settle 1000
+snap wrkhdwrsc-cmn-f11
+key f11
+settle 1000
+pick "CMN04" 9
+key enter
+settle 1500
+snap wrkhdwrsc-cmn04-9
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type dsphdwrsc type(*ahw)
+key enter
+settle 2500
+snap dsphdwrsc-ahw
+key f12
+settle 1000
+wait "Command Entry"
+type dspffd qsys/qarzallf
+key enter
+settle 3000
+snap dspffd-qarzallf-1
+key pgdn
+settle 800
+snap dspffd-qarzallf-2
+key pgdn
+settle 800
+snap dspffd-qarzallf-3
+key pgdn
+settle 800
+snap dspffd-qarzallf-4
+key pgdn
+settle 800
+snap dspffd-qarzallf-5
+key pgdn
+settle 800
+snap dspffd-qarzallf-6
+key pgdn
+settle 800
+snap dspffd-qarzallf-7
+key pgdn
+settle 800
+snap dspffd-qarzallf-8
+key pgdn
+settle 800
+snap dspffd-qarzallf-9
+key pgdn
+settle 800
+snap dspffd-qarzallf-10
+key f3
+settle 1000

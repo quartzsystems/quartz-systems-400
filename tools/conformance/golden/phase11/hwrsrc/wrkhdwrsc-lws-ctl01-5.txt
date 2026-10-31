@@ -1,0 +1,24 @@
+                       Work with Controller Descriptions                        
+                                                             System:   SYSNAME  
+ Resource name  . . . . . . . :   CTL01                                         
+ Text . . . . . . . . . . . . :   Work Station Controller                       
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   5=Work with description   8=Work with configuration status ...    
+                                                                                
+                                                                                
+ Opt     Description                                                            
+                                                                                
+         CTL01                                                                  
+         QCTL                                                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel   F23=More options                
+                                                                                

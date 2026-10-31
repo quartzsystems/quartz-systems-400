@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   4/39          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSWD     CHAR            1       1       233        Both     Screen       
+                                                                   width        
+      Field text  . . . . . . . . . . . . . . . :  Screen width: 0=Standard, 1= 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORIWS     CHAR            1       1       234        Both     Programmable 
+                                                                   work         
+                                                                   station      
+      Field text  . . . . . . . . . . . . . . . :  Programmable work station: 0 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORPOR     CHAR            2       2       235        Both     Port         
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  Port number: 00-06           
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSWT     CHAR            2       2       237        Both     Switch       
+                                                                   setting      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

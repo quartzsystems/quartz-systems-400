@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/55          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    DOCFGO     CHAR           10      10       166        Both     Configuratio 
+                                                                   object       
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  Configuration object name    
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOCFGP     CHAR           10      10       176        Both     Previous     
+                                                                   level        
+                                                                   configuratio 
+      Field text  . . . . . . . . . . . . . . . :  Previous level configuration 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOREDS     CHAR            2       2       186        Both     Resource     
+                                                                   extended     
+                                                                   description  
+      Field text  . . . . . . . . . . . . . . . :  Resource extended descriptio 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSVC     CHAR            8       8       188        Both     Reserved     
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

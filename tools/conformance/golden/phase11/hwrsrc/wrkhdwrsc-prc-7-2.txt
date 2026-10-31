@@ -1,0 +1,24 @@
+                            Display Resource Detail                             
+                                                             System:   SYSNAME  
+ Resource name  . . . . . . . :   CEC01                                         
+ Text . . . . . . . . . . . . :   Main Card Enclosure                           
+ Type-model . . . . . . . . . :   9824-22A                                      
+ Serial number  . . . . . . . :   78-EA841                                      
+ Part number  . . . . . . . . :                                                 
+ Processor feature code . . . :   ERGR                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Location :   U9824.22A.78EA841                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+ Already at bottom of area.                                                     

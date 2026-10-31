@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   6/6           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    PRCFCD     CHAR            4       4       319        Both     Processor    
+                                                                   feature      
+                                                                   code         
+      Field text  . . . . . . . . . . . . . . . :  Processor feature code       
+      Coded Character Set Identifier  . . . . . :     37                        
+    PRCFD      CHAR            4       4       323        Both     Processor    
+                                                                   feature      
+      Field text  . . . . . . . . . . . . . . . :  Processor feature            
+      Coded Character Set Identifier  . . . . . :     37                        
+    PRCIFD     CHAR            4       4       327        Both     Interactive  
+                                                                   feature      
+      Field text  . . . . . . . . . . . . . . . :  Interactive feature          
+      Coded Character Set Identifier  . . . . . :     37                        
+    LOCCOD     CHAR           79      79       331        Both     Location     
+                                                                   code         
+      Field text  . . . . . . . . . . . . . . . :  Location code                
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

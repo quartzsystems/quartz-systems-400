@@ -1,0 +1,190 @@
+# Hardware resources, second pass: the detail displays the first pass
+# could not reach (option 9 on a storage controller, 7 on a tape
+# library, the work station and processor options) and the rest of
+# QARZALLF's DSPFFD. Display options only.
+continue
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrkhdwrsc type(*stg)
+key enter
+settle 2500
+pick "DC03" 9
+key enter
+settle 1500
+snap wrkhdwrsc-stg-dc03-9
+key pgdn
+settle 1000
+snap wrkhdwrsc-stg-dc03-9-2
+key f12
+settle 1500
+pick "TAPMLB01" 7
+key enter
+settle 1500
+snap wrkhdwrsc-stg-tapmlb01-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-stg-tapmlb01-7-2
+key f12
+settle 1500
+pick "DC03" 7
+key enter
+settle 1500
+snap wrkhdwrsc-stg-dc03-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-stg-dc03-7-2
+key f12
+settle 1500
+key pgdn
+settle 1000
+snap wrkhdwrsc-stg-2
+key f3
+wait "Command Entry"
+type wrkhdwrsc type(*lws)
+key enter
+settle 2500
+pick "CTL01" 7
+key enter
+settle 1500
+snap wrkhdwrsc-lws-ctl01-7
+key f12
+settle 1500
+pick "CTL01" 5
+key enter
+settle 1500
+snap wrkhdwrsc-lws-ctl01-5
+key f12
+settle 1500
+key f3
+wait "Command Entry"
+type wrkhdwrsc type(*prc)
+key enter
+settle 2500
+pick "CEC01" 9
+key enter
+settle 1500
+snap wrkhdwrsc-prc-cec01-9
+key f12
+settle 1500
+pick "MP09" 7
+key enter
+settle 1500
+snap wrkhdwrsc-prc-mp09-7
+key f12
+settle 1500
+key pgdn
+settle 1000
+snap wrkhdwrsc-prc-2
+key f3
+wait "Command Entry"
+type dspffd qsys/qarzallf
+key enter
+settle 3000
+key pgdn
+settle 700
+snap dspffd-qarzallf-p01
+key pgdn
+settle 700
+snap dspffd-qarzallf-p02
+key pgdn
+settle 700
+snap dspffd-qarzallf-p03
+key pgdn
+settle 700
+snap dspffd-qarzallf-p04
+key pgdn
+settle 700
+snap dspffd-qarzallf-p05
+key pgdn
+settle 700
+snap dspffd-qarzallf-p06
+key pgdn
+settle 700
+snap dspffd-qarzallf-p07
+key pgdn
+settle 700
+snap dspffd-qarzallf-p08
+key pgdn
+settle 700
+snap dspffd-qarzallf-p09
+key pgdn
+settle 700
+snap dspffd-qarzallf-p10
+key pgdn
+settle 700
+snap dspffd-qarzallf-p11
+key pgdn
+settle 700
+snap dspffd-qarzallf-p12
+key pgdn
+settle 700
+snap dspffd-qarzallf-p13
+key pgdn
+settle 700
+snap dspffd-qarzallf-p14
+key pgdn
+settle 700
+snap dspffd-qarzallf-p15
+key pgdn
+settle 700
+snap dspffd-qarzallf-p16
+key pgdn
+settle 700
+snap dspffd-qarzallf-p17
+key pgdn
+settle 700
+snap dspffd-qarzallf-p18
+key pgdn
+settle 700
+snap dspffd-qarzallf-p19
+key pgdn
+settle 700
+snap dspffd-qarzallf-p20
+key pgdn
+settle 700
+snap dspffd-qarzallf-p21
+key pgdn
+settle 700
+snap dspffd-qarzallf-p22
+key pgdn
+settle 700
+snap dspffd-qarzallf-p23
+key pgdn
+settle 700
+snap dspffd-qarzallf-p24
+key pgdn
+settle 700
+snap dspffd-qarzallf-p25
+key pgdn
+settle 700
+snap dspffd-qarzallf-p26
+key pgdn
+settle 700
+snap dspffd-qarzallf-p27
+key pgdn
+settle 700
+snap dspffd-qarzallf-p28
+key pgdn
+settle 700
+snap dspffd-qarzallf-p29
+key pgdn
+settle 700
+snap dspffd-qarzallf-p30
+key pgdn
+settle 700
+snap dspffd-qarzallf-p31
+key pgdn
+settle 700
+snap dspffd-qarzallf-p32
+key pgdn
+settle 700
+snap dspffd-qarzallf-p33
+key pgdn
+settle 700
+snap dspffd-qarzallf-p34
+key f3
+settle 1000
+key f3

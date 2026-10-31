@@ -1,0 +1,24 @@
+                            Display Resource Detail                             
+                                                             System:   SYSNAME  
+ Resource name  . . . . . . . :   CMB01                                         
+ Text . . . . . . . . . . . . :   Storage Controller                            
+ Type-model . . . . . . . . . :   290A-001                                      
+ Serial number  . . . . . . . :   00-00000                                      
+ Part number  . . . . . . . . :                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Location :   U9824.22A.78EA841-V22-C4                                          
+                                                                                
+   System card                      4                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

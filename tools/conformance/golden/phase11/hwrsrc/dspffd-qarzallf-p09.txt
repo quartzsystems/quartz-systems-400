@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   3/39          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOREIA     CHAR            2       2       157        Both     Resource     
+                                                                   EIA          
+                                                                   location     
+      Field text  . . . . . . . . . . . . . . . :  Resource EIA location        
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORCSL     CHAR            3       3       159        Both     Resource     
+                                                                   card         
+                                                                   position     
+      Field text  . . . . . . . . . . . . . . . :  Resource card position       
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORDSL     CHAR            4       4       162        Both     Resource     
+                                                                   device       
+                                                                   position     
+      Field text  . . . . . . . . . . . . . . . :  Resource device position     
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

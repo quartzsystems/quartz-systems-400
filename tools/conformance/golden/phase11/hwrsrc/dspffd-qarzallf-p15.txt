@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   5/8           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORACP     CHAR            5       5       265        Both     Alternate    
+                                                                   card         
+                                                                   position     
+      Field text  . . . . . . . . . . . . . . . :  Alternate card position      
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORADP     CHAR            5       5       270        Both     Alternate    
+                                                                   device       
+                                                                   position     
+      Field text  . . . . . . . . . . . . . . . :  Alternate device position    
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORTTY     CHAR            2       2       275        Both     Transport    
+                                                                   type         
+                                                                   definition   
+      Field text  . . . . . . . . . . . . . . . :  Transport type definition    
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

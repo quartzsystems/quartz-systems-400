@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/62          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   serial       
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  System serial number         
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORECF     CHAR            1       1        39        Both     Record       
+                                                                   format       
+      Field text  . . . . . . . . . . . . . . . :  Record format identifier     
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSVRM     CHAR            6       6        40        Both     Version      
+                                                                   Release      
+                                                                   Modification 
+      Field text  . . . . . . . . . . . . . . . :  Operating system level       
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORSVD     CHAR           36      36        46        Both     Reserved     
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   4/5           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Reserved                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSYTM     CHAR            8       8       196        Both     Coupled      
+                                                                   system       
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  Coupled system name          
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSMTP     CHAR            4       4       204        Both     Coupled      
+                                                                   system       
+                                                                   type         
+      Field text  . . . . . . . . . . . . . . . :  Coupled system type          
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSMDL     CHAR            3       3       208        Both     Coupled      
+                                                                   system       
+                                                                   model        
+      Field text  . . . . . . . . . . . . . . . :  Coupled system model         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

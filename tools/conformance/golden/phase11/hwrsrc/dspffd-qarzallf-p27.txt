@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   6/25          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Coded Character Set Identifier  . . . . . :     37                        
+    SWTMOD     CHAR            1       1       410        Both     Switchable   
+                                                                   mode         
+      Field text  . . . . . . . . . . . . . . . :  Switchable mode              
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORESR     CHAR           15      15       411        Both     Expanded     
+                                                                   serial       
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  Expanded serial number       
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+ Record requested after last record in file.                                    

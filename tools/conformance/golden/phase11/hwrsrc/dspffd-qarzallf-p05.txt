@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/32          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   function     
+      Field text  . . . . . . . . . . . . . . . :  Local Work Station function: 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSTGF     CHAR            1       1        88        Both     *STG         
+                                                                   function     
+      Field text  . . . . . . . . . . . . . . . :  Storage function: 0=No, 1=Ye 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOPRCF     CHAR            1       1        89        Both     *PRC         
+                                                                   function     
+      Field text  . . . . . . . . . . . . . . . :  Processor function: 0=No, 1= 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORLVL     CHAR            1       1        90        Both     Resource     
+                                                                   level        
+      Field text  . . . . . . . . . . . . . . . :  Resource level               
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORDSC     CHAR            2       2        91        Both     Resource     
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

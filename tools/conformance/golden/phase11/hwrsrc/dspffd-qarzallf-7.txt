@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/52          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   description  
+      Field text  . . . . . . . . . . . . . . . :  Resource description         
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORNAM     CHAR           10      10        93        Both     Resource     
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  System defined resource name 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORPAR     CHAR           10      10       103        Both     Previous     
+                                                                   level        
+                                                                   resource     
+      Field text  . . . . . . . . . . . . . . . :  System defined previous leve 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DORTYP     CHAR            4       4       113        Both     Resource     
+                                                                   type         
+      Field text  . . . . . . . . . . . . . . . :  Resource type                
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

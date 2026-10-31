@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/44          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Time of retrieval: hour/minu 
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSNAM     CHAR            8       8        14        Both     System       
+                                                                   name         
+      Field text  . . . . . . . . . . . . . . . :  System name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSTYP     CHAR            4       4        22        Both     System       
+                                                                   type         
+      Field text  . . . . . . . . . . . . . . . :  System hardware type         
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSMOD     CHAR            3       3        26        Both     System       
+                                                                   model        
+                                                                   number       
+      Field text  . . . . . . . . . . . . . . . :  System model number          
+      Coded Character Set Identifier  . . . . . :     37                        
+    DOSSER     CHAR           10      10        29        Both     System       
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

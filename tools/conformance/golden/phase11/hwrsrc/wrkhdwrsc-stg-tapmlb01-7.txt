@@ -1,0 +1,24 @@
+                            Display Resource Detail                             
+                                                             System:   SYSNAME  
+ Resource name  . . . . . . . :   TAPMLB01                                      
+ Text . . . . . . . . . . . . :   Tape Library                                  
+ Type-model . . . . . . . . . :   3573-020                                      
+ Serial number  . . . . . . . :   02-4404700                                    
+ Part number  . . . . . . . . :                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Location :                                                                     
+                                                                                
+                                                                                
+ Logical address:                                                               
+  SPD bus:                                                                      
+   System bus                       255                                         
+   System board                     128                                         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                
