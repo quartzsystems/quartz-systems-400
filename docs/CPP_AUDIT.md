@@ -75,10 +75,16 @@ leaves text on the menu.
 
 ## Display commands with only the service's text
 
-"Report viewer" is `QUIRPTVW`: the command's own processing program
-runs in the storage service and its lines show on a panel, never on a
-menu's message line. A list panel of its own is still open for those
-(`TODO(phase12)` in `work/qsjob/src/panels/info/reports.rs`).
+"Report viewer" was `QUIRPTVW`: the command's own processing program
+ran in the storage service and its lines showed on a panel. The eight
+that had it now have panels of their own; their drivers are in
+`work/qsjob/src/panels/info/` and their data comes from the service as
+structured `sys2_panel` requests (`stgsvc/cppdata.rs`,
+`stgsvc/cppmedia.rs`) or through the IFS client (`DSPUDFS`).
+`OUTPUT(*PRINT)` still prints the service's text form. Captures are
+indexed in `tools/conformance/golden/audit/displays/INDEX.toml` and
+`verified/oracle71/audit/INDEX.toml`; panels no oracle can show are
+compared with goldens of our own (`ui/uim/tests/golden/audit/`).
 
 | Command | Wired today | Reads from (after) | Panel | Golden | Fix |
 |---|---|---|---|---|---|
@@ -87,14 +93,14 @@ menu's message line. A list panel of its own is still open for those
 | DSPIPLA | text (`cpp/iplcmd.rs`) | `sys2_panel IPLA` (the LIC record) | QUIIPLA new | `phase11/displays/dspipla`, row for row | 46aec2dd |
 | WRKMSGD | text: bridge word `wrkmsgd` | `msgf_list` | QUIDSPMSGD `WORK` | `audit/displays/wrkmsgd`, geometry | 46aec2dd, this batch |
 | WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QUIRDBDIR new | `phase10/misc/wrkrdbdire`, geometry | 46aec2dd |
-| DSPPTFCVR | text (`cpp/ptfcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 46aec2dd |
-| DSPBCKSTS | text (`cpp/opacmd.rs`) | the service's CPP | report viewer | `audit/displays/dspbcksts` captured; panel open | 46aec2dd |
-| DSPLICKEY | text (`cpp/lpcmd.rs`) | the service's CPP | report viewer | `verified/oracle71/audit/dsplickey` (7.1, key and serial masked); panel open | 46aec2dd |
-| DSPUDFS | text (`cpp/ifscmd.rs`) | the service's CPP | report viewer | none (needs a UDFS) | 46aec2dd |
-| DSPTAP | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no tape on pub400) | 46aec2dd |
-| DSPTAPCTG | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no library) | 46aec2dd |
-| DSPOPT | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no volume) | 46aec2dd |
-| WRKOPTVOL | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | `audit/displays/wrkoptvol` captured; panel open | 46aec2dd |
+| DSPPTFCVR | text (`cpp/ptfcmd.rs`) | `sys2_panel PTFCVR` (the cover letters in `QSYS/QSPTFDB`) | QUIDSPPTF `SELCVR`, `DSPCVR`; no IBM outfile | refused on pub400, `CPF6613` on 7.1 (`verified/oracle71/audit/ids-dspptfcvr`, `dspptfcvr`); `ui/uim/tests/audit_panels.rs` against ours (`selcvr`, `dspcvr`) | 58fefdaf |
+| DSPBCKSTS | text (`cpp/opacmd.rs`) | `sys2_panel BCKSTS` (`QUSRSYS/QEZBCKHST`, `wm::opa::hist`) | QEZBCKUP `DSPBCKSTS`, F22 `DSPBCKHST`, option 5 `DSPBCKDTL`; `OUTPUT(* *PRINT)` only, as on pub400 | `audit/displays/dspbcksts`, `-2`, `dspbckhst` row for row; ours with backups | c448bb77 |
+| DSPLICKEY | text (`cpp/lpcmd.rs`) | `sys2_panel LICKEY` (the license repository) | QUILICKEY `DSPLICKEY`, one key to a display; `OUTPUT(*LICKEYFILE)` in the service | `verified/oracle71/audit/dsplickey` (7.1, key and serial masked) row for row | 58fefdaf |
+| DSPUDFS | text (`cpp/ifscmd.rs`) | the IFS client `dspudfs` (`ifscmd::display::udfs`) | QUIDSPUDFS `DSPUDFS` new; `OUTPUT(*PRINT)` now printed; no IBM outfile (`audit/displays/dspudfs-prompt`) | no oracle has a UDFS (`CPFA0A9`, `audit/displays/dspudfs-none`); ours (`dspudfs`, `dspudfs-unmounted`) | e0698746 |
+| DSPTAP | text (`cpp/medcmd.rs`) | `sys2_panel TAP` (`cpp/meddsp.rs` over the drive) | QSMEDIA `DSPTAP`, `DSPTAPVOL`, `DSPTAPSAV`; `OUTPUT(*OUTFILE)` as `QSYS/QATADOF` format `QTADOUTF` (`cpp/medout.rs`, fields from `audit/outfiles/MODELS.txt`) | no tape on pub400 (`CPF6718`, `audit/displays/ids-dsptap`); layout from IBM's documentation, ours (`dsptap`, `dsptapvol`, `dsptapsav`) | a88effcc |
+| DSPTAPCTG | text (`cpp/medcmd.rs`) | `sys2_panel TAPCTG` (the library's cartridges) | QSMEDIA `DSPTAPCTG`, one cartridge to a display; `OUTPUT(*OUTFILE)` as `QSYS/QATAVOF` format `QTAVOUTF` | no library on pub400 (`CPF9814`, `audit/displays/ids-dsptapctg`); ours (`dsptapctg`) | a88effcc |
+| DSPOPT | text (`cpp/medcmd.rs`) | `sys2_panel OPT` (the volume set) | QSMEDIA `DSPOPTVOL`, `DSPOPTDIR`, `DSPOPTFIL`, `DSPOPTSAV`; `OUTPUT(*OUTFILE)` as `QSYS/QAMODVAF`, `QAMODPAF`, `QAMODFAF` (`QAMODVA`, `QAMODPA`, `QAMODFA`) | no volume on pub400 (`OPT1860`, `audit/displays/ids-dspopt`); ours (`dspoptvol`, `-dir`, `-fil`, `-sav`) | a88effcc |
+| WRKOPTVOL | text (`cpp/medcmd.rs`) | `sys2_panel OPTVOLS` (the optical devices' catalogs) | QSMEDIA `WRKOPTVOL` with pub400's parameters (`DEV VOL CSI RTVEXTINFO`); no IBM outfile | `audit/displays/wrkoptvol` row for row; its add row's input fields (row 11) wait for renderer support | a88effcc |
 | GO | the service answers `CPF0901`; menus and Command Entry intercept `GO` | `*MENU` objects | the menu | phase 8 | correct as wired |
 
 ## Panels filled by parsing the service's text
