@@ -190,3 +190,15 @@ The V7R1M0 oracle settled 27 restore rules
 31. **The response file's agreement.** Listing a product under `licpgm`
    accepts its software agreement as QSECOFR; IBM's automatic install
    asks for the agreements on the console. Kept for unattended installs.
+
+## Object integrity
+
+32. **What `CHKOBJITG` checks.** Every shipped object is signed, but the
+    signatures of `*PGM`, `*SRVPGM`, `*MODULE` and `*CMD` only are
+    checked, the types IBM i signs: the others (job queues, devices,
+    data areas) change in use, so a signature over their content stops
+    matching on a healthy system (the first install run found `QSPL
+    *JOBQ` and `QSCONSOLE *DEVD`). Damage is checked for every type. The
+    completion `CPC39E0` and escape `CPF39E1` are Quartz's choices; IBM's
+    `CHKOBJITG` writes an outfile instead and its messages were not
+    captured. Open: an `OUTFILE` in IBM's `QASVOBJI` layout.
