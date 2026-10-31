@@ -27,7 +27,7 @@ mod itgcmd;
 pub(crate) mod medcmd;
 mod msgfcmd;
 mod objcmd;
-mod opacmd;
+pub(crate) mod opacmd;
 mod prbcmd;
 pub(crate) mod ptfcmd;
 pub(crate) mod ptflic;

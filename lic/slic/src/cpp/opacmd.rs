@@ -36,7 +36,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "ENDCLNUP" => endclnup(system),
         "CHGBCKUP" => chgbckup(system, parms),
         "DSPBCKUP" => dspbckup(system, parms),
-        "DSPBCKSTS" => dspbcksts(system),
+        "DSPBCKSTS" => dspbcksts(system, parms),
         "PRTSYSINF" => prtsysinf(system),
         "QSPMTOVR" => pmtovr(system, parms),
         "QSBCKUP" => qsbckup(system, parms),
@@ -527,27 +527,116 @@ fn dspbckup(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     Ok(text_reply(out))
 }
 
-fn dspbcksts(system: &mut System) -> Result<CmdReply, String> {
+/// `DSPBCKSTS`'s data: for each item of `hist::ITEMS` the date and tape
+/// set of the last backup that saved it (blank when none did), and the
+/// runs, newest first.
+pub(crate) struct BackupStatus {
+    /// `(item, date, tape set)`.
+    pub items: Vec<(&'static str, String, String)>,
+    /// The history, newest first.
+    pub runs: Vec<RunView>,
+}
+
+/// One run of the history as `DSPBCKSTS` shows it.
+pub(crate) struct RunView {
+    /// Date and time it started.
+    pub date: String,
+    /// The time.
+    pub time: String,
+    /// `*DAILY`, `*WEEKLY`, `*MONTHLY` or the `GO SAVE` option.
+    pub option: String,
+    /// The device.
+    pub dev: String,
+    /// The tape set.
+    pub tapset: String,
+    /// Every save completed.
+    pub ok: bool,
+    /// Only changed objects were saved.
+    pub changes: bool,
+    /// Each save and how it ended.
+    pub steps: Vec<String>,
+}
+
+pub(crate) fn backup_status(system: &mut System) -> Result<BackupStatus, String> {
     let h = History::decode(&load_text(system, bhist::OBJECT)?);
-    let mut out = String::from("Backup status\n");
-    if h.runs.is_empty() {
-        out.push_str("  No backup has run.\n");
+    let b = backup(system)?;
+    let from_list = |o: &str| Which::parse(o).is_some_and(|w| b.of(w).lib == bckup::Sel::List);
+    let last = h.last_saved(from_list);
+    let date = |secs: u64| wm::joblog::stamp_of(secs.saturating_mul(1_000_000));
+    let items = bhist::ITEMS
+        .iter()
+        .map(|it| match last.get(it).and_then(|&i| h.runs.get(i)) {
+            Some(r) => (*it, date(r.started).0, if r.tapset == "*NONE" { String::new() } else { r.tapset.clone() }),
+            None => (*it, String::new(), String::new()),
+        })
+        .collect();
+    let runs = h
+        .runs
+        .iter()
+        .rev()
+        .map(|r| {
+            let (d, t) = date(r.started);
+            RunView {
+                date: d,
+                time: t,
+                option: r.option.clone(),
+                dev: r.dev.clone(),
+                tapset: r.tapset.clone(),
+                ok: r.ok,
+                changes: r.steps.contains("SAVCHGOBJ"),
+                steps: r.steps.split(';').filter(|s| !s.is_empty()).map(str::to_string).collect(),
+            }
+        })
+        .collect();
+    Ok(BackupStatus { items, runs })
+}
+
+/// What each item is, for the printed report.
+const ITEM_TEXT: [&str; 13] = [
+    "User libraries, all",
+    "User libraries, all (changes only)",
+    "User libraries, from list",
+    "User libraries, from list (changes only)",
+    "Folders, all",
+    "Folders, all (changes only)",
+    "Folders, from list",
+    "User directories, all",
+    "User directories, all (changes only)",
+    "Security data",
+    "Configuration",
+    "OfficeVision calendars",
+    "OfficeVision mail",
+];
+
+fn dspbcksts(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    let s = backup_status(system)?;
+    let mut lines = vec![format!("{:<44}{:<15}{}", "What was backed up", "Last backup", "Tape set")];
+    for ((_, d, t), what) in s.items.iter().zip(ITEM_TEXT) {
+        lines.push(format!("{what:<44}{d:<15}{t}"));
     }
-    for r in h.runs.iter().rev() {
-        let (d, t) = wm::joblog::stamp_of(r.started.saturating_mul(1_000_000));
-        let _ = writeln!(
-            out,
-            "  {d} {t}  {:<9} {:<10} {:<5} {}",
+    lines.push(String::new());
+    lines.push("Backup history".into());
+    if s.runs.is_empty() {
+        lines.push("  No backup has run.".into());
+    }
+    for r in &s.runs {
+        lines.push(format!(
+            "  {} {}  {:<9} {:<10} {:<5} {}",
+            r.date,
+            r.time,
             r.option,
             r.dev,
             r.tapset,
             if r.ok { "Completed" } else { "Ended with errors" }
-        );
-        for s in r.steps.split(';').filter(|s| !s.is_empty()) {
-            let _ = writeln!(out, "      {s}");
+        ));
+        for st in &r.steps {
+            lines.push(format!("      {st}"));
         }
     }
-    Ok(text_reply(out))
+    if parms.name("OUTPUT") == "*PRINT" {
+        return crate::svc::security::print_as(system, "QPEZBCKUP", "DSPBCKSTS", &lines, false).map(text_reply);
+    }
+    Ok(text_reply(lines.join("\n") + "\n"))
 }
 
 /// `QSBCKUP ACTION(*PLAN)`: the commands of a backup, one per line,

@@ -1,0 +1,32 @@
+# CPP audit round 2: DSPUDFS's message ID with no UDFS (F1 on it), and
+# DSPBCKSTS's F22 history. Read-only.
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPBCKSTS
+key enter
+settle 3000
+key f22
+settle 3000
+snap dspbckhst
+key pagedown
+settle 1500
+snap dspbckhst-2
+key f12
+settle 2000
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPUDFS UDFS('/dev/QASP01/qsnone.udfs')
+key enter
+settle 3000
+snap ids-dspudfs-cmdentry
+cursor 5 7
+key f1
+settle 2000
+snap ids-dspudfs
+key f12
+settle 2000

@@ -175,3 +175,69 @@ fn dspptfcvr_list_and_letter() {
     );
     ours("dspcvr", &render(&g, "DSPCVR", &d, &opts(0)).unwrap());
 }
+
+// ------------------------------------------------------------ DSPBCKSTS
+
+/// `DSPBCKSTS` with no backup run (pub400 has none either): both pages
+/// row for row, the system name pub400's.
+#[test]
+fn dspbcksts_matches_the_captures() {
+    let g = group("QEZBCKUP");
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS");
+    let o = |page| Options {
+        system: "PUB400".into(),
+        page,
+        ..Options::default()
+    };
+    against("audit/displays/dspbcksts", &render(&g, "DSPBCKSTS", &d, &o(0)).unwrap(), &[]);
+    against("audit/displays/dspbcksts-2", &render(&g, "DSPBCKSTS", &d, &o(1)).unwrap(), &[]);
+    // F22 with no history; ours says so in its own words and keeps
+    // `Bottom` under the empty list, where pub400 shows none.
+    d.set_list("HIST", list(Vec::new()));
+    let s = render(&g, "DSPBCKHST", &d, &o(0)).unwrap();
+    against("audit/displays/dspbckhst", &s, &[9, 22]);
+    assert_eq!(s.text_rows()[8].trim(), "(No backup has run.)");
+}
+
+/// `DSPBCKSTS` after two backups, and F22's history.
+#[test]
+fn dspbcksts_with_backups() {
+    let g = group("QEZBCKUP");
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "12/31/26  23:59:59");
+    for (k, v) in [
+        ("ULLISTD", "12/30/26"),
+        ("ULLISTT", "DAYA"),
+        ("SECDTAD", "12/30/26"),
+        ("SECDTAT", "DAYA"),
+        ("UDALLD", "12/24/26"),
+        ("UDALLT", "WEEK1"),
+    ] {
+        d.set(k, v);
+    }
+    ours("dspbcksts", &render(&g, "DSPBCKSTS", &d, &opts(0)).unwrap());
+    d.set_list(
+        "HIST",
+        list(vec![
+            vec![("HDATE", "12/30/26"), ("HOPT", "*DAILY"), ("HSET", "DAYA"), ("HCHG", "Yes")],
+            vec![("HDATE", "12/24/26"), ("HOPT", "*WEEKLY"), ("HSET", "WEEK1"), ("HCHG", "No")],
+        ]),
+    );
+    ours("dspbckhst", &render(&g, "DSPBCKHST", &d, &opts(0)).unwrap());
+    for (k, v) in [
+        ("HDATE", "12/24/26"),
+        ("HTIME", "23:00:00"),
+        ("HOPT", "*WEEKLY"),
+        ("HDEV", "TAP01"),
+        ("HSET", "WEEK1"),
+        ("HSTS", "Ended with errors"),
+    ] {
+        d.set(k, v);
+    }
+    d.set_list(
+        "STEPS",
+        list(vec![vec![("HSTEP", "SAVLIB completed")], vec![("HSTEP", "SAVCFG failed")], vec![("HSTEP", "SAV completed")]]),
+    );
+    ours("dspbckdtl", &render(&g, "DSPBCKDTL", &d, &opts(0)).unwrap());
+}

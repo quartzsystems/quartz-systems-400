@@ -1,0 +1,24 @@
+                             Display Backup History                    SYSNAME
+                                                             12/31/26  23:59:59
+ Type options below, then press Enter.
+   5=Display backup details
+
+            Backup       Backup               Tape     Changes
+ Option     Date         Options              Set      Only
+            12/30/26     *DAILY               DAYA     Yes
+            12/24/26     *WEEKLY              WEEK1    No
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         Bottom
+ F1=Help   F3=Exit   F12=Cancel
+

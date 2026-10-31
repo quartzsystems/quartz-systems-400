@@ -1,0 +1,24 @@
+                             Display Backup History                    PUB400   
+                                                             MM/DD/YY  HH:MM:SS 
+ Type options below, then press Enter.                                          
+   5=Display backup details                                                     
+                                                                                
+            Backup       Backup               Tape     Changes                  
+ Option     Date         Options              Set      Only                     
+                                                                                
+   (No backup history information found.)                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F1=Help   F3=Exit   F12=Cancel                                                 
+                                                                                

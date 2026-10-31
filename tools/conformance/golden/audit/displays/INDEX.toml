@@ -30,3 +30,30 @@ date = "2026-10-31"
 script = "disp-wrkoptvol"
 width = 80
 
+
+[[golden]]
+name = "dspbcksts-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-models"
+width = 80
+note = "DSPBCKSTS page 2"
+
+[[golden]]
+name = "dspbcksts-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-outfiles"
+width = 80
+note = "DSPBCKSTS takes OUTPUT(* *PRINT) only"
+
+[[golden]]
+name = "dspbckhst"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-31"
+script = "probe-udfs-hist"
+width = 80
+note = "DSPBCKSTS F22 with no history"

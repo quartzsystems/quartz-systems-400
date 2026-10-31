@@ -1,0 +1,24 @@
+                             Display Backup Details                    SYSNAME
+                                                             12/31/26  23:59:59
+ Backup date . . . . . . :   12/24/26
+ Backup time . . . . . . :   23:00:00
+ Backup option . . . . . :   *WEEKLY
+ Device  . . . . . . . . :   TAP01
+ Tape set  . . . . . . . :   WEEK1
+ Status  . . . . . . . . :   Ended with errors
+
+ Saves
+ SAVLIB completed
+ SAVCFG failed
+ SAV completed
+
+
+
+
+
+
+                                                                         Bottom
+ Press Enter to continue.
+
+ F1=Help   F3=Exit   F12=Cancel
+

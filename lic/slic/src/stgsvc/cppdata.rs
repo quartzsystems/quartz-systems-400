@@ -6,12 +6,12 @@
 //! (`docs/CPP_AUDIT.md`): the PTFs of a product and one PTF's detail
 //! (`DSPPTF`), the PTF groups (`WRKPTFGRP`) and the IPL attributes
 //! (`DSPIPLA`), the cover letters (`DSPPTFCVR`) and the license keys
-//! (`DSPLICKEY`). Answered through request 270 (`sys2_panel`) for the
+//! (`DSPLICKEY`) and the backup status (`DSPBCKSTS`). Answered through request 270 (`sys2_panel`) for the
 //! job's drivers in `work/qsjob/src/panels/info/`.
 
 use stg::proto::Sys2Data;
 
-use crate::cpp::{iplcmd, lpcmd, ptfcmd};
+use crate::cpp::{iplcmd, lpcmd, opacmd, ptfcmd};
 use crate::ipl::system::System;
 
 type Vars = Vec<(String, String)>;
@@ -27,6 +27,7 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Option<Result<
         "IPLA" => Ok(ipla(system)),
         "PTFCVR" => covers(system, args),
         "LICKEY" => lickeys(system, args),
+        "BCKSTS" => backup_status(system),
         _ => return None,
     })
 }
@@ -194,4 +195,33 @@ fn lickeys(system: &mut System, args: &[String]) -> Result<Sys2Data, String> {
         })
         .collect();
     Ok((Vec::new(), vec![("KEYS".into(), rows)]))
+}
+
+/// `DSPBCKSTS`: `<item>D` and `<item>T` for each item, the history in
+/// `HIST`.
+fn backup_status(system: &mut System) -> Result<Sys2Data, String> {
+    let s = opacmd::backup_status(system)?;
+    let mut vars = Vars::new();
+    for (it, d, t) in s.items {
+        vars.push((format!("{it}D"), d));
+        vars.push((format!("{it}T"), t));
+    }
+    let rows: Rows = s
+        .runs
+        .into_iter()
+        .map(|r| {
+            pairs(&[
+                ("OPT", String::new()),
+                ("HDATE", r.date),
+                ("HTIME", r.time),
+                ("HOPT", r.option),
+                ("HDEV", r.dev),
+                ("HSET", r.tapset),
+                ("HCHG", if r.changes { "Yes" } else { "No" }.into()),
+                ("HSTS", if r.ok { "Completed" } else { "Ended with errors" }.into()),
+                ("HSTEPS", r.steps.join(";")),
+            ])
+        })
+        .collect();
+    Ok((vars, vec![("HIST".into(), rows)]))
 }

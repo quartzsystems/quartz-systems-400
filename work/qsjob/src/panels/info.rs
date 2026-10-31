@@ -8,6 +8,7 @@
 //! report viewer (`reports`): `DSPPTFCVR`, `DSPBCKSTS`, `DSPLICKEY`,
 //! `DSPTAP`, `DSPTAPCTG`, `DSPOPT`, `WRKOPTVOL`, `DSPUDFS`.
 
+mod bcksts;
 mod keys;
 mod lists;
 mod ptf;
@@ -39,7 +40,8 @@ pub fn run(
         "WRKRDBDIRE" => lists::wrkrdbdire(job, host, surface, r),
         "DSPPTFCVR" => ptf::dspptfcvr(job, host, surface, r),
         "DSPLICKEY" => keys::dsplickey(job, host, surface, r),
-        "DSPBCKSTS" | "DSPTAP" | "DSPTAPCTG" | "DSPOPT" | "WRKOPTVOL"
+        "DSPBCKSTS" => bcksts::dspbcksts(host, surface),
+        "DSPTAP" | "DSPTAPCTG" | "DSPOPT" | "WRKOPTVOL"
         | "DSPUDFS" => reports::show(job, host, surface, r),
         _ => return None,
     })

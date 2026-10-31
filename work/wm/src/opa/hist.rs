@@ -6,6 +6,7 @@
 //! line per backup that ran, newest last, the oldest dropped past
 //! [`KEEP`].
 
+use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 /// The user space that holds the history.
@@ -96,7 +97,47 @@ impl History {
     pub fn last(&self, option: &str) -> Option<&Run> {
         self.runs.iter().rev().find(|r| r.option == option)
     }
+
+    /// `DSPBCKSTS`: for each item of [`ITEMS`], the last run that saved
+    /// it (an index into `runs`). `from_list` says whether a run's
+    /// option saves the backup list's libraries rather than all of them.
+    #[must_use]
+    pub fn last_saved(&self, from_list: impl Fn(&str) -> bool) -> BTreeMap<&'static str, usize> {
+        let mut out = BTreeMap::new();
+        for (i, r) in self.runs.iter().enumerate() {
+            let list = from_list(&r.option);
+            for step in r.steps.split(';') {
+                let mut w = step.split_whitespace();
+                let verb = w.next().unwrap_or("").to_ascii_uppercase();
+                if !step.contains("completed") {
+                    continue;
+                }
+                let items: &[&'static str] = match verb.as_str() {
+                    "SAVSECDTA" => &["SECDTA"],
+                    "SAVCFG" => &["CFGDTA"],
+                    "SAVSYS" => &["SECDTA", "CFGDTA"],
+                    "SAVLIB" if list => &["ULLIST"],
+                    "SAVLIB" => &["ULALL"],
+                    "SAVCHGOBJ" if list => &["ULLISTC"],
+                    "SAVCHGOBJ" => &["ULALLC"],
+                    "SAVDLO" => &["FLALL"],
+                    "SAV" => &["UDALL"],
+                    _ => &[],
+                };
+                for it in items {
+                    out.insert(*it, i);
+                }
+            }
+        }
+        out
+    }
 }
+
+/// The items `DSPBCKSTS` lists, in its order: the panel variable's stem.
+pub const ITEMS: [&str; 13] = [
+    "ULALL", "ULALLC", "ULLIST", "ULLISTC", "FLALL", "FLALLC", "FLLIST", "UDALL", "UDALLC", "SECDTA", "CFGDTA",
+    "OVCAL", "OVMAIL",
+];
 
 #[cfg(test)]
 mod tests {
@@ -122,5 +163,25 @@ mod tests {
         assert_eq!(back.runs.len(), KEEP);
         assert_eq!(back.last("*WEEKLY").unwrap().started, KEEP as u64 + 3);
         assert_eq!(back.runs[0].steps, "SAVLIB ok;SAV ok");
+    }
+
+    #[test]
+    fn the_last_save_of_each_item() {
+        let run = |option: &str, steps: &str| Run {
+            option: option.into(),
+            steps: steps.into(),
+            ..Run::default()
+        };
+        let mut h = History::default();
+        h.add(run("*DAILY", "SAVLIB completed;SAVSECDTA completed"));
+        h.add(run("*WEEKLY", "SAVLIB completed;SAVCFG failed;SAV completed"));
+        h.add(run("*DAILY", "SAVCHGOBJ completed"));
+        let s = h.last_saved(|o| o == "*DAILY");
+        assert_eq!(s.get("ULLIST"), Some(&0));
+        assert_eq!(s.get("ULALL"), Some(&1));
+        assert_eq!(s.get("ULLISTC"), Some(&2));
+        assert_eq!(s.get("SECDTA"), Some(&0));
+        assert_eq!(s.get("UDALL"), Some(&1));
+        assert_eq!(s.get("CFGDTA"), None);
     }
 }
