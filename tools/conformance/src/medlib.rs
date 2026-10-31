@@ -39,7 +39,7 @@ fn inqmsgrpy(s: &mut Session) -> String {
 /// The cartridges: inserted, added, mounted by a save, demounted by
 /// `ENDOPT(*UNLOAD)`, ejected; then two libraries saved as a file each.
 fn library(s: &mut Session) -> Result<(), String> {
-    run(s, "crtdevmlb DEVD(TAPMLB76) RSRCNAME(*VRT)", &["CPC2618"])?;
+    run(s, "crtdevmlb DEVD(TAPMLB76) DEVCLS(*TAP) RSRCNAME(*VRT)", &["CPC2618"])?;
     run(s, "crtimgclg IMGCLG(QS76LIB) DIR('/qs76/lib') TYPE(*TAP)", &["CPCBC01"])?;
     for v in ["QS76A", "QS76B", "QS76C"] {
         run(
