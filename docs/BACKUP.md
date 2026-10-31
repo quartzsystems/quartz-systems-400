@@ -126,8 +126,8 @@ startup program `QSTRUP` as shipped.
 
 ## Deviations and what waits
 
-- `SAVSYS` is not on the system yet; `GO SAVE` 21 and 22 leave it out
-  until it is (`// BLOCKED(phase11):` in `opa/gosave.rs`).
+- `GO SAVE` 21 and 22 run `SAVSYS` when the system has it, and save
+  everything after it otherwise.
 - The backup list (`DSPBCKUPL`, `EDTBCKUPL`) is not there: `*BCKUPL`
   stands for every user library; F16 and F17 of `DSPBCKUP` say so.
 - `RTVCLNUP` and `RTVBCKUP` are not shipped.
