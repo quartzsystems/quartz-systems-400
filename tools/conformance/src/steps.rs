@@ -601,6 +601,7 @@ impl Suite {
         reports.push(self.step(&mut s, "81 PTFs", Self::ptfs)?);
         reports.push(self.step(&mut s, "82 display commands", Self::display_commands)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
+        reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

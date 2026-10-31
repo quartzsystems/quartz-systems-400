@@ -14,6 +14,7 @@ mod certstep;
 pub mod cl;
 pub mod cmdkit;
 mod cmn;
+mod console;
 pub mod db;
 pub mod ifsapi;
 pub mod ossnet;
