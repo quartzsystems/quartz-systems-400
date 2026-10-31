@@ -33,20 +33,20 @@ fn problem_id(out: &str, symptom: &str) -> Option<String> {
 // The steps share one signature so `step` can take them as fn pointers.
 #[allow(clippy::unused_self)]
 impl Suite {
-    /// Step 72: a severe message to `QSYSOPR` logs a problem `WRKPRB`
+    /// Step 74: a severe message to `QSYSOPR` logs a problem `WRKPRB`
     /// and `DSPPRB` show; `DMPOBJ` prints a dump and logs one; a system
     /// dump is taken and listed; `STRTRC`, `ENDTRC` and `PRTTRC` trace
     /// the console's job and print it.
     pub(crate) fn service(&self, s: &mut Session) -> Result<String, String> {
         // A break message to QSYSOPR has severity 99: a problem.
-        s.command("sndbrkmsg MSG('QS72 severe test') TOMSGQ(QSYSOPR)", CMD)?;
+        s.command("sndbrkmsg MSG('QS74 severe test') TOMSGQ(QSYSOPR)", CMD)?;
         let list = s.command("wrkprb", CMD)?;
         want(&list, "WRKPRB", &["OPENED"])?;
         let all = s.command("dspprb", CMD)?;
-        let id = problem_id(&all, "QS72 severe test")
+        let id = problem_id(&all, "QS74 severe test")
             .ok_or_else(|| format!("no problem for the break message:\n{all}"))?;
         let one = s.command(&format!("dspprb PRBID({id})"), CMD)?;
-        want(&one, "DSPPRB of the problem", &[&id, "QS72 severe test", "MSG/*IMMED", "type 1"])?;
+        want(&one, "DSPPRB of the problem", &[&id, "QS74 severe test", "MSG/*IMMED", "type 1"])?;
         // A formatted object dump to QPSRVDMP logs a problem too.
         let dmp = s.command("dmpobj OBJ(QGPL/QDFTJOBD) OBJTYPE(*JOBD)", CMD)?;
         want(&dmp, "DMPOBJ", &["printed", "problem"])?;
@@ -65,25 +65,25 @@ impl Suite {
         let all = s.command("dspprb", CMD)?;
         want(&all, "problems after the dumps", &[&format!("DUMP/{name}"), "DUMP/QGPL/QDFTJOBD"])?;
         // A job trace of the console's own job.
-        let st = s.command("strtrc SSNID(T72) JOB(*)", CMD)?;
-        want(&st, "STRTRC", &["T72", "started"])?;
-        s.command("crtlib LIB(QS72)", CMD)?;
-        s.command("dltlib LIB(QS72)", CMD)?;
+        let st = s.command("strtrc SSNID(T74) JOB(*)", CMD)?;
+        want(&st, "STRTRC", &["T74", "started"])?;
+        s.command("crtlib LIB(QS74)", CMD)?;
+        s.command("dltlib LIB(QS74)", CMD)?;
         let sts = s.command("dspsrvsts", CMD)?;
-        want(&sts, "DSPSRVSTS", &["T72"])?;
-        let end = s.command("endtrc SSNID(T72) DTAOPT(*LIB) DTALIB(QGPL)", CMD)?;
-        want(&end, "ENDTRC", &["T72", "ended with"])?;
-        let prt = s.command("prttrc DTAMBR(T72) DTALIB(QGPL)", CMD)?;
-        want(&prt, "PRTTRC", &["T72", "printed"])?;
+        want(&sts, "DSPSRVSTS", &["T74"])?;
+        let end = s.command("endtrc SSNID(T74) DTAOPT(*LIB) DTALIB(QGPL)", CMD)?;
+        want(&end, "ENDTRC", &["T74", "ended with"])?;
+        let prt = s.command("prttrc DTAMBR(T74) DTALIB(QGPL)", CMD)?;
+        want(&prt, "PRTTRC", &["T74", "printed"])?;
         let spooled = s.command("wrksplf", CMD)?;
         want(&spooled, "spooled files", &["QPSRVDMP", "QPSRVTRCJ"])?;
         let log = s.command("svc.liclog 0500", CMD)?;
         want(&log, "LIC log", &["0500 0001"])?;
         // Leave the system as it was found.
         s.command(&format!("svc.sysdump delete {name}"), CMD).ok();
-        s.command("svc.obj dlt *USRSPC QGPL/T72", CMD).ok();
+        s.command("svc.obj dlt *USRSPC QGPL/T74", CMD).ok();
         Ok(format!(
-            "problem {id} from a severe QSYSOPR message; DMPOBJ and {name} logged problems; T72 traced and printed"
+            "problem {id} from a severe QSYSOPR message; DMPOBJ and {name} logged problems; T74 traced and printed"
         ))
     }
 }

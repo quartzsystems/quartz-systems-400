@@ -574,7 +574,7 @@ impl Suite {
         reports.push(self.step(&mut s, "70 certificates", Self::certificates)?);
         reports.push(self.step(&mut s, "65 QSH and PASE", Self::qsh_pase)?);
         reports.push(self.step(&mut s, "71 save and restore", Self::save_restore)?);
-        reports.push(self.step(&mut s, "72 problems, dumps and traces", Self::service)?);
+        reports.push(self.step(&mut s, "74 problems, dumps and traces", Self::service)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
