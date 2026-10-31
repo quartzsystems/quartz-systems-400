@@ -162,6 +162,20 @@ pub static REF_LAYOUT: Layout = Layout {
     ],
 };
 
+/// `AuthTableEntry`: a row of a profile's authority table (the engine
+/// writes it as a `*USRPRF`'s typed part).
+pub static AUTH_TABLE_LAYOUT: Layout = Layout {
+    name: "AuthTableEntry",
+    size: Some(36),
+    fields: &[
+        field("library", 0, 10),
+        field("name", 10, 10),
+        field("member", 20, 10),
+        field("type_code", 30, 2),
+        field("bits", 32, 4),
+    ],
+};
+
 /// `IndexEntry`.
 pub static INDEX_LAYOUT: Layout = Layout {
     name: "IndexEntry",

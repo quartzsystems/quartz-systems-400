@@ -7,7 +7,7 @@
 //! to the audit journal are the integrator's (`slic` over `sec`).
 
 use savfmt::ObjectDescriptor;
-use store::obj::ObjectHeader;
+use store::obj::{Authority, ObjectHeader, ObjectId, auth};
 use store::txn::Txn;
 
 /// The engine's questions to the security layer.
@@ -17,14 +17,34 @@ pub trait Hooks {
         Ok(())
     }
 
-    /// May the requester restore this saved object, over `existing`
-    /// when there is one? `Err` is the message.
+    /// May the requester restore this saved object into library `lib`,
+    /// over `existing` when there is one? `Err` is the message.
     fn may_restore(
         &self,
         _txn: &mut Txn<'_>,
         _d: &ObjectDescriptor,
+        _lib: ObjectId,
         _existing: Option<&ObjectHeader>,
     ) -> Result<(), &'static str> {
+        Ok(())
+    }
+
+    /// Give `profile` a private authority to `id` (the security layer
+    /// also indexes it under the profile).
+    fn set_private(
+        &self,
+        txn: &mut Txn<'_>,
+        id: ObjectId,
+        profile: [u8; 10],
+        bits: u32,
+    ) -> store::Result<()> {
+        let (page, mut h) = auth::load(txn, id)?;
+        auth::private_set(txn, page, &mut h, profile, Some(Authority(bits)))?;
+        Ok(())
+    }
+
+    /// Secure `id` with authorization list `autl`.
+    fn secure(&self, _txn: &mut Txn<'_>, _autl: &str, _id: ObjectId) -> store::Result<()> {
         Ok(())
     }
 

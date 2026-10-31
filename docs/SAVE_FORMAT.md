@@ -379,7 +379,26 @@ Type-specific contents (`save/saverst/src/image.rs`):
 | `*FILE` | attr, space, refs; each member follows as an owned object |
 | `*MBR` | attr, space (the record slots), tree0 (access path), tree1 (free slots), refs |
 | `*USRIDX` | attr (root and entry count zeroed), typed 16: every entry in key order, each a `u16` length and the entry |
+| `*USRPRF` | attr, space, typed 16: its authority table, `AuthTableEntry` rows (`SAVSECDTA`) |
+| `*AUTL` | attr, space, the authorities record: its entries |
 | every other type | attr, space, refs, tree0..tree3 when the header has them |
+
+A profile's indexes (objects it owns, is authorized to, is the group
+of) and the index of objects an authorization list secures are this
+system's and are never saved; they are rebuilt as objects are restored.
+A profile's private authorities travel in its authority table instead,
+by name, as IBM i's do: `RSTUSRPRF` keeps the table pending and `RSTAUT`
+grants what it can, keeping the rest for a later `RSTAUT`.
+
+### `AuthTableEntry` (36 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | library | the object's library (a member's file's) |
+| 10 | 10 | name | the object's name (a member's file's) |
+| 20 | 10 | member | member name, blank for an object |
+| 30 | 2 | type_code | |
+| 32 | 4 | bits | the store's authority bits |
 
 When a reference cannot be resolved: a file's journal is dropped and
 the file is restored not journaled; a logical member whose based-on

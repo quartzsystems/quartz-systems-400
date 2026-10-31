@@ -190,7 +190,7 @@ pub fn descriptor(h: &ObjectHeader, library: &str, e: &Exported, now: u64) -> Ob
 }
 
 /// Write one exported object.
-fn write_object<W: Write>(
+pub(crate) fn write_object<W: Write>(
     w: &mut Writer<W>,
     mut d: ObjectDescriptor,
     e: &Exported,
@@ -210,14 +210,15 @@ fn write_object<W: Write>(
     Ok(index)
 }
 
-fn private_auths(h: &ObjectHeader) -> Vec<AuthorityEntry> {
-    h.private_auths
-        .iter()
+/// Every private authority of `h`, the overflow included.
+pub fn private_auths(txn: &mut Txn<'_>, h: &ObjectHeader) -> Result<Vec<AuthorityEntry>> {
+    Ok(store::obj::auth::private_list(txn, h)?
+        .into_iter()
         .map(|p| AuthorityEntry {
             profile: p.profile,
             bits: p.bits.0,
         })
-        .collect()
+        .collect())
 }
 
 struct Candidate {
@@ -386,7 +387,7 @@ fn save_in<W: Write>(
         let members = members_of.remove(&c.id).unwrap_or_default();
         d.owned_count = u32::try_from(members.len()).expect("members");
         let auths = if opts.private_auth {
-            private_auths(&h)
+            private_auths(txn, &h)?
         } else {
             Vec::new()
         };

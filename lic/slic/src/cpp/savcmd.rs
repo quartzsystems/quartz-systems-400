@@ -36,6 +36,9 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CLRSAVF" => clrsavf(system, parms),
         "SAVLIB" | "SAVOBJ" => return Some(save(system, name, parms)),
         "RSTLIB" | "RSTOBJ" => return Some(rst(system, name, parms)),
+        "SAVSECDTA" => return Some(savsecdta(system, parms)),
+        "RSTUSRPRF" => return Some(rstusrprf(system, parms)),
+        "RSTAUT" => return Some(rstaut(system, parms)),
         _ => return None,
     };
     Some(match r {
@@ -104,14 +107,35 @@ impl Hooks for SvcHooks {
         &self,
         txn: &mut Txn<'_>,
         _d: &savfmt::ObjectDescriptor,
+        lib: ObjectId,
         existing: Option<&ObjectHeader>,
     ) -> Result<(), &'static str> {
-        match existing {
-            Some(h) if !savsys() && !sec::guard::allowed(txn, self.qsys, "obj.restore", h.id) => {
-                Err(msg::NOT_RESTORED_AUTH)
-            }
-            _ => Ok(()),
+        if savsys() {
+            return Ok(());
         }
+        let ok = match existing {
+            Some(h) => sec::guard::allowed(txn, self.qsys, "obj.restore", h.id),
+            None => sec::guard::allowed(txn, self.qsys, "lib.create-in", lib),
+        };
+        if ok { Ok(()) } else { Err(msg::NOT_RESTORED_AUTH) }
+    }
+
+    fn set_private(
+        &self,
+        txn: &mut Txn<'_>,
+        id: ObjectId,
+        profile: [u8; 10],
+        bits: u32,
+    ) -> store::Result<()> {
+        let name = store::obj::header::text_of(&profile);
+        sec::auth::grant::set_private(txn, self.qsys, id, &name, Some(sec::auth::bits::Auth::of(store::obj::Authority(bits))))
+            .map_err(|e| store::StoreError::BadValue { what: e.to_string() })
+    }
+
+    fn secure(&self, txn: &mut Txn<'_>, autl: &str, id: ObjectId) -> store::Result<()> {
+        // A list that is gone leaves the object unsecured.
+        let _ = sec::auth::autl::secure(txn, self.qsys, autl, id);
+        Ok(())
     }
 
     fn profile_exists(&self, txn: &mut Txn<'_>, name: &str) -> bool {
@@ -643,12 +667,12 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     if (r.0, r.1, r.2) > (cur.v, cur.r, cur.m) {
         return failed(name, "CPF3743 the save is for a later release");
     }
+    // The hooks decide who may restore; the objects are made by the
+    // system so they keep their saved owners.
     let store = &mut storage.store;
-    let res = if savsys() {
-        sec::guard::as_system(|| saverst::restore(store, jobh, &hooks, qsys, &mut reader, &opts))
-    } else {
+    let res = sec::guard::as_system(|| {
         saverst::restore(store, jobh, &hooks, qsys, &mut reader, &opts)
-    };
+    });
     match res {
         Ok(r) => rst_reply(&r, opts.target_library.as_deref()),
         Err(e) => failed(name, &format!("CPF3793 {e}")),
@@ -691,5 +715,210 @@ fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
         reply.escape = Some(m);
     }
     reply.text = text;
+    reply
+}
+
+/// The save file of a security or configuration command, read.
+fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, Box<CmdReply>> {
+    let dev = values(parms, "DEV");
+    if dev.first().map(String::as_str) != Some("*SAVF") {
+        return Err(Box::new(failed(name, &format!("{NO_DEVICE} device {} not found", dev.join(" ")))));
+    }
+    let savf_name = parms.qual("SAVF");
+    let stream = in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, &savf_name)?;
+        if !savsys() && !sec::guard::allowed(txn, qsys, "savf.read", id) {
+            return Err(format!("CPF2189 not authorized to save file {}", savf_name.0));
+        }
+        savf::read(txn, id).map_err(|e| e.to_string())
+    })
+    .map_err(|e| Box::new(failed(name, &e)))?;
+    if stream.is_empty() {
+        return Err(Box::new(failed(
+            name,
+            &format!("{} save file {} is empty", msg::NONE_FOR_LIB, savf_name.0),
+        )));
+    }
+    Ok(stream)
+}
+
+/// `SAVSECDTA`: profiles and authorization lists to a save file.
+fn savsecdta(system: &mut System, parms: &Parms) -> CmdReply {
+    const NAME: &str = "SAVSECDTA";
+    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SAVSYS, "save security data") {
+        return failed(NAME, &format!("CPF2189 {e}"));
+    }
+    let dev = values(parms, "DEV");
+    if dev.first().map(String::as_str) != Some("*SAVF") {
+        return failed(NAME, &format!("{NO_DEVICE} device {} not found", dev.join(" ")));
+    }
+    let savf_name = parms.qual("SAVF");
+    let clear = parms.text("CLEAR");
+    let savf_id = match in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, &savf_name)?;
+        let used = savf::len(txn, id).map_err(|e| e.to_string())?;
+        if used > 0 && !matches!(clear.as_str(), "*ALL" | "*REPLACE" | "*AFTER") {
+            return Err(format!("{SAVF_NOT_EMPTY} save file {} already holds data", savf_name.0));
+        }
+        Ok(id)
+    }) {
+        Ok(id) => id,
+        Err(e) => return failed(NAME, &e),
+    };
+    let head = header(system, NAME, parms, SaveKind::Security);
+    let Some(storage) = system.storage.as_mut() else {
+        return failed(NAME, "CPF3700 object store not open");
+    };
+    let Some(qsys) = storage.qsys else {
+        return failed(NAME, "CPF3700 object store not initialized");
+    };
+    let hooks = SvcHooks { qsys };
+    let mut w = match Writer::new(Vec::new(), &head) {
+        Ok(w) => w,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    let _ = w.parameters(&parms.to_line(NAME));
+    let store = &mut storage.store;
+    let rep = match sec::guard::as_system(|| {
+        saverst::secdta::save_security(store, &hooks, qsys, now_unix(), &mut w)
+    }) {
+        Ok(r) => r,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    let bytes = match w.finish(u32::try_from(rep.not_saved()).unwrap_or(0)) {
+        Ok((_, b)) => b,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    if let Err(e) = in_store(system, |txn, _, _| {
+        savf::write(txn, savf_id, &bytes).map_err(|e| format!("{SAVF_FULL} {e}"))
+    }) {
+        return failed(NAME, &e);
+    }
+    let n = rep.saved().to_string();
+    CmdReply {
+        text: format!("{SAVED_SECDTA} {n} profiles and authorization lists saved\n"),
+        messages: vec![message(SAVED_SECDTA, 4, &[(&n, 10)])],
+        ..CmdReply::default()
+    }
+}
+
+/// `SAVSECDTA` completed.
+const SAVED_SECDTA: &str = "CPC3701";
+/// Profiles restored, all of them.
+const RESTORED_PROFILES: &str = "CPC3705";
+/// Profiles restored, some not.
+const RESTORED_PROFILES_PARTIAL: &str = "CPF3775";
+/// Authorities granted for a profile.
+const AUTH_RESTORED: &str = "CPC3706";
+/// Authorities left pending for a profile.
+const AUTH_NOT_RESTORED: &str = "CPF3736";
+
+/// `RSTUSRPRF`.
+fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
+    const NAME: &str = "RSTUSRPRF";
+    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SAVSYS, "restore user profiles") {
+        return failed(NAME, &format!("CPF2189 {e}"));
+    }
+    let stream = match read_savf(system, NAME, parms) {
+        Ok(s) => s,
+        Err(r) => return *r,
+    };
+    let users = values(parms, "USRPRF");
+    let opts = saverst::secdta::ProfileOptions {
+        new_only: users.iter().any(|u| u == "*NEW"),
+        users: users.into_iter().filter(|u| !u.starts_with('*')).collect(),
+        omit: values(parms, "OMITUSRPRF")
+            .into_iter()
+            .filter(|u| u != "*NONE")
+            .collect(),
+        now: now_unix(),
+    };
+    let jobh = job(system);
+    let Some(storage) = system.storage.as_mut() else {
+        return failed(NAME, "CPF3700 object store not open");
+    };
+    let Some(qsys) = storage.qsys else {
+        return failed(NAME, "CPF3700 object store not initialized");
+    };
+    let hooks = SvcHooks { qsys };
+    let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
+        Ok(r) => r,
+        Err(e) => return failed(NAME, &format!("CPF3743 {e}")),
+    };
+    let store = &mut storage.store;
+    let rep = match sec::guard::as_system(|| {
+        saverst::secdta::restore_profiles(store, jobh, &hooks, qsys, &mut reader, &opts)
+    }) {
+        Ok(r) => r,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    let mut reply = CmdReply::default();
+    for o in rep.objects.iter().filter(|o| o.msgid.is_some()) {
+        let id = o.msgid.unwrap_or(msg::NOT_RESTORED_DAMAGED);
+        reply.messages.push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
+        let _ = writeln!(reply.text, "{id} {} not restored", o.name);
+    }
+    let n = rep.profiles().to_string();
+    let not = rep.profiles_not().to_string();
+    let _ = writeln!(
+        reply.text,
+        "{n} user profiles restored, {not} not; {} authorization lists restored",
+        rep.autls()
+    );
+    let m = |id| message(id, 4, &[(&n, 10), (&not, 10)]);
+    if rep.profiles_not() == 0 {
+        reply.messages.push(m(RESTORED_PROFILES));
+    } else {
+        reply.escape = Some(CmdMsg {
+            kind: 7,
+            ..m(RESTORED_PROFILES_PARTIAL)
+        });
+    }
+    reply
+}
+
+/// `RSTAUT`.
+fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
+    const NAME: &str = "RSTAUT";
+    if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SECADM, "restore authority") {
+        return failed(NAME, &format!("CPF2189 {e}"));
+    }
+    let users: Vec<String> = values(parms, "USRPRF")
+        .into_iter()
+        .filter(|u| u != "*ALL")
+        .collect();
+    let Some(storage) = system.storage.as_mut() else {
+        return failed(NAME, "CPF3700 object store not open");
+    };
+    let Some(qsys) = storage.qsys else {
+        return failed(NAME, "CPF3700 object store not initialized");
+    };
+    let hooks = SvcHooks { qsys };
+    let store = &mut storage.store;
+    let done = match sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &users)) {
+        Ok(d) => d,
+        Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
+    };
+    let mut reply = CmdReply::default();
+    let mut partial = false;
+    for d in &done {
+        let (r, n) = (d.restored.to_string(), d.not_restored.to_string());
+        let _ = writeln!(
+            reply.text,
+            "{} authorities restored for {}, {} not",
+            d.restored, d.profile, d.not_restored
+        );
+        if d.not_restored == 0 {
+            reply.messages.push(message(AUTH_RESTORED, 4, &[(&r, 10), (&d.profile, 10)]));
+        } else {
+            partial = true;
+            reply
+                .messages
+                .push(message(AUTH_NOT_RESTORED, 5, &[(&r, 10), (&d.profile, 10), (&n, 10)]));
+        }
+    }
+    if partial {
+        reply.escape = Some(message(AUTH_NOT_RESTORED, 7, &[]));
+    }
     reply
 }

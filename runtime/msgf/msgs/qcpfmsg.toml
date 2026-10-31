@@ -2529,3 +2529,38 @@ sev = 0
 text = "An object was given the default owner: &1."
 help = "The profile that owned the object when it was saved does not exist here, so QDFTOWN owns it."
 vars = ["*CHAR 50"]
+
+[[msg]]
+id = "CPC3701"
+sev = 0
+text = "&1 user profiles and authorization lists saved."
+help = "The security data is in the save. RSTUSRPRF and RSTAUT bring it back."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC3705"
+sev = 0
+text = "&1 user profiles restored."
+help = "Their private authorities wait for RSTAUT."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC3706"
+sev = 0
+text = "&1 authorities restored for user profile &2."
+help = "Every authority the profile had in the save was granted."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3736"
+sev = 40
+text = "&1 authorities restored for user profile &2. &3 objects were not found."
+help = "The authorities whose objects are not on the system stay waiting; run RSTAUT again after restoring those objects."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3775"
+sev = 40
+text = "&1 user profiles restored. &2 not restored."
+help = "The diagnostic messages before this one name each profile that was not restored."
+vars = ["*CHAR 10", "*CHAR 10"]

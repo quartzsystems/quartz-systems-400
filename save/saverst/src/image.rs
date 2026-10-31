@@ -47,6 +47,17 @@ fn scrub_attr(type_code: u16, attr: &mut [u8]) {
     }
 }
 
+/// Trees a type keeps as indexes of other objects by ID (a profile's
+/// owned, authorized and group objects; the objects an authorization
+/// list secures): rebuilt where they are restored, never saved.
+fn index_slot(type_code: u16, slot: usize) -> bool {
+    match type_code {
+        types::USRPRF => slot < 3,
+        types::AUTL => slot == 0,
+        _ => false,
+    }
+}
+
 /// Read object `id` out as parts. `data`: false for `SAVFDTA(*NO)` and
 /// the like (attributes only).
 pub fn export(txn: &mut Txn<'_>, id: ObjectId, data: bool) -> Result<Exported> {
@@ -78,8 +89,8 @@ pub fn export(txn: &mut Txn<'_>, id: ObjectId, data: bool) -> Result<Exported> {
             parts.insert(Part::SPACE, bytes);
         }
         for (slot, root) in header.tree_roots.iter().enumerate() {
-            if let Some(root) = root {
-                let (key_len, entries) = btree::dump(txn, *root)?;
+            if let Some(root) = root.filter(|_| !index_slot(tc, slot)) {
+                let (key_len, entries) = btree::dump(txn, root)?;
                 let t = TreeImage {
                     key_len: u16::try_from(key_len).expect("key"),
                     entries,
@@ -145,9 +156,10 @@ pub fn import(txn: &mut Txn<'_>, id: ObjectId, parts: &BTreeMap<Part, Vec<u8>>) 
         }
         _ => {}
     }
-    // Trees first: freeing them does not touch the attribute area.
+    // Trees first: freeing them does not touch the attribute area. A
+    // type's indexes of other objects stay: they are this system's.
     for (slot, root) in h.tree_roots.iter().enumerate().take(TREE_ROOT_SLOTS) {
-        if let Some(root) = root {
+        if let Some(root) = root.as_ref().filter(|_| !index_slot(tc, slot)) {
             btree::free_tree(txn, *root)?;
             ops::set_tree_root(txn, page, slot, None)?;
         }

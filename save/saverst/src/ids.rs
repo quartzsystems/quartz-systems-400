@@ -57,7 +57,7 @@ pub fn find(
 }
 
 /// The names of object `id`, when it exists.
-fn describe(txn: &mut Txn<'_>, id: ObjectId) -> store::Result<Option<RefEntry>> {
+pub(crate) fn describe(txn: &mut Txn<'_>, id: ObjectId) -> store::Result<Option<RefEntry>> {
     let Ok((_, h)) = ops::read_header(txn, id) else {
         return Ok(None);
     };

@@ -21,7 +21,7 @@ use std::io::Read;
 use db::file::{self, DependentEntry, FileAttr, FileKind, members};
 use savfmt::object::NO_OWNER;
 use savfmt::{ObjectDescriptor, Part, Reader, RefEntry, SavedObject, Scan};
-use store::obj::header::{Domain, PrivateAuth, text_of};
+use store::obj::header::{Domain, text_of};
 use store::obj::library::Library;
 use store::obj::{Authority, JobHandle, LockState, ObjectId, ops, types};
 use store::Store;
@@ -440,7 +440,7 @@ fn one(
     }
     let existing_h = existing.map(|id| ops::read_header(txn, id)).transpose()?.map(|x| x.1);
     cx.hooks
-        .may_restore(txn, d, existing_h.as_ref())
+        .may_restore(txn, d, lib, existing_h.as_ref())
         .map_err(|m| Error::refused(m, d.object_name()))?;
     if let Some(h) = &existing_h {
         differs(cx.opts.allow, d, h)?;
@@ -640,20 +640,22 @@ fn set_header(
                 format!("{}: authorization list {autl} not found", d.object_name()),
             ));
         }
-        if cx.opts.private_auth {
-            h.private_auths = auths
-                .iter()
-                .take(store::obj::header::PRIVATE_SLOTS)
-                .filter(|a| cx.hooks.profile_exists(txn, &text_of(&a.profile)))
-                .map(|a| PrivateAuth {
-                    profile: a.profile,
-                    bits: Authority(a.bits),
-                })
-                .collect();
-        }
         h.auth_gen += 1;
     }
     ops::write_header(txn, page, &h)?;
+    if fresh {
+        let autl = text_of(&h.autl);
+        if !autl.is_empty() {
+            cx.hooks.secure(txn, &autl, id)?;
+        }
+        if cx.opts.private_auth {
+            for a in auths {
+                if cx.hooks.profile_exists(txn, &text_of(&a.profile)) {
+                    cx.hooks.set_private(txn, id, a.profile, a.bits)?;
+                }
+            }
+        }
+    }
     Ok(())
 }
 

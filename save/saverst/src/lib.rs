@@ -18,6 +18,7 @@ pub mod msg;
 pub mod order;
 pub mod restore;
 pub mod save;
+pub mod secdta;
 pub mod select;
 
 pub use error::{Error, Result};

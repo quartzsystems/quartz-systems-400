@@ -61,5 +61,6 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::object::REF_LAYOUT,
         &crate::object::INDEX_LAYOUT,
         &crate::object::TRAILER_LAYOUT,
+        &crate::object::AUTH_TABLE_LAYOUT,
     ]
 }

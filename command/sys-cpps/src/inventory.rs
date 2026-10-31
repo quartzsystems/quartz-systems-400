@@ -336,10 +336,13 @@ pub const DIRECT: &[&str] = &[
     "CHGSAVF",
     "CLRSAVF",
     "CRTSAVF",
+    "RSTAUT",
     "RSTLIB",
     "RSTOBJ",
+    "RSTUSRPRF",
     "SAVLIB",
     "SAVOBJ",
+    "SAVSECDTA",
 ];
 
 /// Whether a job-site command also runs in the service: a display the
