@@ -43,35 +43,35 @@ leaves text on the menu.
 - **Reads from**: the storage service request (`stg::proto`) or the
   service module behind it.
 - **Panel**: the panel group; `new` where this audit added it.
-- **Fix**: the commit, or the agent that owns it.
+- **Fix**: the commit on main, or `open`.
 
 ## Operator/system batch (named in the addendum)
 
 | Command | Wired today | Should read from | Panel | Fix |
 |---|---|---|---|---|
-| DSPSFWRSC | panel/fallback; service text when the read failed | `sfwrsc_panel` (licpgm directory) | QUISFWRSC | 0f564e8f (class fix) |
-| WRKCFGSTS | panel/fallback for `CFGTYPE` other than `*LIN`/`*CTL`/`*DEV` | `cmn_panel CFGSTS` (cmncfg) | QUICFG | 0f564e8f (class fix) |
-| DSPDEVD | panel/fallback (`.ok()?` on `devd_panel`) | `devd_panel` (`*DEVD` objects) | QUICFG | 0f564e8f (class fix) |
-| CHGDEVD | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | b370c63d (step 82 setup runs it) |
-| VRYCFG | service CPP (`cpp/cmncmd.rs`) over cmncfg | cmncfg status table | none (action) | b370c63d (step 82 setup runs it) |
-| DSPPTF | panel showing a fixed empty list (`sfwrsc_panel`), "none in this release" | the PTF database `QSYS/QSPTFDB` (`cpp/ptfcmd.rs`) | QUIDSPPTF | 554b33a4 |
-| RTVCFGSTS | job CPP over `cfg_status` | cmncfg status table | none (retrieve) | b370c63d (step 82 setup runs it) |
-| CRTDEVDSP | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | b370c63d (step 82 setup runs it) |
-| DSPNETA | panel/fallback (`.ok()?` on `neta_panel`) | `neta_panel` (network attributes) | QUIDSPNETA | 0f564e8f (class fix) |
-| CHGNETA | service CPP over the store (`cpp/sysinfo.rs`) | the network attributes | none (action) | b370c63d (step 82 setup runs it) |
-| WRKHDWRSC | console word `hw` ("answered by the console") behind a panel/fallback | the hwrsrc service | QUIHDWRSC | hwrsrc agent |
-| DSPHDWRSC | console word `hw` behind a panel/fallback | the hwrsrc service | QUIHDWRSC | hwrsrc agent |
+| DSPSFWRSC | panel/fallback; service text when the read failed | `sfwrsc_panel` (licpgm directory) | QUISFWRSC | b1da8ba2 (class fix) |
+| WRKCFGSTS | panel/fallback for `CFGTYPE` other than `*LIN`/`*CTL`/`*DEV` | `cmn_panel CFGSTS` (cmncfg) | QUICFG | b1da8ba2 (class fix) |
+| DSPDEVD | panel/fallback (`.ok()?` on `devd_panel`) | `devd_panel` (`*DEVD` objects) | QUICFG | b1da8ba2 (class fix) |
+| CHGDEVD | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | 9750760c (step 82 setup runs it) |
+| VRYCFG | service CPP (`cpp/cmncmd.rs`) over cmncfg | cmncfg status table | none (action) | 9750760c (step 82 setup runs it) |
+| DSPPTF | panel showing a fixed empty list (`sfwrsc_panel`), "none in this release" | the PTF database `QSYS/QSPTFDB` (`cpp/ptfcmd.rs`) | QUIDSPPTF | 46aec2dd |
+| RTVCFGSTS | job CPP over `cfg_status` | cmncfg status table | none (retrieve) | 9750760c (step 82 setup runs it) |
+| CRTDEVDSP | service CPP over the store (`cpp/sysinfo.rs`) | the `*DEVD` object | none (action) | 9750760c (step 82 setup runs it) |
+| DSPNETA | panel/fallback (`.ok()?` on `neta_panel`) | `neta_panel` (network attributes) | QUIDSPNETA | b1da8ba2 (class fix) |
+| CHGNETA | service CPP over the store (`cpp/sysinfo.rs`) | the network attributes | none (action) | 9750760c (step 82 setup runs it) |
+| WRKHDWRSC | console word `hw` ("answered by the console") behind a panel/fallback | the hwrsrc service | QUIHDWRSC | 1b38949a, 8b4b2d26 |
+| DSPHDWRSC | console word `hw` behind a panel/fallback | the hwrsrc service | QUIHDWRSC | 1b38949a, 8b4b2d26 |
 
 ## Messages batch
 
 | Command | Wired today | Should read from | Panel | Fix |
 |---|---|---|---|---|
-| DSPMSG | panel/fallback to bridge word `dspmsg` | message queues over the link | QUIDSPMSG | DSPMSG agent |
-| WRKMSG | panel/fallback to bridge word `dspmsg` | message queues over the link | QUIDSPMSG | DSPMSG agent |
-| WRKMSGD | text: bridge word `wrkmsgd`, no panel | `msgf_list` / message file payload | QUIDSPMSGD (WRKMSGD panel) new | 554b33a4 |
-| DSPMSGD | panel/fallback | message file over the link | QUIDSPMSGD | 0f564e8f (class fix) |
-| DSPLOG | panel/fallback | `QHST` over the link | QUIDSPLOG | 0f564e8f (class fix) |
-| WRKRPYLE | panel/fallback | the reply list | QUIWRKRPYL | 0f564e8f (class fix) |
+| DSPMSG | panel/fallback to bridge word `dspmsg` | message queues over the link | QUIDSPMSG | 87be5c4c |
+| WRKMSG | panel/fallback to bridge word `dspmsg` | message queues over the link | QUIDSPMSG | 87be5c4c |
+| WRKMSGD | text: bridge word `wrkmsgd`, no panel | `msgf_list` / message file payload | QUIDSPMSGD (WRKMSGD panel) new | 46aec2dd |
+| DSPMSGD | panel/fallback | message file over the link | QUIDSPMSGD | b1da8ba2 (class fix) |
+| DSPLOG | panel/fallback | `QHST` over the link | QUIDSPLOG | b1da8ba2 (class fix) |
+| WRKRPYLE | panel/fallback | the reply list | QUIWRKRPYL | b1da8ba2 (class fix) |
 
 ## Display commands with only the service's text
 
@@ -82,19 +82,19 @@ menu's message line. A list panel of its own is still open for those
 
 | Command | Wired today | Reads from (after) | Panel | Golden | Fix |
 |---|---|---|---|---|---|
-| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD` | `verified/oracle71/audit/dspptf` (7.1) captured; no geometry test yet | 554b33a4 |
-| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP` | `verified/oracle71/audit/wrkptfgrp` (7.1) captured; no geometry test yet | 554b33a4 |
-| DSPIPLA | text (`cpp/iplcmd.rs`) | `sys2_panel IPLA` (the LIC record) | QUIIPLA new | `phase11/displays/dspipla`, row for row | 554b33a4 |
-| WRKMSGD | text: bridge word `wrkmsgd` | `msgf_list` | QUIDSPMSGD `WORK` | `audit/displays/wrkmsgd`, geometry | 554b33a4, this batch |
-| WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QUIRDBDIR new | `phase10/misc/wrkrdbdire`, geometry | 554b33a4 |
-| DSPPTFCVR | text (`cpp/ptfcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 554b33a4 |
-| DSPBCKSTS | text (`cpp/opacmd.rs`) | the service's CPP | report viewer | `audit/displays/dspbcksts` captured; panel open | 554b33a4 |
-| DSPLICKEY | text (`cpp/lpcmd.rs`) | the service's CPP | report viewer | `verified/oracle71/audit/dsplickey` (7.1, key and serial masked); panel open | 554b33a4 |
-| DSPUDFS | text (`cpp/ifscmd.rs`) | the service's CPP | report viewer | none (needs a UDFS) | 554b33a4 |
-| DSPTAP | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no tape on pub400) | 554b33a4 |
-| DSPTAPCTG | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no library) | 554b33a4 |
-| DSPOPT | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no volume) | 554b33a4 |
-| WRKOPTVOL | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | `audit/displays/wrkoptvol` captured; panel open | 554b33a4 |
+| DSPPTF | panel over a fixed empty list | `sys2_panel PTF`, `PTFD` (`stgsvc/cppdata.rs` over `QSYS/QSPTFDB`) | QUIDSPPTF `DSPPTF`, `DSPPTFD` | `verified/oracle71/audit/dspptf` (7.1) captured; no geometry test yet | 46aec2dd |
+| WRKPTFGRP | text (`cpp/ptfsvc.rs`) | `sys2_panel PTFGRP` (`ptf::grpdb`) | QUIDSPPTF `WRKPTFGRP` | `verified/oracle71/audit/wrkptfgrp` (7.1) captured; no geometry test yet | 46aec2dd |
+| DSPIPLA | text (`cpp/iplcmd.rs`) | `sys2_panel IPLA` (the LIC record) | QUIIPLA new | `phase11/displays/dspipla`, row for row | 46aec2dd |
+| WRKMSGD | text: bridge word `wrkmsgd` | `msgf_list` | QUIDSPMSGD `WORK` | `audit/displays/wrkmsgd`, geometry | 46aec2dd, this batch |
+| WRKRDBDIRE | text: screen rows printed as lines (`command/ddm.rs`) | the RDB directory data area | QUIRDBDIR new | `phase10/misc/wrkrdbdire`, geometry | 46aec2dd |
+| DSPPTFCVR | text (`cpp/ptfcmd.rs`) | the service's CPP | report viewer | refused on pub400 | 46aec2dd |
+| DSPBCKSTS | text (`cpp/opacmd.rs`) | the service's CPP | report viewer | `audit/displays/dspbcksts` captured; panel open | 46aec2dd |
+| DSPLICKEY | text (`cpp/lpcmd.rs`) | the service's CPP | report viewer | `verified/oracle71/audit/dsplickey` (7.1, key and serial masked); panel open | 46aec2dd |
+| DSPUDFS | text (`cpp/ifscmd.rs`) | the service's CPP | report viewer | none (needs a UDFS) | 46aec2dd |
+| DSPTAP | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no tape on pub400) | 46aec2dd |
+| DSPTAPCTG | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no library) | 46aec2dd |
+| DSPOPT | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | none (no volume) | 46aec2dd |
+| WRKOPTVOL | text (`cpp/medcmd.rs`) | the service's CPP | report viewer | `audit/displays/wrkoptvol` captured; panel open | 46aec2dd |
 | GO | the service answers `CPF0901`; menus and Command Entry intercept `GO` | `*MENU` objects | the menu | phase 8 | correct as wired |
 
 ## Panels filled by parsing the service's text
@@ -135,8 +135,9 @@ escape; nothing else changed.
 ## Framebuffer console
 
 The local console had no 5250 display, so every command above took
-the text path there. Owner: the console agent (console as a 5250
-device).
+the text path there. Fixed in ffdd9b6a: `QSCONSOLE` is a real display
+served by the telnet session code over a local socket, with no TCP/IP
+needed; step 84 checks it with TCP/IP ended.
 
 ## Step 82 (QEMU, `--only 82`)
 
@@ -147,11 +148,11 @@ the objects the parameter table names and runs `CHGDEVD`, `CHGNETA`,
 `CRTDEVDSP`, `VRYCFG` and, in a CL program, `RTVCFGSTS`, so every
 command of this audit has a harness invocation.
 
-Last run at b5c2fe68: one failure.
+Last run at 33daa722: one failure.
 
 | Command | Result | Owner |
 |---|---|---|
-| GO | `GO USER` from MAIN's command line shows no menu and no message (the job log has the request only); not diagnosed | open |
+| GO | `GO USER` from MAIN's command line shows no menu and no message (the job log has the request only); fixed: `GO` parsed the menu name as the command word | c432a9ff |
 
 `WRKHDWRSC`, `DSPHDWRSC`, `DSPMSG` and `WRKMSG` passed in this
 worktree through the class fix (a panel or the function check); their
