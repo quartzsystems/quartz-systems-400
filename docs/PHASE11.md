@@ -199,7 +199,7 @@ QEMU, step 81's whole cycle with an IPL takes 13 s.
 
 ## Acceptance checklist
 
-The state at `35d314dd` (2026-10-31). The QEMU runs are KVM guests on
+The state at `8b124fb5` (2026-10-31; the media modes at `35d314dd`). The QEMU runs are KVM guests on
 the bench machine, from a worktree pinned to that commit.
 
 **1. Tests, goldens and matrices; `build test`.**
