@@ -129,7 +129,7 @@ impl Principal {
         self.special_adopted().has(a)
     }
 
-    /// Require special authority `a`, or `CPF2222`-style refusal.
+    /// Require special authority `a`, or the `CPF222E` refusal.
     pub fn require(&self, a: SpecialAuth, what: &str) -> Result<()> {
         if self.has(a) {
             Ok(())
@@ -141,7 +141,7 @@ impl Principal {
                     .set("HAVE", format!("{:08X}", self.special_adopted().0)),
             );
             Err(SecError::msg(
-                "CPF2222",
+                "CPF222E",
                 format!(
                     "{} special authority is needed to {what}.",
                     a.names().join(" ")

@@ -5371,3 +5371,1461 @@ sev = 40
 text = "An error stopped the command."
 help = "The text of the message tells what to change. Correct it and run the command again."
 vars = []
+
+# Message lines of the developer tools and the media and security
+# commands, by identifier (the CPP sweep, round 3).
+
+[[msg]]
+id = "CPD9CD0"
+sev = 30
+text = "SELECT output to a file is not available; the rows were not kept."
+help = "Change the session attribute SELECT output to the display or the printer and run the query again."
+vars = []
+
+[[msg]]
+id = "CPD9CD1"
+sev = 30
+text = "&1 is not a value &2 takes."
+help = "Type one of the values the attribute lists, or press F4 for them."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CD2"
+sev = 30
+text = "&1 needs a value."
+help = "The statement cannot be built without it. Type a value and press Enter."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CD3"
+sev = 30
+text = "The saved session cannot be read."
+help = "The session saved for this user is damaged; a new session starts. Leave STRSQL with option 1 to save the new one."
+vars = []
+
+[[msg]]
+id = "CPD9CD4"
+sev = 30
+text = "This statement has no prompt."
+help = "Type the statement in full and press Enter to run it."
+vars = []
+
+[[msg]]
+id = "CPD9CD8"
+sev = 30
+text = "Field &1 takes digits only."
+help = "A numeric field holds a number: digits, a sign and a decimal point. Correct the value."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CD9"
+sev = 30
+text = "The value of field &1 does not fit."
+help = "The number has more digits than the field holds. Type a smaller value."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CDA"
+sev = 30
+text = "Field &1 holds a character its code page lacks."
+help = "Replace the character; the field's CCSID cannot store it."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CDB"
+sev = 30
+text = "Field &1 does not fit in the record."
+help = "The file's description places the field past the end of its record format. Check the file with DSPFFD."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CDC"
+sev = 30
+text = "The program is not a DFU program."
+help = "The object named holds no DFU program definition. Name a program made with CRTDFUDFN or option 1 of STRDFU."
+vars = []
+
+[[msg]]
+id = "CPD9CDD"
+sev = 30
+text = "Type the name of the DFU program."
+help = "The program field is empty. Type a name and press Enter."
+vars = []
+
+[[msg]]
+id = "CPD9CDE"
+sev = 30
+text = "DFU program &1 is in library &2 already."
+help = "Choose another name, or change the program with option 3."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9CDF"
+sev = 30
+text = "Type the name of the data file."
+help = "The data file field is empty. Type the name of a database file and press Enter."
+vars = []
+
+[[msg]]
+id = "CPD9CE0"
+sev = 30
+text = "&1 takes Y or N."
+help = "Type Y for yes or N for no."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CE1"
+sev = 30
+text = "The display format is 1, 2, 3 or 4."
+help = "Type one of the display format numbers the field lists."
+vars = []
+
+[[msg]]
+id = "CPD9CE2"
+sev = 30
+text = "Processing is 1 or 2."
+help = "Type 1 to work by key or 2 to work by relative record number."
+vars = []
+
+[[msg]]
+id = "CPD9CE3"
+sev = 30
+text = "Option &1 cannot be used on this list."
+help = "Type one of the options the list shows, or a user-defined option."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9CE4"
+sev = 30
+text = "Option &1 does not apply to &2 &3."
+help = "The option is for other types. Choose an option that applies to this item."
+vars = ["*CHAR 10", "*CHAR *VARY 2", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9CE5"
+sev = 30
+text = "No compiler for member type &1 is installed."
+help = "Install the licensed program that compiles this type, or change the member's type."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9CE6"
+sev = 30
+text = "&1 cannot be a user-defined option."
+help = "A user-defined option is one or two characters and is not one of PDM's own options."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9CE7"
+sev = 30
+text = "&1 is not a value &2 takes."
+help = "Type one of the values the field lists."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CE8"
+sev = 30
+text = "The field definition &1 at row &2, column &3 cannot be used."
+help = "Type a field the database knows, or a field definition SDA takes (+I, +O, +B, +Y, +3)."
+vars = ["*CHAR *VARY 2", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9CE9"
+sev = 30
+text = "The code &1 at row &2, column &3 cannot be used."
+help = "Type one of the attribute and color codes SDA takes."
+vars = ["*CHAR *VARY 2", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9CEA"
+sev = 30
+text = "The move at row &1, column &2 has nowhere to go."
+help = "Type = where the moved item is placed."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9CEB"
+sev = 30
+text = "The target at row &1, column &2 has nothing to place."
+help = "Type - before the item to move to it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD9CEC"
+sev = 30
+text = "The keywords &1 are not DDS that can be used here."
+help = "Correct the keyword text and press Enter again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CED"
+sev = 30
+text = "Option &1 is used on a record of the list."
+help = "Type the option beside a record, or type 1 on the add line to add one."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9B8A"
+sev = 0
+text = "Option &1 is kept and is written when the list is left."
+help = "The user-defined options are saved in the option file when you leave the list."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BEA"
+sev = 0
+text = "The session saved earlier is back."
+help = "STRSQL restored the statements and attributes of this user's last session."
+vars = []
+
+[[msg]]
+id = "CPI9BEB"
+sev = 0
+text = "The statement can be run."
+help = "The statement was checked and not run, as the session attributes ask."
+vars = []
+
+[[msg]]
+id = "CPI9BEC"
+sev = 0
+text = "The statement's syntax checks."
+help = "The statement's syntax was checked and the statement not run, as the session attributes ask."
+vars = []
+
+[[msg]]
+id = "CPI9BED"
+sev = 0
+text = "The first &1 rows are shown."
+help = "The query returned more rows than Display Data holds. Narrow the query to see the rest."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BEE"
+sev = 0
+text = "The output went to QSYSPRT."
+help = "A spooled file was made; WRKSPLF shows it."
+vars = []
+
+[[msg]]
+id = "CPI9BEF"
+sev = 0
+text = "The statements went to member &1 of &2/&3."
+help = "The session's statements were written as source."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BF0"
+sev = 0
+text = "&1 pending changes were committed."
+help = "Commitment control ended with the session attributes' change; the changes made under it are kept."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BF1"
+sev = 0
+text = "The session attributes changed."
+help = "The new attributes apply to the statements run from now on."
+vars = []
+
+[[msg]]
+id = "CPI9BF2"
+sev = 0
+text = "The prompt was left and nothing ran."
+help = "The statement typed is kept on the input lines."
+vars = []
+
+[[msg]]
+id = "CPI9BF3"
+sev = 0
+text = "DFU program &1 is stored in library &2."
+help = "The program can be run with option 1 of STRDFU or CHGDTA."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BF4"
+sev = 0
+text = "Member &1 is saved in &2/&3."
+help = "The source was written; compile it to use the change."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BF5"
+sev = 0
+text = "The image went to QSYSPRT."
+help = "A spooled file was made; WRKSPLF shows it."
+vars = []
+
+[[msg]]
+id = "CPI9BF6"
+sev = 0
+text = "The list went to QSYSPRT."
+help = "A spooled file was made; WRKSPLF shows it."
+vars = []
+
+[[msg]]
+id = "CPI9BF7"
+sev = 0
+text = "Choose the libraries to take files from."
+help = "Type 1 beside each library and press Enter."
+vars = []
+
+[[msg]]
+id = "CPI9BF8"
+sev = 0
+text = "Choose the files to take fields from."
+help = "Type 1 beside each file and press Enter."
+vars = []
+
+[[msg]]
+id = "CPI9BF9"
+sev = 0
+text = "Record &1 is added and is kept when the member is saved."
+help = "Leave the member with Save to keep it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BFA"
+sev = 0
+text = "Record &1 is copied to &2."
+help = "Save the member to keep the copy."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BFB"
+sev = 0
+text = "Record &1 is renamed &2."
+help = "Save the member to keep the new name."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BFC"
+sev = 0
+text = "Record &1 is deleted; saving the member keeps the change."
+help = "Leave without saving to keep the record."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BFD"
+sev = 0
+text = "Member &1 was not saved."
+help = "The changes made since the last save are gone."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI9BFE"
+sev = 0
+text = "No other record of the member can be shown with this one."
+help = "Option 9 overlays this record with others of the same member."
+vars = []
+
+[[msg]]
+id = "CPI9BFF"
+sev = 0
+text = "Member &1 is printed."
+help = "A spooled file was made; WRKSPLF shows it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF67A1"
+sev = 40
+text = "Media library &1 holds no cartridge &2."
+help = "Check the cartridge identifier with WRKTAPCTG, or add the cartridge with ADDTAPCTG."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF67EE"
+sev = 40
+text = "Media library &1 has no cartridges in category &2."
+help = "Check the category with DSPTAPCGY, or name another category."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF222E"
+sev = 40
+text = "Special authority &1 is needed for this."
+help = "The user profile, its groups and the authority the program adopts together lack the special authority. Ask the security officer."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9811"
+sev = 40
+text = "No program &1 in library &2."
+help = "Check the name and the library, or the library list."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2291"
+sev = 40
+text = "Only special authorities you have can be given."
+help = "A user profile can be given only the special authorities its creator or changer holds. Remove the others from SPCAUT, or ask the security officer."
+vars = []
+
+[[msg]]
+id = "CPF2292"
+sev = 40
+text = "Special authority *SECADM is needed to create or change user profiles."
+help = "Ask the security officer to make or change the profile, or to give you *SECADM."
+vars = []
+
+# Identifiers the system sends that had no description, worded from
+# the senders' own text (the CPP sweep, round 3).
+
+[[msg]]
+id = "CPD0042"
+sev = 30
+text = "CHGJOB needs at least one attribute to change."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPD0076"
+sev = 30
+text = "&1(&2) is not a number."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD1688"
+sev = 30
+text = "INLJOBS is more than MAXJOBS."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF1002"
+sev = 40
+text = "Cannot allocate &1 &2: held &3 by job &4."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1003"
+sev = 40
+text = "Subsystem description &1 not found."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1010"
+sev = 40
+text = "Subsystem &1 is active, monitor job &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1012"
+sev = 40
+text = "Subsystem &1 did not start."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1023"
+sev = 40
+text = "Data area &1 exists in &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1028"
+sev = 40
+text = "&1 is not a password rule."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1034"
+sev = 40
+text = "&1 is the controlling subsystem; end the others first, or use ENDSBS *ALL."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1053"
+sev = 40
+text = "Subsystem &1 is already ending."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1054"
+sev = 40
+text = "Subsystem &1 is not active."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1070"
+sev = 40
+text = "Job &1 not found."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1071"
+sev = 40
+text = "More than one job named &1; give its number."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1107"
+sev = 40
+text = "No user was given."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF1109"
+sev = 40
+text = "No subsystem has a work station entry for &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1110"
+sev = 40
+text = "User profile &1 is not authorized to sign on at device &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1118"
+sev = 40
+text = "User profile &1 has no password and cannot sign on."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1151"
+sev = 40
+text = "&1 would use more than its &2 KB storage limit."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1165"
+sev = 40
+text = "*MACHINE is sized by QMCHPOOL."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF1220"
+sev = 40
+text = "User profile &1 is signed on at another device already."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1226"
+sev = 40
+text = "No routing entry in &1 for '&2'."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1321"
+sev = 40
+text = "Job not found."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF1337"
+sev = 40
+text = "&1(&2) is beyond the priority limit &3 of user &4."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1342"
+sev = 40
+text = "Job &1 cannot be held."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1343"
+sev = 40
+text = "&1 is not authorized to control job &2; *JOBCTL special authority is needed."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1362"
+sev = 40
+text = "Job &1 cannot be ended this way."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1392"
+sev = 40
+text = "Password or user profile is not correct. The next attempt that is not valid disables the profile or the device."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF1393"
+sev = 40
+text = "Too many sign-on attempts were not valid; user profile &1 or the device is disabled."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1394"
+sev = 40
+text = "User profile &1 is disabled and cannot sign on."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1628"
+sev = 40
+text = "Job schedule entry &1 not found."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1629"
+sev = 40
+text = "Job schedule &1/&2: &3."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1630"
+sev = 40
+text = "More than one entry is named &1; give ENTRYNBR."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1633"
+sev = 40
+text = "A weekly entry needs SCDDAY or a date."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF1697"
+sev = 40
+text = "Routing entry &1 already exists."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1698"
+sev = 40
+text = "&1 &2 does not exist."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF1699"
+sev = 40
+text = "Pool &1 is not defined in the subsystem."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF18B4"
+sev = 40
+text = "&1 cannot change: security system values are locked in dedicated service tools."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2103"
+sev = 40
+text = "Library &1 is already in the library list."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2104"
+sev = 40
+text = "Library &1 is not in the system part."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2112"
+sev = 40
+text = "Object &1 already exists."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2177"
+sev = 40
+text = "Job queue &1 has jobs or is held by a subsystem."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2183"
+sev = 40
+text = "The library list is full."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF2184"
+sev = 40
+text = "Library &1 appears twice."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2189"
+sev = 40
+text = "Not authorized to save file &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2203"
+sev = 40
+text = "&1 is not a valid name."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2204"
+sev = 40
+text = "The user profile was not found."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF2214"
+sev = 40
+text = "User profile &1 already exists."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2215"
+sev = 40
+text = "User profile &1 owns &2 objects; OWNOBJOPT(*NODLT) keeps it."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2217"
+sev = 40
+text = "Not authorized to user profile &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2227"
+sev = 40
+text = "You cannot grant authorities you do not have: &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2245"
+sev = 40
+text = "User profile &1 is shipped with the system and cannot be deleted."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2253"
+sev = 40
+text = "Only the owner or a user with *ALLOBJ can secure &1 by a list."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2254"
+sev = 40
+text = "&1 is not secured by an authorization list."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2256"
+sev = 40
+text = "An authorization list cannot be secured by one."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF2257"
+sev = 40
+text = "User profile &1 is the group of &2 and cannot be deleted."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2282"
+sev = 40
+text = "Authorization list &1 already exists."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2283"
+sev = 40
+text = "Auditing needs the audit journal QSYS/QAUDJRN; CHGSECAUD makes it."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF2285"
+sev = 40
+text = "&1 is not on authorization list &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22A1"
+sev = 40
+text = "Supplemental groups need a group profile (GRPPRF)."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22A2"
+sev = 40
+text = "At most &1 supplemental groups are allowed."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22A3"
+sev = 40
+text = "&1 cannot be its own group profile."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22A4"
+sev = 40
+text = "Group profile &1 is named more than once."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22A6"
+sev = 40
+text = "&1 is the primary group of &2 and cannot own it."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22A7"
+sev = 40
+text = "&1 has no primary group."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22C2"
+sev = 40
+text = "The new password could not be read."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22C3"
+sev = 40
+text = "The new password must differ from the current one."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22C5"
+sev = 40
+text = "The password was changed less than &1 hours ago and cannot change yet."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22C6"
+sev = 40
+text = "The password validation program was not run."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22C7"
+sev = 40
+text = "The password of this profile is not managed here (LCLPWDMGT(*NO))."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22C8"
+sev = 40
+text = "The password data is not valid."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22E2"
+sev = 40
+text = "The password is not correct for user profile &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22E3"
+sev = 40
+text = "User profile &1 is disabled."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF22E4"
+sev = 40
+text = "The password has expired."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22E5"
+sev = 40
+text = "The password cannot be changed here."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22E9"
+sev = 40
+text = "Not authorized to user profile &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2361"
+sev = 40
+text = "The new password and its confirmation differ."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF2362"
+sev = 40
+text = "The password is not correct."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF2410"
+sev = 40
+text = "Message key &1 not found."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2422"
+sev = 40
+text = "Message &1 is not an inquiry."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2451"
+sev = 40
+text = "Message queue &1 is allocated to job &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2556"
+sev = 40
+text = "Sequence number &1 is not in the reply list."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF2817"
+sev = 40
+text = "The member already holds &1 records; give MBROPT(*ADD) or *REPLACE."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3141"
+sev = 40
+text = "Member &1 not found in file &2 in &3."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3303"
+sev = 40
+text = "&1 is not authorized to output queue &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3309"
+sev = 40
+text = "Spooled file &1 is not open in this job."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3310"
+sev = 40
+text = "Device &1 not found."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3311"
+sev = 40
+text = "Writer &1 already prints output queue &2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3313"
+sev = 40
+text = "Writer &1 is already started."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3330"
+sev = 40
+text = "Member &1 in &2/&3 is held by another job."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3340"
+sev = 40
+text = "More than one file &1 in job &2; give SPLNBR."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3417"
+sev = 40
+text = "Output queue &1 has spooled files or a writer."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3492"
+sev = 40
+text = "Spooled file data is not served here."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF3501"
+sev = 40
+text = "A job cannot service itself."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF3502"
+sev = 40
+text = "Not authorized to service job &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3503"
+sev = 40
+text = "Job &1 is already being serviced."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3504"
+sev = 40
+text = "No job is being serviced."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF3520"
+sev = 40
+text = "Job &1 not found."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3C27"
+sev = 40
+text = "Member &1 not renamed."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF3CF2"
+sev = 40
+text = "The store is not open."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF4123"
+sev = 40
+text = "&1 is not a tape file."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF4520"
+sev = 40
+text = "File &1 is not open."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF4AB8"
+sev = 40
+text = "The profile token is not valid."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF4AB9"
+sev = 40
+text = "The token type is not valid."
+help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF5813"
+sev = 40
+text = "&1/&2 type *WSCST already exists."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF6301"
+sev = 40
+text = "Panel group &1 not created.\n&2."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF7306"
+sev = 40
+text = "Member &1 not added to file &2 in &3."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9802"
+sev = 40
+text = "Not authorized to &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9827"
+sev = 40
+text = "&1 is not an object type."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9841"
+sev = 40
+text = "No override for file &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9861"
+sev = 40
+text = "Output file &1 created in library &2.\n."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9899"
+sev = 40
+text = "No library action &1."
+help = "Correct what the message names and try the request again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI2283"
+sev = 0
+text = "QSYSOPR after the receiver filled."
+help = "No action is needed."
+vars = []
+
+# The source debugger's messages: IBM's identifiers (F1 and DSPMSGD on
+# pub400, V7R5M0) where it has one, our words.
+
+[[msg]]
+id = "CPF9C01"
+sev = 0
+text = "A breakpoint is set on line &1."
+help = "The program stops before the statement on that line runs."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9C02"
+sev = 30
+text = "The module has no source view."
+help = "The module was compiled without a debug view. Compile it again with a debug view to see its source and set breakpoints on it."
+vars = []
+
+[[msg]]
+id = "CPF9C04"
+sev = 10
+text = "There are no breakpoints."
+help = "No breakpoint is set in the program shown, or none lies in the direction asked."
+vars = []
+
+[[msg]]
+id = "CPF9C08"
+sev = 0
+text = "Watch &1 is set on &2."
+help = "The program stops when the variable changes."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C10"
+sev = 0
+text = "Watch &1 was removed."
+help = "The variable is no longer watched."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9C12"
+sev = 0
+text = "Every watch was removed."
+help = "No variable of the job is watched any more."
+vars = []
+
+[[msg]]
+id = "CPF9C14"
+sev = 10
+text = "&1 was not found."
+help = "Check the search string; FIND searches the source shown from the cursor."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C17"
+sev = 0
+text = "The breakpoint at line &1 was removed."
+help = "The program no longer stops at that line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9C19"
+sev = 30
+text = "Line &1 is not in the view."
+help = "Type a line number the source view shows."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9C20"
+sev = 0
+text = "Program &1/&2 was added to debug."
+help = "Its modules are in the module list."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9C26"
+sev = 0
+text = "Program &1 was removed from debug."
+help = "Its breakpoints and watches were removed with it."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C28"
+sev = 30
+text = "The cursor is not on a source line."
+help = "Move the cursor to a line of the source and press the key again."
+vars = []
+
+[[msg]]
+id = "CPF9C29"
+sev = 10
+text = "No breakpoint is on line &1."
+help = "Nothing was removed. F13 lists the module's breakpoints."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9C31"
+sev = 0
+text = "Stopped at the breakpoint at line &1 of &2."
+help = "Press F10 to step, F12 to go on, or F11 to show a variable."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C33"
+sev = 0
+text = "Variables are looked up at line &1 now."
+help = "EVAL and the other commands name variables as the procedure at that line sees them."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9C34"
+sev = 0
+text = "The step is done; stopped before line &1 of &2."
+help = "Press F10 to step again, or F12 to go on."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C37"
+sev = 0
+text = "Every breakpoint of program &1 was removed."
+help = "The program runs without stopping until breakpoints are set again."
+vars = ["*CHAR *VARY 2", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9C38"
+sev = 0
+text = "No equates are defined."
+help = "EQUATE names a command or an expression for reuse."
+vars = []
+
+[[msg]]
+id = "CPF9C39"
+sev = 30
+text = "Module &1 is not in the module list."
+help = "Press F14 to see the modules of the programs under debug, and add the program if its module is missing."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF9C42"
+sev = 30
+text = "&1 needs an operand."
+help = "Type the command with the operand its help shows."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C43"
+sev = 30
+text = "&1 is not a debug command."
+help = "Type HELP for the debug commands, or check the abbreviation."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C59"
+sev = 30
+text = "Operand &1 is not valid here."
+help = "Correct the command's operands; HELP shows each command's form."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C64"
+sev = 0
+text = "Watch &1 changed; stopped before line &2 of &3."
+help = "The watched variable changed. Press F12 to go on."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPF9C65"
+sev = 10
+text = "There is no watch &1."
+help = "F18 lists the watches set."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF7E12"
+sev = 30
+text = "&1 is not a variable of the stopped procedure."
+help = "Check the variable's name; the names of the procedure's variables are in its source."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BA4"
+sev = 0
+text = "The module's breakpoints are on lines &1."
+help = "F13 lists them with their conditions."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BA6"
+sev = 0
+text = "The equates are: &1."
+help = "Each name stands for the text after it."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BA7"
+sev = 0
+text = "&1 is now an equate."
+help = "Typing the name runs what it stands for."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BA8"
+sev = 0
+text = "&1 is no longer an equate."
+help = "The name means nothing to the debugger now."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPD9CC3"
+sev = 30
+text = "&1 is watched already, or no more watches fit."
+help = "Remove a watch with F18 and set this one again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "CPI9BAC"
+sev = 0
+text = "&1 was found on line &2."
+help = "Press F16 to find the next one."
+vars = ["*CHAR *VARY 2", "*CHAR 10"]
+
+[[msg]]
+id = "CPI9BAD"
+sev = 0
+text = "FIND matches case now."
+help = "SET CASE IGNORE makes FIND ignore case again."
+vars = []
+
+[[msg]]
+id = "CPI9BAE"
+sev = 0
+text = "FIND ignores case now."
+help = "SET CASE MATCH makes FIND match case."
+vars = []
+
+[[msg]]
+id = "CPI9BAF"
+sev = 0
+text = "OPM programs are debugged at their source now."
+help = "SET OPMSRC N turns this off."
+vars = []
+
+[[msg]]
+id = "CPI9BBB"
+sev = 0
+text = "OPM programs are no longer debugged at their source."
+help = "SET OPMSRC Y turns this on."
+vars = []
+
+[[msg]]
+id = "CPD9CC6"
+sev = 30
+text = "Type a debug command."
+help = "The command line is empty. Type a command, or HELP for the list."
+vars = []
+
+[[msg]]
+id = "CPD9CCB"
+sev = 30
+text = "No statement starts on or after line &1."
+help = "Breakpoints go on lines that start statements. Choose another line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9CCC"
+sev = 30
+text = "&1 can be used only while the program is stopped."
+help = "Set a breakpoint, call the program, and use the command when it stops."
+vars = ["*CHAR *VARY 2"]

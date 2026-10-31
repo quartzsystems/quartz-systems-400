@@ -434,7 +434,7 @@ pub fn end(_system: &mut System, key: &str) -> Result<Note, Note> {
     if let Some(session) = sec::guard::current() {
         let p = session.borrow().principal.clone();
         if let Err(e) = p.require(sec::profile::SpecialAuth::IOSYSCFG, "NETSTAT option 4") {
-            return Err(Note::diag("CPF2222", e.to_string()));
+            return Err(Note::diag(e.msgid().unwrap_or("CPF222E"), e.to_string()));
         }
     }
     let socks = sockets();

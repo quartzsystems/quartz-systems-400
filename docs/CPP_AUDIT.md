@@ -163,3 +163,58 @@ Last run at 33daa722: one failure.
 `WRKHDWRSC`, `DSPHDWRSC`, `DSPMSG` and `WRKMSG` passed in this
 worktree through the class fix (a panel or the function check); their
 owners' changes replace the `hw` word and the message panels.
+
+## Message lines by identifier (round 3)
+
+`command/sys-cpps/tests/messages.rs` holds the line: every message
+line text is a message ID (`message_lines_carry_message_ids`), no
+driver shows a library's own wording or an error value's text
+(`drivers_show_no_library_text`, which also catches a sentence a
+driver words and hands back), the LIC's screens show no internal
+reason (`lic_screens_show_no_error_text`), and every identifier any
+crate sends has a description in a shipped message file
+(`every_sent_identifier_is_described`; the identifiers owed before
+this check are listed in `tests/undescribed.txt`, which may only
+shrink).
+
+The LIC's screens (the IPL menu, DST, the installer and SST's panels)
+are exempt from identifiers: they run before the object store and its
+message files exist, and IBM's LIC panels word their message lines with
+no ID. A failure there names what did not complete
+(`svctools::dst::failed`); the reason goes to the console log.
+
+IBM's identifiers now used, read with F1 on the message line and with
+DSPMSGD on pub400 (V7R5M0); the texts are ours:
+
+| Where | Situation | ID |
+|---|---|---|
+| STRSQL | SELECT ran | SQL6072 |
+| STRSQL | INSERT, UPDATE, DELETE ran | SQL7956, SQL7957, SQL7955 |
+| STRSQL | no row changed | SQL0100 |
+| STRSQL | session start | SQL7971 |
+| STRSQL | COMMIT, ROLLBACK, other statements | SQL7960, SQL7961, SQL7977 |
+| SEU | command not known, quote not closed | EDT0100, EDT0120 |
+| SEU | conflicting line commands, block open | EDT1020, EDT1005 |
+| SEU | shift stopped, line command not here | EDT1021, EDT1002 |
+| SEU | string not found, found, changed (n) | EDT1618, EDT1619, EDT1626, EDT1646 |
+| SEU | F4 off a record, no such prompt | EDT1103, EDT1023 |
+| SEU | SAVE or F4 while browsing | EDT0102, EDT0001 |
+| Debugger | breakpoint added, removed, not found, none | CPF9C01, CPF9C17, CPF9C29, CPF9C04 |
+| Debugger | all breakpoints removed, line not valid | CPF9C37, CPF9C19 |
+| Debugger | watch added, cleared, all cleared, none | CPF9C08, CPF9C10, CPF9C12, CPF9C65 |
+| Debugger | unknown command, no operand, syntax | CPF9C43, CPF9C42, CPF9C59 |
+| Debugger | qualified, string not found, no equates | CPF9C33, CPF9C14, CPF9C38 |
+| Debugger | stops (breakpoint, step, watch) | CPF9C31, CPF9C34, CPF9C64 |
+| Debugger | program added, removed; module not found | CPF9C20, CPF9C26, CPF9C39 |
+| Debugger | cursor not on source, no source view | CPF9C28, CPF9C02 |
+| Debugger | not a variable (EVAL, ATTR) | CPF7E12 |
+| Security | special authority missing | CPF222E |
+| Security | special authority given beyond the giver's | CPF2291 (IBM's CRTUSRPRF documentation) |
+| DSPTAPCTG | no cartridge matched | CPF67A1 (an ID asked for), CPF67EE (a category) |
+
+IBM's `CPF2222` is a storage-limit message; nothing sends it now. SEU's
+message file could not be named on pub400 (not on the library list);
+ours is `QEDTMSG`. SEU's save and exit messages, the debugger's stops and
+the DSPTAPCTG answer were not reproduced on an oracle (calling a
+program and a tape library are not available read-only); their IDs come
+from the message texts read with DSPMSGD.

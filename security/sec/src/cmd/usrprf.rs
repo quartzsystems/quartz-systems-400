@@ -311,7 +311,7 @@ pub fn crtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
     let extra = beyond(env, &p, SpecialAuth::NONE);
     if extra != SpecialAuth::NONE {
         return Err(SecError::msg(
-            "CPF2222",
+            "CPF2291",
             format!(
                 "You cannot give special authorities you do not have: {}.",
                 extra.names().join(" ")
@@ -339,7 +339,7 @@ pub fn chgusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
     let extra = beyond(env, &p, before);
     if extra != SpecialAuth::NONE {
         return Err(SecError::msg(
-            "CPF2222",
+            "CPF2291",
             format!(
                 "You cannot give special authorities you do not have: {}.",
                 extra.names().join(" ")

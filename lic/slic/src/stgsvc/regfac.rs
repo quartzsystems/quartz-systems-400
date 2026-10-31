@@ -21,7 +21,7 @@ use stg::proto::{CmdMsg, CmdReply};
 use crate::ipl::system::System;
 
 fn refused(e: &sec::SecError) -> RegFail {
-    RegFail::id(e.msgid().unwrap_or("CPF2222"), e.to_string())
+    RegFail::id(e.msgid().unwrap_or("CPF222E"), e.to_string())
 }
 
 /// Answer `q` for `me` (the system when `None`): the repository read,

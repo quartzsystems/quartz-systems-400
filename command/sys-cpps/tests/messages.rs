@@ -118,6 +118,74 @@ fn sent_identifiers_are_described_messages() {
     assert!(wrong.is_empty(), "{} sends:\n  {}", wrong.len(), wrong.join("\n  "));
 }
 
+/// Where the whole system's sources are, for the identifiers any of
+/// them sends: every crate but the host tools, tests left out.
+fn system_sources() -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let Ok(rd) = std::fs::read_dir(root()) else {
+        return out;
+    };
+    for e in rd.flatten() {
+        let p = e.path();
+        let name = e.file_name().to_string_lossy().to_string();
+        if p.is_dir() && !matches!(name.as_str(), "target" | "tools" | "docs" | ".git" | "kernel") {
+            sources(&p, &mut out);
+        }
+    }
+    out.retain(|p| !p.to_string_lossy().replace('\\', "/").contains("/tests/"));
+    out
+}
+
+/// The message identifiers a file's code names: a literal that is an
+/// identifier, alone or before its text (`"CPF9801 ..."`).
+fn ids_in(code: &str) -> Vec<String> {
+    let families = ["CPF", "CPD", "CPI", "CPC", "CPA", "CPX", "SQL", "CEE", "TCP", "QSH", "EDT"];
+    let mut out = Vec::new();
+    for (i, _) in code.match_indices('"') {
+        let rest = &code[i + 1..];
+        let Some(id) = rest.get(..7) else { continue };
+        let after = rest[7..].chars().next();
+        if is_msgid(id) && families.contains(&&id[..3]) && matches!(after, Some('"' | ' ')) {
+            out.push(id.to_string());
+        }
+    }
+    out
+}
+
+/// Identifiers sent before this check that no shipped file describes
+/// yet: the list may only shrink. One per line; `#` comments.
+const UNDESCRIBED: &str = include_str!("undescribed.txt");
+
+#[test]
+fn every_sent_identifier_is_described() {
+    let described = described();
+    let owed: BTreeSet<&str> = UNDESCRIBED
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .collect();
+    let mut seen = BTreeSet::new();
+    let mut wrong = Vec::new();
+    for f in system_sources() {
+        let code = code_of(&std::fs::read_to_string(&f).unwrap_or_default());
+        let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
+        for id in ids_in(&code) {
+            if described.contains(&id) || !seen.insert(id.clone()) {
+                continue;
+            }
+            if !owed.contains(id.as_str()) {
+                wrong.push(format!("{name}: {id} is sent but no shipped message file describes it"));
+            }
+        }
+    }
+    for id in &owed {
+        if described.contains(*id) || !seen.contains(*id) {
+            wrong.push(format!("undescribed.txt: {id} is described or no longer sent; take it off"));
+        }
+    }
+    assert!(wrong.is_empty(), "{}:\n  {}", wrong.len(), wrong.join("\n  "));
+}
+
 #[test]
 fn message_lines_show_no_error_text() {
     let mut files = Vec::new();
@@ -153,10 +221,160 @@ const LINE_DIRS: &[&str] = &[
     "devtools",
 ];
 
-/// Files allowed a literal on a message line, each with why. (The
-/// LIC's own screens, `lic/`, are not scanned: DST and the IPL console
-/// run before there are message files, as IBM's do.)
+/// Files allowed a literal on a message line, each with why.
 const ALLOWED: &[(&str, &str)] = &[];
+
+/// The LIC's screens: the IPL menu, DST, the installer and SST, which
+/// shows DST's panels in a job. They are exempt from message IDs: they
+/// run before the object store and its message files exist, and IBM's
+/// LIC panels word their message lines themselves, with no message ID
+/// and no Additional Message Information. They still show no internal
+/// reason (an error value's own text): what failed is worded
+/// (`svctools::dst::failed`) and the reason goes to the console log.
+const LIC_SCREENS: &[&str] = &[
+    "lic/svctools/src",
+    "lic/slic/src/ipl/menu.rs",
+    "lic/slic/src/ipl/dst.rs",
+    "lic/slic/src/ipl/install.rs",
+    "lic/slic/src/stgsvc/sst.rs",
+    "work/qsjob/src/devtools/sst.rs",
+    "devtools/sst/src",
+];
+
+/// Whether `code[i..]` starts an error value's own text: `e.to_string()`
+/// or `{e}` (`e`, `x`, `err`), not a name ending in `e`.
+fn raw_error_at(code: &str, i: usize) -> bool {
+    let before = code[..i].chars().next_back().unwrap_or(' ');
+    if before.is_ascii_alphanumeric() || before == '_' {
+        return false;
+    }
+    let rest = &code[i..];
+    ["e.to_string()", "x.to_string()", "err.to_string()", "{e}", "{e:?}", "{x}", "{err}"]
+        .iter()
+        .any(|p| rest.starts_with(p))
+}
+
+/// The job's display drivers: what they show on a message line comes
+/// from a message file, never from an error value's own text (a
+/// library's `Display`): that goes to the job log (`Fail`,
+/// `panels::failed`, `panels::line`).
+const DRIVER_DIRS: &[&str] = &["work/qsjob/src/devtools", "work/qsjob/src/panels"];
+
+/// The developer tools' libraries: they answer with message IDs and
+/// values (`dbg::Msg`, `LineMsg`), never with text they word
+/// themselves for a driver to show.
+const TOOL_LIBS: &str = "devtools";
+
+#[test]
+fn drivers_show_no_library_text() {
+    let mut wrong = Vec::new();
+    let mut files = Vec::new();
+    for d in DRIVER_DIRS {
+        sources(&root().join(d), &mut files);
+    }
+    for f in &files {
+        let name = f.strip_prefix(root()).unwrap_or(f).display().to_string().replace('\\', "/");
+        let code = code_of(&std::fs::read_to_string(f).unwrap_or_default());
+        let at = |i: usize| format!("{name}:{}", code[..i].matches('\n').count() + 1);
+        for (i, _) in code.char_indices() {
+            let passed = code[i..].starts_with("Err(e) => e,") || code[i..].starts_with("Err(m) => m,");
+            if !(passed || raw_error_at(&code, i)) {
+                continue;
+            }
+            let start = code[..i].rfind([';', '\n']).map_or(0, |s| s + 1);
+            let stmt = &code[start..i];
+            let logged = ["Fail::", "failed(", "panels::line(", "eprintln!", "tracing::", "DETAILS"]
+                .iter()
+                .any(|l| stmt.contains(l));
+            if !logged {
+                wrong.push(format!("{}: an error's own text", at(i)));
+            }
+        }
+        // A sentence the driver words itself and hands back for a
+        // message line: `Some(format!("Record {n} added."))`.
+        for pat in ["Some(format!(", "Some(\"", "return format!(", "Ok(format!(", "=> format!("] {
+            for (i, _) in code.match_indices(pat) {
+                let Some(lit) = literal_at(&code, i + pat.len() - usize::from(pat.ends_with('"'))) else {
+                    continue;
+                };
+                let sentence = lit.starts_with(|c: char| c.is_ascii_uppercase())
+                    && lit.contains(' ')
+                    && lit.trim_end().ends_with('.');
+                if sentence {
+                    wrong.push(format!("{}: sentence {lit:?} worded for a message line", at(i)));
+                }
+            }
+        }
+    }
+    // The libraries: text worded for a message line.
+    let mut libs = Vec::new();
+    sources(&root().join(TOOL_LIBS), &mut libs);
+    for f in &libs {
+        let name = f.strip_prefix(root()).unwrap_or(f).display().to_string().replace('\\', "/");
+        if name.contains("/tests/") {
+            continue;
+        }
+        let code = code_of(&std::fs::read_to_string(f).unwrap_or_default());
+        let at = |i: usize| format!("{name}:{}", code[..i].matches('\n').count() + 1);
+        for pat in ["Message(format!(", "Message(\"", "Message(String"] {
+            for (i, _) in code.match_indices(pat) {
+                wrong.push(format!("{}: text given to {pat}", at(i)));
+            }
+        }
+        for (i, _) in code.match_indices(", String>") {
+            let head = &code[code[..i].rfind('\n').unwrap_or(0)..i];
+            if head.contains("pub fn") && head.contains("Result<") {
+                wrong.push(format!("{}: a library error worded as text", at(i)));
+            }
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "{} library texts reaching a message line:\n  {}",
+        wrong.len(),
+        wrong.join("\n  ")
+    );
+}
+
+#[test]
+fn lic_screens_show_no_error_text() {
+    let mut files = Vec::new();
+    for d in LIC_SCREENS {
+        let p = root().join(d);
+        if p.is_dir() {
+            sources(&p, &mut files);
+        } else {
+            files.push(p);
+        }
+    }
+    let mut wrong = Vec::new();
+    for f in files {
+        let name = f.strip_prefix(root()).unwrap_or(&f).display().to_string().replace('\\', "/");
+        if name.contains("/tests/") {
+            continue;
+        }
+        let code = code_of(&std::fs::read_to_string(&f).unwrap_or_default());
+        for (i, _) in code.char_indices() {
+            if !raw_error_at(&code, i) {
+                continue;
+            }
+            // The statement around it: a log line may show the reason.
+            let start = code[..i].rfind(';').map_or(0, |s| s + 1);
+            let stmt = &code[start..i];
+            let logged = ["serial(", "eprintln!", "println!", "tracing::", ".both(", "Fail::"]
+                .iter()
+                .any(|l| stmt.contains(l));
+            if !logged {
+                wrong.push(format!("{name}:{}", code[..i].matches('\n').count() + 1));
+            }
+        }
+    }
+    assert!(
+        wrong.is_empty(),
+        "LIC screens showing an error's own text (word it with svctools::dst::failed):\n  {}",
+        wrong.join("\n  ")
+    );
+}
 
 /// A file's code: comment lines blank, test modules cut.
 fn code_of(text: &str) -> String {
@@ -229,7 +447,7 @@ fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
                 }
             }
             // Messages by identifier: the literal must be one.
-            for pat in [".error(\"", ".info(\"", "LineMsg::error(\"", "LineMsg::info(\"", ".msg(\""] {
+            for pat in [".error(\"", ".info(\"", "LineMsg::error(\"", "LineMsg::info(\"", ".msg(\"", ".message(\""] {
                 for (i, _) in code.match_indices(pat) {
                     if let Some(lit) = literal_at(&code, i + pat.len() - 1) {
                         ids.push((at(i), lit.to_string()));
@@ -248,6 +466,16 @@ fn message_lines() -> (Vec<String>, Vec<(String, String)>) {
             for (i, _) in said {
                 // The identifier is the second argument: after the host.
                 let window = &code[i..(i + 120).min(code.len())];
+                if let Some(c) = window.find(',')
+                    && let Some(lit) = literal_at(window, c + 1)
+                {
+                    ids.push((at(i), lit.to_string()));
+                }
+            }
+            // STRSQL's history: `note(host, h, "SQL7956", ..)`, the
+            // identifier after the history.
+            for (i, _) in code.match_indices("note(host, ") {
+                let window = &code[i + 11..(i + 160).min(code.len())];
                 if let Some(c) = window.find(',')
                     && let Some(lit) = literal_at(window, c + 1)
                 {

@@ -32,9 +32,12 @@ settle it.
    broken, the identifiers in the error code.
 
 5. **Missing special authority.** Settled for `CRTUSRPRF`: `CPF2292`,
-   now used by `CRTUSRPRF` and `CHGUSRPRF`. Other commands that need a
-   special authority the user lacks still report `CPF2222`. Oracle:
-   `STRSBS` without `*JOBCTL`, `CHGSYSVAL` without `*ALLOBJ`.
+   now used by `CRTUSRPRF` and `CHGUSRPRF`; giving a special authority
+   the giver lacks is `CPF2291` (IBM's CRTUSRPRF documentation). Other
+   commands that need a special authority the user lacks report
+   `CPF222E` (read with DSPMSGD on pub400, V7R5M0). Per-command IDs
+   are still open. Oracle: `STRSBS` without `*JOBCTL`, `CHGSYSVAL`
+   without `*ALLOBJ`.
 
 6. **Owner and public authority of a new profile.** Settled: the
    creator (`QSECOFR`) owns a new profile.

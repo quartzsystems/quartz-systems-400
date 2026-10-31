@@ -1364,7 +1364,7 @@ points it lacks are added and nothing else changes. Only the storage
 service reads or writes it: jobs ask through the `Regfac` request (stg
 tag 210) with a `regfac::Query` (list, programs, register, deregister,
 add, remove, refused). Changing it takes `*ALLOBJ` and `*SECADM`
-(`CPF2222` otherwise); reading it takes nothing.
+(`CPF222E` otherwise); reading it takes nothing.
 
 The payload is the `ExitrgHeader` (magic `QREG` in ASCII, version 1,
 the number of points, little-endian), then per point an `ExitrgPoint`

@@ -90,7 +90,7 @@ impl Provider for StoreProvider {
                 sec::profile::SpecialAuth::ALLOBJ.union(sec::profile::SpecialAuth::SECADM),
                 "change the registration facility",
             )
-            .map_err(|e| ApiFail::id(e.msgid().unwrap_or("CPF2222")))?;
+            .map_err(|e| ApiFail::id(e.msgid().unwrap_or("CPF222E")))?;
         }
         let mut failed = None;
         let out = with_main(&self.shared, |txn, qsys| {

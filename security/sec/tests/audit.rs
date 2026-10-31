@@ -132,7 +132,7 @@ fn audit_commands() {
         cmd::chgobjaud(&mut t, &benv, lib, "*ALL")
             .unwrap_err()
             .msgid(),
-        Some("CPF2222")
+        Some("CPF222E")
     );
     cmd::chgobjaud(&mut t, &env, lib, "*ALL").unwrap();
     let ev = Event::new(Kind::Ad)

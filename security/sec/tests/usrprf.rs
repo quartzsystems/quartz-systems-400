@@ -120,7 +120,7 @@ fn create_change_and_passwords() {
         &Keywords::new(&[("USRPRF", "EVE"), ("SPCAUT", "*ALLOBJ")]),
     )
     .unwrap_err();
-    assert_eq!(e.msgid(), Some("CPF2222"));
+    assert_eq!(e.msgid(), Some("CPF2291"));
     usrprf::crtusrprf(&mut t, &bob_env, &Keywords::new(&[("USRPRF", "EVE")])).unwrap();
 
     // CHGPWD and CHKPWD as BOB.

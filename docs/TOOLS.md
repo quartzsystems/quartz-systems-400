@@ -265,7 +265,7 @@ ends; UP/DOWN/LEFT/RIGHT need no argument (IBM's do).
 
 ## STRSST
 
-Needs a display and `*SERVICE` (CPF2222 otherwise). STRSST runs
+Needs a display and `*SERVICE` (CPF222E otherwise). STRSST runs
 DST's own panels (`lic/svctools`) in the job, converted to
 `uim::Screen`s; the job's environment asks the storage service, which
 checks `*SERVICE` and the signed-on service tools user's privileges on
