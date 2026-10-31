@@ -1,0 +1,24 @@
+             Specify Licensed Internal Code Log Selection Criteria              
+                                                                 System:  QS400 
+                                                                                
+ Major code (blank for all) :                                                   
+                                                                                
+ Major codes: 0100 IPL, 0200 storage service, 0300 jobs, 0400 problems,         
+ 0500 dumps, 0600 traces, 0700 service tools, 0800 disk units.                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

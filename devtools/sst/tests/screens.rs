@@ -115,6 +115,17 @@ fn env() -> MemEnv {
         text: "Mirrored unit missing, protection suspended".into(),
     }];
     e.lic = vec![("Processors".into(), "4".into())];
+    e.capacity = vec![
+        ("Installed processors".into(), "4".into()),
+        ("Processor use, %".into(), "3.5".into()),
+        ("Main storage, MB".into(), "2048.00".into()),
+        ("Storage pools".into(), "2".into()),
+        ("Disk units configured".into(), "2".into()),
+        ("System ASP capacity".into(), "8 G".into()),
+        ("System ASP used, %".into(), "12.5000".into()),
+        ("ASP threshold, %".into(), "90".into()),
+        ("Active jobs".into(), "31".into()),
+    ];
     e
 }
 
@@ -143,6 +154,8 @@ fn sst_screens_match_their_golden_files() {
     check("capacity", &walk(&mut e, &["6"]), &mut e);
     check("capacity-processor", &walk(&mut e, &["6", "1"]), &mut e);
     check("users-devices", &walk(&mut e, &["8"]), &mut e);
+    check("capacity-storage", &walk(&mut e, &["6", "4"]), &mut e);
+    check("device-ids", &walk(&mut e, &["8", "2"]), &mut e);
 }
 
 #[test]
@@ -150,10 +163,14 @@ fn shared_screens_are_dsts() {
     let mut e = env();
     same_as_dst("tools", &walk(&mut e, &["1"]), &mut e);
     same_as_dst("pal", &walk(&mut e, &["1", "1"]), &mut e);
-    same_as_dst("dad", &walk(&mut e, &["1", "4"]), &mut e);
+    same_as_dst("dad-menu", &walk(&mut e, &["1", "4"]), &mut e);
+    same_as_dst("dad", &walk(&mut e, &["1", "4", "1"]), &mut e);
+    same_as_dst("trace", &walk(&mut e, &["1", "2"]), &mut e);
+    same_as_dst("msd", &walk(&mut e, &["1", "6"]), &mut e);
+    same_as_dst("lic-log-menu", &walk(&mut e, &["1", "5"]), &mut e);
     same_as_dst("hsm", &walk(&mut e, &["1", "7"]), &mut e);
     same_as_dst("hsm-packaging", &walk(&mut e, &["1", "7", "1"]), &mut e);
-    same_as_dst("hsm-failed", &walk(&mut e, &["1", "7", "3"]), &mut e);
+    same_as_dst("hsm-failed", &walk(&mut e, &["1", "7", "4"]), &mut e);
     same_as_dst("disk", &walk(&mut e, &["3"]), &mut e);
     same_as_dst("disk-config", &walk(&mut e, &["3", "1"]), &mut e);
     same_as_dst("disk-status", &walk(&mut e, &["3", "1", "1", "1"]), &mut e);

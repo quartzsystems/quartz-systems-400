@@ -1,0 +1,24 @@
+                           Logical Hardware Resources                           
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. All logical hardware resources                                         
+      2. Communications resources (*CMN)                                        
+      3. Storage resources (*STG)                                               
+      4. Tape and optical resources (*TAP)                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

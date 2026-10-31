@@ -298,7 +298,7 @@ fn capacity(system: &mut System) -> Vec<String> {
     vec![
         format!("Installed processors\t{cpus}"),
         format!("Active processors\t{cpus}"),
-        format!("Processor use, % of the interval\t{}", v("CPUPCT")),
+        format!("Processor use, %\t{}", v("CPUPCT")),
         format!("Main storage, MB\t{}", v("MAINSTG")),
         format!("Storage pools\t{pools}"),
         format!("Disk units configured\t{}", units.len()),

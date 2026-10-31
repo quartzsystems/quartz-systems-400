@@ -1,0 +1,24 @@
+                           Licensed Internal Code Log                           
+                                                                 System:  QS400 
+                                                                                
+    Seq Date       Time     Major Minor Job    Description                      
+      1 2026-01-01 00:01:40 0300 0001 000042 QSECOFR/QPADEV0001                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

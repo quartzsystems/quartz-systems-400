@@ -1,0 +1,24 @@
+                          Work with Main Storage Dumps                          
+                                                                 System:  QS400 
+                                                                                
+ Type options, press Enter.  4=Delete   5=Display   6=Copy to media             
+                                                                                
+ Opt  Dump        Taken                Bytes  Reason                            
+     (None)                                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

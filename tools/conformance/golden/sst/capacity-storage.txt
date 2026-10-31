@@ -1,0 +1,24 @@
+                            Display Storage Capacity                            
+                                                                 System:  QS400 
+                                                                                
+ Disk units configured . . . . . :  2                                           
+ System ASP capacity . . . . . . :  8 G                                         
+ System ASP used, % . . . . . . .:  12.5000                                     
+ ASP threshold, % . . . . . . . .:  90                                          
+                                                                                
+ Unit  ASP    Size (MiB)  Used %  Protection                                    
+    0    1          4096     12%  Mirrored                                      
+    1    1          4096     13%  Mirrored                                      
+    2    1          4096     14%  Unprotected                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

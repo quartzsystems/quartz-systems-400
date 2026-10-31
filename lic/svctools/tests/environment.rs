@@ -118,11 +118,23 @@ fn environment_screens_match_their_golden_files() {
     walk(&mut e, &["5", "4"], "sysvals");
     walk(&mut e, &["7"], "tools");
     walk(&mut e, &["7", "1"], "pal");
-    walk(&mut e, &["7", "4"], "dad");
-    walk(&mut e, &["7", "5"], "lic-log");
+    walk(&mut e, &["7", "4"], "dad-menu");
+    walk(&mut e, &["7", "4", "1"], "dad");
+    walk(&mut e, &["7", "4", "2"], "dad-print");
+    walk(&mut e, &["7", "4", "3"], "dad-alter");
+    walk(&mut e, &["7", "5"], "lic-log-menu");
+    walk(&mut e, &["7", "5", "1"], "lic-log-select");
+    walk(&mut e, &["7", "5", "2"], "lic-log");
     walk(&mut e, &["7", "7"], "hsm");
     walk(&mut e, &["7", "7", "1"], "hsm-packaging");
-    walk(&mut e, &["7", "7", "3"], "hsm-failed");
+    walk(&mut e, &["7", "7", "2"], "hsm-logical-menu");
+    walk(&mut e, &["7", "7", "2", "2"], "hsm-cmn");
+    walk(&mut e, &["7", "7", "3"], "hsm-locate");
+    walk(&mut e, &["7", "7", "4"], "hsm-failed");
+    walk(&mut e, &["7", "2"], "trace");
+    walk(&mut e, &["7", "6"], "msd");
+    walk(&mut e, &["7", "6", "1"], "msd-take");
+    walk(&mut e, &["7", "6", "2"], "msd-list");
     walk(&mut e, &["13"], "security");
     walk(&mut e, &["3"], "lic-info");
     walk(&mut e, &["6"], "console-mode");
@@ -229,7 +241,7 @@ fn security_flags_and_paging() {
     r.function(7, &mut many);
     assert!(r.screen(&mut many).dump().contains("More..."));
     // Display/alter/dump refuses nonsense and shows hex for a page.
-    let mut r = walk(&mut e, &["7", "4"], "dad");
+    let mut r = walk(&mut e, &["7", "4", "1"], "dad");
     r.enter(&f(&["", "", ""]), &mut e);
     assert!(r.screen(&mut e).dump().contains("Type a unit number"));
     let lines = svctools::dst::tools::hex_lines("x", b"QS400ASP\x00\x01");
@@ -238,4 +250,47 @@ fn security_flags_and_paging() {
         "000000  51 53 34 30 30 41 53 50 00 01                    QS400ASP.."
     );
     let _ = e.now();
+}
+
+#[test]
+fn dumps_traces_alter_and_the_lic_log() {
+    let mut e = env();
+    e.events = vec!["     1 2026-01-01 00:01:40 0300 0001 000042 QSECOFR/QPADEV0001".into()];
+    // Take a dump on F10 and see it listed; display and delete it.
+    let mut r = walk(&mut e, &["7", "6", "1"], "msd-take");
+    r.function(10, &mut e);
+    assert!(r.screen(&mut e).dump().contains("Main storage dump QSD0000001 taken"));
+    let mut r = walk(&mut e, &["7", "6", "2"], "msd-list-one");
+    r.enter(&f(&["5"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("System dump QSD0000001"));
+    r.function(12, &mut e);
+    r.enter(&f(&["6"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("not available"));
+    r.enter(&f(&["4"]), &mut e);
+    assert!(e.dumps.is_empty());
+    // Start a trace from F6, stop it.
+    let mut r = walk(&mut e, &["7", "2"], "trace");
+    r.function(6, &mut e);
+    check("trace-start", &r.screen(&mut e).dump());
+    r.enter(&f(&["T1", "*ALL", "0", "64", "Y"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("Trace T1 started"));
+    let mut r = walk(&mut e, &["7", "2"], "trace-one");
+    r.enter(&f(&["2"]), &mut e);
+    assert_eq!(e.traces[0].0.status, "Stopped");
+    // Alter asks first.
+    let mut r = walk(&mut e, &["7", "4", "3"], "dad-alter");
+    r.enter(&f(&["0001-0010-0000000000000005-00000001", "12", "10", "C1C2"]), &mut e);
+    check("dad-alter-confirm", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert!(e.actions.iter().any(|a| a.starts_with("alter 0001-0010")));
+    // The event log by major code; the hardware printed with F6.
+    let mut r = walk(&mut e, &["7", "5", "1"], "lic-log-select");
+    r.enter(&f(&["0300"]), &mut e);
+    check("lic-log-entries", &r.screen(&mut e).dump());
+    let mut r = walk(&mut e, &["7", "7"], "hsm");
+    r.function(6, &mut e);
+    assert!(r.screen(&mut e).dump().contains("Configuration printed"));
+    let mut r = walk(&mut e, &["7", "7", "3"], "hsm-locate");
+    r.enter(&f(&["DD*"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("DD001"));
 }

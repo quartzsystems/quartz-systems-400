@@ -5,7 +5,7 @@
  Page number on the unit . :                                                    
  Or object identifier . . :                                                     
                                                                                 
- Display only: altering storage is not available in this release.               
+ Altering is option 3 of the previous menu, for an object's pages.              
                                                                                 
                                                                                 
                                                                                 

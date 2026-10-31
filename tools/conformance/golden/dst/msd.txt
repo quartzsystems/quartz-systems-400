@@ -1,0 +1,24 @@
+                           Main Storage Dump Manager                            
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Take a main storage dump                                               
+      2. Work with main storage dumps                                           
+      3. Copy to media                                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

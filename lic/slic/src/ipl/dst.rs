@@ -602,6 +602,53 @@ impl DstEnv for Env<'_> {
             .collect()
     }
 
+    fn capacity(&mut self) -> Vec<(String, String)> {
+        let cpus = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
+        let units = self.disk_units();
+        let mib: u64 = units.iter().map(|u| u.size_mib).sum();
+        vec![
+            ("Installed processors".into(), cpus.to_string()),
+            ("Disk units configured".into(), units.len().to_string()),
+            ("System ASP capacity".into(), format!("{} G", mib / 1024)),
+            ("ASP threshold, %".into(), self.asp_threshold().to_string()),
+        ]
+    }
+
+    fn dumps(&mut self) -> Result<Vec<svctools::env::DumpRow>, String> {
+        self.store()?;
+        Ok(crate::stgsvc::dumps::list(self.system)?
+            .into_iter()
+            .map(|d| svctools::env::DumpRow {
+                name: d.name,
+                taken: d.taken,
+                size: d.size,
+                text: d.text,
+            })
+            .collect())
+    }
+
+    fn take_dump(&mut self, why: &str) -> Result<String, String> {
+        self.store()?;
+        crate::stgsvc::dumps::take(self.system, why)
+    }
+
+    fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        self.store()?;
+        crate::stgsvc::dumps::show(self.system, name)
+    }
+
+    fn delete_dump(&mut self, name: &str) -> Result<(), String> {
+        self.store()?;
+        crate::stgsvc::dumps::delete(self.system, name)
+    }
+
+    fn lic_events(&mut self, major: u16) -> Vec<String> {
+        crate::stgsvc::liclog::entries(major)
+            .iter()
+            .map(crate::stgsvc::liclog::line)
+            .collect()
+    }
+
     fn resources(&mut self) -> Vec<ResourceRow> {
         self.system
             .hw

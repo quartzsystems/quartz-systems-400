@@ -1,0 +1,24 @@
+                           Confirm Main Storage Dump                            
+                                                                 System:  QS400 
+                                                                                
+ A copy of the storage service's state, the job table, the IPL                  
+ history and the Licensed Internal Code log is kept as a dump                   
+ in ASP 1, and a problem is logged for it.                                      
+                                                                                
+ Press F10 to take the dump, F12 to cancel.                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

@@ -20,6 +20,8 @@ pub struct Submenu {
     name: &'static str,
     title: &'static str,
     options: Vec<(u8, &'static str, Option<Action>)>,
+    fkeys: &'static str,
+    key: Option<(u8, Action)>,
 }
 
 impl Submenu {
@@ -35,7 +37,17 @@ impl Submenu {
             name,
             title,
             options,
+            fkeys: "F3=Exit   F12=Cancel",
+            key: None,
         }
+    }
+
+    /// With function key `n` doing `action`; `fkeys` is the key line.
+    #[must_use]
+    pub fn with_key(mut self, n: u8, fkeys: &'static str, action: Action) -> Self {
+        self.key = Some((n, action));
+        self.fkeys = fkeys;
+        self
     }
 }
 
@@ -50,8 +62,17 @@ impl Panel for Submenu {
             self.title,
             &env.system_name(),
             &options,
-            "F3=Exit   F12=Cancel",
+            self.fkeys,
         )
+    }
+
+    fn function(&mut self, key: u8, env: &mut dyn DstEnv) -> Flow {
+        match (&self.key, key) {
+            (Some((n, action)), k) if *n == k => action(env),
+            (_, 3) => Flow::PopAll,
+            (_, 12) => Flow::Pop,
+            _ => Flow::Stay,
+        }
     }
 
     fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {

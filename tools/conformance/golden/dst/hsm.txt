@@ -5,11 +5,11 @@
                                                                                 
       1. Packaging hardware resources (systems, frames, cards, ...)             
       2. Logical hardware resources (buses, IOPs, controllers, ...)             
-      3. Failed and non-reporting hardware resources                            
-                                                                                
-                                                                                
-                                                                                
-                                                                                
+      3. Locate resource by resource name                                       
+      4. Failed and non-reporting hardware resources                            
+      6. Work with service action log                                           
+      7. Display label location work sheet                                      
+      8. Device Concurrent Maintenance                                          
                                                                                 
                                                                                 
                                                                                 
@@ -20,5 +20,5 @@
  Selection                                                                      
                                                                                 
                                                                                 
- F3=Exit   F12=Cancel                                                           
+ F3=Exit   F6=Print configuration   F12=Cancel                                  
                                                                                 

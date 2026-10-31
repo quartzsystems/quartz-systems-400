@@ -92,6 +92,47 @@ pub struct LogEntry {
     pub text: String,
 }
 
+/// A system dump the main storage dump manager keeps.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DumpRow {
+    /// `QSDnnnnnnn`.
+    pub name: String,
+    /// Unix seconds taken.
+    pub taken: u64,
+    /// Bytes.
+    pub size: u64,
+    /// Why it was taken.
+    pub text: String,
+}
+
+/// A trace the service tools started or see.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TraceRow {
+    /// Table or session name.
+    pub name: String,
+    /// `LIC` or `Job`.
+    pub kind: String,
+    /// `Active` or `Stopped`.
+    pub status: String,
+    /// Records held.
+    pub records: u64,
+}
+
+/// What "start a trace" asks for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TraceSpec {
+    /// Table name.
+    pub name: String,
+    /// Categories, blank-separated; `*ALL` or empty for all.
+    pub categories: String,
+    /// Job number; 0 for every job.
+    pub job: u32,
+    /// Size in KiB.
+    pub size_kib: u64,
+    /// Wrap when full.
+    pub wrap: bool,
+}
+
 /// The `Work with system security` flags.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[allow(clippy::struct_excessive_bools)] // one flag per line of the display
@@ -162,6 +203,9 @@ impl UserChange {
         }
     }
 }
+
+/// What a function that needs the running system says in DST.
+pub const NOT_HERE: &str = "Not available until the system is running; use STRSST";
 
 /// The system behind the service tools.
 pub trait DstEnv {
@@ -400,6 +444,82 @@ pub trait DstEnv {
     fn resources(&mut self) -> Vec<ResourceRow> {
         Vec::new()
     }
+    /// `Work with System Capacity`'s figures, label and value.
+    fn capacity(&mut self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+    /// The system dumps kept, oldest first.
+    fn dumps(&mut self) -> Result<Vec<DumpRow>, String> {
+        Err(NOT_HERE.into())
+    }
+    /// Take a system dump; its name.
+    fn take_dump(&mut self, why: &str) -> Result<String, String> {
+        let _ = why;
+        Err(NOT_HERE.into())
+    }
+    /// A system dump's lines.
+    fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        let _ = name;
+        Err(NOT_HERE.into())
+    }
+    /// Delete a system dump.
+    fn delete_dump(&mut self, name: &str) -> Result<(), String> {
+        let _ = name;
+        Err(NOT_HERE.into())
+    }
+    /// Copy a system dump to media.
+    fn copy_dump(&mut self, name: &str) -> Result<(), String> {
+        let _ = name;
+        Err("Copying a dump to media is not available in this release".into())
+    }
+    /// The traces.
+    fn traces(&mut self) -> Result<Vec<TraceRow>, String> {
+        Err(NOT_HERE.into())
+    }
+    /// Start a Licensed Internal Code trace.
+    fn start_trace(&mut self, spec: &TraceSpec) -> Result<(), String> {
+        let _ = spec;
+        Err(NOT_HERE.into())
+    }
+    /// Stop a trace; it is kept for display.
+    fn stop_trace(&mut self, name: &str) -> Result<(), String> {
+        let _ = name;
+        Err(NOT_HERE.into())
+    }
+    /// A trace formatted.
+    fn trace_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        let _ = name;
+        Err(NOT_HERE.into())
+    }
+    /// Delete a trace.
+    fn delete_trace(&mut self, name: &str) -> Result<(), String> {
+        let _ = name;
+        Err(NOT_HERE.into())
+    }
+    /// The storage service's event log, entries of major code `major`
+    /// (0 for all), one line each.
+    fn lic_events(&mut self, major: u16) -> Vec<String> {
+        let _ = major;
+        Vec::new()
+    }
+    /// Alter `hex` bytes at `offset` of page `page` of object `id`.
+    fn alter_storage(&mut self, id: &str, page: u64, offset: &str, hex: &str) -> Result<String, String> {
+        let _ = (id, page, offset, hex);
+        Err(NOT_HERE.into())
+    }
+    /// Print a unit page or an object header; the message.
+    fn print_storage(&mut self, unit: &str, page: &str, id: &str) -> Result<String, String> {
+        let _ = (unit, page, id);
+        Err(NOT_HERE.into())
+    }
+    /// Print the hardware configuration; the message.
+    fn print_hardware(&mut self) -> Result<String, String> {
+        Err(NOT_HERE.into())
+    }
+    /// The service tools device IDs: name, status, description.
+    fn device_ids(&mut self) -> Vec<(String, String, String)> {
+        vec![("QCONSOLE".into(), "Enabled".into(), "The system console".into())]
+    }
     /// The security flags.
     fn security_flags(&mut self) -> SecurityFlags {
         SecurityFlags::default()
@@ -442,6 +562,14 @@ pub struct MemEnv {
     pub shown: Vec<String>,
     /// Confirm changes first, as SST does.
     pub confirm: bool,
+    /// Dumps kept, with their lines.
+    pub dumps: Vec<(DumpRow, Vec<String>)>,
+    /// Traces, with their lines.
+    pub traces: Vec<(TraceRow, Vec<String>)>,
+    /// Capacity figures.
+    pub capacity: Vec<(String, String)>,
+    /// Event log lines.
+    pub events: Vec<String>,
     seed: u64,
 }
 
@@ -597,5 +725,90 @@ impl DstEnv for MemEnv {
     fn set_security_flags(&mut self, flags: SecurityFlags) -> Result<(), String> {
         self.flags = flags;
         Ok(())
+    }
+    fn capacity(&mut self) -> Vec<(String, String)> {
+        self.capacity.clone()
+    }
+    fn dumps(&mut self) -> Result<Vec<DumpRow>, String> {
+        Ok(self.dumps.iter().map(|d| d.0.clone()).collect())
+    }
+    fn take_dump(&mut self, why: &str) -> Result<String, String> {
+        let name = format!("QSD{:07}", self.dumps.len() + 1);
+        self.actions.push(format!("dump {name}"));
+        self.dumps.push((
+            DumpRow {
+                name: name.clone(),
+                taken: self.time,
+                size: 100,
+                text: why.into(),
+            },
+            vec![format!("System dump {name}")],
+        ));
+        Ok(name)
+    }
+    fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        self.dumps
+            .iter()
+            .find(|d| d.0.name == name)
+            .map(|d| d.1.clone())
+            .ok_or_else(|| format!("System dump {name} not found"))
+    }
+    fn delete_dump(&mut self, name: &str) -> Result<(), String> {
+        self.actions.push(format!("delete dump {name}"));
+        self.dumps.retain(|d| d.0.name != name);
+        Ok(())
+    }
+    fn traces(&mut self) -> Result<Vec<TraceRow>, String> {
+        Ok(self.traces.iter().map(|t| t.0.clone()).collect())
+    }
+    fn start_trace(&mut self, spec: &TraceSpec) -> Result<(), String> {
+        self.actions.push(format!("trace {} {} {}", spec.name, spec.categories, spec.job));
+        self.traces.push((
+            TraceRow {
+                name: spec.name.clone(),
+                kind: "LIC".into(),
+                status: "Active".into(),
+                records: 0,
+            },
+            Vec::new(),
+        ));
+        Ok(())
+    }
+    fn stop_trace(&mut self, name: &str) -> Result<(), String> {
+        self.actions.push(format!("stop trace {name}"));
+        for t in &mut self.traces {
+            if t.0.name == name {
+                t.0.status = "Stopped".into();
+            }
+        }
+        Ok(())
+    }
+    fn trace_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        self.traces
+            .iter()
+            .find(|t| t.0.name == name)
+            .map(|t| t.1.clone())
+            .ok_or_else(|| format!("Trace {name} not found"))
+    }
+    fn delete_trace(&mut self, name: &str) -> Result<(), String> {
+        self.actions.push(format!("delete trace {name}"));
+        self.traces.retain(|t| t.0.name != name);
+        Ok(())
+    }
+    fn lic_events(&mut self, major: u16) -> Vec<String> {
+        let _ = major;
+        self.events.clone()
+    }
+    fn alter_storage(&mut self, id: &str, page: u64, offset: &str, hex: &str) -> Result<String, String> {
+        self.actions.push(format!("alter {id} {page} {offset} {hex}"));
+        Ok(format!("{} bytes altered.", hex.len() / 2))
+    }
+    fn print_storage(&mut self, unit: &str, page: &str, id: &str) -> Result<String, String> {
+        self.actions.push(format!("print {unit} {page} {id}"));
+        Ok("Storage printed to QPCSMPRT.".into())
+    }
+    fn print_hardware(&mut self) -> Result<String, String> {
+        self.actions.push("print hardware".into());
+        Ok("Configuration printed to QPCSMPRT.".into())
     }
 }

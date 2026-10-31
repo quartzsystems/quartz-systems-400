@@ -1,16 +1,16 @@
                        Display Processor Capacity Status                        
                                                                  System:  QS400 
                                                                                 
- Installed processors . . . . . :  4                                            
- Active processors  . . . . . . :  4                                            
- Hardware resources reported  . :  3                                            
+ Installed processors . . . . . .:  4                                           
+ Active processors . . . . . . . :  4                                           
+ Processor use, % . . . . . . . .:  3.5                                         
+ Main storage, MB . . . . . . . .:  2048.00                                     
+ Storage pools . . . . . . . . . :  2                                           
+ Active jobs . . . . . . . . . . :  31                                          
+ Hardware resources reported . . :  3                                           
                                                                                 
  Every installed processor is active: this system has no capacity               
  held in reserve to be activated later.                                         
-                                                                                
-                                                                                
-                                                                                
-                                                                                
                                                                                 
                                                                                 
                                                                                 

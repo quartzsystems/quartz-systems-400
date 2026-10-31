@@ -6,7 +6,7 @@
       1. Display processor capacity status                                      
       2. Work with temporary capacity                                           
       3. Work with permanent capacity                                           
-                                                                                
+      4. Display storage capacity                                               
                                                                                 
                                                                                 
                                                                                 

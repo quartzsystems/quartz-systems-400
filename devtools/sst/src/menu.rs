@@ -140,7 +140,27 @@ fn user_ids_and_devices(privileges: Privilege) -> Submenu {
                     }
                 })),
             ),
-            (2, "Service tools device IDs", None),
+            (
+                2,
+                "Service tools device IDs",
+                Some(Box::new(move |env: &mut dyn DstEnv| {
+                    if !can {
+                        return Flow::Error(NOT_AUTHORIZED.into());
+                    }
+                    let mut lines = vec!["Device ID   Status     Description".to_string()];
+                    for (n, s, d) in env.device_ids() {
+                        lines.push(format!("{n:<10}  {s:<9}  {d}"));
+                    }
+                    lines.push(String::new());
+                    lines.push("Service tools are reached from the system console and from".into());
+                    lines.push("STRSST in a job; there are no LAN service tools devices.".into());
+                    Flow::Push(Box::new(Notice::new(
+                        "sst-device-ids",
+                        "Work with Service Tools Device IDs",
+                        lines,
+                    )))
+                })),
+            ),
         ],
     )
 }

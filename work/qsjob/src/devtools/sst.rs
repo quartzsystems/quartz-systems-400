@@ -14,7 +14,10 @@ use std::collections::BTreeMap;
 use cmd::Resolved;
 use mi::Job;
 use stg::Client;
-use svctools::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow, SecurityFlags, UserChange};
+use svctools::env::{
+    DiskUnit, DumpRow, LogEntry, NonConfigured, ResourceRow, SecurityFlags, TraceRow, TraceSpec,
+    UserChange,
+};
 use svctools::users::SignOnError;
 use svctools::{DstEnv, Privilege, UserDb};
 use tn5250::ds::aid;
@@ -128,6 +131,13 @@ impl SstEnv {
             .link
             .borrow_mut()
             .with(|l| l.sst_disk_change(op, unit, device))
+    }
+
+    /// An SST request of the newer kind (`service_op`, `sst-` and `op`).
+    fn op(&mut self, op: &str, args: &[&str]) -> Result<Vec<String>, String> {
+        let op = format!("sst-{op}");
+        let args: Vec<String> = args.iter().map(|a| (*a).to_string()).collect();
+        self.host.link.borrow_mut().with(|l| l.service_op(op, args))
     }
 
     fn disks(&mut self) -> (Vec<DiskUnit>, Vec<NonConfigured>) {
@@ -337,6 +347,110 @@ impl DstEnv for SstEnv {
             .with(Client::sst_resources)
             .map(|(rows, _)| rows)
             .unwrap_or_default()
+    }
+
+    fn capacity(&mut self) -> Vec<(String, String)> {
+        self.op("capacity", &[])
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|l| l.split_once('\t').map(|(k, v)| (k.to_string(), v.to_string())))
+            .collect()
+    }
+
+    fn dumps(&mut self) -> Result<Vec<DumpRow>, String> {
+        Ok(self
+            .op("dump-list", &[])?
+            .into_iter()
+            .filter_map(|l| {
+                let f: Vec<&str> = l.splitn(4, '\t').collect();
+                (f.len() == 4).then(|| DumpRow {
+                    name: f[0].into(),
+                    taken: f[1].parse().unwrap_or(0),
+                    size: f[2].parse().unwrap_or(0),
+                    text: f[3].into(),
+                })
+            })
+            .collect())
+    }
+
+    fn take_dump(&mut self, why: &str) -> Result<String, String> {
+        Ok(self.op("dump-take", &[why])?.into_iter().next().unwrap_or_default())
+    }
+
+    fn dump_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        self.op("dump-show", &[name])
+    }
+
+    fn delete_dump(&mut self, name: &str) -> Result<(), String> {
+        self.op("dump-delete", &[name]).map(|_| ())
+    }
+
+    fn copy_dump(&mut self, name: &str) -> Result<(), String> {
+        self.op("dump-copy", &[name]).map(|_| ())
+    }
+
+    fn traces(&mut self) -> Result<Vec<TraceRow>, String> {
+        Ok(self
+            .op("trace-list", &[])?
+            .into_iter()
+            .filter_map(|l| {
+                let f: Vec<&str> = l.split('\t').collect();
+                (f.len() == 4).then(|| TraceRow {
+                    name: f[0].into(),
+                    kind: f[1].into(),
+                    status: f[2].into(),
+                    records: f[3].parse().unwrap_or(0),
+                })
+            })
+            .collect())
+    }
+
+    fn start_trace(&mut self, spec: &TraceSpec) -> Result<(), String> {
+        let (job, size) = (spec.job.to_string(), spec.size_kib.to_string());
+        let wrap = if spec.wrap { "Y" } else { "N" };
+        self.op("trace-start", &[&spec.name, &spec.categories, &job, &size, wrap])
+            .map(|_| ())
+    }
+
+    fn stop_trace(&mut self, name: &str) -> Result<(), String> {
+        self.op("trace-stop", &[name]).map(|_| ())
+    }
+
+    fn trace_lines(&mut self, name: &str) -> Result<Vec<String>, String> {
+        self.op("trace-show", &[name])
+    }
+
+    fn delete_trace(&mut self, name: &str) -> Result<(), String> {
+        self.op("trace-delete", &[name]).map(|_| ())
+    }
+
+    fn lic_events(&mut self, major: u16) -> Vec<String> {
+        let m = if major == 0 { String::new() } else { format!("{major:04X}") };
+        self.op("liclog", &[&m]).unwrap_or_else(|e| vec![e])
+    }
+
+    fn alter_storage(&mut self, id: &str, page: u64, offset: &str, hex: &str) -> Result<String, String> {
+        let p = page.to_string();
+        Ok(self.op("dad-alter", &[id, &p, offset, hex])?.join(" "))
+    }
+
+    fn print_storage(&mut self, unit: &str, page: &str, id: &str) -> Result<String, String> {
+        Ok(self.op("dad-print", &[unit, page, id])?.join(" "))
+    }
+
+    fn print_hardware(&mut self) -> Result<String, String> {
+        Ok(self.op("hsm-print", &[])?.join(" "))
+    }
+
+    fn device_ids(&mut self) -> Vec<(String, String, String)> {
+        self.op("devices", &[])
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|l| {
+                let f: Vec<&str> = l.splitn(3, '\t').collect();
+                (f.len() == 3).then(|| (f[0].to_string(), f[1].to_string(), f[2].to_string()))
+            })
+            .collect()
     }
 
     fn security_flags(&mut self) -> SecurityFlags {

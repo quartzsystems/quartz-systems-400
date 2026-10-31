@@ -1,0 +1,24 @@
+                      Start a Licensed Internal Code Trace                      
+                                                                 System:  QS400 
+                                                                                
+ Trace table name . . . : QSTRCTBL                                              
+ Trace points . . . . . : *ALL                                                  
+ Job number (0 for all) : 0                                                     
+ Trace table size (KiB) : 1024                                                  
+ Wrap when full (Y, N) :  Y                                                     
+                                                                                
+ Categories: CALL CMD REQ MSG IO JOB PRB DMP LOG, or *ALL.                      
+ The trace collects the storage service's trace points until stopped.           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

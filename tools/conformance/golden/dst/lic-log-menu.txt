@@ -1,0 +1,24 @@
+                           Licensed Internal Code Log                           
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Select entries from the Licensed Internal Code log                     
+      2. Display the IPL history                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -1,0 +1,24 @@
+                             Confirm Alter Storage                              
+                                                                 System:  QS400 
+                                                                                
+ Object . . . . : 0001-0010-0000000000000005-00000001                           
+ Page . . . . . : 12                                                            
+ Offset . . . . : 10                                                            
+ New bytes  . . : C1C2                                                          
+                                                                                
+ Press F10 to alter the storage, F12 to cancel.                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

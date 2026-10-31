@@ -1,0 +1,24 @@
+                              Alter Object Storage                              
+                                                                 System:  QS400 
+                                                                                
+ Object identifier . . . :                                                      
+ Page number . . . . . . :                                                      
+ Offset in the page (hex) :                                                     
+ New bytes (hex) . . . . :                                                      
+                                                                                
+ The page must be the object's header page or one of its own.                   
+ The change is written at once and recorded in the LIC log.                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                
