@@ -69,6 +69,7 @@ pub fn propose_pairs(
         type_model: u.type_model.clone(),
         size_mib: u.size_mib,
         has_data: false,
+        controller: String::new(),
     }));
     let mut pairs = Vec::new();
     let mut taken: Vec<u16> = Vec::new();

@@ -33,7 +33,8 @@ wire_struct!(NonConfigured {
     serial,
     type_model,
     size_mib,
-    has_data
+    has_data,
+    controller
 });
 
 wire_struct!(ResourceRow {

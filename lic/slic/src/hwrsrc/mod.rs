@@ -8,6 +8,7 @@
 
 pub mod nic;
 pub mod pci;
+pub mod storage;
 pub mod uevent;
 
 use std::fmt::Write as _;
@@ -132,13 +133,10 @@ impl Table {
     /// Walk sysfs once. PCI first, in address order, so names are stable.
     pub fn coldplug() -> Self {
         let mut t = Self::default();
-        for dev in pci::scan() {
-            t.add(dev.kind, dev.address.clone(), dev.description, dev.devpath);
-        }
-        for name in sorted_dir("/sys/class/block") {
-            t.add_block(&name);
-        }
-        t.add_ports(Path::new("/sys"));
+        let sys = Path::new("/sys");
+        t.add_pci(sys);
+        t.add_blocks(sys);
+        t.add_ports(sys);
         for name in sorted_dir("/sys/class/net") {
             t.attach_net(&name);
         }
@@ -165,12 +163,8 @@ impl Table {
                             .join(ev.devpath.trim_start_matches('/'))
                             .as_path(),
                     )
-                    .map(|d| {
-                        self.add(d.kind, d.address.clone(), d.description, d.devpath)
-                            .name
-                            .clone()
-                    }),
-                    "block" => self.add_block(&name),
+                    .map(|d| self.add_function(d)),
+                    "block" => self.add_block(Path::new("/sys"), &name),
                     "net" => {
                         let port = self.add_port(Path::new("/sys"), &name);
                         self.attach_net(&name);
@@ -241,9 +235,47 @@ impl Table {
         self.resources.last().expect("just pushed")
     }
 
-    /// Whole disks and optical drives. Partitions and virtual devices are skipped.
-    fn add_block(&mut self, name: &str) -> Option<String> {
-        let sys = Path::new("/sys/class/block").join(name);
+    /// Every PCI function under `root`, in address order.
+    pub fn add_pci(&mut self, root: &Path) {
+        for dev in pci::scan_in(root) {
+            self.add_function(dev);
+        }
+    }
+
+    /// One PCI function; a storage controller keeps its type and model.
+    fn add_function(&mut self, dev: pci::PciDevice) -> String {
+        let tm = dev.type_model;
+        let name = self
+            .add(dev.kind, dev.address, dev.description, dev.devpath)
+            .name
+            .clone();
+        self.resources.last_mut().expect("just pushed").type_model = tm;
+        name
+    }
+
+    /// Whole disks and optical drives under `root`, named in the order
+    /// of `storage::disk_key`: by controller, then SCSI address, so a
+    /// disk keeps its `DDnnn` from boot to boot whatever the kernel
+    /// calls it.
+    pub fn add_blocks(&mut self, root: &Path) {
+        let dir = root.join("class/block");
+        let mut names: Vec<(_, String)> = sorted_dir(&dir.to_string_lossy())
+            .into_iter()
+            .map(|n| {
+                let path = devpath_in(root, &dir.join(&n)).unwrap_or_default();
+                (storage::disk_key(&path, &n), n)
+            })
+            .collect();
+        names.sort();
+        for (_, name) in names {
+            self.add_block(root, &name);
+        }
+    }
+
+    /// One whole disk or optical drive. Partitions and virtual devices
+    /// are skipped.
+    fn add_block(&mut self, root: &Path, name: &str) -> Option<String> {
+        let sys = root.join("class/block").join(name);
         if sys.join("partition").exists()
             || name.starts_with("loop")
             || name.starts_with("ram")
@@ -251,7 +283,7 @@ impl Table {
         {
             return None;
         }
-        let devpath = devpath_of(&sys)?;
+        let devpath = devpath_in(root, &sys)?;
         let sectors: u64 = read_trim(&sys.join("size")).parse().unwrap_or(0);
         let mib = sectors * 512 / (1024 * 1024);
         let kind = if read_trim(&sys.join("device/type")) == "5" || name.starts_with("sr") {
@@ -259,9 +291,31 @@ impl Table {
         } else {
             Kind::Disk
         };
-        let on = pci::address_in(&devpath).map_or(String::new(), |a| format!(" on {a}"));
-        let desc = format!("{name} {mib} MiB{on}");
+        let at = storage::hctl(&devpath).map_or(String::new(), |[h, c, t, l]| {
+            format!(" at {h}:{c}:{t}:{l}")
+        });
+        let on = pci::address_in(&devpath).map_or(String::new(), |a| {
+            let ctl = self.controller_at(&a).map_or(a, |r| r.name.clone());
+            format!(" on {ctl}")
+        });
+        let desc = format!("{name} {mib} MiB{at}{on}");
         Some(self.add(kind, name.to_string(), desc, devpath).name.clone())
+    }
+
+    /// The storage controller at a PCI address.
+    fn controller_at(&self, address: &str) -> Option<&Resource> {
+        self.resources
+            .iter()
+            .find(|r| r.kind == Kind::Storage && r.location == address)
+    }
+
+    /// The storage controller a disk (`sda`) is attached through.
+    pub fn controller_of(&self, disk: &str) -> Option<&Resource> {
+        let d = self
+            .resources
+            .iter()
+            .find(|r| matches!(r.kind, Kind::Disk | Kind::Optical) && r.location == disk)?;
+        self.controller_at(&pci::address_in(&d.devpath)?)
     }
 
     /// Every Ethernet port under `root`, as `CMNnn` in PCI order.
@@ -389,14 +443,108 @@ pub fn read_trim(path: &Path) -> String {
 
 /// Canonical sysfs path without the `/sys` prefix, as uevents report it.
 pub fn devpath_of(sys: &Path) -> Option<String> {
+    devpath_in(Path::new("/sys"), sys)
+}
+
+/// Canonical path under a sysfs root, without the root.
+pub fn devpath_in(root: &Path, sys: &Path) -> Option<String> {
     let real = fs::canonicalize(sys).ok()?;
-    let s = real.to_string_lossy();
-    s.strip_prefix("/sys").map(str::to_string)
+    let root = fs::canonicalize(root).ok()?;
+    let rest = real.strip_prefix(&root).ok()?;
+    Some(format!("/{}", rest.to_string_lossy()))
 }
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::symlink;
+
     use super::*;
+
+    /// A PCI function under `parent`, linked from `bus/pci/devices`.
+    fn function(root: &Path, parent: &str, addr: &str, ids: [&str; 5]) -> std::path::PathBuf {
+        let dir = root.join(parent).join(addr);
+        fs::create_dir_all(&dir).unwrap();
+        let attrs = ["vendor", "device", "class", "subsystem_vendor", "subsystem_device"];
+        for (attr, v) in attrs.iter().zip(ids) {
+            fs::write(dir.join(attr), format!("0x{v}\n")).unwrap();
+        }
+        symlink(&dir, root.join("bus/pci/devices").join(addr)).unwrap();
+        dir
+    }
+
+    /// A disk at `under/<hctl path>/block/<name>`, linked from `class/block`.
+    fn disk(root: &Path, under: &Path, scsi: &str, name: &str, mib: u64) -> std::path::PathBuf {
+        let dir = under.join(scsi).join("block").join(name);
+        fs::create_dir_all(dir.join("device")).unwrap();
+        fs::write(dir.join("size"), format!("{}\n", mib * 2048)).unwrap();
+        fs::write(dir.join("device/type"), "0\n").unwrap();
+        symlink(&dir, root.join("class/block").join(name)).unwrap();
+        dir
+    }
+
+    #[test]
+    fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
+        let root = std::env::temp_dir().join(format!("qs400-sysfs-perc-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("bus/pci/devices")).unwrap();
+        fs::create_dir_all(root.join("class/block")).unwrap();
+        let top = "devices/pci0000:00";
+        function(&root, top, "0000:00:01.0", ["8086", "6f02", "060400", "8086", "0000"]);
+        let ahci = function(&root, top, "0000:00:1f.2", ["8086", "2922", "010601", "1af4", "1100"]);
+        let perc = function(
+            &root,
+            &format!("{top}/0000:00:01.0"),
+            "0000:02:00.0",
+            ["1000", "005f", "010400", "1028", "1f4b"],
+        );
+        // The kernel's names in another order than the SCSI addresses.
+        for (t, name) in [(3, "sda"), (1, "sdb"), (0, "sdc"), (2, "sdd")] {
+            disk(
+                &root,
+                &perc,
+                &format!("host0/target0:0:{t}/0:0:{t}:0"),
+                name,
+                953_869,
+            );
+        }
+        let sda = fs::canonicalize(root.join("class/block/sda")).unwrap();
+        fs::create_dir_all(sda.join("sda1")).unwrap();
+        fs::write(sda.join("sda1/partition"), "1\n").unwrap();
+        symlink(sda.join("sda1"), root.join("class/block/sda1")).unwrap();
+        disk(&root, &ahci, "ata1/host1/target1:0:0/1:0:0:0", "sde", 4096);
+
+        let mut t = Table::default();
+        t.add_pci(&root);
+        t.add_blocks(&root);
+        let names: Vec<(&str, &str)> = t
+            .resources
+            .iter()
+            .map(|r| (r.name.as_str(), r.location.as_str()))
+            .collect();
+        assert_eq!(
+            names,
+            [
+                ("CMB01", "0000:00:01.0"),
+                ("DC01", "0000:00:1f.2"),
+                ("DC02", "0000:02:00.0"),
+                ("DD001", "sde"),
+                ("DD002", "sdc"),
+                ("DD003", "sdb"),
+                ("DD004", "sdd"),
+                ("DD005", "sda"),
+            ]
+        );
+        let perc = &t.resources[2];
+        assert_eq!(perc.type_model, Some(("QD10", "330")));
+        assert_eq!(perc.description, "1000:005f PERC H330 Mini");
+        assert_eq!(t.resources[1].type_model, Some(("QD03", "001")));
+        assert_eq!(t.controller_of("sdc").map(|r| r.name.as_str()), Some("DC02"));
+        assert_eq!(t.controller_of("sde").map(|r| r.name.as_str()), Some("DC01"));
+        assert_eq!(t.resources[4].description, "sdc 953869 MiB at 0:0:0:0 on DC02");
+        let dump = t.dump();
+        assert!(dump.contains("DC02      QD10-330"), "{dump}");
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn ports_are_cmn_in_pci_order_before_serial_ports() {

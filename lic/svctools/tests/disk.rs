@@ -66,6 +66,7 @@ fn spare(name: &str, size: u64) -> NonConfigured {
         type_model: "QEMU HARDDISK".into(),
         size_mib: size,
         has_data: false,
+        controller: "DC02".into(),
     }
 }
 

@@ -6,7 +6,7 @@
 
 use std::path::Path;
 
-use crate::hwrsrc::{Kind, devpath_of, read_trim, sorted_dir};
+use crate::hwrsrc::{Kind, devpath_in, read_trim, sorted_dir, storage};
 
 /// One PCI function.
 pub struct PciDevice {
@@ -16,30 +16,39 @@ pub struct PciDevice {
     pub kind: Kind,
     /// Vendor, device and class as text.
     pub description: String,
-    /// sysfs device path without `/sys`.
+    /// sysfs device path without the sysfs root.
     pub devpath: String,
+    /// Type and model, for storage controllers.
+    pub type_model: Option<(&'static str, &'static str)>,
 }
 
-/// Every PCI function, in address order.
-pub fn scan() -> Vec<PciDevice> {
-    sorted_dir("/sys/bus/pci/devices")
+/// Every PCI function under a sysfs root, in address order.
+pub fn scan_in(root: &Path) -> Vec<PciDevice> {
+    let dir = root.join("bus/pci/devices");
+    sorted_dir(&dir.to_string_lossy())
         .iter()
-        .filter_map(|addr| scan_one(&Path::new("/sys/bus/pci/devices").join(addr)))
+        .filter_map(|addr| scan_one_in(root, &dir.join(addr)))
         .collect()
 }
 
 /// One PCI function from its sysfs directory.
 pub fn scan_one(sys: &Path) -> Option<PciDevice> {
-    let devpath = devpath_of(sys)?;
+    scan_one_in(Path::new("/sys"), sys)
+}
+
+/// One PCI function from its directory under a sysfs root. Storage
+/// controllers are named from the ID table, board before chip.
+pub fn scan_one_in(root: &Path, sys: &Path) -> Option<PciDevice> {
+    let devpath = devpath_in(root, sys)?;
     let address = sys.file_name()?.to_string_lossy().into_owned();
     let class =
         u32::from_str_radix(read_trim(&sys.join("class")).trim_start_matches("0x"), 16).ok()?;
-    let vendor = read_trim(&sys.join("vendor"))
-        .trim_start_matches("0x")
-        .to_string();
-    let device = read_trim(&sys.join("device"))
-        .trim_start_matches("0x")
-        .to_string();
+    let id = |attr: &str| {
+        read_trim(&sys.join(attr))
+            .trim_start_matches("0x")
+            .to_string()
+    };
+    let (vendor, device) = (id("vendor"), id("device"));
     let kind = match class >> 16 {
         0x01 => Kind::Storage,
         0x02 => Kind::Lan,
@@ -47,12 +56,19 @@ pub fn scan_one(sys: &Path) -> Option<PciDevice> {
         0x07 => Kind::Comm,
         _ => Kind::Other,
     };
-    let description = format!("{vendor}:{device} {}", describe(&vendor, &device, class));
+    let (name, type_model) = if kind == Kind::Storage {
+        let subsys = (id("subsystem_vendor"), id("subsystem_device"));
+        let ctl = storage::controller(&vendor, &device, (&subsys.0, &subsys.1), class);
+        (ctl.name, Some((ctl.type_code, ctl.model)))
+    } else {
+        (describe(&vendor, &device, class), None)
+    };
     Some(PciDevice {
         address,
         kind,
-        description,
+        description: format!("{vendor}:{device} {name}"),
         devpath,
+        type_model,
     })
 }
 
@@ -80,20 +96,16 @@ fn is_pci_address(s: &str) -> bool {
 fn describe(vendor: &str, device: &str, class: u32) -> &'static str {
     match (vendor, device) {
         ("1af4", "1000" | "1041") => "virtio network",
-        ("1af4", "1001" | "1042") => "virtio block",
         ("1af4", "1003" | "1043") => "virtio console",
-        ("1af4", "1004" | "1048") => "virtio SCSI",
         ("1af4", "1050") => "virtio GPU",
         ("1af4", "1052") => "virtio input",
         ("8086", "100e") => "Intel e1000",
         ("8086", "10d3") => "Intel e1000e",
         ("8086", "29c0") => "Q35 host bridge",
         ("8086", "2918") => "ICH9 LPC bridge",
-        ("8086", "2922") => "ICH9 AHCI",
         ("8086", "2930") => "ICH9 SMBus",
         ("8086", "293e") => "ICH9 HD audio",
         ("1b36", "000c") => "PCIe root port",
-        ("1b36", "0010") => "NVMe",
         ("1234", "1111") => "standard VGA",
         _ => class_name(class),
     }
@@ -101,10 +113,6 @@ fn describe(vendor: &str, device: &str, class: u32) -> &'static str {
 
 fn class_name(class: u32) -> &'static str {
     match class >> 8 {
-        0x0100 => "SCSI controller",
-        0x0101 => "IDE controller",
-        0x0106 => "SATA controller",
-        0x0108 => "NVMe controller",
         0x0200 => "Ethernet controller",
         0x0300 => "VGA controller",
         0x0380 => "display controller",

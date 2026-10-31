@@ -173,6 +173,7 @@ mod tests {
             type_model: "QEMU HARDDISK".into(),
             size_mib: 4096,
             has_data: false,
+            controller: "DC01".into(),
         }];
         let mut r = start();
         assert_eq!(r.enter(&f(&["1"]), &mut e), None);

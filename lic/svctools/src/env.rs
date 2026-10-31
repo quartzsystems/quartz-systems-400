@@ -62,6 +62,8 @@ pub struct NonConfigured {
     pub size_mib: u64,
     /// Whether it carries QS/400 partitions or a unit header.
     pub has_data: bool,
+    /// The storage controller resource it is attached through (`DC01`).
+    pub controller: String,
 }
 
 /// One hardware resource.

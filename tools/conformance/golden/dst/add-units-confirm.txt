@@ -3,7 +3,7 @@
                                                                                 
  These units will be added to ASP 1 as unprotected units:                       
                                                                                 
-   DD003     SP-vdd            QEMU HARDDISK        4096  /dev/vdd              
+   DD003     SP-vdd            QEMU HARDDISK       4096 DC02  vdd               
                                                                                 
  Any data on them is lost.                                                      
                                                                                 

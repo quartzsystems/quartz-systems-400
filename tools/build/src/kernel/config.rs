@@ -77,6 +77,14 @@ const REQUIRED_Y: &[&str] = &[
     "SCSI_FC_ATTRS",
     "SCSI_QLA_FC",
     "SCSI_LPFC",
+    // SAS and RAID HBAs: PERC and LSI MegaRAID, LSI IT mode, Microchip
+    // and HPE, Adaptec, Broadcom 9600.
+    "MEGARAID_SAS",
+    "SCSI_MPT3SAS",
+    "SCSI_SMARTPQI",
+    "SCSI_HPSA",
+    "SCSI_AACRAID",
+    "SCSI_MPI3MR",
     "E1000",
     "E1000E",
     "IGB",
@@ -126,7 +134,8 @@ const REQUIRED_N: &[&str] = &[
     "SND",
     "MEDIA_SUPPORT",
     "RTC_HCTOSYS",
-    // Tape and changer nodes must exist when the SCSI scan returns.
+    // Tape and changer nodes must exist when the SCSI scan returns, and
+    // disks behind an HBA keep their order from boot to boot.
     "SCSI_SCAN_ASYNC",
     // Install media: plain ISO 9660 only.
     "ZISOFS",

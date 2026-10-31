@@ -4,7 +4,7 @@
  The Licensed Internal Code will be installed on this disk unit and             
  the system initialized. All data on the unit will be lost.                     
                                                                                 
-   DD002     QM00002           QEMU HARDDISK        4096  /dev/vdb              
+   DD002     QM00002           QEMU HARDDISK       4096 DC02  vdb               
                                                                                 
  The system re-IPLs from the load source when the install completes.            
                                                                                 

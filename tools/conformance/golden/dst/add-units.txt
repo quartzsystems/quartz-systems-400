@@ -3,9 +3,9 @@
                                                                                 
  Type 1 beside the units to add, then press Enter.                              
                                                                                 
- Opt  Resource  Serial Number     Type Model     Size (MiB)  Device             
-     DD003     SP-vdd            QEMU HARDDISK        4096  /dev/vdd            
-     DD003     SP-vde            QEMU HARDDISK        2048  /dev/vde            
+ Opt  Resource  Serial Number     Type Model    Size (MiB) Ctl   Device         
+     DD003     SP-vdd            QEMU HARDDISK       4096 DC02  vdd             
+     DD003     SP-vde            QEMU HARDDISK       2048 DC02  vde             
                                                                                 
                                                                                 
                                                                                 

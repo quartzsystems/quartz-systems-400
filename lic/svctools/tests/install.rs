@@ -49,6 +49,7 @@ fn env() -> MemEnv {
             type_model: "QEMU HARDDISK".into(),
             size_mib: 4096,
             has_data: true,
+            controller: "DC01".into(),
         },
         NonConfigured {
             device: "/dev/vdb".into(),
@@ -57,6 +58,7 @@ fn env() -> MemEnv {
             type_model: "QEMU HARDDISK".into(),
             size_mib: 4096,
             has_data: false,
+            controller: "DC02".into(),
         },
     ];
     e

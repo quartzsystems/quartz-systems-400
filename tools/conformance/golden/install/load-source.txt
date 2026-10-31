@@ -3,9 +3,9 @@
                                                                                 
  Type 1 beside the disk unit to install on, then press Enter.                   
                                                                                 
- Opt  Resource  Serial Number     Type Model     Size (MiB)  Device             
-     DD001     QM00001           QEMU HARDDISK        4096  /dev/vda (has data) 
-     DD002     QM00002           QEMU HARDDISK        4096  /dev/vdb            
+ Opt  Resource  Serial Number     Type Model    Size (MiB) Ctl   Device         
+     DD001     QM00001           QEMU HARDDISK       4096 DC01  vda (has data)  
+     DD002     QM00002           QEMU HARDDISK       4096 DC02  vdb             
                                                                                 
                                                                                 
                                                                                 

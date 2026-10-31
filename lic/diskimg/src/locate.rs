@@ -70,12 +70,35 @@ pub fn identity(node: &Path) -> (String, String) {
     } else {
         format!("{vendor} {model}")
     };
-    let serial = ["device/serial", "serial", "device/wwid"]
-        .iter()
-        .map(|rel| read(rel))
+    // SCSI disks (behind a SAS HBA or a PERC too) report the serial in
+    // the unit serial number VPD page; the WWID is the last resort.
+    let vpd = fs::read(sys.join("device/vpd_pg80"))
+        .ok()
+        .and_then(|b| vpd_serial(&b))
+        .unwrap_or_default();
+    let serial = [read("device/serial"), read("serial"), vpd, read("device/wwid")]
+        .into_iter()
         .find(|s| !s.is_empty())
         .unwrap_or_default();
     (model, serial)
+}
+
+/// The serial in a unit serial number VPD page (0x80): a four-byte
+/// header, the page length at bytes 2 and 3, then ASCII.
+#[must_use]
+pub fn vpd_serial(page: &[u8]) -> Option<String> {
+    if page.len() < 4 || page[1] != 0x80 {
+        return None;
+    }
+    let len = usize::from(u16::from_be_bytes([page[2], page[3]]));
+    let body = page.get(4..4 + len.min(page.len() - 4))?;
+    let s: String = body
+        .iter()
+        .take_while(|&&b| b != 0)
+        .map(|&b| char::from(b))
+        .filter(char::is_ascii_graphic)
+        .collect();
+    (!s.is_empty()).then_some(s)
 }
 
 /// Whole disks under `/sys/class/block` in name order, without
@@ -272,4 +295,20 @@ fn entries_on(dev: &Path) -> io::Result<Vec<(Uuid, Uuid, u64, u64)>> {
         ));
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::vpd_serial;
+
+    #[test]
+    fn the_vpd_serial_is_trimmed_ascii() {
+        let mut page = vec![0x00, 0x80, 0x00, 0x14];
+        page.extend_from_slice(b"     S6PNNS0T123456A");
+        assert_eq!(vpd_serial(&page).as_deref(), Some("S6PNNS0T123456A"));
+        assert_eq!(vpd_serial(&[0, 0x83, 0, 0]), None);
+        assert_eq!(vpd_serial(&[0, 0x80, 0, 4, b' ', b' ', 0, 0]), None);
+        // A length past the end reads what is there.
+        assert_eq!(vpd_serial(&[0, 0x80, 0, 9, b'A', b'B']).as_deref(), Some("AB"));
+    }
 }

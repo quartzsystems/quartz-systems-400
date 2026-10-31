@@ -147,20 +147,22 @@ fn protection(env: &mut dyn DstEnv) -> Notice {
     )
 }
 
-/// `Resource  Serial Number     Type Model    Size (MiB)  Device`.
+/// The non-configured list's headings: the controller resource the disk
+/// is attached through under `Ctl`, the device by its kernel name.
 pub const NONCONFIGURED_HEADINGS: &str =
-    "Resource  Serial Number     Type Model     Size (MiB)  Device";
+    "Resource  Serial Number     Type Model    Size (MiB) Ctl   Device";
 
 /// One row of the non-configured list.
 #[must_use]
 pub fn nonconfigured_row(d: &NonConfigured) -> String {
     format!(
-        "{:<9} {:<17} {:<13} {:>11}  {}{}",
+        "{:<9} {:<17} {:<13} {:>10} {:<5} {}{}",
         d.resource,
         disk::clip(&d.serial, 17),
         disk::clip(&d.type_model, 13),
         d.size_mib,
-        d.device,
+        disk::clip(&d.controller, 5),
+        d.device.strip_prefix("/dev/").unwrap_or(&d.device),
         if d.has_data { " (has data)" } else { "" }
     )
 }

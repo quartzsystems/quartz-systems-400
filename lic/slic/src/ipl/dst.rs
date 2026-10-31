@@ -85,6 +85,18 @@ fn resource_for(system: &System, device: &str) -> String {
         .map_or_else(|| "-----".to_string(), |r| r.name.clone())
 }
 
+/// The storage controller resource a device node's disk is attached
+/// through, or dashes.
+fn controller_for(system: &System, device: &str) -> String {
+    let name = device.rsplit('/').next().unwrap_or(device);
+    let disk =
+        diskimg::locate::disk_of(std::path::Path::new(device)).unwrap_or_else(|| name.to_string());
+    system
+        .hw
+        .controller_of(&disk)
+        .map_or_else(|| "-----".to_string(), |r| r.name.clone())
+}
+
 /// Every disk the system sees, configured or not, for the installer.
 pub fn disks(system: &System) -> Vec<NonConfigured> {
     let mut out = Vec::new();
@@ -97,6 +109,7 @@ pub fn disks(system: &System) -> Vec<NonConfigured> {
         let (type_model, serial) = diskimg::locate::identity(&disk.dev);
         out.push(NonConfigured {
             resource: resource_for(system, &device),
+            controller: controller_for(system, &device),
             serial,
             type_model: if type_model.is_empty() {
                 disk.model.clone()
@@ -108,6 +121,8 @@ pub fn disks(system: &System) -> Vec<NonConfigured> {
             device,
         });
     }
+    // In resource order, which follows the controllers and SCSI addresses.
+    out.sort_by(|a, b| a.resource.cmp(&b.resource));
     out
 }
 
@@ -227,6 +242,7 @@ impl DstEnv for Env<'_> {
             let (type_model, serial) = diskimg::locate::identity(&disk.dev);
             out.push(NonConfigured {
                 resource: self.resource_for(&device),
+                controller: controller_for(self.system, &device),
                 serial,
                 type_model: if type_model.is_empty() {
                     disk.model.clone()
@@ -238,6 +254,7 @@ impl DstEnv for Env<'_> {
                 device,
             });
         }
+        out.sort_by(|a, b| a.resource.cmp(&b.resource));
         out
     }
 
