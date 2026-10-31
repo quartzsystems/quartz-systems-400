@@ -14,7 +14,7 @@
              PARM       KWD(RSRCNAME) TYPE(*NAME) LEN(10) MIN(1) +
                           SPCVAL((*VRT) (*NONE)) KEYPARM(*YES) +
                           PROMPT('Resource name')
-             PARM       KWD(TYPE) TYPE(*CHAR) LEN(9) DFT(*RSRCNAME) +
+             PARM       KWD(TYPE) TYPE(*CHAR) LEN(10) DFT(*RSRCNAME) +
                           SPCVAL((*RSRCNAME)) KEYPARM(*YES) +
                           PROMPT('Device type')
              PARM       KWD(ONLINE) TYPE(*CHAR) LEN(4) RSTD(*YES) +

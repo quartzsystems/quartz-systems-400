@@ -10,7 +10,7 @@
                           SPCVAL((*MOUNTED)) PROMPT('Volume identifier')
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('Optical device')
-             PARM       KWD(DATA) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(DATA) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*VOLATR) VALUES(*VOLATR *DIRATR *FILATR +
                           *SAVRST) PROMPT('Data type')
              PARM       KWD(PATH) TYPE(*PNAME) LEN(1024) DFT('/') +

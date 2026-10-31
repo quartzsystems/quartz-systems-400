@@ -26,7 +26,7 @@
              PARM       KWD(COMPACT) TYPE(*CHAR) LEN(9) RSTD(*YES) +
                           DFT(*FROMFILE) VALUES(*FROMFILE *DEVD *NO) +
                           PMTCTL(*PMTRQS) PROMPT('Data compaction')
-             PARM       KWD(FILES) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(FILES) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*ALL) VALUES(*ALL *ACTIVE) +
                           PMTCTL(*PMTRQS) PROMPT('Files to duplicate')
              PARM       KWD(USRLBLPGM) TYPE(Q1) DFT(*SYSCOPY) +

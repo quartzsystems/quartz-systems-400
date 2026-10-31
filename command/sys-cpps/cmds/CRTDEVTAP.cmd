@@ -9,10 +9,10 @@
                           HLPID(CRTDEVTAP)
              PARM       KWD(DEVD) TYPE(*NAME) LEN(10) MIN(1) +
                           KEYPARM(*YES) PROMPT('Device description')
-             PARM       KWD(TYPE) TYPE(*CHAR) LEN(9) DFT(*RSRCNAME) +
+             PARM       KWD(TYPE) TYPE(*CHAR) LEN(10) DFT(*RSRCNAME) +
                           SPCVAL((*RSRCNAME) (*VRT)) KEYPARM(*YES) +
                           PROMPT('Device type')
-             PARM       KWD(MODEL) TYPE(*CHAR) LEN(9) DFT(*RSRCNAME) +
+             PARM       KWD(MODEL) TYPE(*CHAR) LEN(10) DFT(*RSRCNAME) +
                           SPCVAL((*RSRCNAME)) KEYPARM(*YES) +
                           PROMPT('Device model')
              PARM       KWD(RSRCNAME) TYPE(*NAME) LEN(10) DFT(*NONE) +

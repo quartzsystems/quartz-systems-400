@@ -440,3 +440,50 @@ fn save_file_prompts() {
         case("prompt-dspsavf", "?DSPSAVF", &[]),
     ]);
 }
+
+/// The known fields are integers pub400 sizes by definitions we cannot
+/// see, or values we do not offer (`COVERAGE.md`).
+#[test]
+fn media_prompts() {
+    check(&[
+        // OUTPUT(*OUTFILE) is not offered; pub400's field fits it.
+        Case { known: &["OUTPUT"], ..case("prompt-dsptap", "?DSPTAP", &[]) },
+        Case { known: &["OUTPUT"], ..case("prompt-dspopt", "?DSPOPT", &[]) },
+        case("prompt-chktap", "?CHKTAP", &[]),
+        // NEWOWNID holds the label's 14 characters; pub400's field is 17.
+        Case { known: &["NEWOWNID"], ..case("prompt-inztap", "?INZTAP", &[]) },
+        case("prompt-inzopt", "?INZOPT", &[]),
+        Case { known: &["TYPE", "CCSID"], ..case("prompt-inzopt-f10", "?INZOPT", &[0, 10]) },
+        case("prompt-duptap", "?DUPTAP", &[]),
+        case("prompt-duptap-f10", "?DUPTAP", &[10]),
+        Case { known: &["ALWMEDERR"], ..case("prompt-dupopt", "?DUPOPT", &[]) },
+        Case { known: &["ALWMEDERR"], ..case("prompt-dupopt-f10", "?DUPOPT", &[10]) },
+        // REFIMGCLG shows before F10 here.
+        Case { ours_only: &["REFIMGCLG"], ..case("prompt-crtimgclg", "?CRTIMGCLG", &[]) },
+        case("prompt-crtimgclg-f10", "?CRTIMGCLG", &[10]),
+        case("prompt-addimgclge", "?ADDIMGCLGE", &[]),
+        // The new-image parameters show after F10 here, not on pub400.
+        Case {
+            ours_only: &["IMGSIZ", "VOLNAM", "ALCSTG", "WRTPTC", "TEXT"],
+            known: &["REPLACE"],
+            ..case("prompt-addimgclge-f10", "?ADDIMGCLGE", &[0, 10])
+        },
+        case("prompt-lodimgclg", "?LODIMGCLG", &[]),
+        Case { known: &["LNG"], ..case("prompt-vfyimgclg", "?VFYIMGCLG", &[]) },
+        case("prompt-wrkimgclg", "?WRKIMGCLG", &[]),
+        case("prompt-crtdevtap", "?CRTDEVTAP", &[]),
+        Case { known: &["SWTSET"], ..case("prompt-crtdevtap-f10", "?CRTDEVTAP", &[0, 10]) },
+        case("prompt-crtdevopt", "?CRTDEVOPT", &[]),
+        Case {
+            ours_only: &["ONLINE", "MSGQ", "TEXT", "AUT"],
+            known: &["LCLINTNETA"],
+            ..case("prompt-crtdevopt-f10", "?CRTDEVOPT", &[0, 10])
+        },
+        case("prompt-crtdevmlb", "?CRTDEVMLB", &[]),
+        Case {
+            known: &["UNLOADWAIT", "MAXDEVTIME", "RSCALCPTY", "INLMNTWAIT", "EOVMNTWAIT", "ROBOTHOST", "LCLINTNETA"],
+            ..case("prompt-crtdevmlb-f10", "?CRTDEVMLB", &[0, 10])
+        },
+    ]);
+}
+

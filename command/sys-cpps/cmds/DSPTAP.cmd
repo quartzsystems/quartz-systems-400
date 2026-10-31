@@ -12,7 +12,7 @@
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(17) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('File label')
              PARM       KWD(SEQNBR) TYPE(E1) PROMPT('Sequence number')
-             PARM       KWD(DATA) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(DATA) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*LABELS) VALUES(*LABELS *SAVRST *VOLLBL) +
                           PROMPT('Data type')
              PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(6) RSTD(*YES) +
