@@ -202,6 +202,9 @@ pub struct RestoreReport {
     pub notes: Vec<(&'static str, String)>,
     /// Libraries the restore created.
     pub created_libraries: Vec<String>,
+    /// Output queues restored with spooled files: library, queue, the
+    /// spool part, for the integrator to bring the files back.
+    pub spool: Vec<(String, String, Vec<u8>)>,
 }
 
 impl RestoreReport {
@@ -339,6 +342,13 @@ pub fn restore<R: Read>(
                 st.deferred.extend(staged.deferred);
                 st.files.extend(staged.file);
                 st.journals.extend(staged.journal);
+                if d.type_code == types::OUTQ && !o.part(Part::SPOOL).is_empty() {
+                    report.spool.push((
+                        result.library.clone(),
+                        d.object_name(),
+                        o.part(Part::SPOOL).to_vec(),
+                    ));
+                }
                 report.objects.push(result);
             }
             Ok(None) => txn.abort(),

@@ -92,6 +92,17 @@ fn savsys() -> bool {
 /// The security layer's answers for the engine.
 struct SvcHooks {
     qsys: ObjectId,
+    /// Spool parts gathered before a save, by `lib/queue`.
+    spool: std::collections::HashMap<String, Vec<u8>>,
+}
+
+impl SvcHooks {
+    fn new(qsys: ObjectId) -> Self {
+        Self {
+            qsys,
+            spool: std::collections::HashMap::new(),
+        }
+    }
 }
 
 impl Hooks for SvcHooks {
@@ -147,6 +158,10 @@ impl Hooks for SvcHooks {
 
     fn system_key(&self, key_id: [u8; 8]) -> bool {
         trusted_keys().iter().any(|k| saverst::sign::key_id(k) == key_id)
+    }
+
+    fn spool_part(&self, lib: &str, name: &str) -> Option<Vec<u8>> {
+        self.spool.get(&format!("{lib}/{name}")).cloned()
     }
 
     fn profile_exists(&self, txn: &mut Txn<'_>, name: &str) -> bool {
@@ -441,6 +456,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         library_object: name == "SAVLIB",
         update_history: parms.text("UPDHST") != "*NO",
         save_file_data: parms.text("SAVFDTA") == "*YES",
+        spool: parms.text("SPLFDTA") == "*ALL",
         private_auth: parms.text("PVTAUT") == "*YES",
         changed_since: None,
         now,
@@ -478,6 +494,14 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         SaveKind::Objects
     };
     let head = header(system, name, parms, kind);
+    let spool = if base.spool {
+        match spool_parts(system, &libs) {
+            Ok(m) => m,
+            Err(e) => return failed(name, &e),
+        }
+    } else {
+        std::collections::HashMap::new()
+    };
     let jobh = job(system);
     let Some(storage) = system.storage.as_mut() else {
         return failed(name, "CPF3700 object store not open");
@@ -485,7 +509,7 @@ fn save(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let Some(qsys) = storage.qsys else {
         return failed(name, "CPF3700 object store not initialized");
     };
-    let hooks = SvcHooks { qsys };
+    let hooks = SvcHooks { qsys, spool };
     let mut w = match Writer::new(Vec::new(), &head) {
         Ok(w) => w,
         Err(e) => return failed(name, &format!("CPF3793 {e}")),
@@ -605,6 +629,7 @@ fn mbr_option(s: &str) -> MbrOpt {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let dev = values(parms, "DEV");
     if dev.first().map(String::as_str) != Some("*SAVF") {
@@ -686,7 +711,7 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
     let Some(qsys) = storage.qsys else {
         return failed(name, "CPF3700 object store not initialized");
     };
-    let hooks = SvcHooks { qsys };
+    let hooks = SvcHooks::new(qsys);
     let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
         Ok(r) => r,
         Err(e) => return failed(name, &format!("CPF3743 {e}")),
@@ -703,9 +728,111 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         saverst::restore(store, jobh, &hooks, qsys, &mut reader, &opts)
     });
     match res {
-        Ok(r) => rst_reply(&r, opts.target_library.as_deref()),
+        Ok(r) => {
+            let mut reply = rst_reply(&r, opts.target_library.as_deref());
+            if parms.text("SPLFDTA") != "*NONE" {
+                for (lib, q, part) in &r.spool {
+                    let n = restore_spool(system, &format!("{lib}/{q}"), part);
+                    let _ = writeln!(reply.text, "{n} spooled files restored to {lib}/{q}");
+                }
+            }
+            reply
+        }
         Err(e) => failed(name, &format!("CPF3793 {e}")),
     }
+}
+
+/// The spool parts of every output queue in `libs`: each file's
+/// attribute record and data.
+fn spool_parts(
+    system: &mut System,
+    libs: &[String],
+) -> Result<std::collections::HashMap<String, Vec<u8>>, String> {
+    let mut queues = Vec::new();
+    for lib in libs {
+        let names = in_store(system, |txn, qsys, _| {
+            let Ok(found) = qsname::Name::parse(lib).map(|n| ops::find_library(txn, qsys, n)) else {
+                return Ok(Vec::new());
+            };
+            let Ok(found) = found else { return Ok(Vec::new()) };
+            Ok(store::obj::library::Library::load(txn, found.id)
+                .and_then(|l| l.list(txn, Some(types::OUTQ)))
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .map(|(k, _)| k.name.to_string())
+                .collect::<Vec<_>>())
+        })?;
+        queues.extend(names.into_iter().map(|n| format!("{lib}/{n}")));
+    }
+    let mut out = std::collections::HashMap::new();
+    for q in queues {
+        let Ok((_, _, files)) = crate::stgsvc::spool::on_queue(system, &q) else {
+            continue;
+        };
+        let mut b = Vec::new();
+        b.extend_from_slice(&u32::try_from(files.len()).unwrap_or(0).to_be_bytes());
+        for f in &files {
+            let (attrs, data) = crate::stgsvc::spool::data(system, f.id)?;
+            let rec = attrs.encode();
+            b.extend_from_slice(&u32::try_from(rec.len()).unwrap_or(0).to_be_bytes());
+            b.extend_from_slice(&rec);
+            b.extend_from_slice(&(data.len() as u64).to_be_bytes());
+            b.extend_from_slice(&data);
+        }
+        out.insert(q, b);
+    }
+    Ok(out)
+}
+
+/// Bring back the spooled files of a restored output queue that are
+/// not on the system (`SPLFDTA(*NEW)`). How many.
+fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
+    let take = |at: &mut usize, n: usize| -> Option<&[u8]> {
+        let s = part.get(*at..*at + n)?;
+        *at += n;
+        Some(s)
+    };
+    let mut at = 0;
+    let Some(count) = take(&mut at, 4).map(|b| u32::from_be_bytes(b.try_into().expect("4"))) else {
+        return 0;
+    };
+    let mut made = 0;
+    for _ in 0..count {
+        let Some(len) = take(&mut at, 4).map(|b| u32::from_be_bytes(b.try_into().expect("4")))
+        else {
+            break;
+        };
+        let Some(rec) = take(&mut at, len as usize) else { break };
+        let Ok(saved) = wm::obj::splf::SplfAttrs::decode(rec) else { break };
+        let Some(dlen) = take(&mut at, 8).map(|b| u64::from_be_bytes(b.try_into().expect("8")))
+        else {
+            break;
+        };
+        let Some(data) = take(&mut at, usize::try_from(dlen).unwrap_or(usize::MAX)) else {
+            break;
+        };
+        let exists = system.spool.files.values().any(|e| {
+            e.attrs.job == saved.job && e.attrs.name == saved.name && e.attrs.created == saved.created
+        });
+        if exists {
+            continue;
+        }
+        let mut attrs = saved.clone();
+        attrs.outq = q.to_string();
+        let Ok(id) = crate::stgsvc::spool::create(system, attrs) else {
+            continue;
+        };
+        let _ = crate::stgsvc::spool::append(system, id, data, saved.pages, saved.records);
+        let hold = saved.status == wm::obj::splf::Status::Hld;
+        let _ = crate::stgsvc::spool::close(system, id, hold);
+        let _ = crate::stgsvc::spool::update(system, id, |a| {
+            a.number = saved.number;
+            a.created = saved.created;
+            Ok(())
+        });
+        made += 1;
+    }
+    made
 }
 
 fn rst_reply(r: &RestoreReport, target: Option<&str>) -> CmdReply {
@@ -801,7 +928,7 @@ fn savsecdta(system: &mut System, parms: &Parms) -> CmdReply {
     let Some(qsys) = storage.qsys else {
         return failed(NAME, "CPF3700 object store not initialized");
     };
-    let hooks = SvcHooks { qsys };
+    let hooks = SvcHooks::new(qsys);
     let mut w = match Writer::new(Vec::new(), &head) {
         Ok(w) => w,
         Err(e) => return failed(NAME, &format!("CPF3793 {e}")),
@@ -869,7 +996,7 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
     let Some(qsys) = storage.qsys else {
         return failed(NAME, "CPF3700 object store not initialized");
     };
-    let hooks = SvcHooks { qsys };
+    let hooks = SvcHooks::new(qsys);
     let mut reader = match Reader::new(Cursor::new(stream.as_slice())) {
         Ok(r) => r,
         Err(e) => return failed(NAME, &format!("CPF3743 {e}")),
@@ -922,7 +1049,7 @@ fn rstaut(system: &mut System, parms: &Parms) -> CmdReply {
     let Some(qsys) = storage.qsys else {
         return failed(NAME, "CPF3700 object store not initialized");
     };
-    let hooks = SvcHooks { qsys };
+    let hooks = SvcHooks::new(qsys);
     let store = &mut storage.store;
     let done = match sec::guard::as_system(|| saverst::secdta::rstaut(store, &hooks, qsys, &users)) {
         Ok(d) => d,

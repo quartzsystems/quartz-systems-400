@@ -59,6 +59,12 @@ pub trait Hooks {
         false
     }
 
+    /// The spool part of output queue `lib/name` (`SPLFDTA(*ALL)`):
+    /// its spooled files as the integrator encodes them, `None` for none.
+    fn spool_part(&self, _lib: &str, _name: &str) -> Option<Vec<u8>> {
+        None
+    }
+
     /// Whether a user profile exists.
     fn profile_exists(&self, _txn: &mut Txn<'_>, _name: &str) -> bool {
         true

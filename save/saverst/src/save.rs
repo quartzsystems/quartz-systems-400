@@ -37,6 +37,8 @@ pub struct SaveOptions {
     pub save_file_data: bool,
     /// `PVTAUT(*YES)`.
     pub private_auth: bool,
+    /// `SPLFDTA(*ALL)`: output queues carry their spooled files.
+    pub spool: bool,
     /// `SAVCHGOBJ`: only objects changed since (Unix seconds).
     pub changed_since: Option<u64>,
     /// Unix seconds of the save.
@@ -54,6 +56,7 @@ impl Default for SaveOptions {
             update_history: true,
             save_file_data: true,
             private_auth: false,
+            spool: false,
             changed_since: None,
             now: 0,
             target: SaveTarget::default(),
@@ -387,6 +390,12 @@ fn save_in<W: Write>(
         let me = pos[&c.id.to_bytes()];
         let mut e = image::export(txn, c.id, data)?;
         image::mark_refs(&mut e, &pos, me);
+        if opts.spool && c.id.type_code == types::OUTQ
+            && let Some(b) = hooks.spool_part(&lib_text, &c.name)
+            && !b.is_empty()
+        {
+            e.parts.insert(savfmt::Part::SPOOL, b);
+        }
         let mut d = descriptor(&h, &lib_text, &e, opts.now);
         if !data {
             d.flags |= flags::NO_DATA;

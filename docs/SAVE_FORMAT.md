@@ -381,6 +381,7 @@ Type-specific contents (`save/saverst/src/image.rs`):
 | `*USRIDX` | attr (root and entry count zeroed), typed 16: every entry in key order, each a `u16` length and the entry |
 | `*USRPRF` | attr, space, typed 16: its authority table, `AuthTableEntry` rows (`SAVSECDTA`) |
 | `*AUTL` | attr, space, the authorities record: its entries |
+| `*OUTQ` | attr, space, refs; spool with `SPLFDTA(*ALL)`: a `u32` count, then per spooled file a `u32` length and its attribute record (`work/wm` `SpooledFile`), a `u64` length and its data |
 | every other type | attr, space, refs, tree0..tree3 when the header has them |
 
 A profile's indexes (objects it owns, is authorized to, is the group

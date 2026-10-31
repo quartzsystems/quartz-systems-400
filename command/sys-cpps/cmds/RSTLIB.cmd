@@ -30,6 +30,9 @@
              PARM       KWD(MBROPT) TYPE(*CHAR) LEN(6) RSTD(*YES) +
                           DFT(*MATCH) VALUES(*MATCH *ALL *NEW *OLD) +
                           PROMPT('Database member option')
+             PARM       KWD(SPLFDTA) TYPE(*CHAR) LEN(5) RSTD(*YES) +
+                          DFT(*NEW) VALUES(*NEW *NONE) PMTCTL(*PMTRQS) +
+                          PROMPT('Spooled file data')
              PARM       KWD(SAVF) TYPE(Q1) PMTCTL(P2) +
                           PROMPT('Save file')
              PARM       KWD(MEDDFN) TYPE(Q1) PMTCTL(P3) +

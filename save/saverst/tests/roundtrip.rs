@@ -409,6 +409,32 @@ fn objects_in_use_are_not_saved_or_restored() {
     assert_eq!(c.msgid, Some(msg::NOT_RESTORED_IN_USE));
 }
 
+struct Spool;
+
+impl Hooks for Spool {
+    fn spool_part(&self, lib: &str, name: &str) -> Option<Vec<u8>> {
+        (lib == "QSTEST" && name == "OQ").then(|| b"spooled bytes".to_vec())
+    }
+}
+
+#[test]
+fn output_queues_carry_their_spooled_files() {
+    let mut sys = system();
+    let lib = build(&mut sys);
+    let mut t = sys.store.begin().unwrap();
+    ops::create(&mut t, &CreateParams { by_system: true, ..params(lib, "OQ", types::OUTQ) }).unwrap();
+    t.commit().unwrap();
+    let mut w = Writer::new(Vec::new(), &header()).unwrap();
+    let opts = SaveOptions {
+        spool: true,
+        ..SaveOptions::default()
+    };
+    save_library(&mut sys.store, JobHandle(1), &Spool, sys.qsys, "QSTEST", &opts, &mut w).unwrap();
+    let (_, bytes) = w.finish(0).unwrap();
+    let r = rst(&mut sys, &bytes, &AllowAll, &opts_to("QSTEST5"));
+    assert_eq!(r.spool, [("QSTEST5".to_string(), "OQ".to_string(), b"spooled bytes".to_vec())]);
+}
+
 struct NoProfiles;
 
 impl Hooks for NoProfiles {
