@@ -57,6 +57,8 @@ fn start_listeners(bridge: &Bridge, env: Env, a: HttpAttrs, system: String) -> R
         Err(e) => eprintln!("qsjob: ADMIN could not make its instance: {e}"),
     }
     let admin = Arc::new(Admin::new(env));
+    // Not up until it binds: 2001 serves rather than redirect to it.
+    admin.set_tls_up(false);
     let mut running = Vec::new();
     let plain = listen::bind(a.port)
         .and_then(|l| listen::serve(l, None, Web::new(admin.clone())))
@@ -71,11 +73,12 @@ fn start_listeners(bridge: &Bridge, env: Env, a: HttpAttrs, system: String) -> R
         .unwrap_or_else(|| Err("the job is ending".into()));
     match cfg.and_then(|c| {
         listen::bind(port)
-            .and_then(|l| listen::serve(l, Some(c), Web::new(admin)))
+            .and_then(|l| listen::serve(l, Some(c), Web::new(admin.clone())))
             .map_err(|e| e.to_string())
     }) {
         Ok(r) => {
             eprintln!("qsjob: ADMIN listening on port {port} (TLS)");
+            admin.set_tls_up(true);
             running.push(r);
         }
         Err(e) => eprintln!("qsjob: ADMIN port {port}: {e}"),

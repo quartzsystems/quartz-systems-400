@@ -157,6 +157,12 @@ fn read(rq: &Rq<'_>, old: &Settings) -> Result<Settings, Message> {
             return Err(invalid(&format!("{n} is not an address or network such as 10.0.0.0/8")));
         }
     }
+    if f.has("admtls") && !old.admin_tls && !rq.admin.tls_up() {
+        return Err(invalid(&format!(
+            "TLS cannot be required: port {} is not listening (is a certificate assigned to QIBM_HTTP_SERVER_ADMIN?)",
+            old.admin_tls_port
+        )));
+    }
     let me = rq.peer.addr.ip();
     if !allow_from.is_empty() && !allow_from.iter().any(|n| in_net(me, n)) {
         return Err(invalid(&format!("the allowed networks do not include your own address {me}")));

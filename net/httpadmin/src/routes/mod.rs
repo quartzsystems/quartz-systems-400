@@ -214,7 +214,7 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
     if !settings.allows(peer.addr.ip()) {
         return qsweb::http::plain(403, "Administration is not allowed from this address.");
     }
-    if settings.admin_tls && !peer.secure {
+    if settings.admin_tls && !peer.secure && admin.tls_up() {
         let host = req.header("host").unwrap_or("").rsplit_once(':').map_or(req.header("host").unwrap_or(""), |(h, _)| h);
         let q = if req.query.is_empty() { String::new() } else { format!("?{}", req.query) };
         return Response::redirect(&format!("https://{host}:{}{}{q}", settings.admin_tls_port, req.path));

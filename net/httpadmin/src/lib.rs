@@ -24,6 +24,7 @@ pub mod seed;
 pub mod settings;
 pub mod util;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use qsweb::frame::{NavGroup, Product};
@@ -70,6 +71,10 @@ pub struct Admin {
     pub env: Env,
     /// Signed-on users.
     pub sessions: Sessions,
+    /// Whether the TLS port listens: "Require TLS" redirects to it only
+    /// then, so a TLS port that failed to start cannot lock
+    /// administration out.
+    tls_up: AtomicBool,
 }
 
 impl Admin {
@@ -79,7 +84,18 @@ impl Admin {
         Self {
             env,
             sessions: Sessions::new(Duration::from_secs(u64::from(s.session_minutes.max(1)) * 60)),
+            tls_up: AtomicBool::new(true),
         }
+    }
+
+    /// Whether the TLS port listens.
+    pub fn tls_up(&self) -> bool {
+        self.tls_up.load(Ordering::Relaxed)
+    }
+
+    /// Record whether the TLS port listens (the job, as it binds it).
+    pub fn set_tls_up(&self, up: bool) {
+        self.tls_up.store(up, Ordering::Relaxed);
     }
 }
 

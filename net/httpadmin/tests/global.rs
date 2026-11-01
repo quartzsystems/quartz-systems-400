@@ -113,4 +113,17 @@ fn audit_off_and_tls_take_effect() {
     assert!(r.header("Location").unwrap().starts_with("https://") && r.header("Location").unwrap().contains(":2010/qs400/httpadmin/instances"));
     let s = Settings::load(b.fx.files.as_ref());
     assert!(s.admin_tls && !s.audit);
+    // The TLS port went down: 2001 serves instead of redirecting there.
+    b.admin.set_tls_up(false);
+    assert_eq!(b.get("/instances").status, 200);
+}
+
+#[test]
+fn tls_is_not_required_while_its_port_is_down() {
+    let mut b = Browser::signed_on();
+    b.admin.set_tls_up(false);
+    let r = b.post("/global", &form(&[("admtls", "on")]));
+    let page = b.get(r.header("Location").unwrap_or("/qs400/httpadmin/global")).text();
+    assert!(page.contains("is not listening"), "{page}");
+    assert!(!Settings::load(b.fx.files.as_ref()).admin_tls);
 }
