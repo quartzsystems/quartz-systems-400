@@ -14,10 +14,8 @@ use std::time::{Duration, Instant};
 
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
-use crate::tcp::{forward_port, telnet_answers};
+use crate::tcp::{GUEST, forward_port, telnet_answers};
 
-/// The guest's own address on QEMU's user network.
-const GUEST: &str = "10.0.2.15";
 
 /// A console command whose output must hold `want`.
 fn expect(s: &mut Session, line: &str, want: &str) -> Result<String, String> {

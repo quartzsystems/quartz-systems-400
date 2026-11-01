@@ -406,6 +406,14 @@ pub fn jobs() -> Vec<Job> {
     for _ in 0..27 {
         out.push(job(next(), "QUSER", "QNPSERVS", "PJ", "QCMN", "PSRW", ""));
     }
+    // The numbers System activity shows for these.
+    for j in &mut out {
+        match (j.name.as_str(), j.kind.as_str()) {
+            ("NAVIGATOR", "BCH") => j.number = "123462".into(),
+            ("QDBSRV03", _) => j.number = "123303".into(),
+            _ => {}
+        }
+    }
     out
 }
 

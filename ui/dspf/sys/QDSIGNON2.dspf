@@ -24,4 +24,5 @@
      A                                 12 17'Current library . . . . . . . . .'
      A            CURLIB        10A  I 12 53DSPATR(UL)
      A                                 24 41'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
+     A                                      DSPATR(HI)
      A            UBUFFER      128A  H

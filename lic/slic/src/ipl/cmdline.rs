@@ -31,7 +31,7 @@ pub struct Boot {
     /// (`qs400.pace`); the default when absent.
     pub pace: Option<u64>,
     /// The first Ethernet link's IPv4 address and prefix
-    /// (`qs400.ip=10.0.2.15/24`); QEMU's user network when absent.
+    /// (`qs400.ip=10.0.2.15/24`); none when absent.
     pub ip: Option<String>,
     /// The console scale (`qs400.console.scale=auto|N`); auto when absent.
     pub console_scale: console::Scale,
