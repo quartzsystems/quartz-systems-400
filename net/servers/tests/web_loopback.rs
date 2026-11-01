@@ -28,7 +28,7 @@ use tls::policy::TlsPolicy;
 use tls::stream::TlsStream;
 
 const HOST: &str = "qs400.test";
-const APP_ID: &str = "QIBM_HTTP_SERVER_ADMIN";
+const APP_ID: &str = "QS400_HTTP_SERVER_ADMIN";
 
 /// Says what it saw.
 struct Echo;

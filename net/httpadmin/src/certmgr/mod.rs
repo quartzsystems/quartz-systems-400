@@ -293,8 +293,14 @@ impl Manager<'_> {
     }
 
     /// [`Certs::create_store`](crate::env::Certs::create_store).
+    /// `*SYSTEM` is made at its own path, with the shipped root CAs,
+    /// when the system has none.
     pub fn create_store(&self, name: &str, path: &str, password: &str) -> Result<(), CertFailure> {
         let name = name.trim();
+        if name.eq_ignore_ascii_case("*SYSTEM") {
+            let ks = Keystore::new(SYSTEM_STORE, password);
+            return keystores::create(&self.ctx, &ks, true, true).map(|_| ()).map_err(|e| fail(e, "*SYSTEM"));
+        }
         if name.is_empty() || name.starts_with('*') {
             return Err(CertFailure::Invalid(format!("{name} is not a name a store can be given")));
         }
@@ -487,5 +493,19 @@ impl Manager<'_> {
     pub fn assign(&self, app: &str, label: Option<&str>) -> Result<(), CertFailure> {
         appids::assign(&self.ctx, app, label).map_err(|e| fail(e, "*SYSTEM"))?;
         Ok(())
+    }
+
+    /// [`Certs::copy`](crate::env::Certs::copy).
+    pub fn copy(&self, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {
+        let (src, dst) = (self.keystore(from)?, self.keystore(to)?);
+        entries::copy(&self.ctx, &src, label, &dst).map_err(|e| fail(e, to))?;
+        Ok(())
+    }
+
+    /// [`Certs::export_pkcs12`](crate::env::Certs::export_pkcs12).
+    pub fn export_pkcs12(&self, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure> {
+        let ks = self.keystore(store)?;
+        let f = entries::ExportFormat::Pkcs12(password.to_string());
+        entries::export(&self.ctx, &ks, label, &f).map_err(|e| fail(e, store))
     }
 }

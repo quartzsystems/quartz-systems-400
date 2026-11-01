@@ -6,7 +6,7 @@
 //! (`STRTCPSVR *HTTP HTTPSVR(*ADMIN)`, `net/httpadmin`) on 2001 and,
 //! with TLS, on 2010, kept alive, until `ENDTCPSVR` or `ENDJOB` ends
 //! it. Global settings' TLS port moves the second one. The TLS
-//! certificate is the one `*SYSTEM` assigns `QIBM_HTTP_SERVER_ADMIN`,
+//! certificate is the one `*SYSTEM` assigns `QS400_HTTP_SERVER_ADMIN`,
 //! else the system's own (`tls.rs`).
 //!
 //! The job's thread holds the link and the runtime and answers the
@@ -38,7 +38,7 @@ use jobs::{CertLink, LiveFiles, LiveJobs};
 use system::{Dates, LiveSystem};
 
 /// The certificate application ID of the administration server.
-const APP_ID: &str = "QIBM_HTTP_SERVER_ADMIN";
+const APP_ID: &str = "QS400_HTTP_SERVER_ADMIN";
 /// How often the job looks whether it is to end.
 const LOOK: Duration = Duration::from_millis(500);
 

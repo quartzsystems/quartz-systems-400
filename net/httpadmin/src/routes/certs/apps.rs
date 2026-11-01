@@ -7,12 +7,12 @@
 
 use qsweb::frame::Page;
 use qsweb::http::Response;
-use qsweb::msg::Kind;
+use qsweb::msg::{Kind, Message};
 use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, actions, buttons, form, grey, list_table, props_table, select};
 
 use super::{Rq, WARN_DAYS, days_left, expiry_status, failed, invalid, url_q};
 use crate::PRODUCT;
-use crate::env::{AppInfo, CertRow, EntryType};
+use crate::env::{AppInfo, CertFailure, CertRow, EntryType};
 use crate::msgs;
 
 /// The certificates an application can be given: `*SYSTEM` identities
@@ -44,7 +44,8 @@ pub fn page(rq: &Rq<'_>) -> Response {
     }
     let certs = &rq.env().certs;
     let now = rq.env().system.now();
-    let rows = certs.entries("*SYSTEM").unwrap_or_default();
+    let system = certs.entries("*SYSTEM");
+    let rows = system.clone().unwrap_or_default();
     let mut apps = certs.apps();
     let q = rq.query();
     let sort = q.str("sort");
@@ -100,6 +101,7 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let opts: Vec<&str> = options.iter().map(String::as_str).collect();
     let cert = q.str("cert");
     let chosen = options.iter().find(|o| label_of(o) == cert).map_or("", String::as_str);
+    let (messages, copy_html) = why_none(rq, &system, options.is_empty());
     let form_html = form(
         &rq.ctx,
         "",
@@ -127,11 +129,37 @@ pub fn page(rq: &Rq<'_>) -> Response {
             "Each TCP server and HTTP instance has an application ID. The certificate assigned to the ID is the one the server presents."
                 .into(),
         ),
-        body: format!("{}{form_html}", list_table(&table)),
+        messages,
+        body: format!("{}{copy_html}{form_html}", list_table(&table)),
         help: "cert-apps".into(),
         nav: Some(("Certificates", Some("/certs/apps"))),
         ..Page::default()
     })
+}
+
+/// Why the Certificate list is short, as message rows, and the Copy to
+/// `*SYSTEM` form for a certificate of another store (`?cert=&store=`,
+/// from its page's Assign to application).
+fn why_none(rq: &Rq<'_>, system: &Result<Vec<CertRow>, CertFailure>, empty: bool) -> (Vec<Message>, String) {
+    let q = rq.query();
+    let (label, store) = (q.str("cert"), q.str("store"));
+    let mut out = Vec::new();
+    let mut copy = String::new();
+    let elsewhere = !store.is_empty() && !store.eq_ignore_ascii_case("*SYSTEM") && !label.is_empty();
+    match system {
+        Err(e) => out.push(msgs::message(Kind::Error, "HTP8313", &[&e.to_string()])),
+        Ok(rows) if elsewhere && rows.iter().all(|r| r.label != label) => {
+            out.push(msgs::message(Kind::Info, "HTP8314", &[label, store]));
+            copy = form(
+                &rq.ctx,
+                &url_q("/certs/cert", &[("store", store), ("label", label)]),
+                &buttons(&[Button::new("copy", "Copy to *SYSTEM")]),
+            );
+        }
+        Ok(_) if empty => out.push(msgs::message(Kind::Info, "HTP8312", &[&WARN_DAYS.to_string()])),
+        Ok(_) => {}
+    }
+    (out, copy)
 }
 
 /// The label in a certificate option (`label (expires 01/02/28)`).

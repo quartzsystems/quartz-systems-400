@@ -107,7 +107,7 @@ mod tests {
     use crate::crypto::keys::KeyAlgorithm;
     use crate::x509::build::CertSpec;
 
-    const ADMIN: &str = "QIBM_HTTP_SERVER_ADMIN";
+    const ADMIN: &str = "QS400_HTTP_SERVER_ADMIN";
 
     fn cert(w: &World, label: &str, days: u32) {
         entries::create(
@@ -143,7 +143,7 @@ mod tests {
         let key = crate::crypto::keys::PrivateKey::from_pkcs8_der(&id.key).unwrap();
         assert_eq!(key.algorithm(), KeyAlgorithm::EcdsaP256);
         // A client ID gets no default certificate.
-        assert_eq!(for_app(&w.ctx(), "QIBM_QTMF_FTP_CLIENT").unwrap().identity, None);
+        assert_eq!(for_app(&w.ctx(), "QS400_FTP_CLIENT").unwrap().identity, None);
         // Expired: refused, so the server says why and keeps its own.
         assert!(for_app(&w.at(NOW + 31 * DAY), ADMIN).is_err());
     }

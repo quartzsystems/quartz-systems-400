@@ -137,7 +137,7 @@ pub const TOPICS: &[Topic] = &[
     Topic {
         key: "instance-tls",
         title: "Instance: TLS",
-        body: "<p>The TLS settings of the instance's TLS ports, the ports whose virtual host turns <span class=\"mono\">SSLEngine</span> on (Ports &amp; addresses page). The certificate comes from the <span class=\"mono\">*SYSTEM</span> certificate store through the instance's certificate application, <span class=\"mono\">QIBM_HTTP_SERVER_</span> and the instance name; the list shows the certificate assigned to it first. Assign another on the Certificate applications page.</p>
+        body: "<p>The TLS settings of the instance's TLS ports, the ports whose virtual host turns <span class=\"mono\">SSLEngine</span> on (Ports &amp; addresses page). The certificate comes from the <span class=\"mono\">*SYSTEM</span> certificate store through the instance's certificate application, <span class=\"mono\">QS400_HTTP_SERVER_</span> and the instance name; the list shows the certificate assigned to it first. Assign another on the Certificate applications page.</p>
 <p><b>Protocol versions</b> are written as <span class=\"mono\">SSLProtocolDisable</span> for the versions not chosen; TLS 1.0 is never offered. <b>*DFT</b> uses the cipher list of system value <span class=\"mono\">QSSLCSL</span>; a custom list is written on the Configuration file page. <b>Client authentication</b> asks browsers for a certificate (Optional) or refuses those without one (Required). Changes need the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
     },
     Topic {
@@ -200,7 +200,7 @@ pub const TOPICS: &[Topic] = &[
     Topic {
         key: "cert-view",
         title: "Certificate",
-        body: "<p>The certificate's subject, issuer, serial number, validity and SHA-256 fingerprint, and the certificate itself as PEM text.</p>\n<p><b>Download</b> saves the certificate as a PEM file. <b>Download with chain</b> adds the certificates of the authorities that issued it, as far as the store holds them. Private keys are never downloaded.</p>",
+        body: "<p>The certificate's subject, issuer, serial number, validity and SHA-256 fingerprint, and the certificate itself as PEM text.</p>\n<p><b>Download</b> saves the certificate as a PEM file. <b>Download with chain</b> adds the certificates of the authorities that issued it, as far as the store holds them; neither holds the private key.</p>\n<p>On Export, a certificate with its private key can be downloaded as a PKCS#12 file sealed with a password you type; Import takes that file into another store. <b>Copy to *SYSTEM</b>, on a certificate of another store, copies it with its private key into <span class=\"mono\">*SYSTEM</span>, whose certificates applications present.</p>",
     },
     Topic {
         key: "cert-create",
@@ -228,8 +228,9 @@ pub const TOPICS: &[Topic] = &[
     Topic {
         key: "cert-apps",
         title: "Certificate applications",
-        body: "<p>Every TLS server and client of the system, and every HTTP instance, has an application ID such as <span class=\"mono\">QIBM_HTTP_SERVER_ADMIN</span>. The server presents the <span class=\"mono\">*SYSTEM</span> certificate assigned to its ID; an ID without one uses the store's default certificate.</p>\n\
-<p><b>Assign</b> chooses the certificate; the server presents it the next time it starts. Only certificates with their private keys that do not expire within 60 days are offered. <b>Remove</b> takes the assignment away. A status in red is a certificate that expires within 60 days or has expired.</p>",
+        body: "<p>Every TLS server and client of the system, and every HTTP instance, has an application ID such as <span class=\"mono\">QS400_HTTP_SERVER_ADMIN</span>. The server presents the <span class=\"mono\">*SYSTEM</span> certificate assigned to its ID; an ID without one uses the store's default certificate.</p>\n\
+<p><b>Assign</b> chooses the certificate; the server presents it the next time it starts. Only certificates with their private keys that do not expire within 60 days are offered. <b>Remove</b> takes the assignment away. A status in red is a certificate that expires within 60 days or has expired.</p>\n\
+<p>Only <span class=\"mono\">*SYSTEM</span> certificates are offered. To use one made in another store, open it there and press <b>Copy to *SYSTEM</b>. A program that names an application by its older ID gets the application shown here under its new one.</p>",
     },
     Topic {
         key: "global",
@@ -244,7 +245,7 @@ pub const TOPICS: &[Topic] = &[
     Topic {
         key: "global-tls",
         title: "Require TLS for administration",
-        body: "<p>When selected, a request on the plain administration port is answered with a redirect to the same page on the TLS port, so passwords and session cookies only travel encrypted. The server presents the certificate assigned to application ID <span class=\"mono\">QIBM_HTTP_SERVER_ADMIN</span> on the Applications page; assign one before turning this on.</p>",
+        body: "<p>When selected, a request on the plain administration port is answered with a redirect to the same page on the TLS port, so passwords and session cookies only travel encrypted. The server presents the certificate assigned to application ID <span class=\"mono\">QS400_HTTP_SERVER_ADMIN</span> on the Applications page; assign one before turning this on.</p>",
     },
     Topic {
         key: "cert-confirm",

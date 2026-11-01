@@ -50,6 +50,19 @@ pub fn create(ctx: &Ctx<'_>, ks: &Keystore, stash: bool, seed: bool) -> Result<V
     Ok(notes)
 }
 
+/// Make the `*SYSTEM` store when there is none: a random password,
+/// stashed, and the shipped root CAs trusted. Gives whether it was made.
+pub fn ensure_system(ctx: &Ctx<'_>) -> Result<bool> {
+    let ks = Keystore::system();
+    if ctx.files.exists(&ks.path)? {
+        return Ok(false);
+    }
+    ctx.sealer()?;
+    let password = zeroize::Zeroizing::new(hex::encode(crate::crypto::random(24)?));
+    create(ctx, &Keystore::new(&ks.path, &password), true, true)?;
+    Ok(true)
+}
+
 /// The local CA: its store, its certificate (also as PEM for clients),
 /// and its stash. The `*SYSTEM` store, when it opens through its stash,
 /// trusts the new CA.
@@ -142,6 +155,19 @@ mod tests {
     }
 
     #[test]
+    fn a_new_system_gets_its_system_store_once() {
+        let w = World::new();
+        assert!(ensure_system(&w.ctx()).unwrap());
+        let s = w.ctx().open(&Keystore::system()).unwrap();
+        assert!(s.trusted_cas().len() > 50);
+        assert!(!ensure_system(&w.ctx()).unwrap());
+        // Without the LIC key nothing is made.
+        let w2 = World::new();
+        assert!(ensure_system(&Ctx { sealer: None, ..w2.ctx() }).is_err());
+        assert!(!w2.files.exists(SYSTEM_STORE).unwrap());
+    }
+
+    #[test]
     fn the_local_ca_is_trusted_by_the_system_store() {
         let w = World::with_system();
         let notes = create_local_ca(&w.ctx(), "cacert1", &Subject::cn("QS400 CA"), KeyAlgorithm::EcdsaP256, 3650, true)
@@ -160,14 +186,14 @@ mod tests {
     fn deleting_the_system_store_clears_assignments() {
         let w = World::with_system();
         let mut reg = AppRegistry::load(&w.files).unwrap();
-        reg.assign("QIBM_HTTP_SERVER_ADMIN", Some("X")).unwrap();
+        reg.assign("QS400_HTTP_SERVER_ADMIN", Some("X")).unwrap();
         reg.save(&w.files).unwrap();
         assert!(delete(&w.ctx(), &Keystore::new("*SYSTEM", "wrong1")).is_err());
         delete(&w.ctx(), &Keystore::system()).unwrap();
         assert!(w.files.read(SYSTEM_STORE).unwrap().is_none());
         assert!(w.files.read(&stash_path(SYSTEM_STORE)).unwrap().is_none());
         let reg = AppRegistry::load(&w.files).unwrap();
-        assert_eq!(reg.get("QIBM_HTTP_SERVER_ADMIN").unwrap().label, None);
+        assert_eq!(reg.get("QS400_HTTP_SERVER_ADMIN").unwrap().label, None);
         assert!(matches!(delete(&w.ctx(), &Keystore::system()), Err(CertError::NotFound(_))));
     }
 

@@ -151,9 +151,9 @@ fn no_ibm_wording() {
         for f in walk(&root.join(dir)) {
             let t = std::fs::read_to_string(&f).unwrap_or_default();
             for (n, line) in t.lines().enumerate() {
-                // IBM-compatible identifiers (QIBM_ application IDs,
-                // /QIBM/ paths) are the compatibility interface.
-                let l = line.replace("QIBM", "");
+                // The certificate store paths (/QIBM/...) are the
+                // compatibility interface; application IDs are QS400_.
+                let l = line.replace("/QIBM/", "/");
                 for w in words {
                     if l.contains(w) {
                         hits.push(format!("{}:{}: {w}", f.display(), n + 1));

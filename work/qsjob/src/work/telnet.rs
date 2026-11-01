@@ -55,7 +55,7 @@ use crate::display;
 pub const TLS_PORT: u16 = 992;
 
 /// The certificate application ID of the telnet server.
-const TELNET_APP_ID: &str = "QIBM_QTV_TELNET_SERVER";
+const TELNET_APP_ID: &str = "QS400_TELNET_SERVER";
 
 /// What a session asks the server's main thread for.
 enum Ask {

@@ -7,6 +7,12 @@
 //! each with its assigned certificate, client authentication and CA trust
 //! settings. IBM keeps these in the registration facility and DCM; here
 //! they are one JSON file at [`crate::paths::APP_DEFINITIONS`].
+//!
+//! The IDs are `QS400_*`. The `QIBM_*` IDs programs written for IBM i
+//! give are aliases ([`ALIASES`], [`canonical`]): accepted wherever an
+//! ID is, and a definition stored under one is renamed when read.
+
+use std::borrow::Cow;
 
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +54,7 @@ pub enum CaTrust {
 /// One application definition.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppDef {
-    /// The ID, IBM's name where one exists.
+    /// The ID.
     pub id: String,
     /// Server or client.
     pub kind: AppKind,
@@ -64,77 +70,72 @@ pub struct AppDef {
     pub ca_trust: CaTrust,
 }
 
-/// The shipped application IDs. Names are IBM's; doubts are listed in
-/// `docs/NET_OPEN_QUESTIONS.md` under "Certificates".
+/// The shipped application IDs.
 pub const SHIPPED: &[(&str, AppKind, &str)] = &[
-    ("QIBM_QTV_TELNET_SERVER", AppKind::Server, "Telnet server"),
-    ("QIBM_QTMF_FTP_SERVER", AppKind::Server, "FTP server"),
-    ("QIBM_QTMF_FTP_CLIENT", AppKind::Client, "FTP client"),
-    ("QIBM_QTMS_SMTP_CLIENT", AppKind::Client, "SMTP client"),
-    (
-        "QIBM_OS400_QZBS_SVR_CENTRAL",
-        AppKind::Server,
-        "Central host server",
-    ),
-    (
-        "QIBM_OS400_QZBS_SVR_DATABASE",
-        AppKind::Server,
-        "Database host server",
-    ),
-    (
-        "QIBM_OS400_QZBS_SVR_DTAQ",
-        AppKind::Server,
-        "Data queue host server",
-    ),
-    (
-        "QIBM_OS400_QZBS_SVR_NETPRT",
-        AppKind::Server,
-        "Network print host server",
-    ),
-    (
-        "QIBM_OS400_QZBS_SVR_RMTCMD",
-        AppKind::Server,
-        "Remote command host server",
-    ),
-    (
-        "QIBM_OS400_QZBS_SVR_SIGNON",
-        AppKind::Server,
-        "Sign-on host server",
-    ),
-    (
-        "QIBM_OS400_QZBS_SVR_FILE",
-        AppKind::Server,
-        "File host server",
-    ),
-    (
-        "QIBM_QRW_SERVER_DDM_DRDA",
-        AppKind::Server,
-        "DDM and DRDA server",
-    ),
-    (
-        "QIBM_QRW_CLIENT_DDM_DRDA",
-        AppKind::Client,
-        "DDM and DRDA client",
-    ),
-    (
-        "QIBM_HTTP_SERVER_ADMIN",
-        AppKind::Server,
-        "HTTP administration server",
-    ),
-    (
-        "QIBM_GLD_DIRSRV_SERVER",
-        AppKind::Server,
-        "Directory server",
-    ),
-    (
-        "QIBM_GLD_DIRSRV_CLIENT",
-        AppKind::Client,
-        "Directory client",
-    ),
-    ("QIBM_QTOB_VPN_IKE", AppKind::Server, "VPN key manager"),
-    ("QIBM_QSO_LPD_SERVER", AppKind::Server, "LPD server"),
-    ("QIBM_QTOC_NTP_CLIENT", AppKind::Client, "NTP client"),
+    ("QS400_TELNET_SERVER", AppKind::Server, "Telnet server"),
+    ("QS400_FTP_SERVER", AppKind::Server, "FTP server"),
+    ("QS400_FTP_CLIENT", AppKind::Client, "FTP client"),
+    ("QS400_SMTP_CLIENT", AppKind::Client, "SMTP client"),
+    ("QS400_CENTRAL_SERVER", AppKind::Server, "Central host server"),
+    ("QS400_DATABASE_SERVER", AppKind::Server, "Database host server"),
+    ("QS400_DTAQ_SERVER", AppKind::Server, "Data queue host server"),
+    ("QS400_NETPRT_SERVER", AppKind::Server, "Network print host server"),
+    ("QS400_RMTCMD_SERVER", AppKind::Server, "Remote command host server"),
+    ("QS400_SIGNON_SERVER", AppKind::Server, "Sign-on host server"),
+    ("QS400_FILE_SERVER", AppKind::Server, "File host server"),
+    ("QS400_DDM_DRDA_SERVER", AppKind::Server, "DDM and DRDA server"),
+    ("QS400_DDM_DRDA_CLIENT", AppKind::Client, "DDM and DRDA client"),
+    ("QS400_HTTP_SERVER_ADMIN", AppKind::Server, "HTTP administration server"),
+    ("QS400_DIRECTORY_SERVER", AppKind::Server, "Directory server"),
+    ("QS400_DIRECTORY_CLIENT", AppKind::Client, "Directory client"),
+    ("QS400_VPN_IKE_SERVER", AppKind::Server, "VPN key manager"),
+    ("QS400_LPD_SERVER", AppKind::Server, "LPD server"),
+    ("QS400_NTP_CLIENT", AppKind::Client, "NTP client"),
 ];
+
+/// The IBM i IDs (old) and the IDs they name here (new).
+pub const ALIASES: &[(&str, &str)] = &[
+    ("QIBM_QTV_TELNET_SERVER", "QS400_TELNET_SERVER"),
+    ("QIBM_QTMF_FTP_SERVER", "QS400_FTP_SERVER"),
+    ("QIBM_QTMF_FTP_CLIENT", "QS400_FTP_CLIENT"),
+    ("QIBM_QTMS_SMTP_CLIENT", "QS400_SMTP_CLIENT"),
+    ("QIBM_OS400_QZBS_SVR_CENTRAL", "QS400_CENTRAL_SERVER"),
+    ("QIBM_OS400_QZBS_SVR_DATABASE", "QS400_DATABASE_SERVER"),
+    ("QIBM_OS400_QZBS_SVR_DTAQ", "QS400_DTAQ_SERVER"),
+    ("QIBM_OS400_QZBS_SVR_NETPRT", "QS400_NETPRT_SERVER"),
+    ("QIBM_OS400_QZBS_SVR_RMTCMD", "QS400_RMTCMD_SERVER"),
+    ("QIBM_OS400_QZBS_SVR_SIGNON", "QS400_SIGNON_SERVER"),
+    ("QIBM_OS400_QZBS_SVR_FILE", "QS400_FILE_SERVER"),
+    ("QIBM_QRW_SERVER_DDM_DRDA", "QS400_DDM_DRDA_SERVER"),
+    ("QIBM_QRW_CLIENT_DDM_DRDA", "QS400_DDM_DRDA_CLIENT"),
+    ("QIBM_GLD_DIRSRV_SERVER", "QS400_DIRECTORY_SERVER"),
+    ("QIBM_GLD_DIRSRV_CLIENT", "QS400_DIRECTORY_CLIENT"),
+    ("QIBM_QTOB_VPN_IKE", "QS400_VPN_IKE_SERVER"),
+    ("QIBM_QSO_LPD_SERVER", "QS400_LPD_SERVER"),
+    ("QIBM_QTOC_NTP_CLIENT", "QS400_NTP_CLIENT"),
+];
+
+/// The prefix of an HTTP instance's ID; the instance name follows.
+pub const HTTP_SERVER_PREFIX: &str = "QS400_HTTP_SERVER_";
+
+/// The prefix IBM i gives HTTP instances' IDs, an alias.
+const OLD_HTTP_SERVER_PREFIX: &str = "QIBM_HTTP_SERVER_";
+
+/// The ID of HTTP instance `instance`.
+pub fn http_server(instance: &str) -> String {
+    format!("{HTTP_SERVER_PREFIX}{}", instance.trim().to_ascii_uppercase())
+}
+
+/// The ID `id` names: the new one for an old one, else `id` itself.
+pub fn canonical(id: &str) -> Cow<'_, str> {
+    if let Some((_, new)) = ALIASES.iter().find(|(old, _)| *old == id) {
+        return Cow::Borrowed(new);
+    }
+    match id.strip_prefix(OLD_HTTP_SERVER_PREFIX) {
+        Some(rest) if !rest.is_empty() => Cow::Owned(format!("{HTTP_SERVER_PREFIX}{rest}")),
+        _ => Cow::Borrowed(id),
+    }
+}
 
 /// The definitions file.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -162,14 +163,17 @@ impl AppRegistry {
         r
     }
 
-    /// Read the file, or the shipped set when it does not exist. Shipped
-    /// IDs missing from the file are added back.
+    /// Read the file, or the shipped set when it does not exist.
+    /// Definitions under an old ID are renamed (one already under the
+    /// new ID wins unless it has no certificate); shipped IDs missing
+    /// from the file are added back.
     pub fn load(files: &dyn StoreFiles) -> Result<Self> {
         let mut r = match files.read(APP_DEFINITIONS)? {
             Some(bytes) => serde_json::from_slice::<Self>(&bytes)
                 .map_err(|e| CertError::Corrupt(format!("application definitions: {e}")))?,
             None => Self::shipped(),
         };
+        r.migrate();
         for s in Self::shipped().apps {
             if r.get(&s.id).is_err() {
                 r.apps.push(s);
@@ -177,6 +181,31 @@ impl AppRegistry {
         }
         r.apps.sort_by(|a, b| a.id.cmp(&b.id));
         Ok(r)
+    }
+
+    /// Rename definitions stored under an old ID.
+    fn migrate(&mut self) {
+        let old: Vec<AppDef> = self
+            .apps
+            .iter()
+            .filter(|a| canonical(&a.id) != a.id.as_str())
+            .cloned()
+            .collect();
+        for mut a in old {
+            let new = canonical(&a.id).into_owned();
+            self.apps.retain(|x| x.id != a.id);
+            match self.apps.iter_mut().find(|x| x.id == new) {
+                Some(x) if x.label.is_none() => {
+                    a.id = new;
+                    *x = a;
+                }
+                Some(_) => {}
+                None => {
+                    a.id = new;
+                    self.apps.push(a);
+                }
+            }
+        }
     }
 
     /// Write the file.
@@ -187,29 +216,33 @@ impl AppRegistry {
         Ok(())
     }
 
-    /// The definition of `id` (case-sensitive, as IBM's are).
+    /// The definition of `id` or its alias (case-sensitive, as IBM's
+    /// are).
     pub fn get(&self, id: &str) -> Result<&AppDef> {
+        let want = canonical(id);
         self.apps
             .iter()
-            .find(|a| a.id == id)
+            .find(|a| a.id == want)
             .ok_or_else(|| CertError::NotRegistered(id.to_string()))
     }
 
     fn get_mut(&mut self, id: &str) -> Result<&mut AppDef> {
+        let want = canonical(id);
         self.apps
             .iter_mut()
-            .find(|a| a.id == id)
+            .find(|a| a.id == want)
             .ok_or_else(|| CertError::NotRegistered(id.to_string()))
     }
 
-    /// Register a new application.
+    /// Register a new application; an old ID registers its new one.
     pub fn register(&mut self, id: &str, kind: AppKind, text: &str) -> Result<()> {
         check_id(id)?;
-        if self.get(id).is_ok() {
-            return Err(CertError::AlreadyRegistered(id.to_string()));
+        let id = canonical(id).into_owned();
+        if self.get(&id).is_ok() {
+            return Err(CertError::AlreadyRegistered(id));
         }
         self.apps.push(AppDef {
-            id: id.to_string(),
+            id,
             kind,
             text: text.to_string(),
             shipped: false,
@@ -226,10 +259,12 @@ impl AppRegistry {
         let a = self.get(id)?;
         if a.shipped {
             return Err(CertError::Invalid(format!(
-                "{id} is shipped with the system"
+                "{} is shipped with the system",
+                a.id
             )));
         }
-        self.apps.retain(|a| a.id != id);
+        let gone = a.id.clone();
+        self.apps.retain(|a| a.id != gone);
         Ok(())
     }
 
@@ -244,7 +279,8 @@ impl AppRegistry {
         let a = self.get_mut(id)?;
         if a.kind != AppKind::Server && auth != ClientAuth::None {
             return Err(CertError::Invalid(format!(
-                "{id} is a client application; client authentication applies to servers"
+                "{} is a client application; client authentication applies to servers",
+                a.id
             )));
         }
         a.client_auth = auth;
@@ -254,6 +290,12 @@ impl AppRegistry {
     /// Set the CA trust.
     pub fn set_ca_trust(&mut self, id: &str, trust: CaTrust) -> Result<()> {
         self.get_mut(id)?.ca_trust = trust;
+        Ok(())
+    }
+
+    /// Set the description.
+    pub fn set_text(&mut self, id: &str, text: &str) -> Result<()> {
+        self.get_mut(id)?.text = text.to_string();
         Ok(())
     }
 
@@ -304,13 +346,13 @@ mod tests {
         let files = MemFiles::new();
         let mut r = AppRegistry::load(&files).unwrap();
         assert_eq!(r.apps.len(), SHIPPED.len());
-        assert!(r.get("QIBM_QTV_TELNET_SERVER").is_ok());
+        assert!(r.get("QS400_TELNET_SERVER").is_ok());
         assert!(matches!(r.get("NOPE"), Err(CertError::NotRegistered(_))));
-        r.assign("QIBM_QTV_TELNET_SERVER", Some("QS400")).unwrap();
-        r.set_client_auth("QIBM_QTV_TELNET_SERVER", ClientAuth::Optional)
+        r.assign("QS400_TELNET_SERVER", Some("QS400")).unwrap();
+        r.set_client_auth("QS400_TELNET_SERVER", ClientAuth::Optional)
             .unwrap();
         assert!(
-            r.set_client_auth("QIBM_QTMF_FTP_CLIENT", ClientAuth::Required)
+            r.set_client_auth("QS400_FTP_CLIENT", ClientAuth::Required)
                 .is_err()
         );
         r.register("MYAPP_SERVER", AppKind::Server, "mine").unwrap();
@@ -318,7 +360,7 @@ mod tests {
             r.register("MYAPP_SERVER", AppKind::Server, ""),
             Err(CertError::AlreadyRegistered(_))
         ));
-        assert!(r.deregister("QIBM_QTV_TELNET_SERVER").is_err());
+        assert!(r.deregister("QS400_TELNET_SERVER").is_err());
         r.save(&files).unwrap();
 
         let back = AppRegistry::load(&files).unwrap();
@@ -337,5 +379,69 @@ mod tests {
         files.write(APP_DEFINITIONS, br#"{"apps":[]}"#).unwrap();
         let r = AppRegistry::load(&files).unwrap();
         assert_eq!(r.apps.len(), SHIPPED.len());
+    }
+
+    #[test]
+    fn every_old_id_names_a_shipped_one() {
+        for (old, new) in ALIASES {
+            assert!(SHIPPED.iter().any(|s| s.0 == *new), "{old}");
+            assert_eq!(canonical(old), *new);
+        }
+        assert_eq!(canonical("QIBM_HTTP_SERVER_ADMIN"), "QS400_HTTP_SERVER_ADMIN");
+        assert_eq!(canonical("QIBM_HTTP_SERVER_SHOP"), "QS400_HTTP_SERVER_SHOP");
+        assert_eq!(canonical("QIBM_HTTP_SERVER_"), "QIBM_HTTP_SERVER_");
+        assert_eq!(canonical("QIBM_MYAPP"), "QIBM_MYAPP");
+        assert_eq!(http_server("shop"), "QS400_HTTP_SERVER_SHOP");
+    }
+
+    #[test]
+    fn old_ids_are_accepted_everywhere() {
+        let mut r = AppRegistry::shipped();
+        r.assign("QIBM_QTV_TELNET_SERVER", Some("T")).unwrap();
+        assert_eq!(r.get("QS400_TELNET_SERVER").unwrap().label.as_deref(), Some("T"));
+        assert_eq!(r.get("QIBM_QTV_TELNET_SERVER").unwrap().id, "QS400_TELNET_SERVER");
+        r.register("QIBM_HTTP_SERVER_SHOP", AppKind::Server, "Shop").unwrap();
+        assert!(r.get("QS400_HTTP_SERVER_SHOP").is_ok());
+        assert!(matches!(
+            r.register("QS400_HTTP_SERVER_SHOP", AppKind::Server, ""),
+            Err(CertError::AlreadyRegistered(_))
+        ));
+        r.deregister("QIBM_HTTP_SERVER_SHOP").unwrap();
+        assert!(r.get("QS400_HTTP_SERVER_SHOP").is_err());
+    }
+
+    /// A file written before the rename keeps its assignments.
+    #[test]
+    fn stored_old_ids_are_renamed() {
+        let files = MemFiles::new();
+        let old = |id: &str, shipped: bool, label: Option<&str>| AppDef {
+            id: id.into(),
+            kind: AppKind::Server,
+            text: "t".into(),
+            shipped,
+            label: label.map(str::to_string),
+            client_auth: ClientAuth::Optional,
+            ca_trust: CaTrust::All,
+        };
+        let file = AppRegistry {
+            apps: vec![
+                old("QIBM_HTTP_SERVER_ADMIN", true, Some("ADMIN-CERT01")),
+                old("QIBM_HTTP_SERVER_WEB1", false, Some("WEB")),
+                old("QIBM_QTV_TELNET_SERVER", true, None),
+                old("QS400_TELNET_SERVER", true, Some("TN")),
+                old("QIBM_MYAPP", false, None),
+            ],
+        };
+        file.save(&files).unwrap();
+        let r = AppRegistry::load(&files).unwrap();
+        assert_eq!(r.apps.len(), SHIPPED.len() + 2);
+        assert!(r.apps.iter().all(|a| !a.id.starts_with("QIBM_") || a.id == "QIBM_MYAPP"));
+        let admin = r.get("QS400_HTTP_SERVER_ADMIN").unwrap();
+        assert_eq!((admin.label.as_deref(), admin.client_auth), (Some("ADMIN-CERT01"), ClientAuth::Optional));
+        let web = r.get("QS400_HTTP_SERVER_WEB1").unwrap();
+        assert_eq!((web.label.as_deref(), web.shipped), (Some("WEB"), false));
+        assert_eq!(r.get("QS400_TELNET_SERVER").unwrap().label.as_deref(), Some("TN"));
+        r.save(&files).unwrap();
+        assert_eq!(AppRegistry::load(&files).unwrap(), r);
     }
 }

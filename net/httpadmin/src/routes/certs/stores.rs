@@ -143,7 +143,11 @@ fn create_store(rq: &Rq<'_>) -> Response {
     let f = rq.form();
     let name = f.str("sn").trim().to_ascii_uppercase();
     let mut path = f.str("sp").trim().to_string();
-    if !name_ok(&name) {
+    // *SYSTEM, when the system has none, goes to its own path.
+    let system = name == "*SYSTEM";
+    if system {
+        path = certs::paths::SYSTEM_STORE.into();
+    } else if !name_ok(&name) {
         return rq.done("/certs/stores", invalid("a store name is 1 to 10 letters, digits or underscores, starting with a letter"));
     }
     if path.is_empty() {
@@ -152,7 +156,7 @@ fn create_store(rq: &Rq<'_>) -> Response {
     if !path.starts_with('/') {
         return rq.done("/certs/stores", invalid("the path must start with /"));
     }
-    if path.ends_with('/') {
+    if path.ends_with('/') && !system {
         let _ = write!(path, "{name}.KDB");
     }
     let (p1, p2) = (f.str("p1"), f.str("p2"));

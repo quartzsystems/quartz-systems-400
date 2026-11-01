@@ -185,7 +185,7 @@ fn add_lines(side: &mut JobSide<'_>, lib: &str, file: &str, mbr: &str, lines: &[
 
 /// The TLS configuration the client uses: the server's certificate must
 /// chain to the shipped roots or a trusted CA of `*SYSTEM` and name the
-/// host. The client presents no certificate: `QIBM_QTMF_FTP_CLIENT`'s
+/// host. The client presents no certificate: `QS400_FTP_CLIENT`'s
 /// key goes only to server profiles (docs/CERTS.md).
 fn client_tls(host: &Host) -> Option<Arc<tls::rustls::ClientConfig>> {
     crate::work::tls::client_config(&mut host.link.borrow_mut())

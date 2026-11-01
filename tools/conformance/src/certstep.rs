@@ -2,9 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Phase 10 QEMU step 70: certificates. `QSCRTCRTS` makes the `*SYSTEM`
-//! store (its password kept with the LIC key), `QSCRTCRT` a certificate
-//! in it, `QSASNCRT` gives it to `QIBM_HTTP_SERVER_ADMIN`, and the HTTP
+//! Phase 10 QEMU step 70: certificates. The IPL made the `*SYSTEM` store
+//! (`QSCRTCRTS` finds it there), `QSCRTCRT` makes a certificate
+//! in it, `QSASNCRT` gives it to `QS400_HTTP_SERVER_ADMIN`, and the HTTP
 //! administration instance then serves it on 2010: the harness reads the
 //! certificate from the handshake. `QSWRKCRT`, `QSWRKAPPID` and
 //! `QSCHKCRT` answer in text at the service console.
@@ -84,20 +84,21 @@ impl Suite {
         expect(
             s,
             "QSCRTCRTS KEYSTORE(*SYSTEM) PASSWORD('step70pw')",
-            &["TCP1C00", "TCP1C11"],
+            &["TCP1C11"],
         )?;
         expect(
             s,
             &format!("QSCRTCRT LABEL(STEP70) CN('{CN}') VALIDITY(20) TEXT('Step 70')"),
             &["TCP1C02", "TCP1C14"],
         )?;
+        // The IBM i ID is an alias of the QS400_ one.
         expect(s, "QSASNCRT APPID(QIBM_HTTP_SERVER_ADMIN) LABEL(STEP70)", &["TCP1C08"])?;
         let list = expect(s, "QSWRKCRT", &["STEP70"])?;
-        if !list.lines().any(|l| l.starts_with("STEP70") && l.contains("Expiring") && l.contains("QIBM_HTTP_SERVER_ADMIN")) {
+        if !list.lines().any(|l| l.starts_with("STEP70") && l.contains("Expiring") && l.contains("QS400_HTTP_SERVER_ADMIN")) {
             return Err(format!("QSWRKCRT does not show STEP70 expiring and assigned:\n{list}"));
         }
-        let apps = expect(s, "QSWRKAPPID APPID(QIBM_HTTP*)", &["QIBM_HTTP_SERVER_ADMIN"])?;
-        if !apps.lines().any(|l| l.starts_with("QIBM_HTTP_SERVER_ADMIN") && l.trim_end().ends_with("STEP70")) {
+        let apps = expect(s, "QSWRKAPPID APPID(QS400_HTTP*)", &["QS400_HTTP_SERVER_ADMIN"])?;
+        if !apps.lines().any(|l| l.starts_with("QS400_HTTP_SERVER_ADMIN") && l.trim_end().ends_with("STEP70")) {
             return Err(format!("QSWRKAPPID does not show the assignment:\n{apps}"));
         }
         // Twenty days left: the 30-day warning goes to QSYSOPR, once.
@@ -120,9 +121,9 @@ impl Suite {
         expect(s, "ENDTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", &["TCP1A0A"])?;
         // Unassigned, the server goes back to the store's default, which
         // is still STEP70 (the only certificate): nothing else to see.
-        expect(s, "QSASNCRT APPID(QIBM_HTTP_SERVER_ADMIN) LABEL(*NONE)", &["TCP1C09"])?;
+        expect(s, "QSASNCRT APPID(QS400_HTTP_SERVER_ADMIN) LABEL(*NONE)", &["TCP1C09"])?;
         Ok(format!(
-            "*SYSTEM made, STEP70 assigned to QIBM_HTTP_SERVER_ADMIN and served on 2010 (host {port}, SHA-256 {}...), one expiry warning",
+            "*SYSTEM made, STEP70 assigned to QS400_HTTP_SERVER_ADMIN and served on 2010 (host {port}, SHA-256 {}...), one expiry warning",
             &info.sha256[..16]
         ))
     }

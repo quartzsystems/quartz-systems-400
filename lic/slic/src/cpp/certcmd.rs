@@ -566,10 +566,10 @@ mod tests {
 
     #[test]
     fn message_data_fits_the_variables() {
-        let d = data("TCP1C08", &["ADMIN".into(), "QIBM_HTTP_SERVER_ADMIN".into()]);
+        let d = data("TCP1C08", &["ADMIN".into(), "QS400_HTTP_SERVER_ADMIN".into()]);
         assert_eq!(d.len(), 164);
         let t = text("TCP1C08", &d);
-        assert!(t.contains("ADMIN") && t.contains("QIBM_HTTP_SERVER_ADMIN"), "{t}");
+        assert!(t.contains("ADMIN") && t.contains("QS400_HTTP_SERVER_ADMIN"), "{t}");
         assert!(text("TCP1C20", &data("TCP1C20", &["W".into(), "*SYSTEM".into(), "7".into()])).contains('7'));
     }
 

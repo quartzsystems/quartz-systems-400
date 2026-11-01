@@ -166,7 +166,7 @@ fn add(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
                 .iter()
                 .map(|s| s.value("SSLAppName"))
                 .find(|a| !a.is_empty())
-                .unwrap_or_else(|| format!("QIBM_HTTP_SERVER_{name}"));
+                .unwrap_or_else(|| format!("QS400_HTTP_SERVER_{name}"));
             let mut s = Section::new("VirtualHost", &[&listen]);
             s.add(Directive::new("SSLEngine", &["On"]));
             s.add(Directive::new("SSLAppName", &[&app]));

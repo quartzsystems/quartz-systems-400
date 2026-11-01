@@ -48,7 +48,7 @@ pub fn ensure_admin(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, no
         );
         let _ = write!(
             text,
-            "\n<VirtualHost *:{tls_port}>\n   SSLEngine On\n   SSLAppName QIBM_HTTP_SERVER_{SELF_INSTANCE}\n</VirtualHost>\n"
+            "\n<VirtualHost *:{tls_port}>\n   SSLEngine On\n   SSLAppName QS400_HTTP_SERVER_{SELF_INSTANCE}\n</VirtualHost>\n"
         );
         files
             .write_atomic(&path, text.as_bytes())

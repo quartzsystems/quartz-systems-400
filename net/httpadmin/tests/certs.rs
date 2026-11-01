@@ -123,7 +123,7 @@ fn delete_a_certificate_through_the_confirmation() {
     let mut b = Browser::signed_on();
     let url = "/certs/confirm?op=delete&store=*SYSTEM&label=api.quartz.example";
     let t = b.get(url).text();
-    assert!(t.contains("Confirm Delete Certificate") && t.contains("QIBM_HTTP_SERVER_API"), "{t}");
+    assert!(t.contains("Confirm Delete Certificate") && t.contains("QS400_HTTP_SERVER_API"), "{t}");
     // A GET deleted nothing; Cancel neither.
     assert!(b.fx.certs.entries("*SYSTEM").unwrap().iter().any(|r| r.label == "api.quartz.example"));
     let r = b.post(url, &[("cancel", "Cancel")]);
@@ -134,7 +134,7 @@ fn delete_a_certificate_through_the_confirmation() {
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/*SYSTEM"));
     let t = b.get("/certs/store/*SYSTEM").text();
     assert!(t.contains("HTP8304") && !t.contains(">api.quartz.example<"), "{t}");
-    assert_eq!(b.fx.certs.app_label("QIBM_HTTP_SERVER_API"), None);
+    assert_eq!(b.fx.certs.app_label("QS400_HTTP_SERVER_API"), None);
 }
 
 #[test]
@@ -367,27 +367,133 @@ fn import_pkcs12_pem_der_and_paths() {
 #[test]
 fn assign_and_remove_application_certificates() {
     let mut b = Browser::signed_on();
-    let t = b.get("/certs/apps?app=QIBM_QTV_TELNET_SERVER&cert=webstore.quartz.example").text();
-    assert!(t.contains("<option selected>QIBM_QTV_TELNET_SERVER</option>"), "{t}");
+    let t = b.get("/certs/apps?app=QS400_TELNET_SERVER&cert=webstore.quartz.example").text();
+    assert!(t.contains("<option selected>QS400_TELNET_SERVER</option>"), "{t}");
     assert!(t.contains("<option selected>webstore.quartz.example (expires 03/14/27)</option>"));
     // Expired and expiring certificates are not offered.
     assert!(!t.contains("api.quartz.example (expires") && !t.contains("old-webstore (expires"));
-    assert_eq!(b.post_raw("/certs/apps", &[("app", "QIBM_QTMF_FTP_SERVER"), ("cert", "*.quartz.example")]).status, 403);
-    let r = b.post("/certs/apps", &[("app", "QIBM_QTMF_FTP_SERVER"), ("cert", "*.quartz.example (expires 01/02/28)"), ("assign", "Assign")]);
+    assert_eq!(b.post_raw("/certs/apps", &[("app", "QS400_FTP_SERVER"), ("cert", "*.quartz.example")]).status, 403);
+    let r = b.post("/certs/apps", &[("app", "QS400_FTP_SERVER"), ("cert", "*.quartz.example (expires 01/02/28)"), ("assign", "Assign")]);
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps"));
     let t = b.get("/certs/apps").text();
-    assert!(t.contains("HTP8310") && t.contains("Certificate *.quartz.example assigned to application QIBM_QTMF_FTP_SERVER."), "{t}");
-    assert_eq!(b.fx.certs.app_label("QIBM_QTMF_FTP_SERVER").as_deref(), Some("*.quartz.example"));
+    assert!(t.contains("HTP8310") && t.contains("Certificate *.quartz.example assigned to application QS400_FTP_SERVER."), "{t}");
+    assert_eq!(b.fx.certs.app_label("QS400_FTP_SERVER").as_deref(), Some("*.quartz.example"));
     // A CA is not something a server presents.
-    b.post("/certs/apps", &[("app", "QIBM_QTMF_FTP_SERVER"), ("cert", "Quartz Internal CA")]);
+    b.post("/certs/apps", &[("app", "QS400_FTP_SERVER"), ("cert", "Quartz Internal CA")]);
     assert!(b.get("/certs/apps").text().contains("HTP8320"));
     // Remove, through its confirmation.
-    let url = "/certs/confirm?op=unassign&app=QIBM_HTTP_SERVER_API";
+    let url = "/certs/confirm?op=unassign&app=QS400_HTTP_SERVER_API";
     assert!(b.get(url).text().contains("Confirm Remove Assignment"));
-    assert_eq!(b.fx.certs.app_label("QIBM_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
+    assert_eq!(b.fx.certs.app_label("QS400_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
     let r = b.post(url, &[("ok", "OK")]);
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps"));
     assert!(b.get("/certs/apps").text().contains("HTP8311"));
-    assert_eq!(b.fx.certs.app_label("QIBM_HTTP_SERVER_API"), None);
-    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Change { object, .. } if object == "QIBM_HTTP_SERVER_API")));
+    assert_eq!(b.fx.certs.app_label("QS400_HTTP_SERVER_API"), None);
+    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Change { object, .. } if object == "QS400_HTTP_SERVER_API")));
+}
+
+/// A server certificate made in store `store` (as the store page's
+/// Create does), self-signed.
+fn cert_in(b: &Browser, store: &str, label: &str, cn: &str) {
+    use certs::admin::Keystore;
+    use certs::admin::entries::{self, Signer};
+    use certs::crypto::keys::KeyAlgorithm;
+    use certs::x509::build::CertSpec;
+    let m = b.fx.certs.manager();
+    let path = b.fx.certs.stores().into_iter().find(|s| s.name == store).unwrap().path;
+    let spec = CertSpec::server(cn, httpadmin::fixture::now(), 365);
+    entries::create(&m.ctx, &Keystore::new(&path, ""), label, &spec, KeyAlgorithm::EcdsaP256, &Signer::SelfSigned).unwrap();
+}
+
+/// The Certificate list is never silently empty: a missing `*SYSTEM`
+/// says so and how to make it, and the stores page's Create makes it.
+#[test]
+fn applications_say_why_no_certificate_is_offered() {
+    let mut b = Browser::signed_on();
+    b.fx.certs.files.remove(certs::paths::SYSTEM_STORE).unwrap();
+    let t = b.get("/certs/apps").text();
+    assert!(t.contains("HTP8313") && t.contains("Certificate store *SYSTEM cannot be used"), "{t}");
+    // *SYSTEM made from the stores page, at its own path.
+    let r = b.post("/certs/stores", &[("sn", "*system"), ("sp", "/elsewhere/"), ("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77"), ("create", "Create")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/stores"));
+    assert!(b.get("/certs/stores").text().contains("HTP8306"));
+    let sys = b.fx.certs.stores().into_iter().find(|s| s.name == "*SYSTEM").unwrap();
+    assert_eq!(sys.path, certs::paths::SYSTEM_STORE);
+    // It trusts the shipped roots but has nothing to present.
+    let rows = b.fx.certs.entries("*SYSTEM").unwrap();
+    assert!(!rows.is_empty() && rows.iter().all(|r| r.kind == httpadmin::env::EntryType::Ca));
+    let t = b.get("/certs/apps").text();
+    assert!(t.contains("HTP8312") && t.contains("No certificate of store *SYSTEM can be assigned."), "{t}");
+    // Made again: refused.
+    b.post("/certs/stores", &[("sn", "*SYSTEM"), ("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77")]);
+    assert!(b.get("/certs/stores").text().contains("exists already"));
+}
+
+/// A certificate made in a store of one's own reaches an application:
+/// Assign to application... offers Copy to *SYSTEM, which copies it with
+/// its key and comes back to the Applications page with it chosen.
+#[test]
+fn a_certificate_of_another_store_is_copied_then_assigned() {
+    let mut b = Browser::signed_on();
+    b.post("/certs/stores", &[("sn", "QSTORE01"), ("sp", "/QIBM/UserData/ICSS/Cert/"), ("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77")]);
+    cert_in(&b, "QSTORE01", "ADMIN-CERT01", "qs400.ad.quartz.example");
+    let view = "/certs/cert?store=QSTORE01&label=ADMIN-CERT01";
+    assert!(b.get(view).text().contains("value=\"Copy to *SYSTEM\""));
+    // The certificate's Assign to application...
+    let r = b.post(view, &[("assign", "Assign to application...")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps?cert=ADMIN-CERT01&store=QSTORE01"));
+    let t = b.get("/certs/apps?cert=ADMIN-CERT01&store=QSTORE01").text();
+    assert!(t.contains("HTP8314") && t.contains("Certificate ADMIN-CERT01 is in store QSTORE01, not in *SYSTEM."), "{t}");
+    assert!(t.contains("value=\"Copy to *SYSTEM\"") && !t.contains("ADMIN-CERT01 (expires"), "{t}");
+    // Copy, not without the token.
+    assert_eq!(b.post_raw(view, &[("copy", "Copy to *SYSTEM")]).status, 403);
+    let r = b.post(view, &[("copy", "Copy to *SYSTEM")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps?cert=ADMIN-CERT01"));
+    let t = b.get("/certs/apps?cert=ADMIN-CERT01").text();
+    assert!(t.contains("HTP8309") && t.contains("Certificate ADMIN-CERT01 copied to store *SYSTEM."), "{t}");
+    assert!(t.contains("<option selected>ADMIN-CERT01 (expires") && !t.contains("HTP8314"), "{t}");
+    let opt = t.split("<option selected>ADMIN-CERT01").nth(1).unwrap().split("</option>").next().unwrap();
+    let opt = format!("ADMIN-CERT01{opt}");
+    let r = b.post("/certs/apps", &[("app", "QS400_HTTP_SERVER_ADMIN"), ("cert", &opt), ("assign", "Assign")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps"));
+    assert_eq!(b.fx.certs.app_label("QS400_HTTP_SERVER_ADMIN").as_deref(), Some("ADMIN-CERT01"));
+    // The old ID names the same application.
+    assert_eq!(b.fx.certs.app_label("QIBM_HTTP_SERVER_ADMIN").as_deref(), Some("ADMIN-CERT01"));
+    let row = b.fx.certs.entries("*SYSTEM").unwrap().into_iter().find(|r| r.label == "ADMIN-CERT01").unwrap();
+    assert_eq!(row.kind, httpadmin::env::EntryType::Server);
+    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Change { object, .. } if object == "QSTORE01")));
+    // A second copy is refused: the label is in use.
+    b.post(view, &[("copy", "Copy to *SYSTEM")]);
+    assert!(b.get(view).text().contains("HTP8320"));
+}
+
+/// Export with the private key, then import the file into *SYSTEM.
+#[test]
+fn export_with_key_then_import_into_the_system_store() {
+    let mut b = Browser::signed_on();
+    b.post("/certs/stores", &[("sn", "QSTORE01"), ("sp", "/QIBM/UserData/ICSS/Cert/"), ("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77")]);
+    cert_in(&b, "QSTORE01", "ADMIN-CERT01", "qs400.ad.quartz.example");
+    let export = "/certs/cert?store=QSTORE01&label=ADMIN-CERT01&export=1";
+    let t = b.get(export).text();
+    assert!(t.contains("Export with private key (PKCS#12)") && t.contains("value=\"Download PKCS#12\""), "{t}");
+    // A request has no key to export.
+    assert!(!b.get("/certs/cert?store=WEBSTORE&label=webstore-2027-request&export=1").text().contains("Download PKCS#12"));
+    let mut pages = vec![t];
+    b.post(export, &[("p1", "File-Secret-31"), ("p2", "File-Secret-32"), ("p12", "Download PKCS#12")]);
+    let t = b.get(export).text();
+    assert!(t.contains("HTP8322"), "{t}");
+    pages.push(t);
+    let r = b.post(export, &[("p1", "File-Secret-31"), ("p2", "File-Secret-31"), ("p12", "Download PKCS#12")]);
+    assert_eq!(r.status, 200);
+    assert!(r.header("Content-Disposition").unwrap_or("").contains("ADMIN-CERT01.p12"));
+    let p12 = r.bytes().to_vec();
+    let r = upload(&mut b, &[("store", "*SYSTEM"), ("fmt", "p12"), ("pw", "File-Secret-31"), ("t", "srv"), ("label", "ADMIN-CERT01"), ("import", "Import")], Some(("ADMIN-CERT01.p12", &p12)));
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/*SYSTEM"));
+    pages.push(b.get("/certs/store/*SYSTEM").text());
+    let row = b.fx.certs.entries("*SYSTEM").unwrap().into_iter().find(|r| r.label == "ADMIN-CERT01").unwrap();
+    assert_eq!(row.kind, httpadmin::env::EntryType::Server);
+    b.fx.certs.assign("QSECOFR", "QIBM_HTTP_SERVER_ADMIN", Some("ADMIN-CERT01")).unwrap();
+    assert_eq!(b.fx.certs.app_label("QS400_HTTP_SERVER_ADMIN").as_deref(), Some("ADMIN-CERT01"));
+    pages.push(b.get("/certs/apps").text());
+    assert_eq!(leaks(&b, &pages, "File-Secret-31"), Vec::<String>::new());
 }

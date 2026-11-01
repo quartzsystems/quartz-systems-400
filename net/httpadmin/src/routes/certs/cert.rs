@@ -7,13 +7,14 @@
 //! an application's assignment.
 
 use qsweb::frame::Page;
-use qsweb::html::esc;
+use qsweb::html::{esc, query};
 use qsweb::http::Response;
 use qsweb::msg::Kind;
 use qsweb::pages::confirm_body;
 use qsweb::partials::{Button, Cell, Col, List, Prop, PropGroup, buttons, form, list_table, props_table};
 
-use super::{Rq, dn, failed, store_url, url_q};
+use super::stores::password_field;
+use super::{Rq, dn, failed, invalid, store_url, url_q};
 use crate::PRODUCT;
 use crate::env::{CertDetail, EntryType};
 use crate::msgs;
@@ -73,9 +74,80 @@ pub fn download_target(rq: &Rq<'_>, store: &str, label: &str) -> Option<Response
         )));
     }
     if f.has("assign") {
-        return Some(Response::redirect(&url_q("/certs/apps", &[("cert", label)])));
+        // A certificate of another store is copied to *SYSTEM first.
+        let mut q = vec![("cert", label)];
+        if !is_system(store) {
+            q.push(("store", store));
+        }
+        return Some(Response::redirect(&url_q("/certs/apps", &q)));
     }
     None
+}
+
+/// Whether `store` names `*SYSTEM`.
+fn is_system(store: &str) -> bool {
+    store.eq_ignore_ascii_case("*SYSTEM")
+}
+
+/// Copy to `*SYSTEM`: then on to Applications with the certificate
+/// chosen.
+fn copy(rq: &Rq<'_>, store: &str, label: &str) -> Response {
+    let back = format!("/certs/cert{}", query(&[("store", store), ("label", label)]));
+    match rq.env().certs.copy(rq.user(), store, label, "*SYSTEM") {
+        Ok(()) => {
+            rq.audit_change(store, &format!("certificate {label} copied to *SYSTEM"));
+            let apps = format!("/certs/apps{}", query(&[("cert", label)]));
+            rq.done(&apps, msgs::message(Kind::Done, "HTP8309", &[label, "*SYSTEM", store]))
+        }
+        Err(e) => rq.done(&back, failed(&e)),
+    }
+}
+
+/// The PKCS#12 download: the certificate with its private key, sealed
+/// with the password typed (used for this call only).
+fn pkcs12(rq: &Rq<'_>, store: &str, label: &str) -> Response {
+    let back = format!("/certs/cert{}", query(&[("store", store), ("label", label), ("export", "1")]));
+    let f = rq.form();
+    let (p1, p2) = (f.str("p1"), f.str("p2"));
+    if p1 != p2 {
+        return rq.done(&back, invalid("the two passwords are not the same"));
+    }
+    if p1.chars().count() < 6 {
+        return rq.done(&back, invalid("a file password needs at least 6 characters"));
+    }
+    match rq.env().certs.export_pkcs12(rq.user(), store, label, p1) {
+        Ok(b) => {
+            rq.audit_change(store, &format!("certificate {label} exported with its private key"));
+            Response::download(&file_name(label, "p12"), "application/x-pkcs12", b)
+        }
+        Err(e) => rq.done(&back, failed(&e)),
+    }
+}
+
+/// The page's own buttons: Copy to `*SYSTEM` for a certificate of
+/// another store, and on Export the PKCS#12 form for one with its key.
+fn own_forms(rq: &Rq<'_>, store: &str, d: &CertDetail, export: bool) -> String {
+    let identity = matches!(d.row.kind, EntryType::Server | EntryType::Client);
+    let mut out = String::new();
+    if export && identity {
+        let rows = vec![
+            Prop::new("File password", password_field("p1")),
+            Prop::new("Confirm password", password_field("p2")),
+        ];
+        out.push_str(&form(
+            &rq.ctx,
+            "",
+            &format!(
+                "<h3>Export with private key (PKCS#12)</h3>{}{}",
+                props_table(&PRODUCT, &[PropGroup { title: None, rows }], false),
+                buttons(&[Button::new("p12", "Download PKCS#12")])
+            ),
+        ));
+    }
+    if !is_system(store) && (identity || d.row.kind == EntryType::Ca) {
+        out.push_str(&form(&rq.ctx, "", &buttons(&[Button::new("copy", "Copy to *SYSTEM")])));
+    }
+    out
 }
 
 /// `/certs/cert?store=&label=[&export=1]`: one entry.
@@ -86,6 +158,13 @@ pub fn view(rq: &Rq<'_>) -> Response {
         if let Some(r) = download_target(rq, &store, &label) {
             return r;
         }
+        let f = rq.form();
+        if f.has("copy") {
+            return copy(rq, &store, &label);
+        }
+        if f.has("p12") {
+            return pkcs12(rq, &store, &label);
+        }
         return Response::redirect(&store_url(&store, ""));
     }
     let d = match rq.env().certs.detail(&store, &label) {
@@ -94,7 +173,7 @@ pub fn view(rq: &Rq<'_>) -> Response {
     };
     let export = q.str("export") == "1";
     let body = format!(
-        "{}{}",
+        "{}{}{}",
         facts(rq, &d),
         form(
             &rq.ctx,
@@ -104,7 +183,8 @@ pub fn view(rq: &Rq<'_>) -> Response {
                 download_buttons(&d),
                 buttons(&[Button::new("close", "Close")])
             )
-        )
+        ),
+        own_forms(rq, &store, &d, export)
     );
     let h1 = if export { "Export certificate" } else { "Certificate" };
     rq.page(Page {

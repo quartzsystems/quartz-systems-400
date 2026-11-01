@@ -160,23 +160,23 @@ fn local_ca_issues_and_apps_assign() {
 
     // Application IDs.
     let mut apps = AppRegistry::load(&files).unwrap();
-    apps.assign("QIBM_QTV_TELNET_SERVER", Some("TELNET"))
+    apps.assign("QS400_TELNET_SERVER", Some("TELNET"))
         .unwrap();
-    apps.assign("QIBM_QTMF_FTP_SERVER", Some("FTP")).unwrap();
-    apps.set_client_auth("QIBM_QTMF_FTP_SERVER", ClientAuth::Required)
+    apps.assign("QS400_FTP_SERVER", Some("FTP")).unwrap();
+    apps.set_client_auth("QS400_FTP_SERVER", ClientAuth::Required)
         .unwrap();
     apps.register("MY_SERVER", AppKind::Server, "mine").unwrap();
     apps.save(&files).unwrap();
     let apps = AppRegistry::load(&files).unwrap();
     assert_eq!(
-        apps.get("QIBM_QTV_TELNET_SERVER").unwrap().label.as_deref(),
+        apps.get("QS400_TELNET_SERVER").unwrap().label.as_deref(),
         Some("TELNET")
     );
     assert_eq!(
-        apps.get("QIBM_QTMF_FTP_SERVER").unwrap().client_auth,
+        apps.get("QS400_FTP_SERVER").unwrap().client_auth,
         ClientAuth::Required
     );
-    let def = apps.get("QIBM_QTV_TELNET_SERVER").unwrap();
+    let def = apps.get("QS400_TELNET_SERVER").unwrap();
     let sys = CertStore::open(&files, SYSTEM_STORE, "system1").unwrap();
     assert!(
         sys.get(def.label.as_deref().unwrap())

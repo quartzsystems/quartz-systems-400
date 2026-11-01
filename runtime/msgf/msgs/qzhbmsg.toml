@@ -216,6 +216,34 @@ help = "&N Cause . . . . . :   Application &1 has no certificate assigned. Its s
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "HTP8309"
+sev = 0
+text = "Certificate &1 copied to store &2."
+help = "&N Cause . . . . . :   Certificate &1 and its private key were copied from certificate store &3 to certificate store &2. &N Recovery  . . . :   Assign the certificate to an application on the Applications page to use it."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8312"
+sev = 10
+text = "No certificate of store *SYSTEM can be assigned."
+help = "&N Cause . . . . . :   Applications present certificates of the *SYSTEM store. It holds no server or client certificate with its private key that stays valid for more than &1 days. &N Recovery  . . . :   Create a certificate in *SYSTEM, or bring one there from another store: open the certificate and press Copy to *SYSTEM, or export it with its private key and import the file into *SYSTEM."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8313"
+sev = 30
+text = "Certificate store *SYSTEM cannot be used: &1."
+help = "&N Cause . . . . . :   Applications present certificates of the *SYSTEM store, which could not be opened: &1. &N Recovery  . . . :   If the store does not exist, create it on the Certificate stores page with store name *SYSTEM. If its stashed password no longer opens it, change its password there."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8314"
+sev = 10
+text = "Certificate &1 is in store &2, not in *SYSTEM."
+help = "&N Cause . . . . . :   Applications present certificates of the *SYSTEM store only. Certificate &1 is in certificate store &2. &N Recovery  . . . :   Press Copy to *SYSTEM to copy the certificate and its private key to *SYSTEM, then assign it."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
 id = "HTP8320"
 sev = 30
 text = "Certificate function not done: &1."

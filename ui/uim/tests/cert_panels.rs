@@ -94,7 +94,7 @@ fn dspcrt_shows_the_facts() {
         ("DTO", "2027-10-30 12:00:00"),
         ("DDAYS", "365"),
         ("DKEY", "*ECDSAP256"),
-        ("DAPPS", "QIBM_HTTP_SERVER_ADMIN"),
+        ("DAPPS", "QS400_HTTP_SERVER_ADMIN"),
         ("DSHA1", "AB:CD"),
         ("DSHA2", "EF:01"),
     ] {
@@ -103,7 +103,7 @@ fn dspcrt_shows_the_facts() {
     let rows = rows_of("DSPCRT", &d);
     assert!(find(&rows, "Subject").contains("CN=qs400.example"));
     assert!(find(&rows, "Days left").contains("365"));
-    assert!(find(&rows, "Assigned to").contains("QIBM_HTTP_SERVER_ADMIN"));
+    assert!(find(&rows, "Assigned to").contains("QS400_HTTP_SERVER_ADMIN"));
     find(&rows, "SHA-256 fingerprint");
     assert!(find(&rows, "SHA-256 (continued)").contains("EF:01"));
 }
@@ -114,13 +114,13 @@ fn wrkappid_lists_the_applications() {
     d.set_list(
         "APPS",
         list(&[
-            &[("APPID", "QIBM_HTTP_SERVER_ADMIN"), ("APPTYPE", "*SERVER"), ("APPCRT", "ADMIN"), ("APPAUTH", "*NONE")],
-            &[("APPID", "QIBM_QTV_TELNET_SERVER"), ("APPTYPE", "*SERVER"), ("APPCRT", "*NONE"), ("APPAUTH", "*NONE")],
+            &[("APPID", "QS400_HTTP_SERVER_ADMIN"), ("APPTYPE", "*SERVER"), ("APPCRT", "ADMIN"), ("APPAUTH", "*NONE")],
+            &[("APPID", "QS400_TELNET_SERVER"), ("APPTYPE", "*SERVER"), ("APPCRT", "*NONE"), ("APPAUTH", "*NONE")],
         ]),
     );
     let rows = rows_of("WRKAPPID", &d);
     assert!(rows[0].contains("Work with Certificate Applications"));
-    let a = find(&rows, "QIBM_HTTP_SERVER_ADMIN");
+    let a = find(&rows, "QS400_HTTP_SERVER_ADMIN");
     assert!(a.contains("ADMIN") && a.contains("*SERVER"));
     find(&rows, "9=Unassign");
     find(&rows, "F6=Add");

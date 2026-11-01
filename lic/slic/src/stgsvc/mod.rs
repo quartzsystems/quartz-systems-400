@@ -198,6 +198,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     };
     security::guard(system);
     let text = format!("{text}; {}", ifs::start(system));
+    let text = certs::ensure_system(system).map_or_else(|| text.clone(), |made| format!("{text}; {made}"));
     system.pools = sbs::pool_table_saved(system);
     let iplsts = jobs::take_next_iplsts(system);
     if iplsts != 0

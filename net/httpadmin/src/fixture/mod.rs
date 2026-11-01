@@ -307,7 +307,7 @@ fn sample_conf(s: &Sample) -> String {
     for l in tls {
         let _ = write!(
             out,
-            "\n<VirtualHost {l}>\n   SSLEngine On\n   SSLAppName QIBM_HTTP_SERVER_{}\n</VirtualHost>\n",
+            "\n<VirtualHost {l}>\n   SSLEngine On\n   SSLAppName QS400_HTTP_SERVER_{}\n</VirtualHost>\n",
             s.name
         );
     }
