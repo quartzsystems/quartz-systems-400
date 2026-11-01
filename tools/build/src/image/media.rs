@@ -21,7 +21,7 @@ use optical::manifest::{self, Manifest, ManifestFile};
 use tracing::info;
 
 use crate::ctx::Ctx;
-use crate::host::hash::{sha256_bytes, sha256_file, short};
+use crate::host::hash::{sha256_bytes, sha256_file, short, write_sum};
 use crate::host::paths;
 use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
 use diskimg::fat;
@@ -192,11 +192,13 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         .join(format!("QS400-{release}-{}.iso", short(&hash)));
     fs::write(&out, &image).with_context(|| format!("cannot write {}", out.display()))?;
     paths::write_pointer(&ctx.paths.iso_pointer(), &out)?;
+    let sum = sha256_bytes(&image);
+    let sum_file = write_sum(&out, &sum)?;
     info!(
-        "iso: {} ({} bytes, sha256 {})",
+        "iso: {} ({} bytes, sha256 {sum}, {})",
         out.display(),
         image.len(),
-        sha256_bytes(&image)
+        sum_file.display()
     );
     Ok(out)
 }
