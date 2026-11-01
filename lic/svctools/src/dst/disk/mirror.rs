@@ -306,11 +306,12 @@ fn start(_env: &mut dyn DstEnv) -> Select {
                     Box::new(move |env: &mut dyn DstEnv| {
                         let mut formed = 0;
                         for (unit, device) in &plan {
-                            env.start_mirror(*unit, device).map_err(|e| {
+                            // The environment's refusal is already worded.
+                            env.start_mirror(*unit, device).map_err(|why| {
                                 if formed == 0 {
-                                    e
+                                    why
                                 } else {
-                                    format!("{formed} pair(s) formed, then: {e}")
+                                    format!("{formed} pair(s) formed, then: {why}")
                                 }
                             })?;
                             formed += 1;
