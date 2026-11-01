@@ -193,6 +193,15 @@ pub fn run_with(
     if let Some(rest) = text.strip_prefix("svc.") {
         return passthrough(job, host, rest);
     }
+    // Prompted (F4, a menu's `CMD ?SNDMSG`): what is missing is the
+    // prompt's to ask for, so the line is analyzed as `?` asks.
+    let asked;
+    let text = if matches!(mode, RunMode::PromptRun | RunMode::PromptReturn) && !text.starts_with('?') {
+        asked = format!("?{text}");
+        asked.as_str()
+    } else {
+        text
+    };
     let resolved = {
         let mut cmds = host.cmds.borrow_mut();
         let attrs = host.attrs();

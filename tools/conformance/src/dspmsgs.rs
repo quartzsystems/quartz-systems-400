@@ -167,6 +167,12 @@ impl Suite {
             return Err(format!("DSPMSG ASTLVL(*BASIC):\n{}", screen(&d)));
         }
         back_to(&mut d, &mut ctx, "User Tasks")?;
+        // Option 3 prompts SNDMSG, its required message left to the prompt.
+        run(&mut d, &mut ctx, "type 3\nkey enter\nsettle 2000\n")?;
+        if !d.term.contains("Send Message (SNDMSG)") {
+            return Err(format!("GO USER option 3 did not prompt SNDMSG:\n{}", screen(&d)));
+        }
+        run(&mut d, &mut ctx, "key f12\nsettle 1000\nwait \"User Tasks\"\n")?;
         run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
         d.disconnect();
 
@@ -178,7 +184,7 @@ impl Suite {
         run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
         d.disconnect();
         Ok(format!(
-            "{OWN}: GO USER 2 shows QUSRSYS/{OWN} (basic, QASTLVL), the inquiry answered Y in its field (intermediate), kept by *PRV; DSPMSG QSYSOPR, *WRKUSR, *BASIC; {OPR}: GO USER 2 shows QSYS/QSYSOPR"
+            "{OWN}: GO USER 2 shows QUSRSYS/{OWN} (basic, QASTLVL), the inquiry answered Y in its field (intermediate), kept by *PRV; DSPMSG QSYSOPR, *WRKUSR, *BASIC; option 3 prompts SNDMSG; {OPR}: GO USER 2 shows QSYS/QSYSOPR"
         ))
     }
 }
