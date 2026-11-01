@@ -28,7 +28,8 @@ pub fn strsda(cmdline: &str, msg: Option<&str>, copyright: bool) -> Screen {
     }
     put(&mut s, 20, 2, Attr::Normal, "Selection or command");
     put(&mut s, 21, 2, Attr::Normal, "===>");
-    input(&mut s, 21, 7, 73, Target::CmdLine, cmdline);
+    // IBM's 153: row 21 from column 7, row 22 to column 79.
+    input(&mut s, 21, 7, 153, Target::CmdLine, cmdline);
     keys(
         &mut s,
         &[

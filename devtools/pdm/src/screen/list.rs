@@ -504,7 +504,7 @@ pub fn render(l: &ListScreen<'_>) -> Screen {
     }
     put(&mut s, 20, 2, Attr::Normal, "Parameters or command");
     put(&mut s, 21, 2, Attr::Normal, "===>");
-    input(&mut s, 21, 7, 73, Target::CmdLine, l.cmdline);
+    input(&mut s, 21, 7, 74, Target::CmdLine, l.cmdline);
     let ks = key_sets(l.kind);
     let set = &ks[l.key_set % ks.len()];
     for (r, items) in set.iter().enumerate() {
@@ -607,7 +607,7 @@ pub fn user_options(o: &OptionsScreen<'_>) -> Screen {
     }
     put(&mut s, 20, 2, Attr::Normal, "Command");
     put(&mut s, 21, 2, Attr::Normal, "===>");
-    input(&mut s, 21, 7, 73, Target::CmdLine, o.cmdline);
+    input(&mut s, 21, 7, 74, Target::CmdLine, o.cmdline);
     let sets: [&[(usize, usize, &str)]; 2] = [
         &[
             (22, 2, "F3=Exit"),

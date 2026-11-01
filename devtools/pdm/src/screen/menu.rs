@@ -28,7 +28,8 @@ pub fn strpdm(cmdline: &str, message: Option<&str>, copyright: bool) -> Screen {
     }
     put(&mut s, 19, 2, Attr::Normal, "Selection or command");
     put(&mut s, 20, 2, Attr::Normal, "===>");
-    input(&mut s, 20, 7, 73, Target::CmdLine, cmdline);
+    // Rows 20 and 21 whole: 154 cells.
+    input(&mut s, 20, 7, 74 + 80, Target::CmdLine, cmdline);
     keys(
         &mut s,
         &[

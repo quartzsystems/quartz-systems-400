@@ -40,9 +40,9 @@ pub const WIDTH: usize = 76;
 pub const CMD_ROW: usize = 18;
 /// The command field's column.
 pub const CMD_COL: usize = 7;
-/// The command field's length: the rest of row 18 and rows 19 to 21,
-/// each up to column 79.
-pub const CMD_LEN: usize = 73 + 3 * 79;
+/// The command field's length: the rest of row 18 and the whole of
+/// rows 19 to 21 (the ending attribute is row 22's first cell).
+pub const CMD_LEN: usize = 74 + 3 * 80;
 /// The command field's name.
 pub const CMD_VAR: &str = "QSHCMD";
 /// Commands kept for F9.
