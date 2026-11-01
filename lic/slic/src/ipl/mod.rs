@@ -233,11 +233,15 @@ fn lic_phase(
     Ok(())
 }
 
-/// The address of the first Ethernet link: `qs400.ip=A.B.C.D/N` on the
-/// command line, else the address QEMU's user network expects. It is
-/// there before TCP/IP starts; `STRTCP` adds the configured interfaces
-/// beside it. `BLOCKED(phase10)`: DHCP (no client yet, `*IP4DHCP`).
+/// `qs400.ip=A.B.C.D/N` on the command line puts that address on the
+/// first Ethernet link before TCP/IP starts. Without it the IPL adds
+/// none: a new system has the loopback only until an interface is
+/// configured (`ADDTCPIFC`), as on IBM i. `BLOCKED(phase10)`: DHCP (no
+/// client yet, `*IP4DHCP`).
 fn net_address(system: &mut System) {
+    let Some(spec) = system.boot.ip.clone() else {
+        return;
+    };
     // A link with a device behind it: the kernel makes bond0 and dummy0
     // itself (bonding and dummy are built in), and neither reaches a wire.
     // The hardware resource service knows which links are ports.
@@ -261,11 +265,6 @@ fn net_address(system: &mut System) {
         return;
     };
     let (index, name) = (link.index, link.name.clone());
-    let spec = system
-        .boot
-        .ip
-        .clone()
-        .unwrap_or_else(|| "10.0.2.15/24".into());
     let Some((addr, prefix)) = spec.split_once('/') else {
         return;
     };
