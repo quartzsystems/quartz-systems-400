@@ -14,7 +14,7 @@ pub mod session;
 use std::fmt::Write as _;
 
 pub use layout::{Line, Lines, lines};
-pub use session::{Prompter, Step, Window};
+pub use session::{PAGE_DOWN, PAGE_UP, Prompter, Step, Window};
 
 /// Rows on the display.
 pub const ROWS: usize = 24;

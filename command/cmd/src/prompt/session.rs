@@ -15,6 +15,11 @@ use super::layout::{
     self, DOTS_END, FIELD_COL, FIRST_ROW, LABEL_COL, Line, MARKER_COL, PAGE_ROWS, View,
 };
 use super::{COLS, Path, Screen};
+
+/// Page Up (Roll Down), as the job's display numbers it (`wm::dev::key`).
+pub const PAGE_UP: u8 = 25;
+/// Page Down (Roll Up).
+pub const PAGE_DOWN: u8 = 26;
 use crate::analyze::{Env, Resolved};
 use crate::def::{CmdDef, Parm, ParmType};
 use crate::token::{Options, Sel, Tok};
@@ -466,12 +471,21 @@ impl Prompter {
                 self.texts = self.initial.clone();
                 Step::Show
             }
-            7 => {
+            7 | PAGE_UP => {
+                if self.page == 0 {
+                    self.message = "Already at the first page.".into();
+                }
                 self.page = self.page.saturating_sub(1);
                 Step::Show
             }
-            8 => {
-                self.page += 1;
+            8 | PAGE_DOWN => {
+                let mut lines = self.lines();
+                self.with_source(&mut lines.items);
+                if self.page + 1 < lines.items.len().div_ceil(PAGE_ROWS) {
+                    self.page += 1;
+                } else {
+                    self.message = "Already at the last page.".into();
+                }
                 Step::Show
             }
             9 => {
