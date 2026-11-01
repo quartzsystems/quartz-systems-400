@@ -202,10 +202,10 @@ pub fn structure(toks: Vec<Tok>) -> Result<Tokens, CmdError> {
             // `CALL(...)` is not a command; `CMD(`-style text is a keyword
             // without a command: report it as such.
             let _ = (pfx, args);
-            return Err(Diag::new("CPD0030").data(&[(&name, 10)]).into());
+            return Err(Diag::new("CPD0030").data(&[(&name, 10), ("*LIBL", 10)]).into());
         }
         other => {
-            return Err(Diag::new("CPD0030").data(&[(&other.text(), 10)]).into());
+            return Err(Diag::new("CPD0030").data(&[(&other.text(), 10), ("*LIBL", 10)]).into());
         }
     };
     let name = if let Some(rest) = name.strip_prefix('?') {
