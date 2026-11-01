@@ -22,4 +22,4 @@ pub mod view;
 
 pub use scan::{nic, pci, storage};
 pub use table::tree::TreeRow;
-pub use table::{Kind, ParityCapable, Resource, Status, Table};
+pub use table::{Kind, ParityCapable, ParityController, Resource, Status, Table};

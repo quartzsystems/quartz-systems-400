@@ -7,7 +7,10 @@
 //! across hotplug, and the parents that make the packaging and logical
 //! trees.
 
+mod parity;
 pub mod tree;
+
+pub use parity::ParityController;
 
 use std::fmt::Write as _;
 use std::fs;
@@ -219,18 +222,11 @@ impl Resource {
     }
 }
 
-/// Storage controllers that provide device parity protection. Nothing
-/// reports any in this release: hardware parity is a later item behind
-/// this trait, software RAID is out of scope.
+/// Storage controllers that provide device parity protection: one line
+/// each, resource name first. See `parity.rs`.
 pub trait ParityCapable {
-    /// Resource names of parity-capable controllers.
+    /// The parity-capable controllers.
     fn parity_capable(&self) -> Vec<String>;
-}
-
-impl ParityCapable for Table {
-    fn parity_capable(&self) -> Vec<String> {
-        Vec::new()
-    }
 }
 
 /// The resource table.

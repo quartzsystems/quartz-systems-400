@@ -19,6 +19,12 @@ disks come up in the same order on every boot.
   the chip, then the PCI class): `QD10` MegaRAID/PERC, `QD11` mpt3sas,
   `QD12` smartpqi, `QD13` hpsa, `QD14` aacraid, `QD15` mpi3mr, `QD01`
   virtio block, `QD02` virtio SCSI, `QD03` AHCI, `QD04` NVMe.
+- Device parity has no hardware behind it: DST's `Work with device
+  parity protection` names one virtual controller, `DCnn` after the real
+  controllers, type `QDPY-001` (`lic/hwrsrc/src/table/parity.rs`). It
+  is not in the resource table, so `WRKHDWRSC` does not list it. A RAID
+  card in RAID mode should be put in HBA (pass-through) mode so the store
+  sees the plain disks and keeps parity itself.
 - Disks are `DDnnn` (optical drives `OPTnn`), ordered by the controller's
   PCI address, then the SCSI `host:channel:target:lun`, then the kernel
   name: what the kernel calls `sda` does not decide the number.
