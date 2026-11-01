@@ -30,9 +30,13 @@ fn gone() -> Message {
     Message::new(Kind::Error, "CPF9897", "The administration server is ending; the request was not run.")
 }
 
-/// Run `line` as `user`; its outcome as a message.
-fn run_as(m: &mut Main, user: &str, line: &str) -> Result<Message, Message> {
-    let o = m.as_user(user, |m| m.console.run(line, crate::command::RunMode::Run))?;
+/// Run `line` as `user` (the job itself for `None`); its outcome as a
+/// message.
+fn run_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<Message, Message> {
+    let o = match user {
+        Some(u) => m.as_user(u, |m| m.console.run(line, crate::command::RunMode::Run))?,
+        None => m.console.run(line, crate::command::RunMode::Run),
+    };
     // CPF0001 says only that the command failed: its diagnostic says why.
     let fail = match (o.escape, o.diag) {
         (Some(e), Some(d)) if e.msgid == "CPF0001" => Some(d),
@@ -62,12 +66,20 @@ impl Jobs for LiveJobs {
 
     fn start(&self, user: &str, instance: &str) -> Result<Message, Message> {
         let (user, line) = (user.to_string(), reply::start_command(instance));
-        self.bridge.call(move |m| run_as(m, &user, &line)).unwrap_or_else(|| Err(gone()))
+        self.bridge.call(move |m| run_as(m, Some(&user), &line)).unwrap_or_else(|| Err(gone()))
     }
 
     fn end(&self, user: &str, instance: &str, how: EndHow) -> Result<Message, Message> {
         let (user, line) = (user.to_string(), reply::end_command(instance, how));
-        self.bridge.call(move |m| run_as(m, &user, &line)).unwrap_or_else(|| Err(gone()))
+        self.bridge.call(move |m| run_as(m, Some(&user), &line)).unwrap_or_else(|| Err(gone()))
+    }
+
+    fn authorize(&self, root: &str, profile: &str) -> Result<(), Message> {
+        // As the job: it owns what it made under /www.
+        let lines = httpadmin::env::authorize_commands(root, profile);
+        self.bridge
+            .call(move |m| lines.iter().try_for_each(|l| run_as(m, None, l).map(|_| ())))
+            .unwrap_or_else(|| Err(gone()))
     }
 }
 

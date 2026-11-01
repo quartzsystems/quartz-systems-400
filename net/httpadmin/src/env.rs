@@ -142,6 +142,14 @@ pub trait Jobs: Send + Sync {
     fn start(&self, user: &str, instance: &str) -> Result<Message, Message>;
     /// `ENDTCPSVR SERVER(*HTTP) HTTPSVR(instance)` as `user`.
     fn end(&self, user: &str, instance: &str, how: EndHow) -> Result<Message, Message>;
+    /// Give server user profile `profile` what an instance rooted at
+    /// `root` needs: read on its tree, write on its logs and on the
+    /// registry. Done as the files' owner (the `ADMIN` job); the page
+    /// has checked the user's authority already.
+    fn authorize(&self, root: &str, profile: &str) -> Result<(), Message> {
+        let _ = (root, profile);
+        Ok(())
+    }
 }
 
 /// What a certificate store is for.
@@ -396,6 +404,19 @@ impl std::fmt::Display for CertFailure {
             CertFailure::Invalid(t) => f.write_str(t),
         }
     }
+}
+
+/// The `CHGAUT` commands [`Jobs::authorize`] runs: `/www` (to reach the
+/// tree and replace the registry), the tree, the logs, the registry.
+pub fn authorize_commands(root: &str, profile: &str) -> Vec<String> {
+    let root = root.trim_end_matches('/');
+    let reg = httpd::registry::PATH;
+    vec![
+        format!("CHGAUT OBJ('/www') USER({profile}) DTAAUT(*RWX) OBJAUT(*NONE)"),
+        format!("CHGAUT OBJ('{root}') USER({profile}) DTAAUT(*RX) OBJAUT(*NONE) SUBTREE(*ALL)"),
+        format!("CHGAUT OBJ('{root}/logs') USER({profile}) DTAAUT(*RWX) OBJAUT(*NONE) SUBTREE(*ALL)"),
+        format!("CHGAUT OBJ('{reg}') USER({profile}) DTAAUT(*RW) OBJAUT(*NONE)"),
+    ]
 }
 
 /// The certificate manager (`net/certs` through the storage service:

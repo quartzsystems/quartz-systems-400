@@ -17,6 +17,10 @@ use super::{Rq, bad_value, edit, pick, tab_page};
 use crate::routes::create::low_port;
 use crate::routes::instances::{self, View, job_url, status_cell, views};
 use crate::settings::Settings;
+
+/// The profile that owns the files under `/www` (the `ADMIN` job's);
+/// any other server user profile is given authority to its instance.
+pub const SERVER_OWNER: &str = "QTMHHTTP";
 use crate::msgs;
 
 /// Fewest server threads.
@@ -191,6 +195,9 @@ fn apply(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
         }
         Ok(())
     })?;
+    if user != SERVER_OWNER {
+        rq.env().jobs.authorize(&v.entry.root, &user)?;
+    }
     let desc = form.str("desc").trim().to_string();
     let auto = form.has("autostart");
     let active = form.has("hotbackup");

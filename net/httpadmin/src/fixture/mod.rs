@@ -137,6 +137,8 @@ pub struct FixtureJobs {
     pub next: Mutex<u32>,
     /// Where instances live, to find a started one's ports.
     pub files: Arc<dyn Files>,
+    /// The commands [`Jobs::authorize`] ran.
+    pub granted: Mutex<Vec<String>>,
 }
 
 fn job(instance: &str, number: &str, h: u32, m: u32, s: u32, connections: u32) -> HttpJob {
@@ -195,6 +197,11 @@ impl Jobs for FixtureJobs {
             ));
         }
         Ok(msgs::message(qsweb::msg::Kind::Done, "HTP8002", &[instance, user]))
+    }
+
+    fn authorize(&self, root: &str, profile: &str) -> Result<(), Message> {
+        self.granted.lock().expect("jobs").extend(crate::env::authorize_commands(root, profile));
+        Ok(())
     }
 }
 
@@ -357,6 +364,7 @@ pub fn fixture() -> Fixture {
             job("ACCESSWEB", "123463", 6, 0, 3, 4),
         ]),
         next: Mutex::new(123_480),
+        granted: Mutex::new(Vec::new()),
         files: files.clone(),
     });
     let certs = Arc::new(FixtureCerts::new(files.clone()));

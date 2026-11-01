@@ -269,6 +269,26 @@ fn general_apply() {
 }
 
 #[test]
+fn another_server_user_gets_authority() {
+    let mut b = Browser::signed_on();
+    // QTMHHTTP owns the files: nothing to give.
+    let mut f = general_form(&[]);
+    f.push(("apply", "Apply"));
+    b.post("/instance/WEBSTORE/general", &f);
+    assert!(b.fx.jobs.granted.lock().unwrap().is_empty());
+    // Another profile reads the tree and writes its logs and the registry.
+    let mut f = general_form(&[("usrprf", "WEBADM")]);
+    f.push(("apply", "Apply"));
+    let r = b.post("/instance/WEBSTORE/general", &f);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    assert!(conf(&b, "WEBSTORE").contains("ServerUserID WEBADM\n"));
+    assert_eq!(*b.fx.jobs.granted.lock().unwrap(), httpadmin::env::authorize_commands("/www/webstore", "WEBADM"));
+    let cmds = httpadmin::env::authorize_commands("/www/webstore", "WEBADM");
+    assert!(cmds.iter().any(|c| c.contains("'/www/webstore/logs'") && c.contains("DTAAUT(*RWX)")));
+    assert!(cmds.iter().any(|c| c.contains("'/www/instances.json'")));
+}
+
+#[test]
 fn general_needs_iosyscfg() {
     let mut b = group_member();
     let before = conf(&b, "WEBSTORE");

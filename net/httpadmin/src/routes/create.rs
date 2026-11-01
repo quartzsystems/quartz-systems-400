@@ -495,6 +495,11 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
         }
         let _ = files.write_atomic(&path, c.print().as_bytes());
     }
+    if spec.user != crate::routes::instance::general::SERVER_OWNER
+        && let Err(m) = rq.env().jobs.authorize(&spec.root, &spec.user)
+    {
+        return rq.done("/instances", m);
+    }
     rq.clear("create.");
     rq.audit_change(&spec.name, "instance created");
     rq.done("/instances", msgs::message(Kind::Done, "HTP8020", &[&spec.name, &spec.root]))

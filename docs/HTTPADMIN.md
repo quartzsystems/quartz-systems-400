@@ -220,3 +220,16 @@ system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`). QEMU
 step 87 (`tools/conformance/src/httpadm.rs`) signs on as `QSECOFR` over
 2001, checks Server instances against `DSPJOB`, a message page, the
 CSRF refusal and sign-off, and the sign-on page over TLS on 2010.
+
+## Server user profiles
+
+Everything the administration server makes under `/www` is owned by
+`QTMHHTTP`, the `ADMIN` job's user. An instance whose `ServerUserID` is
+another profile is given, when it is created or its profile changed,
+`*RWX` on `/www` (to replace the registry), `*RX` on its server root,
+`*RWX` on its `logs` and `*RW` on `/www/instances.json`
+(`env::authorize_commands`, run by the job as the files' owner).
+
+"Require TLS" redirects 2001 to the TLS port only while that port
+listens (`Admin::tls_up`), and cannot be switched on while it does not,
+so a TLS port that fails to start never locks administration out.
