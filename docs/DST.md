@@ -216,7 +216,10 @@ together.
   and goes on in the storage service with the system up
   (STORE_FORMAT.md §11, "Background work").
 - Suspend and resume: resume runs in the background; the status column
-  shows its percent.
+  shows its percent. A resume started in DST before the IPL, or cut
+  short by a power down or a crash, goes on in the storage service with
+  the system up; only halves start mirrored protection paired are
+  copied during the IPL (C1001075), as IBM does.
 - Delete disk unit data (option 10, disk units administration; IBM's
   option of the same number, for non-configured units only): makes
   whole disks blank, for example SSDs holding an earlier install. The

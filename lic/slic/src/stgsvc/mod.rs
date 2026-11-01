@@ -149,6 +149,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         devices: paths,
         resume: None,
     });
+    storage::pick_up_resumes();
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
     if let Ok(path) = licpart::locate()

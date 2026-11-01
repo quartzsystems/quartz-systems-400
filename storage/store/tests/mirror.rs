@@ -541,3 +541,55 @@ fn a_unit_before_the_last_span_cannot_leave() {
     ));
     store.remove_unit(2).unwrap();
 }
+
+/// A resume carried across closes and crashes as the storage service
+/// carries one on: the half stays resuming while the store is reopened
+/// and written with no copy running, then the copy goes on from the
+/// journal between more writes, and the half ends up whole.
+#[test]
+fn a_resume_goes_on_across_reopens_with_writes_between() {
+    let a = dev(2048, 15);
+    let b = dev(2048, 16);
+    let (mut store, qsys) = store_with(&a, 4, 10);
+    let mut journal = MemJournal::default();
+    store
+        .start_mirror(0, Box::new(b.clone()), [2; 16], "UNIT1")
+        .unwrap();
+    resume_all(&mut store, 1, &mut journal, 100);
+    store.suspend_unit(1).unwrap();
+    add_spaces(&mut store, qsys, 4, 8, 30);
+    let mut res = store.resume_unit(1, &mut journal).unwrap();
+    store.resume_step(&mut res, &mut journal, 2).unwrap();
+    // The handover: a clean close, a reopen, writes before the copy
+    // is picked up again.
+    store.close().unwrap();
+    let (mut store, recovery) = Store::open(boxed(&[&a, &b]), config()).unwrap();
+    assert_eq!(recovery.events, vec![UnitEvent::Resuming { unit: 1 }]);
+    add_spaces(&mut store, qsys, 8, 10, 30);
+    let mut res = store.resume_unit(1, &mut journal).unwrap();
+    assert_eq!(res.progress().chunks_done, 2, "continues from the journal");
+    store.resume_step(&mut res, &mut journal, 2).unwrap();
+    add_spaces(&mut store, qsys, 10, 12, 30);
+    store.resume_step(&mut res, &mut journal, 1).unwrap();
+    // A crash, more writes after the reopen, then the rest.
+    drop(store);
+    a.drop_unflushed();
+    b.drop_unflushed();
+    let (mut store, _) = Store::open(boxed(&[&a, &b]), config()).unwrap();
+    assert_eq!(store.unit_state(1), UnitState::Resuming);
+    add_spaces(&mut store, qsys, 12, 14, 30);
+    let mut res = store.resume_unit(1, &mut journal).unwrap();
+    assert_eq!(res.progress().chunks_done, 5);
+    while !store.resume_step(&mut res, &mut journal, 1).unwrap().complete {
+        let n = 14 + usize::try_from(res.progress().chunks_done).unwrap();
+        add_spaces(&mut store, qsys, n, n + 1, 10);
+    }
+    assert_eq!(store.unit_state(1), UnitState::Active);
+    assert_halves_agree(&mut store);
+    store.close().unwrap();
+    // Half B alone carries every space.
+    let (mut s, _) = Store::open(boxed(&[&b]), config()).unwrap();
+    for i in 0..14 {
+        assert_eq!(read_marker(&mut s, qsys, &format!("S{i}")), format!("space {i}"));
+    }
+}

@@ -7,7 +7,7 @@
 //!
 //! | Step | What |
 //! |---|---|
-//! | 12 | mirrored protection started over the four units (1 with 4, 2 with 3, data moved off 3 and 4 first), the copies at the re-IPL, then the IPL with disk 4 pulled |
+//! | 12 | mirrored protection started over the four units (1 with 4, 2 with 3, data moved off 3 and 4 first), the copies at the re-IPL, the IPL with disk 4 pulled, then disk 4 back and resumed with the system up across a power down |
 //! | 13 | device parity (RAID 5) over the four units, synchronized with the system up (written and read meanwhile, a power down part way), an IPL with disk 4 pulled (exposed, A6001257), the disk back and rebuilt with the system up |
 //!
 //! Every disk action goes through the DST screens over serial.
@@ -279,6 +279,7 @@ impl Suite {
     }
 
     /// Step 12.
+    #[allow(clippy::too_many_lines)] // one scenario, four boots
     fn four_mirrored(&self, installed: &Path) -> Result<StepReport, HarnessError> {
         let name = "12 four-unit mirror";
         let start = Instant::now();
@@ -355,7 +356,91 @@ impl Suite {
                 return Err(format!("disk 4 not the one unit missing:\n{asp}"));
             }
             verify(&mut s, FILL.0, FILL.1, FILL.2)?;
-            Ok(format!("{first}; with disk 4 pulled: A6001255, unit {} Missing, IPL complete, data intact", gone[0].unit + 1))
+            let out = s.command("svc.obj fill QMIR2 200 32", Duration::from_mins(10))?;
+            if !out.contains("filled") {
+                return Err(format!("obj fill QMIR2 on one half:\n{out}"));
+            }
+            Ok(format!("{first}; with disk 4 pulled: A6001255, unit {} Missing, IPL complete, data intact, written on one half", gone[0].unit + 1))
+        })();
+        let second = match r {
+            Ok(d) => d,
+            Err(e) => {
+                let log = s.log.clone();
+                s.kill();
+                return Self::finish(name, start, Err((e, log)));
+            }
+        };
+        power_down(&mut s);
+        drop(s);
+        // Disk 4 back: its half is stale until resumed, and the resume
+        // runs with the system up, across a power down.
+        let all = self.launch_of(&[&d1, &d2, &d3, &d4]);
+        let mut s = Session::spawn(&all)?;
+        let r = (|| -> Result<String, String> {
+            s.expect(SRC_IPL_COMPLETE, boot)?;
+            s.expect(crate::PROMPT, CMD)?;
+            let asp = s.command("svc.asp", CMD)?;
+            let Some(stale) = units(&asp).into_iter().find(|u| u.state == "Suspended") else {
+                return Err(format!("no suspended half with disk 4 back:\n{asp}"));
+            };
+            let out = s.command(&format!("svc.mirror resume {}", stale.unit), CMD)?;
+            if !out.contains("resuming in the background") {
+                return Err(format!("mirror resume:\n{out}"));
+            }
+            let out = s.command("svc.obj fill QMIR3 200 32", Duration::from_mins(10))?;
+            if !out.contains("filled") {
+                return Err(format!("obj fill QMIR3 during the resume:\n{out}"));
+            }
+            let mid = s.command("svc.asp", CMD)?;
+            let resuming = units(&mid).iter().any(|u| u.state == "Resuming");
+            Ok(format!(
+                "{second}; disk 4 back: unit {} Suspended, resumed with the system up, QMIR3 written {}",
+                stale.unit + 1,
+                if resuming { "while it ran" } else { "(it had ended)" }
+            ))
+        })();
+        let third = match r {
+            Ok(d) => d,
+            Err(e) => {
+                let log = s.log.clone();
+                s.kill();
+                return Self::finish(name, start, Err((e, log)));
+            }
+        };
+        power_down(&mut s);
+        drop(s);
+        let mut s = Session::spawn(&all)?;
+        let r = (|| -> Result<String, String> {
+            let ipl = s.expect(SRC_IPL_COMPLETE, boot)?;
+            s.expect(crate::PROMPT, CMD)?;
+            if ipl.contains("SRC C1001075") {
+                return Err("the IPL copied the resuming half instead of the system".into());
+            }
+            let carried = ipl.contains("resuming; the copy goes on in the background");
+            let started = Instant::now();
+            loop {
+                let asp = s.command("svc.asp", CMD)?;
+                let u = units(&asp);
+                if u.len() == 4 && u.iter().all(|p| p.state == "Active") {
+                    break;
+                }
+                if started.elapsed() > Duration::from_mins(30) {
+                    return Err(format!("the halves are not all active:\n{asp}"));
+                }
+                std::thread::sleep(Duration::from_secs(5));
+            }
+            verify(&mut s, FILL.0, FILL.1, FILL.2)?;
+            verify(&mut s, "QMIR2", 200, 32)?;
+            verify(&mut s, "QMIR3", 200, 32)?;
+            chkstg(&mut s)?;
+            Ok(format!(
+                "{third}; after a power down {}; all four Active, data intact, chkstg clean",
+                if carried {
+                    "the IPL left the copy to the system, which finished it"
+                } else {
+                    "the copy had already ended"
+                }
+            ))
         })()
         .map_err(|e| (e, s.log.clone()));
         power_down(&mut s);

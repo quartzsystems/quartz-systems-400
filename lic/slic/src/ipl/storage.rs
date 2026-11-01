@@ -10,7 +10,7 @@
 use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
@@ -247,8 +247,7 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         store.asp().superblock().generation
     ));
     system.emit(&src::RECOVERY);
-    let mut store = store;
-    report_events(system, &mut store, &recovery.events)?;
+    report_events(system, &store, &recovery.events);
     let sb = store.asp().superblock();
     let qsys = (!fresh && !sb.qsys.is_none()).then_some(sb.qsys);
     system.storage = Some(Storage {
@@ -308,14 +307,30 @@ fn database_recovery(system: &mut System) {
     }
 }
 
+/// Halves found resuming when the store was opened this IPL.
+static RESUMING_AT_OPEN: Mutex<Vec<[u8; 16]>> = Mutex::new(Vec::new());
+
+fn resuming_at_open() -> std::sync::MutexGuard<'static, Vec<[u8; 16]>> {
+    RESUMING_AT_OPEN
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// Set in the storage service: a resuming half with no copy running is
+/// picked up by the next tick.
+static PICK_UP_RESUMES: AtomicBool = AtomicBool::new(false);
+/// Set when a pick-up failed: not tried again this IPL.
+static RESUME_STALLED: AtomicBool = AtomicBool::new(false);
+
+/// The storage service carries on the copies of resuming halves.
+pub fn pick_up_resumes() {
+    PICK_UP_RESUMES.store(true, Ordering::Relaxed);
+}
+
 /// What `open` found out about the units: a missing half is an
-/// attention code, a stale half a note, a resuming half a
-/// synchronization before the store is used.
-fn report_events(
-    system: &mut System,
-    store: &mut Store,
-    events: &[UnitEvent],
-) -> Result<(), &'static src::Src> {
+/// attention code, a stale half a note, a resuming half a copy that
+/// goes on in the background.
+fn report_events(system: &mut System, store: &Store, events: &[UnitEvent]) {
     for e in events {
         match *e {
             UnitEvent::Missing { unit } => {
@@ -339,18 +354,17 @@ fn report_events(
                 "slic: disk unit {unit} is back with stale data; rebuilt from its parity set\n"
             )),
             UnitEvent::Resuming { unit } => {
-                if let Err(e) = synchronize(system, store, unit) {
-                    system.out.serial(&format!(
-                        "slic: synchronizing unit {unit}: {e}
-"
-                    ));
-                    system.emit(&src::RECOVERY_FAILED);
-                    return Err(&src::ASP_UNUSABLE);
+                // A copy cut short by a power down or a crash: it goes on
+                // in the background from its journal, as a resume does.
+                if let Some(u) = store.units().iter().find(|u| u.unit == unit) {
+                    resuming_at_open().push(u.entry.unit_uuid);
                 }
+                system.out.serial(&format!(
+                    "slic: disk unit {unit} is resuming; the copy goes on in the background\n"
+                ));
             }
         }
     }
-    Ok(())
 }
 
 /// C1001075: copy a resuming half from its partner before the store is
@@ -461,6 +475,21 @@ pub fn resume_progress(system: &System) -> Option<store::ResumeProgress> {
         .map(Resume::progress)
 }
 
+/// A resuming half with no copy running, when the service picks them up.
+fn resume_waiting(s: &Storage) -> Option<u16> {
+    if !PICK_UP_RESUMES.load(Ordering::Relaxed)
+        || RESUME_STALLED.load(Ordering::Relaxed)
+        || s.resume.is_some()
+    {
+        return None;
+    }
+    s.store
+        .units()
+        .iter()
+        .find(|u| u.attached && u.entry.state == store::asp::unit::UnitState::Resuming)
+        .map(|u| u.unit)
+}
+
 /// One step of the background resume. Returns whether one is running.
 fn resume_step(system: &mut System) -> bool {
     let System {
@@ -469,6 +498,22 @@ fn resume_step(system: &mut System) -> bool {
     let Some(s) = storage.as_mut() else {
         return false;
     };
+    if let Some(unit) = resume_waiting(s) {
+        match s.store.resume_unit(unit, &mut journal(lic)) {
+            Ok(r) => {
+                let p = r.progress();
+                out.serial(&format!(
+                    "slic: unit {unit} resuming in the background, {} of {} chunks done\n",
+                    p.chunks_done, p.chunks
+                ));
+                s.resume = Some(r);
+            }
+            Err(e) => {
+                out.serial(&format!("slic: resume of unit {unit}: {e}\n"));
+                RESUME_STALLED.store(true, Ordering::Relaxed);
+            }
+        }
+    }
     let Some(resume) = s.resume.as_mut() else {
         return false;
     };
@@ -517,23 +562,28 @@ fn report_io_events(system: &mut System) {
     }
 }
 
-/// Run a background resume to its end before the store changes hands:
-/// the storage service does not carry one on.
+/// Before the store changes hands. Halves paired by start mirrored
+/// protection in DST this IPL are copied now, as IBM synchronizes them
+/// during the IPL (C1001075). A resume under way, or one the open found
+/// cut short, goes on in the storage service from its journal.
 pub fn finish_resume(system: &mut System) {
-    if busy(system) {
+    if system.storage.as_ref().is_some_and(|s| s.resume.is_some()) {
         system
             .out
-            .serial("slic: finishing the resume before the storage service starts\n");
+            .serial("slic: the resume continues in the background\n");
     }
-    while resume_step(system) {}
-    // Halves paired in DST during this IPL: an IPL that goes on from DST
-    // does not open the store again, so they are copied here as the open
-    // would have (C1001075).
     let resuming: Vec<u16> = system.storage.as_ref().map_or_else(Vec::new, |s| {
+        let at_open = resuming_at_open();
+        let running = s.resume.as_ref().map(|r| r.progress().unit);
         s.store
             .units()
             .iter()
-            .filter(|u| u.attached && u.entry.state == store::asp::unit::UnitState::Resuming)
+            .filter(|u| {
+                u.attached
+                    && u.entry.state == store::asp::unit::UnitState::Resuming
+                    && Some(u.unit) != running
+                    && !at_open.contains(&u.entry.unit_uuid)
+            })
             .map(|u| u.unit)
             .collect()
     });
@@ -561,7 +611,11 @@ pub fn finish_resume(system: &mut System) {
 /// Whether the run loop should come back soon: a resume or device
 /// parity work is running.
 pub fn busy(system: &System) -> bool {
-    system.storage.as_ref().is_some_and(|s| s.resume.is_some()) || parity_busy(system)
+    system
+        .storage
+        .as_ref()
+        .is_some_and(|s| s.resume.is_some() || resume_waiting(s).is_some())
+        || parity_busy(system)
 }
 
 /// Blocks per step of the background device parity work.

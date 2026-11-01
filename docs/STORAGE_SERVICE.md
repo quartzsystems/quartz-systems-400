@@ -23,7 +23,8 @@ job's child; when the job ends first, the monitor is `slic`'s to reap.
 `WORKMGMT.md` describes the roles, routing and the job's life.
 
 `slic` runs the IPL exactly as before: it opens ASP 1, replays the WAL,
-synchronizes a resuming mirrored half, creates `QSYS` on a fresh store,
+synchronizes the halves start mirrored protection paired in DST
+(`C1001075`), creates `QSYS` on a fresh store,
 runs database recovery, loads the system values and finishes an
 install. At the end of the OS phase it checkpoints and closes the store,
 then starts itself again as the service (`/init qsstg`, the same
@@ -36,7 +37,10 @@ shows `C6001015` and carries on.
 
 Disk work that IBM does with the system up runs in the service's serve
 loop between requests: a device parity synchronization or rebuild
-(`STORE_FORMAT.md` §11) the IPL left unfinished, and a mirror resume.
+(`STORE_FORMAT.md` §11) the IPL left unfinished, and a mirror resume:
+one started in DST before the IPL, or one a power down or a crash cut
+short, which the service picks up from the resume journal in the LIC
+partition (the open finds the half still resuming).
 The loop is one thread over the one store, so the work takes turns: up
 to 40 ms of it when no request waits, 5 ms when one does, then the
 requests. The IPL does not wait for device parity work; the service
