@@ -773,4 +773,35 @@ mod tests {
         assert!(rows[0].starts_with("two"));
         assert!(rows[1].starts_with("three"));
     }
+
+    #[test]
+    fn a_wrapping_field_keeps_its_attribute_on_the_next_row() {
+        // MAIN's command line as the server writes it: one SF of 153
+        // at row 20 column 7.
+        let mut m = crate::screen::ScreenModel::new(false);
+        m.put(20, 2, "===>", attr::GREEN);
+        m.field(20, 7, 153, attr::GREEN_UL, "", Ffw::default(), &[]);
+        let out = m.render(crate::screen::Read::MdtFields);
+        let mut t = term();
+        t.apply(&Record::new(out.opcode, out.data)).unwrap();
+        assert_eq!(t.fields().len(), 1);
+        assert_eq!(t.fields()[0].len, 153);
+        // The cells as pub400's MAIN shows them: the field attribute
+        // through row 21 column 79, the ending attribute at column 80.
+        let golden = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tools/conformance/golden/verified/pub400/main-menu.attr"),
+        )
+        .unwrap();
+        let theirs: Vec<&str> = golden.lines().map(|l| l.trim_end_matches('\r')).collect();
+        let ours = t.attr_rows();
+        assert_eq!(ours[19], theirs[19]);
+        assert_eq!(ours[20], theirs[20]);
+        // Typing past row 20 goes on at row 21 column 1.
+        for ch in "A".repeat(80).chars() {
+            assert_eq!(t.key(Key::Char(ch)), KeyResult::Done);
+        }
+        assert_eq!(t.cursor(), (21, 7));
+        assert!(t.text_rows()[20].starts_with("AAAAAA "));
+    }
 }

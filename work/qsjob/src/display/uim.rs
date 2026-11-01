@@ -176,4 +176,84 @@ mod tests {
         assert_eq!(m.fields().len(), 1);
         assert_eq!(key_of(aid::ROLL_UP), Some(Key::PageDown));
     }
+
+    /// MAIN with `cmdline` on its command line, through the 5250 stream
+    /// into a terminal: its text and attribute grids.
+    fn main_grids(cmdline: &str) -> (Vec<String>, Vec<String>) {
+        let src = menus::shipped::source("MAIN").expect("MAIN");
+        let compiled = uim::compile(src, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let group = Rc::new(compiled.group.unwrap_or_else(|| panic!("{}", compiled.listing)));
+        let mut d = UimDialog::new(group, "QS400");
+        d.set(CMDLINE_VAR, cmdline);
+        let opts = uim::Options {
+            system: "SYSNAME".into(),
+            show_copyright: true,
+            copyright: "(C) COPYRIGHT QUARTZ SYSTEMS 2026.".into(),
+            ..uim::Options::default()
+        };
+        let screen = uim::render(&d.group, "MAIN", &d, &opts).unwrap();
+        let mut m = ScreenModel::new(false);
+        apply(&screen, &mut m);
+        let out = m.render(Read::MdtFields);
+        let mut t = tn5250::term::Terminal::new(tn5250::ds::wdsf::Capabilities {
+            model: tn5250::ds::wdsf::Model::M3179,
+            gui: false,
+            color: true,
+        });
+        t.apply(&tn5250::record::Record::new(out.opcode, out.data))
+            .unwrap();
+        // The text grid of the UIM screen agrees with the terminal's.
+        assert_eq!(screen.text_rows()[19..21], t.text_rows()[19..21]);
+        (t.text_rows(), t.attr_rows())
+    }
+
+    /// Checks the grids against `audit/cmdline/NAME.{txt,attr}`;
+    /// `QS400_UPDATE_GOLDEN=1` rewrites them.
+    fn golden(name: &str, text: &[String], attrs: &[String]) {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/conformance/golden/audit/cmdline");
+        for (ext, rows) in [("txt", text), ("attr", attrs)] {
+            let path = dir.join(format!("{name}.{ext}"));
+            let ours: String = rows.iter().flat_map(|r| [r.as_str(), "\n"]).collect();
+            if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() {
+                std::fs::create_dir_all(&dir).unwrap();
+                std::fs::write(&path, &ours).unwrap();
+            }
+            let theirs = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("{}: {e} (QS400_UPDATE_GOLDEN=1 writes it)", path.display()))
+                .replace('\r', "");
+            assert_eq!(ours, theirs, "{}", path.display());
+        }
+    }
+
+    /// pub400's MAIN attribute rows 19 to 21 (1-based 20 to 22).
+    fn pub400_cmdline_rows() -> Vec<String> {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/conformance/golden/verified/pub400/main-menu.attr");
+        let text = std::fs::read_to_string(path).unwrap();
+        text.lines()
+            .skip(18)
+            .take(3)
+            .map(|l| l.trim_end_matches('\r').to_string())
+            .collect()
+    }
+
+    #[test]
+    fn main_command_line_is_one_field_over_two_rows() {
+        let (text, attrs) = main_grids("");
+        // Row 19 "===>", rows 20 and 21 the field (153), as on pub400.
+        assert_eq!(attrs[18..21], pub400_cmdline_rows()[..]);
+        golden("main-empty", &text, &attrs);
+    }
+
+    #[test]
+    fn a_long_command_goes_on_at_row_21() {
+        let cmd = "CRTLINETH LIND(ETHLINE) RSRCNAME(CMN04) LINESPEED(*AUTO) \
+                   DUPLEX(*AUTO) ONLINE(*YES) TEXT('Primary Ethernet')";
+        let (text, attrs) = main_grids(cmd);
+        assert_eq!(attrs[18..21], pub400_cmdline_rows()[..]);
+        assert_eq!(&text[19][6..], &cmd[..74]);
+        assert_eq!(text[20].trim_end(), &cmd[74..]);
+        golden("main-long", &text, &attrs);
+    }
 }
