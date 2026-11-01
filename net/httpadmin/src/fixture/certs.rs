@@ -419,6 +419,10 @@ mod tests {
             r.change_password("BOB", "SHOP", "wrong-one", "x").unwrap_err(),
             CertFailure::BadPassword("SHOP".into())
         );
+        // The stash opens it: no current password.
+        assert!(shop.stashed);
+        r.change_password("BOB", "SHOP", "", "pass-word-2").unwrap();
+        r.change_password("BOB", "SHOP", "pass-word-2", "pass-word-3").unwrap();
         assert!(matches!(r.delete_store("BOB", "*SYSTEM"), Err(CertFailure::Invalid(_))));
         r.delete_store("BOB", "SHOP").unwrap();
         assert!(r.stores().iter().all(|s| s.name != "SHOP"));
