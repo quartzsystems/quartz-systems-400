@@ -176,6 +176,7 @@ pub fn proto(url: &str) -> Option<String> {
         ["user", ..] => "user-props".into(),
         ["groups" | "group", ..] => "groups".into(),
         ["autl"] => "authorization-lists".into(),
+        ["autl", _, "remove" | "delete"] => return Some("shared/confirm.html".into()),
         ["autl", ..] => "autl-entries".into(),
         // System.
         ["sysval"] if q.get("cat") == Some("security") => "security-values".into(),

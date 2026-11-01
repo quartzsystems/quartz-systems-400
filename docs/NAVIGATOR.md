@@ -122,6 +122,42 @@ confirmed; an answered inquiry is refused by the command (`CPF2422`).
   (`DSPRCDLCK FILE(...) ...`): a capitalised name followed by
   `KEYWORD(value)` parameters.
 
+## Users and groups
+
+`env::users::Users` reads what `WRKUSRPRF`, `DSPUSRPRF`, `WRKAUTL`,
+`DSPAUTL` and `DSPAUTLOBJ` show; every change runs through
+`Users::run(user, command)`: Apply is one `CHGUSRPRF` with only what
+changed, Reset password `CHGUSRPRF PASSWORD() PWDEXP()`, Delete
+`DLTUSRPRF OWNOBJOPT(*NODLT|*DLT|*CHGOWN user)` (the confirmation asks),
+Create group `CRTUSRPRF PASSWORD(*NONE) GID(*GEN)`, authorization lists
+`CRTAUTL`, `DLTAUTL`, `ADDAUTLE`, `CHGAUTLE`, `RMVAUTLE`. The profile
+commands need `*SECADM` (checked first, the Not authorized page and an
+`AF` entry); the commands check the rest (special authorities you do
+not have, shipped profiles, groups with members, owned objects).
+
+- Routes: `/users`, `/user/<name>/{general,groups,authorities,personal,
+  password,delete}` (Jobs is `/jobs?user=`), `/users/create/step/<n>`,
+  `/groups`, `/groups/create`, `/autl`, `/autl/create`,
+  `/autl/<name>[?edit=USER]`, `/autl/<name>/{objects,remove?user=,
+  delete}`.
+- Users lists user profiles; group profiles (profiles with a GID that
+  others name as their group) are on Groups, and their Properties and
+  Delete are the profile's pages. The Group filter and Members match
+  primary and supplemental groups.
+- The Create user wizard keeps its answers in the session under `cu.`:
+  Create user... (a POST) starts it blank, Back and Next keep them,
+  Cancel and Create forget them; a step not reached yet sends you to
+  the furthest one. The summary prints the command with the password
+  left out (`PASSWORD()`, or `PASSWORD(*NONE)` when none was typed),
+  wrapped at 90 columns. Also creates the home directory (`CRTDIR`,
+  then `CHGOWN` to the new user) and the message queue (`CRTMSGQ
+  QUSRSYS/<name>`) when asked.
+- Sign-on stays the fixture's four profiles (`fixture::PROFILES`:
+  QSECOFR, QSYSOPR, QPGMR, WEBUSER); the Users fixture's fifteen take
+  the special authorities of those they share from that list, and the
+  security commands check the signed-on user's from it. QSYSOPR signs on
+  but is not among the prototype's fifteen.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -141,6 +177,8 @@ of the golden page:
 | `nav/qsysopr.html` | rows 11-25 not compared; `123499/QPGMR/RGZPFM00`, `123150/QSPLJOB/PRT01`, `123380/QTCP/QTCPIP` not links | the prototype repeats its first ten messages to fill the page (the fixture's 41 are distinct, three inquiries waiting); those jobs are not in the system (ended, or another job has the number) and a link would lead nowhere |
 | `nav/message-detail.html` | the Reply field starts empty; its button is named `send` | a prefilled reply other than the default goes out on one click; the field and the button were both named `reply` |
 | `nav/history-log.html` | message IDs linked; six night entries added to the page | message IDs are links everywhere (handoff rule 3); the page said 25 rows of 214 but showed 19 |
+| `nav/users.html` | the two buttons get names `create`/`refresh` | two nameless buttons in one form cannot be told apart |
+| `nav/user-props.html` | Group profile offers every group; Reset password... named `reset` | the select left out three of the six groups; the button shared the Apply form without a name |
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 
 ## Steps
@@ -153,7 +191,7 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 1, 2 | Frame, sign-on, System status | done |
 | 3-11 | Work management | done (golden-clean; live `Work` pending) |
 | 12-14 | Messages | done (golden-clean; live `Msgs` pending) |
-| 15-18 | Users and groups | |
+| 15-18 | Users and groups | done (golden-clean; live `Users` pending) |
 | 19-22 | System | |
 | 23, 24 | Network | |
 | 25, 26 | Database | |

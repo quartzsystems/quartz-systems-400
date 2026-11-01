@@ -85,8 +85,6 @@ fn tree_groups_stay_open() {
 
 /// Routes not built yet: each step removes its own.
 const PENDING: &[&str] = &[
-    // Users and groups.
-    "/users", "/user/", "/groups", "/autl",
     // System.
     "/sysval", "/disk", "/hdwrsc", "/time",
     // Network.
