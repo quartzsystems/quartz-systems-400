@@ -88,6 +88,7 @@ impl Suite {
         // The operator's queue.
         let opr = nav(plain, "GET", "/msgq/QSYS/QSYSOPR", Some(&sid), None)?;
         want(&opr, 200, &["Message queue: QSYSOPR"], "QSYSOPR")?;
+        let live = live_config(s, plain, &sid)?;
         // A POST without the form's field is refused.
         let forged = nav(plain, "POST", "/mymsgs", Some(&sid), Some("send=Send"))?;
         want(&forged, 403, &["out of date"], "a POST without the form field")?;
@@ -107,9 +108,48 @@ impl Suite {
             return Err(format!("ENDTCPSVR *ADMIN:\n{ended}"));
         }
         Ok(format!(
-            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, a forged POST refused, signed off; the sign-on page over TLS on 2005 (host {secure})"
+            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, {live}, a forged POST refused, signed off; the sign-on page over TLS on 2005 (host {secure})"
         ))
     }
+}
+
+/// The table row from `needle` to its end.
+fn row_of<'a>(body: &'a str, needle: &str) -> Option<&'a str> {
+    let at = body.find(needle)?;
+    let end = body[at..].find("</tr>").map_or(body.len(), |e| at + e);
+    Some(&body[at..end])
+}
+
+/// The first `<td class="mono">` value after `needle`.
+fn mono_after(body: &str, needle: &str) -> Option<String> {
+    let row = row_of(body, needle)?;
+    let cell = "<td class=\"mono\">";
+    let at = row[needle.len()..].find(cell)? + needle.len() + cell.len();
+    let end = row[at..].find("</td>")?;
+    Some(row[at..at + end].trim().to_string())
+}
+
+/// System values, interfaces, servers and System activity from live
+/// state: `QSECURITY` as `DSPSYSVAL` shows it, `10.0.2.15`, `*HTTP`
+/// started.
+fn live_config(s: &mut Session, port: u16, sid: &str) -> Result<String, String> {
+    let sv = nav(port, "GET", "/sysval?cat=security", Some(sid), None)?;
+    want(&sv, 200, &["QSECURITY"], "Security values")?;
+    let level = mono_after(&sv.body, "QSECURITY</td>").ok_or_else(|| format!("no QSECURITY value:\n{}", sv.brief()))?;
+    let shown = s.command("DSPSYSVAL SYSVAL(QSECURITY)", CMD)?;
+    if level.is_empty() || !shown.contains(&level) {
+        return Err(format!("Security values show QSECURITY {level}; DSPSYSVAL:\n{shown}"));
+    }
+    let ifc = nav(port, "GET", "/tcp/ifc", Some(sid), None)?;
+    want(&ifc, 200, &["10.0.2.15"], "TCP/IP interfaces")?;
+    let svr = nav(port, "GET", "/tcp/servers", Some(sid), None)?;
+    want(&svr, 200, &["*HTTP"], "TCP servers")?;
+    if !row_of(&svr.body, "*HTTP</a>").is_some_and(|r| r.contains("Started")) {
+        return Err(format!("*HTTP is not started on TCP servers:\n{}", svr.brief()));
+    }
+    let act = nav(port, "GET", "/perf/sys", Some(sid), None)?;
+    want(&act, 200, &["<h1>System activity</h1>"], "System activity")?;
+    Ok(format!("QSECURITY {level} as DSPSYSVAL, 10.0.2.15, *HTTP started, System activity"))
 }
 
 #[cfg(test)]
@@ -124,5 +164,8 @@ mod tests {
             Some("012345/QTMHHTTP/NAVIGATOR")
         );
         assert_eq!(nav_job("x/QTMHHTTP/NAVIGATOR"), None);
+        let body = "<tr><td class=\"mono\">QSECURITY</td>\n<td class=\"mono\">40</td></tr><tr><td>x</td></tr>";
+        assert_eq!(mono_after(body, "QSECURITY</td>").as_deref(), Some("40"));
+        assert!(row_of(body, "QSECURITY").is_some_and(|r| !r.contains('x')));
     }
 }

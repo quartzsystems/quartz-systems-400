@@ -228,15 +228,23 @@ escape (the diagnostic before `CPF0006`) the message.
 | Work | `actjob_data` (`WRKACTJOB`), `job_detail` (`DSPJOB`, the library list), `panel2_data JOBLCK` (`DSPJOB OPTION(*JOBLCK)`: the job's locks from the store's lock table, as `WRKOBJLCK`), `list_objects` + `wm_object` (`*JOBQ`, `*SBSD`, `*OUTQ`, `QUSRSYS/QDFTJOBSCD`), `jobq_attach`, `sbs_list`, `pools`, `splf_list`, `splf_fetch` (text and PDF through `spool`), `wtr_list`, `cfg_status` |
 | Messages | `list_objects *MSGQ` (`QSYS` `QSYSOPR`/`QSYSMSG`, then `QUSRSYS`), `msgq_list` (`DSPMSG`), the profile's `MSGQ` (`QSYRUSRI`), `hst_entries` (`DSPLOG`) |
 | Users | `QSYLAUTU` + `QSYRUSRI` (`sec_api Users`, `Profile`), `QSYLOBJA` (a profile's objects), `autl_panel_list` + `autl_panel` (`WRKAUTL`, `DSPAUTL`), `QSYLATLO` (`DSPAUTLOBJ`). A profile is a group when another names it as `GRPPRF` or `SUPGRPPRF`, or it has a `GID` |
+| Status, more | failed sign-ons: `DSPAUDJRNE ENTTYP(PW)`'s report (`exec`), its entries of the last 24 h; PTFs not applied: `sys2_panel PTF` rows `Loaded` (`DSPPTF`); servers down: the registry's servers set to autostart (`tcp Servers`) with no listener among `active_jobs`; machine type: the processor's type in `hw_table` |
+| Config | `sysval_panel_list` + `sysval_panel` (`WRKSYSVAL`, `DSPSYSVAL`) with shipped value, allowed values and IPL flag from the `lic/sysval` catalog, the category from its group (`httpnav/config.rs`); `panel2_data DSKSTS` (with `SIZEB`, `SERIAL`, `PROT`, `STATUS` per unit) and `SYSSTS`'s ASP figures; `hw_table` in `WRKHDWRSC *AHW` order (`hwrsrc::view`) and `hw_cfgds` per resource; `QTIMZON`, `QDATFMT`, `QDATSEP`, `QTIMSEP`, `QTIMADJ`, `sysval::tz::ZONES`, `CHGNTPA`'s `RMTSYS` (`tcp Servers`), `QTOTNTP` active |
+| Net | `tcp Snapshot` (interfaces, routes), `tcp HostConfig` (domain, host table), `tcp Netstat STS` (active since), `tcp Report attr` (forwarding), the server registry with `tcp Servers` and `active_jobs` |
+| Perf | `panel2_data SYSACT` (`WRKSYSACT`), `SYSSTS RESET(*YES)`'s pools, `DSKSTS RESET(*YES)` |
 
 Not live yet: another job's job log and call stack (the 5250 displays
 refuse them too, `CPD9B9D`), so those tabs are empty; Active jobs'
-ended-job notes; Status' failed sign-ons, PTFs not applied, servers
-down and machine type. Config, Net, Perf, Db, Security and Software
-return empty data (their `run` is live, `run_sql` refuses). QEMU
+ended-job notes; Time's last synchronization (the SNTP client keeps
+none); per-user performance intervals (the service keeps one per
+display, so a refresh here also restarts `WRKSYSACT`'s); disk service
+and wait times and a unit's top job. Db, Security and Software return
+empty data (their `run` is live, `run_sql` refuses). QEMU
 step 88 (`tools/conformance/src/navstep.rs`) signs on over 2002, checks
 System status against `DSPNETA`, the `NAVIGATOR` job on Active jobs
-against `DSPJOB`, `QSYSOPR`, the CSRF refusal and sign-off, and the
+against `DSPJOB`, `QSYSOPR`, `QSECURITY` on Security values against
+`DSPSYSVAL`, `10.0.2.15` on interfaces, `*HTTP` started on TCP
+servers, System activity, the CSRF refusal and sign-off, and the
 sign-on page over TLS on 2005.
 ## Database, security, software
 
