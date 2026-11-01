@@ -70,6 +70,7 @@ page and is listed here:
 | `http/instance-config.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE`; `47 lines` → `45 lines` | compatible application IDs; the file the page itself shows has 45 lines |
 | `http/instance-logs.html` | Download link `#` → the logs page's download route | the prototype's link goes nowhere; served, it streams the log |
 | `http/cert-store-system.html` | `Set default` gets `formaction="cert-store-system.html"` | the button posted to Create certificate with nothing to tell it apart; it opens the store's default-certificate page |
+| `http/cert-create-result.html` | `Download`, `Download with chain`, `Assign to application...` get names `download`, `chain`, `assign` | three nameless buttons in one form cannot be told apart |
 
 ## Steps
 
@@ -90,5 +91,7 @@ message, the audit journal or a page (`tests/certs.rs` checks).
 
 Data differences the golden tests apply (`tests/golden.rs`): the store
 paths (`/QIBM/UserData/ICSS/Cert/...`; `*SIGNATUREVERIFICATION` is
-`Signing/SIGNVER.KDB`). The store page lists the default certificate
-first, then entries in the order they were added.
+`Signing/SIGNVER.KDB`); on the create result, the serial number,
+validity times, fingerprint and PEM of the certificate just made. The
+store page lists the default certificate first, then entries in the
+order they were added.

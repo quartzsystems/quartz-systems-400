@@ -203,6 +203,15 @@ pub const TOPICS: &[Topic] = &[
         body: "<p>The certificate's subject, issuer, serial number, validity and SHA-256 fingerprint, and the certificate itself as PEM text.</p>\n<p><b>Download</b> saves the certificate as a PEM file. <b>Download with chain</b> adds the certificates of the authorities that issued it, as far as the store holds them. Private keys are never downloaded.</p>",
     },
     Topic {
+        key: "cert-create",
+        title: "Create certificate",
+        body: "<p>Creates a new key pair and a certificate for it in the store, in three steps.</p>\n\
+<table class=\"props\" cellspacing=\"0\">\n<tr><th>Key type and size</th><td>RSA keys of 2048, 3072 or 4096 bits sign with SHA-256; ECDSA keys on P-256 sign with SHA-256 and on P-384 with SHA-384. The label names the certificate in the store and must be new there.</td></tr>\n\
+<tr><th>Subject</th><td>The distinguished name. Clients check the common name or one of the alternative names against the host name they connect to.</td></tr>\n\
+<tr><th>Signing</th><td>A self-signed certificate signs itself; a certificate authority of this system signs with its key and the store trusts it; a certificate signing request (CSR) keeps the key in the store and waits until the certificate an external authority returns is imported with the same label.</td></tr>\n</table>\n\
+<p>The result shows the certificate (or the request) as PEM text, with Download buttons.</p>",
+    },
+    Topic {
         key: "cert-confirm",
         title: "Confirm",
         body: "<p>Deleting a certificate removes it and its private key from the store; applications assigned it lose it. Deleting a store removes the store file and its stashed password. Removing an assignment leaves the application with the store's default certificate.</p>",

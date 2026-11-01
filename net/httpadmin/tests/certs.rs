@@ -179,3 +179,103 @@ fn view_and_download() {
     assert!(csr.text().starts_with("-----BEGIN CERTIFICATE REQUEST-----"));
     assert_eq!(csr.header("Content-Disposition"), Some("attachment; filename=\"webstore-2027-request.csr\""));
 }
+
+fn step1(b: &mut Browser, label: &str, kt: &str, size: &str, curve: &str, sig: &str) -> String {
+    let r = b.post(
+        "/certs/create/step/1",
+        &[("label", label), ("kt", kt), ("ks", size), ("curve", curve), ("sig", sig), ("days", "90"), ("next", "Next >")],
+    );
+    r.header("Location").unwrap_or("").to_string()
+}
+
+fn step2(b: &mut Browser, cn: &str) {
+    let r = b.post("/certs/create/step/2", &[("cn", cn), ("san", cn), ("o", "Quartz Systems"), ("c", "us"), ("next", "Next >")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/3"));
+}
+
+#[test]
+fn create_wizard_checks_each_step() {
+    let mut b = Browser::signed_on();
+    // Later steps need the earlier ones.
+    assert_eq!(b.get("/certs/create/step/3").header("Location"), Some("/qs400/httpadmin/certs/create/step/1"));
+    // From a store page's form: the wizard is for that store.
+    let r = b.post("/certs/create/step/1?store=WEBSTORE", &[]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/1"));
+    let t = b.get("/certs/create/step/1").text();
+    let crumb = &t[t.find("class=\"crumb\"").unwrap()..];
+    assert!(crumb[..crumb.find("</div>").unwrap()].contains("WEBSTORE"), "{t}");
+    // SHA-384 with RSA, a label in use, no common name.
+    assert!(step1(&mut b, "x", "rsa", "2048", "P-256", "SHA-384").ends_with("/step/1"));
+    assert!(b.get("/certs/create/step/1").text().contains("HTP8322"));
+    assert!(step1(&mut b, "webstore-dev", "ec", "2048", "P-256", "SHA-256").ends_with("/step/1"));
+    assert!(b.get("/certs/create/step/1").text().contains("already has a certificate labeled webstore-dev"));
+    assert!(step1(&mut b, "dev2", "ec", "2048", "P-256", "SHA-256").ends_with("/step/2"));
+    let r = b.post("/certs/create/step/2", &[("cn", ""), ("next", "Next >")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/2"));
+    assert!(b.get("/certs/create/step/2").text().contains("a common name is required"));
+    // Cancel goes back to the store and forgets the wizard.
+    let r = b.post("/certs/create/step/2", &[("cancel", "Cancel")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/WEBSTORE"));
+    assert_eq!(b.get("/certs/create/step/2").header("Location"), Some("/qs400/httpadmin/certs/create/step/1"));
+}
+
+#[test]
+fn self_signed_and_local_ca_certificates() {
+    let mut b = Browser::signed_on();
+    assert!(step1(&mut b, "p384", "ec", "2048", "P-384", "SHA-384").ends_with("/step/2"));
+    step2(&mut b, "p384.quartz.example");
+    let r = b.post("/certs/create/step/3", &[("s", "self"), ("ku1", "on"), ("dft", "on"), ("finish", "Create")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/result"));
+    let t = b.get("/certs/create/result").text();
+    assert!(t.contains("Certificate p384 created in store *SYSTEM and signed by its own key."), "{t}");
+    let rows = b.fx.certs.entries("*SYSTEM").unwrap();
+    let r = rows.iter().find(|r| r.label == "p384").unwrap();
+    assert_eq!((r.key.as_str(), r.self_signed, r.is_default), ("ECDSA P-384", true, true));
+    assert_eq!(r.subject, "CN=p384.quartz.example,O=Quartz Systems,C=US");
+    assert_eq!((r.not_after - r.not_before) / 86_400, 90);
+    // Done goes to the store; the result is gone.
+    let r = b.post("/certs/create/result", &[("finish", "Done")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/*SYSTEM"));
+    assert_eq!(b.get("/certs/create/result").header("Location"), Some("/qs400/httpadmin/certs/create/step/1"));
+    // The local CA signs a client certificate.
+    assert!(step1(&mut b, "client1", "rsa", "3072", "P-256", "SHA-256").ends_with("/step/2"));
+    step2(&mut b, "client1");
+    b.post("/certs/create/step/3", &[("s", "local"), ("ca", "QSHQ400 Local CA"), ("ku2", "on"), ("finish", "Create")]);
+    let t = b.get("/certs/create/result").text();
+    assert!(t.contains("signed by QSHQ400 Local CA") && t.contains("CN=QSHQ400 Local CA, O=Quartz Systems, C=US"), "{t}");
+    let r = b.post("/certs/create/result", &[("chain", "Download with chain")]);
+    let pem = b.get(r.header("Location").unwrap()).text();
+    assert_eq!(pem.matches("-----BEGIN CERTIFICATE-----").count(), 2);
+    let rows = b.fx.certs.entries("*SYSTEM").unwrap();
+    let c = rows.iter().find(|r| r.label == "client1").unwrap();
+    assert_eq!((c.kind, c.key.as_str()), (httpadmin::env::EntryType::Client, "RSA 3072"));
+    // The audit journal has the changes.
+    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Change { what, .. } if what == "certificate client1 created")));
+}
+
+#[test]
+fn a_request_for_an_external_ca() {
+    let mut b = Browser::signed_on();
+    step1(&mut b, "ext-req", "ec", "2048", "P-256", "SHA-256");
+    step2(&mut b, "ext.quartz.example");
+    b.post("/certs/create/step/3", &[("s", "csr"), ("ku1", "on"), ("finish", "Create")]);
+    let t = b.get("/certs/create/result").text();
+    assert!(t.contains("HTP8303") && t.contains("-----BEGIN CERTIFICATE REQUEST-----"), "{t}");
+    assert!(!t.contains("Download with chain"));
+    let r = b.post("/certs/create/result", &[("download", "Download")]);
+    let csr = b.get(r.header("Location").unwrap());
+    assert!(csr.text().starts_with("-----BEGIN CERTIFICATE REQUEST-----"));
+    assert!(b.get("/certs/store/*SYSTEM/requests").text().contains(">ext-req<"));
+}
+
+#[test]
+fn renew_starts_from_the_certificate() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/certs/create/step/1?store=*SYSTEM&renew=api.quartz.example");
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/1"));
+    let t = b.get("/certs/create/step/1").text();
+    assert!(t.contains("value=\"api.quartz.example-new\"") && t.contains("value=\"ec\" checked"), "{t}");
+    b.post("/certs/create/step/1", &[("label", "api.quartz.example-new"), ("kt", "ec"), ("ks", "2048"), ("curve", "P-256"), ("sig", "SHA-256"), ("days", "365"), ("next", "Next >")]);
+    let t = b.get("/certs/create/step/2").text();
+    assert!(t.contains("name=\"cn\" value=\"api.quartz.example\"") && t.contains("name=\"o\" value=\"Quartz Systems\""), "{t}");
+}

@@ -86,7 +86,7 @@ pub fn dn(s: &str) -> String {
 }
 
 /// The attributes of an RFC 4514 name, split at unescaped commas.
-fn rdns(s: &str) -> Vec<String> {
+pub fn rdns(s: &str) -> Vec<String> {
     let mut parts = Vec::new();
     let mut cur = String::new();
     let mut esc = false;

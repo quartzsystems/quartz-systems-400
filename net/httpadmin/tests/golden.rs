@@ -422,3 +422,77 @@ fn cert_store_system() {
         ],
     );
 }
+
+/// The text between `from` and the next `to` after it.
+fn between<'a>(s: &'a str, from: &str, to: &str) -> &'a str {
+    let a = s.find(from).unwrap_or_else(|| panic!("{from} missing")) + from.len();
+    let b = s[a..].find(to).unwrap_or_else(|| panic!("{to} missing")) + a;
+    &s[a..b]
+}
+
+/// Steps 1 to 3 of Create certificate filled in as the prototype shows.
+fn cert_wizard(b: &mut Browser) {
+    let r = b.post(
+        "/certs/create/step/1",
+        &[("label", "webstore-2027"), ("kt", "rsa"), ("ks", "2048"), ("curve", "P-256"), ("sig", "SHA-256"), ("days", "365"), ("next", "Next >")],
+    );
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/2"));
+    let r = b.post(
+        "/certs/create/step/2",
+        &[
+            ("cn", "webstore.quartz.example"),
+            ("san", "webstore.quartz.example, www.webstore.quartz.example"),
+            ("ou", "Web"),
+            ("o", "Quartz Systems"),
+            ("l", ""),
+            ("st", ""),
+            ("c", "US"),
+            ("next", "Next >"),
+        ],
+    );
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/step/3"));
+}
+
+#[test]
+fn cert_create_steps() {
+    let mut b = Browser::signed_on();
+    cert_wizard(&mut b);
+    for n in 1..=3 {
+        let r = b.get(&format!("/certs/create/step/{n}"));
+        assert_eq!(r.status, 200);
+        assert_golden(&r.text(), &format!("http/cert-create-{n}.html"), &[]);
+    }
+}
+
+#[test]
+fn cert_create_result() {
+    let mut b = Browser::signed_on();
+    cert_wizard(&mut b);
+    let r = b.post("/certs/create/step/3", &[("s", "local"), ("ca", "Quartz Internal CA"), ("ku1", "on"), ("finish", "Create")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/create/result"));
+    let t = b.get("/certs/create/result").text();
+    let g = common::golden("http/cert-create-result.html");
+    let cell = |s: &str, th: &str| between(s, &format!("<th>{th}</th>"), "</td>").rsplit('>').next().unwrap().to_string();
+    let pem = |s: &str| between(s, "<pre class=\"out\">", "</pre>").to_string();
+    let (gp, sp) = (pem(&g), pem(&t));
+    assert!(sp.starts_with("-----BEGIN CERTIFICATE-----") && sp.ends_with("-----END CERTIFICATE-----"));
+    let data: Vec<(String, String)> = ["Serial", "Valid", "Fingerprint (SHA-256)"]
+        .iter()
+        .map(|th| (cell(&g, th), cell(&t, th)))
+        .chain([(gp, qsweb::html::esc(&sp))])
+        .collect();
+    let mut fix: Vec<(&str, &str)> = data.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+    // The download buttons carry names so the page can tell them apart.
+    fix.extend([
+        ("<input type=\"submit\" value=\"Download\">", "<input type=\"submit\" name=\"download\" value=\"Download\">"),
+        (
+            "<input type=\"submit\" value=\"Download with chain\">",
+            "<input type=\"submit\" name=\"chain\" value=\"Download with chain\">",
+        ),
+        (
+            "<input type=\"submit\" value=\"Assign to application...\">",
+            "<input type=\"submit\" name=\"assign\" value=\"Assign to application...\">",
+        ),
+    ]);
+    assert_golden(&t, "http/cert-create-result.html", &fix);
+}
