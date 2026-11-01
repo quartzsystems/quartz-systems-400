@@ -86,6 +86,7 @@ pub const SHIPPED: &[(&str, AppKind, &str)] = &[
     ("QS400_DDM_DRDA_SERVER", AppKind::Server, "DDM and DRDA server"),
     ("QS400_DDM_DRDA_CLIENT", AppKind::Client, "DDM and DRDA client"),
     ("QS400_HTTP_SERVER_ADMIN", AppKind::Server, "HTTP administration server"),
+    ("QS400_HTTP_SERVER_NAVIGATOR", AppKind::Server, "Navigator for QS/400"),
     ("QS400_DIRECTORY_SERVER", AppKind::Server, "Directory server"),
     ("QS400_DIRECTORY_CLIENT", AppKind::Client, "Directory client"),
     ("QS400_VPN_IKE_SERVER", AppKind::Server, "VPN key manager"),

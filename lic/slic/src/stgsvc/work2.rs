@@ -4,7 +4,7 @@
 
 //! Panels batch 2's data (`panel2_data`): what `WRKSBMJOB`,
 //! `WRKSHRPOOL`, `WRKSYSSTS`, `WRKDSKSTS`, `WRKSYSACT`, `WRKOUTQD`,
-//! `DSPSPLF`, `WRKOBJLCK`, `WRKOBJPGP`, `DSPPFM`, `WRKJRNA`, `DSPJRN`,
+//! `DSPSPLF`, `WRKOBJLCK`, `DSPJOB OPTION(*JOBLCK)`, `WRKOBJPGP`, `DSPPFM`, `WRKJRNA`, `DSPJRN`,
 //! `DSPJRNRCVA` and `DSPOVR` show, named as their panel groups' variables
 //! (`ui/uim/pnlgrp/`). The job's library list, `QTEMP` and console state
 //! are in place while these run.
@@ -119,6 +119,7 @@ pub fn data(
         }
         "SPLFA" => super::splcmd::attrs_panel(system, me.number, arg(0), arg(1), arg(2)),
         "OBJLCK" => objlck(system, arg(0), arg(1)),
+        "JOBLCK" => joblck(system, arg(0)),
         "PGP" => pgp(system, arg(0)),
         "PFM" => pfm(system, arg(0), arg(1)),
         "JRNA" => jrna(system, arg(0)),
@@ -368,6 +369,41 @@ fn objlck(system: &mut System, q: &str, ty: &str) -> Result<PanelData, String> {
         pair("ASPDEV", "*SYSBAS"),
     ];
     Ok((vars, rows))
+}
+
+/// `DSPJOB OPTION(*JOBLCK)` of job `number/user/name`: the objects it
+/// holds locks on, from the same lock table as `WRKOBJLCK`.
+fn joblck(system: &mut System, q: &str) -> Result<PanelData, String> {
+    let number: u32 = q.split('/').next().and_then(|n| n.trim().parse().ok()).unwrap_or(0);
+    let job = system
+        .jobs
+        .all()
+        .into_iter()
+        .find(|j| j.number == number)
+        .ok_or_else(|| format!("CPF1070 job {q} not found"))?;
+    let rows = in_store(system, |txn, _, _| {
+        let held = txn.store().locks().held_by(store::obj::lock::JobHandle(job.handle));
+        let mut rows = Vec::new();
+        for (id, state) in held {
+            let Ok(h) = ops::describe(txn, id) else { continue };
+            let lib = if ops::is_library(id) {
+                "QSYS".to_string()
+            } else {
+                ops::describe(txn, h.library).map(|l| l.name.to_string()).unwrap_or_default()
+            };
+            let ty = types::type_by_code(id.type_code).map_or("*N", |t| t.name);
+            rows.push(vec![
+                pair("OBJ", h.name.to_string()),
+                pair("OBJLIB", lib),
+                pair("OBJTYPE", ty),
+                pair("LOCK", state.name()),
+                pair("STATUS", "HELD"),
+                pair("SCOPE", "*JOB"),
+            ]);
+        }
+        Ok(rows)
+    })?;
+    Ok((vec![pair("JOB", job.qualified())], rows))
 }
 
 /// `WRKOBJPGP PGP(name)`: the objects a group profile is the primary

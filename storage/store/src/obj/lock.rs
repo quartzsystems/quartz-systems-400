@@ -128,6 +128,18 @@ impl LockTable {
         self.held.get(&id).cloned().unwrap_or_default()
     }
 
+    /// The locks `job` holds, by object.
+    #[must_use]
+    pub fn held_by(&self, job: JobHandle) -> Vec<(ObjectId, LockState)> {
+        let mut v: Vec<(ObjectId, LockState)> = self
+            .held
+            .iter()
+            .flat_map(|(id, hs)| hs.iter().filter(|h| h.job == job).map(|h| (*id, h.state)))
+            .collect();
+        v.sort_by_key(|(id, s)| (*id, s.name()));
+        v
+    }
+
     /// Objects with any lock.
     #[must_use]
     pub fn locked_objects(&self) -> Vec<ObjectId> {
@@ -176,6 +188,8 @@ mod tests {
         assert!(t.unlock(a, id, LockState::Exclusive));
         assert!(!t.unlock(a, id, LockState::Exclusive));
         assert_eq!(t.locked_objects(), vec![id]);
+        assert_eq!(t.held_by(a), vec![(id, LockState::SharedUpdate)]);
+        assert!(t.held_by(b).is_empty());
         t.release_object(id);
         assert!(t.locked_objects().is_empty());
     }

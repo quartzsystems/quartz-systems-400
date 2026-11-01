@@ -44,7 +44,8 @@ impl TcpServer for Telnet {
 }
 
 /// `*HTTP` with `HTTPSVR(*ADMIN)`: the administration listener `ADMIN`
-/// in `QHTTPSVR`, its ports in the request data.
+/// in `QHTTPSVR` and Navigator's `NAVIGATOR` next to it, their ports
+/// in the request data; `ENDTCPSVR` ends both.
 pub struct HttpAdmin;
 
 impl TcpServer for HttpAdmin {
@@ -54,8 +55,20 @@ impl TcpServer for HttpAdmin {
 
     fn jobs(&self, req: &Request, attrs: &ServerAttrs) -> Result<Vec<JobStart>, Refusal> {
         check_instance(self.spec(), req)?;
-        let a = HttpAttrs::from_bag(&attrs.bag);
-        Ok(listener_job(self.spec(), a.rqsdta()).into_iter().collect())
+        let mut jobs: Vec<JobStart> = listener_job(self.spec(), HttpAttrs::from_bag(&attrs.bag).rqsdta())
+            .into_iter()
+            .collect();
+        if let Some(nav) = self.spec().jobs.iter().find(|j| j.role == "HTTPNAV") {
+            jobs.push(JobStart {
+                name: nav.name.to_string(),
+                user: nav.user.to_string(),
+                subsystem: nav.subsystem.to_string(),
+                role: nav.role.to_string(),
+                rqsdta: HttpAttrs::navigator(&attrs.bag).rqsdta(),
+                ..JobStart::default()
+            });
+        }
+        Ok(jobs)
     }
 }
 

@@ -6,7 +6,8 @@
 //! TLS (`as-admin-http` and `as-admin-https`). No command changes them
 //! (IBM's are in the instance's configuration file, which comes with
 //! the full HTTP server); the bag's `PORT` and `TLSPORT` move them, and
-//! `TLSPORT(0)` leaves TLS off.
+//! `TLSPORT(0)` leaves TLS off. Navigator, started with it, is on 2002
+//! and 2005 (`NAVPORT`, `NAVTLSPORT`).
 
 use super::{get, keyword};
 
@@ -14,6 +15,10 @@ use super::{get, keyword};
 pub const PORT: u16 = 2001;
 /// The TLS port.
 pub const TLS_PORT: u16 = 2010;
+/// Navigator's plain port.
+pub const NAV_PORT: u16 = 2002;
+/// Navigator's TLS port.
+pub const NAV_TLS_PORT: u16 = 2005;
 
 /// The administration instance's ports.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -42,6 +47,18 @@ impl HttpAttrs {
             tls_port: get(bag, "TLSPORT")
                 .and_then(|p| p.trim().parse().ok())
                 .unwrap_or(d.tls_port),
+        }
+    }
+
+    /// Navigator's ports (`NAVIGATOR`, 2002 and 2005): the bag's
+    /// `NAVPORT` and `NAVTLSPORT`; no TLS when the administration
+    /// instance has none.
+    pub fn navigator(bag: &[(String, String)]) -> Self {
+        let admin = Self::from_bag(bag);
+        let port = |k, d| get(bag, k).and_then(|p| p.trim().parse().ok()).unwrap_or(d);
+        Self {
+            port: port("NAVPORT", NAV_PORT),
+            tls_port: if admin.tls_port == 0 { 0 } else { port("NAVTLSPORT", NAV_TLS_PORT) },
         }
     }
 
@@ -74,5 +91,7 @@ mod tests {
         assert_eq!(moved.rqsdta(), "PORT(8001) TLSPORT(0)");
         assert_eq!(HttpAttrs::from_rqsdta(&moved.rqsdta()), moved);
         assert_eq!(HttpAttrs::from_rqsdta(""), d);
+        assert_eq!(HttpAttrs::navigator(&[]).rqsdta(), "PORT(2002) TLSPORT(2005)");
+        assert_eq!(HttpAttrs::navigator(&[("TLSPORT".into(), "0".into())]).tls_port, 0);
     }
 }

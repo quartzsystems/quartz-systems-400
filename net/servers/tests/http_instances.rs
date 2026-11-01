@@ -103,7 +103,7 @@ fn all_and_autostart() {
     let text = out[0].1.as_ref().unwrap();
     assert_eq!(text, "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1.");
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
-    assert_eq!(names, ["ADMIN", "WEB1"]);
+    assert_eq!(names, ["ADMIN", "NAVIGATOR", "WEB1"]);
     // Ending *ALL ends both, with the delay given.
     let out = fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, Some(5));
     assert_eq!(out[0].1.as_ref().unwrap().lines().count(), 2);
@@ -136,5 +136,5 @@ fn chghttpa_autostart() {
         "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1."
     );
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
-    assert_eq!(names, ["ADMIN", "WEB1"]);
+    assert_eq!(names, ["ADMIN", "NAVIGATOR", "WEB1"]);
 }

@@ -16,7 +16,8 @@ use httpd::files::{Entry, Files};
 use qsweb::msg::{Kind, Message};
 use stg::Client;
 
-use super::bridge::{Bridge, Main};
+use crate::work::web::bridge::Bridge;
+use crate::work::web::run_as;
 use crate::httpenv::reply;
 use crate::work::ifsfiles::IfsFiles;
 
@@ -28,33 +29,6 @@ pub struct LiveJobs {
 
 fn gone() -> Message {
     Message::new(Kind::Error, "CPF9897", "The administration server is ending; the request was not run.")
-}
-
-/// Run `line` as `user` (the job itself for `None`); its outcome as a
-/// message.
-fn run_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<Message, Message> {
-    let o = match user {
-        Some(u) => m.as_user(u, |m| m.console.run(line, crate::command::RunMode::Run))?,
-        None => m.console.run(line, crate::command::RunMode::Run),
-    };
-    // CPF0001 says only that the command failed: its diagnostic says why.
-    let fail = match (o.escape, o.diag) {
-        (Some(e), Some(d)) if e.msgid == "CPF0001" => Some(d),
-        (e, _) => e,
-    };
-    let escape = fail.map(|f| {
-        let text = if f.text.is_empty() {
-            let (id, file, lib) = (f.msgid.clone(), "QCPFMSG".to_string(), "QSYS".to_string());
-            m.link
-                .borrow_mut()
-                .with(|l| l.describe(id, file, lib))
-                .map_or_else(|| f.msgid.clone(), |d| d.text)
-        } else {
-            f.text
-        };
-        (f.msgid, text)
-    });
-    reply::outcome(&o.text, escape.as_ref().map(|(i, t)| (i.as_str(), t.as_str())))
 }
 
 impl Jobs for LiveJobs {
