@@ -98,6 +98,27 @@ pub const TOPICS: &[Topic] = &[
         title: "Scheduled jobs",
         body: "<p>Job schedule entries: a command submitted as a job at the times given. A held entry submits nothing until released. <b>Submit now</b> submits the job once without changing its schedule.</p>",
     },
+    // Security and software.
+    Topic {
+        key: "audit",
+        title: "Audit journal",
+        body: "<p>The entries of the security audit journal, newest first, as the 5250 command prints them. Choose an entry type, a user and the first and last day, then press <b>Go</b>. <b>Download as CSV</b> gives every entry that matches. Reading the journal needs special authority <span class=\"mono\">*AUDIT</span>.</p>",
+    },
+    Topic {
+        key: "licpgm",
+        title: "Licensed programs",
+        body: "<p>The products the system knows and whether each is installed. <b>Show</b> lists the installed ones, the ones on an image catalog, or those not installed. <b>Install</b> installs a product from the image catalog chosen and <b>Delete</b> removes one; both show the command first.</p>\n<h2>License keys</h2>\n<p><b>Display license keys</b> lists the keys the system holds: product, term, feature, usage limit and expiration.</p>",
+    },
+    Topic {
+        key: "ptf",
+        title: "PTFs",
+        body: "<p>The program temporary fixes on the system and their status. <b>Load</b>, <b>Apply</b> and <b>Remove</b> run the PTF commands after a page that shows them; a PTF whose IPL action is delayed takes effect at the next IPL. <b>Cover letter</b> shows what a fix changes.</p>\n<h2>Check for fixes</h2>\n<p>Asks the Quartz update server which fixes this system lacks. The answer is on the <b>Fixes</b> page.</p>",
+    },
+    Topic {
+        key: "fixes",
+        title: "Fixes",
+        body: "<p>The fixes the Quartz update server offers that this system does not have, from the last check. <b>Download</b> orders a fix; it is loaded from the save file the order leaves. The server, the automatic check and a proxy are set below; <b>Apply</b> keeps the page, <b>OK</b> returns to the PTFs.</p>",
+    },
     // Database.
     Topic {
         key: "sql",
