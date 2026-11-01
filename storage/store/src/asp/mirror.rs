@@ -38,6 +38,9 @@ pub struct ResumeState {
     pub chunks: u64,
     /// Bit `i` set: chunk `i` is copied and durable.
     pub done: Vec<u8>,
+    /// An operator's resume, which runs with the system up; otherwise
+    /// the synchronization start mirrored protection leaves to the IPL.
+    pub background: bool,
 }
 
 impl ResumeState {
@@ -51,6 +54,7 @@ impl ResumeState {
             chunk_pages: RESUME_CHUNK,
             chunks,
             done: vec![0; usize::try_from(chunks.div_ceil(8)).expect("fits")],
+            background: false,
         }
     }
 
@@ -85,7 +89,8 @@ impl ResumeState {
         u8::try_from(self.chunks_done() * 100 / self.chunks).unwrap_or(100)
     }
 
-    /// Bytes for a journal: magic, UUIDs, sizes, bitmap.
+    /// Bytes for a journal: magic, UUIDs, sizes, bitmap, then one byte,
+    /// 1 for a background resume (absent in older journals: 0).
     #[must_use]
     pub fn encode(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(56 + self.done.len());
@@ -97,6 +102,7 @@ impl ResumeState {
         put_u64(&mut nums, 8, self.chunks);
         out.extend_from_slice(&nums);
         out.extend_from_slice(&self.done);
+        out.push(u8::from(self.background));
         out
     }
 
@@ -118,6 +124,7 @@ impl ResumeState {
             chunk_pages,
             chunks,
             done: bytes[56..56 + need].to_vec(),
+            background: bytes.get(56 + need) == Some(&1),
         })
     }
 }
@@ -177,6 +184,16 @@ pub struct Resume {
 }
 
 impl Resume {
+    /// Mark it an operator's resume, which runs with the system up, and
+    /// record that in the journal.
+    pub fn set_background(&mut self, journal: &mut dyn ResumeJournal) -> Result<()> {
+        if !self.state.background {
+            self.state.background = true;
+            journal.save(&self.state)?;
+        }
+        Ok(())
+    }
+
     /// Progress so far.
     #[must_use]
     pub fn progress(&self) -> ResumeProgress {
@@ -614,6 +631,11 @@ mod tests {
         assert!(!s.complete());
         let back = ResumeState::decode(&s.encode()).unwrap();
         assert_eq!(back, s);
+        s.background = true;
+        assert!(ResumeState::decode(&s.encode()).unwrap().background);
+        let bytes = s.encode();
+        assert!(!ResumeState::decode(&bytes[..bytes.len() - 1]).unwrap().background, "an older journal");
+        s.background = false;
         assert!(ResumeState::decode(b"nothing").is_none());
         s.set_done(0);
         s.set_done(2);

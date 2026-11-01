@@ -226,6 +226,19 @@ impl Store {
         Ok(r)
     }
 
+    /// Whether the journal holds a background resume of `unit`: one an
+    /// operator started, which goes on with the system up after a power
+    /// down or a crash, unlike the synchronization start mirrored
+    /// protection leaves to the IPL.
+    pub fn resume_in_background(&self, unit: u16, journal: &mut dyn ResumeJournal) -> bool {
+        self.asp
+            .superblock()
+            .units
+            .get(usize::from(unit))
+            .and_then(|e| journal.load(e.unit_uuid))
+            .is_some_and(|s| s.background)
+    }
+
     /// Copy up to `budget` chunks for a resume; publishes the half as
     /// active when the copy completes.
     pub fn resume_step(

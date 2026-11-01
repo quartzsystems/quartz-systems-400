@@ -284,4 +284,7 @@ logs, hardware service manager, install, IPL, dumps and traces.
   change, new certificates, system value security changes, add
   certificates); only the first and third have an effect.
 - Resume journal: at offset 1 MiB, the chunk bitmap of a mirrored half
-  being copied, so a crash continues where it stopped.
+  being copied, so a crash continues where it stopped, then one byte: 1
+  for an operator's resume, which goes on with the system up, 0 (or
+  absent) for the synchronization start mirrored protection leaves to
+  the IPL.

@@ -247,7 +247,8 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         store.asp().superblock().generation
     ));
     system.emit(&src::RECOVERY);
-    report_events(system, &store, &recovery.events);
+    let mut store = store;
+    report_events(system, &mut store, &recovery.events)?;
     let sb = store.asp().superblock();
     let qsys = (!fresh && !sb.qsys.is_none()).then_some(sb.qsys);
     system.storage = Some(Storage {
@@ -329,8 +330,13 @@ pub fn pick_up_resumes() {
 
 /// What `open` found out about the units: a missing half is an
 /// attention code, a stale half a note, a resuming half a copy that
-/// goes on in the background.
-fn report_events(system: &mut System, store: &Store, events: &[UnitEvent]) {
+/// goes on in the background (an operator's resume) or a
+/// synchronization before the store is used (start mirrored protection).
+fn report_events(
+    system: &mut System,
+    store: &mut Store,
+    events: &[UnitEvent],
+) -> Result<(), &'static src::Src> {
     for e in events {
         match *e {
             UnitEvent::Missing { unit } => {
@@ -354,17 +360,28 @@ fn report_events(system: &mut System, store: &Store, events: &[UnitEvent]) {
                 "slic: disk unit {unit} is back with stale data; rebuilt from its parity set\n"
             )),
             UnitEvent::Resuming { unit } => {
-                // A copy cut short by a power down or a crash: it goes on
-                // in the background from its journal, as a resume does.
-                if let Some(u) = store.units().iter().find(|u| u.unit == unit) {
-                    resuming_at_open().push(u.entry.unit_uuid);
+                // An operator's resume cut short by a power down or a
+                // crash goes on in the background from its journal; the
+                // synchronization start mirrored protection began stays
+                // the IPL's (C1001075), as IBM's does.
+                if store.resume_in_background(unit, &mut journal(&mut system.lic)) {
+                    if let Some(u) = store.units().iter().find(|u| u.unit == unit) {
+                        resuming_at_open().push(u.entry.unit_uuid);
+                    }
+                    system.out.serial(&format!(
+                        "slic: disk unit {unit} is resuming; the copy goes on in the background\n"
+                    ));
+                } else if let Err(e) = synchronize(system, store, unit) {
+                    system
+                        .out
+                        .serial(&format!("slic: synchronizing unit {unit}: {e}\n"));
+                    system.emit(&src::RECOVERY_FAILED);
+                    return Err(&src::ASP_UNUSABLE);
                 }
-                system.out.serial(&format!(
-                    "slic: disk unit {unit} is resuming; the copy goes on in the background\n"
-                ));
             }
         }
     }
+    Ok(())
 }
 
 /// C1001075: copy a resuming half from its partner before the store is
@@ -453,9 +470,12 @@ pub fn start_resume(system: &mut System, unit: u16) -> Result<String, ResumeRefu
         return Err(ResumeRefused::Running);
     }
     let mut journal = journal(lic);
-    let resume = s
+    let mut resume = s
         .store
         .resume_unit(unit, &mut journal)
+        .map_err(ResumeRefused::Store)?;
+    resume
+        .set_background(&mut journal)
         .map_err(ResumeRefused::Store)?;
     let p = resume.progress();
     s.resume = Some(resume);
