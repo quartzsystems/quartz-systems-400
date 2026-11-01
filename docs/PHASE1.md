@@ -282,7 +282,10 @@ fields keep their text but show nothing. Enter on the sign-on display shows
 
 ## Install media
 
-`build iso` writes `target/images/QS400-V1R0M0-<hash>.iso`, a UEFI-bootable
+`build iso` writes `target/images/QS400-V1R0M0-<hash>.iso` and beside it
+`QS400-V1R0M0-<hash>.iso.sha256`, one `sha256sum` line (`<hex>  <file
+name>`; `sha256sum -c QS400-V1R0M0-<hash>.iso.sha256` checks a copy kept
+with it). The ISO is a UEFI-bootable
 ISO 9660 image written entirely in Rust (no `xorriso`, `mkisofs` or
 `genisoimage`): level 2, no Joliet, no Rock Ridge, an El Torito boot
 catalog with one EFI (platform `EF`) no-emulation entry whose boot image is

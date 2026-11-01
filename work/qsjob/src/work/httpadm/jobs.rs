@@ -37,9 +37,9 @@ fn run_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<Message, Messa
         Some(u) => m.as_user(u, |m| m.console.run(line, crate::command::RunMode::Run))?,
         None => m.console.run(line, crate::command::RunMode::Run),
     };
-    // CPF0001 says only that the command failed: its diagnostic says why.
+    // CPF0006 says only that the command failed: its diagnostic says why.
     let fail = match (o.escape, o.diag) {
-        (Some(e), Some(d)) if e.msgid == "CPF0001" => Some(d),
+        (Some(e), Some(d)) if e.msgid == "CPF0006" => Some(d),
         (e, _) => e,
     };
     let escape = fail.map(|f| {

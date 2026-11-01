@@ -230,40 +230,12 @@ pub fn analyze(env: &mut Env<'_>, text: &str) -> Result<Resolved> {
     if text.chars().count() > MAX_LEN {
         return Err(CmdError::escape("CPF0005"));
     }
-    let toks = token::tokenize(text, env.opts).map_err(|e| e.named(&typed_name(text)))?;
+    let toks = token::tokenize(text, env.opts)?;
     analyze_tokens(env, &toks)
-}
-
-/// The command name as typed, for an escape when the text does not
-/// tokenize: past a label and a `?`, before a library, a blank or `(`.
-fn typed_name(text: &str) -> String {
-    let mut t = text.trim_start();
-    if let Some((label, rest)) = t.split_once(':')
-        && !label.is_empty()
-        && !label.contains(char::is_whitespace)
-        && !label.contains('(')
-    {
-        t = rest.trim_start();
-    }
-    let word = t
-        .trim_start_matches('?')
-        .split(|c: char| c.is_whitespace() || c == '(' || c == '\'')
-        .next()
-        .unwrap_or("");
-    let word = word.rsplit('/').next().unwrap_or("");
-    if word.chars().all(|c| c.is_ascii_alphanumeric() || "$#@_.".contains(c)) {
-        word.to_ascii_uppercase()
-    } else {
-        String::new()
-    }
 }
 
 /// Analyze tokenized text.
 pub fn analyze_tokens(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
-    analyze_named(env, toks).map_err(|e| e.named(&toks.name))
-}
-
-fn analyze_named(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     if toks.name.is_empty() {
         return Err(CmdError::escape("CPF0006"));
     }
@@ -274,7 +246,7 @@ fn analyze_named(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     let typed = !env.setting.program && !env.setting.exec;
     if env.limited && typed && !def.alwlmtusr {
         let refused = Diag::new("CPD0033").data(&[(&name, 10)]);
-        return Err(CmdError::analysis(&name, vec![refused]));
+        return Err(CmdError::analysis(vec![refused]));
     }
     let mut diags = Vec::new();
     if !env.setting.syntax_only {
@@ -285,11 +257,11 @@ fn analyze_named(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
             }
         }
         if def.mode.0 & env.mode == 0 {
-            diags.push(Diag::new("CPD0032").data(&[(&name, 10)]));
+            diags.push(Diag::new("CPD0034").data(&[(&name, 10)]));
         }
     }
     if !diags.is_empty() {
-        return Err(CmdError::analysis(&name, diags));
+        return Err(CmdError::analysis(diags));
     }
     // `?CMD` or a selective prompt: what is missing comes from the
     // display, so required parameters and dependencies wait.
@@ -310,7 +282,7 @@ fn analyze_named(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
         dep::check(&def, &parms, &mut diags);
     }
     if !diags.is_empty() {
-        return Err(CmdError::analysis(&name, diags));
+        return Err(CmdError::analysis(diags));
     }
     Ok(Resolved {
         name,
@@ -344,7 +316,7 @@ pub fn resolve(env: &mut Env<'_>, name: &str, lib: Option<&str>) -> Result<(CmdO
         let Some((object, found)) = env.source.lookup(&name, lib.as_deref())? else {
             let missing =
                 Diag::new("CPD0030").data(&[(&name, 10), (lib.as_deref().unwrap_or("*LIBL"), 10)]);
-            return Err(CmdError::analysis(&name, vec![missing]));
+            return Err(CmdError::analysis(vec![missing]));
         };
         match &object.proxy {
             None => return Ok((object, found)),
@@ -354,7 +326,7 @@ pub fn resolve(env: &mut Env<'_>, name: &str, lib: Option<&str>) -> Result<(CmdO
             }
         }
     }
-    Err(CmdError::analysis(&name, vec![Diag::new("CPD0035").data(&[(&name, 10)])]))
+    Err(CmdError::analysis(vec![Diag::new("CPD0035").data(&[(&name, 10)])]))
 }
 
 /// Whether a parameter may be given positionally at index `i`.

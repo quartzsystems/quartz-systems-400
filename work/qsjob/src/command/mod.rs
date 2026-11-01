@@ -118,7 +118,7 @@ pub struct Outcome {
     pub text: String,
     /// The escape that ended the command, if one did.
     pub escape: Option<Fail>,
-    /// The first diagnostic before a `CPF0001`: what a message line
+    /// The first diagnostic before a `CPF0006`: what a message line
     /// shows (`CPD0030` names a command that is not found).
     pub diag: Option<Fail>,
     /// The command name, upper case, once resolved.

@@ -78,19 +78,33 @@ fn create_store_and_change_its_password() {
     assert!(t.contains("HTP8320"), "{t}");
     pages.push(t);
 
-    // The password page; a wrong current password changes nothing.
-    pages.push(b.get("/certs/store/TESTST/password").text());
-    let r = b.post("/certs/store/TESTST/password", &[("old", "Wrong-Secret-1"), ("p1", "Yak-Secret-88"), ("p2", "Yak-Secret-88")]);
-    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/TESTST/password"));
+    // The store has a stash: the password page asks only for the new one.
     let t = b.get("/certs/store/TESTST/password").text();
-    assert!(t.contains("HTP8321") && t.contains("Password not correct for certificate store TESTST."), "{t}");
+    assert!(!t.contains("Current password") && t.contains("New password"), "{t}");
     pages.push(t);
-    let r = b.post("/certs/store/TESTST/password", &[("old", "Zebra-Secret-77"), ("p1", "Yak-Secret-88"), ("p2", "Yak-Secret-88")]);
+    let r = b.post("/certs/store/TESTST/password", &[("p1", "Yak-Secret-88"), ("p2", "Yak-Secret-88")]);
     assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/stores"));
     let t = b.get("/certs/stores").text();
     assert!(t.contains("HTP8307"), "{t}");
     pages.push(t);
     // The new password opens it; the old one does not.
+    let ctx = b.fx.certs.manager().ctx;
+    let path = "/QIBM/UserData/ICSS/Cert/TESTST.KDB";
+    assert!(ctx.open(&certs::admin::Keystore::new(path, "Yak-Secret-88")).is_ok());
+    assert!(ctx.open(&certs::admin::Keystore::new(path, "Zebra-Secret-77")).is_err());
+    // Without its stash the current password is asked for, and a wrong
+    // one changes nothing.
+    b.fx.certs.files.remove("/QIBM/UserData/ICSS/Cert/TESTST.RDB").unwrap();
+    let t = b.get("/certs/store/TESTST/password").text();
+    assert!(t.contains("Current password"), "{t}");
+    pages.push(t);
+    let r = b.post("/certs/store/TESTST/password", &[("old", "Wrong-Secret-1"), ("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/TESTST/password"));
+    let t = b.get("/certs/store/TESTST/password").text();
+    assert!(t.contains("HTP8321") && t.contains("Password not correct for certificate store TESTST."), "{t}");
+    pages.push(t);
+    let r = b.post("/certs/store/TESTST/password", &[("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/TESTST/password"));
     let ok = b.post("/certs/store/TESTST/password", &[("old", "Yak-Secret-88"), ("p1", "Zebra-Secret-77"), ("p2", "Zebra-Secret-77")]);
     assert_eq!(ok.header("Location"), Some("/qs400/httpadmin/certs/stores"));
     pages.push(b.get("/certs/stores").text());

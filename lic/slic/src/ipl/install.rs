@@ -297,8 +297,8 @@ pub fn drive_panel(system: &mut System, panel: Box<dyn svctools::Panel>, rx: &Re
 }
 
 /// An automatic install's IPL options, from the kept answers: the
-/// clock, the IPL and major options, `QSTRUPPGM`, the system name and
-/// QSECOFR's password.
+/// clock, the IPL and major options, `QSTRUPPGM`, the system name, the
+/// TCP/IP interface and route, and QSECOFR's password.
 pub fn apply_answers(system: &mut System) {
     let Some(rsp) = kept_answers(system) else {
         return;
@@ -340,6 +340,7 @@ pub fn apply_answers(system: &mut System) {
         }
         let _ = crate::ipl::sysvals::save(system);
     }
+    apply_network(system, &rsp);
     if let instmedia::rsp::QsecofrPolicy::Set(pw) = &rsp.qsecofr {
         match set_qsecofr(system, pw) {
             Ok(()) => system
@@ -349,6 +350,31 @@ pub fn apply_answers(system: &mut System) {
         }
     }
     system.out.serial("slic: install: response file applied\n");
+}
+
+/// The response file's `ip` and `gateway` as an operator would give
+/// them: `ADDTCPIFC` on the first Ethernet line (a line description,
+/// else the first port's link, `LIND(ETH0)`), `ADDTCPRTE *DFTROUTE`.
+/// The interface starts with TCP/IP, so the system comes up reachable.
+fn apply_network(system: &mut System, rsp: &instmedia::Response) {
+    let Some(ip) = rsp.ip.as_deref() else {
+        return;
+    };
+    let described = crate::stgsvc::cmn::line_names(system, &|_| true)
+        .ok()
+        .and_then(|v| v.into_iter().next());
+    let Some(line) = described.or_else(|| super::first_ethernet(system).map(|(_, n)| n.to_ascii_uppercase())) else {
+        system.out.serial("slic: install: no Ethernet line for the response file's ip\n");
+        return;
+    };
+    match crate::stgsvc::tcp::store::install_answers(system, ip, rsp.gateway.as_deref(), &line) {
+        Ok(cmds) => {
+            for c in cmds {
+                system.out.serial(&format!("slic: install: {c}\n"));
+            }
+        }
+        Err(e) => system.out.serial(&format!("slic: install: TCP/IP: {e}\n")),
+    }
 }
 
 /// QSECOFR's password, not expired: the shipped profiles made first.

@@ -386,7 +386,9 @@ pub fn password(rq: &Rq<'_>, name: &str) -> Response {
         if f.has("cancel") {
             return rq.redirect("/certs/stores");
         }
-        let (old, new, again) = (f.str("old"), f.str("p1"), f.str("p2"));
+        // A stashed store opens through its stash: no current password.
+        let old = if s.stashed { "" } else { f.str("old") };
+        let (new, again) = (f.str("p1"), f.str("p2"));
         if new != again {
             return rq.done(&here, invalid("the two new passwords are not the same"));
         }
@@ -401,19 +403,18 @@ pub fn password(rq: &Rq<'_>, name: &str) -> Response {
             Err(e) => rq.done(&here, failed(&e)),
         };
     }
+    let mut rows = Vec::new();
+    if !s.stashed {
+        rows.push(Prop::new("Current password", password_field("old")).required());
+    }
+    rows.push(Prop::new("New password", password_field("p1")).required().help("cert-password"));
+    rows.push(Prop::new("Confirm new password", password_field("p2")).required());
     let body = format!(
         "{}{}",
         store_line(&s),
         props(
             &rq.ctx,
-            &[PropGroup {
-                title: None,
-                rows: vec![
-                    Prop::new("Current password", password_field("old")).required(),
-                    Prop::new("New password", password_field("p1")).required().help("cert-password"),
-                    Prop::new("Confirm new password", password_field("p2")).required(),
-                ],
-            }],
+            &[PropGroup { title: None, rows }],
             &[Button::new("change", "Change"), Button::new("cancel", "Cancel")],
         )
     );
@@ -426,7 +427,11 @@ pub fn password(rq: &Rq<'_>, name: &str) -> Response {
             "Change password".into(),
         ],
         h1: "Change store password".into(),
-        desc: Some("The store is sealed again under the new password; servers keep opening it through its stash.".into()),
+        desc: Some(if s.stashed {
+            "The store's stash opens it, so its current password is not needed. The store is sealed again under the new password and the stash follows.".into()
+        } else {
+            "The store has no stash: give its current password. The store is sealed again under the new password.".into()
+        }),
         body,
         help: "cert-password".into(),
         ..Page::default()

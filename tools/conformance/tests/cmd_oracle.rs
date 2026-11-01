@@ -60,12 +60,11 @@ fn oracle(text: &str) -> Vec<(usize, String)> {
 }
 
 /// The diagnostic that says why: the second identifier when the first
-/// is the analyzer's escape (`CPF0001` here, `QCMDCHK`'s `CPF0006`
-/// there), else the first.
+/// is the analyzer's escape (`CPF0006`), else the first.
 fn first_diagnostic(outcome: &str) -> &str {
     let mut ids = outcome.split_whitespace();
     let first = ids.next().unwrap_or("");
-    if matches!(first, "CPF0001" | "CPF0006") {
+    if first == "CPF0006" {
         ids.next().unwrap_or(first)
     } else {
         first

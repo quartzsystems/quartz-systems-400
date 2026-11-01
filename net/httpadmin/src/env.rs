@@ -193,6 +193,11 @@ pub struct StoreInfo {
     pub certificates: usize,
     /// The default certificate's label.
     pub default: Option<String>,
+    /// Whether the store has a stash that opens it. Without one its
+    /// certificates are not counted and changing its password takes the
+    /// current one.
+    #[serde(default)]
+    pub stashed: bool,
 }
 
 /// What a store entry is.
@@ -441,7 +446,9 @@ pub trait Certs: Send + Sync {
     /// Make an empty store `name` at `path` with `password`, its
     /// password stashed (`QSCRTCRTS STASH(*YES)`).
     fn create_store(&self, user: &str, name: &str, path: &str, password: &str) -> Result<(), CertFailure>;
-    /// Change a store's password; `old` must open it. The stash follows.
+    /// Change a store's password; `old` must open it, or is empty when
+    /// the store's stash opens it (the user manages certificates, so
+    /// has `*SECADM` and `*ALLOBJ`). The stash follows.
     fn change_password(&self, user: &str, store: &str, old: &str, new: &str) -> Result<(), CertFailure>;
     /// Delete a store made by someone (`QSDLTCRTS`); the system's own
     /// stores are refused.
