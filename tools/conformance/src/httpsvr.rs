@@ -5,7 +5,7 @@
 //! QEMU step 86: an HTTP server instance. An instance written into the
 //! IFS (`/www/stepweb`, its registry entry) starts with `STRTCPSVR
 //! SERVER(*HTTP) HTTPSVR(STEPWEB)` as job `STEPWEB` in `QHTTPSVR`,
-//! serves its document root on 8086 with the access log written, is
+//! serves its document root on 8186 with the access log written, is
 //! refused a second start and an unknown name, and ends controlled with
 //! `ENDTCPSVR ... OPTION(*CNTRLD) DELAY(5)`, recorded in the registry.
 
@@ -20,10 +20,11 @@ use crate::tcp::forward_port;
 
 /// The guest's own address on QEMU's user network.
 const GUEST: &str = "10.0.2.15";
-/// The instance's port.
-const PORT: u16 = 8086;
+/// The instance's port, outside the 8000-8100 range step 61 keeps
+/// for QTCP.
+const PORT: u16 = 8186;
 
-const CONF: &str = "# Step 86\nServerRoot /www/stepweb\nListen *:8086\nDocumentRoot /www/stepweb/htdocs\n\
+const CONF: &str = "# Step 86\nServerRoot /www/stepweb\nListen *:8186\nDocumentRoot /www/stepweb/htdocs\n\
 LogFormat \"%h %u \\\"%r\\\" %>s %b\" short\nCustomLog logs/access_log short\nErrorLog logs/error_log\n\
 DirectoryIndex index.html\n<Directory />\n   Order Deny,Allow\n   Deny From all\n</Directory>\n\
 <Directory /www/stepweb/htdocs>\n   Order Allow,Deny\n   Allow From all\n</Directory>\n";
@@ -157,6 +158,6 @@ impl Suite {
         gone(port)?;
         expect(s, "svc.ifs cat /www/instances.json", "ENDTCPSVR *HTTP, controlled")?;
         expect(s, "ENDTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB)", "TCP1A09")?;
-        Ok("STEPWEB started in QHTTPSVR, served its document root and access log on 8086, refused a second start and an unknown instance, ended controlled".into())
+        Ok("STEPWEB started in QHTTPSVR, served its document root and access log on 8186, refused a second start and an unknown instance, ended controlled".into())
     }
 }
