@@ -179,3 +179,44 @@ For the administration pages: an instance's job is the active job of
 `QHTTPSVR` named after it (`active_jobs()` gives number, user and
 start time); its **function** is `CNN-n`, the client connections open
 now, refreshed every half second.
+
+## The live administration server
+
+`ADMIN` (role `HTTPADM`, `work/qsjob/src/work/httpadm/`) serves the
+product on 2001 and, with TLS, on 2010 (Global settings' TLS port) through
+`servers::web::Web`, kept alive. The job's thread holds the link and the
+runtime; connection threads hand it closures (`bridge.rs`), so service
+requests never interleave. The environment:
+
+- **System**: the name is `SYSNAME` of the network attributes, else
+  `QSYSNAME`; dates in the job's `DATFMT`/`DATSEP`/`TIMSEP` and the
+  `QTIMZON` zone (`httpenv/stamp.rs`). Sign-on is the service's
+  `sign_on` with no device (`QMAXSIGN`, `PW` `U`/`P`/`Q` entries); an
+  expired password is refused (`CPF22E4`, a `PW` `R` entry); then the
+  profile's handle (`QSYGETPH`) is kept for the user. Special
+  authorities, groups and class are read with the job swapped to the
+  user (`whoami`, the profile), kept 30 seconds. Audit entries go
+  through `web_audit` (only a `QTMHHTTP` job may send it). Message
+  texts come from `QHTTPSVR/QZHBMSG` (`HTP`), `QTCPMSG` (`TCP`) or
+  `QCPFMSG`.
+- **Jobs**: the active jobs of `QHTTPSVR` but its monitor, one per
+  name; connections from the function `CNN-n`. Start and end run
+  `STRTCPSVR`/`ENDTCPSVR ... HTTPSVR(name)` through the analyzer with
+  the job swapped to the web user (`as_user`), so the commands check
+  their own authority; the escape (or the diagnostic before `CPF0001`)
+  is the error message.
+- **Files**: `work/ifsfiles.rs` over the job's link, as `QTMHHTTP`.
+- **Certs**: `httpadmin::certmgr` (shared with the fixture) runs in the
+  storage service (`web_certs`, `lic/slic/src/stgsvc/webadm.rs`) over the
+  store files `certs.rs` stages; the job sends `certmgr::wire` calls,
+  those that change stores as the web user, whose `*ALLOBJ` and
+  `*SECADM` the service checks. The stores someone made are listed in
+  `certs::paths::USER_STORES`. An import from a path is read in the job
+  as the user.
+
+`QZHBMSG` is made from `src/msgs.rs`: after adding a message run
+`QS400_UPDATE_MSGF=1 cargo test -p httpadmin --test msgf`. On a new
+system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`). QEMU
+step 87 (`tools/conformance/src/httpadm.rs`) signs on as `QSECOFR` over
+2001, checks Server instances against `DSPJOB`, a message page, the
+CSRF refusal and sign-off, and the sign-on page over TLS on 2010.
