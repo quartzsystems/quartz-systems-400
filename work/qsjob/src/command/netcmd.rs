@@ -3,8 +3,9 @@
 // root directory of this project.
 
 //! The small servers' commands and their clients, run in the job:
-//! `CHGNTPA`, `CHGLPDA` and `CHGSMTPA` keep their attributes in the
-//! TCP/IP server table (`servers::attrs`); `SNDTCPSPLF` and `LPR` read
+//! `CHGNTPA`, `CHGLPDA`, `CHGHTTPA` and `CHGSMTPA` keep their
+//! attributes in the TCP/IP server table (`servers::attrs`); `CHGHTTPA`
+//! sets only the table's autostart flag. `SNDTCPSPLF` and `LPR` read
 //! a spooled file through the service and send it with `work/print`'s
 //! LPR client; `SNDSMTPEMM` builds a MIME message (`net/mail`) and
 //! hands it to the mail router, as the job's `QtmmSendMail` does.
@@ -110,6 +111,12 @@ fn chglpda(host: &Host, r: &Resolved) -> Result<String, Fail> {
         a.set("NBRSVR", &text_of(v)).map_err(|e| bad(&e))?;
     }
     store(host, "*LPD", "LPD", yes_no(&parms.name("AUTOSTART")), a.to_bag())
+}
+
+/// `CHGHTTPA`: `AUTOSTART` only; the bag (the ports) is left alone.
+fn chghttpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let on = yes_no(&parms_of(r).name("AUTOSTART"));
+    store(host, "*HTTP", "HTTP", on, Vec::new())
 }
 
 /// `CHGSMTPA`.
@@ -377,6 +384,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
     Some(match r.name.as_str() {
         "CHGNTPA" => chgntpa(host, r),
         "CHGLPDA" => chglpda(host, r),
+        "CHGHTTPA" => chghttpa(host, r),
         "CHGSMTPA" => chgsmtpa(host, r),
         "SNDTCPSPLF" | "LPR" => sndtcpsplf(job, host, r),
         "SNDSMTPEMM" => sndsmtpemm(host, r),

@@ -121,3 +121,20 @@ fn all_and_autostart() {
     assert!(fw.active(&mut env, "*HTTP"));
     assert_eq!(fw.start(&mut env, &Request::autostart("*HTTP")).unwrap(), "");
 }
+
+/// `CHGHTTPA AUTOSTART(*YES)` turns the table's flag on: `STRTCP` then
+/// starts the administration instance too, and `*AUTOSTART` names `*HTTP`.
+#[test]
+fn chghttpa_autostart() {
+    let (fw, mut env) = (fw(), env());
+    assert_eq!(servers::registry::lookup("*HTTP").unwrap().attrs_cmd, Some("CHGHTTPA"));
+    assert!(!fw.expand(&mut env, &["*AUTOSTART".to_string()], true).contains(&"*HTTP".to_string()));
+    env.cfg.get_mut("*HTTP").autostart = true;
+    assert!(fw.expand(&mut env, &["*AUTOSTART".to_string()], true).contains(&"*HTTP".to_string()));
+    assert_eq!(
+        fw.start(&mut env, &Request::autostart("*HTTP")).unwrap(),
+        "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1."
+    );
+    let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
+    assert_eq!(names, ["ADMIN", "WEB1"]);
+}

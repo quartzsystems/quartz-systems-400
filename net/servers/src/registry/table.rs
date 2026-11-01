@@ -94,7 +94,7 @@ pub static SPECS: &[ServerSpec] = &[
         name: "HTTP",
         jobs: &[job("ADMIN", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPADM")],
         ports: &[tcp(2001, false), tcp(2010, true)],
-        attrs_cmd: None,
+        attrs_cmd: Some("CHGHTTPA"),
         app_id: Some("QIBM_HTTP_SERVER_ADMIN"),
         exit_points: &[],
         start_subsystem: true,
