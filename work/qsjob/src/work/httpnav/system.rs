@@ -7,7 +7,10 @@
 //! `WRKSYSSTS` (`panel2_data SYSSTS`), `WRKDSKSTS` (`DSKSTS`),
 //! `DSPSYSVAL` (`QSRLNBR`, `QMODEL`), `WRKACTJOB` (`active_jobs`),
 //! `WRKSBS` (`sbs_list`), `WRKJOBQ`, `WRKSPLF` (`splf_list`) and
-//! `DSPMSG QSYSOPR` (`msgq_list`) show.
+//! `DSPMSG QSYSOPR` (`msgq_list`) show; failed sign-ons from
+//! `DSPAUDJRNE ENTTYP(PW)`, PTFs from `DSPPTF` (`sys2_panel PTF`), the
+//! servers down from the registry and the active jobs, the machine
+//! type from the hardware table.
 
 use navigator::env::{Audit, Status, System};
 use qsweb::msg::{Message, SecondLevel};
@@ -102,7 +105,69 @@ fn status(m: &mut Main, reset: bool) -> Status {
         )
         .unwrap_or(0);
     }
+    let now = m.link.borrow_mut().with(Client::now).unix;
+    s.failed_signons = failed_signons(m, now);
+    s.ptfs_not_applied = ptfs_not_applied(m);
+    s.servers_down = super::net::servers(m)
+        .into_iter()
+        .filter(|v| v.autostart && !v.started)
+        .map(|v| v.name)
+        .collect();
+    s.machine_type = machine_type(m);
     s
+}
+
+/// `PW` entries of the last 24 hours, from `DSPAUDJRNE ENTTYP(PW)`'s
+/// report (0 when the user may not read the audit journal).
+fn failed_signons(m: &Main, now: u64) -> u32 {
+    let since = now.saturating_sub(86_400);
+    let line = format!("DSPAUDJRNE ENTTYP(PW) FROMTIME({})", sec::cmd::civil(since));
+    let text = m.link.borrow_mut().with(|l| l.exec(line)).text;
+    u32::try_from(text.lines().filter(|l| entry_time(l).is_some_and(|t| t >= since)).count()).unwrap_or(0)
+}
+
+/// The time of a report line that is an entry: sequence number, then
+/// `YYYY-MM-DD HH:MM:SS.ffffff` (UTC).
+fn entry_time(line: &str) -> Option<u64> {
+    let mut words = line.split_whitespace();
+    words.next()?.parse::<u64>().ok()?;
+    let (date, time) = (words.next()?, words.next()?);
+    let ymd: Vec<u32> = date.split('-').map(|p| p.parse().ok()).collect::<Option<_>>()?;
+    let hms: Vec<u32> = time.split(['.', ':']).take(3).map(|p| p.parse().ok()).collect::<Option<_>>()?;
+    let ([year, month, day], [hour, min, sec]) = (ymd.as_slice(), hms.as_slice()) else {
+        return None;
+    };
+    Some(sysval::civil_to_unix(i64::from(*year), *month, *day, *hour, *min, *sec))
+}
+
+/// The operating system's PTFs loaded and not applied (`DSPPTF`).
+fn ptfs_not_applied(m: &Main) -> u32 {
+    let Ok((_, lists)) = m.link.borrow_mut().with(|l| l.sys2_panel("PTF".into(), vec![String::new(), String::new()]))
+    else {
+        return 0;
+    };
+    let n = lists
+        .iter()
+        .flat_map(|(_, rows)| rows)
+        .filter(|r| r.iter().any(|(k, v)| k == "PSTS" && v.trim() == "Loaded"))
+        .count();
+    u32::try_from(n).unwrap_or(0)
+}
+
+/// The machine type: the processor's type in the hardware table
+/// (`DSPHDWRSC TYPE(*PRC)`), else `QPRCFEAT`.
+fn machine_type(m: &Main) -> String {
+    m.link
+        .borrow_mut()
+        .with(|l| l.hw_table(false))
+        .ok()
+        .and_then(|t| {
+            t.resources
+                .iter()
+                .find(|r| r.kind == hwrsrc::Kind::Processor)
+                .map(|r| r.type_model().0)
+        })
+        .unwrap_or_else(|| sysval(m, "QPRCFEAT"))
 }
 
 impl System for LiveSystem {
@@ -143,5 +208,19 @@ impl System for LiveSystem {
 
     fn status(&self, user: &str, reset: bool) -> Status {
         self.link.read(user, move |m| status(m, reset))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn report_lines() {
+        let row = " 12         2026-11-01 13:05:09.000123   QPADEV0001 QSECOFR    012345 P";
+        assert_eq!(entry_time(row), Some(sysval::civil_to_unix(2026, 11, 1, 13, 5, 9)));
+        assert_eq!(entry_time(" SEQNBR     TIMESTAMP"), None);
+        assert_eq!(entry_time(" Entry type PW"), None);
+        assert_eq!(entry_time(""), None);
     }
 }
