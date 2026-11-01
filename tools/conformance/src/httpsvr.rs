@@ -9,6 +9,7 @@
 //! refused a second start and an unknown name, and ends controlled with
 //! `ENDTCPSVR ... OPTION(*CNTRLD) DELAY(5)`, recorded in the registry.
 
+use std::fmt::Write as _;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
@@ -108,6 +109,22 @@ fn fetch_once(port: u16) -> bool {
     })
 }
 
+/// What the guest says about the instance, for a failure's report.
+fn diagnostics(s: &mut Session) -> String {
+    let mut out = String::new();
+    for line in [
+        "wrkactjob",
+        "svc.ifs cat /www/instances.json",
+        "svc.ifs cat /www/stepweb/logs/error_log",
+        "svc.ifs ls /www/stepweb",
+        "dsplog",
+    ] {
+        let said = s.command(line, CMD).unwrap_or_else(|e| e);
+        let _ = writeln!(out, "--- {line}\n{said}");
+    }
+    out
+}
+
 #[allow(clippy::unused_self)] // the steps share one signature
 impl Suite {
     /// Step 86: an HTTP server instance started, serving and ended.
@@ -124,7 +141,7 @@ impl Suite {
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(STEPWEB)", "TCP1A07")?;
         job_shown(s, "STEPWEB", true)?;
         let port = forward_port(self, GUEST, PORT)?;
-        let page = fetch(port, "/")?;
+        let page = fetch(port, "/").map_err(|e| format!("{e}\n{}", diagnostics(s)))?;
         if !page.starts_with("HTTP/1.1 200 OK") || !page.contains("Step 86 page") {
             return Err(format!("GET / answered:\n{page}"));
         }
