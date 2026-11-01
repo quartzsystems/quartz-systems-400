@@ -128,7 +128,7 @@ fn system_sources() -> Vec<PathBuf> {
     for e in rd.flatten() {
         let p = e.path();
         let name = e.file_name().to_string_lossy().to_string();
-        if p.is_dir() && !matches!(name.as_str(), "target" | "tools" | "docs" | ".git" | "kernel") {
+        if p.is_dir() && !matches!(name.as_str(), "target" | "tools" | "docs" | ".git" | ".claude" | "kernel") {
             sources(&p, &mut out);
         }
     }
