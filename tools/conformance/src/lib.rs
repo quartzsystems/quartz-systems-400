@@ -30,6 +30,7 @@ mod error;
 mod hostsvr;
 mod httpsvr;
 mod httpadm;
+mod navstep;
 pub mod ftp;
 mod ftpsrv;
 mod ifs;

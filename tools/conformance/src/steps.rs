@@ -630,6 +630,7 @@ impl Suite {
         // Before 84, which ends TCP/IP.
         reports.push(self.step(&mut s, "86 HTTP server instance", Self::http_instance)?);
         reports.push(self.step(&mut s, "87 HTTP administration", Self::http_admin)?);
+        reports.push(self.step(&mut s, "88 Navigator", Self::navigator)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         s.command("pwrdwn", CMD).ok();

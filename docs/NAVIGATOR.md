@@ -207,6 +207,38 @@ and `Net::run` as the user, as in Work management.
   user's interval. A job's CPU bar spans 0 to 20 %. Units busy 70 % or
   more are named under Disk activity with the job doing most I/O.
 
+## The live server
+
+`STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)` starts job `NAVIGATOR` in
+`QHTTPSVR` under `QTMHHTTP` next to `ADMIN` (role `HTTPNAV`,
+`work/qsjob/src/work/httpnav/`); `ENDTCPSVR ... HTTPSVR(*ADMIN)` ends
+both and `STRTCP` starts both when `*HTTP` autostarts. It listens on
+2002 and, with TLS, 2005 (the certificate `*SYSTEM` assigns
+`QS400_HTTP_SERVER_NAVIGATOR`, else the system's own). The job's thread
+holds the link; connection threads hand it closures
+(`work/qsjob/src/work/web/`, shared with `ADMIN`). Every read runs with
+the job swapped to the signed-on user (the `QSYGETPH` handle taken at
+sign-on), so the service checks that user's authority; every change is
+`run(user, command)`: the analyzer as the user, the completion or the
+escape (the diagnostic before `CPF0001`) the message.
+
+| Area | What it reads |
+|---|---|
+| System | the name (`SYSNAME`, else `QSYSNAME`), the job's dates, sign-on (`sign_on`, `PW` entries), special authorities and class (`whoami`, `QSYRUSRI`), `web_audit`, message files (`describe`). Status: `panel2_data SYSSTS` (`WRKSYSSTS`: CPU, elapsed, jobs, ASP, temporary storage, main storage, pools) and `DSKSTS` (units), `QSRLNBR`, `QMODEL`, `active_jobs` (active, interactive, `MSGW`, the IPL from `SCPF`'s start), `sbs_list`, the job queues' jobs, `splf_list` (ready files), `msgq_list QSYS/QSYSOPR` |
+| Work | `actjob_data` (`WRKACTJOB`), `job_detail` (`DSPJOB`, the library list), `panel2_data JOBLCK` (`DSPJOB OPTION(*JOBLCK)`: the job's locks from the store's lock table, as `WRKOBJLCK`), `list_objects` + `wm_object` (`*JOBQ`, `*SBSD`, `*OUTQ`, `QUSRSYS/QDFTJOBSCD`), `jobq_attach`, `sbs_list`, `pools`, `splf_list`, `splf_fetch` (text and PDF through `spool`), `wtr_list`, `cfg_status` |
+| Messages | `list_objects *MSGQ` (`QSYS` `QSYSOPR`/`QSYSMSG`, then `QUSRSYS`), `msgq_list` (`DSPMSG`), the profile's `MSGQ` (`QSYRUSRI`), `hst_entries` (`DSPLOG`) |
+| Users | `QSYLAUTU` + `QSYRUSRI` (`sec_api Users`, `Profile`), `QSYLOBJA` (a profile's objects), `autl_panel_list` + `autl_panel` (`WRKAUTL`, `DSPAUTL`), `QSYLATLO` (`DSPAUTLOBJ`). A profile is a group when another names it as `GRPPRF` or `SUPGRPPRF`, or it has a `GID` |
+
+Not live yet: another job's job log and call stack (the 5250 displays
+refuse them too, `CPD9B9D`), so those tabs are empty; Active jobs'
+ended-job notes; Status' failed sign-ons, PTFs not applied, servers
+down and machine type. Config, Net and Perf return empty data (their
+`run` is live); Db, Security and Software have no methods yet. QEMU
+step 88 (`tools/conformance/src/navstep.rs`) signs on over 2002, checks
+System status against `DSPNETA`, the `NAVIGATOR` job on Active jobs
+against `DSPJOB`, `QSYSOPR`, the CSRF refusal and sign-off, and the
+sign-on page over TLS on 2005.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -240,9 +272,9 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | Steps | Area | State |
 |---|---|---|
 | 1, 2 | Frame, sign-on, System status | done |
-| 3-11 | Work management | done (golden-clean; live `Work` pending) |
-| 12-14 | Messages | done (golden-clean; live `Msgs` pending) |
-| 15-18 | Users and groups | done (golden-clean; live `Users` pending) |
+| 3-11 | Work management | done (golden-clean; live) |
+| 12-14 | Messages | done (golden-clean; live) |
+| 15-18 | Users and groups | done (golden-clean; live) |
 | 19-22 | System | done (golden-clean; live `Config` pending) |
 | 23, 24 | Network | done (golden-clean; live `Net` pending) |
 | 25, 26 | Database | |

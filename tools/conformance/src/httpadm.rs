@@ -23,10 +23,10 @@ use crate::tcp::{GUEST, forward_port};
 const PREFIX: &str = "/qs400/httpadmin";
 
 /// An answer: status, head, body.
-struct Reply {
-    status: u16,
-    head: String,
-    body: String,
+pub(crate) struct Reply {
+    pub(crate) status: u16,
+    pub(crate) head: String,
+    pub(crate) body: String,
 }
 
 impl Reply {
@@ -42,14 +42,14 @@ impl Reply {
     }
 
     /// A header's value (the first).
-    fn header(&self, name: &str) -> Option<&str> {
+    pub(crate) fn header(&self, name: &str) -> Option<&str> {
         self.head.lines().find_map(|l| {
             let (k, v) = l.split_once(':')?;
             k.trim().eq_ignore_ascii_case(name).then(|| v.trim())
         })
     }
 
-    fn brief(&self) -> String {
+    pub(crate) fn brief(&self) -> String {
         format!("{}\n{}", self.head, self.body.chars().take(2000).collect::<String>())
     }
 }
@@ -86,11 +86,23 @@ fn connect(port: u16) -> Result<TcpStream, String> {
     Ok(c)
 }
 
-/// One request over plain HTTP, tried for a while: slirp accepts
-/// before the guest does.
+/// One request to the administration server over plain HTTP.
 fn http(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
+    http_at(PREFIX, port, method, path, cookie, form)
+}
+
+/// One request under `prefix` over plain HTTP, tried for a while: slirp accepts
+/// before the guest does.
+pub(crate) fn http_at(
+    prefix: &str,
+    port: u16,
+    method: &str,
+    path: &str,
+    cookie: Option<&str>,
+    form: Option<&str>,
+) -> Result<Reply, String> {
     let end = Instant::now() + Duration::from_secs(30);
-    let req = request_bytes(method, &format!("{PREFIX}{path}"), cookie, form);
+    let req = request_bytes(method, &format!("{prefix}{path}"), cookie, form);
     loop {
         let r = connect(port).ok().and_then(|mut c| exchange(&mut c, &req));
         match r {
@@ -101,8 +113,8 @@ fn http(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<
     }
 }
 
-/// The sign-on page over TLS, the certificate taken as it is.
-fn tls_signon(port: u16) -> Result<Reply, String> {
+/// A GET of `path` over TLS, the certificate taken as it is.
+pub(crate) fn tls_get(port: u16, path: &str) -> Result<Reply, String> {
     let policy = tls::policy::TlsPolicy::opsys();
     let cfg = tls::config::client_config(
         &policy,
@@ -112,7 +124,7 @@ fn tls_signon(port: u16) -> Result<Reply, String> {
     )
     .map_err(|e| e.to_string())?;
     let name = tls::config::server_name("qs400").map_err(|e| e.to_string())?;
-    let req = request_bytes("GET", &format!("{PREFIX}/signon"), None, None);
+    let req = request_bytes("GET", path, None, None);
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let r = connect(port).and_then(|c| {
@@ -127,7 +139,7 @@ fn tls_signon(port: u16) -> Result<Reply, String> {
     }
 }
 
-fn want(r: &Reply, status: u16, needles: &[&str], what: &str) -> Result<(), String> {
+pub(crate) fn want(r: &Reply, status: u16, needles: &[&str], what: &str) -> Result<(), String> {
     if r.status != status {
         return Err(format!("{what}: status {} rather than {status}:\n{}", r.status, r.brief()));
     }
@@ -140,7 +152,7 @@ fn want(r: &Reply, status: u16, needles: &[&str], what: &str) -> Result<(), Stri
 }
 
 /// The session cookie a sign-on set.
-fn session_cookie(r: &Reply) -> Option<String> {
+pub(crate) fn session_cookie(r: &Reply) -> Option<String> {
     r.head.lines().find_map(|l| {
         let v = l.strip_prefix("Set-Cookie: QS400SID=")?;
         let id = v.split(';').next()?.trim();
@@ -159,7 +171,7 @@ fn admin_job(body: &str) -> Option<String> {
 }
 
 /// Form-encode a value.
-fn enc(v: &str) -> String {
+pub(crate) fn enc(v: &str) -> String {
     v.bytes()
         .map(|b| match b {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'*' => char::from(b).to_string(),
@@ -220,7 +232,7 @@ impl Suite {
         }
         // TLS on 2010.
         let secure = forward_port(self, GUEST, 2010)?;
-        let t = tls_signon(secure)?;
+        let t = tls_get(secure, &format!("{PREFIX}/signon"))?;
         want(&t, 200, &["name=\"password\""], "the sign-on page over TLS")?;
         let ended = s.command("ENDTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
         if !ended.contains("TCP1A0A") {

@@ -20,7 +20,9 @@ its reach. The library is `net/servers`; the job side is
 | `work/qsjob/src/command/tcpsvr.rs` | `JobEnv`, `STRTCPSVR`, `ENDTCPSVR`, `CHGTELNA`, `CHGFTPA`, `framework()` |
 | `work/qsjob/src/command/tcp.rs` | `STRTCP`/`ENDTCP` start and end the autostart servers through `Starter` |
 | `work/qsjob/src/work/telnet.rs` | role `TELNET`: `QTVTELNET` |
-| `work/qsjob/src/work/httpadm.rs` | role `HTTPADM`: `ADMIN` |
+| `work/qsjob/src/work/httpadm/` | role `HTTPADM`: `ADMIN` |
+| `work/qsjob/src/work/httpnav/` | role `HTTPNAV`: `NAVIGATOR` (Navigator, docs/NAVIGATOR.md) |
+| `work/qsjob/src/work/web/` | what both share: the job's thread and the bridge, sign-on, profiles, audit, message texts, commands as the web user, the job's loop |
 | `net/ntp/` | SNTP: the packet codec, the client's exchange and poll, the adjustment rules, the server's answer and UDP loop |
 | `net/lpd/` | the line printer daemon: RFC 1179 lines, the session against a `Spooler`, received jobs as spooled files, the queue state |
 | `net/mail/` | mail out: addresses, MIME, the encodings, the SMTP client with `STARTTLS` and `AUTH` |
@@ -41,7 +43,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 | Server | Jobs (user, subsystem) | Ports | Attributes | Application ID | Exit points | This release |
 |---|---|---|---|---|---|---|
 | `*TELNET` | `QTVTELNET` listener, `QTVDEVICE` workers (`QTCP`, `QSYSWRK`) | 23, 992 TLS | `CHGTELNA` | `QS400_TELNET_SERVER` | `QIBM_QTG_DEVINIT`, `QIBM_QTG_DEVTERM` | built |
-| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS | `CHGHTTPA` (bag `PORT`, `TLSPORT`) | `QS400_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
+| `*HTTP` | `ADMIN`, `NAVIGATOR` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS; 2002, 2005 TLS | `CHGHTTPA` (bag `PORT`, `TLSPORT`, `NAVPORT`, `NAVTLSPORT`) | `QS400_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
 | `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QS400_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
 | `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the host servers' `QS400_*_SERVER` IDs) | | built (`servers::framework::HostSvr`) |
@@ -159,6 +161,14 @@ the job's (`QTMHHTTP`, `work/ifsfiles.rs`); `web_audit` writes `PW`, `AF` and `Z
 certificate is the one `*SYSTEM` assigns `QS400_HTTP_SERVER_ADMIN`
 (`servers::web::app_tls` builds it from a store), else the system's
 self-signed one of `work/qsjob/src/work/tls.rs`.
+
+`STRTCPSVR *HTTP HTTPSVR(*ADMIN)` (and `STRTCP` when `*HTTP`
+autostarts) also starts `NAVIGATOR` (role `HTTPNAV`, same user and
+subsystem), Navigator for QS/400 (`net/navigator`, docs/NAVIGATOR.md) on
+2002 and, with TLS, 2005 (`HttpAttrs::navigator`: the bag's `NAVPORT`,
+`NAVTLSPORT`; no TLS when `TLSPORT(0)`), certificate application
+`QS400_HTTP_SERVER_NAVIGATOR`. `ENDTCPSVR ... HTTPSVR(*ADMIN)` ends both
+listeners. What the two jobs share is `work/qsjob/src/work/web/`.
 
 `CHGHTTPA AUTOSTART(*YES|*NO)` sets the server table's flag for `*HTTP`:
 `STRTCP` starts `ADMIN` only when it is on (a new system ships it off);
