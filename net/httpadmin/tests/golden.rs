@@ -258,3 +258,11 @@ fn create_wizard() {
     let r = b.get("/create/step/6");
     assert_golden(&r.text(), "http/create-6.html", &[]);
 }
+
+#[test]
+fn instance_general() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/instance/WEBSTORE/general");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/instance-general.html", &[]);
+}

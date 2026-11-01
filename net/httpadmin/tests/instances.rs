@@ -213,3 +213,68 @@ fn create_needs_iosyscfg() {
     assert!(refused(&b));
     assert!(!b.fx.files.exists("/www/shop"));
 }
+
+fn conf(b: &Browser, name: &str) -> String {
+    String::from_utf8(b.fx.files.read(&format!("/www/{}/conf/httpd.conf", name.to_ascii_lowercase())).unwrap()).unwrap()
+}
+
+/// The general page's fields as they are now, with `set` over them.
+fn general_form<'a>(set: &[(&'a str, &'a str)]) -> Vec<(&'a str, &'a str)> {
+    let mut f = vec![("desc", "Web store"), ("docroot", "/www/webstore/htdocs"), ("usrprf", "QTMHHTTP"), ("threads", "40"), ("hot", "WEBSTORE2")];
+    for (k, v) in set {
+        f.retain(|(n, _)| n != k);
+        f.push((k, v));
+    }
+    f
+}
+
+#[test]
+fn general_apply() {
+    let mut b = Browser::signed_on();
+    let before = conf(&b, "WEBSTORE");
+    // Start goes to the confirmation, changing nothing.
+    let r = b.post("/instance/WEBSTORE/general", &general_form(&[("start", "Start")]));
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instance/WEBSTORE/confirm?op=start"));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+    for (set, id) in [
+        (vec![("threads", "500")], "HTP8120"),
+        (vec![("usrprf", "NOBODY")], "HTP8201"),
+        (vec![("usrprf", "WEBUSER")], "HTP8202"),
+        (vec![("docroot", "htdocs")], "HTP8120"),
+    ] {
+        let mut f = general_form(&set);
+        f.push(("apply", "Apply"));
+        let r = b.post("/instance/WEBSTORE/general", &f);
+        assert!(shown(&mut b, &r).contains(id), "{id}");
+        assert_eq!(conf(&b, "WEBSTORE"), before);
+    }
+    let mut f = general_form(&[("threads", "60"), ("docroot", "/www/webstore/site"), ("autostart", "on"), ("hotbackup", "on"), ("hot", "TESTSRV")]);
+    f.push(("ok", "OK"));
+    let r = b.post("/instance/WEBSTORE/general", &f);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    let after = conf(&b, "WEBSTORE");
+    assert!(after.contains("ThreadsPerChild 60\n") && after.contains("DocumentRoot /www/webstore/site\n"));
+    assert!(after.contains("<Directory /www/webstore/site>\n   Order Allow,Deny\n"), "{after}");
+    assert_eq!(String::from_utf8(b.fx.files.read("/www/webstore/conf/httpd.conf.bak").unwrap()).unwrap(), before);
+    let reg = httpd::registry::Registry::load(b.fx.files.as_ref()).unwrap();
+    let e = reg.get("WEBSTORE").unwrap();
+    assert!(e.autostart && e.hot_backup_active && !e.restart_required);
+    assert_eq!((e.description.as_str(), e.hot_backup.as_deref()), ("Web store", Some("TESTSRV")));
+    // A running instance needs a restart to use a change.
+    let mut f = general_form(&[("docroot", "/www/intranet/htdocs"), ("threads", "50")]);
+    f.push(("apply", "Apply"));
+    b.post("/instance/INTRANET/general", &f);
+    assert!(httpd::registry::Registry::load(b.fx.files.as_ref()).unwrap().get("INTRANET").unwrap().restart_required);
+}
+
+#[test]
+fn general_needs_iosyscfg() {
+    let mut b = group_member();
+    let before = conf(&b, "WEBSTORE");
+    let mut f = general_form(&[("threads", "60")]);
+    f.push(("apply", "Apply"));
+    assert_eq!(b.post("/instance/WEBSTORE/general", &f).status, 403);
+    assert!(refused(&b));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}

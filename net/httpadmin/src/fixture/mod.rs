@@ -335,6 +335,7 @@ pub fn fixture() -> Fixture {
             e.last_started = Some(secs(2026, 10, 27, 18, 42, 10));
             e.last_ended = Some(secs(2026, 10, 28, 2, 0, 0));
             e.ended_how = "ENDTCPSVR *HTTP, controlled".into();
+            e.hot_backup = Some("WEBSTORE2".into());
             files.put("/www/webstore/logs/access_log", include_bytes!("webstore-access.log"));
             // Twelve days of rotated access logs: 14 log files, 212 MB.
             for d in 17..29 {

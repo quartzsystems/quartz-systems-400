@@ -99,6 +99,23 @@ pub const TOPICS: &[Topic] = &[
         body: "<p>Check the summary and press <b>Create</b>. The server root, its directories, the configuration file and the instance's registry entry are created, and message <span class=\"mono\">HTP8020</span> confirms it. The instance is created stopped. Creating an instance needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
     },
     Topic {
+        key: "instance-general",
+        title: "Instance: general",
+        body: "<p>The general properties of an instance. The description, automatic start and hot backup partner are kept in the instance registry; the document root, server user profile and number of threads are directives of the configuration file (<span class=\"mono\">DocumentRoot</span>, <span class=\"mono\">ServerUserID</span>, <span class=\"mono\">ThreadsPerChild</span>).</p>
+<p><b>Apply</b> saves and stays on the page, <b>OK</b> saves and returns to the list. A running instance uses changed directives after it is restarted. <b>Start</b>, <b>Stop</b> and <b>Restart</b> open the confirmation page. Changes need the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>
+<p>The number of server threads must lie between 10 and the most Global settings allow.</p>",
+    },
+    Topic {
+        key: "instance-usrprf",
+        title: "Server user profile",
+        body: "<p>The user profile the instance's job runs requests under. It must exist. If the instance listens on a port below 1024, the profile needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
+        key: "instance-hotbackup",
+        title: "Hot backup instance",
+        body: "<p>An instance that takes over the work of this one when it fails. Select the box to switch the partnership on; the partner chosen is remembered while it is switched off.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",

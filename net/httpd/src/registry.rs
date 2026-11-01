@@ -29,6 +29,10 @@ pub struct Entry {
     /// The hot backup partner instance.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hot_backup: Option<String>,
+    /// The hot backup partner takes over when this instance fails
+    /// (the partner is remembered while switched off).
+    #[serde(default)]
+    pub hot_backup_active: bool,
     /// Seconds since 1970 of the last start.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_started: Option<u64>,
