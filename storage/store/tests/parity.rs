@@ -640,3 +640,240 @@ fn a_smaller_load_source_sets_the_size_and_larger_units_hold_their_rest() {
     assert_eq!(rec.events, vec![UnitEvent::ParityExposed { unit: 3 }]);
     assert_spaces(&mut store, qsys, 10);
 }
+
+/// Write `stamp {i} {v}` into space `i`, one transaction.
+fn stamp(store: &mut Store, qsys: ObjectId, i: usize, v: usize) -> store::Result<()> {
+    let name = format!("S{i}");
+    let mut txn = store.begin()?;
+    let id = ops::list(&mut txn, qsys, Some(types::USRSPC))?
+        .into_iter()
+        .find(|(k, _)| k.name.to_string() == name)
+        .map(|(_, id)| id)
+        .expect("space exists");
+    usrspc::write(&mut txn, id, 6 * 4000, format!("stamp {i} {v:>6}").as_bytes())?;
+    txn.commit()
+}
+
+/// The stamp of space `i`, if any.
+fn read_stamp(store: &mut Store, qsys: ObjectId, i: usize) -> String {
+    let name = format!("S{i}");
+    let mut txn = store.begin().unwrap();
+    let id = ops::list(&mut txn, qsys, Some(types::USRSPC))
+        .unwrap()
+        .into_iter()
+        .find(|(k, _)| k.name.to_string() == name)
+        .map(|(_, id)| id)
+        .unwrap();
+    let b = usrspc::read(&mut txn, id, 6 * 4000, 32).unwrap();
+    txn.abort();
+    String::from_utf8_lossy(&b).trim_end_matches('\0').to_string()
+}
+
+/// The mark the last checkpoint recorded.
+fn recorded(store: &Store) -> u64 {
+    store.asp().superblock().parity.work.map_or(0, |w| w.done)
+}
+
+/// Writes between the steps of a synchronization, to stripes on both
+/// sides of the mark: the stripes below it keep their parity at every
+/// point, and the whole set verifies at the end.
+#[test]
+fn writes_during_synchronization_keep_the_stripes_below_the_mark() {
+    for (level, n) in [(Level::Raid5, 4), (Level::Raid6, 5)] {
+        let d = devs(n, 200);
+        let (mut store, qsys) = store_with(&d, 16);
+        let units: Vec<u16> = (0..u16::try_from(n).unwrap()).collect();
+        store.start_parity(level, &units).unwrap();
+        let mut stamps = [0; 16];
+        let mut round = 0;
+        let mut checked = 0;
+        let mut added = 16;
+        loop {
+            // Old spaces lie all over the units, new ones where the
+            // allocator puts them: both sides of the mark.
+            for i in [round % 16, (round * 7 + 3) % 16] {
+                round += 1;
+                stamps[i] = round;
+                stamp(&mut store, qsys, i, round).unwrap();
+            }
+            if round % 6 == 0 {
+                add_spaces(&mut store, qsys, added, added + 1, 4);
+                added += 1;
+            }
+            let p = store.parity_step(7).unwrap().unwrap();
+            assert!(
+                store.parity_verify(1).unwrap().is_empty(),
+                "{level} below mark {}",
+                p.done
+            );
+            checked += 1;
+            if p.complete {
+                break;
+            }
+        }
+        assert!(checked > 10);
+        assert!(store.parity_sets()[0].members.iter().all(|m| m.status == "DPY/Active"));
+        assert!(store.parity_verify(1).unwrap().is_empty());
+        assert_spaces(&mut store, qsys, 16);
+        for (i, &v) in stamps.iter().enumerate().filter(|(_, v)| **v > 0) {
+            assert_eq!(read_stamp(&mut store, qsys, i), format!("stamp {i} {v:>6}"));
+        }
+        store.close().unwrap();
+        // Every unit's pages are right: any one may go.
+        let (mut s, _) = Store::open(boxed(&d, &[1]), config()).unwrap();
+        assert_spaces(&mut s, qsys, 16);
+    }
+}
+
+/// A crash part way through a synchronization with writes between the
+/// steps, the last ones cut between their data and their parity: the
+/// open repairs the epoch, the work goes on from the recorded mark, and
+/// everything committed is there.
+#[test]
+fn a_crash_mid_synchronization_with_writes_resumes_from_the_mark() {
+    let disks = devs(4, 220);
+    let (mut store, qsys) = store_with(&disks, 16);
+    store.start_parity(Level::Raid5, &[0, 1, 2, 3]).unwrap();
+    let mut stamps = [0; 16];
+    let mut serial = 0;
+    let mut done = 0;
+    while done < 150 {
+        for i in [serial % 16, (serial * 5 + 1) % 16] {
+            serial += 1;
+            stamp(&mut store, qsys, i, serial).unwrap();
+            stamps[i] = serial;
+        }
+        done = store.parity_step(5).unwrap().unwrap().done;
+    }
+    // The mark in memory is past the one recorded.
+    while recorded(&store) == done {
+        done = store.parity_step(5).unwrap().unwrap().done;
+    }
+    let at_crash = recorded(&store);
+    assert!(at_crash < done && at_crash > 0, "{at_crash} {done}");
+    // The next epoch stops after its data: a write hole below the mark.
+    store.parity_fault(1, Some(Fault::StopAfterData));
+    let _ = stamp(&mut store, qsys, 0, 999_999);
+    drop(store);
+    for x in &disks {
+        x.drop_unflushed();
+    }
+    let (mut store, _) = Store::open(boxed(&disks, &[]), config()).unwrap();
+    let w = store.asp().superblock().parity.work.unwrap();
+    assert_eq!((w.kind, w.done), (WorkKind::Sync, at_crash));
+    let p = store.parity_step(5).unwrap().unwrap();
+    assert_eq!(p.done, at_crash + 5, "continues from the recorded mark");
+    assert!(store.parity_verify(1).unwrap().is_empty());
+    finish_work(&mut store, 64);
+    assert!(store.parity_verify(1).unwrap().is_empty());
+    assert_spaces(&mut store, qsys, 16);
+    for (i, &v) in stamps.iter().enumerate().skip(1).filter(|(_, v)| **v > 0) {
+        assert_eq!(read_stamp(&mut store, qsys, i), format!("stamp {i} {v:>6}"));
+    }
+    let s0 = read_stamp(&mut store, qsys, 0);
+    assert!(
+        s0 == format!("stamp 0 {:>6}", stamps[0]) || s0 == "stamp 0 999999",
+        "space 0 neither before nor after: {s0}"
+    );
+    store.close().unwrap();
+    for gone in 0..4 {
+        let (mut s, _) = Store::open(boxed(&disks, &[gone]), config()).unwrap();
+        assert_spaces(&mut s, qsys, 16);
+        drop(s);
+        resync(&disks);
+    }
+}
+
+/// A RAID 6 set rebuilding a replaced unit: with the rebuild part way,
+/// a second unit is lost. Stripes below the mark need the new unit's
+/// pages, those above come from parity, and writes made meanwhile are
+/// on both.
+#[test]
+fn reads_during_a_rebuild_use_the_new_unit_below_the_mark() {
+    let d = devs(5, 240);
+    let (mut store, qsys) = store_with(&d, 14);
+    store.start_parity(Level::Raid6, &[0, 1, 2, 3, 4]).unwrap();
+    finish_work(&mut store, 1000);
+    store.close().unwrap();
+    let (mut store, _) = Store::open(boxed(&d, &[3]), config()).unwrap();
+    let fresh = Arc::new(MemBlockDev::with_seed(PAGES, 241));
+    store
+        .replace_unit(3, Box::new(fresh.clone()), [0x66; 16], "NEW3")
+        .unwrap();
+    let reads = fresh.stats().reads;
+    let mut done = 0;
+    for v in 0..12 {
+        stamp(&mut store, qsys, v, v + 1).unwrap();
+        done = store.parity_step(9).unwrap().unwrap().done;
+        // Reads while the rebuild runs: the new unit below the mark.
+        assert_spaces(&mut store, qsys, 14);
+    }
+    let blocks = store.parity_sets()[0].geometry.blocks;
+    assert!(done < blocks, "the rebuild is still under way");
+    assert!(fresh.stats().reads > reads, "the new unit was read");
+    assert_eq!(store.parity_sets()[0].members[3].status, "DPY/Rebuild");
+    store.close().unwrap();
+    // Unit 0 lost with unit 3 half rebuilt: two unknown, RAID 6 holds.
+    let set = [d[0].clone(), d[1].clone(), d[2].clone(), fresh.clone(), d[4].clone()];
+    let (mut store, rec) = Store::open(boxed(&set, &[0]), config()).unwrap();
+    assert_eq!(rec.events, vec![UnitEvent::ParityExposed { unit: 0 }]);
+    assert_spaces(&mut store, qsys, 14);
+    for v in 0..12 {
+        assert_eq!(read_stamp(&mut store, qsys, v), format!("stamp {v} {:>6}", v + 1));
+    }
+}
+
+/// A crash part way through a rebuild with writes between its steps: the
+/// rebuild goes on from the recorded mark and the new unit ends up
+/// holding everything its predecessor held.
+#[test]
+fn a_crash_during_a_rebuild_resumes_from_the_mark() {
+    let d = devs(4, 260);
+    let (mut store, qsys) = store_with(&d, 14);
+    store.start_parity(Level::Raid5, &[0, 1, 2, 3]).unwrap();
+    finish_work(&mut store, 1000);
+    store.close().unwrap();
+    let (mut store, _) = Store::open(boxed(&d, &[2]), config()).unwrap();
+    let fresh = Arc::new(MemBlockDev::with_seed(PAGES, 261));
+    store
+        .replace_unit(2, Box::new(fresh.clone()), [0x55; 16], "NEW2")
+        .unwrap();
+    let mut stamps = [0; 14];
+    let mut done = 0;
+    let mut v = 0;
+    while done < 120 {
+        v += 1;
+        stamp(&mut store, qsys, v % 14, v).unwrap();
+        stamps[v % 14] = v;
+        done = store.parity_step(6).unwrap().unwrap().done;
+    }
+    while recorded(&store) == done {
+        done = store.parity_step(6).unwrap().unwrap().done;
+    }
+    let at_crash = recorded(&store);
+    assert!(at_crash > 0 && at_crash < done, "{at_crash} {done}");
+    drop(store);
+    for x in d.iter().chain([&fresh]) {
+        x.drop_unflushed();
+    }
+    let set = [d[0].clone(), d[1].clone(), fresh.clone(), d[3].clone()];
+    let (mut store, rec) = Store::open(boxed(&set, &[]), config()).unwrap();
+    assert!(rec.events.is_empty(), "{:?}", rec.events);
+    let w = store.asp().superblock().parity.work.unwrap();
+    assert_eq!((w.kind, w.member, w.done), (WorkKind::Rebuild, 2, at_crash));
+    assert_eq!(store.parity_sets()[0].members[2].status, "DPY/Rebuild");
+    assert_spaces(&mut store, qsys, 14);
+    finish_work(&mut store, 50);
+    assert!(store.parity_sets()[0].members.iter().all(|m| m.status == "DPY/Active"));
+    assert!(store.parity_verify(1).unwrap().is_empty());
+    for (i, &v) in stamps.iter().enumerate().filter(|(_, v)| **v > 0) {
+        assert_eq!(read_stamp(&mut store, qsys, i), format!("stamp {i} {v:>6}"));
+    }
+    store.close().unwrap();
+    // The rebuilt unit alone carries what unit 2 held.
+    let (mut store, _) = Store::open(boxed(&set, &[1]), config()).unwrap();
+    assert_spaces(&mut store, qsys, 14);
+    for (i, &v) in stamps.iter().enumerate().filter(|(_, v)| **v > 0) {
+        assert_eq!(read_stamp(&mut store, qsys, i), format!("stamp {i} {v:>6}"));
+    }
+}

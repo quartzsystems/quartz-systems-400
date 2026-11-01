@@ -14,6 +14,7 @@ use std::io;
 use blockdev::{BlockDev, BlockError};
 use tracing::{info, warn};
 
+use crate::asp::layout::RESERVED_HEAD;
 use crate::asp::parity::geometry::{Geometry, PPL_ENTRIES, PageRole};
 use crate::asp::parity::gf;
 use crate::asp::parity::ppl::{self, Entry, Ident};
@@ -746,6 +747,73 @@ impl Engine {
             self.zero_state()?;
         }
         let end = (done + budget.max(1)).min(self.geo.blocks);
+        if self.members.iter().all(|m| m.dev.is_some() && m.health == Health::Ok) {
+            self.sync_bulk(done, end)?;
+        } else {
+            self.sync_stripes(done, end)?;
+        }
+        self.flush_members(&self.all_members())?;
+        self.dirty = false;
+        self.sync = (end < self.geo.blocks).then_some(end);
+        Ok(end)
+    }
+
+    /// Where blocks `from..` start: the first row and the first parity page.
+    fn bases(&self, from: u64) -> (u64, u64) {
+        (
+            RESERVED_HEAD + from * self.geo.w() as u64,
+            self.geo.parity_lba(from * self.geo.n as u64, false),
+        )
+    }
+
+    /// One run of pages from a member.
+    fn read_run(&self, member: usize, lba: u64, pages: usize) -> Res<Vec<u8>> {
+        let mut buf = vec![0u8; pages * PAGE_SIZE];
+        self.dev(member).read(lba, &mut buf)?;
+        Ok(buf)
+    }
+
+    /// Synchronize blocks `from..to` with one read of each member's rows
+    /// and one write of its parity pages: they are contiguous.
+    #[allow(clippy::many_single_char_names)] // stripe arithmetic
+    fn sync_bulk(&mut self, from: u64, to: u64) -> Res<()> {
+        let (count, width, kp) = (self.geo.n, self.geo.w(), self.geo.k());
+        let blocks = usize::try_from(to - from).expect("a step's blocks");
+        let (row0, par0) = self.bases(from);
+        let mut runs = Vec::with_capacity(count);
+        for m in 0..count {
+            runs.push(self.read_run(m, row0, blocks * width)?);
+        }
+        let mut parity = vec![vec![0u8; blocks * kp * PAGE_SIZE]; count];
+        for b in 0..blocks {
+            for j in 0..count {
+                let s = (from + b as u64) * count as u64 + j as u64;
+                let dm = self.geo.data_members(s);
+                let pages: Vec<&[u8]> = dm
+                    .iter()
+                    .map(|&m| {
+                        let at = usize::try_from(self.geo.row_of(s, m) - row0).expect("in the run") * PAGE_SIZE;
+                        &runs[m][at..at + PAGE_SIZE]
+                    })
+                    .collect();
+                let coefs: Vec<u8> = dm.iter().map(|&m| gf::coef(m)).collect();
+                let (p, q) = gf::compute(&pages, &coefs, PAGE_SIZE, kp == 2);
+                let (pm, qm) = self.geo.parity_members(s);
+                let at = b * kp * PAGE_SIZE;
+                parity[pm][at..at + PAGE_SIZE].copy_from_slice(&p);
+                if let (Some(qm), Some(q)) = (qm, q) {
+                    parity[qm][at + PAGE_SIZE..at + 2 * PAGE_SIZE].copy_from_slice(&q);
+                }
+            }
+        }
+        for (m, buf) in parity.iter().enumerate() {
+            self.dev(m).write(par0, buf)?;
+        }
+        Ok(())
+    }
+
+    /// Synchronize blocks `from..to` a stripe at a time.
+    fn sync_stripes(&mut self, done: u64, end: u64) -> Res<()> {
         for s in done * self.geo.n as u64..end * self.geo.n as u64 {
             let st = self.read_stripe(s, None)?;
             if st.data.iter().any(Option::is_none) {
@@ -758,10 +826,7 @@ impl Engine {
             let (p, q) = gf::compute(&refs, &st.coefs(), PAGE_SIZE, self.geo.k() == 2);
             self.write_parity(s, &p, q.as_deref())?;
         }
-        self.flush_members(&self.all_members())?;
-        self.dirty = false;
-        self.sync = (end < self.geo.blocks).then_some(end);
-        Ok(end)
+        Ok(())
     }
 
     /// Rebuild up to `budget` blocks of a member from the mark. Returns
@@ -778,6 +843,83 @@ impl Engine {
             self.zero_slots(&[member])?;
         }
         let end = (done + budget.max(1)).min(self.geo.blocks);
+        let others_ok = self
+            .members
+            .iter()
+            .enumerate()
+            .all(|(i, m)| i == member || (m.dev.is_some() && m.health == Health::Ok));
+        // A read that fails in bulk is retried a stripe at a time, where a
+        // failing member is failed on the way when the set can lose it.
+        if !(others_ok && self.rebuild_bulk(member, done, end).is_ok()) {
+            self.rebuild_stripes(member, done, end)?;
+        }
+        self.dev(member).flush()?;
+        if end < self.geo.blocks {
+            self.members[member].health = Health::Rebuilding(end);
+        } else {
+            self.members[member].health = Health::Ok;
+            self.write_state();
+        }
+        Ok(end)
+    }
+
+    /// Rebuild blocks `from..to` of a member with one read of each other
+    /// member's rows and parity pages and one write of each of its own.
+    #[allow(clippy::many_single_char_names)] // stripe arithmetic
+    fn rebuild_bulk(&mut self, member: usize, from: u64, to: u64) -> Res<()> {
+        let (count, width, kp) = (self.geo.n, self.geo.w(), self.geo.k());
+        let blocks = usize::try_from(to - from).expect("a step's blocks");
+        let (row0, par0) = self.bases(from);
+        let mut runs = Vec::with_capacity(count);
+        let mut parity = Vec::with_capacity(count);
+        for m in 0..count {
+            if m == member {
+                runs.push(Vec::new());
+                parity.push(Vec::new());
+            } else {
+                runs.push(self.read_run(m, row0, blocks * width)?);
+                parity.push(self.read_run(m, par0, blocks * kp)?);
+            }
+        }
+        let mut my_rows = vec![0u8; blocks * width * PAGE_SIZE];
+        let mut my_par = vec![0u8; blocks * kp * PAGE_SIZE];
+        let page = |buf: &[u8], at: usize| buf[at..at + PAGE_SIZE].to_vec();
+        for b in 0..blocks {
+            for j in 0..count {
+                let s = (from + b as u64) * count as u64 + j as u64;
+                let dm = self.geo.data_members(s);
+                let row_at = |m: usize| usize::try_from(self.geo.row_of(s, m) - row0).expect("in the run") * PAGE_SIZE;
+                let (pm, qm) = self.geo.parity_members(s);
+                let at = b * kp * PAGE_SIZE;
+                let mut st = Stripe {
+                    data: dm.iter().map(|&m| (m != member).then(|| page(&runs[m], row_at(m)))).collect(),
+                    p: (pm != member).then(|| page(&parity[pm], at)),
+                    q: qm.filter(|&q| q != member).map(|q| page(&parity[q], at + PAGE_SIZE)),
+                    data_members: dm,
+                };
+                if let Some(i) = st.data_members.iter().position(|&m| m == member) {
+                    if !st.fill() {
+                        return Err(err(format!("parity set {}: stripe {s} cannot be rebuilt", self.set)));
+                    }
+                    let to = row_at(member);
+                    my_rows[to..to + PAGE_SIZE].copy_from_slice(st.data[i].as_deref().expect("filled"));
+                } else {
+                    let refs: Vec<&[u8]> = st.data.iter().map(|d| d.as_deref().expect("known")).collect();
+                    let (p, q) = gf::compute(&refs, &st.coefs(), PAGE_SIZE, kp == 2);
+                    if pm == member {
+                        my_par[at..at + PAGE_SIZE].copy_from_slice(&p);
+                    } else {
+                        my_par[at + PAGE_SIZE..at + 2 * PAGE_SIZE].copy_from_slice(&q.expect("RAID 6"));
+                    }
+                }
+            }
+        }
+        self.dev(member).write(row0, &my_rows)?;
+        self.dev(member).write(par0, &my_par)
+    }
+
+    /// Rebuild blocks `done..end` of a member a stripe at a time.
+    fn rebuild_stripes(&mut self, member: usize, done: u64, end: u64) -> Res<()> {
         let k6 = self.geo.k() == 2;
         for s in done * self.geo.n as u64..end * self.geo.n as u64 {
             let mut st = self.read_stripe(s, Some(member))?;
@@ -805,14 +947,7 @@ impl Engine {
                 }
             }
         }
-        self.dev(member).flush()?;
-        if end < self.geo.blocks {
-            self.members[member].health = Health::Rebuilding(end);
-        } else {
-            self.members[member].health = Health::Ok;
-            self.write_state();
-        }
-        Ok(end)
+        Ok(())
     }
 
     /// Whether every stripe's parity matches its data, for tests and

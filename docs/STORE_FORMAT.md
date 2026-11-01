@@ -848,6 +848,43 @@ crash resumes from the mark of the last checkpoint and redoes the blocks
 after it, which is harmless. Sets waiting their turn keep their state;
 the next one starts at block 0 when the current one ends.
 
+The work runs with the system up, as IBM's controllers run it: the IPL
+does not wait for it. The storage service does it between requests in
+turns of a few milliseconds (short ones while requests wait), each turn
+a few steps of 16 blocks. A step reads each member's rows of its blocks
+in one run and writes each member's parity pages in one run (they are
+contiguous, see above), falling back to a stripe at a time when a
+member is not in step or a read fails. The mark is recorded by a
+checkpoint each time it has moved a thousandth of the set's blocks (at
+least 32) past the one last recorded, and when the work ends; power
+down's closing checkpoint records it too. In memory the mark moves only
+after the step's pages are flushed, and a checkpoint flushes before it
+writes the superblock, so the recorded mark never runs ahead of the
+units.
+
+While the work runs, the rules are:
+
+- A step holds the set for its blocks: it first makes the writes held
+  so far (each to its stripe by the rules below, as of the old mark),
+  then computes its blocks, so no write lands in a block while it is
+  computed. A write held before the step is computed with its block; a
+  write after it finds the block below the mark.
+- Synchronization: a write to a stripe below the mark is made in an
+  epoch with its partial parity, like any write to a protected set; a
+  write above the mark goes to its data page only. A crash between two
+  recorded marks leaves the blocks between them with either kind of
+  write. The open repairs the stripes the newest slots name, and the
+  synchronization then computes those blocks again from their data.
+- Rebuild: a page of the unit being rebuilt is read from the unit below
+  the mark and computed from the rest of its stripe above it. Writes go
+  to every member in step or being rebuilt, the new unit included, with
+  partial parity on the parity members, so a block once rebuilt stays
+  current. After a crash the unit is in step only below the recorded
+  mark; the blocks above are rebuilt again from the others.
+- A member missing at open while its set synchronizes stops the open
+  (the set has no parity yet); during a rebuild the rules of "Missing
+  units" above apply, the member being rebuilt counting as unknown.
+
 Pages that start being held (start, include, exclude) are written only
 after the checkpoint that records the new set: until then the last
 durable superblock may still reach them. Pages that stop being held

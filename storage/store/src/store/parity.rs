@@ -11,6 +11,11 @@ use crate::asp::parity::table::Level;
 use crate::store::Store;
 use crate::{Refusal, Result, StoreError};
 
+/// The mark is recorded every `1/MARK_EVERY` of a set's blocks ...
+pub const MARK_EVERY: u64 = 1000;
+/// ... and never more often than every `MARK_MIN` blocks.
+pub const MARK_MIN: u64 = 32;
+
 impl Store {
     /// Refuse a unit that is in a parity set.
     pub(super) fn not_parity(&self, unit: u16) -> Result<()> {
@@ -50,15 +55,26 @@ impl Store {
         self.checkpoint()
     }
 
-    /// Run up to `budget` blocks of the parity work due; a checkpoint
-    /// publishes the end of each piece.
+    /// Run up to `budget` blocks of the parity work due. A checkpoint
+    /// publishes the end of each piece, and the mark each time it has
+    /// moved a [`MARK_EVERY`]th of the set (at least [`MARK_MIN`] blocks)
+    /// past the last one recorded, so a crash redoes little.
     pub fn parity_step(&mut self, budget: u64) -> Result<Option<ParityProgress>> {
         self.check()?;
-        let p = self.asp.parity_step(budget)?;
-        if p.is_some_and(|p| p.complete) {
+        let Some(p) = self.asp.parity_step(budget)? else {
+            return Ok(None);
+        };
+        let recorded = self
+            .asp
+            .superblock()
+            .parity
+            .work
+            .filter(|w| w.set == p.set && w.kind == p.kind)
+            .map_or(0, |w| w.done);
+        if p.complete || p.done.saturating_sub(recorded) >= (p.blocks / MARK_EVERY).max(MARK_MIN) {
             self.checkpoint()?;
         }
-        Ok(p)
+        Ok(Some(p))
     }
 
     /// Every set, for the displays.
