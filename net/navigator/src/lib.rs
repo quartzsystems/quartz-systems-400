@@ -110,6 +110,8 @@ pub struct Navigator {
     pub env: Env,
     /// Signed-on users.
     pub sessions: Sessions,
+    /// Run SQL's statements and last result, per user, in memory.
+    pub sql: routes::db::SqlState,
 }
 
 impl Navigator {
@@ -118,6 +120,7 @@ impl Navigator {
         Self {
             env,
             sessions: Sessions::new(Duration::from_secs(SESSION_MINUTES * 60)),
+            sql: routes::db::SqlState::default(),
         }
     }
 }

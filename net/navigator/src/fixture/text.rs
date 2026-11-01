@@ -531,6 +531,70 @@ const MESSAGES: &[Desc] = &[
         "The user lacks authority to the page asked for.",
         "None.",
     ),
+    // Database.
+    (
+        "SQL0084",
+        30,
+        "The statement is not supported: &1.",
+        "The statement or clause is outside the subset this release implements.",
+        "Write the statement with the clauses this release supports.",
+    ),
+    (
+        "SQL0100",
+        0,
+        "No row was found for &1.",
+        "The statement found no row to work on; nothing was changed.",
+        "None.",
+    ),
+    (
+        "SQL0104",
+        30,
+        "Syntax error at line &1 column &2: &3.",
+        "The statement could not be parsed at the position shown.",
+        "Correct the statement and run it again.",
+    ),
+    (
+        "SQL0204",
+        30,
+        "&1 in &2 not found.",
+        "No table, view or index of that name exists in the schema named or the current schema.",
+        "Check the name and the schema, or choose another default schema.",
+    ),
+    (
+        "SQL0206",
+        30,
+        "Column &1 not found.",
+        "No table in the statement has a column of that name.",
+        "Check the column's name in the table's columns.",
+    ),
+    (
+        "SQL0551",
+        30,
+        "Not authorized to &1 in &2 type &3.",
+        "Your user profile lacks the authority to the object that the statement needs.",
+        "Ask the object's owner or the security officer for the authority.",
+    ),
+    (
+        "SQL7955",
+        0,
+        "&3 rows were deleted from &1 in &2.",
+        "The DELETE statement ran.",
+        "None.",
+    ),
+    (
+        "SQL7957",
+        0,
+        "&3 rows were updated in &1 in &2.",
+        "The UPDATE statement ran.",
+        "None.",
+    ),
+    (
+        "SQL7958",
+        0,
+        "&1 rows fetched in &2 seconds.",
+        "The query ran and its rows were read.",
+        "None.",
+    ),
 ];
 
 /// The second-level text of `id`, `data` substituted.

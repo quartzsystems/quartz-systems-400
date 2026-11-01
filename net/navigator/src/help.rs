@@ -98,6 +98,27 @@ pub const TOPICS: &[Topic] = &[
         title: "Scheduled jobs",
         body: "<p>Job schedule entries: a command submitted as a job at the times given. A held entry submits nothing until released. <b>Submit now</b> submits the job once without changing its schedule.</p>",
     },
+    // Database.
+    Topic {
+        key: "sql",
+        title: "Run SQL",
+        body: "<p>Type one SQL statement and press <b>Run</b>. It runs with your user profile's authority, with the schema chosen as the default for unqualified names, the naming chosen (<span class=\"mono\">*SQL</span>: <span class=\"mono\">schema.table</span>; <span class=\"mono\">*SYS</span>: <span class=\"mono\">library/file</span>) and the isolation level chosen.</p>\n<h2>Results</h2>\n<p>A query shows at most 500 rows; <b>Download as CSV</b> runs it again and gives every row. Column headings sort the rows shown. <b>Explain</b> shows how the statement would run without running it.</p>\n<h2>Previous statements</h2>\n<p>Your last 50 statements, newest first. Choose one to put it back in the statement box. They are kept while the server runs.</p>",
+    },
+    Topic {
+        key: "db",
+        title: "Schemas",
+        body: "<p>The schemas (libraries) you may see, and in the one chosen its tables, views, indexes and procedures from the system catalog. Choose a table to see its columns, constraints, indexes, triggers and attributes, or its data.</p>",
+    },
+    Topic {
+        key: "db-table",
+        title: "Table",
+        body: "<p>A table as the system catalog describes it, tab by tab. <b>Generate SQL (DDL)</b> shows the statements that create the table. <b>Run SQL</b> starts a query of the table.</p>",
+    },
+    Topic {
+        key: "db-data",
+        title: "Viewing table data",
+        body: "<p>The table's rows, 25 a page, read with the statement shown and your authority. Type a condition in <b>Where</b> (for example <span class=\"mono\">STATUS = 'SPARE'</span>) and press <b>Apply</b> to narrow them. <b>Edit in Run SQL</b> opens the statement there.</p>",
+    },
 ];
 
 /// The title and body of `key`; an unknown key gives the contents.
