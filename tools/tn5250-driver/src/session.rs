@@ -130,6 +130,7 @@ impl Session {
         for bytes in records {
             self.records_in += 1;
             if self.startup.is_none() && tn5250::startup::is_startup(&bytes) {
+                self.trace.raw(&bytes);
                 if let Ok(s) = tn5250::startup::decode(&bytes) {
                     self.trace.note(&format!("startup response: {} {} {}", s.code, s.system, s.device));
                     self.startup = Some(s.code);
@@ -150,6 +151,7 @@ impl Session {
                 && self.startup.is_none()
                 && self.records_in <= 2
             {
+                self.trace.raw(&bytes);
                 let text = ccsid::from_ebcdic(&rec.data);
                 let decoded = format!("startup response: {}", text.trim());
                 self.trace.note(&decoded);

@@ -47,6 +47,13 @@ impl Trace {
         }
     }
 
+    /// A record's bytes alone (the start-up response).
+    pub fn raw(&self, bytes: &[u8]) {
+        if self.on {
+            self.hexdump(bytes);
+        }
+    }
+
     /// A record from the host.
     pub fn inbound_record(&self, rec: &Record, bytes: &[u8]) {
         if !self.on {
