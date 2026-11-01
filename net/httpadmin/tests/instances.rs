@@ -416,3 +416,61 @@ fn tls_needs_iosyscfg() {
     assert!(refused(&b));
     assert_eq!(conf(&b, "WEBSTORE"), before);
 }
+
+fn logging_form<'a>(set: &[(&'a str, &'a str)]) -> Vec<(&'a str, &'a str)> {
+    let mut f = vec![
+        ("al", "on"), ("alp", "/www/webstore/logs/access_log"), ("alf", "Combined"), ("elp", "/www/webstore/logs/error_log"),
+        ("ll", "warn"), ("rot", "daily"), ("at", "00:00"), ("size", "10"), ("keep", "30"), ("ccsid", "1208"),
+    ];
+    for (k, v) in set {
+        f.retain(|(n, _)| n != k);
+        f.push((k, v));
+    }
+    f
+}
+
+#[test]
+fn logging_apply() {
+    let mut b = Browser::signed_on();
+    let before = conf(&b, "WEBSTORE");
+    // The page as it is changes nothing in the file.
+    let mut f = logging_form(&[]);
+    f.push(("apply", "Apply"));
+    let r = b.post("/instance/WEBSTORE/logging", &f);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+    for (set, id) in [(vec![("at", "25:00")], "HTP8120"), (vec![("keep", "0")], "HTP8120"), (vec![("elp", "logs/x")], "HTP8120")] {
+        let mut f = logging_form(&set);
+        f.push(("apply", "Apply"));
+        let r = b.post("/instance/WEBSTORE/logging", &f);
+        assert!(shown(&mut b, &r).contains(id));
+        assert_eq!(conf(&b, "WEBSTORE"), before);
+    }
+    let mut f = logging_form(&[("alf", "Common"), ("ll", "info"), ("rot", "size"), ("size", "50"), ("keep", "7"), ("ccsid", "819")]);
+    f.push(("ok", "OK"));
+    let r = b.post("/instance/WEBSTORE/logging", &f);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(c.contains("CustomLog logs/access_log common\n") && c.contains("LogFormat \"%h %l %u %t \\\"%r\\\" %>s %b\" common\n"), "{c}");
+    assert!(c.contains("LogLevel info\nLogMaint logs/access_log 7 50\nLogMaint logs/error_log 7 50\n"), "{c}");
+    assert!(c.contains("LogCCSID 819\n"), "{c}");
+    // Daily at a time; no access log.
+    let mut f = logging_form(&[("at", "03:30")]);
+    f.retain(|(k, _)| *k != "al");
+    f.push(("apply", "Apply"));
+    b.post("/instance/WEBSTORE/logging", &f);
+    let c = conf(&b, "WEBSTORE");
+    assert!(!c.contains("CustomLog") && c.contains("LogMaint logs/error_log 30 0 03:30\n"), "{c}");
+    httpd::conf::parse(&c).unwrap();
+}
+
+#[test]
+fn logging_needs_iosyscfg() {
+    let mut b = group_member();
+    let before = conf(&b, "WEBSTORE");
+    let mut f = logging_form(&[("ll", "debug")]);
+    f.push(("apply", "Apply"));
+    assert_eq!(b.post("/instance/WEBSTORE/logging", &f).status, 403);
+    assert!(refused(&b));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}

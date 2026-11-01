@@ -350,3 +350,11 @@ fn instance_tls() {
     // Application IDs stay the compatible QIBM_ ones (docs/HTTPADMIN.md).
     assert_golden(&r.text(), "http/instance-tls.html", &[("QS400_HTTP_SERVER_WEBSTORE", "QIBM_HTTP_SERVER_WEBSTORE")]);
 }
+
+#[test]
+fn instance_logging() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/instance/WEBSTORE/logging");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/instance-logging.html", &[]);
+}

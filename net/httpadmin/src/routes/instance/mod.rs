@@ -10,6 +10,7 @@
 pub mod confirm;
 pub mod dirs;
 pub mod general;
+pub mod logging;
 pub mod ports;
 pub mod tls;
 
@@ -51,6 +52,7 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
         ["directory"] => dirs::props_page(rq, &v),
         ["remove"] => dirs::remove(rq, &v),
         ["tls"] => tls::page(rq, &v),
+        ["logging"] => logging::page(rq, &v),
         _ => rq.not_found(&format!("page {} of instance {}", rest.join("/"), v.name())),
     }
 }

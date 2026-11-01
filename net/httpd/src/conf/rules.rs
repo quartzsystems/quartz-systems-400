@@ -77,7 +77,7 @@ pub const DIRECTIVES: &[Rule] = &[
     r("LogCCSID", 1, 1, Scope::SV),
     r("LogFormat", 1, 2, Scope::SV),
     r("LogLevel", 1, 1, Scope::SV),
-    r("LogMaint", 3, 3, Scope::SV),
+    r("LogMaint", 3, 4, Scope::SV),
     r("MaxKeepAliveRequests", 1, 1, Scope::SV),
     r("NameVirtualHost", 1, 1, Scope::SERVER),
     r("Options", 1, ANY, Scope::ALL),
@@ -209,11 +209,18 @@ pub fn check_directive(name: &str, args: &[String], line: u32, col: u32, parent:
         "AuthType" => {
             one_of(rule.name, &args[0], &["Basic"]).map_err(bad)?;
         }
+        // LogMaint path keep-files size-MB [HH:MM]: size 0 rotates daily,
+        // at the time given (00:00 by default).
         "LogMaint" => {
-            for a in &args[1..] {
+            for a in &args[1..3] {
                 if a.parse::<u32>().is_err() {
                     return Err(bad(format!("LogMaint needs a number, not {a}.")));
                 }
+            }
+            if let Some(t) = args.get(3)
+                && !is_time(t)
+            {
+                return Err(bad(format!("LogMaint needs a time of day as HH:MM, not {t}.")));
             }
         }
         "SSLProtocolDisable" => {
@@ -227,6 +234,13 @@ pub fn check_directive(name: &str, args: &[String], line: u32, col: u32, parent:
         _ => {}
     }
     Ok(())
+}
+
+/// Whether `t` is a time of day, `HH:MM`.
+pub fn is_time(t: &str) -> bool {
+    t.split_once(':').is_some_and(|(h, m)| {
+        h.len() == 2 && m.len() == 2 && h.parse::<u8>().is_ok_and(|h| h < 24) && m.parse::<u8>().is_ok_and(|m| m < 60)
+    })
 }
 
 fn one_of(name: &str, v: &str, allowed: &[&str]) -> Result<(), String> {

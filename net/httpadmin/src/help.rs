@@ -146,6 +146,12 @@ pub const TOPICS: &[Topic] = &[
         body: "<p>Turns TLS on or off for every TLS port of the instance at once. Off, the ports stay in the configuration file and answer without TLS until it is turned on again.</p>",
     },
     Topic {
+        key: "instance-logging",
+        title: "Instance: logging",
+        body: "<p>The <b>access log</b> records each request (<span class=\"mono\">CustomLog</span>) in the format chosen; the <b>error log</b> records problems at the log level chosen and above (<span class=\"mono\">ErrorLog</span>, <span class=\"mono\">LogLevel</span>). Paths under the server root are written relative to it.</p>
+<p><b>Rotate</b> starts a new file daily at the time given or when a file passes the size given, and keeps the number of rotated files given (<span class=\"mono\">LogMaint</span>). <b>Log directory CCSID</b> is the coded character set the logs are written in; 1208 is UTF-8. Changes need the <span class=\"mono\">*IOSYSCFG</span> special authority and are used by a running instance after it is restarted.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",

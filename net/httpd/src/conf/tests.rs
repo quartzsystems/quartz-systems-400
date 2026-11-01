@@ -73,3 +73,11 @@ fn errors_name_line_and_column() {
     assert_eq!(rules::listen_addr("10.0.10.21:8081"), Ok((Some("10.0.10.21".into()), 8081)));
     assert!(rules::listen_addr("host:80").is_err());
 }
+
+#[test]
+fn log_maintenance() {
+    assert!(parse("LogMaint logs/access_log 30 0\nLogMaint logs/error_log 7 0 03:30\n").is_ok());
+    assert!(parse("LogMaint logs/a 30 0 3:30\n").unwrap_err().text.contains("HH:MM"));
+    assert!(parse("LogMaint logs/a 30 x\n").is_err());
+    assert!(rules::is_time("23:59") && !rules::is_time("24:00"));
+}
