@@ -351,6 +351,14 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 SNDSMTPEMM commands) and the roles work/qsjob/src/work/telnet.rs
                 (QTVTELNET), httpadm.rs (ADMIN), ftp.rs (QTFTP00nnn), ntp.rs (QTOTNTP),
                 lpd.rs (QTLPD00001)
+  qsweb/        the web products' shared layer (docs/WEB_STYLE.md): src/http/ HTTP/1.1, forms,
+                multipart, responses; session.rs sessions and CSRF; frame.rs the frame, sign-on
+                and help (templates/); partials.rs; pages.rs; golden.rs; assets/qs400.css
+  httpd/        the HTTP server's instances: src/conf/ httpd.conf (parse, rules, edit, print),
+                files.rs Files by IFS path, registry.rs /www/instances.json, instance.rs
+  httpadmin/    HTTP Server Administration on 2001 (docs/HTTPADMIN.md): env.rs the traits it
+                runs over, src/routes/ the pages, msgs.rs QZHBMSG, settings.rs, src/fixture/;
+                tests/golden/ the approved pages, tests/golden.rs, tests/behavior.rs
   ntp/          SNTP: src/packet/ the header and timestamps, client.rs one exchange,
                 adjust.rs MINADJ/ADJTHLD/MAXADJ, poll.rs a poll over RMTSYS, server.rs the
                 answer and the UDP loop, clock.rs the Clock trait (MemClock for tests)
@@ -451,6 +459,8 @@ cargo test -p tape -p optical -p imgclg -p medio   # tape, optical, image catalo
 cargo test --release -p saverst --test media_bench -- --ignored --nocapture   # save/restore MiB/s to virtual tape and optical
 cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sessions; report in target/conformance-ftp/
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
+cargo test -p qsweb -p httpd -p httpadmin # web layer, httpd.conf, the admin pages against tests/golden/
+cargo run -p httpadmin --bin httpadmin-demo [PORT]   # the admin over the fixture (QSECOFR / QS400)
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
 cargo test -p sys-cpps --test smallsvr    # CHGNTPA, CHGLPDA, CHGSMTPA, SNDTCPSPLF, LPR against the oracle
 cargo test -p sshd                        # the SSH server end to end in memory
