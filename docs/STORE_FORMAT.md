@@ -12,8 +12,8 @@ columns must match its fields exactly. Prose and `Notes` are free.
 
 - A page is 4096 bytes. A unit is addressed in pages. An ASP is the
   concatenation of its spans into one logical page space, where a span
-  is one unprotected unit or one mirrored pair of units holding the same
-  pages. `PageNo` is a logical page number in that space (`u64`).
+  is one unprotected unit, one mirrored pair of units holding the same
+  pages, or one member of a device parity set (§11). `PageNo` is a logical page number in that space (`u64`).
 - Multi-byte fields inside page structures are little-endian.
 - B+tree keys are big-endian so that byte order equals key order.
 - CRC32C (Castagnoli) everywhere.
@@ -229,7 +229,7 @@ At offset 0 of the body.
 | 44 | 1 | release_v | creating release |
 | 45 | 1 | release_r | |
 | 46 | 1 | release_m | |
-| 47 | 1 | protection | 0 no unit mirrored, 1 at least one pair |
+| 47 | 1 | protection | bit 0 at least one mirrored pair, bit 1 at least one parity set |
 | 48 | 8 | alloc_root | free-space tree root, 0 for empty |
 | 56 | 8 | free_log_head | first free-log page, 0 for none |
 | 64 | 8 | objdir_root | object directory tree root, 0 for empty |
@@ -243,7 +243,12 @@ At offset 0 of the body.
 | 128 | 8 | last_rclstg_time | Unix seconds, 0 for never |
 | 136 | 16 | qsys | `ObjectId` of QSYS, zero before the object layer initializes |
 | 152 | 16 | sysval | `ObjectId` of the `*SYSVAL` object, zero before it exists |
-| 168 | 88 | reserved2 | 0 |
+| 168 | 1 | parity_work_set | parity set whose synchronization or rebuild is under way, 0 for none (§11) |
+| 169 | 1 | parity_work_kind | 1 synchronization, 2 rebuild |
+| 170 | 1 | parity_work_member | member being rebuilt; 0 for a synchronization |
+| 171 | 5 | reserved3 | 0 |
+| 176 | 8 | parity_work_done | blocks of the set done, as of this checkpoint |
+| 184 | 72 | reserved2 | 0 |
 
 The unit table follows at body offset 256: `unit_count` entries, one
 per unit in unit-number order. Units are added, removed and paired only
@@ -271,7 +276,11 @@ configuration.
 | 32 | 8 | usable_pages | pages of the span: `pages`, or the smaller of a pair |
 | 40 | 2 | mirror_partner | unit number of the other half, 0xFFFF when unprotected |
 | 42 | 1 | state | see §4, unit states |
-| 43 | 5 | reserved | 0 |
+| 43 | 1 | parity_set | device parity set, 1..15; 0 when the unit is in none (§11) |
+| 44 | 1 | parity_member | position in the set, from 0 |
+| 45 | 1 | parity_level | 5 RAID 5, 6 RAID 6; 0 when in no set |
+| 46 | 1 | parity_state | see §11, parity unit states |
+| 47 | 1 | reserved | 0 |
 | 48 | 32 | serial | the device's serial number, ASCII, zero padded; blank means use the unit UUID |
 
 ## 6. WAL
@@ -745,3 +754,192 @@ The byte space holds the `sysval` crate's TLV blob.
 |---|---|---|---|
 | 0 | 8 | blob_len | bytes |
 | 8 | 8 | reserved | 0 |
+
+## 11. Device parity protection
+
+IBM i keeps device parity (RAID 5, RAID 6) in its SAS RAID controllers.
+QS/400 runs on plain disks, so the store keeps it itself, as it keeps
+mirroring. A unit is unprotected, half of a mirrored pair, or a member
+of one parity set, never two of these.
+
+**Sets.** A parity set is 3 to 18 units for RAID 5 (`*PARITY`, one
+parity page per stripe) and 4 to 18 for RAID 6 (`*RAID6`, two), IBM's
+limits for its current controllers. An ASP has at most 15 sets. The
+members are numbered from 0 in `parity_member`; the set uses the size
+of its smallest member, and a member more than 10% larger than the
+smallest is refused. Membership, level and state live in the unit table
+(§5, `parity_*`); the work under way lives in the superblock.
+
+**Data stays where it is.** Each member stays its own span and keeps its
+logical pages: nothing moves when protection starts or stops. Parity
+takes the tail of each member instead, the share IBM's displays show as
+the capacity a unit gives up. With `N` members, `k` parity pages per
+stripe (1 or 2), `S` the smallest member's span pages and `SLOT` the
+pages of one partial-parity slot (below):
+
+- `A = S - 1 - 3 - 2 * SLOT - 1` pages are left for rows and parity;
+- `B = A div N` blocks; `w = N - k` rows per block;
+- the rows are member pages `3 .. 3 + B * w` (span-relative, which for
+  a member is unit-relative): the data, the WAL on unit 0 included;
+- the parity area is `3 + B * w .. 3 + B * N`, `k` pages per block;
+- the two partial-parity slots follow, `SLOT` pages each, then the
+  state page (`ParityState`);
+- from there to the span's last page, nothing (a larger member's rest).
+
+Pages from `3 + B * w` to the span's last page are held by the
+allocator: never allocated, never in the free-space tree, never freed
+by RCLSTG. Starting protection needs them to hold no data. Pages 0, 1, 2
+and the last page are the unit's own and are in no stripe.
+
+**Stripes.** Block `b` holds `N` stripes `s = b * N + j`, `j` from 0 to
+`N - 1`. Stripe `s` has its P page on member `j` at parity page
+`3 + B * w + k * b`; for RAID 6 its Q page is on member `(j + 1) mod N`
+at `3 + B * w + k * b + 1`. Every other member gives the stripe one data
+page: member `u` takes part in the stripes of the block whose parity it
+does not hold, in ascending `j`, and its `i`th such stripe is row
+`3 + b * w + i`. So parity rotates over all members and each member
+gives up `1/N` (RAID 5) or `2/N` (RAID 6) of its rows.
+
+P is the XOR of the stripe's data pages. Q is `sum g^m * D_m` over the
+data pages in GF(2^8) with the polynomial `0x11D` and `g = 2`, `m` the
+member number of the page's unit. One unknown page of a stripe comes
+from P (or from Q when P is unknown too); two come from P and Q.
+Parity pages carry no trailer of their own: they are the XOR (and
+product sum) of whole pages, trailers included.
+
+### Parity unit states
+
+| Value | State | Display | Meaning |
+|---|---|---|---|
+| 0 | Active | `DPY/Active` | in step with the set |
+| 1 | Synchronizing | `DPY/Unprotected` | the set's parity is being computed: start, include, exclude |
+| 2 | Rebuilding | `DPY/Rebuild` | a replaced or returned unit being rebuilt from the others |
+| 3 | Failed | `DPY/Failed` | missing or failing; its pages are computed from the others |
+
+The displays derive the other members' status from these: while a set
+has a failed or rebuilding member, the others show `DPY/Unprotected`
+for RAID 5 and for RAID 6 with two, `DPY/Degraded` for RAID 6 with one.
+
+**Missing units.** At open a member that is not found is Failed when
+its set was Active and no more than `k` members are Failed or
+Rebuilding; the ASP opens exposed (an attention code) and reads of the
+missing unit's pages are computed from the stripe. A member found again
+after being Failed is stale and Rebuilding from block 0. More unknown
+members than `k`, or any missing member of a set that is still
+Synchronizing, stops the open (disk unit missing, B1001030). A member
+whose I/O fails while running becomes Failed when the set can lose it;
+otherwise the error reaches the store. Before anything is written
+without it, the failure is recorded in the state page of every other
+member (flushed): the unit table only learns of it at the next
+checkpoint, and a crash before then must not let the stale unit be read
+as in step. At open the newest valid state page turns an Active member
+it names into a stale one (Rebuilding from block 0). A rebuild that
+completes writes the state page again without the member.
+
+**Background work.** One synchronization or rebuild runs at a time per
+ASP, block by block in ascending order; the superblock records the set,
+the kind, the member and `parity_work_done` as of each checkpoint.
+Blocks below that mark are done and stay done: writes to them keep
+parity. A synchronization first zeroes the partial-parity slots of every
+member, a rebuild those of the member it rebuilds; then each block is
+computed and written, and the members flushed, before the mark moves. A
+crash resumes from the mark of the last checkpoint and redoes the blocks
+after it, which is harmless. Sets waiting their turn keep their state;
+the next one starts at block 0 when the current one ends.
+
+Pages that start being held (start, include, exclude) are written only
+after the checkpoint that records the new set: until then the last
+durable superblock may still reach them. Pages that stop being held
+become free at that checkpoint, as freed pages do (§7).
+
+**Writes and the write hole.** A data page is never written in place
+on its own. Writes to a set are held until the next flush, then made
+in epochs of at most 126 stripes:
+
+1. For every stripe written, the old value of each data page is read
+   (computed from the stripe when its unit is not in step), and the
+   partial parity is computed: the P (and for RAID 6 the Q) of the
+   pages the epoch does not write. The new P and Q follow from the
+   old values and the new pages.
+2. The partial parity goes to the next slot of each parity member of
+   those stripes, which are flushed.
+3. The data pages and the new parity pages are written in place and
+   every member is flushed.
+
+A crash in step 3 can leave a stripe with new data and old parity, or
+the reverse: the RAID write hole. At open, before anything is read,
+the newest valid slot of every member that can be trusted (not Failed;
+a Rebuilding one for blocks below its mark) is read and each stripe it
+names is repaired: the pages the epoch did not write are known from the
+partial parity even when one (RAID 6: two) of their units is missing,
+the pages it wrote are what their units hold now (for a missing unit,
+what the stripe's parity says, else zeros), and P and Q are written
+afresh. Nothing the store committed lies on the pages an epoch wrote
+without the WAL covering them (§6: copy-on-write pages are flushed
+before their record commits, in-place pages are imaged in the WAL, an
+unfinished WAL page ends the log), so the store sees at most the torn
+writes it already tolerates. Stripes of an earlier epoch were flushed
+before the next epoch's slots were written; repairing one again
+changes nothing. Pages the store writes to a member outside the rows
+(unit header, superblock copies) go straight to the unit.
+
+Writes to a stripe of a set still Synchronizing, above the mark, go to
+the data page only; the synchronization computes their parity when it
+gets there.
+
+**Reads.** A data page is read from its unit when the unit is in step
+for that stripe. When it is not, or the read fails, or the page is not
+zero and its trailer checksum fails, it is computed from the rest of
+the stripe; a page computed this way that verifies is written back to
+its unit when the unit answers.
+
+### `PplHeader` (64 bytes)
+
+At offset 0 of the first page of a partial-parity slot (a raw page, no
+trailer). The entries follow from offset 64; the partial pages of entry
+`i` are pages `1 + 2 * i` (P) and `2 + 2 * i` (Q, RAID 6) of the slot. A
+slot is `SLOT = 1 + 2 * 126 = 253` pages. A member writes its two slots
+in turn; the valid one with the higher `seq` is the newest.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400PPL` |
+| 8 | 8 | seq | epoch number, never reused while the set exists |
+| 16 | 16 | asp_uuid | |
+| 32 | 1 | set | parity set |
+| 33 | 1 | level | 5 or 6 |
+| 34 | 1 | members | `N` |
+| 35 | 1 | member | this unit's member number |
+| 36 | 4 | count | entries, at most 126 |
+| 40 | 8 | blocks | `B` |
+| 48 | 4 | crc | CRC32C of this header with `crc` zero, the entries and the partial pages |
+| 52 | 12 | reserved | 0 |
+
+### `PplEntry` (16 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | stripe | `b * N + j` |
+| 8 | 4 | written | bit `m` set: member `m`'s data page of the stripe is written in this epoch |
+| 12 | 4 | reserved | 0 |
+
+### `ParityState` (64 bytes)
+
+At offset 0 of the state page, `3 + B * N + 2 * SLOT` on every member (a
+raw page, no trailer). Every member carries the same contents; the
+valid one with the highest `seq` is the newest. A synchronization zeroes
+it.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400PST` |
+| 8 | 8 | seq | write number |
+| 16 | 16 | asp_uuid | |
+| 32 | 1 | set | parity set |
+| 33 | 1 | level | 5 or 6 |
+| 34 | 1 | members | `N` |
+| 35 | 1 | reserved1 | 0 |
+| 36 | 4 | failed | bit `m` set: member `m` has failed |
+| 40 | 8 | blocks | `B` |
+| 48 | 4 | crc | CRC32C of these 64 bytes with `crc` zero |
+| 52 | 12 | reserved | 0 |
