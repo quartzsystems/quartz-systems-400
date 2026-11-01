@@ -11,6 +11,7 @@ pub mod confirm;
 pub mod dirs;
 pub mod general;
 pub mod ports;
+pub mod tls;
 
 use std::fmt::Write as _;
 
@@ -49,6 +50,7 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
         ["directories"] => dirs::list(rq, &v),
         ["directory"] => dirs::props_page(rq, &v),
         ["remove"] => dirs::remove(rq, &v),
+        ["tls"] => tls::page(rq, &v),
         _ => rq.not_found(&format!("page {} of instance {}", rest.join("/"), v.name())),
     }
 }

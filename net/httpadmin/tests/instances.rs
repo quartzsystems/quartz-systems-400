@@ -376,3 +376,43 @@ fn directories_need_iosyscfg() {
     assert!(refused(&b));
     assert_eq!(conf(&b, "WEBSTORE"), before);
 }
+
+#[test]
+fn tls_apply() {
+    let mut b = Browser::signed_on();
+    let before = conf(&b, "WEBSTORE");
+    // Nothing checked is refused.
+    let r = b.post("/instance/WEBSTORE/tls", &[("tls", "on"), ("cipher", "*STRONG"), ("ca", "none"), ("apply", "Apply")]);
+    assert!(shown(&mut b, &r).contains("HTP8120"));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+    let r = b.post(
+        "/instance/WEBSTORE/tls",
+        &[("tls", "on"), ("t13", "on"), ("cipher", "*STRONG"), ("ca", "req"), ("apply", "Apply")],
+    );
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(
+        c.contains("<VirtualHost *:443>\n   SSLEngine On\n   SSLAppName QIBM_HTTP_SERVER_WEBSTORE\n   SSLProtocolDisable TLSv1 TLSv1.1 TLSv1.2\n   SSLCipherSpec *STRONG\n   SSLClientAuth Required\n</VirtualHost>"),
+        "{c}"
+    );
+    let t = b.get("/instance/WEBSTORE/tls").text();
+    assert!(t.contains("<option selected>*STRONG</option>") && t.contains("value=\"req\" checked"));
+    // Off.
+    let r = b.post("/instance/WEBSTORE/tls", &[("t13", "on"), ("t12", "on"), ("cipher", "*DFT (system value QSSLCSL)"), ("ca", "none"), ("ok", "OK")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(c.contains("   SSLEngine Off\n") && !c.contains("SSLCipherSpec") && !c.contains("SSLClientAuth"), "{c}");
+    assert!(b.get("/instance/WEBSTORE/ports").text().contains("<td>No</td>"));
+    // No TLS port to turn on.
+    let r = b.post("/instance/TESTSRV/tls", &[("tls", "on"), ("t13", "on"), ("cipher", "*STRONG"), ("apply", "Apply")]);
+    assert!(shown(&mut b, &r).contains("HTP8120"));
+}
+
+#[test]
+fn tls_needs_iosyscfg() {
+    let mut b = group_member();
+    let before = conf(&b, "WEBSTORE");
+    assert_eq!(b.post("/instance/WEBSTORE/tls", &[("t13", "on"), ("apply", "Apply")]).status, 403);
+    assert!(refused(&b));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}

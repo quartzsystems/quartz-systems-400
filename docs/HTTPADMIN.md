@@ -53,6 +53,7 @@ page and is listed here:
 | `shared/components.html` | tab links `components.html` → `help.html`; `error.html` → `help.html` | the pattern page links to itself; served, they are help windows |
 | `http/confirm-stop.html` | `<form method="post">` moved before the How to end paragraph | the radios and delay field sat outside the form, so the choice was never submitted |
 | `http/instance-ports.html` | `<form method="post">` moved before the list | the Select boxes sat outside the form, so Remove never saw them |
+| `http/instance-tls.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE` | application IDs stay the compatible ones (Decisions) |
 
 ## Steps
 

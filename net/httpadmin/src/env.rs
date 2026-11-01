@@ -144,7 +144,14 @@ pub trait Jobs: Send + Sync {
 }
 
 /// The certificate manager's side (steps 12 to 15 shape it).
-pub trait Certs: Send + Sync {}
+pub trait Certs: Send + Sync {
+    /// The `*SYSTEM` server certificates application `app` may present,
+    /// the one assigned to it first: label and expiry (seconds since
+    /// 1970). Read-only; the TLS page of an instance shows them.
+    fn for_app(&self, _app: &str) -> Vec<(String, u64)> {
+        Vec::new()
+    }
+}
 
 /// Everything the product runs over.
 #[derive(Clone)]

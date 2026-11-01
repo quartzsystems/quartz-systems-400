@@ -197,7 +197,18 @@ impl Jobs for FixtureJobs {
 /// The sample certificate side (filled in with the certificate pages).
 pub struct FixtureCerts;
 
-impl Certs for FixtureCerts {}
+impl Certs for FixtureCerts {
+    fn for_app(&self, app: &str) -> Vec<(String, u64)> {
+        let mut out = vec![
+            ("*.quartz.example".to_string(), secs(2028, 1, 2, 12, 0, 0)),
+            ("QSHQ400 self-signed".to_string(), secs(2031, 10, 29, 12, 0, 0)),
+        ];
+        if app == "QIBM_HTTP_SERVER_WEBSTORE" {
+            out.insert(0, ("webstore.quartz.example".into(), secs(2027, 3, 14, 12, 0, 0)));
+        }
+        out
+    }
+}
 
 /// The sample system with handles to its parts.
 pub struct Fixture {

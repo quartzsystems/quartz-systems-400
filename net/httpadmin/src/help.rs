@@ -135,6 +135,17 @@ pub const TOPICS: &[Topic] = &[
 <p><b>Require authentication</b> asks for a user and password checked against a validation list (<span class=\"mono\">LIBRARY/NAME</span>); the realm is the name the browser shows.</p>",
     },
     Topic {
+        key: "instance-tls",
+        title: "Instance: TLS",
+        body: "<p>The TLS settings of the instance's TLS ports, the ports whose virtual host turns <span class=\"mono\">SSLEngine</span> on (Ports &amp; addresses page). The certificate comes from the <span class=\"mono\">*SYSTEM</span> certificate store through the instance's certificate application, <span class=\"mono\">QIBM_HTTP_SERVER_</span> and the instance name; the list shows the certificate assigned to it first. Assign another on the Certificate applications page.</p>
+<p><b>Protocol versions</b> are written as <span class=\"mono\">SSLProtocolDisable</span> for the versions not chosen; TLS 1.0 is never offered. <b>*DFT</b> uses the cipher list of system value <span class=\"mono\">QSSLCSL</span>; a custom list is written on the Configuration file page. <b>Client authentication</b> asks browsers for a certificate (Optional) or refuses those without one (Required). Changes need the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
+        key: "instance-tls-enable",
+        title: "Enable TLS",
+        body: "<p>Turns TLS on or off for every TLS port of the instance at once. Off, the ports stay in the configuration file and answer without TLS until it is turned on again.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",
