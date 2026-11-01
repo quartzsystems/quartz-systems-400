@@ -6,7 +6,7 @@
 //! `QSWRKAPPID`. Assignments name labels of the `*SYSTEM` store.
 
 use super::{Ctx, Keystore, Note, msgs};
-use crate::apps::{AppDef, AppKind, AppRegistry, CaTrust, ClientAuth};
+use crate::apps::{AppDef, AppKind, AppRegistry, CaTrust, ClientAuth, canonical};
 use crate::error::{CertError, Result};
 use crate::store::EntryKind;
 
@@ -16,6 +16,7 @@ use crate::store::EntryKind;
 pub fn assign(ctx: &Ctx<'_>, id: &str, label: Option<&str>) -> Result<Vec<Note>> {
     let mut reg = AppRegistry::load(ctx.files)?;
     let def = reg.get(id)?.clone();
+    let id = def.id.as_str();
     let Some(label) = label else {
         reg.assign(id, None)?;
         reg.save(ctx.files)?;
@@ -43,7 +44,7 @@ pub fn add(ctx: &Ctx<'_>, id: &str, kind: AppKind, text: &str) -> Result<Vec<Not
     let mut reg = AppRegistry::load(ctx.files)?;
     reg.register(id, kind, text)?;
     reg.save(ctx.files)?;
-    Ok(vec![Note::new(msgs::APP_ADDED, &[id])])
+    Ok(vec![Note::new(msgs::APP_ADDED, &[&canonical(id)])])
 }
 
 /// Remove an application ID a user registered.
@@ -51,7 +52,7 @@ pub fn remove(ctx: &Ctx<'_>, id: &str) -> Result<Vec<Note>> {
     let mut reg = AppRegistry::load(ctx.files)?;
     reg.deregister(id)?;
     reg.save(ctx.files)?;
-    Ok(vec![Note::new(msgs::APP_REMOVED, &[id])])
+    Ok(vec![Note::new(msgs::APP_REMOVED, &[&canonical(id)])])
 }
 
 /// What `QSCHGAPPID` changes; `None` keeps the value.
@@ -69,7 +70,8 @@ pub struct Change {
 /// of `*SYSTEM`.
 pub fn change(ctx: &Ctx<'_>, id: &str, c: &Change) -> Result<Vec<Note>> {
     let mut reg = AppRegistry::load(ctx.files)?;
-    reg.get(id)?;
+    let id = reg.get(id)?.id.clone();
+    let id = id.as_str();
     if let Some(a) = c.client_auth {
         reg.set_client_auth(id, a)?;
     }
@@ -85,10 +87,8 @@ pub fn change(ctx: &Ctx<'_>, id: &str, c: &Change) -> Result<Vec<Note>> {
         }
         reg.set_ca_trust(id, t.clone())?;
     }
-    if let Some(t) = &c.text
-        && let Some(a) = reg.apps.iter_mut().find(|a| a.id == id)
-    {
-        a.text.clone_from(t);
+    if let Some(t) = &c.text {
+        reg.set_text(id, t)?;
     }
     reg.save(ctx.files)?;
     Ok(vec![Note::new(msgs::APP_CHANGED, &[id])])
@@ -126,7 +126,7 @@ mod tests {
     use crate::crypto::keys::KeyAlgorithm;
     use crate::x509::build::CertSpec;
 
-    const ADMIN: &str = "QIBM_HTTP_SERVER_ADMIN";
+    const ADMIN: &str = "QS400_HTTP_SERVER_ADMIN";
 
     fn with_cert(w: &World, label: &str) {
         entries::create(
