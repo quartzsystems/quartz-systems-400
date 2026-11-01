@@ -85,8 +85,6 @@ fn tree_groups_stay_open() {
 
 /// Routes not built yet: each step removes its own.
 const PENDING: &[&str] = &[
-    // Database.
-    "/db", "/sql",
     // Security, software, performance.
     "/audit", "/licpgm", "/ptf", "/fixes",
 ];
