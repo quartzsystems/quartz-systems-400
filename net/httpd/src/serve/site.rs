@@ -57,15 +57,37 @@ pub struct AccessLog {
     pub format: String,
 }
 
-/// `LogMaint`: a log's rotated days kept and their size limit.
+/// `LogMaint path files size-MB [HH:MM]`: how a log rotates and how
+/// many rotated files stay.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Maint {
     /// The log file.
     pub path: String,
-    /// Days of rotated logs kept; 0 keeps them all.
-    pub days: u32,
-    /// Bytes the rotated logs may take together; 0 for no limit.
+    /// Rotated files kept, newest first; 0 keeps them all.
+    pub files: u32,
+    /// Rotate when the file would pass this many bytes; 0 rotates
+    /// daily at [`Maint::at`].
     pub size: u64,
+    /// Seconds after midnight (UTC) of the daily rotation.
+    pub at: u64,
+}
+
+impl Maint {
+    /// From a `LogMaint` directive's arguments, `path` resolved.
+    pub fn parse(path: String, args: &[String]) -> Self {
+        let num = |i: usize| args.get(i).and_then(|a| a.parse::<u64>().ok()).unwrap_or(0);
+        let at = args
+            .get(3)
+            .and_then(|t| t.split_once(':'))
+            .and_then(|(h, m)| Some(h.parse::<u64>().ok()? * 3600 + m.parse::<u64>().ok()? * 60))
+            .unwrap_or(0);
+        Self {
+            path,
+            files: u32::try_from(num(1)).unwrap_or(u32::MAX),
+            size: num(2) * 1024 * 1024,
+            at,
+        }
+    }
 }
 
 /// The main server or one virtual host.
@@ -273,11 +295,7 @@ fn same_v4(a: IpAddr, b: IpAddr) -> bool {
 fn maints(items: &[Node], root: &str, out: &mut Vec<Maint>) {
     for n in items {
         match n {
-            Node::Directive(d) if d.is("LogMaint") => out.push(Maint {
-                path: resolve(root, &d.args[0]),
-                days: d.args[1].parse().unwrap_or(0),
-                size: d.args[2].parse().unwrap_or(0),
-            }),
+            Node::Directive(d) if d.is("LogMaint") => out.push(Maint::parse(resolve(root, &d.args[0]), &d.args)),
             Node::Section(s) if s.name.eq_ignore_ascii_case("VirtualHost") || s.name.eq_ignore_ascii_case("IfModule") => {
                 maints(&s.items, root, out);
             }
@@ -414,7 +432,7 @@ mod tests {
     use crate::conf::parse;
 
     const CONF: &str = "ServerRoot /www/shop\nListen *:8080\nListen 8443\nServerName shop.example\n\
-        DocumentRoot htdocs\nLogFormat \"%h %u\" short\nCustomLog logs/access_log short\nLogMaint logs/access_log 7 0\n\
+        DocumentRoot htdocs\nLogFormat \"%h %u\" short\nCustomLog logs/access_log short\nLogMaint logs/access_log 7 0 03:30\n\
         KeepAlive Off\nAlias /icons/ /www/shop/icons/\n\
         <VirtualHost *:8443>\n   ServerName secure.example\n   SSLEngine On\n   SSLProtocolDisable TLSv1.2\n   SSLClientAuth Optional\n   DocumentRoot /www/shop/secure\n</VirtualHost>\n\
         <VirtualHost *:8080>\n   ServerName other.example\n   DocumentRoot /www/shop/other\n   CustomLog logs/other_log common\n</VirtualHost>\n";
@@ -439,7 +457,8 @@ mod tests {
         assert_eq!(sec.access_logs[0].path, "/www/shop/logs/access_log");
         assert_eq!(p.vhosts[1].access_logs.len(), 1);
         assert_eq!(p.log_files(), ["/www/shop/logs/access_log", "/www/shop/logs/error_log", "/www/shop/logs/other_log"]);
-        assert_eq!(p.maint_of("/www/shop/logs/access_log").unwrap().days, 7);
+        let m = p.maint_of("/www/shop/logs/access_log").unwrap();
+        assert_eq!((m.files, m.size, m.at), (7, 0, 3 * 3600 + 1800));
         let none = Plan::new("x", "/www/x", &parse("Listen 80\n").unwrap());
         assert_eq!(none.site("10.0.0.1:80".parse().unwrap(), Some("a")).doc_root, "/www/x/htdocs");
     }

@@ -138,24 +138,17 @@ pub fn error_stamp(secs: u64) -> String {
     )
 }
 
-/// A day's suffix for a rotated log: `20261101`.
-pub fn day_suffix(secs: u64) -> String {
+/// A rotated log's suffix: `20261101123000` (when it rotated or was
+/// last written).
+pub fn stamp(secs: u64) -> String {
     let c = civil(secs);
-    format!("{:04}{:02}{:02}", c.year, c.month, c.day)
+    format!("{:04}{:02}{:02}{:02}{:02}{:02}", c.year, c.month, c.day, c.hour, c.min, c.sec)
 }
 
-/// The day a suffix names, as days since 1970.
-pub fn suffix_day(s: &str) -> Option<i64> {
-    if s.len() != 8 || !s.bytes().all(|b| b.is_ascii_digit()) {
-        return None;
-    }
-    let y: i64 = s[..4].parse().ok()?;
-    let m: u32 = s[4..6].parse().ok()?;
-    let d: u32 = s[6..].parse().ok()?;
-    if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
-        return None;
-    }
-    Some(days_from_civil(y, m, d))
+/// Whether `s` is a rotated log's suffix: 14 digits (8 from logs
+/// rotated by day alone).
+pub fn is_stamp(s: &str) -> bool {
+    (s.len() == 14 || s.len() == 8) && s.bytes().all(|b| b.is_ascii_digit())
 }
 
 #[cfg(test)]
@@ -170,8 +163,7 @@ mod tests {
         assert_eq!(parse_http_date(&http_date(1_793_232_000)), Some(1_793_232_000));
         assert_eq!(clf(1_793_232_000), "[29/Oct/2026:00:00:00 +0000]");
         assert_eq!(error_stamp(1_793_232_000), "Thu Oct 29 00:00:00 2026");
-        assert_eq!(day_suffix(1_793_232_000), "20261029");
-        assert_eq!(suffix_day("20261029"), Some(1_793_232_000 / 86_400));
-        assert_eq!(suffix_day("2026102x"), None);
+        assert_eq!(stamp(1_793_232_000 + 3723), "20261029010203");
+        assert!(is_stamp("20261029010203") && is_stamp("20261029") && !is_stamp("2026102x"));
     }
 }
