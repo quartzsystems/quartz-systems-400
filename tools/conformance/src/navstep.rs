@@ -10,7 +10,9 @@
 //! sign-off; then the sign-on page over TLS on 2005; `ENDTCPSVR` ends
 //! both jobs.
 
-use crate::httpadm::{Reply, enc, http_at, session_cookie, tls_get, want};
+use std::time::{Duration, Instant};
+
+use crate::httpadm::{Reply, enc, http_at, secofr_password, session_cookie, tls_get, want};
 use crate::phase5::SECOFR_PASSWORD;
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
@@ -44,9 +46,19 @@ fn nav_job(body: &str) -> Option<String> {
 impl Suite {
     /// Step 88: Navigator over HTTP and HTTPS.
     pub(crate) fn navigator(&self, s: &mut Session) -> Result<String, String> {
-        let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
-        if !started.contains("TCP1A07") && !started.contains("TCP1A08") {
-            return Err(format!("STRTCPSVR *ADMIN:\n{started}"));
+        secofr_password(s)?;
+        // Step 87's ENDTCPSVR may still be ending the jobs: "already
+        // started" until they are gone.
+        let end = Instant::now() + Duration::from_secs(60);
+        loop {
+            let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
+            if started.contains("TCP1A07") || (started.contains("TCP1A08") && Instant::now() > end) {
+                break;
+            }
+            if !started.contains("TCP1A08") {
+                return Err(format!("STRTCPSVR *ADMIN:\n{started}"));
+            }
+            std::thread::sleep(Duration::from_secs(2));
         }
         let plain = forward_port(self, GUEST, 2002)?;
         let page = nav(plain, "GET", "/signon", None, None)?;

@@ -170,6 +170,15 @@ fn admin_job(body: &str) -> Option<String> {
         .then(|| format!("{number}/QTMHHTTP/ADMIN"))
 }
 
+/// Set `QSECOFR`'s password, so a step needs no earlier one.
+pub(crate) fn secofr_password(s: &mut Session) -> Result<(), String> {
+    let set = s.command(&format!("CHGUSRPRF USRPRF(QSECOFR) PASSWORD('{SECOFR_PASSWORD}') PWDEXP(*NO)"), CMD)?;
+    if set.trim_start().starts_with("CPF") {
+        return Err(format!("CHGUSRPRF QSECOFR: {set}"));
+    }
+    Ok(())
+}
+
 /// Form-encode a value.
 pub(crate) fn enc(v: &str) -> String {
     v.bytes()
@@ -189,6 +198,7 @@ impl Suite {
         if !www.contains("QTMHHTTP") {
             return Err(format!("/www is not QTMHHTTP's:\n{www}"));
         }
+        secofr_password(s)?;
         let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
         if !started.contains("TCP1A07") && !started.contains("TCP1A08") {
             return Err(format!("STRTCPSVR *ADMIN:\n{started}"));
