@@ -136,8 +136,8 @@ pub(super) fn has_carrier(ifname: &str) -> bool {
         .is_ok_and(|l| l.has_carrier())
 }
 
-/// Give a port no line owns back to the IPL's network: up, so the
-/// boot address and the service console reach it again.
+/// Give a port no line owns back: up, so the interfaces on its kernel
+/// link (and a `qs400.ip=` address) reach it again.
 pub(super) fn release(ifname: &str) -> Result<(), String> {
     let mut r = Rtnl::open().map_err(|e| nl(&e))?;
     match r.link_by_name(ifname) {

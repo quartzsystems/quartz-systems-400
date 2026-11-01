@@ -15,10 +15,8 @@ use std::time::{Duration, Instant};
 
 use crate::qemu::session::Session;
 use crate::steps::Suite;
-use crate::tcp::forward_port;
+use crate::tcp::{GUEST, forward_port};
 
-/// The guest's own address on QEMU's user network.
-const GUEST: &str = "10.0.2.15";
 
 /// The certificate commands derive store keys (Argon2id), slow without
 /// acceleration.

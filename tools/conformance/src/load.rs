@@ -209,6 +209,8 @@ impl Suite {
         };
         s.expect("Service console ready", Duration::from_secs(180))
             .map_err(fail)?;
+        s.discard();
+        crate::tcp::guest_address(&mut s).map_err(fail)?;
         let port = launch.telnet_port.ok_or_else(|| fail("no telnet port".into()))?;
         // The first sign-on changes QSECOFR's expired password; the
         // others sign on with the new one.
