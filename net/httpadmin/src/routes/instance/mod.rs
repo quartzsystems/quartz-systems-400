@@ -9,6 +9,7 @@
 
 pub mod confirm;
 pub mod general;
+pub mod ports;
 
 use std::fmt::Write as _;
 
@@ -43,6 +44,7 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
     match rest {
         ["confirm"] => confirm::page(rq, &v),
         ["general"] => general::page(rq, &v),
+        ["ports"] => ports::page(rq, &v),
         _ => rq.not_found(&format!("page {} of instance {}", rest.join("/"), v.name())),
     }
 }

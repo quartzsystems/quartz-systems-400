@@ -278,3 +278,49 @@ fn general_needs_iosyscfg() {
     assert!(refused(&b));
     assert_eq!(conf(&b, "WEBSTORE"), before);
 }
+
+#[test]
+fn ports_add_remove() {
+    let mut b = Browser::signed_on();
+    let r = b.post("/instance/WEBSTORE/ports", &[("addr", "*ALL"), ("port", "8443"), ("tls", "on"), ("add", "Add")]);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(c.contains("Listen *:443\nListen *:8443\n"), "{c}");
+    assert!(c.ends_with("<VirtualHost *:8443>\n   SSLEngine On\n   SSLAppName QIBM_HTTP_SERVER_WEBSTORE\n</VirtualHost>\n"), "{c}");
+    for (addr, port, id) in [("*ALL", "80", "HTP8105"), ("10.9.9.9", "8090", "HTP8120"), ("*ALL", "0", "HTP8120")] {
+        let r = b.post("/instance/WEBSTORE/ports", &[("addr", addr), ("port", port), ("add", "Add")]);
+        assert!(shown(&mut b, &r).contains(id), "{port}");
+    }
+    // Remove 443: its Listen and its virtual host.
+    let r = b.post("/instance/WEBSTORE/ports", &[("l2", "on"), ("remove", "Remove")]);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(!c.contains("Listen *:443\n") && !c.contains("<VirtualHost *:443>"), "{c}");
+    assert!(c.contains("<VirtualHost *:8443>"));
+    // Not every one.
+    let r = b.post("/instance/WEBSTORE/ports", &[("l1", "on"), ("l2", "on"), ("remove", "Remove")]);
+    assert!(shown(&mut b, &r).contains("HTP8120"));
+    assert!(conf(&b, "WEBSTORE").contains("Listen *:80\n"));
+}
+
+#[test]
+fn ports_low_port_needs_iosyscfg_on_server_profile() {
+    let mut b = Browser::signed_on();
+    let c = conf(&b, "TESTSRV").replace("ServerUserID QTMHHTTP", "ServerUserID WEBUSER");
+    b.fx.files.put("/www/testsrv/conf/httpd.conf", c.as_bytes());
+    let r = b.post("/instance/TESTSRV/ports", &[("addr", "*ALL"), ("port", "81"), ("add", "Add")]);
+    assert!(shown(&mut b, &r).contains("HTP8202"));
+    assert_eq!(conf(&b, "TESTSRV"), c);
+    let r = b.post("/instance/TESTSRV/ports", &[("addr", "*ALL"), ("port", "8001"), ("add", "Add")]);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+}
+
+#[test]
+fn ports_need_iosyscfg_and_token() {
+    let mut b = group_member();
+    let before = conf(&b, "WEBSTORE");
+    assert_eq!(b.post("/instance/WEBSTORE/ports", &[("port", "8090"), ("add", "Add")]).status, 403);
+    assert!(refused(&b));
+    assert_eq!(b.post_raw("/instance/WEBSTORE/ports", &[("port", "8090"), ("add", "Add")]).status, 403);
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}

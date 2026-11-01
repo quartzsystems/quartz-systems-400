@@ -266,3 +266,24 @@ fn instance_general() {
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "http/instance-general.html", &[]);
 }
+
+/// The prototype's WEBSTORE also listens on 10.0.10.21:8081, added here
+/// through the page itself.
+#[test]
+fn instance_ports() {
+    let mut b = Browser::signed_on();
+    let r = b.post("/instance/WEBSTORE/ports", &[("addr", "10.0.10.21"), ("port", "8081"), ("add", "Add")]);
+    assert_eq!(r.status, 303);
+    assert!(b.get("/instance/WEBSTORE/ports").text().contains("HTP8022"));
+    let r = b.get("/instance/WEBSTORE/ports");
+    // The prototype leaves the Select boxes outside the form, so they
+    // would never be submitted.
+    assert_golden(
+        &r.text(),
+        "http/instance-ports.html",
+        &[
+            ("</div><table class=\"list\"", "</div><form method=\"post\"><table class=\"list\""),
+            ("</table><form method=\"post\"><div class=\"buttons\"><input type=\"submit\" name=\"remove\"", "</table><div class=\"buttons\"><input type=\"submit\" name=\"remove\""),
+        ],
+    );
+}

@@ -116,6 +116,12 @@ pub const TOPICS: &[Topic] = &[
         body: "<p>An instance that takes over the work of this one when it fails. Select the box to switch the partnership on; the partner chosen is remembered while it is switched off.</p>",
     },
     Topic {
+        key: "instance-ports",
+        title: "Instance: ports and addresses",
+        body: "<p>Each row is a <span class=\"mono\">Listen</span> directive: the address the instance listens on (<span class=\"mono\">*ALL</span> for every interface) and the port. A port is TLS when a <span class=\"mono\">&lt;VirtualHost&gt;</span> for it turns <span class=\"mono\">SSLEngine On</span>; the certificate comes from the instance's certificate application (TLS page).</p>
+<p><b>Add</b> writes a new Listen entry and, for a TLS port, its virtual host. <b>Remove</b> deletes the selected entries and any virtual host left without a port; an instance keeps at least one. A port below 1024 needs the <span class=\"mono\">*IOSYSCFG</span> special authority on the server user profile. A running instance uses the change after a restart.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",
