@@ -53,6 +53,20 @@ pub fn strtcp(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
     lines(&notes, &mut out);
     let fw = super::tcpsvr::framework();
     let mut env = super::tcpsvr::JobEnv::new(job, host);
+    // *HTTP goes on its own: its instances marked autostart start even
+    // when the administration instance is running or does not autostart.
+    let servers: Vec<String> = servers.into_iter().filter(|s| !s.eq_ignore_ascii_case("*HTTP")).collect();
+    if strsvr {
+        match fw.start(&mut env, &servers::Request::autostart("*HTTP")) {
+            Ok(t) if !t.is_empty() => {
+                let _ = writeln!(out, "{t}");
+            }
+            Ok(_) => {}
+            Err(e) => {
+                let _ = writeln!(out, "{}", e.line());
+            }
+        }
+    }
     let mut starter = servers::framework::Starter::new(&fw, &mut env);
     for (server, r) in start_all(&mut starter, &servers) {
         match r {

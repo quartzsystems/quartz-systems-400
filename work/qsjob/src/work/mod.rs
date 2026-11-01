@@ -13,6 +13,8 @@ pub mod consdev;
 pub mod ftp;
 pub mod httpadm;
 pub mod hostsvr;
+pub mod httpsvr;
+pub mod ifsfiles;
 pub mod inter;
 pub mod lpd;
 pub mod menu;

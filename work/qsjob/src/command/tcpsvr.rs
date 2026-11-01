@@ -31,7 +31,33 @@ pub fn framework() -> Framework {
     f.register(Box::new(servers::framework::Lpd));
     f.register(Box::new(servers::framework::Ftp));
     f.register(Box::new(servers::framework::HostSvr));
+    f.register(Box::new(servers::framework::HttpServer));
     f
+}
+
+/// The HTTP server's instances from `/www/instances.json`, each with
+/// the `ServerUserID` of its configuration, read as this job's user.
+pub fn http_instances(host: &Host) -> Vec<servers::framework::HttpInstance> {
+    crate::work::ifsfiles::with_files(&host.link, |files| {
+        let Ok(reg) = httpd::registry::Registry::load(files) else {
+            return Vec::new();
+        };
+        reg.instances
+            .iter()
+            .map(|e| {
+                let user = httpd::instance::load_conf(files, &e.root)
+                    .map_or_else(
+                        |_| httpd::serve::site::DEFAULT_USER.to_string(),
+                        |c| httpd::serve::site::Plan::new(&e.name, &e.root, &c).user,
+                    );
+                servers::framework::HttpInstance {
+                    name: e.name.to_ascii_uppercase(),
+                    autostart: e.autostart,
+                    user,
+                }
+            })
+            .collect()
+    })
 }
 
 /// Every server's autostart and attributes from the service.
@@ -148,6 +174,23 @@ impl Env for JobEnv<'_> {
         }
         self.command(&format!("STRSBS SBSD(QSYS/{name})")).map(|_| ())
     }
+
+    fn http_instances(&mut self) -> Vec<servers::framework::HttpInstance> {
+        http_instances(self.host)
+    }
+
+    fn http_ending(&mut self, instance: &str, immediate: bool, delay: u32) {
+        if immediate {
+            return;
+        }
+        let name = instance.to_string();
+        let r = crate::work::ifsfiles::with_files(&self.host.link, move |files| {
+            httpd::registry::Registry::update(files, &name, |e| e.end_delay = Some(delay))
+        });
+        if let Err(e) = r {
+            eprintln!("qsjob: ENDTCPSVR {instance}: {e}");
+        }
+    }
 }
 
 /// `value`, or `default` when it is empty.
@@ -257,8 +300,11 @@ pub fn endtcpsvr(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fai
     let fw = framework();
     let list = server_list(r);
     let inst = instance(r);
+    let parms = parms_of(r);
+    let immediate = parms.name("OPTION") == "*IMMED";
+    let delay = parms.int("DELAY").and_then(|d| u32::try_from(d).ok());
     let mut env = JobEnv::new(job, host);
-    report(fw.run(&mut env, &list, &inst, false, false))
+    report(fw.run_with(&mut env, &list, &inst, false, immediate, delay))
 }
 
 /// `CHGTELNA`: the attributes into the server table, checked first.

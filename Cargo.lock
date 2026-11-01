@@ -2341,6 +2341,7 @@ dependencies = [
  "ftp",
  "hostserver",
  "hostsvr",
+ "httpd",
  "hwrsrc",
  "ifs",
  "ifscmd",

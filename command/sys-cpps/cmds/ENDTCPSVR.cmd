@@ -15,3 +15,8 @@
                           SPCVAL((*ALL) (*ADMIN)) PROMPT('HTTP server')
              PARM       KWD(INSTANCE) TYPE(*CHAR) LEN(32) DFT(*DFT) +
                           SPCVAL((*DFT) (*ALL)) PROMPT('Server instance')
+             PARM       KWD(OPTION) TYPE(*CHAR) LEN(7) RSTD(*YES) +
+                          DFT(*CNTRLD) VALUES(*CNTRLD *IMMED) +
+                          PROMPT('How to end')
+             PARM       KWD(DELAY) TYPE(*INT4) DFT(30) RANGE(1 86400) +
+                          PROMPT('Delay for *CNTRLD (seconds)')
