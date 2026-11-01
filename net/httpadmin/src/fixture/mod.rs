@@ -190,8 +190,8 @@ impl Jobs for FixtureJobs {
         if jobs.len() == before {
             return Err(Message::new(
                 qsweb::msg::Kind::Error,
-                "TCP1A12",
-                &format!("HTTP server instance {instance} is not active."),
+                "TCP1A09",
+                &format!("HTTP server instance {instance} not active."),
             ));
         }
         Ok(msgs::message(qsweb::msg::Kind::Done, "HTP8002", &[instance, user]))
