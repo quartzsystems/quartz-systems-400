@@ -204,3 +204,28 @@ fn components() {
         ],
     );
 }
+
+#[test]
+fn confirm_stop() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/instance/INTRANET/confirm?op=stop");
+    assert_eq!(r.status, 200);
+    // The prototype leaves the How to end choice outside the form, so it
+    // would never be submitted.
+    assert_golden(
+        &r.text(),
+        "http/confirm-stop.html",
+        &[
+            ("</table><p class=\"small grey\">How to end:", "</table><form method=\"post\"><p class=\"small grey\">How to end:"),
+            ("Immediate</p><form method=\"post\">", "Immediate</p>"),
+        ],
+    );
+}
+
+#[test]
+fn confirm_delete() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/instance/WEBSTORE/confirm?op=delete");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "shared/confirm.html", &[]);
+}

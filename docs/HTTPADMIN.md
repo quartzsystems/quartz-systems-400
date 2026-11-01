@@ -51,6 +51,7 @@ page and is listed here:
 |---|---|---|
 | `http/signon.html` | form `action` `instances.html` → `signon.html` | the form posts to the sign-on route; the list follows by redirect |
 | `shared/components.html` | tab links `components.html` → `help.html`; `error.html` → `help.html` | the pattern page links to itself; served, they are help windows |
+| `http/confirm-stop.html` | `<form method="post">` moved before the How to end paragraph | the radios and delay field sat outside the form, so the choice was never submitted |
 
 ## Steps
 

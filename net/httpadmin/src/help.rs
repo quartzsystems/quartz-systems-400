@@ -28,6 +28,21 @@ pub const TOPICS: &[Topic] = &[
 <h2>Columns</h2>\n<table class=\"props\" cellspacing=\"0\">\n<tr><th>Ports</th><td>The ports named by the instance's Listen directives.</td></tr>\n<tr><th>Job</th><td>The qualified job name <span class=\"mono\">number/user/name</span> of the running instance.</td></tr>\n<tr><th>Started</th><td>When the running instance's job started.</td></tr>\n</table>",
     },
     Topic {
+        key: "confirm-instance",
+        title: "Start, stop or restart an instance",
+        body: "<p>This page confirms an action on an HTTP server instance before it is taken. Nothing happens until you press <b>OK</b>; <b>Cancel</b> returns to the Server instances page.</p>
+<h2>How to end</h2>
+<p><b>Controlled</b> stops accepting new connections and gives requests in progress up to the number of seconds you give, from 0 to 3600, to finish (ENDTCPSVR SERVER(*HTTP) with a controlled end). <b>Immediate</b> ends the job at once and closes every connection.</p>
+<p>A restart ends the instance the way you choose and starts it again with the configuration file as it is now. The administration instance itself cannot be stopped or restarted from its own pages; use a 5250 session.</p>
+<p>Starting and stopping instances needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
+        key: "confirm-delete",
+        title: "Delete an instance",
+        body: "<p>Deleting an instance removes its server root, with the configuration file, the content under it and every log file, and its entry in the instance registry. It cannot be undone.</p>
+<p>A running instance is not deleted: stop it first. Deleting needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",

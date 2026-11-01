@@ -46,7 +46,7 @@ impl Default for FixtureSystem {
                     "*SECOFR",
                     vec![],
                 ),
-                ("QTMHHTTP", vec![], "*USER", vec![]),
+                ("QTMHHTTP", vec!["*IOSYSCFG"], "*USER", vec![]),
                 ("WEBADM", vec!["*IOSYSCFG"], "*SYSOPR", vec![]),
                 ("WEBUSER", vec![], "*USER", vec!["WEBUSERS"]),
             ],
@@ -336,6 +336,10 @@ pub fn fixture() -> Fixture {
             e.last_ended = Some(secs(2026, 10, 28, 2, 0, 0));
             e.ended_how = "ENDTCPSVR *HTTP, controlled".into();
             files.put("/www/webstore/logs/access_log", include_bytes!("webstore-access.log"));
+            // Twelve days of rotated access logs: 14 log files, 212 MB.
+            for d in 17..29 {
+                files.put_sized(&format!("/www/webstore/logs/access_log.2026-10-{d}"), b"", 18_525_000);
+            }
         }
         reg.put(e);
     }

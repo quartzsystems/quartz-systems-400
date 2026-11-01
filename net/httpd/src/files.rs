@@ -86,6 +86,8 @@ enum MemNode {
 #[derive(Debug, Default)]
 pub struct MemFiles {
     nodes: Mutex<BTreeMap<String, MemNode>>,
+    /// Sizes reported instead of the data's (large fixture files).
+    sizes: Mutex<BTreeMap<String, u64>>,
     /// The time stamped on writes.
     pub now: u64,
 }
@@ -102,6 +104,20 @@ impl MemFiles {
     pub fn put(&self, path: &str, data: &[u8]) {
         let _ = self.mkdir_all(parent(path));
         self.nodes.lock().expect("files").insert(norm(path), MemNode::File(data.to_vec(), self.now));
+    }
+
+    /// Put a file that reports `size` bytes whatever its data (a large
+    /// file a fixture does not need to hold).
+    pub fn put_sized(&self, path: &str, data: &[u8], size: u64) {
+        self.put(path, data);
+        self.sizes.lock().expect("files").insert(norm(path), size);
+    }
+
+    fn sized(&self, path: &str, mut e: Entry) -> Entry {
+        if let Some(s) = self.sizes.lock().expect("files").get(path) {
+            e.size = *s;
+        }
+        e
     }
 
     /// Every path held, in order.
@@ -201,7 +217,7 @@ impl Files for MemFiles {
         let pre = if d == "/" { "/".to_string() } else { format!("{d}/") };
         Ok(m.iter()
             .filter(|(k, _)| k.starts_with(&pre) && k.len() > pre.len() && !k[pre.len()..].contains('/'))
-            .map(|(k, v)| entry(&k[pre.len()..], v))
+            .map(|(k, v)| self.sized(k, entry(&k[pre.len()..], v)))
             .collect())
     }
 
@@ -209,7 +225,7 @@ impl Files for MemFiles {
         let p = norm(path);
         let m = self.nodes.lock().expect("files");
         let name = p.rsplit('/').next().unwrap_or("");
-        m.get(&p).map(|v| entry(name, v)).ok_or_else(|| not_found(path))
+        m.get(&p).map(|v| self.sized(&p, entry(name, v))).ok_or_else(|| not_found(path))
     }
 }
 
