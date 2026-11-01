@@ -8,6 +8,7 @@
 //! the page frame, and changing the configuration file safely.
 
 pub mod confirm;
+pub mod dirs;
 pub mod general;
 pub mod ports;
 
@@ -45,6 +46,9 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
         ["confirm"] => confirm::page(rq, &v),
         ["general"] => general::page(rq, &v),
         ["ports"] => ports::page(rq, &v),
+        ["directories"] => dirs::list(rq, &v),
+        ["directory"] => dirs::props_page(rq, &v),
+        ["remove"] => dirs::remove(rq, &v),
         _ => rq.not_found(&format!("page {} of instance {}", rest.join("/"), v.name())),
     }
 }

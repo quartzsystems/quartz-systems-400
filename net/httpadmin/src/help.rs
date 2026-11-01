@@ -122,6 +122,19 @@ pub const TOPICS: &[Topic] = &[
 <p><b>Add</b> writes a new Listen entry and, for a TLS port, its virtual host. <b>Remove</b> deletes the selected entries and any virtual host left without a port; an instance keeps at least one. A port below 1024 needs the <span class=\"mono\">*IOSYSCFG</span> special authority on the server user profile. A running instance uses the change after a restart.</p>",
     },
     Topic {
+        key: "instance-directories",
+        title: "Instance: directories and aliases",
+        body: "<p>The directories the instance serves and how. A <span class=\"mono\">&lt;Directory&gt;</span> row is a directory container: under the document root it is reached at the URL below it, elsewhere through an <span class=\"mono\">Alias</span> shown on the same row. An <b>Alias</b> maps a URL path onto a directory outside the document root; a <b>ScriptAlias</b> does the same for programs the server runs. An alias's own options and access rules are kept in a <span class=\"mono\">&lt;Location&gt;</span> for its URL.</p>
+<p>The server's guard for the root of the file system, which refuses everything not granted elsewhere, is not listed. <b>Remove</b> asks for confirmation before deleting the entry's directives. Changes need the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
+        key: "instance-directory",
+        title: "Directory properties",
+        body: "<p><b>Options</b> are the server features allowed in the directory: listing a directory without an index file (Indexes), following symbolic links, running programs (ExecCGI) and server-side includes. Only the options that differ from what the directory inherits are written.</p>
+<p><b>Order</b>, <b>Allow from</b> and <b>Deny from</b> decide which clients may connect, by address, network (<span class=\"mono\">10.0.0.0/8</span>) or <span class=\"mono\">all</span>. With Deny,Allow the deny list is checked first and the allow list can override it.</p>
+<p><b>Require authentication</b> asks for a user and password checked against a validation list (<span class=\"mono\">LIBRARY/NAME</span>); the realm is the name the browser shows.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",

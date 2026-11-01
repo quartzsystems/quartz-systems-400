@@ -138,6 +138,7 @@ pub fn proto(url: &str) -> Option<String> {
             }
             "confirm-stop".into()
         }
+        ["instance", _, "remove"] => return Some("shared/confirm.html".into()),
         ["instance", _, "directory"] => "instance-directory-props".into(),
         ["instance", _, page, ..] => format!("instance-{page}"),
         ["create", "step", n] => format!("create-{n}"),

@@ -324,3 +324,55 @@ fn ports_need_iosyscfg_and_token() {
     assert_eq!(b.post_raw("/instance/WEBSTORE/ports", &[("port", "8090"), ("add", "Add")]).status, 403);
     assert_eq!(conf(&b, "WEBSTORE"), before);
 }
+
+#[test]
+fn directories_change_add_remove() {
+    let mut b = Browser::signed_on();
+    // Change the document root's directory.
+    let r = b.post(
+        "/instance/WEBSTORE/directory?path=/www/webstore/htdocs",
+        &[("fs", "/www/webstore/htdocs"), ("url", "/"), ("idx", "on"), ("fsl", "on"), ("di", "index.html index.htm"), ("ao", "None"), ("order", "Allow,Deny"), ("allow", "all"), ("deny", "10.9.0.0/16"), ("apply", "Apply")],
+    );
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instance/WEBSTORE/directory?path=/www/webstore/htdocs"));
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(c.contains("<Directory /www/webstore/htdocs>\n   Order Allow,Deny\n   Options +Indexes\n   Allow From all\n   Deny From 10.9.0.0/16\n</Directory>\n"), "{c}");
+    assert!(b.fx.files.exists("/www/webstore/conf/httpd.conf.bak"));
+    // Add a protected directory under the document root.
+    let r = b.post("/instance/WEBSTORE/directories", &[("newtype", "Directory")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instance/WEBSTORE/directory?new=Directory"));
+    let bad = [("fs", "/www/webstore/htdocs/private"), ("url", ""), ("auth", "on"), ("realm", "Private"), ("vldl", "NOSLASH"), ("fsl", "on"), ("ok", "OK")];
+    let r = b.post("/instance/WEBSTORE/directory?new=Directory", &bad);
+    assert!(shown(&mut b, &r).contains("HTP8120"));
+    let mut good = bad.to_vec();
+    good[4] = ("vldl", "webstore/users");
+    let r = b.post("/instance/WEBSTORE/directory?new=Directory", &good);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instance/WEBSTORE/directories"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(c.contains("<Directory /www/webstore/htdocs/private>\n   AuthType Basic\n   AuthName Private\n   PasswdFile WEBSTORE/USERS\n   Require valid-user\n</Directory>\n"), "{c}");
+    let t = b.get("/instance/WEBSTORE/directories").text();
+    assert!(t.contains("<td class=\"mono\">/private/</td>"), "{t}");
+    // An alias with listings.
+    let r = b.post("/instance/WEBSTORE/directory?new=Alias", &[("fs", "/www/docs/"), ("url", "/docs/"), ("idx", "on"), ("ok", "OK")]);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    let c = conf(&b, "WEBSTORE");
+    assert!(c.contains("Alias /docs/ /www/docs/\n") && c.contains("<Location /docs/>\n   Options +Indexes\n</Location>\n"), "{c}");
+    // Remove one: the GET only asks.
+    assert_eq!(b.get("/instance/WEBSTORE/remove?path=/images/").status, 200);
+    assert!(conf(&b, "WEBSTORE").contains("Alias /images/"));
+    let r = b.post("/instance/WEBSTORE/remove?path=/images/", &[("ok", "OK")]);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    assert!(!conf(&b, "WEBSTORE").contains("Alias /images/"));
+}
+
+#[test]
+fn directories_need_iosyscfg() {
+    let mut b = group_member();
+    let before = conf(&b, "WEBSTORE");
+    let r = b.post("/instance/WEBSTORE/remove?path=/images/", &[("ok", "OK")]);
+    assert_eq!(r.status, 403);
+    let r = b.post("/instance/WEBSTORE/directory?new=Alias", &[("fs", "/www/docs/"), ("url", "/docs/"), ("ok", "OK")]);
+    assert_eq!(r.status, 403);
+    assert!(refused(&b));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}

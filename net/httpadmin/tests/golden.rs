@@ -287,3 +287,57 @@ fn instance_ports() {
         ],
     );
 }
+
+/// The prototype's WEBSTORE as its Directories page shows it: the
+/// administration directory published at `/admin/` with its own
+/// options, and directory listings on `/downloads/`. The order of the
+/// file is the order of the list.
+const WEBSTORE_DIRS: &str = "# Configuration for HTTP server instance WEBSTORE
+ServerRoot /www/webstore
+Listen *:80
+Listen *:443
+DocumentRoot /www/webstore/htdocs
+ServerName webstore.quartz.example
+ServerUserID QTMHHTTP
+ThreadsPerChild 40
+DirectoryIndex index.html index.htm
+Options -Indexes +FollowSymLinks
+
+<Directory />
+   Order Deny,Allow
+   Deny From all
+</Directory>
+<Directory /www/webstore/htdocs>
+   Order Allow,Deny
+   Allow From all
+</Directory>
+Alias /images/ /www/shared/images/
+ScriptAlias /cgi-bin/ /QSYS.LIB/WEBSTORE.LIB/
+Alias /admin/ /www/webstore/admin/
+<Directory /www/webstore/admin>
+   Options -Indexes
+   Order Deny,Allow
+   Deny From all
+   Allow From 10.0.0.0/8
+   AuthType Basic
+   AuthName \"Web store administration\"
+   PasswdFile WEBSTORE/ADMINS
+   Require valid-user
+</Directory>
+Alias /downloads/ /home/WEBSTORE/downloads/
+<Location /downloads/>
+   Options +Indexes
+</Location>
+";
+
+#[test]
+fn instance_directories() {
+    let mut b = Browser::signed_on();
+    b.fx.files.put("/www/webstore/conf/httpd.conf", WEBSTORE_DIRS.as_bytes());
+    let r = b.get("/instance/WEBSTORE/directories");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/instance-directories.html", &[]);
+    let r = b.get("/instance/WEBSTORE/directory?path=/www/webstore/admin");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/instance-directory-props.html", &[]);
+}
