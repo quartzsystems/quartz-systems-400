@@ -8,11 +8,15 @@
 //! - [`files`]: the files instances live in, by IFS path.
 //! - [`registry`]: `/www/instances.json`, every instance's entry.
 //! - [`instance`]: creating, deleting and configuring an instance.
+//! - [`serve`]: serving an instance: sites, files, access, logs, TLS.
+//! - [`bridge`]: [`files::Files`] for threads through one owning thread.
 
+pub mod bridge;
 pub mod conf;
 pub mod files;
 pub mod instance;
 pub mod registry;
+pub mod serve;
 
 /// Why an instance operation failed.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]

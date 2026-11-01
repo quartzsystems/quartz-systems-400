@@ -10,6 +10,11 @@ publish.workspace = true
 thiserror.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+qsweb = { path = "../qsweb", version = "0.1.0" }
+tls = { path = "../tls", version = "0.1.0" }
+
+[dev-dependencies]
+certs = { path = "../certs", version = "0.1.0" }
 
 [lints]
 workspace = true

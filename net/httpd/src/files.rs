@@ -100,6 +100,11 @@ impl MemFiles {
         m
     }
 
+    /// An empty tree whose writes are stamped `now`.
+    pub fn at(now: u64) -> Self {
+        Self { now, ..Self::new() }
+    }
+
     /// Put a file, creating its directories.
     pub fn put(&self, path: &str, data: &[u8]) {
         let _ = self.mkdir_all(parent(path));
