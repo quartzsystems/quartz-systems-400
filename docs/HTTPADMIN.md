@@ -100,3 +100,12 @@ the Application select. The update client has no shipped ID; the fixture
 registers `QS400_UPDATE_CLIENT` as a user-defined one. The
 store page lists the default certificate first, then entries in the
 order they were added.
+
+## Global settings
+
+`/global` edits `crate::settings::Settings` (`*IOSYSCFG`). A new session
+timeout goes to `Admin::sessions` at once; the allowed networks must
+include the address of the browser making the change; a change writes a
+`ZC` entry when auditing was on before or after it (so turning auditing
+off is recorded). The golden page's `QS400_HTTP_SERVER_ADMIN` is served
+as `QIBM_HTTP_SERVER_ADMIN`.

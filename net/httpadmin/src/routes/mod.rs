@@ -10,6 +10,7 @@
 pub mod create;
 pub mod instance;
 pub mod certs;
+pub mod global;
 pub mod instances;
 pub mod shared;
 pub mod signon;
@@ -253,6 +254,7 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         ["instance", name, rest @ ..] => instance::route(&rq, name, rest),
         ["create", "step", n] => create::step(&rq, n),
         ["certs", rest @ ..] => certs::route(&rq, rest),
+        ["global"] => global::page(&rq),
         ["help", key] => shared::help(&rq, key),
         ["msg", id] => shared::msg(&rq, id),
         _ => rq.not_found(r),

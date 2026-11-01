@@ -232,6 +232,21 @@ pub const TOPICS: &[Topic] = &[
 <p><b>Assign</b> chooses the certificate; the server presents it the next time it starts. Only certificates with their private keys that do not expire within 60 days are offered. <b>Remove</b> takes the assignment away. A status in red is a certificate that expires within 60 days or has expired.</p>",
     },
     Topic {
+        key: "global",
+        title: "Global settings",
+        body: "<p>Settings kept in <span class=\"mono\">/www/admin/conf/global.json</span>. Changing them needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>\n\
+<table class=\"props\" cellspacing=\"0\">\n<tr><th>Defaults for new instances</th><td>What Create HTTP server proposes: the server user profile (it must exist), the directory server roots go under, and the threads per instance.</td></tr>\n\
+<tr><th>Limits</th><td>The most instances the system may have and the most threads one instance may use.</td></tr>\n\
+<tr><th>Session timeout</th><td>Minutes a signed-on session may stay idle; it applies to every session from its next request.</td></tr>\n\
+<tr><th>Allow administration from</th><td>Addresses and networks (<span class=\"mono\">10.0.0.0/8</span>, <span class=\"mono\">::1/128</span>) separated by commas; blank allows every address. The list must include the address you are working from.</td></tr>\n\
+<tr><th>Administration audit log</th><td>Every change made through this product is written to the audit journal <span class=\"mono\">QAUDJRN</span> as a <span class=\"mono\">ZC</span> entry. Turning it off is itself recorded.</td></tr>\n</table>",
+    },
+    Topic {
+        key: "global-tls",
+        title: "Require TLS for administration",
+        body: "<p>When selected, a request on the plain administration port is answered with a redirect to the same page on the TLS port, so passwords and session cookies only travel encrypted. The server presents the certificate assigned to application ID <span class=\"mono\">QIBM_HTTP_SERVER_ADMIN</span> on the Applications page; assign one before turning this on.</p>",
+    },
+    Topic {
         key: "cert-confirm",
         title: "Confirm",
         body: "<p>Deleting a certificate removes it and its private key from the store; applications assigned it lose it. Deleting a store removes the store file and its stashed password. Removing an assignment leaves the application with the store's default certificate.</p>",

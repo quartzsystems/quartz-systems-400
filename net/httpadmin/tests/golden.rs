@@ -532,3 +532,26 @@ fn cert_apps() {
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "http/cert-apps.html", APP_IDS);
 }
+
+#[test]
+fn global_settings() {
+    use qsweb::http::{Handler, Peer, Request};
+    let mut b = Browser::signed_on();
+    let s = httpadmin::settings::Settings {
+        admin_tls: true,
+        allow_from: vec!["10.0.0.0/8".into(), "172.16.0.0/12".into()],
+        ..httpadmin::settings::Settings::default()
+    };
+    s.save(b.fx.files.as_ref()).unwrap();
+    // With TLS required the page is reached on the TLS port.
+    assert_eq!(b.get("/global").status, 303);
+    let mut req = Request::new("GET", &PRODUCT.url("/global"));
+    req.headers.push(("cookie".into(), format!("QS400SID={}", b.cookie.clone().unwrap())));
+    let peer = Peer {
+        addr: "10.0.10.55:50000".parse().unwrap(),
+        secure: true,
+    };
+    let r = b.admin.handle(&req, &peer);
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/global.html", &[("QS400_HTTP_SERVER_ADMIN", "QIBM_HTTP_SERVER_ADMIN")]);
+}
