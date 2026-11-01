@@ -1752,6 +1752,20 @@ impl Service for Served<'_> {
         super::sst::disk_change(self.system, self.ctx.job.number, &op, unit, &device)
     }
 
+    fn sst_parity(&mut self) -> Result<Vec<svctools::env::ParityUnit>, String> {
+        super::sst::parity(self.system, self.ctx.job.number)
+    }
+
+    fn sst_parity_change(
+        &mut self,
+        op: String,
+        level: u8,
+        set: u8,
+        units: Vec<u16>,
+    ) -> Result<String, String> {
+        super::sst::parity_change(self.system, self.ctx.job.number, &op, level, set, &units)
+    }
+
     fn sst_disk_facts(&mut self) -> Result<(u8, Vec<String>), String> {
         super::sst::disk_facts(self.system, self.ctx.job.number)
     }

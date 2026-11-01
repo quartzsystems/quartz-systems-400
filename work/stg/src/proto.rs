@@ -585,6 +585,12 @@ ipc::rpc! {
     /// SST: a change to the user IDs (`create`, `delete`, `enable`,
     /// `disable`, `privileges`, `reset`); the message of a refusal.
     432 => fn sst_user_change / SstUserChange (op: String, name: String, password: String, text: String, privileges: svctools::Privilege) -> Result<(), String>;
+    /// SST: the units of the device parity sets.
+    433 => fn sst_parity / SstParity () -> Result<Vec<svctools::env::ParityUnit>, String>;
+    /// SST: a device parity change as DST makes it: `start` (`level` 5
+    /// or 6 over `units`), `stop` (`set`), `include` (`units[0]` in
+    /// `set`), `exclude` (`units[0]`); the line the message line shows.
+    434 => fn sst_parity_change / SstParityChange (op: String, level: u8, set: u8, units: Vec<u16>) -> Result<String, String>;
     // --- the integrated file system (440-459)
     /// One IFS operation for the job (`crate::ifs`): descriptors,
     /// directory streams and locks are the connection's and end with it.

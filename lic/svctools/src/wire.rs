@@ -8,7 +8,7 @@
 
 use ipc::{Dec, Wire, WireError, wire_struct};
 
-use crate::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow};
+use crate::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow};
 use crate::users::{Privilege, SignOnError};
 
 wire_struct!(DiskUnit {
@@ -47,6 +47,18 @@ wire_struct!(ResourceRow {
 });
 
 wire_struct!(LogEntry { time, code, text });
+
+wire_struct!(ParityUnit {
+    set,
+    level,
+    unit,
+    serial,
+    type_model,
+    resource,
+    controller,
+    status,
+    percent
+});
 
 impl Wire for Privilege {
     fn put(&self, out: &mut Vec<u8>) {
@@ -95,6 +107,15 @@ mod tests {
             controller: "DC01".into(),
         };
         assert_eq!(ipc::decode::<DiskUnit>(&ipc::encode(&u)).unwrap(), u);
+        let p = ParityUnit {
+            set: 1,
+            level: "RAID 5".into(),
+            unit: 3,
+            status: "DPY/Rebuild".into(),
+            percent: Some(40),
+            ..ParityUnit::default()
+        };
+        assert_eq!(ipc::decode::<ParityUnit>(&ipc::encode(&p)).unwrap(), p);
         let e = SignOnError::BadPassword("empty".into());
         assert_eq!(ipc::decode::<SignOnError>(&ipc::encode(&e)).unwrap(), e);
         let p = Privilege::LOGS.with(Privilege::HARDWARE);

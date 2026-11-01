@@ -4,10 +4,11 @@
 
 //! `STRSST` in the job: the `sst` crate's menus over DST's panels, shown
 //! on the job's display, with an environment ([`SstEnv`]) that asks the
-//! storage service (requests 420-432) for the disks, the logs, the
-//! hardware table and the service tools user IDs. The service checks
-//! `*SERVICE` and the signed-on user's privileges on every request; the
-//! job checks `*SERVICE` first so the refusal is a message.
+//! storage service (requests 420-434) for the disks, the logs, the
+//! hardware table, the device parity sets and the service tools user
+//! IDs. The service checks `*SERVICE` and the signed-on user's
+//! privileges on every request; the job checks `*SERVICE` first so the
+//! refusal is a message.
 
 use std::collections::BTreeMap;
 
@@ -15,7 +16,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 use svctools::env::{
-    DiskUnit, DumpRow, LogEntry, NonConfigured, ResourceRow, SecurityFlags, TraceRow, TraceSpec,
+    DiskUnit, DumpRow, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags, TraceRow, TraceSpec,
     UserChange,
 };
 use svctools::users::SignOnError;
@@ -128,6 +129,14 @@ impl SstEnv {
             .link
             .borrow_mut()
             .with(|l| l.sst_disk_change(op, unit, device))
+    }
+
+    fn parity_change(&mut self, op: &str, level: u8, set: u8, units: &[u16]) -> Result<String, String> {
+        let (op, units) = (op.to_string(), units.to_vec());
+        self.host
+            .link
+            .borrow_mut()
+            .with(|l| l.sst_parity_change(op, level, set, units))
     }
 
     /// An SST request of the newer kind (`service_op`, `sst-` and `op`).
@@ -276,6 +285,30 @@ impl DstEnv for SstEnv {
             .with(Client::sst_disk_facts)
             .map(|(_, p)| p)
             .unwrap_or_default()
+    }
+
+    fn parity_units(&mut self) -> Vec<ParityUnit> {
+        self.host
+            .link
+            .borrow_mut()
+            .with(Client::sst_parity)
+            .unwrap_or_default()
+    }
+
+    fn start_parity(&mut self, level: u8, units: &[u16]) -> Result<String, String> {
+        self.parity_change("start", level, 0, units)
+    }
+
+    fn stop_parity(&mut self, set: u8) -> Result<String, String> {
+        self.parity_change("stop", 0, set, &[])
+    }
+
+    fn include_parity(&mut self, set: u8, unit: u16) -> Result<String, String> {
+        self.parity_change("include", 0, set, &[unit])
+    }
+
+    fn exclude_parity(&mut self, unit: u16) -> Result<String, String> {
+        self.parity_change("exclude", 0, 0, &[unit])
     }
 
     fn asp_threshold(&mut self) -> u8 {

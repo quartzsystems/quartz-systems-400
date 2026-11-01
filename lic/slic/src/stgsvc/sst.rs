@@ -14,7 +14,7 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 
 use sec::profile::SpecialAuth;
-use svctools::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow, UserChange};
+use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, UserChange};
 use svctools::users::{SignOnError, normalize_name};
 use svctools::{DstEnv, Privilege};
 
@@ -167,6 +167,37 @@ pub fn disk_change(
     };
     if r.is_ok() {
         eprintln!("qsstg: SST disk change {op} unit {unit} {device} by {by}");
+    }
+    r
+}
+
+/// The units of the device parity sets.
+pub fn parity(system: &mut System, job: u32) -> Result<Vec<ParityUnit>, String> {
+    need(system, job, Privilege::DISK_UNITS_OPERATIONS)?;
+    Ok(env(system).parity_units())
+}
+
+/// A device parity change, with the privilege DST's menu asks for it.
+pub fn parity_change(
+    system: &mut System,
+    job: u32,
+    op: &str,
+    level: u8,
+    set: u8,
+    units: &[u16],
+) -> Result<String, String> {
+    let by = need(system, job, Privilege::DISK_UNITS_ADMIN)?;
+    let one = units.first().copied();
+    let mut e = env(system);
+    let r = match (op, one) {
+        ("start", _) => e.start_parity(level, units),
+        ("stop", _) => e.stop_parity(set),
+        ("include", Some(u)) => e.include_parity(set, u),
+        ("exclude", Some(u)) => e.exclude_parity(u),
+        (other, _) => Err(format!("{other} is not a device parity change")),
+    };
+    if r.is_ok() {
+        eprintln!("qsstg: SST device parity {op} set {set} units {units:?} by {by}");
     }
     r
 }
