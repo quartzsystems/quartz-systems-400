@@ -223,24 +223,9 @@ fn move_object(
         report.trees_rebuilt += 1;
         moved = true;
     }
-    // Trees in the header's root slots (profile indexes, authorization
-    // lists, member paths): rebuilt from their raw entries, whatever
-    // their key type, as a restore loads them.
-    for slot in 0..h.tree_roots.len() {
-        let Some(root) = h.tree_roots[slot] else {
-            continue;
-        };
-        if !btree::walk_pages(txn, root)?.into_iter().any(|p| on_span(txn, span, p)) {
-            continue;
-        }
-        let (key_len, items) = btree::dump(txn, root)?;
-        let new = btree::load(txn, id, key_len, items)?;
-        btree::free_tree(txn, root)?;
-        ops::set_tree_root(txn, page, slot, new)?;
-        h.tree_roots[slot] = new;
-        report.trees_rebuilt += 1;
-        moved = true;
-    }
+    let rebuilt = move_slot_trees(txn, span, page, &mut h)?;
+    report.trees_rebuilt += rebuilt;
+    moved |= rebuilt > 0;
     // Trees the object owns.
     if h.id.type_code == types::LIB {
         let mut lib = Library::load(txn, id)?;
@@ -294,4 +279,32 @@ fn move_object(
         moved = true;
     }
     Ok(moved)
+}
+
+/// Rebuild off the span every tree in the header's root slots (profile
+/// indexes, authorization lists, member paths) with a page on it, from
+/// its raw entries, whatever its key type, as a restore loads them.
+/// Returns how many were rebuilt.
+fn move_slot_trees(
+    txn: &mut Txn<'_>,
+    span: u16,
+    page: PageNo,
+    h: &mut crate::obj::header::ObjectHeader,
+) -> Result<usize> {
+    let mut rebuilt = 0;
+    for slot in 0..h.tree_roots.len() {
+        let Some(root) = h.tree_roots[slot] else {
+            continue;
+        };
+        if !btree::walk_pages(txn, root)?.into_iter().any(|p| on_span(txn, span, p)) {
+            continue;
+        }
+        let (key_len, items) = btree::dump(txn, root)?;
+        let new = btree::load(txn, h.id, key_len, items)?;
+        btree::free_tree(txn, root)?;
+        ops::set_tree_root(txn, page, slot, new)?;
+        h.tree_roots[slot] = new;
+        rebuilt += 1;
+    }
+    Ok(rebuilt)
 }

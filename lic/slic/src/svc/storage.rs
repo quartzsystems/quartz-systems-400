@@ -143,18 +143,7 @@ pub fn asp(system: &mut System) -> String {
         let _ = writeln!(
             out,
             "  protection: {}; recovery replayed {} transaction(s) at IPL",
-            {
-                use store::asp::superblock::{PROTECTION_MIRRORED, PROTECTION_PARITY};
-                match (
-                    sb.protection & PROTECTION_MIRRORED != 0,
-                    sb.protection & PROTECTION_PARITY != 0,
-                ) {
-                    (true, true) => "mirrored, device parity",
-                    (true, false) => "mirrored",
-                    (false, true) => "device parity",
-                    (false, false) => "none",
-                }
-            },
+            protection(sb.protection),
             s.recovery.replayed
         );
         for u in st.units() {
@@ -177,26 +166,7 @@ pub fn asp(system: &mut System) -> String {
                 if u.attached { "" } else { " (not attached)" }
             );
         }
-        for set in st.parity_sets() {
-            let members: Vec<String> = set
-                .members
-                .iter()
-                .map(|m| match m.rebuild_percent {
-                    Some(p) => format!("unit {} {} {p}%", m.unit, m.status),
-                    None => format!("unit {} {}", m.unit, m.status),
-                })
-                .collect();
-            let sync = set
-                .sync_percent
-                .map_or_else(String::new, |p| format!("; synchronizing {p}%"));
-            let _ = writeln!(
-                out,
-                "  parity set {} ({}): {}{sync}",
-                set.set,
-                set.level,
-                members.join(", ")
-            );
-        }
+        parity_lines(st, &mut out);
         for u in a.unit_stats() {
             let _ = writeln!(
                 out,
@@ -365,4 +335,39 @@ pub fn txn_stats(system: &mut System) -> String {
         st.cache.misses,
         st.cache.evictions
     )
+}
+
+/// `asp`'s device parity lines: each set's members and its work.
+fn parity_lines(st: &store::Store, out: &mut String) {
+    for set in st.parity_sets() {
+        let members: Vec<String> = set
+            .members
+            .iter()
+            .map(|m| match m.rebuild_percent {
+                Some(p) => format!("unit {} {} {p}%", m.unit, m.status),
+                None => format!("unit {} {}", m.unit, m.status),
+            })
+            .collect();
+        let sync = set
+            .sync_percent
+            .map_or_else(String::new, |p| format!("; synchronizing {p}%"));
+        let _ = writeln!(
+            out,
+            "  parity set {} ({}): {}{sync}",
+            set.set,
+            set.level,
+            members.join(", ")
+        );
+    }
+}
+
+/// The ASP's protection as `asp` shows it.
+fn protection(bits: u8) -> &'static str {
+    use store::asp::superblock::{PROTECTION_MIRRORED, PROTECTION_PARITY};
+    match (bits & PROTECTION_MIRRORED != 0, bits & PROTECTION_PARITY != 0) {
+        (true, true) => "mirrored, device parity",
+        (true, false) => "mirrored",
+        (false, true) => "device parity",
+        (false, false) => "none",
+    }
 }

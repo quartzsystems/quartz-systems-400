@@ -525,6 +525,29 @@ pub fn finish_resume(system: &mut System) {
             .serial("slic: finishing the resume before the storage service starts\n");
     }
     while resume_step(system) {}
+    // Halves paired in DST during this IPL: an IPL that goes on from DST
+    // does not open the store again, so they are copied here as the open
+    // would have (C1001075).
+    let resuming: Vec<u16> = system.storage.as_ref().map_or_else(Vec::new, |s| {
+        s.store
+            .units()
+            .iter()
+            .filter(|u| u.attached && u.entry.state == store::asp::unit::UnitState::Resuming)
+            .map(|u| u.unit)
+            .collect()
+    });
+    if !resuming.is_empty()
+        && let Some(mut s) = system.storage.take()
+    {
+        for unit in resuming {
+            if let Err(e) = synchronize(system, &mut s.store, unit) {
+                system
+                    .out
+                    .serial(&format!("slic: synchronizing unit {unit}: {e}\n"));
+            }
+        }
+        system.storage = Some(s);
+    }
     if parity_busy(system) {
         system
             .out
