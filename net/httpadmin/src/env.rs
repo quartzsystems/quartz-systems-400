@@ -143,13 +143,328 @@ pub trait Jobs: Send + Sync {
     fn end(&self, user: &str, instance: &str, how: EndHow) -> Result<Message, Message>;
 }
 
-/// The certificate manager's side (steps 12 to 15 shape it).
+/// What a certificate store is for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StoreType {
+    /// `*SYSTEM`: the certificates TCP servers present.
+    System,
+    /// `*OBJECTSIGNING`: certificates that sign objects.
+    ObjectSigning,
+    /// `*SIGNATUREVERIFICATION`: certificates that verify signed objects.
+    SignatureVerification,
+    /// A store someone made, named by its path.
+    Other,
+}
+
+impl StoreType {
+    /// The Type column.
+    pub fn label(self) -> &'static str {
+        match self {
+            StoreType::System => "System",
+            StoreType::ObjectSigning => "Object signing",
+            StoreType::SignatureVerification => "Signature verification",
+            StoreType::Other => "Other system store",
+        }
+    }
+}
+
+/// A certificate store as the stores page lists it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StoreInfo {
+    /// `*SYSTEM`, `*OBJECTSIGNING`, `*SIGNATUREVERIFICATION`, or the
+    /// name given when the store was made (`WEBSTORE`). Routes and every
+    /// other method name the store by this.
+    pub name: String,
+    /// What it is for.
+    pub kind: StoreType,
+    /// The store file in the IFS (`/QIBM/UserData/ICSS/Cert/Server/DEFAULT.KDB`).
+    pub path: String,
+    /// The certificates the store is for: its CA certificates in a
+    /// signature verification store, every other entry elsewhere.
+    pub certificates: usize,
+    /// The default certificate's label.
+    pub default: Option<String>,
+}
+
+/// What a store entry is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EntryType {
+    /// A server certificate with its private key.
+    Server,
+    /// A client certificate with its private key.
+    Client,
+    /// A certificate authority's certificate.
+    Ca,
+    /// A key waiting for its certificate (a request went out).
+    Request,
+}
+
+/// One store entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CertRow {
+    /// The label, unique in the store.
+    pub label: String,
+    /// What it is.
+    pub kind: EntryType,
+    /// The subject, RFC 4514 (`CN=a,O=b,C=US`); a request's from its CSR.
+    pub subject: String,
+    /// The issuer, RFC 4514 ("" for a request).
+    pub issuer: String,
+    /// The certificate signs itself.
+    pub self_signed: bool,
+    /// Valid from, seconds since 1970 (0 for a request).
+    pub not_before: u64,
+    /// Valid to, seconds since 1970 (0 for a request).
+    pub not_after: u64,
+    /// `RSA 2048`, `ECDSA P-256`.
+    pub key: String,
+    /// A trusted CA.
+    pub trusted: bool,
+    /// The store's default certificate.
+    pub is_default: bool,
+    /// When the entry was added, seconds since 1970.
+    pub added: u64,
+}
+
+/// One entry with everything the certificate page shows.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CertDetail {
+    /// The entry.
+    pub row: CertRow,
+    /// The serial number, upper-case hex ("" for a request).
+    pub serial: String,
+    /// The SHA-256 fingerprint as `AB:CD:...` ("" for a request).
+    pub fingerprint: String,
+    /// Subject alternative names.
+    pub san: Vec<String>,
+    /// The certificate as PEM, or a request's CSR.
+    pub pem: String,
+}
+
+/// A key type and size.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KeySpec {
+    /// RSA, 2048 bits.
+    Rsa2048,
+    /// RSA, 3072 bits.
+    Rsa3072,
+    /// RSA, 4096 bits.
+    Rsa4096,
+    /// ECDSA on P-256 (signed with SHA-256).
+    P256,
+    /// ECDSA on P-384 (signed with SHA-384).
+    P384,
+}
+
+/// A distinguished name as the create wizard asks for it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Dn {
+    /// Common name (required).
+    pub cn: String,
+    /// Organizational unit.
+    pub ou: String,
+    /// Organization.
+    pub o: String,
+    /// Locality.
+    pub l: String,
+    /// State or province.
+    pub st: String,
+    /// Two-letter country.
+    pub c: String,
+}
+
+/// Who signs a new certificate.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Signing {
+    /// The certificate signs itself.
+    SelfSigned,
+    /// A certificate authority whose key this system holds: a name from
+    /// [`Certs::signers`].
+    Ca(String),
+    /// Nobody yet: a key and a certificate signing request for an
+    /// external CA.
+    Request,
+}
+
+/// A new certificate (`QSCRTCRT`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NewCert {
+    /// The store, as [`StoreInfo::name`].
+    pub store: String,
+    /// The label.
+    pub label: String,
+    /// The key.
+    pub key: KeySpec,
+    /// Days of validity from now.
+    pub days: u32,
+    /// The subject.
+    pub subject: Dn,
+    /// Subject alternative names (DNS names or addresses).
+    pub san: Vec<String>,
+    /// For servers (server and client authentication); `false` makes a
+    /// client certificate.
+    pub server: bool,
+    /// Who signs it.
+    pub signing: Signing,
+    /// Make it the store's default certificate.
+    pub make_default: bool,
+}
+
+/// Where an imported certificate comes from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ImportSource {
+    /// An uploaded file's bytes.
+    Data(Vec<u8>),
+    /// A stream file on this system, read with the user's authority.
+    Path(String),
+}
+
+/// The format of an imported file.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImportFormat {
+    /// PEM when the data is text with a `-----BEGIN` line, DER when it
+    /// is one certificate, else PKCS#12.
+    Auto,
+    /// PEM.
+    Pem,
+    /// PKCS#12.
+    Pkcs12,
+}
+
+/// An import (`QSIMPCRT`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Import {
+    /// The store, as [`StoreInfo::name`].
+    pub store: String,
+    /// The file.
+    pub source: ImportSource,
+    /// Its format.
+    pub format: ImportFormat,
+    /// The PKCS#12 (or encrypted key) password; used for this call only.
+    pub password: Option<String>,
+    /// The label; `None` uses the certificate's common name.
+    pub label: Option<String>,
+    /// Import certificate authority certificates (trusted) rather than a
+    /// certificate with its private key.
+    pub ca: bool,
+    /// Make the imported certificate the store's default.
+    pub make_default: bool,
+}
+
+/// An application ID and its certificate.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AppInfo {
+    /// `QIBM_HTTP_SERVER_ADMIN`.
+    pub id: String,
+    /// A server (else a client).
+    pub server: bool,
+    /// The description.
+    pub description: String,
+    /// The assigned certificate's label in `*SYSTEM`.
+    pub label: Option<String>,
+}
+
+/// Why a certificate request failed. The text never holds a password.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CertFailure {
+    /// The password does not open the store (its name).
+    BadPassword(String),
+    /// No such store.
+    NoStore(String),
+    /// A store exists there already.
+    StoreExists(String),
+    /// No entry has this label.
+    NoLabel(String),
+    /// The label is in use.
+    LabelInUse(String),
+    /// No such application ID.
+    NoApp(String),
+    /// Anything else, as a sentence.
+    Invalid(String),
+}
+
+impl std::fmt::Display for CertFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CertFailure::BadPassword(s) => write!(f, "the password is not correct for certificate store {s}"),
+            CertFailure::NoStore(s) => write!(f, "certificate store {s} does not exist"),
+            CertFailure::StoreExists(s) => write!(f, "certificate store {s} exists already"),
+            CertFailure::NoLabel(l) => write!(f, "no certificate has label {l}"),
+            CertFailure::LabelInUse(l) => write!(f, "label {l} is in use"),
+            CertFailure::NoApp(a) => write!(f, "application ID {a} is not registered"),
+            CertFailure::Invalid(t) => f.write_str(t),
+        }
+    }
+}
+
+/// The certificate manager (`net/certs` through the storage service:
+/// `QSCRTCRTS`, `QSCRTCRT`, `QSIMPCRT`, ...). Pages check `*ALLOBJ` and
+/// `*SECADM` before calling a method that changes anything; `user` is
+/// the signed-on user, for the implementation's own check and its
+/// audit. Stores open through their stash; store passwords given to a
+/// method are used for that call only and never logged, sent in a
+/// message or kept.
 pub trait Certs: Send + Sync {
+    /// Every store: `*SYSTEM`, `*OBJECTSIGNING`,
+    /// `*SIGNATUREVERIFICATION` (those that exist), then the others the
+    /// system knows, in the order they were made.
+    fn stores(&self) -> Vec<StoreInfo>;
+    /// Every entry of `store`, in label order.
+    fn entries(&self, store: &str) -> Result<Vec<CertRow>, CertFailure>;
+    /// One entry with its PEM and fingerprint.
+    fn detail(&self, store: &str, label: &str) -> Result<CertDetail, CertFailure>;
+    /// The entry as a PEM file: the certificate, with `chain` its
+    /// issuers up to a root the store holds; for a request, its CSR.
+    fn export(&self, store: &str, label: &str, chain: bool) -> Result<Vec<u8>, CertFailure>;
+    /// Make an empty store `name` at `path` with `password`, its
+    /// password stashed (`QSCRTCRTS STASH(*YES)`).
+    fn create_store(&self, user: &str, name: &str, path: &str, password: &str) -> Result<(), CertFailure>;
+    /// Change a store's password; `old` must open it. The stash follows.
+    fn change_password(&self, user: &str, store: &str, old: &str, new: &str) -> Result<(), CertFailure>;
+    /// Delete a store made by someone (`QSDLTCRTS`); the system's own
+    /// stores are refused.
+    fn delete_store(&self, user: &str, store: &str) -> Result<(), CertFailure>;
+    /// The certificate authorities whose keys this system holds, by the
+    /// name [`Signing::Ca`] takes (the label of their CA entry in
+    /// `*SYSTEM`).
+    fn signers(&self) -> Vec<String>;
+    /// Make a certificate or a request (`QSCRTCRT`).
+    fn create(&self, user: &str, new: &NewCert) -> Result<CertDetail, CertFailure>;
+    /// Import (`QSIMPCRT`); gives the labels added.
+    fn import(&self, user: &str, import: &Import) -> Result<Vec<String>, CertFailure>;
+    /// Make `label` the store's default certificate.
+    fn set_default(&self, user: &str, store: &str, label: &str) -> Result<(), CertFailure>;
+    /// Remove an entry (`QSDLTCRT`); application IDs naming it lose it.
+    fn remove(&self, user: &str, store: &str, label: &str) -> Result<(), CertFailure>;
+    /// The application IDs of the system's TLS servers and clients and
+    /// of the HTTP instances, in the order the system lists them.
+    fn apps(&self) -> Vec<AppInfo>;
+    /// Assign a `*SYSTEM` certificate to an application ID, or with
+    /// `None` remove its assignment.
+    fn assign(&self, user: &str, app: &str, label: Option<&str>) -> Result<(), CertFailure>;
+    /// The label assigned to application ID `app`.
+    fn app_label(&self, app: &str) -> Option<String> {
+        self.apps().into_iter().find(|a| a.id == app).and_then(|a| a.label)
+    }
     /// The `*SYSTEM` server certificates application `app` may present,
     /// the one assigned to it first: label and expiry (seconds since
-    /// 1970). Read-only; the TLS page of an instance shows them.
-    fn for_app(&self, _app: &str) -> Vec<(String, u64)> {
-        Vec::new()
+    /// 1970). The TLS page of an instance shows them.
+    fn for_app(&self, app: &str) -> Vec<(String, u64)> {
+        let assigned = self.app_label(app);
+        let mut out: Vec<(String, u64)> = self
+            .entries("*SYSTEM")
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|e| e.kind == EntryType::Server)
+            .map(|e| (e.label, e.not_after))
+            .collect();
+        if let Some(a) = assigned
+            && let Some(i) = out.iter().position(|(l, _)| *l == a)
+        {
+            let first = out.remove(i);
+            out.insert(0, first);
+        }
+        out
     }
 }
 

@@ -65,11 +65,15 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
         "required" | "2" => "req",
         _ => "none",
     };
+    // Certificates still good for 60 days; one expiring sooner is the
+    // store page's warning, not a choice.
+    let soon = rq.env().system.now() + 60 * 86_400;
     let certs: Vec<String> = rq
         .env()
         .certs
         .for_app(&app)
         .into_iter()
+        .filter(|(_, expires)| *expires > soon)
         .map(|(label, expires)| format!("{label} (expires {})", rq.stamp(expires).0))
         .collect();
     let certs: Vec<&str> = certs.iter().map(String::as_str).collect();

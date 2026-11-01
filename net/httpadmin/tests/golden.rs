@@ -386,3 +386,39 @@ fn instance_logs() {
         &[("<a href=\"#\">Download complete file</a>", "<a href=\"instance-logs.html\">Download complete file</a>")],
     );
 }
+/// Data differences: the store paths are IBM-compatible
+/// (docs/HTTPADMIN.md, "Decisions").
+const STORE_PATHS: &[(&str, &str)] = &[
+    ("/QS400/USERDATA/ICSS/CERT/SERVER/DEFAULT.KDB", "/QIBM/UserData/ICSS/Cert/Server/DEFAULT.KDB"),
+    ("/QS400/USERDATA/ICSS/CERT/SIGNING/SGNOBJ.KDB", "/QIBM/UserData/ICSS/Cert/Signing/SIGNING.KDB"),
+    ("/QS400/USERDATA/ICSS/CERT/SIGNING/VFYOBJ.KDB", "/QIBM/UserData/ICSS/Cert/Signing/SIGNVER.KDB"),
+    ("value=\"/QS400/USERDATA/ICSS/CERT/\"", "value=\"/QIBM/UserData/ICSS/Cert/\""),
+];
+
+#[test]
+fn cert_stores() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/certs/stores");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/cert-stores.html", STORE_PATHS);
+}
+
+#[test]
+fn cert_store_system() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/certs/store/*SYSTEM");
+    assert_eq!(r.status, 200);
+    assert_golden(
+        &r.text(),
+        "http/cert-store-system.html",
+        &[
+            STORE_PATHS[0],
+            // Set default has no target of its own in the prototype; it
+            // opens the store's default-certificate page.
+            (
+                "<input type=\"submit\" value=\"Set default\">",
+                "<input type=\"submit\" value=\"Set default\" formaction=\"cert-store-system.html\">",
+            ),
+        ],
+    );
+}

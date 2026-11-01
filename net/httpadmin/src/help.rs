@@ -179,6 +179,34 @@ pub const TOPICS: &[Topic] = &[
         title: "Not authorized",
         body: "<p>Each action checks the same authority as the command behind it. When the check fails the action is not taken, the page names the authority that was missing, and the attempt is recorded in the audit journal as an <span class=\"mono\">AF</span> entry.</p>",
     },
+    Topic {
+        key: "cert-stores",
+        title: "Certificate stores",
+        body: "<p>A certificate store is a file that holds certificates, their private keys, certificate authority certificates and waiting requests, sealed under the store's password. The password is also kept sealed by the system (stashed), so servers open the store without anyone typing it.</p>\n\
+<table class=\"props\" cellspacing=\"0\">\n<tr><th>*SYSTEM</th><td>The certificates TCP servers and HTTP instances present, through their application IDs.</td></tr>\n<tr><th>*OBJECTSIGNING</th><td>Certificates that sign objects.</td></tr>\n<tr><th>*SIGNATUREVERIFICATION</th><td>Certificates that check signed objects.</td></tr>\n<tr><th>Other system store</th><td>A store someone created, at the path given.</td></tr>\n</table>\n\
+<p><b>Create</b> makes an empty store with a password of at least 6 characters. Working with certificates needs the <span class=\"mono\">*ALLOBJ</span> and <span class=\"mono\">*SECADM</span> special authorities.</p>",
+    },
+    Topic {
+        key: "cert-store",
+        title: "Certificate store",
+        body: "<p>The store's entries, one tab each: server and client certificates (with their private keys), certificate authority certificates, and certificate requests waiting for their certificate.</p>\n\
+<p>A status in red is a certificate that expires within 60 days or has expired. <b>Renew</b> starts Create certificate with the certificate's subject and key type. <b>Set default</b> chooses the certificate a server presents when it opens the store without naming one.</p>",
+    },
+    Topic {
+        key: "cert-password",
+        title: "Store password",
+        body: "<p>The current password must open the store. The new password needs at least 6 characters. The store is sealed again under the new password and the stashed copy is replaced, so servers keep opening the store.</p>\n<p>The password is used for this request only. It is not kept, logged or shown.</p>",
+    },
+    Topic {
+        key: "cert-view",
+        title: "Certificate",
+        body: "<p>The certificate's subject, issuer, serial number, validity and SHA-256 fingerprint, and the certificate itself as PEM text.</p>\n<p><b>Download</b> saves the certificate as a PEM file. <b>Download with chain</b> adds the certificates of the authorities that issued it, as far as the store holds them. Private keys are never downloaded.</p>",
+    },
+    Topic {
+        key: "cert-confirm",
+        title: "Confirm",
+        body: "<p>Deleting a certificate removes it and its private key from the store; applications assigned it lose it. Deleting a store removes the store file and its stashed password. Removing an assignment leaves the application with the store's default certificate.</p>",
+    },
 ];
 
 /// The title and body of `key`; the contents for an unknown key.

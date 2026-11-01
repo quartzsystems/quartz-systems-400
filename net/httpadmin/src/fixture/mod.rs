@@ -15,9 +15,13 @@ use httpd::instance::{self, LogFormat, Spec};
 use httpd::registry::{Entry, Registry};
 use qsweb::msg::{Message, SecondLevel};
 
-use crate::env::{Audit, Certs, EndHow, Env, HttpJob, Jobs, System};
+use crate::env::{Audit, EndHow, Env, HttpJob, Jobs, System};
 use crate::msgs;
 use crate::util::{mdy, secs};
+
+pub mod certs;
+
+pub use certs::FixtureCerts;
 
 /// The fixture's password for every user.
 pub const PASSWORD: &str = "QS400";
@@ -194,22 +198,6 @@ impl Jobs for FixtureJobs {
     }
 }
 
-/// The sample certificate side (filled in with the certificate pages).
-pub struct FixtureCerts;
-
-impl Certs for FixtureCerts {
-    fn for_app(&self, app: &str) -> Vec<(String, u64)> {
-        let mut out = vec![
-            ("*.quartz.example".to_string(), secs(2028, 1, 2, 12, 0, 0)),
-            ("QSHQ400 self-signed".to_string(), secs(2031, 10, 29, 12, 0, 0)),
-        ];
-        if app == "QIBM_HTTP_SERVER_WEBSTORE" {
-            out.insert(0, ("webstore.quartz.example".into(), secs(2027, 3, 14, 12, 0, 0)));
-        }
-        out
-    }
-}
-
 /// The sample system with handles to its parts.
 pub struct Fixture {
     /// The environment the product runs over.
@@ -220,6 +208,8 @@ pub struct Fixture {
     pub jobs: Arc<FixtureJobs>,
     /// The IFS.
     pub files: Arc<MemFiles>,
+    /// The certificate manager.
+    pub certs: Arc<FixtureCerts>,
 }
 
 /// One sample instance: name, description, ports, autostart.
@@ -369,16 +359,18 @@ pub fn fixture() -> Fixture {
         next: Mutex::new(123_480),
         files: files.clone(),
     });
+    let certs = Arc::new(FixtureCerts::new(files.clone()));
     let env = Env {
         system: system.clone(),
         jobs: jobs.clone(),
         files: files.clone(),
-        certs: Arc::new(FixtureCerts),
+        certs: certs.clone(),
     };
     Fixture {
         env,
         system,
         jobs,
         files,
+        certs,
     }
 }

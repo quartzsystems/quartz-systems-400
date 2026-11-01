@@ -145,9 +145,10 @@ pub fn proto(url: &str) -> Option<String> {
         ["certs", "stores"] => "cert-stores".into(),
         ["certs", "store", ..] => "cert-store-system".into(),
         ["certs", "create", "step", n] => format!("cert-create-{n}"),
-        ["certs", "create", "result"] => "cert-create-result".into(),
+        ["certs", "create", "result"] | ["certs", "cert"] => "cert-create-result".into(),
         ["certs", "import"] => "cert-import".into(),
         ["certs", "apps", ..] => "cert-apps".into(),
+        ["certs", "confirm"] => return Some("shared/confirm.html".into()),
         ["global"] => "global".into(),
         _ => return None,
     };

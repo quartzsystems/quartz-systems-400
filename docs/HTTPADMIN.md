@@ -69,9 +69,26 @@ page and is listed here:
 | `http/instance-tls.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE` | application IDs stay the compatible ones (Decisions) |
 | `http/instance-config.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE`; `47 lines` → `45 lines` | compatible application IDs; the file the page itself shows has 45 lines |
 | `http/instance-logs.html` | Download link `#` → the logs page's download route | the prototype's link goes nowhere; served, it streams the log |
+| `http/cert-store-system.html` | `Set default` gets `formaction="cert-store-system.html"` | the button posted to Create certificate with nothing to tell it apart; it opens the store's default-certificate page |
 
 ## Steps
 
 The handoff's build order, one commit each. The crawler test's
 `PENDING` list names the routes not built yet; each step removes its
 own entries.
+
+## Certificates
+
+The certificate pages run over `env::Certs`, which the fixture
+implements with the real `net/certs` code (`certs::admin` over
+`certs::files::MemFiles`, a test sealer, cheap Argon2 costs; the stores
+are built once per test process). Every certificate page needs both
+`*ALLOBJ` and `*SECADM` (`Rq::require_each`), as the `QS*` commands do.
+Stores open through their stash; a store password typed on a page is
+passed to the one call that needs it and is never put in the session, a
+message, the audit journal or a page (`tests/certs.rs` checks).
+
+Data differences the golden tests apply (`tests/golden.rs`): the store
+paths (`/QIBM/UserData/ICSS/Cert/...`; `*SIGNATUREVERIFICATION` is
+`Signing/SIGNVER.KDB`). The store page lists the default certificate
+first, then entries in the order they were added.

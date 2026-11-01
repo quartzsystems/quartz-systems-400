@@ -9,6 +9,7 @@
 
 pub mod create;
 pub mod instance;
+pub mod certs;
 pub mod instances;
 pub mod shared;
 pub mod signon;
@@ -118,6 +119,21 @@ impl Rq<'_> {
         if self.has(need) {
             return Ok(());
         }
+        Err(self.refuse(need, function, object, crumb))
+    }
+
+    /// Check that the user holds every one of `needs` itself (`*ALLOBJ`
+    /// stands in for none of them), as the certificate commands do.
+    pub fn require_each(&self, needs: &[Need], function: &str, object: &str, crumb: &[&str]) -> Result<(), Response> {
+        let sp = self.env().system.special(self.user());
+        match needs.iter().find(|n| !sp.iter().any(|s| s == n.name())) {
+            Some(n) => Err(self.refuse(*n, function, object, crumb)),
+            None => Ok(()),
+        }
+    }
+
+    /// The Not authorized page for a missing `need`, and its `AF` entry.
+    pub fn refuse(&self, need: Need, function: &str, object: &str, crumb: &[&str]) -> Response {
         let sys = &self.env().system;
         sys.audit(Audit::Refused {
             user: self.user().to_string(),
@@ -142,7 +158,7 @@ impl Rq<'_> {
         };
         let mut page = not_authorized(&self.ctx, &r);
         page.generic = false;
-        Err(Response::html(403, render(&self.ctx, &page)))
+        Response::html(403, render(&self.ctx, &page))
     }
 
     /// The page for a missing object.
@@ -236,6 +252,7 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         ["instances"] => instances::list(&rq),
         ["instance", name, rest @ ..] => instance::route(&rq, name, rest),
         ["create", "step", n] => create::step(&rq, n),
+        ["certs", rest @ ..] => certs::route(&rq, rest),
         ["help", key] => shared::help(&rq, key),
         ["msg", id] => shared::msg(&rq, id),
         _ => rq.not_found(r),

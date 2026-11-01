@@ -38,7 +38,7 @@ impl std::fmt::Display for Tok {
 }
 
 /// Attributes holding URLs.
-const URL_ATTRS: [&str; 3] = ["href", "action", "src"];
+const URL_ATTRS: [&str; 4] = ["href", "action", "src", "formaction"];
 
 /// Decode the entities the pages use.
 pub fn decode_entities(s: &str) -> String {
@@ -278,6 +278,10 @@ pub fn links(html: &str) -> Vec<(String, String)> {
                 "form" => {
                     let method = attrs.get("method").map_or("GET".into(), |m| m.to_ascii_uppercase());
                     out.push((method, attrs.get("action").cloned().unwrap_or_default()));
+                }
+                // A submit button that posts somewhere else.
+                "input" | "button" if attrs.contains_key("formaction") => {
+                    out.push(("POST".into(), attrs.get("formaction").cloned().unwrap_or_default()));
                 }
                 _ => {}
             }

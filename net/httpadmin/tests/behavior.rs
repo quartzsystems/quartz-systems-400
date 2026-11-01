@@ -87,7 +87,7 @@ fn filters_sort_and_page() {
 }
 
 /// Routes not built yet; each step removes its own.
-const PENDING: &[&str] = &["/certs/", "/global"];
+const PENDING: &[&str] = &["/certs/create/", "/certs/import", "/certs/apps", "/global"];
 
 /// Every link and form on every reachable page resolves to a page of
 /// this product (or Navigator's, which is another product's to serve).

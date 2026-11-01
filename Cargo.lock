@@ -1362,6 +1362,7 @@ dependencies = [
 name = "httpadmin"
 version = "0.1.0"
 dependencies = [
+ "certs",
  "httpd",
  "qsweb",
  "release",
