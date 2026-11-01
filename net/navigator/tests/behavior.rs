@@ -85,8 +85,6 @@ fn tree_groups_stay_open() {
 
 /// Routes not built yet: each step removes its own.
 const PENDING: &[&str] = &[
-    // Messages.
-    "/msgq/", "/mymsgs", "/qhst",
     // Users and groups.
     "/users", "/user/", "/groups", "/autl",
     // System.

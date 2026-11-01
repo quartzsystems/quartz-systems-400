@@ -95,6 +95,33 @@ authorized page and an `AF` entry.
   confirmations are built the same way (sentence, table, options, the
   equivalent command, OK and Cancel) and the crawler maps them to it.
 
+## Messages
+
+`env::msgs::Msgs` reads what `DSPMSG` and `DSPLOG` show and runs
+every change through `Msgs::run(user, command)`: Send is `SNDMSG`
+(`TOUSR` or `TOMSGQ`; an inquiry's `RPYMSGQ` is the user's own queue),
+Reply is `SNDRPYMSG MSGKEY() MSGQ() RPY() RMV(*NO)` (the system's name
+for the reply command; `RMV(*NO)` keeps the answered inquiry on the
+queue with its reply, as `DSPMSG` shows it), Remove is `RMVMSG`, Clear
+queue is `CLRMSGQ CLEAR(*KEEPUNANS|*ALL)`. Remove and Clear are
+confirmed; an answered inquiry is refused by the command (`CPF2422`).
+
+- Routes: `/msgq/<lib>/<name>` the operator's view of any queue (Queue,
+  Type and Since filters, Clear queue...), `/msgq/<lib>/<name>/<key>`
+  the detail and Reply, `.../<key>/remove`, `/msgq/<lib>/<name>/clear`,
+  `/mymsgs` the user profile's queue with Send message, `/qhst`. Links
+  from My messages carry `?from=my` so their pages return there.
+- The operator's view cuts text at 70 characters and links the sending
+  job when it is still in the system (`Work::job`); My messages shows
+  whole texts and the job as text, as the prototype does. A message a
+  user typed shows as `From USER: text`; Send's To user starts as the
+  sender of the newest one.
+- An empty reply sends the inquiry's default (`RPY(*DFT)`), as Enter on
+  an empty reply does at the 5250 display.
+- Second-level text shows command strings in it in Courier
+  (`DSPRCDLCK FILE(...) ...`): a capitalised name followed by
+  `KEYWORD(value)` parameters.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -111,6 +138,9 @@ of the golden page:
 | `nav/job-props-callstack.html` | the Thread select and Go wrapped in `<form method="get">` | they sat outside any form, so Go did nothing |
 | `nav/subsystems.html`, `nav/printers.html`, `nav/scheduled-jobs.html` | the two buttons get names `start`/`add` and `refresh` | two nameless buttons in one form cannot be told apart |
 | `nav/subsystem-props-pools.html` | Add pool..., Change..., Remove get names `add`, `change`, `remove` | the same |
+| `nav/qsysopr.html` | rows 11-25 not compared; `123499/QPGMR/RGZPFM00`, `123150/QSPLJOB/PRT01`, `123380/QTCP/QTCPIP` not links | the prototype repeats its first ten messages to fill the page (the fixture's 41 are distinct, three inquiries waiting); those jobs are not in the system (ended, or another job has the number) and a link would lead nowhere |
+| `nav/message-detail.html` | the Reply field starts empty; its button is named `send` | a prefilled reply other than the default goes out on one click; the field and the button were both named `reply` |
+| `nav/history-log.html` | message IDs linked; six night entries added to the page | message IDs are links everywhere (handoff rule 3); the page said 25 rows of 214 but showed 19 |
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 
 ## Steps
@@ -122,7 +152,7 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 |---|---|---|
 | 1, 2 | Frame, sign-on, System status | done |
 | 3-11 | Work management | done (golden-clean; live `Work` pending) |
-| 12-14 | Messages | |
+| 12-14 | Messages | done (golden-clean; live `Msgs` pending) |
 | 15-18 | Users and groups | |
 | 19-22 | System | |
 | 23, 24 | Network | |

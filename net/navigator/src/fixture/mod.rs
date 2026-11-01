@@ -7,6 +7,7 @@
 //! `QSHQ400`, a clock stopped at 10/29/26 14:03:40, and each area's
 //! sample data in its own module.
 
+pub mod cl;
 pub mod config;
 pub mod db;
 pub mod msgs;
@@ -66,6 +67,15 @@ pub const PROFILES: &[Profile] = &[
         class: "*USER",
     },
 ];
+
+/// Whether sign-on profile `user` has special authority `what`
+/// (`*ALLOBJ` has every one).
+pub fn has_special(user: &str, what: &str) -> bool {
+    PROFILES
+        .iter()
+        .find(|p| p.name == user)
+        .is_some_and(|p| p.special.iter().any(|s| *s == what || *s == "*ALLOBJ"))
+}
 
 /// The sample system.
 #[derive(Default)]
