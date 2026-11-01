@@ -1,0 +1,24 @@
+                         Confirm Delete Disk Unit Data                          
+                                                                 System:  QS400 
+                                                                                
+ WARNING: all data on these units is lost and cannot be recovered:              
+ partitions, QS/400 unit headers and any other system's data.                   
+                                                                                
+   DD003     SP-vdg            QEMU HARDDISK       8192 DC02  vdg (has data)    
+                                                                                
+ The partition tables, the first and last 8 MiB and every partition's           
+ start are written with zeros; the rest is discarded where the drive            
+ supports it. This is a quick delete, not an overwrite of every page.           
+                                                                                
+ Press F10 to delete the data, F12 to go back without a change.                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

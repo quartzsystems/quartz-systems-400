@@ -12,7 +12,7 @@
       7. Suspend mirrored protection                                            
       8. Resume mirrored protection                                             
       9. Copy disk unit data                                                    
-                                                                                
+     10. Delete disk unit data                                                  
                                                                                 
                                                                                 
                                                                                 

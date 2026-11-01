@@ -864,6 +864,7 @@ dependencies = [
 name = "diskimg"
 version = "0.1.0"
 dependencies = [
+ "blockdev",
  "fatfs",
  "gpt",
  "thiserror",

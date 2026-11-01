@@ -222,7 +222,11 @@ impl BlockDev for MemBlockDev {
         // Discarded blocks read as zero, at once and after a flush.
         let zero = vec![0u8; BLOCK_SIZE as usize];
         for i in 0..count {
-            g.put(lba + i, &zero);
+            // A block that reads as zero already is left alone, so a
+            // large, mostly empty device stays cheap.
+            if g.get(lba + i).iter().any(|&b| b != 0) {
+                g.put(lba + i, &zero);
+            }
         }
         Ok(())
     }

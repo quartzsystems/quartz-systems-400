@@ -1,0 +1,24 @@
+                  Select Disk Units for Delete Disk Unit Data                   
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the non-configured units to make blank, then press Enter.        
+                                                                                
+ Opt  Resource  Serial Number     Type Model    Size (MiB) Ctl   Device         
+     DD003     SP-vdd            QEMU HARDDISK       4096 DC02  vdd             
+     DD003     SP-vde            QEMU HARDDISK       4096 DC02  vde             
+     DD003     SP-vdg            QEMU HARDDISK       8192 DC02  vdg (has data)  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

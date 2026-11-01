@@ -1,0 +1,24 @@
+                                Function Status                                 
+                                                                 System:  QS400 
+                                                                                
+ Delete disk unit data is running. Do not power off the system.                 
+                                                                                
+ Unit  . . . . . . :  DD003  vdg                                                
+ Unit number . . . :  1 of 1                                                    
+                                                                                
+ 100%  ##################################################                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                

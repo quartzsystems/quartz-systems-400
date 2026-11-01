@@ -368,6 +368,22 @@ pub trait DstEnv {
     fn disks(&mut self) -> Vec<NonConfigured> {
         self.nonconfigured()
     }
+    /// Disks no disk function may touch whatever the configuration says:
+    /// the one the LIC runs from, the install media, disks with a
+    /// mounted file system. Device nodes, whole disks or partitions.
+    fn reserved_disks(&mut self) -> Vec<String> {
+        Vec::new()
+    }
+    /// `Delete disk unit data`: make the whole disk `device` blank,
+    /// calling `report` with the percent done.
+    fn delete_unit_data(
+        &mut self,
+        device: &str,
+        report: &mut dyn FnMut(u8, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        let _ = (device, report);
+        Err("not available".into())
+    }
     /// Install the Licensed Internal Code on `device`: partition it,
     /// initialize the LIC partition, copy both slots, write the record
     /// marking the operating system install pending (automatic when
@@ -672,6 +688,10 @@ pub struct MemEnv {
     pub units: Vec<DiskUnit>,
     /// Disks to report.
     pub spare: Vec<NonConfigured>,
+    /// Every whole disk, configured or not; `spare` when empty.
+    pub whole: Vec<NonConfigured>,
+    /// Disks no disk function may touch.
+    pub reserved: Vec<String>,
     /// Resources to report.
     pub hardware: Vec<ResourceRow>,
     /// Log to report.
@@ -827,6 +847,32 @@ impl DstEnv for MemEnv {
     }
     fn show(&mut self, screen: Screen) {
         self.shown.push(screen.dump());
+    }
+    fn disks(&mut self) -> Vec<NonConfigured> {
+        if self.whole.is_empty() {
+            self.spare.clone()
+        } else {
+            self.whole.clone()
+        }
+    }
+    fn reserved_disks(&mut self) -> Vec<String> {
+        self.reserved.clone()
+    }
+    fn delete_unit_data(
+        &mut self,
+        device: &str,
+        report: &mut dyn FnMut(u8, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        self.actions.push(format!("delete {device}"));
+        for p in [0, 50, 100] {
+            report(p, self);
+        }
+        for d in self.spare.iter_mut().chain(self.whole.iter_mut()) {
+            if d.device == device {
+                d.has_data = false;
+            }
+        }
+        Ok(())
     }
     fn install_lic(
         &mut self,

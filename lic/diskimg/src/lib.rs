@@ -18,6 +18,7 @@ pub mod migrate;
 pub mod plan;
 mod table;
 mod window;
+pub mod wipe;
 
 #[cfg(target_os = "linux")]
 pub mod locate;

@@ -191,6 +191,42 @@ pub fn disks(system: &System) -> Vec<NonConfigured> {
     out
 }
 
+/// Disks no disk function may touch: the LIC partition's, the units'
+/// devices, the install media and any with a mounted file system.
+fn reserved(system: &System) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    if let Ok(lic) = licpart::locate() {
+        out.push(lic.display().to_string());
+    }
+    if let Some(s) = system.storage.as_ref() {
+        out.extend(s.devices.iter().map(|d| d.display().to_string()));
+    }
+    let media = crate::ipl::media::disk_on_d_ipl(system.boot.ipl_d);
+    out.extend(
+        media
+            .into_iter()
+            .chain(crate::ipl::instdev::media_disks())
+            .map(|n| format!("/dev/{n}")),
+    );
+    if let Ok(mounts) = std::fs::read_to_string("/proc/mounts") {
+        out.extend(
+            mounts
+                .lines()
+                .filter_map(|l| l.split_whitespace().next())
+                .filter(|src| src.starts_with("/dev/"))
+                .map(str::to_string),
+        );
+    }
+    // A partition reserves its whole disk too.
+    let disks: Vec<String> = out
+        .iter()
+        .filter_map(|p| diskimg::locate::disk_of(std::path::Path::new(p)))
+        .map(|d| format!("/dev/{d}"))
+        .collect();
+    out.extend(disks);
+    out
+}
+
 fn loaded_none(env: &Env<'_>) -> bool {
     env.system
         .lic
@@ -502,6 +538,46 @@ impl DstEnv for Env<'_> {
 
     fn disks(&mut self) -> Vec<NonConfigured> {
         disks(self.system)
+    }
+
+    fn reserved_disks(&mut self) -> Vec<String> {
+        reserved(self.system)
+    }
+
+    fn delete_unit_data(
+        &mut self,
+        device: &str,
+        report: &mut dyn FnMut(u8, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        const WHAT: &str = "Deleting the disk unit data";
+        // Only a disk the list offers, asked again now.
+        let offered = svctools::dst::disk::delete::deletable(self)
+            .iter()
+            .any(|d| d.device == device);
+        if !offered {
+            return Err(svctools::dst::failed(WHAT));
+        }
+        let dev = blockdev::LinuxBlockDev::open(std::path::Path::new(device)).map_err(fail(WHAT))?;
+        let mut last = None;
+        let wiped = diskimg::wipe::wipe(&dev, &mut |p| {
+            if last != Some(p) {
+                last = Some(p);
+                report(p, &mut *self);
+            }
+        })
+        .map_err(fail(WHAT))?;
+        drop(dev);
+        self.system.out.serial(&format!(
+            "slic: DST: data deleted on {device}: {} blocks zeroed, {} discarded, {} partitions\n",
+            wiped.zeroed, wiped.discarded, wiped.partitions
+        ));
+        // The kernel forgets the old partitions; the resources follow.
+        let file = std::fs::File::open(device).map_err(fail(WHAT))?;
+        crate::platform::blk::reread_partitions(&file).map_err(fail(WHAT))?;
+        if let Err(e) = hwrsrc::client::rescan() {
+            eprintln!("slic: hardware resource rescan: {e}");
+        }
+        Ok(())
     }
 
     fn install_lic(

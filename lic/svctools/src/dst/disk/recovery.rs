@@ -3,7 +3,8 @@
 // root directory of this project.
 
 //! `Work with disk unit recovery`: replace a lost half, suspend and
-//! resume, and the recovery procedures text.
+//! resume, delete a non-configured unit's data, and the recovery
+//! procedures text.
 
 use crate::dst::NOT_AUTHORIZED;
 use crate::dst::common::{Confirm, Notice, Select, Submenu, guarded};
@@ -57,6 +58,13 @@ pub fn work_with_disk_unit_recovery(ops: bool, admin: bool) -> Submenu {
                 })),
             ),
             (9, "Copy disk unit data", None),
+            (
+                10,
+                "Delete disk unit data",
+                Some(Box::new(move |env| {
+                    guard(admin, Flow::Push(Box::new(super::delete::select(env))))
+                })),
+            ),
         ],
     )
 }

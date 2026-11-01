@@ -68,6 +68,7 @@ guest's own screens with the same files.
 | Work with Device Parity Protection (no controller; menu), Display Device Parity Status, Start RAID 5 and RAID 6, Confirm, Stop, Include, Exclude and their confirmations | `disk-parity.txt`, `parity.txt`, `parity-status.txt`, `parity-start5.txt`, `parity-start5-three.txt`, `parity-start6.txt`, `parity-start6-three.txt`, `parity-start-confirm.txt`, `parity-stop.txt`, `parity-stop-confirm.txt`, `parity-include.txt`, `parity-include-confirm.txt`, `parity-exclude.txt`, `parity-exclude-confirm.txt` |
 | Disk status, protection and replacement with a parity set | `disk-status-parity.txt`, `disk-protection-parity.txt`, `replace-unit-parity.txt`, `replace-confirm-parity.txt` |
 | Work with Disk Unit Recovery, Replace, Procedures, Suspend, Resume | `disk-recovery.txt`, `replace-unit.txt`, `disk-procedures.txt`, `suspend.txt`, `resume.txt` |
+| Delete Disk Unit Data (select, confirm, Function Status) | `delete-data.txt`, `delete-data-confirm.txt`, `delete-data-status.txt` |
 | Work with Licensed Internal Code | `lic-info.txt` |
 | Select DST Console Mode | `console-mode.txt` |
 | Work with DST Environment, Active Service Tools, System Devices | `env.txt`, `env-active.txt`, `env-devices.txt`, `env-devices-serial.txt` |
@@ -119,7 +120,8 @@ parity protection (1 display status, 2 start RAID 5, 3 start RAID 6,
 starts, not available), 6 and 7 not available.
 
 `Work with disk unit recovery`: 3 replace configured unit, 6 problem
-recovery procedures, 7 suspend, 8 resume; the rest are not available.
+recovery procedures, 7 suspend, 8 resume, 10 delete disk unit data; the
+rest are not available.
 
 `Work with DST environment`: 1 active service tools, 2 system devices,
 3 service tools user IDs, 4 system values (the LIC-side subset), 5 not
@@ -209,6 +211,25 @@ together.
   finished before the storage service takes the store, as a resume is.
 - Suspend and resume: resume runs in the background; the status column
   shows its percent.
+- Delete disk unit data (option 10, disk units administration; IBM's
+  option of the same number, for non-configured units only): makes
+  whole disks blank, for example SSDs holding an earlier install. The
+  list (`deletable` in `lic/svctools/src/dst/disk/delete.rs`) is every
+  whole disk less those holding a configured unit (the load source,
+  mirrored halves) and the reserved ones: the disk the LIC partition is
+  on, the install media and any disk with a mounted file system. It
+  includes disks with QS/400 or foreign partitions, marked `(has
+  data)`. `Confirm Delete Disk Unit Data` warns that the data is lost;
+  F10 runs it with a `Function Status` bar per unit. IBM's option writes
+  zeros to every page in one pass; this one is quick and says so
+  (`diskimg::wipe`): the whole disk is discarded (`BLKDISCARD`; most
+  SSDs then read the blocks as zeros), then the first and last 8 MiB
+  and the first MiB of every partition either GPT listed are written
+  with zeros, so no GPT, unit header, LIC record, FAT or XFS signature
+  is left. The kernel re-reads the partition table and the hardware
+  resources are rescanned; the disk then shows as non-configured with
+  no data, without an IPL. A parity set member is never listed, matched
+  by resource and serial as the parity displays show it.
 
 A D IPL opens the store on demand when a disk option needs it.
 

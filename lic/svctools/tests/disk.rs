@@ -324,3 +324,84 @@ fn parity_actions_reach_the_environment() {
     }
     assert!(r.screen(&mut e).dump().contains("not authorized"));
 }
+
+/// Every whole disk: three configured units, two spares, the install
+/// media and an old load source holding data.
+fn whole_disks(e: &mut MemEnv) {
+    e.units[0].device = "/dev/vda4".into();
+    let mut old = spare("vdg", 8192);
+    old.has_data = true;
+    e.whole = ["vda", "vdb", "vdc", "vdd", "vde", "vdf"]
+        .iter()
+        .map(|n| spare(n, 4096))
+        .chain(std::iter::once(old))
+        .collect();
+    e.reserved = vec!["/dev/vdf".into()];
+}
+
+#[test]
+fn delete_data_lists_only_disks_outside_the_configuration() {
+    let mut e = env();
+    whole_disks(&mut e);
+    let shown: Vec<String> = svctools::dst::disk::delete::deletable(&mut e)
+        .into_iter()
+        .map(|d| d.device)
+        .collect();
+    // Not the load source (vda4), the mirrored half (vdb), the
+    // unprotected unit (vdc) nor the media (vdf); the old disk is.
+    assert_eq!(shown, vec!["/dev/vdd", "/dev/vde", "/dev/vdg"]);
+    // Before the store is open, the reserved load source still counts.
+    e.units.clear();
+    e.reserved.push("/dev/vda2".into());
+    let shown: Vec<String> = svctools::dst::disk::delete::deletable(&mut e)
+        .into_iter()
+        .map(|d| d.device)
+        .collect();
+    assert_eq!(shown, vec!["/dev/vdb", "/dev/vdc", "/dev/vdd", "/dev/vde", "/dev/vdg"]);
+    // A parity set member is never offered, even by serial alone.
+    e.parity = vec![svctools::env::ParityUnit {
+        set: 1,
+        unit: 7,
+        serial: "SP-vdd".into(),
+        ..Default::default()
+    }];
+    let shown: Vec<String> = svctools::dst::disk::delete::deletable(&mut e)
+        .into_iter()
+        .map(|d| d.device)
+        .collect();
+    assert_eq!(shown, vec!["/dev/vdb", "/dev/vdc", "/dev/vde", "/dev/vdg"]);
+}
+
+#[test]
+fn delete_data_confirms_then_reaches_the_environment() {
+    let mut e = env();
+    whole_disks(&mut e);
+    let mut r = walk(&mut e, &["4", "2", "10"], "delete-data");
+    assert_eq!(r.screen(&mut e).fields.len(), 3);
+    r.enter(&f(&["", "", "1"]), &mut e);
+    assert_eq!(r.top(), "dst-delete-data-confirm");
+    check("delete-data-confirm", &r.screen(&mut e).dump());
+    // Enter alone does nothing; F12 goes back without a change.
+    r.enter(&f(&[]), &mut e);
+    assert!(e.actions.is_empty());
+    r.function(12, &mut e);
+    assert_eq!(r.top(), "dst-delete-data");
+    assert!(e.actions.is_empty());
+    r.enter(&f(&["", "", "1"]), &mut e);
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["delete /dev/vdg"]);
+    assert_eq!(r.top(), "dst-disk-recovery");
+    assert!(r.screen(&mut e).dump().contains("Data deleted on 1 unit(s)"));
+    check("delete-data-status", e.shown.last().unwrap());
+    assert!(!e.whole.iter().any(|d| d.has_data));
+    // Operators may not delete data.
+    let mut r = Runner::new(Box::new(svctools::dst::menu::MainMenu::new(
+        "22222222".into(),
+        Privilege::DISK_UNITS_OPERATIONS,
+    )));
+    for sel in ["4", "2", "10"] {
+        r.enter(&f(&[sel]), &mut e);
+    }
+    assert_eq!(r.top(), "dst-disk-recovery");
+    assert!(r.screen(&mut e).dump().contains("not authorized"));
+}

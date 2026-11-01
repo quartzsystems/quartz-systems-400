@@ -6,6 +6,7 @@
 //! recovery. Rows are built from what the environment reports.
 
 pub mod config;
+pub mod delete;
 pub mod mirror;
 pub mod parity;
 pub mod recovery;
