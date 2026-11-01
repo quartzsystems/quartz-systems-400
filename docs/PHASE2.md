@@ -155,6 +155,7 @@ New codes, in the order they appear:
 | C6004001..C6004090 | OS | The LIC install: started, load source partitioned, LIC partition initialized, slot A, slot B, LIC record written, installed |
 | C6004100..C6004190 | OS | The operating system install: pending, ASP 1 initialized, system libraries created, installed |
 | A6001255 | attention | Mirrored unit missing, protection suspended |
+| A6001257 | attention | Device parity unit failed, parity set exposed |
 | A6001256 | attention | Mirrored unit not operational, protection suspended |
 | A6001260 | attention | Disk unit not configured (disks beyond the load source at a pending install) |
 | B1001030 | fatal | ASP 1 unit not found on an A or B IPL |

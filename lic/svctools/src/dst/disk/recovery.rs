@@ -75,6 +75,9 @@ fn procedures() -> Notice {
             "   least the same size and replace the configured unit (option 3).".into(),
             "3. An unprotected unit that is missing stops the IPL with B1001030;".into(),
             "   attach it again and IPL.".into(),
+            "4. A unit of a device parity set that is missing or fails shows".into(),
+            "   DPY/Failed and the ASP stays usable. Replace it (option 3), or".into(),
+            "   attach it again and IPL; it is rebuilt from the rest of its set.".into(),
             String::new(),
             "Every allocated page is checksummed. A page that fails on one half".into(),
             "is read from the other and rewritten; chkstg compares both halves.".into(),
@@ -87,7 +90,9 @@ fn replace(env: &mut dyn DstEnv) -> Select {
         .disk_units()
         .into_iter()
         .filter(|u| {
-            u.mirrored && (!u.attached || u.status == "Not operational" || u.status == "Suspended")
+            (u.mirrored
+                && (!u.attached || u.status == "Not operational" || u.status == "Suspended"))
+                || u.status == "DPY/Failed"
         })
         .collect();
     let rows: Vec<String> = lost.iter().map(disk::status_row).collect();
@@ -114,13 +119,19 @@ fn replace(env: &mut dyn DstEnv) -> Select {
                 Box::new(move |chosen: &[usize], _env: &mut dyn DstEnv| {
                     let device = spare[chosen[0]].device.clone();
                     let number = unit.unit;
+                    let mirrored = unit.mirrored;
                     let lines = vec![
                         format!(
-                            "Unit {} is replaced by {}; the new unit is copied from its",
+                            "Unit {} is replaced by {}; the new unit is {} from its",
                             number + 1,
-                            device
+                            device,
+                            if mirrored { "copied" } else { "rebuilt" }
                         ),
-                        "partner in the background once you continue.".into(),
+                        if mirrored {
+                            "partner in the background once you continue.".into()
+                        } else {
+                            "parity set in the background once you continue.".into()
+                        },
                     ];
                     Flow::Push(Box::new(
                         Confirm::new(
@@ -129,6 +140,9 @@ fn replace(env: &mut dyn DstEnv) -> Select {
                             lines,
                             Box::new(move |env: &mut dyn DstEnv| {
                                 env.replace(number, &device)?;
+                                if !mirrored {
+                                    return Ok(format!("Unit {} replaced and rebuilding", number + 1));
+                                }
                                 env.resume(number)?;
                                 Ok(format!("Unit {} replaced and resuming", number + 1))
                             }),

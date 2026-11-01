@@ -283,22 +283,7 @@ impl Asp {
         let (parity, mut events) = parity::attach(&mut units, &mut sb)?;
         events.extend(resolve_states(&layout, &mut units, &mut sb)?);
         let mut io = AspIo::with_units(units, layout.clone());
-        for unit in renumbered {
-            let e = &sb.units[usize::from(unit)];
-            warn!("asp: unit {unit} header carried another number; rewritten");
-            let mut h = UnitHeader {
-                unit_uuid: e.unit_uuid,
-                asp_uuid: sb.asp_uuid,
-                asp_number: sb.asp_number,
-                unit_number: unit,
-                pages: e.pages,
-                mirror_of: (e.mirror_partner != NO_PARTNER)
-                    .then(|| sb.units[usize::from(e.mirror_partner)].unit_uuid),
-            };
-            if let Err(e) = mirror::rewrite_unit_header(&mut io, unit, &mut h) {
-                warn!("asp: unit {unit} header not rewritten: {e}");
-            }
-        }
+        rewrite_renumbered(&mut io, &sb, &renumbered);
         let mut alloc = Allocator::load(&mut io, layout.clone(), sb.alloc_root, sb.free_log_head)?;
         parity::hold_all(&sb, &layout, &mut alloc)?;
         debug!(
@@ -586,6 +571,26 @@ impl Asp {
 /// WAL on unit 0.
 fn min_pages(first: bool, wal_pages: u64) -> u64 {
     RESERVED_HEAD + 1 + MIN_UNIT_SPARE + if first { wal_pages } else { 0 }
+}
+
+/// Rewrite the headers of units whose number lags the table.
+fn rewrite_renumbered(io: &mut AspIo, sb: &Superblock, renumbered: &[u16]) {
+    for &unit in renumbered {
+        let e = &sb.units[usize::from(unit)];
+        warn!("asp: unit {unit} header carried another number; rewritten");
+        let mut h = UnitHeader {
+            unit_uuid: e.unit_uuid,
+            asp_uuid: sb.asp_uuid,
+            asp_number: sb.asp_number,
+            unit_number: unit,
+            pages: e.pages,
+            mirror_of: (e.mirror_partner != NO_PARTNER)
+                .then(|| sb.units[usize::from(e.mirror_partner)].unit_uuid),
+        };
+        if let Err(e) = mirror::rewrite_unit_header(io, unit, &mut h) {
+            warn!("asp: unit {unit} header not rewritten: {e}");
+        }
+    }
 }
 
 /// Decide what to do with the units found and not found. Updates the

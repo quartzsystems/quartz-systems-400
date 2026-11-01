@@ -180,6 +180,13 @@ pub const MIRROR_FAILED: Src = src(
     "Mirrored unit not operational, protection suspended",
     Phase::Attention,
 );
+/// A unit of a device parity set is missing or failed; the set runs
+/// exposed, its pages computed from the others.
+pub const PARITY_EXPOSED: Src = src(
+    "A6001257",
+    "Device parity unit failed, parity set exposed",
+    Phase::Attention,
+);
 /// Disks beyond the load source belong to no ASP yet.
 pub const DISK_NOT_CONFIGURED: Src = src("A6001260", "Disk unit not configured", Phase::Attention);
 /// No IFS partition on any disk; the IPL goes on without the IFS.
@@ -277,6 +284,7 @@ pub const TABLE: &[Src] = &[
     DISK_NOT_CONFIGURED,
     MIRROR_MISSING,
     MIRROR_FAILED,
+    PARITY_EXPOSED,
     IFS_MISSING,
     IFS_MOUNT_FAILED,
     DEVICE_ERROR,

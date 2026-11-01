@@ -10,12 +10,12 @@
     least the same size and replace the configured unit (option 3).             
  3. An unprotected unit that is missing stops the IPL with B1001030;            
     attach it again and IPL.                                                    
+ 4. A unit of a device parity set that is missing or fails shows                
+    DPY/Failed and the ASP stays usable. Replace it (option 3), or              
+    attach it again and IPL; it is rebuilt from the rest of its set.            
                                                                                 
  Every allocated page is checksummed. A page that fails on one half             
  is read from the other and rewritten; chkstg compares both halves.             
-                                                                                
-                                                                                
-                                                                                
                                                                                 
                                                                                 
                                                                                 

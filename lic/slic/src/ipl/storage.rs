@@ -11,6 +11,7 @@ use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use blockdev::{BlockDev, LinuxBlockDev, MemBlockDev};
 use licpart::{Device, LicPart};
@@ -327,6 +328,15 @@ fn report_events(
                 "slic: disk unit {unit} is back with stale data; suspended until resumed
 "
             )),
+            UnitEvent::ParityExposed { unit } => {
+                system.out.serial(&format!(
+                    "slic: disk unit {unit} of a device parity set missing; the set runs exposed\n"
+                ));
+                system.emit(&src::PARITY_EXPOSED);
+            }
+            UnitEvent::ParityStale { unit } => system.out.serial(&format!(
+                "slic: disk unit {unit} is back with stale data; rebuilt from its parity set\n"
+            )),
             UnitEvent::Resuming { unit } => {
                 if let Err(e) = synchronize(system, store, unit) {
                     system.out.serial(&format!(
@@ -471,7 +481,15 @@ fn report_io_events(system: &mut System) {
                 system.out.serial(&format!(
                     "slic: disk unit {unit} taken out of service: {what}\n"
                 ));
-                system.emit(&src::MIRROR_FAILED);
+                let parity = system
+                    .storage
+                    .as_ref()
+                    .is_some_and(|s| s.store.parity_set_of(unit).is_some());
+                system.emit(if parity {
+                    &src::PARITY_EXPOSED
+                } else {
+                    &src::MIRROR_FAILED
+                });
             }
         }
     }
@@ -486,11 +504,68 @@ pub fn finish_resume(system: &mut System) {
             .serial("slic: finishing the resume before the storage service starts\n");
     }
     while resume_step(system) {}
+    if parity_busy(system) {
+        system
+            .out
+            .serial("slic: finishing the device parity work before the storage service starts\n");
+    }
+    while parity_step(system) {}
 }
 
-/// Whether the run loop should come back soon: a resume is running.
+/// Whether the run loop should come back soon: a resume or device
+/// parity work is running.
 pub fn busy(system: &System) -> bool {
-    system.storage.as_ref().is_some_and(|s| s.resume.is_some())
+    system.storage.as_ref().is_some_and(|s| s.resume.is_some()) || parity_busy(system)
+}
+
+/// Blocks per step of the background device parity work.
+const PARITY_BUDGET: u64 = 64;
+
+/// Set when the parity work failed: not retried this IPL.
+static PARITY_STALLED: AtomicBool = AtomicBool::new(false);
+
+/// Whether a set is being synchronized or a unit rebuilt.
+fn parity_busy(system: &System) -> bool {
+    !PARITY_STALLED.load(Ordering::Relaxed)
+        && system.storage.as_ref().is_some_and(|s| {
+            s.store.parity_sets().iter().any(|set| {
+                set.sync_percent.is_some()
+                    || set
+                        .members
+                        .iter()
+                        .any(|m| m.rebuild_percent.is_some() && m.attached)
+            })
+        })
+}
+
+/// One step of the device parity synchronization or rebuild. Returns
+/// whether more may follow.
+fn parity_step(system: &mut System) -> bool {
+    if !parity_busy(system) {
+        return false;
+    }
+    let System { storage, out, .. } = system;
+    let Some(s) = storage.as_mut() else {
+        return false;
+    };
+    match s.store.parity_step(PARITY_BUDGET) {
+        Ok(Some(p)) => {
+            if p.complete {
+                let what = match p.unit {
+                    Some(u) => format!("unit {u} rebuilt"),
+                    None => "synchronized".to_string(),
+                };
+                out.serial(&format!("slic: device parity set {}: {what}\n", p.set));
+            }
+            true
+        }
+        Ok(None) => false,
+        Err(e) => {
+            out.serial(&format!("slic: device parity: {e}\n"));
+            PARITY_STALLED.store(true, Ordering::Relaxed);
+            false
+        }
+    }
 }
 
 /// C6001005, C6001007, C6001008: the object layer. On a fresh store,
@@ -666,6 +741,7 @@ pub fn open_temp(system: &mut System) {
 /// events, and time-based checkpoints.
 pub fn tick(system: &mut System) {
     resume_step(system);
+    parity_step(system);
     report_io_events(system);
     let now = now_unix();
     if let Some(s) = system.storage.as_mut()

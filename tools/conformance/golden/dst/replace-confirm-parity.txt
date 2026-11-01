@@ -1,0 +1,24 @@
+                        Confirm Replace Configured Unit                         
+                                                                 System:  QS400 
+                                                                                
+ Unit 4 is replaced by /dev/vdg; the new unit is rebuilt from its               
+ parity set in the background once you continue.                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

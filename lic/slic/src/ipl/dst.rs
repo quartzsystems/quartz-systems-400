@@ -10,7 +10,8 @@ use std::sync::mpsc::Receiver;
 pub use svctools::Outcome;
 use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
-use svctools::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow, SecurityFlags};
+use store::asp::parity::Level;
+use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags};
 use svctools::install::lic::{LicEvent, LicKind};
 use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
 use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
@@ -234,6 +235,14 @@ impl DstEnv for Env<'_> {
         };
         let asp = store.asp_number();
         let infos = store.units();
+        // Device parity members: IBM's DPY status, and the held share
+        // left out of the use figure.
+        let dpy: Vec<(u16, &'static str, u64)> = store
+            .parity_sets()
+            .iter()
+            .flat_map(|s| s.members.iter().map(|m| (m.unit, m.status)))
+            .map(|(u, st)| (u, st, store.asp().parity_held(u)))
+            .collect();
         let resume = storage::resume_progress(self.system);
         // Devices by the unit UUID in their header: the order they were
         // found in says nothing about unit numbers.
@@ -258,8 +267,10 @@ impl DstEnv for Env<'_> {
                     .map(|(_, d)| d.clone())
                     .unwrap_or_default();
                 let (type_model, _) = diskimg::locate::identity(std::path::Path::new(&device));
-                let used = (u.used_pages * 100)
-                    .checked_div(e.usable_pages)
+                let parity = dpy.iter().find(|(n, _, _)| *n == u.unit);
+                let held = parity.map_or(0, |p| p.2);
+                let used = (u.used_pages.saturating_sub(held) * 100)
+                    .checked_div(e.usable_pages.saturating_sub(held))
                     .map_or(0, |p| u8::try_from(p).unwrap_or(100));
                 DiskUnit {
                     asp,
@@ -269,7 +280,7 @@ impl DstEnv for Env<'_> {
                     resource: self.resource_for(&device),
                     size_mib: e.pages * 4096 / (1024 * 1024),
                     percent_used: used,
-                    status: e.state.to_string(),
+                    status: parity.map_or_else(|| e.state.to_string(), |p| p.1.to_string()),
                     mirrored: e.mirrored(),
                     partner: e.mirrored().then_some(e.mirror_partner),
                     attached: u.attached,
@@ -403,7 +414,76 @@ impl DstEnv for Env<'_> {
         let store = self.store()?;
         store
             .replace_unit(unit, dev, storage::fresh_uuid(), &serial)
-            .map_err(fail("Replacing the mirrored unit"))
+            .map_err(fail("Replacing the unit"))?;
+        if let Some(s) = self.system.storage.as_mut() {
+            s.devices.push(std::path::PathBuf::from(device));
+        }
+        Ok(())
+    }
+
+    fn parity_units(&mut self) -> Vec<ParityUnit> {
+        let controller = hw()
+            .parity_capable()
+            .first()
+            .and_then(|l| l.split_whitespace().next().map(str::to_string))
+            .unwrap_or_default();
+        let units = self.disk_units();
+        let Ok(store) = self.store() else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for set in store.parity_sets() {
+            for m in &set.members {
+                let d = units.iter().find(|u| u.unit == m.unit);
+                out.push(ParityUnit {
+                    set: set.set,
+                    level: set.level.to_string(),
+                    unit: m.unit,
+                    serial: d.map(|d| d.serial.clone()).unwrap_or_default(),
+                    type_model: d.map(|d| d.type_model.clone()).unwrap_or_default(),
+                    resource: d.map(|d| d.resource.clone()).unwrap_or_default(),
+                    controller: controller.clone(),
+                    status: m.status.to_string(),
+                    percent: m.rebuild_percent.or(set.sync_percent),
+                });
+            }
+        }
+        out
+    }
+
+    fn start_parity(&mut self, level: u8, units: &[u16]) -> Result<String, String> {
+        let level = if level == 6 { Level::Raid6 } else { Level::Raid5 };
+        let set = self
+            .store()?
+            .start_parity(level, units)
+            .map_err(fail("Starting device parity protection"))?;
+        Ok(format!(
+            "Device parity set {set} ({level}) started; parity is computed in the background"
+        ))
+    }
+
+    fn stop_parity(&mut self, set: u8) -> Result<String, String> {
+        self.store()?
+            .stop_parity(set)
+            .map_err(fail("Stopping device parity protection"))?;
+        Ok(format!("Device parity protection stopped for set {set}"))
+    }
+
+    fn include_parity(&mut self, set: u8, unit: u16) -> Result<String, String> {
+        self.store()?
+            .include_parity(set, unit)
+            .map_err(fail("Including the unit in device parity protection"))?;
+        Ok(format!(
+            "Unit {} included in set {set}; parity is computed again in the background",
+            unit + 1
+        ))
+    }
+
+    fn exclude_parity(&mut self, unit: u16) -> Result<String, String> {
+        self.store()?
+            .exclude_parity(unit)
+            .map_err(fail("Excluding the unit from device parity protection"))?;
+        Ok(format!("Unit {} excluded from device parity protection", unit + 1))
     }
 
     fn parity_capable(&mut self) -> Vec<String> {
