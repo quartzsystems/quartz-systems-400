@@ -807,6 +807,10 @@ The file opens `OPN`; at close it is `RDY`, `HLD` for `HOLD(*YES)`, or
 
 The output queue of a new file: the printer file's `OUTQ`, else the
 job's, else `QGPL/QPRINT` (`MIGRATE(phase10)`: the printer device's).
+A queue the file or the job names that is not found (deleted since
+`CHGJOB OUTQ`, say) is not passed over silently: the job log gets the
+diagnostic `CPF3357` naming it, and the file goes to the next choice.
+The Print key takes this path through `QSYSPRT`'s `OUTQ(*JOB)`.
 
 The job log: the job keeps the service's copy of its log current after
 every request, so a job that vanishes still has one. At the end the

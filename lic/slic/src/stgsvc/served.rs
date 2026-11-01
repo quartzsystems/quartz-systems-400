@@ -879,7 +879,9 @@ impl Service for Served<'_> {
         let ovr = self.ctx.svc.prt_overrides.clone();
         let r = super::prtf::open(self.system, &ovr, &self.ctx.job, (&file, &lib), &actgrp);
         ile::set_libl(None);
-        let (id, prtf) = r?;
+        let (id, prtf, missing) = r?;
+        // The queue was not found: QGPL/QPRINT, and the job log says so.
+        self.joblog_put(super::prtf::missing_outq_entries(&missing));
         self.ctx.splfs.push(id);
         Ok((id, prtf))
     }
