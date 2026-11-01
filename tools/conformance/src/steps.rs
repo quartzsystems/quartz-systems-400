@@ -602,6 +602,8 @@ impl Suite {
         reports.push(self.step(&mut s, "80 licensed programs", Self::licensed_programs)?);
         reports.push(self.step(&mut s, "81 PTFs", Self::ptfs)?);
         reports.push(self.step(&mut s, "82 display commands", Self::display_commands)?);
+        // Before 84, which ends TCP/IP.
+        reports.push(self.step(&mut s, "87 HTTP administration", Self::http_admin)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         reports.push(self.step(&mut s, "86 HTTP server instance", Self::http_instance)?);
