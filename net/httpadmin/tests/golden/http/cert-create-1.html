@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Create certificate - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Certificates &gt; Certificate stores &gt; *SYSTEM &gt; Create certificate</div>
+<h1>Create certificate</h1>
+<div class="desc">Step 1 of 4.</div>
+
+<form method="post"><table class="wizard" cellspacing="0"><tr><td class="wsteps"><div class="wstep cur">1. Key type and size</div><div class="wstep ">2. Subject</div><div class="wstep ">3. Signing</div><div class="wstep ">4. Result</div></td><td class="wbody"><h2>Key type and size</h2><table class="props"><tr><th>Certificate label <span class="req">*</span></th><td><input type="text" name="label" value="webstore-2027" size="30"></td></tr><tr><th>Key type</th><td><input type="radio" name="kt" value="rsa" checked> RSA<br><input type="radio" name="kt" value="ec"> ECDSA</td></tr><tr><th>Key size</th><td><select name="ks"><option>2048</option><option>3072</option><option>4096</option></select> bits (RSA) &nbsp; <select name="curve"><option>P-256</option><option>P-384</option></select> (ECDSA)</td></tr><tr><th>Signature algorithm</th><td><select name="sig"><option>SHA-256</option><option>SHA-384</option></select></td></tr><tr><th>Validity</th><td><input type="text" name="days" value="365" size="5"> days</td></tr></table><div class="buttons"><input type="submit" name="back" value="&lt; Back" disabled><input type="submit" name="next" value="Next &gt;"><input type="submit" name="cancel" value="Cancel"></div></td></tr></table></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

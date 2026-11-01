@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Manage instance: WEBSTORE - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Manage &gt; Server instances &gt; WEBSTORE &gt; Logging</div>
+<h1>Manage instance: WEBSTORE</h1>
+
+
+<div class="tabs"><a href="instance-general.html">General</a> | <a href="instance-ports.html">Ports &amp; addresses</a> | <a href="instance-directories.html">Directories &amp; aliases</a> | <a href="instance-tls.html">TLS</a> | <b>Logging</b> | <a href="instance-config.html">Configuration file</a> | <a href="instance-logs.html">Logs</a></div><form method="post"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Access log</td></tr>
+<tr><th>Access log</th><td><input type="checkbox" name="al" checked> Enabled</td></tr>
+<tr><th>Path</th><td><input type="text" name="alp" value="/www/webstore/logs/access_log" size="45" class="cmd"></td></tr>
+<tr><th>Format</th><td><select name="alf"><option>Combined</option><option>Common</option><option>Extended</option></select></td></tr>
+<tr class="subrow"><td colspan="2">Error log</td></tr>
+<tr><th>Path</th><td><input type="text" name="elp" value="/www/webstore/logs/error_log" size="45" class="cmd"></td></tr>
+<tr><th>Log level</th><td><select name="ll"><option>emerg</option><option>alert</option><option>crit</option><option>error</option><option selected>warn</option><option>notice</option><option>info</option><option>debug</option></select></td></tr>
+<tr class="subrow"><td colspan="2">Rotation</td></tr>
+<tr><th>Rotate</th><td><input type="radio" name="rot" value="daily" checked> Daily at <input type="text" name="at" value="00:00" size="5"><br><input type="radio" name="rot" value="size"> When size exceeds <input type="text" name="size" value="10" size="4"> MB<br><input type="radio" name="rot" value="never"> Never</td></tr>
+<tr><th>Keep</th><td><input type="text" name="keep" value="30" size="3"> rotated files</td></tr>
+<tr><th>Log directory CCSID</th><td><input type="text" name="ccsid" value="1208" size="5"></td></tr>
+</table>
+<div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Create HTTP server - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Create &gt; New HTTP server</div>
+<h1>Create HTTP server</h1>
+<div class="desc">Step 4 of 6.</div>
+
+<form method="post"><table class="wizard" cellspacing="0"><tr><td class="wsteps"><div class="wstep done">1. Name and description</div><div class="wstep done">2. Server root</div><div class="wstep done">3. Document root</div><div class="wstep cur">4. IP address and port</div><div class="wstep ">5. Access log</div><div class="wstep ">6. Create</div></td><td class="wbody"><h2>IP address and port</h2><p class="small grey">The address and port the instance listens on. *ALL listens on every interface. Ports below 1024 require the server user profile to have *IOSYSCFG special authority.</p><table class="props"><tr><th>IP address <a class="help" href="../shared/help.html" target="_blank">?</a></th><td><input type="radio" name="addr" value="*ALL" checked> *ALL (all interfaces)<br><input type="radio" name="addr" value="ip"> Specific address: <select name="ip"><option>10.0.10.20</option><option>10.0.10.21</option><option>172.16.0.5</option><option>127.0.0.1</option></select></td></tr><tr><th>Port <span class="req">*</span></th><td><input type="text" name="port" value="80" size="6"></td></tr></table><div class="buttons"><input type="submit" name="back" value="&lt; Back"><input type="submit" name="next" value="Next &gt;"><input type="submit" name="cancel" value="Cancel"></div></td></tr></table></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,19 @@
+[package]
+name = "qsweb"
+description = "QS/400 web products' shared layer: HTTP/1.1, forms and uploads, sessions and CSRF, the page frame and its partials, golden comparison"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+release = { path = "../../lic/release", version = "0.1.0" }
+thiserror.workspace = true
+hex.workspace = true
+# Session IDs and CSRF tokens.
+graviola = "0.4.1"
+# Compile-time templates: the same DOM on every request.
+askama = "0.16.1"
+
+[lints]
+workspace = true

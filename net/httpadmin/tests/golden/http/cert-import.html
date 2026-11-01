@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Import certificate - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Certificates &gt; Certificate stores &gt; Import certificate</div>
+<h1>Import certificate</h1>
+
+
+<form method="post" enctype="multipart/form-data">
+<table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Source</td></tr>
+<tr><th>Import into store</th><td><select name="store"><option>*SYSTEM</option><option>*OBJECTSIGNING</option><option>*SIGNATUREVERIFICATION</option><option>WEBSTORE</option></select></td></tr>
+<tr><th>File <a class="help" href="../shared/help.html" target="_blank">?</a></th><td><input type="file" name="file" size="40"> <span class="small grey">PEM (.pem, .crt, .cer), DER or PKCS#12 (.p12, .pfx)</span></td></tr>
+<tr><th>Or path on this system</th><td><input type="text" name="path" value="/home/CWELLMAN/certs/webstore.p12" size="45" class="cmd"> <input type="submit" value="Browse..."></td></tr>
+<tr><th>Format</th><td><input type="radio" name="fmt" value="auto" checked> Detect from file<br><input type="radio" name="fmt" value="pem"> PEM<br><input type="radio" name="fmt" value="p12"> PKCS#12</td></tr>
+<tr class="subrow"><td colspan="2">PKCS#12</td></tr>
+<tr><th>Password</th><td><input type="password" name="pw" size="20"></td></tr>
+<tr class="subrow"><td colspan="2">Options</td></tr>
+<tr><th>Certificate label</th><td><input type="text" name="label" value="" size="30"> <span class="small grey">blank: use the common name</span></td></tr>
+<tr><th>Import type</th><td><input type="radio" name="t" value="srv" checked> Server or client certificate (with private key)<br><input type="radio" name="t" value="ca"> Certificate authority certificate</td></tr>
+<tr><th>After import</th><td><input type="checkbox" name="dft"> Make default certificate</td></tr>
+</table>
+<div class="buttons"><input type="submit" name="import" value="Import"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

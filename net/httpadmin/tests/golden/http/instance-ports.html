@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Manage instance: WEBSTORE - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Manage &gt; Server instances &gt; WEBSTORE &gt; Ports &amp; addresses</div>
+<h1>Manage instance: WEBSTORE</h1>
+<div class="desc">Listen directives in the configuration file.</div>
+
+<div class="tabs"><a href="instance-general.html">General</a> | <b>Ports &amp; addresses</b> | <a href="instance-directories.html">Directories &amp; aliases</a> | <a href="instance-tls.html">TLS</a> | <a href="instance-logging.html">Logging</a> | <a href="instance-config.html">Configuration file</a> | <a href="instance-logs.html">Logs</a></div><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Select</th>
+<th><a href="?sort=addr">Address</a></th>
+<th><a href="?sort=port">Port</a></th>
+<th><a href="?sort=tls">TLS</a></th>
+<th>Virtual host</th>
+</tr>
+<tr>
+<td><input type="checkbox" name="l1"></td>
+<td class="mono">*ALL</td>
+<td class="num">80</td>
+<td>No</td>
+<td>webstore.quartz.example</td>
+</tr>
+<tr class="alt">
+<td><input type="checkbox" name="l2"></td>
+<td class="mono">*ALL</td>
+<td class="num">443</td>
+<td>Yes</td>
+<td>webstore.quartz.example</td>
+</tr>
+<tr>
+<td><input type="checkbox" name="l3"></td>
+<td class="mono">10.0.10.21</td>
+<td class="num">8081</td>
+<td>No</td>
+<td>(default)</td>
+</tr>
+</table><form method="post"><div class="buttons"><input type="submit" name="remove" value="Remove"></div><h3>Add Listen entry</h3><table class="props"><tr><th>Address</th><td><input type="text" name="addr" value="*ALL" size="16"></td></tr><tr><th>Port</th><td><input type="text" name="port" value="" size="6"></td></tr><tr><th>TLS</th><td><input type="checkbox" name="tls"> Use TLS on this port</td></tr></table><div class="buttons"><input type="submit" name="add" value="Add"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

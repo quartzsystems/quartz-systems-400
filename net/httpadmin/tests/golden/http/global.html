@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Global settings - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[-]</a> <b>Advanced</b></div>
+<div class="navitem"><a href="global.html" class="navcur">Global settings</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Advanced &gt; Global settings</div>
+<h1>Global settings</h1>
+<div class="desc">Settings that apply to the administration server and to every instance.</div>
+
+<form method="post"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Defaults for new instances</td></tr>
+<tr><th>Default server user profile</th><td><input type="text" name="usrprf" value="QTMHHTTP" size="10"></td></tr>
+<tr><th>Default server root</th><td><input type="text" name="root" value="/www/" size="30" class="cmd"></td></tr>
+<tr><th>Default threads per instance</th><td><input type="text" name="thr" value="40" size="4"></td></tr>
+<tr class="subrow"><td colspan="2">Limits</td></tr>
+<tr><th>Maximum instances</th><td><input type="text" name="max" value="50" size="4"></td></tr>
+<tr><th>Maximum threads per instance</th><td><input type="text" name="maxthr" value="200" size="4"></td></tr>
+<tr class="subrow"><td colspan="2">Administration server (ADMIN, port 2001)</td></tr>
+<tr><th>Require TLS for administration <a class="help" href="../shared/help.html" target="_blank">?</a></th><td><input type="checkbox" name="admtls" checked> Redirect port 2001 to 2010 (TLS)</td></tr>
+<tr><th>Administration certificate application</th><td><span class="mono">QS400_HTTP_SERVER_ADMIN</span></td></tr>
+<tr><th>Session timeout</th><td><input type="text" name="to" value="30" size="3"> minutes</td></tr>
+<tr><th>Allow administration from</th><td><input type="text" name="from" value="10.0.0.0/8, 172.16.0.0/12" size="40" class="cmd"></td></tr>
+<tr class="subrow"><td colspan="2">Logging</td></tr>
+<tr><th>Administration audit log</th><td><input type="checkbox" name="audit" checked> Write every change to the QAUDJRN journal (entry type ZC)</td></tr>
+</table>
+<div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

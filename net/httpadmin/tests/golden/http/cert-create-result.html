@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Create certificate - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Certificates &gt; Certificate stores &gt; *SYSTEM &gt; Create certificate</div>
+<h1>Create certificate</h1>
+<div class="desc">Step 4 of 4.</div>
+
+<form method="post"><table class="wizard" cellspacing="0"><tr><td class="wsteps"><div class="wstep done">1. Key type and size</div><div class="wstep done">2. Subject</div><div class="wstep done">3. Signing</div><div class="wstep cur">4. Result</div></td><td class="wbody"><h2>Result</h2><table class="msg"><tr><td class="done"><a class="msgid" href="../shared/help.html" target="_blank">HTP8301</a> - Certificate webstore-2027 created in store *SYSTEM and signed by Quartz Internal CA.</td></tr></table><table class="props"><tr><th>Label</th><td class="mono">webstore-2027</td></tr><tr><th>Subject</th><td class="mono">CN=webstore.quartz.example, OU=Web, O=Quartz Systems, C=US</td></tr><tr><th>Issuer</th><td class="mono">CN=Quartz Internal Certificate Authority, O=Quartz Systems, C=US</td></tr><tr><th>Serial</th><td class="mono">41 53 34 30 30 00 00 00 00 01</td></tr><tr><th>Valid</th><td>10/29/26 18:15:00 to 10/29/27 18:15:00</td></tr><tr><th>Fingerprint (SHA-256)</th><td class="mono">3F:9A:12:C0:77:B1:5E:0D:AA:41:9C:E2:10:6B:F4:58:21:D3:7E:90:C5:1B:2A:66:0E:4F:8D:13:B7:92:A5:C8</td></tr></table><h3>Certificate (PEM)</h3><pre class="out">-----BEGIN CERTIFICATE-----
+MIIDszCCApugAwIBAgIUQS400000000000000000000000001wDQYJKoZIhvcNAQEL
+BQAwTDELMAkGA1UEBhMCVVMxFzAVBgNVBAoMDlF1YXJ0eiBTeXN0ZW1zMSQwIgYD
+VQQDDBtRdWFydHogSW50ZXJuYWwgQ2VydGlmaWNhdGUwHhcNMjYxMDI5MTgxNTAw
+WhcNMjcxMDI5MTgxNTAwWjBPMQswCQYDVQQGEwJVUzEXMBUGA1UECgwOUXVhcnR6
+IFN5c3RlbXMxDDAKBgNVBAsMA1dlYjEZMBcGA1UEAwwQd2Vic3RvcmUucXVhcnR6
+LmV4YW1wbGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC7sample0
+(sample data - 18 more lines)
+-----END CERTIFICATE-----</pre><div class="buttons"><input type="submit" value="Download"><input type="submit" value="Download with chain"><input type="submit" value="Assign to application..."></div><div class="buttons"><input type="submit" name="back" value="&lt; Back" disabled><input type="submit" name="cancel" value="Cancel"><input type="submit" name="finish" value="Done"></div></td></tr></table></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

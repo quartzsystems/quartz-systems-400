@@ -4,3 +4,6 @@
 *.trace text eol=lf
 *.sht text eol=lf
 *.hex text eol=lf
+# The web stylesheet ships byte-for-byte; the golden pages stay as delivered.
+net/qsweb/assets/** -text
+net/httpadmin/tests/golden/** -text

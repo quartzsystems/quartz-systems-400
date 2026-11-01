@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Manage instance: WEBSTORE - QS/400 HTTP Server Administration</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">QS/400 HTTP Server Administration</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="instances.html">[+]</a> <b>Manage</b></div>
+<div class="navgrp"><a class="glyph" href="create-1.html">[+]</a> <b>Create</b></div>
+<div class="navgrp"><a class="glyph" href="cert-stores.html">[+]</a> <b>Certificates</b></div>
+<div class="navgrp"><a class="glyph" href="global.html">[+]</a> <b>Advanced</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">HTTP Server Administration &gt; Manage &gt; Server instances &gt; WEBSTORE &gt; Logs</div>
+<h1>Manage instance: WEBSTORE</h1>
+
+
+<div class="tabs"><a href="instance-general.html">General</a> | <a href="instance-ports.html">Ports &amp; addresses</a> | <a href="instance-directories.html">Directories &amp; aliases</a> | <a href="instance-tls.html">TLS</a> | <a href="instance-logging.html">Logging</a> | <a href="instance-config.html">Configuration file</a> | <b>Logs</b></div><div class="tabs"><b>Access log</b> | <a href="instance-logs.html">Error log</a></div><form method="get"><table class="filter" cellspacing="0"><tr><td>Lines:</td><td><select name="n"><option>50</option><option>100</option><option selected>200</option><option>500</option><option>1000</option></select></td><td>Contains:</td><td><input type="text" name="q" value="" size="20"></td><td><input type="submit" value="Refresh"> </td></tr></table></form><pre class="out">10.0.10.55 - - [29/Oct/2026:14:10:01 -0400] "GET / HTTP/1.1" 200 5123 "-" "Mozilla/5.0"
+10.0.10.55 - - [29/Oct/2026:14:10:01 -0400] "GET /images/logo.gif HTTP/1.1" 200 2210 "http://webstore.quartz.example/" "Mozilla/5.0"
+10.0.10.55 - - [29/Oct/2026:14:10:02 -0400] "GET /css/site.css HTTP/1.1" 304 - "http://webstore.quartz.example/" "Mozilla/5.0"
+10.0.22.7   - - [29/Oct/2026:14:10:04 -0400] "GET /cgi-bin/CATALOG.PGM?dept=12 HTTP/1.1" 200 18822 "-" "Mozilla/5.0"
+10.0.22.7   - - [29/Oct/2026:14:10:09 -0400] "POST /cgi-bin/CART.PGM HTTP/1.1" 302 0 "http://webstore.quartz.example/cgi-bin/CATALOG.PGM?dept=12" "Mozilla/5.0"
+172.16.0.9  - - [29/Oct/2026:14:10:12 -0400] "GET /admin/ HTTP/1.1" 401 381 "-" "curl/8.4.0"
+172.16.0.9  - cody [29/Oct/2026:14:10:15 -0400] "GET /admin/ HTTP/1.1" 200 2201 "-" "curl/8.4.0"
+10.0.10.55 - - [29/Oct/2026:14:10:31 -0400] "GET /downloads/ HTTP/1.1" 200 1420 "-" "Mozilla/5.0"
+10.0.10.55 - - [29/Oct/2026:14:10:40 -0400] "GET /downloads/pricelist.pdf HTTP/1.1" 200 240112 "http://webstore.quartz.example/downloads/" "Mozilla/5.0"
+10.0.31.2   - - [29/Oct/2026:14:11:02 -0400] "GET /favicon.ico HTTP/1.1" 404 209 "-" "Mozilla/5.0"
+10.0.31.2   - - [29/Oct/2026:14:11:02 -0400] "GET /robots.txt HTTP/1.1" 200 26 "-" "Mozilla/5.0"
+</pre><p class="small grey">Showing last 11 of 11 lines of /www/webstore/logs/access_log (rotated daily). <a href="#">Download complete file</a></p>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

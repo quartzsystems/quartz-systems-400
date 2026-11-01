@@ -1,0 +1,177 @@
+/* QS/400 web interfaces - shared stylesheet
+   Quartz Systems - V1R0M0
+   One file for HTTP Server Administration, Navigator and Access for Web.
+   Rule of thumb: if it would not have shipped in 2006 it is not in here. */
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #000000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+}
+a { color: #0000cc; }
+a:visited { color: #551a8b; }
+h1 { font-size: 13pt; font-weight: bold; margin: 2px 0 2px 0; }
+h2 { font-size: 10pt; font-weight: bold; margin: 10px 0 3px 0; }
+h3 { font-size: 9pt; font-weight: bold; margin: 8px 0 2px 0; }
+p { margin: 4px 0 6px 0; }
+small, .small { font-size: 8pt; }
+.grey { color: #555555; }
+.ok { color: #007700; }
+.err { color: #cc0000; }
+img { border: 0; vertical-align: middle; }
+
+/* Anything that is system output is fixed pitch and keeps its columns */
+pre, code, tt, .mono, textarea, .cmd {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 9pt;
+}
+pre { margin: 2px 0; white-space: pre; }
+pre.out { background: #ffffff; border: 1px solid #c0c0c0; padding: 3px; overflow: auto; }
+pre.out132 { width: 100%; }
+
+/* ---- Page frame -------------------------------------------------- */
+table.frame { width: 100%; border-collapse: collapse; }
+td.hdr {
+  background: #2b3a55;
+  color: #ffffff;
+  height: 40px;
+  padding: 0 8px;
+  border-bottom: 2px solid #00d992;
+}
+td.hdr a, td.hdr a:visited { color: #ffffff; }
+.wordmark { font-size: 12pt; font-weight: bold; color: #ffffff; white-space: nowrap; }
+.hdrright { font-size: 8pt; color: #ffffff; text-align: right; white-space: nowrap; }
+td.nav {
+  background: #e8e8e8;
+  width: 190px;
+  padding: 6px 4px 6px 6px;
+  border-right: 1px solid #c0c0c0;
+  font-size: 8pt;
+}
+td.content { padding: 6px 10px 12px 10px; }
+td.footer {
+  font-size: 7pt; color: #777777;
+  padding: 4px 8px; border-top: 1px solid #c0c0c0;
+}
+.crumb { font-size: 8pt; color: #555555; margin-bottom: 2px; }
+.desc { font-size: 8pt; color: #555555; margin: 0 0 6px 0; }
+
+/* Navigation tree: text, plus/minus glyphs, current item bold */
+.navgrp { margin: 5px 0 1px 0; white-space: nowrap; }
+.navitem { margin: 0 0 1px 14px; white-space: nowrap; }
+.navitem2 { margin: 0 0 1px 28px; white-space: nowrap; }
+.navcur { font-weight: bold; }
+.glyph { font-family: "Courier New", Courier, monospace; color: #333333; }
+
+/* ---- Message area ------------------------------------------------ */
+table.msg { width: 100%; border-collapse: collapse; margin: 3px 0 6px 0; }
+table.msg td { padding: 3px 5px; font-size: 8pt; border: 1px solid #c0c0c0; }
+table.msg td.info { background: #ffffcc; }
+table.msg td.error { background: #ffdddd; }
+table.msg td.done { background: #eeffee; }
+.msgid { font-family: "Courier New", Courier, monospace; }
+
+/* ---- List tables ------------------------------------------------- */
+table.list { width: 100%; border-collapse: collapse; border: 1px solid #c0c0c0; }
+table.list th {
+  background: #e0e0e0;
+  font-size: 8pt; font-weight: bold; text-align: left;
+  padding: 3px 4px; border: 1px solid #c0c0c0; white-space: nowrap;
+}
+table.list th a, table.list th a:visited { color: #000000; }
+table.list td { padding: 2px 4px; border: 1px solid #d8d8d8; font-size: 8pt; vertical-align: top; }
+table.list tr.alt td { background: #f0f4f8; }
+table.list td.num { text-align: right; }
+table.list td.act { white-space: nowrap; }
+table.list td.empty { padding: 10px; color: #555555; font-style: italic; }
+table.list td.mono, table.list th.mono { font-family: "Courier New", Courier, monospace; white-space: nowrap; }
+.filter { margin: 2px 0 4px 0; font-size: 8pt; }
+.filter td { padding: 1px 6px 1px 0; font-size: 8pt; }
+.paging { font-size: 8pt; margin: 4px 0; }
+.toolbar { margin: 4px 0 6px 0; }
+.toolbar input { margin-right: 3px; }
+.actions { font-size: 8pt; white-space: nowrap; }
+
+/* A one-row HTML bar for utilisation: coloured cell of proportional width */
+table.bar { border-collapse: collapse; width: 120px; border: 1px solid #999999; }
+table.bar td { padding: 0; height: 9px; font-size: 1px; line-height: 1px; }
+table.bar td.fill { background: #6688aa; }
+table.bar td.hot { background: #cc0000; }
+
+/* ---- Properties / detail ----------------------------------------- */
+table.props { border-collapse: collapse; margin: 2px 0 6px 0; }
+table.props th {
+  text-align: right; vertical-align: top; font-weight: normal; color: #555555;
+  padding: 2px 8px 2px 4px; font-size: 8pt; white-space: nowrap; width: 180px;
+}
+table.props td { padding: 2px 4px; font-size: 8pt; vertical-align: top; }
+table.props td.sub { font-weight: bold; padding-top: 8px; color: #000000; }
+table.props tr.subrow td { font-weight: bold; padding-top: 8px; }
+.tabs { margin: 4px 0 6px 0; font-size: 8pt; border-bottom: 1px solid #c0c0c0; padding-bottom: 3px; }
+.tabs b { color: #000000; }
+.buttons { margin: 8px 0 2px 0; }
+.buttons input { margin-right: 4px; }
+.help, .help:visited { font-size: 7pt; color: #0000cc; text-decoration: none; border: 1px solid #0000cc; padding: 0 2px; }
+.req { color: #cc0000; }
+
+/* ---- Wizard ------------------------------------------------------ */
+table.wizard { width: 100%; border-collapse: collapse; }
+td.wsteps { width: 170px; background: #f0f0f0; border-right: 1px solid #c0c0c0; padding: 6px; font-size: 8pt; vertical-align: top; }
+td.wbody { padding: 6px 12px; vertical-align: top; }
+.wstep { margin: 2px 0; color: #555555; }
+.wstep.cur { font-weight: bold; color: #000000; }
+.wstep.done { color: #000000; }
+
+/* ---- Sign-on ----------------------------------------------------- */
+table.signon { margin: 50px auto 40px auto; border-collapse: collapse; }
+table.signon th { text-align: left; font-weight: normal; padding: 3px 8px; font-size: 9pt; white-space: nowrap; }
+table.signon td { padding: 3px 4px; }
+.signtitle { font-size: 13pt; font-weight: bold; text-align: left; padding-bottom: 10px; }
+.signsys { font-family: "Courier New", Courier, monospace; font-size: 9pt; text-align: center; color: #555555; }
+
+/* ---- Forms ------------------------------------------------------- */
+input, select, textarea { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt; }
+textarea.conf { width: 100%; font-family: "Courier New", Courier, monospace; font-size: 9pt; }
+input.cmd { font-family: "Courier New", Courier, monospace; font-size: 9pt; width: 100%; }
+fieldset { border: 1px solid #c0c0c0; margin: 6px 0; padding: 4px 8px; }
+legend { font-size: 8pt; font-weight: bold; }
+hr { border: 0; border-top: 1px solid #c0c0c0; height: 0; margin: 8px 0; }
+
+/* ---- Home pages -------------------------------------------------- */
+table.home td { padding: 6px 14px 6px 0; vertical-align: top; }
+table.status { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
+table.status th { text-align: left; background: #e0e0e0; padding: 2px 4px; font-size: 8pt; border: 1px solid #c0c0c0; }
+table.status td { padding: 2px 4px; font-size: 8pt; border: 1px solid #d8d8d8; }
+table.status td.lbl { color: #555555; width: 45%; }
+a.big { font-size: 11pt; }
+
+/* ---- 5250 session (the one page with script) --------------------- */
+.term {
+  font-family: "Courier New", Courier, monospace; font-size: 10pt; line-height: 13px;
+  background: #000000; color: #00ff66; padding: 6px; display: block;
+  white-space: pre; border: 2px inset #808080; overflow: auto; margin: 0;
+}
+.term.light { background: #ffffff; color: #000000; }
+.term .inp { text-decoration: underline; }
+.term .hi { color: #ffffff; }
+.term .rev { background: #00ff66; color: #000000; }
+.fkeys { margin: 4px 0; }
+.fkeys input { width: 38px; margin: 1px; font-size: 7pt; padding: 0; }
+.fkeys input.wide { width: 56px; }
+.fkeys input.auto { width: auto; }
+.sessline { font-size: 8pt; margin: 4px 0; }
+
+/* ---- Policies / preferences -------------------------------------- */
+table.list td.radio { text-align: center; width: 50px; }
+tr.cat td { background: #e8e8e8; font-weight: bold; }
+
+/* ---- Hardware tree / indentation --------------------------------- */
+.ind1 { padding-left: 16px; }
+.ind2 { padding-left: 32px; }
+.ind3 { padding-left: 48px; }
+.ind4 { padding-left: 64px; }
+
+/* ---- Print ------------------------------------------------------- */
+@media print { td.nav, td.hdr, td.footer, .toolbar, .buttons { display: none; } }

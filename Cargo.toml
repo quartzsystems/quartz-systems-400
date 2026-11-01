@@ -91,6 +91,8 @@ members = [
 
     "net/ddm",
     "net/servers",
+    "net/qsweb",
+    "net/httpd",
     "net/nettools",
     "net/ntp",
     "net/lpd",
