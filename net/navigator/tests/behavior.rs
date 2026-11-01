@@ -85,14 +85,10 @@ fn tree_groups_stay_open() {
 
 /// Routes not built yet: each step removes its own.
 const PENDING: &[&str] = &[
-    // System.
-    "/sysval", "/disk", "/hdwrsc", "/time",
-    // Network.
-    "/tcp",
     // Database.
     "/db", "/sql",
     // Security, software, performance.
-    "/audit", "/licpgm", "/ptf", "/fixes", "/perf/",
+    "/audit", "/licpgm", "/ptf", "/fixes",
 ];
 
 /// Every link and form on every reachable page resolves to a page of
