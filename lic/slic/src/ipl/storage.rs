@@ -466,7 +466,16 @@ pub fn start_resume(system: &mut System, unit: u16) -> Result<String, ResumeRefu
     let Some(s) = storage.as_mut() else {
         return Err(ResumeRefused::NotOpen);
     };
-    if s.resume.is_some() {
+    if let Some(r) = &s.resume {
+        // Asked again for the half already copying (a start-mirror pairs
+        // and starts it): its progress, not a refusal.
+        let p = r.progress();
+        if p.unit == unit {
+            return Ok(format!(
+                "unit {unit} already resuming in the background, {} of {} chunks done\n",
+                p.chunks_done, p.chunks
+            ));
+        }
         return Err(ResumeRefused::Running);
     }
     let mut journal = journal(lic);
