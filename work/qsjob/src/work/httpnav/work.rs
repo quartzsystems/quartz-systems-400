@@ -10,15 +10,18 @@
 //! `splf_list` and `splf_fetch` (`WRKSPLF`, `DSPSPLF`), `wtr_list` and
 //! `cfg_status` (`WRKWTR`, `WRKCFGSTS`); changes are commands (`run`).
 //! Another job's log and call stack are not readable (the 5250
-//! displays refuse them too): those tabs are empty.
+//! displays refuse them too): those tabs are empty. A job a user ends
+//! here is reported to that user once it has left the active job table
+//! (its `CPF1164` from the history log).
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
+use std::sync::{Arc, Mutex};
 
 use navigator::env::work::{
     ActiveJobs, Autostart, Choices, Job, JobPerf, JobProps, JobQueue, LibEntry, Lock, LogEntry, OutQueue, Prestart,
     Routing, SbsPool, ScheduleEntry, Splf, Subsystem, SubsystemDesc, Thread, Work, Workstation, Writer,
 };
-use qsweb::msg::Message;
+use qsweb::msg::{Kind, Message};
 use stg::{Client, JobInfo};
 use wm::obj::jobq::JobQ;
 use wm::obj::jobscd::{DateKind, Frequency, JobScd, SCHEDULE};
@@ -29,16 +32,69 @@ use wm::obj::splf::SplfAttrs;
 use super::Link;
 use crate::work::web::bridge::Main;
 
+/// Jobs each user ended here, by user, as `number/user/name`.
+type Ended = Arc<Mutex<HashMap<String, Vec<String>>>>;
+
 /// Work management.
 pub struct LiveWork {
     link: Link,
+    ended: Ended,
 }
 
 impl LiveWork {
     /// Over the job's thread; `_me` is this job's qualified name.
     pub fn new(link: Link, _me: String) -> Self {
-        Self { link }
+        Self {
+            link,
+            ended: Arc::default(),
+        }
     }
+}
+
+/// The job `ENDJOB JOB(...)` names, when `command` is one.
+fn ended_job(command: &str) -> Option<String> {
+    let c = command.trim().to_ascii_uppercase();
+    let rest = c.strip_prefix("ENDJOB ")?;
+    let at = rest.find("JOB(")? + 4;
+    let end = rest[at..].find(')')? + at;
+    Some(rest[at..end].trim().to_string())
+}
+
+/// For each job `user` ended that is gone from `jobs`, its `CPF1164`
+/// from the history log (the text `DSPLOG` shows); a job not logged yet
+/// waits for a later look.
+fn notes(m: &Main, ended: &Ended, user: &str, jobs: &[Job]) -> Vec<Message> {
+    let Ok(mut all) = ended.lock() else {
+        return Vec::new();
+    };
+    let Some(mine) = all.get_mut(user) else {
+        return Vec::new();
+    };
+    let number = |q: &str| q.split('/').next().and_then(|n| n.trim().parse::<u32>().ok());
+    if mine.iter().all(|q| jobs.iter().any(|j| j.number.parse::<u32>().ok() == number(q))) {
+        return Vec::new();
+    }
+    let rows = m.link.borrow_mut().with(Client::hst_entries).unwrap_or_default();
+    let logged = |n: u32| {
+        rows.iter().rev().find(|r| {
+            r.get(2).is_some_and(|id| id.trim() == "CPF1164") && r.get(7).and_then(|v| v.trim().parse::<u32>().ok()) == Some(n)
+        })
+    };
+    let mut out = Vec::new();
+    mine.retain(|q| {
+        let Some(n) = number(q) else { return false };
+        if jobs.iter().any(|j| j.number.parse::<u32>().ok() == Some(n)) {
+            return true;
+        }
+        match logged(n) {
+            Some(r) => {
+                out.push(Message::new(Kind::Info, "CPF1164", r.get(8).map_or("", |t| t.trim())));
+                false
+            }
+            None => true,
+        }
+    });
+    out
 }
 
 fn job_of(j: &JobInfo, cpu: u32) -> Job {
@@ -356,13 +412,15 @@ fn schedule(m: &Main) -> Vec<ScheduleEntry> {
 
 impl Work for LiveWork {
     fn active_jobs(&self, user: &str, reset: bool) -> ActiveJobs {
+        let (ended, u) = (Arc::clone(&self.ended), user.to_string());
         self.link.read(user, move |m| {
             let d = m.link.borrow_mut().with(|l| l.actjob_data(reset));
+            let jobs: Vec<Job> = d.jobs.iter().map(|a| job_of(&a.job, a.cpu)).collect();
             ActiveJobs {
                 cpu: d.cpu,
                 elapsed: u32::try_from(d.elapsed).unwrap_or(u32::MAX),
-                jobs: d.jobs.iter().map(|a| job_of(&a.job, a.cpu)).collect(),
-                notes: Vec::new(),
+                notes: notes(m, &ended, &u, &jobs),
+                jobs,
             }
         })
     }
@@ -568,7 +626,14 @@ impl Work for LiveWork {
     }
 
     fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
-        self.link.run(user, command)
+        let r = self.link.run(user, command);
+        if r.is_ok()
+            && let Some(job) = ended_job(command)
+            && let Ok(mut all) = self.ended.lock()
+        {
+            all.entry(user.to_string()).or_default().push(job);
+        }
+        r
     }
 }
 
@@ -583,5 +648,7 @@ mod tests {
         assert_eq!(nomax16(0), None);
         assert_eq!(nomax16(5), Some(5));
         assert_eq!(nomax32(u32::MAX), None);
+        assert_eq!(ended_job("ENDJOB JOB(123456/QPGMR/X) OPTION(*IMMED)").as_deref(), Some("123456/QPGMR/X"));
+        assert_eq!(ended_job("HLDJOB JOB(1/A/B)"), None);
     }
 }

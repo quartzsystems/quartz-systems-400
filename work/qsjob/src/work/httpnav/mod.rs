@@ -14,11 +14,13 @@
 //! job swapped to the signed-on user ([`Link`]).
 
 mod config;
+mod db;
 mod msgs;
 mod net;
 mod parse;
 mod perf;
-mod stubs;
+mod sec;
+mod sw;
 mod system;
 mod users;
 mod work;
@@ -104,9 +106,9 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         users: Arc::new(users::LiveUsers { link: l.clone() }),
         config: Arc::new(config::LiveConfig { link: l.clone() }),
         net: Arc::new(net::LiveNet { link: l.clone() }),
-        db: Arc::new(stubs::Pending(l.clone())),
-        sec: Arc::new(stubs::Pending(l.clone())),
-        sw: Arc::new(stubs::Pending(l.clone())),
+        db: Arc::new(db::LiveDb { link: l.clone() }),
+        sec: Arc::new(sec::LiveSecurity { link: l.clone() }),
+        sw: Arc::new(sw::LiveSoftware::new(l.clone())),
         perf: Arc::new(perf::LivePerf { link: l.clone() }),
     };
     let nav = Arc::new(Navigator::new(env));

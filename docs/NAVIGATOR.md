@@ -232,20 +232,27 @@ escape (the diagnostic before `CPF0006`) the message.
 | Config | `sysval_panel_list` + `sysval_panel` (`WRKSYSVAL`, `DSPSYSVAL`) with shipped value, allowed values and IPL flag from the `lic/sysval` catalog, the category from its group (`httpnav/config.rs`); `panel2_data DSKSTS` (with `SIZEB`, `SERIAL`, `PROT`, `STATUS` per unit) and `SYSSTS`'s ASP figures; `hw_table` in `WRKHDWRSC *AHW` order (`hwrsrc::view`) and `hw_cfgds` per resource; `QTIMZON`, `QDATFMT`, `QDATSEP`, `QTIMSEP`, `QTIMADJ`, `sysval::tz::ZONES`, `CHGNTPA`'s `RMTSYS` (`tcp Servers`), `QTOTNTP` active |
 | Net | `tcp Snapshot` (interfaces, routes), `tcp HostConfig` (domain, host table), `tcp Netstat STS` (active since), `tcp Report attr` (forwarding), the server registry with `tcp Servers` and `active_jobs` |
 | Perf | `panel2_data SYSACT` (`WRKSYSACT`), `SYSSTS RESET(*YES)`'s pools, `DSKSTS RESET(*YES)` |
+| Db | queries over the `QSYS2` catalog views through the interactive SQL session (`isql_start` `*SQL`/`*NONE`, `isql_run`): `SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST` + `SYSKEYCST`, `SYSINDEXES` + `SYSKEYS`, `SYSVIEWDEP`; creation times from `object`. Run SQL: `isql_start` with the naming and isolation, `SET SCHEMA`, `isql_run` (the row cap), `isql_end` commits; messages from `QSQLMSG` as Enter SQL Statements words them. No `SYSTRIGGERS`/`SYSROUTINES` (no triggers, procedures), no `QSQGNDDL` (Generate SQL answers `SQL0084`), no Explain (`SQL0084`) |
+| Security | `DSPAUDJRNE ... OUTPUT(*)` through `exec`, as its 5250 display runs it (whole UTC days, cut to the filter's seconds), `secaud_panel` (`DSPSECAUD`), the receiver's creation (`object *JRNRCV`) as its attach time |
+| Software | `licpgm_panel` `INSTALLED`, `SFWRSC` (libraries), `LICINF` (usage limits), `MEDIA` of a catalog's device; `panel2_data IMGCLG` (`WRKIMGCLG`); `sys2_panel` `LICKEY`, `PTF` per installed product, `PTFD` (delayed), `PTFGRP`, `PTFCVR` (cover letters; a PTF's text is its letter's first line); data area `QSYS/QSUPDATTR` (`api_dtaara_read`). Fixes are the lines of the last `QSCHKUPD` run from Navigator (newer groups, missing HIPER PTFs, a cumulative package), kept in memory |
 
 Not live yet: another job's job log and call stack (the 5250 displays
-refuse them too, `CPD9B9D`), so those tabs are empty; Active jobs'
-ended-job notes; Time's last synchronization (the SNTP client keeps
-none); per-user performance intervals (the service keeps one per
-display, so a refresh here also restarts `WRKSYSACT`'s); disk service
-and wait times and a unit's top job. Db, Security and Software return
-empty data (their `run` is live, `run_sql` refuses). QEMU
-step 88 (`tools/conformance/src/navstep.rs`) signs on over 2002, checks
-System status against `DSPNETA`, the `NAVIGATOR` job on Active jobs
-against `DSPJOB`, `QSYSOPR`, `QSECURITY` on Security values against
-`DSPSYSVAL`, `10.0.2.15` on interfaces, `*HTTP` started on TCP
-servers, System activity, the CSRF refusal and sign-off, and the
-sign-on page over TLS on 2005.
+refuse them too, `CPD9B9D`), so those tabs are empty; Time's last
+synchronization (the SNTP client keeps none); per-user performance
+intervals (the service keeps one per display, so a refresh here also
+restarts `WRKSYSACT`'s); disk service and wait times and a unit's top
+job; when a PTF was loaded and a product installed (neither display
+shows it). Active jobs' notes: a job a user ended through Navigator
+(`ENDJOB` that completed) is reported to that user once, when it has
+left the active job table, as the job's `CPF1164` from the history
+log (the golden page shows `CPF1321`, the prototype's choice). QEMU step 88
+(`tools/conformance/src/navstep.rs`) signs on over 2002, checks System
+status against `DSPNETA`, the `NAVIGATOR` job on Active jobs against
+`DSPJOB`, `QSYSOPR`, `QSECURITY` on Security values against
+`DSPSYSVAL`, `10.0.2.15` on interfaces, `*HTTP` started on TCP servers,
+System activity, the CSRF refusal, Run SQL's result table over
+`QSYS2.SYSTABLES`, `QS00SS1` on Licensed programs, PTFs, the audit
+journal and sign-off, and the sign-on page over TLS on 2005.
 ## Database, security, software
 
 `env::db::Db` reads the catalog views (`QSYS2.SYSSCHEMAS`, `SYSTABLES`,
