@@ -7,6 +7,9 @@
 use release::Release;
 
 use crate::asp::layout::MAX_UNITS;
+use crate::asp::parity::table::{
+    Level, MemberState, ParityTable, ParityTag, ParityWork, WorkKind,
+};
 use crate::asp::unit::UnitState;
 use crate::bytes::{get_u16, get_u32, get_u64, put_u16, put_u32, put_u64, u16_of};
 use crate::obj::ObjectId;
@@ -37,6 +40,8 @@ pub const FLAG_RCLSTG_REQUIRED: u32 = 2;
 pub const PROTECTION_NONE: u8 = 0;
 /// `protection`: at least one pair exists.
 pub const PROTECTION_MIRRORED: u8 = 1;
+/// `protection` bit: at least one device parity set exists.
+pub const PROTECTION_PARITY: u8 = 2;
 
 const OFF_MAGIC: usize = 0;
 const OFF_VERSION: usize = 8;
@@ -62,6 +67,10 @@ const OFF_INSTALL_TIME: usize = 120;
 const OFF_LAST_RCLSTG: usize = 128;
 const OFF_QSYS: usize = 136;
 const OFF_SYSVAL: usize = 152;
+const OFF_WORK_SET: usize = 168;
+const OFF_WORK_KIND: usize = 169;
+const OFF_WORK_MEMBER: usize = 170;
+const OFF_WORK_DONE: usize = 176;
 
 const ENTRY_UUID: usize = 0;
 const ENTRY_PAGES: usize = 16;
@@ -69,6 +78,10 @@ const ENTRY_START: usize = 24;
 const ENTRY_USABLE: usize = 32;
 const ENTRY_PARTNER: usize = 40;
 const ENTRY_STATE: usize = 42;
+const ENTRY_PARITY_SET: usize = 43;
+const ENTRY_PARITY_MEMBER: usize = 44;
+const ENTRY_PARITY_LEVEL: usize = 45;
+const ENTRY_PARITY_STATE: usize = 46;
 const ENTRY_SERIAL: usize = 48;
 
 /// The spec layout of the fixed part.
@@ -100,7 +113,12 @@ pub static LAYOUT: Layout = Layout {
         field("last_rclstg_time", OFF_LAST_RCLSTG, 8),
         field("qsys", OFF_QSYS, 16),
         field("sysval", OFF_SYSVAL, 16),
-        field("reserved2", 168, 88),
+        field("parity_work_set", OFF_WORK_SET, 1),
+        field("parity_work_kind", OFF_WORK_KIND, 1),
+        field("parity_work_member", OFF_WORK_MEMBER, 1),
+        field("reserved3", 171, 5),
+        field("parity_work_done", OFF_WORK_DONE, 8),
+        field("reserved2", 184, 72),
     ],
 };
 
@@ -115,7 +133,11 @@ pub static UNIT_ENTRY_LAYOUT: Layout = Layout {
         field("usable_pages", ENTRY_USABLE, 8),
         field("mirror_partner", ENTRY_PARTNER, 2),
         field("state", ENTRY_STATE, 1),
-        field("reserved", 43, 5),
+        field("parity_set", ENTRY_PARITY_SET, 1),
+        field("parity_member", ENTRY_PARITY_MEMBER, 1),
+        field("parity_level", ENTRY_PARITY_LEVEL, 1),
+        field("parity_state", ENTRY_PARITY_STATE, 1),
+        field("reserved", 47, 1),
         field("serial", ENTRY_SERIAL, SERIAL_LEN),
     ],
 };
@@ -239,6 +261,8 @@ pub struct Superblock {
     pub sysval: ObjectId,
     /// The unit table.
     pub units: Vec<UnitEntry>,
+    /// Device parity: membership, by unit UUID, and the work under way.
+    pub parity: ParityTable,
 }
 
 fn opt(v: u64) -> Option<PageNo> {
@@ -254,11 +278,17 @@ impl Superblock {
 
     /// Recompute `protection` from the unit table.
     pub fn update_protection(&mut self) {
-        self.protection = if self.units.iter().any(UnitEntry::mirrored) {
+        let mirrored = if self.units.iter().any(UnitEntry::mirrored) {
             PROTECTION_MIRRORED
         } else {
             PROTECTION_NONE
         };
+        let parity = if self.parity.tags.is_empty() {
+            0
+        } else {
+            PROTECTION_PARITY
+        };
+        self.protection = mirrored | parity;
     }
 
     /// Encode into a page body.
@@ -289,6 +319,12 @@ impl Superblock {
         put_u64(body, OFF_LAST_RCLSTG, self.last_rclstg_time);
         body[OFF_QSYS..OFF_QSYS + 16].copy_from_slice(&self.qsys.to_bytes());
         body[OFF_SYSVAL..OFF_SYSVAL + 16].copy_from_slice(&self.sysval.to_bytes());
+        if let Some(w) = self.parity.work {
+            body[OFF_WORK_SET] = w.set;
+            body[OFF_WORK_KIND] = w.kind.as_u8();
+            body[OFF_WORK_MEMBER] = w.member;
+            put_u64(body, OFF_WORK_DONE, w.done);
+        }
         for (i, u) in self.units.iter().enumerate() {
             let at = HEADER_LEN + i * UNIT_ENTRY_LEN;
             body[at + ENTRY_UUID..at + ENTRY_UUID + 16].copy_from_slice(&u.unit_uuid);
@@ -298,6 +334,12 @@ impl Superblock {
             put_u16(body, at + ENTRY_PARTNER, u.mirror_partner);
             body[at + ENTRY_STATE] = u.state.as_u8();
             body[at + ENTRY_SERIAL..at + ENTRY_SERIAL + SERIAL_LEN].copy_from_slice(&u.serial);
+            if let Some(t) = self.parity.tag(&u.unit_uuid) {
+                body[at + ENTRY_PARITY_SET] = t.set;
+                body[at + ENTRY_PARITY_MEMBER] = t.member;
+                body[at + ENTRY_PARITY_LEVEL] = t.level.as_u8();
+                body[at + ENTRY_PARITY_STATE] = t.state.as_u8();
+            }
         }
     }
 
@@ -334,6 +376,7 @@ impl Superblock {
                     .expect("32"),
             });
         }
+        let parity = decode_parity(body, &units).map_err(corrupt)?;
         Ok(Self {
             flags: get_u32(body, OFF_FLAGS),
             generation: get_u64(body, OFF_GENERATION),
@@ -361,8 +404,43 @@ impl Superblock {
             qsys: ObjectId::from_bytes(&body[OFF_QSYS..OFF_QSYS + 16]),
             sysval: ObjectId::from_bytes(&body[OFF_SYSVAL..OFF_SYSVAL + 16]),
             units,
+            parity,
         })
     }
+}
+
+/// The parity columns of the unit table and the work fields.
+fn decode_parity(body: &[u8], units: &[UnitEntry]) -> std::result::Result<ParityTable, String> {
+    let mut tags = Vec::new();
+    for (i, u) in units.iter().enumerate() {
+        let at = HEADER_LEN + i * UNIT_ENTRY_LEN;
+        let set = body[at + ENTRY_PARITY_SET];
+        if set == 0 {
+            continue;
+        }
+        let level = Level::from_u8(body[at + ENTRY_PARITY_LEVEL])
+            .ok_or_else(|| format!("unit {i} parity level {}", body[at + ENTRY_PARITY_LEVEL]))?;
+        let state = MemberState::from_u8(body[at + ENTRY_PARITY_STATE])
+            .ok_or_else(|| format!("unit {i} parity state {}", body[at + ENTRY_PARITY_STATE]))?;
+        tags.push(ParityTag {
+            unit_uuid: u.unit_uuid,
+            set,
+            member: body[at + ENTRY_PARITY_MEMBER],
+            level,
+            state,
+        });
+    }
+    let work = match body[OFF_WORK_SET] {
+        0 => None,
+        set => Some(ParityWork {
+            set,
+            kind: WorkKind::from_u8(body[OFF_WORK_KIND])
+                .ok_or_else(|| format!("parity work kind {}", body[OFF_WORK_KIND]))?,
+            member: body[OFF_WORK_MEMBER],
+            done: get_u64(body, OFF_WORK_DONE),
+        }),
+    };
+    Ok(ParityTable { tags, work })
 }
 
 #[cfg(test)]
@@ -417,9 +495,24 @@ mod tests {
                     serial: serial_bytes(""),
                 },
             ],
+            parity: ParityTable {
+                tags: vec![ParityTag {
+                    unit_uuid: [1; 16],
+                    set: 1,
+                    member: 0,
+                    level: Level::Raid6,
+                    state: MemberState::Rebuilding,
+                }],
+                work: Some(ParityWork {
+                    set: 1,
+                    kind: WorkKind::Rebuild,
+                    member: 0,
+                    done: 12,
+                }),
+            },
         };
         sb.update_protection();
-        assert_eq!(sb.protection, PROTECTION_MIRRORED);
+        assert_eq!(sb.protection, PROTECTION_MIRRORED | PROTECTION_PARITY);
         let mut body = vec![0u8; BODY_SIZE];
         sb.encode(&mut body);
         let back = Superblock::decode(&body, 1).unwrap();

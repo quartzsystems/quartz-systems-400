@@ -36,6 +36,8 @@ struct Inner {
     fail_after: Option<u64>,
     /// This write persists only a prefix.
     tear_at: Option<u64>,
+    /// Every read fails: a dead unit.
+    fail_reads: bool,
     rng: Rng,
 }
 
@@ -64,6 +66,7 @@ impl MemBlockDev {
                 stats: MemStats::default(),
                 fail_after: None,
                 tear_at: None,
+                fail_reads: false,
                 rng: Rng::new(seed),
             }),
         }
@@ -81,6 +84,11 @@ impl MemBlockDev {
     /// the fault.
     pub fn tear_at(&self, n: Option<u64>) {
         self.lock().tear_at = n;
+    }
+
+    /// Every read fails while `on`, like a unit that died.
+    pub fn fail_reads(&self, on: bool) {
+        self.lock().fail_reads = on;
     }
 
     /// Forget every write since the last flush, like a power pull on a
@@ -145,6 +153,12 @@ impl BlockDev for MemBlockDev {
         let bs = BLOCK_SIZE as usize;
         let mut g = self.lock();
         g.stats.reads += 1;
+        if g.fail_reads {
+            return Err(BlockError::Injected {
+                kind: "fail_reads",
+                write: 0,
+            });
+        }
         for i in 0..count {
             let dst = usize::try_from(i).expect("count fits") * bs;
             buf[dst..dst + bs].copy_from_slice(g.get(lba + i));

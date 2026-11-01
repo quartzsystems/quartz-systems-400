@@ -203,6 +203,13 @@ pub enum StoreError {
         what: String,
     },
 
+    /// A device parity operation cannot be done as asked.
+    #[error("device parity: {what}")]
+    Parity {
+        /// Why.
+        what: String,
+    },
+
     /// The resume journal outside the store could not be read or written.
     #[error("resume journal: {what}")]
     Journal {

@@ -10,6 +10,7 @@
 pub mod io;
 pub mod layout;
 pub mod mirror;
+pub mod parity;
 pub mod superblock;
 pub mod unit;
 
@@ -65,6 +66,16 @@ pub enum UnitEvent {
         /// The unit.
         unit: u16,
     },
+    /// A device parity unit was not found; its set runs exposed.
+    ParityExposed {
+        /// The unit.
+        unit: u16,
+    },
+    /// A failed device parity unit is back; it is rebuilt.
+    ParityStale {
+        /// The unit.
+        unit: u16,
+    },
 }
 
 /// A unit as the configuration displays see it.
@@ -85,6 +96,7 @@ pub struct Asp {
     io: AspIo,
     sb: Superblock,
     alloc: Allocator,
+    parity: parity::ParitySets,
 }
 
 impl Asp {
@@ -153,6 +165,7 @@ impl Asp {
             qsys: ObjectId::NONE,
             sysval: ObjectId::NONE,
             units,
+            parity: parity::ParityTable::default(),
         };
         // The WAL of a store that used these units before would replay
         // into this one: its pages carry the sequence numbers this one
@@ -167,7 +180,12 @@ impl Asp {
             done += n;
         }
         let alloc = Allocator::format(layout, params.wal_pages);
-        let mut asp = Self { io, sb, alloc };
+        let mut asp = Self {
+            io,
+            sb,
+            alloc,
+            parity: parity::ParitySets::default(),
+        };
         asp.checkpoint()?;
         info!(
             "asp {}: formatted {} unit(s), {} pages, {} free",
@@ -262,7 +280,8 @@ impl Asp {
             );
         }
         let layout = Layout::from_table(&sb.units)?;
-        let events = resolve_states(&layout, &mut units, &mut sb)?;
+        let (parity, mut events) = parity::attach(&mut units, &mut sb)?;
+        events.extend(resolve_states(&layout, &mut units, &mut sb)?);
         let mut io = AspIo::with_units(units, layout.clone());
         for unit in renumbered {
             let e = &sb.units[usize::from(unit)];
@@ -280,14 +299,23 @@ impl Asp {
                 warn!("asp: unit {unit} header not rewritten: {e}");
             }
         }
-        let alloc = Allocator::load(&mut io, layout, sb.alloc_root, sb.free_log_head)?;
+        let mut alloc = Allocator::load(&mut io, layout.clone(), sb.alloc_root, sb.free_log_head)?;
+        parity::hold_all(&sb, &layout, &mut alloc)?;
         debug!(
             "asp {}: opened at generation {}, {} free pages",
             sb.asp_number,
             sb.generation,
             alloc.total_free()
         );
-        Ok((Self { io, sb, alloc }, events))
+        Ok((
+            Self {
+                io,
+                sb,
+                alloc,
+                parity,
+            },
+            events,
+        ))
     }
 
     /// Write the allocator's tree and log, then the superblock on every
@@ -299,6 +327,7 @@ impl Asp {
         // Everything the superblock will point at, and every in-place
         // write the WAL tail will no longer cover, must be durable first.
         self.io.flush()?;
+        self.parity.publish(&mut self.sb);
         self.sb.generation = generation;
         self.sb.alloc_root = roots.alloc_root;
         self.sb.free_log_head = roots.free_log_head;
@@ -473,7 +502,8 @@ impl Asp {
                     unit,
                     entry: entry.clone(),
                     used_pages,
-                    attached: self.io.unit_attached(unit),
+                    attached: self.io.unit_attached(unit)
+                        && self.parity.attached(&entry.unit_uuid),
                 }
             })
             .collect()

@@ -74,5 +74,8 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::obj::usridx::OVERFLOW_LAYOUT,
         &crate::obj::usridx::OVERFLOW_REF_LAYOUT,
         &crate::obj::sysval::LAYOUT,
+        &crate::asp::parity::ppl::HEADER_LAYOUT,
+        &crate::asp::parity::ppl::ENTRY_LAYOUT,
+        &crate::asp::parity::ppl::STATE_LAYOUT,
     ]
 }

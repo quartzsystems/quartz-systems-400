@@ -10,6 +10,7 @@
 pub mod bitmap;
 mod chunk;
 pub mod freelog;
+mod held;
 mod ranges;
 pub mod tree;
 
@@ -100,6 +101,8 @@ pub struct Allocator {
     reserve: u64,
     /// Spans `alloc` and checkpoints keep off (a unit being removed).
     excluded: Vec<bool>,
+    /// Runs never allocated or listed free (device parity).
+    held: RangeSet,
     /// In the middle of a checkpoint: the state to publish at the end.
     staged: Option<Staged>,
 }
@@ -131,6 +134,7 @@ impl Allocator {
             tree_pages: Vec::new(),
             log_pages: Vec::new(),
             alloc_root: None,
+            held: RangeSet::default(),
             staged: None,
         }
     }
@@ -438,6 +442,7 @@ impl Allocator {
         for e in free {
             self.mark_free(*e)?;
         }
+        self.clear_held();
         Ok(())
     }
 
@@ -555,6 +560,7 @@ impl Allocator {
             let (unit, lba) = self.layout.locate(*pno).expect("own page");
             free.insert(Extent { unit, lba, len: 1 });
         }
+        self.without_held(&mut free);
         // Chunks: enough for the tree over `free` and one log page.
         let mut chunks: Vec<Extent> = Vec::new();
         let mut have = 0;
@@ -616,7 +622,9 @@ impl Allocator {
     /// tree and log, and the chunk tails are allocatable now.
     pub fn finish_checkpoint(&mut self) {
         let staged = self.staged.take().expect("prepare_checkpoint first");
-        for e in staged.release.iter() {
+        let mut release = staged.release;
+        self.without_held(&mut release);
+        for e in release.iter() {
             self.bitmaps[usize::from(e.unit)].set(e.lba, e.len);
         }
         self.tree_pages = staged.tree_pages;

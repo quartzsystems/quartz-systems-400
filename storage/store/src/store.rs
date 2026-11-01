@@ -26,6 +26,8 @@ use crate::wal::Wal;
 use crate::wal::record::WalRecord;
 use crate::{Result, StoreError};
 
+mod parity;
+
 /// Tunables.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoreConfig {
@@ -166,6 +168,7 @@ impl Store {
     /// it is durable.
     pub fn remove_unit(&mut self, unit: u16) -> Result<Box<dyn BlockDev>> {
         self.check()?;
+        self.not_parity(unit)?;
         self.asp.check_removable(unit)?;
         self.drain_unit(unit)?;
         let removed = self.asp.remove_unit(unit);
@@ -194,6 +197,7 @@ impl Store {
         serial: &str,
     ) -> Result<u16> {
         self.check()?;
+        self.not_parity(unit)?;
         let new = self.asp.start_mirror(unit, dev, unit_uuid, serial)?;
         self.checkpoint()?;
         Ok(new)
@@ -247,7 +251,11 @@ impl Store {
         serial: &str,
     ) -> Result<()> {
         self.check()?;
-        self.asp.replace_unit(unit, dev, unit_uuid, serial)?;
+        if self.asp.parity_set_of(unit).is_some() {
+            self.asp.replace_parity_unit(unit, dev, unit_uuid, serial)?;
+        } else {
+            self.asp.replace_unit(unit, dev, unit_uuid, serial)?;
+        }
         self.checkpoint()
     }
 
@@ -281,7 +289,9 @@ impl Store {
     /// Events the I/O layer logged since the last call: pages rewritten
     /// from a mirror, halves taken out of service.
     pub fn drain_io_events(&mut self) -> Vec<crate::asp::io::IoEvent> {
-        self.asp.io().drain_events()
+        let mut events = self.asp.io().drain_events();
+        events.extend(self.asp_mut().drain_parity_events());
+        events
     }
 
     fn from_asp(asp: Asp, config: StoreConfig) -> Self {

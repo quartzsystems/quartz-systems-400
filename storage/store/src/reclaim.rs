@@ -323,7 +323,8 @@ impl Store {
                     let at = lba + i;
                     let reserved = at < RESERVED_HEAD
                         || at == span.pages - 1
-                        || (unit == 0 && at >= wal_start && at < wal_start + wal_pages);
+                        || (unit == 0 && at >= wal_start && at < wal_start + wal_pages)
+                        || self.asp().allocator().is_held(pno);
                     report.pages_swept += 1;
                     if reserved {
                         fixed.push(pno);
