@@ -23,6 +23,7 @@ const CMD: Duration = Duration::from_secs(10);
 pub const SYSTEM_LIBRARIES: &[&str] = &[
     "QGPL",
     "QHLPSYS",
+    "QHTTPSVR",
     "QRCL",
     "QRECOVERY",
     "QSPL",
