@@ -53,7 +53,7 @@ pub struct Codec {
 }
 
 /// The EBCDIC CCSIDs with tables.
-const EBCDIC: [u16; 10] = [37, 273, 277, 278, 280, 284, 285, 297, 500, 871];
+const EBCDIC: [u16; 11] = [37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 1140];
 
 /// Every CCSID [`Codec::of`] knows, binary included.
 #[must_use]
@@ -331,8 +331,8 @@ mod tests {
     #[test]
     fn every_ccsid_is_known() {
         for c in [
-            37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 819, 850, 1252, 367, 1208, 1200,
-            13488, 65535,
+            37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 1140, 819, 850, 1252, 367, 1208,
+            1200, 13488, 65535,
         ] {
             assert!(Codec::of(c).is_ok(), "{c}");
             assert!(supported().contains(&c), "{c}");
@@ -367,6 +367,10 @@ mod tests {
         // '@' is 0x7C in 37 but 0xB5 in 273 (German).
         assert_eq!(from_str(37, "@").unwrap(), vec![0x7C]);
         assert_eq!(from_str(273, "@").unwrap(), vec![0xB5]);
+        // 1140 is 37 with the euro sign where 37 has the currency sign.
+        assert_eq!(from_str(1140, "\u{20ac}").unwrap(), vec![0x9F]);
+        assert_eq!(from_str(37, "\u{a4}").unwrap(), vec![0x9F]);
+        assert_eq!(from_str(1140, "\u{a4}").unwrap(), vec![0x3F]);
         assert_eq!(from_str(285, "£").unwrap(), vec![0x5B]);
         assert_eq!(from_str(819, "é").unwrap(), vec![0xE9]);
         assert_eq!(from_str(850, "é").unwrap(), vec![0x82]);

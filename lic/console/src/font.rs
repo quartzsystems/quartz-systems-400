@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn every_printable_character_of_the_ccsids_has_a_glyph() {
         use ccsid::conv::Codec;
-        for id in [37u16, 273, 285, 297, 500] {
+        for id in [37u16, 273, 285, 297, 500, 1140] {
             let codec = Codec::of(id).unwrap().unwrap();
             let bytes: Vec<u8> = (0..=255).collect();
             let mut chars = Vec::new();

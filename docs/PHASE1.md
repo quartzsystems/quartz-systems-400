@@ -229,7 +229,7 @@ characters and the 5250 column separator (private use U+E000). Accents
 sit in rows 2-3 over lowercase and rows 0-1 over capitals. `build.rs`
 compiles it to a table; tests require every printable ASCII glyph to be
 present and non-empty, and every printable character of CCSIDs 37, 273,
-285, 297 and 500 to have a glyph.
+285, 297, 500 and 1140 (37 with the euro sign) to have a glyph.
 
 ### Display
 
