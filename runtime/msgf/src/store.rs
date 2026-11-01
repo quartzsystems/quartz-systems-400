@@ -17,7 +17,7 @@ use store::obj::{CreateParams, NameContext, ObjectId, ops, types};
 use crate::desc::MsgDesc;
 use crate::error::Result;
 use crate::payload;
-use crate::source::{MsgFile, builtin};
+use crate::source::{MsgFile, builtin, product_files};
 
 /// Who creates and when.
 #[derive(Clone, Debug)]
@@ -153,9 +153,9 @@ pub fn dspmsgd(file: &str, d: &MsgDesc) -> String {
 }
 
 /// Install the system message files (`QCPFMSG`, `QCEEMSG`, `QSQLMSG`,
-/// `QRPGLEMSG`, `QRNXMSG`, `QTCPMSG`, `QZSHMSGF`, `QEDTMSG`) into `QSYS` when
-/// absent;
-/// returns the objects created.
+/// `QRPGLEMSG`, `QRNXMSG`, `QTCPMSG`, `QZSHMSGF`, `QEDTMSG`) into `QSYS`,
+/// and the product libraries' files (`QHTTPSVR/QZHBMSG`) with their
+/// libraries, when absent; returns the objects created.
 pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<Vec<ObjectId>> {
     let mut made = Vec::new();
     let lib = Library::load(txn, qsys)?;
@@ -165,6 +165,37 @@ pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<V
             continue;
         }
         let id = crtmsgf(txn, ctx, qsys, name, &f.text, true)?;
+        write_payload(txn, id, &f)?;
+        made.push(id);
+    }
+    for (lib_name, lib_text, f) in product_files() {
+        let lname = Name::parse(lib_name)?;
+        let found = Library::load(txn, qsys)?.lookup(txn, types::LIB, lname)?;
+        let plib = if let Some(id) = found {
+            id
+        } else {
+            let id = ops::create(
+                txn,
+                &CreateParams {
+                    library: qsys,
+                    name: lname,
+                    type_code: types::LIB,
+                    attribute: String::new(),
+                    text: lib_text.into(),
+                    owner: "QSYS".into(),
+                    system: ctx.system.clone(),
+                    now: ctx.now,
+                    by_system: true,
+                },
+            )?;
+            made.push(id);
+            id
+        };
+        let name = Name::parse(&f.name)?;
+        if Library::load(txn, plib)?.lookup(txn, types::MSGF, name)?.is_some() {
+            continue;
+        }
+        let id = crtmsgf(txn, ctx, plib, name, &f.text, true)?;
         write_payload(txn, id, &f)?;
         made.push(id);
     }

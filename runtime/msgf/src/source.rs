@@ -26,6 +26,13 @@ pub const QTCPMSG: &str = include_str!("../msgs/qtcpmsg.toml");
 pub const QZSHMSGF: &str = include_str!("../msgs/qzshmsgf.toml");
 /// The source of `QEDTMSG`, the source entry utility's messages.
 pub const QEDTMSG: &str = include_str!("../msgs/qedtmsg.toml");
+/// The source of `QZHBMSG`, HTTP Server Administration's messages, made
+/// from `net/httpadmin/src/msgs.rs`.
+pub const QZHBMSG: &str = include_str!("../msgs/qzhbmsg.toml");
+
+/// Message files of product libraries: the library, its text, the
+/// file's source.
+pub const PRODUCT_FILES: &[(&str, &str, &str)] = &[("QHTTPSVR", "HTTP server", QZHBMSG)];
 
 /// A message file: its name, text and descriptions.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -181,6 +188,15 @@ pub fn builtin() -> Vec<MsgFile> {
     [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG]
         .iter()
         .map(|s| parse(s).expect("the built-in sources parse"))
+        .collect()
+}
+
+/// The product libraries' message files: library, its text, the file.
+#[must_use]
+pub fn product_files() -> Vec<(&'static str, &'static str, MsgFile)> {
+    PRODUCT_FILES
+        .iter()
+        .map(|(lib, text, src)| (*lib, *text, parse(src).expect("the product sources parse")))
         .collect()
 }
 

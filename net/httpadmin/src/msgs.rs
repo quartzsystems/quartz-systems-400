@@ -298,6 +298,28 @@ pub fn message(kind: Kind, id: &str, data: &[&str]) -> Message {
     Message::new(kind, id, &text)
 }
 
+/// Where a message file's second-level text starts the recovery.
+const RECOVERY: &str = "&N Recovery  . . . :   ";
+/// Where it starts the cause.
+const CAUSE: &str = "&N Cause . . . . . :   ";
+
+/// A description's second-level text as a message file keeps it, with
+/// the `&N` line breaks `DSPMSGD` shows.
+pub fn help_text(cause: &str, recovery: &str) -> String {
+    format!("{CAUSE}{cause} {RECOVERY}{recovery}")
+}
+
+/// Cause and recovery from a message file's second-level text; text
+/// without the headings is all cause.
+pub fn split_help(help: &str) -> (String, String) {
+    let h = help.trim();
+    let h = h.strip_prefix(CAUSE.trim_end()).map_or(h, str::trim_start);
+    match h.split_once(RECOVERY.trim_end()) {
+        Some((c, r)) => (c.trim().to_string(), r.trim().to_string()),
+        None => (h.to_string(), String::new()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
