@@ -93,6 +93,7 @@ members = [
     "net/servers",
     "net/qsweb",
     "net/httpd",
+    "net/httpadmin",
     "net/nettools",
     "net/ntp",
     "net/lpd",

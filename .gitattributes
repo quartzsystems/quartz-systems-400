@@ -7,3 +7,5 @@
 # The web stylesheet ships byte-for-byte; the golden pages stay as delivered.
 net/qsweb/assets/** -text
 net/httpadmin/tests/golden/** -text
+net/httpadmin/src/fixture/*.conf -text
+net/httpadmin/src/fixture/*.log -text

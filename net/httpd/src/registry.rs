@@ -88,11 +88,13 @@ impl Registry {
         self.instances.iter_mut().find(|e| e.name.eq_ignore_ascii_case(name))
     }
 
-    /// Add or replace an entry, keeping the list in name order.
+    /// Replace an entry in place, or add it at the end (the list keeps
+    /// creation order).
     pub fn put(&mut self, e: Entry) {
-        self.instances.retain(|x| !x.name.eq_ignore_ascii_case(&e.name));
-        self.instances.push(e);
-        self.instances.sort_by(|a, b| a.name.cmp(&b.name));
+        match self.get_mut(&e.name) {
+            Some(x) => *x = e,
+            None => self.instances.push(e),
+        }
     }
 
     /// Remove entry `name`; whether it was there.
@@ -133,7 +135,7 @@ mod tests {
         });
         r.save(&f).unwrap();
         let back = Registry::load(&f).unwrap();
-        assert_eq!(back.instances.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["ADMIN", "WEBSTORE"]);
+        assert_eq!(back.instances.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["WEBSTORE", "ADMIN"]);
         Registry::update(&f, "webstore", |e| e.restart_required = true).unwrap();
         assert!(Registry::load(&f).unwrap().get("WEBSTORE").unwrap().restart_required);
         assert!(matches!(Registry::update(&f, "NONE", |_| {}), Err(Error::NotFound(_))));
