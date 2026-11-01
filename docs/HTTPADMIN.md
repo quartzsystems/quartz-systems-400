@@ -109,3 +109,73 @@ include the address of the browser making the change; a change writes a
 `ZC` entry when auditing was on before or after it (so turning auditing
 off is recorded). The golden page's `QS400_HTTP_SERVER_ADMIN` is served
 as `QIBM_HTTP_SERVER_ADMIN`.
+
+## Serving instances
+
+The server itself is `net/httpd/src/serve/`: `site::Plan` compiles an
+`httpd.conf` (listeners and their TLS, the main server and each
+`<VirtualHost>` as a `Site`), `Server` answers requests over `Deps`
+(`Files`, an `auth::Authenticator`, a clock) and runs connections.
+What it does: static files from `DocumentRoot` with media types
+(`AddType`, `DefaultType`), `DirectoryIndex`, `Options +/-Indexes`
+listings, `If-Modified-Since` (304), one byte range (206/416), `HEAD`,
+`OPTIONS`; `Alias`; `ScriptAlias` answers 501 and logs it until CGI
+exists (`TODO(later)`); `<Directory>` (shortest first), `<Files>`,
+`<Location>`, `<Limit>`/`<LimitExcept>`; `Order`/`Allow`/`Deny` by
+client address (a section naming any of them replaces the access group
+before it); `AuthType Basic`, `AuthName`, `PasswdFile` (`%%SYSTEM%%`,
+the default, is the user profiles; a validation list is refused until
+`*VLDL` exists), `Require valid-user` / `user X`; `ErrorDocument` (a
+local URL keeps the status, a URL redirects, text is the body);
+`Redirect` (`permanent`, `temp`, `seeother`, `gone`, a number);
+`CustomLog`/`LogFormat` (`%h %a %A %l %u %t %r %s %>s %b %B %{X}i
+%{X}o %D %T %U %q %m %H %v %p %f`), `ErrorLog` (or `off`) with
+`LogLevel`; `LogMaint path files size-MB [HH:MM]` (size 0 rotates
+daily at the time, UTC, else at that size; rotated files are
+`<name>.YYYYMMDDhhmmss`, the newest `files` kept); `KeepAlive`,
+`MaxKeepAliveRequests`, `KeepAliveTimeout`, `TimeOut`; virtual hosts
+by the connection's address and port, then `ServerName`/`ServerAlias`
+against `Host`; TLS per listener from the virtual host on its port (or
+the main server) with `SSLEngine On`, `SSLAppName` (default
+`QIBM_HTTP_SERVER_<instance>`), `SSLProtocolDisable`, `SSLClientAuth`
+(else the application's own setting). `Server::stop` is a controlled
+end (the request in hand finishes, idle connections close),
+`Server::drain` waits for them.
+
+`httpd::bridge` carries `Files` operations from connection threads to
+the one thread that owns the job's link (`Pump::serve`), and
+`Pump::run` runs work that wants `Files` on a helper thread while the
+owner answers. In `work/qsjob`, `work/ifsfiles.rs` is the IFS as a
+`bridge::Local` and `with_files(link, |files| ...)` gives any job
+`Files` over its own IFS view; the administration job can use both.
+
+### The instance job and the commands
+
+`STRTCPSVR SERVER(*HTTP) HTTPSVR(name)` starts job `name` in
+`QHTTPSVR` under the configuration's `ServerUserID` (default
+`QTMHHTTP`), role `HTTPSVR` (`work/qsjob/src/work/httpsvr.rs`);
+`HTTPSVR(*ADMIN)` (or `ADMIN`) is still the administration instance.
+`HTTPSVR(*ALL)` starts the administration instance and every registry
+instance with `autostart`; `STRTCP` starts every registry instance
+with `autostart` (and the administration instance when `*HTTP`
+autostarts). An unknown name is `TCP1A06`, a running one `TCP1A08`
+(refusals); started is `TCP1A07 HTTP server starting: instance X.`.
+`ENDTCPSVR SERVER(*HTTP) HTTPSVR(name) OPTION(*CNTRLD|*IMMED)
+DELAY(n)` (default `*CNTRLD`, 30 seconds) ends one; `HTTPSVR(*ALL)`
+ends every running one; not running is `TCP1A09`. The `DELAY` reaches
+the job through the registry entry's `end_delay`.
+
+The job reads `/www/instances.json` and the instance's `httpd.conf`
+through the IFS as its user, refuses ports below 1024 without
+`*IOSYSCFG` (`HTP8201`), binds every `Listen` (a TLS port without a
+certificate for its application ID is skipped and logged), writes
+`last_started` (and clears `restart_required`), then `last_ended` and
+`ended_how` (`ENDTCPSVR *HTTP, controlled` / `, immediate`, `ENDJOB,
+...`, `ENDSBS, ...`) to the registry, and `HTP8000`, `HTP8001`
+(`listening on *:80, *:443 (TLS)`), `HTP8100`, `HTP8002` to its job
+log (program `QZHBHTTP`).
+
+For the administration pages: an instance's job is the active job of
+`QHTTPSVR` named after it (`active_jobs()` gives number, user and
+start time); its **function** is `CNN-n`, the client connections open
+now, refreshed every half second.
