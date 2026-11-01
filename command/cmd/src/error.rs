@@ -129,12 +129,37 @@ impl CmdError {
     }
 }
 
+impl CmdError {
+    /// Name the command of a `CPF0001` that does not name one yet; with
+    /// no name to give, the escape becomes `CPF0006`, which takes none.
+    #[must_use]
+    pub fn named(mut self, name: &str) -> Self {
+        if self.escape.msgid == "CPF0001" && self.escape_name().is_empty() {
+            let name = name.trim().to_ascii_uppercase();
+            self.escape = if name.is_empty() {
+                Diag::new("CPF0006")
+            } else {
+                Diag::new("CPF0001").data(&[(&name, 10)])
+            };
+        }
+        self
+    }
+
+    /// The command a `CPF0001` escape names, blank when it names none.
+    #[must_use]
+    pub fn escape_name(&self) -> String {
+        let n = self.escape.data.len().min(10);
+        ccsid::from_ebcdic(&self.escape.data[..n]).trim().to_string()
+    }
+}
+
+/// A diagnostic alone: `CPF0001` without a name yet, which the
+/// analyzer gives with [`CmdError::named`] once it knows the command.
 impl From<Diag> for CmdError {
     fn from(d: Diag) -> Self {
-        let name = d.parm.clone().unwrap_or_default();
         Self {
             diags: vec![d],
-            escape: Diag::new("CPF0001").data(&[(&name, 10)]),
+            escape: Diag::new("CPF0001"),
         }
     }
 }

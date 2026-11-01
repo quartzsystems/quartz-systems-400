@@ -54,7 +54,7 @@ pub fn start(host: &Host, r: &Resolved) -> Result<String, Fail> {
             .link
             .borrow_mut()
             .with(Client::job_number)
-            .map_err(|e| Fail::new("CPF0001", e))?;
+            .map_err(|e| Fail::check("STRHOSTSVR", e))?;
         let start = wm::ctl::Start {
             name: d.name.into(),
             user: "QUSER".into(),
@@ -69,8 +69,8 @@ pub fn start(host: &Host, r: &Resolved) -> Result<String, Fail> {
             rqsdta: d.keyword.into(),
             ..wm::ctl::Start::default()
         };
-        let mut s = crate::work::spawn::job(start).map_err(|e| Fail::new("CPF0001", e))?;
-        crate::work::spawn::ready(&mut s).map_err(|e| Fail::new("CPF0001", e))?;
+        let mut s = crate::work::spawn::job(start).map_err(|e| Fail::check("STRHOSTSVR", e))?;
+        crate::work::spawn::ready(&mut s).map_err(|e| Fail::check("STRHOSTSVR", e))?;
         host.children.borrow_mut().push(s);
         let _ = writeln!(out, "Host server {} started as job {number:06}/QUSER/{}.", d.keyword, d.name);
     }

@@ -218,6 +218,61 @@ fn table() {
     assert!(failed.is_empty(), "\n{}", failed.join("\n"));
 }
 
+/// No `CPF0001` leaves the analyzer without the command it names: every
+/// failure of the table, and text whose command is not found or does
+/// not tokenize. Text with no name at all ends in `CPF0006`.
+#[test]
+fn every_cpf0001_names_its_command() {
+    let mut src = source();
+    let mut env = Env::new(&mut src);
+    let extra: &[(&str, &str)] = &[
+        ("VFYCMN", "VFYCMN"),
+        ("?VFYCMN", "VFYCMN"),
+        ("vfycmn x(1)", "VFYCMN"),
+        ("QGPL/NOPE LIB(X)", "NOPE"),
+        ("L1: NOPE", "NOPE"),
+        ("NOPE X(", "NOPE"),
+        ("NOPE X('abc)", "NOPE"),
+        ("NOPE(1)", "NOPE"),
+        ("CRTLIB LIB(X) TEXT(", "CRTLIB"),
+        ("CRTLIBX LIB(X)", "CRTLIBX"),
+    ];
+    let mut bad = Vec::new();
+    for (text, _) in TABLE {
+        if let Err(e) = analyze(&mut env, text)
+            && e.escape.msgid == "CPF0001"
+            && e.escape_name().is_empty()
+        {
+            bad.push(format!("{text}: CPF0001 names no command"));
+        }
+    }
+    for (text, name) in extra {
+        match analyze(&mut env, text) {
+            Err(e) if e.escape.msgid == "CPF0001" && e.escape_name() == *name => {}
+            other => bad.push(format!("{text}: want CPF0001 naming {name}, got {other:?}")),
+        }
+    }
+    for text in ["(", "'abc'", "*X"] {
+        match analyze(&mut env, text) {
+            Err(e) if e.escape.msgid != "CPF0001" || !e.escape_name().is_empty() => {}
+            other => bad.push(format!("{text}: a CPF0001 with no name, got {other:?}")),
+        }
+    }
+    assert!(bad.is_empty(), "\n{}", bad.join("\n"));
+}
+
+/// A bare diagnostic's `CPF0001` waits for its name; `named` gives it.
+#[test]
+fn a_diagnostic_is_named_once() {
+    let e: cmd::CmdError = cmd::Diag::new("CPD0030").into();
+    assert_eq!(e.escape_name(), "");
+    let e = e.named("vfycmn");
+    assert_eq!((e.escape.msgid.as_str(), e.escape_name().as_str()), ("CPF0001", "VFYCMN"));
+    assert_eq!(e.named("OTHER").escape_name(), "VFYCMN");
+    let e: cmd::CmdError = cmd::Diag::new("CPD0030").into();
+    assert_eq!(e.named(" ").escape.msgid, "CPF0006");
+}
+
 #[test]
 fn bound_values() {
     let mut src = source();

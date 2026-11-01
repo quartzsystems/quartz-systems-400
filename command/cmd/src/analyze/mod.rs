@@ -229,12 +229,40 @@ pub fn analyze(env: &mut Env<'_>, text: &str) -> Result<Resolved> {
     if text.chars().count() > MAX_LEN {
         return Err(CmdError::escape("CPF0005"));
     }
-    let toks = token::tokenize(text, env.opts)?;
+    let toks = token::tokenize(text, env.opts).map_err(|e| e.named(&typed_name(text)))?;
     analyze_tokens(env, &toks)
+}
+
+/// The command name as typed, for an escape when the text does not
+/// tokenize: past a label and a `?`, before a library, a blank or `(`.
+fn typed_name(text: &str) -> String {
+    let mut t = text.trim_start();
+    if let Some((label, rest)) = t.split_once(':')
+        && !label.is_empty()
+        && !label.contains(char::is_whitespace)
+        && !label.contains('(')
+    {
+        t = rest.trim_start();
+    }
+    let word = t
+        .trim_start_matches('?')
+        .split(|c: char| c.is_whitespace() || c == '(' || c == '\'')
+        .next()
+        .unwrap_or("");
+    let word = word.rsplit('/').next().unwrap_or("");
+    if word.chars().all(|c| c.is_ascii_alphanumeric() || "$#@_.".contains(c)) {
+        word.to_ascii_uppercase()
+    } else {
+        String::new()
+    }
 }
 
 /// Analyze tokenized text.
 pub fn analyze_tokens(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
+    analyze_named(env, toks).map_err(|e| e.named(&toks.name))
+}
+
+fn analyze_named(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     if toks.name.is_empty() {
         return Err(CmdError::escape("CPF0006"));
     }
@@ -311,9 +339,9 @@ pub fn resolve(env: &mut Env<'_>, name: &str, lib: Option<&str>) -> Result<(CmdO
     let mut lib = lib.map(str::to_ascii_uppercase);
     for _ in 0..=5 {
         let Some((object, found)) = env.source.lookup(&name, lib.as_deref())? else {
-            return Err(Diag::new("CPD0030")
-                .data(&[(&name, 10), (lib.as_deref().unwrap_or("*LIBL"), 10)])
-                .into());
+            let missing =
+                Diag::new("CPD0030").data(&[(&name, 10), (lib.as_deref().unwrap_or("*LIBL"), 10)]);
+            return Err(CmdError::analysis(&name, vec![missing]));
         };
         match &object.proxy {
             None => return Ok((object, found)),
@@ -323,7 +351,7 @@ pub fn resolve(env: &mut Env<'_>, name: &str, lib: Option<&str>) -> Result<(CmdO
             }
         }
     }
-    Err(Diag::new("CPD0035").data(&[(&name, 10)]).into())
+    Err(CmdError::analysis(&name, vec![Diag::new("CPD0035").data(&[(&name, 10)])]))
 }
 
 /// Whether a parameter may be given positionally at index `i`.

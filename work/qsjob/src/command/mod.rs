@@ -118,6 +118,9 @@ pub struct Outcome {
     pub text: String,
     /// The escape that ended the command, if one did.
     pub escape: Option<Fail>,
+    /// The first diagnostic before a `CPF0001`: what a message line
+    /// shows (`CPD0030` names a command that is not found).
+    pub diag: Option<Fail>,
     /// The command name, upper case, once resolved.
     pub name: String,
     /// The command string as analyzed (what `QCMDCHK` returns).
@@ -692,6 +695,11 @@ fn failed(job: &mut Job, e: &CmdError) -> Outcome {
             msgid: e.escape.msgid.clone(),
             data: e.escape.data.clone(),
             text: e.escape.detail.clone(),
+        }),
+        diag: e.diags.first().map(|d| Fail {
+            msgid: d.msgid.clone(),
+            data: d.data.clone(),
+            text: d.detail.clone(),
         }),
         ..Outcome::default()
     }
