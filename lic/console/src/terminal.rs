@@ -128,8 +128,17 @@ impl ConsoleTerminal {
         let mut s = Screen::new();
         let cells = self.term.cells();
         let cols = self.term.cols();
+        // An attribute holds until the next one, across row ends (a
+        // field that wraps keeps its underline on the next row); the
+        // first cell has the screen's last attribute, as the buffer
+        // wraps.
+        let mut a = cells
+            .iter()
+            .rev()
+            .copied()
+            .find(|b| attr::is_attr(*b))
+            .unwrap_or(attr::GREEN);
         for r in 0..ROWS.min(self.term.rows()) {
-            let mut a = attr::GREEN;
             for c in 0..COLS.min(cols) {
                 let b = cells[r * cols + c];
                 if attr::is_attr(b) {
@@ -213,5 +222,54 @@ mod tests {
         assert!(t.locked());
         assert!(t.text_rows()[23].starts_with("X II"));
         assert!(t.text_rows()[5].contains("CODY"));
+    }
+
+    /// The pixel row of a cell's underline.
+    fn underline_y(l: crate::scale::Layout, row: usize) -> usize {
+        use crate::font::GLYPH_H;
+        l.y0 + (row * GLYPH_H + GLYPH_H - 2) * l.scale
+    }
+
+    #[test]
+    fn a_wrapping_field_is_underlined_on_both_rows() {
+        use crate::font::GLYPH_W;
+        use crate::scale::{Canvas, Mode, PixelFormat, Scale};
+        // The MAIN menu's command line: row 20 from column 7, all of
+        // row 21 but its last column (153 cells).
+        let mut model = ScreenModel::new(false);
+        model.put(20, 2, "===>", attr::GREEN);
+        model.field(20, 7, 153, attr::GREEN_UL, "", Ffw::default(), &[]);
+        model.put(22, 2, "F3=Exit", attr::BLUE);
+        let out = model.render(Read::MdtFields);
+        let mut t = ConsoleTerminal::new();
+        t.apply(&Record::new(out.opcode, out.data));
+        let under = |s: &Screen, r: usize, c: usize| s.cell(r - 1, c - 1).attr.underline;
+        let s = t.screen();
+        assert!((7..=80).all(|c| under(&s, 20, c)), "row 20");
+        assert!((1..=79).all(|c| under(&s, 21, c)), "row 21");
+        assert!(!under(&s, 21, 80) && !under(&s, 20, 5) && !under(&s, 22, 3));
+        // Typed past row 20: the text goes on at row 21, column 1.
+        let cmd = "CRTLINETH LIND(ETHLINE) RSRCNAME(CMN04) LINESPEED(*AUTO) \
+                   DUPLEX(*AUTO) ONLINE(*YES) TEXT('Primary Ethernet')";
+        for c in cmd.chars() {
+            t.key(Key::Char(c));
+        }
+        let rows = t.text_rows();
+        assert_eq!(&rows[19][6..], &cmd[..74]);
+        assert!(rows[20].starts_with(&cmd[74..]));
+        let s = t.screen();
+        assert!((1..=79).all(|c| under(&s, 21, c)), "row 21 with text");
+        // Drawn: the underline scanline lit on both rows, empty cells
+        // included, and dark past the field.
+        let mode = Mode::packed(1024, 768, PixelFormat::XRGB8888);
+        let mut canvas = Canvas::new(mode, ROWS, COLS, Scale::Auto);
+        canvas.draw(&s);
+        let lay = canvas.layout();
+        let lit = |r: usize, c: usize| {
+            let x = lay.x0 + ((c - 1) * GLYPH_W + 1) * lay.scale;
+            canvas.pixel(x, underline_y(lay, r - 1)) != 0
+        };
+        assert!(lit(20, 80) && lit(21, 1) && lit(21, 50) && lit(21, 79));
+        assert!(!lit(21, 80) && !lit(23, 40));
     }
 }
