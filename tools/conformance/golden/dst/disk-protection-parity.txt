@@ -1,0 +1,24 @@
+                     Display Disk Configuration Protection                      
+                                                                 System:  QS400 
+                                                                                
+ ASP Unit  Protection   Partner  Status                                         
+   1    1  Device parity          DPY/Unprotected                               
+   1    2  Device parity          DPY/Unprotected                               
+   1    3  Device parity          DPY/Unprotected                               
+   1    4  Device parity          DPY/Failed                                    
+   1    5  Unprotected                                                          
+   1    6  Unprotected                                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

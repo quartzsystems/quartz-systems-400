@@ -7,6 +7,7 @@
 
 pub mod config;
 pub mod mirror;
+pub mod parity;
 pub mod recovery;
 
 use crate::dst::common::{Notice, Submenu};
@@ -50,6 +51,7 @@ pub const STATUS_HEADINGS: &str = "ASP Unit  Serial Number     Type Model    Res
 #[must_use]
 pub fn status_row(u: &DiskUnit) -> String {
     let status = match (u.mirrored, u.resume_percent, u.attached) {
+        (false, _, _) if in_parity_set(u) => u.status.clone(),
         (false, _, _) => "Unprotected".to_string(),
         (true, Some(p), _) => format!("Resuming {p:>3}%"),
         (true, None, _) => u.status.clone(),
@@ -79,10 +81,19 @@ pub fn capacity_row(u: &DiskUnit) -> String {
         u.percent_used,
         if u.mirrored {
             "Mirrored"
+        } else if in_parity_set(u) {
+            "Device parity"
         } else {
             "Unprotected"
         }
     )
+}
+
+/// Whether a unit is in a device parity set: its status is IBM's
+/// `DPY/...`.
+#[must_use]
+pub fn in_parity_set(u: &DiskUnit) -> bool {
+    u.status.starts_with("DPY/")
 }
 
 /// Cut a string to `n` characters.

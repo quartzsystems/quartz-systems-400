@@ -1,0 +1,24 @@
+                Confirm Include Unit in Device Parity Protection                
+                                                                 System:  QS400 
+                                                                                
+ Unit 6 joins device parity set 1:                                              
+                                                                                
+      Set  Level   Status           Units                                       
+        1  RAID 5  DPY/Unprotected  1 2 3 4                                     
+                                                                                
+ The set's parity is computed again over its new units in the                   
+ background; until then its units show DPY/Unprotected.                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

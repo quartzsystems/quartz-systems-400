@@ -69,6 +69,29 @@ pub struct NonConfigured {
     pub controller: String,
 }
 
+/// A unit of a device parity set, as the parity displays show it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ParityUnit {
+    /// Parity set number.
+    pub set: u8,
+    /// `RAID 5` or `RAID 6`.
+    pub level: String,
+    /// Unit number, from 0.
+    pub unit: u16,
+    /// Serial number.
+    pub serial: String,
+    /// Type and model.
+    pub type_model: String,
+    /// Resource name.
+    pub resource: String,
+    /// The controller the set belongs to.
+    pub controller: String,
+    /// `DPY/Active`, `DPY/Failed`, `DPY/Rebuild`, ...
+    pub status: String,
+    /// Percent synchronized or rebuilt while that runs.
+    pub percent: Option<u8>,
+}
+
 /// One hardware resource.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResourceRow {
@@ -434,6 +457,31 @@ pub trait DstEnv {
     fn parity_capable(&mut self) -> Vec<String> {
         Vec::new()
     }
+    /// Units in device parity sets, by set and position.
+    fn parity_units(&mut self) -> Vec<ParityUnit> {
+        Vec::new()
+    }
+    /// Start device parity protection (`level` 5 or 6) over units;
+    /// parity is computed in the background.
+    fn start_parity(&mut self, level: u8, units: &[u16]) -> Result<String, String> {
+        let _ = (level, units);
+        Err("not available".into())
+    }
+    /// Stop device parity protection for a set.
+    fn stop_parity(&mut self, set: u8) -> Result<String, String> {
+        let _ = set;
+        Err("not available".into())
+    }
+    /// Include a unit in a set.
+    fn include_parity(&mut self, set: u8, unit: u16) -> Result<String, String> {
+        let _ = (set, unit);
+        Err("not available".into())
+    }
+    /// Exclude a unit from its set.
+    fn exclude_parity(&mut self, unit: u16) -> Result<String, String> {
+        let _ = unit;
+        Err("not available".into())
+    }
     /// The ASP threshold percent.
     fn asp_threshold(&mut self) -> u8 {
         90
@@ -652,6 +700,10 @@ pub struct MemEnv {
     pub sysvals: Vec<(String, String, String)>,
     /// Install devices to report.
     pub devices: Vec<InstallDevice>,
+    /// Parity-capable controllers to report.
+    pub controllers: Vec<String>,
+    /// Parity set members to report.
+    pub parity: Vec<ParityUnit>,
     seed: u64,
 }
 
@@ -750,6 +802,28 @@ impl DstEnv for MemEnv {
     fn set_asp_threshold(&mut self, percent: u8) -> Result<(), String> {
         self.actions.push(format!("threshold {percent}"));
         Ok(())
+    }
+    fn parity_capable(&mut self) -> Vec<String> {
+        self.controllers.clone()
+    }
+    fn parity_units(&mut self) -> Vec<ParityUnit> {
+        self.parity.clone()
+    }
+    fn start_parity(&mut self, level: u8, units: &[u16]) -> Result<String, String> {
+        self.actions.push(format!("parity start {level} {units:?}"));
+        Ok("Device parity protection started".into())
+    }
+    fn stop_parity(&mut self, set: u8) -> Result<String, String> {
+        self.actions.push(format!("parity stop {set}"));
+        Ok("Device parity protection stopped".into())
+    }
+    fn include_parity(&mut self, set: u8, unit: u16) -> Result<String, String> {
+        self.actions.push(format!("parity include {set} {unit}"));
+        Ok("Unit included".into())
+    }
+    fn exclude_parity(&mut self, unit: u16) -> Result<String, String> {
+        self.actions.push(format!("parity exclude {unit}"));
+        Ok("Unit excluded".into())
     }
     fn show(&mut self, screen: Screen) {
         self.shown.push(screen.dump());

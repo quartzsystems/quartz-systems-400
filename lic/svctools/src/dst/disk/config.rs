@@ -9,7 +9,7 @@ use console::Screen;
 
 use crate::dst::NOT_AUTHORIZED;
 use crate::dst::common::{Confirm, Notice, Select, Submenu, guarded};
-use crate::dst::disk::{self, CAPACITY_HEADINGS, STATUS_HEADINGS, mirror};
+use crate::dst::disk::{self, CAPACITY_HEADINGS, STATUS_HEADINGS, in_parity_set, mirror, parity};
 use crate::env::{DstEnv, NonConfigured};
 use crate::panel::{Flow, Panel};
 use crate::ui::{self, FormLine};
@@ -60,7 +60,7 @@ pub fn work_with_disk_configuration(admin: bool) -> Submenu {
             (
                 5,
                 "Work with device parity protection",
-                Some(Box::new(|env| Flow::Push(Box::new(parity(env))))),
+                Some(Box::new(move |env| parity::open(env, admin))),
             ),
             (6, "Work with checksum protection", None),
             (7, "Work with disk compression", None),
@@ -129,11 +129,13 @@ fn protection(env: &mut dyn DstEnv) -> Notice {
             u.unit + 1,
             if u.mirrored {
                 "Mirrored"
+            } else if in_parity_set(u) {
+                "Device parity"
             } else {
                 "Unprotected"
             },
             u.partner.map_or(String::new(), |p| (p + 1).to_string()),
-            if u.mirrored {
+            if u.mirrored || in_parity_set(u) {
                 u.status.clone()
             } else {
                 String::new()
@@ -177,27 +179,6 @@ fn nonconfigured(env: &mut dyn DstEnv) -> Notice {
     Notice::new(
         "dst-disk-nonconfigured",
         "Display Non-Configured Units",
-        lines,
-    )
-}
-
-/// The device parity display: controllers capable of it, of which this
-/// release has none.
-fn parity(env: &mut dyn DstEnv) -> Notice {
-    let controllers = env.parity_capable();
-    let mut lines = vec![
-        "Device parity protection needs a controller that provides it.".to_string(),
-        String::new(),
-    ];
-    if controllers.is_empty() {
-        lines.push("No device parity capable controllers are attached to this system.".into());
-    } else {
-        lines.push("Controller  Status".into());
-        lines.extend(controllers);
-    }
-    Notice::new(
-        "dst-disk-parity",
-        "Work with Device Parity Protection",
         lines,
     )
 }

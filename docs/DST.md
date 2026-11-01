@@ -65,7 +65,8 @@ guest's own screens with the same files.
 | Work with ASP Threshold | `asp-threshold.txt` |
 | Work with ASP Configuration, Add Units, Remove Units | `asp-config.txt`, `add-units.txt`, `add-units-confirm.txt`, `remove-units.txt` |
 | Work with Mirrored Protection, Start, Stop | `mirror.txt`, `mirror-start.txt`, `mirror-start-confirm.txt`, `mirror-start-confirm-units.txt`, `mirror-stop.txt` |
-| Work with Device Parity Protection | `disk-parity.txt` |
+| Work with Device Parity Protection (no controller; menu), Display Device Parity Status, Start RAID 5 and RAID 6, Confirm, Stop, Include, Exclude and their confirmations | `disk-parity.txt`, `parity.txt`, `parity-status.txt`, `parity-start5.txt`, `parity-start5-three.txt`, `parity-start6.txt`, `parity-start6-three.txt`, `parity-start-confirm.txt`, `parity-stop.txt`, `parity-stop-confirm.txt`, `parity-include.txt`, `parity-include-confirm.txt`, `parity-exclude.txt`, `parity-exclude-confirm.txt` |
+| Disk status, protection and replacement with a parity set | `disk-status-parity.txt`, `disk-protection-parity.txt`, `replace-unit-parity.txt`, `replace-confirm-parity.txt` |
 | Work with Disk Unit Recovery, Replace, Procedures, Suspend, Resume | `disk-recovery.txt`, `replace-unit.txt`, `disk-procedures.txt`, `suspend.txt`, `resume.txt` |
 | Work with Licensed Internal Code | `lic-info.txt` |
 | Select DST Console Mode | `console-mode.txt` |
@@ -113,8 +114,9 @@ source.
 protection, non-configured units), 2 ASP threshold, 3 ASP configuration
 (2 add units, 4 remove units; 3 and 6 are not available), 4 mirrored
 protection (1 display, 2 start, 3 stop; 4 not available), 5 device
-parity protection (reports no capable controllers), 6 and 7 not
-available.
+parity protection (1 display status, 2 start RAID 5, 3 start RAID 6,
+4 stop, 5 include a unit, 6 exclude a unit; 7 and 8, the hot spare
+starts, not available), 6 and 7 not available.
 
 `Work with disk unit recovery`: 3 replace configured unit, 6 problem
 recovery procedures, 7 suspend, 8 resume; the rest are not available.
@@ -192,6 +194,19 @@ together.
 - Replace configured unit: a missing, failed or suspended half is
   replaced by a non-configured disk and the copy starts in the
   background.
+- Device parity: the virtual controller the hardware table names
+  (`QDPY-001`, the storage controller number after the real ones) owns
+  every set; the store keeps the parity (STORE_FORMAT.md §11). Start
+  takes 3 to 18 unprotected units for RAID 5, 4 to 18 for RAID 6,
+  refuses mirrored ones and units whose tail (the share parity takes)
+  holds data, and computes parity in the background (`DPY/Unprotected`
+  with its percent until done). Include and exclude compute the set's
+  parity again over its new units. A missing or failed member shows
+  `DPY/Failed` (A6001257) and the ASP stays usable; Replace configured
+  unit puts a non-configured disk in its place and rebuilds it
+  (`DPY/Rebuild nn%`). A unit in a set is never paired by start
+  mirrored protection. The work runs from slic's run loop and is
+  finished before the storage service takes the store, as a resume is.
 - Suspend and resume: resume runs in the background; the status column
   shows its percent.
 

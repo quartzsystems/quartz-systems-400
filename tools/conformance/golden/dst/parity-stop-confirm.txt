@@ -1,0 +1,24 @@
+                     Confirm Stop Device Parity Protection                      
+                                                                 System:  QS400 
+                                                                                
+ Device parity protection stops for this set. Its units stay in the             
+ ASP unprotected and get back the space parity used:                            
+                                                                                
+      Set  Level   Status           Units                                       
+        1  RAID 5  DPY/Unprotected  1 2 3 4                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

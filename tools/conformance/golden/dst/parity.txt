@@ -1,0 +1,24 @@
+                       Work with Device Parity Protection                       
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display device parity status                                           
+      2. Start device parity protection - RAID 5                                
+      3. Start device parity protection - RAID 6                                
+      4. Stop device parity protection                                          
+      5. Include unit in device parity protection                               
+      6. Exclude unit from device parity protection                             
+      7. Start device parity protection - RAID 5 with hot spare                 
+      8. Start device parity protection - RAID 6 with hot spare                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

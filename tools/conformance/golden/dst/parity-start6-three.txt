@@ -1,0 +1,24 @@
+                    Start Device Parity Protection - RAID 6                     
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the units to protect together, then press Enter.                 
+                                                                                
+ Opt  ASP Unit  Serial Number     Type Model    Resource  Status                
+       1    5  QM00004           QEMU HARDDISK DD005     Unprotected            
+       1    6  QM00005           QEMU HARDDISK DD006     Unprotected            
+       1    7  QM00006           QEMU HARDDISK DD007     Unprotected            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

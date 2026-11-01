@@ -8,7 +8,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use svctools::env::{DiskUnit, MemEnv, NonConfigured};
+use svctools::env::{DiskUnit, MemEnv, NonConfigured, ParityUnit};
 use svctools::panel::Runner;
 use svctools::users::Privilege;
 
@@ -219,4 +219,108 @@ fn units_holding_data_pair_with_each_other() {
     r.enter(&f(&["1"]), &mut e);
     assert!(r.screen(&mut e).dump().contains("even number"));
     assert!(e.actions.is_empty());
+}
+
+/// Four units in a RAID 5 set (unit 3 failed, being replaced) and two
+/// unprotected units, with the virtual parity controller.
+fn parity_env() -> MemEnv {
+    let mut e = MemEnv::new("QS400");
+    let status = ["DPY/Unprotected", "DPY/Unprotected", "DPY/Unprotected", "DPY/Failed"];
+    e.units = (0..4)
+        .map(|n| unit(n, false, None, status[usize::from(n)], n != 3))
+        .chain((4..6).map(|n| unit(n, false, None, "Unprotected", true)))
+        .collect();
+    e.controllers = vec!["DC03      QDPY-001  Software device parity controller".into()];
+    e.parity = (0..4)
+        .map(|n| ParityUnit {
+            set: 1,
+            level: "RAID 5".into(),
+            unit: n,
+            serial: format!("QM0000{n}"),
+            type_model: "QEMU HARDDISK".into(),
+            resource: format!("DD00{}", n + 1),
+            controller: "DC03".into(),
+            status: status[usize::from(n)].into(),
+            percent: None,
+        })
+        .collect();
+    e.spare = vec![spare("vdg", 4096)];
+    e
+}
+
+#[test]
+fn parity_screens_match_their_golden_files() {
+    let mut e = parity_env();
+    walk(&mut e, &["4", "1", "5"], "parity");
+    walk(&mut e, &["4", "1", "5", "1"], "parity-status");
+    walk(&mut e, &["4", "1", "1", "1"], "disk-status-parity");
+    walk(&mut e, &["4", "1", "1", "3"], "disk-protection-parity");
+    walk(&mut e, &["4", "2", "3"], "replace-unit-parity");
+    let mut r = walk(&mut e, &["4", "1", "5", "2"], "parity-start5");
+    r.enter(&f(&["1", "1"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("needs 3 to 18 units"));
+    walk(&mut e, &["4", "1", "5", "3"], "parity-start6");
+    let mut r = walk(&mut e, &["4", "1", "5", "4"], "parity-stop");
+    r.enter(&f(&["1"]), &mut e);
+    check("parity-stop-confirm", &r.screen(&mut e).dump());
+    let mut r = walk(&mut e, &["4", "1", "5", "5"], "parity-include");
+    r.enter(&f(&["", "1"]), &mut e);
+    check("parity-include-confirm", &r.screen(&mut e).dump());
+    let mut r = walk(&mut e, &["4", "1", "5", "6"], "parity-exclude");
+    r.enter(&f(&["1", "", "", ""]), &mut e);
+    check("parity-exclude-confirm", &r.screen(&mut e).dump());
+    // Start over three of three eligible units (the env's two plus one).
+    e.units.push(unit(6, false, None, "Unprotected", true));
+    let mut r = walk(&mut e, &["4", "1", "5", "2"], "parity-start5-three");
+    r.enter(&f(&["1", "1", "1"]), &mut e);
+    check("parity-start-confirm", &r.screen(&mut e).dump());
+}
+
+#[test]
+fn parity_actions_reach_the_environment() {
+    let mut e = parity_env();
+    e.units.push(unit(6, false, None, "Unprotected", true));
+    let mut r = walk(&mut e, &["4", "1", "5", "3"], "parity-start6-three");
+    // RAID 6 needs four.
+    r.enter(&f(&["1", "1", "1"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("needs 4 to 18 units"));
+    let mut r = walk(&mut e, &["4", "1", "5", "2"], "parity-start5-three");
+    r.enter(&f(&["1", "1", "1"]), &mut e);
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["parity start 5 [4, 5, 6]"]);
+    assert_eq!(r.top(), "dst-parity");
+    e.actions.clear();
+    e.units.pop();
+    let mut r = walk(&mut e, &["4", "1", "5", "4"], "parity-stop");
+    r.enter(&f(&["1"]), &mut e);
+    r.function(10, &mut e);
+    let mut r2 = walk(&mut e, &["4", "1", "5", "5"], "parity-include");
+    r2.enter(&f(&["", "1"]), &mut e);
+    r2.function(10, &mut e);
+    let mut r3 = walk(&mut e, &["4", "1", "5", "6"], "parity-exclude");
+    r3.enter(&f(&["", "1", "", ""]), &mut e);
+    r3.function(10, &mut e);
+    assert_eq!(
+        e.actions,
+        vec!["parity stop 1", "parity include 1 5", "parity exclude 1"]
+    );
+    drop((r, r2, r3));
+    // The failed unit is replaced and rebuilt; nothing resumes.
+    e.actions.clear();
+    let mut r = walk(&mut e, &["4", "2", "3"], "replace-unit-parity");
+    r.enter(&f(&["1"]), &mut e);
+    r.enter(&f(&["1"]), &mut e);
+    check("replace-confirm-parity", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["replace 3 /dev/vdg"]);
+    assert!(r.screen(&mut e).dump().contains("rebuilding"));
+    // Operators see the status but cannot start.
+    let mut r = Runner::new(Box::new(svctools::dst::menu::MainMenu::new(
+        "22222222".into(),
+        Privilege::DISK_UNITS_OPERATIONS,
+    )));
+    for k in ["4", "1", "5", "2"] {
+        r.enter(&f(&[k]), &mut e);
+    }
+    assert!(r.screen(&mut e).dump().contains("not authorized"));
 }

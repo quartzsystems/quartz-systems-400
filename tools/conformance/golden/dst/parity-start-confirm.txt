@@ -1,0 +1,24 @@
+                     Confirm Start Device Parity Protection                     
+                                                                 System:  QS400 
+                                                                                
+ Device parity protection (RAID 5) starts on these units. Each gives            
+ about 1/3 of its space to parity; parity is computed in the                    
+ background and the units show DPY/Unprotected until it is done.                
+                                                                                
+      ASP Unit  Serial Number     Type Model    Resource  Status                
+        1    5  QM00004           QEMU HARDDISK DD005     Unprotected           
+        1    6  QM00005           QEMU HARDDISK DD006     Unprotected           
+        1    7  QM00006           QEMU HARDDISK DD007     Unprotected           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

@@ -155,7 +155,11 @@ fn as_disk(u: &DiskUnit) -> NonConfigured {
 /// end of the configuration, and the data in use fitting on the units
 /// that keep it. A partner behind another controller is preferred.
 pub fn propose_pairs(units: &[DiskUnit], spare: &[NonConfigured]) -> Result<Vec<Pairing>, Refusal> {
-    let mut alone: Vec<&DiskUnit> = units.iter().filter(|u| !u.mirrored).collect();
+    // A unit in a device parity set is neither paired nor a partner.
+    let mut alone: Vec<&DiskUnit> = units
+        .iter()
+        .filter(|u| !u.mirrored && !super::in_parity_set(u))
+        .collect();
     alone.sort_by_key(|u| u.unit);
     if alone.is_empty() {
         return Err(Refusal::NothingToPair);
@@ -438,6 +442,24 @@ mod tests {
         assert!(rows[0].starts_with("  1    1  S0"), "{}", rows[0]);
         assert!(rows[1].starts_with("  1    1  S3"), "{}", rows[1]);
         assert!(rows[1].ends_with("Device  data moves"), "{}", rows[1]);
+    }
+
+    #[test]
+    fn parity_units_are_neither_paired_nor_partners() {
+        let mut units: Vec<DiskUnit> = (0..5).map(|n| unit(n, 20, "DC01")).collect();
+        for u in &mut units[..3] {
+            u.status = "DPY/Active".into();
+        }
+        // Units 4 and 5 pair with each other; the set is left alone.
+        let pairs = propose_pairs(&units, &[]).unwrap();
+        assert_eq!(summary(&pairs), vec![(3, "/dev/sde".into(), Some(4), "Device")]);
+        // A parity unit after the partners keeps them from leaving.
+        units[4].status = "DPY/Active".into();
+        units[2].status = "Unprotected".into();
+        assert!(matches!(
+            propose_pairs(&units, &[]),
+            Err(Refusal::CannotLeave(_))
+        ));
     }
 
     #[test]
