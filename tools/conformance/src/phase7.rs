@@ -162,7 +162,7 @@ impl Suite {
     }
 
     /// Step 48: a user with `LMTCPB(*YES)` may not run `CRTLIB`
-    /// (`CPD0043`) but may sign off.
+    /// (`CPD0033`) but may sign off.
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn limited_user(&self, s: &mut Session) -> Result<String, String> {
         let made = s.command(
@@ -174,7 +174,7 @@ impl Suite {
         }
         screen_wait(s, "Sign On")?;
         crate::phase5::console_sign_on_as(s, "LIMITED", PASSWORD, PASSWORD)?;
-        // The menu's line shows the CPD0043 diagnostic under the CPF0001
+        // The menu's line shows the CPD0033 diagnostic under the CPF0001
         // escape, as it shows CPD0030 for a command not found.
         entry(s, "crtlib LIB(NOTALLOWED)")?;
         screen_wait(s, "Command CRTLIB is not allowed")?;
@@ -184,7 +184,7 @@ impl Suite {
         if !gone.contains("not found") && !gone.contains("CPF") {
             return Err(format!("the limited user created a library:\n{gone}"));
         }
-        Ok("LIMITED refused CRTLIB with CPD0043; DSPJOBLOG and SIGNOFF allowed".into())
+        Ok("LIMITED refused CRTLIB with CPD0033; DSPJOBLOG and SIGNOFF allowed".into())
     }
 
     /// Step 49: the startup program compiled from CL started the work:

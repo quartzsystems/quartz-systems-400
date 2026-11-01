@@ -121,7 +121,8 @@ pub struct Env<'a> {
     pub setting: Setting,
     /// The job's mode (`*PROD`, `*DEBUG`, `*SERVICE`).
     pub mode: u8,
-    /// `LMTCPB(*YES)`: only commands with `ALWLMTUSR(*YES)` may run.
+    /// `LMTCPB(*YES)`: only commands with `ALWLMTUSR(*YES)` may be typed
+    /// on a command line (not in a program or through `QCMDEXC`).
     pub limited: bool,
     /// Number formats.
     pub opts: Options,
@@ -269,8 +270,10 @@ fn analyze_named(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     let (object, lib) = resolve(env, &toks.name, toks.lib.as_deref())?;
     let def = object.effective();
     let name = def.name.clone();
-    if env.limited && !def.alwlmtusr {
-        let refused = Diag::new("CPD0043").data(&[(&name, 10)]);
+    // LMTCPB binds only a command line; programs and QCMDEXC run anything.
+    let typed = !env.setting.program && !env.setting.exec;
+    if env.limited && typed && !def.alwlmtusr {
+        let refused = Diag::new("CPD0033").data(&[(&name, 10)]);
         return Err(CmdError::analysis(&name, vec![refused]));
     }
     let mut diags = Vec::new();

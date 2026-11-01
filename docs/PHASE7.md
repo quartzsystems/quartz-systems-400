@@ -18,7 +18,7 @@ parameter set; and the dev console's old words live on behind `svc.`.
 | `lic/slic/src/cpp/` | the service's processing programs: direct implementations, the bridge, the CL commands (`CRTCLMOD`, `CRTBNDCL`, `CRTCLPGM`, `RTVCLSRC`) |
 | `lic/osobjects/shipped/QSTRUP.clle` | the startup program as CL, compiled at the service's first start |
 | `work/qsjob/src/command/` | the job's side: `run`, the dispatch by site, the job-site commands (`CALL`, `RTVJOBA`, `RTVSYSVAL`, `RTVOBJD`, the debugger, `SBMJOB`, ...), the `*LDA` commands, the prompt session on the display, the natives a compiled CL program calls (`QC*`, `QCLEXEC`, `QCLSWS`, `QCLDMP`), the `QCMDEXC` hook |
-| `work/qsjob/src/work/inter.rs` | Command Entry: the 512-character line, F4, F9 over the last 25 commands, F10 second-level text, F11 full width, F24; `CPD0043` for a limited user |
+| `work/qsjob/src/work/inter.rs` | Command Entry: the 512-character line, F4, F9 over the last 25 commands, F10 second-level text, F11 full width, F24; `CPD0033` for a limited user |
 | `work/stg` | `cmd_lookup` and `run_cmd` requests; the job's cached `CmdSource`; the Phase 4 `QCMDEXC` queue gone |
 | `runtime/sysapi` | `QCMDEXC`, `QCMDCHK`, `QCAPCMD` through the hook |
 | `runtime/msgf` | `CPD00xx` analyzer messages, `CPD02xx` definition rules, `CPD07xx` compiler messages, the CL commands' messages |
@@ -59,7 +59,7 @@ real box would settle.
 |---|---|
 | 46 command entry | QSECOFR creates a library through the analyzer; `?CRTPF` and F4 prompt; Enter runs the prompted command; `DSPJOBLOG` lists the requests; F9 retrieves; a bad keyword gives `CPD0012` |
 | 47 CL program | `CRTCLPGM` from a source member; `CALL` with a parameter prints the program's messages (`RTVJOBA`, `DOWHILE`, `MONMSG`); `SBMJOB` submits it; `WRKACTJOB`; `RTVCLSRC` gives the source back |
-| 48 limited user | `LMTCPB(*YES)` refuses `CRTLIB` with `CPD0043`, allows sign-off |
+| 48 limited user | `LMTCPB(*YES)` refuses `CRTLIB` with `CPD0033`, allows sign-off |
 | 49 startup program | the subsystems `QSTRUP` starts under `QBASE` are active; `QSYS/QSTRUP` is a `CLLE` program |
 | 50 analyzer console | `CPD0015`, `CPD0030`, `CPD0012` at the service console; `svc.` words still work |
 

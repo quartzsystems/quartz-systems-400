@@ -352,15 +352,33 @@ fn bound_values() {
     assert_eq!(r.get("JOBPTY").unwrap().sel, Some(Sel::Hidden));
 }
 
+/// A misspelled keyword is `CPD0043` naming the keyword, for any user:
+/// never the limited-capability refusal.
+#[test]
+fn misspelled_keyword() {
+    let mut src = source();
+    let mut env = Env::new(&mut src);
+    let e = analyze(&mut env, "CRTLIB LIB(X) LIBB(Y)").unwrap_err();
+    assert_eq!(e.msgids(), ["CPD0043", "CPF0001"]);
+    assert_eq!(e.diags[0].data, cmd::error::data(&[("LIBB", 10)]));
+    assert_eq!(e.escape.data, cmd::error::data(&[("CRTLIB", 10)]));
+}
+
 #[test]
 fn settings_and_limits() {
     let mut src = source();
     let mut env = Env::new(&mut src);
     env.limited = true;
-    assert_eq!(
-        analyze(&mut env, "CRTLIB X").unwrap_err().msgid(),
-        "CPD0043"
-    );
+    let e = analyze(&mut env, "CRTLIB X").unwrap_err();
+    assert_eq!(e.msgid(), "CPD0033");
+    assert_eq!(e.diags[0].data, cmd::error::data(&[("CRTLIB", 10)]));
+    // A program or QCMDEXC is not a command line: LMTCPB does not apply.
+    env.setting.program = true;
+    assert!(analyze(&mut env, "CRTLIB X").is_ok());
+    env.setting.program = false;
+    env.setting.exec = true;
+    assert!(analyze(&mut env, "CRTLIB X").is_ok());
+    env.setting.exec = false;
     env.limited = false;
     env.mode = cmd::def::Mode::DEBUG;
     assert!(analyze(&mut env, "CRTLIB X").is_ok());
