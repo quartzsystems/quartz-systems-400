@@ -397,7 +397,32 @@ impl Suite {
             return Err(format!("svc.asp did not report the store: {asp}"));
         }
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
-        Ok(format!("C1001080 and C6001005 seen, sign-on at {last:.1}s"))
+        let web = Self::admin_instance(s)?;
+        Ok(format!("C1001080 and C6001005 seen, sign-on at {last:.1}s; {web}"))
+    }
+
+    /// `/www` belongs to `QTMHHTTP`, and the `ADMIN` job makes its
+    /// instance there (in the registry, with its configuration).
+    fn admin_instance(s: &mut Session) -> Result<String, String> {
+        let www = s.command("svc.ifs stat /www", CMD)?;
+        if !www.contains("QTMHHTTP") {
+            return Err(format!("/www is not QTMHHTTP's:\n{www}"));
+        }
+        // The IPL's STRTCP may have started it already (TCP1A08).
+        let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
+        let deadline = std::time::Instant::now() + Duration::from_secs(90);
+        loop {
+            let reg = s.command("svc.ifs cat /www/instances.json", CMD)?;
+            let conf = s.command("svc.ifs stat /www/admin/conf/httpd.conf", CMD)?;
+            if reg.contains("\"ADMIN\"") && conf.contains("QTMHHTTP") {
+                return Ok("ADMIN made its instance in /www/admin".into());
+            }
+            if std::time::Instant::now() > deadline {
+                let log = s.command("svc.ifs ls /www", CMD).unwrap_or_default();
+                return Err(format!("no ADMIN instance:\n{started}\n{reg}\n{conf}\n{log}"));
+            }
+            std::thread::sleep(Duration::from_secs(3));
+        }
     }
 
     /// The installation media steps, each in its own guest.
