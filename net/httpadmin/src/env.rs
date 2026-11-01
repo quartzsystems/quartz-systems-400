@@ -363,7 +363,7 @@ pub struct Import {
 /// An application ID and its certificate.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppInfo {
-    /// `QIBM_HTTP_SERVER_ADMIN`.
+    /// `QS400_HTTP_SERVER_ADMIN`.
     pub id: String,
     /// A server (else a client).
     pub server: bool,
@@ -464,9 +464,16 @@ pub trait Certs: Send + Sync {
     /// Assign a `*SYSTEM` certificate to an application ID, or with
     /// `None` remove its assignment.
     fn assign(&self, user: &str, app: &str, label: Option<&str>) -> Result<(), CertFailure>;
-    /// The label assigned to application ID `app`.
+    /// Copy entry `label` of `from`, with its private key, into `to`
+    /// under the same label.
+    fn copy(&self, user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure>;
+    /// The entry with its private key and issuers as a PKCS#12 file
+    /// sealed with `password`.
+    fn export_pkcs12(&self, user: &str, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure>;
+    /// The label assigned to application ID `app` (or its old ID).
     fn app_label(&self, app: &str) -> Option<String> {
-        self.apps().into_iter().find(|a| a.id == app).and_then(|a| a.label)
+        let want = certs::apps::canonical(app);
+        self.apps().into_iter().find(|a| a.id == want).and_then(|a| a.label)
     }
     /// The `*SYSTEM` server certificates application `app` may present,
     /// the one assigned to it first: label and expiry (seconds since

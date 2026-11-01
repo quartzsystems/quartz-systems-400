@@ -347,8 +347,7 @@ fn instance_tls() {
     let mut b = Browser::signed_on();
     let r = b.get("/instance/WEBSTORE/tls");
     assert_eq!(r.status, 200);
-    // Application IDs stay the compatible QIBM_ ones (docs/HTTPADMIN.md).
-    assert_golden(&r.text(), "http/instance-tls.html", &[("QS400_HTTP_SERVER_WEBSTORE", "QIBM_HTTP_SERVER_WEBSTORE")]);
+    assert_golden(&r.text(), "http/instance-tls.html", &[]);
 }
 
 #[test]
@@ -364,13 +363,8 @@ fn instance_config() {
     let mut b = Browser::signed_on();
     let r = b.get("/instance/WEBSTORE/config");
     assert_eq!(r.status, 200);
-    // Application IDs stay the compatible QIBM_ ones (docs/HTTPADMIN.md);
-    // the prototype's file in the text area has 45 lines, not 47.
-    assert_golden(
-        &r.text(),
-        "http/instance-config.html",
-        &[("QS400_HTTP_SERVER_WEBSTORE", "QIBM_HTTP_SERVER_WEBSTORE"), ("47 lines", "45 lines")],
-    );
+    // The prototype's file in the text area has 45 lines, not 47.
+    assert_golden(&r.text(), "http/instance-config.html", &[("47 lines", "45 lines")]);
 }
 
 #[test]
@@ -510,27 +504,12 @@ fn cert_import() {
     assert_golden(&r.text(), "http/cert-import.html", &[]);
 }
 
-/// Data differences: the application IDs the system really uses
-/// (docs/HTTPADMIN.md, "Decisions"). The select lists them sorted, so
-/// the real IDs come in another order.
-const APP_IDS: &[(&str, &str)] = &[
-    (
-        "<option>QS400_FTP_SERVER</option><option>QS400_HTTP_SERVER_API</option>",
-        "<option>QIBM_HTTP_SERVER_API</option><option>QIBM_QTMF_FTP_SERVER</option>",
-    ),
-    ("QS400_HTTP_SERVER_", "QIBM_HTTP_SERVER_"),
-    ("QS400_TELNET_SERVER", "QIBM_QTV_TELNET_SERVER"),
-    ("QS400_FTP_SERVER", "QIBM_QTMF_FTP_SERVER"),
-    ("QS400_DDM_DRDA_SERVER", "QIBM_QRW_SERVER_DDM_DRDA"),
-    ("QS400_CENTRAL_SERVER", "QIBM_OS400_QZBS_SVR_CENTRAL"),
-];
-
 #[test]
 fn cert_apps() {
     let mut b = Browser::signed_on();
     let r = b.get("/certs/apps");
     assert_eq!(r.status, 200);
-    assert_golden(&r.text(), "http/cert-apps.html", APP_IDS);
+    assert_golden(&r.text(), "http/cert-apps.html", &[]);
 }
 
 #[test]
@@ -553,5 +532,5 @@ fn global_settings() {
     };
     let r = b.admin.handle(&req, &peer);
     assert_eq!(r.status, 200);
-    assert_golden(&r.text(), "http/global.html", &[("QS400_HTTP_SERVER_ADMIN", "QIBM_HTTP_SERVER_ADMIN")]);
+    assert_golden(&r.text(), "http/global.html", &[]);
 }

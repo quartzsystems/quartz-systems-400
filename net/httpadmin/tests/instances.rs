@@ -306,7 +306,7 @@ fn ports_add_remove() {
     assert!(shown(&mut b, &r).contains("HTP8022"));
     let c = conf(&b, "WEBSTORE");
     assert!(c.contains("Listen *:443\nListen *:8443\n"), "{c}");
-    assert!(c.ends_with("<VirtualHost *:8443>\n   SSLEngine On\n   SSLAppName QIBM_HTTP_SERVER_WEBSTORE\n</VirtualHost>\n"), "{c}");
+    assert!(c.ends_with("<VirtualHost *:8443>\n   SSLEngine On\n   SSLAppName QS400_HTTP_SERVER_WEBSTORE\n</VirtualHost>\n"), "{c}");
     for (addr, port, id) in [("*ALL", "80", "HTP8105"), ("10.9.9.9", "8090", "HTP8120"), ("*ALL", "0", "HTP8120")] {
         let r = b.post("/instance/WEBSTORE/ports", &[("addr", addr), ("port", port), ("add", "Add")]);
         assert!(shown(&mut b, &r).contains(id), "{port}");
@@ -412,7 +412,7 @@ fn tls_apply() {
     assert!(shown(&mut b, &r).contains("HTP8022"));
     let c = conf(&b, "WEBSTORE");
     assert!(
-        c.contains("<VirtualHost *:443>\n   SSLEngine On\n   SSLAppName QIBM_HTTP_SERVER_WEBSTORE\n   SSLProtocolDisable TLSv1 TLSv1.1 TLSv1.2\n   SSLCipherSpec *STRONG\n   SSLClientAuth Required\n</VirtualHost>"),
+        c.contains("<VirtualHost *:443>\n   SSLEngine On\n   SSLAppName QS400_HTTP_SERVER_WEBSTORE\n   SSLProtocolDisable TLSv1 TLSv1.1 TLSv1.2\n   SSLCipherSpec *STRONG\n   SSLClientAuth Required\n</VirtualHost>"),
         "{c}"
     );
     let t = b.get("/instance/WEBSTORE/tls").text();

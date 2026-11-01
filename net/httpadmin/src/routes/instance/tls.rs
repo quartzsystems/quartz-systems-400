@@ -36,10 +36,10 @@ fn tls_hosts(c: &Conf) -> Vec<&Section> {
     c.sections("VirtualHost").into_iter().filter(|s| is_tls(s)).collect()
 }
 
-/// The instance's certificate application.
+/// The instance's certificate application (an old ID as its new one).
 pub fn app_name(c: Option<&Conf>, name: &str) -> String {
     c.and_then(|c| tls_hosts(c).iter().map(|s| s.value("SSLAppName")).find(|a| !a.is_empty()))
-        .unwrap_or_else(|| format!("QIBM_HTTP_SERVER_{name}"))
+        .map_or_else(|| certs::apps::http_server(name), |a| certs::apps::canonical(&a).into_owned())
 }
 
 /// `GET` shows the settings; `POST` applies them.

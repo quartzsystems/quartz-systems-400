@@ -93,10 +93,29 @@ pub enum CertCall {
         /// The label, `None` to remove the assignment.
         label: Option<String>,
     },
+    /// `copy`.
+    Copy {
+        /// The store it is in.
+        from: String,
+        /// The label.
+        label: String,
+        /// The store it goes to.
+        to: String,
+    },
+    /// `export_pkcs12`.
+    ExportPkcs12 {
+        /// The store.
+        store: String,
+        /// The label.
+        label: String,
+        /// The file's password.
+        password: String,
+    },
 }
 
 impl CertCall {
-    /// Whether it changes stores (needs `*ALLOBJ` and `*SECADM`).
+    /// Whether it changes stores or gives a private key away (needs
+    /// `*ALLOBJ` and `*SECADM`; sent as the user).
     pub fn changes(&self) -> bool {
         !matches!(
             self,
@@ -172,6 +191,10 @@ pub fn answer(m: &Manager<'_>, call: CertCall) -> CertReply {
         CertCall::Remove { store, label } => CertReply::Done(m.remove(&store, &label)),
         CertCall::Apps => CertReply::Apps(m.apps()),
         CertCall::Assign { app, label } => CertReply::Done(m.assign(&app, label.as_deref())),
+        CertCall::Copy { from, label, to } => CertReply::Done(m.copy(&from, &label, &to)),
+        CertCall::ExportPkcs12 { store, label, password } => {
+            CertReply::Bytes(m.export_pkcs12(&store, &label, &password))
+        }
     }
 }
 
@@ -328,5 +351,27 @@ impl<T: Transport> Certs for Remote<T> {
             label: label.map(String::from),
         };
         self.done(user, &c)
+    }
+
+    fn copy(&self, user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {
+        let c = CertCall::Copy {
+            from: from.into(),
+            label: label.into(),
+            to: to.into(),
+        };
+        self.done(user, &c)
+    }
+
+    fn export_pkcs12(&self, user: &str, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure> {
+        let c = CertCall::ExportPkcs12 {
+            store: store.into(),
+            label: label.into(),
+            password: password.into(),
+        };
+        match self.ask(Some(user), &c) {
+            Some(CertReply::Bytes(r)) => r,
+            Some(CertReply::Refused(f)) => Err(f),
+            _ => Err(silent()),
+        }
     }
 }

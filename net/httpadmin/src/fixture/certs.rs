@@ -41,16 +41,16 @@ const FAST: Argon2Params = Argon2Params {
 
 /// The application IDs the sample system shows, in its order.
 const SHOWN_APPS: &[&str] = &[
-    "QIBM_HTTP_SERVER_ADMIN",
-    "QIBM_HTTP_SERVER_NAVIGATOR",
-    "QIBM_HTTP_SERVER_ACCESSWEB",
-    "QIBM_HTTP_SERVER_WEBSTORE",
-    "QIBM_HTTP_SERVER_API",
-    "QIBM_HTTP_SERVER_INTRANET",
-    "QIBM_QTV_TELNET_SERVER",
-    "QIBM_QTMF_FTP_SERVER",
-    "QIBM_QRW_SERVER_DDM_DRDA",
-    "QIBM_OS400_QZBS_SVR_CENTRAL",
+    "QS400_HTTP_SERVER_ADMIN",
+    "QS400_HTTP_SERVER_NAVIGATOR",
+    "QS400_HTTP_SERVER_ACCESSWEB",
+    "QS400_HTTP_SERVER_WEBSTORE",
+    "QS400_HTTP_SERVER_API",
+    "QS400_HTTP_SERVER_INTRANET",
+    "QS400_TELNET_SERVER",
+    "QS400_FTP_SERVER",
+    "QS400_DDM_DRDA_SERVER",
+    "QS400_CENTRAL_SERVER",
     "QS400_UPDATE_CLIENT",
 ];
 
@@ -217,21 +217,21 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     // Application IDs: the HTTP instances, the update client, the
     // descriptions and the assignments.
     for (id, kind, text) in [
-        ("QIBM_HTTP_SERVER_NAVIGATOR", AppKind::Server, "Navigator (port 2005)"),
-        ("QIBM_HTTP_SERVER_ACCESSWEB", AppKind::Server, "Access for Web (port 2006)"),
-        ("QIBM_HTTP_SERVER_WEBSTORE", AppKind::Server, "Instance WEBSTORE"),
-        ("QIBM_HTTP_SERVER_API", AppKind::Server, "Instance API"),
-        ("QIBM_HTTP_SERVER_INTRANET", AppKind::Server, "Instance INTRANET"),
+        ("QS400_HTTP_SERVER_NAVIGATOR", AppKind::Server, "Navigator (port 2005)"),
+        ("QS400_HTTP_SERVER_ACCESSWEB", AppKind::Server, "Access for Web (port 2006)"),
+        ("QS400_HTTP_SERVER_WEBSTORE", AppKind::Server, "Instance WEBSTORE"),
+        ("QS400_HTTP_SERVER_API", AppKind::Server, "Instance API"),
+        ("QS400_HTTP_SERVER_INTRANET", AppKind::Server, "Instance INTRANET"),
         ("QS400_UPDATE_CLIENT", AppKind::Client, "Fix download from Quartz update server"),
     ] {
         appids::add(&c, id, kind, text)?;
     }
     for (id, text) in [
-        ("QIBM_HTTP_SERVER_ADMIN", "HTTP administration (port 2001)"),
-        ("QIBM_QTV_TELNET_SERVER", "Telnet server (TLS port 992)"),
-        ("QIBM_QTMF_FTP_SERVER", "FTP server"),
-        ("QIBM_QRW_SERVER_DDM_DRDA", "DDM/DRDA server"),
-        ("QIBM_OS400_QZBS_SVR_CENTRAL", "Host servers (central, database, signon)"),
+        ("QS400_HTTP_SERVER_ADMIN", "HTTP administration (port 2001)"),
+        ("QS400_TELNET_SERVER", "Telnet server (TLS port 992)"),
+        ("QS400_FTP_SERVER", "FTP server"),
+        ("QS400_DDM_DRDA_SERVER", "DDM/DRDA server"),
+        ("QS400_CENTRAL_SERVER", "Host servers (central, database, signon)"),
     ] {
         let ch = appids::Change {
             text: Some(text.into()),
@@ -240,15 +240,15 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
         appids::change(&c, id, &ch)?;
     }
     for (id, label) in [
-        ("QIBM_HTTP_SERVER_ADMIN", "QSHQ400 self-signed"),
-        ("QIBM_HTTP_SERVER_NAVIGATOR", "*.quartz.example"),
-        ("QIBM_HTTP_SERVER_ACCESSWEB", "*.quartz.example"),
-        ("QIBM_HTTP_SERVER_WEBSTORE", "webstore.quartz.example"),
-        ("QIBM_HTTP_SERVER_API", "api.quartz.example"),
-        ("QIBM_HTTP_SERVER_INTRANET", "*.quartz.example"),
-        ("QIBM_QTV_TELNET_SERVER", "*.quartz.example"),
-        ("QIBM_QRW_SERVER_DDM_DRDA", "*.quartz.example"),
-        ("QIBM_OS400_QZBS_SVR_CENTRAL", "*.quartz.example"),
+        ("QS400_HTTP_SERVER_ADMIN", "QSHQ400 self-signed"),
+        ("QS400_HTTP_SERVER_NAVIGATOR", "*.quartz.example"),
+        ("QS400_HTTP_SERVER_ACCESSWEB", "*.quartz.example"),
+        ("QS400_HTTP_SERVER_WEBSTORE", "webstore.quartz.example"),
+        ("QS400_HTTP_SERVER_API", "api.quartz.example"),
+        ("QS400_HTTP_SERVER_INTRANET", "*.quartz.example"),
+        ("QS400_TELNET_SERVER", "*.quartz.example"),
+        ("QS400_DDM_DRDA_SERVER", "*.quartz.example"),
+        ("QS400_CENTRAL_SERVER", "*.quartz.example"),
         ("QS400_UPDATE_CLIENT", "QSHQ400 self-signed"),
     ] {
         appids::assign(&c, id, Some(label))?;
@@ -375,6 +375,14 @@ impl Certs for FixtureCerts {
     fn assign(&self, _user: &str, app: &str, label: Option<&str>) -> Result<(), CertFailure> {
         self.manager().assign(app, label)
     }
+
+    fn copy(&self, _user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {
+        self.manager().copy(from, label, to)
+    }
+
+    fn export_pkcs12(&self, _user: &str, store: &str, label: &str, password: &str) -> Result<Vec<u8>, CertFailure> {
+        self.manager().export_pkcs12(store, label, password)
+    }
 }
 
 #[cfg(test)]
@@ -416,7 +424,7 @@ mod tests {
         assert!(r.stores().iter().all(|s| s.name != "SHOP"));
         assert_eq!(r.signers(), local.signers());
         assert_eq!(r.apps(), local.apps());
-        assert_eq!(r.app_label("QIBM_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
+        assert_eq!(r.app_label("QS400_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
         let i = Import {
             store: "*SYSTEM".into(),
             source: ImportSource::Path("/tmp/x.pem".into()),
@@ -452,7 +460,7 @@ mod tests {
         assert_eq!((api.not_after - super::super::now()) / 86_400, 32);
         let cas: Vec<&str> = rows.iter().filter(|r| r.kind == EntryType::Ca).map(|r| r.label.as_str()).collect();
         assert_eq!(cas, ["QSHQ400 Local CA", "Quartz Internal CA"]);
-        assert_eq!(f.app_label("QIBM_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
+        assert_eq!(f.app_label("QS400_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
         assert_eq!(f.apps().len(), 11);
     }
 }

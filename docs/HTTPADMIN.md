@@ -20,12 +20,15 @@ password `QS400`).
 
 ## Decisions
 
-- Certificate application IDs and store paths stay IBM-compatible
-  (`QIBM_HTTP_SERVER_ADMIN`, `/QIBM/UserData/ICSS/Cert/`): programs name
-  them through the GSKit and `SSL_` APIs. The golden pages' `QS400_*`
-  IDs and `/QS400/USERDATA` paths are data differences. The "no IBM
-  wording" rule covers names of products, features and text; the
-  hygiene test (`tests/behavior.rs`) skips `QIBM` identifiers.
+- Certificate application IDs are `QS400_*`, as the golden pages show
+  them (`QS400_HTTP_SERVER_ADMIN`, `QS400_TELNET_SERVER`; Cody,
+  2026-11-01, reversing the earlier choice). The IBM i IDs
+  (`QIBM_HTTP_SERVER_ADMIN`, ...) are aliases everywhere an ID is taken,
+  and definitions stored under them are renamed when read
+  (docs/CERTS.md, "Application IDs"). Store paths stay IBM i's
+  (`/QIBM/UserData/ICSS/Cert/`): programs name keyring files by path;
+  the golden pages' `/QS400/USERDATA` paths are data differences. The
+  hygiene test (`tests/behavior.rs`) skips only `/QIBM/` paths.
 - `ADMIN` listens on 2001 and, with TLS, 2010 (2005 is Navigator's).
 - Routes: `/qs400/httpadmin/` + the prototype's file name as a path
   (`instance-ports.html` is `/instance/<name>/ports`). The stylesheet is
@@ -66,8 +69,7 @@ page and is listed here:
 | `shared/components.html` | tab links `components.html` → `help.html`; `error.html` → `help.html` | the pattern page links to itself; served, they are help windows |
 | `http/confirm-stop.html` | `<form method="post">` moved before the How to end paragraph | the radios and delay field sat outside the form, so the choice was never submitted |
 | `http/instance-ports.html` | `<form method="post">` moved before the list | the Select boxes sat outside the form, so Remove never saw them |
-| `http/instance-tls.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE` | application IDs stay the compatible ones (Decisions) |
-| `http/instance-config.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE`; `47 lines` → `45 lines` | compatible application IDs; the file the page itself shows has 45 lines |
+| `http/instance-config.html` | `47 lines` → `45 lines` | the file the page itself shows has 45 lines |
 | `http/instance-logs.html` | Download link `#` → the logs page's download route | the prototype's link goes nowhere; served, it streams the log |
 | `http/cert-store-system.html` | `Set default` gets `formaction="cert-store-system.html"` | the button posted to Create certificate with nothing to tell it apart; it opens the store's default-certificate page |
 | `http/cert-create-result.html` | `Download`, `Download with chain`, `Assign to application...` get names `download`, `chain`, `assign` | three nameless buttons in one form cannot be told apart |
@@ -92,14 +94,23 @@ message, the audit journal or a page (`tests/certs.rs` checks).
 Data differences the golden tests apply (`tests/golden.rs`): the store
 paths (`/QIBM/UserData/ICSS/Cert/...`; `*SIGNATUREVERIFICATION` is
 `Signing/SIGNVER.KDB`); on the create result, the serial number,
-validity times, fingerprint and PEM of the certificate just made; on
-Applications, the application IDs (`QIBM_QTV_TELNET_SERVER` for
-`QS400_TELNET_SERVER`, `QIBM_QTMF_FTP_SERVER`, `QIBM_QRW_SERVER_DDM_DRDA`,
-`QIBM_OS400_QZBS_SVR_CENTRAL`, `QIBM_HTTP_SERVER_<instance>`), sorted in
-the Application select. The update client has no shipped ID; the fixture
-registers `QS400_UPDATE_CLIENT` as a user-defined one. The
-store page lists the default certificate first, then entries in the
-order they were added.
+validity times, fingerprint and PEM of the certificate just made. The
+update client has no shipped ID; the fixture registers
+`QS400_UPDATE_CLIENT` as a user-defined one. The store page lists the
+default certificate first, then entries in the order they were added.
+
+Applications are assigned certificates of `*SYSTEM` only, as on IBM i.
+The Certificate list is never silently empty: `*SYSTEM` that cannot be
+opened is `HTP8313` (with how to make it: Create on the stores page
+with store name `*SYSTEM`, which goes to its own path with the shipped
+roots), nothing to offer is `HTP8312`. A certificate of another store
+has Copy to `*SYSTEM` on its page (`Certs::copy`, with its key); its
+Assign to application... opens Applications with `HTP8314` and the same
+button, and the copy comes back there with the certificate chosen
+(`HTP8309`). Export of a certificate with its key offers a PKCS#12
+download (`Certs::export_pkcs12`, a file password typed for that call
+only), which Import takes into `*SYSTEM`. A new system's first IPL
+makes `*SYSTEM` (docs/CERTS.md).
 
 ## Global settings
 
@@ -107,8 +118,7 @@ order they were added.
 timeout goes to `Admin::sessions` at once; the allowed networks must
 include the address of the browser making the change; a change writes a
 `ZC` entry when auditing was on before or after it (so turning auditing
-off is recorded). The golden page's `QS400_HTTP_SERVER_ADMIN` is served
-as `QIBM_HTTP_SERVER_ADMIN`.
+off is recorded).
 
 ## Serving instances
 
@@ -137,7 +147,7 @@ daily at the time, UTC, else at that size; rotated files are
 by the connection's address and port, then `ServerName`/`ServerAlias`
 against `Host`; TLS per listener from the virtual host on its port (or
 the main server) with `SSLEngine On`, `SSLAppName` (default
-`QIBM_HTTP_SERVER_<instance>`), `SSLProtocolDisable`, `SSLClientAuth`
+`QS400_HTTP_SERVER_<instance>`; the IBM i ID is an alias), `SSLProtocolDisable`, `SSLClientAuth`
 (else the application's own setting). `Server::stop` is a controlled
 end (the request in hand finishes, idle connections close),
 `Server::drain` waits for them.

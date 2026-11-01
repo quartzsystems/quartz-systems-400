@@ -21,7 +21,7 @@ use crate::settings::{PATH, Settings, in_net};
 use crate::{SELF_INSTANCE, msgs};
 
 /// The administration server's certificate application ID.
-pub const ADMIN_APP_ID: &str = "QIBM_HTTP_SERVER_ADMIN";
+pub const ADMIN_APP_ID: &str = "QS400_HTTP_SERVER_ADMIN";
 
 const CRUMB: [&str; 2] = ["Advanced", "Global settings"];
 
@@ -159,7 +159,7 @@ fn read(rq: &Rq<'_>, old: &Settings) -> Result<Settings, Message> {
     }
     if f.has("admtls") && !old.admin_tls && !rq.admin.tls_up() {
         return Err(invalid(&format!(
-            "TLS cannot be required: port {} is not listening (is a certificate assigned to QIBM_HTTP_SERVER_ADMIN?)",
+            "TLS cannot be required: port {} is not listening (is a certificate assigned to QS400_HTTP_SERVER_ADMIN?)",
             old.admin_tls_port
         )));
     }
