@@ -186,6 +186,7 @@ fn run_options(
                 } else {
                     d.substitute(text, Some((&c.list, c.row)))
                 };
+                let cmd = crate::panels::with_parms(d, cmd);
                 run_command(job, host, d, history, &cmd);
             }
             Some(Action::Return(n)) => returned.push((*n, c.clone())),

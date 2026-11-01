@@ -196,6 +196,15 @@ pub fn data_var(data: &stg::proto::Sys2Data, name: &str) -> String {
         .unwrap_or_default()
 }
 
+/// An option's command with the parameters typed on the command line
+/// when the options were (`2` and `OUTQ(PRT01)` on `WRKSPLF`).
+#[must_use]
+pub fn with_parms(d: &UimDialog, cmd: String) -> String {
+    let parms = d.get(uim::engine::OPTION_PARMS_VAR);
+    let parms = parms.trim();
+    if parms.is_empty() { cmd } else { format!("{} {parms}", cmd.trim_end()) }
+}
+
 /// The command of an option typed on a list's extended action entry,
 /// with the entry's values: a parameter the entry left blank (`KWD()`,
 /// `KWD('')`, `KWD(/)`) is left out for the prompt to ask, and a name typed

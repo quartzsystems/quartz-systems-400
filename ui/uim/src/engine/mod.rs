@@ -385,6 +385,10 @@ pub const PRINT_UNAVAILABLE: &str = msgid::NO_PRINT;
 
 /// The command line's value when `:CMDLINE.` names no variable.
 pub const CMDLINE_VAR: &str = "*CMDLINE";
+/// What the command line held when options were typed: the parameters
+/// for the options' commands ("Parameters for options 1, 2, 3 or
+/// command").
+pub const OPTION_PARMS_VAR: &str = "*OPTPARMS";
 
 /// The dialog of one panel group.
 #[allow(clippy::struct_excessive_bools)] // independent switches
