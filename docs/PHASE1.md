@@ -269,6 +269,7 @@ layout):
 | Esc | Attention (no-op in Phase 1) |
 | Ctrl+Left | Reset |
 | Arrows | cursor, confined to input fields |
+| Page Up / Page Down | Roll Down / Roll Up |
 
 Field rules: the cursor stays inside input fields, typing past the last
 cell autoskips to the next field, Field Exit clears to the end of the

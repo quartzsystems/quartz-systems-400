@@ -251,6 +251,8 @@ fn key(system: &mut System, name: &str) -> String {
         "right" => Key::Right,
         "up" => Key::Up,
         "down" => Key::Down,
+        "pageup" | "rolldown" => Key::PageUp,
+        "pagedown" | "rollup" => Key::PageDown,
         "backspace" => Key::Backspace,
         "delete" => Key::Delete,
         "insert" => Key::Insert,

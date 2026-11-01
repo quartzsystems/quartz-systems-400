@@ -47,6 +47,8 @@ pub fn term_key(key: Key) -> Option<TermKey> {
         Key::Right => TermKey::Right,
         Key::Up => TermKey::Up,
         Key::Down => TermKey::Down,
+        Key::PageUp => TermKey::PageUp,
+        Key::PageDown => TermKey::PageDown,
     })
 }
 

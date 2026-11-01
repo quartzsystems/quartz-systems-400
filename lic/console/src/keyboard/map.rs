@@ -43,6 +43,10 @@ pub enum Key {
     Up,
     /// Cursor down.
     Down,
+    /// Page Up (Roll Down).
+    PageUp,
+    /// Page Down (Roll Up).
+    PageDown,
 }
 
 /// Modifier state tracked from press and release events.
@@ -77,6 +81,8 @@ const KEY_UP: u16 = 103;
 const KEY_LEFT: u16 = 105;
 const KEY_RIGHT: u16 = 106;
 const KEY_DOWN: u16 = 108;
+const KEY_PAGEUP: u16 = 104;
+const KEY_PAGEDOWN: u16 = 109;
 const KEY_INSERT: u16 = 110;
 const KEY_DELETE: u16 = 111;
 
@@ -188,6 +194,8 @@ pub fn translate(code: u16, mods: Modifiers) -> Option<Key> {
         KEY_RIGHT => Key::Right,
         KEY_UP => Key::Up,
         KEY_DOWN => Key::Down,
+        KEY_PAGEUP => Key::PageUp,
+        KEY_PAGEDOWN => Key::PageDown,
         KEY_F1..=KEY_F10 => function(code - KEY_F1 + 1, mods),
         KEY_F11 => function(11, mods),
         KEY_F12 => function(12, mods),
@@ -281,6 +289,8 @@ mod tests {
         assert_eq!(translate(KEY_RIGHTSHIFT, plain), Some(Key::FieldExit));
         assert_eq!(translate(KEY_F1, plain), Some(Key::Function(1)));
         assert_eq!(translate(KEY_F1, shift), Some(Key::Function(13)));
+        assert_eq!(translate(KEY_PAGEUP, plain), Some(Key::PageUp));
+        assert_eq!(translate(KEY_PAGEDOWN, plain), Some(Key::PageDown));
         assert_eq!(translate(KEY_F12, shift), Some(Key::Function(24)));
         assert_eq!(translate(KEY_ESC, plain), Some(Key::Attention));
         assert_eq!(translate(KEY_ESC, shift), Some(Key::SysReq));
