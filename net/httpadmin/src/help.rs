@@ -159,6 +159,12 @@ pub const TOPICS: &[Topic] = &[
 <p>Applying needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
     },
     Topic {
+        key: "instance-logs",
+        title: "Instance: logs",
+        body: "<p>The last lines of the instance's access log or error log, newest last, as the server wrote them. <b>Lines</b> sets how many are shown; <b>Contains</b> shows only the lines holding the text given, exactly as typed. <b>Refresh</b> reads the log again.</p>
+<p><b>Download complete file</b> sends the whole current log file to your browser. Rotated files are kept in the instance's <span class=\"mono\">logs</span> directory.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",

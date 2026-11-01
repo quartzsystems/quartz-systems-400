@@ -372,3 +372,17 @@ fn instance_config() {
         &[("QS400_HTTP_SERVER_WEBSTORE", "QIBM_HTTP_SERVER_WEBSTORE"), ("47 lines", "45 lines")],
     );
 }
+
+#[test]
+fn instance_logs() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/instance/WEBSTORE/logs?which=access&n=200");
+    assert_eq!(r.status, 200);
+    // The prototype's download link goes nowhere; served, it streams the
+    // file.
+    assert_golden(
+        &r.text(),
+        "http/instance-logs.html",
+        &[("<a href=\"#\">Download complete file</a>", "<a href=\"instance-logs.html\">Download complete file</a>")],
+    );
+}

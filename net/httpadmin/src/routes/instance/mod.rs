@@ -12,6 +12,7 @@ pub mod confirm;
 pub mod dirs;
 pub mod general;
 pub mod logging;
+pub mod logs;
 pub mod ports;
 pub mod tls;
 
@@ -55,6 +56,8 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
         ["tls"] => tls::page(rq, &v),
         ["logging"] => logging::page(rq, &v),
         ["config"] => config::page(rq, &v),
+        ["logs"] => logs::page(rq, &v),
+        ["logs", "download"] => logs::download(rq, &v),
         _ => rq.not_found(&format!("page {} of instance {}", rest.join("/"), v.name())),
     }
 }

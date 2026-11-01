@@ -574,3 +574,24 @@ fn config_failed_write_keeps_the_file() {
     assert!(t.contains("HTP8106") && t.contains("LogLevel info"), "{t}");
     assert_eq!(conf(&b, "WEBSTORE"), before);
 }
+
+#[test]
+fn logs_tail_filter_download() {
+    let mut b = Browser::signed_on();
+    let t = b.get("/instance/WEBSTORE/logs?n=50&q=cgi-bin").text();
+    assert!(t.contains("Showing last 2 of 2 lines") && t.contains("CART.PGM") && !t.contains("robots.txt"), "{t}");
+    assert!(!t.contains("<option selected>50</option>") && t.contains("value=\"cgi-bin\""));
+    let r = b.get("/instance/WEBSTORE/logs/download?which=access");
+    assert_eq!(r.status, 200);
+    assert!(r.header("Content-Disposition").unwrap().contains("WEBSTORE-access_log.txt"));
+    let qsweb::http::Body::Stream(mut from) = r.body else { panic!("not streamed") };
+    let mut got = Vec::new();
+    std::io::Read::read_to_end(&mut from, &mut got).unwrap();
+    assert_eq!(got, b.fx.files.read("/www/webstore/logs/access_log").unwrap());
+    b.fx.files.put("/www/webstore/logs/error_log", b"[warn] one\n[error] two\n[warn] three\n");
+    let t = b.get("/instance/WEBSTORE/logs?which=error&q=warn").text();
+    assert!(t.contains("<b>Error log</b>") && t.contains("[warn] three") && !t.contains("[error] two"));
+    assert!(t.contains("name=\"which\" value=\"error\""));
+    let t = b.get("/instance/WEBSTORE/logs?which=error&n=100").text();
+    assert!(t.contains("Showing last 3 of 3 lines of /www/webstore/logs/error_log (rotated daily)"));
+}

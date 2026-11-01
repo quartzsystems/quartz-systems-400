@@ -55,6 +55,7 @@ page and is listed here:
 | `http/instance-ports.html` | `<form method="post">` moved before the list | the Select boxes sat outside the form, so Remove never saw them |
 | `http/instance-tls.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE` | application IDs stay the compatible ones (Decisions) |
 | `http/instance-config.html` | `QS400_HTTP_SERVER_WEBSTORE` → `QIBM_HTTP_SERVER_WEBSTORE`; `47 lines` → `45 lines` | compatible application IDs; the file the page itself shows has 45 lines |
+| `http/instance-logs.html` | Download link `#` → the logs page's download route | the prototype's link goes nowhere; served, it streams the log |
 
 ## Steps
 
