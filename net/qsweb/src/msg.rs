@@ -37,6 +37,8 @@ pub struct Message {
     pub id: String,
     /// The first-level text, substitutions made.
     pub text: String,
+    /// The substitution values, for the second-level text's link.
+    pub data: Vec<String>,
 }
 
 impl Message {
@@ -46,7 +48,15 @@ impl Message {
             kind,
             id: id.to_string(),
             text: text.to_string(),
+            data: Vec::new(),
         }
+    }
+
+    /// With the substitution values its second-level text shows.
+    #[must_use]
+    pub fn with_data(mut self, data: &[&str]) -> Self {
+        self.data = data.iter().map(ToString::to_string).collect();
+        self
     }
 }
 

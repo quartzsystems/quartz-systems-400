@@ -295,7 +295,7 @@ pub fn second_level(id: &str, data: &[&str]) -> Option<SecondLevel> {
 /// A message row for `id` with `data`.
 pub fn message(kind: Kind, id: &str, data: &[&str]) -> Message {
     let text = desc(id).map_or_else(|| id.to_string(), |m| substitute(m.text, data));
-    Message::new(kind, id, &text)
+    Message::new(kind, id, &text).with_data(data)
 }
 
 /// Where a message file's second-level text starts the recovery.
