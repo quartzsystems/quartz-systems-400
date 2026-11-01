@@ -102,6 +102,13 @@ fn crawl() {
             continue;
         }
         let r = b.get(&url);
+        // A wizard's start link sets it up and redirects into it.
+        if r.status == 303
+            && let Some(to) = r.header("Location").filter(|l| l.starts_with(PRODUCT.prefix))
+        {
+            queue.push_back(to.to_string());
+            continue;
+        }
         if r.status != 200 {
             if PENDING.iter().any(|p| url.contains(p)) {
                 continue;

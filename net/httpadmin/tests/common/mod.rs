@@ -138,7 +138,7 @@ pub fn proto(url: &str) -> Option<String> {
             }
             "confirm-stop".into()
         }
-        ["instance", _, "remove"] => return Some("shared/confirm.html".into()),
+        ["instance", _, "remove"] | ["certs", "confirm"] => return Some("shared/confirm.html".into()),
         ["instance", _, "directory"] => "instance-directory-props".into(),
         ["instance", _, page, ..] => format!("instance-{page}"),
         ["create", "step", n] => format!("create-{n}"),
@@ -148,7 +148,6 @@ pub fn proto(url: &str) -> Option<String> {
         ["certs", "create", "result"] | ["certs", "cert"] => "cert-create-result".into(),
         ["certs", "import"] => "cert-import".into(),
         ["certs", "apps", ..] => "cert-apps".into(),
-        ["certs", "confirm"] => return Some("shared/confirm.html".into()),
         ["global"] => "global".into(),
         _ => return None,
     };
