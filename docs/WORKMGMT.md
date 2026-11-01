@@ -878,12 +878,16 @@ other file is `CPF3337`. `WRKSPLFA` shows one file's attributes
 (`QGSPSPLA`). `SNDNETSPLF FILE() TOUSRID((user system))` delivers on
 this system only: a copy of the file on each user's output queue (the
 profile's `OUTQ`; `*WRKSTN` and `*DEV` are `QGPL/QPRINT`), owned by
-that user under job `QPRTJOB` number 0, ready; the file sent stays. A
+that user, ready; the file sent stays. The copy belongs to the user's
+job `QPRTJOB` with a job number of its own: the first file sent to a
+user takes the next job number, later ones join the same job while it
+has spooled files and fewer than 9999 of them, so `WRKSPLF`,
+`WRKSPLFA` and `JOB(nnnnnn/user/QPRTJOB)` find it as any job's. A job
+number that still owns spooled files is not handed out again. A
 system other than this one (`QSYSNAME`) is refused with `CPF3496`,
 which points to `SNDTCPSPLF`. Left out: delivery to other systems
 (SNA distribution), `JOBSYSNAME`, `CRTDATE` and `DTAFMT`, which are
-accepted and ignored, and the receiving user's `QPRTJOB` being a job
-of its own.
+accepted and ignored.
 
 ### The SCS subset
 

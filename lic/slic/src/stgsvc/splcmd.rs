@@ -518,7 +518,8 @@ pub const SENT: &str = "CPC3303";
 pub const NOT_LOCAL: &str = "CPF3496";
 
 /// `SNDNETSPLF FILE TOUSRID((user system)) JOB SPLNBR [DTAFMT]`: a copy
-/// of the file on each user's output queue on this system (the
+/// of the file on each user's output queue on this system, in the
+/// user's job `QPRTJOB` with a number of its own (the
 /// profile's `OUTQ`; `*WRKSTN` and `*DEV` resolve to `QGPL/QPRINT`, as
 /// a job's do), owned by that user, ready to print; the original
 /// stays. A system other than this one is refused (`CPF3496`):
@@ -554,7 +555,13 @@ pub fn sndnetsplf(system: &mut System, me: u32, line: &str) -> Result<(String, u
     }
     for user in users {
         let q = super::jobs::user_dft(system, &user).outq;
-        let copy = a.net_copy(&user, &q);
+        // The user's QPRTJOB, a real job number, reused while it lasts.
+        let files = system.spool.files.values().map(|e| &e.attrs);
+        let number = match wm::obj::splf::prtjob(files, &user) {
+            Some(n) => n,
+            None => super::jobs::next(system)?,
+        };
+        let copy = a.net_copy(&user, &q, number);
         let nid = spool::create(system, copy)?;
         spool::append(system, nid, &data, a.pages, a.records)?;
         spool::close(system, nid, false)?;
