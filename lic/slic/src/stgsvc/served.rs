@@ -1889,7 +1889,7 @@ impl Service for Served<'_> {
     }
 
     fn web_audit(&mut self, kind: String, user: String, a: String, b: String) {
-        super::webadm::audit(&self.ctx.job.user, &kind, &user, &a, &b);
+        super::webadm::audit(&self.ctx.job.user, &self.ctx.job.name, &kind, &user, &a, &b);
     }
 
     fn web_certs(&mut self, call: Vec<u8>) -> Vec<u8> {

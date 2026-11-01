@@ -79,24 +79,25 @@ fn on(e: Event, a: &str) -> Event {
     }
 }
 
-/// The event for `web_audit`; `None` when the kind is not one it writes.
-pub fn event(kind: &str, user: &str, a: &str, b: &str) -> Option<Event> {
+/// The event for `web_audit` from the server job `server` (`ADMIN`,
+/// `NAVIGATOR`); `None` when the kind is not one it writes.
+pub fn event(server: &str, kind: &str, user: &str, a: &str, b: &str) -> Option<Event> {
     let e = match kind {
         "PW" => Event::new(Kind::Pw).set("ETYP", a).set("USRP", user),
-        "AF" => on(Event::new(Kind::Af).set("VIOL", "A"), a).set("OPER", format!("httpadmin {b}")),
+        "AF" => on(Event::new(Kind::Af).set("VIOL", "A"), a).set("OPER", format!("{server} {b}")),
         "ZC" => on(Event::new(Kind::Zc).set("ACCY", "C"), a).set("OPER", b),
         _ => return None,
     };
     Some(e.by(user))
 }
 
-/// Record `web_audit`'s entry when the job is the administration
-/// server's.
-pub fn audit(job_user: &str, kind: &str, user: &str, a: &str, b: &str) {
+/// Record `web_audit`'s entry when the job is a web server's
+/// (`QTMHHTTP`).
+pub fn audit(job_user: &str, server: &str, kind: &str, user: &str, a: &str, b: &str) {
     if job_user != SERVER_USER {
         return;
     }
-    if let Some(e) = event(kind, user, a, b) {
+    if let Some(e) = event(server, kind, user, a, b) {
         sec::audit::record(e);
     }
 }
@@ -107,13 +108,13 @@ mod tests {
 
     #[test]
     fn entries() {
-        let e = event("AF", "BOB", "QHTTPSVR/ADMIN", "*IOSYSCFG").unwrap();
+        let e = event("ADMIN", "AF", "BOB", "QHTTPSVR/ADMIN", "*IOSYSCFG").unwrap();
         assert_eq!((e.get("ONAM"), e.get("OLIB"), e.get("VIOL")), ("ADMIN", "QHTTPSVR", "A"));
         assert_eq!(e.user.as_deref(), Some("BOB"));
-        let p = event("PW", "BOB", "R", "").unwrap();
+        let p = event("ADMIN", "PW", "BOB", "R", "").unwrap();
         assert_eq!((p.get("ETYP"), p.get("USRP")), ("R", "BOB"));
-        let z = event("ZC", "BOB", "/www/web1/conf/httpd.conf", "apply").unwrap();
+        let z = event("ADMIN", "ZC", "BOB", "/www/web1/conf/httpd.conf", "apply").unwrap();
         assert_eq!((z.get("ONAM"), z.path()), ("httpd.conf", "/www/web1/conf/httpd.conf"));
-        assert!(event("XX", "BOB", "", "").is_none());
+        assert!(event("ADMIN", "XX", "BOB", "", "").is_none());
     }
 }
