@@ -454,6 +454,9 @@ pub const DIRECT: &[&str] = &[
     "CRTTAPF",
     "CHGTAPF",
     "SAVSYS",
+    // --- spooled files (lic/slic/src/cpp/splcpp.rs)
+    "RLSSPLF",
+    "SNDNETSPLF",
     // --- licensed programs (lic/slic/src/cpp/lpcmd.rs)
     "RSTLICPGM",
     "DLTLICPGM",
@@ -547,6 +550,7 @@ pub const JOB_SITE: &[&str] = &[
     "WRKDSKSTS",
     "WRKSYSACT",
     "WRKOUTQD",
+    "WRKSPLFA",
     "DSPSPLF",
     "WRKLIB",
     "WRKOBJLCK",

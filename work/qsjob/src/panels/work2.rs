@@ -52,6 +52,7 @@ pub fn run(
         "WRKSYSACT" => sys::wrksysact(job, host, surface),
         "WRKSHRPOOL" => sys::wrkshrpool(job, host, surface),
         "WRKOUTQD" => spool::wrkoutqd(job, host, surface, r),
+        "WRKSPLFA" => spool::wrksplfa(host, surface, r),
         "DSPSPLF" => spool::dspsplf(host, surface, r),
         "WRKLIB" => objs::wrklib(job, host, surface, r),
         "WRKOBJLCK" => objs::wrkobjlck(job, host, surface, r),

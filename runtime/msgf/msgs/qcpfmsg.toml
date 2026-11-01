@@ -6492,6 +6492,20 @@ help = "Only a held file or a saved file can be released. Hold the file first, o
 vars = []
 
 [[msg]]
+id = "CPC3303"
+sev = 0
+text = "Spooled file &1 number &2 sent to &3 on system &4."
+help = "A copy of the file is on the output queue of each user named, owned by that user and ready to print. The file sent stays where it was."
+vars = ["*CHAR 10", "*CHAR 6", "*CHAR 10", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3496"
+sev = 40
+text = "Spooled file not sent: a user is on another system."
+help = "SNDNETSPLF delivers to users on this system only. Name this system in TOUSRID, or send the file over TCP/IP with SNDTCPSPLF."
+vars = []
+
+[[msg]]
 id = "CPA3388"
 sev = 99
 text = "Writer &1 could not print file &2 number &3 on device &4. Reply (C H R)."
