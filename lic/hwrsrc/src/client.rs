@@ -5,11 +5,15 @@
 //! Reaching the hardware resource service: a connection per question to
 //! its socket, so any process may ask without keeping one open.
 
+#[cfg(unix)]
 use std::path::Path;
 
+#[cfg(unix)]
 use ipc::WireError;
 
+#[cfg(unix)]
 use crate::proto;
+#[cfg(unix)]
 use crate::table::{Resource, Table};
 
 /// The service's socket.
