@@ -766,8 +766,9 @@ of one parity set, never two of these.
 parity page per stripe) and 4 to 18 for RAID 6 (`*RAID6`, two), IBM's
 limits for its current controllers. An ASP has at most 15 sets. The
 members are numbered from 0 in `parity_member`; the set uses the size
-of its smallest member, and a member more than 10% larger than the
-smallest is refused. Membership, level and state live in the unit table
+of its smallest member, as IBM's controllers do: a larger member's rest
+is held unused (the load source, which also carries the ESP, the LIC
+and the IFS partitions, is usually the smallest). Membership, level and state live in the unit table
 (§5, `parity_*`); the work under way lives in the superblock.
 
 **Data stays where it is.** Each member stays its own span and keeps its

@@ -237,7 +237,7 @@ fn units_are_added_and_removed_through_the_table() {
     }
     assert!(matches!(
         store.remove_unit(0),
-        Err(StoreError::UnitInUse { unit: 0, .. })
+        Err(StoreError::Refused { unit: Some(0), .. })
     ));
     store.close().unwrap();
     // The removed device is no longer a unit: opening it alone fails.
@@ -287,4 +287,42 @@ fn foreign_units_are_ignored() {
     all.push(other[0].clone());
     let (store, _) = Store::open(boxed(&all), config()).unwrap();
     assert_eq!(store.units().len(), 1);
+}
+
+#[test]
+fn a_tree_in_a_header_root_slot_moves_with_the_unit() {
+    let devs = devices(&[1024], 3);
+    let mut store = Store::format(boxed(&devs), &params(1), config()).unwrap();
+    let qsys = {
+        let mut t = store.begin().unwrap();
+        let q = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
+        t.commit().unwrap();
+        q
+    };
+    let extra = Arc::new(MemBlockDev::with_seed(1536, 10));
+    store.add_unit(Box::new(extra), [8; 16], "EXTRA2").unwrap();
+    // A tree in slot 2 of a user space, as a profile keeps its indexes.
+    let entries: Vec<(Vec<u8>, Vec<u8>)> = (0..400u32)
+        .map(|i| (i.to_be_bytes().to_vec(), vec![u8::try_from(i % 251).unwrap(); 40]))
+        .collect();
+    let id = {
+        let mut t = store.begin().unwrap();
+        let id = usrspc::create(&mut t, &create_params(qsys, "TREES"), 4064, false, 0).unwrap();
+        let root = store::btree::load(&mut t, id, 4, entries.clone()).unwrap();
+        let (page, _) = ops::read_header(&mut t, id).unwrap();
+        ops::set_tree_root(&mut t, page, 2, root).unwrap();
+        let on_extra = store::btree::walk_pages(&mut t, root.unwrap())
+            .unwrap()
+            .into_iter()
+            .any(|p| t.layout().locate(p).unwrap().0 == 1);
+        assert!(on_extra, "the tree lives on unit 1");
+        t.commit().unwrap();
+        id
+    };
+    store.remove_unit(1).unwrap();
+    let mut t = store.begin().unwrap();
+    let (_, h) = ops::read_header(&mut t, id).unwrap();
+    let (key_len, got) = store::btree::dump(&mut t, h.tree_roots[2].unwrap()).unwrap();
+    assert_eq!((key_len, got), (4, entries));
+    t.abort();
 }

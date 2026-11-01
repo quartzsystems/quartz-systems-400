@@ -533,11 +533,11 @@ fn a_unit_before_the_last_span_cannot_leave() {
     let mut store = Store::format(boxed(&all), &p, config()).unwrap();
     assert!(matches!(
         store.remove_unit(1),
-        Err(StoreError::UnitInUse { unit: 1, .. })
+        Err(StoreError::Refused { unit: Some(1), .. })
     ));
     assert!(matches!(
         store.remove_unit(0),
-        Err(StoreError::UnitInUse { unit: 0, .. })
+        Err(StoreError::Refused { unit: Some(0), .. })
     ));
     store.remove_unit(2).unwrap();
 }

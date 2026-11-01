@@ -21,7 +21,7 @@ use crate::asp::superblock::serial_bytes;
 use crate::asp::unit::{UnitHeader, UnitState};
 use crate::obj::ObjectId;
 use crate::page::{Page, PageType};
-use crate::{Result, StoreError};
+use crate::{Refusal, Result, StoreError};
 
 /// A member as the displays show it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,10 +78,17 @@ fn percent(done: u64, blocks: u64) -> u8 {
     u8::try_from((done * 100).checked_div(blocks).unwrap_or(100)).unwrap_or(100)
 }
 
-fn in_use(unit: u16, what: impl Into<String>) -> StoreError {
-    StoreError::UnitInUse {
-        unit,
-        what: what.into(),
+fn no_set(set: u8) -> StoreError {
+    StoreError::Refused {
+        unit: None,
+        reason: Refusal::NoParitySet(set),
+    }
+}
+
+fn not_active(set: u8) -> StoreError {
+    StoreError::Refused {
+        unit: None,
+        reason: Refusal::ParitySetNotActive(set),
     }
 }
 
@@ -156,45 +163,37 @@ impl Asp {
             what: "no such unit".into(),
         })?;
         if e.mirrored() {
-            return Err(in_use(unit, "the unit has mirrored protection"));
+            return Err(StoreError::refused(unit, Refusal::Mirrored));
         }
-        if self.sb.parity.tag(&e.unit_uuid).is_some() {
-            return Err(in_use(unit, "the unit is already in a parity set"));
+        if let Some(t) = self.sb.parity.tag(&e.unit_uuid) {
+            return Err(StoreError::refused(unit, Refusal::InParitySet(t.set)));
         }
         if self.io.unit_state(unit) != UnitState::Unprotected || !self.io.unit_attached(unit) {
-            return Err(StoreError::UnitMissing {
-                unit,
-                what: "the unit is not attached".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::NotAttached));
         }
         Ok(())
     }
 
-    /// The geometry for these units, checking sizes and that the pages
-    /// parity is to take hold no data.
+    /// The geometry for these units, checking that the pages parity is
+    /// to take hold no data. The set uses the smallest unit's size; a
+    /// larger unit's rest is held unused, as IBM's controllers do.
     fn plan_set(&self, level: Level, units: &[u16]) -> Result<Geometry> {
         if units.len() < level.min_units() || units.len() > MAX_MEMBERS {
-            return Err(StoreError::Parity {
-                what: format!(
-                    "{level} needs {} to {MAX_MEMBERS} units, not {}",
-                    level.min_units(),
-                    units.len()
-                ),
+            return Err(StoreError::Refused {
+                unit: None,
+                reason: Refusal::ParityUnits {
+                    level: if level == Level::Raid6 { "RAID 6" } else { "RAID 5" },
+                    least: level.min_units(),
+                    most: MAX_MEMBERS,
+                    got: units.len(),
+                },
             });
         }
-        let sizes: Vec<u64> = units
+        let smallest = units
             .iter()
             .map(|&u| self.sb.units[usize::from(u)].usable_pages)
-            .collect();
-        let smallest = sizes.iter().copied().min().unwrap_or(0);
-        for (&u, &s) in units.iter().zip(&sizes) {
-            if s > smallest + smallest / 10 {
-                return Err(in_use(
-                    u,
-                    "the unit is more than 10% larger than the smallest unit of the set",
-                ));
-            }
-        }
+            .min()
+            .unwrap_or(0);
         let geo = Geometry::new(level, units.len(), smallest)
             .ok_or_else(|| StoreError::UnitTooSmall {
                 pages: smallest,
@@ -205,10 +204,7 @@ impl Asp {
             let pages = self.layout().span(span).pages;
             let used = self.alloc.in_use(span, geo.rows_end(), pages - 1 - geo.rows_end());
             if used > 0 {
-                return Err(in_use(
-                    u,
-                    format!("{used} page(s) in the part of the unit that parity takes are in use"),
-                ));
+                return Err(StoreError::refused(u, Refusal::ParityShareInUse(used)));
             }
         }
         Ok(geo)
@@ -260,9 +256,7 @@ impl Asp {
             .sets
             .iter()
             .position(|s| s.set == set)
-            .ok_or_else(|| StoreError::Parity {
-                what: format!("no parity set {set}"),
-            })?;
+            .ok_or_else(|| no_set(set))?;
         let geo = geometry_of(&self.sb, set)?;
         let handle = self.parity.sets.remove(at);
         let (uuids, devs) = {
@@ -295,14 +289,10 @@ impl Asp {
     /// Whether every member of a set is in step and the set is not
     /// being synchronized.
     fn set_healthy(&self, set: u8) -> Result<()> {
-        let h = self.parity.get(set).ok_or_else(|| StoreError::Parity {
-            what: format!("no parity set {set}"),
-        })?;
+        let h = self.parity.get(set).ok_or_else(|| no_set(set))?;
         let e = h.lock();
         if e.sync.is_some() || e.members.iter().any(|m| m.health != Health::Ok) {
-            return Err(StoreError::Parity {
-                what: format!("parity set {set} is not active: a unit is failed or being rebuilt, or the set is being synchronized"),
-            });
+            return Err(not_active(set));
         }
         Ok(())
     }
@@ -317,8 +307,9 @@ impl Asp {
         for &u in &units {
             self.eligible(u)?;
         }
-        let set = self.sb.parity.free_set().ok_or_else(|| StoreError::Parity {
-            what: "the ASP has the most parity sets it can hold".into(),
+        let set = self.sb.parity.free_set().ok_or(StoreError::Refused {
+            unit: None,
+            reason: Refusal::ParitySetsFull,
         })?;
         let geo = self.plan_set(level, &units)?;
         self.form(set, level, &units, geo);
@@ -333,14 +324,10 @@ impl Asp {
     /// step (a synchronizing set may stop).
     pub fn stop_parity(&mut self, set: u8) -> Result<()> {
         {
-            let h = self.parity.get(set).ok_or_else(|| StoreError::Parity {
-                what: format!("no parity set {set}"),
-            })?;
+            let h = self.parity.get(set).ok_or_else(|| no_set(set))?;
             let e = h.lock();
             if e.members.iter().any(|m| m.health != Health::Ok) {
-                return Err(StoreError::Parity {
-                    what: format!("parity set {set} has a unit that is failed or being rebuilt"),
-                });
+                return Err(not_active(set));
             }
         }
         self.dissolve(set)?;
@@ -377,7 +364,7 @@ impl Asp {
     pub fn exclude_parity(&mut self, unit: u16) -> Result<()> {
         let set = self
             .parity_set_of(unit)
-            .ok_or_else(|| in_use(unit, "the unit is not in a parity set"))?;
+            .ok_or_else(|| StoreError::refused(unit, Refusal::NotInParitySet))?;
         self.set_healthy(set)?;
         let level = geometry_of(&self.sb, set)?.level;
         let rest: Vec<u16> = self
@@ -409,7 +396,7 @@ impl Asp {
     ) -> Result<()> {
         let set = self
             .parity_set_of(unit)
-            .ok_or_else(|| in_use(unit, "the unit is not in a parity set"))?;
+            .ok_or_else(|| StoreError::refused(unit, Refusal::NotInParitySet))?;
         let entry = self.sb.units[usize::from(unit)].clone();
         let handle = self.parity.get(set).expect("set exists");
         let member = {
@@ -420,7 +407,7 @@ impl Asp {
                 .position(|m| m.unit_uuid == entry.unit_uuid)
                 .expect("member");
             if e.members[i].health != Health::Failed {
-                return Err(in_use(unit, "the unit has not failed"));
+                return Err(StoreError::refused(unit, Refusal::NotFailed));
             }
             i
         };
@@ -517,9 +504,7 @@ impl Asp {
 
     /// Stripes of a set whose parity does not match their data.
     pub fn parity_verify(&mut self, set: u8) -> Result<Vec<u64>> {
-        let h = self.parity.get(set).ok_or_else(|| StoreError::Parity {
-            what: format!("no parity set {set}"),
-        })?;
+        let h = self.parity.get(set).ok_or_else(|| no_set(set))?;
         Ok(h.lock().verify()?)
     }
 

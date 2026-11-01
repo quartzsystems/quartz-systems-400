@@ -8,7 +8,7 @@
 
 use tracing::info;
 
-use crate::btree::BTree;
+use crate::btree::{self, BTree};
 use crate::obj::auth::ProfileKey;
 use crate::obj::dir::{DirKey, LibDir, ObjDir, objdir_entries, objdir_update};
 use crate::obj::library::Library;
@@ -17,7 +17,7 @@ use crate::page::PageType;
 use crate::page::pager::{PageNo, Pager};
 use crate::store::Store;
 use crate::txn::Txn;
-use crate::{Result, StoreError};
+use crate::{Refusal, Result, StoreError};
 
 /// What a drain moved.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -84,16 +84,50 @@ impl Store {
         self.checkpoint()?;
         let used = self.asp().allocator().span_used(span);
         if used > 0 {
-            return Err(StoreError::UnitInUse {
-                unit: self.asp().layout().span(span).primary,
-                what: format!("{used} page(s) could not be moved"),
-            });
+            let left = self.leftovers(span);
+            tracing::warn!("drain: span {span}: {left}");
+            let unit = self.asp().layout().span(span).primary;
+            return Err(StoreError::refused(unit, Refusal::CannotMove { pages: used, left }));
         }
         info!(
             "drain: span {span}: {} object(s), {} page(s), {} tree(s) moved",
             report.objects_moved, report.pages_moved, report.trees_rebuilt
         );
         Ok(report)
+    }
+
+    /// What still lies on a span: page counts by type and owner, for the
+    /// log when a drain cannot finish.
+    fn leftovers(&mut self, span: u16) -> String {
+        use std::collections::BTreeMap;
+        let pages = self.asp().layout().span(span).pages;
+        let used: Vec<PageNo> = (crate::asp::layout::RESERVED_HEAD..pages - 1)
+            .map(|lba| self.asp().layout().logical(span, lba))
+            .filter(|&p| !self.asp().allocator().is_free(p))
+            .collect();
+        let tree: Vec<PageNo> = self.asp().allocator().tree_pages().to_vec();
+        let log: Vec<PageNo> = self.asp().allocator().log_pages().to_vec();
+        let mut by: BTreeMap<String, u64> = BTreeMap::new();
+        for p in used.iter().take(4096) {
+            let what = if tree.contains(p) {
+                "allocator tree".to_string()
+            } else if log.contains(p) {
+                "allocator log".to_string()
+            } else {
+                match self.asp_mut().io().read_run(*p, 1) {
+                    Ok(raw) if raw.iter().all(|&b| b == 0) => "zero page".to_string(),
+                    Ok(raw) => {
+                        let t = crate::page::trailer::Trailer::read(&raw);
+                        format!("type {:#06x} owner {}", t.page_type, t.owner)
+                    }
+                    Err(e) => format!("unreadable: {e}"),
+                }
+            };
+            *by.entry(what).or_default() += 1;
+        }
+        let mut parts: Vec<String> = by.into_iter().map(|(k, n)| format!("{n} x {k}")).collect();
+        parts.truncate(12);
+        format!("{} page(s) left: {}", used.len(), parts.join("; "))
     }
 }
 
@@ -186,6 +220,24 @@ fn move_object(
         old.free_all(txn)?;
         h.private_overflow = new.root();
         ops::write_header(txn, page, &h)?;
+        report.trees_rebuilt += 1;
+        moved = true;
+    }
+    // Trees in the header's root slots (profile indexes, authorization
+    // lists, member paths): rebuilt from their raw entries, whatever
+    // their key type, as a restore loads them.
+    for slot in 0..h.tree_roots.len() {
+        let Some(root) = h.tree_roots[slot] else {
+            continue;
+        };
+        if !btree::walk_pages(txn, root)?.into_iter().any(|p| on_span(txn, span, p)) {
+            continue;
+        }
+        let (key_len, items) = btree::dump(txn, root)?;
+        let new = btree::load(txn, id, key_len, items)?;
+        btree::free_tree(txn, root)?;
+        ops::set_tree_root(txn, page, slot, new)?;
+        h.tree_roots[slot] = new;
         report.trees_rebuilt += 1;
         moved = true;
     }

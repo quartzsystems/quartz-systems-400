@@ -16,7 +16,7 @@ use crate::asp::superblock::{NO_PARTNER, UnitEntry, serial_bytes};
 use crate::asp::unit::{UnitHeader, UnitState};
 use crate::asp::{Asp, MIN_UNIT_SPARE, UnitInfo, wipe_unit, write_unit_header};
 use crate::bytes::{get_u64, put_u64};
-use crate::{Result, StoreError};
+use crate::{Refusal, Result, StoreError};
 
 /// Pages per resume chunk: 1 MiB.
 pub const RESUME_CHUNK: u64 = 256;
@@ -203,10 +203,7 @@ impl Asp {
     ) -> Result<u16> {
         let entry = self.unit_entry(unit)?.clone();
         if entry.mirrored() {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: "already half of a pair".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::Mirrored));
         }
         if self.sb.units.len() >= crate::asp::layout::MAX_UNITS {
             return Err(StoreError::Corrupt {
@@ -281,16 +278,10 @@ impl Asp {
     pub fn stop_mirror(&mut self, keep: u16) -> Result<Option<Box<dyn BlockDev>>> {
         let entry = self.unit_entry(keep)?.clone();
         if !entry.mirrored() {
-            return Err(StoreError::UnitInUse {
-                unit: keep,
-                what: "not half of a pair".into(),
-            });
+            return Err(StoreError::refused(keep, Refusal::NotMirrored));
         }
         if self.io.unit_state(keep) != UnitState::Active {
-            return Err(StoreError::UnitInUse {
-                unit: keep,
-                what: format!("the half to keep is {}", self.io.unit_state(keep)),
-            });
+            return Err(StoreError::refused(keep, Refusal::HalfState(self.io.unit_state(keep).to_string())));
         }
         let other = entry.mirror_partner;
         let span = self.span_of(keep)?;
@@ -330,10 +321,7 @@ impl Asp {
         let entry = self.unit_entry(unit)?.clone();
         let partner = self.active_partner(unit, &entry)?;
         if self.io.unit_state(unit) != UnitState::Active {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: format!("the half is {}", self.io.unit_state(unit)),
-            });
+            return Err(StoreError::refused(unit, Refusal::HalfState(self.io.unit_state(unit).to_string())));
         }
         self.set_state(unit, UnitState::Suspended);
         info!(
@@ -350,18 +338,12 @@ impl Asp {
         let entry = self.unit_entry(unit)?.clone();
         let _ = self.active_partner(unit, &entry)?;
         if !self.io.unit_attached(unit) {
-            return Err(StoreError::UnitMissing {
-                unit,
-                what: "the half to resume is not attached".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::NotAttached));
         }
         match self.io.unit_state(unit) {
             UnitState::Suspended | UnitState::Resuming | UnitState::NotOperational => {}
             other => {
-                return Err(StoreError::UnitInUse {
-                    unit,
-                    what: format!("the half is {other}"),
-                });
+                return Err(StoreError::refused(unit, Refusal::HalfState(other.to_string())));
             }
         }
         let span = self.span_of(unit)?;
@@ -479,10 +461,7 @@ impl Asp {
             self.io.unit_state(unit),
             UnitState::Missing | UnitState::NotOperational | UnitState::Suspended
         ) {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: format!("the half is {}", self.io.unit_state(unit)),
-            });
+            return Err(StoreError::refused(unit, Refusal::HalfState(self.io.unit_state(unit).to_string())));
         }
         let pages = dev.blocks();
         if pages < entry.usable_pages {
@@ -555,17 +534,11 @@ impl Asp {
     /// The partner of a half, which must be active.
     fn active_partner(&self, unit: u16, entry: &UnitEntry) -> Result<u16> {
         if !entry.mirrored() {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: "not half of a pair".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::NotMirrored));
         }
         let partner = entry.mirror_partner;
         if self.io.unit_state(partner) != UnitState::Active || !self.io.unit_attached(partner) {
-            return Err(StoreError::UnitMissing {
-                unit: partner,
-                what: format!("the other half is {}", self.io.unit_state(partner)),
-            });
+            return Err(StoreError::refused(partner, Refusal::HalfState(self.io.unit_state(partner).to_string())));
         }
         Ok(partner)
     }

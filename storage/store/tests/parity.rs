@@ -517,7 +517,7 @@ fn include_exclude_and_stop() {
     // Too few units for RAID 6.
     assert!(matches!(
         store.start_parity(Level::Raid6, &[0, 1, 2]),
-        Err(StoreError::Parity { .. })
+        Err(StoreError::Refused { reason: store::Refusal::ParityUnits { .. }, .. })
     ));
 }
 
@@ -615,8 +615,28 @@ fn start_is_refused_when_parity_would_take_pages_in_use() {
         i += 1;
     }
     match store.start_parity(Level::Raid5, &[0, 1, 2]) {
-        Err(StoreError::UnitInUse { what, .. }) => assert!(what.contains("parity takes"), "{what}"),
+        Err(StoreError::Refused { reason: store::Refusal::ParityShareInUse(_), .. }) => {}
         other => panic!("started anyway: {:?}", other.map(|_| ())),
     }
     assert!(store.parity_sets().is_empty());
+}
+
+#[test]
+fn a_smaller_load_source_sets_the_size_and_larger_units_hold_their_rest() {
+    // Unit 0 two thirds the size of the others, as a load source that
+    // also carries the ESP, the LIC and the IFS partitions.
+    let mut d = vec![Arc::new(MemBlockDev::with_seed(PAGES * 2 / 3, 70))];
+    d.extend((1..4).map(|i| Arc::new(MemBlockDev::with_seed(PAGES, 70 + i))));
+    let (mut store, qsys) = store_with(&d, 6);
+    store.start_parity(Level::Raid5, &[0, 1, 2, 3]).unwrap();
+    finish_work(&mut store, 1000);
+    let held: Vec<u64> = (0..4).map(|u| store.asp().parity_held(u)).collect();
+    assert!(held[1] > held[0] + PAGES / 4, "{held:?}");
+    assert_eq!(held[1], held[2]);
+    add_spaces(&mut store, qsys, 6, 10, 12);
+    assert!(store.parity_verify(1).unwrap().is_empty());
+    store.close().unwrap();
+    let (mut store, rec) = Store::open(boxed(&d, &[3]), config()).unwrap();
+    assert_eq!(rec.events, vec![UnitEvent::ParityExposed { unit: 3 }]);
+    assert_spaces(&mut store, qsys, 10);
 }

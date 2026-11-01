@@ -21,7 +21,7 @@ use crate::alloc::{Allocator, Run, UnitStats};
 use crate::obj::ObjectId;
 use crate::page::pager::PageNo;
 use crate::page::{Page, PageType};
-use crate::{Result, StoreError};
+use crate::{Refusal, Result, StoreError};
 use io::{AspIo, UnitDev};
 use layout::{Layout, MAX_UNITS, RESERVED_HEAD};
 use superblock::{NO_PARTNER, Superblock, UnitEntry};
@@ -408,17 +408,11 @@ impl Asp {
             });
         }
         if self.sb.units[usize::from(unit)].mirrored() {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: "the unit is half of a mirrored pair".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::Mirrored));
         }
         let last = self.layout().spans().last().map(|s| s.primary);
         if last != Some(unit) || unit == 0 {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: "only the unit of the last span can be removed".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::NotLast));
         }
         Ok(())
     }
@@ -433,16 +427,10 @@ impl Asp {
         let span = self.span_of(unit)?;
         let used = self.alloc.span_used(span);
         if used > 0 {
-            return Err(StoreError::UnitInUse {
-                unit,
-                what: format!("{used} page(s) are in use"),
-            });
+            return Err(StoreError::refused(unit, Refusal::HasData(used)));
         }
         if !self.io.unit_attached(unit) {
-            return Err(StoreError::UnitMissing {
-                unit,
-                what: "unit is not attached".into(),
-            });
+            return Err(StoreError::refused(unit, Refusal::NotAttached));
         }
         self.alloc.pop_unit()?;
         let mut layout = self.layout().clone();

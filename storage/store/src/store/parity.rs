@@ -9,16 +9,13 @@ use crate::asp::parity::Fault;
 use crate::asp::parity::ops::{ParityProgress, SetInfo};
 use crate::asp::parity::table::Level;
 use crate::store::Store;
-use crate::{Result, StoreError};
+use crate::{Refusal, Result, StoreError};
 
 impl Store {
     /// Refuse a unit that is in a parity set.
     pub(super) fn not_parity(&self, unit: u16) -> Result<()> {
         match self.asp.parity_set_of(unit) {
-            Some(set) => Err(StoreError::UnitInUse {
-                unit,
-                what: format!("the unit is in device parity set {set}"),
-            }),
+            Some(set) => Err(StoreError::refused(unit, Refusal::InParitySet(set))),
             None => Ok(()),
         }
     }

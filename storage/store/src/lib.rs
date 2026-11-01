@@ -32,7 +32,7 @@ pub mod wal;
 pub use asp::mirror::{MemJournal, Resume, ResumeJournal, ResumeProgress, ResumeState};
 pub use asp::{Asp, FormatParams, UnitEvent, UnitInfo};
 pub use drain::DrainReport;
-pub use error::{Result, StoreError};
+pub use error::{Refusal, Result, StoreError};
 pub use page::pager::{MemPager, PageNo, Pager};
 pub use page::{BODY_SIZE, PAGE_SIZE, Page, PageType};
 pub use reclaim::{BadPage, ReclaimMode, ReclaimReport};

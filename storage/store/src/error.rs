@@ -210,6 +210,16 @@ pub enum StoreError {
         what: String,
     },
 
+    /// A disk configuration change refused for a reason the service
+    /// tools word for the operator.
+    #[error("{}{reason}", unit.map_or_else(String::new, |u| format!("disk unit {u}: ")))]
+    Refused {
+        /// The unit, when one is the reason.
+        unit: Option<u16>,
+        /// Why.
+        reason: Refusal,
+    },
+
     /// The resume journal outside the store could not be read or written.
     #[error("resume journal: {what}")]
     Journal {
@@ -236,7 +246,82 @@ pub enum StoreError {
     },
 }
 
+/// Why a disk configuration change was refused. The service tools show
+/// their own words for each; `Display` is for the console log.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum Refusal {
+    /// The unit is half of a mirrored pair.
+    #[error("the unit has mirrored protection")]
+    Mirrored,
+    /// The unit is not half of a mirrored pair.
+    #[error("the unit is not half of a mirrored pair")]
+    NotMirrored,
+    /// The unit is a member of a device parity set.
+    #[error("the unit is in device parity set {0}")]
+    InParitySet(u8),
+    /// The unit is in no device parity set.
+    #[error("the unit is not in a parity set")]
+    NotInParitySet,
+    /// The unit is not attached.
+    #[error("the unit is not attached")]
+    NotAttached,
+    /// The half's state does not allow the change.
+    #[error("the half is {0}")]
+    HalfState(String),
+    /// Only the unit of the last span can leave the configuration.
+    #[error("only the unit of the last span can be removed")]
+    NotLast,
+    /// Pages of the unit are still in use.
+    #[error("{0} page(s) are in use")]
+    HasData(u64),
+    /// Pages could not move to the other units.
+    #[error("{pages} page(s) could not be moved; {left}")]
+    CannotMove {
+        /// Pages left on the unit.
+        pages: u64,
+        /// What they are, for the log.
+        left: String,
+    },
+    /// A parity set needs `least` to `most` units.
+    #[error("{level} needs {least} to {most} units, not {got}")]
+    ParityUnits {
+        /// `RAID 5` or `RAID 6`.
+        level: &'static str,
+        /// Fewest units.
+        least: usize,
+        /// Most units.
+        most: usize,
+        /// Units asked for.
+        got: usize,
+    },
+    /// Pages in the share parity takes hold data.
+    #[error("{0} page(s) in the part of the unit that parity takes are in use")]
+    ParityShareInUse(u64),
+    /// The ASP holds the most sets it can.
+    #[error("the ASP has the most parity sets it can hold")]
+    ParitySetsFull,
+    /// No such set.
+    #[error("no parity set {0}")]
+    NoParitySet(u8),
+    /// A member has failed or is being rebuilt, or the set is being
+    /// synchronized.
+    #[error("parity set {0} is not active: a unit is failed or being rebuilt, or the set is being synchronized")]
+    ParitySetNotActive(u8),
+    /// The unit to replace has not failed.
+    #[error("the unit has not failed")]
+    NotFailed,
+}
+
 impl StoreError {
+    /// A refusal of `unit`.
+    #[must_use]
+    pub fn refused(unit: u16, reason: Refusal) -> Self {
+        Self::Refused {
+            unit: Some(unit),
+            reason,
+        }
+    }
+
     /// The message ID a later phase will send for this error, if any.
     #[must_use]
     pub fn msgid(&self) -> Option<&'static str> {
