@@ -11,11 +11,13 @@
 
 mod builtin;
 mod hostsvr;
+mod httpsvr;
 mod small;
 mod starter;
 
 pub use builtin::{Ftp, HttpAdmin, Standard, Telnet};
 pub use hostsvr::{HOST_DAEMONS, HostSvr};
+pub use httpsvr::{DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer};
 pub use small::{Lpd, Ntp};
 pub use starter::Starter;
 
@@ -69,6 +71,9 @@ pub struct Request {
     pub server: String,
     /// The instance.
     pub instance: Instance,
+    /// `ENDTCPSVR DELAY`: the seconds a controlled end gives requests
+    /// in progress; `None` for the server's default.
+    pub delay: Option<u32>,
 }
 
 impl Request {
@@ -77,6 +82,7 @@ impl Request {
         Self {
             server: server.trim().to_ascii_uppercase(),
             instance: Instance::Default,
+            delay: None,
         }
     }
 
@@ -121,6 +127,28 @@ pub trait Env {
     fn attrs(&mut self, server: &str) -> ServerAttrs;
     /// Start a subsystem unless it is active.
     fn start_subsystem(&mut self, name: &str) -> Result<(), String>;
+    /// The HTTP server's instances (`/www/instances.json`); none where
+    /// the job cannot read them.
+    fn http_instances(&mut self) -> Vec<HttpInstance> {
+        Vec::new()
+    }
+    /// An HTTP instance's job is about to be told to end: how
+    /// (`OPTION`) and the controlled end's `DELAY`, kept where the job
+    /// reads them.
+    fn http_ending(&mut self, instance: &str, immediate: bool, delay: u32) {
+        let _ = (instance, immediate, delay);
+    }
+}
+
+/// An HTTP server instance as `STRTCPSVR` sees it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HttpInstance {
+    /// The name (and job name), upper case.
+    pub name: String,
+    /// Started with `STRTCP` and `HTTPSVR(*ALL)`.
+    pub autostart: bool,
+    /// Its `ServerUserID` (`QTMHHTTP` when the file names none).
+    pub user: String,
 }
 
 /// A server's hooks. Every method but [`TcpServer::spec`] has a
@@ -335,6 +363,19 @@ impl Framework {
         starting: bool,
         immediate: bool,
     ) -> Vec<(String, Result<String, Refusal>)> {
+        self.run_with(env, list, instance, starting, immediate, None)
+    }
+
+    /// [`Framework::run`] with `ENDTCPSVR`'s `DELAY`.
+    pub fn run_with(
+        &self,
+        env: &mut dyn Env,
+        list: &[String],
+        instance: &Instance,
+        starting: bool,
+        immediate: bool,
+        delay: Option<u32>,
+    ) -> Vec<(String, Result<String, Refusal>)> {
         let autostart = list.iter().any(|s| s.trim().eq_ignore_ascii_case("*AUTOSTART"));
         self.expand(env, list, starting)
             .into_iter()
@@ -345,6 +386,7 @@ impl Framework {
                     } else {
                         instance.clone()
                     },
+                    delay,
                     ..Request::new(&server)
                 };
                 let r = if starting {

@@ -48,6 +48,10 @@ pub struct Entry {
     /// Seconds since 1970 of creation.
     #[serde(default)]
     pub created: u64,
+    /// The `DELAY` of the `ENDTCPSVR` ending the running job, which the
+    /// job reads when told to end; cleared when it starts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_delay: Option<u32>,
 }
 
 /// Every instance's entry.
