@@ -1,6 +1,10 @@
                       Install Licensed Internal Code (LIC)                      
                                                                  System:  QS400 
                                                                                 
+ Current load source, where option 1 restores the LIC:                          
+   Resource  Serial Number     Type Model    Size (MiB) Ctl   Device            
+   DD001     QM00001           QEMU HARDDISK       4096 DC01  vda               
+                                                                                
  Select one of the following:                                                   
                                                                                 
       1. Restore Licensed Internal Code                                         
@@ -8,10 +12,6 @@
       3. Install Licensed Internal Code and Recover Configuration               
       4. Install Licensed Internal Code and Restore Disk Unit Data              
       5. Install Licensed Internal Code and Upgrade Load Source                 
-                                                                                
-                                                                                
-                                                                                
-                                                                                
                                                                                 
                                                                                 
                                                                                 

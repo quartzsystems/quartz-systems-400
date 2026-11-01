@@ -9,7 +9,7 @@
 use crate::dst::common::{Confirm, Select, Submenu};
 use crate::dst::disk::config::{NONCONFIGURED_HEADINGS, nonconfigured_row};
 use crate::env::{DstEnv, NonConfigured};
-use crate::install::{LIC_STEPS, Progress, disk_status, lic_status};
+use crate::install::{LIC_STEPS, Progress, RESTORE_STEPS, disk_status, lic_status};
 use crate::panel::{Flow, Outcome, Runner};
 
 /// The installer, starting at `Install Licensed Internal Code`.
@@ -28,7 +28,7 @@ pub fn install_lic_menu() -> Submenu {
             (
                 1,
                 "Install Licensed Internal Code",
-                Some(Box::new(|_env| Flow::Push(Box::new(lic_options_menu())))),
+                Some(Box::new(|env| Flow::Push(Box::new(lic_options_menu(env))))),
             ),
             (
                 2,
@@ -43,25 +43,42 @@ pub fn install_lic_menu() -> Submenu {
 /// What a LIC install does with the disks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LicKind {
+    /// Option 1: the LIC again onto the current load source; ASP 1, its
+    /// configuration, the service tools users and the boot entries stay
+    /// (the new LIC goes into the slot the system did not boot).
+    Restore,
     /// Option 2: partition the load source, initialize the system.
     Initialize,
-    /// Option 3: the LIC again over an installed load source; ASP 1 and
-    /// its configuration stay (a newer release goes into the slot the
-    /// system did not boot; see docs/INSTALL.md).
+    /// Option 3: on IBM i, a replaced load source whose configuration
+    /// is recovered from the other units. Not there yet: it does what
+    /// option 1 does over a load source chosen from the disks with
+    /// QS/400 data (see docs/INSTALL.md).
     Recover,
     /// Option 4: a new load source, its ASP 1 copied back from the
     /// mirrored partner that survived.
     RestoreUnits,
 }
 
-/// The `Install Licensed Internal Code (LIC)` menu.
-#[must_use]
-pub fn lic_options_menu() -> Submenu {
+/// The `Install Licensed Internal Code (LIC)` menu, under the current
+/// load source as IBM i shows it.
+pub fn lic_options_menu(env: &mut dyn DstEnv) -> Submenu {
+    let lead = match env.load_source() {
+        Some(d) => vec![
+            "Current load source, where option 1 restores the LIC:".to_string(),
+            format!("  {NONCONFIGURED_HEADINGS}"),
+            format!("  {}", nonconfigured_row(&NonConfigured { has_data: false, ..d })),
+        ],
+        None => vec!["No installed load source was found.".to_string()],
+    };
     Submenu::new(
         "install-lic-options",
         "Install Licensed Internal Code (LIC)",
         vec![
-            (1, "Restore Licensed Internal Code", None),
+            (
+                1,
+                "Restore Licensed Internal Code",
+                Some(Box::new(restore)),
+            ),
             (
                 2,
                 "Install Licensed Internal Code and Initialize System",
@@ -90,6 +107,19 @@ pub fn lic_options_menu() -> Submenu {
             ),
         ],
     )
+    .with_lead(lead)
+}
+
+/// Option 1: as on IBM i, no load source choice and no confirmation;
+/// the LIC goes onto the current load source at once, then a re-IPL.
+fn restore(env: &mut dyn DstEnv) -> Flow {
+    let Some(disk) = env.load_source() else {
+        return Flow::Error("No installed load source; use option 2 to install".into());
+    };
+    match run_install_as(env, &disk.device, LicKind::Restore, false) {
+        Ok(()) => Flow::Exit(Outcome::Reboot),
+        Err(e) => Flow::Error(e),
+    }
 }
 
 /// `Select Load Source Device`: every disk the system sees.
@@ -161,7 +191,7 @@ pub fn confirm_as(disk: NonConfigured, kind: LicKind, auto: bool) -> Confirm {
                 "the system initialized. All data on the unit will be lost.",
             ],
         ),
-        LicKind::Recover => (
+        LicKind::Recover | LicKind::Restore => (
             "install-recover-confirm",
             "Install LIC and Recover Configuration - Confirmation",
             [
@@ -212,7 +242,11 @@ pub fn run_install_as(
 ) -> Result<(), String> {
     let system = env.system_name();
     let device = device.to_string();
-    let mut progress = Progress::new(&LIC_STEPS);
+    let steps: &[&str] = match kind {
+        LicKind::Restore | LicKind::Recover => &RESTORE_STEPS,
+        LicKind::Initialize | LicKind::RestoreUnits => &LIC_STEPS,
+    };
+    let mut progress = Progress::new(steps);
     env.install_lic_as(&device, kind, auto, &mut |event, env| {
         match event {
             LicEvent::DiskPercent(p) => {
@@ -273,7 +307,10 @@ mod tests {
         assert_eq!(r.enter(&f(&["1"]), &mut e), None);
         assert_eq!(r.top(), "install-lic-options");
         assert_eq!(r.enter(&f(&["1"]), &mut e), None);
-        assert!(r.screen(&mut e).dump().contains("not available"));
+        let d = r.screen(&mut e).dump();
+        assert!(d.contains("No installed load source was found"));
+        assert!(d.contains("use option 2"));
+        assert!(e.actions.is_empty());
         assert_eq!(r.enter(&f(&["2"]), &mut e), None);
         assert_eq!(r.top(), "install-load-source");
         assert_eq!(r.enter(&f(&["1"]), &mut e), None);
@@ -327,5 +364,29 @@ mod tests {
         assert!(r.screen(&mut e).dump().contains("mirrored partner"));
         assert_eq!(r.function(10, &mut e), Some(Outcome::Reboot));
         assert_eq!(e.actions, vec!["install-lic /dev/vdb RestoreUnits auto=false"]);
+    }
+
+    #[test]
+    fn option_1_restores_onto_the_load_source_without_asking() {
+        let mut e = MemEnv::new("QS400");
+        let disk = |dev: &str, res: &str, data: bool| NonConfigured {
+            device: dev.into(),
+            resource: res.into(),
+            has_data: data,
+            size_mib: 4096,
+            ..NonConfigured::default()
+        };
+        e.spare = vec![disk("/dev/vda", "DD001", false), disk("/dev/vdb", "DD002", true)];
+        let mut r = start();
+        r.enter(&f(&["1"]), &mut e);
+        let d = r.screen(&mut e).dump();
+        assert!(d.contains("Current load source") && d.contains("DD002"));
+        assert!(!d.contains("DD001"));
+        // No selection, no confirmation: the status display, then a re-IPL.
+        assert_eq!(r.enter(&f(&["1"]), &mut e), Some(Outcome::Reboot));
+        assert_eq!(e.actions, vec!["install-lic /dev/vdb Restore auto=false"]);
+        let last = e.shown.last().unwrap();
+        assert!(last.contains("Install Licensed Internal Code - Status"));
+        assert!(last.contains("X  Make the new slot the IPL default"));
     }
 }

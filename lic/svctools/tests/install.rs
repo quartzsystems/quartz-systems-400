@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use svctools::env::{MemEnv, NonConfigured};
 use svctools::install::os::{DeviceKind, InstallDevice};
-use svctools::install::{LIC_STEPS, OS_STEPS, Progress, disk_status};
+use svctools::install::{LIC_STEPS, OS_STEPS, Progress, RESTORE_STEPS, disk_status};
 
 fn golden_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -107,6 +107,16 @@ fn install_screens_match_their_golden_files() {
     p.done(0);
     p.done(1);
     check("lic-status", &svctools::install::lic_status(&e, &p).dump());
+    let mut p = Progress::new(&RESTORE_STEPS);
+    p.done(0);
+    p.done(1);
+    p.done(2);
+    check("restore-status", &svctools::install::lic_status(&e, &p).dump());
+    let mut none = MemEnv::new("QS400");
+    let mut r = svctools::install::lic::start();
+    r.enter(&f(&["1"]), &mut none);
+    r.enter(&f(&["1"]), &mut none);
+    check("lic-options-no-source", &r.screen(&mut none).dump());
     let mut r = svctools::install::lic::start();
     r.enter(&f(&["1"]), &mut e);
     r.enter(&f(&["3"]), &mut e);

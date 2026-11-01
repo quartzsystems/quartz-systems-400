@@ -290,7 +290,7 @@ fn net_address(system: &mut System) {
 
 /// A D IPL with a response file installs without the menu: onto a
 /// system with no operating system yet, or over one when the answers
-/// ask for option 3 and the media's release is not the installed one
+/// ask for option 1 or 3 and the media's release is not the installed one
 /// (a slip install of the same release, or media left in the drive,
 /// shows the menu instead of installing again).
 fn automatic(system: &mut System) -> bool {
@@ -300,7 +300,10 @@ fn automatic(system: &mut System) -> bool {
     if !menu::os_installed() {
         return true;
     }
-    if rsp.lic_option != instmedia::rsp::LicOption::Recover {
+    if !matches!(
+        rsp.lic_option,
+        instmedia::rsp::LicOption::Restore | instmedia::rsp::LicOption::Recover
+    ) {
         return false;
     }
     let media_rel = media::locate()

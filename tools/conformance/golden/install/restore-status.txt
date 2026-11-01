@@ -1,0 +1,24 @@
+                    Install Licensed Internal Code - Status                     
+                                                                 System:  QS400 
+                                                                                
+   X  Check the release of the media against the system                         
+   X  Read the LIC record of the load source                                    
+   X  Copy the Licensed Internal Code to the other slot                         
+      Make the new slot the IPL default                                         
+      Write the LIC record                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                

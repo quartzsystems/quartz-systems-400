@@ -586,6 +586,19 @@ impl DstEnv for Env<'_> {
         disks(self.system)
     }
 
+    fn load_source(&mut self) -> Option<NonConfigured> {
+        // The first LIC partition on a disk that is not install media.
+        let all = disks(self.system);
+        diskimg::locate::partitions_of_type(licpart::LIC_TYPE_GUID)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|p| diskimg::locate::disk_of(p))
+            .find_map(|disk| {
+                let node = format!("/dev/{disk}");
+                all.iter().find(|d| d.device == node).cloned()
+            })
+    }
+
     fn reserved_disks(&mut self) -> Vec<String> {
         reserved(self.system)
     }

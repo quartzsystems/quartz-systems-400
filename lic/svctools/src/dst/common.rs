@@ -22,6 +22,7 @@ pub struct Submenu {
     options: Vec<(u8, &'static str, Option<Action>)>,
     fkeys: &'static str,
     key: Option<(u8, Action)>,
+    lead: Vec<String>,
 }
 
 impl Submenu {
@@ -39,7 +40,15 @@ impl Submenu {
             options,
             fkeys: "F3=Exit   F12=Cancel",
             key: None,
+            lead: Vec::new(),
         }
+    }
+
+    /// With these lines above the options.
+    #[must_use]
+    pub fn with_lead(mut self, lead: Vec<String>) -> Self {
+        self.lead = lead;
+        self
     }
 
     /// With function key `n` doing `action`; `fkeys` is the key line.
@@ -58,9 +67,10 @@ impl Panel for Submenu {
 
     fn render(&self, env: &mut dyn DstEnv) -> Screen {
         let options: Vec<(u8, &str)> = self.options.iter().map(|(n, t, _)| (*n, *t)).collect();
-        ui::menu(
+        ui::menu_after(
             self.title,
             &env.system_name(),
+            &self.lead,
             &options,
             self.fkeys,
         )

@@ -79,7 +79,8 @@ them with `svc.key` and `svc.type`.
 |---|---|---|---|
 | 1 | `IPL or Install the System` | (slic's menu) | D IPL from the media; 1 IPL, 2 install, 3 DST, 4 automatic install |
 | 2 | `Install Licensed Internal Code` | `lic-menu.txt` | 1 install, 2 DST, 3 not available |
-| 3 | `Install Licensed Internal Code (LIC)` | `lic-options.txt` | 2, 3 and 4 work |
+| 3 | `Install Licensed Internal Code (LIC)` | `lic-options.txt`, `lic-options-no-source.txt` | the current load source above the options; 1 to 4 work |
+| 4d | (option 1) | | no load source choice and no confirmation, as on IBM i: straight to panel 7 |
 | 4a | `Select Load Source Device` | `load-source.txt` | option 2: every disk |
 | 5a | `Install LIC and Initialize System - Confirmation` | `lic-confirm.txt` | F10 |
 | 4b | `Select Load Source Device` | `recover-source.txt` | option 3: the disks with QS/400 data |
@@ -87,7 +88,7 @@ them with `svc.key` and `svc.type`.
 | 4c | `Select Load Source Device` | `restore-source.txt` | option 4: the blank disks |
 | 5c | `Install LIC and Restore Disk Unit Data - Confirmation` | `restore-confirm.txt` | F10 |
 | 6 | `Initialize the Disk - Status` | `disk-status.txt` | options 2 and 4 |
-| 7 | `Install Licensed Internal Code - Status` | `lic-status.txt` | C6004001 to C6004090; re-IPL |
+| 7 | `Install Licensed Internal Code - Status` | `lic-status.txt`, `restore-status.txt` | C6004001 to C6004090; re-IPL; options 1 and 3 show their own steps |
 | 8 | DST sign-on, `Use Dedicated Service Tools (DST)` | `dst/` | the re-IPL finds the install pending (C6004100); option 2 |
 | 9 | `Install Device Type Selection` | `device-type.txt` | 1 tape, 2 optical, 3 virtual |
 | 10 | `Select Install Device` | `install-device.txt` | when more than one device of the kind holds media |
@@ -124,17 +125,50 @@ install device (`OPT01`) in place of a save file; the agreement panels
 show first (F14 accepts, F15 declines), then `RSTLICPGM DEV(OPT01)` per
 option.
 
-### LIC options 3 and 4
+### LIC options 1, 3 and 4
 
-- **Option 3, Install LIC and Recover Configuration.** Over an installed
-  load source: nothing is partitioned, ASP 1 and its unit table stay.
-  The release rule (§4) decides between a slip install and an upgrade,
-  or refuses (A6004080). The new LIC goes into the slot the system did
-  not boot (C6004060), which becomes the default (`TAG_LIC_SLOTS` and
-  the firmware's `BootOrder`); where the firmware cannot be told, slot A
-  gets the image as well. The operating system install follows at the
-  re-IPL. Once it completes, the LIC is copied into the other slot too
-  (the record's TLV `0x0109`), so both slots hold the new release.
+- **Option 1, Restore Licensed Internal Code.** The way to put new media
+  onto an installed system (a slip install or an upgrade). As on IBM i,
+  the menu shows the current load source above the options (the disk
+  with the first LIC partition that is not install media) and option 1
+  asks nothing more: no load source choice, no confirmation (IBM shows
+  a confirmation only for options 2 to 5). With no installed load
+  source the menu says so and option 1 refuses. Nothing is partitioned:
+  ASP 1 and its unit table, the configuration, the service tools users
+  (in the LIC record) and the firmware's boot entries stay. The release
+  rule (§4) decides between a slip install and an upgrade, or refuses
+  (A6004080, on the menu's message line). The new LIC goes into the
+  slot the system did not boot (C6004060), which becomes the default
+  (`TAG_LIC_SLOTS` and the firmware's `BootOrder`); where the firmware
+  cannot be told, slot A gets the image as well. The status display
+  shows the five steps of `RESTORE_STEPS`, then the system re-IPLs from
+  the disk, where the operating system install is pending (C6004100;
+  DST option 2, as after any LIC install). Once it completes, the LIC is
+  copied into the other slot too (the record's TLV `0x0109`), so both
+  slots hold the new release. A response file asks for it with
+  `lic-option = 1`.
+- **Option 3, Install LIC and Recover Configuration.** On IBM i this is
+  for a load source that was replaced: the LIC goes onto the new, blank
+  load source, and at the re-IPL DST recovers the disk configuration
+  (which units belong to which ASP) from what the other configured
+  units record about themselves; the data that was on the old load
+  source is gone and is restored from a save. QS/400 cannot do that yet,
+  and option 3 still does what option 1 does over a load source chosen
+  from the disks with QS/400 data (`recover-source.txt`,
+  `recover-confirm.txt`). What exists: every unit carries its header
+  (unit UUID, ASP UUID and number) and both superblock copies with the
+  whole unit table (STORE_FORMAT.md §4 and §5), so the configuration
+  survives on the other units. What is missing: (1) a DST `Recover
+  configuration` display that reads the newest superblock off the
+  surviving units, shows the configuration it found, and on F10 puts
+  the new load source's ASP 1 partition in as unit 1; (2) a store that
+  opens ASP 1 with unit 1's pages gone. QS/400 has no user ASPs, so
+  every object of ASP 1 may have pages on the lost unit: as on IBM i
+  for the system ASP, the objects are lost and ASP 1 has to be cleared
+  and loaded again from a system save (docs/RECOVERY.md), which makes
+  the recovered configuration worth only the units' membership until
+  user ASPs exist. A replaced load source of a mirrored ASP 1 is
+  option 4, which works.
 - **Option 4, Install LIC and Restore Disk Unit Data.** A new load
   source in place of a failed one whose ASP 1 was mirrored: the LIC is
   written as for option 2, ASP 1 is opened on its other units, and the
@@ -152,7 +186,7 @@ instead. It is read from `QS400/INSTALL.RSP` on the media, or from the
 path `qs400.rsp=PATH` names on the command line (a path on the media;
 `qs400.rsp=http://...` is `BLOCKED(phase11)` until the network boot).
 A D IPL that finds one installs at once, without the menu, when no
-disk holds an operating system, or when the file asks for option 3 and
+disk holds an operating system, or when the file asks for option 1 or 3 and
 the media's release is not the installed one; otherwise the menu shows,
 so media left in the drive does not install again. The file's text is
 kept in the LIC record (TLV `0x0108`) from the LIC install to the end
@@ -166,8 +200,8 @@ apply.
 
 | Key | Values | Default | Answers |
 |---|---|---|---|
-| `lic-option` | `2`, `3`, `4` | `2` | the `Install Licensed Internal Code (LIC)` option |
-| `load-source` | resource name (`DD001`), device (`vdb`, `/dev/vdb`), `*FIRST` | `*FIRST` | `Select Load Source Device` |
+| `lic-option` | `1`, `2`, `3`, `4` | `2` | the `Install Licensed Internal Code (LIC)` option |
+| `load-source` | resource name (`DD001`), device (`vdb`, `/dev/vdb`), `*FIRST` | `*FIRST` | `Select Load Source Device`; ignored with option 1, which takes the current load source |
 | `mirror` | two disks | none | a mirrored pair; may repeat; a disk already in ASP 1 is paired with the other |
 | `unit` | disks | none | further unprotected units; may repeat |
 | `device` | `*MEDIA`, `*OPT`, `*TAP`, `*VRT` | `*MEDIA` | `Install Device Type Selection`; `*MEDIA` takes a `SAVSYS` medium first, else the boot media |
@@ -246,10 +280,11 @@ matrix:
 | 3 interactive install | every panel of §2 over serial, `Specify Install Options` included |
 | 8 response file mirrored | a FAT32 copy of the media with `QS400/INSTALL.RSP`: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 | 9 SAVSYS and recovery | `CRTDEVTAP`, `CRTIMGCLG`, `ADDIMGCLGE`, `LODIMGCLG`, then `SAVSYS DEV(TAPVRT01)`, `CHKTAP` (a system save), `SAVLIB LIB(*NONSYS)` and `SAV` after it; the volume copied onto a disk (`svc.vrtout`), the system disk wiped, option 4: LIC and operating system from the tape, RSTUSRPRF, RSTCFG, RSTAUT, then the storage service's RSTLIB, RST and RSTAUT; the profile, the library and the IFS file made before the save are back |
-| 10 slip install V1R1M0 | option 3 with V1R1M0 media over V1R0M0, the upgrade's panels, user data kept, the store at V1R1M0; then V1R0M0 media refused |
+| 10 slip install V1R1M0 | option 1 with V1R1M0 media over V1R0M0, the upgrade's panels, user data kept, the store at V1R1M0; then V1R0M0 media refused |
 | 11 power pull mid-install | killed during the LIC install; the reinstall reaches sign-on, `chkstg` clean |
 | 12 four-unit mirror | step 1's disk with three blank disks: added to ASP 1 in DST, `svc.obj fill` puts data on every unit, Start mirrored protection pairs 1 with 4 and 2 with 3 (the data of 3 and 4 moved first), the copies at the re-IPL, the data intact; disk 4 pulled: A6001255, its unit Missing, the IPL completes |
 | 13 device parity RAID 5 | the same four units, RAID 5 started over all of them in DST and synchronized at the IPL; disk 4 pulled: A6001257, `DPY/Failed`, every page read and written through parity; disk 4 back: rebuilt at the IPL, `DPY/Active`, data intact, `chkstg` clean |
+| 14 restore LIC in place | step 1's disk with a user library: the media's option 1 restores the LIC onto the load source with no prompts (a slip install of the same release), the operating system goes in again from DST, then the disk alone IPLs from the new slot with the library intact and `chkstg` clean |
 
 `--media iso-raw` is the D IPL from the USB image: the hybrid image
 written raw to a disk boots, installs onto a blank disk beside it, and

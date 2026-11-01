@@ -16,6 +16,8 @@ use crate::{Error, Result};
 /// menu's number).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum LicOption {
+    /// 1: restore the LIC onto the current load source; ASP 1 stays.
+    Restore,
     /// 2: install and initialize the system.
     #[default]
     Initialize,
@@ -30,6 +32,7 @@ impl LicOption {
     #[must_use]
     pub fn number(self) -> u8 {
         match self {
+            Self::Restore => 1,
             Self::Initialize => 2,
             Self::Recover => 3,
             Self::RestoreUnits => 4,
@@ -255,10 +258,11 @@ impl Response {
             match key.as_str() {
                 "lic-option" => {
                     r.lic_option = match v {
+                        "1" => LicOption::Restore,
                         "2" => LicOption::Initialize,
                         "3" => LicOption::Recover,
                         "4" => LicOption::RestoreUnits,
-                        _ => return Err(bad(n, format!("lic-option '{v}' is not 2, 3 or 4"))),
+                        _ => return Err(bad(n, format!("lic-option '{v}' is not 1, 2, 3 or 4"))),
                     }
                 }
                 "load-source" => {
@@ -538,6 +542,9 @@ special-environment = *S36
         }
         assert_eq!(Response::parse("licpgm = *ALL").unwrap().licpgm, Licpgms::All);
         assert_eq!(Response::parse("date = *CURRENT").unwrap().date, None);
+        let r = Response::parse("lic-option = 1").unwrap();
+        assert_eq!(r.lic_option, LicOption::Restore);
+        assert!(r.to_text().contains("lic-option = 1"));
     }
 
     #[test]

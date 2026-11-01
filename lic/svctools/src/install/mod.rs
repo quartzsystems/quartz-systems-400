@@ -89,6 +89,16 @@ pub const LIC_STEPS: [&str; 5] = [
     "Write the LIC record",
 ];
 
+/// The steps of a LIC install over the installed load source (options
+/// 1 and 3), in order.
+pub const RESTORE_STEPS: [&str; 5] = [
+    "Check the release of the media against the system",
+    "Read the LIC record of the load source",
+    "Copy the Licensed Internal Code to the other slot",
+    "Make the new slot the IPL default",
+    "Write the LIC record",
+];
+
 /// The stages of the operating system install, in order: the status
 /// display ticks them off as the `QS00SS1` load goes in.
 pub const OS_STEPS: [&str; 6] = [

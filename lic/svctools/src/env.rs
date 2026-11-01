@@ -368,6 +368,11 @@ pub trait DstEnv {
     fn disks(&mut self) -> Vec<NonConfigured> {
         self.nonconfigured()
     }
+    /// The current load source: the disk holding the LIC partition and
+    /// unit 1 of ASP 1, which option 1 restores the LIC onto.
+    fn load_source(&mut self) -> Option<NonConfigured> {
+        None
+    }
     /// Disks no disk function may touch whatever the configuration says:
     /// the one the LIC runs from, the install media, disks with a
     /// mounted file system. Device nodes, whole disks or partitions.
@@ -397,10 +402,11 @@ pub trait DstEnv {
         let _ = (device, auto, report);
         Err("not available".into())
     }
-    /// Install the Licensed Internal Code as `kind` asks: initialize
-    /// (option 2, [`DstEnv::install_lic`]), keep ASP 1 and its
-    /// configuration (option 3), or restore the load source from its
-    /// mirrored partner (option 4).
+    /// Install the Licensed Internal Code as `kind` asks: restore it
+    /// onto the current load source (option 1), initialize (option 2,
+    /// [`DstEnv::install_lic`]), keep ASP 1 and its configuration
+    /// (option 3), or restore the load source from its mirrored
+    /// partner (option 4).
     fn install_lic_as(
         &mut self,
         device: &str,
@@ -854,6 +860,9 @@ impl DstEnv for MemEnv {
         } else {
             self.whole.clone()
         }
+    }
+    fn load_source(&mut self) -> Option<NonConfigured> {
+        self.disks().into_iter().find(|d| d.has_data)
     }
     fn reserved_disks(&mut self) -> Vec<String> {
         self.reserved.clone()

@@ -47,17 +47,31 @@ pub fn message(s: &mut Screen, text: &str, error: bool) {
 /// A numbered menu: the options from row 4, `Selection` and its field
 /// at the bottom.
 pub fn menu(title: &str, system: &str, options: &[(u8, &str)], fkeys: &str) -> Screen {
+    menu_after(title, system, &[], options, fkeys)
+}
+
+/// A numbered menu under `lead` lines (a blank line between them).
+pub fn menu_after(
+    title: &str,
+    system: &str,
+    lead: &[String],
+    options: &[(u8, &str)],
+    fkeys: &str,
+) -> Screen {
     let mut s = Screen::new();
     header(&mut s, title, system);
-    s.put(
-        BODY_ROW,
-        BODY_COL,
-        "Select one of the following:",
-        Attr::GREEN,
-    );
+    for (i, line) in lead.iter().enumerate() {
+        s.put(BODY_ROW + i, BODY_COL, line, Attr::GREEN);
+    }
+    let top = if lead.is_empty() {
+        BODY_ROW
+    } else {
+        BODY_ROW + lead.len() + 1
+    };
+    s.put(top, BODY_COL, "Select one of the following:", Attr::GREEN);
     for (i, (number, text)) in options.iter().enumerate() {
         s.put(
-            BODY_ROW + 2 + i,
+            top + 2 + i,
             BODY_COL + 4,
             &format!("{number:>2}. {text}"),
             Attr::GREEN,

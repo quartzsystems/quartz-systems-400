@@ -9,8 +9,9 @@
 //! |---|---|
 //! | 8 | a response file on a FAT32 copy of the media: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 //! | 9 | `SAVSYS` to a virtual tape, the system disk wiped, the recovery from the tape: LIC, operating system, profiles, configuration |
-//! | 10 | a slip install of a V1R1M0 build over V1R0M0 (`QS400_SLIP_ISO`): user data kept, release recorded, the downgrade refused |
+//! | 10 | an upgrade to a V1R1M0 build over V1R0M0 with option 1 (`QS400_SLIP_ISO`): user data kept, release recorded, the downgrade refused |
 //! | 11 | a power pull in the middle of a LIC install, then a clean reinstall |
+//! | 14 | option 1, Restore Licensed Internal Code, over step 1's disk with user data: the data kept, the new slot booted |
 
 use std::fs;
 use std::path::PathBuf;
@@ -360,63 +361,8 @@ impl Suite {
         };
         let mut s = Session::spawn(&upgrade)?;
         let r = (|| -> Result<String, String> {
-            s.expect("Selection", self.boot_timeout)?;
-            s.send("2")?;
-            s.expect("Install Licensed Internal Code", CMD)?;
-            s.send("1")?;
-            s.expect("Install Licensed Internal Code (LIC)", CMD)?;
-            s.send("3")?;
-            s.expect("Type 1 beside the installed load source", CMD)?;
-            s.send("1")?;
-            s.expect("Install LIC and Recover Configuration - Confirmation", CMD)?;
-            self.snap("install-recover-confirm");
-            s.send("key f10")?;
-            s.expect("upgrade to V1R1M0 over V1R0M0", Duration::from_mins(1))?;
-            s.expect("SRC C6004060", Duration::from_mins(2))?;
-            s.expect("SRC C6004090", Duration::from_mins(2))?;
-            s.expect("SRC C6004100", self.boot_timeout * 2)?;
-            s.expect("Dedicated Service Tools (DST) Sign On", self.boot_timeout)?;
-            for l in ["type QSECOFR", "key tab", "type Quartz1", "key enter"] {
-                s.send(l)?;
-            }
-            if s.expect("Use Dedicated Service Tools (DST)", CMD).is_err() {
-                // Step 3 did not run: the shipped password, then the change.
-                for l in ["type QSECOFR", "key tab", "type QSECOFR", "key enter"] {
-                    s.send(l)?;
-                }
-                s.expect("Change Service Tools User Password", CMD)?;
-                for l in [
-                    "key tab",
-                    "type QSECOFR",
-                    "key tab",
-                    "type Quartz1",
-                    "key tab",
-                    "type Quartz1",
-                    "key enter",
-                ] {
-                    s.send(l)?;
-                }
-                s.expect("Use Dedicated Service Tools (DST)", CMD)?;
-            }
-            s.send("2")?;
-            s.expect("Install Device Type Selection", CMD)?;
-            s.send("2")?;
-            s.expect("Upgrade from V1R0M0 to V1R1M0", CMD)?;
-            s.send("key f10")?;
-            s.expect("Select a Language Group", CMD)?;
-            s.send("1")?;
-            s.expect("Confirm Language Feature Selection", CMD)?;
-            s.send("key f10")?;
-            s.expect("Install option", CMD)?;
-            s.send("key enter")?;
-            s.expect("SRC C6004140", Duration::from_mins(15))?;
-            let tr = s.expect("modules translated again", CMD)?;
-            s.expect("IPL Options", self.boot_timeout)?;
-            s.send("key enter")?;
-            s.expect("Set Major System Options", CMD)?;
-            s.send("key enter")?;
-            s.expect(SRC_IPL_COMPLETE, Duration::from_mins(5))?;
-            s.expect(crate::PROMPT, CMD)?;
+            self.restore_lic(&mut s, "upgrade to V1R1M0 over V1R0M0")?;
+            let tr = self.os_over(&mut s, "Upgrade from V1R0M0 to V1R1M0")?;
             let asp = s.command("svc.asp", CMD)?;
             if !asp.contains("V1R1M0") {
                 return Err(format!("the store does not record V1R1M0:\n{asp}"));
@@ -454,20 +400,181 @@ impl Suite {
             s.expect("Selection", self.boot_timeout)?;
             for (l, want) in [
                 ("2", "Install Licensed Internal Code"),
-                ("1", "Install Licensed Internal Code (LIC)"),
-                ("3", "Type 1 beside the installed load source"),
-                ("1", "Install LIC and Recover Configuration - Confirmation"),
+                ("1", "Current load source"),
             ] {
                 s.send(l)?;
                 s.expect(want, CMD)?;
             }
-            s.send("key f10")?;
+            // Option 1 asks nothing more; the release rule refuses.
+            s.send("1")?;
             s.expect("SRC A6004080", CMD)?;
             s.expect("downgrade is not allow", CMD)?;
             Ok(format!("{detail}; V1R0M0 over it refused"))
         })()
         .map_err(|e| (e, s.log.clone()));
         s.kill();
+        report(name, start, r)
+    }
+
+    /// Option 1 from the media's IPL menu: no load source choice, no
+    /// confirmation; `kind` is slic's line for the release rule's answer.
+    fn restore_lic(&self, s: &mut Session, kind: &str) -> Result<(), String> {
+        s.expect("Selection", self.boot_timeout)?;
+        s.send("2")?;
+        s.expect("Install Licensed Internal Code", CMD)?;
+        s.send("1")?;
+        s.expect("Install Licensed Internal Code (LIC)", CMD)?;
+        s.expect("Current load source", CMD)?;
+        self.snap("install-lic-options");
+        s.send("1")?;
+        s.expect(kind, Duration::from_mins(1))?;
+        s.expect("SRC C6004060", Duration::from_mins(2))?;
+        s.expect("SRC C6004090", Duration::from_mins(2))?;
+        Ok(())
+    }
+
+    /// After a LIC restore: the re-IPL finds the operating system install
+    /// pending, DST installs it from the optical media (`confirm` on its
+    /// confirmation), the IPL completes. Returns the text before the
+    /// install's summary line.
+    fn os_over(&self, s: &mut Session, confirm: &str) -> Result<String, String> {
+        s.expect("SRC C6004100", self.boot_timeout * 2)?;
+        s.expect("Dedicated Service Tools (DST) Sign On", self.boot_timeout)?;
+        for l in ["type QSECOFR", "key tab", "type Quartz1", "key enter"] {
+            s.send(l)?;
+        }
+        if s.expect("Use Dedicated Service Tools (DST)", CMD).is_err() {
+            // Step 3 did not run: the shipped password, then the change.
+            for l in ["type QSECOFR", "key tab", "type QSECOFR", "key enter"] {
+                s.send(l)?;
+            }
+            s.expect("Change Service Tools User Password", CMD)?;
+            for l in [
+                "key tab",
+                "type QSECOFR",
+                "key tab",
+                "type Quartz1",
+                "key tab",
+                "type Quartz1",
+                "key enter",
+            ] {
+                s.send(l)?;
+            }
+            s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+        }
+        s.send("2")?;
+        s.expect("Install Device Type Selection", CMD)?;
+        s.send("2")?;
+        s.expect(confirm, CMD)?;
+        s.send("key f10")?;
+        s.expect("Select a Language Group", CMD)?;
+        s.send("1")?;
+        s.expect("Confirm Language Feature Selection", CMD)?;
+        s.send("key f10")?;
+        s.expect("Install option", CMD)?;
+        s.send("key enter")?;
+        s.expect("SRC C6004140", Duration::from_mins(15))?;
+        let tr = s.expect("modules translated again", CMD)?;
+        s.expect("IPL Options", self.boot_timeout)?;
+        s.send("key enter")?;
+        s.expect("Set Major System Options", CMD)?;
+        s.send("key enter")?;
+        s.expect(SRC_IPL_COMPLETE, Duration::from_mins(5))?;
+        s.expect(crate::PROMPT, CMD)?;
+        Ok(tr)
+    }
+
+    /// Step 14: option 1 with the suite's own media over step 1's disk.
+    /// User data first; then the LIC restored onto the load source and
+    /// the operating system slip-installed; the disk alone boots the new
+    /// slot with the data intact.
+    pub(crate) fn restore_in_place(&self, installed: &PathBuf) -> Result<StepReport, HarnessError> {
+        let name = "14 restore LIC in place";
+        let start = Instant::now();
+        if self.skipped(name) {
+            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+        }
+        let Some(iso) = self.iso.clone() else {
+            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped: no media".into() });
+        };
+        let system = self.out_dir.join("restore-system.img");
+        fs::copy(installed, &system)?;
+        let disk = Launch {
+            image: Some(system.clone()),
+            cdrom: None,
+            cdrom_first: false,
+            extra_disks: Vec::new(),
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&disk)?;
+        let r = (|| -> Result<(), String> {
+            s.expect(SRC_IPL_COMPLETE, self.boot_timeout * 2)?;
+            s.expect(crate::PROMPT, CMD)?;
+            s.command("crtlib LIB(RSTLICUSR) TEXT('user data')", CMD)?;
+            s.command("svc.obj crt *DTAARA RSTLICUSR/KEEPME kept", CMD)?;
+            Ok(())
+        })();
+        if let Err(e) = r {
+            return report(name, start, Err((e, s.log.clone())));
+        }
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(30));
+        drop(s);
+        let media = Launch {
+            cdrom: Some(iso),
+            cdrom_first: true,
+            ..disk.clone()
+        };
+        let mut s = Session::spawn(&media)?;
+        let r = (|| -> Result<String, String> {
+            self.restore_lic(&mut s, "slip install of ")?;
+            self.os_over(&mut s, "Slip install of ")?;
+            // The new LIC went into the other slot, now the default, and
+            // into the first as well once the operating system was in.
+            let how = if s.log.contains("slot A written as well") {
+                "both slots written (firmware not told)"
+            } else if s.log.contains("Licensed Internal Code copied from slot") {
+                "new slot the default, copied into the other"
+            } else {
+                return Err("neither the new slot's copy nor the fallback was logged".into());
+            };
+            let kept = s.command("svc.obj ls RSTLICUSR", CMD)?;
+            if !kept.contains("KEEPME") {
+                return Err(format!("user data lost:\n{kept}"));
+            }
+            Ok(how.to_string())
+        })()
+        .map_err(|e| (e, s.log.clone()));
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(30));
+        drop(s);
+        let how = match r {
+            Ok(h) => h,
+            Err(e) => return report(name, start, Err(e)),
+        };
+        // The disk alone: the IPL completes from the restored LIC.
+        let mut s = Session::spawn(&disk)?;
+        let r = (|| -> Result<String, String> {
+            s.expect("slic: slot ", self.boot_timeout)?;
+            let slot = s.expect(", mode", CMD)?;
+            s.expect(SRC_IPL_COMPLETE, self.boot_timeout * 2)?;
+            s.expect(crate::PROMPT, CMD)?;
+            let kept = s.command("svc.obj ls RSTLICUSR", CMD)?;
+            if !kept.contains("KEEPME") {
+                return Err(format!("user data lost after the IPL from disk:\n{kept}"));
+            }
+            let check = s.command("svc.chkstg", Duration::from_secs(300))?;
+            if !check.contains(": 0 bad") {
+                return Err(format!("svc.chkstg:\n{check}"));
+            }
+            Ok(format!(
+                "option 1, no prompts; {how}; IPL from disk in slot {}; RSTLICUSR/KEEPME kept; chkstg clean",
+                slot.trim(),
+            ))
+        })()
+        .map_err(|e| (e, s.log.clone()));
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(30));
         report(name, start, r)
     }
 

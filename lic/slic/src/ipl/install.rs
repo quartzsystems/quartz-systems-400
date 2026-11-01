@@ -112,6 +112,10 @@ pub fn run_auto(system: &mut System) {
     let mut env = Env::new(system);
     let disks = env.disks();
     let device = match &rsp.load_source {
+        // Option 1 has no choice: the current load source.
+        _ if rsp.lic_option == instmedia::rsp::LicOption::Restore => {
+            env.load_source().map(|d| d.device)
+        }
         Some(want) => disks
             .iter()
             .find(|d| instmedia::Response::names(want, &d.resource, &d.device))
@@ -119,6 +123,7 @@ pub fn run_auto(system: &mut System) {
         None => disks.first().map(|d| d.device.clone()),
     };
     let kind = match rsp.lic_option {
+        instmedia::rsp::LicOption::Restore => LicKind::Restore,
         instmedia::rsp::LicOption::Initialize => LicKind::Initialize,
         instmedia::rsp::LicOption::Recover => LicKind::Recover,
         instmedia::rsp::LicOption::RestoreUnits => LicKind::RestoreUnits,
@@ -477,7 +482,9 @@ impl Env<'_> {
     ) -> Result<(), String> {
         match kind {
             LicKind::Initialize => self.write_lic(device, auto, 1, report),
-            LicKind::Recover => self.write_lic_over(device, auto, report),
+            // Option 3 recovers no configuration yet: it restores in
+            // place as option 1 does (docs/INSTALL.md).
+            LicKind::Restore | LicKind::Recover => self.write_lic_over(device, auto, report),
             LicKind::RestoreUnits => self.write_lic_restore(device, auto, report),
         }
     }
@@ -593,8 +600,9 @@ impl Env<'_> {
         Ok(())
     }
 
-    /// Option 3: the LIC over the installed load source; ASP 1 and its
-    /// configuration stay. The release rule decides: the same release
+    /// Option 1 (and option 3 for now): the LIC over the installed load
+    /// source; ASP 1, its configuration, the service tools users and the
+    /// boot entries stay. The release rule decides: the same release
     /// again or a newer one goes into the slot the system did not boot,
     /// which becomes the default; the operating system install follows.
     fn write_lic_over(
@@ -657,7 +665,7 @@ impl Env<'_> {
             f.sync_all().map_err(fail("Installing the Licensed Internal Code"))?;
         }
         self.system.emit(&src::INSTALL_LIC_SLOT);
-        report(LicEvent::StepDone(if target == Slot::A { 2 } else { 3 }), self);
+        report(LicEvent::StepDone(2), self);
         // The new slot boots from now on; the firmware is told, and
         // where it cannot be, slot A (its removable-media path) gets the
         // image too, so the next IPL runs the new LIC either way.
@@ -689,7 +697,7 @@ impl Env<'_> {
                 record.remove_tlv(TAG_LIC_COPY);
             }
         }
-        report(LicEvent::StepDone(if target == Slot::A { 3 } else { 2 }), self);
+        report(LicEvent::StepDone(3), self);
         keep_answers(&mut record, auto)?;
         record.header.install_stage = 1;
         record.header.auto_install = auto;
