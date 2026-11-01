@@ -129,6 +129,13 @@ impl Session {
         }
         for bytes in records {
             self.records_in += 1;
+            if self.startup.is_none() && tn5250::startup::is_startup(&bytes) {
+                if let Ok(s) = tn5250::startup::decode(&bytes) {
+                    self.trace.note(&format!("startup response: {} {} {}", s.code, s.system, s.device));
+                    self.startup = Some(s.code);
+                }
+                continue;
+            }
             let rec = match Record::decode(&bytes) {
                 Ok(r) => r,
                 Err(e) => {

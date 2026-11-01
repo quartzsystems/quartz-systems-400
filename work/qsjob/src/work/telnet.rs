@@ -341,6 +341,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             || "QS400".to_string(),
             |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
         );
+    let _ = SYSTEM.set(host.clone());
     let (ask_tx, ask_rx) = mpsc::channel::<Ask>();
     if a.plain() {
         match bind(port) {
@@ -683,12 +684,15 @@ fn io_thread(mut s: Stream, out_rx: &Receiver<Vec<u8>>, ev_tx: &Sender<Ev>) {
     }
 }
 
-/// The start-up response record (RFC 2877): the code and the device.
+/// The system name the start-up response carries, set when the server
+/// starts.
+static SYSTEM: OnceLock<String> = OnceLock::new();
+
+/// The start-up response record (RFC 4777): the code, the system and
+/// the device.
 fn startup_response(code: &str, device: &str) -> Vec<u8> {
-    let mut data = Vec::new();
-    data.extend(ccsid::to_ebcdic(code).unwrap_or_default());
-    data.extend(ccsid::to_ebcdic(&format!("{device:<10}")).unwrap_or_default());
-    telnet::record(&Record::new(0, data).encode())
+    let system = SYSTEM.get().map_or("QS400", String::as_str);
+    telnet::record(&tn5250::startup::encode(code, system, device))
 }
 
 /// One connection, start to end.
@@ -826,7 +830,7 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
     if let Some(ask) = at.ask {
         // The console display is the console's, never a network session's.
         if requested == display::CONSOLE_DEVICE {
-            let _ = tr.send(startup_response("8903", &requested));
+            let _ = tr.send(startup_response(tn5250::startup::code::NOT_VALID, &requested));
             return Err(format!("{peer}: {requested} is the console"));
         }
         // QIBM_QTG_DEVINIT: the exit programs may refuse the connection
@@ -871,7 +875,7 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
         }
     };
     if !requested.is_empty() && !console {
-        tr.send(startup_response("I902", &device))?;
+        tr.send(startup_response(tn5250::startup::code::STARTED, &device))?;
     }
     let auto = if console {
         None
@@ -973,7 +977,7 @@ fn printer_session(
             return Err(format!("{peer}: no printer device: {code}"));
         }
     };
-    tr.send(startup_response("I902", &device))?;
+    tr.send(startup_response(tn5250::startup::code::STARTED, &device))?;
     let path = dev::socket(&device);
     let _ = std::fs::create_dir_all(dev::DIR);
     let _ = std::fs::remove_file(&path);
@@ -1822,6 +1826,7 @@ mod tests {
     fn startup_response_is_a_record() {
         let r = startup_response("I902", "QPADEV0001");
         assert_eq!(&r[r.len() - 2..], &[0xFF, 0xEF]);
-        assert_eq!(r[2..4], [0x12, 0xA0]);
+        let d = tn5250::startup::decode(&r[..r.len() - 2]).unwrap();
+        assert_eq!((d.code.as_str(), d.device.as_str()), ("I902", "QPADEV0001"));
     }
 }

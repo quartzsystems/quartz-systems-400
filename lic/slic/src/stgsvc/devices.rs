@@ -13,7 +13,8 @@ use wm::obj::devd::{DevStatus, Devd, VIRTUAL_CONTROLLER, VIRTUAL_PREFIX, virtual
 
 use crate::ipl::system::System;
 
-/// The response codes of RFC 2877 a session gets instead of a device.
+/// The response codes of RFC 4777 a session gets instead of a device
+/// (`tn5250::startup::code`).
 pub mod code {
     /// Device not available.
     pub const BUSY: &str = "8902";

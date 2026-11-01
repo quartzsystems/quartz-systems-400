@@ -9,3 +9,5 @@ net/qsweb/assets/** -text
 net/httpadmin/tests/golden/** -text
 net/httpadmin/src/fixture/*.conf -text
 net/httpadmin/src/fixture/*.log -text
+ui/tn5250/tests/fixtures/startup/*.bin -text
+ui/tn5250/tests/fixtures/startup/*.hex -text
