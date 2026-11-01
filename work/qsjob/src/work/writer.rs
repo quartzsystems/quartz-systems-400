@@ -9,7 +9,12 @@
 //! queue gets it through the `print` crate (transform, then the raw
 //! port, IPP or LPR). A failed send is reported to the service, which
 //! puts the file back and shows the writer in `MSGW`; the writer tries
-//! again after a pause.
+//! again after a pause. A TN5250E printer session's device gets each
+//! file as one RFC 2877 print job; a file completes only when the client
+//! answered every record. A refusal leaves the file ready and the writer
+//! in `MSGW` on an inquiry; a lost session leaves the file ready and the
+//! writer waiting for a session to hold the device again (the session
+//! that ends ends the writer).
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -75,35 +80,50 @@ impl TlsConnector for PrinterTls {
     }
 }
 
-/// Send a spooled file's SCS to the printer session holding device
-/// `name`, one record at a time, each answered by the client. A device
-/// without a session (the capture device) has no socket: nothing to do.
-/// `BLOCKED(phase8)`: the record framing follows RFC 2877 as read; no
-/// printer client could verify it.
-fn send_to_device(name: &str, scs: &[u8]) -> Result<(), String> {
-    use std::os::unix::net::UnixStream;
-    let path = wm::dev::socket(name);
-    if !std::path::Path::new(&path).exists() {
-        return Ok(());
+/// How long a printer session's client has to answer a record.
+const ANSWER: Duration = Duration::from_secs(120);
+
+/// The printer session's socket, as `tn5250::print::deliver` sees it.
+struct SessionDevice(ipc::chan::Chan);
+
+impl tn5250::print::Device for SessionDevice {
+    fn send(&mut self, record: Vec<u8>) -> Result<(), String> {
+        self.0
+            .send(&wm::dev::ToDevice::Print { record })
+            .map_err(|_| "the printer session went away".to_string())
     }
-    let stream = UnixStream::connect(&path).map_err(|e| format!("{path}: {e}"))?;
-    stream
-        .set_read_timeout(Some(Duration::from_secs(30)))
-        .map_err(|e| e.to_string())?;
-    let mut chan = ipc::chan::Chan::new(stream);
-    for chunk in scs.chunks(PRINT_CHUNK) {
-        chan.send(&wm::dev::ToDevice::Write {
-            opcode: 0,
-            data: chunk.to_vec(),
-        })
-        .map_err(|e| e.to_string())?;
-        match chan.recv::<wm::dev::FromDevice>() {
-            Ok(wm::dev::FromDevice::Record { .. } | wm::dev::FromDevice::Reset { .. }) => {}
-            Ok(wm::dev::FromDevice::Gone) | Err(_) => return Err("the printer session went away".into()),
+
+    fn recv(&mut self) -> Result<Vec<u8>, String> {
+        match self.0.recv::<wm::dev::FromDevice>() {
+            Ok(wm::dev::FromDevice::Printed { record }) => Ok(record),
+            Ok(wm::dev::FromDevice::Record { .. } | wm::dev::FromDevice::Reset { .. }) => Ok(Vec::new()),
+            Ok(wm::dev::FromDevice::Gone) => Err("the printer session went away".into()),
+            Err(_) => Err("the printer session did not answer".into()),
         }
     }
-    let _ = chan.send(&wm::dev::ToDevice::Release);
-    Ok(())
+}
+
+/// Send a spooled file to the printer session holding `device` as one
+/// print job (RFC 2877): its records, each answered, then the null
+/// record. `Ok` only when the client took all of it.
+fn send_to_session(device: &str, scs: &[u8]) -> Result<(), tn5250::print::Failure> {
+    use std::os::unix::net::UnixStream;
+    use tn5250::print::Failure;
+    let path = wm::dev::socket(device);
+    let stream = UnixStream::connect(&path).map_err(|e| Failure::Lost(format!("{path}: {e}")))?;
+    stream
+        .set_read_timeout(Some(ANSWER))
+        .map_err(|e| Failure::Lost(e.to_string()))?;
+    let mut dev = SessionDevice(ipc::chan::Chan::new(stream));
+    let mut sent = 0;
+    let r = tn5250::print::deliver(&mut dev, scs, PRINT_CHUNK, &mut sent);
+    let _ = dev.0.send(&wm::dev::ToDevice::Release);
+    r
+}
+
+/// Whether a printer session holds `device` now.
+fn session_up(device: &str) -> bool {
+    std::path::Path::new(&wm::dev::socket(device)).exists()
 }
 
 /// Run writer `name` until it is ended; the end code.
@@ -120,7 +140,24 @@ pub fn run(c: &mut Console, link: &Shared, name: &str) -> u16 {
         Err("the device does not ask for TLS".into())
     };
     let tls: Arc<dyn TlsConnector> = Arc::new(PrinterTls(config));
+    let session = match &dest {
+        WtrDest::Session { device } => Some(device.clone()),
+        _ => None,
+    };
     loop {
+        // A printer session's writer takes no file while no session
+        // holds its device.
+        if session.as_deref().is_some_and(|d| !session_up(d)) {
+            status(link, Status::Evtw, "");
+            if !c.idle(IDLE) {
+                return 0;
+            }
+            let ending = link.borrow_mut().with(Client::wtr_list).iter().any(|w| w.0 == name && w.2 == "END");
+            if ending {
+                return 0;
+            }
+            continue;
+        }
         let step = link.borrow_mut().with(|l| l.wtr_next(name.to_string()));
         match step {
             WtrStep::End => return 0,
@@ -130,8 +167,21 @@ pub fn run(c: &mut Console, link: &Shared, name: &str) -> u16 {
                     return 0;
                 }
             }
+            WtrStep::MsgWait => {
+                status(link, Status::Msgw, "");
+                if !c.idle(IDLE) {
+                    return 0;
+                }
+            }
             WtrStep::File { attrs, data } => {
                 status(link, Status::Run, &format!("PRT-{}", attrs.name));
+                if let Some(device) = &session {
+                    // After a lost session, give its end time to show.
+                    if print_on_session(link, name, device, &attrs, &data) && !c.idle(LOST) {
+                        return 0;
+                    }
+                    continue;
+                }
                 let Some(t) = &target else {
                     capture(link, name, &attrs, &data);
                     continue;
@@ -161,12 +211,40 @@ pub fn run(c: &mut Console, link: &Shared, name: &str) -> u16 {
     }
 }
 
-/// The capture device: the file to a TN5250E printer session when one
-/// holds the device, and its text and PDF to the store.
-fn capture(link: &Shared, name: &str, attrs: &SplfAttrs, data: &[u8]) {
-    if let Err(e) = send_to_device(name, data) {
-        eprintln!("qsjob: writer {name}: printer session: {e}");
+/// How long a writer waits after its printer session went away.
+const LOST: Duration = Duration::from_secs(2);
+
+/// A file to a printer session: complete only when the client took all
+/// of it; otherwise ready again, with a message or an inquiry. Whether
+/// the session was lost.
+fn print_on_session(link: &Shared, name: &str, device: &str, attrs: &SplfAttrs, data: &[u8]) -> bool {
+    use tn5250::print::Failure;
+    let mut was_lost = false;
+    let r = match send_to_session(device, data) {
+        Ok(()) => link
+            .borrow_mut()
+            .with(|l| l.wtr_printed(name.to_string(), attrs.id, String::new(), Vec::new())),
+        Err(f) => {
+            eprintln!("qsjob: writer {name}: {device}: {}", f.text());
+            let lost = matches!(f, Failure::Lost(_));
+            was_lost = lost;
+            let r = link.borrow_mut().with(|l| {
+                l.wtr_device_error(name.to_string(), attrs.id, lost, f.text(), f.diag_hex())
+            });
+            if !lost {
+                status(link, Status::Msgw, "");
+            }
+            r
+        }
+    };
+    if let Err(e) = r {
+        eprintln!("qsjob: writer {name}: {e}");
     }
+    was_lost
+}
+
+/// The capture device: the file's text and PDF to the store.
+fn capture(link: &Shared, name: &str, attrs: &SplfAttrs, data: &[u8]) {
     let (pages, fmt) = spool::scs::decode(data);
     let text = spool::view::text(&pages);
     let pdf = spool::pdf::render(&pages, fmt);

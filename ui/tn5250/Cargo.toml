@@ -13,3 +13,6 @@ thiserror.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+spool = { path = "../../work/spool", version = "0.1.0" }

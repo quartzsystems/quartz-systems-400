@@ -866,7 +866,11 @@ length, width, lines and characters per inch, a quarter-inch margin.
 `prtcapture get` shows the text, or the PDF in base64.
 Phase 10 adds LAN printer devices and remote writers (`STRRMTWTR`):
 the writer sends through the `print` crate and a failed send leaves the
-writer in `MSGW` (`docs/PRINT.md`).
+writer in `MSGW` (`docs/PRINT.md`). A TN5250E printer session's
+virtual printer gets each file as an RFC 2877 print job; the file
+completes only when the client took all of it (`docs/TN5250.md`,
+printer sessions). `WRKWTR`'s Printed counts the files a writer
+completed since its `STRPRTWTR`, each once.
 
 ### The SCS subset
 

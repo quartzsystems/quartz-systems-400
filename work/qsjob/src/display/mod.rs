@@ -189,6 +189,8 @@ impl Display {
                     },
                     FromDevice::Reset { device } => ToJob::DeviceReset { device },
                     FromDevice::Gone => ToJob::DeviceGone,
+                    // A display gets no printer records.
+                    FromDevice::Printed { .. } => continue,
                 };
                 if tx.send(to).is_err() {
                     return;

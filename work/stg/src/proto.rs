@@ -386,6 +386,12 @@ ipc::rpc! {
     /// sends (`msgid`, a line of text), and whether the file is held
     /// (the far end refused it) or waits to be tried again.
     145 => fn wtr_failed / WtrFailed (name: String, id: u32, msgid: String, text: String, hold: bool) -> Result<(), String>;
+    /// Writer `name` could not finish spooled file `id` on its printer
+    /// session: the file is ready again; `lost` when the session went
+    /// away (a message), else the client refused it (an inquiry the
+    /// writer waits on). `text` says why, `diag` is the client's
+    /// diagnostic bytes in hex.
+    146 => fn wtr_device_error / WtrDeviceError (name: String, id: u32, lost: bool, text: String, diag: String) -> Result<(), String>;
     // --- panel data: messages and objects (160-179)
     /// What `DSPOBJD DETAIL(*FULL)` shows beyond `object`: `(field,
     /// value)` pairs (`CREATOR`, `SYSTEM`, `RELEASE`, `SIZE` in bytes,
