@@ -647,6 +647,12 @@ ipc::rpc! {
     /// The hourly look at the update check schedule (`QSCHGUPDA`): the
     /// check runs when it is due; the lines for the log.
     1250 => fn upd_tick / UpdTick () -> Vec<String>;
+    // --- HTTP Server Administration (1260-1269; stgsvc/webadm.rs)
+    /// An audit entry for a web user of the administration server:
+    /// `kind` `PW` (`a` the reason code), `AF` (`a` the object
+    /// `LIB/NAME`, `b` what was missing) or `ZC` (`a` the object, `b`
+    /// what changed). Only a job running as `QTMHHTTP` may send it.
+    1260 => fn web_audit / WebAudit (kind: String, user: String, a: String, b: String) -> ();
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;

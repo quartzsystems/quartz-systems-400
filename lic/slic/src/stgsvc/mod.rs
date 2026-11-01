@@ -48,6 +48,7 @@ pub(crate) mod stats;
 pub(crate) mod tcp;
 mod work2;
 mod uiapi;
+pub(crate) mod webadm;
 pub(crate) mod wtr;
 
 pub use jobs::chgjob;

@@ -216,6 +216,7 @@ pub fn sign_on(
         objects::write(txn, id, &p)?;
     }
     if p.disabled && !exempt {
+        pw("Q", &user, &a.device);
         return Ok(Err(refused(
             "CPF1394",
             format!("User profile {user} is disabled and cannot sign on."),

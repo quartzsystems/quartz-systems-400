@@ -102,6 +102,11 @@ fn every_path() {
             .iter()
             .any(|e| e.kind == sec::audit::Kind::Pw && e.get("ETYP") == "P")
     );
+    assert!(
+        events
+            .iter()
+            .any(|e| e.kind == sec::audit::Kind::Pw && e.get("ETYP") == "Q")
+    );
 
     // Enabled again: a good sign-on clears the count and shows it once.
     usrprf::chgusrprf(

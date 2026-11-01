@@ -1875,6 +1875,10 @@ impl Service for Served<'_> {
         crate::cpp::updcmd::tick(self.system, crate::ipl::system::now_unix())
     }
 
+    fn web_audit(&mut self, kind: String, user: String, a: String, b: String) {
+        super::webadm::audit(&self.ctx.job.user, &kind, &user, &a, &b);
+    }
+
     // --- communications objects (1180-1189)
 
     fn cmn_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
