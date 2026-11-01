@@ -37,21 +37,22 @@ pub fn page(rq: &Rq<'_>) -> Response {
     let schemas = rq.env().db.sql_schemas(rq.user());
     let mut last = state.last.clone();
     let mut statement = last.as_ref().map(|l| l.statement.clone()).unwrap_or_default();
-    let mut opts = last.as_ref().map(|l| l.opts.clone()).unwrap_or_else(|| SqlOptions {
-        schema: schemas.first().cloned().unwrap_or_default(),
-        ..SqlOptions::default()
-    });
+    let mut opts = last.as_ref().map_or_else(
+        || SqlOptions {
+            schema: schemas.first().cloned().unwrap_or_default(),
+            ..SqlOptions::default()
+        },
+        |l| l.opts.clone(),
+    );
     if let Some(s) = q.get("q") {
         statement = s.to_string();
         last = None;
         if let Some(sc) = q.get("s") {
             opts.schema = sc.to_ascii_uppercase();
         }
-    } else if let Some(h) = q.get("h").and_then(|h| h.parse::<usize>().ok()) {
-        if let Some(s) = state.history.get(h) {
-            statement.clone_from(s);
-            last = None;
-        }
+    } else if let Some(s) = q.get("h").and_then(|h| h.parse::<usize>().ok()).and_then(|h| state.history.get(h)) {
+        statement.clone_from(s);
+        last = None;
     }
     let fields = PropGroup {
         title: None,

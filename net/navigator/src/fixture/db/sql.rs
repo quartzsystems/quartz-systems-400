@@ -23,6 +23,7 @@ enum Tok {
     Sym(String),
 }
 
+#[allow(clippy::many_single_char_names)]
 fn lex(s: &str) -> Result<Vec<Tok>, String> {
     let b: Vec<char> = s.chars().collect();
     let mut out = Vec::new();

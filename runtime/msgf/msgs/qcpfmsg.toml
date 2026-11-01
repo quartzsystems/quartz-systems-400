@@ -2889,6 +2889,13 @@ help = "The PTFs are save files in QGPL named after them. LODPTF DEV(*SAVF) or I
 vars = ["*CHAR 10", "*CHAR 5"]
 
 [[msg]]
+id = "CPI3599"
+sev = 0
+text = "&1 fixes are available from the Quartz update server (&2) that are not on this system. Last checked &3."
+help = "The last check of the update server found fixes this system does not have. Navigator's Fixes page lists them; SNDPTFORD orders them."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
 id = "CPI3E01"
 sev = 10
 text = "Updates are available from the update service: &1 item(s)."

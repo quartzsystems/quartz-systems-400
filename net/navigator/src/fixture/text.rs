@@ -595,6 +595,18 @@ const MESSAGES: &[Desc] = &[
         "The query ran and its rows were read.",
         "None.",
     ),
+    // Software.
+    ("CPC0C20", 0, "No errors were found for product &1.", "Every object of the product's installed loads is present and undamaged.", "None."),
+    ("CPC3604", 0, "PTF &1 of product &2 loaded.", "The PTF is on the system and can be applied with APYPTF.", "None."),
+    ("CPC3606", 0, "PTF &1 of product &2 applied.", "A delayed PTF is applied at the next IPL; DSPPTF shows its state.", "None."),
+    ("CPC3608", 0, "PTF &1 of product &2 removed.", "The objects the PTF replaced are back in place.", "None."),
+    ("CPC3D81", 0, "Product &1 option &2 release &3 installed.", "The product's loads were restored and are now installed.", "None."),
+    ("CPC3D82", 0, "Product &1 option &2 deleted.", "The product's loads and the objects only they used were removed.", "None."),
+    ("CPC3E03", 0, "Update service attributes changed.", "QSCHKUPD and SNDPTFORD use them from now on.", "None."),
+    ("CPF0C1F", 40, "The product, option or load is not on the system.", "No product definition or load matches.", "Check the product ID, release, option and load ID."),
+    ("CPI3599", 0, "&1 fixes are available from the Quartz update server (&2) that are not on this system. Last checked &3.", "The last check of the update server found fixes this system does not have.", "See the Fixes page; Download orders a fix."),
+    ("CPI3E01", 10, "Updates are available from the update service: &1 item(s).", "The update service has fixes this system lacks.", "See the Fixes page."),
+    ("CPZ8C38", 0, "PTF order &1 delivered, &2 PTF(s) received.", "The PTFs are save files in QGPL named after them.", "Load them with LODPTF DEV(*SAVF) or INSPTF."),
     // Messages.
     ("CPA0702", 99, "&1 received by procedure &2. (C D I R)", "A program did not handle an escape message sent to it.", "Reply C to cancel the program, D to cancel it and dump the job, I to ignore the message, or R to try again."),
     ("CPA4002", 99, "Verify alignment on printer &1. (I G N R C)", "The writer stopped so that the forms can be aligned.", "Check the forms, then reply I, G, N, R or C."),

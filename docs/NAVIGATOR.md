@@ -207,6 +207,61 @@ and `Net::run` as the user, as in Work management.
   user's interval. A job's CPU bar spans 0 to 20 %. Units busy 70 % or
   more are named under Disk activity with the job doing most I/O.
 
+## Database, security, software
+
+`env::db::Db` reads the catalog views (`QSYS2.SYSSCHEMAS`, `SYSTABLES`,
+`SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST`, `SYSINDEXES`, `SYSTRIGGERS`)
+and runs one statement as the user (`run_sql`, the interactive SQL
+session's `isql_run` with its naming, isolation and row limit);
+`env::sec::Security` is `DSPAUDJRNE` and `DSPSECAUD`;
+`env::sw::Software` is `GO LICPGM`'s data (`licpgm_panel`), the image
+catalogs, `DSPLICKEY`, `DSPPTF`, `WRKPTFGRP`, `DSPPTFCVR` and the update
+attributes (`QSYS/QSUPDATTR`), and runs every change through
+`Software::run` as the user.
+
+- Routes: `/sql[?q=&s=|?h=N|?sort=|?csv=1]`, `/db[/<schema>][?show=
+  tables|views|indexes|procedures&sort=t|r]`, `/db/<s>/<t>/{columns,
+  keys,indexes,triggers,properties,ddl}`, `/db/<s>/<t>/data?w=&sort=&
+  page=[&csv=1]`, `/audit?t=&u=&f=&to=&page=[&csv=1]`, `/licpgm?s=&c=`,
+  `/licpgm/keys`, `/licpgm/<id>/<option>[/confirm?op=delete|install&c=]`,
+  `/ptf?p=&s=&id=&sort=&page=[&check=]`, `/ptf/confirm?op=load|apply|
+  remove|order&id=...[&c=&t=]`, `/ptf/level`, `/ptf/<id>/cover`,
+  `/fixes`, `/fixes/<id>/cover`.
+- Run SQL keeps, per user and in memory only (`Navigator::sql`), the
+  last 50 statements (newest first, each once) and the last statement's
+  result: the POST runs (or explains) and redirects, the GET shows. A
+  query shows at most 500 rows; CSV runs the query again for every row.
+  Its message line is `SQL7958` (rows, seconds) and `SQL0100` at the end
+  of the data, then the statement's own messages. Previous statements
+  leave out the one shown.
+- View data is Run SQL's result table over `SELECT * FROM S.T [WHERE w]
+  ORDER BY <primary key or the sorted column>`, 25 a page, with Edit in
+  Run SQL carrying the statement (`/sql?q=`).
+- The audit journal needs `*AUDIT`; the dates are the user's days, the
+  page is `DSPAUDJRNE`'s print (time, type, user, job, detail) in a
+  `<pre>`. The home page's `/audit?t=PW` selects `PW - Password`.
+- Licensed programs: Installed lists the product directory, which
+  includes products it knows but has not installed (their Install uses
+  the image catalog chosen); the catalog view shows the directory's state
+  of each product on it. Install is `RSTLICPGM ... DEV(<the catalog's
+  virtual device>)`, Delete `DLTLICPGM`, both confirmed, both `*ALLOBJ`
+  first, as every software change (`LODPTF`, `INSPTF`, `APYPTF`,
+  `RMVPTF`, `SNDPTFORD`, `QSCHGUPDA`). Check compatibility is
+  `CHKPRDOPT PRDID(*ALL)` straight from its POST.
+- PTFs: Load from image catalog is `INSPTF LICPGM(*ALL) DEV(<device>)
+  INSTYPE(*DLYALL)`; a PTF's Load is `LODPTF DEV(*SAVF) SAVF(QGPL/<id>)`
+  (where `SNDPTFORD` leaves it); Apply asks *TEMP/*PERM and whether the
+  delayed ones wait for the next IPL (`DELAYED(*YES)`) or the next
+  unattended IPL (`IPLAPY(*YES)`), one `APYPTF` per product. Check for
+  fixes (`QSCHKUPD`) runs from the filter's GET button: it reads the
+  update service and changes nothing but the time of the last check.
+  `CPI3599` under the filter counts the fixes the last check found
+  missing. Cover letters open in the help window's layout.
+- Fixes: Download is `SNDPTFORD PTFID((<id>))` (`*CUMPKG` for a
+  cumulative package), confirmed. The settings run `QSCHGUPDA`; the
+  Server field is the URL's host (a host alone becomes
+  `https://<host>/qs400`), an empty proxy `*NONE`.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -231,6 +286,13 @@ of the golden page:
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 | `nav/tcpip.html` | `13 started` → `14 started` | the Servers page lists fourteen started |
 | `nav/tcpip-interfaces.html`, `nav/servers.html` | the two buttons get names `add`/`start` and `refresh` | two nameless buttons in one form cannot be told apart |
+| `nav/run-sql.html` | `SQL0100`'s text → the message file's (`No row was found for FETCH.`); Download as CSV `#` → `?csv=1` | the prototype quoted another vendor's message text; the link went nowhere |
+| `nav/table-columns.html` | Generate SQL (DDL) `#` → `/ddl` | the link went nowhere |
+| `nav/table-data.html` | the list is the table's first 25 rows, all 12 columns; `12 rows returned` → `412 rows returned`; CSV `#` → `?csv=1` | the prototype pasted Run SQL's 8-column, 12-row result under `SELECT *` of a 412-row table paged 25 at a time |
+| `nav/audit-journal.html` | eleven more entries on the page; CSV `#` → `?csv=1` | the page said 25 rows of 762 but showed 14 |
+| `nav/licensed-programs.html`, `nav/ptfs.html`, `nav/ptf-confirm.html`, `nav/fixes.html` | product IDs `5Q00xxx` → `QS00xxx` | the system's products are `QS00SS1`, `QS00WDS`, ... (`licpgm/licpgm/catalog.toml`) |
+| `nav/licensed-programs.html`, `nav/ptfs.html` | the three buttons get names `install`, `check`, `keys` and `load`, `apply`, `level` | three nameless buttons in one form cannot be told apart |
+| `nav/ptf-confirm.html` | `QS10447`'s description → the list's (`Kernel: IPL time with large ASP`); the options moved into the form | the two pages disagreed; the radio buttons sat outside the form, so OK never sent them |
 
 ## Steps
 
@@ -245,6 +307,6 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 15-18 | Users and groups | done (golden-clean; live `Users` pending) |
 | 19-22 | System | done (golden-clean; live `Config` pending) |
 | 23, 24 | Network | done (golden-clean; live `Net` pending) |
-| 25, 26 | Database | |
-| 27-29 | Security, software | |
+| 25, 26 | Database | done (golden-clean; live `Db` pending) |
+| 27-29 | Security, software | done (golden-clean; live `Security`, `Software` pending) |
 | 30 | Performance | done (golden-clean; live `Perf` pending) |

@@ -115,6 +115,7 @@ fn shown(v: Option<&String>) -> String {
 }
 
 /// Sort rows by column `key` (a column name in lower case).
+#[allow(clippy::many_single_char_names)]
 fn sort_rows(columns: &[String], rows: &mut [Vec<Option<String>>], key: &str) {
     let Some(i) = columns.iter().position(|c| c.to_ascii_lowercase() == key) else {
         return;

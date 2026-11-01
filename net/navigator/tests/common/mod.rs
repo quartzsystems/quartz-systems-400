@@ -201,6 +201,8 @@ pub fn proto(url: &str) -> Option<String> {
         ["audit", ..] => "audit-journal".into(),
         ["licpgm", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
         ["licpgm", ..] => "licensed-programs".into(),
+        // A cover letter opens in the help window.
+        ["ptf" | "fixes", _, "cover"] => return Some("shared/help.html".into()),
         ["ptf", "confirm"] => "ptf-confirm".into(),
         ["ptf", ..] => "ptfs".into(),
         ["fixes", ..] => "fixes".into(),

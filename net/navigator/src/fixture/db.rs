@@ -9,6 +9,7 @@
 
 mod sql;
 
+use std::fmt::Write as _;
 use std::sync::Mutex;
 
 use qsweb::msg::{Kind, Message};
@@ -64,6 +65,7 @@ fn obj(name: &str, text: &str, rows: u64, size10: u64, changed: u64) -> DbObject
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn col(name: &str, sys: &str, typ: &str, length: u32, scale: Option<u32>, nullable: bool, default: &str, text: &str) -> Column {
     Column {
         name: name.into(),
@@ -113,6 +115,13 @@ const IN_SERVICE: &[[&str; 8]] = &[
 
 /// ASSETS' 412 rows: the twelve in service, then 400 retired ones.
 pub fn asset_rows() -> Vec<Vec<Option<String>>> {
+    const SITES: [&str; 4] = ["QS-HQ-R1", "QS-HQ-R2", "QS-HQ-R3", "QS-BR1-R1"];
+    const KINDS: [(&str, &str, &str); 4] = [
+        ("DELL", "R630", "SERVER"),
+        ("QUANTA", "LB6M", "SWITCH"),
+        ("APC", "SMT1500", "UPS"),
+        ("SUPERMICRO", "X10SLM", "SERVER"),
+    ];
     let some = |s: &str| Some(s.to_string());
     let mut rows = Vec::new();
     for (i, a) in IN_SERVICE.iter().enumerate() {
@@ -123,13 +132,6 @@ pub fn asset_rows() -> Vec<Vec<Option<String>>> {
         r.push(some("2026-10-29-13.58.02.000000"));
         rows.push(r);
     }
-    const SITES: [&str; 4] = ["QS-HQ-R1", "QS-HQ-R2", "QS-HQ-R3", "QS-BR1-R1"];
-    const KINDS: [(&str, &str, &str); 4] = [
-        ("DELL", "R630", "SERVER"),
-        ("QUANTA", "LB6M", "SWITCH"),
-        ("APC", "SMT1500", "UPS"),
-        ("SUPERMICRO", "X10SLM", "SERVER"),
-    ];
     for i in 0..400usize {
         let (mfr, model, kind) = KINDS[i % KINDS.len()];
         rows.push(vec![
@@ -353,16 +355,16 @@ impl Db for FixtureDb {
             .iter()
             .map(|c| {
                 let mut s = format!("  {} FOR COLUMN {} {}", c.name, c.system_name, c.typ);
-                match (c.typ.as_str(), c.scale) {
-                    (_, Some(sc)) => s.push_str(&format!("({}, {sc})", c.length)),
-                    ("CHAR" | "VARCHAR", None) => s.push_str(&format!("({})", c.length)),
-                    _ => {}
-                }
+                let _ = match (c.typ.as_str(), c.scale) {
+                    (_, Some(sc)) => write!(s, "({}, {sc})", c.length),
+                    ("CHAR" | "VARCHAR", None) => write!(s, "({})", c.length),
+                    _ => Ok(()),
+                };
                 if !c.nullable {
                     s.push_str(" NOT NULL");
                 }
                 if !c.default.is_empty() && c.default != "NULL" {
-                    s.push_str(&format!(" DEFAULT {}", c.default));
+                    let _ = write!(s, " DEFAULT {}", c.default);
                 }
                 s
             })
@@ -374,9 +376,9 @@ impl Db for FixtureDb {
                 "FOREIGN KEY" => format!("FOREIGN KEY ({}) REFERENCES {}", c.columns, c.references),
                 k => format!("{k} ({})", c.columns),
             };
-            out.push_str(&format!(",\n  CONSTRAINT {schema}.{} {body}", c.name));
+            let _ = write!(out, ",\n  CONSTRAINT {schema}.{} {body}", c.name);
         }
-        out.push_str(&format!(");\n\nLABEL ON TABLE {schema}.{table} IS '{}';\n", t.table.text.replace('\'', "''")));
+        let _ = write!(out, ");\n\nLABEL ON TABLE {schema}.{table} IS '{}';\n", t.table.text.replace('\'', "''"));
         Ok(out)
     }
 

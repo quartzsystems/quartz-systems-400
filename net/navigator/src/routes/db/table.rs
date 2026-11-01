@@ -59,7 +59,7 @@ pub fn tab(rq: &Rq<'_>, schema: &str, table: &str, tab: &str) -> Response {
         link(&run_sql_link(rq, &all, &t.schema), "Run SQL"),
         link(&rq.ctx.url(&format!("{base}/ddl")), "Generate SQL (DDL)")
     );
-    body.push_str(&match tab {
+    let content = match tab {
         "columns" => columns(&t, rq.query().str("sort")),
         "keys" => keys(&t),
         "indexes" => indexes(rq, &t),
@@ -69,7 +69,8 @@ pub fn tab(rq: &Rq<'_>, schema: &str, table: &str, tab: &str) -> Response {
             Ok(sql) => format!("<pre class=\"out\">{}</pre>", esc(&sql)),
             Err(m) => message_line(&[m]),
         },
-    });
+    };
+    body.push_str(&content);
     let title = format!("Table: {}.{}", t.schema, t.table.name);
     super::page(rq, &["Schemas", &t.schema, &t.table.name], &title, None, body, "db-table", None)
 }
@@ -201,6 +202,7 @@ fn properties(rq: &Rq<'_>, t: &TableDesc) -> String {
 }
 
 /// `/db/<schema>/<table>/data`: the rows, a Where filter, 25 a page.
+#[allow(clippy::many_single_char_names)]
 pub fn data(rq: &Rq<'_>, schema: &str, table: &str) -> Response {
     let t = match find(rq, schema, table) {
         Ok(t) => t,

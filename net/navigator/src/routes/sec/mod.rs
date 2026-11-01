@@ -51,6 +51,7 @@ pub fn line(time: &str, e: &AuditEntry) -> String {
 }
 
 /// Days since 1970 of `MM/DD/YY`.
+#[allow(clippy::many_single_char_names)]
 fn day_of(s: &str) -> Option<i64> {
     let mut p = s.trim().split('/').map(|x| x.parse::<u32>().ok());
     let (m, d, y) = (p.next()??, p.next()??, p.next()??);
