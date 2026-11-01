@@ -40,7 +40,7 @@ No web fonts, no icon fonts. Nothing bold except headings, the current navigatio
 
 ## Page frame
 
-Header band → left navigation column (190 px, text tree, `[+]` / `[-]` glyphs, current item bold) → content column → one-line footer `QS/400 V1R0M0 · Quartz Systems`. Content starts with a breadcrumb (8 pt grey), the `h1`, an optional one-line grey description, then the message area, then the body. `System: QSHQ400  User: QSECOFR  Sign off  Help` sits at the right of the header on every page; Sign off is one click from everywhere and returns to that product's own sign-on page. The frame is a `<table class="frame">`; it is usable with CSS off.
+Header band → left navigation column (190 px, text tree, `[+]` / `[-]` glyphs, current item bold) (`[+]` and `[-]` open and close a group in place through `/nav?open=` / `?close=`; the groups a user opened stay open for the session, and arriving at a page opens its group) → content column → one-line footer `QS/400 V1R0M0 · Quartz Systems`. Content starts with a breadcrumb (8 pt grey), the `h1`, an optional one-line grey description, then the message area, then the body. `System: QSHQ400  User: QSECOFR  Sign off  Help` sits at the right of the header on every page; Sign off is one click from everywhere and returns to that product's own sign-on page. The frame is a `<table class="frame">`; it is usable with CSS off.
 
 Sign-on pages carry the same header band (wordmark left, `System: QSHQ400` right) and footer, then a left-aligned "Sign on" heading, User and Password in one label column with 30-character fields, and the Sign on button alone on the next row. Nothing else.
 

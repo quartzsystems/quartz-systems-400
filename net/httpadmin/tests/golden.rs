@@ -55,6 +55,8 @@ fn components() {
         system: "QSHQ400".into(),
         user: "QSECOFR".into(),
         csrf: "t".into(),
+        open: None,
+        here: String::new(),
     };
     let nav = "/qs400/navigator";
     let act = format!(
@@ -252,6 +254,11 @@ fn create_wizard() {
         f.push(("next", "Next >"));
         let r = b.post(&format!("/create/step/{n}"), &f);
         assert_eq!(r.header("Location").map(ToString::to_string), Some(PRODUCT.url(&format!("/create/step/{}", n + 1))));
+        if n == 2 {
+            // The prototype draws the tree closed after step 1; served,
+            // the group stays open until the user closes it.
+            b.get("/nav?close=Create");
+        }
         let r = b.get(&format!("/create/step/{n}"));
         assert_golden(&r.text(), &format!("http/create-{n}.html"), &[]);
     }

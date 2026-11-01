@@ -658,6 +658,8 @@ mod tests {
             system: "S".into(),
             user: "U".into(),
             csrf: "tok".into(),
+            open: None,
+            here: String::new(),
         };
         let w = wizard(&ctx, &["One", "Two", "Three"], 2, "<p>b</p>", &[Button::new("next", "Next >")]);
         assert!(w.starts_with("<form method=\"post\"><input type=\"hidden\" name=\"csrf\" value=\"tok\">"));

@@ -127,6 +127,13 @@ pub fn proto(url: &str) -> Option<String> {
     }
     let r = url.strip_prefix(PRODUCT.prefix)?;
     let (path, query) = r.split_once('?').unwrap_or((r, ""));
+    // The tree's [+] and [-] stand for the group's first page.
+    if path == "/nav" {
+        let q = qsweb::http::Request::new("GET", &format!("{}?{query}", PRODUCT.url("/nav"))).query();
+        let g = q.get("open").or_else(|| q.get("close"))?;
+        let first = PRODUCT.nav.iter().find(|n| n.label == g)?.items.first()?.1;
+        return proto(&PRODUCT.url(first));
+    }
     let segs: Vec<&str> = path.trim_matches('/').split('/').collect();
     let file = match segs.as_slice() {
         ["help" | "msg", ..] => return Some("shared/help.html".into()),

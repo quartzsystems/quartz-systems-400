@@ -138,6 +138,54 @@ impl Sessions {
     }
 }
 
+/// The session value naming the open navigation groups.
+const NAV_OPEN: &str = "nav.open";
+/// The session value naming the group of the last page shown.
+const NAV_LAST: &str = "nav.last";
+
+/// The navigation groups open in `s`.
+pub fn nav_open(s: &Session) -> Vec<String> {
+    s.get(NAV_OPEN).split('|').filter(|l| !l.is_empty()).map(ToString::to_string).collect()
+}
+
+fn set_open(s: &mut Session, open: &[String]) {
+    s.data.insert(NAV_OPEN.into(), open.join("|"));
+}
+
+/// A page of `group` is shown: arriving from another group opens it.
+/// Gives the groups open now.
+pub fn nav_visit(sessions: &Sessions, id: &str, group: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    sessions.update(id, |s| {
+        let mut open = nav_open(s);
+        if s.get(NAV_LAST) != group {
+            if !open.iter().any(|l| l == group) {
+                open.push(group.to_string());
+            }
+            set_open(s, &open);
+            s.data.insert(NAV_LAST.into(), group.to_string());
+        }
+        out = open;
+    });
+    out
+}
+
+/// `[+]` or `[-]` of the tree: `open=` or `close=` a group.
+pub fn nav_toggle(sessions: &Sessions, id: &str, open: Option<&str>, close: Option<&str>) {
+    sessions.update(id, |s| {
+        let mut set = nav_open(s);
+        if let Some(g) = open
+            && !set.iter().any(|l| l == g)
+        {
+            set.push(g.to_string());
+        }
+        if let Some(g) = close {
+            set.retain(|l| l != g);
+        }
+        set_open(s, &set);
+    });
+}
+
 /// 32 random bytes as hex.
 pub fn token() -> String {
     let mut b = [0u8; 32];
@@ -169,6 +217,21 @@ pub fn clear_cookie(path: &str) -> String {
 mod tests {
     use super::*;
     use crate::msg::Kind;
+
+    #[test]
+    fn nav_groups() {
+        let t = Sessions::new(Duration::from_secs(60));
+        let id = t.create("QSECOFR").id;
+        assert_eq!(nav_visit(&t, &id, "Manage"), ["Manage"]);
+        nav_toggle(&t, &id, Some("Create"), None);
+        assert_eq!(nav_visit(&t, &id, "Manage"), ["Manage", "Create"]);
+        // Closing the page's own group sticks while the user stays there.
+        nav_toggle(&t, &id, None, Some("Manage"));
+        assert_eq!(nav_visit(&t, &id, "Manage"), ["Create"]);
+        // Arriving from another group opens it again.
+        assert_eq!(nav_visit(&t, &id, "Create"), ["Create"]);
+        assert_eq!(nav_visit(&t, &id, "Manage"), ["Create", "Manage"]);
+    }
 
     #[test]
     fn lifecycle() {

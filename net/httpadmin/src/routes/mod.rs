@@ -69,7 +69,11 @@ impl Rq<'_> {
         if let Some(m) = self.admin.sessions.take_flash(&self.session.id) {
             page.messages.insert(0, m);
         }
-        Response::html(200, render(&self.ctx, &page))
+        let mut ctx = self.ctx.clone();
+        if let Some((group, _)) = page.nav {
+            ctx.open = Some(session::nav_visit(&self.admin.sessions, &self.session.id, group));
+        }
+        Response::html(200, render(&ctx, &page))
     }
 
     /// Leave `m` for the next page.
@@ -240,6 +244,8 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         system: admin.env.system.name(),
         user: session.user.clone(),
         csrf: session.csrf.clone(),
+        open: Some(session::nav_open(&session)),
+        here: qsweb::frame::here(req),
     };
     let rq = Rq {
         admin,
@@ -255,6 +261,7 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         ["create", "step", n] => create::step(&rq, n),
         ["certs", rest @ ..] => certs::route(&rq, rest),
         ["global"] => global::page(&rq),
+        ["nav"] => qsweb::frame::nav_toggle(&PRODUCT, &admin.sessions, &rq.session.id, req),
         ["help", key] => shared::help(&rq, key),
         ["msg", id] => shared::msg(&rq, id),
         _ => rq.not_found(r),
