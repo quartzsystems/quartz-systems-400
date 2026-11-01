@@ -106,7 +106,7 @@ fn page(
     help: &str,
     item: Option<&'static str>,
 ) -> Response {
-    super::work::page_in(rq, GROUP, crumb, h1, desc, body, help, item)
+    super::common::group_page(rq, GROUP, crumb, h1, desc, body, help, item)
 }
 
 /// A result value as shown.

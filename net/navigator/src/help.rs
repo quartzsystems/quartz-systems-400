@@ -119,6 +119,106 @@ pub const TOPICS: &[Topic] = &[
         title: "Viewing table data",
         body: "<p>The table's rows, 25 a page, read with the statement shown and your authority. Type a condition in <b>Where</b> (for example <span class=\"mono\">STATUS = 'SPARE'</span>) and press <b>Apply</b> to narrow them. <b>Edit in Run SQL</b> opens the statement there.</p>",
     },
+    // Messages.
+    Topic {
+        key: "msgq",
+        title: "Message queue",
+        body: "<p>The messages on a queue, newest first. Inquiry messages still waiting for a reply are bold and offer <b>Reply</b>. Choose another queue, a type or the first date to show and press <b>Go</b>.</p>\n<h2>Actions</h2>\n<p><b>Remove</b> removes one message; <b>Clear queue...</b> removes them all, keeping the inquiries waiting unless you choose otherwise. Both show the command first.</p>",
+    },
+    Topic {
+        key: "mymsgs",
+        title: "My messages",
+        body: "<p>The messages on your user profile's message queue. <b>Send message</b> sends a message to a user or a message queue; an inquiry's reply comes back to your queue.</p>",
+    },
+    Topic {
+        key: "message",
+        title: "Message details",
+        body: "<p>One message: who sent it, from which job and program, and its full text. For an inquiry waiting for its reply, type one of the valid replies and press <b>Reply</b>; an empty reply sends the default. A message answered already cannot be answered again.</p>",
+    },
+    Topic {
+        key: "qhst",
+        title: "History log",
+        body: "<p>The system's history log, newest first, as the 5250 display prints it. Narrow it by period, message identifier (a name ending in <span class=\"mono\">*</span> is generic), lowest severity or job, and press <b>Go</b>.</p>",
+    },
+    // Users and groups.
+    Topic {
+        key: "users",
+        title: "Users",
+        body: "<p>The user profiles on the system. Filter by name (generic with <span class=\"mono\">*</span>), status, class or group, primary or supplemental. <b>Delete</b> asks what to do with the objects the profile owns.</p>",
+    },
+    Topic {
+        key: "user",
+        title: "User properties",
+        body: "<p>One user profile, tab by tab. <b>Apply</b> changes what you changed with one command; creating or changing profiles needs special authority <span class=\"mono\">*SECADM</span>, and you can give only the special authorities you have.</p>\n<h2>Reset password</h2>\n<p>Type the new password and press <b>Reset password...</b>; choose <b>Set to expired</b> so that the user must change it at the next sign-on.</p>",
+    },
+    Topic {
+        key: "createuser",
+        title: "Create user",
+        body: "<p>Five steps to a new user profile. <b>Back</b> and <b>Next</b> keep what you typed; <b>Cancel</b> forgets it. The last step shows the command that <b>Create</b> runs and can also create the home directory and the message queue.</p>",
+    },
+    Topic {
+        key: "groups",
+        title: "Groups",
+        body: "<p>Group profiles: profiles other users name as their group. <b>Members</b> lists the users whose primary or supplemental group it is. A group with members cannot be deleted.</p>",
+    },
+    Topic {
+        key: "autl",
+        title: "Authorization lists",
+        body: "<p>Authorization lists secure objects with one list of users and their authorities. <b>Open</b> shows and changes the entries, <b>Objects</b> the objects the list secures.</p>",
+    },
+    // System.
+    Topic {
+        key: "sysval",
+        title: "System values",
+        body: "<p>The system values by category. <b>Change</b> shows a value with the values it accepts in grey; <b>OK</b> runs <span class=\"mono\">CHGSYSVAL</span> as you, which writes an <span class=\"mono\">SV</span> entry to the audit journal. A value marked <span class=\"mono\">(IPL)</span> takes effect at the next IPL. Security values need special authority <span class=\"mono\">*SECADM</span>.</p>",
+    },
+    Topic {
+        key: "disk",
+        title: "Disk status",
+        body: "<p>The auxiliary storage pools and the disk units in them, with how full each is. A bar turns red at 70 %. <b>Reset</b> restarts your I/O counters, which Disk activity measures from.</p>",
+    },
+    Topic {
+        key: "hdwrsc",
+        title: "Hardware resources",
+        body: "<p>The hardware as a tree: the system unit, its I/O processors, their adapters and the devices on them. <b>Vary on</b> and <b>Vary off</b> run <span class=\"mono\">VRYCFG</span> for the lines, controllers and devices over a resource, after a confirmation.</p>",
+    },
+    Topic {
+        key: "time",
+        title: "Time management",
+        body: "<p>The time zone, the date and time formats and how the clock is kept right. <b>Apply</b> runs <span class=\"mono\">CHGSYSVAL</span> for each value you changed and <span class=\"mono\">CHGNTPA</span> for the time servers (special authority <span class=\"mono\">*IOSYSCFG</span>).</p>",
+    },
+    // Network.
+    Topic {
+        key: "tcp",
+        title: "TCP/IP configuration",
+        body: "<p>The host and domain names, name servers and datagram forwarding. <b>Apply</b> runs <span class=\"mono\">CHGTCPDMN</span> and <span class=\"mono\">CHGTCPA</span> for what you changed; changing TCP/IP needs special authority <span class=\"mono\">*IOSYSCFG</span>.</p>",
+    },
+    Topic {
+        key: "tcpifc",
+        title: "TCP/IP interfaces",
+        body: "<p>The system's internet addresses. <b>Start</b> and <b>End</b> run <span class=\"mono\">STRTCPIFC</span> and <span class=\"mono\">ENDTCPIFC</span>; <b>Add...</b>, <b>Change</b> and <b>Remove</b> change the configuration. Addresses the system makes itself cannot be removed.</p>",
+    },
+    Topic {
+        key: "tcprte",
+        title: "TCP/IP routes",
+        body: "<p>Where traffic for other networks goes. <span class=\"mono\">*DFTROUTE</span> carries everything no other route matches. A route is inactive while its interface is.</p>",
+    },
+    Topic {
+        key: "servers",
+        title: "Servers",
+        body: "<p>The TCP servers and the ports they listen on. <b>Start</b>, <b>End</b> and <b>Restart</b> run <span class=\"mono\">STRTCPSVR</span> and <span class=\"mono\">ENDTCPSVR</span>; <b>Properties</b> sets whether a server starts with TCP/IP. The HTTP server's instances are managed in HTTP Server Administration.</p>",
+    },
+    // Performance.
+    Topic {
+        key: "perfsys",
+        title: "System activity",
+        body: "<p>The processor's use by job and the storage pools' paging, measured from your previous display of the page. A job's bar spans 0 to 20 % CPU. Choose an interval and press <b>Apply</b> to reload the page by itself.</p>",
+    },
+    Topic {
+        key: "perfdisk",
+        title: "Disk activity",
+        body: "<p>Each disk unit's requests and transfer rates, measured from your previous display of the page. A unit busy 70 % or more is red and named under the table.</p>",
+    },
 ];
 
 /// The title and body of `key`; an unknown key gives the contents.

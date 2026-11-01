@@ -17,10 +17,8 @@ use std::time::{Duration, Instant};
 use crate::phase5::SECOFR_PASSWORD;
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
-use crate::tcp::forward_port;
+use crate::tcp::{GUEST, forward_port};
 
-/// The guest's own address on QEMU's user network.
-const GUEST: &str = "10.0.2.15";
 /// The product's URLs.
 const PREFIX: &str = "/qs400/httpadmin";
 

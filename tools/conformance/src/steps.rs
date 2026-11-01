@@ -688,13 +688,16 @@ impl Suite {
         }
     }
 
-    /// Step 1: the SRC sequence in order, then the service prompt.
+    /// Step 1: the SRC sequence in order, then the service prompt; the
+    /// guest's address configured as an operator would (the IPL adds
+    /// none), so the launch's forwards reach it.
     fn src_sequence(&self, s: &mut Session) -> Result<String, String> {
         let seen = s.expect_in_order(SRC_SEQUENCE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
+        let net = crate::tcp::guest_address(s)?;
         Ok(format!(
-            "{} codes in order, IPL complete at {last:.1}s",
+            "{} codes in order, IPL complete at {last:.1}s; {net}",
             seen.len()
         ))
     }

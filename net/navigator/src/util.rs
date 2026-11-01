@@ -47,6 +47,26 @@ pub fn mdy(secs: u64, offset: i64) -> (String, String) {
     )
 }
 
+/// `MM/DD/YY` as seconds since 1970 at midnight, `None` when not a date.
+pub fn parse_mdy(s: &str) -> Option<u64> {
+    let mut it = s.trim().split('/').map(|x| x.parse::<u32>().ok());
+    let (m, d, y) = (it.next()??, it.next()??, it.next()??);
+    if it.next().is_some() || !(1..=12).contains(&m) || !(1..=31).contains(&d) || y > 99 {
+        return None;
+    }
+    Some(secs(2000 + i64::from(y), m, d, 0, 0, 0))
+}
+
+/// `HH:MM:SS` as seconds after midnight, `None` when not a time.
+pub fn parse_hms(s: &str) -> Option<u64> {
+    let mut it = s.trim().split(':').map(|x| x.parse::<u64>().ok());
+    let (h, m, sec) = (it.next()??, it.next()??, it.next()??);
+    if it.next().is_some() || h > 23 || m > 59 || sec > 59 {
+        return None;
+    }
+    Some(h * 3600 + m * 60 + sec)
+}
+
 /// Bytes as the pages show sizes (`212 MB`, `14 KB`).
 pub fn size(bytes: u64) -> String {
     const K: u64 = 1024;

@@ -17,7 +17,7 @@ use super::{Last, MAX_ROWS, csv, message_line, messages, result_table, returned,
 use crate::PRODUCT;
 use crate::env::db::SqlOptions;
 use crate::routes::Rq;
-use crate::routes::work::{pick, strings};
+use crate::routes::common::{pick, strings};
 
 /// The namings offered.
 const NAMINGS: [&str; 2] = ["*SQL", "*SYS"];

@@ -207,7 +207,7 @@ apply.
 | `device` | `*MEDIA`, `*OPT`, `*TAP`, `*VRT` | `*MEDIA` | `Install Device Type Selection`; `*MEDIA` takes a `SAVSYS` medium first, else the boot media |
 | `language` | four digits | `2924` | `Select a Language Group` |
 | `system-name` | 1 to 8 letters and digits | the default | `QSYSNAME` |
-| `ip` | `a.b.c.d/n` | QEMU's | the first link's address at IPL (`BLOCKED(phase11)`: kept for the install IPL; the TCP/IP configuration takes it after) |
+| `ip` | `a.b.c.d/n` | none | the first link's address at IPL (`BLOCKED(phase11)`: kept for the install IPL; the TCP/IP configuration takes it after) |
 | `gateway` | `a.b.c.d` | none | the default route (with `ip`) |
 | `date`, `time` | `YYYY-MM-DD`, `HH:MM:SS`, `*CURRENT` | `*CURRENT` | `IPL Options` |
 | `qsecofr-password` | `*EXPIRED` or a password | `*EXPIRED` | QSECOFR's password: the shipped one expired, or this one, not expired |

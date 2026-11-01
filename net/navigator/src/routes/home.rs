@@ -42,19 +42,29 @@ fn status_table(rows: &[(&str, String)]) -> String {
 
 /// The auto-refresh choice of the query: seconds, or `None` for Off.
 pub fn auto(rq: &Rq<'_>) -> (String, Option<u32>) {
+    auto_in(rq, "auto", AUTO)
+}
+
+/// The auto-refresh choice of query field `name` among `choices`.
+pub fn auto_in(rq: &Rq<'_>, name: &str, choices: &[&str]) -> (String, Option<u32>) {
     let q = rq.query();
-    let v = q.str("auto");
+    let v = q.str(name);
     match v.parse::<u32>() {
-        Ok(n) if AUTO.contains(&v) => (v.to_string(), Some(n)),
+        Ok(n) if choices.contains(&v) => (v.to_string(), Some(n)),
         _ => ("Off".into(), None),
     }
 }
 
 /// The toolbar: Refresh and the auto-refresh select.
 pub fn toolbar(chosen: &str) -> String {
+    toolbar_in("auto", AUTO, chosen, "")
+}
+
+/// A toolbar with select `name` of `choices`, `tail` (HTML) after Apply.
+pub fn toolbar_in(name: &str, choices: &[&str], chosen: &str, tail: &str) -> String {
     format!(
-        "<form method=\"get\"><div class=\"toolbar\"><input type=\"submit\" value=\"Refresh\"> &nbsp; Auto-refresh every {} seconds <input type=\"submit\" value=\"Apply\"></div></form>",
-        select("auto", AUTO, chosen)
+        "<form method=\"get\"><div class=\"toolbar\"><input type=\"submit\" value=\"Refresh\"> &nbsp; Auto-refresh every {} seconds <input type=\"submit\" value=\"Apply\">{tail}</div></form>",
+        select(name, choices, chosen)
     )
 }
 

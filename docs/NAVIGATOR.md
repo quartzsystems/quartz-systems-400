@@ -95,6 +95,118 @@ authorized page and an `AF` entry.
   confirmations are built the same way (sentence, table, options, the
   equivalent command, OK and Cancel) and the crawler maps them to it.
 
+## Messages
+
+`env::msgs::Msgs` reads what `DSPMSG` and `DSPLOG` show and runs
+every change through `Msgs::run(user, command)`: Send is `SNDMSG`
+(`TOUSR` or `TOMSGQ`; an inquiry's `RPYMSGQ` is the user's own queue),
+Reply is `SNDRPYMSG MSGKEY() MSGQ() RPY() RMV(*NO)` (the system's name
+for the reply command; `RMV(*NO)` keeps the answered inquiry on the
+queue with its reply, as `DSPMSG` shows it), Remove is `RMVMSG`, Clear
+queue is `CLRMSGQ CLEAR(*KEEPUNANS|*ALL)`. Remove and Clear are
+confirmed; an answered inquiry is refused by the command (`CPF2422`).
+
+- Routes: `/msgq/<lib>/<name>` the operator's view of any queue (Queue,
+  Type and Since filters, Clear queue...), `/msgq/<lib>/<name>/<key>`
+  the detail and Reply, `.../<key>/remove`, `/msgq/<lib>/<name>/clear`,
+  `/mymsgs` the user profile's queue with Send message, `/qhst`. Links
+  from My messages carry `?from=my` so their pages return there.
+- The operator's view cuts text at 70 characters and links the sending
+  job when it is still in the system (`Work::job`); My messages shows
+  whole texts and the job as text, as the prototype does. A message a
+  user typed shows as `From USER: text`; Send's To user starts as the
+  sender of the newest one.
+- An empty reply sends the inquiry's default (`RPY(*DFT)`), as Enter on
+  an empty reply does at the 5250 display.
+- Second-level text shows command strings in it in Courier
+  (`DSPRCDLCK FILE(...) ...`): a capitalised name followed by
+  `KEYWORD(value)` parameters.
+
+## Users and groups
+
+`env::users::Users` reads what `WRKUSRPRF`, `DSPUSRPRF`, `WRKAUTL`,
+`DSPAUTL` and `DSPAUTLOBJ` show; every change runs through
+`Users::run(user, command)`: Apply is one `CHGUSRPRF` with only what
+changed, Reset password `CHGUSRPRF PASSWORD() PWDEXP()`, Delete
+`DLTUSRPRF OWNOBJOPT(*NODLT|*DLT|*CHGOWN user)` (the confirmation asks),
+Create group `CRTUSRPRF PASSWORD(*NONE) GID(*GEN)`, authorization lists
+`CRTAUTL`, `DLTAUTL`, `ADDAUTLE`, `CHGAUTLE`, `RMVAUTLE`. The profile
+commands need `*SECADM` (checked first, the Not authorized page and an
+`AF` entry); the commands check the rest (special authorities you do
+not have, shipped profiles, groups with members, owned objects).
+
+- Routes: `/users`, `/user/<name>/{general,groups,authorities,personal,
+  password,delete}` (Jobs is `/jobs?user=`), `/users/create/step/<n>`,
+  `/groups`, `/groups/create`, `/autl`, `/autl/create`,
+  `/autl/<name>[?edit=USER]`, `/autl/<name>/{objects,remove?user=,
+  delete}`.
+- Users lists user profiles; group profiles (profiles with a GID that
+  others name as their group) are on Groups, and their Properties and
+  Delete are the profile's pages. The Group filter and Members match
+  primary and supplemental groups.
+- The Create user wizard keeps its answers in the session under `cu.`:
+  Create user... (a POST) starts it blank, Back and Next keep them,
+  Cancel and Create forget them; a step not reached yet sends you to
+  the furthest one. The summary prints the command with the password
+  left out (`PASSWORD()`, or `PASSWORD(*NONE)` when none was typed),
+  wrapped at 90 columns. Also creates the home directory (`CRTDIR`,
+  then `CHGOWN` to the new user) and the message queue (`CRTMSGQ
+  QUSRSYS/<name>`) when asked.
+- Sign-on stays the fixture's four profiles (`fixture::PROFILES`:
+  QSECOFR, QSYSOPR, QPGMR, WEBUSER); the Users fixture's fifteen take
+  the special authorities of those they share from that list, and the
+  security commands check the signed-on user's from it. QSYSOPR signs on
+  but is not among the prototype's fifteen.
+## System, network, performance
+
+`env::config::Config` (system values, disks, hardware, time),
+`env::net::Net` (TCP/IP and the servers) and `env::perf::Perf` read
+what `WRKSYSVAL`, `WRKDSKSTS`, `WRKHDWRSC`, `CFGTCP`, `NETSTAT`,
+`WRKSYSACT` and `WRKSYSSTS` show; changes run through `Config::run`
+and `Net::run` as the user, as in Work management.
+
+- Routes: `/sysval?cat=<key>&sort=n` (keys `security`, `datetime`,
+  `jobs`, `storage`, `msgs`, `devices`, `libl`, `perf`, `power`, `save`,
+  `sysctl`; none is Security under the System group, `cat=security` is
+  the Security group's Security values), `/sysval/<name>`, `/disk`,
+  `/disk/<unit>`, `/hdwrsc?t=&s=`, `/hdwrsc/<name>[/varyon|/confirm]`,
+  `/time`, `/tcp`, `/tcp/hosts`, `/tcp/ifc[?add=1|?edit=<addr>]`,
+  `/tcp/ifc/{start,confirm}?a=<addr>[&op=end|remove]`,
+  `/tcp/rte[?add=1|?d=&m=&n=]`, `/tcp/rte/confirm?d=&m=&n=`,
+  `/tcp/servers[/<name without *>[/start|/confirm?op=end|restart]]`,
+  `/perf/sys?a=&sort=cpu|io`, `/perf/disk?a=`.
+- Change system value checks the value against what the value accepts
+  (the grey hint) before `CHGSYSVAL` runs; a refused value stays on the
+  page with `CPD9B8D`. Security values need `*SECADM`. The command
+  writes the `SV` entry.
+- Disk status's Reset is `WRKDSKSTS RESET(*YES)`: it restarts the
+  user's own I/O counters, changes nothing on the system, so it is a
+  plain link (`/disk?reset=1`) with no confirmation. Bars are never
+  narrower than 1 %.
+- Hardware resources: Vary on and Vary off run `VRYCFG` for the
+  configuration descriptions over the resource (one command per
+  `CFGTYPE`), `*JOBCTL` first; a resource no description uses gets a
+  page that says so, with Cancel only. Filters keep a matching row's
+  parents. The system unit, I/O processors and adapters (depth 0 to 2)
+  carry the `[-]` glyph, as the prototype shows them.
+- Time management: Apply runs `CHGSYSVAL` for each changed value and
+  `CHGNTPA RMTSYS()` for the servers (`*IOSYSCFG`). OK and Cancel go to
+  System status.
+- TCP/IP: every change needs `*IOSYSCFG`; Apply runs `CHGTCPDMN` with
+  only the parameters changed, `CHGTCPA IPDTGFWD()` for forwarding.
+  Interfaces the system makes (the loopback, generated IPv6 addresses)
+  have no Remove. The Host table tab is a read-only list; the Domain
+  tab is the overview, which holds the domain fields.
+- Servers: Start all autostart servers is `STRTCPSVR
+  SERVER(*AUTOSTART)` straight from its POST; End and Restart
+  (`STRTCPSVR RESTART()`) are confirmed. Properties changes autostart
+  with the server's own `CHGxxxA AUTOSTART()`; a server without one shows
+  it read-only. `*HTTP` links to `http://<host>:2001/qs400/httpadmin/instances`.
+- Performance: the refresh select is `a` with Off, 5, 10, 30 and 60
+  seconds (the golden pages'; home keeps `auto`); each display ends the
+  user's interval. A job's CPU bar spans 0 to 20 %. Units busy 70 % or
+  more are named under Disk activity with the job doing most I/O.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -111,7 +223,14 @@ of the golden page:
 | `nav/job-props-callstack.html` | the Thread select and Go wrapped in `<form method="get">` | they sat outside any form, so Go did nothing |
 | `nav/subsystems.html`, `nav/printers.html`, `nav/scheduled-jobs.html` | the two buttons get names `start`/`add` and `refresh` | two nameless buttons in one form cannot be told apart |
 | `nav/subsystem-props-pools.html` | Add pool..., Change..., Remove get names `add`, `change`, `remove` | the same |
+| `nav/qsysopr.html` | rows 11-25 not compared; `123499/QPGMR/RGZPFM00`, `123150/QSPLJOB/PRT01`, `123380/QTCP/QTCPIP` not links | the prototype repeats its first ten messages to fill the page (the fixture's 41 are distinct, three inquiries waiting); those jobs are not in the system (ended, or another job has the number) and a link would lead nowhere |
+| `nav/message-detail.html` | the Reply field starts empty; its button is named `send` | a prefilled reply other than the default goes out on one click; the field and the button were both named `reply` |
+| `nav/history-log.html` | message IDs linked; six night entries added to the page | message IDs are links everywhere (handoff rule 3); the page said 25 rows of 214 but showed 19 |
+| `nav/users.html` | the two buttons get names `create`/`refresh` | two nameless buttons in one form cannot be told apart |
+| `nav/user-props.html` | Group profile offers every group; Reset password... named `reset` | the select left out three of the six groups; the button shared the Apply form without a name |
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
+| `nav/tcpip.html` | `13 started` → `14 started` | the Servers page lists fourteen started |
+| `nav/tcpip-interfaces.html`, `nav/servers.html` | the two buttons get names `add`/`start` and `refresh` | two nameless buttons in one form cannot be told apart |
 
 ## Steps
 
@@ -122,9 +241,10 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 |---|---|---|
 | 1, 2 | Frame, sign-on, System status | done |
 | 3-11 | Work management | done (golden-clean; live `Work` pending) |
-| 12-14 | Messages | |
-| 15-18 | Users and groups | |
-| 19-22 | System | |
-| 23, 24 | Network | |
+| 12-14 | Messages | done (golden-clean; live `Msgs` pending) |
+| 15-18 | Users and groups | done (golden-clean; live `Users` pending) |
+| 19-22 | System | done (golden-clean; live `Config` pending) |
+| 23, 24 | Network | done (golden-clean; live `Net` pending) |
 | 25, 26 | Database | |
-| 27-30 | Security, software, performance | |
+| 27-29 | Security, software | |
+| 30 | Performance | done (golden-clean; live `Perf` pending) |

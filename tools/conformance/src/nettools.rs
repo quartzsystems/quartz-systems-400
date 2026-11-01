@@ -10,9 +10,8 @@
 
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
+use crate::tcp::GUEST;
 
-/// The guest's address on QEMU's user network.
-const GUEST: &str = "10.0.2.15";
 /// QEMU's gateway.
 const GATEWAY: &str = "10.0.2.2";
 
