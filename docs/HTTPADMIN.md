@@ -92,6 +92,11 @@ message, the audit journal or a page (`tests/certs.rs` checks).
 Data differences the golden tests apply (`tests/golden.rs`): the store
 paths (`/QIBM/UserData/ICSS/Cert/...`; `*SIGNATUREVERIFICATION` is
 `Signing/SIGNVER.KDB`); on the create result, the serial number,
-validity times, fingerprint and PEM of the certificate just made. The
+validity times, fingerprint and PEM of the certificate just made; on
+Applications, the application IDs (`QIBM_QTV_TELNET_SERVER` for
+`QS400_TELNET_SERVER`, `QIBM_QTMF_FTP_SERVER`, `QIBM_QRW_SERVER_DDM_DRDA`,
+`QIBM_OS400_QZBS_SVR_CENTRAL`, `QIBM_HTTP_SERVER_<instance>`), sorted in
+the Application select. The update client has no shipped ID; the fixture
+registers `QS400_UPDATE_CLIENT` as a user-defined one. The
 store page lists the default certificate first, then entries in the
 order they were added.

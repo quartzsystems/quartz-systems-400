@@ -509,3 +509,26 @@ fn cert_import() {
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "http/cert-import.html", &[]);
 }
+
+/// Data differences: the application IDs the system really uses
+/// (docs/HTTPADMIN.md, "Decisions"). The select lists them sorted, so
+/// the real IDs come in another order.
+const APP_IDS: &[(&str, &str)] = &[
+    (
+        "<option>QS400_FTP_SERVER</option><option>QS400_HTTP_SERVER_API</option>",
+        "<option>QIBM_HTTP_SERVER_API</option><option>QIBM_QTMF_FTP_SERVER</option>",
+    ),
+    ("QS400_HTTP_SERVER_", "QIBM_HTTP_SERVER_"),
+    ("QS400_TELNET_SERVER", "QIBM_QTV_TELNET_SERVER"),
+    ("QS400_FTP_SERVER", "QIBM_QTMF_FTP_SERVER"),
+    ("QS400_DDM_DRDA_SERVER", "QIBM_QRW_SERVER_DDM_DRDA"),
+    ("QS400_CENTRAL_SERVER", "QIBM_OS400_QZBS_SVR_CENTRAL"),
+];
+
+#[test]
+fn cert_apps() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/certs/apps");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/cert-apps.html", APP_IDS);
+}

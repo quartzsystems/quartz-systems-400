@@ -226,6 +226,12 @@ pub const TOPICS: &[Topic] = &[
 <tr><th>PKCS#12</th><td>A certificate with its private key and chain, sealed with a password; usually .p12 or .pfx.</td></tr>\n</table>",
     },
     Topic {
+        key: "cert-apps",
+        title: "Certificate applications",
+        body: "<p>Every TLS server and client of the system, and every HTTP instance, has an application ID such as <span class=\"mono\">QIBM_HTTP_SERVER_ADMIN</span>. The server presents the <span class=\"mono\">*SYSTEM</span> certificate assigned to its ID; an ID without one uses the store's default certificate.</p>\n\
+<p><b>Assign</b> chooses the certificate; the server presents it the next time it starts. Only certificates with their private keys that do not expire within 60 days are offered. <b>Remove</b> takes the assignment away. A status in red is a certificate that expires within 60 days or has expired.</p>",
+    },
+    Topic {
         key: "cert-confirm",
         title: "Confirm",
         body: "<p>Deleting a certificate removes it and its private key from the store; applications assigned it lose it. Deleting a store removes the store file and its stashed password. Removing an assignment leaves the application with the store's default certificate.</p>",

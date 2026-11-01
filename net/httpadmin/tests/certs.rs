@@ -363,3 +363,31 @@ fn import_pkcs12_pem_der_and_paths() {
     let r = upload(&mut b, &[("store", "*SYSTEM")], Some(("shop.pem", pem.as_bytes())));
     assert_eq!(r.status, 403);
 }
+
+#[test]
+fn assign_and_remove_application_certificates() {
+    let mut b = Browser::signed_on();
+    let t = b.get("/certs/apps?app=QIBM_QTV_TELNET_SERVER&cert=webstore.quartz.example").text();
+    assert!(t.contains("<option selected>QIBM_QTV_TELNET_SERVER</option>"), "{t}");
+    assert!(t.contains("<option selected>webstore.quartz.example (expires 03/14/27)</option>"));
+    // Expired and expiring certificates are not offered.
+    assert!(!t.contains("api.quartz.example (expires") && !t.contains("old-webstore (expires"));
+    assert_eq!(b.post_raw("/certs/apps", &[("app", "QIBM_QTMF_FTP_SERVER"), ("cert", "*.quartz.example")]).status, 403);
+    let r = b.post("/certs/apps", &[("app", "QIBM_QTMF_FTP_SERVER"), ("cert", "*.quartz.example (expires 01/02/28)"), ("assign", "Assign")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps"));
+    let t = b.get("/certs/apps").text();
+    assert!(t.contains("HTP8310") && t.contains("Certificate *.quartz.example assigned to application QIBM_QTMF_FTP_SERVER."), "{t}");
+    assert_eq!(b.fx.certs.app_label("QIBM_QTMF_FTP_SERVER").as_deref(), Some("*.quartz.example"));
+    // A CA is not something a server presents.
+    b.post("/certs/apps", &[("app", "QIBM_QTMF_FTP_SERVER"), ("cert", "Quartz Internal CA")]);
+    assert!(b.get("/certs/apps").text().contains("HTP8320"));
+    // Remove, through its confirmation.
+    let url = "/certs/confirm?op=unassign&app=QIBM_HTTP_SERVER_API";
+    assert!(b.get(url).text().contains("Confirm Remove Assignment"));
+    assert_eq!(b.fx.certs.app_label("QIBM_HTTP_SERVER_API").as_deref(), Some("api.quartz.example"));
+    let r = b.post(url, &[("ok", "OK")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/apps"));
+    assert!(b.get("/certs/apps").text().contains("HTP8311"));
+    assert_eq!(b.fx.certs.app_label("QIBM_HTTP_SERVER_API"), None);
+    assert!(b.fx.system.audit.lock().unwrap().iter().any(|a| matches!(a, Audit::Change { object, .. } if object == "QIBM_HTTP_SERVER_API")));
+}
