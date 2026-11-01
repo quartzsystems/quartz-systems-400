@@ -281,6 +281,7 @@ impl Suite {
         }
         let installed = self.out_dir.join("install.img");
         reports.extend(self.install_matrix(&installed)?);
+        reports.extend(self.four_disks(&installed)?);
         Ok(reports)
     }
 

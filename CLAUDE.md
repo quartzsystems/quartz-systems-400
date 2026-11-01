@@ -468,7 +468,7 @@ analyzer (`crtlib LIB(X) TEXT('made')`, `?crtpf`); the dev words below are
 reached with the `svc.` prefix only (`svc.obj ls QGPL`, `svc.xfer put`).
 Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
-[restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
+[restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench|fill|verify`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
 `txn stats`, `ifs` (the IFS mount at /run/qs400/ifs, capacity, free space),
 `sysdump [take|list|show N|delete N]` (system dumps), `liclog [MAJOR]` (the LIC log),

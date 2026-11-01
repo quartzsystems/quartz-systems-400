@@ -248,6 +248,8 @@ matrix:
 | 9 SAVSYS and recovery | `CRTDEVTAP`, `CRTIMGCLG`, `ADDIMGCLGE`, `LODIMGCLG`, then `SAVSYS DEV(TAPVRT01)`, `CHKTAP` (a system save), `SAVLIB LIB(*NONSYS)` and `SAV` after it; the volume copied onto a disk (`svc.vrtout`), the system disk wiped, option 4: LIC and operating system from the tape, RSTUSRPRF, RSTCFG, RSTAUT, then the storage service's RSTLIB, RST and RSTAUT; the profile, the library and the IFS file made before the save are back |
 | 10 slip install V1R1M0 | option 3 with V1R1M0 media over V1R0M0, the upgrade's panels, user data kept, the store at V1R1M0; then V1R0M0 media refused |
 | 11 power pull mid-install | killed during the LIC install; the reinstall reaches sign-on, `chkstg` clean |
+| 12 four-unit mirror | step 1's disk with three blank disks: added to ASP 1 in DST, `svc.obj fill` puts data on every unit, Start mirrored protection pairs 1 with 4 and 2 with 3 (the data of 3 and 4 moved first), the copies at the re-IPL, the data intact; disk 4 pulled: A6001255, its unit Missing, the IPL completes |
+| 13 device parity RAID 5 | the same four units, RAID 5 started over all of them in DST and synchronized at the IPL; disk 4 pulled: A6001257, `DPY/Failed`, every page read and written through parity; disk 4 back: rebuilt at the IPL, `DPY/Active`, data intact, `chkstg` clean |
 
 `--media iso-raw` is the D IPL from the USB image: the hybrid image
 written raw to a disk boots, installs onto a blank disk beside it, and

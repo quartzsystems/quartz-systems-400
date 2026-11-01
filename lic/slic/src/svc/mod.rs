@@ -7,6 +7,7 @@
 
 mod authority;
 pub(crate) mod db;
+mod fill;
 pub(crate) mod ile;
 pub(crate) mod ifs;
 mod jobq;
@@ -56,6 +57,8 @@ obj rnm TYPE LIB/NAME NEWNAME  rename
 obj mov TYPE LIB/NAME TOLIB    move
 obj dsp LIB/NAME     object description, every type of that name
 obj bench N          create and delete N data areas over ten libraries
+obj fill LIB N KIB   N user spaces of KIB KiB with a pattern, kept
+obj verify LIB N KIB check what obj fill made
 dtaara get|set LIB/NAME [VALUE]
 dtaq snd|rcv LIB/NAME [DATA]
 usrspc rd LIB/NAME OFFSET [LEN] | wr LIB/NAME OFFSET TEXT

@@ -25,6 +25,7 @@ mod dspmsgs;
 #[cfg(unix)]
 mod hwrsrc;
 mod dst;
+mod fourdisk;
 mod error;
 mod hostsvr;
 pub mod ftp;

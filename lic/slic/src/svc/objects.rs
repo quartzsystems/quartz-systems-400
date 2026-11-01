@@ -32,7 +32,7 @@ const BENCH_LIBS: u64 = 10;
 const CHECKPOINT_EVERY: u64 = 4;
 
 /// The store and root library a library name lives in.
-fn target<'a>(system: &'a mut System, lib: &str) -> Result<(&'a mut Store, ObjectId), String> {
+pub(super) fn target<'a>(system: &'a mut System, lib: &str) -> Result<(&'a mut Store, ObjectId), String> {
     if lib.eq_ignore_ascii_case("QTEMP") {
         let t = system.temp.as_mut().ok_or("QTEMP is not available")?;
         return Ok((&mut t.store, t.qtemp));
@@ -101,7 +101,7 @@ fn type_code(s: &str) -> Result<u16, String> {
         .ok_or_else(|| format!("unknown type {s}"))
 }
 
-fn params(library: ObjectId, name: Name, type_code: u16, text: &str) -> CreateParams {
+pub(super) fn params(library: ObjectId, name: Name, type_code: u16, text: &str) -> CreateParams {
     CreateParams {
         library,
         name,
@@ -172,7 +172,9 @@ pub fn obj(system: &mut System, args: &[&str]) -> String {
         ["mov", t, qual, to] => obj_mov(system, t, qual, to),
         ["dsp", qual] => obj_dsp(system, qual),
         ["bench", n] => n.parse::<u64>().map_err(|e| e.to_string()).and_then(|n| bench(system, n)),
-        _ => Err("Usage: obj ls LIB [TYPE] | crt TYPE LIB/NAME [TEXT] | dlt TYPE LIB/NAME | rnm TYPE LIB/NAME NEW | mov TYPE LIB/NAME TOLIB | dsp LIB/NAME | bench N".into()),
+        ["fill", lib, n, kib] => super::fill::fill(system, lib, n, kib),
+        ["verify", lib, n, kib] => super::fill::verify(system, lib, n, kib),
+        _ => Err("Usage: obj ls LIB [TYPE] | crt TYPE LIB/NAME [TEXT] | dlt TYPE LIB/NAME | rnm TYPE LIB/NAME NEW | mov TYPE LIB/NAME TOLIB | dsp LIB/NAME | bench N | fill LIB N KIB | verify LIB N KIB".into()),
     };
     match r {
         Ok(s) => s,

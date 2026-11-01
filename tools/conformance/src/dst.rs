@@ -18,10 +18,10 @@ use crate::steps::{SRC_IPL_COMPLETE, StepReport, Suite};
 
 const CMD: Duration = Duration::from_secs(10);
 /// The DST password QSECOFR gets on first use.
-const PASSWORD: &str = "Quartz1";
+pub(crate) const PASSWORD: &str = "Quartz1";
 
 /// Sign on to DST as QSECOFR with `password`.
-fn sign_on(s: &mut Session, password: &str) -> Result<(), String> {
+pub(crate) fn sign_on(s: &mut Session, password: &str) -> Result<(), String> {
     s.expect("Dedicated Service Tools (DST) Sign On", CMD)?;
     s.send("type QSECOFR")?;
     s.send("key tab")?;
@@ -41,7 +41,7 @@ pub(crate) fn answer_ipl_options(s: &mut Session, timeout: Duration) -> Result<(
 }
 
 /// QSECOFR's first sign-on: the shipped password, then the change.
-fn first_sign_on(s: &mut Session) -> Result<(), String> {
+pub(crate) fn first_sign_on(s: &mut Session) -> Result<(), String> {
     sign_on(s, "QSECOFR")?;
     s.expect("Change Service Tools User Password", CMD)?;
     s.send("key tab")?;
