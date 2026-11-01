@@ -104,6 +104,10 @@ fn models(rq: &Rq<'_>) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// Set by a wizard button for the step it redirects to; step 1 without
+/// it starts afresh.
+const WITHIN: &str = "create.within";
+
 /// `/create/step/<n>`.
 pub fn step(rq: &Rq<'_>, n: &str) -> Response {
     let Some(n) = n.parse::<usize>().ok().filter(|n| (1..=STEPS.len()).contains(n)) else {
@@ -111,6 +115,13 @@ pub fn step(rq: &Rq<'_>, n: &str) -> Response {
     };
     if rq.post() {
         return post(rq, n);
+    }
+    // Step 1 reached other than from the wizard's own buttons (the
+    // navigation item, a bookmark) starts the wizard anew.
+    let within = !rq.get(WITHIN).is_empty();
+    rq.clear(WITHIN);
+    if n == 1 && !within {
+        rq.clear("create.");
     }
     let reached = rq.get("create.reached").parse::<usize>().unwrap_or(1).max(1);
     if n > reached {
@@ -321,6 +332,8 @@ fn post(rq: &Rq<'_>, n: usize) -> Response {
         rq.clear("create.");
         return rq.redirect("/create/step/1");
     }
+    // The page this answers is the wizard's own.
+    rq.set(&[(WITHIN, "1")]);
     let s = Settings::load(rq.env().files.as_ref());
     if n == 1 && f.has("name") {
         // A new name moves the paths that still follow the old one.
@@ -451,8 +464,13 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
         return rq.done("/create/step/6", m);
     }
     let sys = &rq.env().system;
+    // From here an error ends the wizard: the next one starts blank.
+    let failed = |m: Message| {
+        rq.clear("create.");
+        rq.done("/instances", m)
+    };
     if !sys.profile_exists(&s.default_user) {
-        return rq.done("/create/step/6", msgs::message(Kind::Error, "HTP8201", &[&s.default_user]));
+        return failed(msgs::message(Kind::Error, "HTP8201", &[&s.default_user]));
     }
     let port: u16 = a.port.parse().unwrap_or(80);
     let spec = Spec {
@@ -472,7 +490,7 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
     let (date, time) = sys.stamp(sys.now());
     let files = rq.env().files.as_ref();
     if let Err(e) = instance::create(files, &spec, &format!("{date} {time}"), sys.now()) {
-        return rq.done("/create/step/6", msgs::message(Kind::Error, "HTP8106", &[&a.name, &e.to_string()]));
+        return failed(msgs::message(Kind::Error, "HTP8106", &[&a.name, &e.to_string()]));
     }
     // What the generated file does not say: threads, size rotation, and
     // a copied file's port.
@@ -498,7 +516,7 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
     if spec.user != crate::routes::instance::general::SERVER_OWNER
         && let Err(m) = rq.env().jobs.authorize(&spec.root, &spec.user)
     {
-        return rq.done("/instances", m);
+        return failed(m);
     }
     rq.clear("create.");
     rq.audit_change(&spec.name, "instance created");
