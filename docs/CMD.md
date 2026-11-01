@@ -109,8 +109,9 @@ order, the label and the prompt flag.
 Every refusal is a diagnostic `CPD00nn` followed by the escape
 `CPF0001`, with the identifiers the IBM i 7.1 capture of the analyzer
 kit showed (`tools/conformance/cmd/oracle.txt`): CPD0065 a positional
-value beyond `MAXPOS`; CPD0043 a keyword the command has not (and a
-command a limited user may not run); CPD0042 a keyword given twice;
+value beyond `MAXPOS`; CPD0043 a keyword the command has not (CPD0033,
+not captured, a command a limited user may not type on a command line;
+programs and `QCMDEXC` are not limited); CPD0042 a keyword given twice;
 CPD0014 an unterminated string or an unbalanced parenthesis; CPD0071 a
 required parameter missing, CPD0072 a required element; CPD0016 too
 many values in a list; CPD0047 several values where one goes, or a

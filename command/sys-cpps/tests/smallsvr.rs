@@ -226,6 +226,29 @@ fn label_of(r: &str) -> String {
         .to_string()
 }
 
+/// `CHGHTTPA`: `AUTOSTART` alone (the oracle's capture has no
+/// `CHGHTTPA`; docs/SERVERS.md says what is left out), run by the job.
+#[test]
+fn chghttpa() {
+    let e = sys_cpps::entry("CHGHTTPA").expect("in the inventory");
+    assert_eq!(e.site, sys_cpps::Site::Job);
+    assert!(sys_cpps::inventory::JOB_SITE.contains(&"CHGHTTPA"));
+    let mut src = source();
+    let mut env = Env::new(&mut src);
+    for ok in ["CHGHTTPA AUTOSTART(*YES)", "CHGHTTPA *NO", "CHGHTTPA"] {
+        let r = analyze(&mut env, ok).unwrap_or_else(|e| panic!("{ok}: {e:?}"));
+        assert_eq!(r.name, "CHGHTTPA");
+    }
+    for (bad, id) in [("CHGHTTPA AUTOSTART(*MAYBE)", "CPD0084"), ("CHGHTTPA NBRSVR(3)", "CPD0043")] {
+        assert_eq!(analyze(&mut env, bad).unwrap_err().msgid(), id, "{bad}");
+    }
+    let r = analyze(&mut env, "?CHGHTTPA").unwrap();
+    let p = Prompter::new(&r);
+    let rows = &p.screen().rows;
+    assert!(rows.iter().any(|r| r.contains("Change HTTP Attributes")), "{}", rows.join("\n"));
+    assert!(rows.iter().any(|r| label_of(r) == "Autostart" && r.contains("*SAME")), "{}", rows.join("\n"));
+}
+
 #[test]
 fn sndtcpsplf_and_lpr_prompts() {
     check("prompt-sndtcpsplf", "?SNDTCPSPLF", &[], true);

@@ -502,6 +502,10 @@ note = "kept in the TCP/IP server table in QUSRSYS; QTOTNTP reads it at each pol
 site = "job"
 note = "kept in the TCP/IP server table in QUSRSYS"
 
+[cmd.CHGHTTPA]
+site = "job"
+note = "kept in the TCP/IP server table in QUSRSYS; AUTOSTART only (STRTCP starts the administration instance)"
+
 [cmd.CHGSMTPA]
 site = "job"
 note = "kept in the TCP/IP server table; only FWDHUBSVR and MAILROUTER act (no SMTP server)"

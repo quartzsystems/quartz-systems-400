@@ -14,7 +14,7 @@ its reach. The library is `net/servers`; the job side is
 |---|---|
 | `net/servers/src/registry/` | `ServerSpec`, `JobSpec`, `Readiness`; the table of every server (`table.rs`) |
 | `net/servers/src/framework/` | `TcpServer` (the hooks), `Env` (the job's reach), `Framework`, `Starter` (the framework as `tcpcfg::server::ServerStarter`), the built-in hooks (`builtin.rs`) |
-| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `ftp.rs` (`CHGFTPA`), `http.rs` (the administration ports), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`) |
+| `net/servers/src/attrs/` | typed attributes over the server table's keyword bag: `telnet.rs` (`CHGTELNA`), `ftp.rs` (`CHGFTPA`), `http.rs` (the administration ports; `CHGHTTPA` sets only the autostart flag), `ntp.rs` (`CHGNTPA`), `lpd.rs` (`CHGLPDA`), `smtp.rs` (`CHGSMTPA`) |
 | `net/servers/src/listen.rs` | bind with retries, the accept loop with a stop flag, TLS handshake, `Service` |
 | `net/servers/src/http/` | the minimal HTTP/1.1 administration listener: request head parsing, responses, the page, `Date` |
 | `work/qsjob/src/command/tcpsvr.rs` | `JobEnv`, `STRTCPSVR`, `ENDTCPSVR`, `CHGTELNA`, `CHGFTPA`, `framework()` |
@@ -41,7 +41,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 | Server | Jobs (user, subsystem) | Ports | Attributes | Application ID | Exit points | This release |
 |---|---|---|---|---|---|---|
 | `*TELNET` | `QTVTELNET` listener, `QTVDEVICE` workers (`QTCP`, `QSYSWRK`) | 23, 992 TLS | `CHGTELNA` | `QIBM_QTV_TELNET_SERVER` | `QIBM_QTG_DEVINIT`, `QIBM_QTG_DEVTERM` | built |
-| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS | (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
+| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS | `CHGHTTPA` (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
 | `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
 | `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | built (`servers::framework::HostSvr`) |
@@ -159,6 +159,16 @@ the job's (`QTMHHTTP`, `work/ifsfiles.rs`); `web_audit` writes `PW`, `AF` and `Z
 certificate is the one `*SYSTEM` assigns `QIBM_HTTP_SERVER_ADMIN`
 (`servers::web::app_tls` builds it from a store), else the system's
 self-signed one of `work/qsjob/src/work/tls.rs`.
+
+`CHGHTTPA AUTOSTART(*YES|*NO)` sets the server table's flag for `*HTTP`:
+`STRTCP` starts `ADMIN` only when it is on (a new system ships it off);
+`HTTPSVR` instances marked autostart in `/www/instances.json` start
+with `STRTCP` either way. IBM's other keywords (`NBRSVR`, `CCSID`, the
+ASCII/EBCDIC translation tables) configure the original HTTP server
+that IBM i no longer ships; the Apache-style instances read their
+configuration files, so the definition leaves them out (a typed one is
+`CPD0043`). The command is in `QSYS`; IBM's is in `QHTTPSVR` with a
+proxy in `QSYS`.
 
 ## Adding a server
 

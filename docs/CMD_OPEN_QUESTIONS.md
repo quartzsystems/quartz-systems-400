@@ -121,3 +121,13 @@ now and what to check.
     - `CRTBNDCL`, `CRTCLMOD` and `CRTCMD` with `SRCSTMF`: the keyword
       came after 7.1 (`CPD0043` on the box); Phase 10 added it as later
       releases have it.
+
+16. **The limited-capability refusal's identifier.** `CPD0043` is the
+    box's "keyword not valid" (the kit's capture), so a command refused
+    to an `LMTCPB(*YES)` user cannot share it; it is `CPD0033` here, a
+    guess. The refusal applies only to a command line (Command Entry, a
+    menu's line, System Request), not to programs or `QCMDEXC`.
+    `CPD0032` is also suspect: the box sends it for "not authorized to
+    command" (`oracle/save/pub400/roundtrip.txt`), the analyzer for a
+    `MODE` mismatch. Test: sign on as a limited user on the box, type
+    `CRTLIB X`, `DSPJOBLOG`.

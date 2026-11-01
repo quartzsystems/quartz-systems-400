@@ -411,10 +411,17 @@ help = "A proxy chain may be at most five commands long."
 vars = ["*CHAR 10"]
 
 [[msg]]
-id = "CPD0043"
+id = "CPD0033"
 sev = 30
 text = "Command &1 is not allowed for a user with limited capabilities."
 help = "The user profile has LMTCPB(*YES); only commands with ALWLMTUSR(*YES) may be typed on a command line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0043"
+sev = 30
+text = "Keyword &1 is not valid for this command."
+help = "The command has no parameter with that keyword. Check the spelling, or press F4 to see the command's keywords."
 vars = ["*CHAR 10"]
 
 [[msg]]
