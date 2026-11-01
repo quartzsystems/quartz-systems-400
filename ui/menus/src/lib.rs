@@ -16,6 +16,7 @@ pub mod payload;
 pub mod shipped;
 pub mod spec;
 pub mod stack;
+pub mod unavailable;
 
 pub use payload::{CmdLin, CurLib, MenuAttrs, MenuKind, PrdLib};
 pub use stack::{MenuStack, Outcome, Target};

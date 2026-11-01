@@ -164,7 +164,7 @@ Counts of 2026-10-23 (`genmenus` prints them):
 |---|---|
 | `CMDxxx` menus in IBM's list | 520 (506 on 7.1, 14 only on 7.5) |
 | generated | 512: 509 command menus and `MAJOR`, `VERB`, `SUBJECT` |
-| hand-written later | 11 of `MAJOR`'s groups whose contents IBM curates: `CMDOBJMGT`, `CMDFILE`, `CMDSAVRST`, `CMDWRKMGT`, `CMDDTAMGT`, `CMDSYSCTL`, `CMDCMNMGT`, `CMDDSTSRV`, `CMDPRBMGT`, `CMDMSGHDL`, `CMDS36` (`CMDS38` and `CMDOFC` are on `MAJOR` but in no inventory) |
+| hand-written | 11 of `MAJOR`'s groups whose contents IBM curates: `CMDOBJMGT`, `CMDFILE`, `CMDSAVRST`, `CMDWRKMGT`, `CMDDTAMGT`, `CMDSYSCTL`, `CMDCMNMGT`, `CMDDSTSRV`, `CMDPRBMGT`, `CMDMSGHDL` under `sys/` from the pub400 captures (§7); `CMDS36`, like `CMDS38` and `CMDOFC` (on `MAJOR` but in no inventory), is not in this release |
 | generated but empty | 22 whose code starts or tokenizes no command of the list: `CMDADMDMN`, `CMDAMT`, `CMDBGU`, `CMDCPH`, `CMDCRSDMN`, `CMDDEVMGT`, `CMDDPR`, `CMDENC`, `CMDGDF`, `CMDINST`, `CMDIWS`, `CMDJS`, `CMDLBL`, `CMDMAC`, `CMDMGD`, `CMDMGR`, `CMDOBJTYPE`, `CMDRJECTL`, `CMDRQS`, `CMDUBC`, `CMDWG`, `CMDWLCGRP` |
 | commands considered | 2218 (`QSYS` and `QTCP`, both releases) |
 | options placed | 5171, of which 831 show a title (a command we ship); a command is on 2.3 menus on average |
@@ -266,7 +266,149 @@ hides keep their number unused, which leaves the blank row a skipped
 number gives; `SAVE` 34 is a reserved option (no text), whose blank
 row keeps the next group on the third page as IBM's does.
 
-## 7. Open questions
+## 7. Where every option leads
+
+Every option of every shipped menu leads to a shipped menu, to a command
+with a definition, or to one of the names below that this release leaves
+out (`menus::unavailable`): the menu driver answers `CPD9D61` ("Menu &1
+is not available in this release.") or `CPD9D60` ("Command &1 is not
+available in this release.") instead of an object that is not found. A
+command menu's reserved option (a row with no text) answers `CPD9D60`
+too. `ui/menus/tests/options.rs` keeps it so: an option naming anything
+else fails, as does a name below that is shipped now, that no option
+names, or that this table does not hold. IBM has no message of its own
+for this, so the identifiers are Quartz's.
+
+The decisions: (a) the menu is shipped, from the pub400 captures under
+`tools/conformance/golden/addendum/menus/` (`probes/addendum/menus.tn`),
+its options pointing at what QS/400 has; (b) the command is added; (c)
+not in this release.
+
+| Name | Kind | Decision | Reached from | Note |
+|---|---|---|---|---|
+| `CMNSTS` | menu | (a) | CMN 1, STATUS | line, controller, device and network interface status (`WRKCFGSTS`) |
+| `CFGCMN` | menu | (a) | CMN 4, CFGDEVCMN 2, NETCFG 10 | lines, devices, TCP/IP; SNA objects answer (c) |
+| `NETCFG` | menu | (a) | CMN 6, CFG | option 10 and 70 lead on; the SNA distribution options answer (c) |
+| `CFGDEVCMN` | menu | (a) | CFG | hardware resources, display devices, configuration status |
+| `FILESYS` | menu | (a) | DATA | `CMDDIR`, `CMDLNK`, `CMDAUT` |
+| `JOBENV` | menu | (a) | JOB | job and subsystem descriptions |
+| `MANAGESYS` | menu | (a) | ASSIST | Operational Assistant: status, backup, `QSYSOPR`, output, jobs, devices |
+| `NETPRB` | menu | (a) | NETWORK, PROBLEM | `WRKPRB` and the network menus; alerts and APPC answer (c) |
+| `OPTICAL` | menu | (a) | DEVICE | optical volumes, libraries, devices, `RECOVERY` |
+| `RESOURCE` | menu | (a) | DEFINE | `HARDWARE` and `SOFTWARE` |
+| `USERHELP` | menu | (a) | ASSIST, SUPPORT | Operational Assistant: help, `INFO`, `DSPWSUSR`, `TECHHELP`, `DSCJOB` |
+| `CMDOBJMGT` | menu | (a) | MAJOR | curated group: related command menus |
+| `CMDFILE` | menu | (a) | MAJOR | curated group, five pages |
+| `CMDSAVRST` | menu | (a) | MAJOR | curated group |
+| `CMDWRKMGT` | menu | (a) | MAJOR | curated group |
+| `CMDDTAMGT` | menu | (a) | MAJOR | curated group |
+| `CMDSYSCTL` | menu | (a) | MAJOR | curated group |
+| `CMDCMNMGT` | menu | (a) | MAJOR | curated group |
+| `CMDDSTSRV` | menu | (a) | MAJOR | curated group; its commands are reserved rows |
+| `CMDPRBMGT` | menu | (a) | MAJOR | curated group |
+| `CMDMSGHDL` | menu | (a) | MAJOR | curated group |
+| `CFGPCS` | menu | (c) | CFGCMN 30, DEVICE | PC connections over SNA |
+| `CMDOFC` | menu | (c) | MAJOR | OfficeVision |
+| `CMDS36` | menu | (c) | MAJOR | System/36 environment |
+| `CMDS38` | menu | (c) | MAJOR | System/38 environment |
+| `CMNCFG` | menu | (c) | SETUP | configuration assistants for remote SNA systems |
+| `CRQADM` | menu | (c) | DEFINE | change request management (Managed System Services) |
+| `DECISION` | menu | (c) | OFCTSK | decision support (OfficeVision) |
+| `DISKETTE` | menu | (c) | DEVICE | diskette units |
+| `FILETFR` | menu | (c) | CMN 8, FILE2, NETPRB, USER2 | SNADS object distribution and DSNX; FTP is on `TCPADM` |
+| `FOLDER` | menu | (c) | DATA, OFCTSK | document library objects |
+| `IDDU` | menu | (c) | FILE | interactive data definition utility |
+| `NWSADM` | menu | (c) | CFGCMN 41, NETCFG 7 | integrated network servers |
+| `OFCSEC` | menu | (c) | OFCTSK, SECURITY | office security (directory, folders) |
+| `OPTSERVER` | menu | (c) | OPTICAL 7 | optical servers on the LAN |
+| `PERFORM` | menu | (c) | PROBLEM2, SYSTEM2 | Performance Tools licensed program (refused on pub400) |
+| `PROGRAMS36` | menu | (c) | PROGRAM | System/36 programs |
+| `QUERY` | menu | (c) | FILE | Query/400 |
+| `RSTS36FMT` | menu | (c) | RESTORE | System/36-format restores |
+| `SAVS36FMT` | menu | (c) | SAVE | System/36-format saves |
+| `SECTOOLS` | menu | (c) | SECURITY | security tools menu (refused on pub400; the commands are on `CMDSEC`) |
+| `SVSM` | menu | (c) | NETWORK | Managed System Services |
+| `UTILITIES` | menu | (c) | PROGRAM | pub400 has no such menu either |
+| `WRKF` | command | (b) | FILE | `QUIWRKF`: the files of `WRKOBJ OBJTYPE(*FILE)` with IBM's options and an attribute filter |
+| `WRKMSGQ` | command | (b) | MESSAGE | `QUIWRKMSGQ`: the message queues, with create, change, delete, display and clear |
+| `DSPHLP` | command | (a) | SUPPORT 1 | (a) the option shows a help module, `HLPUSEHELP`, as USERHELP 1 does |
+| `ASKQST` | command | (c) | PROBLEM, PROGRAM, SUPPORT, SYSTEM2, USER2 | Question and Answer |
+| `CFGDSTSRV` | command | (c) | NETCFG 2 | SNADS |
+| `CFGRPDS` | command | (c) | NETCFG 4 | VM/MVS bridge |
+| `CHGPRF` | command | (c) | SECURITY, USER | a user changing their own profile: later |
+| `CHKOPTVOL` | command | (c) | RECOVERY | optical backup tools |
+| `CPYOPT` | command | (c) | RECOVERY | optical volume copy |
+| `CPYPTFCVR` | command | (c) | PTF | PTF cover letters from media |
+| `CPYPTFGRP` | command | (c) | PTF | PTF groups from media |
+| `CVTOPTBKU` | command | (c) | RECOVERY | optical backup conversion |
+| `DLTPTF` | command | (c) | PTF | PTF save file cleanup |
+| `DSPAPPNINF` | command | (c) | NETWORK | APPN |
+| `DSPDSTLOG` | command | (c) | NETWORK | SNADS |
+| `DSPDSTSRV` | command | (c) | NETWORK | SNADS |
+| `DSPPWRSCD` | command | (c) | POWER | power-on schedule |
+| `DSPSOCSTS` | command | (c) | NETWORK | sphere of control |
+| `EDTRBDAP` | command | (c) | FILE2 | access path rebuild order |
+| `ENDCPYSCN` | command | (c) | TECHHELP | copy screen |
+| `ENDRMTSPT` | command | (c) | TECHHELP | remote support |
+| `PRTDEVADR` | command | (c) | DEVICESTS | local device addresses |
+| `RCLOPT` | command | (c) | RECOVERY | optical index reclaim |
+| `RSTDLO` | command | (c) | DOCUMENT, RESTORE | document library objects |
+| `RSTS36F` | command | (c) | FILE2 | System/36 |
+| `RSTS36LIBM` | command | (c) | LIBRARY | System/36 |
+| `RTVCFGSRC` | command | (c) | CFGDEVCMN 5 | configuration source |
+| `SAVAPARDTA` | command | (c) | USERHELP 10 | APAR data |
+| `SAVDLO` | command | (c) | DOCUMENT, SAVE | document library objects |
+| `SAVS36F` | command | (c) | FILE2 | System/36 |
+| `SAVS36LIBM` | command | (c) | LIBRARY | System/36 |
+| `SBMDBJOB` | command | (c) | JOB2 | database jobs (System/36) |
+| `SLTCMD` | command | (c) | MAJOR 1 | command selection by generic name: later; `GO CMD*` lists the menus |
+| `SNDNETMSG` | command | (c) | MESSAGE | SNADS |
+| `STRCPYSCN` | command | (c) | PROBLEM2, PROGRAM, TECHHELP | copy screen |
+| `STRCSP` | command | (c) | PROGRAM | Cross System Product |
+| `STREDU` | command | (c) | SUPPORT | online education |
+| `STRPASTHR` | command | (c) | CMN, NETPRB, USER2 | pass-through: the TN5250 client is the console's, not a job's |
+| `STRPGMMNU` | command | (c) | FILE, PROGRAM | programmer menu (System/38) |
+| `STRRMTSPT` | command | (c) | TECHHELP | remote support |
+| `STRSCHIDX` | command | (c) | SUPPORT | search index displays |
+| `STRTCPTELN` | command | (c) | TCPADM | TELNET client: as `STRPASTHR` |
+| `VFYAPPCCNN` | command | (c) | NETPRB 8 | APPC |
+| `VFYCMN` | command | (c) | CMN 7, NETPRB 3 | link tests; `PING` and `VFYTCPCNN` test TCP/IP |
+| `VFYTAP` | command | (c) | TAPE | tape drive tests |
+| `WRKALR` | command | (c) | NETPRB, PROBLEM2 | alerts |
+| `WRKALRD` | command | (c) | NETPRB, PROBLEM2 | alerts |
+| `WRKCFGL` | command | (c) | CFGCMN 9 | configuration lists |
+| `WRKCNNL` | command | (c) | CFGCMN 11 | connection lists |
+| `WRKCOSD` | command | (c) | CFGCMN 8 | classes-of-service (SNA) |
+| `WRKCTLD` | command | (c) | CFGCMN 2, 3 | controller descriptions |
+| `WRKDDMF` | command | (c) | FILE2 | DDM files: `WRKOBJ OBJTYPE(*FILE)` lists them |
+| `WRKDIRE` | command | (c) | NETCFG, OFCTSK | system distribution directory |
+| `WRKDOC` | command | (c) | DOCUMENT | documents |
+| `WRKDOCLIB` | command | (c) | NETCFG 5 | remote document libraries |
+| `WRKDSTQ` | command | (c) | NETWORK | SNADS |
+| `WRKFLR` | command | (c) | DISKTASKS | folders |
+| `WRKHLDOPTF` | command | (c) | RECOVERY | held optical files |
+| `WRKMODD` | command | (c) | CFGCMN 7 | modes (SNA) |
+| `WRKNETJOBE` | command | (c) | NETCFG 3 | network job entries (SNADS) |
+| `WRKNTBD` | command | (c) | CFGCMN 13 | NetBIOS |
+| `WRKNWID` | command | (c) | CFGCMN 10 | network interfaces (frame relay, ISDN) |
+| `WRKNWSCFG` | command | (c) | CFGCMN 40 | integrated network servers |
+| `WRKNWSD` | command | (c) | CFGCMN 12 | integrated network servers |
+| `WRKOPTDIR` | command | (c) | OPTICAL 2 | optical directories |
+| `WRKOPTF` | command | (c) | OPTICAL 3 | optical files |
+| `WRKSOC` | command | (c) | NETWORK | sphere of control |
+
+Counts: 21 menus shipped and one option turned into a help module (a),
+two commands added (b), 22 menus and 64 commands left out (c). Of the
+90 names options led nowhere before (41 menus, 49 commands), 21 menus
+are shipped, `DSPHLP` became a help module, `WRKF` and `WRKMSGQ` were
+added, and 20 menus and 46 commands are left out; `NWSADM`,
+`OPTSERVER` and 18 commands are named by the new menus' options.
+
+The roll keys page every menu: UIM's defaults give `PAGEUP` and
+`PAGEDOWN` to a key list that does not name them, as the shipped menus'
+do not (`uim::engine`, `a_tall_menu_pages_without_page_keys`).
+
+## 8. Open questions
 
 - IBM's subject menus are curated: whether a `CMDJOB` option such as
   `ADDJOBQE` or `CHGJOBD` is listed cannot be read from the goldens

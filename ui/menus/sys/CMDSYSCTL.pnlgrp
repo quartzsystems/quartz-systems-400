@@ -1,0 +1,55 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* CMDSYSCTL: System Control Commands, a group of the major command menu.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 3'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='CMDSYSCTL'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='MENU MAJOR'.F16=Major menu
+:EKEYL.
+:PANEL NAME=CMDSYSCTL HELP=HLPCMDSYSCTL KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.System Control Commands
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUGRP.Commands
+:MENUI OPTION=1 ACTION='CMD ?CHGRCYAP'.
+:MENUI OPTION=2 ACTION='CMD ?DSPLOG'.Display Log  DSPLOG
+:MENUI OPTION=3 ACTION='CMD ?DSPRCYAP'.
+:MENUI OPTION=4 ACTION='CMD ?EDTRCYAP'.
+:MENUI OPTION=5 ACTION='CMD ?RCLSTG'.Reclaim Storage  RCLSTG
+:MENUI OPTION=6 ACTION='CMD ?RCLTMPSTG'.Reclaim Temporary Storage  RCLTMPSTG
+:MENUI OPTION=7 ACTION='CMD ?RGZDLO'.
+:MENUI OPTION=8 ACTION='CMD ?WRKACTJOB'.Work with Active Jobs  WRKACTJOB
+:EMENUGRP.
+:MENUGRP.Related Command Menus
+:MENUI OPTION=9 ACTION='MENU CMDJOB'.Job Commands  CMDJOB
+:MENUI OPTION=10 ACTION='MENU CMDSTS'.Status Commands  CMDSTS
+:MENUI OPTION=11 ACTION='MENU CMDSYS'.System Commands  CMDSYS
+:MENUI OPTION=12 ACTION='MENU CMDSYSVAL'.System Value Commands  CMDSYSVAL
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPCMDSYSCTL.System Control Commands - Help
+:P.System Control Commands: the commands and the command menus of this
+group, as the major command menu arranges them, with each name at the
+right of its row. A blank row is a command this release does not
+provide.
+:P.Type an option number and press Enter to prompt the command or show the
+menu, or type a command on the command line. F12 returns to the previous
+menu, F3 to the menu where you started and F16 to the major command
+groups.
+:EHELP.
+:EPNLGRP.

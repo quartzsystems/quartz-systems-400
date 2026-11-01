@@ -1,0 +1,41 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* MANAGESYS: the Operational Assistant menu for the system, users and devices.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='MANAGESYS'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=MANAGESYS HELP=HLPMANAGESYS KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Manage Your System, Users, and Devices
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='CMD WRKSYSSTS'.Display system status
+:MENUI OPTION=2 ACTION='MENU RUNBCKUP'.Run a backup
+:MENUI OPTION=3 ACTION='CMD DSPMSG MSGQ(QSYSOPR)'.Work with system operator messages
+:MENUI OPTION=10 ACTION='CMD WRKSPLF'.Work with printer output
+:MENUI OPTION=11 ACTION='CMD WRKUSRJOB'.Work with jobs
+:MENUI OPTION=12 ACTION='CMD WRKUSRJOB USER(*ALL) STATUS(*ACTIVE) JOBTYPE(*INTERACT)'.Work with signed-on users
+:MENUI OPTION=20 ACTION='MENU DEVICESTS'.Device status tasks
+:MENUI OPTION=60 ACTION='MENU SETUP'.Customize your system, users, and devices
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPMANAGESYS.Manage Your System, Users, and Devices - Help
+:P.The everyday tasks of the person who runs the system: its status,
+backups, the operator's messages, printer output, jobs and devices.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:EPNLGRP.

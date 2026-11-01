@@ -1,0 +1,54 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* CFGCMN: the task menu for communications configuration.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='CFGCMN'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System main menu
+:EKEYL.
+:PANEL NAME=CFGCMN HELP=HLPCFGCMN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configure Communications and Remote Hardware
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKLIND'.Work with lines
+:MENUI OPTION=2 ACTION='CMD ?WRKCTLD'.Work with communications controllers
+:MENUI OPTION=3 ACTION='CMD ?WRKCTLD'.Work with work station controllers
+:MENUI OPTION=4 ACTION='CMD WRKDEVD DEVD(*CMN)'.Work with communications devices
+:MENUI OPTION=5 ACTION='CMD WRKDEVD DEVD(*PRT)'.Work with printers
+:MENUI OPTION=6 ACTION='CMD WRKDEVD DEVD(*DSP)'.Work with display stations
+:MENUI OPTION=7 ACTION='CMD ?WRKMODD'.Work with modes
+:MENUI OPTION=8 ACTION='CMD ?WRKCOSD'.Work with classes-of-service
+:MENUI OPTION=9 ACTION='CMD ?WRKCFGL'.Work with configuration lists
+:MENUI OPTION=10 ACTION='CMD ?WRKNWID'.Work with network interfaces
+:MENUI OPTION=11 ACTION='CMD ?WRKCNNL'.Work with connection lists
+:MENUI OPTION=12 ACTION='CMD ?WRKNWSD'.Work with network servers
+:MENUI OPTION=13 ACTION='CMD ?WRKNTBD'.Work with NetBIOS descriptions
+:MENUI OPTION=20 ACTION='CMD CFGTCP'.Configure TCP/IP
+:MENUI OPTION=30 ACTION='MENU CFGPCS'.Configure personal computer connections
+:MENUI OPTION=40 ACTION='CMD ?WRKNWSCFG'.Configure network server
+:MENUI OPTION=41 ACTION='MENU NWSADM'.Network server administration
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPCFGCMN.Configure Communications and Remote Hardware - Help
+:P.The lines, controllers and devices that connect this system to others,
+and TCP/IP. Options for functions this release does not have say so.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

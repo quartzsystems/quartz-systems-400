@@ -23,7 +23,7 @@
 :EKEYL.
 :PANEL NAME=SUPPORT HELP=HLPSUPPORT KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.User Support and Education
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD DSPHLP'.How to use help
+:MENUI OPTION=1 ACTION='HELP HLPUSEHELP'.How to use help
 :MENUI OPTION=2 ACTION='CMD STRSCHIDX'.Search system help index
 :MENUI OPTION=3 ACTION='MENU MAJOR'.How to use commands
 :MENUI OPTION=4 ACTION='CMD ASKQST'.Question and answer
@@ -40,5 +40,13 @@ when something fails.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+:HELP NAME=HLPUSEHELP.How to Use Help
+:P.Press F1 or the Help key anywhere for help about the place the cursor is
+on: a field, an option, a function key or the message on the bottom
+line. With the cursor elsewhere, the help is about the whole display.
+:P.In a help window, F2 shows the help for the whole display, Page Down and
+Page Up move through a long text, F12 closes the window and F3 leaves
+help altogether.
 :EHELP.
 :EPNLGRP.

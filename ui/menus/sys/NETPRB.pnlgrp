@@ -1,0 +1,46 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* NETPRB: the task menu for network problems.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='NETPRB'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=NETPRB HELP=HLPNETPRB KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Network Problem Handling
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKPRB'.Work with problems
+:MENUI OPTION=2 ACTION='CMD ?WRKALR'.Work with alerts
+:MENUI OPTION=3 ACTION='CMD ?VFYCMN'.Verify communications
+:MENUI OPTION=4 ACTION='MENU NETWORK'.Network management
+:MENUI OPTION=5 ACTION='MENU FILETFR'.Send or receive files
+:MENUI OPTION=6 ACTION='CMD ?STRPASTHR'.Access a remote system
+:MENUI OPTION=7 ACTION='CMD ?WRKALRD'.Work with alert descriptions
+:MENUI OPTION=8 ACTION='CMD ?VFYAPPCCNN'.Verify APPC connection
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPNETPRB.Network Problem Handling - Help
+:P.The problems this system logged and the tools for network problems.
+Alerts, APPC and pass-through are not in this release; their options say
+so.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

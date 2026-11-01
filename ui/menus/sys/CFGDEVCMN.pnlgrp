@@ -1,0 +1,42 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* CFGDEVCMN: the task menu for device and communications configuration.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='CFGDEVCMN'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System main menu
+:EKEYL.
+:PANEL NAME=CFGDEVCMN HELP=HLPCFGDEVCMN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configure Devices and Communications
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKHDWRSC TYPE(*LWS)'.Configure local hardware
+:MENUI OPTION=2 ACTION='MENU CFGCMN'.Configure communications and remote hardware
+:MENUI OPTION=3 ACTION='CMD WRKDEVD DEVD(*DSP)'.Configure virtual controllers and devices
+:MENUI OPTION=4 ACTION='CMD WRKCFGSTS'.Work with configuration status
+:MENUI OPTION=5 ACTION='CMD ?RTVCFGSRC'.Retrieve configuration source
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPCFGDEVCMN.Configure Devices and Communications - Help
+:P.The hardware attached to this system, the virtual display devices of
+TN5250 sessions and the state of the configuration.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

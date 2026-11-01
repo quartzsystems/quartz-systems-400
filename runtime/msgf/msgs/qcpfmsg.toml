@@ -4057,6 +4057,20 @@ help = "The option is listed for compatibility; what it does arrives in a later 
 vars = ["*CHAR 4"]
 
 [[msg]]
+id = "CPD9D60"
+sev = 30
+text = "Command &1 is not available in this release."
+help = "The option names a function this release of QS/400 does not have, kept for its place on the menu. Nothing was done."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD9D61"
+sev = 30
+text = "Menu &1 is not available in this release."
+help = "The option leads to a menu of functions this release of QS/400 does not have, kept for its place on the menu. Nothing was done."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "CPD9D40"
 sev = 30
 text = "Option &1 cannot be used on the saved library's own entry."

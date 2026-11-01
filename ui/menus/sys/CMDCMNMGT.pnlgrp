@@ -1,0 +1,68 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* CMDCMNMGT: Communication Mgmt Commands, a group of the major command menu.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 3'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='CMDCMNMGT'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='MENU MAJOR'.F16=Major menu
+:EKEYL.
+:PANEL NAME=CMDCMNMGT HELP=HLPCMDCMNMGT KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Communication Mgmt Commands
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUGRP.Related Command Menus
+:MENUI OPTION=1 ACTION='MENU CMDALR'.Alert Commands  CMDALR
+:MENUI OPTION=2 ACTION='MENU CMDAPPC'.APPC Commands  CMDAPPC
+:MENUI OPTION=3 ACTION='MENU CMDASC'.Async Commands  CMDASC
+:MENUI OPTION=4 ACTION='MENU CMDBSCF'.BSC File Commands  CMDBSCF
+:MENUI OPTION=5 ACTION='MENU CMDCFG'.Configuration Commands  CMDCFG
+:MENUI OPTION=6 ACTION='MENU CMDCFGL'.Configuration List Commands  CMDCFGL
+:MENUI OPTION=7 ACTION='MENU CMDCMN'.Communications Commands  CMDCMN
+:MENUI OPTION=8 ACTION='MENU CMDCOSD'.Class-of-Service Desc Commands  CMDCOSD
+:MENUI OPTION=9 ACTION='MENU CMDCSI'.Comm Side Information Commands  CMDCSI
+:MENUI OPTION=10 ACTION='MENU CMDCTL'.Control Commands  CMDCTL
+:MENUI OPTION=11 ACTION='MENU CMDDEVMGT'.Device Management Commands  CMDDEVMGT
+:MENUI OPTION=12 ACTION='MENU CMDETH'.Ethernet Commands  CMDETH
+:MENUI OPTION=13 ACTION='MENU CMDFILE'.File Commands  CMDFILE
+:MENUI OPTION=14 ACTION='MENU CMDHOST'.Host Commands  CMDHOST
+:MENUI OPTION=15 ACTION='MENU CMDINTR'.Intrasystem Commands  CMDINTR
+:MENUI OPTION=16 ACTION='MENU CMDLIN'.Line Commands  CMDLIN
+:MENUI OPTION=17 ACTION='MENU CMDLWS'.Local Work Station Commands  CMDLWS
+:MENUI OPTION=18 ACTION='MENU CMDMOD'.Mode and Module Commands  CMDMOD
+:MENUI OPTION=19 ACTION='MENU CMDNET'.Network Commands  CMDNET
+:MENUI OPTION=20 ACTION='MENU CMDPASTHR'.Pass-Through Commands  CMDPASTHR
+:MENUI OPTION=21 ACTION='MENU CMDRJE'.RJE Commands  CMDRJE
+:MENUI OPTION=22 ACTION='MENU CMDSNPT'.SNPT Commands  CMDSNPT
+:MENUI OPTION=23 ACTION='MENU CMDSNUF'.SNUF Commands  CMDSNUF
+:MENUI OPTION=24 ACTION='MENU CMDSOC'.Sphere of Control Commands  CMDSOC
+:MENUI OPTION=25 ACTION='MENU CMDSRV'.Service Commands  CMDSRV
+:MENUI OPTION=26 ACTION='MENU CMDTCP'.TCP/IP Commands  CMDTCP
+:MENUI OPTION=27 ACTION='MENU CMDVWS'.Virtual Work Station Commands  CMDVWS
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPCMDCMNMGT.Communication Mgmt Commands - Help
+:P.Communication Mgmt Commands: the commands and the command menus of this
+group, as the major command menu arranges them, with each name at the
+right of its row. A blank row is a command this release does not
+provide.
+:P.Type an option number and press Enter to prompt the command or show the
+menu, or type a command on the command line. F12 returns to the previous
+menu, F3 to the menu where you started and F16 to the major command
+groups.
+:EHELP.
+:EPNLGRP.

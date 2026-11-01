@@ -1,0 +1,24 @@
+ LICPGM                   Work with Licensed Programs
+                                                             System:   SYSNAME
+ Select one of the following:
+
+     20. Display secondary languages
+     21. Install secondary languages
+     22. Delete secondary languages
+
+   Completion Status
+     50. Display log for messages
+
+   Related
+     70. Licensed program commands
+
+
+
+
+                                                                         Bottom
+ Selection or command
+ ===>
+
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant
+ F16=System Main menu
+

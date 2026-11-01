@@ -358,6 +358,10 @@ impl Engine {
             None if key == Key::Enter => Some(Action::Enter),
             // The Help key always helps.
             None if key == Key::Help => Some(Action::Help),
+            // The roll keys page a key list that does not name them, as
+            // UIM's defaults do (the menus' key lists do not).
+            None if key == Key::PageUp => Some(Action::PageUp),
+            None if key == Key::PageDown => Some(Action::PageDown),
             None => None,
         }
     }

@@ -5,6 +5,7 @@
 #![allow(clippy::many_single_char_names)] // dialogs, terminals and rows
 
 use std::collections::VecDeque;
+use std::fmt::Write as _;
 
 use super::*;
 use crate::model::Action;
@@ -280,6 +281,31 @@ fn menu_choice_and_help_action() {
         t.rows(1)
     );
     assert!(t.rows(2)[0].contains("A Test Menu"));
+}
+
+/// A menu taller than the screen pages with the roll keys though its key
+/// list does not name them (the shipped menus' key lists do not).
+#[test]
+fn a_tall_menu_pages_without_page_keys() {
+    let mut items = String::new();
+    for n in 1..=30 {
+        let _ = writeln!(items, ":MENUI OPTION={n} ACTION='CMD DSPJOB'.Option number {n}");
+    }
+    let src = MENU.replace(
+        ":MENUI OPTION=1 ACTION='MENU USER'.User tasks\n",
+        &items,
+    );
+    let g = compile(&src);
+    let mut d = Engine::new(Rc::clone(&g), "QS400");
+    let mut t = Script::default();
+    t.step(Key::PageDown, (21, 7), &[])
+        .step(Key::PageUp, (21, 7), &[])
+        .step(Key::F(3), (1, 1), &[]);
+    assert_eq!(d.show(&mut t, "TEST").unwrap(), Response::Exit);
+    let has = |n: usize, s: &str| t.rows(n).iter().any(|r| r.contains(s));
+    assert!(has(0, "Option number 1 ") && has(0, "More..."), "{:?}", t.rows(0));
+    assert!(has(1, "Option number 15") && !has(1, "Option number 1 "), "{:?}", t.rows(1));
+    assert!(has(2, "Option number 1 "), "{:?}", t.rows(2));
 }
 
 #[test]

@@ -125,7 +125,7 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
             }
             continue;
         }
-        let mut dialog = UimDialog::new(group, &s.system);
+        let mut dialog = UimDialog::new(Rc::clone(&group), &s.system);
         dialog.copyright = true;
         if let Some(m) = message.take() {
             dialog.send(m);
@@ -159,6 +159,10 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
                     break;
                 }
                 Response::Menu(name) => {
+                    if let Some(id) = menus::unavailable::menu(&name) {
+                        dialog.error(id, &[&name]);
+                        continue;
+                    }
                     let target = match name.as_str() {
                         "MAIN" => Target::Main,
                         n => Target::Menu(Qualified::new("*LIBL", n)),
@@ -172,6 +176,10 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
                     }
                 }
                 Response::Command(text) => {
+                    if let Some((id, name)) = unavailable(&group, &panel, &text) {
+                        dialog.error(id, &[&name]);
+                        continue;
+                    }
                     let text = dialog.substitute(&text, None);
                     match run(s, &text, &mut dialog) {
                         Flow::Back => {}
@@ -248,6 +256,23 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
             Flow::Back
         }
     }
+}
+
+/// A command this release does not have: one left out on purpose
+/// (`menus::unavailable`, chosen or typed), or a command menu's reserved
+/// option (an option with no text). Any other goes to the analyzer.
+fn unavailable(group: &uim::PanelGroup, panel: &str, text: &str) -> Option<(&'static str, String)> {
+    if let Some(hit) = menus::unavailable::command(text) {
+        return Some(hit);
+    }
+    let menu = group.panel(panel)?.areas.iter().find_map(|a| match a {
+        uim::model::Area::Menu(m) => Some(m),
+        _ => None,
+    })?;
+    menu.all_items()
+        .into_iter()
+        .any(|i| i.text.is_empty() && matches!(&i.action, uim::model::Action::Cmd(c) if c == text))
+        .then(|| (menus::unavailable::COMMAND, menus::unavailable::command_name(text)))
 }
 
 /// `CPF9801`: the menu is not there (the oracle says so for GO).

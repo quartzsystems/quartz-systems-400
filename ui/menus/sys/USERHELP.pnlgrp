@@ -1,0 +1,47 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* USERHELP: the Operational Assistant menu for information and problems.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='USERHELP'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=USERHELP HELP=HLPUSERHELP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Information and Problem Handling
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='HELP HLPUSEHELP'.How to use help
+:MENUI OPTION=2 ACTION='MENU INFO'.Information Assistant options
+:MENUI OPTION=3 ACTION='CMD DSPWSUSR'.Display work station user
+:MENUI OPTION=10 ACTION='CMD ?SAVAPARDTA'.Save information to help resolve a problem
+:MENUI OPTION=11 ACTION='MENU TECHHELP'.Technical support tasks
+:MENUI OPTION=80 ACTION='CMD DSCJOB'.Temporary sign-off
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPUSERHELP.Information and Problem Handling - Help
+:P.Where to find help, who is signed on at this display, and the tasks that
+gather what a problem report needs.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:HELP NAME=HLPUSEHELP.How to Use Help
+:P.Press F1 or the Help key anywhere for help about the place the cursor is
+on: a field, an option, a function key or the message on the bottom
+line. With the cursor elsewhere, the help is about the whole display.
+:P.In a help window, F2 shows the help for the whole display, Page Down and
+Page Up move through a long text, F12 closes the window and F3 leaves
+help altogether.
+:EHELP.
+:EPNLGRP.
