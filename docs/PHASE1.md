@@ -222,11 +222,14 @@ changes QTIME and QUTCOFFSET immediately.
 
 ### Font
 
-[lic/console/font/qs400-9x16.txt](../lic/console/font/qs400-9x16.txt): 107 glyphs
+[lic/console/font/qs400-9x16.txt](../lic/console/font/qs400-9x16.txt): 204 glyphs
 drawn by Quartz as text art, 9×16 cells, two-pixel strokes, printable
-ASCII plus eleven box-drawing characters and the 5250 column separator
-(private use U+E000). `build.rs` compiles it to a table; a test requires
-every printable ASCII glyph to be present and non-empty.
+ASCII, Latin-1 (U+00A0 to U+00FF) and the euro sign, eleven box-drawing
+characters and the 5250 column separator (private use U+E000). Accents
+sit in rows 2-3 over lowercase and rows 0-1 over capitals. `build.rs`
+compiles it to a table; tests require every printable ASCII glyph to be
+present and non-empty, and every printable character of CCSIDs 37, 273,
+285, 297 and 500 to have a glyph.
 
 ### Display
 

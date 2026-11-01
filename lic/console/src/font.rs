@@ -62,7 +62,38 @@ mod tests {
                 "{c:?} missing"
             );
         }
-        assert!(std::ptr::eq(glyph('\u{00e9}'), &raw const REPLACEMENT));
+        assert!(std::ptr::eq(glyph('\u{0100}'), &raw const REPLACEMENT));
+    }
+
+    #[test]
+    fn every_printable_character_of_the_ccsids_has_a_glyph() {
+        use ccsid::conv::Codec;
+        for id in [37u16, 273, 285, 297, 500] {
+            let codec = Codec::of(id).unwrap().unwrap();
+            let bytes: Vec<u8> = (0..=255).collect();
+            let mut chars = Vec::new();
+            codec.decode(&bytes, &mut chars);
+            assert_eq!(chars.len(), 256);
+            for (b, c) in chars.into_iter().enumerate() {
+                if c.is_control() {
+                    continue;
+                }
+                assert!(
+                    !std::ptr::eq(glyph(c), &raw const REPLACEMENT),
+                    "CCSID {id} byte {b:#04x} ({c:?}) has no glyph"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn latin1_and_euro_are_drawn() {
+        for c in ('\u{a1}'..='\u{ff}').chain(['\u{20ac}']) {
+            let rows = glyph(c);
+            assert!(rows.iter().any(|r| *r != 0), "{c:?} is empty");
+            assert!(rows.iter().all(|r| r & 1 == 0), "{c:?} fills the gap");
+        }
+        assert!(glyph('\u{a0}').iter().all(|r| *r == 0));
     }
 
     #[test]
