@@ -51,8 +51,13 @@ fn shipped_system_rows() {
     assert_eq!(os[0].0, "*BASE");
     assert!(
         rows.iter()
-            .all(|r| !r.product.as_str().starts_with("QS00D")),
+            .all(|r| !matches!(r.product.as_str(), "QS00NAV" | "QS00AFW" | "QS00PSE")),
         "reserved products are not installed"
+    );
+    assert!(
+        rows.iter()
+            .any(|r| r.product.as_str() == "QS00DG1" && r.status.name() == "*COMPATIBLE"),
+        "the HTTP server is installed"
     );
     let res = software_resources(&s);
     let wds: Vec<(String, String)> = res

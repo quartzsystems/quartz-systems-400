@@ -153,9 +153,9 @@ pub fn dspmsgd(file: &str, d: &MsgDesc) -> String {
 }
 
 /// Install the system message files (`QCPFMSG`, `QCEEMSG`, `QSQLMSG`,
-/// `QRPGLEMSG`, `QRNXMSG`, `QTCPMSG`, `QZSHMSGF`, `QEDTMSG`) into `QSYS`,
-/// and the product libraries' files (`QHTTPSVR/QZHBMSG`) with their
-/// libraries, when absent; returns the objects created.
+/// `QRPGLEMSG`, `QRNXMSG`, `QTCPMSG`, `QZSHMSGF`, `QEDTMSG`) into `QSYS`
+/// when absent; returns the objects created. A product library's files
+/// come with its product ([`install_product_files`]).
 pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<Vec<ObjectId>> {
     let mut made = Vec::new();
     let lib = Library::load(txn, qsys)?;
@@ -168,7 +168,22 @@ pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<V
         write_payload(txn, id, &f)?;
         made.push(id);
     }
+    Ok(made)
+}
+
+/// Install a product library's message files (`QHTTPSVR/QZHBMSG`), and
+/// the library, when absent; returns the objects created.
+pub fn install_product_files(
+    txn: &mut Txn<'_>,
+    ctx: &Ctx,
+    qsys: ObjectId,
+    library: &str,
+) -> Result<Vec<ObjectId>> {
+    let mut made = Vec::new();
     for (lib_name, lib_text, f) in product_files() {
+        if lib_name != library {
+            continue;
+        }
         let lname = Name::parse(lib_name)?;
         let found = Library::load(txn, qsys)?.lookup(txn, types::LIB, lname)?;
         let plib = if let Some(id) = found {

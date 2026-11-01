@@ -215,7 +215,12 @@ requests never interleave. The environment:
   as the user.
 
 `QZHBMSG` is made from `src/msgs.rs`: after adding a message run
-`QS400_UPDATE_MSGF=1 cargo test -p httpadmin --test msgf`. On a new
+`QS400_UPDATE_MSGF=1 cargo test -p httpadmin --test msgf`. The HTTP
+server is licensed program `QS00DG1` (`5770DG1`, docs/LICPGM.md),
+installed on every new system: its `*BASE` code load is library
+`QHTTPSVR` with `QZHBMSG`, made by `lic/osobjects/src/products.rs` when
+the service seeds the catalog at IPL and by `build lp` for the
+product's load, so `CHKPRDOPT PRDID(QS00DG1)` checks the file. On a new
 system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`). QEMU
 step 87 (`tools/conformance/src/httpadm.rs`) signs on as `QSECOFR` over
 2001, checks Server instances against `DSPJOB`, a message page, the

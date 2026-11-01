@@ -130,7 +130,8 @@ licpgm/       licensed programs (docs/LICPGM.md)
   lpstore/      ProductStore and ObjectCheck over the object store (QUSRSYS/QLZALIC,
                 QUSRSYS/QSZAGREE), product save streams (SavfMedia, SaveRestorer, save_product)
   lpbuild/      build lp's work: a store in memory, the objects, signed, saved as a product load
-  products/     the QSPKGPRD manifests build lp packages (QS00SS1, QS00WDS, QS00TC1, QS00ST1).
+  products/     the QSPKGPRD manifests build lp packages (QS00SS1, QS00WDS, QS00TC1, QS00ST1,
+                QS00DG1; its objects are lic/osobjects/src/products.rs).
                 The service side is lic/slic/src/stgsvc/licpgm.rs (seed, the product store,
                 the key at /qs400/keys/system.pub), cpp/lpcmd.rs (the commands) and
                 cpp/lpapi.rs (panel data, API calls); the job's runtime/sysapi/src/lp.rs and

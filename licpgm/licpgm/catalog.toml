@@ -192,22 +192,30 @@ compliance = "*WARNING"
 usage_limit = "*NOMAX"
 
 # ---------------------------------------------------------------------
-# Reserved: IDs registered, nothing shipped.
+# QS00DG1: the HTTP server. Its objects are lic/osobjects' products.rs.
 [[package]]
 [package.product]
 id = "QS00DG1"
 ibm_alias = "5770DG1"
 text = "Quartz Systems/400 HTTP Server"
 library = "QHTTPSVR"
-status = "reserved"
+first_copyright = 2026
+current_copyright = 2026
+status = "shipped"
 
 [[package.option]]
 option = "*BASE"
 text = "Quartz Systems/400 HTTP Server"
 msgid = "QSZ4000"
+feature = "5001"
 requires = ["QS00SS1:*BASE", "QS00TC1:*BASE"]
+libraries = [{ name = "QHTTPSVR" }]
+objects = [{ lib = "QHTTPSVR", name = "QZHBMSG", type = "*MSGF" }]
+components = ["httpd (instances under /www)", "httpadmin (the ADMIN instance)", "qsweb"]
 ibm = "5770DG1 *BASE"
 
+# ---------------------------------------------------------------------
+# Reserved: IDs registered, nothing shipped.
 [[package]]
 [package.product]
 id = "QS00NAV"

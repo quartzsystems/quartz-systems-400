@@ -196,3 +196,37 @@ fn the_os_installs_fresh_and_again_as_a_slip() {
 }
 
 
+
+#[test]
+fn the_http_server_installs_its_library() {
+    let key = SigningKey::from_bytes(&[42; 32]);
+    let public = key.verifying_key().to_bytes();
+    let built = lpbuild::build(&manifest("QS00DG1"), &key, NOW).unwrap();
+    let (mut store, qsys) = system_on(Arc::new(MemBlockDev::with_seed(65536, 10)));
+    // The catalog seeded (its prerequisites installed), then the load
+    // restored over the seeded one.
+    lpstore::seed(&mut store, qsys, NOW).unwrap();
+    let r = osload::install(
+        &mut store,
+        qsys,
+        &Request {
+            stream: built.stream,
+            product: "QS00DG1",
+            options: Vec::new(),
+            key: Some(public),
+            system: SystemInfo::current("QS40001", "P05"),
+            accepted_by: "QSECOFR",
+            now: NOW,
+        },
+    )
+    .unwrap();
+    assert_eq!(r.bad_signatures, 0);
+    assert!(r.verified >= 1, "{}", osload::summary(&r));
+    assert_eq!(count(&mut store, qsys, "QHTTPSVR"), 1);
+    let cell = std::cell::RefCell::new(&mut store);
+    let mut p = lpstore::Products::new(&cell, qsys, lpstore::stamp(NOW));
+    let objs = lpstore::Products::new(&cell, qsys, lpstore::stamp(NOW));
+    let pid = "QS00DG1".parse().unwrap();
+    let report = licpgm::directory::check::chkprdopt(&mut p, &objs, &pid, None, None).unwrap();
+    assert!(report.clean(), "{report:?}");
+}

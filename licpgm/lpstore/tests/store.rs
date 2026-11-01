@@ -96,7 +96,7 @@ fn seed_save_delete_restore() {
         .iter()
         .filter(|(_, l)| l.state == LoadState::Installed)
         .count();
-    assert_eq!(installed, 2 * (6 + 4 + 1 + 1));
+    assert_eq!(installed, 2 * (6 + 4 + 1 + 1 + 1));
     assert!(!p.licenses().info.is_empty());
 
     // SAVLICPGM QS00WDS into a stream.

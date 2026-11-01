@@ -1,6 +1,6 @@
 [package]
 name = "osobjects"
-description = "QS/400 operating system objects: the QSYS objects of QS00SS1 *BASE, made the same way at first IPL and by build lp"
+description = "QS/400 operating system objects: the QSYS objects of QS00SS1 *BASE and the other shipped products' objects, made the same way at IPL and by build lp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -24,6 +24,8 @@ thiserror.workspace = true
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+licpgm = { path = "../../licpgm/licpgm", version = "0.1.0" }
+lpstore = { path = "../../licpgm/lpstore", version = "0.1.0" }
 
 [lints]
 workspace = true

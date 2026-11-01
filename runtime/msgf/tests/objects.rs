@@ -11,7 +11,8 @@ use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
 use msgf::store::{
-    Ctx, addmsgd, chgmsgd, crtmsgf, dspmsgd, install_builtin, load, mrgmsgf, rmvmsgd, rtvmsg,
+    Ctx, addmsgd, chgmsgd, crtmsgf, dspmsgd, install_builtin, install_product_files, load, mrgmsgf,
+    rmvmsgd, rtvmsg,
 };
 use msgf::{MsgDesc, VarType};
 use qsname::{LibSpec, Name};
@@ -87,8 +88,22 @@ fn system_files_install_once_and_resolve() {
     let (mut store, qsys, lib) = open_new();
     let mut t = store.begin().unwrap();
     let made = install_builtin(&mut t, &ctx(), qsys).unwrap();
-    assert_eq!(made.len(), 10);
+    assert_eq!(made.len(), 8);
     assert!(install_builtin(&mut t, &ctx(), qsys).unwrap().is_empty());
+    // A product library's files come with the library, once.
+    let made_p = install_product_files(&mut t, &ctx(), qsys, "QHTTPSVR").unwrap();
+    assert_eq!(made_p.len(), 2);
+    assert!(
+        install_product_files(&mut t, &ctx(), qsys, "QHTTPSVR")
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        install_product_files(&mut t, &ctx(), qsys, "QNONE")
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(load(&mut t, made_p[1]).unwrap().name, "QZHBMSG");
     let names = NameContext {
         curlib: Some(lib),
         libl: vec![qsys, lib],

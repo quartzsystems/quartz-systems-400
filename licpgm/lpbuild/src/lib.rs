@@ -4,10 +4,10 @@
 
 //! Product loads made at build time (`build lp`, `docs/LICPGM.md` §6):
 //! a store in memory gets the product's objects (for `QS00SS1` what
-//! `osobjects` makes; for the others what their manifest names), its
-//! `*PRDDFN` and packaged `*PRDLOD`s, every object signed with the
-//! build key, and the whole saved as a `SaveKind::LicPgm` stream, the
-//! bytes a save file holds for RSTLICPGM.
+//! `osobjects` makes; for the others what `osobjects::products` makes,
+//! which their manifest lists), its `*PRDDFN` and packaged `*PRDLOD`s,
+//! every object signed with the build key, and the whole saved as a
+//! `SaveKind::LicPgm` stream, the bytes a save file holds for RSTLICPGM.
 
 #![deny(missing_docs)]
 
@@ -180,10 +180,14 @@ pub fn build(manifest: &str, key: &SigningKey, now: u64) -> Result<Built, BuildE
     let (mut store, qsys) = empty(now)?;
     let product = pkg.definition.product.clone();
     let is_os = product.as_str() == licpgm::ProductId::OS;
-    if is_os {
+    {
         let stamp = lpstore::stamp(now);
         let mut t = store.begin().map_err(store_err)?;
-        osobjects::create(&mut t, qsys, &stamp)?;
+        if is_os {
+            osobjects::create(&mut t, qsys, &stamp)?;
+        } else {
+            osobjects::products::create(&mut t, qsys, &stamp, product.as_str())?;
+        }
         t.commit().map_err(store_err)?;
     }
     let libs: Vec<String> = {

@@ -169,7 +169,7 @@ mod tests {
             .reserved()
             .map(|p| p.definition.product.as_str())
             .collect();
-        assert_eq!(reserved, ["QS00DG1", "QS00NAV", "QS00AFW", "QS00PSE"]);
+        assert_eq!(reserved, ["QS00NAV", "QS00AFW", "QS00PSE"]);
         let os = c.product("5770SS1").unwrap();
         let opts: Vec<u8> = os.definition.options.iter().map(|o| o.option.0).collect();
         assert_eq!(opts, [0, 12, 18, 30, 33, 34]);
@@ -177,6 +177,20 @@ mod tests {
         let wds = c.product("QS00WDS").unwrap();
         assert!(wds.definition.option(OptionNo(31)).is_some());
         assert!(wds.definition.licensed);
+        // The HTTP server is shipped and its base code load lists its
+        // message file in its own library.
+        let dg1 = c.product("5770DG1").unwrap();
+        assert_eq!(dg1.status, Status::Shipped);
+        let code = &dg1.loads[0].1;
+        assert_eq!(code.key.load_type, LoadType::Code);
+        assert_eq!(code.libraries[0].installed, "QHTTPSVR");
+        assert_eq!(
+            code.objects
+                .iter()
+                .map(|o| (o.lib.as_str(), o.name.as_str(), o.typ.as_str()))
+                .collect::<Vec<_>>(),
+            [("QHTTPSVR", "QZHBMSG", "*MSGF")]
+        );
         for p in &c.products {
             assert!(p.agreement.is_some(), "{}", p.definition.product);
             assert!(p.notes.iter().all(|(_, _, ibm)| ibm.is_some()));

@@ -13,6 +13,8 @@ use lpstore::SavfMedia;
 use savfmt::{Reader, SaveKind, Scan};
 
 const NOW: u64 = 1_767_225_600;
+/// `*LIB`'s type code.
+const LIB: u16 = 0x0001;
 
 fn manifest(id: &str) -> String {
     let p = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../products/{id}.toml"));
@@ -29,7 +31,45 @@ fn the_manifests_match_the_catalog() {
         let id = p.definition.product.as_str();
         let m = licpgm::pkg::parse(&manifest(id), opts).unwrap();
         assert_eq!(m.definition, p.definition, "{id}");
+        // The loads hold the same libraries and objects.
+        assert_eq!(m.loads.len(), p.loads.len(), "{id}");
+        for ((mq, ml), (pq, pl)) in m.loads.iter().zip(&p.loads) {
+            assert_eq!(mq, pq, "{id}");
+            assert_eq!(ml.libraries, pl.libraries, "{id} {}", mq.name);
+            assert_eq!(ml.objects, pl.objects, "{id} {}", mq.name);
+        }
     }
+}
+
+#[test]
+fn the_http_server_load_holds_its_library() {
+    let key = SigningKey::from_bytes(&[42; 32]);
+    let b = lpbuild::build(&manifest("QS00DG1"), &key, NOW).unwrap();
+    let mut r = Reader::new(Cursor::new(&b.stream)).unwrap();
+    let mut found = Vec::new();
+    while let Some(Scan::Object(o)) = r.next_object().unwrap() {
+        found.push((
+            savfmt::text(&o.descriptor.library),
+            savfmt::text(&o.descriptor.name),
+        ));
+    }
+    assert!(
+        found.iter().any(|(l, n)| l == "QHTTPSVR" && n == "QZHBMSG"),
+        "{found:?}"
+    );
+    let media = SavfMedia::read(b.stream).unwrap();
+    let base = media
+        .loads()
+        .into_iter()
+        .find(|m| m.load.key.option.is_base() && m.load.key.load_type == licpgm::LoadType::Code)
+        .unwrap();
+    assert_eq!(base.load.libraries[0].installed, "QHTTPSVR");
+    assert!(
+        base.load
+            .objects
+            .iter()
+            .any(|o| o.name == "QZHBMSG" && o.typ == "*MSGF")
+    );
 }
 
 fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
@@ -41,6 +81,10 @@ fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
         let Scan::Object(o) = s else {
             panic!("{id}: a damaged object in the stream")
         };
+        // A product library saved whole is not signed; its objects are.
+        if o.descriptor.type_code == LIB {
+            continue;
+        }
         let sig = o.signature.as_ref().unwrap_or_else(|| {
             panic!(
                 "{id}: {} {} type {:#x} unsigned",
@@ -63,7 +107,7 @@ fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
 #[test]
 fn products_build_signed() {
     let key = SigningKey::from_bytes(&[42; 32]);
-    for id in ["QS00WDS", "QS00TC1", "QS00ST1"] {
+    for id in ["QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1"] {
         let b = lpbuild::build(&manifest(id), &key, NOW).unwrap();
         assert_eq!(b.product, id);
         let n = check(id, &b.stream, &key);

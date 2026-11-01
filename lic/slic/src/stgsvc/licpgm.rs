@@ -21,7 +21,9 @@ pub const LICENSE_KEY_PATH: &str = "/qs400/keys/system.pub";
 /// The processor group license keys are bound to. QS/400 has one.
 pub const PROCESSOR_GROUP: &str = "P05";
 
-/// Seed the catalog's products; whether any was made.
+/// Seed the catalog's products, the shipped products' own objects
+/// first (`QHTTPSVR` and its message file for `QS00DG1`); whether
+/// anything was made.
 pub fn seed(system: &mut System) -> bool {
     let Some(s) = system.storage.as_mut() else {
         return false;
@@ -29,11 +31,23 @@ pub fn seed(system: &mut System) -> bool {
     let Some(qsys) = s.qsys else {
         return false;
     };
-    match sec::guard::as_system(|| lpstore::seed(&mut s.store, qsys, now_unix())) {
-        Ok(made) => made,
+    let now = now_unix();
+    let objects = sec::guard::as_system(|| -> Result<usize, String> {
+        let mut t = s.store.begin().map_err(|e| e.to_string())?;
+        let made = osobjects::products::create_all(&mut t, qsys, &lpstore::stamp(now))
+            .map_err(|e| e.to_string())?;
+        t.commit().map_err(|e| e.to_string())?;
+        Ok(made)
+    });
+    let objects = objects.unwrap_or_else(|e| {
+        eprintln!("qsstg: licensed program objects: {e}");
+        0
+    });
+    match sec::guard::as_system(|| lpstore::seed(&mut s.store, qsys, now)) {
+        Ok(made) => made || objects > 0,
         Err(e) => {
             eprintln!("qsstg: licensed programs: {e}");
-            false
+            objects > 0
         }
     }
 }

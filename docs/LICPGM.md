@@ -25,7 +25,7 @@ build pipeline asks.
 | `QS00WDS` | shipped | `5770WDS` | Quartz Systems/400 Application Development |
 | `QS00TC1` | shipped | `5770TC1` | Quartz Systems/400 TCP/IP Utilities |
 | `QS00ST1` | shipped | `5770ST1` | Quartz Systems/400 SQL Database Utilities |
-| `QS00DG1` | reserved | `5770DG1` | Quartz Systems/400 HTTP Server |
+| `QS00DG1` | shipped | `5770DG1` | Quartz Systems/400 HTTP Server |
 | `QS00NAV` | reserved | | Quartz Systems/400 Navigator |
 | `QS00AFW` | reserved | `5770XH2` | Quartz Systems/400 Access for Web |
 | `QS00PSE` | reserved | | Quartz Systems/400 PASE Runtime |
@@ -85,7 +85,13 @@ Server) with no SS1 option.
 The CL compiler is part of the operating system, as on IBM i. There is
 no COBOL, C or C++ compiler. QS00TC1 `*BASE` holds FTP, the LPD,
 the SMTP client, SNTP, the SSH server and the Telnet server; QS00ST1
-`*BASE` holds STRSQL. Every product's `*BASE` needs `QS00SS1 *BASE`.
+`*BASE` holds STRSQL. QS00DG1 `*BASE` (needs QS00TC1 `*BASE`) holds the
+HTTP server instances and the ADMIN instance (docs/HTTPADMIN.md); its
+code load is library `QHTTPSVR` with the message file `QZHBMSG`, the
+only shipped product besides the operating system with objects of its
+own (`lic/osobjects/src/products.rs`). Every shipped product is
+installed on a new system. Every product's `*BASE` needs
+`QS00SS1 *BASE`.
 
 ### The catalog
 
@@ -730,10 +736,12 @@ UTF-8).
   store, one transaction per call: the license repository is the user
   space `QUSRSYS/QLZALIC`, the agreement answers `QUSRSYS/QSZAGREE`.
 - **Every IPL** the service seeds the catalog (`lpstore::seed`, from
-  `lic/slic/src/stgsvc/licpgm.rs`): every product's `*PRDDFN` in
-  `QSYS`, the shipped products' loads there at 90, their license
-  information; reserved products get their definition only. What
-  exists is left alone.
+  `lic/slic/src/stgsvc/licpgm.rs`): first the shipped products' own
+  objects (`osobjects::products`: `QHTTPSVR` and `QZHBMSG` for
+  `QS00DG1`), then every product's `*PRDDFN` in `QSYS`, the shipped
+  products' loads there at 90, their license information; reserved
+  products get their definition only. What exists is left alone. The
+  first IPL's message-file install makes only `QSYS`'s files.
 - **The key.** The build writes the public half of its signing key
   (`QS400_SIGNING_KEY`, or the dev key under `target/keys/`) into the
   initramfs as `/qs400/keys/system.pub`, 32 raw bytes. The save engine
@@ -779,7 +787,9 @@ libraries; for `QS00SS1` the objects `lic/osobjects` makes (message
 files, work management objects, display files, panel groups and menus,
 the registration facility, the commands, `QSTRUP`; user profiles,
 system values, network attributes and the TCP/IP configuration stay
-with the first IPL), which the base code load lists; the `*PRDDFN` and
+with the first IPL), which the base code load lists; for the others
+what `osobjects::products` makes (`QS00DG1`: library `QHTTPSVR`, saved
+whole, with `QZHBMSG`), which their manifest lists; the `*PRDDFN` and
 packaged `*PRDLOD`s; every object signed (ed25519 over its content
 digest, key ID the first 8 bytes of the public key's SHA-256, the
 descriptor flagged `SIGNED`); then SAVLICPGM's stream. The digests do

@@ -1,0 +1,24 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00DG1 from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal. The objects are what
+# lic/osobjects' products.rs makes.
+
+[product]
+id = "QS00DG1"
+ibm_alias = "5770DG1"
+text = "Quartz Systems/400 HTTP Server"
+library = "QHTTPSVR"
+first_copyright = 2026
+current_copyright = 2026
+
+[[option]]
+option = "*BASE"
+text = "Quartz Systems/400 HTTP Server"
+msgid = "QSZ4000"
+feature = "5001"
+requires = ["QS00SS1:*BASE", "QS00TC1:*BASE"]
+libraries = [{ name = "QHTTPSVR" }]
+objects = [{ lib = "QHTTPSVR", name = "QZHBMSG", type = "*MSGF" }]

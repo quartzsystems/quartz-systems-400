@@ -257,7 +257,11 @@ fn restore_failures_set_ibm_states() {
     let base_code = |s: &MemStore| {
         s.lods
             .values()
-            .find(|l| l.key.option.is_base() && l.key.load_type == LoadType::Code)
+            .find(|l| {
+                l.key.product == pid("1AB1234")
+                    && l.key.option.is_base()
+                    && l.key.load_type == LoadType::Code
+            })
             .unwrap()
             .state
     };
@@ -423,14 +427,14 @@ fn delete_refuses_what_others_need_and_spares_system_libraries() {
     assert_eq!(plan.loads.len(), 1);
     assert_eq!(plan.loads[0].1.key.load_type, LoadType::Lng);
     let req = DltLicPgm {
-        product: pid("QS00DG1"),
+        product: pid("QS00NAV"),
         option: None,
         release: None,
         lng: None,
     };
     assert_eq!(
         plan_delete(&s, &req).unwrap_err(),
-        PlanError::NotInstalled(pid("QS00DG1"))
+        PlanError::NotInstalled(pid("QS00NAV"))
     );
 }
 

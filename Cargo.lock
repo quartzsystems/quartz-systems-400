@@ -2055,6 +2055,8 @@ dependencies = [
  "cmd",
  "dspf",
  "ile",
+ "licpgm",
+ "lpstore",
  "menus",
  "msgf",
  "qir",

@@ -8,10 +8,12 @@
 //! saves them as the product load) make the same objects. User
 //! profiles, system values, network attributes and the TCP/IP
 //! configuration are the system's own and stay with the first IPL.
+//! [`products`] makes the other shipped products' objects.
 
 #![deny(missing_docs)]
 
 pub mod display;
+pub mod products;
 pub mod qstrup;
 pub mod ui;
 
