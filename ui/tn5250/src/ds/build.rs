@@ -73,9 +73,10 @@ impl Builder {
         self
     }
 
-    /// Erase to Address (every attribute type).
+    /// Erase to Address of every attribute type: the length byte counts
+    /// itself and the one type, `0xFF` (all).
     pub fn ea(&mut self, row: u8, col: u8) -> &mut Self {
-        self.out.extend([order::EA, row, col, 1]);
+        self.out.extend([order::EA, row, col, 2, 0xFF]);
         self
     }
 

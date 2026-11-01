@@ -314,24 +314,24 @@ impl Terminal {
                 Order::Ic(r, c) => pending_ic = Some(self.addr(*r, *c)?),
                 Order::Mc(r, c) => self.cursor = self.addr(*r, *c)?,
                 Order::Ra(r, c, byte) => {
+                    // Up to and including the address, which may not
+                    // be before the current one.
                     let to = self.addr(*r, *c)?;
-                    loop {
-                        let here = a;
-                        self.write(&mut a, *byte);
-                        if here == to {
-                            break;
-                        }
+                    if to < a {
+                        return Err(Error::Address { row: *r, col: *c });
                     }
+                    self.cells[a..=to].fill(*byte);
+                    a = (to + 1) % self.cells.len();
                 }
                 Order::Ea(r, c, _) => {
+                    // Characters and attributes become nulls; the
+                    // terminal keeps no extended attributes to erase.
                     let to = self.addr(*r, *c)?;
-                    loop {
-                        let here = a;
-                        self.write(&mut a, NULL);
-                        if here == to {
-                            break;
-                        }
+                    if to < a {
+                        return Err(Error::Address { row: *r, col: *c });
                     }
+                    self.cells[a..=to].fill(NULL);
+                    a = (to + 1) % self.cells.len();
                 }
                 Order::Td(bytes) | Order::Data(bytes) => {
                     for &b in bytes {
@@ -803,5 +803,35 @@ mod tests {
         }
         assert_eq!(t.cursor(), (21, 7));
         assert!(t.text_rows()[20].starts_with("AAAAAA "));
+    }
+
+    #[test]
+    fn repeats_and_erases_to_an_address() {
+        let mut t = term();
+        let mut b = Builder::new();
+        b.clear_unit().wtd(0x00, 0x00);
+        // Repeat across a row end, then erase part of it again.
+        b.sba(2, 79).ra(3, 2, 0x5C);
+        b.sba(5, 1).text("abcdef").sba(5, 3).ea(5, 4);
+        t.apply(&Record::new(opcode::OUTPUT_ONLY, b.into_vec()))
+            .unwrap();
+        let rows = t.text_rows();
+        assert_eq!(&rows[1][78..], "**");
+        assert_eq!(&rows[2][..3], "** ");
+        assert_eq!(&rows[4][..6], "ab  ef");
+        assert_eq!(t.cells()[4 * 80 + 2..4 * 80 + 4], [NULL, NULL]);
+        // An address before the current one is an error.
+        let mut b = Builder::new();
+        b.wtd(0x00, 0x00).sba(5, 10).ra(5, 2, 0x5C);
+        assert!(
+            t.apply(&Record::new(opcode::OUTPUT_ONLY, b.into_vec()))
+                .is_err()
+        );
+        // Erase to Address takes one to four attribute types.
+        let bad = [0x04, 0x11, 0x00, 0x00, 0x03, 0x05, 0x01, 0x01];
+        assert!(
+            t.apply(&Record::new(opcode::OUTPUT_ONLY, bad.to_vec()))
+                .is_err()
+        );
     }
 }

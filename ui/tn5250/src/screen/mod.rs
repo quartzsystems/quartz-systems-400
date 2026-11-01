@@ -13,6 +13,10 @@ use crate::ds::field::Ffw;
 use crate::ds::inbound::Inbound;
 use crate::ds::{NULL, aid, attr};
 
+mod encode;
+
+use encode::{Plan, Start};
+
 /// An input field of the model.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Field {
@@ -78,6 +82,17 @@ pub struct ScreenModel {
     /// for each function key that returns no data (F24-F17, F16-F9,
     /// F8-F1).
     key_switches: [u8; 3],
+}
+
+/// How a render writes the cells.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Encoding {
+    /// Only the cells that changed, runs as repeats: what goes on the
+    /// wire.
+    Compressed,
+    /// Every cell of every changed row up to its trailing nulls: the
+    /// reference the compressed form is checked against.
+    Plain,
 }
 
 /// What the model sends: the stream and the record's operation code.
@@ -397,9 +412,14 @@ impl ScreenModel {
 
     /// The stream that brings the client to this screen: everything
     /// after a clear when the client's screen is unknown, else the
-    /// rows that differ. With `read` the keyboard opens for an
+    /// cells that differ. With `read` the keyboard opens for an
     /// attention key.
     pub fn render(&mut self, read: Read) -> Output {
+        self.render_with(read, Encoding::Compressed)
+    }
+
+    /// `render` with a chosen encoding.
+    pub fn render_with(&mut self, read: Read, enc: Encoding) -> Output {
         let mut b = Builder::new();
         let full = self
             .known
@@ -432,8 +452,13 @@ impl ScreenModel {
             let k = self.key_switches;
             b.soh(&[0, 0, 0, err, k[0], k[1], k[2]]);
         }
-        for r in changed {
-            self.render_row(&mut b, r);
+        match enc {
+            Encoding::Compressed => self.encode(&mut b, full, &changed),
+            Encoding::Plain => {
+                for r in changed {
+                    self.render_row(&mut b, r);
+                }
+            }
         }
         let (cr, cc) = self.cursor.unwrap_or_else(|| {
             self.fields
@@ -463,9 +488,40 @@ impl ScreenModel {
         }
     }
 
-    /// One row: Set Buffer Address, then runs of data with Start of
-    /// Field orders where fields begin, and Repeat to Address for the
-    /// trailing nulls.
+    /// The compressed orders: the cells that differ from what the
+    /// client shows (nulls after a clear), and Start of Field for every
+    /// field whose attribute sits on a changed row.
+    fn encode(&self, b: &mut Builder, full: bool, rows: &[usize]) {
+        let n = self.cells.len();
+        let changed: Vec<bool> = match (&self.known, full) {
+            (Some(k), false) => (0..n).map(|i| k[i] != self.cells[i]).collect(),
+            _ => self.cells.iter().map(|&c| c != NULL).collect(),
+        };
+        let starts: Vec<Start<'_>> = self
+            .fields
+            .iter()
+            .filter_map(|f| {
+                let at = f.start(self.cols).checked_sub(1)?;
+                rows.contains(&(at / self.cols)).then_some(Start {
+                    at,
+                    ffw: f.ffw.encode(),
+                    fcws: &f.fcws,
+                    len: f.len as u16,
+                })
+            })
+            .collect();
+        Plan {
+            cols: self.cols,
+            cells: &self.cells,
+            changed: &changed,
+            starts: &starts,
+        }
+        .encode(b);
+    }
+
+    /// One row, uncompressed: Set Buffer Address, then runs of data
+    /// with Start of Field orders where fields begin, and Repeat to
+    /// Address for the trailing nulls.
     fn render_row(&self, b: &mut Builder, r: usize) {
         let start = r * self.cols;
         let row = &self.cells[start..start + self.cols];

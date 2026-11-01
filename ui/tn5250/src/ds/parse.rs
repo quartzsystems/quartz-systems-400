@@ -260,8 +260,12 @@ fn orders(c: &mut Cursor<'_>) -> Result<Vec<Order>, Error> {
                 flush(&mut data, &mut out);
                 let r = c.byte()?;
                 let col = c.byte()?;
+                // The length counts itself and one to four types.
                 let len = usize::from(c.byte()?);
-                let types = c.bytes(len.saturating_sub(1))?;
+                if !(2..=5).contains(&len) {
+                    return Err(Error::Order(order::EA, c.at - 1));
+                }
+                let types = c.bytes(len - 1)?;
                 out.push(Order::Ea(r, col, types));
             }
             order::TD => {

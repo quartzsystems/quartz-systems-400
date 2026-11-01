@@ -16,7 +16,7 @@ use dspf::rt::{Env, Runtime};
 use dspf::{CompileOpts, NoRefs, Source, compile_dspf};
 use tn5250::ds::wdsf::{Capabilities, Model};
 use tn5250::record::Record;
-use tn5250::screen::{Read, ScreenModel};
+use tn5250::screen::{Encoding, Read, ScreenModel};
 use tn5250::term::Terminal;
 
 fn golden(ext: &str) -> Vec<String> {
@@ -31,9 +31,8 @@ fn golden(ext: &str) -> Vec<String> {
         .collect()
 }
 
-/// The SIGNON format written with the capture's values, as a terminal
-/// shows it: text rows and attribute rows.
-fn shown(text: &str) -> (Vec<String>, Vec<String>, Terminal) {
+/// The SIGNON format written with the capture's values.
+fn written(text: &str) -> ScreenModel {
     let (src, diags) = Source::from_text(text);
     assert!(diags.is_empty(), "{diags:?}");
     let c = compile_dspf(&src, &NoRefs, &CompileOpts::default());
@@ -54,12 +53,22 @@ fn shown(text: &str) -> (Vec<String>, Vec<String>, Terminal) {
     let mut rt = Runtime::new(df, false);
     let mut m = ScreenModel::new(false);
     rt.write(&mut m, &Env::default(), "SIGNON", &out, &[]).unwrap();
-    let o = m.render(Read::MdtFields);
-    let mut t = Terminal::new(Capabilities {
+    m
+}
+
+fn terminal() -> Terminal {
+    Terminal::new(Capabilities {
         model: Model::M3179,
         gui: false,
         color: true,
-    });
+    })
+}
+
+/// The SIGNON format as a terminal shows it: text rows and attribute
+/// rows.
+fn shown(text: &str) -> (Vec<String>, Vec<String>, Terminal) {
+    let o = written(text).render(Read::MdtFields);
+    let mut t = terminal();
     t.apply(&Record::new(o.opcode, o.data)).unwrap();
     (t.text_rows(), t.attr_rows(), t)
 }
@@ -129,4 +138,34 @@ fn qdsignon2_has_ibms_level_2_geometry() {
     assert!(attrs[7].chars().all(|c| c == '7'));
     assert!(attrs[8][..20].chars().all(|c| c == '7'));
     assert!(text[7].trim().is_empty() && text[8].trim().is_empty());
+}
+
+/// The sign-on record compressed and plain: the same screen, the same
+/// fields, the same cursor, in far fewer bytes.
+#[test]
+fn the_sign_on_record_is_compressed() {
+    for src in [dspf::sys::QDSIGNON, dspf::sys::QDSIGNON2] {
+        let mut zip = written(src);
+        let mut plain = zip.clone();
+        let a = zip.render_with(Read::MdtFields, Encoding::Compressed);
+        let b = plain.render_with(Read::MdtFields, Encoding::Plain);
+        let (mut ta, mut tb) = (terminal(), terminal());
+        ta.apply(&Record::new(a.opcode, a.data.clone())).unwrap();
+        tb.apply(&Record::new(b.opcode, b.data.clone())).unwrap();
+        assert_eq!(ta.cells(), tb.cells());
+        assert_eq!(ta.fields(), tb.fields());
+        assert_eq!(ta.cursor(), tb.cursor());
+        assert_eq!(ta.key_switches(), tb.key_switches());
+        println!(
+            "sign-on: {} bytes compressed, {} plain",
+            a.data.len(),
+            b.data.len()
+        );
+        assert!(
+            a.data.len() * 2 < b.data.len(),
+            "{} vs {}",
+            a.data.len(),
+            b.data.len()
+        );
+    }
 }
