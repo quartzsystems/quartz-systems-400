@@ -631,10 +631,14 @@ impl Certs for FixtureCerts {
         let label = match import.label.as_deref().map(str::trim).filter(|l| !l.is_empty()) {
             Some(l) => l.to_string(),
             None => Self::common_name(&data, pw)
-                .ok_or_else(|| CertFailure::Invalid("the file holds no certificate with a common name; give a label".into()))?,
+                .ok_or_else(|| CertFailure::Invalid("no common name could be read from the file (a PKCS#12 file needs its password); give a label".into()))?,
         };
         let c = self.ctx();
-        let notes = entries::import(&c, &ks, &label, &data, format, pw, true).map_err(|e| fail(e, store))?;
+        let notes = entries::import(&c, &ks, &label, &data, format, pw, true).map_err(|e| match e {
+            // The password is the file's, not the store's.
+            CertError::BadPassword => CertFailure::Invalid("the password does not open the file".into()),
+            e => fail(e, store),
+        })?;
         let labels: Vec<String> = notes.into_iter().filter_map(|n| n.data.into_iter().next()).collect();
         if import.make_default && !import.ca && labels.iter().any(|l| l == &label) {
             let ch = entries::Change {

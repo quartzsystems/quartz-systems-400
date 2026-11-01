@@ -496,3 +496,16 @@ fn cert_create_result() {
     ]);
     assert_golden(&t, "http/cert-create-result.html", &fix);
 }
+
+#[test]
+fn cert_import() {
+    let mut b = Browser::signed_on();
+    let id = b.cookie.clone().unwrap();
+    // The path typed last time.
+    b.admin.sessions.update(&id, |s| {
+        s.data.insert("certimp.path".into(), "/home/CWELLMAN/certs/webstore.p12".into());
+    });
+    let r = b.get("/certs/import");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "http/cert-import.html", &[]);
+}

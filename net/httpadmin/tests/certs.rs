@@ -279,3 +279,87 @@ fn renew_starts_from_the_certificate() {
     let t = b.get("/certs/create/step/2").text();
     assert!(t.contains("name=\"cn\" value=\"api.quartz.example\"") && t.contains("name=\"o\" value=\"Quartz Systems\""), "{t}");
 }
+
+/// A certificate made elsewhere: PKCS#12 with `pw`, PEM with its key,
+/// and the DER of a CA certificate.
+fn outside_cert(cn: &str, pw: &str) -> (Vec<u8>, String, Vec<u8>) {
+    use certs::crypto::kdf::Argon2Params;
+    use certs::crypto::keys::KeyAlgorithm;
+    use certs::store::{CertStore, StoreKind};
+    use certs::x509::build::{CertKind, CertSpec, Subject};
+    let files = certs::files::MemFiles::new();
+    let fast = Argon2Params { m_cost: 64, t_cost: 1, p_cost: 1 };
+    let now = httpadmin::fixture::now();
+    let mut s = CertStore::create_with(&files, "/tmp/o.kdb", "outside1", StoreKind::System, now, fast).unwrap();
+    s.create_self_signed("x", &CertSpec::server(cn, now, 365), KeyAlgorithm::EcdsaP256).unwrap();
+    let ca = CertSpec { subject: Subject::cn("Outside CA"), kind: CertKind::Ca, san: Vec::new(), not_before: now, days: 365 };
+    s.create_self_signed("ca", &ca, KeyAlgorithm::EcdsaP256).unwrap();
+    let der = s.get("ca").unwrap().cert.clone().unwrap();
+    (s.export_pkcs12("x", pw).unwrap(), s.export_pem("x", true).unwrap().to_string(), der)
+}
+
+/// Post the import form as a browser does: multipart, a file part.
+fn upload(b: &mut Browser, fields: &[(&str, &str)], file: Option<(&str, &[u8])>) -> qsweb::http::Response {
+    let boundary = "----qs400test";
+    let mut body = Vec::new();
+    let csrf = b.csrf.clone();
+    for (k, v) in [("csrf", csrf.as_str())].iter().chain(fields) {
+        body.extend_from_slice(format!("--{boundary}\r\nContent-Disposition: form-data; name=\"{k}\"\r\n\r\n{v}\r\n").as_bytes());
+    }
+    let (name, data) = file.unwrap_or(("", b""));
+    body.extend_from_slice(
+        format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\nContent-Type: application/octet-stream\r\n\r\n").as_bytes(),
+    );
+    body.extend_from_slice(data);
+    body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+    let mut req = qsweb::http::Request::new("POST", &httpadmin::PRODUCT.url("/certs/import"));
+    req.headers.push(("content-type".into(), format!("multipart/form-data; boundary={boundary}")));
+    req.body = body;
+    b.send(req)
+}
+
+#[test]
+fn import_pkcs12_pem_der_and_paths() {
+    let mut b = Browser::signed_on();
+    let mut pages = Vec::new();
+    // Import certificate... on a store page.
+    let r = b.post("/certs/import?store=WEBSTORE", &[]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/import?store=WEBSTORE"));
+    assert!(b.get("/certs/import?store=WEBSTORE").text().contains("<option selected>WEBSTORE</option>"));
+    // PKCS#12, label from the common name; a wrong password first.
+    let (p12, pem, der) = outside_cert("shop.quartz.example", "P12-Secret-55");
+    let r = upload(&mut b, &[("store", "*SYSTEM"), ("fmt", "auto"), ("pw", "Wrong-P12-1"), ("t", "srv"), ("label", "shop")], Some(("shop.p12", &p12)));
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/import?store=*SYSTEM"));
+    let t = b.get("/certs/import?store=*SYSTEM").text();
+    assert!(t.contains("HTP8320") && t.contains("the password does not open the file"), "{t}");
+    pages.push(t);
+    let r = upload(&mut b, &[("store", "*SYSTEM"), ("fmt", "p12"), ("pw", "P12-Secret-55"), ("t", "srv"), ("dft", "on"), ("import", "Import")], Some(("shop.p12", &p12)));
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/*SYSTEM"));
+    let t = b.get("/certs/store/*SYSTEM").text();
+    assert!(t.contains("HTP8302") && t.contains("Certificate shop.quartz.example imported into store *SYSTEM."), "{t}");
+    pages.push(t);
+    let rows = b.fx.certs.entries("*SYSTEM").unwrap();
+    let shop = rows.iter().find(|r| r.label == "shop.quartz.example").unwrap();
+    assert!(shop.is_default && shop.kind == httpadmin::env::EntryType::Server);
+    assert_eq!(leaks(&b, &pages, "P12-Secret-55"), Vec::<String>::new());
+    assert_eq!(leaks(&b, &pages, "Wrong-P12-1"), Vec::<String>::new());
+    // PEM with its key, into another store with a label.
+    upload(&mut b, &[("store", "WEBSTORE"), ("fmt", "pem"), ("t", "srv"), ("label", "shop-pem")], Some(("shop.pem", pem.as_bytes())));
+    assert!(b.fx.certs.entries("WEBSTORE").unwrap().iter().any(|r| r.label == "shop-pem"));
+    // A DER certificate from a stream file, as a CA.
+    b.fx.files.put("/home/QSECOFR/root.cer", &der);
+    let r = upload(&mut b, &[("store", "*SIGNATUREVERIFICATION"), ("path", "/home/QSECOFR/root.cer"), ("t", "ca")], None);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/certs/store/*SIGNATUREVERIFICATION/cas"));
+    let s = b.fx.certs.stores();
+    assert_eq!(s.iter().find(|s| s.name == "*SIGNATUREVERIFICATION").unwrap().certificates, 4);
+    // Nothing to import; a path that is not there.
+    upload(&mut b, &[("store", "*SYSTEM")], None);
+    assert!(b.get("/certs/import").text().contains("HTP8322"));
+    upload(&mut b, &[("store", "*SYSTEM"), ("path", "/home/nothing.p12")], None);
+    let t = b.get("/certs/import").text();
+    assert!(t.contains("HTP8320") && t.contains("value=\"/home/nothing.p12\""), "{t}");
+    // Not without the token.
+    b.csrf = "0000".into();
+    let r = upload(&mut b, &[("store", "*SYSTEM")], Some(("shop.pem", pem.as_bytes())));
+    assert_eq!(r.status, 403);
+}

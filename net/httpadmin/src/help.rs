@@ -212,6 +212,20 @@ pub const TOPICS: &[Topic] = &[
 <p>The result shows the certificate (or the request) as PEM text, with Download buttons.</p>",
     },
     Topic {
+        key: "cert-import",
+        title: "Import certificate",
+        body: "<p>Adds certificates from a file to a store: upload the file, or give the path of a stream file on this system, which is read with your authority.</p>\n\
+<p><b>Server or client certificate</b> imports a certificate with its private key; certificates of the authorities that issued it come along. <b>Certificate authority certificate</b> imports CA certificates, trusted. A file that holds the certificate a waiting request was made for completes the request when its label is given.</p>\n\
+<p>A blank label uses the certificate's common name. The PKCS#12 password is used to open the file only; it is not kept.</p>",
+    },
+    Topic {
+        key: "cert-import-file",
+        title: "Certificate files",
+        body: "<table class=\"props\" cellspacing=\"0\">\n<tr><th>PEM</th><td>Text with <span class=\"mono\">-----BEGIN CERTIFICATE-----</span> blocks, optionally a private key (PKCS#8, PKCS#1, SEC1, or encrypted PKCS#8 opened with the password). Usual names end in .pem, .crt or .cer.</td></tr>\n\
+<tr><th>DER</th><td>One certificate in binary form, usually .cer or .der.</td></tr>\n\
+<tr><th>PKCS#12</th><td>A certificate with its private key and chain, sealed with a password; usually .p12 or .pfx.</td></tr>\n</table>",
+    },
+    Topic {
         key: "cert-confirm",
         title: "Confirm",
         body: "<p>Deleting a certificate removes it and its private key from the store; applications assigned it lose it. Deleting a store removes the store file and its stashed password. Removing an assignment leaves the application with the store's default certificate.</p>",
