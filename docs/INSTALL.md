@@ -207,8 +207,8 @@ apply.
 | `device` | `*MEDIA`, `*OPT`, `*TAP`, `*VRT` | `*MEDIA` | `Install Device Type Selection`; `*MEDIA` takes a `SAVSYS` medium first, else the boot media |
 | `language` | four digits | `2924` | `Select a Language Group` |
 | `system-name` | 1 to 8 letters and digits | the default | `QSYSNAME` |
-| `ip` | `a.b.c.d/n` | none | the first link's address at IPL (`BLOCKED(phase11)`: kept for the install IPL; the TCP/IP configuration takes it after) |
-| `gateway` | `a.b.c.d` | none | the default route (with `ip`) |
+| `ip` | `a.b.c.d/n` | none | the installed system's first interface: its first IPL adds it as `ADDTCPIFC INTNETADR('a.b.c.d') LIND(line) SUBNETMASK(...)` on the first Ethernet line (a line description, else the first port's link, `ETH0`), autostarted with TCP/IP |
+| `gateway` | `a.b.c.d` | none | with `ip`, `ADDTCPRTE RTEDEST(*DFTROUTE) NEXTHOP('a.b.c.d')` at the same IPL |
 | `date`, `time` | `YYYY-MM-DD`, `HH:MM:SS`, `*CURRENT` | `*CURRENT` | `IPL Options` |
 | `qsecofr-password` | `*EXPIRED` or a password | `*EXPIRED` | QSECOFR's password: the shipped one expired, or this one, not expired |
 | `licpgm` | `*NONE`, `*ALL`, a list of `PRODUCT[/OPTION]` | `*NONE` | `GO LICPGM` option 1 (`*ALL`) or 11 |

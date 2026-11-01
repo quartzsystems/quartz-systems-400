@@ -31,6 +31,8 @@ load-source = vdb
 mirror = vdb vdc
 language = 2924
 system-name = QSINST
+ip = 10.0.2.15/24
+gateway = 10.0.2.2
 date = *CURRENT
 time = *CURRENT
 qsecofr-password = Quartz1
@@ -150,6 +152,8 @@ impl Suite {
             s.expect("mirrored with", Duration::from_mins(2))?;
             s.expect("SRC C6004130", Duration::from_mins(15))?;
             s.expect("SRC C6004160", Duration::from_mins(15))?;
+            s.expect("slic: install: ADDTCPIFC INTNETADR('10.0.2.15') LIND(ETH0)", Duration::from_mins(5))?;
+            s.expect("slic: install: ADDTCPRTE RTEDEST(*DFTROUTE) NEXTHOP('10.0.2.2')", CMD)?;
             s.expect("slic: install: response file applied", Duration::from_mins(5))?;
             s.expect(SRC_IPL_COMPLETE, Duration::from_mins(5))?;
             s.expect(crate::PROMPT, CMD)?;
@@ -165,8 +169,19 @@ impl Suite {
             if !sw.contains("QS00WDS") {
                 return Err(format!("the licensed programs are not installed:\n{sw}"));
             }
+            // The response file's ip and gateway, as ADDTCPIFC and ADDTCPRTE.
+            let ifc = s.command("svc.tcp ifc", CMD)?;
+            if !ifc.lines().any(|l| l.starts_with("ifc 10.0.2.15 ")) {
+                return Err(format!("the response file's interface is missing:\n{ifc}"));
+            }
+            let rte = s.command("svc.tcp rte", CMD)?;
+            if !rte.contains("10.0.2.2") {
+                return Err(format!("the response file's default route is missing:\n{rte}"));
+            }
             let sig = signatures_clean(&mut s)?;
-            Ok(format!("no prompts; unit pair mirrored; QSYSNAME QSINST; QS00WDS installed; {sig}"))
+            Ok(format!(
+                "no prompts; unit pair mirrored; QSYSNAME QSINST; 10.0.2.15/24 via 10.0.2.2; QS00WDS installed; {sig}"
+            ))
         })()
         .map_err(|e| (e, s.log.clone()));
         s.command("pwrdwn", CMD).ok();
