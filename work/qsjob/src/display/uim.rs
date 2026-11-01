@@ -54,8 +54,9 @@ fn ffw_of(f: &Field) -> Ffw {
     }
 }
 
-/// Put a rendered screen on the model.
+/// Put a rendered screen on the model, in the screen's own size.
 pub fn apply(s: &Screen, m: &mut ScreenModel) {
+    m.resize(s.cols > 80);
     m.clear();
     for t in &s.texts {
         m.put(t.row, t.col, &t.text, attr_of(t.attr));
@@ -175,6 +176,29 @@ mod tests {
         assert!(rows[4].contains("1. User tasks"));
         assert_eq!(m.fields().len(), 1);
         assert_eq!(key_of(aid::ROLL_UP), Some(Key::PageDown));
+    }
+
+    /// A panel goes out in its own size: a 24x80 panel on a 27x132
+    /// screen switches it to 24x80, a 27x132 screen back.
+    #[test]
+    fn screen_sets_the_mode() {
+        let c = uim::compile(GROUP, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let g = Rc::new(c.group.unwrap_or_else(|| panic!("{}", c.listing)));
+        let d = UimDialog::new(g, "QS400");
+        let opts = uim::Options {
+            wide: true,
+            ..uim::Options::default()
+        };
+        let screen = uim::render(&d.group, "TEST", &d, &opts).unwrap();
+        let mut m = ScreenModel::new(true);
+        apply(&screen, &mut m);
+        assert_eq!((m.rows(), m.cols()), (24, 80));
+        let out = m.render(Read::MdtFields);
+        assert_eq!(&out.data[..2], &[0x04, tn5250::ds::cmd::CLEAR_UNIT]);
+        apply(&Screen::new(27, 132), &mut m);
+        assert_eq!((m.rows(), m.cols()), (27, 132));
+        let out = m.render(Read::MdtFields);
+        assert_eq!(&out.data[..2], &[0x04, tn5250::ds::cmd::CLEAR_UNIT_ALT]);
     }
 
     /// MAIN with `cmdline` on its command line, through the 5250 stream

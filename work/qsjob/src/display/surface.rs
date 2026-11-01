@@ -119,9 +119,10 @@ impl Surface {
         &self.host
     }
 
-    /// Whether the screen is 132 columns wide.
+    /// Whether the device can show 27x132; the screen's mode follows
+    /// what is written to it.
     pub fn wide(&mut self) -> bool {
-        self.with_model(|m| m.cols() == 132)
+        self.host.display.borrow().as_ref().is_some_and(|d| d.wide)
     }
 
     /// Run `f` on the screen the job draws on.

@@ -40,9 +40,11 @@ fn text_attr(code: u8) -> u8 {
     }
 }
 
-/// Render a panel into a model: the screen is cleared, texts and
-/// fields placed, the message on the last row, the cursor set.
+/// Render a panel into a model: the screen is cleared (panels are
+/// 24x80), texts and fields placed, the message on the last row, the
+/// cursor set.
 pub fn render(p: &Panel, m: &mut ScreenModel) {
+    m.resize(false);
     m.clear();
     let rows = m.rows();
     for (row, col, a, text) in &p.texts {
@@ -142,6 +144,8 @@ pub struct Display {
     last: Option<Panel>,
     /// The device's name.
     pub device: String,
+    /// The device shows 27x132; what is shown picks the mode.
+    pub wide: bool,
 }
 
 impl Display {
@@ -193,9 +197,10 @@ impl Display {
         });
         Ok(Self {
             chan,
-            model: ScreenModel::new(model.wide()),
+            model: ScreenModel::new(false),
             last: None,
             device: device.to_string(),
+            wide: model.wide(),
         })
     }
 
@@ -327,6 +332,17 @@ mod tests {
         let inb = m.accept(&rec.data).unwrap();
         assert_eq!(key_of(rec.flags, inb.aid), Some(3));
         assert_eq!(m.values()[0], "QSECOFR");
+    }
+
+    /// A panel is 24x80 on any device: Clear Unit, not the alternate.
+    #[test]
+    fn panel_is_24x80_on_a_wide_screen() {
+        let p = wm::panels::sign_on("QS400", "QINTER", "QPADEV0001", false, "");
+        let mut m = ScreenModel::new(true);
+        render(&p, &mut m);
+        assert_eq!((m.rows(), m.cols()), (24, 80));
+        let out = m.render(Read::MdtFields);
+        assert_eq!(&out.data[..2], &[0x04, tn5250::ds::cmd::CLEAR_UNIT]);
     }
 
     #[test]

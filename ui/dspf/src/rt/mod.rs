@@ -98,6 +98,8 @@ impl Sfl {
 pub struct Runtime {
     df: DisplayFile,
     size: usize,
+    /// The device shows 27x132.
+    wide: bool,
     shown: Vec<Shown>,
     last_out: BTreeMap<String, Vec<u8>>,
     last_inds: BTreeMap<String, Inds>,
@@ -107,8 +109,8 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    /// Over a compiled file, for a 24x80 or a 27x132 display: the
-    /// file's size for that display when it has one, else its primary.
+    /// Over a compiled file, for a 24x80 or a 27x132 device: the
+    /// file's size for that device when it has one, else its primary.
     #[must_use]
     pub fn new(df: DisplayFile, wide: bool) -> Self {
         let want = if wide { 132 } else { 80 };
@@ -121,6 +123,7 @@ impl Runtime {
         Self {
             df,
             size,
+            wide,
             shown: Vec::new(),
             last_out: BTreeMap::new(),
             last_inds: BTreeMap::new(),
@@ -140,6 +143,14 @@ impl Runtime {
     #[must_use]
     pub fn size_index(&self) -> usize {
         self.size
+    }
+
+    /// Whether records go out in 27x132 mode: the file's size in use is
+    /// 27x132 and the device shows it. A 24x80 file is 24x80 on any
+    /// device; a 27x132 file on a 24x80 device stays 24x80.
+    #[must_use]
+    pub fn shows_wide(&self) -> bool {
+        self.wide && self.df.file.sizes.get(self.size).is_some_and(|s| s.cols == 132)
     }
 
     fn size_name(&self) -> String {
@@ -240,6 +251,12 @@ impl Runtime {
                 .collect();
             m.set_no_data_keys(&ca);
         }
+        // The display's mode follows the file: a change of size clears
+        // the screen in the new mode.
+        if (m.cols() == 132) != self.shows_wide() {
+            m.resize(self.shows_wide());
+            self.forget_shown();
+        }
         let rows = m.rows();
         let msgloc = rec
             .keyword("MSGLOC")
@@ -296,6 +313,14 @@ impl Runtime {
         Ok(())
     }
 
+    /// Nothing of this file is on the display any more.
+    fn forget_shown(&mut self) {
+        self.shown.clear();
+        for s in self.subfiles.values_mut() {
+            s.displayed = false;
+        }
+    }
+
     /// Make the display ready for a record: everything goes without
     /// `OVERLAY`; with it, `ERASE`d records, `CLRL` lines or the
     /// records the new one overlaps.
@@ -309,10 +334,7 @@ impl Runtime {
     ) {
         if !overlay {
             m.clear();
-            self.shown.clear();
-            for s in self.subfiles.values_mut() {
-                s.displayed = false;
-            }
+            self.forget_shown();
             return;
         }
         let erased: Vec<String> = rec

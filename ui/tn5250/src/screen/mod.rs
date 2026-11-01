@@ -107,6 +107,22 @@ impl ScreenModel {
         }
     }
 
+    /// Change the screen's size: a different size blanks the model and
+    /// the next render clears the client in the new mode (Clear Unit
+    /// or Clear Unit Alternate) and sets the error line again. The same
+    /// size changes nothing.
+    pub fn resize(&mut self, wide: bool) {
+        let (rows, cols) = if wide { (27, 132) } else { (24, 80) };
+        if (rows, cols) == (self.rows, self.cols) {
+            return;
+        }
+        let keys = self.key_switches;
+        let alarm = self.alarm;
+        *self = Self::new(wide);
+        self.key_switches = keys;
+        self.alarm = alarm;
+    }
+
     /// The function keys that return no field data (command attention
     /// keys): a changed set goes out with the next full render.
     pub fn set_no_data_keys(&mut self, keys: &[u8]) {

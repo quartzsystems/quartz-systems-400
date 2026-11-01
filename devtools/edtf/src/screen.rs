@@ -77,6 +77,7 @@ fn bytes(text: &str) -> Vec<u8> {
 
 /// Draw the session.
 pub fn draw(s: &Session, m: &mut ScreenModel) {
+    m.resize(false);
     m.clear();
     let edit = s.mode == Mode::Edit;
     if edit {
