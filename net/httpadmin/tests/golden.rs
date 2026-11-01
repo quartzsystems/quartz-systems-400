@@ -229,3 +229,32 @@ fn confirm_delete() {
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "shared/confirm.html", &[]);
 }
+
+/// The wizard as the prototype shows it: creating `WEBSTORE` on a system
+/// that has neither it nor `TESTSRV` yet.
+#[test]
+fn create_wizard() {
+    let mut b = Browser::signed_on();
+    for n in ["WEBSTORE", "TESTSRV"] {
+        httpd::instance::delete(b.fx.files.as_ref(), n).unwrap();
+    }
+    let steps: [&[(&str, &str)]; 5] = [
+        &[("name", "webstore"), ("desc", "Web store front end"), ("base", "new"), ("copyfrom", "APACHEDFT")],
+        &[("root", "/www/webstore")],
+        &[("docroot", "/www/webstore/htdocs"), ("sample", "on")],
+        &[("addr", "*ALL"), ("ip", "10.0.10.20"), ("port", "80")],
+        &[("log", "yes"), ("logpath", "/www/webstore/logs/access_log"), ("fmt", "Combined"), ("rot", "Daily")],
+    ];
+    assert_eq!(b.post("/create/step/1", &[("create_new_instance", "Create new instance...")]).status, 303);
+    for (i, fields) in steps.iter().enumerate() {
+        let n = i + 1;
+        let mut f = fields.to_vec();
+        f.push(("next", "Next >"));
+        let r = b.post(&format!("/create/step/{n}"), &f);
+        assert_eq!(r.header("Location").map(ToString::to_string), Some(PRODUCT.url(&format!("/create/step/{}", n + 1))));
+        let r = b.get(&format!("/create/step/{n}"));
+        assert_golden(&r.text(), &format!("http/create-{n}.html"), &[]);
+    }
+    let r = b.get("/create/step/6");
+    assert_golden(&r.text(), "http/create-6.html", &[]);
+}

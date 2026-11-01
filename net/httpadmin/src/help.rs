@@ -43,6 +43,62 @@ pub const TOPICS: &[Topic] = &[
 <p>A running instance is not deleted: stop it first. Deleting needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
     },
     Topic {
+        key: "create-1",
+        title: "Create HTTP server: name",
+        body: "<p>Name the new instance. The name is also the name of the instance's job in subsystem <span class=\"mono\">QHTTPSVR</span> and, in lower case, of its directory under the default server root of Global settings.</p>
+<p><b>Based on</b> either writes a new configuration file from your answers or copies the file of an existing instance, with the server root, document root and port you give in the next steps.</p>",
+    },
+    Topic {
+        key: "create-name",
+        title: "Instance name",
+        body: "<p>1 to 10 characters: letters and digits, starting with a letter. The name is shown in upper case and must not already be used by another instance. Global settings limit how many instances the system may have.</p>",
+    },
+    Topic {
+        key: "create-2",
+        title: "Create HTTP server: server root",
+        body: "<p>The server root holds the instance: <span class=\"mono\">conf/httpd.conf</span>, the <span class=\"mono\">logs</span> directory and, by default, the <span class=\"mono\">htdocs</span> content directory. Relative paths in the configuration file are taken from it.</p>",
+    },
+    Topic {
+        key: "create-root",
+        title: "Server root",
+        body: "<p>An absolute path name. The directory is created if it does not exist; it must not be the server root of another instance.</p>",
+    },
+    Topic {
+        key: "create-3",
+        title: "Create HTTP server: document root",
+        body: "<p>The document root is the directory the server serves files from: a request for <span class=\"mono\">/</span> maps to it. A sample <span class=\"mono\">index.html</span> can be written there so the new instance has a page to show; an existing file is never replaced.</p>",
+    },
+    Topic {
+        key: "create-docroot",
+        title: "Document root",
+        body: "<p>An absolute path name. It is created if it does not exist.</p>",
+    },
+    Topic {
+        key: "create-4",
+        title: "Create HTTP server: address and port",
+        body: "<p>The instance listens on the port you give, on every interface (<span class=\"mono\">*ALL</span>) or on one address of this system. More ports, and TLS ports, are added later on the Ports &amp; addresses page.</p>",
+    },
+    Topic {
+        key: "create-addr",
+        title: "IP address",
+        body: "<p><span class=\"mono\">*ALL</span> listens on every TCP/IP interface. A specific address listens only on that interface. A port below 1024 needs the <span class=\"mono\">*IOSYSCFG</span> special authority on the server user profile named in Global settings.</p>",
+    },
+    Topic {
+        key: "create-5",
+        title: "Create HTTP server: access log",
+        body: "<p>The access log records one line per request in the format you choose: <b>Common</b> (client, user, time, request, status, bytes), <b>Combined</b> (Common with the referring page and the browser) or <b>Extended</b> (Combined with the time taken). Rotation starts a new file daily or when the file passes 10 MB and keeps 30 rotated files.</p>",
+    },
+    Topic {
+        key: "create-log",
+        title: "Access log",
+        body: "<p>An absolute path name, usually under the instance's <span class=\"mono\">logs</span> directory. Choose No to keep no access log; errors are always written to the error log.</p>",
+    },
+    Topic {
+        key: "create-6",
+        title: "Create HTTP server: create",
+        body: "<p>Check the summary and press <b>Create</b>. The server root, its directories, the configuration file and the instance's registry entry are created, and message <span class=\"mono\">HTP8020</span> confirms it. The instance is created stopped. Creating an instance needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",
