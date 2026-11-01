@@ -11,7 +11,7 @@
 //! reaches the IFS over its link, runs `RCMD` in its own runtime and
 //! calls the exit programs of `QIBM_QTMF_SERVER_REQ` and
 //! `QIBM_QTMF_SVR_LOGON`. `AUTH TLS` and port 990 present the
-//! certificate assigned to `QIBM_QTMF_FTP_SERVER` in `*SYSTEM`, read
+//! certificate assigned to `QS400_FTP_SERVER` in `*SYSTEM`, read
 //! as `QTCP` before sign-on, else the system's own (`tls.rs`).
 
 use std::net::TcpStream;

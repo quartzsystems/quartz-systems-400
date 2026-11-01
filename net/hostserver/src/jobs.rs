@@ -130,13 +130,13 @@ pub fn server_of_prestart(program: &str) -> Option<ServerId> {
 /// The DCM application ID of a server's TLS port.
 pub fn app_id(s: ServerId) -> &'static str {
     match s {
-        ServerId::Central => "QIBM_OS400_QZBS_SVR_CENTRAL",
-        ServerId::Database => "QIBM_OS400_QZBS_SVR_DATABASE",
-        ServerId::DataQueue => "QIBM_OS400_QZBS_SVR_DTAQ",
-        ServerId::File => "QIBM_OS400_QZBS_SVR_FILE",
-        ServerId::NetPrint => "QIBM_OS400_QZBS_SVR_NETPRT",
-        ServerId::RemoteCommand => "QIBM_OS400_QZBS_SVR_RMTCMD",
-        ServerId::Signon => "QIBM_OS400_QZBS_SVR_SIGNON",
+        ServerId::Central => "QS400_CENTRAL_SERVER",
+        ServerId::Database => "QS400_DATABASE_SERVER",
+        ServerId::DataQueue => "QS400_DTAQ_SERVER",
+        ServerId::File => "QS400_FILE_SERVER",
+        ServerId::NetPrint => "QS400_NETPRT_SERVER",
+        ServerId::RemoteCommand => "QS400_RMTCMD_SERVER",
+        ServerId::Signon => "QS400_SIGNON_SERVER",
     }
 }
 

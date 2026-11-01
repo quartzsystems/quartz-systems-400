@@ -112,33 +112,53 @@ store as a trusted CA, skipping those already present by fingerprint.
 `certs::apps::AppRegistry` is the list of application IDs with, for each,
 its kind (server or client), the assigned certificate label in `*SYSTEM`,
 the client authentication setting (none, optional, required) and the CA
-trust (all trusted CAs of the store, or a list of labels). Shipped IDs
-(IBM's names; doubts in docs/NET_OPEN_QUESTIONS.md, "Certificates"):
+trust (all trusted CAs of the store, or a list of labels). The shipped
+IDs are `QS400_*` (Cody, 2026-11-01). The IBM i ID of each is an alias
+(`certs::apps::ALIASES`, `canonical`): every API, command and
+`SSLAppName` that takes an ID accepts it, and a definition stored under
+it (a system installed before the rename) is renamed when
+`QSAPPDEF.JSON` is read, keeping its certificate, client
+authentication and CA trust; the file is rewritten at the next change.
+Doubts about the IBM names are in docs/NET_OPEN_QUESTIONS.md,
+"Certificates".
 
-| ID | Kind |
-|---|---|
-| `QIBM_QTV_TELNET_SERVER` | server |
-| `QIBM_QTMF_FTP_SERVER` | server |
-| `QIBM_QTMF_FTP_CLIENT` | client |
-| `QIBM_QTMS_SMTP_CLIENT` | client |
-| `QIBM_OS400_QZBS_SVR_CENTRAL` | server |
-| `QIBM_OS400_QZBS_SVR_DATABASE` | server |
-| `QIBM_OS400_QZBS_SVR_DTAQ` | server |
-| `QIBM_OS400_QZBS_SVR_NETPRT` | server |
-| `QIBM_OS400_QZBS_SVR_RMTCMD` | server |
-| `QIBM_OS400_QZBS_SVR_SIGNON` | server |
-| `QIBM_OS400_QZBS_SVR_FILE` | server |
-| `QIBM_QRW_SERVER_DDM_DRDA` | server |
-| `QIBM_QRW_CLIENT_DDM_DRDA` | client |
-| `QIBM_HTTP_SERVER_ADMIN` | server |
-| `QIBM_GLD_DIRSRV_SERVER` | server |
-| `QIBM_GLD_DIRSRV_CLIENT` | client |
-| `QIBM_QTOB_VPN_IKE` | server |
-| `QIBM_QSO_LPD_SERVER` | server |
-| `QIBM_QTOC_NTP_CLIENT` | client |
+| ID | Kind | Alias (IBM i) |
+|---|---|---|
+| `QS400_TELNET_SERVER` | server | `QIBM_QTV_TELNET_SERVER` |
+| `QS400_FTP_SERVER` | server | `QIBM_QTMF_FTP_SERVER` |
+| `QS400_FTP_CLIENT` | client | `QIBM_QTMF_FTP_CLIENT` |
+| `QS400_SMTP_CLIENT` | client | `QIBM_QTMS_SMTP_CLIENT` |
+| `QS400_CENTRAL_SERVER` | server | `QIBM_OS400_QZBS_SVR_CENTRAL` |
+| `QS400_DATABASE_SERVER` | server | `QIBM_OS400_QZBS_SVR_DATABASE` |
+| `QS400_DTAQ_SERVER` | server | `QIBM_OS400_QZBS_SVR_DTAQ` |
+| `QS400_NETPRT_SERVER` | server | `QIBM_OS400_QZBS_SVR_NETPRT` |
+| `QS400_RMTCMD_SERVER` | server | `QIBM_OS400_QZBS_SVR_RMTCMD` |
+| `QS400_SIGNON_SERVER` | server | `QIBM_OS400_QZBS_SVR_SIGNON` |
+| `QS400_FILE_SERVER` | server | `QIBM_OS400_QZBS_SVR_FILE` |
+| `QS400_DDM_DRDA_SERVER` | server | `QIBM_QRW_SERVER_DDM_DRDA` |
+| `QS400_DDM_DRDA_CLIENT` | client | `QIBM_QRW_CLIENT_DDM_DRDA` |
+| `QS400_HTTP_SERVER_ADMIN` | server | `QIBM_HTTP_SERVER_ADMIN` |
+| `QS400_DIRECTORY_SERVER` | server | `QIBM_GLD_DIRSRV_SERVER` |
+| `QS400_DIRECTORY_CLIENT` | client | `QIBM_GLD_DIRSRV_CLIENT` |
+| `QS400_VPN_IKE_SERVER` | server | `QIBM_QTOB_VPN_IKE` |
+| `QS400_LPD_SERVER` | server | `QIBM_QSO_LPD_SERVER` |
+| `QS400_NTP_CLIENT` | client | `QIBM_QTOC_NTP_CLIENT` |
+| `QS400_HTTP_SERVER_<instance>` | server | `QIBM_HTTP_SERVER_<instance>` |
 
+An HTTP instance's ID is `QS400_HTTP_SERVER_` and its name
+(`certs::apps::http_server`; Navigator's is `QS400_HTTP_SERVER_NAVIGATOR`).
 A server with no certificate assigned uses the store's default. Shipped
 IDs cannot be removed; users may register their own.
+
+The store paths stay IBM i's (`/QIBM/UserData/ICSS/Cert/...`): programs
+name keyring files by path. A new system's first IPL makes `*SYSTEM`
+(`certs::admin::keystores::ensure_system`, called by the storage
+service after the IFS starts): a random password kept only in its
+stash, the shipped roots trusted. Applications are assigned
+certificates of `*SYSTEM` only; a certificate made in another store is
+brought there with Copy to `*SYSTEM` on its page
+(`certs::admin::entries::copy`, with its key and intermediates) or by
+exporting it as PKCS#12 and importing the file.
 
 ## TLS policy
 
@@ -390,10 +410,10 @@ HTTP administration instance) makes a certificate for the run in memory.
 
 | Server | Application ID |
 |---|---|
-| HTTP administration, 2005 | `QIBM_HTTP_SERVER_ADMIN` |
-| Telnet, 992 | `QIBM_QTV_TELNET_SERVER` |
-| Host servers (TLS ports) | `QIBM_OS400_QZBS_SVR_CENTRAL`, `_DATABASE`, `_DTAQ`, `_FILE`, `_NETPRT`, `_RMTCMD`, `_SIGNON` |
-| FTP, `AUTH TLS` and 990 | `QIBM_QTMF_FTP_SERVER` |
+| HTTP administration, 2010 | `QS400_HTTP_SERVER_ADMIN` |
+| Telnet, 992 | `QS400_TELNET_SERVER` |
+| Host servers (TLS ports) | `QS400_CENTRAL_SERVER`, `QS400_DATABASE_SERVER`, `QS400_DTAQ_SERVER`, `QS400_FILE_SERVER`, `QS400_NETPRT_SERVER`, `QS400_RMTCMD_SERVER`, `QS400_SIGNON_SERVER` |
+| FTP, `AUTH TLS` and 990 | `QS400_FTP_SERVER` |
 
 A server reads its certificate when it starts (a prestart job keeps it
 ten minutes; an FTP session job at its connection), so an assignment
@@ -406,7 +426,7 @@ implicit) check the server's chain and name against the shipped roots
 and the trusted CAs of `*SYSTEM`. A server with a self-signed
 certificate is trusted by importing that certificate as a CA
 (`QSIMPCRT ... TRUST(*YES)`). The FTP client presents no certificate:
-the key of `QIBM_QTMF_FTP_CLIENT` goes only to server profiles.
+the key of `QS400_FTP_CLIENT` goes only to server profiles.
 
 ## Expiry warnings
 

@@ -79,7 +79,7 @@ to 70; step 65 is QSH):
 | 67 | the FTP server: sign-on, members, stream files, `RCMD`, the scripted `FTP` command |
 | 68 | the host server daemons and prestart jobs, JTOpen `CommandCall` and JDBC |
 | 69 | `*LPD` receiving an LPR job into an output queue, `*NTP` answering SNTP |
-| 70 | a certificate assigned to `QIBM_HTTP_SERVER_ADMIN` served on 2005 |
+| 70 | a certificate assigned to `QS400_HTTP_SERVER_ADMIN` served on 2005 |
 
 ## Deviations
 

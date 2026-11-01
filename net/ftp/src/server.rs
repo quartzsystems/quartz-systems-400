@@ -22,7 +22,7 @@ use crate::reply::Reply;
 use crate::session::{Flow, Session};
 
 /// The FTP server's certificate application ID.
-pub const APP_ID: &str = "QIBM_QTMF_FTP_SERVER";
+pub const APP_ID: &str = "QS400_FTP_SERVER";
 
 /// The TLS configuration of `AUTH TLS` and port 990: the certificate
 /// assigned to [`APP_ID`] in `store`.

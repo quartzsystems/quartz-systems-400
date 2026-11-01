@@ -100,7 +100,7 @@ fn plain_and_tls_virtual_host_then_controlled_end() {
         <VirtualHost *:2>\n   ServerName shop.test\n   SSLEngine On\n   SSLProtocolDisable TLSv1.3\n   DocumentRoot /www/shop/secure\n</VirtualHost>\n";
     let plan = Plan::new("SHOP", "/www/shop", &parse(conf).unwrap());
     let spec = plan.listeners[1].tls.clone().unwrap();
-    assert_eq!(spec.app_id, "QIBM_HTTP_SERVER_SHOP");
+    assert_eq!(spec.app_id, "QS400_HTTP_SERVER_SHOP");
     let files = Arc::new(MemFiles::new());
     files.put("/www/shop/htdocs/index.html", b"plain");
     files.put("/www/shop/secure/index.html", b"secure");

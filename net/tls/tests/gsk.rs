@@ -254,12 +254,17 @@ fn call_order_and_return_codes() {
 #[test]
 fn application_ids_at_environment_init() {
     let (files, now) = system(|r| {
-        r.assign("QIBM_QTMF_FTP_SERVER", Some("ECDSA")).unwrap();
+        r.assign("QS400_FTP_SERVER", Some("ECDSA")).unwrap();
     });
     let mut g = Gsk::new(ctx(&files, now, TlsPolicy::opsys()));
     let e = g.environment_open().unwrap();
     set(&mut g, e, GSK_OS400_APPLICATION_ID, "NOT_REGISTERED_APP");
     assert_eq!(g.environment_init(e), Err(GSK_IBMI_ERROR_NOT_REGISTERED));
+    set(&mut g, e, GSK_OS400_APPLICATION_ID, "QS400_FTP_SERVER");
+    g.environment_init(e).unwrap();
+    g.environment_close(e).unwrap();
+    // A program written for IBM i gives the IBM i ID: an alias.
+    let e = g.environment_open().unwrap();
     set(&mut g, e, GSK_OS400_APPLICATION_ID, "QIBM_QTMF_FTP_SERVER");
     g.environment_init(e).unwrap();
     g.environment_close(e).unwrap();
@@ -271,7 +276,7 @@ fn application_ids_at_environment_init() {
         &mut late,
         e,
         GSK_OS400_APPLICATION_ID,
-        "QIBM_QTMF_FTP_SERVER",
+        "QS400_FTP_SERVER",
     );
     assert_eq!(late.environment_init(e), Err(GSK_KEYFILE_CERT_EXPIRED));
 
@@ -280,7 +285,7 @@ fn application_ids_at_environment_init() {
         .remove(&certs::paths::stash_path(SYSTEM_STORE))
         .unwrap();
     let e = g.environment_open().unwrap();
-    set(&mut g, e, GSK_OS400_APPLICATION_ID, "QIBM_QTMF_FTP_SERVER");
+    set(&mut g, e, GSK_OS400_APPLICATION_ID, "QS400_FTP_SERVER");
     assert!(g.environment_init(e).is_err());
 }
 
@@ -399,7 +404,7 @@ fn keyring_client(
 #[test]
 fn gsk_sessions_under_tls_1_3_and_1_2() {
     let (files, now) = system(|r| {
-        r.assign("QIBM_QTV_TELNET_SERVER", Some("ECDSA")).unwrap();
+        r.assign("QS400_TELNET_SERVER", Some("ECDSA")).unwrap();
     });
     let policy = TlsPolicy::opsys();
 
@@ -407,7 +412,7 @@ fn gsk_sessions_under_tls_1_3_and_1_2() {
         &files,
         now,
         &policy,
-        app_server("QIBM_QTV_TELNET_SERVER"),
+        app_server("QS400_TELNET_SERVER"),
         keyring_client(TRUST_STORE, "trust1", None, Box::new(|_, _| {})),
     );
     assert_eq!(s.init, Ok(()), "{s:?}");
@@ -425,7 +430,7 @@ fn gsk_sessions_under_tls_1_3_and_1_2() {
         &files,
         now,
         &policy,
-        app_server("QIBM_QTV_TELNET_SERVER"),
+        app_server("QS400_TELNET_SERVER"),
         keyring_client(
             TRUST_STORE,
             "trust1",
@@ -455,7 +460,7 @@ fn gsk_sessions_under_tls_1_3_and_1_2() {
 #[test]
 fn gsk_protocols_from_the_system_values() {
     let (files, now) = system(|r| {
-        r.assign("QIBM_QTV_TELNET_SERVER", Some("RSA")).unwrap();
+        r.assign("QS400_TELNET_SERVER", Some("RSA")).unwrap();
     });
     // QSSLPCL *TLSV1.2 only: a client asking for 1.3 alone gets nothing.
     let only12 = TlsPolicy::from_sysvals(&["*TLSV1.2"], &[], "*OPSYS");
@@ -469,7 +474,7 @@ fn gsk_protocols_from_the_system_values() {
         &files,
         now,
         &only12,
-        app_server("QIBM_QTV_TELNET_SERVER"),
+        app_server("QS400_TELNET_SERVER"),
         keyring_client(TRUST_STORE, "trust1", None, Box::new(|_, _| {})),
     );
     assert_eq!(c.init, Ok(()), "{c:?} {s:?}");
@@ -489,7 +494,7 @@ fn gsk_protocols_from_the_system_values() {
         &files,
         now,
         &one,
-        app_server("QIBM_QTV_TELNET_SERVER"),
+        app_server("QS400_TELNET_SERVER"),
         keyring_client(TRUST_STORE, "trust1", None, Box::new(|_, _| {})),
     );
     assert_eq!(c.init, Ok(()));
@@ -515,11 +520,11 @@ fn gsk_protocols_from_the_system_values() {
 #[test]
 fn gsk_client_authentication_from_the_application() {
     let (files, now) = system(|r| {
-        r.assign("QIBM_QTMF_FTP_SERVER", Some("ECDSA")).unwrap();
-        r.set_client_auth("QIBM_QTMF_FTP_SERVER", ClientAuth::Required)
+        r.assign("QS400_FTP_SERVER", Some("ECDSA")).unwrap();
+        r.set_client_auth("QS400_FTP_SERVER", ClientAuth::Required)
             .unwrap();
-        r.assign("QIBM_QTV_TELNET_SERVER", Some("ECDSA")).unwrap();
-        r.set_client_auth("QIBM_QTV_TELNET_SERVER", ClientAuth::Optional)
+        r.assign("QS400_TELNET_SERVER", Some("ECDSA")).unwrap();
+        r.set_client_auth("QS400_TELNET_SERVER", ClientAuth::Optional)
             .unwrap();
     });
     let policy = TlsPolicy::opsys();
@@ -529,7 +534,7 @@ fn gsk_client_authentication_from_the_application() {
         &files,
         now,
         &policy,
-        app_server("QIBM_QTMF_FTP_SERVER"),
+        app_server("QS400_FTP_SERVER"),
         keyring_client(SYSTEM_STORE, PASSWORD, Some("CLIENT"), Box::new(|_, _| {})),
     );
     assert_eq!(s.init, Ok(()), "{s:?} {c:?}");
@@ -540,7 +545,7 @@ fn gsk_client_authentication_from_the_application() {
         &files,
         now,
         &policy,
-        app_server("QIBM_QTMF_FTP_SERVER"),
+        app_server("QS400_FTP_SERVER"),
         keyring_client(TRUST_STORE, "trust1", None, Box::new(|_, _| {})),
     );
     assert_eq!(s.init, Err(GSK_ERROR_NO_CERTIFICATE));
@@ -551,7 +556,7 @@ fn gsk_client_authentication_from_the_application() {
         &files,
         now,
         &policy,
-        app_server("QIBM_QTV_TELNET_SERVER"),
+        app_server("QS400_TELNET_SERVER"),
         keyring_client(TRUST_STORE, "trust1", None, Box::new(|_, _| {})),
     );
     assert_eq!(s.init, Ok(()));
@@ -560,7 +565,7 @@ fn gsk_client_authentication_from_the_application() {
         &files,
         now,
         &policy,
-        app_server("QIBM_QTV_TELNET_SERVER"),
+        app_server("QS400_TELNET_SERVER"),
         keyring_client(SYSTEM_STORE, PASSWORD, Some("CLIENT"), Box::new(|_, _| {})),
     );
     assert_eq!(s.partner_cn.as_deref(), Some("client one"));
@@ -599,7 +604,7 @@ fn gsk_untrusted_server() {
 #[test]
 fn ssl_api_sessions() {
     let (files, now) = system(|r| {
-        r.assign("QIBM_QTV_TELNET_SERVER", Some("RSA")).unwrap();
+        r.assign("QS400_TELNET_SERVER", Some("RSA")).unwrap();
     });
     let policy = TlsPolicy::opsys();
     let mut early = Ssl::new(ctx(&files, now, policy.clone()));
@@ -641,7 +646,7 @@ fn ssl_api_sessions() {
         let t = std::thread::spawn(move || {
             server
                 .init_application(&SslInitApp {
-                    application_id: "QIBM_QTV_TELNET_SERVER".into(),
+                    application_id: "QS400_TELNET_SERVER".into(),
                     ..SslInitApp::default()
                 })
                 .unwrap();

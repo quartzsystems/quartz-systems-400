@@ -40,14 +40,14 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 
 | Server | Jobs (user, subsystem) | Ports | Attributes | Application ID | Exit points | This release |
 |---|---|---|---|---|---|---|
-| `*TELNET` | `QTVTELNET` listener, `QTVDEVICE` workers (`QTCP`, `QSYSWRK`) | 23, 992 TLS | `CHGTELNA` | `QIBM_QTV_TELNET_SERVER` | `QIBM_QTG_DEVINIT`, `QIBM_QTG_DEVTERM` | built |
-| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS | (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
-| `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
+| `*TELNET` | `QTVTELNET` listener, `QTVDEVICE` workers (`QTCP`, `QSYSWRK`) | 23, 992 TLS | `CHGTELNA` | `QS400_TELNET_SERVER` | `QIBM_QTG_DEVINIT`, `QIBM_QTG_DEVTERM` | built |
+| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS | (bag `PORT`, `TLSPORT`) | `QS400_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
+| `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QS400_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
-| `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | built (`servers::framework::HostSvr`) |
+| `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the host servers' `QS400_*_SERVER` IDs) | | built (`servers::framework::HostSvr`) |
 | `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | built |
-| `*LPD` | `QTLPD00nnn` (`QTMPLPD`, `QSYSWRK`) | 515 | `CHGLPDA` | `QIBM_QSO_LPD_SERVER` | | built |
-| `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QIBM_QRW_SERVER_DDM_DRDA` | | blocked |
+| `*LPD` | `QTLPD00nnn` (`QTMPLPD`, `QSYSWRK`) | 515 | `CHGLPDA` | `QS400_LPD_SERVER` | | built |
+| `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QS400_DDM_DRDA_SERVER` | | blocked |
 | `*SMTP`, `*SNMP`, `*ROUTED`, `*BOOTP`, `*TFTP`, `*REXEC`, `*DHCP`, `*DNS`, `*POP` | | | | | | not planned (docs/PHASE10.md) |
 
 `Readiness::Slot` means the server is being built elsewhere and starts
@@ -156,7 +156,7 @@ runtime and answers the connections' threads; sign-on is the storage
 service's (`QMAXSIGN`, `PW` entries), then the profile's handle
 (`QSYGETPH`) runs `STRTCPSVR`/`ENDTCPSVR` as the web user; the IFS is
 the job's (`QTMHHTTP`, `work/ifsfiles.rs`); `web_audit` writes `PW`, `AF` and `ZC`. The TLS
-certificate is the one `*SYSTEM` assigns `QIBM_HTTP_SERVER_ADMIN`
+certificate is the one `*SYSTEM` assigns `QS400_HTTP_SERVER_ADMIN`
 (`servers::web::app_tls` builds it from a store), else the system's
 self-signed one of `work/qsjob/src/work/tls.rs`.
 

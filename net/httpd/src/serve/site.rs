@@ -21,7 +21,7 @@ pub const DEFAULT_USER: &str = "QTMHHTTP";
 /// A port's TLS: what the job asks the certificate store for.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TlsSpec {
-    /// `SSLAppName`, or `QIBM_HTTP_SERVER_<instance>`.
+    /// `SSLAppName`, or `QS400_HTTP_SERVER_<instance>`.
     pub app_id: String,
     /// `SSLProtocolDisable`: `TLSv1.2`, ...
     pub disabled: Vec<String>,
@@ -248,7 +248,7 @@ impl Site {
         match tls_on {
             Some(true) => {
                 self.tls = Some(TlsSpec {
-                    app_id: app.unwrap_or_else(|| format!("QIBM_HTTP_SERVER_{}", instance.to_ascii_uppercase())),
+                    app_id: app.unwrap_or_else(|| format!("QS400_HTTP_SERVER_{}", instance.to_ascii_uppercase())),
                     disabled,
                     client_auth,
                 });
@@ -444,7 +444,7 @@ mod tests {
         assert_eq!(p.listeners.len(), 2);
         assert!(p.listeners[0].tls.is_none());
         let t = p.listeners[1].tls.as_ref().unwrap();
-        assert_eq!((t.app_id.as_str(), t.disabled.clone(), t.client_auth), ("QIBM_HTTP_SERVER_SHOP", vec!["TLSv1.2".to_string()], Some(1)));
+        assert_eq!((t.app_id.as_str(), t.disabled.clone(), t.client_auth), ("QS400_HTTP_SERVER_SHOP", vec!["TLSv1.2".to_string()], Some(1)));
         assert_eq!(p.main.doc_root, "/www/shop/htdocs");
         assert_eq!(p.main.access_logs[0].format, "%h %u");
         assert!(!p.main.keep_alive);

@@ -258,7 +258,7 @@ fn application_ids_resolve_to_configurations() {
     let policy = TlsPolicy::opsys();
     // A server with nothing assigned uses the store's default; one with
     // an assignment uses it; a client with none has no identity.
-    match config::for_app(&f.system, &apps, "QIBM_QTV_TELNET_SERVER", &policy, f.now).unwrap() {
+    match config::for_app(&f.system, &apps, "QS400_TELNET_SERVER", &policy, f.now).unwrap() {
         AppConfig::Server {
             identity,
             client_auth,
@@ -272,15 +272,15 @@ fn application_ids_resolve_to_configurations() {
         }
         AppConfig::Client { .. } => panic!("telnet is a server"),
     }
-    apps.assign("QIBM_QTMF_FTP_SERVER", Some("ECDSA")).unwrap();
-    apps.set_client_auth("QIBM_QTMF_FTP_SERVER", ClientAuth::Required)
+    apps.assign("QS400_FTP_SERVER", Some("ECDSA")).unwrap();
+    apps.set_client_auth("QS400_FTP_SERVER", ClientAuth::Required)
         .unwrap();
-    apps.assign("QIBM_QTMF_FTP_CLIENT", Some("CLIENT")).unwrap();
+    apps.assign("QS400_FTP_CLIENT", Some("CLIENT")).unwrap();
     let AppConfig::Server {
         config: sc,
         identity,
         client_auth,
-    } = config::for_app(&f.system, &apps, "QIBM_QTMF_FTP_SERVER", &policy, f.now).unwrap()
+    } = config::for_app(&f.system, &apps, "QS400_FTP_SERVER", &policy, f.now).unwrap()
     else {
         panic!("server")
     };
@@ -289,7 +289,7 @@ fn application_ids_resolve_to_configurations() {
     let AppConfig::Client {
         config: cc,
         identity,
-    } = config::for_app(&f.system, &apps, "QIBM_QTMF_FTP_CLIENT", &policy, f.now).unwrap()
+    } = config::for_app(&f.system, &apps, "QS400_FTP_CLIENT", &policy, f.now).unwrap()
     else {
         panic!("client")
     };
@@ -306,7 +306,7 @@ fn application_ids_resolve_to_configurations() {
         config::for_app(
             &f.system,
             &apps,
-            "QIBM_QTMF_FTP_SERVER",
+            "QS400_FTP_SERVER",
             &policy,
             f.now + 40 * 86_400
         ),
