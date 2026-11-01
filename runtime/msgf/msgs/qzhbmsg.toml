@@ -48,11 +48,25 @@ help = "&N Cause . . . . . :   The server root &2 and the registry entry of inst
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
+id = "HTP8022"
+sev = 0
+text = "Configuration of HTTP server instance &1 changed."
+help = "&N Cause . . . . . :   The configuration file of instance &1 was replaced. The previous file was kept as httpd.conf.bak in the same directory. &N Recovery  . . . :   A running instance uses the new configuration after it is restarted."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
 id = "HTP8100"
 sev = 30
 text = "Configuration error at line &1 column &2: &3"
 help = "&N Cause . . . . . :   The configuration file &4 could not be used. The directive at line &1, column &2 is not valid: &3 &N Recovery  . . . :   Correct the line on the Configuration file page of the instance and validate the file again. The file in use was not changed."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8101"
+sev = 0
+text = "Configuration file &1 has no errors."
+help = "&N Cause . . . . . :   Every line of the configuration file was read and checked. The file was not changed. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8103"
@@ -64,9 +78,23 @@ vars = ["*CHAR *VARY 2"]
 [[msg]]
 id = "HTP8104"
 sev = 30
-text = "HTTP server instance &1 cannot be stopped from its own administration session."
-help = "&N Cause . . . . . :   Instance &1 serves this administration session. Stopping it would end the session in which the request was made. &N Recovery  . . . :   Stop the instance from a 5250 session with ENDTCPSVR SERVER(*HTTP) HTTPSVR(&1), or restart it instead."
+text = "HTTP server instance &1 cannot be stopped or restarted from its own administration session."
+help = "&N Cause . . . . . :   Instance &1 serves this administration session. Stopping or restarting it would end the session in which the request was made. &N Recovery  . . . :   End or restart the instance from a 5250 session with ENDTCPSVR SERVER(*HTTP) HTTPSVR(&1) and STRTCPSVR SERVER(*HTTP) HTTPSVR(&1)."
 vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8105"
+sev = 30
+text = "Port &1 is already used by HTTP server instance &2."
+help = "&N Cause . . . . . :   A Listen directive for port &1 already exists in the configuration of instance &2. &N Recovery  . . . :   Choose another port, or remove the existing Listen entry first."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8106"
+sev = 30
+text = "Files of HTTP server instance &1 could not be used."
+help = "&N Cause . . . . . :   Reading or writing a file of instance &1 failed: &2 &N Recovery  . . . :   Check that the server root of the instance exists and that the administration server can write to it, then try again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8110"
@@ -81,6 +109,27 @@ sev = 30
 text = "User &1 is not an administrator of the HTTP server."
 help = "&N Cause . . . . . :   Signing on to HTTP Server Administration needs the *IOSYSCFG special authority or membership in group profile &2. &N Recovery  . . . :   Ask the security officer for the authority, or sign on as a user who has it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8120"
+sev = 30
+text = "Value &1 is not valid for &2."
+help = "&N Cause . . . . . :   &2 must be &3. &N Recovery  . . . :   Correct the value and try again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8122"
+sev = 30
+text = "HTTP server instance &1 already exists."
+help = "&N Cause . . . . . :   An instance named &1 is already defined on this system. &N Recovery  . . . :   Choose another name, or manage the existing instance from the Server instances page."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8123"
+sev = 30
+text = "No more HTTP server instances can be created."
+help = "&N Cause . . . . . :   The system already has &1 instances, the most Global settings allow. &N Recovery  . . . :   Delete an instance that is no longer needed, or raise the limit in Global settings."
+vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8201"
@@ -99,9 +148,9 @@ vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 [[msg]]
 id = "HTP8301"
 sev = 0
-text = "Certificate &1 created in store &2."
-help = "&N Cause . . . . . :   A key pair and certificate labeled &1 were created in certificate store &2. &N Recovery  . . . :   Assign the certificate to an application on the Applications page to use it."
-vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+text = "Certificate &1 created in store &2 and signed by &3."
+help = "&N Cause . . . . . :   A new key pair and a certificate labeled &1, signed by &3, were added to certificate store &2. &N Recovery  . . . :   Assign the certificate to an application on the Applications page to use it."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8302"
@@ -116,3 +165,80 @@ sev = 0
 text = "Certificate &1 assigned to application &2."
 help = "&N Cause . . . . . :   Application &2 presents certificate &1 the next time its server starts. &N Recovery  . . . :   Restart the server that uses application &2 to present the new certificate now."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8303"
+sev = 0
+text = "Certificate request &1 created in store &2."
+help = "&N Cause . . . . . :   A key pair labeled &1 was added to certificate store &2 with a certificate signing request for it. The entry waits for its certificate. &N Recovery  . . . :   Download the request and send it to a certificate authority. Import the certificate it returns into store &2 with label &1."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8304"
+sev = 0
+text = "Certificate &1 removed from store &2."
+help = "&N Cause . . . . . :   The entry labeled &1 was removed from certificate store &2. Applications that were assigned it no longer have a certificate. &N Recovery  . . . :   Assign another certificate to those applications on the Applications page."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8305"
+sev = 0
+text = "Certificate &1 is now the default certificate of store &2."
+help = "&N Cause . . . . . :   Servers that open certificate store &2 without naming a certificate present &1. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8306"
+sev = 0
+text = "Certificate store &1 created."
+help = "&N Cause . . . . . :   An empty certificate store &1 was created at &2. Its password is stashed so that servers can open it. &N Recovery  . . . :   Create or import certificates into the store from its page."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8307"
+sev = 0
+text = "Password of certificate store &1 changed."
+help = "&N Cause . . . . . :   Certificate store &1 was sealed again under the new password and its stashed password was replaced. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8308"
+sev = 0
+text = "Certificate store &1 deleted."
+help = "&N Cause . . . . . :   The store file of certificate store &1 and its stashed password were removed. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8311"
+sev = 0
+text = "Certificate assignment removed from application &1."
+help = "&N Cause . . . . . :   Application &1 has no certificate assigned. Its server presents the default certificate of the *SYSTEM store, if any, the next time it starts. &N Recovery  . . . :   Assign a certificate to the application on the Applications page."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8320"
+sev = 30
+text = "Certificate function not done: &1."
+help = "&N Cause . . . . . :   The certificate manager refused the request: &1. Nothing was changed. &N Recovery  . . . :   Correct the request and try again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8321"
+sev = 30
+text = "Password not correct for certificate store &1."
+help = "&N Cause . . . . . :   The password typed does not open certificate store &1. Nothing was changed. &N Recovery  . . . :   Type the store's current password. If it is lost, delete the store and create it again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8322"
+sev = 30
+text = "Value not valid: &1."
+help = "&N Cause . . . . . :   A value on the page cannot be used: &1. &N Recovery  . . . :   Correct the value and try again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8330"
+sev = 0
+text = "Global settings changed."
+help = "&N Cause . . . . . :   The settings were written to &1. A new session timeout applies from each session's next request. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]

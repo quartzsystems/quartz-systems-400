@@ -14,6 +14,7 @@
 //! - [`seed`]: the `ADMIN` instance made on a new system.
 //! - [`fixture`]: the prototype's sample system, for tests and the demo.
 
+pub mod certmgr;
 pub mod env;
 pub mod fixture;
 pub mod help;

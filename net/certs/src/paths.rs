@@ -16,6 +16,11 @@ pub const LOCAL_CA_STORE: &str = "/QIBM/UserData/ICSS/Cert/CertAuth/DEFAULT.KDB"
 pub const LOCAL_CA_CERT: &str = "/QIBM/UserData/ICSS/Cert/CertAuth/DEFAULT.TXT";
 /// The `*OBJECTSIGNING` store (named for completeness; unused yet).
 pub const OBJECT_SIGNING_STORE: &str = "/QIBM/UserData/ICSS/Cert/Signing/SIGNING.KDB";
+/// The `*SIGNATUREVERIFICATION` store.
+pub const SIGNATURE_VERIFICATION_STORE: &str = "/QIBM/UserData/ICSS/Cert/Signing/SIGNVER.KDB";
+/// The stores someone made, by name (a Quartz file; HTTP Server
+/// Administration lists them).
+pub const USER_STORES: &str = "/QIBM/UserData/ICSS/Cert/Server/QSSTORES.JSON";
 /// The application definitions (a Quartz file; IBM keeps these in the
 /// registration facility).
 pub const APP_DEFINITIONS: &str = "/QIBM/UserData/ICSS/Cert/Server/QSAPPDEF.JSON";

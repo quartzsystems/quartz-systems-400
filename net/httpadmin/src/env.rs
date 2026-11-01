@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use httpd::files::Files;
 use qsweb::msg::{Message, SecondLevel};
+use serde::{Deserialize, Serialize};
 
 /// A special authority or other right an action needs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -144,7 +145,7 @@ pub trait Jobs: Send + Sync {
 }
 
 /// What a certificate store is for.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StoreType {
     /// `*SYSTEM`: the certificates TCP servers present.
     System,
@@ -169,7 +170,7 @@ impl StoreType {
 }
 
 /// A certificate store as the stores page lists it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StoreInfo {
     /// `*SYSTEM`, `*OBJECTSIGNING`, `*SIGNATUREVERIFICATION`, or the
     /// name given when the store was made (`WEBSTORE`). Routes and every
@@ -187,7 +188,7 @@ pub struct StoreInfo {
 }
 
 /// What a store entry is.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EntryType {
     /// A server certificate with its private key.
     Server,
@@ -200,7 +201,7 @@ pub enum EntryType {
 }
 
 /// One store entry.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CertRow {
     /// The label, unique in the store.
     pub label: String,
@@ -227,7 +228,7 @@ pub struct CertRow {
 }
 
 /// One entry with everything the certificate page shows.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CertDetail {
     /// The entry.
     pub row: CertRow,
@@ -242,7 +243,7 @@ pub struct CertDetail {
 }
 
 /// A key type and size.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum KeySpec {
     /// RSA, 2048 bits.
     Rsa2048,
@@ -257,7 +258,7 @@ pub enum KeySpec {
 }
 
 /// A distinguished name as the create wizard asks for it.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Dn {
     /// Common name (required).
     pub cn: String,
@@ -274,7 +275,7 @@ pub struct Dn {
 }
 
 /// Who signs a new certificate.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Signing {
     /// The certificate signs itself.
     SelfSigned,
@@ -287,7 +288,7 @@ pub enum Signing {
 }
 
 /// A new certificate (`QSCRTCRT`).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NewCert {
     /// The store, as [`StoreInfo::name`].
     pub store: String,
@@ -311,7 +312,7 @@ pub struct NewCert {
 }
 
 /// Where an imported certificate comes from.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ImportSource {
     /// An uploaded file's bytes.
     Data(Vec<u8>),
@@ -320,7 +321,7 @@ pub enum ImportSource {
 }
 
 /// The format of an imported file.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ImportFormat {
     /// PEM when the data is text with a `-----BEGIN` line, DER when it
     /// is one certificate, else PKCS#12.
@@ -332,7 +333,7 @@ pub enum ImportFormat {
 }
 
 /// An import (`QSIMPCRT`).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Import {
     /// The store, as [`StoreInfo::name`].
     pub store: String,
@@ -352,7 +353,7 @@ pub struct Import {
 }
 
 /// An application ID and its certificate.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppInfo {
     /// `QIBM_HTTP_SERVER_ADMIN`.
     pub id: String,
@@ -365,7 +366,7 @@ pub struct AppInfo {
 }
 
 /// Why a certificate request failed. The text never holds a password.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CertFailure {
     /// The password does not open the store (its name).
     BadPassword(String),
