@@ -28,6 +28,7 @@ mod dst;
 mod fourdisk;
 mod error;
 mod hostsvr;
+mod httpsvr;
 pub mod ftp;
 mod ftpsrv;
 mod ifs;
