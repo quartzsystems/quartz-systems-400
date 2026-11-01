@@ -31,6 +31,11 @@ const LOOK: Duration = Duration::from_millis(500);
 /// Run `line` as `user` (the job itself for `None`) through the
 /// analyzer; its completion or escape as a message.
 pub fn run_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<Message, Message> {
+    run_text_as(m, user, line).and_then(|(r, _)| r)
+}
+
+/// [`run_as`], with the command's output text beside its message.
+pub fn run_text_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<(Result<Message, Message>, String), Message> {
     let o = match user {
         Some(u) => m.as_user(u, |m| m.console.run(line, crate::command::RunMode::Run))?,
         None => m.console.run(line, crate::command::RunMode::Run),
@@ -52,7 +57,8 @@ pub fn run_as(m: &mut Main, user: Option<&str>, line: &str) -> Result<Message, M
         };
         (f.msgid, text)
     });
-    reply::outcome(&o.text, escape.as_ref().map(|(i, t)| (i.as_str(), t.as_str())))
+    let r = reply::outcome(&o.text, escape.as_ref().map(|(i, t)| (i.as_str(), t.as_str())));
+    Ok((r, o.text))
 }
 
 /// Serve `handler` on `port` with TLS: the certificate `*SYSTEM`

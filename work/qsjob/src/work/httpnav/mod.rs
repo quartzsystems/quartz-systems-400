@@ -13,9 +13,12 @@
 //! the 5250 panels use and runs every change as a CL command with the
 //! job swapped to the signed-on user ([`Link`]).
 
+mod db;
 mod msgs;
 mod parse;
+mod sec;
 mod stubs;
+mod sw;
 mod system;
 mod users;
 mod work;
@@ -101,9 +104,9 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         users: Arc::new(users::LiveUsers { link: l.clone() }),
         config: Arc::new(stubs::Pending(l.clone())),
         net: Arc::new(stubs::Pending(l.clone())),
-        db: Arc::new(stubs::Pending(l.clone())),
-        sec: Arc::new(stubs::Pending(l.clone())),
-        sw: Arc::new(stubs::Pending(l.clone())),
+        db: Arc::new(db::LiveDb { link: l.clone() }),
+        sec: Arc::new(sec::LiveSecurity { link: l.clone() }),
+        sw: Arc::new(sw::LiveSoftware::new(l.clone())),
         perf: Arc::new(stubs::Pending(l.clone())),
     };
     let nav = Arc::new(Navigator::new(env));
