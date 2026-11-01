@@ -132,7 +132,7 @@ fn run_choices(job: &mut Job, host: &Host, d: &mut UimDialog, list: &str, choice
     for c in choices {
         match &c.action {
             Some(uim::model::Action::Cmd(text)) => {
-                let text = crate::panels::with_parms(d, d.substitute(text, Some((&c.list, c.row))));
+                let text = crate::panels::option_command(d, c, text);
                 if let Some(m) = command(job, host, &text) {
                     shown = Some(m);
                 }

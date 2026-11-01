@@ -15,6 +15,9 @@ use crate::console::host::Host;
 use crate::display::surface::Surface;
 use crate::display::uim::Response;
 
+/// The list's views, F11 stepping through them.
+const VIEWS: usize = 3;
+
 /// `WRKSPLF [SELECT(user ...)] [JOB()]`.
 pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
     // The first element of SELECT is the user.
@@ -38,6 +41,7 @@ pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         let rows = files
             .iter()
             .map(|f| {
+                let (date, time) = wm::joblog::stamp_of(f.created);
                 let queue = f.outq.rsplit('/').next().unwrap_or("").to_string();
                 entry(&[
                     ("FILE", f.name.clone()),
@@ -51,6 +55,10 @@ pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                     ("JOB", f.job.0.clone()),
                     ("NUMBER", format!("{:06}", f.job.2)),
                     ("SPLNBR", f.number.to_string()),
+                    ("FORMTYPE", f.formtype.clone()),
+                    ("PTY", f.outpty.to_string()),
+                    ("CRTDATE", date),
+                    ("CRTTIME", time[..8].to_string()),
                 ])
             })
             .collect();
@@ -63,7 +71,12 @@ pub fn wrksplf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                     }
                     Flow::Refresh
                 }
-                Response::Return(10 | 11) => {
+                Response::Return(11) => {
+                    d.view = (d.view + 1) % VIEWS;
+                    d.set("VIEW", &(d.view + 1).to_string());
+                    Flow::Stay
+                }
+                Response::Return(10) => {
                     d.error("CPD9B8B", &[]);
                     Flow::Stay
                 }

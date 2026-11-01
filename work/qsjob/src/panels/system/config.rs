@@ -113,7 +113,7 @@ pub fn wrkcfgsts(
                     for c in &choices {
                         let text = match &c.action {
                             Some(uim::model::Action::Cmd(t)) => {
-                                Ok(d.substitute(t, Some((&c.list, c.row))))
+                                Ok(crate::panels::option_command(&d, c, t))
                             }
                             _ => special(&d, c.row, c.option.trim()),
                         };

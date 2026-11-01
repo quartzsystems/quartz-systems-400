@@ -176,6 +176,10 @@ note = "a panel at a display; the text form in the service otherwise"
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"
 
+[cmd.WRKSPLFA]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
 [cmd.WRKLIB]
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"
@@ -509,6 +513,9 @@ note = "kept in the TCP/IP server table in QUSRSYS; AUTOSTART only (STRTCP start
 [cmd.CHGSMTPA]
 site = "job"
 note = "kept in the TCP/IP server table; only FWDHUBSVR and MAILROUTER act (no SMTP server)"
+
+[cmd.SNDNETSPLF]
+note = "local delivery only: a copy on each TOUSRID user's output queue on this system (lic/slic/src/cpp/splcpp.rs); another system is CPF3496, SNDTCPSPLF sends over TCP/IP; JOBSYSNAME, CRTDATE and DTAFMT are accepted and ignored"
 
 [cmd.SNDTCPSPLF]
 site = "job"

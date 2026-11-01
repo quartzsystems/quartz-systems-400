@@ -29,10 +29,10 @@ fn transform(on: bool, mfrtypmdl: &str, wscst: &[u8]) -> Transform {
 }
 
 /// Where a destination prints through the `print` crate; `None` for the
-/// capture device.
+/// capture device and a printer session.
 pub fn target_of(dest: &WtrDest) -> Option<Target> {
     match dest {
-        WtrDest::Capture => None,
+        WtrDest::Capture | WtrDest::Session { .. } => None,
         WtrDest::Lan {
             host,
             port,
@@ -77,7 +77,7 @@ pub fn job_of(attrs: &SplfAttrs, dest: &WtrDest) -> PrintJob {
     let (chrid, system) = match dest {
         WtrDest::Lan { chrid, .. } => (chrid.clone(), "QS400".to_string()),
         WtrDest::Remote { local_host, .. } => ("*DEVD".to_string(), local_host.clone()),
-        WtrDest::Capture => ("*DEVD".to_string(), "QS400".to_string()),
+        WtrDest::Capture | WtrDest::Session { .. } => ("*DEVD".to_string(), "QS400".to_string()),
     };
     PrintJob {
         file: attrs.name.clone(),

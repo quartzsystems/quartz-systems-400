@@ -207,7 +207,7 @@ fn act(
 ) {
     for c in choices {
         let text = if let Some(Action::Cmd(t)) = &c.action {
-            d.substitute(t, Some((&c.list, c.row)))
+            crate::panels::option_command(d, c, t)
         } else if let Some(t) = special(d, c) {
             t
         } else {

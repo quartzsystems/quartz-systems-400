@@ -709,3 +709,15 @@ fn extended_action_entry() {
         assert_eq!(f.attr, Attr::Reverse, "{at:?}");
     }
 }
+
+#[test]
+fn option_parameters_run_without_the_prompt() {
+    let cmd = "?CHGSPLFA FILE(QSYSPRT) JOB(000225/QSECOFR/QPADEV0001) SPLNBR(1)";
+    assert_eq!(with_option_parms(cmd, ""), cmd);
+    assert_eq!(
+        with_option_parms(cmd, " OUTQ(QS01P01) "),
+        "CHGSPLFA FILE(QSYSPRT) JOB(000225/QSECOFR/QPADEV0001) SPLNBR(1) OUTQ(QS01P01)"
+    );
+    assert_eq!(with_option_parms("HLDSPLF FILE(X)", "OPTION(*IMMED)"), "HLDSPLF FILE(X) OPTION(*IMMED)");
+    assert_eq!(with_option_parms("?CRTX ??A(1) ?*B(2) TEXT('a ?b')", "C(3)"), "CRTX A(1) B(2) TEXT('a ?b') C(3)");
+}

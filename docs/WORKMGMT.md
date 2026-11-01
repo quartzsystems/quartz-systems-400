@@ -866,7 +866,24 @@ length, width, lines and characters per inch, a quarter-inch margin.
 `prtcapture get` shows the text, or the PDF in base64.
 Phase 10 adds LAN printer devices and remote writers (`STRRMTWTR`):
 the writer sends through the `print` crate and a failed send leaves the
-writer in `MSGW` (`docs/PRINT.md`).
+writer in `MSGW` (`docs/PRINT.md`). A TN5250E printer session's
+virtual printer gets each file as an RFC 2877 print job; the file
+completes only when the client took all of it (`docs/TN5250.md`,
+printer sessions). `WRKWTR`'s Printed counts the files a writer
+completed since its `STRPRTWTR`, each once.
+
+`RLSSPLF` makes a held file ready again (or open or closed, when it
+was held so) and a saved one ready, to print from its first page; any
+other file is `CPF3337`. `WRKSPLFA` shows one file's attributes
+(`QGSPSPLA`). `SNDNETSPLF FILE() TOUSRID((user system))` delivers on
+this system only: a copy of the file on each user's output queue (the
+profile's `OUTQ`; `*WRKSTN` and `*DEV` are `QGPL/QPRINT`), owned by
+that user under job `QPRTJOB` number 0, ready; the file sent stays. A
+system other than this one (`QSYSNAME`) is refused with `CPF3496`,
+which points to `SNDTCPSPLF`. Left out: delivery to other systems
+(SNA distribution), `JOBSYSNAME`, `CRTDATE` and `DTAFMT`, which are
+accepted and ignored, and the receiving user's `QPRTJOB` being a job
+of its own.
 
 ### The SCS subset
 

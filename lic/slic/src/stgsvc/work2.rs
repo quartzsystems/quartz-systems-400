@@ -117,6 +117,7 @@ pub fn data(
         "SPLF" => {
             super::splcmd::panel_lines(system, me.number, arg(0), arg(1), arg(2), arg(3) == "*HEX")
         }
+        "SPLFA" => super::splcmd::attrs_panel(system, me.number, arg(0), arg(1), arg(2)),
         "OBJLCK" => objlck(system, arg(0), arg(1)),
         "PGP" => pgp(system, arg(0)),
         "PFM" => pfm(system, arg(0), arg(1)),

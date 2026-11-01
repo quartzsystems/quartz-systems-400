@@ -487,6 +487,37 @@ impl SplfAttrs {
         Ok(())
     }
 
+    /// `RLSSPLF`: a held file goes back to what it was (ready, or open
+    /// or closed when held so), a saved one to ready, to print again
+    /// from its first page. False, and nothing changed, for any other
+    /// status.
+    pub fn release(&mut self) -> bool {
+        self.status = match (self.status, self.held_from) {
+            (Status::Hld, Status::Opn | Status::Clo) => self.held_from,
+            (Status::Hld | Status::Sav, _) => Status::Rdy,
+            _ => return false,
+        };
+        self.last_page = 0;
+        true
+    }
+
+    /// The copy `SNDNETSPLF` puts on `user`'s queue on this system:
+    /// the same data and attributes, owned by `user` (job `QPRTJOB`),
+    /// on `outq` (the profile's `OUTQ`; `*WRKSTN` and `*DEV` are
+    /// `QGPL/QPRINT`, as a job's), ready to print once closed.
+    #[must_use]
+    pub fn net_copy(&self, user: &str, outq: &str) -> Self {
+        let outq = if outq.is_empty() || outq.starts_with('*') { "QGPL/QPRINT" } else { outq };
+        Self {
+            job: ("QPRTJOB".into(), user.to_ascii_uppercase(), 0),
+            outq: outq.to_string(),
+            writer: String::new(),
+            last_page: 0,
+            schedule: Schedule::Immed,
+            ..self.clone()
+        }
+    }
+
     /// `WRKSPLFA` as text.
     #[must_use]
     pub fn describe(&self) -> String {
@@ -537,6 +568,35 @@ impl SplfAttrs {
         );
         out
     }
+}
+
+/// Why `SNDNETSPLF`'s `TOUSRID` cannot be delivered here.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum NetSend {
+    /// No user named.
+    NoUser,
+    /// A system other than this one: its name.
+    Remote(String),
+}
+
+/// The users of `TOUSRID((user system) ...)`, every system `local`
+/// (this system's name).
+pub fn net_users(tousrid: &str, local: &str) -> std::result::Result<Vec<String>, NetSend> {
+    let local = local.trim().to_ascii_uppercase();
+    let flat = tousrid.replace(['(', ')'], " ");
+    let words: Vec<String> = flat.split_whitespace().map(str::to_ascii_uppercase).collect();
+    if words.is_empty() {
+        return Err(NetSend::NoUser);
+    }
+    let mut users = Vec::new();
+    for pair in words.chunks(2) {
+        match pair {
+            [user, sys] if *sys == local => users.push(user.clone()),
+            [_, sys] => return Err(NetSend::Remote(sys.clone())),
+            _ => return Err(NetSend::NoUser),
+        }
+    }
+    Ok(users)
 }
 
 /// Write a new spooled file's attributes into its object.
@@ -629,5 +689,61 @@ mod tests {
             .unwrap();
         assert_eq!((b.copies, b.prtqlty, b.save), (3, 2, true));
         assert!(b.describe().contains("*NLQ"));
+    }
+
+    #[test]
+    fn sndnetsplf_local_delivery() {
+        assert_eq!(net_users("((BOB QS400))", "QS400"), Ok(vec!["BOB".to_string()]));
+        assert_eq!(
+            net_users("((bob qs400) (ann QS400))", "qs400 "),
+            Ok(vec!["BOB".to_string(), "ANN".to_string()])
+        );
+        assert_eq!(net_users("((BOB OTHER))", "QS400"), Err(NetSend::Remote("OTHER".into())));
+        assert_eq!(net_users("((BOB QS400) (ANN OTHER))", "QS400"), Err(NetSend::Remote("OTHER".into())));
+        assert_eq!(net_users("", "QS400"), Err(NetSend::NoUser));
+        assert_eq!(net_users("((BOB))", "QS400"), Err(NetSend::NoUser));
+        let a = SplfAttrs {
+            name: "QSYSPRT".into(),
+            job: ("QPADEV0001".into(), "QSECOFR".into(), 225),
+            status: Status::Sav,
+            outq: "QUSRSYS/QS01P01".into(),
+            writer: "QS01P01".into(),
+            pages: 2,
+            last_page: 2,
+            ..SplfAttrs::default()
+        };
+        let c = a.net_copy("bob", "QGPL/BOBQ");
+        assert_eq!(c.job, ("QPRTJOB".into(), "BOB".into(), 0));
+        assert_eq!((c.outq.as_str(), c.writer.as_str(), c.last_page, c.pages), ("QGPL/BOBQ", "", 0, 2));
+        assert_eq!(c.schedule, Schedule::Immed);
+        assert_eq!(a.net_copy("BOB", "*WRKSTN").outq, "QGPL/QPRINT");
+        assert_eq!(a.net_copy("BOB", "*DEV").outq, "QGPL/QPRINT");
+        // The original is untouched.
+        assert_eq!(a.job.1, "QSECOFR");
+    }
+
+    #[test]
+    fn release() {
+        let mut a = SplfAttrs {
+            status: Status::Sav,
+            last_page: 3,
+            pages: 3,
+            ..SplfAttrs::default()
+        };
+        assert!(a.release());
+        assert_eq!((a.status, a.last_page), (Status::Rdy, 0));
+        a.status = Status::Hld;
+        a.held_from = Status::Rdy;
+        assert!(a.release());
+        assert_eq!(a.status, Status::Rdy);
+        a.status = Status::Hld;
+        a.held_from = Status::Opn;
+        assert!(a.release());
+        assert_eq!(a.status, Status::Opn);
+        for s in [Status::Rdy, Status::Wtr, Status::Opn, Status::Clo] {
+            a.status = s;
+            assert!(!a.release());
+            assert_eq!(a.status, s);
+        }
     }
 }

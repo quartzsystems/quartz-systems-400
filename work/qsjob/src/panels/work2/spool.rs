@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `WRKOUTQD` (`QGSPDSPQD`) and the spooled file viewer `DSPSPLF`
-//! (`QGSPDSPF`).
+//! `WRKOUTQD` (`QGSPDSPQD`), `WRKSPLFA` (`QGSPSPLA`) and the spooled
+//! file viewer `DSPSPLF` (`QGSPDSPF`).
 
 use cmd::Resolved;
 use mi::Job;
@@ -39,6 +39,27 @@ pub fn wrkoutqd(
                 );
                 load(&mut d, "", fetch(host, "OUTQD", &[&q])?);
             }
+            _ => return Ok(String::new()),
+        }
+    }
+}
+
+/// `WRKSPLFA FILE() JOB() SPLNBR()`: the file's attributes; F5 reads
+/// them again.
+pub fn wrksplfa(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+    let file = parm(r, "FILE").unwrap_or_default();
+    let jobq = parm(r, "JOB").filter(|j| j != "*").unwrap_or_default();
+    let nbr = match parm(r, "SPLNBR").unwrap_or_default().as_str() {
+        "0" => "*ONLY".to_string(),
+        "-1" => "*LAST".to_string(),
+        n => n.to_string(),
+    };
+    let args = [file.as_str(), jobq.as_str(), nbr.as_str()];
+    let mut d = dialog(host, "QGSPSPLA")?;
+    load(&mut d, "", fetch(host, "SPLFA", &args)?);
+    loop {
+        match show(&mut d, surface, "WRKSPLFA")? {
+            Response::Return(5) => load(&mut d, "", fetch(host, "SPLFA", &args)?),
             _ => return Ok(String::new()),
         }
     }

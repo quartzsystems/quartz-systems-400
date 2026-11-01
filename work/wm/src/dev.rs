@@ -39,11 +39,18 @@ pub enum ToDevice {
     },
     /// The job is done with the display.
     Release,
+    /// A printer record (RFC 2877), header and data, for a printer
+    /// session to send as it is.
+    Print {
+        /// The record.
+        record: Vec<u8>,
+    },
 }
 
 wire_enum!(ToDevice {
     0 => Write { opcode, data },
     1 => Release,
+    2 => Print { record },
 });
 
 /// From the session to the job.
@@ -67,12 +74,18 @@ pub enum FromDevice {
     /// The connection is gone; the session decides what becomes of
     /// the job (`QDEVRCYACN`).
     Gone,
+    /// A printer session's record from the client, as it arrived.
+    Printed {
+        /// The record.
+        record: Vec<u8>,
+    },
 }
 
 wire_enum!(FromDevice {
     0 => Record { flags, opcode, data },
     1 => Reset { device },
     2 => Gone,
+    3 => Printed { record },
 });
 
 /// The key numbers a job's display answers with: `0` for Enter, `1`

@@ -6478,6 +6478,49 @@ help = "Correct what the message names and try the request again."
 vars = []
 
 [[msg]]
+id = "CPC3302"
+sev = 0
+text = "Spooled file &1 number &2 of job &3 released."
+help = "The file is ready: a writer for its output queue prints it from its first page."
+vars = ["*CHAR 10", "*CHAR 6", "*CHAR 28"]
+
+[[msg]]
+id = "CPF3337"
+sev = 40
+text = "Spooled file not released: it is neither held nor saved."
+help = "Only a held file or a saved file can be released. Hold the file first, or wait until it is saved after printing."
+vars = []
+
+[[msg]]
+id = "CPC3303"
+sev = 0
+text = "Spooled file &1 number &2 sent to &3 on system &4."
+help = "A copy of the file is on the output queue of each user named, owned by that user and ready to print. The file sent stays where it was."
+vars = ["*CHAR 10", "*CHAR 6", "*CHAR 10", "*CHAR 8"]
+
+[[msg]]
+id = "CPF3496"
+sev = 40
+text = "Spooled file not sent: a user is on another system."
+help = "SNDNETSPLF delivers to users on this system only. Name this system in TOUSRID, or send the file over TCP/IP with SNDTCPSPLF."
+vars = []
+
+[[msg]]
+id = "CPA3388"
+sev = 99
+text = "Writer &1 could not print file &2 number &3 on device &4. Reply (C H R)."
+help = "The printer session answered with an error, diagnostic &5: &6. The file is ready again and is not counted as printed. Reply R to print it again from the start, H to hold it and go on with the next file, or C to end the writer."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 10", "*CHAR 8", "*CHAR 64"]
+reply = { default = "R", valid = ["C", "H", "R"] }
+
+[[msg]]
+id = "CPF3429"
+sev = 40
+text = "The printer session of device &4 ended while writer &1 printed file &2 number &3."
+help = "The file is ready again and is not counted as printed. It prints from the start when a printer session holds the device again."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 10"]
+
+[[msg]]
 id = "CPF3501"
 sev = 40
 text = "A job cannot service itself."

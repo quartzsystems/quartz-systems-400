@@ -390,6 +390,39 @@ pub const CMDLINE_VAR: &str = "*CMDLINE";
 /// command").
 pub const OPTION_PARMS_VAR: &str = "*OPTPARMS";
 
+/// An option's command with the parameters typed on the command line.
+/// With parameters it runs as it is: the prompt (`?` before the name)
+/// and selective prompts (`??KWD`, `?*KWD`, ...) are taken out. Without,
+/// the command is unchanged.
+#[must_use]
+pub fn with_option_parms(cmd: &str, parms: &str) -> String {
+    let parms = parms.trim();
+    if parms.is_empty() {
+        return cmd.to_string();
+    }
+    let mut out = String::with_capacity(cmd.len() + parms.len() + 1);
+    let mut quoted = false;
+    let mut chars = cmd.trim().chars().peekable();
+    let mut start = true;
+    while let Some(ch) = chars.next() {
+        if ch == '\'' {
+            quoted = !quoted;
+        }
+        if start && !quoted && ch == '?' {
+            // `?` alone before the name; `??`, `?*`, `?<`, `?>`, `?/`,
+            // `?-`, `?&` before a keyword.
+            if chars.peek().is_some_and(|n| "?*<>/-&".contains(*n)) {
+                chars.next();
+            }
+            start = false;
+            continue;
+        }
+        start = !quoted && ch == ' ';
+        out.push(ch);
+    }
+    format!("{} {parms}", out.trim_end())
+}
+
 /// The dialog of one panel group.
 #[allow(clippy::struct_excessive_bools)] // independent switches
 pub struct Engine {

@@ -52,6 +52,7 @@ pub fn run(
         "WRKSYSACT" => sys::wrksysact(job, host, surface),
         "WRKSHRPOOL" => sys::wrkshrpool(job, host, surface),
         "WRKOUTQD" => spool::wrkoutqd(job, host, surface, r),
+        "WRKSPLFA" => spool::wrksplfa(host, surface, r),
         "DSPSPLF" => spool::dspsplf(host, surface, r),
         "WRKLIB" => objs::wrklib(job, host, surface, r),
         "WRKOBJLCK" => objs::wrkobjlck(job, host, surface, r),
@@ -262,11 +263,7 @@ fn work(
                 let mut step = Step::Reload;
                 for c in &choices {
                     if let Some(Action::Cmd(t)) = &c.action {
-                        let text = if c.is_ext() {
-                            crate::panels::ext_command(d, c, t)
-                        } else {
-                            d.substitute(t, Some((&c.list, c.row)))
-                        };
+                        let text = crate::panels::option_command(d, c, t);
                         exec(job, host, d, &text);
                     } else if let Step::Leave =
                         keys(job, host, surface, d, Response::Options(vec![c.clone()]))?

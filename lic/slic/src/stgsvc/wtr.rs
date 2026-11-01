@@ -7,8 +7,10 @@
 //! subsystem; the job asks for the next ready file on its queue, prints
 //! it and says so. The capture device's writer prints into the store: a
 //! user space `QSPL/CPnnnnnnnn` per file with its text and its PDF,
-//! which `prtcapture` reads. `MIGRATE(phase10)`: real printers and
-//! remote writers.
+//! which `prtcapture` reads. A file is complete, counted and saved or
+//! deleted, only once the writer says the device took all of it; a
+//! printer session's refusal leaves it ready and the writer on an
+//! inquiry (`device_error`).
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -24,35 +26,13 @@ use wm::wtr::{WtrDest, WtrStep};
 use super::spool::{self, with_outq, with_store};
 use crate::ipl::system::{System, now_unix};
 
-/// A started writer.
-#[derive(Clone, Debug)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct Writer {
-    /// The device.
-    pub dev: String,
-    /// The queue it prints, `lib/name`.
-    pub outq: String,
-    /// Its job's number.
-    pub job: u32,
-    /// `HLDWTR`.
-    pub held: bool,
-    /// `ENDWTR`: end after the file in hand.
-    pub ending: bool,
-    /// `FORMTYPE`: `*ALL` or a form type.
-    pub formtype: String,
-    /// `FILESEP`.
-    pub filesep: u16,
-    /// `AUTOEND(*YES)`: end when the queue is empty.
-    pub autoend: bool,
-    /// The file being printed.
-    pub current: Option<u32>,
-    /// Files printed.
-    pub printed: u32,
-    /// A remote writer (`STRRMTWTR`): it prints a remote output queue.
-    pub remote: bool,
-    /// The message it waits on after a failed send.
-    pub msgw: Option<String>,
-}
+pub use wm::wtr::Writer;
+use wm::wtr::AfterReply;
+
+/// The inquiry a writer sends when its printer session refuses a file.
+pub const DEVICE_ERROR: &str = "CPA3388";
+/// The message when a printer session goes while a file prints.
+pub const SESSION_LOST: &str = "CPF3429";
 
 /// Every started writer, by name.
 pub type Writers = BTreeMap<String, Writer>;
@@ -194,23 +174,13 @@ fn start(
         oq.writer = name.to_string();
         Ok(((), true))
     })?;
-    system.writers.insert(
-        name.to_string(),
-        Writer {
-            dev: dev.to_string(),
-            outq: real.clone(),
-            job,
-            held: false,
-            ending: false,
-            formtype: formtype(p),
-            filesep: p.upper("FILESEP").and_then(|n| n.parse().ok()).unwrap_or(0),
-            autoend: p.upper("AUTOEND").is_some_and(|a| a.trim_start_matches('(').starts_with("*YES")),
-            current: None,
-            printed: 0,
-            remote,
-            msgw: None,
-        },
-    );
+    // A new writer starts its Printed count at zero.
+    let mut w = Writer::started(dev, &real, job);
+    w.formtype = formtype(p);
+    w.filesep = p.upper("FILESEP").and_then(|n| n.parse().ok()).unwrap_or(0);
+    w.autoend = p.upper("AUTOEND").is_some_and(|a| a.trim_start_matches('(').starts_with("*YES"));
+    w.remote = remote;
+    system.writers.insert(name.to_string(), w);
     Ok(format!(
         "Writer {name} submitted as job {job:06}/QSPLJOB/{name} to print output queue {real}.\n"
     ))
@@ -265,6 +235,9 @@ pub fn target(system: &mut System, name: &str) -> Result<WtrDest, String> {
         });
     }
     let d = device(system, &w.dev)?;
+    if d.devcls == "*VRT" && d.is_printer() {
+        return Ok(WtrDest::Session { device: w.dev.clone() });
+    }
     let Some(l) = d.printer.filter(lan_ip) else {
         return Ok(WtrDest::Capture);
     };
@@ -339,6 +312,95 @@ pub fn failed(
     };
     let _ = super::msgs::send(system, "QSYS", "QSYSOPR", m);
     Ok(())
+}
+
+/// Writer `name`'s printer session did not take spooled file `id`: the
+/// file is ready again and nothing is counted. A lost session gets a
+/// message to the device's message queue (the session that ends ends
+/// the writer; one that takes the device again finds the file ready).
+/// A refusal gets an inquiry there with the client's diagnostic, and
+/// the writer waits in `MSGW` for its reply.
+pub fn device_error(
+    system: &mut System,
+    name: &str,
+    id: u32,
+    lost: bool,
+    text: &str,
+    diag: &str,
+) -> Result<(), String> {
+    let Some(w) = system.writers.get_mut(name) else {
+        return Err(format!("CPF3313 writer {name} is not started"));
+    };
+    w.stopped();
+    let (dev, job) = (w.dev.clone(), w.job);
+    spool::update(system, id, |a: &mut SplfAttrs| {
+        if a.status == Status::Wtr {
+            a.status = Status::Rdy;
+        }
+        a.writer.clear();
+        Ok(())
+    })?;
+    let (file, number) = system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| (e.attrs.name.clone(), e.attrs.number))
+        .unwrap_or_default();
+    let msgq = device(system, &dev)
+        .ok()
+        .map(|d| d.msgq)
+        .filter(|q| !q.is_empty())
+        .unwrap_or_else(|| "QSYS/QSYSOPR".into());
+    let (lib, q) = super::msgs::queue_name(&msgq);
+    let number = format!("{number:06}");
+    let mut fields: Vec<(&str, usize)> = vec![(name, 10), (&file, 10), (&number, 6), (&dev, 10)];
+    let msgid = if lost { SESSION_LOST } else { DEVICE_ERROR };
+    if !lost {
+        fields.push((diag, 8));
+        fields.push((text, 64));
+    }
+    let data = cmd::error::data(&fields);
+    let mut m = wm::obj::msgq::QMsg {
+        msgid: msgid.into(),
+        msgf: ("QCPFMSG".into(), "QSYS".into()),
+        severity: 40,
+        text: super::hist::message_text(msgid, &data),
+        data,
+        job: (name.to_string(), "QSPLJOB".into(), job),
+        from_pgm: "QSPWTR".into(),
+        ..wm::obj::msgq::QMsg::default()
+    };
+    if !lost {
+        m.kind = wm::obj::msgq::MsgKind::Inq;
+        m.severity = 99;
+        m.dft = "R".into();
+        m.reply_to = (q.clone(), lib.clone());
+    }
+    let key = super::msgs::send(system, &lib, &q, m)?;
+    if !lost && let Some(w) = system.writers.get_mut(name) {
+        w.ask(DEVICE_ERROR, &format!("{lib}/{q}"), key, id);
+    }
+    Ok(())
+}
+
+/// The reply to inquiry `key` on `queue` (`lib/name`), taken; `None`
+/// while it waits. An inquiry no longer on the queue counts as
+/// answered with its default.
+fn take_reply(system: &mut System, queue: &str, key: u32) -> Option<String> {
+    use wm::obj::msgq::Status as M;
+    let (lib, name) = super::msgs::queue_name(queue);
+    super::msgs::with_queue(system, "msgq.receive", &lib, &name, |q, _| {
+        let Some(m) = q.msgs.iter().find(|m| m.key == key) else {
+            return Ok((Some(String::new()), false));
+        };
+        if m.status == M::Unanswered {
+            return Ok((None, false));
+        }
+        let (reply, rk) = (m.reply.clone(), m.reply_key);
+        let _ = q.receive(None, Some(rk), false);
+        Ok((Some(reply), true))
+    })
+    .unwrap_or(Some(String::new()))
 }
 
 /// `ENDWTR`, `HLDWTR`, `RLSWTR`, `CHGWTR`.
@@ -418,8 +480,14 @@ pub fn wrkwtr(system: &System) -> String {
             "     {name:<10}  {kind}   {:<10}  {status:<4}  {:<10}  {q:<12}  {lib:<10}  {:>7}",
             w.dev, w.formtype, w.printed
         );
-        if let Some(m) = &w.msgw {
-            let _ = writeln!(out, "       waiting after {m}; the writer tries again");
+        match (&w.msgw, &w.inquiry) {
+            (Some(m), Some((q, _, _))) => {
+                let _ = writeln!(out, "       waiting for the reply to {m} on {q}");
+            }
+            (Some(m), None) => {
+                let _ = writeln!(out, "       waiting after {m}; the writer tries again");
+            }
+            _ => {}
         }
     }
     if system.writers.is_empty() {
@@ -435,6 +503,25 @@ pub fn next(system: &mut System, name: &str) -> WtrStep {
     };
     if w.ending {
         return WtrStep::End;
+    }
+    if let Some((q, key, _)) = w.inquiry.clone() {
+        let Some(reply) = take_reply(system, &q, key) else {
+            return WtrStep::MsgWait;
+        };
+        let after = system.writers.get_mut(name).map(|w| w.answered(&reply));
+        match after {
+            Some(AfterReply::End) | None => return WtrStep::End,
+            Some(AfterReply::Hold(id)) => {
+                let _ = spool::update(system, id, |a: &mut SplfAttrs| {
+                    if a.status == Status::Rdy {
+                        a.held_from = Status::Rdy;
+                        a.status = Status::Hld;
+                    }
+                    Ok(())
+                });
+            }
+            Some(AfterReply::Go) => {}
+        }
     }
     if w.held {
         return WtrStep::Wait;
@@ -494,6 +581,10 @@ pub fn printed(
         .get(&id)
         .map(|e| e.attrs.clone())
         .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
+    // Only the file this writer has in hand completes.
+    if attrs.status != Status::Wtr || attrs.writer != name {
+        return Err(format!("CPF3330 spooled file {} is not printing on writer {name}", attrs.name));
+    }
     if let Some(w) = system.writers.get_mut(name) {
         w.msgw = None;
     }
@@ -532,11 +623,11 @@ fn capture(system: &mut System, id: u32, attrs: &SplfAttrs, text: &str, pdf: &[u
     })
 }
 
-/// The file is printed: counted, then saved or deleted.
+/// The file is printed (the device took all of it): counted once,
+/// then saved or deleted.
 fn finish(system: &mut System, name: &str, id: u32, attrs: &SplfAttrs) -> Result<(), String> {
     if let Some(w) = system.writers.get_mut(name) {
-        w.current = None;
-        w.printed += 1;
+        w.completed();
     }
     if attrs.save {
         spool::update(system, id, |a| {

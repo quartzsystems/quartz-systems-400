@@ -4,6 +4,7 @@
 
 //! TN5250E for QS/400: the telnet option negotiation of RFC 854, 1091,
 //! 1572, 2877 and 4777 (`telnet`), the 5250 record framing (`record`),
+//! the printer records (`print`),
 //! the start-up response record (`startup`), the data stream codec
 //! (`ds`), a client-side terminal that applies
 //! the outbound stream and answers it (`term`), and the server-side
@@ -16,6 +17,7 @@
 
 pub mod ds;
 pub mod error;
+pub mod print;
 pub mod record;
 pub mod screen;
 pub mod startup;

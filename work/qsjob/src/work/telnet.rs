@@ -990,9 +990,10 @@ fn exit(ask: &Sender<Ask>, point: &'static str, req: ExitRequest) -> ExitAnswer 
 }
 
 /// A printer session: the named printer device, its writer started,
-/// and the writer's records (SCS) carried to the client until the
-/// connection drops. `BLOCKED(phase8)`: the printer record framing is
-/// RFC 2877 as read, unverified against a real printer client.
+/// and the writer's print records (RFC 2877, built by
+/// `tn5250::print`) carried to the client and the client's responses
+/// back, until the connection drops. The writer of a session that
+/// ended earlier may still be ending: it is waited for, then started.
 #[allow(clippy::too_many_arguments)]
 fn printer_session(
     tr: &Transport,
@@ -1020,12 +1021,7 @@ fn printer_session(
     let _ = std::fs::remove_file(&path);
     let listener = UnixListener::bind(&path).map_err(|e| format!("{path}: {e}"))?;
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
-    let started = link
-        .exec(format!("STRPRTWTR DEV({device}) WTR({device})"))
-        .map_err(|e| e.to_string())?;
-    if started.text.lines().next().is_some_and(|l| l.starts_with("CPF") && !l.starts_with("CPF3313")) {
-        eprintln!("qsjob: QTVDEVICE: {device}: {}", started.text.trim());
-    }
+    start_writer(link, &device)?;
     let mut writer: Option<Chan> = None;
     let r = loop {
         if writer.is_none() {
@@ -1041,6 +1037,7 @@ fn printer_session(
         }
         if let Some(w) = writer.as_mut() {
             match w.recv::<ToDevice>() {
+                Ok(ToDevice::Print { record }) => tr.send(telnet::record(&record))?,
                 Ok(ToDevice::Write { opcode, data }) => tr.record(opcode, data)?,
                 Err(ipc::WireError::Io(ref e))
                     if matches!(
@@ -1056,13 +1053,10 @@ fn printer_session(
                 if !reply.is_empty() {
                     tr.send(reply)?;
                 }
-                for b in records {
-                    if let (Ok(r), Some(w)) = (Record::decode(&b), writer.as_mut()) {
-                        let _ = w.send(&FromDevice::Record {
-                            flags: r.flags,
-                            opcode: r.opcode,
-                            data: r.data,
-                        });
+                // The client's responses go to the writer as they came.
+                for record in records {
+                    if let Some(w) = writer.as_mut() {
+                        let _ = w.send(&FromDevice::Printed { record });
                     }
                 }
             }
@@ -1077,6 +1071,34 @@ fn printer_session(
     let _ = link.exec(format!("ENDWTR WTR({device}) OPTION(*IMMED)"));
     let _ = link.device_status(device, 1);
     r
+}
+
+/// Start writer `device` for a printer session. A writer of that name
+/// that is ending (its session's `ENDWTR`) is waited for, up to 30
+/// seconds; one that runs on serves this session from its next file.
+fn start_writer(link: &mut Link, device: &str) -> Result<(), String> {
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        let started = link
+            .exec(format!("STRPRTWTR DEV({device}) WTR({device})"))
+            .map_err(|e| e.to_string())?;
+        let first = started.text.lines().next().unwrap_or("").to_string();
+        if !first.starts_with("CPF3313") {
+            if first.starts_with("CPF") {
+                eprintln!("qsjob: QTVDEVICE: {device}: {}", started.text.trim());
+            }
+            return Ok(());
+        }
+        let ending = link
+            .wtr_list()
+            .map_err(|e| e.to_string())?
+            .iter()
+            .any(|w| w.0 == device && w.2 == "END");
+        if !ending || Instant::now() >= deadline {
+            return Ok(());
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
 }
 
 fn seed() -> [u8; 8] {
@@ -1477,7 +1499,8 @@ fn hold(
         n,
         move |m| match m {
             ToDevice::Write { opcode, data } => Ev::Write(n, opcode, data),
-            ToDevice::Release => Ev::Release,
+            // A display job sends no printer records.
+            ToDevice::Release | ToDevice::Print { .. } => Ev::Release,
         },
     );
     relay::<FromJob>(

@@ -922,6 +922,17 @@ impl Service for Served<'_> {
         super::wtr::failed(self.system, &name, id, &msgid, &text, hold)
     }
 
+    fn wtr_device_error(
+        &mut self,
+        name: String,
+        id: u32,
+        lost: bool,
+        text: String,
+        diag: String,
+    ) -> Result<(), String> {
+        super::wtr::device_error(self.system, &name, id, lost, &text, &diag)
+    }
+
     fn wtr_printed(
         &mut self,
         name: String,

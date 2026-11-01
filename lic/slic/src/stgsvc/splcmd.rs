@@ -472,6 +472,97 @@ fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     Ok(format!("{n} records copied to file {name} in {lib}.\n"))
 }
 
+/// `RLSSPLF`'s completion message.
+pub const RELEASED: &str = "CPC3302";
+/// A file `RLSSPLF` cannot release: neither held nor saved.
+pub const NOT_HELD: &str = "CPF3337";
+
+/// Release spooled file `id` (`SplfAttrs::release`); `CPF3337` when it
+/// is neither held nor saved. The file's attributes after.
+fn release(system: &mut System, id: u32) -> Result<SplfAttrs, String> {
+    let a = system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| e.attrs.clone())
+        .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
+    if !a.clone().release() {
+        return Err(format!(
+            "{NOT_HELD} Spooled file {} number {} is {}, neither held nor saved.",
+            a.name,
+            a.number,
+            a.status.code()
+        ));
+    }
+    spool::update(system, id, |a| {
+        a.release();
+        Ok(())
+    })?;
+    Ok(system.spool.files.get(&id).map(|e| e.attrs.clone()).unwrap_or(a))
+}
+
+/// `RLSSPLF FILE JOB SPLNBR` for its processing program: the file,
+/// its number and its job.
+pub fn rlssplf(system: &mut System, me: u32, line: &str) -> Result<(String, u32, String), String> {
+    let p = Params::parse(line);
+    let id = target(system, me, &p)?;
+    may_spool(system, id, false)?;
+    sf(system, id, "L");
+    let a = release(system, id)?;
+    Ok((a.name.clone(), a.number, a.job_text()))
+}
+
+/// `SNDNETSPLF`'s completion message.
+pub const SENT: &str = "CPC3303";
+/// `SNDNETSPLF` to a system other than this one.
+pub const NOT_LOCAL: &str = "CPF3496";
+
+/// `SNDNETSPLF FILE TOUSRID((user system)) JOB SPLNBR [DTAFMT]`: a copy
+/// of the file on each user's output queue on this system (the
+/// profile's `OUTQ`; `*WRKSTN` and `*DEV` resolve to `QGPL/QPRINT`, as
+/// a job's do), owned by that user, ready to print; the original
+/// stays. A system other than this one is refused (`CPF3496`):
+/// `SNDTCPSPLF` sends over TCP/IP. `JOBSYSNAME`, `CRTDATE` and
+/// `DTAFMT` are accepted and change nothing. The file, its number and
+/// the users it went to.
+pub fn sndnetsplf(system: &mut System, me: u32, line: &str) -> Result<(String, u32, Vec<String>), String> {
+    use wm::obj::splf::{NetSend, net_users};
+    let p = Params::parse(line);
+    let local = system.system_name();
+    let users = match net_users(&p.upper("TOUSRID").unwrap_or_default(), &local) {
+        Ok(u) => u,
+        Err(NetSend::NoUser) => return Err("CPD0071 TOUSRID needs a user and a system".into()),
+        Err(NetSend::Remote(sys)) => {
+            return Err(format!(
+                "{NOT_LOCAL} System {sys} is not this system ({local}); use SNDTCPSPLF to send over TCP/IP."
+            ));
+        }
+    };
+    let id = target(system, me, &p)?;
+    may_spool(system, id, true)?;
+    sf(system, id, "R");
+    let (a, data) = spool::data(system, id)?;
+    let mut sent = Vec::new();
+    // Every user is checked before anything is sent.
+    for user in &users {
+        let found = with_store(system, |txn, qsys| {
+            sec::profile::objects::read(txn, qsys, user).map_err(|e| e.to_string())
+        });
+        if found.is_err() {
+            return Err(format!("CPF2204 User profile {user} not found."));
+        }
+    }
+    for user in users {
+        let q = super::jobs::user_dft(system, &user).outq;
+        let copy = a.net_copy(&user, &q);
+        let nid = spool::create(system, copy)?;
+        spool::append(system, nid, &data, a.pages, a.records)?;
+        spool::close(system, nid, false)?;
+        sent.push(user);
+    }
+    Ok((a.name.clone(), a.number, sent))
+}
+
 /// `CHGSPLFA`, `HLDSPLF`, `RLSSPLF`, `DLTSPLF`, `WRKSPLFA`.
 fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
@@ -516,16 +607,8 @@ fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String
             Ok(format!("Spooled file {name} held.\n"))
         }
         "rlssplf" => {
-            spool::update(system, id, |a| {
-                if a.status == Status::Hld {
-                    a.status = match a.held_from {
-                        Status::Opn | Status::Clo => a.held_from,
-                        _ => Status::Rdy,
-                    };
-                }
-                Ok(())
-            })?;
-            Ok(format!("Spooled file {name} released.\n"))
+            let a = release(system, id)?;
+            Ok(format!("{RELEASED} Spooled file {name} number {} released.\n", a.number))
         }
         "wrksplfa" => Ok(system
             .spool
@@ -566,6 +649,75 @@ pub fn command(
         "chgsplfa" | "hldsplf" | "rlssplf" | "dltsplf" | "wrksplfa" => file_op(system, me, cmd, &p),
         _ => return None,
     })
+}
+
+/// `WRKSPLFA` as panel data (`QGSPSPLA`): the file's attributes, the
+/// job that made it and when, and the writer printing it.
+pub fn attrs_panel(
+    system: &mut System,
+    me: u32,
+    file: &str,
+    job: &str,
+    splnbr: &str,
+) -> Result<stg::proto::PanelData, String> {
+    let mut line = format!("wrksplfa {}", file.trim());
+    if !job.trim().is_empty() {
+        let _ = write!(line, " JOB({})", job.trim());
+    }
+    if !splnbr.trim().is_empty() {
+        let _ = write!(line, " SPLNBR({})", splnbr.trim());
+    }
+    let p = Params::parse(&line);
+    let id = target(system, me, &p)?;
+    may_spool(system, id, true)?;
+    let a = system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| e.attrs.clone())
+        .ok_or_else(|| format!("CPF3309 no spooled file {file}"))?;
+    Ok((attr_vars(&a), Vec::new()))
+}
+
+/// `WRKSPLFA`'s variables of a file.
+fn attr_vars(a: &SplfAttrs) -> Vec<(String, String)> {
+    let (date, time) = wm::joblog::stamp_of(a.created);
+    let (qlib, q) = qualified(&a.outq);
+    let star = |s: &str, none: &str| if s.trim().is_empty() { none.to_string() } else { s.to_string() };
+    [
+        ("FILE", a.name.clone()),
+        ("JOB", a.job.0.clone()),
+        ("USER", a.job.1.clone()),
+        ("NUMBER", format!("{:06}", a.job.2)),
+        ("SPLNBR", a.number.to_string()),
+        ("CRTDATE", date),
+        ("CRTTIME", time[..8].to_string()),
+        ("STATUS", a.status.code().to_string()),
+        ("OUTQ", q),
+        ("OUTQLIB", qlib),
+        ("DEVICE", star(&a.writer, "*NONE")),
+        ("OUTPTY", a.outpty.to_string()),
+        ("PAGES", a.pages.to_string()),
+        ("CURPAGE", a.last_page.to_string()),
+        ("COPIES", a.copies.to_string()),
+        ("COPIESLEFT", a.copies_left.max(1).to_string()),
+        ("FORMTYPE", star(&a.formtype, "*STD")),
+        ("USRDTA", a.usrdta.clone()),
+        ("SAVE", if a.save { "*YES" } else { "*NO" }.to_string()),
+        ("SCHEDULE", a.schedule.name().to_string()),
+        ("RECORDS", a.records.to_string()),
+        ("PRTF", a.prtf.clone()),
+        ("DEVTYPE", a.devtype.clone()),
+        ("PAGESIZE", format!("{} by {}", a.page_len, a.page_width)),
+        ("LPI", a.lpi.to_string()),
+        ("CPI", a.cpi.to_string()),
+        ("OVRFLW", a.ovrflw.to_string()),
+        ("EXPDATE", if a.expires == 0 { "*NONE".to_string() } else { a.expires.to_string() }),
+        ("USRDFNDTA", star(&a.usrdfndta, "*NONE")),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_string(), v))
+    .collect()
 }
 
 /// `DSPSPLF` as panel data (`work2`): the file's name, job and pages,
