@@ -195,7 +195,8 @@ now, refreshed every half second.
 `ADMIN` (role `HTTPADM`, `work/qsjob/src/work/httpadm/`) serves the
 product on 2001 and, with TLS, on 2010 (Global settings' TLS port) through
 `servers::web::Web`, kept alive. The job's thread holds the link and the
-runtime; connection threads hand it closures (`bridge.rs`), so service
+runtime; connection threads hand it closures (`work/web/bridge.rs`, shared
+with Navigator's `NAVIGATOR` job), so service
 requests never interleave. The environment:
 
 - **System**: the name is `SYSNAME` of the network attributes, else
