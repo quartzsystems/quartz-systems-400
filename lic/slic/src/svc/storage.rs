@@ -70,7 +70,9 @@ pub fn mirror(system: &mut System, args: &[&str]) -> String {
         };
     }
     if let ["resume", n] = args {
-        return match unit_number(n).and_then(|n| storage::start_resume(system, n)) {
+        let started = unit_number(n)
+            .and_then(|n| storage::start_resume(system, n).map_err(|e| e.to_string()));
+        return match started {
             Ok(line) => line,
             Err(e) => format!("{e}\n"),
         };
@@ -141,10 +143,17 @@ pub fn asp(system: &mut System) -> String {
         let _ = writeln!(
             out,
             "  protection: {}; recovery replayed {} transaction(s) at IPL",
-            if sb.protection == store::asp::superblock::PROTECTION_MIRRORED {
-                "mirrored"
-            } else {
-                "none"
+            {
+                use store::asp::superblock::{PROTECTION_MIRRORED, PROTECTION_PARITY};
+                match (
+                    sb.protection & PROTECTION_MIRRORED != 0,
+                    sb.protection & PROTECTION_PARITY != 0,
+                ) {
+                    (true, true) => "mirrored, device parity",
+                    (true, false) => "mirrored",
+                    (false, true) => "device parity",
+                    (false, false) => "none",
+                }
             },
             s.recovery.replayed
         );
@@ -166,6 +175,26 @@ pub fn asp(system: &mut System) -> String {
                 e.serial_text(),
                 partner,
                 if u.attached { "" } else { " (not attached)" }
+            );
+        }
+        for set in st.parity_sets() {
+            let members: Vec<String> = set
+                .members
+                .iter()
+                .map(|m| match m.rebuild_percent {
+                    Some(p) => format!("unit {} {} {p}%", m.unit, m.status),
+                    None => format!("unit {} {}", m.unit, m.status),
+                })
+                .collect();
+            let sync = set
+                .sync_percent
+                .map_or_else(String::new, |p| format!("; synchronizing {p}%"));
+            let _ = writeln!(
+                out,
+                "  parity set {} ({}): {}{sync}",
+                set.set,
+                set.level,
+                members.join(", ")
             );
         }
         for u in a.unit_stats() {

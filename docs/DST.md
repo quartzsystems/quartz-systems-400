@@ -201,7 +201,8 @@ together.
   every set; the store keeps the parity (STORE_FORMAT.md §11). Start
   takes 3 to 18 unprotected units for RAID 5, 4 to 18 for RAID 6,
   refuses mirrored ones and units whose tail (the share parity takes)
-  holds data, and computes parity in the background (`DPY/Unprotected`
+  holds data, uses the smallest unit's size on every member (the
+  confirmation says so when the sizes differ), and computes parity in the background (`DPY/Unprotected`
   with its percent until done). Include and exclude compute the set's
   parity again over its new units. A missing or failed member shows
   `DPY/Failed` (A6001257) and the ASP stays usable; Replace configured
@@ -232,6 +233,14 @@ together.
   by resource and serial as the parity displays show it. A disk holding
   an earlier install counts as non-configured (A6001260 at an attended
   IPL); its blank ASP 1 partition is never taken for a unit.
+- A change the store refuses shows the reason on the message line in
+  Quartz's words, the unit it is about numbered as the displays number
+  units (`svctools::dst::disk::reasons`; LIC screens have no message
+  IDs, so these texts are the stable form). The store's own text goes
+  to the console log; any other failure still shows only what failed.
+  SST makes the same changes through the storage service (requests
+  423-425 for the disks, 433-434 for device parity) and shows the same
+  reasons.
 
 A D IPL opens the store on demand when a disk option needs it.
 

@@ -9,7 +9,7 @@
 
 use crate::dst::NOT_AUTHORIZED;
 use crate::dst::common::{Confirm, Notice, Select, Submenu};
-use crate::dst::disk::{self, STATUS_HEADINGS, in_parity_set};
+use crate::dst::disk::{self, STATUS_HEADINGS, in_parity_set, reasons};
 use crate::env::{DiskUnit, DstEnv, ParityUnit};
 use crate::panel::Flow;
 
@@ -158,13 +158,13 @@ fn start(env: &mut dyn DstEnv, level: u8) -> Flow {
         Box::new(move |chosen: &[usize], _env: &mut dyn DstEnv| {
             let least = if level == 6 { 4 } else { 3 };
             if chosen.len() < least || chosen.len() > MAX_UNITS {
-                return Flow::Error(format!(
-                    "{} needs {least} to {MAX_UNITS} units",
-                    level_name(level)
-                ));
+                let why = if level == 6 { reasons::RAID6_UNITS } else { reasons::RAID5_UNITS };
+                return Flow::Error(why.into());
             }
             let numbers: Vec<u16> = chosen.iter().map(|&i| units[i].unit).collect();
             let share = if level == 6 { 2 } else { 1 };
+            let smallest = chosen.iter().map(|&i| units[i].size_mib).min().unwrap_or(0);
+            let mixed = chosen.iter().any(|&i| units[i].size_mib > smallest);
             let mut lines = vec![
                 format!(
                     "Device parity protection ({}) starts on these units. Each gives",
@@ -175,9 +175,14 @@ fn start(env: &mut dyn DstEnv, level: u8) -> Flow {
                     numbers.len()
                 ),
                 "background and the units show DPY/Unprotected until it is done.".into(),
-                String::new(),
-                format!("     {STATUS_HEADINGS}"),
             ];
+            if mixed {
+                lines.push(format!(
+                    "The set uses {smallest} MiB of each unit; larger units leave the rest unused."
+                ));
+            }
+            lines.push(String::new());
+            lines.push(format!("     {STATUS_HEADINGS}"));
             lines.extend(chosen.iter().map(|&i| format!("     {}", disk::status_row(&units[i]))));
             Flow::Push(Box::new(
                 Confirm::new(

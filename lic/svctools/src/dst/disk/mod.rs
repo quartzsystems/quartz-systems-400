@@ -9,6 +9,7 @@ pub mod config;
 pub mod delete;
 pub mod mirror;
 pub mod parity;
+pub mod reasons;
 pub mod recovery;
 
 use crate::dst::common::{Notice, Submenu};

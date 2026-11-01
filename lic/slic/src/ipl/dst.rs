@@ -11,6 +11,7 @@ pub use svctools::Outcome;
 use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
 use store::asp::parity::Level;
+use store::{Refusal, StoreError};
 use svctools::env::{DiskUnit, LogEntry, NonConfigured, ParityUnit, ResourceRow, SecurityFlags};
 use svctools::install::lic::{LicEvent, LicKind};
 use svctools::install::os::{DeviceKind, InstallDevice, OsOptions};
@@ -31,6 +32,47 @@ pub(crate) fn fail<E: std::fmt::Display>(what: &'static str) -> impl FnOnce(E) -
         eprintln!("slic: {what}: {e}");
         svctools::dst::failed(what)
     }
+}
+
+/// A disk change the store refused: its reason in the service tools'
+/// words when the store gave one, else as [`fail`]. Either way the
+/// store's own text goes to the console log.
+pub(crate) fn refused(what: &'static str) -> impl FnOnce(StoreError) -> String {
+    move |e| {
+        eprintln!("slic: {what}: {e}");
+        reason_of(&e).unwrap_or_else(|| svctools::dst::failed(what))
+    }
+}
+
+/// The service tools' words for a refusal.
+fn reason_of(e: &StoreError) -> Option<String> {
+    use svctools::dst::disk::reasons as r;
+    Some(match e {
+        StoreError::Refused { unit, reason } => {
+            let text = match reason {
+                Refusal::Mirrored => r::MIRRORED,
+                Refusal::NotMirrored => r::NOT_MIRRORED,
+                Refusal::InParitySet(_) => r::IN_PARITY_SET,
+                Refusal::NotInParitySet => r::NOT_IN_PARITY_SET,
+                Refusal::NotAttached => r::NOT_ATTACHED,
+                Refusal::HalfState(_) => r::HALF_STATE,
+                Refusal::NotLast => r::NOT_LAST,
+                Refusal::HasData(_) => r::HAS_DATA,
+                Refusal::CannotMove { .. } => r::CANNOT_MOVE,
+                Refusal::ParityUnits { least, .. } if *least >= 4 => r::RAID6_UNITS,
+                Refusal::ParityUnits { .. } => r::RAID5_UNITS,
+                Refusal::ParityShareInUse(_) => r::PARITY_SHARE_IN_USE,
+                Refusal::ParitySetsFull => r::PARITY_SETS_FULL,
+                Refusal::NoParitySet(_) => r::NO_PARITY_SET,
+                Refusal::ParitySetNotActive(_) => r::PARITY_NOT_ACTIVE,
+                Refusal::NotFailed => r::NOT_FAILED,
+            };
+            r::for_unit(text, *unit)
+        }
+        StoreError::UnitTooSmall { .. } => r::TOO_SMALL.to_string(),
+        StoreError::NoSpace { .. } => r::NO_SPACE.to_string(),
+        _ => return None,
+    })
 }
 
 /// A service failure as the service tools show it: a message the
@@ -375,7 +417,7 @@ impl DstEnv for Env<'_> {
         let store = self.store()?;
         let n = store
             .add_unit(dev, storage::fresh_uuid(), &serial)
-            .map_err(fail("Adding the disk unit"))?;
+            .map_err(refused("Adding the disk unit"))?;
         if let Some(s) = self.system.storage.as_mut() {
             s.devices.push(std::path::PathBuf::from(device));
         }
@@ -389,7 +431,7 @@ impl DstEnv for Env<'_> {
             .get(usize::from(unit))
             .map(|u| u.entry.unit_uuid);
         let at = uuid.and_then(|u| self.device_index(u));
-        self.store()?.remove_unit(unit).map_err(fail("Removing the disk unit"))?;
+        self.store()?.remove_unit(unit).map_err(refused("Removing the disk unit"))?;
         self.forget_device(at);
         Ok(())
     }
@@ -415,14 +457,14 @@ impl DstEnv for Env<'_> {
             });
         if let Some((n, uuid)) = configured {
             let at = self.device_index(uuid);
-            self.store()?.remove_unit(n).map_err(fail("Starting mirrored protection"))?;
+            self.store()?.remove_unit(n).map_err(refused("Starting mirrored protection"))?;
             self.forget_device(at);
         }
         let (dev, serial) = open_unit(device)?;
         let store = self.store()?;
         let new = store
             .start_mirror(unit, dev, storage::fresh_uuid(), &serial)
-            .map_err(fail("Starting mirrored protection"))?;
+            .map_err(refused("Starting mirrored protection"))?;
         if let Some(s) = self.system.storage.as_mut() {
             s.devices.push(std::path::PathBuf::from(device));
         }
@@ -433,16 +475,20 @@ impl DstEnv for Env<'_> {
         self.store()?
             .stop_mirror(keep)
             .map(|_| ())
-            .map_err(fail("Stopping mirrored protection"))
+            .map_err(refused("Stopping mirrored protection"))
     }
 
     fn suspend(&mut self, unit: u16) -> Result<(), String> {
-        self.store()?.suspend_unit(unit).map_err(fail("Suspending the mirrored unit"))
+        self.store()?.suspend_unit(unit).map_err(refused("Suspending the mirrored unit"))
     }
 
     fn resume(&mut self, unit: u16) -> Result<(), String> {
         self.store()?;
-        storage::start_resume(self.system, unit).map(|_| ()).map_err(fail("Resuming mirrored protection"))
+        storage::start_resume(self.system, unit).map(|_| ()).map_err(|e| match e {
+            storage::ResumeRefused::Running => svctools::dst::disk::reasons::RESUME_RUNNING.to_string(),
+            storage::ResumeRefused::Store(e) => refused("Resuming mirrored protection")(e),
+            storage::ResumeRefused::NotOpen => fail("Resuming mirrored protection")("object store not open"),
+        })
     }
 
     fn replace(&mut self, unit: u16, device: &str) -> Result<(), String> {
@@ -450,7 +496,7 @@ impl DstEnv for Env<'_> {
         let store = self.store()?;
         store
             .replace_unit(unit, dev, storage::fresh_uuid(), &serial)
-            .map_err(fail("Replacing the unit"))?;
+            .map_err(refused("Replacing the unit"))?;
         if let Some(s) = self.system.storage.as_mut() {
             s.devices.push(std::path::PathBuf::from(device));
         }
@@ -492,7 +538,7 @@ impl DstEnv for Env<'_> {
         let set = self
             .store()?
             .start_parity(level, units)
-            .map_err(fail("Starting device parity protection"))?;
+            .map_err(refused("Starting device parity protection"))?;
         Ok(format!(
             "Device parity set {set} ({level}) started; parity is computed in the background"
         ))
@@ -501,14 +547,14 @@ impl DstEnv for Env<'_> {
     fn stop_parity(&mut self, set: u8) -> Result<String, String> {
         self.store()?
             .stop_parity(set)
-            .map_err(fail("Stopping device parity protection"))?;
+            .map_err(refused("Stopping device parity protection"))?;
         Ok(format!("Device parity protection stopped for set {set}"))
     }
 
     fn include_parity(&mut self, set: u8, unit: u16) -> Result<String, String> {
         self.store()?
             .include_parity(set, unit)
-            .map_err(fail("Including the unit in device parity protection"))?;
+            .map_err(refused("Including the unit in device parity protection"))?;
         Ok(format!(
             "Unit {} included in set {set}; parity is computed again in the background",
             unit + 1
@@ -518,7 +564,7 @@ impl DstEnv for Env<'_> {
     fn exclude_parity(&mut self, unit: u16) -> Result<String, String> {
         self.store()?
             .exclude_parity(unit)
-            .map_err(fail("Excluding the unit from device parity protection"))?;
+            .map_err(refused("Excluding the unit from device parity protection"))?;
         Ok(format!("Unit {} excluded from device parity protection", unit + 1))
     }
 
@@ -972,7 +1018,10 @@ impl DstEnv for Env<'_> {
 /// Open a device node for a new unit, with its serial from sysfs.
 fn open_unit(device: &str) -> Result<(Box<dyn blockdev::BlockDev>, String), String> {
     let p = std::path::Path::new(device);
-    let dev = blockdev::LinuxBlockDev::open(p).map_err(fail("Opening the disk unit"))?;
+    let dev = blockdev::LinuxBlockDev::open(p).map_err(|e| {
+        eprintln!("slic: opening the disk unit {device}: {e}");
+        svctools::dst::disk::reasons::DISK_NOT_OPENED.to_string()
+    })?;
     let (_, serial) = diskimg::locate::identity(p);
     Ok((Box::new(dev), serial))
 }

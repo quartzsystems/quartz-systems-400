@@ -407,20 +407,41 @@ fn sync_screen(
     }
 }
 
+/// Why a resume did not start.
+#[derive(Debug)]
+pub enum ResumeRefused {
+    /// No store is open.
+    NotOpen,
+    /// One already runs.
+    Running,
+    /// The store refused.
+    Store(store::StoreError),
+}
+
+impl std::fmt::Display for ResumeRefused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotOpen => f.write_str("object store not open"),
+            Self::Running => f.write_str("a resume is already running"),
+            Self::Store(e) => e.fmt(f),
+        }
+    }
+}
+
 /// Start copying a half in the background; `tick` carries on.
-pub fn start_resume(system: &mut System, unit: u16) -> Result<String, String> {
+pub fn start_resume(system: &mut System, unit: u16) -> Result<String, ResumeRefused> {
     let System { storage, lic, .. } = system;
     let Some(s) = storage.as_mut() else {
-        return Err("object store not open".into());
+        return Err(ResumeRefused::NotOpen);
     };
     if s.resume.is_some() {
-        return Err("a resume is already running".into());
+        return Err(ResumeRefused::Running);
     }
     let mut journal = journal(lic);
     let resume = s
         .store
         .resume_unit(unit, &mut journal)
-        .map_err(|e| e.to_string())?;
+        .map_err(ResumeRefused::Store)?;
     let p = resume.progress();
     s.resume = Some(resume);
     Ok(format!(
