@@ -6,7 +6,7 @@
  the background.                                                                
                                                                                 
  Set  Level   Unit  Serial Number     Type Model    Resource  Status            
-   1  RAID 5     1  QM00000           QEMU HARDDISK DD001     DPY/Unprotected   
+   1  RAID 5     1  QM00000           QEMU HARDDISK DD001     Unprotected       
                                                                                 
                                                                                 
                                                                                 

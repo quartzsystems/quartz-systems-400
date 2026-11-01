@@ -12,6 +12,7 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 
 use blockdev::{BlockDev, LinuxBlockDev, MemBlockDev};
 use licpart::{Device, LicPart};
@@ -548,12 +549,13 @@ pub fn finish_resume(system: &mut System) {
         }
         system.storage = Some(s);
     }
+    // Device parity synchronization and rebuild go on in the storage
+    // service, as IBM's controllers do them with the system up.
     if parity_busy(system) {
         system
             .out
-            .serial("slic: finishing the device parity work before the storage service starts\n");
+            .serial("slic: device parity work continues in the background\n");
     }
-    while parity_step(system) {}
 }
 
 /// Whether the run loop should come back soon: a resume or device
@@ -563,7 +565,12 @@ pub fn busy(system: &System) -> bool {
 }
 
 /// Blocks per step of the background device parity work.
-const PARITY_BUDGET: u64 = 64;
+const PARITY_BUDGET: u64 = 16;
+/// How long one turn of the device parity work may run while nothing
+/// waits.
+pub const PARITY_SLICE: Duration = Duration::from_millis(40);
+/// The turn while requests wait.
+pub const PARITY_SLICE_BUSY: Duration = Duration::from_millis(5);
 
 /// Set when the parity work failed: not retried this IPL.
 static PARITY_STALLED: AtomicBool = AtomicBool::new(false);
@@ -580,6 +587,20 @@ fn parity_busy(system: &System) -> bool {
                         .any(|m| m.rebuild_percent.is_some() && m.attached)
             })
         })
+}
+
+/// Steps of the device parity synchronization or rebuild for up to
+/// `slice`. Returns whether more may follow.
+fn parity_turn(system: &mut System, slice: Duration) -> bool {
+    let start = Instant::now();
+    loop {
+        if !parity_step(system) {
+            return false;
+        }
+        if start.elapsed() >= slice {
+            return true;
+        }
+    }
 }
 
 /// One step of the device parity synchronization or rebuild. Returns
@@ -794,8 +815,13 @@ pub fn open_temp(system: &mut System) {
 /// From the run loop: a step of any background resume, the I/O layer's
 /// events, and time-based checkpoints.
 pub fn tick(system: &mut System) {
+    tick_with(system, PARITY_SLICE);
+}
+
+/// [`tick`] with the device parity work held to `slice`.
+pub fn tick_with(system: &mut System, slice: Duration) {
     resume_step(system);
-    parity_step(system);
+    parity_turn(system, slice);
     report_io_events(system);
     let now = now_unix();
     if let Some(s) = system.storage.as_mut()

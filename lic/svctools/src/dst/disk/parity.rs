@@ -19,12 +19,16 @@ const MAX_UNITS: usize = 18;
 /// The headings of the status display and the member lists.
 pub const PARITY_HEADINGS: &str = "Set  Level   Unit  Serial Number     Type Model    Resource  Status";
 
-/// One member row.
+/// One member row. The status is in the words of IBM's parity status
+/// display: `Active`, `Failed`, `Unprotected`, and while the work runs
+/// `nn% Rebuilt` on the unit being rebuilt and `nn% Resyncing` on every
+/// unit of a set whose parity is being computed.
 #[must_use]
 pub fn parity_row(p: &ParityUnit) -> String {
-    let status = match p.percent {
-        Some(n) => format!("{} {n:>3}%", p.status),
-        None => p.status.clone(),
+    let status = match (p.percent, p.status.as_str()) {
+        (Some(n), "DPY/Rebuild") => format!("{n:>3}% Rebuilt"),
+        (Some(n), _) => format!("{n:>3}% Resyncing"),
+        (None, s) => s.strip_prefix("DPY/").unwrap_or(s).to_string(),
     };
     format!(
         "{:>3}  {:<7} {:>4}  {:<17} {:<13} {:<9} {}",
@@ -355,4 +359,29 @@ fn exclude(env: &mut dyn DstEnv) -> Flow {
             ))
         }),
     )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row(status: &str, percent: Option<u8>) -> String {
+        let p = ParityUnit {
+            set: 1,
+            level: "RAID 5".into(),
+            status: status.into(),
+            percent,
+            ..ParityUnit::default()
+        };
+        parity_row(&p)
+    }
+
+    #[test]
+    fn status_words_and_percents() {
+        assert!(row("DPY/Active", None).ends_with(" Active"));
+        assert!(row("DPY/Failed", None).ends_with(" Failed"));
+        assert!(row("DPY/Unprotected", None).ends_with(" Unprotected"));
+        assert!(row("DPY/Unprotected", Some(7)).ends_with("   7% Resyncing"));
+        assert!(row("DPY/Rebuild", Some(42)).ends_with("  42% Rebuilt"));
+    }
 }

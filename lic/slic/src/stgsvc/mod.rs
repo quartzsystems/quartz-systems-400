@@ -268,13 +268,20 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
     }
     let mut conns = vec![Conn::new(slic, ctx)];
     loop {
+        // Background disk work (device parity, a mirror resume) runs in
+        // turns between requests, short ones while jobs wait.
         let wait = if storage::busy(system) {
-            Duration::from_millis(20)
+            Duration::from_millis(2)
         } else {
             Duration::from_secs(5)
         };
         let (accept, ready) = wait_ready(listener, &conns, wait);
-        storage::tick(system);
+        let slice = if accept || !ready.is_empty() {
+            storage::PARITY_SLICE_BUSY
+        } else {
+            storage::PARITY_SLICE
+        };
+        storage::tick_with(system, slice);
         cmn::tick(system);
         if accept {
             match listener.accept() {

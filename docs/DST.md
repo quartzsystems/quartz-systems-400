@@ -202,14 +202,19 @@ together.
   takes 3 to 18 unprotected units for RAID 5, 4 to 18 for RAID 6,
   refuses mirrored ones and units whose tail (the share parity takes)
   holds data, uses the smallest unit's size on every member (the
-  confirmation says so when the sizes differ), and computes parity in the background (`DPY/Unprotected`
-  with its percent until done). Include and exclude compute the set's
-  parity again over its new units. A missing or failed member shows
-  `DPY/Failed` (A6001257) and the ASP stays usable; Replace configured
-  unit puts a non-configured disk in its place and rebuilds it
-  (`DPY/Rebuild nn%`). A unit in a set is never paired by start
-  mirrored protection. The work runs from slic's run loop and is
-  finished before the storage service takes the store, as a resume is.
+  confirmation says so when the sizes differ), and computes parity in
+  the background (`DPY/Unprotected` in the configuration status until
+  done). Include and exclude compute the set's parity again over its
+  new units. A missing or failed member shows `DPY/Failed` (A6001257)
+  and the ASP stays usable; Replace configured unit puts a
+  non-configured disk in its place and rebuilds it (`DPY/Rebuild`). The
+  device parity status display uses the words of IBM's: `Active`,
+  `Failed`, `Unprotected`, `nn% Resyncing` on every unit of a set being
+  synchronized and `nn% Rebuilt` on the unit being rebuilt. A unit in a
+  set is never paired by start mirrored protection. The work does not
+  hold the IPL: it runs from slic's run loop while the store is slic's
+  and goes on in the storage service with the system up
+  (STORE_FORMAT.md §11, "Background work").
 - Suspend and resume: resume runs in the background; the status column
   shows its percent.
 - Delete disk unit data (option 10, disk units administration; IBM's

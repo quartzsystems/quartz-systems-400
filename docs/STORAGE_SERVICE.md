@@ -34,6 +34,14 @@ the LIC partition for the mirror resume journal only, binds
 `/run/qs400/stg` and answers `slic` with what it opened. `slic` then
 shows `C6001015` and carries on.
 
+Disk work that IBM does with the system up runs in the service's serve
+loop between requests: a device parity synchronization or rebuild
+(`STORE_FORMAT.md` §11) the IPL left unfinished, and a mirror resume.
+The loop is one thread over the one store, so the work takes turns: up
+to 40 ms of it when no request waits, 5 ms when one does, then the
+requests. The IPL does not wait for device parity work; the service
+picks it up from the mark the superblock records.
+
 The service is the only process that touches pages. Job processes link
 the runtime (`mi`, `codegen`, `sysapi`) but no storage code that runs:
 their programs reach objects, files, data areas, data queues, user
