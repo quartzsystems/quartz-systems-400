@@ -107,7 +107,7 @@ known). `DEP` statements then run over the bound values. The result,
 order, the label and the prompt flag.
 
 Every refusal is a diagnostic `CPD00nn` followed by the escape
-`CPF0001`, with the identifiers the IBM i 7.1 capture of the analyzer
+`CPF0006`, with the identifiers the IBM i 7.1 capture of the analyzer
 kit showed (`tools/conformance/cmd/oracle.txt`): CPD0065 a positional
 value beyond `MAXPOS`; CPD0043 a keyword the command has not (CPD0033,
 not captured, a command a limited user may not type on a command line;
@@ -119,8 +119,9 @@ group's parentheses one level too many, CPD0048 the same for a group
 whose first element is a qualified name; CPD0045 too many qualifier
 parts, CPD0049 a qualifier where none is allowed; CPD0094 a single
 value given with others; CPD0030 the command not found; CPD0031 the
-command not allowed in this setting (`ALLOW`), CPD0032 not in this
-mode; CPD0074 a value too long or with too many digits; CPD0076 a
+command not allowed in this setting (`ALLOW`), CPD0034 (not captured)
+not in this mode; CPD0032 is kept for a command the user is not
+authorized to, as the box sends it; CPD0074 a value too long or with too many digits; CPD0076 a
 number wanted; CPD0078 a name not valid (a special value where a name
 goes, a single value qualified), CPD0079 the same for a generic name;
 CPD0012 a job number that is not one; CPD0075 a message identifier not
@@ -137,7 +138,8 @@ box's order: too many positional values first, then parentheses and
 job numbers, unknown keywords, a missing required parameter, then the
 values in the order of the string. `Setting::syntax_only` checks as
 `QCMDCHK` does, without `ALLOW` and `MODE`. CPF0005 refuses a string
-over 32 702 characters, CPF0006 anything the analyzer itself cannot do.
+over 32 702 characters; CPF0006 alone, with no diagnostic, anything the
+analyzer itself cannot do.
 
 Where IBM's definitions say `EXPR(*YES)` on nearly every parameter
 and ours leave it out, a character, numeric, logical or name-typed

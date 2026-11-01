@@ -148,7 +148,7 @@ pub fn of_outcome(job: &Job, host: &Host, since: u32, out: &Outcome) -> Option<L
     match &out.escape {
         // An analysis error shows its first diagnostic, as IBM's line
         // shows `CPD0030` for a command that is not found.
-        Some(f) if f.msgid == "CPF0001" && out.diag.is_some() => out.diag.as_ref().map(|d| of_fail(host, d)),
+        Some(f) if f.msgid == "CPF0006" && out.diag.is_some() => out.diag.as_ref().map(|d| of_fail(host, d)),
         Some(f) => Some(of_fail(host, f)),
         None => job
             .ext_msgq

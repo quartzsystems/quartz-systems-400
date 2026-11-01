@@ -126,8 +126,15 @@ now and what to check.
     box's "keyword not valid" (the kit's capture), so a command refused
     to an `LMTCPB(*YES)` user cannot share it; it is `CPD0033` here, a
     guess. The refusal applies only to a command line (Command Entry, a
-    menu's line, System Request), not to programs or `QCMDEXC`.
-    `CPD0032` is also suspect: the box sends it for "not authorized to
-    command" (`oracle/save/pub400/roundtrip.txt`), the analyzer for a
-    `MODE` mismatch. Test: sign on as a limited user on the box, type
-    `CRTLIB X`, `DSPJOBLOG`.
+    menu's line, System Request), not to programs or `QCMDEXC`. Test:
+    sign on as a limited user on the box, type `CRTLIB X`, `DSPJOBLOG`.
+    Settled 2026-11-02: `CPD0032` is "not authorized to command", as the
+    box sends it (`oracle/save/pub400/roundtrip.txt`); the `MODE`
+    mismatch moved to `CPD0034`, a Quartz choice (test: a `MODE(*SERVICE)`
+    command in a production job). The escape after the diagnostics is
+    `CPF0006`, as the kit's capture shows. Still open: the save captures
+    (`oracle/save/primary/01-build.txt`) and the remote command trace
+    (`jtopen/expected/oracle/cmdcall.out`) show IBM's analyzer sending
+    `CPF0001` ("error found on &1 command") to `QCMDEXC`, which then
+    sends `CPF0006` to its caller; a remote command's caller sees the
+    `CPF0001`. QS/400 sends the `CPF0006` only.

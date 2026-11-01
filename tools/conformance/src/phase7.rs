@@ -100,7 +100,7 @@ impl Suite {
         key(s, "f12")?;
         screen_without(s, "===> crtpf")?;
         let _ = (retrieved, older);
-        // A command the analyzer refuses: the diagnostic and CPF0001.
+        // A command the analyzer refuses: the diagnostic and CPF0006.
         entry_wait(s, "crtlib LIB(CLTEST) NOPE(1)", has(&["CPD0043"]))?;
         sign_off(s)?;
         Ok("CRTLIB ran through the analyzer; ?CRTPF and F4 prompted; Enter ran CRTPF; DSPJOBLOG lists the requests; F9 retrieved; CPD0043 for a bad keyword".into())
@@ -174,7 +174,7 @@ impl Suite {
         }
         screen_wait(s, "Sign On")?;
         crate::phase5::console_sign_on_as(s, "LIMITED", PASSWORD, PASSWORD)?;
-        // The menu's line shows the CPD0033 diagnostic under the CPF0001
+        // The menu's line shows the CPD0033 diagnostic under the CPF0006
         // escape, as it shows CPD0030 for a command not found.
         entry(s, "crtlib LIB(NOTALLOWED)")?;
         screen_wait(s, "Command CRTLIB is not allowed")?;
@@ -209,7 +209,7 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn analyzer_console(&self, s: &mut Session) -> Result<String, String> {
         let bad = s.command("crtlib", CMD)?;
-        if !bad.contains("CPD0071") || !bad.contains("CPF0001") {
+        if !bad.contains("CPD0071") || !bad.contains("CPF0006") {
             return Err(format!("a missing LIB was not refused with CPD0071:\n{bad}"));
         }
         let unknown = s.command("nosuchcmd", CMD)?;

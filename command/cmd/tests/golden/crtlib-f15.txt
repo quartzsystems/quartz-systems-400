@@ -1,7 +1,7 @@
                                  Error Messages                                 
                                                                                 
  CPD0084 TYPE: *NOPE is not one of the values allowed                           
- CPF0001                                                                        
+ CPF0006                                                                        
                                                                                 
                                                                                 
                                                                                 

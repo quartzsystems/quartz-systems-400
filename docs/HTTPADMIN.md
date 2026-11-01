@@ -213,7 +213,7 @@ requests never interleave. The environment:
   name; connections from the function `CNN-n`. Start and end run
   `STRTCPSVR`/`ENDTCPSVR ... HTTPSVR(name)` through the analyzer with
   the job swapped to the web user (`as_user`), so the commands check
-  their own authority; the escape (or the diagnostic before `CPF0001`)
+  their own authority; the escape (or the diagnostic before `CPF0006`)
   is the error message.
 - **Files**: `work/ifsfiles.rs` over the job's link, as `QTMHHTTP`.
 - **Certs**: `httpadmin::certmgr` (shared with the fixture) runs in the
