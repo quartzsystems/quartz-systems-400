@@ -81,9 +81,11 @@ impl Suite {
         if set.trim_start().starts_with("CPF") {
             return Err(format!("CHGUSRPRF QSECOFR: {set}"));
         }
-        // A new guest: the main session's forward to the address step 61
-        // configured is gone, so make it again; the launch's own forward
-        // (the guest's first address) when step 61 did not run.
+        // A new guest, perhaps on a disk the boot step never saw.
+        crate::tcp::guest_address(s)?;
+        // The main session's forward to the address step 61 configured
+        // is gone, so make it again; the launch's own forward (the
+        // guest's own address) when step 61 did not run.
         let port = if self.tn_port.get().is_some() {
             crate::tcp::forward_port(self, crate::tcp::VIP, 23)?
         } else {

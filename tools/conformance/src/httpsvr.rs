@@ -16,10 +16,8 @@ use std::time::{Duration, Instant};
 
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
-use crate::tcp::forward_port;
+use crate::tcp::{GUEST, forward_port};
 
-/// The guest's own address on QEMU's user network.
-const GUEST: &str = "10.0.2.15";
 /// The instance's port, outside the 8000-8100 range step 61 keeps
 /// for QTCP.
 const PORT: u16 = 8186;

@@ -16,6 +16,10 @@ use std::time::{Duration, Instant};
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
 
+/// The guest's own address on QEMU's user network, where the launch's
+/// forwards go. The IPL adds none; [`guest_address`] configures it.
+pub(crate) const GUEST: &str = "10.0.2.15";
+
 /// The address step 61 configures as a virtual IP on the guest; QEMU's
 /// user network reaches it as it reaches the guest's own address.
 pub(crate) const VIP: &str = "10.0.2.16";
@@ -34,7 +38,12 @@ fn expect(s: &mut Session, line: &str, want: &str) -> Result<String, String> {
 
 /// Wait until `svc.tcp what` shows `want`.
 fn until(s: &mut Session, what: &str, want: &str) -> Result<String, String> {
-    let end = Instant::now() + Duration::from_secs(20);
+    until_for(s, what, want, Duration::from_secs(20))
+}
+
+/// [`until`] with its own deadline.
+fn until_for(s: &mut Session, what: &str, want: &str, limit: Duration) -> Result<String, String> {
+    let end = Instant::now() + limit;
     loop {
         let out = s.command(&format!("svc.tcp {what}"), CMD)?;
         if out.contains(want) {
@@ -74,6 +83,39 @@ pub(crate) fn telnet_answers(port: u16) -> Result<(), String> {
 /// description over the NIC would share its port with step 60's line,
 /// whose vary off takes the link down.
 const NIC_LINE: &str = "ETH0";
+
+/// The guest's own address configured and started on the NIC's line,
+/// as an operator does on a new system, once `QSTRUP` has TCP/IP
+/// active. A disk that has the interface keeps it (it autostarts), so
+/// each command runs only when the configuration lacks it.
+pub(crate) fn guest_address(s: &mut Session) -> Result<String, String> {
+    until_for(s, "ifc", "TCP/IP Active", Duration::from_secs(180))?;
+    let row = format!("ifc {GUEST} ");
+    let mut did = Vec::new();
+    let ifc = s.command("svc.tcp ifc", CMD)?;
+    if !ifc.lines().any(|l| l.starts_with(&row)) {
+        expect(
+            s,
+            &format!("ADDTCPIFC INTNETADR('{GUEST}') LIND({NIC_LINE}) SUBNETMASK('255.255.255.0')"),
+            "TCP1D03",
+        )?;
+        did.push("added");
+    }
+    let ifc = s.command("svc.tcp ifc", CMD)?;
+    let started = ifc
+        .lines()
+        .any(|l| l.starts_with(&row) && (l.contains(" Active ") || l.contains(" RCYPND ")));
+    if !started {
+        expect(s, &format!("STRTCPIFC INTNETADR('{GUEST}')"), "TCP1A0B")?;
+        did.push("started");
+    }
+    until(s, "ifc", &format!("kernel addr eth0 {GUEST}/24"))?;
+    Ok(if did.is_empty() {
+        format!("{GUEST} on {NIC_LINE} already active")
+    } else {
+        format!("{GUEST} on {NIC_LINE} {}", did.join(" and "))
+    })
+}
 
 #[allow(clippy::unused_self)] // the steps share one signature
 impl Suite {
@@ -127,10 +169,10 @@ impl Suite {
         let port = forward(self, VIP)?;
         if let Err(e) = telnet_answers(port) {
             // Tell slirp trouble from the server's: the guest's own address.
-            let own = forward(self, "10.0.2.15")?;
+            let own = forward(self, GUEST)?;
             let theirs = telnet_answers(own).err().unwrap_or_else(|| "answers".into());
             let ifc = s.command("svc.tcp ifc", CMD)?;
-            return Err(format!("{e}; over 10.0.2.15: {theirs}
+            return Err(format!("{e}; over {GUEST}: {theirs}
 {ifc}"));
         }
         self.tn_port.set(Some(port));
