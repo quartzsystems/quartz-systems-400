@@ -152,8 +152,7 @@ fn exec(job: &mut Job, host: &Host, text: &str) -> Option<LineMsg> {
 fn option_command(d: &UimDialog, c: &Choice) -> Option<String> {
     match &c.action {
         // The add entry's values, a blank one left for the prompt.
-        Some(uim::model::Action::Cmd(t)) if c.is_ext() => Some(crate::panels::with_parms(d, crate::panels::ext_command(d, c, t))),
-        Some(uim::model::Action::Cmd(t)) => Some(crate::panels::with_parms(d, d.substitute(t, Some((&c.list, c.row))))),
+        Some(uim::model::Action::Cmd(t)) => Some(crate::panels::option_command(d, c, t)),
         _ => None,
     }
 }

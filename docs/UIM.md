@@ -411,6 +411,13 @@ A `:CMDLINE.` without `NAME` shows the dialog's `*CMDLINE` variable, so
 model by position: input variables, list cells, list options (by
 entry index), the command line and the menu selection.
 
+Text on the command line when options were typed is the options'
+parameters (`*OPTPARMS`): every list display builds an option's
+command with `panels::option_command`, which adds them and, when there
+are any, runs the command without its prompt (the leading `?` and
+selective prompts dropped; `uim::engine::with_option_parms`). An empty
+line leaves an option that prompts (`2` on `WRKSPLF`) prompting.
+
 ### Additions (second wave)
 
 The engine lives in the `uim` crate (`uim::engine`): `Engine` holds the

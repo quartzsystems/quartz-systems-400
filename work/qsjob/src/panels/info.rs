@@ -149,11 +149,7 @@ fn act(
 ) -> Result<(), Fail> {
     for c in choices {
         if let Some(Action::Cmd(t)) = &c.action {
-            let text = if c.is_ext() {
-                crate::panels::ext_command(d, c, t)
-            } else {
-                d.substitute(t, Some((&c.list, c.row)))
-            };
+            let text = crate::panels::option_command(d, c, t);
             if let Some(m) = exec(job, host, &text) {
                 d.send(m);
             }

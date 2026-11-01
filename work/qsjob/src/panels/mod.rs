@@ -197,12 +197,25 @@ pub fn data_var(data: &stg::proto::Sys2Data, name: &str) -> String {
 }
 
 /// An option's command with the parameters typed on the command line
-/// when the options were (`2` and `OUTQ(PRT01)` on `WRKSPLF`).
+/// when the options were (`2` and `OUTQ(PRT01)` on `WRKSPLF`): with
+/// them it runs without its prompt (`uim::engine::with_option_parms`).
 #[must_use]
-pub fn with_parms(d: &UimDialog, cmd: String) -> String {
-    let parms = d.get(uim::engine::OPTION_PARMS_VAR);
-    let parms = parms.trim();
-    if parms.is_empty() { cmd } else { format!("{} {parms}", cmd.trim_end()) }
+pub fn with_parms(d: &UimDialog, cmd: &str) -> String {
+    uim::engine::with_option_parms(cmd, &d.get(uim::engine::OPTION_PARMS_VAR))
+}
+
+/// The command of a `CMD` option `text` typed on list entry `c`: the
+/// entry's values (the add entry's as `ext_command` takes them), then
+/// the parameters typed on the command line. Every list display runs
+/// its options' commands through this.
+#[must_use]
+pub fn option_command(d: &UimDialog, c: &uim::engine::Choice, text: &str) -> String {
+    let cmd = if c.is_ext() {
+        ext_command(d, c, text)
+    } else {
+        d.substitute(text, Some((&c.list, c.row)))
+    };
+    with_parms(d, &cmd)
 }
 
 /// The command of an option typed on a list's extended action entry,

@@ -181,12 +181,7 @@ fn run_options(
     for c in choices {
         match &c.action {
             Some(Action::Cmd(text)) => {
-                let cmd = if c.is_ext() {
-                    crate::panels::ext_command(d, c, text)
-                } else {
-                    d.substitute(text, Some((&c.list, c.row)))
-                };
-                let cmd = crate::panels::with_parms(d, cmd);
+                let cmd = crate::panels::option_command(d, c, text);
                 run_command(job, host, d, history, &cmd);
             }
             Some(Action::Return(n)) => returned.push((*n, c.clone())),
