@@ -59,7 +59,7 @@ fn served_certificate(port: u16) -> Result<Vec<u8>, String> {
             })
             .and_then(|mut t| {
                 let peer = t.session().map(|s| s.peer_certs).unwrap_or_default();
-                t.write_all(b"GET / HTTP/1.1\r\nHost: qs400\r\n\r\n")
+                t.write_all(b"GET /qs400/httpadmin/signon HTTP/1.1\r\nHost: qs400\r\nConnection: close\r\n\r\n")
                     .map_err(|e| e.to_string())?;
                 let mut page = Vec::new();
                 let _ = t.read_to_end(&mut page);
