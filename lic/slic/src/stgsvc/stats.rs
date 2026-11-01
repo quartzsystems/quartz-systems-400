@@ -777,6 +777,32 @@ pub fn syssts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
     (vars, rows)
 }
 
+/// A unit's protection: `None`, or `Mirrored (A)` for the lower unit
+/// of a pair and `(B)` for its partner.
+fn unit_protection(u: &store::UnitInfo) -> String {
+    let p = u.entry.mirror_partner;
+    if p == store::asp::superblock::NO_PARTNER {
+        "None".into()
+    } else if u.unit < p {
+        "Mirrored (A)".into()
+    } else {
+        "Mirrored (B)".into()
+    }
+}
+
+/// A unit's status as Navigator words it.
+fn unit_status(u: &store::UnitInfo) -> &'static str {
+    use store::asp::unit::UnitState as S;
+    match u.entry.state {
+        _ if !u.attached => "Not found",
+        S::Unprotected | S::Active => "Active",
+        S::Suspended => "Suspended",
+        S::Resuming => "Resuming",
+        S::NotOperational => "Failed",
+        S::Missing => "Not found",
+    }
+}
+
 /// `WRKDSKSTS` as panel data: the elapsed time and one entry per unit.
 #[allow(clippy::cast_precision_loss)] // counters far below 2^52
 pub fn dsksts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
@@ -840,6 +866,11 @@ pub fn dsksts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
                 pair("READK", kb(x.read_sectors, x.reads)),
                 pair("WRITEK", kb(x.write_sectors, x.writes)),
                 pair("BUSY", format!("{:.0}", percent(x.busy_ms, ms))),
+                // For Navigator: exact size, serial, protection, status.
+                pair("SIZEB", (u.entry.pages + ifs_pages) * 4096),
+                pair("SERIAL", u.entry.serial_text()),
+                pair("PROT", unit_protection(u)),
+                pair("STATUS", unit_status(u)),
             ]
         })
         .collect();
