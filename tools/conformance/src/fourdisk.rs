@@ -8,7 +8,7 @@
 //! | Step | What |
 //! |---|---|
 //! | 12 | mirrored protection started over the four units (1 with 4, 2 with 3, data moved off 3 and 4 first), the copies at the re-IPL, then the IPL with disk 4 pulled |
-//! | 13 | device parity (RAID 5) over the four units, synchronized, an IPL with disk 4 pulled (exposed, A6001257), the disk back and rebuilt |
+//! | 13 | device parity (RAID 5) over the four units, synchronized with the system up (written and read meanwhile, a power down part way), an IPL with disk 4 pulled (exposed, A6001257), the disk back and rebuilt with the system up |
 //!
 //! Every disk action goes through the DST screens over serial.
 
@@ -363,7 +363,7 @@ impl Suite {
     }
 
     /// Step 13.
-    #[allow(clippy::too_many_lines)] // one scenario, three boots
+    #[allow(clippy::too_many_lines)] // one scenario, four boots
     fn four_parity(&self, installed: &Path) -> Result<StepReport, HarnessError> {
         let name = "13 device parity RAID 5";
         let start = Instant::now();
@@ -393,27 +393,61 @@ impl Suite {
             s.send("1")?;
             s.expect("Display Device Parity Status", CMD)?;
             let shown = s.expect("F3=Exit", CMD)?;
-            if shown.matches("DPY/Unprotected").count() != 4 {
+            if shown.matches("% Resyncing").count() != 4 {
                 return Err(format!("the status display:\n{shown}"));
             }
             s.send("key f3")?;
             s.expect("Use Dedicated Service Tools (DST)", CMD)?;
-            // The synchronization ends before the storage service starts.
-            let ipl = ipl_from_dst(&mut s, Duration::from_mins(60))?;
-            if !ipl.contains("synchronized") {
-                return Err("the IPL did not finish the synchronization".into());
+            // The IPL does not wait for the synchronization.
+            let ipl = ipl_from_dst(&mut s, boot)?;
+            if !ipl.contains("device parity work continues in the background") {
+                return Err("the IPL did not leave the synchronization to the system".into());
             }
-            let asp = s.command("svc.asp", CMD)?;
-            if asp.matches("DPY/Active").count() != 4 {
-                return Err(format!("not four DPY/Active units:\n{asp}"));
-            }
+            let first = s.command("svc.asp", CMD)?;
+            let Some(p0) = sync_percent(&first) else {
+                return Err(format!("not synchronizing after the IPL:\n{first}"));
+            };
+            // Writes while it runs, on both sides of the mark.
             let out = s.command("svc.obj fill QPAR2 300 32", Duration::from_mins(10))?;
             if !out.contains("filled") {
                 return Err(format!("obj fill QPAR2:\n{out}"));
             }
             verify(&mut s, FILL.0, FILL.1, FILL.2)?;
+            let after = s.command("svc.asp", CMD)?;
+            let p1 = sync_percent(&after);
+            Ok(format!(
+                "{filled}; RAID 5 started over units 1-4 in DST; the IPL completed at {p0}% synchronized; QPAR2 written and QFILL read back during the synchronization (then {})",
+                p1.map_or_else(|| "done".to_string(), |p| format!("{p}%"))
+            ))
+        })();
+        let first = match r {
+            Ok(d) => d,
+            Err(e) => {
+                let log = s.log.clone();
+                s.kill();
+                return Self::finish(name, start, Err((e, log)));
+            }
+        };
+        // Power down in the middle: the next IPL carries on from the mark.
+        power_down(&mut s);
+        drop(s);
+        let mut s = Session::spawn(&all)?;
+        let r = (|| -> Result<String, String> {
+            s.expect(SRC_IPL_COMPLETE, boot)?;
+            s.expect(crate::PROMPT, CMD)?;
+            let asp = s.command("svc.asp", CMD)?;
+            let resumed = sync_percent(&asp);
+            let waited = wait_active(&mut s, 4)?;
+            verify(&mut s, FILL.0, FILL.1, FILL.2)?;
             verify(&mut s, "QPAR2", 300, 32)?;
-            Ok(format!("{filled}; RAID 5 started over units 1-4 in DST and synchronized at the IPL"))
+            chkstg(&mut s)?;
+            Ok(format!(
+                "{first}; after a power down the next IPL {}; DPY/Active {waited}s later; data intact; chkstg clean",
+                resumed.map_or_else(
+                    || "found it synchronized".to_string(),
+                    |p| format!("went on from {p}%")
+                )
+            ))
         })();
         let first = match r {
             Ok(d) => d,
@@ -454,27 +488,71 @@ impl Suite {
         };
         power_down(&mut s);
         drop(s);
-        // Disk 4 back: stale, rebuilt before the storage service starts.
+        // Disk 4 back: stale, rebuilt with the system up.
         let mut s = Session::spawn(&all)?;
         let r = (|| -> Result<String, String> {
-            let ipl = s.expect(SRC_IPL_COMPLETE, Duration::from_mins(60))?;
+            s.expect(SRC_IPL_COMPLETE, boot)?;
             s.expect(crate::PROMPT, CMD)?;
-            if !ipl.contains("rebuilt") {
-                return Err("no rebuild at the IPL".into());
-            }
             let asp = s.command("svc.asp", CMD)?;
-            if asp.matches("DPY/Active").count() != 4 {
-                return Err(format!("not four DPY/Active units after the rebuild:\n{asp}"));
+            let Some(r0) = rebuild_percent(&asp) else {
+                return Err(format!("no rebuild under way after the IPL:\n{asp}"));
+            };
+            // Reads and writes while it runs: unit 4's pages from the
+            // unit below the mark, from parity above it.
+            verify(&mut s, FILL.0, FILL.1, FILL.2)?;
+            verify(&mut s, "QPAR3", 100, 32)?;
+            let out = s.command("svc.obj fill QPAR4 300 32", Duration::from_mins(10))?;
+            if !out.contains("filled") {
+                return Err(format!("obj fill QPAR4 during the rebuild:\n{out}"));
             }
+            let mid = s.command("svc.asp", CMD)?;
+            let r1 = rebuild_percent(&mid);
+            let waited = wait_active(&mut s, 4)?;
             verify(&mut s, FILL.0, FILL.1, FILL.2)?;
             verify(&mut s, "QPAR2", 300, 32)?;
             verify(&mut s, "QPAR3", 100, 32)?;
+            verify(&mut s, "QPAR4", 300, 32)?;
             chkstg(&mut s)?;
-            Ok(format!("{second}; disk 4 back: rebuilt at the IPL, DPY/Active, data intact, chkstg clean"))
+            Ok(format!(
+                "{second}; disk 4 back: the IPL completed at {r0}% rebuilt, data read and QPAR4 written during the rebuild (then {}), DPY/Active {waited}s later, data intact, chkstg clean",
+                r1.map_or_else(|| "done".to_string(), |p| format!("{p}%"))
+            ))
         })()
         .map_err(|e| (e, s.log.clone()));
         power_down(&mut s);
         Self::finish(name, start, r)
+    }
+}
+
+/// The percent `svc.asp` shows for a set being synchronized.
+fn sync_percent(asp: &str) -> Option<u8> {
+    asp.split("synchronizing ")
+        .nth(1)
+        .and_then(|t| t.split('%').next())
+        .and_then(|n| n.trim().parse().ok())
+}
+
+/// The percent `svc.asp` shows for a unit being rebuilt.
+fn rebuild_percent(asp: &str) -> Option<u8> {
+    asp.split("DPY/Rebuild ")
+        .nth(1)
+        .and_then(|t| t.split('%').next())
+        .and_then(|n| n.trim().parse().ok())
+}
+
+/// Poll `svc.asp` until `n` units are `DPY/Active`; the seconds waited.
+fn wait_active(s: &mut Session, n: usize) -> Result<u64, String> {
+    let start = Instant::now();
+    let deadline = start + Duration::from_mins(60);
+    loop {
+        let asp = s.command("svc.asp", CMD)?;
+        if asp.matches("DPY/Active").count() == n {
+            return Ok(start.elapsed().as_secs());
+        }
+        if Instant::now() > deadline {
+            return Err(format!("not {n} DPY/Active units after an hour:\n{asp}"));
+        }
+        std::thread::sleep(Duration::from_secs(10));
     }
 }
 
@@ -492,5 +570,15 @@ mod tests {
         assert_eq!(disk_of(&u[1].serial), Some(4));
         assert_eq!(u[1].state, "Missing");
         assert!(!u[1].attached);
+    }
+
+    #[test]
+    fn parity_percents_parse() {
+        let sync = "  parity set 1 (RAID 5): unit 0 DPY/Unprotected, unit 1 DPY/Unprotected; synchronizing 37%\n";
+        assert_eq!(sync_percent(sync), Some(37));
+        assert_eq!(rebuild_percent(sync), None);
+        let rebuild = "  parity set 1 (RAID 5): unit 0 DPY/Unprotected, unit 3 DPY/Rebuild 5%\n";
+        assert_eq!(rebuild_percent(rebuild), Some(5));
+        assert_eq!(sync_percent(rebuild), None);
     }
 }
