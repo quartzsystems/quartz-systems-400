@@ -660,6 +660,64 @@ fn wrksplf() {
     compare(&golden("wrksplf"), &s);
 }
 
+/// WRKSPLF's F11 views: two files of one name told apart by their
+/// number, job and creation time.
+#[test]
+fn wrksplf_views() {
+    let rows = [
+        vec![
+            ("FILE", "QSYSPRT"),
+            ("USER", "QSECOFR"),
+            ("DEVQ", "QS01P01"),
+            ("STS", "SAV"),
+            ("PAGES", "1"),
+            ("COPIES", "1"),
+            ("FORMTYPE", "*STD"),
+            ("PTY", "5"),
+            ("SPLNBR", "1"),
+            ("JOB", "QPADEV0001"),
+            ("NUMBER", "000225"),
+            ("CRTDATE", "11/01/26"),
+            ("CRTTIME", "15:45:02"),
+        ],
+        vec![
+            ("FILE", "QSYSPRT"),
+            ("USER", "QSECOFR"),
+            ("DEVQ", "QPRINT"),
+            ("STS", "RDY"),
+            ("PAGES", "1"),
+            ("COPIES", "1"),
+            ("FORMTYPE", "*STD"),
+            ("PTY", "5"),
+            ("SPLNBR", "2"),
+            ("JOB", "QPADEV0001"),
+            ("NUMBER", "000225"),
+            ("CRTDATE", "11/01/26"),
+            ("CRTTIME", "15:46:10"),
+        ],
+    ];
+    let g = shipped("QUIWRKSPLF");
+    let screen = |view: usize| {
+        let mut d = MapDialog::new();
+        d.set("VIEW", &(view + 1).to_string()).set_list("FILES", list(&rows));
+        let o = Options { view, ..opts("QS400") };
+        render(&g, "WRKSPLF", &d, &o).expect("render").text_rows()
+    };
+    let v1 = screen(0).join("\n");
+    assert!(v1.contains("Device or") && v1.contains("F11=View 2"), "{v1}");
+    let v2 = screen(1).join("\n");
+    assert!(v2.contains("Form Type") && v2.contains("Nbr") && v2.contains("F11=View 3"), "{v2}");
+    let v3 = screen(2);
+    let all = v3.join("\n");
+    assert!(all.contains("Job") && all.contains("Number") && all.contains("Date") && all.contains("Time"), "{all}");
+    assert!(all.contains("F11=View 1"), "{all}");
+    let a = v3.iter().find(|r| r.contains("15:45:02")).expect("first file");
+    let b = v3.iter().find(|r| r.contains("15:46:10")).expect("second file");
+    for r in [a, b] {
+        assert!(r.contains("QSYSPRT") && r.contains("QPADEV0001") && r.contains("000225") && r.contains("11/01/26"), "{r}");
+    }
+}
+
 /// A panel without a golden: its title on row 1 and its keys above
 /// the message line.
 fn title_and_keys(group: &str, panel: &str, title: &str) {
