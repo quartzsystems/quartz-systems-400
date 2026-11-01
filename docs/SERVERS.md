@@ -41,7 +41,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 | Server | Jobs (user, subsystem) | Ports | Attributes | Application ID | Exit points | This release |
 |---|---|---|---|---|---|---|
 | `*TELNET` | `QTVTELNET` listener, `QTVDEVICE` workers (`QTCP`, `QSYSWRK`) | 23, 992 TLS | `CHGTELNA` | `QIBM_QTV_TELNET_SERVER` | `QIBM_QTG_DEVINIT`, `QIBM_QTG_DEVTERM` | built |
-| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2005 TLS | (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
+| `*HTTP` | `ADMIN` (`QTMHHTTP`, `QHTTPSVR`) | 2001, 2010 TLS | (bag `PORT`, `TLSPORT`) | `QIBM_HTTP_SERVER_ADMIN` | | built: `HTTPSVR(*ADMIN)` only |
 | `*FTP` | `QTFTP00nnn` listener and session jobs (`QTCP`, `QSYSWRK`) | 21, 990 TLS | `CHGFTPA` | `QIBM_QTMF_FTP_SERVER` | `QIBM_QTMF_SERVER_REQ`, `QIBM_QTMF_SVR_LOGON` | built (docs/FTP.md) |
 | `*SSHD` | `QP0ZSPWT` (`QUSER`, `QUSRWRK`) | 22 | `sshd_config` | | | slot |
 | `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the `QIBM_OS400_QZBS_SVR_*` IDs) | | built (`servers::framework::HostSvr`) |
@@ -145,17 +145,20 @@ that is handed the socket; docs/FTP.md has the server, its attributes
 
 ## `*HTTP` administration
 
-`ADMIN` serves `servers::http`'s page on 2001 and, with TLS, on 2005:
-`GET` and `HEAD` of `/`, `/index.html` and `/HTTPAdmin` answer 200 with
-a Quartz page saying web administration is not yet available, with the
-system name and release; other paths 404, other methods 405, other
-versions 505, a malformed head 400, a head over 16 KiB 431. Every
-answer closes the connection. `servers::http::admin_tls` builds the TLS
-configuration from the `*SYSTEM` store and the application ID
-`QIBM_HTTP_SERVER_ADMIN` (`tls::config::for_app`); the job cannot open
-the store yet (its stash key is the LIC partition's), so the job uses
-the system's self-signed certificate of `work/qsjob/src/work/tls.rs`
-until the storage service answers an application ID's identity.
+`ADMIN` runs HTTP Server Administration (`net/httpadmin`, docs/HTTPADMIN.md)
+on 2001 and, with TLS, on 2010 (Global settings' TLS port moves it):
+`servers::web::Web` serves a `qsweb` handler on a listener's
+connections, HTTP/1.1 kept alive, idle connections closed after 30
+seconds, the peer's `secure` from the connection (Global settings'
+Require TLS redirects 2001 to the TLS port). The job's live environment
+is `work/qsjob/src/work/httpadm/`: its thread holds the link and the
+runtime and answers the connections' threads; sign-on is the storage
+service's (`QMAXSIGN`, `PW` entries), then the profile's handle
+(`QSYGETPH`) runs `STRTCPSVR`/`ENDTCPSVR` as the web user; the IFS is
+the job's (`QTMHHTTP`); `web_audit` writes `PW`, `AF` and `ZC`. The TLS
+certificate is the one `*SYSTEM` assigns `QIBM_HTTP_SERVER_ADMIN`
+(`servers::web::app_tls` builds it from a store), else the system's
+self-signed one of `work/qsjob/src/work/tls.rs`.
 
 ## Adding a server
 
@@ -357,8 +360,8 @@ built.
   from the host over a UDP forward, answered from the guest's clock;
   `ENDTCPSVR` of both.
 - QEMU step 64 (`tools/conformance/src/servers.rs`): `STRTCPSVR *HTTP
-  HTTPSVR(*ADMIN)` starts `ADMIN` in `QHTTPSVR`; the page arrives over
-  2001 and 2005; a second start says already started, an unknown
+  HTTPSVR(*ADMIN)` starts `ADMIN` in `QHTTPSVR`; the sign-on page arrives over
+  2001 and 2010; a second start says already started, an unknown
   instance `TCP1A06`; `ENDTCPSVR` ends it and the port goes quiet;
   `ENDTCPSVR *TELNET` ends `QTVTELNET`, `CHGTELNA` takes new values and
   refuses an out-of-range one, `STRTCPSVR *TELNET` brings telnet back;

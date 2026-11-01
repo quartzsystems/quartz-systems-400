@@ -1364,7 +1364,6 @@ version = "0.1.0"
 dependencies = [
  "certs",
  "httpd",
- "msgf",
  "qsweb",
  "release",
  "serde",

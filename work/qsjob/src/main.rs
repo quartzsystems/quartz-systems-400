@@ -23,6 +23,8 @@ mod panels;
 #[cfg(target_os = "linux")]
 mod platform;
 #[cfg(any(target_os = "linux", test))]
+mod httpenv;
+#[cfg(any(target_os = "linux", test))]
 mod printmap;
 #[cfg(target_os = "linux")]
 mod qsh;

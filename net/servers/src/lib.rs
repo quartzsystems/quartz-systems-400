@@ -15,17 +15,17 @@
 //! - [`attrs`]: the servers' attributes in the `QUSRSYS` server table
 //!   (`CHGTELNA`, `CHGFTPA`, the HTTP administration ports).
 //! - [`listen`]: binding, the accept loop with its stop flag and TLS.
-//! - [`http`]: the minimal HTTP/1.1 administration listener's page.
+//! - [`web`]: a web product (`qsweb`) served on a listener, kept alive.
 //! - [`msg`]: the message identifiers.
 
 #![deny(missing_docs)]
 
 pub mod attrs;
 pub mod framework;
-pub mod http;
 pub mod listen;
 pub mod msg;
 pub mod registry;
+pub mod web;
 
 pub use framework::{Env, Framework, Instance, JobStart, Refusal, Request, TcpServer};
 pub use registry::{JobKind, JobSpec, Readiness, ServerSpec};

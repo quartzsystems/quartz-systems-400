@@ -11,6 +11,7 @@
 //! - [`routes`]: the pages, by area.
 //! - [`msgs`]: the `HTP` messages (`QHTTPSVR/QZHBMSG`).
 //! - [`settings`]: Global settings.
+//! - [`seed`]: the `ADMIN` instance made on a new system.
 //! - [`fixture`]: the prototype's sample system, for tests and the demo.
 
 pub mod env;
@@ -18,6 +19,7 @@ pub mod fixture;
 pub mod help;
 pub mod msgs;
 pub mod routes;
+pub mod seed;
 pub mod settings;
 pub mod util;
 

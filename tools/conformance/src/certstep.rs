@@ -5,7 +5,7 @@
 //! Phase 10 QEMU step 70: certificates. `QSCRTCRTS` makes the `*SYSTEM`
 //! store (its password kept with the LIC key), `QSCRTCRT` a certificate
 //! in it, `QSASNCRT` gives it to `QIBM_HTTP_SERVER_ADMIN`, and the HTTP
-//! administration instance then serves it on 2005: the harness reads the
+//! administration instance then serves it on 2010: the harness reads the
 //! certificate from the handshake. `QSWRKCRT`, `QSWRKAPPID` and
 //! `QSCHKCRT` answer in text at the service console.
 
@@ -79,7 +79,7 @@ fn served_certificate(port: u16) -> Result<Vec<u8>, String> {
 #[allow(clippy::unused_self)] // the steps share one signature
 impl Suite {
     /// Step 70: a certificate assigned to the HTTP administration
-    /// instance is the one port 2005 serves.
+    /// instance is the one port 2010 serves.
     pub(crate) fn certificates(&self, s: &mut Session) -> Result<String, String> {
         expect(
             s,
@@ -111,18 +111,18 @@ impl Suite {
         }
         // The server presents the assigned certificate.
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", &["TCP1A07", "TCP1A08"])?;
-        let port = forward_port(self, GUEST, 2005)?;
+        let port = forward_port(self, GUEST, 2010)?;
         let der = served_certificate(port)?;
         let info = certs::x509::CertInfo::from_der(&der).map_err(|e| e.to_string())?;
         if info.common_name.as_deref() != Some(CN) {
-            return Err(format!("2005 served {} rather than CN={CN}", info.subject));
+            return Err(format!("2010 served {} rather than CN={CN}", info.subject));
         }
         expect(s, "ENDTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", &["TCP1A0A"])?;
         // Unassigned, the server goes back to the store's default, which
         // is still STEP70 (the only certificate): nothing else to see.
         expect(s, "QSASNCRT APPID(QIBM_HTTP_SERVER_ADMIN) LABEL(*NONE)", &["TCP1C09"])?;
         Ok(format!(
-            "*SYSTEM made, STEP70 assigned to QIBM_HTTP_SERVER_ADMIN and served on 2005 (host {port}, SHA-256 {}...), one expiry warning",
+            "*SYSTEM made, STEP70 assigned to QIBM_HTTP_SERVER_ADMIN and served on 2010 (host {port}, SHA-256 {}...), one expiry warning",
             &info.sha256[..16]
         ))
     }

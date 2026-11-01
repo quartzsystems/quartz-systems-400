@@ -58,6 +58,10 @@ mail = { path = "../../net/mail", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }
 ftp = { path = "../../net/ftp", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }
+httpadmin = { path = "../../net/httpadmin", version = "0.1.0" }
+httpd = { path = "../../net/httpd", version = "0.1.0" }
+qsweb = { path = "../../net/qsweb", version = "0.1.0" }
+sysval = { path = "../../lic/sysval", version = "0.1.0" }
 rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }
 rustls-graviola = "0.4.0"
 x509-cert = { version = "0.3.0", features = ["builder"] }

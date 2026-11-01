@@ -3,8 +3,8 @@
 // root directory of this project.
 
 //! Phase 10 QEMU step 64: the TCP servers framework. `STRTCPSVR *HTTP
-//! HTTPSVR(*ADMIN)` starts `ADMIN` in `QHTTPSVR`, whose page comes over
-//! HTTP on 2001 and HTTPS on 2005; `ENDTCPSVR` takes it down. The
+//! HTTPSVR(*ADMIN)` starts `ADMIN` in `QHTTPSVR`, whose sign-on page comes over
+//! HTTP on 2001 and HTTPS on 2010; `ENDTCPSVR` takes it down. The
 //! telnet server ends, takes `CHGTELNA`, and starts again under the
 //! framework; a server this release does not run says so.
 
@@ -47,10 +47,10 @@ fn job_shown(s: &mut Session, name: &str, present: bool) -> Result<String, Strin
     }
 }
 
-/// One request over `stream`, the whole answer.
+/// The sign-on page over `stream`, the whole answer.
 fn get(stream: &mut (impl Read + Write)) -> Result<String, String> {
     stream
-        .write_all(b"GET / HTTP/1.1\r\nHost: qs400\r\n\r\n")
+        .write_all(b"GET /qs400/httpadmin/signon HTTP/1.1\r\nHost: qs400\r\nConnection: close\r\n\r\n")
         .map_err(|e| e.to_string())?;
     let mut out = Vec::new();
     let _ = stream.read_to_end(&mut out);
@@ -145,12 +145,12 @@ impl Suite {
         }
         let plain = forward_port(self, GUEST, 2001)?;
         let p = page(plain)?;
-        for want in ["not yet available", "QS/400 V1R0M0", "Connection: close"] {
+        for want in ["QS/400 HTTP Server Administration", "name=\"password\"", "Connection: close"] {
             if !p.contains(want) {
                 return Err(format!("the page has no {want:?}:\n{p}"));
             }
         }
-        let secure = forward_port(self, GUEST, 2005)?;
+        let secure = forward_port(self, GUEST, 2010)?;
         secure_page(secure)?;
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", "TCP1A08")?;
         expect(s, "STRTCPSVR SERVER(*HTTP) HTTPSVR(WEB1)", "TCP1A06")?;
@@ -174,7 +174,7 @@ impl Suite {
         }
         expect(s, "STRTCPSVR SERVER(*SNMP)", "TCP1A04")?;
         Ok(format!(
-            "ADMIN in QHTTPSVR served the page on 2001 (host {plain}) and 2005 (host {secure}) and ended; QTVTELNET ended, took CHGTELNA and started again"
+            "ADMIN in QHTTPSVR served the sign-on page on 2001 (host {plain}) and 2010 (host {secure}) and ended; QTVTELNET ended, took CHGTELNA and started again"
         ))
     }
 }
