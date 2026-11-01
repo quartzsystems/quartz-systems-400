@@ -95,6 +95,56 @@ authorized page and an `AF` entry.
   confirmations are built the same way (sentence, table, options, the
   equivalent command, OK and Cancel) and the crawler maps them to it.
 
+## System, network, performance
+
+`env::config::Config` (system values, disks, hardware, time),
+`env::net::Net` (TCP/IP and the servers) and `env::perf::Perf` read
+what `WRKSYSVAL`, `WRKDSKSTS`, `WRKHDWRSC`, `CFGTCP`, `NETSTAT`,
+`WRKSYSACT` and `WRKSYSSTS` show; changes run through `Config::run`
+and `Net::run` as the user, as in Work management.
+
+- Routes: `/sysval?cat=<key>&sort=n` (keys `security`, `datetime`,
+  `jobs`, `storage`, `msgs`, `devices`, `libl`, `perf`, `power`, `save`,
+  `sysctl`; none is Security under the System group, `cat=security` is
+  the Security group's Security values), `/sysval/<name>`, `/disk`,
+  `/disk/<unit>`, `/hdwrsc?t=&s=`, `/hdwrsc/<name>[/varyon|/confirm]`,
+  `/time`, `/tcp`, `/tcp/hosts`, `/tcp/ifc[?add=1|?edit=<addr>]`,
+  `/tcp/ifc/{start,confirm}?a=<addr>[&op=end|remove]`,
+  `/tcp/rte[?add=1|?d=&m=&n=]`, `/tcp/rte/confirm?d=&m=&n=`,
+  `/tcp/servers[/<name without *>[/start|/confirm?op=end|restart]]`,
+  `/perf/sys?a=&sort=cpu|io`, `/perf/disk?a=`.
+- Change system value checks the value against what the value accepts
+  (the grey hint) before `CHGSYSVAL` runs; a refused value stays on the
+  page with `CPD9B8D`. Security values need `*SECADM`. The command
+  writes the `SV` entry.
+- Disk status's Reset is `WRKDSKSTS RESET(*YES)`: it restarts the
+  user's own I/O counters, changes nothing on the system, so it is a
+  plain link (`/disk?reset=1`) with no confirmation. Bars are never
+  narrower than 1 %.
+- Hardware resources: Vary on and Vary off run `VRYCFG` for the
+  configuration descriptions over the resource (one command per
+  `CFGTYPE`), `*JOBCTL` first; a resource no description uses gets a
+  page that says so, with Cancel only. Filters keep a matching row's
+  parents. The system unit, I/O processors and adapters (depth 0 to 2)
+  carry the `[-]` glyph, as the prototype shows them.
+- Time management: Apply runs `CHGSYSVAL` for each changed value and
+  `CHGNTPA RMTSYS()` for the servers (`*IOSYSCFG`). OK and Cancel go to
+  System status.
+- TCP/IP: every change needs `*IOSYSCFG`; Apply runs `CHGTCPDMN` with
+  only the parameters changed, `CHGTCPA IPDTGFWD()` for forwarding.
+  Interfaces the system makes (the loopback, generated IPv6 addresses)
+  have no Remove. The Host table tab is a read-only list; the Domain
+  tab is the overview, which holds the domain fields.
+- Servers: Start all autostart servers is `STRTCPSVR
+  SERVER(*AUTOSTART)` straight from its POST; End and Restart
+  (`STRTCPSVR RESTART()`) are confirmed. Properties changes autostart
+  with the server's own `CHGxxxA AUTOSTART()`; a server without one shows
+  it read-only. `*HTTP` links to `http://<host>:2001/qs400/httpadmin/instances`.
+- Performance: the refresh select is `a` with Off, 5, 10, 30 and 60
+  seconds (the golden pages'; home keeps `auto`); each display ends the
+  user's interval. A job's CPU bar spans 0 to 20 %. Units busy 70 % or
+  more are named under Disk activity with the job doing most I/O.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -112,6 +162,8 @@ of the golden page:
 | `nav/subsystems.html`, `nav/printers.html`, `nav/scheduled-jobs.html` | the two buttons get names `start`/`add` and `refresh` | two nameless buttons in one form cannot be told apart |
 | `nav/subsystem-props-pools.html` | Add pool..., Change..., Remove get names `add`, `change`, `remove` | the same |
 | `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
+| `nav/tcpip.html` | `13 started` → `14 started` | the Servers page lists fourteen started |
+| `nav/tcpip-interfaces.html`, `nav/servers.html` | the two buttons get names `add`/`start` and `refresh` | two nameless buttons in one form cannot be told apart |
 
 ## Steps
 
@@ -124,7 +176,8 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | 3-11 | Work management | done (golden-clean; live `Work` pending) |
 | 12-14 | Messages | |
 | 15-18 | Users and groups | |
-| 19-22 | System | |
-| 23, 24 | Network | |
+| 19-22 | System | done (golden-clean; live `Config` pending) |
+| 23, 24 | Network | done (golden-clean; live `Net` pending) |
 | 25, 26 | Database | |
-| 27-30 | Security, software, performance | |
+| 27-29 | Security, software | |
+| 30 | Performance | done (golden-clean; live `Perf` pending) |

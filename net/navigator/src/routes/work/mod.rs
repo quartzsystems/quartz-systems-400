@@ -21,7 +21,7 @@ use std::fmt::Write as _;
 use qsweb::frame::Page;
 use qsweb::html::esc;
 use qsweb::http::Response;
-use qsweb::msg::Kind;
+use qsweb::msg::{Kind, Message};
 use qsweb::pages::confirm_body;
 use qsweb::partials::{Cell, Col, List, list_table};
 
@@ -123,7 +123,23 @@ pub fn page(
     help: &str,
     item: Option<&'static str>,
 ) -> Response {
-    let mut c = vec![GROUP.to_string()];
+    page_in(rq, GROUP, crumb, h1, desc, body, help, item)
+}
+
+/// A page of tree group `group`; `item` is the tree's current item
+/// for a list page, `None` for pages below one.
+#[allow(clippy::too_many_arguments)]
+pub fn page_in(
+    rq: &Rq<'_>,
+    group: &'static str,
+    crumb: &[&str],
+    h1: &str,
+    desc: Option<&str>,
+    body: String,
+    help: &str,
+    item: Option<&'static str>,
+) -> Response {
+    let mut c = vec![group.to_string()];
     c.extend(crumb.iter().map(ToString::to_string));
     rq.page(Page {
         title: h1.into(),
@@ -132,7 +148,7 @@ pub fn page(
         desc: desc.map(ToString::to_string),
         body,
         help: help.into(),
-        nav: item.map(|i| (GROUP, Some(i))),
+        nav: item.map(|i| (group, Some(i))),
         ..Page::default()
     })
 }
@@ -157,6 +173,11 @@ pub struct Confirm<'a> {
 
 /// The confirmation page.
 pub fn confirm_page(rq: &Rq<'_>, c: &Confirm<'_>) -> Response {
+    confirm_in(rq, GROUP, c)
+}
+
+/// The confirmation page of a command in tree group `group`.
+pub fn confirm_in(rq: &Rq<'_>, group: &'static str, c: &Confirm<'_>) -> Response {
     let list = List {
         cols: c.cols.iter().map(|l| Col::plain(l)).collect(),
         rows: c
@@ -176,7 +197,7 @@ pub fn confirm_page(rq: &Rq<'_>, c: &Confirm<'_>) -> Response {
     let title = format!("Confirm {}", c.what);
     let mut crumb: Vec<&str> = c.crumb.to_vec();
     crumb.push(&title);
-    page(rq, &crumb, &title, None, body, "confirm", None)
+    page_in(rq, group, &crumb, &title, None, body, "confirm", None)
 }
 
 /// `<span class="mono">` of `s`.
@@ -201,7 +222,12 @@ pub fn need(
 
 /// Run `command` as the user, then `303` to `back` with its message.
 pub fn run(rq: &Rq<'_>, command: &str, back: &str) -> Response {
-    let m = match rq.env().work.run(rq.user(), command) {
+    reply(rq, rq.env().work.run(rq.user(), command), back)
+}
+
+/// `303` to `back` with a command's message, completion or failure.
+pub fn reply(rq: &Rq<'_>, r: Result<Message, Message>, back: &str) -> Response {
+    let m = match r {
         Ok(m) | Err(m) => m,
     };
     rq.done(back, m)
