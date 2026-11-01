@@ -193,7 +193,7 @@ pub fn disks(system: &System) -> Vec<NonConfigured> {
 
 /// Disks no disk function may touch: the LIC partition's, the units'
 /// devices, the install media and any with a mounted file system.
-fn reserved(system: &System) -> Vec<String> {
+pub(crate) fn reserved(system: &System) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     if let Ok(lic) = licpart::locate() {
         out.push(lic.display().to_string());

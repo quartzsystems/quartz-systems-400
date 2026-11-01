@@ -55,6 +55,58 @@ fn first_sign_on(s: &mut Session) -> Result<(), String> {
     Ok(())
 }
 
+/// Write a QS/400 disk layout (GPT, ESP, LIC, IFS, ASP1) onto `path`.
+fn old_install(path: &std::path::Path) -> Result<(), HarnessError> {
+    let other = |e: diskimg::Error| std::io::Error::other(e.to_string());
+    let mut f = fs::OpenOptions::new().read(true).write(true).open(path)?;
+    let bytes = f.metadata()?.len();
+    let plan = diskimg::Plan::for_bytes(bytes).map_err(other)?;
+    let esp = diskimg::fat::build(&diskimg::fat::DISK_ESP, &[]).map_err(other)?;
+    let ifs = diskimg::IfsFormat {
+        time: diskimg::xfsfmt::Timestamp {
+            secs: 1_767_225_600,
+            nsecs: 0,
+        },
+        zeroed: true,
+    };
+    diskimg::write_image(&mut f, &plan, &diskimg::Guids::FIXED, &esp, &ifs).map_err(other)?;
+    Ok(())
+}
+
+/// Recovery option 10 on DD002, which holds an earlier install: offered
+/// with its data, made blank, then listed as non-configured without it.
+fn delete_old_data(s: &mut Session) -> Result<(), String> {
+    s.send("4")?;
+    s.expect("Work with Disk Units", CMD)?;
+    s.send("2")?;
+    s.expect("Work with Disk Unit Recovery", CMD)?;
+    s.send("10")?;
+    s.expect("Select Disk Units for Delete Disk Unit Data", CMD)?;
+    let list = s.expect("F3=Exit", CMD)?;
+    if !list.contains("DD002") || !list.contains("(has data)") || list.contains("DD001") {
+        return Err(format!("not DD002 alone, with its data:\n{list}"));
+    }
+    s.send("1")?;
+    s.expect("Confirm Delete Disk Unit Data", CMD)?;
+    s.send("key f10")?;
+    s.expect("Data deleted on 1 unit(s)", Duration::from_secs(120))?;
+    s.send("key f12")?;
+    s.expect("Work with Disk Units", CMD)?;
+    s.send("1")?;
+    s.expect("Work with Disk Configuration", CMD)?;
+    s.send("1")?;
+    s.expect("Display Disk Configuration", CMD)?;
+    s.send("4")?;
+    s.expect("Display Non-Configured Units", CMD)?;
+    let shown = s.expect("Press Enter to continue", CMD)?;
+    if !shown.contains("DD002") || shown.contains("(has data)") {
+        return Err(format!("DD002 is not blank and non-configured:\n{shown}"));
+    }
+    s.send("key f3")?;
+    s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+    Ok(())
+}
+
 /// Poll `mirror status` until no resume runs.
 fn wait_resume(s: &mut Session) -> Result<(), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(600);
@@ -79,6 +131,8 @@ impl Suite {
             let f = fs::File::create(p)?;
             f.set_len(4 * 1024 * 1024 * 1024)?;
         }
+        // The second disk holds an earlier install, as old disks do.
+        old_install(&second)?;
         let two = Launch {
             image: Some(first.clone()),
             extra_disks: vec![second.clone()],
@@ -119,7 +173,8 @@ impl Suite {
     }
 
     /// Step 4: the LIC onto DD001, the re-IPL into DST with A6001260,
-    /// DD002 added and paired through the disk menus, option 1 to
+    /// DD002 (an earlier install) made blank with Delete disk unit data,
+    /// added and paired through the disk menus, option 1 to
     /// re-IPL. Ends inside the synchronization of the next IPL, which
     /// step 5 interrupts.
     fn mirrored_install(&self, s: &mut Session) -> Result<String, String> {
@@ -138,6 +193,7 @@ impl Suite {
         s.expect("SRC C6004100", self.boot_timeout)?;
         s.expect("SRC A6001260", CMD)?;
         first_sign_on(s)?;
+        delete_old_data(s)?;
         // Work with disk units > configuration > ASP configuration > add.
         s.send("4")?;
         s.expect("Work with Disk Units", CMD)?;
@@ -174,7 +230,7 @@ impl Suite {
         // The next IPL synchronizes before DST comes back.
         s.expect("SRC C1001075", self.boot_timeout)?;
         s.expect("slic: synchronizing unit 1: 20%", Duration::from_secs(120))?;
-        Ok("DD002 added and paired in DST; synchronization running at the re-IPL".into())
+        Ok("DD002 data deleted, added and paired in DST; synchronization running at the re-IPL".into())
     }
 
     /// Step 5: the power pulled at 20% of the synchronization; the next

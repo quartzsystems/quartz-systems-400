@@ -229,7 +229,9 @@ together.
   is left. The kernel re-reads the partition table and the hardware
   resources are rescanned; the disk then shows as non-configured with
   no data, without an IPL. A parity set member is never listed, matched
-  by resource and serial as the parity displays show it.
+  by resource and serial as the parity displays show it. A disk holding
+  an earlier install counts as non-configured (A6001260 at an attended
+  IPL); its blank ASP 1 partition is never taken for a unit.
 
 A D IPL opens the store on demand when a disk option needs it.
 

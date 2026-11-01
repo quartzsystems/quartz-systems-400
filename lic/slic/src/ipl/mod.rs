@@ -335,16 +335,17 @@ fn pending_install(
         ));
     }
     if !auto {
-        let media = media::disk_on_d_ipl(system.boot.ipl_d);
         instdev::scan(None, true);
-        let others = instdev::media_disks();
+        // Any disk outside the configuration, an earlier install's too.
+        let taken = dst::reserved(system);
         let spare = diskimg::locate::whole_disks()
             .unwrap_or_default()
             .iter()
             .filter(|d| {
-                !d.has_qs400
-                    && media.as_deref() != Some(d.name.as_str())
-                    && !others.contains(&d.name)
+                let dev = d.dev.display().to_string();
+                !taken
+                    .iter()
+                    .any(|t| svctools::dst::disk::delete::on_disk(t, &dev))
             })
             .count();
         if spare > 0 {

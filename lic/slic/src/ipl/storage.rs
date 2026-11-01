@@ -628,12 +628,22 @@ pub fn open_objects(system: &mut System) -> Result<(), &'static src::Src> {
     Ok(())
 }
 
-/// Device nodes that may be units: every ASP 1 partition, and every
-/// whole disk that starts with a unit header (a unit added as a whole
-/// disk through the service tools).
+/// Device nodes that may be units: the ASP 1 partition on the LIC
+/// partition's disk, any other ASP 1 partition that starts with a unit
+/// header, and every whole disk that starts with one (a unit added as a
+/// whole disk through the service tools). A blank ASP 1 partition left
+/// on another disk by an earlier install is not a unit.
 pub fn unit_candidates() -> Vec<PathBuf> {
-    let mut paths =
-        diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID).unwrap_or_default();
+    let home = licpart::locate()
+        .ok()
+        .and_then(|p| diskimg::locate::disk_of(&p));
+    let mut paths: Vec<PathBuf> = diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|p| {
+            (home.is_some() && diskimg::locate::disk_of(p) == home) || has_unit_header(p)
+        })
+        .collect();
     for disk in diskimg::locate::whole_disks().unwrap_or_default() {
         if disk.has_qs400 {
             continue; // its units are partitions, listed above
