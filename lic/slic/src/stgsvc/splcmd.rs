@@ -472,6 +472,46 @@ fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     Ok(format!("{n} records copied to file {name} in {lib}.\n"))
 }
 
+/// `RLSSPLF`'s completion message.
+pub const RELEASED: &str = "CPC3302";
+/// A file `RLSSPLF` cannot release: neither held nor saved.
+pub const NOT_HELD: &str = "CPF3337";
+
+/// Release spooled file `id` (`SplfAttrs::release`); `CPF3337` when it
+/// is neither held nor saved. The file's attributes after.
+fn release(system: &mut System, id: u32) -> Result<SplfAttrs, String> {
+    let a = system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| e.attrs.clone())
+        .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
+    if !a.clone().release() {
+        return Err(format!(
+            "{NOT_HELD} Spooled file {} number {} is {}, neither held nor saved.",
+            a.name,
+            a.number,
+            a.status.code()
+        ));
+    }
+    spool::update(system, id, |a| {
+        a.release();
+        Ok(())
+    })?;
+    Ok(system.spool.files.get(&id).map(|e| e.attrs.clone()).unwrap_or(a))
+}
+
+/// `RLSSPLF FILE JOB SPLNBR` for its processing program: the file,
+/// its number and its job.
+pub fn rlssplf(system: &mut System, me: u32, line: &str) -> Result<(String, u32, String), String> {
+    let p = Params::parse(line);
+    let id = target(system, me, &p)?;
+    may_spool(system, id, false)?;
+    sf(system, id, "L");
+    let a = release(system, id)?;
+    Ok((a.name.clone(), a.number, a.job_text()))
+}
+
 /// `CHGSPLFA`, `HLDSPLF`, `RLSSPLF`, `DLTSPLF`, `WRKSPLFA`.
 fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
@@ -516,16 +556,8 @@ fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String
             Ok(format!("Spooled file {name} held.\n"))
         }
         "rlssplf" => {
-            spool::update(system, id, |a| {
-                if a.status == Status::Hld {
-                    a.status = match a.held_from {
-                        Status::Opn | Status::Clo => a.held_from,
-                        _ => Status::Rdy,
-                    };
-                }
-                Ok(())
-            })?;
-            Ok(format!("Spooled file {name} released.\n"))
+            let a = release(system, id)?;
+            Ok(format!("{RELEASED} Spooled file {name} number {} released.\n", a.number))
         }
         "wrksplfa" => Ok(system
             .spool

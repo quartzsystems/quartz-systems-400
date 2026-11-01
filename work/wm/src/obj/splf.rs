@@ -487,6 +487,20 @@ impl SplfAttrs {
         Ok(())
     }
 
+    /// `RLSSPLF`: a held file goes back to what it was (ready, or open
+    /// or closed when held so), a saved one to ready, to print again
+    /// from its first page. False, and nothing changed, for any other
+    /// status.
+    pub fn release(&mut self) -> bool {
+        self.status = match (self.status, self.held_from) {
+            (Status::Hld, Status::Opn | Status::Clo) => self.held_from,
+            (Status::Hld | Status::Sav, _) => Status::Rdy,
+            _ => return false,
+        };
+        self.last_page = 0;
+        true
+    }
+
     /// `WRKSPLFA` as text.
     #[must_use]
     pub fn describe(&self) -> String {
@@ -629,5 +643,30 @@ mod tests {
             .unwrap();
         assert_eq!((b.copies, b.prtqlty, b.save), (3, 2, true));
         assert!(b.describe().contains("*NLQ"));
+    }
+
+    #[test]
+    fn release() {
+        let mut a = SplfAttrs {
+            status: Status::Sav,
+            last_page: 3,
+            pages: 3,
+            ..SplfAttrs::default()
+        };
+        assert!(a.release());
+        assert_eq!((a.status, a.last_page), (Status::Rdy, 0));
+        a.status = Status::Hld;
+        a.held_from = Status::Rdy;
+        assert!(a.release());
+        assert_eq!(a.status, Status::Rdy);
+        a.status = Status::Hld;
+        a.held_from = Status::Opn;
+        assert!(a.release());
+        assert_eq!(a.status, Status::Opn);
+        for s in [Status::Rdy, Status::Wtr, Status::Opn, Status::Clo] {
+            a.status = s;
+            assert!(!a.release());
+            assert_eq!(a.status, s);
+        }
     }
 }

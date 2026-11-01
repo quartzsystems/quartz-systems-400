@@ -6478,6 +6478,20 @@ help = "Correct what the message names and try the request again."
 vars = []
 
 [[msg]]
+id = "CPC3302"
+sev = 0
+text = "Spooled file &1 number &2 of job &3 released."
+help = "The file is ready: a writer for its output queue prints it from its first page."
+vars = ["*CHAR 10", "*CHAR 6", "*CHAR 28"]
+
+[[msg]]
+id = "CPF3337"
+sev = 40
+text = "Spooled file not released: it is neither held nor saved."
+help = "Only a held file or a saved file can be released. Hold the file first, or wait until it is saved after printing."
+vars = []
+
+[[msg]]
 id = "CPA3388"
 sev = 99
 text = "Writer &1 could not print file &2 number &3 on device &4. Reply (C H R)."

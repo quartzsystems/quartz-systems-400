@@ -37,6 +37,7 @@ pub(crate) mod ptflic;
 mod ptfsvc;
 mod rpg;
 mod savcmd;
+mod splcpp;
 pub(crate) mod savout;
 pub(crate) mod svccmd;
 pub(crate) mod savsys;
@@ -82,6 +83,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
         Site::Job | Site::Service => tcpcmd::run(system, name, parms)
             .or_else(|| direct::run(system, name, parms))
             .or_else(|| savcmd::run(system, name, parms))
+            .or_else(|| splcpp::run(system, name, parms))
             .or_else(|| medcmd::run(system, name, parms))
             .or_else(|| tapcpy::run(system, name, parms))
             .or_else(|| savsys::run(system, name, parms))
