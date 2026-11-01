@@ -228,16 +228,23 @@ escape (the diagnostic before `CPF0006`) the message.
 | Work | `actjob_data` (`WRKACTJOB`), `job_detail` (`DSPJOB`, the library list), `panel2_data JOBLCK` (`DSPJOB OPTION(*JOBLCK)`: the job's locks from the store's lock table, as `WRKOBJLCK`), `list_objects` + `wm_object` (`*JOBQ`, `*SBSD`, `*OUTQ`, `QUSRSYS/QDFTJOBSCD`), `jobq_attach`, `sbs_list`, `pools`, `splf_list`, `splf_fetch` (text and PDF through `spool`), `wtr_list`, `cfg_status` |
 | Messages | `list_objects *MSGQ` (`QSYS` `QSYSOPR`/`QSYSMSG`, then `QUSRSYS`), `msgq_list` (`DSPMSG`), the profile's `MSGQ` (`QSYRUSRI`), `hst_entries` (`DSPLOG`) |
 | Users | `QSYLAUTU` + `QSYRUSRI` (`sec_api Users`, `Profile`), `QSYLOBJA` (a profile's objects), `autl_panel_list` + `autl_panel` (`WRKAUTL`, `DSPAUTL`), `QSYLATLO` (`DSPAUTLOBJ`). A profile is a group when another names it as `GRPPRF` or `SUPGRPPRF`, or it has a `GID` |
+| Db | queries over the `QSYS2` catalog views through the interactive SQL session (`isql_start` `*SQL`/`*NONE`, `isql_run`): `SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST` + `SYSKEYCST`, `SYSINDEXES` + `SYSKEYS`, `SYSVIEWDEP`; creation times from `object`. Run SQL: `isql_start` with the naming and isolation, `SET SCHEMA`, `isql_run` (the row cap), `isql_end` commits; messages from `QSQLMSG` as Enter SQL Statements words them. No `SYSTRIGGERS`/`SYSROUTINES` (no triggers, procedures), no `QSQGNDDL` (Generate SQL answers `SQL0084`), no Explain (`SQL0084`) |
+| Security | `DSPAUDJRNE ... OUTPUT(*)` through `exec`, as its 5250 display runs it (whole UTC days, cut to the filter's seconds), `secaud_panel` (`DSPSECAUD`), the receiver's creation (`object *JRNRCV`) as its attach time |
+| Software | `licpgm_panel` `INSTALLED`, `SFWRSC` (libraries), `LICINF` (usage limits), `MEDIA` of a catalog's device; `panel2_data IMGCLG` (`WRKIMGCLG`); `sys2_panel` `LICKEY`, `PTF` per installed product, `PTFD` (delayed), `PTFGRP`, `PTFCVR` (cover letters; a PTF's text is its letter's first line); data area `QSYS/QSUPDATTR` (`api_dtaara_read`). Fixes are the lines of the last `QSCHKUPD` run from Navigator (newer groups, missing HIPER PTFs, a cumulative package), kept in memory |
 
 Not live yet: another job's job log and call stack (the 5250 displays
-refuse them too, `CPD9B9D`), so those tabs are empty; Active jobs'
-ended-job notes; Status' failed sign-ons, PTFs not applied, servers
-down and machine type. Config, Net, Perf, Db, Security and Software
-return empty data (their `run` is live, `run_sql` refuses). QEMU
+refuse them too, `CPD9B9D`), so those tabs are empty; Status' failed
+sign-ons, PTFs not applied, servers down and machine type; when a PTF
+was loaded and a product installed (neither display shows it). Config,
+Net and Perf return empty data (their `run` is live). Active jobs'
+notes: a job a user ended through Navigator (`ENDJOB` that completed)
+is reported to that user once, when it has left the active job table,
+as `CPF1321` with `QCPFMSG`'s text. QEMU
 step 88 (`tools/conformance/src/navstep.rs`) signs on over 2002, checks
 System status against `DSPNETA`, the `NAVIGATOR` job on Active jobs
-against `DSPJOB`, `QSYSOPR`, the CSRF refusal and sign-off, and the
-sign-on page over TLS on 2005.
+against `DSPJOB`, `QSYSOPR`, the CSRF refusal, Run SQL's result table
+over `QSYS2.SYSTABLES`, `QS00SS1` on Licensed programs, PTFs, the audit
+journal and sign-off, and the sign-on page over TLS on 2005.
 ## Database, security, software
 
 `env::db::Db` reads the catalog views (`QSYS2.SYSSCHEMAS`, `SYSTABLES`,

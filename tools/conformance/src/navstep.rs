@@ -7,6 +7,8 @@
 //! 2002: `QSECOFR` signs on, System status names the system, Active
 //! jobs lists the `NAVIGATOR` job itself (which `DSPJOB` knows), the
 //! `QSYSOPR` queue loads, a POST without the form field is refused,
+//! Run SQL returns a result table from `QSYS2.SYSTABLES`, Licensed
+//! programs lists `QS00SS1`, PTFs and the audit journal load,
 //! sign-off; then the sign-on page over TLS on 2005; `ENDTCPSVR` ends
 //! both jobs.
 
@@ -23,6 +25,16 @@ const PREFIX: &str = "/qs400/navigator";
 
 fn nav(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
     http_at(PREFIX, port, method, path, cookie, form)
+}
+
+/// What step 88 runs on Run SQL.
+const QUERY: &str = "SELECT * FROM QSYS2.SYSTABLES FETCH FIRST 5 ROWS ONLY";
+
+/// The form field every POST carries (`name="csrf" value="..."`).
+fn csrf_in(body: &str) -> Option<String> {
+    let at = body.find("name=\"csrf\" value=\"")? + "name=\"csrf\" value=\"".len();
+    let end = body[at..].find('"')?;
+    Some(body[at..at + end].to_string())
 }
 
 /// The system name in the header (`System: <b>NAME</b>`).
@@ -91,6 +103,20 @@ impl Suite {
         // A POST without the form's field is refused.
         let forged = nav(plain, "POST", "/mymsgs", Some(&sid), Some("send=Send"))?;
         want(&forged, 403, &["out of date"], "a POST without the form field")?;
+        // Run SQL over the catalog, then the software and audit pages.
+        let sql = nav(plain, "GET", "/sql", Some(&sid), None)?;
+        let token = csrf_in(&sql.body).ok_or_else(|| format!("no form field on Run SQL:\n{}", sql.brief()))?;
+        let form = format!("csrf={}&sql={}&run=Run", enc(&token), enc(QUERY));
+        let ran = nav(plain, "POST", "/sql", Some(&sid), Some(&form))?;
+        want(&ran, 303, &[], "Run SQL's POST")?;
+        let result = nav(plain, "GET", "/sql", Some(&sid), None)?;
+        want(&result, 200, &["class=\"list\"", "TABLE_NAME", "SQL7958"], "Run SQL's result table")?;
+        let lp = nav(plain, "GET", "/licpgm", Some(&sid), None)?;
+        want(&lp, 200, &["Licensed programs", "QS00SS1"], "Licensed programs")?;
+        let ptf = nav(plain, "GET", "/ptf", Some(&sid), None)?;
+        want(&ptf, 200, &["PTFs"], "PTFs")?;
+        let audit = nav(plain, "GET", "/audit", Some(&sid), None)?;
+        want(&audit, 200, &["Audit journal"], "the audit journal")?;
         let off = nav(plain, "GET", "/signoff", Some(&sid), None)?;
         want(&off, 303, &["Max-Age=0"], "sign-off")?;
         let after = nav(plain, "GET", "/home", Some(&sid), None)?;
@@ -107,7 +133,7 @@ impl Suite {
             return Err(format!("ENDTCPSVR *ADMIN:\n{ended}"));
         }
         Ok(format!(
-            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, a forged POST refused, signed off; the sign-on page over TLS on 2005 (host {secure})"
+            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, a forged POST refused, Run SQL, QS00SS1 installed, PTFs, the audit journal, signed off; the sign-on page over TLS on 2005 (host {secure})"
         ))
     }
 }
@@ -124,5 +150,6 @@ mod tests {
             Some("012345/QTMHHTTP/NAVIGATOR")
         );
         assert_eq!(nav_job("x/QTMHHTTP/NAVIGATOR"), None);
+        assert_eq!(csrf_in("<input type=\"hidden\" name=\"csrf\" value=\"ab12\">").as_deref(), Some("ab12"));
     }
 }
