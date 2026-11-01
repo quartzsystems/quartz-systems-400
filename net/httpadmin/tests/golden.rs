@@ -358,3 +358,17 @@ fn instance_logging() {
     assert_eq!(r.status, 200);
     assert_golden(&r.text(), "http/instance-logging.html", &[]);
 }
+
+#[test]
+fn instance_config() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/instance/WEBSTORE/config");
+    assert_eq!(r.status, 200);
+    // Application IDs stay the compatible QIBM_ ones (docs/HTTPADMIN.md);
+    // the prototype's file in the text area has 45 lines, not 47.
+    assert_golden(
+        &r.text(),
+        "http/instance-config.html",
+        &[("QS400_HTTP_SERVER_WEBSTORE", "QIBM_HTTP_SERVER_WEBSTORE"), ("47 lines", "45 lines")],
+    );
+}

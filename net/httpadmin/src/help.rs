@@ -152,6 +152,13 @@ pub const TOPICS: &[Topic] = &[
 <p><b>Rotate</b> starts a new file daily at the time given or when a file passes the size given, and keeps the number of rotated files given (<span class=\"mono\">LogMaint</span>). <b>Log directory CCSID</b> is the coded character set the logs are written in; 1208 is UTF-8. Changes need the <span class=\"mono\">*IOSYSCFG</span> special authority and are used by a running instance after it is restarted.</p>",
     },
     Topic {
+        key: "instance-config",
+        title: "Instance: configuration file",
+        body: "<p>The instance's configuration file as it is on disk. The other pages of the instance read and write the same file; changes made here show on them at once.</p>
+<p><b>Validate</b> checks every line without writing anything and reports the first error with its line and column (message <span class=\"mono\">HTP8100</span>). <b>Apply</b> checks the text the same way and, only if it is correct, replaces the file: the new text is written to a temporary file and renamed over the old one, so an interruption leaves the previous file in place, and the previous file is kept as <span class=\"mono\">httpd.conf.bak</span>. A running instance uses the new file after it is restarted. <b>Reset</b> discards your edits and shows the file again.</p>
+<p>Applying needs the <span class=\"mono\">*IOSYSCFG</span> special authority.</p>",
+    },
+    Topic {
         key: "signon",
         title: "Sign on",
         body: "<p>Sign on with a QS/400 user profile and its password. The same rules as a 5250 sign-on apply: a disabled profile cannot sign on, an expired password must be changed from a 5250 session first, and too many wrong passwords disable the profile (system value <span class=\"mono\">QMAXSIGN</span>).</p>\n<p>HTTP Server Administration needs the <span class=\"mono\">*IOSYSCFG</span> special authority, or membership in the administrators group named in Global settings.</p>",

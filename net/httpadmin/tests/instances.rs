@@ -474,3 +474,103 @@ fn logging_needs_iosyscfg() {
     assert!(refused(&b));
     assert_eq!(conf(&b, "WEBSTORE"), before);
 }
+
+#[test]
+fn config_validate_apply_reset() {
+    let mut b = Browser::signed_on();
+    let before = conf(&b, "INTRANET");
+    let bad = before.replace("ThreadsPerChild 40", "ThreadsPerChild many").replace('\n', "\r\n");
+    let r = b.post("/instance/INTRANET/config", &[("conf", &bad), ("validate", "Validate")]);
+    let t = shown(&mut b, &r);
+    assert!(t.contains("HTP8100") && t.contains("Configuration error at line 8 column 1"), "{t}");
+    assert!(t.contains("Error at line 8 column 1") && t.contains("ThreadsPerChild many"));
+    assert_eq!(conf(&b, "INTRANET"), before, "validate never writes");
+    // Apply refuses it too.
+    let r = b.post("/instance/INTRANET/config", &[("conf", &bad), ("apply", "Apply")]);
+    assert!(shown(&mut b, &r).contains("HTP8100"));
+    assert_eq!(conf(&b, "INTRANET"), before);
+    // Reset goes back to the file.
+    let r = b.post("/instance/INTRANET/config", &[("reset", "Reset")]);
+    let t = shown(&mut b, &r);
+    assert!(t.contains("ThreadsPerChild 40") && t.contains("Syntax OK"));
+    let good = before.replace("ThreadsPerChild 40", "ThreadsPerChild 80");
+    let r = b.post("/instance/INTRANET/config", &[("conf", &good), ("validate", "Validate")]);
+    assert!(shown(&mut b, &r).contains("HTP8101"));
+    assert_eq!(conf(&b, "INTRANET"), before);
+    let r = b.post("/instance/INTRANET/config", &[("conf", &good.replace('\n', "\r\n")), ("apply", "Apply")]);
+    assert!(shown(&mut b, &r).contains("HTP8022"));
+    assert_eq!(conf(&b, "INTRANET"), good);
+    assert_eq!(String::from_utf8(b.fx.files.read("/www/intranet/conf/httpd.conf.bak").unwrap()).unwrap(), before);
+    let reg = httpd::registry::Registry::load(b.fx.files.as_ref()).unwrap();
+    assert!(reg.get("INTRANET").unwrap().restart_required);
+}
+
+#[test]
+fn config_apply_needs_token_and_iosyscfg() {
+    let mut b = group_member();
+    let before = conf(&b, "WEBSTORE");
+    let r = b.post_raw("/instance/WEBSTORE/config", &[("conf", "Listen 81\n"), ("apply", "Apply")]);
+    assert_eq!(r.status, 403);
+    let r = b.post("/instance/WEBSTORE/config", &[("conf", "Listen 8181\n"), ("apply", "Apply")]);
+    assert_eq!(r.status, 403);
+    assert!(refused(&b));
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}
+
+/// Files whose configuration writes fail, as if the job died before
+/// the rename.
+struct FailingWrites(std::sync::Arc<httpd::files::MemFiles>);
+
+impl Files for FailingWrites {
+    fn read(&self, path: &str) -> std::io::Result<Vec<u8>> {
+        self.0.read(path)
+    }
+    fn write_atomic(&self, path: &str, data: &[u8]) -> std::io::Result<()> {
+        if path.ends_with("/httpd.conf") {
+            return Err(std::io::Error::other("ended before the rename"));
+        }
+        self.0.write_atomic(path, data)
+    }
+    fn append(&self, path: &str, data: &[u8]) -> std::io::Result<()> {
+        self.0.append(path, data)
+    }
+    fn rename(&self, from: &str, to: &str) -> std::io::Result<()> {
+        self.0.rename(from, to)
+    }
+    fn mkdir_all(&self, path: &str) -> std::io::Result<()> {
+        self.0.mkdir_all(path)
+    }
+    fn remove(&self, path: &str) -> std::io::Result<()> {
+        self.0.remove(path)
+    }
+    fn remove_tree(&self, path: &str) -> std::io::Result<()> {
+        self.0.remove_tree(path)
+    }
+    fn list(&self, dir: &str) -> std::io::Result<Vec<httpd::files::Entry>> {
+        self.0.list(dir)
+    }
+    fn stat(&self, path: &str) -> std::io::Result<httpd::files::Entry> {
+        self.0.stat(path)
+    }
+}
+
+#[test]
+fn config_failed_write_keeps_the_file() {
+    let fx = httpadmin::fixture::fixture();
+    let env = httpadmin::Env {
+        files: std::sync::Arc::new(FailingWrites(fx.files.clone())),
+        ..fx.env.clone()
+    };
+    let mut b = Browser {
+        admin: httpadmin::Admin::new(env),
+        fx,
+        cookie: None,
+        csrf: String::new(),
+    };
+    assert_eq!(b.sign_on("QSECOFR", PASSWORD).status, 303);
+    let before = conf(&b, "WEBSTORE");
+    let r = b.post("/instance/WEBSTORE/config", &[("conf", &before.replace("LogLevel warn", "LogLevel info")), ("apply", "Apply")]);
+    let t = shown(&mut b, &r);
+    assert!(t.contains("HTP8106") && t.contains("LogLevel info"), "{t}");
+    assert_eq!(conf(&b, "WEBSTORE"), before);
+}

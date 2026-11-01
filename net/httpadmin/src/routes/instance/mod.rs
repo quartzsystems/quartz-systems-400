@@ -7,6 +7,7 @@
 //! TLS, Logging, Configuration file, Logs). Shared here: the tab strip,
 //! the page frame, and changing the configuration file safely.
 
+pub mod config;
 pub mod confirm;
 pub mod dirs;
 pub mod general;
@@ -53,6 +54,7 @@ pub fn route(rq: &Rq<'_>, name: &str, rest: &[&str]) -> Response {
         ["remove"] => dirs::remove(rq, &v),
         ["tls"] => tls::page(rq, &v),
         ["logging"] => logging::page(rq, &v),
+        ["config"] => config::page(rq, &v),
         _ => rq.not_found(&format!("page {} of instance {}", rest.join("/"), v.name())),
     }
 }
