@@ -1983,6 +1983,7 @@ version = "0.1.0"
 dependencies = [
  "qsweb",
  "release",
+ "spool",
 ]
 
 [[package]]

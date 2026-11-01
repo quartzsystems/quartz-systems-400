@@ -46,6 +46,55 @@ fixture profile, password `QS400`).
   a toggle link to the group's first page, which is where the
   prototype's glyphs point.
 
+## Work management
+
+`env::work::Work` reads what the `WRK*`/`DSP*` commands show and runs
+every change as a CL command through `Work::run(user, command)`: the
+page builds the command (and shows it), the live job runs it through
+the analyzer as the signed-on user, so the command checks its own
+authority and its completion or escape message is what the next page
+shows. Navigator additionally checks the special authority the command
+needs where it is known before running it (`*JOBCTL` for another
+user's job, job queues, subsystems, output queues, writers, devices,
+another user's schedule entries; another user's spooled file needs
+`*JOBCTL` unless the user has `*SPLCTL`), so a refusal is the Not
+authorized page and an `AF` entry.
+
+- Every row action that changes something (Hold, Release, End, Start,
+  Clear, Delete, Vary on/off, Submit now ...) is a GET page naming the
+  command and its objects (`Confirm Hold Job`, ...) whose OK posts; the
+  dangerous ones say what is lost. Nothing changes on a GET.
+- Routes: `/jobs`, `/job/<number>/<user>/<name>/{general,performance,
+  liblist,joblog,splf,locks,callstack,hold,release,end}`, `/jobq`,
+  `/jobq/<lib>/<name>/{hold,release,confirm}` (confirm = Clear), `/sbs`,
+  `/sbs/<name>/{general,pools,routing,autostart,workstation,prestart,
+  start,end}`, `/sbs/<name>/{routing,autostart}/confirm?seq=|job=`,
+  `/outq`, `/outq/<lib>/<name>[/hold|/release|/confirm|/props]`,
+  `/splf/<number>/<user>/<job>/<file>/<nbr>[/pdf|/text|/hold|/release|
+  /confirm|/move]`, `/writers`, `/writers/<dev>[/start|/hold|/release|
+  /varyon|/confirm?op=end|varyoff]`, `/jobscde`, `/jobscde/add`,
+  `/jobscde/<name>/<entry>/{change,hold,release,submit,confirm}`.
+- Active jobs: the figures line (elapsed interval, CPU %, active jobs,
+  `MSGW`) shows above a non-empty list when the last action did not
+  fail; `ActiveJobs::notes` are messages about jobs the user ended that
+  have finished since the last look (the golden `CPF1321` row), shown
+  once. The Subsystem select and the job and output queue Library
+  selects offer `Work::choices`.
+- Selects mark the chosen option `selected` unless it is the first (the
+  default), as the prototype does.
+- Spooled files: the view is one page of the file's text in a
+  `<pre class="out out132">`, never reflowed; Find searches from the
+  page shown to the end, then from page 1 (`CPI9801` when absent).
+  PDF is `spool::pdf` over the pages.
+- Pools, routing and autostart entries are edited in a form under their
+  list (`?edit=`, `?seq=`, `?job=`): `CHGSBSD POOLS()`,
+  `ADDRTGE`/`CHGRTGE`, `ADDAJE`/`CHGAJE`; Remove is confirmed
+  (`RMVRTGE`, `RMVAJE`).
+- `shared/confirm.html` is HTTP Server Administration's Confirm Delete
+  Instance; no Navigator page carries that data. The work management
+  confirmations are built the same way (sentence, table, options, the
+  equivalent command, OK and Cancel) and the crawler maps them to it.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -57,6 +106,12 @@ of the golden page:
 | Page | Fix | Why |
 |---|---|---|
 | `nav/signon.html` | form `action` `home.html` → `signon.html` | the form posts to the sign-on route; home follows by redirect |
+| `nav/job-props-liblist.html` | Add library..., Remove, Change current library... `disabled` | only the job itself changes its library list (`CHGLIBL`); Navigator runs in another job |
+| `nav/job-props-joblog.html` | `7 messages.` → `6 messages.` | the page lists six |
+| `nav/job-props-callstack.html` | the Thread select and Go wrapped in `<form method="get">` | they sat outside any form, so Go did nothing |
+| `nav/subsystems.html`, `nav/printers.html`, `nav/scheduled-jobs.html` | the two buttons get names `start`/`add` and `refresh` | two nameless buttons in one form cannot be told apart |
+| `nav/subsystem-props-pools.html` | Add pool..., Change..., Remove get names `add`, `change`, `remove` | the same |
+| `nav/spooled-view.html` | `< Previous` on page 1 grey text; Next, View as PDF, Download text links `#` → the view's routes; the Hold, Release, Delete buttons → links like the list's | the links went nowhere; the buttons sat in the page's GET form, so Delete would have run by a bare GET without its confirmation |
 
 ## Steps
 
@@ -66,7 +121,7 @@ The handoff's build order, one commit each; `tests/behavior.rs`'s
 | Steps | Area | State |
 |---|---|---|
 | 1, 2 | Frame, sign-on, System status | done |
-| 3-11 | Work management | |
+| 3-11 | Work management | done (golden-clean; live `Work` pending) |
 | 12-14 | Messages | |
 | 15-18 | Users and groups | |
 | 19-22 | System | |

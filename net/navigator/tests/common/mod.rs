@@ -142,19 +142,23 @@ pub fn proto(url: &str) -> Option<String> {
         // Work management.
         ["jobs"] => "active-jobs".into(),
         ["job", _, _, _, "end"] => "end-job-confirm".into(),
+        ["job", _, _, _, "hold" | "release"] => "active-jobs".into(),
+        ["job", _, _, _, "splf"] => "spooled-files".into(),
         ["job", _, _, _, tab] => format!("job-props-{tab}"),
-        ["job", _, _, _, _, ..] => "active-jobs".into(),
-        ["jobq", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
+        ["jobq" | "outq" | "splf" | "writers" | "jobscde", ..]
+            if segs.last() == Some(&"confirm") =>
+        {
+            return Some("shared/confirm.html".into());
+        }
         ["jobq", ..] => "job-queues".into(),
-        ["sbs"] => "subsystems".into(),
+        ["sbs"] | ["sbs", _, "start"] => "subsystems".into(),
         ["sbs", _, "general" | "workstation" | "prestart"] => "subsystem-props".into(),
         ["sbs", _, tab @ ("pools" | "routing" | "autostart")] => format!("subsystem-props-{tab}"),
-        ["sbs", _, "end" | "confirm"] => return Some("shared/confirm.html".into()),
-        ["outq"] => "output-queues".into(),
-        ["outq", _, _, ..] => "spooled-files".into(),
-        ["splf", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
+        ["sbs", _, "end"] | ["sbs", _, _, "confirm"] => return Some("shared/confirm.html".into()),
+        ["outq"] | ["outq", _, _, "hold" | "release" | "props"] => "output-queues".into(),
+        ["outq", _, _] => "spooled-files".into(),
+        ["splf", .., "hold" | "release" | "move"] => "spooled-files".into(),
         ["splf", ..] => "spooled-view".into(),
-        ["writers", ..] if segs.last() == Some(&"confirm") => return Some("shared/confirm.html".into()),
         ["writers", ..] => "printers".into(),
         ["jobscde", ..] => "scheduled-jobs".into(),
         // Messages.
