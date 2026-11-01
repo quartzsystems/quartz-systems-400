@@ -164,6 +164,9 @@ pub fn proto(url: &str) -> Option<String> {
         // Messages.
         ["msgq", _, "QSYSOPR"] => "qsysopr".into(),
         ["msgq", _, _] | ["mymsgs"] => "my-messages".into(),
+        ["msgq", _, _, "clear"] => return Some("shared/confirm.html".into()),
+        ["msgq", _, "QSYSOPR", _, "remove"] => "qsysopr".into(),
+        ["msgq", _, _, _, "remove"] => "my-messages".into(),
         ["msgq", _, _, _] => "message-detail".into(),
         ["qhst"] => "history-log".into(),
         // Users and groups.
@@ -173,6 +176,7 @@ pub fn proto(url: &str) -> Option<String> {
         ["user", ..] => "user-props".into(),
         ["groups" | "group", ..] => "groups".into(),
         ["autl"] => "authorization-lists".into(),
+        ["autl", _, "remove" | "delete"] => return Some("shared/confirm.html".into()),
         ["autl", ..] => "autl-entries".into(),
         // System.
         ["sysval"] if q.get("cat") == Some("security") => "security-values".into(),
@@ -217,7 +221,12 @@ pub fn relative(target: &str, from: &str) -> String {
 /// Compare a served page with golden file `file` (`nav/home.html`);
 /// `fix` edits the golden text first (documented golden corrections).
 pub fn assert_golden(served: &str, file: &str, fix: &[(&str, &str)]) {
-    let mut g = golden(file);
+    assert_golden_text(served, golden(file), file, fix);
+}
+
+/// [`assert_golden`] over golden text `g` already read (and cut) from
+/// `file`.
+pub fn assert_golden_text(served: &str, mut g: String, file: &str, fix: &[(&str, &str)]) {
     for (from, to) in fix {
         assert!(g.contains(from), "golden fix not applicable to {file}: {from}");
         g = g.replace(from, to);

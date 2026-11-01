@@ -15,7 +15,8 @@ use std::sync::Mutex;
 
 use qsweb::msg::{Kind, Message};
 
-use super::text;
+pub use super::cl::parse;
+use super::cl::{done, fail, msg, split, unquote};
 use crate::env::work::{
     ActiveJobs, Choices, Job, JobProps, JobQueue, LibEntry, Lock, LogEntry, OutQueue, Routing,
     ScheduleEntry, Splf, Subsystem, SubsystemDesc, Thread, Work, Writer,
@@ -92,82 +93,6 @@ impl Default for FixtureWork {
             ran: Mutex::new(Vec::new()),
         }
     }
-}
-
-/// Message `id` with `data` from the fixture's message texts.
-fn msg(kind: Kind, id: &str, data: &[&str]) -> Message {
-    let t = text::second_level(id, data)
-        .map(|s| s.text)
-        .unwrap_or_default();
-    Message::new(kind, id, &t)
-}
-
-#[allow(clippy::unnecessary_wraps)]
-fn done(id: &str, data: &[&str]) -> Result<Message, Message> {
-    Ok(msg(Kind::Done, id, data))
-}
-
-fn fail(id: &str, data: &[&str]) -> Result<Message, Message> {
-    Err(msg(Kind::Error, id, data))
-}
-
-/// A CL command's name and its `KEYWORD(value)` parameters, values with
-/// their parentheses' contents as typed.
-pub fn parse(cmd: &str) -> (String, BTreeMap<String, String>) {
-    let cmd = cmd.trim();
-    let (name, rest) = cmd.split_once(' ').unwrap_or((cmd, ""));
-    let mut parms = BTreeMap::new();
-    let b: Vec<char> = rest.chars().collect();
-    let mut i = 0;
-    while i < b.len() {
-        while i < b.len() && b[i] == ' ' {
-            i += 1;
-        }
-        let start = i;
-        while i < b.len() && b[i] != '(' && b[i] != ' ' {
-            i += 1;
-        }
-        let key: String = b[start..i].iter().collect();
-        if i < b.len() && b[i] == '(' {
-            let mut depth = 0;
-            let mut quoted = false;
-            let vs = i + 1;
-            while i < b.len() {
-                match b[i] {
-                    '\'' => quoted = !quoted,
-                    '(' if !quoted => depth += 1,
-                    ')' if !quoted => {
-                        depth -= 1;
-                        if depth == 0 {
-                            break;
-                        }
-                    }
-                    _ => {}
-                }
-                i += 1;
-            }
-            let v: String = b[vs..i.min(b.len())].iter().collect();
-            parms.insert(key.to_ascii_uppercase(), v);
-            i += 1;
-        } else if !key.is_empty() {
-            parms.insert(key.to_ascii_uppercase(), String::new());
-        }
-    }
-    (name.to_ascii_uppercase(), parms)
-}
-
-/// A quoted CL string's text.
-fn unquote(s: &str) -> String {
-    let s = s.trim();
-    match s.strip_prefix('\'').and_then(|r| r.strip_suffix('\'')) {
-        Some(t) => t.replace("''", "'"),
-        None => s.to_string(),
-    }
-}
-
-/// `lib/name` split; a bare name gets `lib`.
-fn split<'a>(q: &'a str, lib: &'a str) -> (&'a str, &'a str) {
-    q.split_once('/').unwrap_or((lib, q))
 }
 
 fn special(user: &str, what: &str) -> bool {

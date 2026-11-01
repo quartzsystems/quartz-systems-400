@@ -8,6 +8,7 @@
 //! `GET /job/<number>/<user>/<name>/joblog`). Each area routes its own
 //! first path segments.
 
+pub mod common;
 pub mod config;
 pub mod db;
 pub mod home;
