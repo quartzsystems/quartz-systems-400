@@ -6,3 +6,4 @@ tools/conformance/oracle/.env
 tools/conformance/hlinv/src/
 tools/conformance/oss/src/
 __pycache__/
+!net/httpadmin/src/fixture/*.log
