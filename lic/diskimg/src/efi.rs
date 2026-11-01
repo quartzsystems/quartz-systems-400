@@ -139,11 +139,13 @@ pub fn parse_numbers(file: &[u8]) -> Vec<u16> {
         .collect()
 }
 
-/// `BootOrder` with `first` at the front, once.
+/// `BootOrder` with `front` at the front in that order, each once: the
+/// default slot, then the other, so firmware menus that list only
+/// `BootOrder` show both.
 #[must_use]
-pub fn order_with_first(order: &[u16], first: u16) -> Vec<u16> {
-    let mut out = vec![first];
-    out.extend(order.iter().copied().filter(|n| *n != first));
+pub fn order_with_front(order: &[u16], front: &[u16]) -> Vec<u16> {
+    let mut out = front.to_vec();
+    out.extend(order.iter().copied().filter(|n| !front.contains(n)));
     out
 }
 
@@ -168,6 +170,7 @@ mod tests {
         assert_eq!(&b[b.len() - 4..], &[0x7F, 0xFF, 4, 0]);
         assert_eq!(boot_name(0x5142), "Boot5142");
         assert_eq!(parse_numbers(&file_bytes(&numbers(&[1, 0x5142]))), [1, 0x5142]);
-        assert_eq!(order_with_first(&[3, 0x5142, 1], 0x5142), [0x5142, 3, 1]);
+        assert_eq!(order_with_front(&[3, 0x5142, 1], &[0x5142]), [0x5142, 3, 1]);
+        assert_eq!(order_with_front(&[3, 0x5141, 1], &[0x5142, 0x5141]), [0x5142, 0x5141, 3, 1]);
     }
 }

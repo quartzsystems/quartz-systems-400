@@ -84,8 +84,9 @@ impl EfiFirmware {
         fs::write(&path, efi::file_bytes(data)).map_err(|e| format!("{name}: {e}"))
     }
 
-    /// Slot A's entry first in `BootOrder`, both slots' entries made: a
-    /// newly installed disk boots without the firmware's setup.
+    /// Slot A's entry first in `BootOrder` and slot B's next, both
+    /// slots' entries made: a newly installed disk boots without the
+    /// firmware's setup.
     pub fn register_install(&mut self) -> Result<(), String> {
         ptf::slot::Firmware::boot_default(self, Slot::A)
     }
@@ -116,6 +117,8 @@ impl ptf::slot::Firmware for EfiFirmware {
         let order = fs::read(var(&self.dir, "BootOrder"))
             .map(|b| efi::parse_numbers(&b))
             .unwrap_or_default();
-        self.write("BootOrder", &efi::numbers(&efi::order_with_first(&order, entry(s).0)))
+        let other = if s == Slot::A { Slot::B } else { Slot::A };
+        let front = [entry(s).0, entry(other).0];
+        self.write("BootOrder", &efi::numbers(&efi::order_with_front(&order, &front)))
     }
 }
