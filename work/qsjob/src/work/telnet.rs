@@ -684,6 +684,29 @@ fn io_thread(mut s: Stream, out_rx: &Receiver<Vec<u8>>, ev_tx: &Sender<Ev>) {
     }
 }
 
+/// Ask a display's client for another device name, as other systems do
+/// when the one named is in use or not valid: the new name, or `None`
+/// when the client offers none, the same one, or goes.
+fn device_again(server: &mut Server, tr: &Transport, ev_rx: &Receiver<Ev>, old: &str) -> Result<Option<String>, String> {
+    let before = server.env_answers;
+    tr.send(server.ask_device())?;
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while server.env_answers == before {
+        match ev_rx.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+            Ok(Ev::Tcp(bytes)) => {
+                let (reply, _) = server.feed(&bytes);
+                if !reply.is_empty() {
+                    tr.send(reply)?;
+                }
+            }
+            Ok(Ev::TcpGone) | Err(_) => return Ok(None),
+            Ok(_) => {}
+        }
+    }
+    let new = server.negotiated.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
+    Ok((!new.is_empty() && new != old).then_some(new))
+}
+
 /// The system name the start-up response carries, set when the server
 /// starts.
 static SYSTEM: OnceLock<String> = OnceLock::new();
@@ -827,11 +850,21 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
     let neg = server.negotiated.clone();
     let mut requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
     let mut desc = exit_session(&neg, &requested, at.addrs, at.secure);
+    let printer = printer_type_model(&neg.terminal_type).is_some();
     if let Some(ask) = at.ask {
         // The console display is the console's, never a network session's.
         if requested == display::CONSOLE_DEVICE {
-            let _ = tr.send(startup_response(tn5250::startup::code::NOT_VALID, &requested));
-            return Err(format!("{peer}: {requested} is the console"));
+            if printer {
+                let _ = tr.send(startup_response(tn5250::startup::code::NOT_VALID, &requested));
+                return Err(format!("{peer}: {requested} is the console"));
+            }
+            match device_again(&mut server, &tr, &ev_rx, &requested)? {
+                Some(n) if n != display::CONSOLE_DEVICE => {
+                    requested = n;
+                    desc.device.clone_from(&requested);
+                }
+                _ => return Err(format!("{peer}: {requested} is the console")),
+            }
         }
         // QIBM_QTG_DEVINIT: the exit programs may refuse the connection
         // or name its device.
@@ -862,21 +895,25 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
     let model = Model::from_terminal_type(&neg.terminal_type).unwrap_or_default();
     let (devtype, devmodel) = model.device_type_model();
     let kbdtype = neg.var("KBDTYPE").unwrap_or_else(|| "USB".into());
-    let device = match link
-        .device_allocate(requested.clone(), devtype.into(), devmodel.into(), kbdtype)
-        .map_err(|e| e.to_string())?
-    {
-        Ok(d) => d,
-        Err(code) => {
-            if !requested.is_empty() {
-                let _ = tr.send(startup_response(&code[..4.min(code.len())], &requested));
-            }
-            return Err(format!("{peer}: no device: {code}"));
-        }
+    let allocate = |link: &mut Link, name: &str| {
+        link.device_allocate(name.to_string(), devtype.into(), devmodel.into(), kbdtype.clone())
+            .map_err(|e| e.to_string())
     };
-    if !requested.is_empty() && !console {
-        tr.send(startup_response(tn5250::startup::code::STARTED, &device))?;
-    }
+    // A display gets no start-up response record, as other systems send
+    // none: a device in use or not valid is asked for again once, then
+    // the connection closes.
+    let device = match allocate(link, &requested)? {
+        Ok(d) => d,
+        Err(code) if !requested.is_empty() && !console => match device_again(&mut server, &tr, &ev_rx, &requested)? {
+            Some(n) => {
+                requested = n;
+                desc.device.clone_from(&requested);
+                allocate(link, &requested)?.map_err(|c| format!("{peer}: no device: {c}"))?
+            }
+            None => return Err(format!("{peer}: no device: {code}")),
+        },
+        Err(code) => return Err(format!("{peer}: no device: {code}")),
+    };
     let auto = if console {
         None
     } else {

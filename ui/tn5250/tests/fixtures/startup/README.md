@@ -24,3 +24,11 @@ describes it for printer sessions. A printer capture needs a printer
 device created on the reference system, which neither system's rules
 allow here, so no capture is stored yet. The record QS/400 sends is
 checked against the RFC's own figures in `src/startup.rs`.
+
+## What QS/400 does (decided 2026-11-01)
+
+As the reference systems do: a display session gets no start-up
+response record. A display whose named device is in use or not valid
+is asked for another name once (`SEND USERVAR DEVNAME`); offered none,
+the same one, or one that fails too, the connection closes. Printer
+sessions get the RFC 4777 record (`tn5250::startup`).

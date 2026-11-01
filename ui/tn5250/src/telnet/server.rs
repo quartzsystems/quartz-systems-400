@@ -60,6 +60,8 @@ pub struct Server {
     do_binary: bool,
     /// The negotiation is complete.
     pub done: bool,
+    /// Environment answers (`IS`) received, the first included.
+    pub env_answers: u32,
     /// One line per command, for traces.
     pub trace: Vec<String>,
 }
@@ -82,6 +84,7 @@ impl Server {
             will_binary: false,
             do_binary: false,
             done: false,
+            env_answers: 0,
             trace: Vec::new(),
         }
     }
@@ -206,12 +209,33 @@ impl Server {
                         "< SB NEW-ENVIRON IS {}",
                         super::client::describe(&vars)
                     ));
-                    self.negotiated.vars = vars;
+                    // A later answer (to `ask_device`) updates by name.
+                    for v in vars {
+                        match self.negotiated.vars.iter_mut().find(|x| x.name == v.name) {
+                            Some(x) => *x = v,
+                            None => self.negotiated.vars.push(v),
+                        }
+                    }
+                    self.env_answers += 1;
                     self.got_env = true;
                 }
             }
             _ => self.trace.push(format!("< SB {} ...", option_name(opt))),
         }
+    }
+
+    /// Ask the client for a device name again (the one it named is in
+    /// use or not valid): `SB NEW-ENVIRON SEND USERVAR DEVNAME`.
+    pub fn ask_device(&mut self) -> Vec<u8> {
+        let v = Var {
+            kind: env::USERVAR,
+            name: b"DEVNAME".to_vec(),
+            value: None,
+        };
+        let mut b = vec![OPT_NEW_ENVIRON];
+        b.extend(env::encode(env::SEND, &[v]));
+        self.trace.push("> SB NEW-ENVIRON SEND USERVAR DEVNAME".into());
+        sub(&b)
     }
 
     /// The seed this server sent.
@@ -248,5 +272,14 @@ mod tests {
         assert_eq!(s.negotiated.var("DEVNAME").as_deref(), Some("DSP01"));
         assert_eq!(s.negotiated.var("USER").as_deref(), Some("USR"));
         assert_eq!(s.negotiated.var_bytes("IBMSUBSPW").unwrap().len(), 20);
+        // Asked for its device again, the client answers and the rest of
+        // what it said stays.
+        assert_eq!(s.env_answers, 1);
+        let ask = s.ask_device();
+        let (answer, _) = c.feed(&ask);
+        s.feed(&answer);
+        assert_eq!(s.env_answers, 2);
+        assert_eq!(s.negotiated.var("DEVNAME").as_deref(), Some("DSP01"));
+        assert_eq!(s.negotiated.var("USER").as_deref(), Some("USR"));
     }
 }
