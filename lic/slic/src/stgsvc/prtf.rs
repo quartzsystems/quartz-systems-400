@@ -14,9 +14,6 @@ use wm::table::JobInfo;
 
 use crate::ipl::system::System;
 
-/// The queue spooled files go to when nothing else names one.
-pub const DEFAULT_OUTQ: &str = "QGPL/QPRINT";
-
 /// One `OVRPRTF`: the file it names, the activation group that issued
 /// it (or `*JOB`), and its keywords as typed.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -86,35 +83,65 @@ fn exists(system: &mut System, q: &str) -> bool {
 /// the file's `OUTQ`, else the job's, else `QGPL/QPRINT`
 /// (`MIGRATE(phase10)`: the printer device's queue before that).
 pub fn outq_of(system: &mut System, f: &Prtf, job: u32) -> String {
+    outq_checked(system, f, job).0
+}
+
+/// [`outq_of`] and the queues named that were not found.
+pub fn outq_checked(system: &mut System, f: &Prtf, job: u32) -> (String, Vec<String>) {
     let job_q = system
         .attrs
         .get(&job)
         .map(|a| a.outq.clone())
         .unwrap_or_default();
-    let mut tries = Vec::new();
-    if f.outq != "*JOB" && !f.outq.is_empty() {
-        tries.push(f.outq.clone());
+    let mut known = std::collections::BTreeMap::new();
+    for q in [f.outq.as_str(), job_q.as_str()] {
+        if !q.is_empty() && !q.starts_with('*') && !known.contains_key(q) {
+            known.insert(q.to_string(), exists(system, q));
+        }
     }
-    if !job_q.starts_with('*') && !job_q.is_empty() {
-        tries.push(job_q);
-    }
-    tries.push(DEFAULT_OUTQ.into());
-    tries
-        .into_iter()
-        .find(|q| exists(system, q))
-        .unwrap_or_else(|| DEFAULT_OUTQ.into())
+    wm::obj::prtf::pick_outq(&f.outq, &job_q, |q| known.get(q).copied().unwrap_or(false))
 }
+
+/// `CPF3357` for each queue a printer file or job named that was not
+/// found, as diagnostics for the job log: the file went to
+/// `QGPL/QPRINT` instead.
+pub fn missing_outq_entries(missing: &[String]) -> Vec<wm::joblog::Entry> {
+    missing
+        .iter()
+        .map(|q| {
+            let (lib, name) = wm::obj::params::qualified(q);
+            let data = wm::joblog::data(&[(&name, 10), (&lib, 10)]);
+            wm::joblog::Entry {
+                msgid: MISSING_OUTQ.into(),
+                kind: "Diagnostic".into(),
+                severity: 40,
+                time: super::msgs::now_micros(),
+                from: ("QSPOPNSP".into(), "QSYS".into()),
+                from_inst: "*N".into(),
+                to: ("*EXT".into(), String::new()),
+                to_inst: "*N".into(),
+                text: super::hist::message_text(MISSING_OUTQ, &data),
+                external: true,
+                ..wm::joblog::Entry::default()
+            }
+        })
+        .collect()
+}
+
+/// An output queue named for a spooled file was not found.
+pub const MISSING_OUTQ: &str = "CPF3357";
 
 /// Open printer file `(file, lib)` for `job` from activation group
 /// `actgrp`: the overrides that reach it applied (the last `TOFILE`
-/// redirects), a new spooled file. Its identifier and the attributes.
+/// redirects), a new spooled file. Its identifier, the attributes and
+/// the output queues named that were not found.
 pub fn open(
     system: &mut System,
     overrides: &[PrtOverride],
     job: &JobInfo,
     (file, lib): (&str, &str),
     actgrp: &str,
-) -> Result<(u32, Prtf), String> {
+) -> Result<(u32, Prtf, Vec<String>), String> {
     let file = file.to_ascii_uppercase();
     // Outer call levels first, the deepest last; a SECURE(*YES) one
     // hides those below it.
@@ -142,7 +169,7 @@ pub fn open(
         .find_map(|p| p.upper("TOFILE"))
         .unwrap_or_else(|| format!("{}/{file}", if lib.is_empty() { "*LIBL" } else { lib }));
     let (prtf, real) = resolve_real(system, &target, &mine)?;
-    let outq = outq_of(system, &prtf, job.number);
+    let (outq, missing) = outq_checked(system, &prtf, job.number);
     let a = system.attrs.get(&job.number);
     let outpty = if prtf.outpty == 0 {
         a.map_or(5, |a| a.outpty)
@@ -177,5 +204,5 @@ pub fn open(
         ..SplfAttrs::default()
     };
     let id = super::spool::create(system, attrs)?;
-    Ok((id, prtf))
+    Ok((id, prtf, missing))
 }

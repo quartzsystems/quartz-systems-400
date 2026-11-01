@@ -524,9 +524,52 @@ impl Prtf {
     }
 }
 
+/// The queue spooled files go to when nothing else names one.
+pub const DEFAULT_OUTQ: &str = "QGPL/QPRINT";
+
+/// The output queue a file opened through a printer file goes to: the
+/// file's `OUTQ` (`file_q`), else the job's (`job_q`), else
+/// [`DEFAULT_OUTQ`], the first that `exists`. Also the queues named
+/// that were not found, in order, for the job log.
+pub fn pick_outq(file_q: &str, job_q: &str, exists: impl Fn(&str) -> bool) -> (String, Vec<String>) {
+    let mut missing = Vec::new();
+    for q in [file_q, job_q] {
+        if q.is_empty() || q.starts_with('*') {
+            continue;
+        }
+        if exists(q) {
+            return (q.to_string(), missing);
+        }
+        missing.push(q.to_string());
+    }
+    (DEFAULT_OUTQ.into(), missing)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn outq_choice() {
+        let have = |q: &str| matches!(q, "QUSRSYS/P1" | "QGPL/QPRINT");
+        assert_eq!(pick_outq("*JOB", "QUSRSYS/P1", have), ("QUSRSYS/P1".into(), vec![]));
+        assert_eq!(pick_outq("QUSRSYS/P1", "QGPL/GONE", have), ("QUSRSYS/P1".into(), vec![]));
+        // The job's queue was deleted: QPRINT, and the job log names it.
+        assert_eq!(
+            pick_outq("*JOB", "QUSRSYS/GONE", have),
+            ("QGPL/QPRINT".into(), vec!["QUSRSYS/GONE".into()])
+        );
+        assert_eq!(
+            pick_outq("QGPL/X", "QUSRSYS/Y", have),
+            ("QGPL/QPRINT".into(), vec!["QGPL/X".into(), "QUSRSYS/Y".into()])
+        );
+        assert_eq!(
+            pick_outq("QGPL/X", "QUSRSYS/P1", have),
+            ("QUSRSYS/P1".into(), vec!["QGPL/X".into()])
+        );
+        // *DEV and *WRKSTN name no queue: nothing to report.
+        assert_eq!(pick_outq("*JOB", "*DEV", have), ("QGPL/QPRINT".into(), vec![]));
+    }
 
     #[test]
     fn round_trip_and_keywords() {

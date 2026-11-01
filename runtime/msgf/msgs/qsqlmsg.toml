@@ -214,6 +214,13 @@ help = "The UPDATE statement ran."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR *VARY 2"]
 
 [[msg]]
+id = "SQL7958"
+sev = 0
+text = "&1 rows fetched in &2 seconds."
+help = "The query ran and its rows were read."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
 id = "SQL7960"
 sev = 0
 text = "The commit is done."

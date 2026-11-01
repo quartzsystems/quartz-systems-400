@@ -140,6 +140,25 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Res
     Ok(made)
 }
 
+/// An automatic install's `ip` and `gateway` on `line`, before TCP/IP
+/// starts: the files made when missing, then the interface and the
+/// default route `ADDTCPIFC` and `ADDTCPRTE` would add
+/// (`tcpcfg::install`). The commands it stands for.
+pub fn install_answers(system: &mut System, ip: &str, gateway: Option<&str>, line: &str) -> Result<Vec<String>, String> {
+    let cmds = tcpcfg::install::commands(ip, gateway, line).map_err(|e| e.text)?;
+    let stamp = wm::obj::Stamp {
+        owner: "QSYS".into(),
+        system: system.system_name(),
+        now: crate::ipl::system::now_unix(),
+    };
+    with_store(system, |txn, qsys| install(txn, qsys, &stamp))?;
+    let mut cfg = load(system)?;
+    for t in tcpcfg::install::apply(&mut cfg, ip, gateway, line).map_err(|e| e.text)? {
+        save(system, &cfg, t)?;
+    }
+    Ok(cmds)
+}
+
 /// Run `f` in a transaction on ASP 1, as the system.
 fn with_store<T>(
     system: &mut System,

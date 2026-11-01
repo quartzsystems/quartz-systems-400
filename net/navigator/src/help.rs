@@ -98,6 +98,48 @@ pub const TOPICS: &[Topic] = &[
         title: "Scheduled jobs",
         body: "<p>Job schedule entries: a command submitted as a job at the times given. A held entry submits nothing until released. <b>Submit now</b> submits the job once without changing its schedule.</p>",
     },
+    // Security and software.
+    Topic {
+        key: "audit",
+        title: "Audit journal",
+        body: "<p>The entries of the security audit journal, newest first, as the 5250 command prints them. Choose an entry type, a user and the first and last day, then press <b>Go</b>. <b>Download as CSV</b> gives every entry that matches. Reading the journal needs special authority <span class=\"mono\">*AUDIT</span>.</p>",
+    },
+    Topic {
+        key: "licpgm",
+        title: "Licensed programs",
+        body: "<p>The products the system knows and whether each is installed. <b>Show</b> lists the installed ones, the ones on an image catalog, or those not installed. <b>Install</b> installs a product from the image catalog chosen and <b>Delete</b> removes one; both show the command first.</p>\n<h2>License keys</h2>\n<p><b>Display license keys</b> lists the keys the system holds: product, term, feature, usage limit and expiration.</p>",
+    },
+    Topic {
+        key: "ptf",
+        title: "PTFs",
+        body: "<p>The program temporary fixes on the system and their status. <b>Load</b>, <b>Apply</b> and <b>Remove</b> run the PTF commands after a page that shows them; a PTF whose IPL action is delayed takes effect at the next IPL. <b>Cover letter</b> shows what a fix changes.</p>\n<h2>Check for fixes</h2>\n<p>Asks the Quartz update server which fixes this system lacks. The answer is on the <b>Fixes</b> page.</p>",
+    },
+    Topic {
+        key: "fixes",
+        title: "Fixes",
+        body: "<p>The fixes the Quartz update server offers that this system does not have, from the last check. <b>Download</b> orders a fix; it is loaded from the save file the order leaves. The server, the automatic check and a proxy are set below; <b>Apply</b> keeps the page, <b>OK</b> returns to the PTFs.</p>",
+    },
+    // Database.
+    Topic {
+        key: "sql",
+        title: "Run SQL",
+        body: "<p>Type one SQL statement and press <b>Run</b>. It runs with your user profile's authority, with the schema chosen as the default for unqualified names, the naming chosen (<span class=\"mono\">*SQL</span>: <span class=\"mono\">schema.table</span>; <span class=\"mono\">*SYS</span>: <span class=\"mono\">library/file</span>) and the isolation level chosen.</p>\n<h2>Results</h2>\n<p>A query shows at most 500 rows; <b>Download as CSV</b> runs it again and gives every row. Column headings sort the rows shown. <b>Explain</b> shows how the statement would run without running it.</p>\n<h2>Previous statements</h2>\n<p>Your last 50 statements, newest first. Choose one to put it back in the statement box. They are kept while the server runs.</p>",
+    },
+    Topic {
+        key: "db",
+        title: "Schemas",
+        body: "<p>The schemas (libraries) you may see, and in the one chosen its tables, views, indexes and procedures from the system catalog. Choose a table to see its columns, constraints, indexes, triggers and attributes, or its data.</p>",
+    },
+    Topic {
+        key: "db-table",
+        title: "Table",
+        body: "<p>A table as the system catalog describes it, tab by tab. <b>Generate SQL (DDL)</b> shows the statements that create the table. <b>Run SQL</b> starts a query of the table.</p>",
+    },
+    Topic {
+        key: "db-data",
+        title: "Viewing table data",
+        body: "<p>The table's rows, 25 a page, read with the statement shown and your authority. Type a condition in <b>Where</b> (for example <span class=\"mono\">STATUS = 'SPARE'</span>) and press <b>Apply</b> to narrow them. <b>Edit in Run SQL</b> opens the statement there.</p>",
+    },
     // Messages.
     Topic {
         key: "msgq",

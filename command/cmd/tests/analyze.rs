@@ -76,68 +76,68 @@ fn source() -> MemSource {
 }
 
 /// The table: a command string and the identifiers expected, in
-/// order; `CPF0001` last for failures, nothing for success.
+/// order; `CPF0006` last for failures, nothing for success.
 const TABLE: &[(&str, &[&str])] = &[
     ("CRTLIB LIB(TESTLIB)", &[]),
     ("crtlib testlib", &[]),
     ("CRTLIB TESTLIB *TEST", &[]),
-    ("CRTLIB TESTLIB *TEST 'text'", &["CPD0065", "CPF0001"]),
-    ("CRTLIB", &["CPD0071", "CPF0001"]),
-    ("CRTLIB LIB(TESTLIB) TYPE(*PRODX)", &["CPD0084", "CPF0001"]),
+    ("CRTLIB TESTLIB *TEST 'text'", &["CPD0065", "CPF0006"]),
+    ("CRTLIB", &["CPD0071", "CPF0006"]),
+    ("CRTLIB LIB(TESTLIB) TYPE(*PRODX)", &["CPD0084", "CPF0006"]),
     ("CRTLIB LIB(TESTLIB) TYPE(*prod)", &[]),
-    ("CRTLIB LIB(1LIB)", &["CPD0078", "CPF0001"]),
-    ("CRTLIB LIB(ABCDEFGHIJK)", &["CPD0074", "CPF0001"]),
-    ("CRTLIB LIB(X) FOO(1)", &["CPD0043", "CPF0001"]),
-    ("CRTLIB LIB(X) LIB(Y)", &["CPD0042", "CPF0001"]),
-    ("CRTLIB LIB(X) ASP(33)", &["CPD0085", "CPF0001"]),
-    ("CRTLIB LIB(X) ASP(1.5)", &["CPD0085", "CPF0001"]),
-    ("CRTLIB LIB(X) ASP(abc)", &["CPD0076", "CPF0001"]),
+    ("CRTLIB LIB(1LIB)", &["CPD0078", "CPF0006"]),
+    ("CRTLIB LIB(ABCDEFGHIJK)", &["CPD0074", "CPF0006"]),
+    ("CRTLIB LIB(X) FOO(1)", &["CPD0043", "CPF0006"]),
+    ("CRTLIB LIB(X) LIB(Y)", &["CPD0042", "CPF0006"]),
+    ("CRTLIB LIB(X) ASP(33)", &["CPD0085", "CPF0006"]),
+    ("CRTLIB LIB(X) ASP(1.5)", &["CPD0085", "CPF0006"]),
+    ("CRTLIB LIB(X) ASP(abc)", &["CPD0076", "CPF0006"]),
     ("CRTLIB LIB(X) TEXT('it''s a (lib)')", &[]),
     ("CRTLIB LIB(X) TEXT(*BLANK)", &[]),
     ("CRTLIB LIB(X) AUT(*ALL)", &[]),
-    ("CRTLIB LIB(X) AUT(*NOPE)", &["CPD0078", "CPF0001"]),
+    ("CRTLIB LIB(X) AUT(*NOPE)", &["CPD0078", "CPF0006"]),
     ("CRTLIB LIB(X) AUT(PAYROLL)", &[]),
-    ("CRTLIB LIB(X) TEXT(", &["CPD0014", "CPF0001"]),
-    ("CRTLIB LIB(X) TEXT('abc)", &["CPD0014", "CPF0001"]),
-    ("CRTLIB LIB(X) LIB", &["CPD0011", "CPF0001"]),
-    ("CRTLIBX LIB(X)", &["CPD0030", "CPF0001"]),
-    ("QGPL/CRTLIB LIB(X)", &["CPD0030", "CPF0001"]),
-    ("CRTLIB LIB(&X)", &["CPD0103", "CPF0001"]),
+    ("CRTLIB LIB(X) TEXT(", &["CPD0014", "CPF0006"]),
+    ("CRTLIB LIB(X) TEXT('abc)", &["CPD0014", "CPF0006"]),
+    ("CRTLIB LIB(X) LIB", &["CPD0011", "CPF0006"]),
+    ("CRTLIBX LIB(X)", &["CPD0030", "CPF0006"]),
+    ("QGPL/CRTLIB LIB(X)", &["CPD0030", "CPF0006"]),
+    ("CRTLIB LIB(&X)", &["CPD0103", "CPF0006"]),
     ("CPYF FROMFILE(QGPL/A) TOFILE(QGPL/B) MBROPT(*ADD)", &[]),
     ("CPYF A B", &[]),
     ("CPYF (A QGPL) *PRINT", &[]),
-    ("CPYF FROMFILE(A/B/C)", &["CPD0045", "CPF0001"]),
+    ("CPYF FROMFILE(A/B/C)", &["CPD0045", "CPF0006"]),
     (
         "CPYF FROMFILE(QGPL/A) INCREL((*IF NAME *EQ 'x') (*AND AGE *GT 5))",
         &[],
     ),
     (
         "CPYF FROMFILE(QGPL/A) INCREL((*IF NAME *EQ 'x') (*XOR AGE *GT 5))",
-        &["CPD0084", "CPF0001"],
+        &["CPD0084", "CPF0006"],
     ),
     (
         "CPYF FROMFILE(QGPL/A) INCREL((*IF NAME))",
-        &["CPD0072", "CPF0001"],
+        &["CPD0072", "CPF0006"],
     ),
     ("CPYF FROMFILE(QGPL/A) INCREL(*NONE)", &[]),
     ("CPYF FROMFILE(QGPL/A) FMTOPT(*MAP *DROP)", &[]),
     (
         "CPYF FROMFILE(QGPL/A) FMTOPT(*MAP *DROP *NOCHK)",
-        &["CPD0016", "CPF0001"],
+        &["CPD0016", "CPF0006"],
     ),
-    ("CPYF FROMFILE(QGPL/A) FROMRCD(0)", &["CPD0085", "CPF0001"]),
-    ("CPYF FROMFILE(QGPL/A) NBRRCDS(0)", &["CPD0086", "CPF0001"]),
+    ("CPYF FROMFILE(QGPL/A) FROMRCD(0)", &["CPD0085", "CPF0006"]),
+    ("CPYF FROMFILE(QGPL/A) NBRRCDS(0)", &["CPD0086", "CPF0006"]),
     ("CPYF FROMFILE(QGPL/A) NBRRCDS(*END)", &[]),
     ("CPYF FROMFILE(QGPL/A) ERRLVL(*NOMAX)", &[]),
     (
         "CPYF FROMFILE(QGPL/A) TOFILE(QGPL/B) MBROPT(*NONE) CRTFILE(*YES)",
-        &["CPD2918", "CPF0001"],
+        &["CPD2918", "CPF0006"],
     ),
     (
         "CPYF FROMFILE(QGPL/A) TOFILE(QGPL/B) MBROPT(*ADD) CRTFILE(*YES)",
         &[],
     ),
-    ("CPYF FROMFILE(QGPL/A) FROMRCD(5)", &["CPD2919", "CPF0001"]),
+    ("CPYF FROMFILE(QGPL/A) FROMRCD(5)", &["CPD2919", "CPF0006"]),
     ("CPYF FROMFILE(QGPL/A) FROMRCD(5) NBRRCDS(2)", &[]),
     ("CPYF FROMFILE(QGPL/A) TOFILE(*PRINT)", &[]),
     (
@@ -146,16 +146,16 @@ const TABLE: &[(&str, &[&str])] = &[
     ),
     (
         "CPYF FROMFILE(QGPL/A) INCREL((*IF NAME *EQ 'a' *CAT 'b'))",
-        &["CPD0016", "CPF0001"],
+        &["CPD0016", "CPF0006"],
     ),
     (
         "SBMJOB CMD(CALL PGM(X))",
-        &["CPD0030", "CPD0084", "CPF0001"],
+        &["CPD0030", "CPD0084", "CPF0006"],
     ),
     ("SBMJOB CMD(CRTLIB LIB(X)) JOB(NIGHT)", &[]),
     (
         "SBMJOB CMD(CRTLIB LIB(X) TYPE(*Q)) JOB(NIGHT)",
-        &["CPD0084", "CPD0084", "CPF0001"],
+        &["CPD0084", "CPD0084", "CPF0006"],
     ),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) JOBD(QGPL/QBATCH) JOBQ(*JOBD) JOBPTY(5)",
@@ -163,16 +163,16 @@ const TABLE: &[(&str, &[&str])] = &[
     ),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) JOBPTY(10)",
-        &["CPD0085", "CPF0001"],
+        &["CPD0085", "CPF0006"],
     ),
     ("SBMJOB CMD(CRTLIB LIB(X)) LOG(4 00 *SECLVL)", &[]),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) LOG(5 00 *SECLVL)",
-        &["CPD0085", "CPF0001"],
+        &["CPD0085", "CPF0006"],
     ),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) LOG(4 00 *SECLVL *MORE)",
-        &["CPD0016", "CPF0001"],
+        &["CPD0016", "CPF0006"],
     ),
     ("SBMJOB CMD(CRTLIB LIB(X)) INLLIBL(QGPL QTEMP MYLIB)", &[]),
     ("SBMJOB CMD(CRTLIB LIB(X)) INLLIBL(*NONE)", &[]),
@@ -182,11 +182,11 @@ const TABLE: &[(&str, &[&str])] = &[
     ),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) SCDDATE(133126)",
-        &["CPD0082", "CPF0001"],
+        &["CPD0082", "CPF0006"],
     ),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) HOLD(*MAYBE)",
-        &["CPD0084", "CPF0001"],
+        &["CPD0084", "CPF0006"],
     ),
     ("SBMJOB CMD(CRTLIB LIB(X)) MSGQ(*NONE)", &[]),
     ("SBMJOB CMD(CRTLIB LIB(X)) RTGDTA('abc def')", &[]),
@@ -197,7 +197,7 @@ const TABLE: &[(&str, &[&str])] = &[
     ),
     (
         "SBMJOB CMD(CRTLIB LIB(X)) JOB(A) JOB(B)",
-        &["CPD0042", "CPF0001"],
+        &["CPD0042", "CPF0006"],
     ),
 ];
 
@@ -218,59 +218,30 @@ fn table() {
     assert!(failed.is_empty(), "\n{}", failed.join("\n"));
 }
 
-/// No `CPF0001` leaves the analyzer without the command it names: every
-/// failure of the table, and text whose command is not found or does
-/// not tokenize. Text with no name at all ends in `CPF0006`.
+/// Every analysis error ends in `CPF0006`, also for text whose
+/// command is not found, does not tokenize or names no command.
 #[test]
-fn every_cpf0001_names_its_command() {
+fn every_analysis_error_ends_in_cpf0006() {
     let mut src = source();
     let mut env = Env::new(&mut src);
-    let extra: &[(&str, &str)] = &[
-        ("VFYCMN", "VFYCMN"),
-        ("?VFYCMN", "VFYCMN"),
-        ("vfycmn x(1)", "VFYCMN"),
-        ("QGPL/NOPE LIB(X)", "NOPE"),
-        ("L1: NOPE", "NOPE"),
-        ("NOPE X(", "NOPE"),
-        ("NOPE X('abc)", "NOPE"),
-        ("NOPE(1)", "NOPE"),
-        ("CRTLIB LIB(X) TEXT(", "CRTLIB"),
-        ("CRTLIBX LIB(X)", "CRTLIBX"),
+    let texts = [
+        "VFYCMN",
+        "?VFYCMN",
+        "QGPL/NOPE LIB(X)",
+        "L1: NOPE",
+        "NOPE X(",
+        "NOPE(1)",
+        "CRTLIB LIB(X) TEXT(",
+        "(",
+        "'abc'",
+        "*X",
     ];
-    let mut bad = Vec::new();
-    for (text, _) in TABLE {
-        if let Err(e) = analyze(&mut env, text)
-            && e.escape.msgid == "CPF0001"
-            && e.escape_name().is_empty()
-        {
-            bad.push(format!("{text}: CPF0001 names no command"));
-        }
+    for text in texts {
+        let e = analyze(&mut env, text).unwrap_err();
+        assert_eq!(e.escape.msgid, "CPF0006", "{text}");
     }
-    for (text, name) in extra {
-        match analyze(&mut env, text) {
-            Err(e) if e.escape.msgid == "CPF0001" && e.escape_name() == *name => {}
-            other => bad.push(format!("{text}: want CPF0001 naming {name}, got {other:?}")),
-        }
-    }
-    for text in ["(", "'abc'", "*X"] {
-        match analyze(&mut env, text) {
-            Err(e) if e.escape.msgid != "CPF0001" || !e.escape_name().is_empty() => {}
-            other => bad.push(format!("{text}: a CPF0001 with no name, got {other:?}")),
-        }
-    }
-    assert!(bad.is_empty(), "\n{}", bad.join("\n"));
-}
-
-/// A bare diagnostic's `CPF0001` waits for its name; `named` gives it.
-#[test]
-fn a_diagnostic_is_named_once() {
     let e: cmd::CmdError = cmd::Diag::new("CPD0030").into();
-    assert_eq!(e.escape_name(), "");
-    let e = e.named("vfycmn");
-    assert_eq!((e.escape.msgid.as_str(), e.escape_name().as_str()), ("CPF0001", "VFYCMN"));
-    assert_eq!(e.named("OTHER").escape_name(), "VFYCMN");
-    let e: cmd::CmdError = cmd::Diag::new("CPD0030").into();
-    assert_eq!(e.named(" ").escape.msgid, "CPF0006");
+    assert_eq!(e.msgids(), ["CPD0030", "CPF0006"]);
 }
 
 #[test]
@@ -359,9 +330,9 @@ fn misspelled_keyword() {
     let mut src = source();
     let mut env = Env::new(&mut src);
     let e = analyze(&mut env, "CRTLIB LIB(X) LIBB(Y)").unwrap_err();
-    assert_eq!(e.msgids(), ["CPD0043", "CPF0001"]);
+    assert_eq!(e.msgids(), ["CPD0043", "CPF0006"]);
     assert_eq!(e.diags[0].data, cmd::error::data(&[("LIBB", 10)]));
-    assert_eq!(e.escape.data, cmd::error::data(&[("CRTLIB", 10)]));
+    assert!(e.escape.data.is_empty());
 }
 
 #[test]
@@ -401,7 +372,7 @@ fn settings_and_limits() {
     env.mode = cmd::def::Mode::DEBUG;
     assert_eq!(
         analyze(&mut env, "BATCHONLY").unwrap_err().msgid(),
-        "CPD0032"
+        "CPD0034"
     );
 }
 

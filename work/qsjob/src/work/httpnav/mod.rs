@@ -101,9 +101,9 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         users: Arc::new(users::LiveUsers { link: l.clone() }),
         config: Arc::new(stubs::Pending(l.clone())),
         net: Arc::new(stubs::Pending(l.clone())),
-        db: Arc::new(stubs::Missing),
-        sec: Arc::new(stubs::Missing),
-        sw: Arc::new(stubs::Missing),
+        db: Arc::new(stubs::Pending(l.clone())),
+        sec: Arc::new(stubs::Pending(l.clone())),
+        sw: Arc::new(stubs::Pending(l.clone())),
         perf: Arc::new(stubs::Pending(l.clone())),
     };
     let nav = Arc::new(Navigator::new(env));

@@ -19,7 +19,7 @@ use certs::apps::AppKind;
 use certs::ca;
 use certs::crypto::keys::KeyAlgorithm;
 use certs::paths::{
-    LOCAL_CA_STORE, OBJECT_SIGNING_STORE, SIGNATURE_VERIFICATION_STORE, SYSTEM_STORE, USER_STORES,
+    LOCAL_CA_STORE, OBJECT_SIGNING_STORE, SIGNATURE_VERIFICATION_STORE, SYSTEM_STORE, USER_STORES, stash_path,
 };
 use certs::store::{CertStore, EntryKind};
 use certs::x509::CertInfo;
@@ -191,7 +191,18 @@ impl Manager<'_> {
     }
 
     fn store_info(&self, name: &str, kind: StoreType, path: &str) -> Option<StoreInfo> {
-        let store = self.ctx.open(&Keystore::new(path, "")).ok()?;
+        let Ok(store) = self.ctx.open(&Keystore::new(path, "")) else {
+            // A store without a stash is listed; only its password opens it.
+            let unstashed = self.ctx.files.exists(path).unwrap_or(false) && !self.has_stash(path);
+            return unstashed.then(|| StoreInfo {
+                name: name.into(),
+                kind,
+                path: path.into(),
+                certificates: 0,
+                default: None,
+                stashed: false,
+            });
+        };
         let certificates = store
             .entries()
             .iter()
@@ -203,7 +214,12 @@ impl Manager<'_> {
             path: path.into(),
             certificates,
             default: store.default_label().map(ToString::to_string),
+            stashed: self.has_stash(path),
         })
+    }
+
+    fn has_stash(&self, path: &str) -> bool {
+        self.ctx.files.exists(&stash_path(path)).unwrap_or(false)
     }
 
     /// The common name of the certificate in an import, for its label.
@@ -314,9 +330,10 @@ impl Manager<'_> {
     }
 
     /// [`Certs::change_password`](crate::env::Certs::change_password).
+    /// An empty `old` opens the store through its stash.
     pub fn change_password(&self, store: &str, old: &str, new: &str) -> Result<(), CertFailure> {
         let (_, path) = self.find(store)?;
-        if old.is_empty() {
+        if old.trim().is_empty() && !self.has_stash(&path) {
             return Err(CertFailure::BadPassword(store.into()));
         }
         keystores::change_password(&self.ctx, &Keystore::new(&path, old), new).map_err(|e| fail(e, store))?;

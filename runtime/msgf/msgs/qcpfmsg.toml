@@ -399,6 +399,13 @@ vars = ["*CHAR 10"]
 [[msg]]
 id = "CPD0032"
 sev = 30
+text = "You may not use command &1 in library &2."
+help = "Your profile has no authority to the command object. Ask the security officer for *USE authority to it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0034"
+sev = 30
 text = "Command &1 is not allowed in the job's mode."
 help = "The command's MODE attribute does not include the mode the job runs in (production, debug or service)."
 vars = ["*CHAR 10"]
@@ -783,9 +790,9 @@ help = "A command line takes up to 512 characters; QCMDEXC up to 32702."
 [[msg]]
 id = "CPF0006"
 sev = 30
-text = "Errors occurred while command &1 was processed."
-help = "The command's processing program ended with an error; the messages before this one say what happened."
-vars = ["*CHAR 10"]
+text = "The command had errors."
+help = "The diagnostic messages before this one say what was wrong with the command or what went wrong while it ran."
+vars = []
 
 [[msg]]
 id = "CPF0201"
@@ -2887,6 +2894,13 @@ sev = 0
 text = "PTF order &1 delivered, &2 PTF(s) received."
 help = "The PTFs are save files in QGPL named after them. LODPTF DEV(*SAVF) or INSPTF loads them."
 vars = ["*CHAR 10", "*CHAR 5"]
+
+[[msg]]
+id = "CPI3599"
+sev = 0
+text = "&1 fixes are available from the Quartz update server (&2) that are not on this system. Last checked &3."
+help = "The last check of the update server found fixes this system does not have. Navigator's Fixes page lists them; SNDPTFORD orders them."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "CPI3E01"

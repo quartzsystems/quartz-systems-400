@@ -502,14 +502,15 @@ impl SplfAttrs {
     }
 
     /// The copy `SNDNETSPLF` puts on `user`'s queue on this system:
-    /// the same data and attributes, owned by `user` (job `QPRTJOB`),
-    /// on `outq` (the profile's `OUTQ`; `*WRKSTN` and `*DEV` are
-    /// `QGPL/QPRINT`, as a job's), ready to print once closed.
+    /// the same data and attributes, owned by `user` (job
+    /// `number/user/QPRTJOB`), on `outq` (the profile's `OUTQ`;
+    /// `*WRKSTN` and `*DEV` are `QGPL/QPRINT`, as a job's), ready to
+    /// print once closed.
     #[must_use]
-    pub fn net_copy(&self, user: &str, outq: &str) -> Self {
+    pub fn net_copy(&self, user: &str, outq: &str, number: u32) -> Self {
         let outq = if outq.is_empty() || outq.starts_with('*') { "QGPL/QPRINT" } else { outq };
         Self {
-            job: ("QPRTJOB".into(), user.to_ascii_uppercase(), 0),
+            job: (PRTJOB.into(), user.to_ascii_uppercase(), number),
             outq: outq.to_string(),
             writer: String::new(),
             last_page: 0,
@@ -568,6 +569,34 @@ impl SplfAttrs {
         );
         out
     }
+}
+
+/// The job that owns spooled files sent to a user.
+pub const PRTJOB: &str = "QPRTJOB";
+/// The most files one `QPRTJOB` holds before the next one starts.
+pub const PRTJOB_FILES: usize = 9999;
+
+/// The number of `user`'s `QPRTJOB` among `files` that can take one
+/// more file (the newest); `None` when a new job is needed.
+pub fn prtjob<'a>(files: impl IntoIterator<Item = &'a SplfAttrs>, user: &str) -> Option<u32> {
+    let user = user.to_ascii_uppercase();
+    let mut count = std::collections::BTreeMap::<u32, usize>::new();
+    for a in files {
+        if a.job.0 == PRTJOB && a.job.1 == user && a.job.2 != 0 {
+            *count.entry(a.job.2).or_default() += 1;
+        }
+    }
+    let lo = *count.keys().next()?;
+    let hi = *count.keys().next_back()?;
+    let half = crate::job::MAX_NUMBER / 2;
+    // After a wrap from the last number to 1 the newest is the
+    // highest below the gap.
+    let newest = if hi - lo > half {
+        count.keys().copied().filter(|n| *n < half).max()?
+    } else {
+        hi
+    };
+    (count[&newest] < PRTJOB_FILES).then_some(newest)
 }
 
 /// Why `SNDNETSPLF`'s `TOUSRID` cannot be delivered here.
@@ -712,14 +741,32 @@ mod tests {
             last_page: 2,
             ..SplfAttrs::default()
         };
-        let c = a.net_copy("bob", "QGPL/BOBQ");
-        assert_eq!(c.job, ("QPRTJOB".into(), "BOB".into(), 0));
+        let c = a.net_copy("bob", "QGPL/BOBQ", 231);
+        assert_eq!(c.job, ("QPRTJOB".into(), "BOB".into(), 231));
         assert_eq!((c.outq.as_str(), c.writer.as_str(), c.last_page, c.pages), ("QGPL/BOBQ", "", 0, 2));
         assert_eq!(c.schedule, Schedule::Immed);
-        assert_eq!(a.net_copy("BOB", "*WRKSTN").outq, "QGPL/QPRINT");
-        assert_eq!(a.net_copy("BOB", "*DEV").outq, "QGPL/QPRINT");
+        assert_eq!(a.net_copy("BOB", "*WRKSTN", 231).outq, "QGPL/QPRINT");
+        assert_eq!(a.net_copy("BOB", "*DEV", 231).outq, "QGPL/QPRINT");
         // The original is untouched.
         assert_eq!(a.job.1, "QSECOFR");
+    }
+
+    #[test]
+    fn prtjob_reused() {
+        let f = |user: &str, n: u32| SplfAttrs {
+            job: ("QPRTJOB".into(), user.into(), n),
+            ..SplfAttrs::default()
+        };
+        assert_eq!(prtjob(&[], "BOB"), None);
+        let files = vec![f("ANN", 300), f("BOB", 0), f("BOB", 231), f("BOB", 240)];
+        assert_eq!(prtjob(&files, "bob"), Some(240));
+        assert_eq!(prtjob(&files, "ANN"), Some(300));
+        assert_eq!(prtjob(&files, "CAT"), None);
+        // A full job is not reused.
+        let full: Vec<SplfAttrs> = (0..PRTJOB_FILES).map(|_| f("BOB", 7)).collect();
+        assert_eq!(prtjob(&full, "BOB"), None);
+        // After the wrap the low number is the newer.
+        assert_eq!(prtjob(&[f("BOB", 999_990), f("BOB", 3)], "BOB"), Some(3));
     }
 
     #[test]

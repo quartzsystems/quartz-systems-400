@@ -114,3 +114,26 @@ closes when the machine's answer is recorded here and the code agrees.
     one IPL (`docs/PTF.md` §5), `*PANEL` keeps the default slot. `D`
     and `*IMGCLG` are refused. Test: `PWRDWNSYS RESTART(*YES)
     IPLSRC(B)` on the machine, then `DSPPTF` shows `##MACH#B`.
+
+## Spooled file messages and the writer
+
+16. **The spool message identifiers.** Quartz choices, to check
+    against IBM i 7.1 on Cody's box: `CPA3388` the writer's inquiry
+    when a printer session reports a device error, `CPF3429` the
+    session ending while a file prints, `CPC3302` `RLSSPLF` done,
+    `CPF3337` `RLSSPLF` of a file neither held nor saved, `CPC3303`
+    `SNDNETSPLF` done, `CPF3496` `SNDNETSPLF` to a user on another
+    system; also `CPF3357` as the diagnostic when a printer file's or
+    the job's output queue is not found and the file goes to
+    `QGPL/QPRINT`. Test: on the box, end a printer session mid-file,
+    `RLSSPLF` a ready file, `SNDNETSPLF` to a user here and to another
+    system, `CHGJOB OUTQ(...)` to a queue then delete it and print;
+    `DSPMSG QSYSOPR` and `DSPJOBLOG` show the identifiers.
+
+17. **The writer's inquiry replies.** Decided: `CPA3388` takes `C`
+    (end the writer), `H` (hold the file, go on with the next) or `R`
+    (print it again from the start), `R` the default. Closed.
+
+18. **F5 on `WRKSPLF`.** Closed: F5 refreshes the list; the terminal
+    resends only the fields that changed, so a refresh with nothing
+    typed looks like no input but is one.

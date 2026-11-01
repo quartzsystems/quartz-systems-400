@@ -90,6 +90,13 @@ are built once per test process). Every certificate page needs both
 Stores open through their stash; a store password typed on a page is
 passed to the one call that needs it and is never put in the session, a
 message, the audit journal or a page (`tests/certs.rs` checks).
+Change password asks for the current password only when the store has
+no stash: a stashed store (`*SYSTEM` among them, made at the first IPL
+with a random password kept only in its stash) is opened through the
+stash, which the certificate managers' `*ALLOBJ` and `*SECADM` entitle
+them to, and the stash is rewritten under the new password. A store
+without a stash is still listed (no certificate count) so its password
+can be changed with the current one.
 
 Data differences the golden tests apply (`tests/golden.rs`): the store
 paths (`/QIBM/UserData/ICSS/Cert/...`; `*SIGNATUREVERIFICATION` is
@@ -214,7 +221,7 @@ requests never interleave. The environment:
   name; connections from the function `CNN-n`. Start and end run
   `STRTCPSVR`/`ENDTCPSVR ... HTTPSVR(name)` through the analyzer with
   the job swapped to the web user (`as_user`), so the commands check
-  their own authority; the escape (or the diagnostic before `CPF0001`)
+  their own authority; the escape (or the diagnostic before `CPF0006`)
   is the error message.
 - **Files**: `work/ifsfiles.rs` over the job's link, as `QTMHHTTP`.
 - **Certs**: `httpadmin::certmgr` (shared with the fixture) runs in the

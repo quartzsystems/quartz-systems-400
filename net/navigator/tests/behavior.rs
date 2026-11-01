@@ -84,12 +84,7 @@ fn tree_groups_stay_open() {
 }
 
 /// Routes not built yet: each step removes its own.
-const PENDING: &[&str] = &[
-    // Database.
-    "/db", "/sql",
-    // Security, software, performance.
-    "/audit", "/licpgm", "/ptf", "/fixes",
-];
+const PENDING: &[&str] = &[];
 
 /// Every link and form on every reachable page resolves to a page of
 /// this product (or HTTP Server Administration's instances).

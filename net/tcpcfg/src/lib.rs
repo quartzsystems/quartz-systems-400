@@ -28,6 +28,7 @@ pub mod apply;
 mod config;
 mod error;
 pub mod files;
+pub mod install;
 pub mod line;
 pub mod model;
 pub mod msg;

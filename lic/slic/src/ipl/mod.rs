@@ -233,15 +233,8 @@ fn lic_phase(
     Ok(())
 }
 
-/// `qs400.ip=A.B.C.D/N` on the command line puts that address on the
-/// first Ethernet link before TCP/IP starts. Without it the IPL adds
-/// none: a new system has the loopback only until an interface is
-/// configured (`ADDTCPIFC`), as on IBM i. `BLOCKED(phase10)`: DHCP (no
-/// client yet, `*IP4DHCP`).
-fn net_address(system: &mut System) {
-    let Some(spec) = system.boot.ip.clone() else {
-        return;
-    };
+/// The first Ethernet link: its index and name.
+pub(crate) fn first_ethernet(system: &mut System) -> Option<(i32, String)> {
     // A link with a device behind it: the kernel makes bond0 and dummy0
     // itself (bonding and dummy are built in), and neither reaches a wire.
     // The hardware resource service knows which links are ports.
@@ -252,19 +245,27 @@ fn net_address(system: &mut System) {
         .filter_map(|r| r.port.as_ref().map(|p| p.ifname.clone()))
         .collect();
     let device = |n: &str| ports.iter().any(|p| p == n);
-    let Some(link) = system
-        .links
-        .iter()
-        .find(|l| device(&l.name))
-        .or_else(|| {
-            system.links.iter().find(|l| {
-                l.name != "lo" && !["sit", "bond", "dummy"].iter().any(|p| l.name.starts_with(p))
-            })
-        })
-    else {
+    let link = system.links.iter().find(|l| device(&l.name)).or_else(|| {
+        system
+            .links
+            .iter()
+            .find(|l| l.name != "lo" && !["sit", "bond", "dummy"].iter().any(|p| l.name.starts_with(p)))
+    })?;
+    Some((link.index, link.name.clone()))
+}
+
+/// `qs400.ip=A.B.C.D/N` on the command line puts that address on the
+/// first Ethernet link before TCP/IP starts. Without it the IPL adds
+/// none: a new system has the loopback only until an interface is
+/// configured (`ADDTCPIFC`), as on IBM i. `BLOCKED(phase10)`: DHCP (no
+/// client yet, `*IP4DHCP`).
+fn net_address(system: &mut System) {
+    let Some(spec) = system.boot.ip.clone() else {
         return;
     };
-    let (index, name) = (link.index, link.name.clone());
+    let Some((index, name)) = first_ethernet(system) else {
+        return;
+    };
     let Some((addr, prefix)) = spec.split_once('/') else {
         return;
     };
@@ -276,7 +277,8 @@ fn net_address(system: &mut System) {
         return;
     }
     let ip = [octets[0], octets[1], octets[2], octets[3]];
-    if !link.is_up()
+    let up = system.links.iter().any(|l| l.index == index && l.is_up());
+    if !up
         && let Err(e) = net::set_up(index)
     {
         system.out.serial(&format!("slic: {name} up: {e}\n"));

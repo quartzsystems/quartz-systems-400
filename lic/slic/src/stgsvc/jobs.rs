@@ -88,7 +88,8 @@ pub fn take_next_iplsts(system: &mut System) -> u8 {
     r.unwrap_or(0)
 }
 
-/// The next job number, skipping numbers of active jobs; the last one
+/// The next job number, skipping numbers of active jobs and of jobs
+/// that still own spooled files; the last one
 /// handed out is kept in `QSYS/QJOBNBR`.
 pub fn next(system: &mut System) -> Result<u32, String> {
     let s = system.storage.as_mut().ok_or("object store not open")?;
@@ -119,8 +120,12 @@ pub fn next(system: &mut System) -> Result<u32, String> {
     };
     let queued = &system.queued;
     let pending = &system.pending;
+    let spool = &system.spool.files;
     let n = next_number(last, |n| {
-        jobs.in_use(n) || queued.contains_key(&n) || pending.contains_key(&n)
+        jobs.in_use(n)
+            || queued.contains_key(&n)
+            || pending.contains_key(&n)
+            || spool.values().any(|e| e.attrs.job.2 == n)
     })
     .ok_or("every job number is in use")?;
     dtaara::write(&mut txn, id, &DataAreaValue::Dec(i128::from(n))).map_err(|e| e.to_string())?;
