@@ -14,6 +14,15 @@ use httpd::registry::Registry;
 
 use crate::SELF_INSTANCE;
 
+/// The directory of the instances and the registry: the IFS makes it
+/// at every IPL, owned by the administration server's profile, so the
+/// `ADMIN` job can make instances under it.
+pub const WWW: &str = "/www";
+/// Its owner.
+pub const WWW_OWNER: &str = "QTMHHTTP";
+/// Its `*PUBLIC` data authority.
+pub const WWW_PUBLIC: &str = "*RX";
+
 /// Make `ADMIN`'s registry entry and server root when the registry has
 /// none; whether it was made. `tls_port` 0 leaves TLS out. `stamp` is
 /// the time as the configuration's comment shows it.

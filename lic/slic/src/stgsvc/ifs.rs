@@ -18,6 +18,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::OnceLock;
 
+use httpadmin::seed::{WWW, WWW_OWNER, WWW_PUBLIC};
 use ifs::Errno;
 use ifs::backend::linux::LinuxBackend;
 use ifs::client::{Direct, IfsClient, Unavailable};
@@ -136,7 +137,10 @@ fn build(system: &mut System) -> Result<Ifs<LinuxBackend>, String> {
     let opt = ifs::vfs::optical::Volumes::new(super::media::volume_set());
     let ifs = Ifs::with_optical(b, Box::new(StoreQsys::new(Lent)), Box::new(opt), Config::default());
     with_lent(system, JobHandle(0), || {
-        ifs.ensure_layout(&StoreEnv::new(&Lent))
+        let env = StoreEnv::new(&Lent);
+        ifs.ensure_layout(&env)?;
+        // The HTTP server's instances: the `ADMIN` job writes there.
+        ifs.ensure_dir(&env, WWW, WWW_OWNER, WWW_PUBLIC)
     })
     .map_err(|e| format!("making the standard directories: {}", e.text()))?;
     Ok(ifs)
