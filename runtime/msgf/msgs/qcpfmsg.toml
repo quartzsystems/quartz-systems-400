@@ -4022,6 +4022,13 @@ help = "Printing the display needs a function a later release brings. The displa
 vars = []
 
 [[msg]]
+id = "CPI9801"
+sev = 0
+text = "The text &1 was not found."
+help = "The search looked from the page shown to the end and then from the beginning. Check the spelling, or search for a shorter part of the text."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
 id = "CPI9B80"
 sev = 0
 text = "The display was written to the spooled file QSYSPRT."

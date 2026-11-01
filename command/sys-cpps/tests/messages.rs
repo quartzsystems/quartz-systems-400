@@ -132,7 +132,11 @@ fn system_sources() -> Vec<PathBuf> {
             sources(&p, &mut out);
         }
     }
-    out.retain(|p| !p.to_string_lossy().replace('\\', "/").contains("/tests/"));
+    // Tests and the web products' sample systems send nothing.
+    out.retain(|p| {
+        let p = p.to_string_lossy().replace('\\', "/");
+        !p.contains("/tests/") && !p.contains("/src/fixture/")
+    });
     out
 }
 
