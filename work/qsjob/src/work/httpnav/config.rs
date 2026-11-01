@@ -1,0 +1,349 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! `navigator::env::config::Config` as the user: system values from
+//! `sysval_panel_list` and `sysval_panel` (`WRKSYSVAL`, `DSPSYSVAL`)
+//! with what each accepts from the `lic/sysval` catalog; disks from
+//! `panel2_data DSKSTS` (`WRKDSKSTS`) and `SYSSTS`'s ASP figures;
+//! hardware from `hw_table` in `WRKHDWRSC`'s tree order (`view.rs`)
+//! with `hw_cfgds` by resource; time from the date and time values,
+//! `CHGNTPA`'s attributes (`tcp Servers`) and the `QTOTNTP` job.
+
+use hwrsrc::Kind;
+use hwrsrc::view;
+use navigator::env::config::{Allowed, Asp, Config, DiskUnit, Disks, Resource, SysVal, Time};
+use qsweb::msg::Message;
+use servers::attrs::ntp::NtpAttrs;
+use stg::Client;
+use stg::tcp::{TcpOp, TcpReply};
+use sysval::{Catalog, Entry, Group, Kind as SvKind};
+
+use super::Link;
+use super::parse;
+use super::perf::{panel, val};
+use crate::work::web::bridge::Main;
+
+/// What `QTIMADJ` names while the SNTP client adjusts the clock.
+const SNTP: &str = crate::work::ntp::ADJUSTER;
+
+/// System values, disks, hardware and time.
+pub struct LiveConfig {
+    /// The job's thread.
+    pub link: Link,
+}
+
+/// The Navigator category of a value: its catalog group, with the
+/// values IBM's Navigator files elsewhere.
+fn category(name: &str, group: Option<Group>) -> &'static str {
+    match name {
+        "QDSCJOBITV" => return "security",
+        "QAUTOCFG" | "QAUTORMT" | "QAUTOVRT" | "QDEVNAMING" | "QDEVRCYACN" | "QPRTDEV" | "QCMNRCYLMT"
+        | "QCMNARB" | "QCONSOLE" | "QSTRPRTWTR" => return "devices",
+        "QPWRDWNLMT" | "QPWRRSTIPL" | "QUPSDLYTIM" | "QUPSMSGQ" | "QIPLDATTIM" | "QRMTIPL" => return "power",
+        "QSAVACCPTH" => return "save",
+        "QDYNPTYADJ" | "QDYNPTYSCD" | "QPFRADJ" | "QQRYDEGREE" | "QQRYTIMLMT" | "QTHDRSCADJ" | "QTHDRSCAFN"
+        | "QMAXACTLVL" | "QBASACTLVL" | "QTSEPOOL" => return "perf",
+        "QENDJOBLMT" | "QSETJOBATR" | "QALWJOBITP" => return "jobs",
+        _ => {}
+    }
+    match group {
+        Some(Group::Sec) => "security",
+        Some(Group::Dattim | Group::Edt) => "datetime",
+        Some(Group::Alc) => "jobs",
+        Some(Group::Stg) => "storage",
+        Some(Group::Msg) => "msgs",
+        Some(Group::Libl) => "libl",
+        Some(Group::Sysctl | Group::Net) | None => "sysctl",
+    }
+}
+
+/// A catalog default as `DSPSYSVAL` would show it.
+fn shipped(e: &Entry) -> String {
+    e.default_value().text()
+}
+
+/// What a value accepts, as its catalog says.
+fn allowed(e: &Entry) -> Allowed {
+    match (e.kind, &e.allowed, e.range) {
+        (SvKind::List, Some(v), _) => Allowed::List(v.clone(), e.elems.unwrap_or(v.len())),
+        (_, Some(v), _) => Allowed::Values(v.clone()),
+        (SvKind::Dec, None, Some([min, max])) => Allowed::Range(min, max, Vec::new()),
+        _ => Allowed::Any,
+    }
+}
+
+/// The catalog, parsed once.
+fn catalog() -> Option<&'static Catalog> {
+    static CAT: std::sync::OnceLock<Option<Catalog>> = std::sync::OnceLock::new();
+    CAT.get_or_init(|| Catalog::builtin().ok()).as_ref()
+}
+
+fn sysvals(m: &Main) -> Vec<SysVal> {
+    let cat = catalog();
+    let all = m.link.borrow_mut().with(Client::sysval_panel_list);
+    all.into_iter()
+        .map(|(name, _, text)| {
+            let n = name.clone();
+            let value = m
+                .link
+                .borrow_mut()
+                .with(|l| l.sysval_panel(n))
+                .map(|(_, _, elems)| elems.iter().map(|e| e.trim()).collect::<Vec<_>>().join(" "))
+                .unwrap_or_default();
+            let e = cat.and_then(|c| c.get(&name));
+            SysVal {
+                category: category(&name, e.map(|e| e.group)).to_string(),
+                value: value.trim().to_string(),
+                shipped: e.map(shipped).unwrap_or_default(),
+                text,
+                allowed: e.map(allowed).unwrap_or_default(),
+                ipl: e.is_some_and(|e| e.restart_required),
+                changed: None,
+                name,
+            }
+        })
+        .collect()
+}
+
+/// `QTIMZON` and the other values Time management shows.
+fn sysval(m: &Main, name: &str) -> String {
+    let n = name.to_string();
+    m.link
+        .borrow_mut()
+        .with(|l| l.sysval(n))
+        .map(|v| ccsid::from_ebcdic(&v.data).trim().to_string())
+        .unwrap_or_default()
+}
+
+/// The units' resource names by serial number, from the hardware table.
+pub fn disk_names(m: &Main) -> Vec<(String, String)> {
+    m.link
+        .borrow_mut()
+        .with(|l| l.hw_table(false))
+        .map(|t| {
+            t.resources
+                .into_iter()
+                .filter(|r| r.kind == Kind::Disk && !r.serial.is_empty())
+                .map(|r| (r.serial, r.name))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// A unit's resource name: the disk with its serial number, else
+/// `DDnnn` from the unit number.
+pub fn unit_resource(names: &[(String, String)], serial: &str, unit: u32) -> String {
+    names
+        .iter()
+        .find(|(s, _)| !serial.is_empty() && s == serial)
+        .map_or_else(|| format!("DD{unit:03}"), |(_, n)| n.clone())
+}
+
+fn disks(m: &Main, reset: bool) -> Disks {
+    let (vars, rows) = panel(m, "DSKSTS", &[if reset { "*YES" } else { "*NO" }]);
+    let names = disk_names(m);
+    let units: Vec<DiskUnit> = rows
+        .iter()
+        .map(|r| {
+            let unit = val(r, "UNIT").trim().parse().unwrap_or(0);
+            let serial = val(r, "SERIAL").trim().to_string();
+            let bytes = val(r, "SIZEB").trim().parse::<u64>().ok();
+            DiskUnit {
+                unit,
+                resource: unit_resource(&names, &serial, unit),
+                kind: val(r, "TYPE").trim().to_string(),
+                model: String::new(),
+                capacity: bytes.unwrap_or_else(|| parse::size(&format!("{} G", val(r, "SIZE")))),
+                used_pct: parse::tenths(val(r, "USED")),
+                protection: match val(r, "PROT").trim() {
+                    "" => "None".into(),
+                    p => p.to_string(),
+                },
+                status: match val(r, "STATUS").trim() {
+                    "" => "Active".into(),
+                    s => s.to_string(),
+                },
+                asp: Some(1),
+                serial,
+            }
+        })
+        .collect();
+    let (sys, _) = panel(m, "SYSSTS", &["*NO"]);
+    let capacity = parse::size(val(&sys, "SYSASP"));
+    let used_pct = parse::tenths(val(&sys, "ASPPCT"));
+    let mirrored = units.iter().any(|u| u.protection.starts_with("Mirrored"));
+    Disks {
+        asps: vec![Asp {
+            number: 1,
+            kind: "System".into(),
+            capacity,
+            used: capacity / 1000 * u64::from(used_pct),
+            used_pct,
+            protection: if mirrored { "Mirrored" } else { "None" }.into(),
+            overflow: Some(false),
+            threshold: 90,
+        }],
+        units,
+        elapsed: parse::hms(val(&vars, "ELAPSED")),
+    }
+}
+
+/// Where a kind of resource is listed.
+fn hw_category(k: Kind) -> &'static str {
+    match k {
+        Kind::Lan | Kind::Port | Kind::Comm => "Communications",
+        Kind::Storage | Kind::Disk | Kind::Optical | Kind::Tape | Kind::TapeLibrary => "Storage",
+        Kind::Processor | Kind::Memory => "Processor",
+        Kind::Keyboard => "Workstation",
+        Kind::Bridge | Kind::Other => "",
+    }
+}
+
+/// `*LIND` as `VRYCFG`'s `CFGTYPE` (`*LIN`).
+fn cfg_type(t: &str) -> String {
+    match t {
+        "*LIND" => "*LIN".into(),
+        "*CTLD" => "*CTL".into(),
+        "*DEVD" => "*DEV".into(),
+        other => other.to_string(),
+    }
+}
+
+fn resources(m: &Main) -> Vec<Resource> {
+    let Ok(t) = m.link.borrow_mut().with(|l| l.hw_table(false)) else {
+        return Vec::new();
+    };
+    let Some(all) = view::spec("*AHW") else {
+        return Vec::new();
+    };
+    view::list(&t, all)
+        .into_iter()
+        .map(|row| {
+            let r = t.get(&row.name);
+            let n = row.name.clone();
+            let cfg = m
+                .link
+                .borrow_mut()
+                .with(|l| l.hw_cfgds(n))
+                .into_iter()
+                .map(|(d, ty)| (d, cfg_type(&ty)))
+                .collect();
+            Resource {
+                depth: u32::try_from(row.depth).unwrap_or(0),
+                type_model: row.type_col.trim().to_string(),
+                text: r.map_or_else(|| row.text.clone(), |r| r.description.clone()),
+                status: row.status.clone(),
+                serial: r.map(|r| r.serial.clone()).unwrap_or_default(),
+                location: r.map(view::location).unwrap_or_default(),
+                category: r.map_or("", |r| hw_category(r.kind)).to_string(),
+                cfg,
+                name: row.name,
+            }
+        })
+        .collect()
+}
+
+/// `-04:00` from seconds east of UTC.
+fn offset_text(secs: i32) -> String {
+    let sign = if secs < 0 { '-' } else { '+' };
+    let a = secs.unsigned_abs();
+    format!("{sign}{:02}:{:02}", a / 3600, a % 3600 / 60)
+}
+
+/// `CHGNTPA`'s attributes from the server table.
+pub fn ntp_attrs(m: &Main) -> NtpAttrs {
+    match m.link.borrow_mut().with(|l| l.tcp(TcpOp::Servers)) {
+        TcpReply::Servers { list } => list
+            .into_iter()
+            .find(|s| s.server == "*NTP")
+            .map(|s| NtpAttrs::from_bag(&s.bag))
+            .unwrap_or_default(),
+        _ => NtpAttrs::default(),
+    }
+}
+
+fn time(m: &Main) -> Time {
+    let now = m.link.borrow_mut().with(Client::now);
+    let zone = sysval(m, "QTIMZON");
+    let a = ntp_attrs(m);
+    let jobs = m.link.borrow_mut().with(Client::active_jobs);
+    let mut zones: Vec<(String, String)> = sysval::tz::ZONES
+        .iter()
+        .map(|z| (z.name.to_string(), z.text.to_string()))
+        .collect();
+    if !zone.is_empty() && !zones.iter().any(|(n, _)| *n == zone) {
+        zones.push((zone.clone(), String::new()));
+    }
+    let adjust = sysval(m, "QTIMADJ");
+    let mut adjusters = vec![
+        ("*NONE".to_string(), "No time adjustment software".to_string()),
+        (SNTP.to_string(), "The system's SNTP client".to_string()),
+    ];
+    if !adjust.is_empty() && !adjusters.iter().any(|(v, _)| v.eq_ignore_ascii_case(&adjust)) {
+        adjusters.push((adjust.clone(), String::new()));
+    }
+    Time {
+        zone,
+        zones,
+        offset: offset_text(now.offset_min * 60),
+        dst: now.dst,
+        date_format: sysval(m, "QDATFMT"),
+        date_sep: sysval(m, "QDATSEP"),
+        time_sep: sysval(m, "QTIMSEP"),
+        adjust,
+        adjusters,
+        ntp_servers: a.rmtsys,
+        // The client logs each synchronization; nothing keeps the last.
+        last_sync: None,
+        ntp_active: jobs.iter().any(|j| j.name == "QTOTNTP"),
+    }
+}
+
+impl Config for LiveConfig {
+    fn sysvals(&self, user: &str) -> Vec<SysVal> {
+        self.link.read(user, |m| sysvals(m))
+    }
+
+    fn disks(&self, user: &str, reset: bool) -> Disks {
+        self.link.read(user, move |m| disks(m, reset))
+    }
+
+    fn resources(&self, user: &str) -> Vec<Resource> {
+        self.link.read(user, |m| resources(m))
+    }
+
+    fn time(&self, user: &str) -> Time {
+        self.link.read(user, |m| time(m))
+    }
+
+    fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
+        self.link.run(user, command)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn categories() {
+        let c = Catalog::builtin().unwrap();
+        let of = |n: &str| category(n, c.get(n).map(|e| e.group));
+        assert_eq!(of("QSECURITY"), "security");
+        assert_eq!(of("QDATFMT"), "datetime");
+        assert_eq!(of("QMAXJOB"), "jobs");
+        assert_eq!(of("QDEVNAMING"), "devices");
+        assert_eq!(of("QPFRADJ"), "perf");
+        assert_eq!(of("QCTLSBSD"), "sysctl");
+        assert_eq!(of("QSYSLIBL"), "libl");
+        assert_eq!(of("QHSTLOGSIZ"), "msgs");
+        assert_eq!(of("QSTGLOWLMT"), "storage");
+        assert_eq!(of("QUPSDLYTIM"), "power");
+        assert_eq!(of("QSAVACCPTH"), "save");
+        let v = c.get("QALWOBJRST").unwrap();
+        assert_eq!(shipped(v), "*ALL");
+        assert_eq!(offset_text(-4 * 3600), "-04:00");
+        assert_eq!(offset_text(5 * 3600 + 1800), "+05:30");
+    }
+}

@@ -5,78 +5,15 @@
 //! The areas not live yet: their pages show empty lists. A command still
 //! runs its command as the user.
 
-use navigator::env::config::{Config, Disks, Resource, SysVal, Time};
 use navigator::env::db::{Db, DbObject, ObjKind, Schema, SqlOptions, SqlOutcome, TableDesc};
-use navigator::env::net::{HostEntry, Interface, Net, Route, Server, TcpConfig};
-use navigator::env::perf::{DiskActivity, Perf, SysActivity};
 use navigator::env::sec::{AuditEntry, AuditFilter, AuditReceiver, Security};
 use navigator::env::sw::{Fix, ImageCatalog, LicenseKey, Product, Ptf, PtfGroup, Software, UpdateAttrs};
 use qsweb::msg::{Kind, Message};
 
 use super::Link;
 
-/// System values, disks, hardware, time, TCP/IP and performance:
-/// nothing read yet (TODO: live over `sysval_panel_list`, `DSKSTS`,
-/// the hardware resource service, `tcp`, `SYSACT`).
+/// The areas not live yet.
 pub struct Pending(pub Link);
-
-impl Config for Pending {
-    fn sysvals(&self, _user: &str) -> Vec<SysVal> {
-        Vec::new()
-    }
-
-    fn disks(&self, _user: &str, _reset: bool) -> Disks {
-        Disks::default()
-    }
-
-    fn resources(&self, _user: &str) -> Vec<Resource> {
-        Vec::new()
-    }
-
-    fn time(&self, _user: &str) -> Time {
-        Time::default()
-    }
-
-    fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
-        self.0.run(user, command)
-    }
-}
-
-impl Net for Pending {
-    fn config(&self, _user: &str) -> TcpConfig {
-        TcpConfig::default()
-    }
-
-    fn interfaces(&self, _user: &str) -> Vec<Interface> {
-        Vec::new()
-    }
-
-    fn routes(&self, _user: &str) -> Vec<Route> {
-        Vec::new()
-    }
-
-    fn hosts(&self, _user: &str) -> Vec<HostEntry> {
-        Vec::new()
-    }
-
-    fn servers(&self, _user: &str) -> Vec<Server> {
-        Vec::new()
-    }
-
-    fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
-        self.0.run(user, command)
-    }
-}
-
-impl Perf for Pending {
-    fn system(&self, _user: &str) -> SysActivity {
-        SysActivity::default()
-    }
-
-    fn disks(&self, _user: &str) -> DiskActivity {
-        DiskActivity::default()
-    }
-}
 
 fn not_yet(what: &str) -> Message {
     Message::new(Kind::Error, "CPF9899", &format!("{what} is not available from Navigator yet."))
