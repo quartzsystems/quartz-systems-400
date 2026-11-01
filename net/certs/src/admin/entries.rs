@@ -265,6 +265,30 @@ pub fn remove(ctx: &Ctx<'_>, ks: &Keystore, label: &str) -> Result<Vec<Note>> {
     Ok(vec![Note::new(msgs::REMOVED, &[label, ks.shown()])])
 }
 
+/// Copy entry `label` of `from` into `to` under the same label: a
+/// certificate with its key and the intermediates that issued it, or a
+/// CA certificate. A waiting request stays where its key is.
+pub fn copy(ctx: &Ctx<'_>, from: &Keystore, label: &str, to: &Keystore) -> Result<Vec<Note>> {
+    if from.path == to.path {
+        return Err(CertError::Invalid(format!("{label} is already in {}", to.shown())));
+    }
+    let src = ctx.open(from)?;
+    let e = src.get(label)?;
+    let mut dst = ctx.open(to)?;
+    let waiting = || CertError::Invalid(format!("{label} is a request still waiting for its certificate"));
+    let cert = e.cert.clone().ok_or_else(waiting)?;
+    match e.kind {
+        EntryKind::Server | EntryKind::Client => {
+            let chain = src.chain(label)?.split_off(1);
+            dst.add_identity(label, e.kind, cert, chain, &e.private_key()?, ctx.now)?;
+        }
+        EntryKind::Ca => dst.add_ca(label, cert, e.trusted, ctx.now)?,
+        EntryKind::Request => return Err(waiting()),
+    }
+    dst.save(ctx.files)?;
+    Ok(vec![Note::new(msgs::IMPORTED, &[label, to.shown()])])
+}
+
 /// One certificate as `QSWRKCRT` lists it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Row {
@@ -423,12 +447,36 @@ mod tests {
         assert!(!root.trusted);
     }
 
+    /// A certificate made in another store reaches `*SYSTEM` with its
+    /// key, and can then be assigned.
+    #[test]
+    fn copy_brings_a_certificate_and_its_key_into_the_system_store() {
+        let w = World::with_system();
+        let other = Keystore::new("/QIBM/UserData/ICSS/Cert/QSTORE01.KDB", "other123");
+        keystores::create(&w.ctx(), &other, true, false).unwrap();
+        let other = Keystore::new(&other.path, "");
+        create(&w.ctx(), &other, "ADMIN-CERT01", &server("qs400.example", 365), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned)
+            .unwrap();
+        create(&w.ctx(), &other, "REQ", &server("r.example", 30), KeyAlgorithm::EcdsaP256, &Signer::Request).unwrap();
+        let sys = Keystore::system();
+        assert!(appids::assign(&w.ctx(), "QS400_HTTP_SERVER_ADMIN", Some("ADMIN-CERT01")).is_err());
+        let notes = copy(&w.ctx(), &other, "ADMIN-CERT01", &sys).unwrap();
+        assert_eq!(notes, [Note::new(msgs::IMPORTED, &["ADMIN-CERT01", "*SYSTEM"])]);
+        let s = w.ctx().open(&sys).unwrap();
+        let a = s.get("ADMIN-CERT01").unwrap();
+        assert!(a.has_identity() && a.kind == EntryKind::Server);
+        appids::assign(&w.ctx(), "QIBM_HTTP_SERVER_ADMIN", Some("ADMIN-CERT01")).unwrap();
+        assert!(matches!(copy(&w.ctx(), &other, "ADMIN-CERT01", &sys), Err(CertError::LabelExists(_))));
+        assert!(copy(&w.ctx(), &other, "REQ", &sys).is_err());
+        assert!(copy(&w.ctx(), &sys, "ADMIN-CERT01", &Keystore::system()).is_err());
+    }
+
     #[test]
     fn rename_follows_into_the_assignments_and_remove_clears_them() {
         let w = World::with_system();
         let ks = Keystore::system();
         create(&w.ctx(), &ks, "OLD", &server("o.example", 30), KeyAlgorithm::EcdsaP256, &Signer::SelfSigned).unwrap();
-        appids::assign(&w.ctx(), "QIBM_HTTP_SERVER_ADMIN", Some("OLD")).unwrap();
+        appids::assign(&w.ctx(), "QS400_HTTP_SERVER_ADMIN", Some("OLD")).unwrap();
         let c = Change {
             new_label: Some("NEW".into()),
             text: Some("admin".into()),
@@ -439,11 +487,11 @@ mod tests {
         assert_eq!(rows[0].label, "NEW");
         assert_eq!(rows[0].text, "admin");
         assert!(rows[0].is_default);
-        assert_eq!(rows[0].apps, ["QIBM_HTTP_SERVER_ADMIN"]);
+        assert_eq!(rows[0].apps, ["QS400_HTTP_SERVER_ADMIN"]);
         assert!(change(&w.ctx(), &ks, "NEW", &Change { trusted: Some(true), ..Change::default() }).is_err());
         remove(&w.ctx(), &ks, "NEW").unwrap();
         let reg = AppRegistry::load(&w.files).unwrap();
-        assert_eq!(reg.get("QIBM_HTTP_SERVER_ADMIN").unwrap().label, None);
+        assert_eq!(reg.get("QS400_HTTP_SERVER_ADMIN").unwrap().label, None);
         assert!(matches!(remove(&w.ctx(), &ks, "NEW"), Err(CertError::LabelNotFound(_))));
     }
 }

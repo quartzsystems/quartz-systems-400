@@ -201,6 +201,27 @@ pub fn with_stores<T>(
     Ok(out)
 }
 
+/// At IPL: make the `*SYSTEM` store when the system has none (a new
+/// install), its random password kept only in the stash. A line for the
+/// open reply when it was made.
+pub fn ensure_system(system: &mut System) -> Option<String> {
+    if service::why_not().is_some() || sealer(system).is_none() {
+        return None;
+    }
+    match with_stores(system, &[], true, admin::keystores::ensure_system) {
+        Ok(Ok(true)) => Some("certificate store *SYSTEM created".into()),
+        Ok(Ok(false)) => None,
+        Ok(Err(e)) => {
+            eprintln!("qsstg: certificate store *SYSTEM: {e}");
+            None
+        }
+        Err(e) => {
+            eprintln!("qsstg: certificate store *SYSTEM: {e}");
+            None
+        }
+    }
+}
+
 /// Whether `p` (the request's actor; `None` is the system) may manage
 /// certificates: `*ALLOBJ` and `*SECADM`, as DCM asks. A refusal is
 /// audited.
