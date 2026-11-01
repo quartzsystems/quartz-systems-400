@@ -49,7 +49,10 @@ buffers), ends its directory streams and drops its locks.
 standard directories where they are missing, owned by `QSYS`:
 `/home` (`*PUBLIC *RX`), `/tmp` (`*RWX`, restricted rename and unlink),
 `/QIBM`, `/QIBM/ProdData`, `/QIBM/UserData`, `/etc`, `/QOpenSys/usr`,
-`/QOpenSys/etc`, `/QOpenSys/tmp` (`*RWX`, restricted). The backend's
+`/QOpenSys/etc`, `/QOpenSys/tmp` (`*RWX`, restricted). `Ifs::ensure_dir`
+makes a product's directory the same way with another owner: the
+storage service makes `/www` owned by `QTMHHTTP`, `*PUBLIC *RX`, so the
+`ADMIN` job can make the HTTP server's instances and registry. The backend's
 `UDFS/` area is reachable by no path; a UDFS shows as the block special
 file `/dev/QASPnn/NAME.udfs`.
 

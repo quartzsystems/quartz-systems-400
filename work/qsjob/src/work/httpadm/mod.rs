@@ -39,6 +39,8 @@ use system::{Dates, LiveSystem};
 
 /// The certificate application ID of the administration server.
 const APP_ID: &str = "QS400_HTTP_SERVER_ADMIN";
+/// The program the job log names.
+const PGM: &str = "QZHBHTTP";
 /// How often the job looks whether it is to end.
 const LOOK: Duration = Duration::from_millis(500);
 
@@ -54,7 +56,12 @@ fn start_listeners(bridge: &Bridge, env: Env, a: HttpAttrs, system: String) -> R
     match httpadmin::seed::ensure_admin(env.files.as_ref(), a.port, tls, &format!("{d} {t}"), now) {
         Ok(true) => eprintln!("qsjob: ADMIN made instance ADMIN in /www/admin"),
         Ok(false) => {}
-        Err(e) => eprintln!("qsjob: ADMIN could not make its instance: {e}"),
+        Err(e) => {
+            // The job log says why Server instances will not list it.
+            let text = format!("Files of HTTP server instance ADMIN could not be used: {e}");
+            eprintln!("qsjob: ADMIN: {text}");
+            bridge.call(move |m| super::netsvc::joblog(&m.link, PGM, "HTP8106", &text));
+        }
     }
     let admin = Arc::new(Admin::new(env));
     // Not up until it binds: 2001 serves rather than redirect to it.

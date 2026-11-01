@@ -404,24 +404,43 @@ impl<B: Backend> Ifs<B> {
             meta::write(&self.b, &asp, Kind::Dir, &top, env)?;
         }
         for (path, public, restricted) in STANDARD_DIRS {
-            let (base, rest) = match path.strip_prefix("/QOpenSys/") {
-                Some(r) => (QOPENSYS_BASE, r),
-                None => (ROOT_BASE, &path[1..]),
-            };
-            let rel = crate::backend::join(base, rest);
-            if self.b.stat(&rel).is_ok() {
-                continue;
-            }
-            self.b.mkdir(&rel, 0o755)?;
             let mut m = top.clone();
             m.public = crate::auth::data::DataAuth::parse(public)
                 .expect("name")
                 .auth();
             m.flags.set(meta::Flags::RSTDRNMUNL, *restricted);
-            meta::write(&self.b, &rel, Kind::Dir, &m, env)?;
+            self.make_dir(env, path, &m)?;
         }
         self.lock().index.clear();
         Ok(())
+    }
+
+    /// Make the directory `path` owned by `owner` with `*PUBLIC`
+    /// `public` (as `*RX`) where it is missing; its parent must exist.
+    /// For a product's directories, as `/www` for the HTTP server.
+    pub fn ensure_dir(&self, env: &dyn AuthEnv, path: &str, owner: &str, public: &str) -> Result<()> {
+        let mut m = Meta::new(owner, ccsid::conv::UTF8, now());
+        m.public = crate::auth::data::DataAuth::parse(public)
+            .ok_or(Errno::EINVAL)?
+            .auth();
+        m.flags.set(meta::Flags::SYSDIR, true);
+        self.make_dir(env, path, &m)?;
+        self.lock().index.clear();
+        Ok(())
+    }
+
+    /// Make `path` with `m` unless it exists.
+    fn make_dir(&self, env: &dyn AuthEnv, path: &str, m: &Meta) -> Result<()> {
+        let (base, rest) = match path.strip_prefix("/QOpenSys/") {
+            Some(r) => (QOPENSYS_BASE, r),
+            None => (ROOT_BASE, path.trim_start_matches('/')),
+        };
+        let rel = crate::backend::join(base, rest);
+        if self.b.stat(&rel).is_ok() {
+            return Ok(());
+        }
+        self.b.mkdir(&rel, 0o755)?;
+        meta::write(&self.b, &rel, Kind::Dir, m, env)
     }
 
     fn owner_state<'r>(&self, rest: &'r mut Rest<B::File>, o: Owner) -> &'r mut OwnerState {

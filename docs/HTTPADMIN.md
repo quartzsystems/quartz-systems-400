@@ -231,7 +231,14 @@ installed on every new system: its `*BASE` code load is library
 `QHTTPSVR` with `QZHBMSG`, made by `lic/osobjects/src/products.rs` when
 the service seeds the catalog at IPL and by `build lp` for the
 product's load, so `CHKPRDOPT PRDID(QS00DG1)` checks the file. On a new
-system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`). QEMU
+system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`) in
+`/www`, which the storage service makes at every IPL where it is
+missing, owned by `QTMHHTTP` with `*PUBLIC *RX` (`seed::WWW`); when it
+cannot, the job log says why (`HTP8106`). A message row's link carries
+its substitution values (`/msg/ID?d=...`), so the second-level text
+names the file and the IFS error. The Create wizard starts blank when
+step 1 is reached other than through its own buttons, and after
+Cancel or a Create that made or failed to make the instance. QEMU
 step 87 (`tools/conformance/src/httpadm.rs`) signs on as `QSECOFR` over
 2001, checks Server instances against `DSPJOB`, a message page, the
 CSRF refusal and sign-off, and the sign-on page over TLS on 2010.

@@ -27,12 +27,20 @@ pub fn msgid(product: &Product, id: &str) -> String {
     )
 }
 
-/// One message row.
+/// One message row; the link carries the substitution values
+/// (`?d=...`), so the second-level text shows them.
 pub fn message_row(product: &Product, m: &Message) -> String {
+    let mut href = product.msg(&m.id);
+    for (i, d) in m.data.iter().enumerate() {
+        href.push(if i == 0 { '?' } else { '&' });
+        href.push_str("d=");
+        href.push_str(&crate::http::form::encode(d));
+    }
     format!(
-        "<table class=\"msg\"><tr><td class=\"{}\">{} - {}</td></tr></table>",
+        "<table class=\"msg\"><tr><td class=\"{}\"><a class=\"msgid\" href=\"{}\" target=\"_blank\">{}</a> - {}</td></tr></table>",
         m.kind.class(),
-        msgid(product, &m.id),
+        esc(&href),
+        esc(&m.id),
         esc(&m.text)
     )
 }

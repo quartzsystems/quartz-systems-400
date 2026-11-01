@@ -615,3 +615,38 @@ fn logs_tail_filter_download() {
     let t = b.get("/instance/WEBSTORE/logs?which=error&n=100").text();
     assert!(t.contains("Showing last 3 of 3 lines of /www/webstore/logs/error_log (rotated daily)"));
 }
+
+#[test]
+fn create_starts_blank() {
+    let mut b = Browser::signed_on();
+    let answers = [("name", "qstest"), ("desc", "Quartz Systems Test"), ("docroot", "/www/qstest/htdocs")];
+    let blank = |b: &mut Browser| {
+        let t = b.get("/create/step/1").text();
+        !t.contains("QSTEST") && !t.contains("Quartz Systems Test")
+    };
+    // Between steps the answers stay.
+    wizard(&mut b, &answers);
+    let r = b.post("/create/step/6", &[("back", "< Back")]);
+    let t = shown(&mut b, &r);
+    assert!(t.contains("/www/qstest/logs/access_log"), "{t}");
+    for n in [5, 4, 3, 2] {
+        b.post(&format!("/create/step/{n}"), &[("back", "< Back")]);
+    }
+    assert!(b.get("/create/step/1").text().contains("Quartz Systems Test"));
+    // The navigation item starts afresh.
+    wizard(&mut b, &answers);
+    b.get("/create/step/6");
+    b.get("/instances");
+    assert!(blank(&mut b));
+    // So do Cancel and a failed Create, whose message says why.
+    wizard(&mut b, &answers);
+    b.post("/create/step/6", &[("cancel", "Cancel")]);
+    assert!(blank(&mut b));
+    b.fx.files.write_atomic("/www/qstest", b"in the way").unwrap();
+    wizard(&mut b, &answers);
+    let r = b.post("/create/step/6", &[("finish", "Create")]);
+    let t = shown(&mut b, &r);
+    assert!(t.contains("HTP8106"), "{t}");
+    assert!(t.contains("/msg/HTP8106?d=QSTEST&amp;d="), "{t}");
+    assert!(blank(&mut b));
+}

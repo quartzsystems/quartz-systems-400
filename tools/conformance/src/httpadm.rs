@@ -174,6 +174,11 @@ fn enc(v: &str) -> String {
 impl Suite {
     /// Step 87: HTTP Server Administration over HTTP and HTTPS.
     pub(crate) fn http_admin(&self, s: &mut Session) -> Result<String, String> {
+        // The IPL makes /www for the ADMIN job, whatever step 86 did.
+        let www = s.command("svc.ifs stat /www", CMD)?;
+        if !www.contains("QTMHHTTP") {
+            return Err(format!("/www is not QTMHHTTP's:\n{www}"));
+        }
         let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
         if !started.contains("TCP1A07") && !started.contains("TCP1A08") {
             return Err(format!("STRTCPSVR *ADMIN:\n{started}"));
