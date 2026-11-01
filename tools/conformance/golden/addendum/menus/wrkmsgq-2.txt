@@ -1,0 +1,24 @@
+                            Work with Message Queues                            
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   2=Change   4=Delete   5=Display messages   14=Clear               
+                                                                                
+      Message                                                                   
+ Opt  Queue       Library     Text                                              
+                                                                                
+      #C#23#69#1  QSYS        Work Station Message Queue                        
+      #C#23#69#7  QSYS        Work Station Message Queue                        
+      #CG4105BFF  QSYS        Work Station Message Queue                        
+      #COMPN      QSYS        Work Station Message Queue                        
+      #CON#T450S  QSYS        Work Station Message Queue                        
+      #CPN0CP79A  QSYS        Work Station Message Queue                        
+      #CPN0CP79B  QSYS        Work Station Message Queue                        
+      #D          QSYS        Work Station Message Queue                        
+      #DELL       QSYS        Work Station Message Queue                        
+      #DFT        QSYS        Work Station Message Queue                        
+                                                                        More... 
+ Parameters for options 1, 2 and 5 or command                                   
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to   F24=More keys          
+                                                                                

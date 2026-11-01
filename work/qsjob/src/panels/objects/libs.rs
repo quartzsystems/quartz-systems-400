@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The library and object displays: `DSPLIBL`, `WRKOBJ`, `DSPLIB`,
-//! `DSPOBJD`, `DSPOBJAUT`, `WRKBNDDIR`.
+//! `DSPOBJD`, `DSPOBJAUT`, `WRKBNDDIR`, `WRKF`, `WRKMSGQ`.
 
 use cmd::Resolved;
 use mi::Job;
@@ -137,6 +137,103 @@ fn cell(d: &UimDialog, c: &Choice, var: &str) -> String {
         .find(|(v, _)| v == var)
         .map(|(_, x)| x)
         .unwrap_or_default()
+}
+
+/// A `WRK` list of the objects of one type, a row each: its panel group
+/// and list, the name's variable and the row's other values.
+struct WrkList {
+    group: &'static str,
+    panel: &'static str,
+    list: &'static str,
+    var: &'static str,
+    ty: &'static str,
+    kwd: &'static str,
+}
+
+/// `WRKF`: the files with their options; `FILEATR` keeps one attribute.
+pub fn wrkf(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+    let attr = parm(r, "FILEATR").unwrap_or_else(|| "*ALL".into());
+    let keep = attr.trim_start_matches('*').to_ascii_uppercase();
+    let w = WrkList { group: "QUIWRKF", panel: "WRKF", list: "FILES", var: "FILE", ty: "*FILE", kwd: "FILE" };
+    work_list(job, host, surface, r, &w, &|o| {
+        (attr == "*ALL" || o.attr.eq_ignore_ascii_case(&keep)).then(|| vec![("ATTR", o.attr.clone())])
+    })
+}
+
+/// `WRKMSGQ`: the message queues with their options.
+pub fn wrkmsgq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String, Fail> {
+    let w = WrkList { group: "QUIWRKMSGQ", panel: "WRKMSGQ", list: "QUEUES", var: "MSGQ", ty: "*MSGQ", kwd: "MSGQ" };
+    work_list(job, host, surface, r, &w, &|_| Some(Vec::new()))
+}
+
+/// A kept object's other values, `None` for one a list leaves out.
+type RowValues = dyn Fn(&ObjInfo) -> Option<Vec<(&'static str, String)>>;
+
+/// Show a `WRK` list until it is left: `row` gives a kept object's
+/// other values, `None` for one the list leaves out. F5 lists again,
+/// F11 shows the names alone, F17 and F16 position the list.
+fn work_list(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+    w: &WrkList,
+    row: &RowValues,
+) -> Result<String, Fail> {
+    let (name, lib) = qual(r, w.kwd, "*LIBL");
+    let mut d = dialog(host, w.group)?;
+    let mut last = String::new();
+    let mut position = String::new();
+    let mut reload = true;
+    loop {
+        if reload {
+            let rows = objects(host, &lib, &name, w.ty)
+                .into_iter()
+                .filter_map(|o| {
+                    let mut values = vec![(w.var, o.name.clone()), ("LIB", o.lib.clone()), ("TEXT", o.text.clone())];
+                    values.extend(row(&o)?);
+                    Some(entry(&values))
+                })
+                .collect();
+            fill(&mut d, w.list, rows);
+            reload = false;
+        }
+        let resp = show(&mut d, surface, w.panel)?;
+        let Some(resp) = common(job, host, &mut d, resp, &mut last) else {
+            reload = true;
+            continue;
+        };
+        match resp {
+            Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
+            Response::Options(c) => {
+                act(job, host, &mut d, &c, &|_, _| None);
+                reload = true;
+            }
+            Response::Return(5) => reload = true,
+            Response::Return(11) => d.view = 1 - d.view.min(1),
+            Response::Return(n @ (16 | 17)) => {
+                if n == 17 {
+                    position = d.get(CMDLINE_VAR).trim().to_ascii_uppercase();
+                    d.set(CMDLINE_VAR, "");
+                }
+                if position.is_empty() {
+                    d.error("CPD9B87", &[]);
+                    continue;
+                }
+                let var = w.var;
+                let l = d.list_mut(w.list);
+                let at = l
+                    .rows
+                    .iter()
+                    .position(|row| row.iter().any(|(v, x)| v == var && x.as_str() >= position.as_str()));
+                match at {
+                    Some(i) => l.top = i,
+                    None => d.error("CPD9B80", &[&position]),
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 /// `WRKOBJ`: the objects with their options; F17 positions the list at

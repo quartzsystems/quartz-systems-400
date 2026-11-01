@@ -1,0 +1,24 @@
+ CMDDTAMGT                  Data Management Commands                            
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Display Override                                            DSPOVR     
+                                                                                
+   Related Command Menus                                                        
+      2. Database File Commands                                      CMDDBF     
+                                                                                
+      4. Data Commands                                               CMDDTA     
+      5. Data Area Commands                                          CMDDTAARA  
+      6. File Commands                                               CMDFILE    
+      7. Override Commands                                           CMDOVR     
+      8. Print Commands                                              CMDPRT     
+      9. Query Commands                                              CMDQRY     
+     10. Save and Restore Commands                                   CMDSAVRST  
+     11. Tape Commands                                               CMDTAP     
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

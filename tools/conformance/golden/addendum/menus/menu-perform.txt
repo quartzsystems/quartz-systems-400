@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > go netcfg                                                                 
+    > go cmncfg                                                                 
+    > go cfgdevcmn                                                              
+    > go filesys                                                                
+    > go filetfr                                                                
+    > go jobenv                                                                 
+    > go managesys                                                              
+    > go netprb                                                                 
+    > go optical                                                                
+    > go perform                                                                
+      Not authorized to object PERFORM in QSYS.                                 
+      Menu PERFORM in library *LIBL not displayed.                              
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> go perform                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

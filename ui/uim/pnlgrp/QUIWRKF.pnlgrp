@@ -1,0 +1,66 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* WRKF: the files a name and an attribute select, with their options.
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=FILE CLASS=NAMECL.
+:VAR NAME=LIB CLASS=NAMECL.
+:VAR NAME=ATTR CLASS=NAMECL.
+:VAR NAME=TEXT CLASS=TEXTCL.
+:LISTDEF NAME=FILES VARS='OPT FILE LIB ATTR TEXT'.
+:KEYL NAME=WRKKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F11 ACTION='RETURN 11'.F11=Display names only
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Repeat position to
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+:EKEYL.
+:PANEL NAME=WRKF KEYL=WRKKEYS HELP=WRKFH ENTER='RETURN 1'.Work with Files
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=FILES ACTLEN=2 EXTACT=YES VIEWS=2 SCROLL=YES.
+:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTPF FILE(&LIB./&FILE.)'.1=Create
+:LISTACT OPTION=3 ACTFOR=LISTE ENTER='CMD ?CPYF FROMFILE(&LIB./&FILE.)'.3=Copy
+:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD DLTF FILE(&LIB./&FILE.)'.4=Delete
+:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPPFM FILE(&LIB./&FILE.)'.5=Display physical file member
+:LISTACT OPTION=8 ACTFOR=LISTE ENTER='CMD DSPFD FILE(&LIB./&FILE.)'.8=Display file description
+:LISTACT OPTION=9 ACTFOR=LISTE ENTER='CMD ?SAVOBJ OBJ(&FILE.) LIB(&LIB.) OBJTYPE(*FILE)'.9=Save
+:LISTACT OPTION=10 ACTFOR=LISTE ENTER='CMD ?RSTOBJ OBJ(&FILE.) SAVLIB(&LIB.) OBJTYPE(*FILE)'.10=Restore
+:LISTACT OPTION=13 ACTFOR=LISTE ENTER='CMD ?CHGOBJD OBJ(&LIB./&FILE.) OBJTYPE(*FILE)'.13=Change description
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=FILE USAGE=OUTPUT EXTACT=YES.File
+:LISTCOL VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL VAR=ATTR USAGE=OUTPUT.Attribute
+:LISTCOL VAR=TEXT USAGE=OUTPUT.Text
+:LISTVIEW COLS='OPT FILE LIB ATTR TEXT'.
+:LISTVIEW COLS='OPT FILE LIB'.
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters for options 1, 3, 4, 5, 8, 9, 10 and 13 or command
+:EPANEL.
+:HELP NAME=WRKFH.Work with Files - Help
+:P.The files the name and attribute select, a row each. Type an option
+next to a file, or on the first line with a new name to create one, and
+press Enter; a command typed on the command line runs as typed.
+:P.F17 positions the list at the file named on the command line, F16
+does it again, F11 shows the names alone and F5 lists the files again.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 and F12 leave the list. F4 prompts the command on the command
+line, F9 brings the previous one back.
+:EHELP.
+:EPNLGRP.

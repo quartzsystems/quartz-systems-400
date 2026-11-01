@@ -1,0 +1,24 @@
+ CMDFILE                         File Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Display File                                                DSPF       
+     15. Display File Description                                    DSPFD      
+     16. Display File Field Description                              DSPFFD     
+     17. Display Override                                            DSPOVR     
+     18. Edit File                                                   EDTF       
+     19. Start TCP/IP File Transfer                                  FTP        
+     20. Receive File                                                RCVF       
+     21. Restore S/36 File                                           RSTS36F    
+     22. Save S/36 File                                              SAVS36F    
+     23. Send File                                                   SNDF       
+     24. Send/Receive File                                           SNDRCVF    
+     25. Start TCP/IP File Transfer                                  STRTCPFTP  
+     26. Work with Files                                             WRKF       
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

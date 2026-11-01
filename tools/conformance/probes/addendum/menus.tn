@@ -1,0 +1,326 @@
+# Addendum (round 4): the menus task menus open that QS/400 did not ship,
+# from Command Entry as phase11/menus.tn does: GO, Page Down for a second
+# page, F12 back. A menu the profile may not use (or that does not exist)
+# leaves its message on Command Entry, kept as the snapshot.
+wait "Main Menu"
+timeout 20000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type go cmnsts
+key enter
+settle 2000
+snap menu-cmnsts
+key pgdn
+settle 1000
+snap menu-cmnsts-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cfgcmn
+key enter
+settle 2000
+snap menu-cfgcmn
+key pgdn
+settle 1000
+snap menu-cfgcmn-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go netcfg
+key enter
+settle 2000
+snap menu-netcfg
+key pgdn
+settle 1000
+snap menu-netcfg-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmncfg
+key enter
+settle 2000
+snap menu-cmncfg
+key pgdn
+settle 1000
+snap menu-cmncfg-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cfgdevcmn
+key enter
+settle 2000
+snap menu-cfgdevcmn
+key pgdn
+settle 1000
+snap menu-cfgdevcmn-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go filesys
+key enter
+settle 2000
+snap menu-filesys
+key pgdn
+settle 1000
+snap menu-filesys-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go filetfr
+key enter
+settle 2000
+snap menu-filetfr
+key pgdn
+settle 1000
+snap menu-filetfr-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go jobenv
+key enter
+settle 2000
+snap menu-jobenv
+key pgdn
+settle 1000
+snap menu-jobenv-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go managesys
+key enter
+settle 2000
+snap menu-managesys
+key pgdn
+settle 1000
+snap menu-managesys-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go netprb
+key enter
+settle 2000
+snap menu-netprb
+key pgdn
+settle 1000
+snap menu-netprb-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go optical
+key enter
+settle 2000
+snap menu-optical
+key pgdn
+settle 1000
+snap menu-optical-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go perform
+key enter
+settle 2000
+snap menu-perform
+key pgdn
+settle 1000
+snap menu-perform-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go resource
+key enter
+settle 2000
+snap menu-resource
+key pgdn
+settle 1000
+snap menu-resource-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go sectools
+key enter
+settle 2000
+snap menu-sectools
+key pgdn
+settle 1000
+snap menu-sectools-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go userhelp
+key enter
+settle 2000
+snap menu-userhelp
+key pgdn
+settle 1000
+snap menu-userhelp-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go utilities
+key enter
+settle 2000
+snap menu-utilities
+key pgdn
+settle 1000
+snap menu-utilities-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdobjmgt
+key enter
+settle 2000
+snap menu-cmdobjmgt
+key pgdn
+settle 1000
+snap menu-cmdobjmgt-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdfile
+key enter
+settle 2000
+snap menu-cmdfile
+key pgdn
+settle 1000
+snap menu-cmdfile-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdsavrst
+key enter
+settle 2000
+snap menu-cmdsavrst
+key pgdn
+settle 1000
+snap menu-cmdsavrst-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdwrkmgt
+key enter
+settle 2000
+snap menu-cmdwrkmgt
+key pgdn
+settle 1000
+snap menu-cmdwrkmgt-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmddtamgt
+key enter
+settle 2000
+snap menu-cmddtamgt
+key pgdn
+settle 1000
+snap menu-cmddtamgt-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdsysctl
+key enter
+settle 2000
+snap menu-cmdsysctl
+key pgdn
+settle 1000
+snap menu-cmdsysctl-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdcmnmgt
+key enter
+settle 2000
+snap menu-cmdcmnmgt
+key pgdn
+settle 1000
+snap menu-cmdcmnmgt-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmddstsrv
+key enter
+settle 2000
+snap menu-cmddstsrv
+key pgdn
+settle 1000
+snap menu-cmddstsrv-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdprbmgt
+key enter
+settle 2000
+snap menu-cmdprbmgt
+key pgdn
+settle 1000
+snap menu-cmdprbmgt-2
+key reset
+key f12
+settle 1500
+key eraseinput
+type go cmdmsghdl
+key enter
+settle 2000
+snap menu-cmdmsghdl
+key pgdn
+settle 1000
+snap menu-cmdmsghdl-2
+key reset
+key f12
+settle 1500
+# The commands options run that QS/400 adds: prompts left with F12,
+# lists left with F3 (nothing typed on an option line).
+key eraseinput
+type ?wrkf
+key enter
+settle 1500
+snap prompt-wrkf
+key f12
+settle 1000
+key eraseinput
+type wrkf file(qgpl/*all)
+key enter
+settle 2000
+snap wrkf
+key f3
+settle 1000
+key eraseinput
+type ?wrkmsgq
+key enter
+settle 1500
+snap prompt-wrkmsgq
+key f12
+settle 1000
+key eraseinput
+type wrkmsgq msgq(*libl/*all)
+key enter
+settle 2000
+snap wrkmsgq
+key f3
+settle 1000

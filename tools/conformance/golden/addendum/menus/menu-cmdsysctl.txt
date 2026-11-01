@@ -1,0 +1,24 @@
+ CMDSYSCTL                  System Control Commands                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Chg Recovery for Access Paths                               CHGRCYAP   
+      2. Display Log                                                 DSPLOG     
+      3. Dsp Recovery for Access Paths                               DSPRCYAP   
+      4. Edit Recovery for Access Paths                              EDTRCYAP   
+      5. Reclaim Storage                                             RCLSTG     
+      6. Reclaim Temporary Storage                                   RCLTMPSTG  
+      7. Reorganize Document Lib Object                              RGZDLO     
+      8. Work with Active Jobs                                       WRKACTJOB  
+                                                                                
+   Related Command Menus                                                        
+      9. Job Commands                                                CMDJOB     
+     10. Status Commands                                             CMDSTS     
+     11. System Commands                                             CMDSYS     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

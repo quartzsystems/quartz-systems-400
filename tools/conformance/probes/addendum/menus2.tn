@@ -1,0 +1,28 @@
+# Addendum (round 4): CMDFILE's third, fourth and fifth pages.
+wait "Main Menu"
+timeout 20000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type go cmdfile
+key enter
+settle 2000
+key pgdn
+settle 1000
+key reset
+key pgdn
+settle 1000
+snap menu-cmdfile-3
+key reset
+key pgdn
+settle 1000
+snap menu-cmdfile-4
+key reset
+key pgdn
+settle 1000
+snap menu-cmdfile-5
+key reset
+key f12
+settle 1500

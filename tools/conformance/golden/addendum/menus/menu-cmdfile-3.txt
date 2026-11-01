@@ -1,0 +1,24 @@
+ CMDFILE                         File Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Related Command Menus                                                        
+     27. BSC File Commands                                           CMDBSCF    
+     28. Communications File Commands                                CMDCMNF    
+     29. Create File Commands                                        CMDCRTF    
+     30. Constraint/Customization Cmds                               CMDCST     
+     31. Database File Commands                                      CMDDBF     
+     32. Display File Commands                                       CMDDSPF    
+     33. ICF Commands                                                CMDICF     
+     34. ICF File Commands                                           CMDICFF    
+     35. Logical File Commands                                       CMDLF      
+     36. Message File Commands                                       CMDMSGF    
+     37. Network File Commands                                       CMDNETF    
+     38. Override Commands                                           CMDOVR     
+     39. Physical File Commands                                      CMDPF      
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

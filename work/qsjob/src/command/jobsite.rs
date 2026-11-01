@@ -83,6 +83,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RTVCFGSTS" => return rtvcfgsts(host, r, out),
         "RTVCURDIR" => return rtvcurdir(host, r, out),
         "RCLRSC" => return Ok(rclrsc(job, host)),
+        // Lists with no text form: a display is needed.
+        "WRKF" | "WRKMSGQ" => return Err(Fail::no_display(&r.name)),
         "STRTCP" | "ENDTCP" | "ENDTCPABN" | "WRKSRVTBLE" | "WRKPCLTBLE" | "WRKNETTBLE" | "CFGTCP"
         | "CFGTCPAPP" | "CFGTCPBP" | "CFGTCPRTD" | "CFGTCPSNMP" | "CFGTCPTELN" | "CFGTCPSMTP"
         | "CFGTCPPTP" => {

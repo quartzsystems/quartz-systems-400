@@ -1,0 +1,24 @@
+ CMDFILE                         File Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Close File                                                  CLOF       
+      2. Copy File                                                   CPYF       
+      3. Copy From Archive File                                      CPYFRMARCF 
+      4. Copy From Import File                                       CPYFRMIMPF 
+      5. Copy From Stream File                                       CPYFRMSTMF 
+      6. Copy To Archive File                                        CPYTOARCF  
+      7. Copy To Import File                                         CPYTOIMPF  
+      8. Copy To Stream File                                         CPYTOSTMF  
+      9. Copy VPN Configuration File                                 CPYVPNCFGF 
+     10. Declare File                                                DCLF       
+     11. Delete File                                                 DLTF       
+     12. Delete Override                                             DLTOVR     
+     13. Dump DNS Journal File                                       DMPDNSJRNF 
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

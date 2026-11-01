@@ -501,6 +501,15 @@ fn licpgm_and_system_prompts() {
     ]);
 }
 
+/// The commands the addendum added for the menus' options.
+#[test]
+fn menu_option_prompts() {
+    check(&[
+        Case { dir: "../addendum/menus", ..case("prompt-wrkf", "?WRKF", &[]) },
+        Case { dir: "../addendum/menus", ..case("prompt-wrkmsgq", "?WRKMSGQ", &[]) },
+    ]);
+}
+
 /// The commands pub400 refused to prompt or run (its `*EXCLUDE`
 /// public authority) are defined here.
 #[test]

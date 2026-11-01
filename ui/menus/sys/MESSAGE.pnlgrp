@@ -29,7 +29,7 @@
 :MENUI OPTION=3 ACTION='CMD DSPMSG'.Display messages
 :MENUI OPTION=4 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display system operator messages
 :MENUI OPTION=5 ACTION='CMD ?SNDNETMSG'.Send a network message
-:MENUI OPTION=6 ACTION='CMD WRKMSGQ'.Work with message queues
+:MENUI OPTION=6 ACTION='CMD ?WRKMSGQ'.Work with message queues
 :MENUI OPTION=7 ACTION='CMD ?CRTMSGQ'.Create a message queue
 :MENUI OPTION=8 ACTION='CMD ?WRKMSGD'.Work with message descriptions
 :MENUI OPTION=70 ACTION='MENU CMDMSG'.Related commands

@@ -1,0 +1,18 @@
+# Addendum (round 4): WRKMSGQ over the library list.
+wait "Main Menu"
+timeout 20000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type wrkmsgq msgq(*libl/*all)
+key enter
+settle 2000
+snap wrkmsgq
+key pgdn
+settle 1000
+snap wrkmsgq-2
+key reset
+key f3
+settle 1000

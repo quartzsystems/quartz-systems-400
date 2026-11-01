@@ -1,0 +1,24 @@
+ CMNCFG                Communications Configuration Tasks                       
+                                                             System:   SYSNAME  
+ To configure one of the following, type its number below and press Enter:      
+                                                                                
+      1. Remote work station controllers and devices                            
+      2. Remote systems                                                         
+      3. Remote systems using printed instructions                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Type a menu option below                                                       
+                                                                                
+                                                                                
+ F1=Help   F3=Exit   F9=Command line   F12=Cancel                               
+                                                                                

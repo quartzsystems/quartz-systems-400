@@ -63,6 +63,14 @@ note = "a panel at a display; the text form in the service otherwise"
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"
 
+[cmd.WRKF]
+site = "job"
+note = "a panel at a display (QUIWRKF); none without one"
+
+[cmd.WRKMSGQ]
+site = "job"
+note = "a panel at a display (QUIWRKMSGQ); none without one"
+
 [cmd.DSPLIB]
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"

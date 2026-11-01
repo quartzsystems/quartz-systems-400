@@ -1,0 +1,24 @@
+ MANAGESYS           Manage Your System, Users, and Devices                     
+                                                             System:   SYSNAME  
+ To select one of the following, type its number below and press Enter:         
+                                                                                
+      1. Display system status                                                  
+      2. Run a backup                                                           
+      3. Work with system operator messages                                     
+                                                                                
+     10. Work with printer output                                               
+     11. Work with jobs                                                         
+     12. Work with signed-on users                                              
+                                                                                
+     20. Device status tasks                                                    
+                                                                                
+     60. Customize your system, users, and devices                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Type a menu option below                                                       
+                                                                                
+                                                                                
+ F1=Help   F3=Exit   F9=Command line   F12=Cancel                               
+                                                                                

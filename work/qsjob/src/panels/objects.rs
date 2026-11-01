@@ -41,6 +41,8 @@ pub fn run(
         "DSPLOG" => msgs::dsplog(host, surface, r),
         "DSPLIBL" => libs::dsplibl(job, host, surface),
         "WRKOBJ" => libs::wrkobj(job, host, surface, r),
+        "WRKF" => libs::wrkf(job, host, surface, r),
+        "WRKMSGQ" => libs::wrkmsgq(job, host, surface, r),
         "DSPLIB" => libs::dsplib(job, host, surface, r),
         "DSPOBJD" => libs::dspobjd(job, host, surface, r),
         "DSPOBJAUT" => libs::dspobjaut(host, surface, r),

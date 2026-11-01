@@ -1,0 +1,24 @@
+ CMDOBJMGT                 Object Management Commands                           
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Related Command Menus                                                        
+      1. Dump Commands                                               CMDDMP     
+      2. Lock Commands                                               CMDLCK     
+      3. Library Commands                                            CMDLIB     
+      4. Object Commands                                             CMDOBJ     
+      5. Object Type Commands                                        CMDOBJTYPE 
+      6. Save and Restore Commands                                   CMDSAVRST  
+      7. Security Commands                                           CMDSEC     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

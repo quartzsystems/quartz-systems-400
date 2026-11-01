@@ -76,6 +76,8 @@ const PROMPTED: &[(&str, &str)] = &[
     ("addrdbdire", "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)"),
     ("chgddmtcpa", "CHGDDMTCPA"),
     ("chgdstpwd", "CHGDSTPWD"),
+    ("wrkf", "WRKF FILE(QGPL/*ALL)"),
+    ("wrkmsgq", "WRKMSGQ MSGQ(*LIBL/*ALL)"),
 ];
 
 fn source() -> MemSource {

@@ -1,0 +1,24 @@
+ CMDWRKMGT                  Work Management Commands                            
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Related Command Menus                                                        
+      1. Class Commands                                              CMDCLS     
+      2. Job Commands                                                CMDJOB     
+      3. Job Description Commands                                    CMDJOBD    
+      4. Routing Entry Commands                                      CMDRTGE    
+      5. Subsystem Description Commands                              CMDSBSD    
+      6. Schedule Entry Commands                                     CMDSCDE    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

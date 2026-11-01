@@ -1,0 +1,24 @@
+ CMDSAVRST                 Save and Restore Commands                            
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Save Restore                                                SAVRST     
+      2. Save Restore Configuration                                  SAVRSTCFG  
+      3. Save Restore Changed Objects                                SAVRSTCHG  
+      4. Save Restore Doc/Lib Object                                 SAVRSTDLO  
+      5. Save Restore Library                                        SAVRSTLIB  
+      6. Save Restore Object                                         SAVRSTOBJ  
+                                                                                
+   Related Command Menus                                                        
+      7. Object Management Commands                                  CMDOBJMGT  
+      8. OptiConnect Commands                                        CMDOPC     
+      9. Restore Commands                                            CMDRST     
+     10. Save Commands                                               CMDSAV     
+     11. Tape Commands                                               CMDTAP     
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

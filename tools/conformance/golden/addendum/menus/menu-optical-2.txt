@@ -1,0 +1,24 @@
+ OPTICAL                   Optical Support Utilities                            
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with optical volumes                                              
+      2. Work with optical directories                                          
+      3. Work with optical files                                                
+      4. Work with optical libraries                                            
+      5. Work with optical devices                                              
+      6. Optical backup/recovery menu                                           
+      7. Optical server menu                                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+ Function key not allowed.                                                      

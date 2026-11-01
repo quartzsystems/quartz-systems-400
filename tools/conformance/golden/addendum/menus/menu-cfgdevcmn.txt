@@ -1,0 +1,24 @@
+ CFGDEVCMN            Configure Devices and Communications                      
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Configure local hardware                                               
+      2. Configure communications and remote hardware                           
+      3. Configure virtual controllers and devices                              
+      4. Work with configuration status                                         
+      5. Retrieve configuration source                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

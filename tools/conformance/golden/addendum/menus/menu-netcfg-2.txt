@@ -1,0 +1,24 @@
+ NETCFG                      Network Configuration                              
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with directory entries                                            
+      2. Configure distribution services                                        
+      3. Work with network job entries                                          
+      4. Configure VM/MVS bridge                                                
+      5. Work with remote document libraries                                    
+                                                                                
+      7. Network Server administration                                          
+                                                                                
+     10. Configure communications and remote hardware                           
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

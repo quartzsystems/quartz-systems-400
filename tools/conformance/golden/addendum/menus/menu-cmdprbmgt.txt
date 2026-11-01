@@ -1,0 +1,24 @@
+ CMDPRBMGT                Problem Management Commands                           
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Change Service Attributes                                   CHGSRVA    
+      2. Display Service Attributes                                  DSPSRVA    
+                                                                                
+   Related Command Menus                                                        
+      3. Alert Commands                                              CMDALR     
+      4. Copy Screen Commands                                        CMDCPYSCN  
+      5. Debug Commands                                              CMDDBG     
+      6. Dump Commands                                               CMDDMP     
+      7. Filter Commands                                             CMDFTR     
+      8. Message Handling Commands                                   CMDMSGHDL  
+      9. Problem Commands                                            CMDPRB     
+     10. Program Temporary Fix Commands                              CMDPTF     
+     11. Recovery Commands                                           CMDRCY     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDPRBMGT                Problem Management Commands                           
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     12. Service Commands                                            CMDSRV     
+     13. System Service Tools Commands                               CMDSST     
+     14. Trace Commands                                              CMDTRC     
+     15. Work Management Commands                                    CMDWRKMGT  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

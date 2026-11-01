@@ -1,0 +1,24 @@
+ CMDDSTSRV               Distribution Services Commands                         
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Distribution Queue                                      ADDDSTQ    
+      2. Add Distribution Route                                      ADDDSTRTE  
+      3. Add Secondary System Name                                   ADDDSTSYSN 
+      4. Configure Distribution Service                              CFGDSTSRV  
+      5. Change Distribution Queue                                   CHGDSTQ    
+      6. Change Distribution Route                                   CHGDSTRTE  
+      7. Display Distribution Log                                    DSPDSTLOG  
+      8. Display Distribution Services                               DSPDSTSRV  
+      9. Hold Distribution Queue                                     HLDDSTQ    
+     10. Initialize Distribution Queue                               INZDSTQ    
+     11. Release Distribution Queue                                  RLSDSTQ    
+     12. Remove Distribution Queue                                   RMVDSTQ    
+     13. Remove Distribution Route                                   RMVDSTRTE  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDCMNMGT                Communication Mgmt Commands                           
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Related Command Menus                                                        
+      1. Alert Commands                                              CMDALR     
+      2. APPC Commands                                               CMDAPPC    
+      3. Async Commands                                              CMDASC     
+      4. BSC File Commands                                           CMDBSCF    
+      5. Configuration Commands                                      CMDCFG     
+      6. Configuration List Commands                                 CMDCFGL    
+      7. Communications Commands                                     CMDCMN     
+      8. Class-of-Service Desc Commands                              CMDCOSD    
+      9. Comm Side Information Commands                              CMDCSI     
+     10. Control Commands                                            CMDCTL     
+     11. Device Management Commands                                  CMDDEVMGT  
+     12. Ethernet Commands                                           CMDETH     
+     13. File Commands                                               CMDFILE    
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

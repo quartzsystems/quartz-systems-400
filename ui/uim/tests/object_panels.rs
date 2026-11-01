@@ -138,6 +138,57 @@ fn wrkobj() {
     compare("wrkobj", &render(&g, "WRKOBJ", &d, &opts()).unwrap());
 }
 
+/// `WRKF FILE(QGPL/*ALL)` (the addendum's capture).
+#[test]
+fn wrkf() {
+    let g = shipped("QUIWRKF");
+    let mut d = MapDialog::new();
+    let files = [
+        ("DOCUMENTOS", "PF", ""),
+        ("EVFEVENT", "PF", ""),
+        ("PBCATCOL", "PF", ""),
+        ("PBCATEDT", "PF", ""),
+        ("PBCATFMT", "PF", ""),
+        ("PBCATTBL", "PF", ""),
+        ("PBCATVLD", "PF", ""),
+        ("QAAPFILE", "LF", "Symbol set symbol definitions logical"),
+        ("QAAPFILE$", "PF", "Symbol set small symbol definitions"),
+        ("QAAPFILE#", "PF", "Symbol set medium symbol definitions"),
+        ("QAAPFILE@", "PF", ""),
+    ];
+    let mut l = list(
+        files
+            .iter()
+            .map(|(n, a, t)| vec![("FILE", *n), ("LIB", "QGPL"), ("ATTR", *a), ("TEXT", *t)])
+            .collect(),
+    );
+    l.total = None;
+    l.complete = false;
+    d.set_list("FILES", l);
+    compare("../../addendum/menus/wrkf", &render(&g, "WRKF", &d, &opts()).unwrap());
+}
+
+/// `WRKMSGQ MSGQ(*LIBL/*ALL)` (the addendum's capture).
+#[test]
+fn wrkmsgq() {
+    let g = shipped("QUIWRKMSGQ");
+    let mut d = MapDialog::new();
+    let queues = [
+        "$#ANDROID_", "#", "##DD", "#ACUAPTD", "#AFC91EEF1", "#ARTRG1", "#A6BA9", "#C#23#69#B", "#C#23#69#D",
+        "#C#23#69#F", "#C#23#69#1",
+    ];
+    let mut l = list(
+        queues
+            .iter()
+            .map(|n| vec![("MSGQ", *n), ("LIB", "QSYS"), ("TEXT", "Work Station Message Queue")])
+            .collect(),
+    );
+    l.total = None;
+    l.complete = false;
+    d.set_list("QUEUES", l);
+    compare("../../addendum/menus/wrkmsgq", &render(&g, "WRKMSGQ", &d, &opts()).unwrap());
+}
+
 fn objd_header(d: &mut MapDialog) {
     d.set("LIBPOS", &format!("{:>28}", "Library 1 of 1"))
         .set("LIB", "QGPL")

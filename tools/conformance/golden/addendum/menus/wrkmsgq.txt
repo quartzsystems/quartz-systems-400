@@ -1,0 +1,24 @@
+                            Work with Message Queues                            
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   2=Change   4=Delete   5=Display messages   14=Clear               
+                                                                                
+      Message                                                                   
+ Opt  Queue       Library     Text                                              
+                                                                                
+      $#ANDROID_  QSYS        Work Station Message Queue                        
+      #           QSYS        Work Station Message Queue                        
+      ##DD        QSYS        Work Station Message Queue                        
+      #ACUAPTD    QSYS        Work Station Message Queue                        
+      #AFC91EEF1  QSYS        Work Station Message Queue                        
+      #ARTRG1     QSYS        Work Station Message Queue                        
+      #A6BA9      QSYS        Work Station Message Queue                        
+      #C#23#69#B  QSYS        Work Station Message Queue                        
+      #C#23#69#D  QSYS        Work Station Message Queue                        
+      #C#23#69#F  QSYS        Work Station Message Queue                        
+                                                                        More... 
+ Parameters for options 1, 2 and 5 or command                                   
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to   F24=More keys          
+                                                                                

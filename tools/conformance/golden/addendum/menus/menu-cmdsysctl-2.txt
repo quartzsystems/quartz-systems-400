@@ -1,0 +1,24 @@
+ CMDSYSCTL                  System Control Commands                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     12. System Value Commands                                       CMDSYSVAL  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

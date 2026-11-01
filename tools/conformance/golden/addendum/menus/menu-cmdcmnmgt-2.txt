@@ -1,0 +1,24 @@
+ CMDCMNMGT                Communication Mgmt Commands                           
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Host Commands                                               CMDHOST    
+     15. Intrasystem Commands                                        CMDINTR    
+     16. Line Commands                                               CMDLIN     
+     17. Local Work Station Commands                                 CMDLWS     
+     18. Mode and Module Commands                                    CMDMOD     
+     19. Network Commands                                            CMDNET     
+     20. Pass-Through Commands                                       CMDPASTHR  
+     21. RJE Commands                                                CMDRJE     
+     22. SNPT Commands                                               CMDSNPT    
+     23. SNUF Commands                                               CMDSNUF    
+     24. Sphere of Control Commands                                  CMDSOC     
+     25. Service Commands                                            CMDSRV     
+     26. TCP/IP Commands                                             CMDTCP     
+     27. Virtual Work Station Commands                               CMDVWS     
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

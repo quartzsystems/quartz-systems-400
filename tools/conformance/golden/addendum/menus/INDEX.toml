@@ -1,0 +1,480 @@
+[[golden]]
+name = "menu-cmnsts"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmnsts-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cfgcmn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cfgcmn-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-netcfg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-netcfg-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmncfg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmncfg-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cfgdevcmn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cfgdevcmn-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-filesys"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-filesys-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-filetfr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-filetfr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-jobenv"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-jobenv-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-managesys"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-managesys-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-netprb"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-netprb-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-optical"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-optical-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-perform"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-perform-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-resource"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-resource-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-sectools"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-sectools-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-userhelp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-userhelp-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-utilities"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-utilities-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdobjmgt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdobjmgt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdfile"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdfile-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsavrst"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsavrst-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdwrkmgt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdwrkmgt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddtamgt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddtamgt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsysctl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsysctl-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcmnmgt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcmnmgt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddstsrv"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddstsrv-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdprbmgt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdprbmgt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmsghdl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmsghdl-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "prompt-wrkf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "wrkf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "prompt-wrkmsgq"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdfile-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus2"
+width = 80
+
+[[golden]]
+name = "menu-cmdfile-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus2"
+width = 80
+
+[[golden]]
+name = "menu-cmdfile-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus2"
+width = 80
+
+[[golden]]
+name = "wrkmsgq"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus3"
+width = 80
+
+[[golden]]
+name = "wrkmsgq-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-01"
+script = "menus3"
+width = 80
+

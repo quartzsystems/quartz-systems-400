@@ -1,0 +1,24 @@
+ CFGCMN           Configure Communications and Remote Hardware                  
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with lines                                                        
+      2. Work with communications controllers                                   
+      3. Work with work station controllers                                     
+      4. Work with communications devices                                       
+      5. Work with printers                                                     
+      6. Work with display stations                                             
+      7. Work with modes                                                        
+      8. Work with classes-of-service                                           
+      9. Work with configuration lists                                          
+     10. Work with network interfaces                                           
+     11. Work with connection lists                                             
+     12. Work with network servers                                              
+     13. Work with NetBIOS descriptions                                         
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDMSGHDL                 Message Handling Commands                            
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Related Command Menus                                                        
+      1. Log Commands                                                CMDLOG     
+      2. Message Commands                                            CMDMSG     
+      3. Message Description Commands                                CMDMSGD    
+      4. Message File Commands                                       CMDMSGF    
+      5. Message Queue Commands                                      CMDMSGQ    
+      6. Reply Commands                                              CMDRPY     
+      7. Reply List Commands                                         CMDRPYL    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

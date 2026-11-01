@@ -1,0 +1,24 @@
+ CMDDSTSRV               Distribution Services Commands                         
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Remove Secondary System Name                                RMVDSTSYSN 
+     15. Send Distribution Queue                                     SNDDSTQ    
+     16. Work with Directory Entries                                 WRKDIRE    
+     17. Work with Distribution Queue                                WRKDSTQ    
+                                                                                
+   Related Command Menus                                                        
+     18. Communication Mgmt Commands                                 CMDCMNMGT  
+     19. Document Commands                                           CMDDOC     
+     20. Mail Server Framework Commands                              CMDMSF     
+     21. Network Commands                                            CMDNET     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                
