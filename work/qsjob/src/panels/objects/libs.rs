@@ -167,7 +167,7 @@ pub fn wrkmsgq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
 }
 
 /// A kept object's other values, `None` for one a list leaves out.
-type RowValues = dyn Fn(&ObjInfo) -> Option<Vec<(&'static str, String)>>;
+type RowValues<'a> = dyn Fn(&ObjInfo) -> Option<Vec<(&'static str, String)>> + 'a;
 
 /// Show a `WRK` list until it is left: `row` gives a kept object's
 /// other values, `None` for one the list leaves out. F5 lists again,
@@ -178,7 +178,7 @@ fn work_list(
     surface: &mut Surface,
     r: &Resolved,
     w: &WrkList,
-    row: &RowValues,
+    row: &RowValues<'_>,
 ) -> Result<String, Fail> {
     let (name, lib) = qual(r, w.kwd, "*LIBL");
     let mut d = dialog(host, w.group)?;

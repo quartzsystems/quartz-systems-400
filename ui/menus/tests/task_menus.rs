@@ -251,7 +251,8 @@ fn every_page_of_a_tall_menu_is_checked() {
 /// menu: `phase11/menus/menu-licpgm-refused`); the roll keys reach it.
 #[test]
 fn licpgm_second_page() {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/menu-licpgm-2.txt");
+    // Ours, kept with the captures (`ours-` names it so).
+    let path = golden_dir().join("../../addendum/menus/ours-menu-licpgm-2.txt");
     let ours: Vec<String> = rendered("LICPGM", 1).iter().map(|r| r.trim_end().to_string()).collect();
     assert!(rendered("LICPGM", 0).iter().any(|r| r.contains("More...")));
     let text = ours.join("\n") + "\n";
