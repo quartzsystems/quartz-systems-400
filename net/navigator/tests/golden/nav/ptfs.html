@@ -1,0 +1,304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>PTFs - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[-]</a> <b>Software</b></div>
+<div class="navitem"><a href="licensed-programs.html">Licensed programs</a></div>
+<div class="navitem"><a href="ptfs.html" class="navcur">PTFs</a></div>
+<div class="navitem"><a href="fixes.html">Fixes</a></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Software &gt; PTFs</div>
+<h1>PTFs</h1>
+<div class="desc">Program temporary fixes (DSPPTF / WRKPTF). Cumulative level QS400-CUM-26290.</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Product:</td><td><select name="p"><option>*ALL</option><option>5Q00SS1</option><option>5Q00DG1</option><option>5Q00TC1</option><option>5Q00NV1</option><option>5Q00XW1</option><option>5Q00WDS</option></select></td><td>Status:</td><td><select name="s"><option>*ALL</option><option>Not applied</option><option>Temporarily applied</option><option>Permanently applied</option><option>Superseded</option></select></td><td>PTF ID:</td><td><input type="text" name="id" value="" size="8"></td><td><input type="submit" value="Go"> <input type="submit" name="check" value="Check for fixes"> <input type="submit" name="refresh" value="Refresh"></td></tr></table></form><table class="msg"><tr><td class="info"><a class="msgid" href="../shared/help.html" target="_blank">CPI3599</a> - 2 fixes are available from the Quartz update server (update.quartz.systems) that are not on this system. Last checked 10/29/26 04:00:12.</td></tr></table><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=id">PTF ID</a></th>
+<th><a href="?sort=p">Product</a></th>
+<th>Release</th>
+<th><a href="?sort=s">Status</a></th>
+<th><a href="?sort=ipl">IPL action</a></th>
+<th>Description</th>
+<th><a href="?sort=l">Loaded</a></th>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10420</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>Security fix for TLS handshake</td>
+<td>10/01/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10423</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">Yes - delayed</td>
+<td>Database: index rebuild after restore</td>
+<td>10/02/26</td>
+</tr>
+<tr>
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10426</td>
+<td class="mono">5Q00DG1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">None</td>
+<td>HTTP server: log rotation at month end</td>
+<td>10/03/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10429</td>
+<td class="mono">5Q00TC1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">None</td>
+<td>FTP: passive mode port range</td>
+<td>10/04/26</td>
+</tr>
+<tr>
+<td class="act"><a href="ptf-confirm.html">Load</a> | <a href="ptf-confirm.html">Apply</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10432</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="err">Not applied</span></td>
+<td class="mono">Yes - delayed</td>
+<td>Save/restore: SAVACT lock timeout</td>
+<td>10/05/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10435</td>
+<td class="mono">5Q00NV1</td>
+<td class="mono">V1R0M0</td>
+<td>Superseded</td>
+<td class="mono">None</td>
+<td>Navigator: spooled file PDF viewer</td>
+<td>10/06/26</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10438</td>
+<td class="mono">5Q00XW1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>Access for Web: 5250 field exit key</td>
+<td>10/07/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10441</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">Yes - immediate</td>
+<td>Work management: job queue priority</td>
+<td>10/08/26</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10444</td>
+<td class="mono">5Q00WDS</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>RPG compiler: %SCANRPL</td>
+<td>10/09/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Load</a> | <a href="ptf-confirm.html">Apply</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10447</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="err">Not applied</span></td>
+<td class="mono">None</td>
+<td>Kernel: IPL time with large ASP</td>
+<td>10/10/26</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10450</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>Security fix for TLS handshake</td>
+<td>10/11/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10453</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">Yes - delayed</td>
+<td>Database: index rebuild after restore</td>
+<td>10/12/26</td>
+</tr>
+<tr>
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10456</td>
+<td class="mono">5Q00DG1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">None</td>
+<td>HTTP server: log rotation at month end</td>
+<td>10/13/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10459</td>
+<td class="mono">5Q00TC1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">None</td>
+<td>FTP: passive mode port range</td>
+<td>10/14/26</td>
+</tr>
+<tr>
+<td class="act"><a href="ptf-confirm.html">Load</a> | <a href="ptf-confirm.html">Apply</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10462</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="err">Not applied</span></td>
+<td class="mono">Yes - delayed</td>
+<td>Save/restore: SAVACT lock timeout</td>
+<td>10/15/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10465</td>
+<td class="mono">5Q00NV1</td>
+<td class="mono">V1R0M0</td>
+<td>Superseded</td>
+<td class="mono">None</td>
+<td>Navigator: spooled file PDF viewer</td>
+<td>10/16/26</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10468</td>
+<td class="mono">5Q00XW1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>Access for Web: 5250 field exit key</td>
+<td>10/17/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10471</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">Yes - immediate</td>
+<td>Work management: job queue priority</td>
+<td>10/18/26</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10474</td>
+<td class="mono">5Q00WDS</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>RPG compiler: %SCANRPL</td>
+<td>10/19/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Load</a> | <a href="ptf-confirm.html">Apply</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10477</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="err">Not applied</span></td>
+<td class="mono">None</td>
+<td>Kernel: IPL time with large ASP</td>
+<td>10/20/26</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10480</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">None</td>
+<td>Security fix for TLS handshake</td>
+<td>10/21/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10483</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="ok">Permanently applied</span></td>
+<td class="mono">Yes - delayed</td>
+<td>Database: index rebuild after restore</td>
+<td>10/22/26</td>
+</tr>
+<tr>
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10486</td>
+<td class="mono">5Q00DG1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">None</td>
+<td>HTTP server: log rotation at month end</td>
+<td>10/23/26</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="ptf-confirm.html">Apply permanently</a> | <a href="ptf-confirm.html">Remove</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10489</td>
+<td class="mono">5Q00TC1</td>
+<td class="mono">V1R0M0</td>
+<td>Temporarily applied</td>
+<td class="mono">None</td>
+<td>FTP: passive mode port range</td>
+<td>10/24/26</td>
+</tr>
+<tr>
+<td class="act"><a href="ptf-confirm.html">Load</a> | <a href="ptf-confirm.html">Apply</a> | <a href="../shared/help.html">Cover letter</a></td>
+<td class="mono">QS10492</td>
+<td class="mono">5Q00SS1</td>
+<td class="mono">V1R0M0</td>
+<td><span class="err">Not applied</span></td>
+<td class="mono">Yes - delayed</td>
+<td>Save/restore: SAVACT lock timeout</td>
+<td>10/25/26</td>
+</tr>
+</table><form method="get" class="paging">Page 1 of 5 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <a href="?page=2">Next &gt;</a> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 118 entries</form><form method="post"><div class="buttons"><input type="submit" value="Load from image catalog..."><input type="submit" value="Apply all loaded at next IPL"><input type="submit" value="Display PTF level"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

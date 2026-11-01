@@ -1,0 +1,273 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Disk status - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[-]</a> <b>System</b></div>
+<div class="navitem"><a href="home.html">System status</a></div>
+<div class="navitem"><a href="system-values.html">System values</a></div>
+<div class="navitem"><a href="disk-status.html" class="navcur">Disk status</a></div>
+<div class="navitem"><a href="hardware-resources.html">Hardware resources</a></div>
+<div class="navitem"><a href="time-management.html">Time management</a></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; System &gt; Disk status</div>
+<h1>Disk status</h1>
+<div class="desc">Auxiliary storage pools and disk units (WRKDSKSTS).</div>
+
+<h2>Auxiliary storage pools</h2><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>ASP</th>
+<th>Type</th>
+<th>Capacity (GB)</th>
+<th>Used (GB)</th>
+<th>% used</th>
+<th></th>
+<th>Protection</th>
+<th>Overflow</th>
+<th>Threshold</th>
+</tr>
+<tr>
+<td class="num">1</td>
+<td>System</td>
+<td class="num">1,862.4</td>
+<td class="num">1,253.3</td>
+<td class="num">67.3</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored</td>
+<td>No</td>
+<td>90%</td>
+</tr>
+<tr class="alt">
+<td class="num">2</td>
+<td>User (basic)</td>
+<td class="num">931.2</td>
+<td class="num">412.0</td>
+<td class="num">44.2</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="44%"></td><td width="56%"></td></tr></table></td>
+<td>None</td>
+<td>No</td>
+<td>90%</td>
+</tr>
+<tr>
+<td class="num">33</td>
+<td>Independent (IASP INVIASP)</td>
+<td class="num">465.6</td>
+<td class="num">88.1</td>
+<td class="num">18.9</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="18%"></td><td width="82%"></td></tr></table></td>
+<td>Mirrored</td>
+<td></td>
+<td>90%</td>
+</tr>
+</table><h2>Disk units</h2><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=u">Unit</a></th>
+<th><a href="?sort=r">Resource</a></th>
+<th>Type</th>
+<th>Model</th>
+<th><a href="?sort=c">Capacity (GB)</a></th>
+<th><a href="?sort=p">% used</a></th>
+<th></th>
+<th>Protection</th>
+<th><a href="?sort=s">Status</a></th>
+<th>ASP</th>
+<th>Serial</th>
+</tr>
+<tr>
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">1</td>
+<td class="mono">DD001</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.4</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (A)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1C9</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">2</td>
+<td class="mono">DD002</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.4</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (B)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1D0</td>
+</tr>
+<tr>
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">3</td>
+<td class="mono">DD003</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.2</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (A)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1D4</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">4</td>
+<td class="mono">DD004</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.2</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (B)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1D8</td>
+</tr>
+<tr>
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">5</td>
+<td class="mono">DD005</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.3</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (A)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1E1</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">6</td>
+<td class="mono">DD006</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.3</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (B)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1E6</td>
+</tr>
+<tr>
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">7</td>
+<td class="mono">DD007</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.3</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (A)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1F0</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">8</td>
+<td class="mono">DD008</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">67.3</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="67%"></td><td width="33%"></td></tr></table></td>
+<td>Mirrored (B)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">1</td>
+<td class="mono">Y3B0A1F3</td>
+</tr>
+<tr>
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">9</td>
+<td class="mono">DD009</td>
+<td class="mono">6B23</td>
+<td class="mono">072</td>
+<td class="num">931.2</td>
+<td class="num">44.2</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="44%"></td><td width="56%"></td></tr></table></td>
+<td>None</td>
+<td><span class="ok">Active</span></td>
+<td class="num">2</td>
+<td class="mono">Y3C1B220</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">10</td>
+<td class="mono">DD010</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">18.9</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="18%"></td><td width="82%"></td></tr></table></td>
+<td>Mirrored (A)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">33</td>
+<td class="mono">Y3B0A201</td>
+</tr>
+<tr>
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">11</td>
+<td class="mono">DD011</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">18.9</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="18%"></td><td width="82%"></td></tr></table></td>
+<td>Mirrored (B)</td>
+<td><span class="ok">Active</span></td>
+<td class="num">33</td>
+<td class="mono">Y3B0A202</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="disk-status.html">Properties</a> | <a href="disk-status.html">Reset</a></td>
+<td class="num">12</td>
+<td class="mono">DD012</td>
+<td class="mono">6B22</td>
+<td class="mono">050</td>
+<td class="num">465.6</td>
+<td class="num">0.0</td>
+<td><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="1%"></td><td width="99%"></td></tr></table></td>
+<td>Non-configured</td>
+<td>Non-configured</td>
+<td class="num"></td>
+<td class="mono">Y3B0A210</td>
+</tr>
+</table><form method="get"><div class="buttons"><input type="submit" value="Refresh"> &nbsp; <span class="small grey">Elapsed interval 00:05:00. Reset clears the I/O counters used on Disk activity.</span></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

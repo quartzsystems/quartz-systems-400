@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Scheduled jobs - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[-]</a> <b>Work management</b></div>
+<div class="navitem"><a href="active-jobs.html">Active jobs</a></div>
+<div class="navitem"><a href="job-queues.html">Job queues</a></div>
+<div class="navitem"><a href="subsystems.html">Subsystems</a></div>
+<div class="navitem"><a href="output-queues.html">Output queues</a></div>
+<div class="navitem"><a href="printers.html">Printers</a></div>
+<div class="navitem"><a href="scheduled-jobs.html" class="navcur">Scheduled jobs</a></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Work management &gt; Scheduled jobs</div>
+<h1>Scheduled jobs</h1>
+<div class="desc">Job schedule entries (WRKJOBSCDE).</div>
+
+<table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=name">Job name</a></th>
+<th>Command</th>
+<th><a href="?sort=f">Frequency</a></th>
+<th>Schedule</th>
+<th><a href="?sort=nx">Next submit</a></th>
+<th>Job queue</th>
+<th>User</th>
+<th><a href="?sort=st">Status</a></th>
+</tr>
+<tr>
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="scheduled-jobs.html">Hold</a> | <a href="../shared/confirm.html">Remove</a> | <a href="scheduled-jobs.html">Submit now</a></td>
+<td class="mono">NIGHTLY</td>
+<td class="mono">CALL PGM(QGPL/NIGHTLY)</td>
+<td class="mono">*WEEKLY</td>
+<td>*ALL days 02:00</td>
+<td>10/30/26 02:00</td>
+<td class="mono">QGPL/QBATCH</td>
+<td class="mono">QPGMR</td>
+<td class="mono">SCD</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="scheduled-jobs.html">Hold</a> | <a href="../shared/confirm.html">Remove</a> | <a href="scheduled-jobs.html">Submit now</a></td>
+<td class="mono">SAVDAILY</td>
+<td class="mono">SAVLIB LIB(*ALLUSR) DEV(TAP01) SAVACT(*LIB)</td>
+<td class="mono">*WEEKLY</td>
+<td>*MON *TUE *WED *THU *FRI 23:30</td>
+<td>10/29/26 23:30</td>
+<td class="mono">QGPL/QBATCH</td>
+<td class="mono">QSECOFR</td>
+<td class="mono">SCD</td>
+</tr>
+<tr>
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="scheduled-jobs.html">Hold</a> | <a href="../shared/confirm.html">Remove</a> | <a href="scheduled-jobs.html">Submit now</a></td>
+<td class="mono">SAVWEEKLY</td>
+<td class="mono">SAVSYS DEV(TAP01)</td>
+<td class="mono">*WEEKLY</td>
+<td>*SUN 01:00</td>
+<td>11/01/26 01:00</td>
+<td class="mono">QGPL/QBATCH</td>
+<td class="mono">QSECOFR</td>
+<td class="mono">SCD</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="scheduled-jobs.html">Release</a> | <a href="../shared/confirm.html">Remove</a></td>
+<td class="mono">RGZPFM01</td>
+<td class="mono">RGZPFM FILE(HLINV/ASSETS)</td>
+<td class="mono">*MONTHLY</td>
+<td>Day 1 03:00</td>
+<td>11/01/26 03:00</td>
+<td class="mono">QGPL/QBATCH</td>
+<td class="mono">QPGMR</td>
+<td class="mono"><span class="err">HLD</span></td>
+</tr>
+<tr>
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="scheduled-jobs.html">Hold</a> | <a href="../shared/confirm.html">Remove</a> | <a href="scheduled-jobs.html">Submit now</a></td>
+<td class="mono">INVLOAD</td>
+<td class="mono">CALL PGM(HLINV/INVLOAD) PARM('*ALL')</td>
+<td class="mono">*WEEKLY</td>
+<td>*ALL days 06:00</td>
+<td>10/30/26 06:00</td>
+<td class="mono">HLINV/INVLOAD</td>
+<td class="mono">CWELLMAN</td>
+<td class="mono">SCD</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="scheduled-jobs.html">Hold</a> | <a href="../shared/confirm.html">Remove</a> | <a href="scheduled-jobs.html">Submit now</a></td>
+<td class="mono">CHKFIX</td>
+<td class="mono">CHKPTF UPDSVR(*QUARTZ)</td>
+<td class="mono">*WEEKLY</td>
+<td>*SUN 04:00</td>
+<td>11/01/26 04:00</td>
+<td class="mono">QGPL/QBATCH</td>
+<td class="mono">QSECOFR</td>
+<td class="mono">SCD</td>
+</tr>
+<tr>
+<td class="act"><a href="scheduled-jobs.html">Change</a> | <a href="../shared/confirm.html">Remove</a></td>
+<td class="mono">CLNUPJOBLOG</td>
+<td class="mono">DLTSPLF FILE(QPJOBLOG) SELECT(*ALL *ALL *ALL *ALL) ...</td>
+<td class="mono">*ONCE</td>
+<td>11/15/26 05:00</td>
+<td>11/15/26 05:00</td>
+<td class="mono">QGPL/QBATCH</td>
+<td class="mono">QSECOFR</td>
+<td class="mono">SCD</td>
+</tr>
+</table><form method="post"><div class="buttons"><input type="submit" value="Add..."><input type="submit" value="Refresh"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

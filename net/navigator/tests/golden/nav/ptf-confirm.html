@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Confirm Apply PTF - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Software &gt; PTFs &gt; Confirm Apply PTF</div>
+<h1>Confirm Apply PTF</h1>
+
+
+<p>Press OK to apply the PTFs listed below. PTFs with a delayed IPL action are applied at the next IPL.</p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>PTF ID</th>
+<th>Product</th>
+<th>Status</th>
+<th>IPL action</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><span class="mono">QS10432</span></td>
+<td><span class="mono">5Q00SS1</span></td>
+<td><span class="err">Not applied</span></td>
+<td>Yes - delayed</td>
+<td>Save/restore: SAVACT lock timeout</td>
+</tr>
+<tr class="alt">
+<td><span class="mono">QS10447</span></td>
+<td><span class="mono">5Q00SS1</span></td>
+<td><span class="err">Not applied</span></td>
+<td>None</td>
+<td>Security fix for TLS handshake</td>
+</tr>
+</table><p class="small grey">Apply type: <input type="radio" name="t" value="*TEMP" checked> Temporarily (*TEMP) <input type="radio" name="t" value="*PERM"> Permanently (*PERM) &nbsp; Delayed PTFs: <input type="radio" name="d" value="*NO" checked> Apply at next IPL <input type="radio" name="d" value="*IPL"> Schedule IPL now<br>Equivalent command: <span class="mono">APYPTF LICPGM(5Q00SS1) SELECT(QS10432 QS10447) APY(*TEMP) DELAYED(*YES)</span></p><form method="post"><div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

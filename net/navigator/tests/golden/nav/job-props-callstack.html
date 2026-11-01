@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Job: 123456/QTMHHTTP/ADMIN - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Work management &gt; Active jobs &gt; 123456/QTMHHTTP/ADMIN &gt; Call stack</div>
+<h1>Job: 123456/QTMHHTTP/ADMIN</h1>
+
+
+<div class="tabs"><a href="job-props-general.html">General</a> | <a href="job-props-performance.html">Performance</a> | <a href="job-props-liblist.html">Library list</a> | <a href="job-props-joblog.html">Job log</a> | <a href="spooled-files.html">Spooled files</a> | <a href="job-props-locks.html">Locks</a> | <b>Call stack</b></div><p class="small">Thread: <select name="thr"><option>00000001 (initial)</option><option>00000012</option><option>00000013</option><option>00000014</option></select> <input type="submit" value="Go"></p><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Level</th>
+<th>Program</th>
+<th>Library</th>
+<th>Module</th>
+<th>Procedure</th>
+<th>Statement</th>
+<th>Activation group</th>
+</tr>
+<tr>
+<td class="num">1</td>
+<td class="mono">QCMD</td>
+<td class="mono">QSYS</td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td class="mono"></td>
+<td class="mono">*DFTACTGRP</td>
+</tr>
+<tr class="alt">
+<td class="num">2</td>
+<td class="mono">QZHBMAIN</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">QZHBMAIN</td>
+<td class="mono">main</td>
+<td class="mono">0412</td>
+<td class="mono">QZHBHTTP</td>
+</tr>
+<tr>
+<td class="num">3</td>
+<td class="mono">QZHBMAIN</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">QZHBSRV</td>
+<td class="mono">serve_loop</td>
+<td class="mono">1203</td>
+<td class="mono">QZHBHTTP</td>
+</tr>
+<tr class="alt">
+<td class="num">4</td>
+<td class="mono">QZHBMAIN</td>
+<td class="mono">QHTTPSVR</td>
+<td class="mono">QZHBSRV</td>
+<td class="mono">accept_wait</td>
+<td class="mono">0877</td>
+<td class="mono">QZHBHTTP</td>
+</tr>
+<tr>
+<td class="num">5</td>
+<td class="mono">QP0ZCPA</td>
+<td class="mono">QSYS</td>
+<td class="mono">QP0ZCPA</td>
+<td class="mono">pthread_cond_wait</td>
+<td class="mono"></td>
+<td class="mono">*DFTACTGRP</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

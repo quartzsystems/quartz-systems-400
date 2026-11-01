@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Servers - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[-]</a> <b>Network</b></div>
+<div class="navitem"><a href="tcpip.html">TCP/IP configuration</a></div>
+<div class="navitem"><a href="tcpip-interfaces.html">Interfaces</a></div>
+<div class="navitem"><a href="tcpip-routes.html">Routes</a></div>
+<div class="navitem"><a href="servers.html" class="navcur">Servers</a></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Network &gt; Servers</div>
+<h1>Servers</h1>
+<div class="desc">TCP/IP servers (STRTCPSVR / ENDTCPSVR).</div>
+
+<table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=n">Server</a></th>
+<th>Description</th>
+<th><a href="?sort=s">Status</a></th>
+<th>Autostart</th>
+<th>Ports</th>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono"><a href="../http/instances.html">*HTTP</a> <span class="small grey">(HTTP Server Administration)</span></td>
+<td>HTTP server (7 instances)</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">80, 443, 2001, 2002, 2005, ...</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*TELNET</td>
+<td>Telnet server</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">23, 992</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*FTP</td>
+<td>FTP server</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">21</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*SSHD</td>
+<td>SSH server</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">22</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*DDM</td>
+<td>DDM/DRDA server</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">446, 448</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*NTP</td>
+<td>NTP client/server</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">123</td>
+</tr>
+<tr>
+<td class="act"><a href="servers.html">Start</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*SNMP</td>
+<td>SNMP agent</td>
+<td><span class="err">Ended</span></td>
+<td class="mono">*NO</td>
+<td class="mono">161</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*NETSVR</td>
+<td>File and print server (SMB)</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">445</td>
+</tr>
+<tr>
+<td class="act"><a href="servers.html">Start</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*SMTP</td>
+<td>SMTP server</td>
+<td><span class="err">Ended</span></td>
+<td class="mono">*NO</td>
+<td class="mono">25</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="servers.html">Start</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*DNS</td>
+<td>DNS server</td>
+<td><span class="err">Ended</span></td>
+<td class="mono">*NO</td>
+<td class="mono">53</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*LPD</td>
+<td>Line printer daemon</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">515</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*CENTRAL</td>
+<td>Host server - central</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">8470, 9470</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*DATABASE</td>
+<td>Host server - database</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">8471, 9471</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*SIGNON</td>
+<td>Host server - sign-on</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">8476, 9476</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*RMTCMD</td>
+<td>Host server - remote command</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">8475, 9475</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*FILE</td>
+<td>Host server - file</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">8473, 9473</td>
+</tr>
+<tr>
+<td class="act"><a href="../shared/confirm.html">End</a> | <a href="../shared/confirm.html">Restart</a> | <a href="servers.html">Properties</a></td>
+<td class="mono">*SVRMAP</td>
+<td>Server mapper</td>
+<td><span class="ok">Started</span></td>
+<td class="mono">*YES</td>
+<td class="mono">449</td>
+</tr>
+</table><form method="post"><div class="buttons"><input type="submit" value="Start all autostart servers"><input type="submit" value="Refresh"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

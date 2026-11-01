@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>History log - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[-]</a> <b>Messages</b></div>
+<div class="navitem"><a href="qsysopr.html">QSYSOPR</a></div>
+<div class="navitem"><a href="my-messages.html">My messages</a></div>
+<div class="navitem"><a href="history-log.html" class="navcur">History log</a></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Messages &gt; History log</div>
+<h1>History log</h1>
+<div class="desc">System history log QHST (DSPLOG). Newest first.</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>From:</td><td><input type="text" name="f" value="10/29/26" size="8"> <input type="text" name="ft" value="00:00:00" size="8"></td><td>To:</td><td><input type="text" name="t" value="10/29/26" size="8"> <input type="text" name="tt" value="23:59:59" size="8"></td><td>Message ID:</td><td><input type="text" name="id" value="*ALL" size="8"></td><td>Severity &ge;:</td><td><input type="text" name="sev" value="0" size="2"></td><td>Job:</td><td><input type="text" name="job" value="*ALL" size="10"></td><td><input type="submit" value="Go"> </td></tr></table></form><pre class="out">TIME      MSGID     SEV  JOB                                 MESSAGE
+14:01:55  CPF1164   00   123499/QPGMR/RGZPFM00               Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds used; end code 0.
+14:01:54  CPF1124   00   123499/QPGMR/RGZPFM00               Job 123499/QPGMR/RGZPFM00 started on 10/29/26 at 14:01:54 in subsystem QBATCH in QSYS.
+13:58:02  CPA5305   99   123503/CWELLMAN/INVBATCH            Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)
+13:40:11  CPF0907   40   123105/QSYS/QSPLMAINT               Serious storage condition may exist. Press HELP.
+13:22:07  CPA4002   99   123150/QSPLJOB/PRT01                Verify alignment on printer PRT01. (I G N R C)
+13:05:10  CPF1241   00   123488/CWELLMAN/QPADEV0003          Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in QGPL.
+12:50:00  CPC1129   00   123200/QSYS/QINTER                  Job 123490/OPERATOR/QPADEV0004 started.
+12:49:58  CPF1164   00   123489/OPERATOR/QPADEV0004          Job 123489/OPERATOR/QPADEV0004 ended on 10/29/26 at 12:49:58; 3 seconds used; end code 0.
+12:10:33  CPF2204   30   123457/QTMHHTTP/ADMIN               User profile WEBUSER not found.
+11:42:17  HTP8110   20   123456/QTMHHTTP/ADMIN               Request from 172.16.0.9 for /qs400/httpadmin/instance/WEBSTORE/general failed, user WEBUSER not authorized.
+11:00:00  CPI2209   00   123200/QSYS/QINTER                  User profile GUEST disabled because maximum number of sign-on attempts reached.
+10:59:58  CPF1107   30   123200/QSYS/QINTER                  Password not correct for user profile GUEST.
+10:59:51  CPF1107   30   123200/QSYS/QINTER                  Password not correct for user profile GUEST.
+10:31:49  CPA0702   99   123503/CWELLMAN/INVBATCH            CPF0001 received by procedure INVLOAD. (C D I R)
+09:15:12  TCP1A03   10   123380/QTCP/QTCPIP                  Interface 10.0.10.21 on line ETHLIN02 started.
+09:00:02  CPC3703   00   123350/QSECOFR/SAVDAILY             2 objects saved from library QGPL.
+06:00:04  HTP8001   00   123471/QTMHHTTP/API                 HTTP server instance API started, listening on *:9443.
+06:00:03  HTP8001   00   123456/QTMHHTTP/ADMIN               HTTP server instance ADMIN started, listening on *:2001.
+06:00:00  CPF0927   00   123202/QSYS/QHTTPSVR                Subsystem QHTTPSVR active.
+</pre><form method="get" class="paging">Page 1 of 9 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <a href="?page=2">Next &gt;</a> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 214 entries</form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

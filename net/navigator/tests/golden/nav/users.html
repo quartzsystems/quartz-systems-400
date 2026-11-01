@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Users - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[-]</a> <b>Users and groups</b></div>
+<div class="navitem"><a href="users.html" class="navcur">Users</a></div>
+<div class="navitem"><a href="groups.html">Groups</a></div>
+<div class="navitem"><a href="authorization-lists.html">Authorization lists</a></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Users and groups &gt; Users</div>
+<h1>Users</h1>
+<div class="desc">User profiles on the system (WRKUSRPRF).</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Profile:</td><td><input type="text" name="p" value="*ALL" size="10"></td><td>Status:</td><td><select name="s"><option>*ALL</option><option>*ENABLED</option><option>*DISABLED</option></select></td><td>Class:</td><td><select name="c"><option>*ALL</option><option>*USER</option><option>*SYSOPR</option><option>*PGMR</option><option>*SECADM</option><option>*SECOFR</option></select></td><td>Group:</td><td><input type="text" name="g" value="*ALL" size="10"></td><td><input type="submit" value="Go"> </td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=p">Profile</a></th>
+<th><a href="?sort=t">Text description</a></th>
+<th><a href="?sort=s">Status</a></th>
+<th><a href="?sort=c">User class</a></th>
+<th><a href="?sort=l">Last sign-on</a></th>
+<th><a href="?sort=g">Group</a></th>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">QSECOFR</a></td>
+<td>Security officer</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*SECOFR</td>
+<td>10/29/26 13:50:01</td>
+<td class="mono"></td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">QPGMR</a></td>
+<td>Programmer</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*PGMR</td>
+<td>10/29/26 06:00:00</td>
+<td class="mono"></td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">QUSER</a></td>
+<td>Default user for host servers</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/29/26 14:02:11</td>
+<td class="mono"></td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">QTMHHTTP</a></td>
+<td>HTTP server user</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/29/26 06:00:01</td>
+<td class="mono"></td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">QTCP</a></td>
+<td>TCP/IP</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/27/26 06:00:00</td>
+<td class="mono"></td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">QSSHD</a></td>
+<td>SSH daemon</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/27/26 06:00:02</td>
+<td class="mono"></td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">CWELLMAN</a></td>
+<td>Cody Wellman</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*SECOFR</td>
+<td>10/29/26 13:05:00</td>
+<td class="mono">ADMINS</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">OPERATOR</a></td>
+<td>System operator</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*SYSOPR</td>
+<td>10/29/26 12:50:00</td>
+<td class="mono">OPS</td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">WEBUSER</a></td>
+<td>Access for Web default user</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/29/26 11:41:50</td>
+<td class="mono">WEBUSERS</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">GUEST</a></td>
+<td>Guest profile</td>
+<td class="mono"><span class="err">*DISABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/12/26 09:20:17</td>
+<td class="mono">WEBUSERS</td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">INVSVC</a></td>
+<td>Inventory service account</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/29/26 06:00:00</td>
+<td class="mono">SERVICES</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">BACKUP</a></td>
+<td>Backup operator</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*SYSOPR</td>
+<td>10/28/26 23:30:00</td>
+<td class="mono">OPS</td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">JDOE</a></td>
+<td>J. Doe - warehouse</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/29/26 08:02:33</td>
+<td class="mono">WAREHOUSE</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">ASMITH</a></td>
+<td>A. Smith - accounting</td>
+<td class="mono"><span class="ok">*ENABLED</span></td>
+<td class="mono">*USER</td>
+<td>10/28/26 16:44:10</td>
+<td class="mono">ACCTG</td>
+</tr>
+<tr>
+<td class="act"><a href="user-props.html">Properties</a> | <a href="../shared/confirm.html">Delete</a> | <a href="user-props.html">Reset password</a> | <a href="active-jobs.html">Jobs</a></td>
+<td class="mono"><a href="user-props.html">TEMP01</a></td>
+<td>Temporary contractor</td>
+<td class="mono"><span class="err">*DISABLED</span></td>
+<td class="mono">*USER</td>
+<td>08/30/26 10:11:00</td>
+<td class="mono"></td>
+</tr>
+</table><form method="get" class="paging">Page 1 of 1 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <span class="grey">Next &gt;</span> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 15 entries</form><form method="post" action="create-user-1.html"><div class="buttons"><input type="submit" value="Create user..."><input type="submit" value="Refresh"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

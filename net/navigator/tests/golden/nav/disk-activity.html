@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Disk activity - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+<meta http-equiv="refresh" content="10" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[-]</a> <b>Performance</b></div>
+<div class="navitem"><a href="system-activity.html">System activity</a></div>
+<div class="navitem"><a href="disk-activity.html" class="navcur">Disk activity</a></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Performance &gt; Disk activity</div>
+<h1>Disk activity</h1>
+<div class="desc">I/O by disk unit (WRKDSKSTS, elapsed interval).</div>
+
+<form method="get"><div class="toolbar"><input type="submit" value="Refresh"> &nbsp; Auto-refresh every <select name="a"><option>Off</option><option>5</option><option selected>10</option><option>30</option><option>60</option></select> seconds <input type="submit" value="Apply"> &nbsp; <span class="small grey">Elapsed 00:00:10</span></div></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Unit</th>
+<th>Resource</th>
+<th>ASP</th>
+<th>% busy</th>
+<th></th>
+<th>Read req/s</th>
+<th>Write req/s</th>
+<th>Read KB/s</th>
+<th>Write KB/s</th>
+<th>Avg service (ms)</th>
+<th>Avg wait (ms)</th>
+<th>Queue</th>
+</tr>
+<tr>
+<td class="num">1</td>
+<td class="mono">DD001</td>
+<td class="num">1</td>
+<td class="num">18.2</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="18%"></td><td width="82%"></td></tr></table></td>
+<td class="num">41.0</td>
+<td class="num">88.5</td>
+<td class="num">1,312</td>
+<td class="num">2,832</td>
+<td class="num">1.4</td>
+<td class="num">0.1</td>
+<td class="num">0</td>
+</tr>
+<tr class="alt">
+<td class="num">2</td>
+<td class="mono">DD002</td>
+<td class="num">1</td>
+<td class="num">17.9</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="17%"></td><td width="83%"></td></tr></table></td>
+<td class="num">40.2</td>
+<td class="num">88.5</td>
+<td class="num">1,286</td>
+<td class="num">2,832</td>
+<td class="num">1.4</td>
+<td class="num">0.1</td>
+<td class="num">0</td>
+</tr>
+<tr>
+<td class="num">3</td>
+<td class="mono">DD003</td>
+<td class="num">1</td>
+<td class="num">22.4</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="22%"></td><td width="78%"></td></tr></table></td>
+<td class="num">60.1</td>
+<td class="num">90.0</td>
+<td class="num">1,923</td>
+<td class="num">2,880</td>
+<td class="num">1.5</td>
+<td class="num">0.2</td>
+<td class="num">1</td>
+</tr>
+<tr class="alt">
+<td class="num">4</td>
+<td class="mono">DD004</td>
+<td class="num">1</td>
+<td class="num">22.0</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="22%"></td><td width="78%"></td></tr></table></td>
+<td class="num">59.8</td>
+<td class="num">90.0</td>
+<td class="num">1,914</td>
+<td class="num">2,880</td>
+<td class="num">1.5</td>
+<td class="num">0.2</td>
+<td class="num">1</td>
+</tr>
+<tr>
+<td class="num">5</td>
+<td class="mono">DD005</td>
+<td class="num">1</td>
+<td class="num">9.1</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="9%"></td><td width="91%"></td></tr></table></td>
+<td class="num">20.3</td>
+<td class="num">30.1</td>
+<td class="num">650</td>
+<td class="num">963</td>
+<td class="num">1.2</td>
+<td class="num">0.0</td>
+<td class="num">0</td>
+</tr>
+<tr class="alt">
+<td class="num">6</td>
+<td class="mono">DD006</td>
+<td class="num">1</td>
+<td class="num">9.0</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="9%"></td><td width="91%"></td></tr></table></td>
+<td class="num">20.1</td>
+<td class="num">30.1</td>
+<td class="num">643</td>
+<td class="num">963</td>
+<td class="num">1.2</td>
+<td class="num">0.0</td>
+<td class="num">0</td>
+</tr>
+<tr>
+<td class="num">7</td>
+<td class="mono">DD007</td>
+<td class="num">1</td>
+<td class="num">71.3</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="hot" width="71%"></td><td width="29%"></td></tr></table></td>
+<td class="num">402.5</td>
+<td class="num">120.2</td>
+<td class="num">12,880</td>
+<td class="num">3,846</td>
+<td class="num">3.9</td>
+<td class="num">2.1</td>
+<td class="num">4</td>
+</tr>
+<tr class="alt">
+<td class="num">8</td>
+<td class="mono">DD008</td>
+<td class="num">1</td>
+<td class="num">70.8</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="hot" width="70%"></td><td width="30%"></td></tr></table></td>
+<td class="num">401.9</td>
+<td class="num">120.2</td>
+<td class="num">12,861</td>
+<td class="num">3,846</td>
+<td class="num">3.9</td>
+<td class="num">2.1</td>
+<td class="num">4</td>
+</tr>
+<tr>
+<td class="num">9</td>
+<td class="mono">DD009</td>
+<td class="num">2</td>
+<td class="num">4.2</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="4%"></td><td width="96%"></td></tr></table></td>
+<td class="num">11.0</td>
+<td class="num">6.1</td>
+<td class="num">352</td>
+<td class="num">195</td>
+<td class="num">1.0</td>
+<td class="num">0.0</td>
+<td class="num">0</td>
+</tr>
+<tr class="alt">
+<td class="num">10</td>
+<td class="mono">DD010</td>
+<td class="num">33</td>
+<td class="num">2.1</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="2%"></td><td width="98%"></td></tr></table></td>
+<td class="num">5.2</td>
+<td class="num">3.0</td>
+<td class="num">166</td>
+<td class="num">96</td>
+<td class="num">0.9</td>
+<td class="num">0.0</td>
+<td class="num">0</td>
+</tr>
+<tr>
+<td class="num">11</td>
+<td class="mono">DD011</td>
+<td class="num">33</td>
+<td class="num">2.0</td>
+<td class="num"><table class="bar" cellspacing="0" cellpadding="0"><tr><td class="fill" width="2%"></td><td width="98%"></td></tr></table></td>
+<td class="num">5.1</td>
+<td class="num">3.0</td>
+<td class="num">163</td>
+<td class="num">96</td>
+<td class="num">0.9</td>
+<td class="num">0.0</td>
+<td class="num">0</td>
+</tr>
+</table><p class="small grey">Units 7 and 8 are busy above 70% (job 123502/QPGMR/RGZPFM01). <a href="disk-status.html">Disk status</a></p>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

@@ -6135,6 +6135,13 @@ help = "Correct what the message names and try the request again."
 vars = []
 
 [[msg]]
+id = "CPF2207"
+sev = 40
+text = "Not authorized to use object &1 in library &2 type &3."
+help = "Your user profile lacks the authority to the object that the request needs. Ask the security officer or the object's owner for the authority, or use a profile that has it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 7"]
+
+[[msg]]
 id = "CPF2214"
 sev = 40
 text = "User profile &1 already exists."

@@ -1,0 +1,110 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Output queues - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[-]</a> <b>Work management</b></div>
+<div class="navitem"><a href="active-jobs.html">Active jobs</a></div>
+<div class="navitem"><a href="job-queues.html">Job queues</a></div>
+<div class="navitem"><a href="subsystems.html">Subsystems</a></div>
+<div class="navitem"><a href="output-queues.html" class="navcur">Output queues</a></div>
+<div class="navitem"><a href="printers.html">Printers</a></div>
+<div class="navitem"><a href="scheduled-jobs.html">Scheduled jobs</a></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Work management &gt; Output queues</div>
+<h1>Output queues</h1>
+<div class="desc">Output queues and the spooled files on them (WRKOUTQ).</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Library:</td><td><select name="lib"><option>*ALL</option><option>QGPL</option><option>QUSRSYS</option><option>QSYS</option></select></td><td>Queue:</td><td><input type="text" name="q" value="*ALL" size="10"></td><td><input type="submit" value="Go"> </td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=name">Output queue</a></th>
+<th><a href="?sort=lib">Library</a></th>
+<th><a href="?sort=files">Files</a></th>
+<th><a href="?sort=wtr">Writer</a></th>
+<th><a href="?sort=st">Status</a></th>
+<th>Text</th>
+</tr>
+<tr>
+<td class="act"><a href="spooled-files.html">Open</a> | <a href="output-queues.html">Hold</a> | <a href="output-queues.html">Release</a> | <a href="../shared/confirm.html">Clear</a> | <a href="output-queues.html">Properties</a></td>
+<td class="mono">QPRINT</td>
+<td class="mono">QGPL</td>
+<td class="num">148</td>
+<td class="mono">PRT01</td>
+<td><span class="ok">Released</span></td>
+<td>Default print queue</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="spooled-files.html">Open</a> | <a href="output-queues.html">Hold</a> | <a href="output-queues.html">Release</a> | <a href="../shared/confirm.html">Clear</a> | <a href="output-queues.html">Properties</a></td>
+<td class="mono">QEZJOBLOG</td>
+<td class="mono">QUSRSYS</td>
+<td class="num">41</td>
+<td class="mono"></td>
+<td><span class="ok">Released</span></td>
+<td>Job logs</td>
+</tr>
+<tr>
+<td class="act"><a href="spooled-files.html">Open</a> | <a href="output-queues.html">Hold</a> | <a href="output-queues.html">Release</a> | <a href="../shared/confirm.html">Clear</a> | <a href="output-queues.html">Properties</a></td>
+<td class="mono">QEZDEBUG</td>
+<td class="mono">QUSRSYS</td>
+<td class="num">3</td>
+<td class="mono"></td>
+<td><span class="ok">Released</span></td>
+<td>Dumps and debug output</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="spooled-files.html">Open</a> | <a href="output-queues.html">Hold</a> | <a href="output-queues.html">Release</a> | <a href="../shared/confirm.html">Clear</a> | <a href="output-queues.html">Properties</a></td>
+<td class="mono">PRT02</td>
+<td class="mono">QGPL</td>
+<td class="num">12</td>
+<td class="mono">PRT02</td>
+<td><span class="err">Held</span></td>
+<td>Warehouse label printer</td>
+</tr>
+<tr>
+<td class="act"><a href="spooled-files.html">Open</a> | <a href="output-queues.html">Hold</a> | <a href="output-queues.html">Release</a> | <a href="../shared/confirm.html">Clear</a> | <a href="output-queues.html">Properties</a></td>
+<td class="mono">INVRPT</td>
+<td class="mono">HLINV</td>
+<td class="num">8</td>
+<td class="mono"></td>
+<td><span class="ok">Released</span></td>
+<td>Inventory reports</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="spooled-files.html">Open</a> | <a href="output-queues.html">Hold</a> | <a href="output-queues.html">Release</a> | <a href="../shared/confirm.html">Clear</a> | <a href="output-queues.html">Properties</a></td>
+<td class="mono">QPDF</td>
+<td class="mono">QGPL</td>
+<td class="num">0</td>
+<td class="mono"></td>
+<td><span class="ok">Released</span></td>
+<td>PDF output (file system)</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

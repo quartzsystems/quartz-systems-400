@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Run SQL - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[-]</a> <b>Database</b></div>
+<div class="navitem"><a href="schemas.html">Schemas</a></div>
+<div class="navitem"><a href="run-sql.html" class="navcur">Run SQL</a></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Database &gt; Run SQL</div>
+<h1>Run SQL</h1>
+<div class="desc">Run an SQL statement against the local database.</div>
+
+<form method="post"><table class="props"><tr><th>Schema</th><td><select name="schema"><option>HLINV</option><option>QGPL</option><option>QSYS2</option><option>WEBSTORE</option><option>PAYROLL</option></select> &nbsp; Naming: <select name="naming"><option>*SQL</option><option>*SYS</option></select> &nbsp; Isolation: <select name="iso"><option>*NONE</option><option>*CHG</option><option>*CS</option><option>*ALL</option></select></td></tr><tr><th>Statement</th><td><textarea name="sql" rows="10" cols="100" class="conf">SELECT asset_tag, location, manufacturer, model, serial, asset_type, status, acquired
+  FROM hlinv.assets
+ WHERE status IN ('ACTIVE', 'SPARE')
+ ORDER BY location, asset_tag</textarea></td></tr></table><div class="buttons"><input type="submit" name="run" value="Run"><input type="submit" name="explain" value="Explain"><input type="submit" name="clear" value="Clear"></div></form><h2>Results</h2><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th><a href="?sort=asset_tag">ASSET_TAG</a></th>
+<th><a href="?sort=location">LOCATION</a></th>
+<th><a href="?sort=manufacturer">MANUFACTURER</a></th>
+<th><a href="?sort=model">MODEL</a></th>
+<th><a href="?sort=serial">SERIAL</a></th>
+<th><a href="?sort=asset_type">ASSET_TYPE</a></th>
+<th><a href="?sort=status">STATUS</a></th>
+<th><a href="?sort=acquired">ACQUIRED</a></th>
+</tr>
+<tr>
+<td class="mono">QS000101</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">QUANTA</td>
+<td class="mono">T4048-IX8</td>
+<td class="mono">QTFCEV2340021</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2025-03-11</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000102</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">QUANTA</td>
+<td class="mono">T4048-IX8</td>
+<td class="mono">QTFCEV2340022</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2025-03-11</td>
+</tr>
+<tr>
+<td class="mono">QS000110</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">EDGECORE</td>
+<td class="mono">AS5712-54X</td>
+<td class="mono">571254X2041B0019</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-11-02</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000111</td>
+<td class="mono">QS-HQ-R1</td>
+<td class="mono">EDGECORE</td>
+<td class="mono">AS5712-54X</td>
+<td class="mono">571254X2041B0020</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-11-02</td>
+</tr>
+<tr>
+<td class="mono">QS000201</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">R740XD</td>
+<td class="mono">7XK2Q33</td>
+<td class="mono">SERVER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-06-20</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000202</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">R740XD</td>
+<td class="mono">7XK2Q34</td>
+<td class="mono">SERVER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-06-20</td>
+</tr>
+<tr>
+<td class="mono">QS000203</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">R740XD</td>
+<td class="mono">7XK2Q35</td>
+<td class="mono">SERVER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-06-20</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000210</td>
+<td class="mono">QS-HQ-R2</td>
+<td class="mono">DELL</td>
+<td class="mono">QLE2562</td>
+<td class="mono">BFE1234567</td>
+<td class="mono">ADAPTER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2026-09-20</td>
+</tr>
+<tr>
+<td class="mono">QS000302</td>
+<td class="mono">QS-HQ-R3</td>
+<td class="mono">WEIDMULLER</td>
+<td class="mono">UR20-FBC-EIP</td>
+<td class="mono">2024-11-00341</td>
+<td class="mono">IO-COUPLER</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2026-10-01</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000401</td>
+<td class="mono">QS-BR1-R1</td>
+<td class="mono">DELL</td>
+<td class="mono">S4048-ON</td>
+<td class="mono">8H3K2P2</td>
+<td class="mono">SWITCH</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-09-08</td>
+</tr>
+<tr>
+<td class="mono">QS000402</td>
+<td class="mono">QS-BR1-R1</td>
+<td class="mono">WATCHGUARD</td>
+<td class="mono">M370</td>
+<td class="mono">80BA0F2B1C33</td>
+<td class="mono">FIREWALL</td>
+<td class="mono">ACTIVE</td>
+<td class="mono">2024-09-08</td>
+</tr>
+<tr class="alt">
+<td class="mono">QS000403</td>
+<td class="mono">QS-BR1-R1</td>
+<td class="mono">ARISTA</td>
+<td class="mono">7050SX-64</td>
+<td class="mono">JPE14210033</td>
+<td class="mono">SWITCH</td>
+<td class="mono">SPARE</td>
+<td class="mono">2023-05-02</td>
+</tr>
+</table><div class="small">12 rows returned (maximum 500). <a href="#">Download as CSV</a></div><div class="small"><b>Messages:</b> <a class="msgid" href="../shared/help.html" target="_blank">SQL7958</a> - 12 rows fetched in 0.041 seconds. &nbsp; <a class="msgid" href="../shared/help.html" target="_blank">SQL0100</a> - Row not found for FETCH, UPDATE or DELETE; or the result of a query is an empty table.</div><h2>Previous statements</h2><div class="small mono"><a href="run-sql.html">SELECT COUNT(*) FROM hlinv.assets GROUP BY location</a><br><a href="run-sql.html">SELECT * FROM qsys2.active_job_info WHERE job_status = 'MSGW'</a><br><a href="run-sql.html">UPDATE hlinv.assets SET status = 'RETIRED' WHERE asset_tag = 'QS000301'</a><br><a href="run-sql.html">SELECT * FROM qsys2.system_status_info</a></div>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

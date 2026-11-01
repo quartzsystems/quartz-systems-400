@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Message queue: QSYSOPR - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[-]</a> <b>Messages</b></div>
+<div class="navitem"><a href="qsysopr.html" class="navcur">QSYSOPR</a></div>
+<div class="navitem"><a href="my-messages.html">My messages</a></div>
+<div class="navitem"><a href="history-log.html">History log</a></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Messages &gt; QSYSOPR</div>
+<h1>Message queue: QSYSOPR</h1>
+<div class="desc">System operator message queue (DSPMSG QSYSOPR). Inquiry messages awaiting a reply are shown in bold.</div>
+
+<form method="get"><table class="filter" cellspacing="0"><tr><td>Queue:</td><td><select name="q"><option>QSYSOPR</option><option>QSYSMSG</option><option>QSECOFR</option><option>CWELLMAN</option><option>QTCP</option></select></td><td>Type:</td><td><select name="t"><option>All</option><option>Inquiry (unanswered)</option><option>Informational</option><option>Severity 30+</option></select></td><td>Since:</td><td><input type="text" name="d" value="10/29/26" size="8"></td><td><input type="submit" value="Go"> <input type="submit" name="refresh" value="Refresh"> <input type="submit" name="clear" value="Clear queue..."></td></tr></table></form><table class="list" width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<th>Actions</th>
+<th><a href="?sort=dt">Date/time</a></th>
+<th><a href="?sort=sev">Sev</a></th>
+<th><a href="?sort=id">Message ID</a></th>
+<th>Message text</th>
+<th><a href="?sort=job">From job</a></th>
+<th>Type</th>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 14:01:55</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF1164</a></td>
+<td>Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds ...</td>
+<td class="mono"><a href="job-props-general.html">123499/QPGMR/RGZPFM00</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:58:02</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA5305</a></td>
+<td><b>Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS f...</b></td>
+<td class="mono"><a href="job-props-general.html">123503/CWELLMAN/INVBATCH</a></td>
+<td>Inquiry</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:40:11</td>
+<td class="num">40</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF0907</a></td>
+<td>Serious storage condition may exist. Press HELP.</td>
+<td class="mono"><a href="job-props-general.html">123105/QSYS/QSPLMAINT</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:22:07</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA4002</a></td>
+<td><b>Verify alignment on printer PRT01. (I G N R C)</b></td>
+<td class="mono"><a href="job-props-general.html">123150/QSPLJOB/PRT01</a></td>
+<td>Inquiry</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 12:50:00</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPC1129</a></td>
+<td>Job 123490/OPERATOR/QPADEV0004 started.</td>
+<td class="mono"><a href="job-props-general.html">123200/QSYS/QINTER</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 12:10:33</td>
+<td class="num">30</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF2204</a></td>
+<td>User profile WEBUSER not found.</td>
+<td class="mono"><a href="job-props-general.html">123457/QTMHHTTP/ADMIN</a></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 11:42:17</td>
+<td class="num">20</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">HTP8110</a></td>
+<td>Request from 172.16.0.9 for /qs400/httpadmin/... failed, user WEBUS...</td>
+<td class="mono"><a href="job-props-general.html">123456/QTMHHTTP/ADMIN</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 11:00:00</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPI2209</a></td>
+<td>User profile GUEST disabled because maximum number of sign-on attem...</td>
+<td class="mono"><a href="job-props-general.html">123200/QSYS/QINTER</a></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 10:31:49</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA0702</a></td>
+<td><b>CPF0001 received by procedure INVLOAD. (C D I R)</b></td>
+<td class="mono"><a href="job-props-general.html">123503/CWELLMAN/INVBATCH</a></td>
+<td>Inquiry</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 09:15:12</td>
+<td class="num">10</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">TCP1A03</a></td>
+<td>Interface 10.0.10.21 on line ETHLIN02 started.</td>
+<td class="mono"><a href="job-props-general.html">123380/QTCP/QTCPIP</a></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 14:01:55</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF1164</a></td>
+<td>Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds ...</td>
+<td class="mono"><a href="job-props-general.html">123499/QPGMR/RGZPFM00</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:58:02</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA5305</a></td>
+<td><b>Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS f...</b></td>
+<td class="mono"><a href="job-props-general.html">123503/CWELLMAN/INVBATCH</a></td>
+<td>Inquiry</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:40:11</td>
+<td class="num">40</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF0907</a></td>
+<td>Serious storage condition may exist. Press HELP.</td>
+<td class="mono"><a href="job-props-general.html">123105/QSYS/QSPLMAINT</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:22:07</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA4002</a></td>
+<td><b>Verify alignment on printer PRT01. (I G N R C)</b></td>
+<td class="mono"><a href="job-props-general.html">123150/QSPLJOB/PRT01</a></td>
+<td>Inquiry</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 12:50:00</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPC1129</a></td>
+<td>Job 123490/OPERATOR/QPADEV0004 started.</td>
+<td class="mono"><a href="job-props-general.html">123200/QSYS/QINTER</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 12:10:33</td>
+<td class="num">30</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF2204</a></td>
+<td>User profile WEBUSER not found.</td>
+<td class="mono"><a href="job-props-general.html">123457/QTMHHTTP/ADMIN</a></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 11:42:17</td>
+<td class="num">20</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">HTP8110</a></td>
+<td>Request from 172.16.0.9 for /qs400/httpadmin/... failed, user WEBUS...</td>
+<td class="mono"><a href="job-props-general.html">123456/QTMHHTTP/ADMIN</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 11:00:00</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPI2209</a></td>
+<td>User profile GUEST disabled because maximum number of sign-on attem...</td>
+<td class="mono"><a href="job-props-general.html">123200/QSYS/QINTER</a></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 10:31:49</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA0702</a></td>
+<td><b>CPF0001 received by procedure INVLOAD. (C D I R)</b></td>
+<td class="mono"><a href="job-props-general.html">123503/CWELLMAN/INVBATCH</a></td>
+<td>Inquiry</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 09:15:12</td>
+<td class="num">10</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">TCP1A03</a></td>
+<td>Interface 10.0.10.21 on line ETHLIN02 started.</td>
+<td class="mono"><a href="job-props-general.html">123380/QTCP/QTCPIP</a></td>
+<td>Info</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 14:01:55</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF1164</a></td>
+<td>Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds ...</td>
+<td class="mono"><a href="job-props-general.html">123499/QPGMR/RGZPFM00</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:58:02</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA5305</a></td>
+<td><b>Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS f...</b></td>
+<td class="mono"><a href="job-props-general.html">123503/CWELLMAN/INVBATCH</a></td>
+<td>Inquiry</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:40:11</td>
+<td class="num">40</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPF0907</a></td>
+<td>Serious storage condition may exist. Press HELP.</td>
+<td class="mono"><a href="job-props-general.html">123105/QSYS/QSPLMAINT</a></td>
+<td>Info</td>
+</tr>
+<tr class="alt">
+<td class="act"><a href="message-detail.html">Details</a> | <a href="message-detail.html">Reply</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 13:22:07</td>
+<td class="num">99</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPA4002</a></td>
+<td><b>Verify alignment on printer PRT01. (I G N R C)</b></td>
+<td class="mono"><a href="job-props-general.html">123150/QSPLJOB/PRT01</a></td>
+<td>Inquiry</td>
+</tr>
+<tr>
+<td class="act"><a href="message-detail.html">Details</a> | <a href="qsysopr.html">Remove</a></td>
+<td class="mono">10/29/26 12:50:00</td>
+<td class="num">00</td>
+<td class="mono"><a href="../shared/help.html" target="_blank">CPC1129</a></td>
+<td>Job 123490/OPERATOR/QPADEV0004 started.</td>
+<td class="mono"><a href="job-props-general.html">123200/QSYS/QINTER</a></td>
+<td>Info</td>
+</tr>
+</table><form method="get" class="paging">Page 1 of 2 &nbsp; <span class="grey">&lt; Previous</span> &nbsp; <a href="?page=2">Next &gt;</a> &nbsp;&nbsp; Rows per page: <select name="rows"><option>10</option><option selected>25</option><option>50</option><option>100</option></select> <input type="submit" value="Go"> &nbsp; 41 entries</form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

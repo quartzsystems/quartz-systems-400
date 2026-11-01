@@ -360,6 +360,9 @@ net/          TCP/IP: configuration, sockets, TLS, servers
   httpadmin/    HTTP Server Administration on 2001 (docs/HTTPADMIN.md): env.rs the traits it
                 runs over, src/routes/ the pages, msgs.rs QZHBMSG, settings.rs, src/fixture/;
                 tests/golden/ the approved pages, tests/golden.rs, tests/behavior.rs
+  navigator/    Navigator for QS/400 on 2002/2005 (docs/NAVIGATOR.md): src/env/ System and one
+                trait per area, src/routes/ by area, src/fixture/ the sample QSHQ400;
+                tests/golden/ the approved pages, golden.rs, behavior.rs (crawler, PENDING)
   ntp/          SNTP: src/packet/ the header and timestamps, client.rs one exchange,
                 adjust.rs MINADJ/ADJTHLD/MAXADJ, poll.rs a poll over RMTSYS, server.rs the
                 answer and the UDP loop, clock.rs the Clock trait (MemClock for tests)
@@ -397,7 +400,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
-              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
+              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NAVIGATOR.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
               SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md, SERVICE.md,
               LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, UPDATE_PROTOCOL.md,
               CONSOLE.md, HARDWARE_NOTES.md, BACKUP.md, images/
@@ -462,6 +465,8 @@ cargo test -p conformance --test ftp_replay   # the 192 recorded pub400 FTP sess
 cargo test -p servers                     # the servers framework, CHGTELNA, the HTTP admin listener over loopback
 cargo test -p qsweb -p httpd -p httpadmin # web layer, httpd.conf, the admin pages against tests/golden/
 cargo run -p httpadmin --bin httpadmin-demo [PORT]   # the admin over the fixture (QSECOFR / QS400)
+cargo test -p navigator                   # Navigator's pages against tests/golden/, the crawler
+cargo run -p navigator --bin navigator-demo [PORT]   # Navigator over the fixture (QSECOFR / QS400)
 cargo test -p ntp -p lpd -p mail          # SNTP, the LPD with LPR over loopback, MIME and SMTP against a fake host
 cargo test -p sys-cpps --test smallsvr    # CHGNTPA, CHGLPDA, CHGSMTPA, SNDTCPSPLF, LPR against the oracle
 cargo test -p sshd                        # the SSH server end to end in memory

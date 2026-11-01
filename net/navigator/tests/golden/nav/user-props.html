@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>User: WEBUSER - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Users and groups &gt; Users &gt; WEBUSER</div>
+<h1>User: WEBUSER</h1>
+
+
+<div class="tabs"><b>General</b> | <a href="user-props.html">Groups</a> | <a href="user-props.html">Authorities</a> | <a href="active-jobs.html">Jobs</a> | <a href="user-props.html">Personal</a></div><form method="post"><table class="props" cellspacing="0">
+<tr class="subrow"><td colspan="2">Profile</td></tr>
+<tr><th>User profile</th><td><span class="mono">WEBUSER</span></td></tr>
+<tr><th>Text description</th><td><input type="text" name="t" value="Access for Web default user" size="40"></td></tr>
+<tr><th>Status</th><td><select name="s"><option>*ENABLED</option><option>*DISABLED</option></select></td></tr>
+<tr><th>User class</th><td><select name="c"><option>*USER</option><option>*SYSOPR</option><option>*PGMR</option><option>*SECADM</option><option>*SECOFR</option></select></td></tr>
+<tr><th>Group profile</th><td><select name="g"><option>WEBUSERS</option><option>*NONE</option><option>ADMINS</option><option>OPS</option></select></td></tr>
+<tr><th>Supplemental groups</th><td><input type="text" name="sg" value="*NONE" size="30"></td></tr>
+<tr class="subrow"><td colspan="2">Password</td></tr>
+<tr><th>Password</th><td><input type="password" name="pw" size="12"> &nbsp; <input type="submit" value="Reset password..."> &nbsp; Set to expired: <input type="checkbox" name="exp"></td></tr>
+<tr><th>Password expiration interval</th><td><input type="text" name="pi" value="*SYSVAL" size="8"> days</td></tr>
+<tr><th>Last changed</th><td>09/01/26</td></tr>
+<tr><th>Sign-on attempts not valid</th><td>0</td></tr>
+<tr><th>Last sign-on</th><td>10/29/26 11:41:50</td></tr>
+<tr class="subrow"><td colspan="2">Job attributes</td></tr>
+<tr><th>Initial program</th><td><input type="text" name="ip" value="*NONE" size="20" class="cmd"></td></tr>
+<tr><th>Initial menu</th><td><input type="text" name="im" value="MAIN" size="20" class="cmd"></td></tr>
+<tr><th>Current library</th><td><input type="text" name="cl" value="QGPL" size="10" class="cmd"></td></tr>
+<tr><th>Limit capabilities</th><td><select name="lc"><option selected>*YES</option><option>*PARTIAL</option><option>*NO</option></select></td></tr>
+<tr><th>Job description</th><td><input type="text" name="jd" value="QGPL/QDFTJOBD" size="20" class="cmd"></td></tr>
+<tr><th>Output queue</th><td><input type="text" name="oq" value="*WRKSTN" size="20" class="cmd"></td></tr>
+<tr><th>Message queue</th><td><input type="text" name="mq" value="QUSRSYS/WEBUSER" size="20" class="cmd"></td></tr>
+<tr><th>Home directory</th><td><input type="text" name="hd" value="/home/WEBUSER" size="30" class="cmd"></td></tr>
+<tr class="subrow"><td colspan="2">Special authorities</td></tr>
+<tr><th></th><td><input type="checkbox" name="a1"> *ALLOBJ <input type="checkbox" name="a2"> *SECADM <input type="checkbox" name="a3"> *JOBCTL <input type="checkbox" name="a4"> *SPLCTL <input type="checkbox" name="a5"> *SAVSYS <input type="checkbox" name="a6"> *SERVICE <input type="checkbox" name="a7"> *AUDIT <input type="checkbox" name="a8"> *IOSYSCFG</td></tr>
+</table>
+<div class="buttons"><input type="submit" name="apply" value="Apply"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>

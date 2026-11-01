@@ -2,10 +2,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-{% if let Some(r) = refresh %}<meta http-equiv="refresh" content="{{ r }}" />
-{% endif %}<title>{{ title }} - {{ suffix }}</title>
+<title>{{ title }} - {{ suffix }}</title>
 <link rel="stylesheet" type="text/css" href="{{ css }}" />
-</head>
+{% if let Some(r) = refresh %}<meta http-equiv="refresh" content="{{ r }}" />
+{% endif %}</head>
 <body>
 <table class="frame" cellspacing="0" cellpadding="0">
 <tr><td class="hdr" colspan="2">

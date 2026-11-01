@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Job: 123456/QTMHHTTP/ADMIN - Navigator for QS/400</title>
+<link rel="stylesheet" type="text/css" href="../shared/qs400.css" />
+</head>
+<body>
+<table class="frame" cellspacing="0" cellpadding="0">
+<tr><td class="hdr" colspan="2">
+  <table width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td class="wordmark">Navigator for QS/400</td>
+    <td class="hdrright">System: <b>QSHQ400</b> &nbsp;&nbsp; User: <b>QSECOFR</b> &nbsp;&nbsp;
+      <a href="signon.html">Sign off</a> &nbsp;&nbsp; <a href="../shared/help.html" target="_blank">Help</a></td>
+  </tr></table>
+</td></tr>
+<tr>
+<td class="nav" valign="top">
+<div class="navgrp"><a class="glyph" href="home.html">[+]</a> <b>System</b></div>
+<div class="navgrp"><a class="glyph" href="active-jobs.html">[+]</a> <b>Work management</b></div>
+<div class="navgrp"><a class="glyph" href="qsysopr.html">[+]</a> <b>Messages</b></div>
+<div class="navgrp"><a class="glyph" href="users.html">[+]</a> <b>Users and groups</b></div>
+<div class="navgrp"><a class="glyph" href="tcpip.html">[+]</a> <b>Network</b></div>
+<div class="navgrp"><a class="glyph" href="schemas.html">[+]</a> <b>Database</b></div>
+<div class="navgrp"><a class="glyph" href="audit-journal.html">[+]</a> <b>Security</b></div>
+<div class="navgrp"><a class="glyph" href="licensed-programs.html">[+]</a> <b>Software</b></div>
+<div class="navgrp"><a class="glyph" href="system-activity.html">[+]</a> <b>Performance</b></div>
+</td>
+<td class="content" valign="top">
+<div class="crumb">Navigator &gt; Work management &gt; Active jobs &gt; 123456/QTMHHTTP/ADMIN &gt; Job log</div>
+<h1>Job: 123456/QTMHHTTP/ADMIN</h1>
+
+
+<div class="tabs"><a href="job-props-general.html">General</a> | <a href="job-props-performance.html">Performance</a> | <a href="job-props-liblist.html">Library list</a> | <b>Job log</b> | <a href="spooled-files.html">Spooled files</a> | <a href="job-props-locks.html">Locks</a> | <a href="job-props-callstack.html">Call stack</a></div><form method="get"><table class="filter" cellspacing="0"><tr><td>Show:</td><td><select name="lvl"><option>All messages</option><option>Severity 10 and above</option><option>Severity 20 and above</option><option>Escape and diagnostic only</option></select></td><td>Last:</td><td><select name="n"><option>100</option><option selected>200</option><option>500</option><option>All</option></select></td><td><input type="submit" value="Refresh"> <input type="submit" name="print" value="Print job log"> <input type="submit" name="dsp" value="Display second level"></td></tr></table></form><pre class="out">Job name . . . . . . . . . . :   ADMIN           User  . . . . . . :   QTMHHTTP     Number . . . . . . . . . . . :   123456
+Job description  . . . . . . :   QZHBHTTP        Library . . . . . :   QHTTPSVR
+
+MSGID      TYPE                    SEV  DATE      TIME             FROM PGM     LIBRARY     INST     TO PGM      LIBRARY     INST
+<a href="../shared/help.html" target="_blank">CPF1124</a>    Information             00   10/29/26  06:00:01.117332  QWTPIIPP     QSYS        04C8     *EXT                    *N
+                                     Message . . . . :   Job 123456/QTMHHTTP/ADMIN started on 10/29/26 at 06:00:01 in subsystem QHTTPSVR in QSYS. Job entered system on 10/29/26 at 06:00:01.
+<a href="../shared/help.html" target="_blank">CPI1125</a>    Information             00   10/29/26  06:00:01.118004  QWTPIIPP     QSYS        04C8     *EXT                    *N
+                                     Message . . . . :   Job 123456/QTMHHTTP/ADMIN submitted.
+<a href="../shared/help.html" target="_blank">HTP8000</a>    Information             00   10/29/26  06:00:02.410993  QZHBMAIN     QHTTPSVR    0012     *EXT                    *N
+                                     Message . . . . :   HTTP server instance ADMIN starting with configuration /www/admin/conf/httpd.conf.
+<a href="../shared/help.html" target="_blank">HTP8010</a>    Information             00   10/29/26  06:00:02.902211  QZHBMAIN     QHTTPSVR    0031     *EXT                    *N
+                                     Message . . . . :   Certificate QSHQ400 self-signed loaded for application QS400_HTTP_SERVER_ADMIN.
+<a href="../shared/help.html" target="_blank">HTP8001</a>    Information             00   10/29/26  06:00:03.004210  QZHBMAIN     QHTTPSVR    0044     *EXT                    *N
+                                     Message . . . . :   HTTP server instance ADMIN started, listening on *:2001.
+<a href="../shared/help.html" target="_blank">HTP8110</a>    Diagnostic              20   10/29/26  11:42:17.330018  QZSRHTTP     QHTTPSVR    02A1     QZHBMAIN    QHTTPSVR    0044
+                                     Message . . . . :   Request from 172.16.0.9 for /qs400/httpadmin/instance/WEBSTORE/general failed, user WEBUSER not authorized.
+</pre><p class="small grey">7 messages. Message IDs link to second-level text.</p>
+</td>
+</tr>
+<tr><td class="footer" colspan="2">QS/400 V1R0M0 &middot; Quartz Systems</td></tr>
+</table>
+</body>
+</html>
