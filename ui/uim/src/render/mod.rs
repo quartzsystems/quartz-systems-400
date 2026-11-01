@@ -237,7 +237,13 @@ fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
         };
         s.put(prompt_row, 2, Attr::Normal, &prompt);
         s.put(prompt_row + 1, 2, Attr::Normal, "===>");
-        let len = s.limit() + 1 - 7 + (field_rows - 1) * s.limit();
+        // Short: columns 7 to 79. Long (IBM's 153): column 7 to the
+        // row's end, then the next row up to its last column, which
+        // holds the ending attribute.
+        let len = match c.size {
+            CmdLineSize::Short => s.limit() + 1 - 7,
+            CmdLineSize::Long => s.cols + 1 - 7 + s.limit(),
+        };
         s.field(Field {
             row: prompt_row + 1,
             col: 7,

@@ -78,7 +78,8 @@ pub struct Field {
     pub row: usize,
     /// Column, from 1.
     pub col: usize,
-    /// Length; a field longer than its row goes on at column 1 of the next.
+    /// Length; a field longer than its row goes on at column 1 of the
+    /// next, as the 5250 buffer runs (the last column included).
     pub len: usize,
     /// How it shows.
     pub attr: Attr,
@@ -243,7 +244,7 @@ impl Screen {
             let mut row = f.row - 1;
             let mut col = f.col - 1;
             for i in 0..f.len {
-                if col >= self.limit() {
+                if col >= self.cols {
                     row += 1;
                     col = 0;
                 }
@@ -281,8 +282,8 @@ mod tests {
         });
         let rows = s.text_rows();
         assert_eq!(rows[0], "       ab ");
-        assert_eq!(rows[1], "       xy ");
-        assert_eq!(rows[2], "z         ");
+        assert_eq!(rows[1], "       xyz");
+        assert_eq!(rows[2], "          ");
         assert_eq!(s.texts.len(), 1);
     }
 }
