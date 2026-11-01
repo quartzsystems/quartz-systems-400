@@ -14,6 +14,7 @@
 //! job swapped to the signed-on user ([`Link`]).
 
 mod msgs;
+mod parse;
 mod stubs;
 mod system;
 mod users;
@@ -50,11 +51,6 @@ impl Link {
     pub fn read<T: Send + Default + 'static>(&self, user: &str, f: impl FnOnce(&mut Main) -> T + Send + 'static) -> T {
         let u = user.to_string();
         self.bridge.call(move |m| m.as_user(&u, f).ok()).flatten().unwrap_or_default()
-    }
-
-    /// `f` on the job's thread as the job itself.
-    pub fn job<T: Send + Default + 'static>(&self, f: impl FnOnce(&mut Main) -> T + Send + 'static) -> T {
-        self.bridge.call(f).unwrap_or_default()
     }
 
     /// Run CL `command` through the analyzer as `user`: the completion
@@ -102,13 +98,13 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         system: Arc::new(system::LiveSystem { core, link: l.clone() }),
         work: Arc::new(work::LiveWork::new(l.clone(), me)),
         msgs: Arc::new(msgs::LiveMsgs { link: l.clone() }),
-        users: Arc::new(users::LiveUsers { link: l }),
-        config: Arc::new(stubs::Missing),
-        net: Arc::new(stubs::Missing),
+        users: Arc::new(users::LiveUsers { link: l.clone() }),
+        config: Arc::new(stubs::Pending(l.clone())),
+        net: Arc::new(stubs::Pending(l.clone())),
         db: Arc::new(stubs::Missing),
         sec: Arc::new(stubs::Missing),
         sw: Arc::new(stubs::Missing),
-        perf: Arc::new(stubs::Missing),
+        perf: Arc::new(stubs::Pending(l.clone())),
     };
     let nav = Arc::new(Navigator::new(env));
     let starter = bridge.clone();

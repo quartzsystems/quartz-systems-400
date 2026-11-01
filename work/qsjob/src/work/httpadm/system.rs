@@ -7,6 +7,7 @@
 
 use httpadmin::env::{Audit, SignOnRefused, System};
 use qsweb::msg::SecondLevel;
+use stg::Client;
 use stg::tcp::{TcpOp, TcpReply};
 
 use crate::work::web::system::Core;

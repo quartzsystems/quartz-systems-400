@@ -2367,6 +2367,7 @@ dependencies = [
  "menus",
  "mi",
  "msgf",
+ "navigator",
  "nettools",
  "ntp",
  "p256",

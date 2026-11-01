@@ -226,6 +226,7 @@ impl Core {
     }
 
     /// Seconds since 1970.
+    #[allow(clippy::unused_self)] // the products' clock is the system's
     pub fn now(&self) -> u64 {
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
