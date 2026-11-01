@@ -33,7 +33,8 @@ use stg::{Client, Shared};
 use wm::ctl::{FromJob, Start, ToJob};
 
 use bridge::{Bridge, Main};
-use jobs::{LiveCerts, LiveFiles, LiveJobs};
+use httpadmin::certmgr::wire::Remote;
+use jobs::{CertLink, LiveFiles, LiveJobs};
 use system::{Dates, LiveSystem};
 
 /// The certificate application ID of the administration server.
@@ -114,7 +115,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         system: Arc::new(LiveSystem::new(bridge.clone(), job, Dates::of(&main), name.clone())),
         jobs: Arc::new(LiveJobs { bridge: bridge.clone() }),
         files: Arc::new(LiveFiles { bridge: bridge.clone() }),
-        certs: Arc::new(LiveCerts),
+        certs: Arc::new(Remote(CertLink { bridge: bridge.clone() })),
     };
     let starter = bridge.clone();
     let mut setup: Option<JoinHandle<Result<Vec<Running>, String>>> =

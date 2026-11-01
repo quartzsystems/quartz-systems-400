@@ -653,6 +653,13 @@ ipc::rpc! {
     /// `LIB/NAME`, `b` what was missing) or `ZC` (`a` the object, `b`
     /// what changed). Only a job running as `QTMHHTTP` may send it.
     1260 => fn web_audit / WebAudit (kind: String, user: String, a: String, b: String) -> ();
+    /// A certificate call of the administration server
+    /// (`httpadmin::certmgr::wire`: a `CertCall`, the answer a
+    /// `CertReply`). One that changes stores needs `*ALLOBJ` and
+    /// `*SECADM` of the job's user (the server sends it as the web
+    /// user); one that reads, the server's own user or those. It
+    /// carries store passwords: never logged.
+    1261 => fn web_certs / WebCerts (call: Vec<u8>) -> Vec<u8>;
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;

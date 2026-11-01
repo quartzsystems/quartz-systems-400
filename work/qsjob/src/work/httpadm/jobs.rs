@@ -9,13 +9,16 @@
 
 use std::io;
 
-use httpadmin::env::{Certs, EndHow, HttpJob, Jobs};
+use httpadmin::certmgr::wire::Transport;
+use httpadmin::env::{EndHow, HttpJob, Jobs};
+use httpd::bridge::Local;
 use httpd::files::{Entry, Files};
 use qsweb::msg::{Kind, Message};
 use stg::Client;
 
 use super::bridge::{Bridge, Main};
-use crate::httpenv::{files, reply};
+use crate::httpenv::reply;
+use crate::work::ifsfiles::IfsFiles;
 
 /// The instances' jobs.
 pub struct LiveJobs {
@@ -75,12 +78,9 @@ pub struct LiveFiles {
 }
 
 impl LiveFiles {
-    fn on<T: Send + 'static>(
-        &self,
-        f: impl FnOnce(&dyn ifs::client::IfsClient) -> io::Result<T> + Send + 'static,
-    ) -> io::Result<T> {
+    fn on<T: Send + 'static>(&self, f: impl FnOnce(&IfsFiles) -> io::Result<T> + Send + 'static) -> io::Result<T> {
         self.bridge
-            .call(move |m| f(&m.ifs))
+            .call(move |m| f(&m.files))
             .unwrap_or_else(|| Err(io::Error::other("the administration server is ending")))
     }
 }
@@ -88,54 +88,76 @@ impl LiveFiles {
 impl Files for LiveFiles {
     fn read(&self, path: &str) -> io::Result<Vec<u8>> {
         let p = path.to_string();
-        self.on(move |c| files::read(c, &p))
+        self.on(move |c| c.read(&p))
     }
 
     fn write_atomic(&self, path: &str, data: &[u8]) -> io::Result<()> {
         let (p, d) = (path.to_string(), data.to_vec());
-        self.on(move |c| files::write_atomic(c, &p, &d))
+        self.on(move |c| c.write_atomic(&p, &d))
     }
 
     fn append(&self, path: &str, data: &[u8]) -> io::Result<()> {
         let (p, d) = (path.to_string(), data.to_vec());
-        self.on(move |c| files::append(c, &p, &d))
+        self.on(move |c| c.append(&p, &d))
     }
 
     fn rename(&self, from: &str, to: &str) -> io::Result<()> {
         let (f, t) = (from.to_string(), to.to_string());
-        self.on(move |c| files::rename(c, &f, &t))
+        self.on(move |c| c.rename(&f, &t))
     }
 
     fn mkdir_all(&self, path: &str) -> io::Result<()> {
         let p = path.to_string();
-        self.on(move |c| files::mkdir_all(c, &p))
+        self.on(move |c| c.mkdir_all(&p))
     }
 
     fn remove(&self, path: &str) -> io::Result<()> {
         let p = path.to_string();
-        self.on(move |c| files::remove(c, &p))
+        self.on(move |c| c.remove(&p))
     }
 
     fn remove_tree(&self, path: &str) -> io::Result<()> {
         let p = path.to_string();
-        self.on(move |c| files::remove_tree(c, &p))
+        self.on(move |c| c.remove_tree(&p))
     }
 
     fn list(&self, dir: &str) -> io::Result<Vec<Entry>> {
         let p = dir.to_string();
-        self.on(move |c| files::list(c, &p))
+        self.on(move |c| c.list(&p))
     }
 
     fn stat(&self, path: &str) -> io::Result<Entry> {
         let p = path.to_string();
-        self.on(move |c| files::stat(c, &p))
+        self.on(move |c| c.stat(&p))
     }
 }
 
-/// The certificate manager's side.
-// TODO(httpadmin): the Certs trait's methods once the certificate pages
-// shape it (steps 12 to 15); they go to the service as `cert_*`
-// requests over the bridge.
-pub struct LiveCerts;
+/// The certificate calls' way to the storage service: a call that
+/// changes stores goes as the web user, so the service checks that
+/// user's authority.
+pub struct CertLink {
+    /// The job's thread.
+    pub bridge: Bridge,
+}
 
-impl Certs for LiveCerts {}
+impl Transport for CertLink {
+    fn call(&self, user: Option<&str>, call: Vec<u8>) -> Option<Vec<u8>> {
+        let user = user.map(String::from);
+        self.bridge
+            .call(move |m| match user {
+                Some(u) => m.as_user(&u, |m| m.link.borrow_mut().with(|l| l.web_certs(call))).ok(),
+                None => Some(m.link.borrow_mut().with(|l| l.web_certs(call))),
+            })
+            .flatten()
+    }
+
+    fn read_as(&self, user: &str, path: &str) -> Result<Vec<u8>, String> {
+        let (u, p) = (user.to_string(), path.to_string());
+        self.bridge
+            .call(move |m| match m.as_user(&u, |m| m.files.read(&p)) {
+                Ok(r) => r.map_err(|e| e.to_string()),
+                Err(msg) => Err(msg.text),
+            })
+            .unwrap_or_else(|| Err("the administration server is ending".into()))
+    }
+}

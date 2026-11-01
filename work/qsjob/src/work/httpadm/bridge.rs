@@ -17,9 +17,9 @@ use std::time::Duration;
 use qsweb::msg::{Kind, Message};
 use sec::api::{Answer, Query};
 use stg::Shared;
-use stg::remote::RemoteIfs;
 
 use crate::console::Console;
+use crate::work::ifsfiles::IfsFiles;
 
 /// How long a connection waits for the job's thread.
 const WAIT: Duration = Duration::from_secs(120);
@@ -31,8 +31,8 @@ pub type Task = Box<dyn FnOnce(&mut Main) + Send>;
 pub struct Main {
     /// The storage service.
     pub link: Shared,
-    /// The IFS over the link.
-    pub ifs: RemoteIfs,
+    /// The IFS over the link, as `httpd`'s files.
+    pub files: IfsFiles,
     /// The job's runtime, for commands.
     pub console: Console,
     /// Profile handles (`QSYGETPH`) of the users signed on, by user.
@@ -44,7 +44,7 @@ impl Main {
     pub fn new(link: &Shared, console: Console) -> Self {
         Self {
             link: Rc::clone(link),
-            ifs: RemoteIfs::new(Rc::clone(link)),
+            files: IfsFiles::new(link),
             console,
             handles: HashMap::new(),
         }

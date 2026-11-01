@@ -1364,6 +1364,7 @@ version = "0.1.0"
 dependencies = [
  "certs",
  "httpd",
+ "msgf",
  "qsweb",
  "release",
  "serde",
@@ -2341,6 +2342,7 @@ dependencies = [
  "ftp",
  "hostserver",
  "hostsvr",
+ "httpadmin",
  "httpd",
  "hwrsrc",
  "ifs",
@@ -2366,6 +2368,7 @@ dependencies = [
  "qsh",
  "qsh-job",
  "qshterm",
+ "qsweb",
  "regfac",
  "release",
  "rustix",
@@ -2382,6 +2385,7 @@ dependencies = [
  "svctools",
  "sys-cpps",
  "sysapi",
+ "sysval",
  "tcpcfg",
  "thiserror",
  "tls",
@@ -2954,6 +2958,7 @@ name = "servers"
 version = "0.1.0"
 dependencies = [
  "certs",
+ "qsweb",
  "release",
  "tcpcfg",
  "thiserror",
@@ -3068,6 +3073,7 @@ dependencies = [
  "diskimg",
  "dspf",
  "hostsvr",
+ "httpadmin",
  "hwrsrc",
  "ifs",
  "ifscmd",

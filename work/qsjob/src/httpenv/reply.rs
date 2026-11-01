@@ -52,6 +52,11 @@ pub fn outcome(text: &str, escape: Option<(&str, &str)>) -> Result<Message, Mess
     })
 }
 
+/// The open connections an instance job's function (`CNN-n`) shows.
+pub fn connections(function: &str) -> u32 {
+    function.trim().strip_prefix("CNN-").and_then(|n| n.trim().parse().ok()).unwrap_or(0)
+}
+
 /// The jobs of [`SUBSYSTEM`] that run instances (not its monitor), one
 /// per instance, the earliest when there are more.
 pub fn instance_jobs(active: &[JobInfo]) -> Vec<HttpJob> {
@@ -70,9 +75,7 @@ pub fn instance_jobs(active: &[JobInfo]) -> Vec<HttpJob> {
             number: format!("{:06}", j.number),
             user: j.user.clone(),
             started: j.started,
-            // TODO(httpadmin): the instance job's open connections, once
-            // the instance engine reports them.
-            connections: 0,
+            connections: connections(&j.function),
         });
     }
     out.sort_by(|a, b| a.instance.cmp(&b.instance));
@@ -114,7 +117,10 @@ mod tests {
     fn instance_jobs_from_the_table() {
         let active = [
             job("QHTTPSVR", 10, "QHTTPSVR", 'M', 1),
-            job("WEB1", 30, "QHTTPSVR", 'B', 5),
+            JobInfo {
+                function: "CNN-17".into(),
+                ..job("WEB1", 30, "QHTTPSVR", 'B', 5)
+            },
             job("ADMIN", 20, "QHTTPSVR", 'B', 2),
             job("WEB1", 31, "QHTTPSVR", 'B', 6),
             job("QTVTELNET", 40, "QSYSWRK", 'B', 1),
@@ -123,5 +129,6 @@ mod tests {
         let names: Vec<(&str, &str)> = j.iter().map(|h| (h.instance.as_str(), h.number.as_str())).collect();
         assert_eq!(names, [("ADMIN", "000020"), ("WEB1", "000030")]);
         assert_eq!(j[0].qualified(), "000020/QTMHHTTP/ADMIN");
+        assert_eq!((j[0].connections, j[1].connections), (0, 17));
     }
 }

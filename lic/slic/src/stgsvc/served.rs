@@ -1879,6 +1879,11 @@ impl Service for Served<'_> {
         super::webadm::audit(&self.ctx.job.user, &kind, &user, &a, &b);
     }
 
+    fn web_certs(&mut self, call: Vec<u8>) -> Vec<u8> {
+        let me = self.ctx.session.borrow().principal.clone();
+        super::webadm::certs(self.system, &me, &call)
+    }
+
     // --- communications objects (1180-1189)
 
     fn cmn_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {

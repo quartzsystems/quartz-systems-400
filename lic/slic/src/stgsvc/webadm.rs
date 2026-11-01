@@ -3,12 +3,70 @@
 // root directory of this project.
 
 //! HTTP Server Administration's requests (`net/httpadmin`, the `ADMIN`
-//! job): the audit entries it writes for its web users.
+//! job): the audit entries it writes for its web users, and its
+//! certificate calls, run by `httpadmin::certmgr` over the store files
+//! `certs.rs` stages (the stashes open with the LIC key, held here).
 
+use certs::admin::Ctx;
+use certs::paths::{LOCAL_CA_STORE, USER_STORES};
+use httpadmin::certmgr::wire::{self, CertCall, CertReply};
+use httpadmin::certmgr::{Manager, SYSTEM_STORES, local_signer, user_stores};
+use httpadmin::env::CertFailure;
 use sec::audit::{Event, Kind};
+use sec::auth::principal::Principal;
+
+use crate::ipl::system::System;
 
 /// The profile the administration server runs as.
 pub const SERVER_USER: &str = "QTMHHTTP";
+
+/// The store files a call may touch: the system's stores, the stores
+/// someone made, the local CA's and a new store's.
+fn store_paths(system: &mut System, call: &CertCall) -> Vec<String> {
+    let mut v: Vec<String> = SYSTEM_STORES.iter().map(|s| s.2.to_string()).collect();
+    v.extend([USER_STORES.to_string(), LOCAL_CA_STORE.to_string()]);
+    let made = super::certs::with_stores(system, &[USER_STORES], false, user_stores).unwrap_or_default();
+    v.extend(made.into_iter().map(|(_, p)| p));
+    if let CertCall::CreateStore { path, .. } = call {
+        v.push(path.clone());
+    }
+    v
+}
+
+/// `web_certs`: the call run for the job's user.
+pub fn certs(system: &mut System, principal: &Principal, call: &[u8]) -> Vec<u8> {
+    let refused = |t: String| CertReply::Refused(CertFailure::Invalid(t)).encode();
+    let Some(call) = CertCall::decode(call) else {
+        return refused("the certificate call was not understood".into());
+    };
+    let reader = principal.user == SERVER_USER && !call.changes();
+    if !reader && super::certs::may_manage(Some(principal)).is_err() {
+        return refused(format!(
+            "user {} needs the *ALLOBJ and *SECADM special authorities to manage certificates",
+            principal.user
+        ));
+    }
+    let paths = store_paths(system, &call);
+    let refs: Vec<&str> = paths.iter().map(String::as_str).collect();
+    let changes = call.changes();
+    let r = super::certs::with_stores(system, &refs, changes, |ctx| {
+        let m = Manager {
+            ctx: Ctx {
+                files: ctx.files,
+                sealer: ctx.sealer,
+                now: ctx.now,
+                params: ctx.params,
+            },
+            signers: local_signer(ctx).into_iter().collect(),
+            shown: None,
+        };
+        wire::answer(&m, call)
+    });
+    match r {
+        Ok(reply) => reply.encode(),
+        Err(e) => refused(e),
+    }
+}
 
 /// The object fields of `a`: an IFS path, else `LIB/NAME`.
 fn on(e: Event, a: &str) -> Event {
