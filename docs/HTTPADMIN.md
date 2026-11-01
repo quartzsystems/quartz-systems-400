@@ -34,6 +34,19 @@ password `QS400`).
 - A POST without the session's token gets 403. Every POST answers with
   a redirect to a GET page; the completion message rides in the session
   (`Rq::done`).
+- Instance pages edit `httpd.conf` through `routes::instance::edit`:
+  parse, change, write with `httpd::instance::apply_conf` (temporary
+  file and rename, one `.bak`, restart required while running). Every
+  change needs `*IOSYSCFG`; `ADMIN` cannot stop or restart itself
+  (`HTP8104`). The Configuration file page keeps text being edited in
+  the session until Apply or Reset.
+- Directories & aliases: a `<Directory>` under the document root is
+  reached below it, one elsewhere through an `Alias` naming it (one
+  row); an alias's own options and access live in a `<Location>` for
+  its URL; the `<Directory />` guard is not listed.
+- `LogMaint path files size-MB [HH:MM]`: size 0 rotates daily at the
+  time given (00:00 when absent). The registry's `hot_backup_active`
+  switches the remembered hot backup partner on.
 - Authority: `Rq::require(Need, function, object, crumb)` renders Not
   authorized and writes the `AF` entry. Sign-on needs `*IOSYSCFG`
   (`*ALLOBJ` implies it) or the administrators group of Global settings.
