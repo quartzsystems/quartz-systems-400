@@ -774,3 +774,17 @@ sev = 40
 text = "QAP server could not be started: &1."
 help = "The QAP listener ended at once for the reason shown. Correct it, then start the server again with STRTCPSVR SERVER(*QAP)."
 vars = ["*CHAR 128"]
+
+[[msg]]
+id = "TCP1A53"
+sev = 30
+text = "QAP session ended or expired."
+help = "The session the token names was signed off, ended by an operator or with the QAP server, or stayed without a connection longer than its idle timeout (CHGQAPA IDLETIMO). Sign on again."
+vars = []
+
+[[msg]]
+id = "TCP1A54"
+sev = 0
+text = "QAP session of &1 ended by an operator."
+help = "The connection job serving the session was ended. The session cannot be resumed; sign on again."
+vars = ["*CHAR 10"]

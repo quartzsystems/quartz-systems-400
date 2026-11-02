@@ -3,17 +3,20 @@
 // root directory of this project.
 
 //! The connection job's [`qapd::Host`]: the system's description and
-//! messages through its link, and the end of the job: its parent's
-//! `End` (the server ending) or `ENDJOB` (an operator).
+//! messages through its link, sign-on, sessions and passwords through
+//! the storage service (`stgsvc/qap.rs`), and the end of the job: its
+//! parent's `End` (the server ending) or `ENDJOB` (an operator).
+//! Passwords and tokens go to the service and nowhere else.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ipc::chan::Chan;
-use qap_proto::ServerMessage;
-use qapd::{Ending, Host, SystemId};
-use stg::{Client, Shared};
+use qap_proto::ops::signon::SignOnReply;
+use qap_proto::{Secret, ServerMessage, Status, Token};
+use qapd::{Ending, Host, Refusal, SystemId};
+use stg::{Client, QapRefused, QapSession, Shared};
 use wm::ctl::ToJob;
 
 /// How often the job asks whether an operator ended it.
@@ -68,6 +71,41 @@ impl JobHost {
     }
 }
 
+/// A session from the service as the client sees it.
+fn reply_of(s: &QapSession) -> SignOnReply {
+    SignOnReply {
+        token: Token(s.token.as_slice().try_into().unwrap_or([0; 32])),
+        idle_timeout_secs: s.idle_secs,
+        profile: s.profile.clone(),
+        text: s.text.clone(),
+        ccsid: s.ccsid,
+        date_format: s.date_format.clone(),
+        date_separator: s.date_separator.clone(),
+        time_separator: s.time_separator.clone(),
+        home_directory: s.home_directory.clone(),
+        special_authorities: s.special_authorities.clone(),
+    }
+}
+
+impl JobHost {
+    /// A refusal from the service: its status, and the message as a 5250
+    /// display shows it (the service's text, no more) or from the file.
+    fn refusal(&mut self, r: &QapRefused) -> Refusal {
+        let status = ipc::decode::<Status>(&r.status.to_le_bytes()).unwrap_or(Status::Error);
+        let data: Vec<&str> = r.data.iter().map(String::as_str).collect();
+        let mut message = self.message(&r.msgid, &data);
+        if !r.text.is_empty() {
+            message.text.clone_from(&r.text);
+            message.help.clear();
+        }
+        Refusal { status, message }
+    }
+
+    fn session(&mut self, r: Result<QapSession, QapRefused>) -> Result<SignOnReply, Refusal> {
+        r.map(|s| reply_of(&s)).map_err(|e| self.refusal(&e))
+    }
+}
+
 impl Host for JobHost {
     fn system_id(&mut self) -> SystemId {
         SystemId {
@@ -112,6 +150,34 @@ impl Host for JobHost {
                 help: String::new(),
             },
         }
+    }
+
+    fn sign_on(&mut self, user: &str, password: &Secret) -> Result<SignOnReply, Refusal> {
+        let r = self
+            .link
+            .borrow_mut()
+            .with(|l| l.qap_signon(user.to_string(), password.expose().to_string()));
+        self.session(r)
+    }
+
+    fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal> {
+        let r = self.link.borrow_mut().with(|l| {
+            l.qap_chgpwd(user.to_string(), old.expose().to_string(), new.expose().to_string())
+        });
+        self.session(r)
+    }
+
+    fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
+        let r = self.link.borrow_mut().with(|l| l.qap_resume(token.0.to_vec()));
+        self.session(r)
+    }
+
+    fn sign_off(&mut self, token: &Token) {
+        self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec()));
+    }
+
+    fn detach(&mut self, token: &Token) {
+        self.link.borrow_mut().with(|l| l.qap_detach(token.0.to_vec()));
     }
 
     fn ending(&mut self) -> Option<Ending> {

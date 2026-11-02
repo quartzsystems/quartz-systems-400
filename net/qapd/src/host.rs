@@ -6,7 +6,8 @@
 //! The job implements it over its link to the storage service; tests
 //! implement it in memory.
 
-use qap_proto::ServerMessage;
+use qap_proto::ops::signon::SignOnReply;
+use qap_proto::{Secret, ServerMessage, Status, Token};
 
 /// Why the connection is to end, from outside it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,6 +32,16 @@ pub struct SystemId {
     pub ccsid: u16,
 }
 
+/// A sign-on, password change or resume refused: the status and the
+/// message a 5250 display would show for the same case.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Refusal {
+    /// `SignOnFailed`, `PasswordExpired`, `SessionExpired`, ...
+    pub status: Status,
+    /// The message.
+    pub message: ServerMessage,
+}
+
 /// The connection job's reach.
 pub trait Host {
     /// The system's name, release, time zone and CCSID.
@@ -42,4 +53,18 @@ pub trait Host {
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage;
     /// Whether the connection is to end.
     fn ending(&mut self) -> Option<Ending>;
+
+    /// Sign on as a 5250 display would; on success the job runs as the
+    /// user and a session exists.
+    fn sign_on(&mut self, user: &str, password: &Secret) -> Result<SignOnReply, Refusal>;
+    /// Change `user`'s password; signed on as [`Host::sign_on`] when the
+    /// connection was not. In a signed-on connection the reply's token
+    /// is all zeros: the session goes on with its own.
+    fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal>;
+    /// Attach this connection to the session `token` names.
+    fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal>;
+    /// End the session; the job runs as its own user again.
+    fn sign_off(&mut self, token: &Token);
+    /// The connection closed: the session waits to be resumed.
+    fn detach(&mut self, token: &Token);
 }

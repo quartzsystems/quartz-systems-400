@@ -272,7 +272,7 @@ pub fn request(number: u32, req: &stg::Request) {
     } else {
         "REQ"
     };
-    let secret = ["Sign", "Pwd", "Password", "Token", "Host", "Sst"].iter().any(|k| name.contains(k));
+    let secret = ["Sign", "Pwd", "Password", "Token", "Host", "Sst", "Qap"].iter().any(|k| name.contains(k));
     let text = if secret || matches!(category, "CALL" | "CMD" | "REQ") {
         name.to_string()
     } else {

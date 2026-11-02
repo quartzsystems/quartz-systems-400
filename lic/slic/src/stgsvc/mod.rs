@@ -38,6 +38,7 @@ pub(crate) mod msgs;
 pub(crate) mod prtf;
 pub(crate) mod prtdev;
 pub(crate) mod prblog;
+pub(crate) mod qap;
 pub(crate) mod qsh;
 pub(crate) mod regfac;
 pub(crate) mod sbs;

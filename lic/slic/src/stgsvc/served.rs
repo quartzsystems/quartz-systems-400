@@ -556,6 +556,30 @@ impl Service for Served<'_> {
         super::hostsvr::signon(self.system, self.ctx, &user, &proof, &token, swap)
     }
 
+    fn qap_signon(&mut self, user: String, password: String) -> Result<stg::QapSession, stg::QapRefused> {
+        super::qap::signon(self.system, self.ctx, &user, &password)
+    }
+
+    fn qap_chgpwd(&mut self, user: String, old: String, new: String) -> Result<stg::QapSession, stg::QapRefused> {
+        super::qap::chgpwd(self.system, self.ctx, &user, &old, &new)
+    }
+
+    fn qap_resume(&mut self, token: Vec<u8>) -> Result<stg::QapSession, stg::QapRefused> {
+        super::qap::resume(self.system, self.ctx, &token)
+    }
+
+    fn qap_signoff(&mut self, token: Vec<u8>) {
+        super::qap::signoff(self.system, self.ctx, &token);
+    }
+
+    fn qap_detach(&mut self, token: Vec<u8>) {
+        super::qap::detach(self.ctx, &token);
+    }
+
+    fn qap_end_all(&mut self) {
+        super::qap::end_all(self.ctx);
+    }
+
     fn host_token(
         &mut self,
         user: String,

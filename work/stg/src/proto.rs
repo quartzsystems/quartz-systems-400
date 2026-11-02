@@ -620,6 +620,26 @@ ipc::rpc! {
     /// connections).
     723 => fn host_reset / HostReset () -> ();
 
+    // --- QAP sessions (740-749; docs/QAP.md, stgsvc/qap.rs). Only a
+    // QAP connection job (QAPCNN) may ask.
+    /// Sign on as a 5250 display would (`QMAXSIGN`, audit), with no
+    /// device; on success the job runs as the user and a session is
+    /// made. An expired password signs nothing on.
+    740 => fn qap_signon / QapSignon (user: String, password: String) -> Result<QapSession, QapRefused>;
+    /// Change `user`'s password, the old one checked as a sign-on; on
+    /// success, signed on as `qap_signon`. In a signed-on job, only for
+    /// the job's own user.
+    741 => fn qap_chgpwd / QapChgPwd (user: String, old: String, new: String) -> Result<QapSession, QapRefused>;
+    /// Attach this job to the session `token` names; the job runs as
+    /// its user.
+    742 => fn qap_resume / QapResume (token: Vec<u8>) -> Result<QapSession, QapRefused>;
+    /// End the session; the job runs as its own user again.
+    743 => fn qap_signoff / QapSignoff (token: Vec<u8>) -> ();
+    /// This job's connection closed: the session waits to be resumed.
+    744 => fn qap_detach / QapDetach (token: Vec<u8>) -> ();
+    /// End every session (the QAP server ended).
+    745 => fn qap_end_all / QapEndAll () -> ();
+
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the
     /// name or generic name), `DSPLIND` (args the line), `CFGSTS`
@@ -732,6 +752,68 @@ wire_struct!(CertTrust {
 });
 
 // --- host server types
+
+/// A QAP session: what `SignOnReply` carries.
+#[derive(Clone, Default, PartialEq, Eq)]
+pub struct QapSession {
+    /// The token, 32 bytes.
+    pub token: Vec<u8>,
+    /// Seconds it may stay detached.
+    pub idle_secs: u32,
+    /// The profile.
+    pub profile: String,
+    /// Its description.
+    pub text: String,
+    /// Its CCSID, the system's when it says `*SYSVAL`.
+    pub ccsid: u16,
+    /// `QDATFMT`.
+    pub date_format: String,
+    /// `QDATSEP`.
+    pub date_separator: String,
+    /// `QTIMSEP`.
+    pub time_separator: String,
+    /// The home directory.
+    pub home_directory: String,
+    /// Special authorities.
+    pub special_authorities: Vec<String>,
+}
+
+impl std::fmt::Debug for QapSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("QapSession").field("profile", &self.profile).finish_non_exhaustive()
+    }
+}
+
+wire_struct!(QapSession {
+    token,
+    idle_secs,
+    profile,
+    text,
+    ccsid,
+    date_format,
+    date_separator,
+    time_separator,
+    home_directory,
+    special_authorities
+});
+
+/// Why a QAP sign-on, password change or resume failed.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct QapRefused {
+    /// What the client is told: 4 `SignOnFailed`, 5 `PasswordExpired`,
+    /// 6 `NotAuthorized`, 8 `InvalidRequest`, 11 `SessionExpired`, 1
+    /// `Error` (docs/QAP.md's values).
+    pub status: u16,
+    /// The message.
+    pub msgid: String,
+    /// Its first-level text as a 5250 display shows it; empty to take
+    /// the message file's.
+    pub text: String,
+    /// Its values.
+    pub data: Vec<String>,
+}
+
+wire_struct!(QapRefused { status, msgid, text, data });
 
 /// A host server sign-on that succeeded.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

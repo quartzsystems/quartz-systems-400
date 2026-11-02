@@ -3128,6 +3128,8 @@ dependencies = [
  "print",
  "ptf",
  "ptf-update",
+ "qap-proto",
+ "qapd",
  "qdecimal",
  "qir",
  "qsname",

@@ -57,6 +57,10 @@ pub const QAP_STARTED: &str = "TCP1A50";
 pub const QAP_ENDED: &str = "TCP1A51";
 /// `QAP server could not be started: &1.`
 pub const QAP_NOT_STARTED: &str = "TCP1A52";
+/// `QAP session ended or expired.`
+pub const QAP_SESSION_GONE: &str = "TCP1A53";
+/// `QAP session of &1 ended by an operator.`
+pub const QAP_SESSION_ENDED: &str = "TCP1A54";
 
 /// Every identifier above.
 pub const ALL: &[&str] = &[
@@ -85,4 +89,6 @@ pub const ALL: &[&str] = &[
     QAP_STARTED,
     QAP_ENDED,
     QAP_NOT_STARTED,
+    QAP_SESSION_GONE,
+    QAP_SESSION_ENDED,
 ];

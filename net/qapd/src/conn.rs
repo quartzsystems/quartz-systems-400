@@ -13,9 +13,10 @@ use std::thread;
 use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
 use qap_proto::ops::event;
-use qap_proto::{Envelope, HELLO_ID, Op, ServerMessage, Service, Status, VERSION};
+use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
+use qap_proto::{Envelope, HELLO_ID, Op, ServerMessage, Service, Status, Token, VERSION};
 
-use crate::host::{Ending, Host};
+use crate::host::{Ending, Host, Refusal};
 use crate::pump::{self, Cancels, In, Out, cancelled};
 use crate::{Closed, Config, Transport};
 
@@ -42,6 +43,14 @@ impl Answer {
             body: Vec::new(),
         }
     }
+
+    pub fn refused(r: Refusal) -> Self {
+        Self {
+            status: r.status,
+            message: Some(r.message),
+            body: Vec::new(),
+        }
+    }
 }
 
 /// What the connection knows.
@@ -51,6 +60,8 @@ struct Conn<'h, H: Host> {
     cancels: Cancels,
     /// The version `Hello` agreed; `None` before it.
     version: Option<u16>,
+    /// The signed-on session's token and profile.
+    session: Option<(Token, String)>,
 }
 
 impl<H: Host> Conn<'_, H> {
@@ -123,14 +134,75 @@ impl<H: Host> Conn<'_, H> {
         None
     }
 
-    fn operation(&mut self, op: Op, _req: &Envelope) -> Answer {
+    fn operation(&mut self, op: Op, req: &Envelope) -> Answer {
+        if self.session.is_none() && !op.before_signon() {
+            return Answer::status(Status::NotSignedOn);
+        }
         match op {
             Op::Ping => Answer::ok(&PingReply {
                 server_time: self.host.now_ms(),
             }),
-            Op::SignOff | Op::SystemInfo => Answer::status(Status::NotSignedOn),
-            Op::Hello | Op::SignOn | Op::ChangePassword | Op::Resume => Answer::status(Status::InvalidRequest),
+            Op::SignOn => self.sign_on(req),
+            Op::ChangePassword => self.change_password(req),
+            Op::Resume => self.resume(req),
+            Op::SignOff => self.sign_off(),
+            Op::SystemInfo | Op::Hello => Answer::status(Status::InvalidRequest),
         }
+    }
+
+    /// A reply that opens or resumes a session.
+    fn opened(&mut self, r: Result<SignOnReply, Refusal>) -> Answer {
+        match r {
+            Ok(reply) => {
+                self.session = Some((reply.token.clone(), reply.profile.clone()));
+                Answer::ok(&reply)
+            }
+            Err(r) => Answer::refused(r),
+        }
+    }
+
+    fn sign_on(&mut self, req: &Envelope) -> Answer {
+        let Ok(b) = req.body_as::<SignOn>() else {
+            return Answer::status(Status::InvalidRequest);
+        };
+        if self.session.is_some() {
+            return Answer::status(Status::InvalidRequest);
+        }
+        let r = self.host.sign_on(&b.user, &b.password);
+        self.opened(r)
+    }
+
+    fn change_password(&mut self, req: &Envelope) -> Answer {
+        let Ok(b) = req.body_as::<ChangePassword>() else {
+            return Answer::status(Status::InvalidRequest);
+        };
+        let r = self.host.change_password(&b.user, &b.old_password, &b.new_password);
+        match (&self.session, r) {
+            // Signed on: the session and its token go on.
+            (Some((token, _)), Ok(mut reply)) => {
+                reply.token = token.clone();
+                Answer::ok(&reply)
+            }
+            (_, r) => self.opened(r),
+        }
+    }
+
+    fn resume(&mut self, req: &Envelope) -> Answer {
+        let Ok(b) = req.body_as::<Resume>() else {
+            return Answer::status(Status::InvalidRequest);
+        };
+        if self.session.is_some() {
+            return Answer::status(Status::InvalidRequest);
+        }
+        let r = self.host.resume(&b.token);
+        self.opened(r)
+    }
+
+    fn sign_off(&mut self) -> Answer {
+        if let Some((token, _)) = self.session.take() {
+            self.host.sign_off(&token);
+        }
+        Answer::status(Status::Ok)
     }
 
     /// The server or an operator ends the connection.
@@ -146,7 +218,19 @@ impl<H: Host> Conn<'_, H> {
                 )]);
                 Closed::ServerEnding
             }
-            Ending::Operator => Closed::Operator,
+            Ending::Operator => {
+                if let Some((token, profile)) = self.session.take() {
+                    self.host.sign_off(&token);
+                    let m = self.host.message("TCP1A54", &[&profile]);
+                    self.send(vec![Envelope::event(
+                        Service::SignOn,
+                        event::SESSION_ENDED,
+                        Status::Ok,
+                        Some(m),
+                    )]);
+                }
+                Closed::Operator
+            }
         }
     }
 }
@@ -163,6 +247,7 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config) -> Closed {
         out: out_tx,
         cancels,
         version: None,
+        session: None,
     };
     let why = loop {
         match in_rx.recv_timeout(cfg.poll) {
@@ -179,6 +264,10 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config) -> Closed {
             break c.end(e);
         }
     };
+    // A session outlives its connection until its idle timeout.
+    if let Some((token, _)) = c.session.take() {
+        c.host.detach(&token);
+    }
     let _ = c.out.send(Out::Close);
     let _ = pump.join();
     why

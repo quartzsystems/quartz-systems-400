@@ -135,6 +135,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     }
     running.stop();
     end_connections(&mut jobs);
+    // The sessions end with the server.
+    link.borrow_mut().with(Client::qap_end_all);
     netsvc::sysopr(link, msg::QAP_ENDED, 0, "QAP server ended.");
     netsvc::joblog(link, PGM, msg::QAP_ENDED, "QAP server ended.");
     let mut ctl = ctl;

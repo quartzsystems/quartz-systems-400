@@ -53,7 +53,7 @@ fn exists(system: &mut System, user: &str) -> bool {
     read(system, user).is_some()
 }
 
-fn read(system: &mut System, user: &str) -> Option<sec::profile::UsrPrf> {
+pub(super) fn read(system: &mut System, user: &str) -> Option<sec::profile::UsrPrf> {
     sec::guard::as_system(|| {
         let s = system.storage.as_mut()?;
         let qsys = s.qsys?;
@@ -128,7 +128,7 @@ pub fn signon(system: &mut System, ctx: &mut JobCtx, user: &str, proof: &Substit
 }
 
 /// The session runs as `user`, keeping what the job adopts (`QWTSETP`).
-fn become_user(system: &mut System, ctx: &mut JobCtx, user: &str) {
+pub(super) fn become_user(system: &mut System, ctx: &mut JobCtx, user: &str) {
     let from = ctx.session.borrow().principal.user.clone();
     let mut p = principal(system, user);
     p.adopted = std::mem::take(&mut ctx.session.borrow_mut().principal.adopted);
