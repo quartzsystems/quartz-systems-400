@@ -135,6 +135,15 @@ fn a_query_in_batches_with_its_types() {
     assert!(matches!(lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never), Err(SqlStop::Refused(r)) if r.status == Status::NotFound));
     lane.release(&mut e, q.statement).unwrap();
     assert_eq!(lane.release(&mut e, q.statement).unwrap_err().status, Status::NotFound);
+    // The engine's statement went with it.
+    let open = sql::embed::Desc {
+        op: sql::embed::Op::Open,
+        name: "QAPCX".into(),
+        stmt: format!("QAPS{}", q.statement),
+        ..sql::embed::Desc::default()
+    };
+    let r = e.run(&Request { scope: super::SCOPE.into(), desc: open, inputs: Vec::new() });
+    assert_eq!(r.sqlca.sqlcode, -514);
 }
 
 #[test]

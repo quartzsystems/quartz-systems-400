@@ -566,8 +566,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `VARBINARY`, `BLOB`, `CLOB` or `BOOLEAN`, and timestamps only to the
   microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
   value is stored fitted to its field's scale, 0 for SQL's, so
-  `4.5` reads back `4`; `Release` cannot drop the engine's prepared text,
-  which stays until the connection ends; `Prepare` gives no column
+  `4.5` reads back `4`; `Prepare` gives no column
   headings, so `label` is the name, and `SELECT *` gives system
   names. The storage service answers one request at a time, so while
   a statement runs there, other jobs' storage requests and this

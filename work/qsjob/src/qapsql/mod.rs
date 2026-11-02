@@ -383,12 +383,21 @@ impl Lane {
         Ok(())
     }
 
-    /// `Release`.
+    /// `Release`: the engine's prepared statement goes too; cursors
+    /// opened from it stay.
     pub fn release(&mut self, e: &mut dyn Engine, statement: u32) -> Result<(), Refusal> {
-        match self.statements.remove(&statement) {
-            Some(_) => Ok(()),
-            None => Err(Self::not_found(e, "SQL0518", &format!("QAPS{statement}"))),
-        }
+        let Some(s) = self.statements.remove(&statement) else {
+            return Err(Self::not_found(e, "SQL0518", &format!("QAPS{statement}")));
+        };
+        let _ = self.run(
+            e,
+            Desc {
+                name: s.name,
+                ..self.desc(Op::Deallocate)
+            },
+            Vec::new(),
+        );
+        Ok(())
     }
 
     /// `Commit` or `Rollback`; nothing to do without commitment control.

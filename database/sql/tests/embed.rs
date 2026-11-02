@@ -204,3 +204,19 @@ fn a_default_schema_applies_under_system_naming() {
     run(&mut s, "1:P", sys("SET SCHEMA DEFAULT"), vec![]);
     assert_eq!(count(&mut s), 0);
 }
+
+#[test]
+fn a_prepared_statement_can_be_deallocated() {
+    let mut s = session();
+    assert_eq!(run(&mut s, "1:P", op(Op::Prepare, "S1", "SELECT ID FROM T"), vec![]).sqlca.sqlcode, 0);
+    let mut open = op(Op::Open, "C1", "");
+    open.stmt = "S1".into();
+    assert_eq!(run(&mut s, "1:P", open, vec![]).sqlca.sqlcode, 0);
+    // Another scope's statement of that name is not this one.
+    assert_eq!(run(&mut s, "1:Q", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, -514);
+    assert_eq!(run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, -514);
+    assert_eq!(run(&mut s, "1:P", op(Op::Execute, "S1", ""), vec![]).sqlca.sqlcode, -518);
+    // The cursor opened from it stays open.
+    assert_eq!(run(&mut s, "1:P", op(Op::Fetch, "C1", ""), vec![]).sqlca.sqlcode, 0);
+}

@@ -59,6 +59,9 @@ pub enum Op {
     End,
     /// A statement with nothing to do at run time.
     Nothing,
+    /// The prepared statement `name` goes from the scope, as a CLI
+    /// statement handle is freed; its open cursors stay.
+    Deallocate,
 }
 
 impl Op {
@@ -76,6 +79,7 @@ impl Op {
             Self::Describe => 'B',
             Self::End => 'Z',
             Self::Nothing => 'N',
+            Self::Deallocate => 'R',
         }
     }
 
@@ -93,6 +97,7 @@ impl Op {
             'B' => Self::Describe,
             'Z' => Self::End,
             'N' => Self::Nothing,
+            'R' => Self::Deallocate,
             _ => return None,
         })
     }
@@ -464,7 +469,7 @@ impl Session {
         };
         self.ctx.no_commit = level.is_none();
         let lcklvl = level?;
-        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag) {
+        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag | Op::Deallocate) {
             return None;
         }
         if let Some(def) = self.ctx.session.commit_def() {
@@ -488,6 +493,7 @@ impl Session {
         match d.op {
             Op::Nothing => Reply::default(),
             Op::End => self.end(&req.scope),
+            Op::Deallocate => self.deallocate(&req.scope, &d.name),
             Op::Diag => self.diagnostics(&d.text),
             Op::Describe => self.describe(req),
             Op::Query => self.with_txn(&req.scope, |txn, ctx, _| {
@@ -607,6 +613,15 @@ impl Session {
             self.scopes.remove(scope);
         }
         Reply::default()
+    }
+
+    /// A prepared statement goes: -514 when the scope has none of
+    /// that name.
+    fn deallocate(&mut self, scope: &str, name: &str) -> Reply {
+        match self.scopes.get_mut(scope).and_then(|sc| sc.prepared.remove(name)) {
+            Some(_) => Reply::default(),
+            None => Reply::of(code(-514, "26501")),
+        }
     }
 
     /// `GET DIAGNOSTICS`: the items of the last statement.
