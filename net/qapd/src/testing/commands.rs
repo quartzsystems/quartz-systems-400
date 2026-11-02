@@ -18,7 +18,10 @@
 //! - `CPYFRMSTMF FROMSTMF() TOMBR()`: `CPCA081` (00), or `CPFA096`
 //!   (20) when the stream file's name has `long` in it (lines cut);
 //! - `CHGAUT OBJ() USER() DTAAUT()`: `CPDA091` (10) for a `DTAAUT` it
-//!   does not take.
+//!   does not take;
+//! - `CHGCURLIB CURLIB(name)`: the job's current library
+//!   ([`super::System::curlib`]); `CPF2110` for a library `CRTLIB` did
+//!   not make.
 //!
 //! A missing required parameter is `CPD0071` then `CPF0006`; a command
 //! not here, `CPD0030`. Messages carry the severities QS/400's message
@@ -99,6 +102,13 @@ pub const COMMANDS: &[Cmd] = &[
         authorized: true,
         required: &["OBJ", "USER"],
     },
+    Cmd {
+        name: "CHGCURLIB",
+        text: "Change Current Library",
+        interactive_only: false,
+        authorized: true,
+        required: &["CURLIB"],
+    },
 ];
 
 /// Message `id`'s severity as QS/400's message files give it (the
@@ -106,10 +116,10 @@ pub const COMMANDS: &[Cmd] = &[
 #[must_use]
 pub fn severity(id: &str) -> u8 {
     match id {
-        "CPC2102" | "CPCA081" | "TCP1A0A" | "TCP1A54" => 0,
+        "CPC2102" | "CPCA081" | "TCP1A0A" | "TCP1A54" | "TCP1A58" => 0,
         "CPDA091" => 10,
         "CPFA096" => 20,
-        "CPD0030" | "CPD0031" | "CPD0071" | "CPF0006" | "CPF1907" | "CPD9BAE" | "TCP1A53" | "TCP1A55" => 30,
+        "CPD0030" | "CPD0031" | "CPD0071" | "CPF0006" | "CPF1907" | "CPD9BAE" | "TCP1A53" | "TCP1A55" | "TCP1A59" => 30,
         _ => 40,
     }
 }
@@ -242,6 +252,11 @@ pub fn definition(c: &Cmd) -> CommandDefinition {
             d.default = Some("*SAME".into());
             d.special_values = vec!["*SAME".into(), "*RWX".into(), "*RX".into(), "*R".into(), "*EXCLUDE".into()];
             n.push(d);
+        }
+        "CHGCURLIB" => {
+            let mut c = required(node(0, None, Role::Parameter, "CURLIB", "Current library", ParmKind::Name, 10));
+            c.special_values = vec!["*CRTDFT".into()];
+            n.push(c);
         }
         _ => n.push(required(node(0, None, Role::Parameter, "USRPRF", "User profile", ParmKind::Name, 10))),
     }

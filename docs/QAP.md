@@ -458,3 +458,37 @@ Version 3, as built on 2026-11-02 (decisions made in the build, for Cody to revi
   `DLTSPLF` refuses deleting one (`CPF3330`).
 - `ListOutputQueues` `*LIBL` is the connection job's library list;
   libraries in it that do not exist are passed over.
+
+Version 4, `Attach`, as built on 2026-11-02 (decisions made in the build, for Cody to review):
+
+- `Attach` must be the second request the connection routes, `Hello`
+  being the first. After any other request, a `Ping` or a failed
+  `Attach` included, it is `InvalidRequest` and the connection stays.
+  On a version 1 to 3 connection it is `InvalidRequest` too.
+- The session table (`qapd::sessions`) keeps one resumable job per
+  session (the one that signed on or last resumed) and a list of
+  attached jobs. `Resume` replaces the resumable job only; attached
+  jobs stay. The idle timer starts when the last connection of either
+  kind leaves. Dead jobs are swept from both, as before.
+- The limit of 16 counts both kinds. `Attach` beyond it is `Busy` with
+  `TCP1A59`. A `Resume` while the resumable connection is gone and 16
+  others are attached would make 17, so it is `Busy` with `TCP1A59`
+  too.
+- An attached job swaps to the profile as `Resume` does (`become_user`,
+  then the library list of the profile's job description). The rest of
+  its job state is its own (rpc 749 `qap_attach`).
+- When one job ends a session, the table records the session's other
+  jobs as ended, and how. Each connection job asks at its end poll (rpc
+  739 `qap_ended`, every 500 ms beside the `ENDJOB` check) and ends with
+  `Ending::Session`: `SessionEnded` with status `Ok`, then close
+  (`Closed::SessionEnded`), with no second sign-off or detach. A
+  connection of any version gets this event, since all its values are
+  version 1's.
+- `SignOff` on any connection: that connection gets `Ok` and stays
+  open, not signed on. The others get `TCP1A58`.
+- `ENDJOB` of one connection job of a session with several: as before,
+  that job sends `SessionEnded` with `TCP1A54` and ends the session
+  (`qap_signoff` with `operator` set). The session's other connections
+  then get `SessionEnded` with `TCP1A54` too, and close. `ENDTCPSVR`
+  is unchanged: every connection gets `ServerEnding`.
+- `TCP1A58` and `TCP1A59` are in `QTCPMSG`.

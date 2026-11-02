@@ -25,6 +25,7 @@ use qap_proto::{Envelope, Op, ServerMessage, Service, Status, Token};
 use crate::host::{Ending, Host, Refusal};
 use crate::lanes::{self, ToMain};
 use crate::pump::{self, Cancels, In, Out, Running, cancelled};
+use crate::sessions::EndedBy;
 use crate::watch::{self, Identity, Watch};
 use crate::{Closed, Config, Transport};
 
@@ -227,7 +228,7 @@ impl<H: Host> Main<'_, H> {
                 let session = lock(&self.shared.session).take();
                 if let Some((token, profile)) = session {
                     let m = self.host.message("TCP1A54", &[&profile]);
-                    self.host.sign_off(&token);
+                    self.host.end_session(&token);
                     self.shared.send(vec![Envelope::event(
                         Service::SignOn,
                         event::SESSION_ENDED,
@@ -236,6 +237,24 @@ impl<H: Host> Main<'_, H> {
                     )]);
                 }
                 Closed::Operator
+            }
+            // Ended already; no sign-off, no detach.
+            Ending::Session(by) => {
+                let session = lock(&self.shared.session).take();
+                if let Some((_, profile)) = session {
+                    let id = match by {
+                        EndedBy::SignOff => "TCP1A58",
+                        EndedBy::Operator => "TCP1A54",
+                    };
+                    let m = self.host.message(id, &[&profile]);
+                    self.shared.send(vec![Envelope::event(
+                        Service::SignOn,
+                        event::SESSION_ENDED,
+                        Status::Ok,
+                        Some(m),
+                    )]);
+                }
+                Closed::SessionEnded
             }
         }
     }

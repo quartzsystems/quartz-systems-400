@@ -8,6 +8,8 @@
 //! [`serve_loopback`]. It follows the real system's rules and
 //! messages where tests look at them:
 //!
+//! - sessions with up to 16 connections each (`Attach`), and
+//!   `SessionEnded` on the others when one signs off;
 //! - sign-on as a 5250 display: `QMAXSIGN` 3 with the profile
 //!   disabled; `CPF1107`, `CPF1392` before the last try, `CPF1393` at
 //!   it, `CPF1394` disabled, `CPF1118` `*NONE`, `CPD9BAE` expired;
@@ -112,6 +114,9 @@ pub struct System {
     pub libraries: Mutex<Vec<String>>,
     /// Who each connection job runs as, by job.
     pub running_as: Mutex<HashMap<u32, String>>,
+    /// Each connection job's current library, once `CHGCURLIB` set it:
+    /// job state, its own in every job.
+    pub curlib: Mutex<HashMap<u32, String>>,
     /// The output queues and spooled files.
     pub spool: Mutex<spool::Spool>,
     /// A panic to come, once.
@@ -151,6 +156,7 @@ impl System {
             products: Mutex::new(3),
             libraries: Mutex::new(Vec::new()),
             running_as: Mutex::new(HashMap::new()),
+            curlib: Mutex::new(HashMap::new()),
             spool: Mutex::new(spool::Spool::default()),
             crash: Mutex::new(None),
             tokens: AtomicU32::new(0),

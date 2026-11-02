@@ -100,6 +100,9 @@ pub enum Closed {
     ServerEnding,
     /// An operator ended the job.
     Operator,
+    /// Another connection of the session signed off, or an operator
+    /// ended another of its jobs.
+    SessionEnded,
     /// One of the connection's threads panicked: which, and the panic.
     Panic(String),
     /// The job's process is ending under the connection: why.
@@ -117,6 +120,7 @@ impl fmt::Display for Closed {
             Closed::ServerEnding => f.write_str("server ending"),
             Closed::Operator => f.write_str("job ended by an operator"),
             Closed::Panic(p) => write!(f, "panic: {p}"),
+            Closed::SessionEnded => f.write_str("session ended on another connection"),
             Closed::Exit(why) => write!(f, "job ending: {why}"),
         }
     }

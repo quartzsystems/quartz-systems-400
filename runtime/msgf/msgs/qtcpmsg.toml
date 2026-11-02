@@ -809,3 +809,17 @@ sev = 40
 text = "Spooled file &1 number &2 is still being written."
 help = "The program writing the file has not closed it. Read it once it is closed."
 vars = ["*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "TCP1A58"
+sev = 0
+text = "QAP session of &1 was signed off on another connection."
+help = "One of the session's connections signed off, which ends the session on every connection. This connection is closed. Sign on again to go on."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A59"
+sev = 30
+text = "QAP session of &1 has as many connections as it may have."
+help = "A QAP session has at most 16 connections, the one that signed on included. Close one of them, then attach this connection again."
+vars = ["*CHAR 10"]

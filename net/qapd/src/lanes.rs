@@ -7,6 +7,7 @@
 //! once; `Command` requests to the job's own thread, one at a time;
 //! every other operation to a secondary thread of the job, as many at
 //! once as are outstanding, each thread made when none is free.
+//! `Attach` only as the first request after `Hello`.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -14,7 +15,7 @@ use std::sync::{Arc, Mutex};
 
 use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
-use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
+use qap_proto::ops::signon::{Attach, ChangePassword, Resume, SignOn, SignOnReply};
 use qap_proto::ops::spool::{
     HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, ReadSpooledFile, SpooledFileRef,
 };
@@ -38,10 +39,14 @@ pub(crate) enum ToMain {
 pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Threads, main: &Sender<ToMain>, watch: &Arc<Watch>) {
     let mut own = threads();
     let mut pool = Pool::new(Arc::clone(shared), Arc::clone(threads), main.clone(), Arc::clone(watch));
+    // Requests routed: `Hello` is the first, so the second is the first
+    // after it.
+    let mut routed = 0u64;
     while let Ok(i) = rx.recv() {
         match i {
             In::Request(req) => {
-                if let Some(why) = route(shared, &mut *own, &mut pool, main, req) {
+                routed += 1;
+                if let Some(why) = route(shared, &mut *own, &mut pool, main, req, routed == 2) {
                     let _ = main.send(ToMain::Closed(why));
                     return;
                 }
@@ -56,8 +61,16 @@ pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Thread
     let _ = main.send(ToMain::Closed(Closed::Broken("the connection's reader ended".into())));
 }
 
-/// Send one request on its way; `Some` when the connection is to close.
-fn route(shared: &Shared, own: &mut dyn ThreadHost, pool: &mut Pool, main: &Sender<ToMain>, req: Envelope) -> Option<Closed> {
+/// Send one request on its way; `first` when it is the first after
+/// `Hello`. `Some` when the connection is to close.
+fn route(
+    shared: &Shared,
+    own: &mut dyn ThreadHost,
+    pool: &mut Pool,
+    main: &Sender<ToMain>,
+    req: Envelope,
+    first: bool,
+) -> Option<Closed> {
     if shared.cancelled_before(&req) {
         return None;
     }
@@ -85,6 +98,10 @@ fn route(shared: &Shared, own: &mut dyn ThreadHost, pool: &mut Pool, main: &Send
                 server_time: own.now_ms(),
             }),
         ),
+        // Only first after Hello; signed on it cannot be.
+        Some(Op::Attach) if !first || shared.signed_on() => {
+            shared.reply(&req, Answer::status(Status::InvalidRequest));
+        }
         Some(op) if !op.before_signon() && !shared.signed_on() => {
             shared.reply(&req, Answer::status(Status::NotSignedOn));
         }
@@ -192,6 +209,7 @@ fn operation(shared: &Shared, host: &mut dyn ThreadHost, op: Op, req: &Envelope)
         Op::SignOn => sign_on(shared, host, req),
         Op::ChangePassword => change_password(shared, host, req),
         Op::Resume => resume(shared, host, req),
+        Op::Attach => attach(shared, host, req),
         Op::SignOff => sign_off(shared, host),
         Op::SystemInfo => Answer::ok(&host.system_info()),
         Op::PasswordStatus => Answer::ok(&host.password_status()),
@@ -287,6 +305,18 @@ fn resume(shared: &Shared, host: &mut dyn ThreadHost, req: &Envelope) -> Answer 
         return Answer::status(Status::InvalidRequest);
     }
     let r = host.resume(&b.token);
+    opened(shared, r)
+}
+
+fn attach(shared: &Shared, host: &mut dyn ThreadHost, req: &Envelope) -> Answer {
+    let Ok(b) = req.body_as::<Attach>() else {
+        return Answer::status(Status::InvalidRequest);
+    };
+    let _one = lock(&shared.signon);
+    if shared.signed_on() {
+        return Answer::status(Status::InvalidRequest);
+    }
+    let r = host.attach(&b.token);
     opened(shared, r)
 }
 

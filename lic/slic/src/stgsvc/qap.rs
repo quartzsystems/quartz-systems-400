@@ -4,8 +4,8 @@
 
 //! QAP sessions (docs/QAP.md): sign-on as a 5250 display signs on (the
 //! same checks, messages and audit entries, no device), the profile
-//! swap, the tokens and their table (`qapd::sessions`), resume, sign
-//! off and password changes. Only a QAP connection job (`QAPCNN`) asks,
+//! swap, the tokens and their table (`qapd::sessions`), resume, attach,
+//! sign off and password changes. Only a QAP connection job (`QAPCNN`) asks,
 //! and only the listener (`QAPD`) ends every session. Passwords and
 //! tokens are never logged.
 
@@ -15,7 +15,7 @@ use std::io::Read;
 use std::sync::{Mutex, OnceLock, PoisonError};
 
 use qap_proto::Token;
-use qapd::sessions::Sessions;
+use qapd::sessions::{EndedBy, Gone, Sessions};
 use qapd::tickets::{TICKET_SECS, Tickets};
 use servers::attrs::qap::QapAttrs;
 use stg::{QapRefused, QapSession};
@@ -37,10 +37,13 @@ const SIGNON_FAILED: u16 = 4;
 const PASSWORD_EXPIRED: u16 = 5;
 const NOT_AUTHORIZED: u16 = 6;
 const INVALID_REQUEST: u16 = 8;
+const BUSY: u16 = 9;
 const SESSION_EXPIRED: u16 = 11;
 
 /// `QAP session ended or expired.`
 const SESSION_GONE: &str = "TCP1A53";
+/// `QAP session of &1 has as many connections as it may have.`
+const SESSION_FULL: &str = "TCP1A59";
 /// What a 5250 display shows when the password expired.
 const EXPIRED: &str = "CPD9BAE";
 
@@ -247,6 +250,17 @@ fn token_of(b: &[u8]) -> Option<Token> {
 
 /// `qap_resume`.
 pub fn resume(system: &mut System, ctx: &mut JobCtx, token: &[u8]) -> Result<QapSession, QapRefused> {
+    join(system, ctx, token, false)
+}
+
+/// `qap_attach`: as `qap_resume`, but beside the session's other jobs.
+pub fn attach(system: &mut System, ctx: &mut JobCtx, token: &[u8]) -> Result<QapSession, QapRefused> {
+    join(system, ctx, token, true)
+}
+
+/// Resume or attach: the job runs as the session's profile with the
+/// library list of its job description, its other state its own.
+fn join(system: &mut System, ctx: &mut JobCtx, token: &[u8], attach: bool) -> Result<QapSession, QapRefused> {
     connection_job(ctx)?;
     if signed_on(ctx).is_some() {
         return Err(refused(INVALID_REQUEST, "CPF9898", "The connection is signed on already.", &[]));
@@ -254,23 +268,39 @@ pub fn resume(system: &mut System, ctx: &mut JobCtx, token: &[u8]) -> Result<Qap
     let gone = || refused(SESSION_EXPIRED, SESSION_GONE, "", &[]);
     let token = token_of(token).ok_or_else(gone)?;
     let alive = |n: u32| system.jobs.get(n).is_some();
-    let s = sessions()
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .resume(&token, ctx.job.number, now_unix(), &alive)
-        .map_err(|_| gone())?;
+    let (job, now) = (ctx.job.number, now_unix());
+    let mut table = sessions().lock().unwrap_or_else(PoisonError::into_inner);
+    let r = if attach {
+        table.attach(&token, job, now, &alive)
+    } else {
+        table.resume(&token, job, now, &alive)
+    };
+    let s = match r {
+        Ok(s) => s,
+        Err(Gone::Full) => {
+            let user = table.get(&token).map(|s| s.user.clone()).unwrap_or_default();
+            return Err(refused(BUSY, SESSION_FULL, "", &[&user]));
+        }
+        Err(_) => return Err(gone()),
+    };
+    drop(table);
     become_user(system, ctx, &s.user);
     libl_of(system, ctx, &s.user);
     Ok(describe(system, &s.user, &token, s.idle_secs))
 }
 
-/// `qap_signoff`.
-pub fn signoff(system: &mut System, ctx: &mut JobCtx, token: &[u8]) {
+/// `qap_signoff`; `operator` when an operator ended this job. The
+/// session's other jobs hear of it at their next `qap_ended`.
+pub fn signoff(system: &mut System, ctx: &mut JobCtx, token: &[u8], operator: bool) {
     if ctx.job.name != CONN_JOB {
         return;
     }
     if let Some(t) = token_of(token) {
-        sessions().lock().unwrap_or_else(PoisonError::into_inner).end(&t);
+        let why = if operator { EndedBy::Operator } else { EndedBy::SignOff };
+        sessions()
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .end(&t, ctx.job.number, why);
     }
     reset(system, ctx);
     let own = ctx.job.user.clone();
@@ -288,6 +318,19 @@ pub fn detach(ctx: &JobCtx, token: &[u8]) {
             .unwrap_or_else(PoisonError::into_inner)
             .detach(&t, ctx.job.number, now_unix());
     }
+}
+
+/// `qap_ended`: whether another job ended this job's session, and
+/// whether an operator did; told once.
+pub fn ended(ctx: &JobCtx) -> Option<bool> {
+    if ctx.job.name != CONN_JOB {
+        return None;
+    }
+    sessions()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .take_ended(ctx.job.number)
+        .map(|by| by == EndedBy::Operator)
 }
 
 /// `qap_end_all`.

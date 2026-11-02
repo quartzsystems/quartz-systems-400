@@ -633,8 +633,16 @@ impl Service for Served<'_> {
         super::qap::resume(self.system, self.ctx, &token)
     }
 
-    fn qap_signoff(&mut self, token: Vec<u8>) {
-        super::qap::signoff(self.system, self.ctx, &token);
+    fn qap_attach(&mut self, token: Vec<u8>) -> Result<stg::QapSession, stg::QapRefused> {
+        super::qap::attach(self.system, self.ctx, &token)
+    }
+
+    fn qap_signoff(&mut self, token: Vec<u8>, operator: bool) {
+        super::qap::signoff(self.system, self.ctx, &token, operator);
+    }
+
+    fn qap_ended(&mut self) -> Option<bool> {
+        super::qap::ended(self.ctx)
     }
 
     fn qap_detach(&mut self, token: Vec<u8>) {

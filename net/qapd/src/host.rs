@@ -20,6 +20,8 @@ use qap_proto::ops::system::SystemInfo;
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
+use crate::sessions::EndedBy;
+
 /// Why the connection is to end, from outside it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ending {
@@ -28,6 +30,9 @@ pub enum Ending {
     /// An operator ended the job: `SessionEnded` when signed on, then
     /// close.
     Operator,
+    /// Another connection of the session ended it: `SessionEnded`, then
+    /// close.
+    Session(EndedBy),
 }
 
 /// What `Hello` reports of the system.
@@ -84,6 +89,11 @@ pub trait Host {
     fn ending(&mut self) -> Option<Ending>;
     /// End the session; the job runs as its own user again.
     fn sign_off(&mut self, token: &Token);
+    /// An operator ended the job: end its session, its other
+    /// connections told so.
+    fn end_session(&mut self, token: &Token) {
+        self.sign_off(token);
+    }
     /// The connection closed: the session waits to be resumed.
     fn detach(&mut self, token: &Token);
     /// The job runs as another profile since the last command: a
@@ -129,8 +139,12 @@ pub trait ThreadHost {
     /// when the connection was not. In a signed-on connection the
     /// reply's token is all zeros: the session goes on with its own.
     fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal>;
-    /// Attach this connection to the session `token` names.
+    /// Move the session `token` names to this connection.
     fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal>;
+    /// Attach this connection to the session `token` names beside its
+    /// others (version 4), the job running as its profile with job
+    /// state of its own; `SessionExpired` or `Busy` with the message why.
+    fn attach(&mut self, token: &Token) -> Result<SignOnReply, Refusal>;
     /// End the session; the job runs as its own user again.
     fn sign_off(&mut self, token: &Token);
     /// When the signed-on profile's password expires.

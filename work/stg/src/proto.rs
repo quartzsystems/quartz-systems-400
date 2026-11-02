@@ -632,8 +632,11 @@ ipc::rpc! {
     /// connections).
     723 => fn host_reset / HostReset () -> ();
 
-    // --- QAP sessions (740-749; docs/QAP.md, stgsvc/qap.rs). Only a
+    // --- QAP sessions (739-749; docs/QAP.md, stgsvc/qap.rs). Only a
     // QAP connection job (QAPCNN) may ask.
+    /// Whether another connection job ended this job's session since
+    /// it last asked: `Some(true)` an operator, `Some(false)` a sign-off.
+    739 => fn qap_ended / QapEnded () -> Option<bool>;
     /// Sign on as a 5250 display would (`QMAXSIGN`, audit), with no
     /// device; on success the job runs as the user and a session is
     /// made. An expired password signs nothing on.
@@ -642,11 +645,13 @@ ipc::rpc! {
     /// success, signed on as `qap_signon`. In a signed-on job, only for
     /// the job's own user.
     741 => fn qap_chgpwd / QapChgPwd (user: String, old: String, new: String) -> Result<QapSession, QapRefused>;
-    /// Attach this job to the session `token` names; the job runs as
-    /// its user.
+    /// Move the session `token` names to this job; the job runs as its
+    /// user.
     742 => fn qap_resume / QapResume (token: Vec<u8>) -> Result<QapSession, QapRefused>;
-    /// End the session; the job runs as its own user again.
-    743 => fn qap_signoff / QapSignoff (token: Vec<u8>) -> ();
+    /// End the session, `operator` when an operator ended this job; the
+    /// job runs as its own user again and the session's other jobs are
+    /// told (`qap_ended`).
+    743 => fn qap_signoff / QapSignoff (token: Vec<u8>, operator: bool) -> ();
     /// This job's connection closed: the session waits to be resumed.
     744 => fn qap_detach / QapDetach (token: Vec<u8>) -> ();
     /// End every session (the QAP server ended).
@@ -662,6 +667,10 @@ ipc::rpc! {
     /// the answer; on success the sign-on checks follow, all but the
     /// password. Only `QTVTELNET` may ask.
     748 => fn telnet_ticket / TelnetTicket (user: String, ticket: Vec<u8>, device: String, tls: bool) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
+    /// Attach this job to the session `token` names beside its other
+    /// connection jobs (QAP version 4); the job runs as its user with
+    /// its own library list.
+    749 => fn qap_attach / QapAttach (token: Vec<u8>) -> Result<QapSession, QapRefused>;
 
     // --- QAP spool (750-759; docs/QAP.md, stgsvc/qap/spool.rs). Only a
     // QAP connection job asks; each is checked and audited as the

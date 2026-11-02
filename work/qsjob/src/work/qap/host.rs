@@ -4,7 +4,8 @@
 
 //! The connection job's reach. [`JobHost`] is the job's own thread:
 //! commands in its runtime (`commands.rs`), and the end of the job: its
-//! parent's `End` (the server ending) or `ENDJOB` (an operator).
+//! parent's `End` (the server ending), `ENDJOB` (an operator), or its
+//! session ended on another connection.
 //! [`JobThread`] is a secondary thread of the job on a thread link of
 //! its own (`hello_thread`), sharing the job's security session: the
 //! system's description and messages, sign-on, sessions and passwords
@@ -25,6 +26,7 @@ use qap_proto::ops::spool::{
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
+use qapd::sessions::EndedBy;
 use qapd::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use stg::{Client, Link, QapRefused, QapSession, Shared};
 use wm::ctl::{Start, ToJob};
@@ -140,12 +142,18 @@ impl Host for JobHost {
         } else if state.end_jobs.iter().any(|(n, _)| *n == self.me) {
             Some(Ending::Operator)
         } else {
-            None
+            let ended = self.link.borrow_mut().with(Client::qap_ended);
+            ended.map(|op| Ending::Session(if op { EndedBy::Operator } else { EndedBy::SignOff }))
         }
     }
 
     fn sign_off(&mut self, token: &Token) {
-        self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec()));
+        self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec(), false));
+        self.console.swapped();
+    }
+
+    fn end_session(&mut self, token: &Token) {
+        self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec(), true));
         self.console.swapped();
     }
 
@@ -319,8 +327,13 @@ impl ThreadHost for JobThread {
         self.session(r)
     }
 
+    fn attach(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
+        let r = self.link.with(|l| l.qap_attach(token.0.to_vec()));
+        self.session(r)
+    }
+
     fn sign_off(&mut self, token: &Token) {
-        self.link.with(|l| l.qap_signoff(token.0.to_vec()));
+        self.link.with(|l| l.qap_signoff(token.0.to_vec(), false));
     }
 
     fn password_status(&mut self) -> PasswordStatus {

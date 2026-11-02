@@ -21,6 +21,7 @@ use qap_proto::{Secret, ServerMessage, Status, Token};
 use super::commands::{self, definition, find, parse};
 use super::{Crash, System, lock};
 use crate::host::{Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
+use crate::sessions::{EndedBy, Gone};
 use crate::tickets::TICKET_SECS;
 
 /// Message `id` as job `job` of `sys` looks it up: its text says whose
@@ -91,11 +92,17 @@ impl Host for MemHost {
     }
 
     fn ending(&mut self) -> Option<Ending> {
-        lock(&self.sys.ending).take()
+        let e = lock(&self.sys.ending).take();
+        e.or_else(|| lock(&self.sys.sessions).take_ended(self.job).map(Ending::Session))
     }
 
     fn sign_off(&mut self, token: &Token) {
-        lock(&self.sys.sessions).end(token);
+        lock(&self.sys.sessions).end(token, self.job, EndedBy::SignOff);
+        lock(&self.sys.running_as).remove(&self.job);
+    }
+
+    fn end_session(&mut self, token: &Token) {
+        lock(&self.sys.sessions).end(token, self.job, EndedBy::Operator);
         lock(&self.sys.running_as).remove(&self.job);
     }
 
@@ -155,6 +162,14 @@ impl Host for MemHost {
                 } else {
                     self.ran(Status::Ok, &[("CPCA081", &[&from, &to, "10"])])
                 }
+            }
+            "CHGCURLIB" => {
+                let lib = get("CURLIB").unwrap_or_default().to_ascii_uppercase();
+                if lib != "*CRTDFT" && !lock(&self.sys.libraries).contains(&lib) {
+                    return self.ran(Status::Error, &[("CPF2110", &[&lib])]);
+                }
+                lock(&self.sys.curlib).insert(self.job, lib);
+                self.ran(Status::Ok, &[])
             }
             "CHGAUT" => {
                 let dta = get("DTAAUT").unwrap_or_else(|| "*SAME".into()).to_ascii_uppercase();
@@ -281,6 +296,22 @@ impl MemThread {
         Ok((user, u.expired))
     }
 
+    /// A resume or attach: the job runs as the session's profile, its
+    /// job state its own.
+    fn joined(&mut self, token: &Token, r: Result<crate::sessions::Session, Gone>) -> Result<SignOnReply, Refusal> {
+        match r {
+            Ok(s) => {
+                lock(&self.sys.running_as).insert(self.job, s.user.clone());
+                Ok(self.reply(token.clone(), &s.user))
+            }
+            Err(Gone::Full) => {
+                let user = lock(&self.sys.sessions).get(token).map(|s| s.user.clone()).unwrap_or_default();
+                Err(self.refuse(Status::Busy, "TCP1A59", &[&user]))
+            }
+            Err(_) => Err(self.refuse(Status::SessionExpired, "TCP1A53", &[])),
+        }
+    }
+
     fn open(&mut self, user: &str) -> SignOnReply {
         let token = self.sys.next_token(0x5A);
         lock(&self.sys.sessions).create(&token, user, self.sys.idle_secs, self.job);
@@ -366,17 +397,17 @@ impl ThreadHost for MemThread {
     fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
         let now = self.sys.now();
         let r = lock(&self.sys.sessions).resume(token, self.job, now, &|_| true);
-        match r {
-            Ok(s) => {
-                lock(&self.sys.running_as).insert(self.job, s.user.clone());
-                Ok(self.reply(token.clone(), &s.user))
-            }
-            Err(_) => Err(self.refuse(Status::SessionExpired, "TCP1A53", &[])),
-        }
+        self.joined(token, r)
+    }
+
+    fn attach(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
+        let now = self.sys.now();
+        let r = lock(&self.sys.sessions).attach(token, self.job, now, &|_| true);
+        self.joined(token, r)
     }
 
     fn sign_off(&mut self, token: &Token) {
-        lock(&self.sys.sessions).end(token);
+        lock(&self.sys.sessions).end(token, self.job, EndedBy::SignOff);
         lock(&self.sys.running_as).remove(&self.job);
     }
 

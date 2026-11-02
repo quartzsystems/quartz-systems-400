@@ -3,43 +3,76 @@
 // root directory of this project.
 
 //! The signed-on sessions, kept by the storage service: a token names
-//! a session, a session is attached to one connection job at a time,
-//! and a detached session can be resumed until its idle timeout. A
-//! session whose job ended without detaching counts as detached from
-//! when that is first noticed. Tokens never leave this table except to
-//! the client that signed on.
+//! a session; a session has one resumable connection job (the one that
+//! signed on or last resumed) and others attached (version 4), at most
+//! [`MAX_CONNECTIONS`] in all. A session with no connection can be
+//! resumed until its idle timeout. A job that ended without detaching
+//! counts as detached from when that is first noticed. When a session
+//! ends, its other jobs are told ([`Sessions::take_ended`]). Tokens
+//! never leave this table except to the client that signed on.
 
 use std::collections::HashMap;
 
 use qap_proto::Token;
+
+/// Connections a session may have, the resumable one included.
+pub const MAX_CONNECTIONS: usize = 16;
 
 /// One session.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Session {
     /// The profile.
     pub user: String,
-    /// Seconds it may stay detached.
+    /// Seconds it may stay without a connection.
     pub idle_secs: u32,
-    /// The connection job attached, by number.
+    /// The resumable connection job, by number.
     pub job: Option<u32>,
-    /// When it was detached, Unix seconds.
+    /// The attached connection jobs.
+    pub attached: Vec<u32>,
+    /// When its last connection left, Unix seconds.
     pub detached_at: u64,
 }
 
-/// Why a token does not resume.
+impl Session {
+    /// Its connections now.
+    #[must_use]
+    pub fn connections(&self) -> usize {
+        usize::from(self.job.is_some()) + self.attached.len()
+    }
+
+    /// Whether `job` is one of its connections.
+    fn has(&self, job: u32) -> bool {
+        self.job == Some(job) || self.attached.contains(&job)
+    }
+}
+
+/// Why a token does not resume or attach.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Gone {
     /// No such token (never issued, signed off, or ended with the
     /// server).
     Unknown,
-    /// Detached longer than its idle timeout.
+    /// Without a connection longer than its idle timeout.
     Expired,
+    /// It has [`MAX_CONNECTIONS`] already.
+    Full,
+}
+
+/// How a session ended, as its other connections are told.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EndedBy {
+    /// `SignOff` on one of its connections.
+    SignOff,
+    /// An operator ended one of its connection jobs.
+    Operator,
 }
 
 /// The table.
 #[derive(Debug, Default)]
 pub struct Sessions {
     map: HashMap<[u8; 32], Session>,
+    /// Jobs whose session another job ended, until they ask.
+    ended: HashMap<u32, EndedBy>,
 }
 
 impl Sessions {
@@ -49,19 +82,24 @@ impl Sessions {
         Self::default()
     }
 
-    /// Detach sessions whose job is gone, drop the expired ones.
+    /// Drop jobs that are gone, then the expired sessions.
     fn sweep(&mut self, now: u64, alive: &dyn Fn(u32) -> bool) {
         for s in self.map.values_mut() {
+            let before = s.connections();
             if s.job.is_some_and(|j| !alive(j)) {
                 s.job = None;
+            }
+            s.attached.retain(|j| alive(*j));
+            if before > 0 && s.connections() == 0 {
                 s.detached_at = now;
             }
         }
         self.map
-            .retain(|_, s| s.job.is_some() || now < s.detached_at.saturating_add(u64::from(s.idle_secs)));
+            .retain(|_, s| s.connections() > 0 || now < s.detached_at.saturating_add(u64::from(s.idle_secs)));
+        self.ended.retain(|j, _| alive(*j));
     }
 
-    /// A new session for `user`, attached to `job`.
+    /// A new session for `user`, `job` its resumable connection.
     pub fn create(&mut self, token: &Token, user: &str, idle_secs: u32, job: u32) {
         self.map.insert(
             token.0,
@@ -69,43 +107,92 @@ impl Sessions {
                 user: user.to_string(),
                 idle_secs,
                 job: Some(job),
+                attached: Vec::new(),
                 detached_at: 0,
             },
         );
     }
 
-    /// Attach `job` to the session `token` names (moving it from
-    /// another job); its idle timeout starts over.
-    pub fn resume(&mut self, token: &Token, job: u32, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<Session, Gone> {
+    /// The session `token` names, after a sweep.
+    fn live(&mut self, token: &Token, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<&mut Session, Gone> {
         let was_known = self.map.contains_key(&token.0);
         self.sweep(now, alive);
-        let s = self
-            .map
+        self.map
             .get_mut(&token.0)
-            .ok_or(if was_known { Gone::Expired } else { Gone::Unknown })?;
+            .ok_or(if was_known { Gone::Expired } else { Gone::Unknown })
+    }
+
+    /// Make `job` the session's resumable connection, moving it from
+    /// another job; attached jobs stay. `Full` when that would make more
+    /// than [`MAX_CONNECTIONS`].
+    pub fn resume(&mut self, token: &Token, job: u32, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<Session, Gone> {
+        let s = self.live(token, now, alive)?;
+        if s.job.is_none() && s.connections() >= MAX_CONNECTIONS {
+            return Err(Gone::Full);
+        }
         s.job = Some(job);
-        s.detached_at = 0;
         Ok(s.clone())
     }
 
-    /// The connection of `job` closed: the session waits to be resumed.
+    /// Attach `job` to the session beside its other connections; `Full`
+    /// when it has [`MAX_CONNECTIONS`].
+    pub fn attach(&mut self, token: &Token, job: u32, now: u64, alive: &dyn Fn(u32) -> bool) -> Result<Session, Gone> {
+        let s = self.live(token, now, alive)?;
+        if s.has(job) {
+            return Ok(s.clone());
+        }
+        if s.connections() >= MAX_CONNECTIONS {
+            return Err(Gone::Full);
+        }
+        s.attached.push(job);
+        Ok(s.clone())
+    }
+
+    /// The connection of `job` closed. The last to go starts the idle
+    /// timeout.
     pub fn detach(&mut self, token: &Token, job: u32, now: u64) {
-        if let Some(s) = self.map.get_mut(&token.0)
-            && s.job == Some(job)
-        {
+        let Some(s) = self.map.get_mut(&token.0) else {
+            return;
+        };
+        if !s.has(job) {
+            return;
+        }
+        if s.job == Some(job) {
             s.job = None;
+        }
+        s.attached.retain(|j| *j != job);
+        if s.connections() == 0 {
             s.detached_at = now;
         }
     }
 
-    /// End the session (`SignOff`, an operator); whether it was there.
-    pub fn end(&mut self, token: &Token) -> bool {
-        self.map.remove(&token.0).is_some()
+    /// End the session from job `by` (`SignOff`, an operator); its other
+    /// jobs are told why. Whether it was there.
+    pub fn end(&mut self, token: &Token, by: u32, why: EndedBy) -> bool {
+        let Some(s) = self.map.remove(&token.0) else {
+            return false;
+        };
+        for j in s.job.into_iter().chain(s.attached).filter(|j| *j != by) {
+            self.ended.insert(j, why);
+        }
+        true
     }
 
-    /// End every session (the server ended).
+    /// Whether another job ended `job`'s session, and how; told once.
+    pub fn take_ended(&mut self, job: u32) -> Option<EndedBy> {
+        self.ended.remove(&job)
+    }
+
+    /// End every session (the server ended; its jobs hear it so).
     pub fn clear(&mut self) {
         self.map.clear();
+        self.ended.clear();
+    }
+
+    /// The session `token` names, as it is now.
+    #[must_use]
+    pub fn get(&self, token: &Token) -> Option<&Session> {
+        self.map.get(&token.0)
     }
 
     /// Sessions now, for a display.
@@ -161,10 +248,96 @@ mod tests {
         let (a, b) = (Token([3; 32]), Token([4; 32]));
         t.create(&a, "A", 60, 1);
         t.create(&b, "B", 60, 2);
-        assert!(t.end(&a));
-        assert!(!t.end(&a));
+        assert!(t.end(&a, 1, EndedBy::SignOff));
+        assert!(!t.end(&a, 1, EndedBy::SignOff));
+        assert_eq!(t.take_ended(1), None, "the job that signed off is not told");
         assert_eq!(t.resume(&a, 3, 0, ALIVE), Err(Gone::Unknown));
         t.clear();
         assert_eq!(t.resume(&b, 3, 0, ALIVE), Err(Gone::Unknown));
+    }
+
+    #[test]
+    fn attach_up_to_sixteen() {
+        let mut t = Sessions::new();
+        let tok = Token([5; 32]);
+        t.create(&tok, "BOB", 60, 1);
+        for j in 2..=16u32 {
+            assert_eq!(t.attach(&tok, j, 0, ALIVE).unwrap().connections(), j as usize);
+        }
+        assert_eq!(t.attach(&tok, 17, 0, ALIVE), Err(Gone::Full));
+        // One leaves, one more fits.
+        t.detach(&tok, 9, 0);
+        assert!(t.attach(&tok, 17, 0, ALIVE).is_ok());
+        // The resumable one left: one more attaches, and a resume would
+        // then make 17.
+        t.detach(&tok, 1, 0);
+        assert!(t.attach(&tok, 18, 0, ALIVE).is_ok());
+        assert_eq!(t.resume(&tok, 19, 0, ALIVE), Err(Gone::Full));
+        assert_eq!(t.attach(&tok, 99, 0, ALIVE), Err(Gone::Full));
+        assert_eq!(t.attach(&Token([6; 32]), 20, 0, ALIVE), Err(Gone::Unknown));
+    }
+
+    #[test]
+    fn the_timer_runs_only_without_connections() {
+        let mut t = Sessions::new();
+        let tok = Token([7; 32]);
+        t.create(&tok, "BOB", 60, 1);
+        t.attach(&tok, 2, 0, ALIVE).unwrap();
+        // The resumable connection left; the attached one keeps it.
+        t.detach(&tok, 1, 100);
+        assert!(t.attach(&tok, 3, 10_000, ALIVE).is_ok());
+        t.detach(&tok, 2, 10_000);
+        t.detach(&tok, 3, 20_000);
+        // Resumable until 20 060.
+        assert_eq!(t.resume(&tok, 4, 20_059, ALIVE).unwrap().job, Some(4));
+        t.detach(&tok, 4, 30_000);
+        assert_eq!(t.attach(&tok, 5, 30_060, ALIVE), Err(Gone::Expired));
+    }
+
+    #[test]
+    fn a_dead_attached_job_leaves() {
+        let mut t = Sessions::new();
+        let tok = Token([8; 32]);
+        t.create(&tok, "BOB", 60, 1);
+        t.attach(&tok, 2, 0, ALIVE).unwrap();
+        t.detach(&tok, 1, 0);
+        let dead: &dyn Fn(u32) -> bool = &|j| j != 2;
+        // Noticed at 500: no connection left, resumable until 560.
+        let s = t.resume(&tok, 3, 500, dead).unwrap();
+        assert!(s.attached.is_empty());
+        t.detach(&tok, 3, 500);
+        assert_eq!(t.resume(&tok, 4, 560, ALIVE), Err(Gone::Expired));
+    }
+
+    #[test]
+    fn resume_leaves_attached_jobs() {
+        let mut t = Sessions::new();
+        let tok = Token([9; 32]);
+        t.create(&tok, "BOB", 60, 1);
+        t.attach(&tok, 2, 0, ALIVE).unwrap();
+        let s = t.resume(&tok, 3, 0, ALIVE).unwrap();
+        assert_eq!((s.job, s.attached), (Some(3), vec![2]));
+    }
+
+    #[test]
+    fn ending_tells_the_other_jobs() {
+        let mut t = Sessions::new();
+        let tok = Token([10; 32]);
+        t.create(&tok, "BOB", 60, 1);
+        t.attach(&tok, 2, 0, ALIVE).unwrap();
+        t.attach(&tok, 3, 0, ALIVE).unwrap();
+        assert!(t.end(&tok, 2, EndedBy::Operator));
+        assert_eq!(t.take_ended(2), None);
+        assert_eq!(t.take_ended(1), Some(EndedBy::Operator));
+        assert_eq!(t.take_ended(3), Some(EndedBy::Operator));
+        assert_eq!(t.take_ended(3), None, "told once");
+        // A job that ended before it asked is forgotten at the next sweep.
+        let tok = Token([11; 32]);
+        t.create(&tok, "BOB", 60, 4);
+        t.attach(&tok, 5, 0, ALIVE).unwrap();
+        t.end(&tok, 5, EndedBy::SignOff);
+        let dead: &dyn Fn(u32) -> bool = &|j| j != 4;
+        let _ = t.resume(&Token([12; 32]), 6, 0, dead);
+        assert_eq!(t.take_ended(4), None);
     }
 }

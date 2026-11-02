@@ -67,6 +67,10 @@ pub const QAP_NO_AUTO_SIGNON: &str = "TCP1A55";
 pub const QAP_SPLF_NO_FORMAT: &str = "TCP1A56";
 /// `Spooled file &1 number &2 is still being written.`
 pub const QAP_SPLF_IN_USE: &str = "TCP1A57";
+/// `QAP session of &1 was signed off on another connection.`
+pub const QAP_SIGNED_OFF_ELSEWHERE: &str = "TCP1A58";
+/// `QAP session of &1 has as many connections as it may have.`
+pub const QAP_SESSION_FULL: &str = "TCP1A59";
 
 /// Every identifier above.
 pub const ALL: &[&str] = &[
@@ -100,4 +104,6 @@ pub const ALL: &[&str] = &[
     QAP_NO_AUTO_SIGNON,
     QAP_SPLF_NO_FORMAT,
     QAP_SPLF_IN_USE,
+    QAP_SIGNED_OFF_ELSEWHERE,
+    QAP_SESSION_FULL,
 ];
