@@ -1,6 +1,6 @@
 # QAP: Quartz Access Protocol, version 1 (draft)
 
-QAP is how QS/400 Access talks to QS/400 for everything except 5250 and printer sessions, which stay on TN5250E (RFC 4777). It replaces the plan to clone the host-server protocol. It is an original Quartz design: nothing in it is taken from IBM host-server protocols, JTOpen or any IBM-authored source.
+QAP is how QS/400 Access talks to QS/400 for everything except 5250 and printer sessions, which stay on TN5250E (RFC 4777). It is an original Quartz design: it takes nothing from any other access protocol or from any other protocol's sources.
 
 This draft settles the decisions below. Anything it leaves open is listed under Open questions; the first agent to reach one stops and asks Cody.
 
@@ -67,11 +67,11 @@ Every frame is one Wire-encoded `Envelope`. The envelope layout never changes be
 
 ## Later phases (spec now, build later)
 
-The client agent inventories which host-server functions QS/400 Access was going to use, and adds each as a QAP service with its requests and replies to this document before building it. Expected, in this order: remote command (run CL, return messages and the job), spooled files (list, read as SCS, text or PDF, hold, release, delete, move), SQL, IFS files, message queues. Optional: a one-time `TelnetTicket` from a signed-on session that the Telnet server accepts for 5250 auto sign-on, which would remove the need for password substitution on Telnet.
+The client agent inventories which system functions QS/400 Access uses, and adds each as a QAP service with its requests and replies to this document before building it. Expected, in this order: remote command (run CL, return messages and the job), spooled files (list, read as SCS, text or PDF, hold, release, delete, move), SQL, IFS files, message queues. Optional: a one-time `TelnetTicket` from a signed-on session that the Telnet server accepts for 5250 auto sign-on, which would remove the need for password substitution on Telnet.
 
 ### Inventory
 
-What QS/400 Access was going to reach through the host servers, from its task pane, README and messages, and the service each becomes:
+What QS/400 Access needs of the system besides 5250, from its task pane, README and messages, and the service each becomes:
 
 | Function in QS/400 Access | Service |
 | --- | --- |
@@ -83,7 +83,7 @@ What QS/400 Access was going to reach through the host servers, from its task pa
 | Password expiry warning (`QAD4031`), which the phase 0 `SignOnReply` cannot give | `SignOn` op 6 `PasswordStatus` |
 | 5250 automatic sign-on without a password on Telnet (the optional ticket) | `SignOn` op 5 `TelnetTicket` |
 
-Not host-server functions, so not in QAP: 5250 display and printer sessions (Telnet), the printer session's message queue (named in the TN5250E startup), the 5250 Console and Control Panel tasks (the service console), and Key and Certificate Management (this computer's trust store).
+Not in QAP: 5250 display and printer sessions (Telnet), the printer session's message queue (named in the TN5250E startup), the 5250 Console and Control Panel tasks (the service console), and Key and Certificate Management (this computer's trust store).
 
 ### Rules for these additions
 
