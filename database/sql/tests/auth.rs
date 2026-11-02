@@ -5,6 +5,8 @@
 //! A query reads a table only with the authority a read open needs:
 //! a profile excluded from a table gets SQL0551, one with `*USE` reads it.
 
+#![allow(clippy::many_single_char_names)]
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
