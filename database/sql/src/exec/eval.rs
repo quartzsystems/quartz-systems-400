@@ -53,7 +53,9 @@ impl Schema {
     pub fn find(&self, table: Option<&str>, name: &str) -> Result<Option<usize>> {
         let mut found = None;
         for (i, c) in self.cols.iter().enumerate() {
-            if c.name != name || table.is_some_and(|t| c.table.as_deref() != Some(t)) {
+            // A column by its system name or its SQL name.
+            let named = c.name == name || c.field.as_ref().is_some_and(|f| f.alias.as_deref() == Some(name));
+            if !named || table.is_some_and(|t| c.table.as_deref() != Some(t)) {
                 continue;
             }
             if found.is_some() {
@@ -117,7 +119,11 @@ pub fn sql_type(f: &FieldDef) -> String {
         },
         D::Date => "DATE".into(),
         D::Time => "TIME".into(),
-        D::Timestamp => "TIMESTAMP".into(),
+        D::Timestamp if f.length == 26 => "TIMESTAMP".into(),
+        D::Timestamp => format!("TIMESTAMP({})", D::timestamp_precision(f.length)),
+        D::DecFloat => format!("DECFLOAT({})", if f.length <= 16 { 16 } else { 34 }),
+        D::Boolean => "BOOLEAN".into(),
+        t => format!("{}({})", t.sql_name(f.varlen.is_some()), f.length),
     }
 }
 
@@ -366,6 +372,7 @@ impl Evaluator<'_> {
                 Ok(match v {
                     Value::Null => None,
                     Value::Num(d) => Some(!d.is_zero()),
+                    Value::Bool(b) => Some(b),
                     v => {
                         return Err(SqlError::TypeMismatch {
                             what: format!("{} where a condition is needed", v.type_name()),
@@ -421,6 +428,7 @@ impl Evaluator<'_> {
             Expr::Register(r) => Ok(self.register(*r)),
             Expr::Neg(a) => match self.eval(txn, a, env)? {
                 Value::Null => Ok(Value::Null),
+                Value::DecFloat(d) => Ok(Value::DecFloat(d.negated())),
                 v => Ok(Value::Num(v.as_decimal()?.negated())),
             },
             Expr::Binary(a, op, b) => {
@@ -523,11 +531,10 @@ impl Evaluator<'_> {
         match r {
             Register::Date => Value::Date(Date::from_unix(now)),
             Register::Time => Value::Time(Time::from_unix(now)),
-            Register::Timestamp => Value::Timestamp(Timestamp {
-                date: Date::from_unix(now),
-                time: Time::from_unix(now),
-                micros: 0,
-            }),
+            Register::Timestamp => {
+                let (secs, picos) = self.ctx.clock_picos();
+                Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos))
+            }
             Register::User => Value::Str(self.ctx.user.clone()),
             Register::Server => Value::Str("QS400".into()),
             Register::Schema => Value::Str(
@@ -630,6 +637,17 @@ impl Evaluator<'_> {
                 if values.is_empty() {
                     return Ok(Value::Null);
                 }
+                if values.iter().any(|v| matches!(v, Value::DecFloat(_))) {
+                    let mut sum = values[0].clone();
+                    for v in &values[1..] {
+                        sum = binary(&sum, BinOp::Add, v)?;
+                    }
+                    if f.name == "AVG" {
+                        let n = Value::int(i64::try_from(values.len()).expect("fits"));
+                        return binary(&sum, BinOp::Div, &n);
+                    }
+                    return Ok(sum);
+                }
                 let mut sum = Decimal::zero();
                 for v in &values {
                     sum = sum.add_exact(&v.as_decimal()?).map_err(overflow)?;
@@ -687,6 +705,18 @@ pub fn literal(l: &Literal) -> Result<Value> {
     Ok(match l {
         Literal::Str(s) => Value::Str(s.clone()),
         Literal::Hex(h) => Value::Str(ccsid::from_ebcdic(h)),
+        Literal::Bin(b) => Value::Bin(b.clone()),
+        Literal::Bool(b) => Value::Bool(*b),
+        // A literal with an exponent is a double.
+        Literal::Num(n) if n.contains(['E', 'e']) => Value::Num(
+            n.parse::<f64>()
+                .ok()
+                .and_then(crate::value::float_decimal)
+                .ok_or_else(|| SqlError::Literal {
+                    text: n.clone(),
+                    what: "not a number the engine can hold".into(),
+                })?,
+        ),
         Literal::Num(n) => Value::Num(Decimal::parse(n).map_err(|e| SqlError::Literal {
             text: n.clone(),
             what: e.to_string(),
@@ -735,8 +765,14 @@ pub fn binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
     if a.is_null() || b.is_null() {
         return Ok(Value::Null);
     }
+    if op != BinOp::Concat && (matches!(a, Value::DecFloat(_)) || matches!(b, Value::DecFloat(_))) {
+        return decfloat_binary(a, op, b);
+    }
     match op {
-        BinOp::Concat => Ok(Value::Str(format!("{}{}", a.as_text(), b.as_text()))),
+        BinOp::Concat => match (a, b) {
+            (Value::Bin(x), Value::Bin(y)) => Ok(Value::Bin([x.as_slice(), y].concat())),
+            _ => Ok(Value::Str(format!("{}{}", a.as_text(), b.as_text()))),
+        },
         BinOp::Add | BinOp::Sub => {
             if matches!(a, Value::Date(_) | Value::Timestamp(_)) && matches!(b, Value::Num(_)) {
                 return Err(SqlError::Unsupported {
@@ -775,6 +811,21 @@ pub fn binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
             Ok(Value::Num(x.div_to_scale(&y, scale).map_err(overflow)?))
         }
     }
+}
+
+/// Arithmetic with a `DECFLOAT` operand: the other converted, the
+/// result in the wider format.
+fn decfloat_binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
+    let lhs = a.as_decfloat(a.decfloat_format())?;
+    let rhs = b.as_decfloat(b.decfloat_format())?;
+    let out = match op {
+        BinOp::Add => qdecimal::decfloat::add(&lhs, &rhs),
+        BinOp::Sub => qdecimal::decfloat::sub(&lhs, &rhs),
+        BinOp::Mul => qdecimal::decfloat::mul(&lhs, &rhs),
+        BinOp::Div => qdecimal::decfloat::div(&lhs, &rhs),
+        BinOp::Concat => unreachable!("not arithmetic"),
+    };
+    out.map(Value::DecFloat).map_err(crate::value::decfloat_error)
 }
 
 /// `date - date` as the `yyyymmdd` duration DB2 gives.
@@ -828,7 +879,7 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
             let mut secs = i64::from(t.time.hour) * 3600
                 + i64::from(t.time.minute) * 60
                 + i64::from(t.time.second);
-            let mut micros = i64::from(t.micros);
+            let mut picos = i128::from(t.picos);
             let mut date = t.date;
             match unit {
                 DurationUnit::Years => date = add_months(date, n * 12).ok_or_else(bad)?,
@@ -837,10 +888,11 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
                 DurationUnit::Hours => secs += n * 3600,
                 DurationUnit::Minutes => secs += n * 60,
                 DurationUnit::Seconds => secs += n,
-                DurationUnit::Microseconds => micros += n,
+                DurationUnit::Microseconds => picos += i128::from(n) * 1_000_000,
             }
-            secs += micros.div_euclid(1_000_000);
-            micros = micros.rem_euclid(1_000_000);
+            let unit = i128::from(crate::value::PICOS);
+            secs += i64::try_from(picos.div_euclid(unit)).map_err(|_| bad())?;
+            let picos = u64::try_from(picos.rem_euclid(unit)).expect("below a second");
             let day_shift = secs.div_euclid(86_400);
             secs = secs.rem_euclid(86_400);
             if day_shift != 0 {
@@ -854,7 +906,8 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
                     u8::try_from(secs % 60).expect("second"),
                 )
                 .expect("valid"),
-                micros: u32::try_from(micros).expect("fits"),
+                picos,
+                precision: t.precision,
             }))
         }
         Value::Time(t) => {
@@ -921,7 +974,36 @@ pub fn cast(v: &Value, t: &TypeSpec) -> Result<Value> {
             },
         )?))
     };
+    let bytes = |n: u32, pad: bool| -> Result<Value> {
+        let mut b = v.as_bytes()?;
+        let n = usize::try_from(n).expect("fits");
+        b.truncate(n);
+        if pad {
+            b.resize(n, 0);
+        }
+        Ok(Value::Bin(b))
+    };
+    let chars = |n: u32| -> String { v.as_text().chars().take(usize::try_from(n).expect("fits")).collect() };
+    // A binary string as bit data is its bytes.
+    let v = &match v {
+        Value::Bin(b) if matches!(t.data_type, DataType::Char(_) | DataType::Varchar(_)) => {
+            Value::Str(ccsid::from_ebcdic(b))
+        }
+        v => v.clone(),
+    };
     Ok(match &t.data_type {
+        DataType::DecFloat(n) => {
+            let format = if *n == 16 { qdecimal::DfFormat::D16 } else { qdecimal::DfFormat::D34 };
+            let d = match v {
+                Value::Str(s) => qdecimal::DecFloat::parse(s, format).map_err(crate::value::decfloat_error)?,
+                v => v.as_decfloat(format)?,
+            };
+            Value::DecFloat(d.to_format(format).map_err(crate::value::decfloat_error)?)
+        }
+        DataType::Binary(n) => bytes(*n, true)?,
+        DataType::Varbinary(n) | DataType::Blob(n) => bytes(*n, false)?,
+        DataType::Boolean => Value::Bool(v.as_bool()?),
+        DataType::Clob(n) | DataType::Dbclob(n) => Value::Str(chars(*n)),
         DataType::Char(n) => {
             let s = v.as_text();
             let n = usize::try_from(*n).expect("fits");
@@ -944,7 +1026,7 @@ pub fn cast(v: &Value, t: &TypeSpec) -> Result<Value> {
         DataType::Real | DataType::Double => Value::Num(v.as_decimal()?),
         DataType::Date => Value::Date(v.as_date()?),
         DataType::Time => Value::Time(v.as_time()?),
-        DataType::Timestamp => Value::Timestamp(v.as_timestamp()?),
+        DataType::Timestamp(p) => Value::Timestamp(v.as_timestamp()?.with_precision(*p)),
     })
 }
 

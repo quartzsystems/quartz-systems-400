@@ -34,11 +34,98 @@ pub enum DataType {
     Date,
     /// `T`: time.
     Time,
-    /// `Z`: timestamp.
+    /// `Z`: timestamp; SQL's `TIMESTAMP(p)` is 19 or `20 + p` long.
     Timestamp,
+    /// SQL `DECFLOAT(16)` or `DECFLOAT(34)`: IEEE 754 decimal64 or
+    /// decimal128. DDS has no letter; stored as `E`.
+    DecFloat,
+    /// SQL `BINARY(n)` and, with `VARLEN`, `VARBINARY(n)`; stored as `X`.
+    Bytes,
+    /// SQL `BOOLEAN`: one byte, X'F1' true, X'F0' false; stored as `N`.
+    Boolean,
+    /// SQL `BLOB(n)`: a LOB reference in the record; stored as `Q`.
+    Blob,
+    /// SQL `CLOB(n)`; stored as `C`.
+    Clob,
+    /// SQL `DBCLOB(n)`, `n` UTF-16 characters; stored as `J`.
+    Dbclob,
 }
 
+/// Bytes a LOB reference takes in the record (`docs/DB_FORMAT.md`, `LobRef`).
+pub const LOB_REF_LEN: u32 = 32;
+
 impl DataType {
+    /// From the type code a file stores: a DDS letter or an SQL-only code.
+    #[must_use]
+    pub fn from_code(ch: char) -> Option<Self> {
+        Some(match ch {
+            'E' => Self::DecFloat,
+            'X' => Self::Bytes,
+            'N' => Self::Boolean,
+            'Q' => Self::Blob,
+            'C' => Self::Clob,
+            'J' => Self::Dbclob,
+            _ => return Self::from_letter(ch),
+        })
+    }
+
+    /// Only SQL can make it.
+    #[must_use]
+    pub fn is_sql_only(self) -> bool {
+        matches!(
+            self,
+            Self::DecFloat | Self::Bytes | Self::Boolean | Self::Blob | Self::Clob | Self::Dbclob
+        )
+    }
+
+    /// `BLOB`, `CLOB` or `DBCLOB`.
+    #[must_use]
+    pub fn is_lob(self) -> bool {
+        matches!(self, Self::Blob | Self::Clob | Self::Dbclob)
+    }
+
+    /// The SQL type name, for displays.
+    #[must_use]
+    pub fn sql_name(self, varlen: bool) -> &'static str {
+        match (self, varlen) {
+            (Self::Char | Self::Hex, true) => "VARCHAR",
+            (Self::Char | Self::Hex, false) => "CHAR",
+            (Self::Graphic | Self::DbcsOpen, false) => "GRAPHIC",
+            (Self::Graphic | Self::DbcsOpen, true) => "VARGRAPHIC",
+            (Self::Zoned, _) => "NUMERIC",
+            (Self::Packed, _) => "DECIMAL",
+            (Self::Binary, _) => "INTEGER",
+            (Self::Float, _) => "FLOAT",
+            (Self::Date, _) => "DATE",
+            (Self::Time, _) => "TIME",
+            (Self::Timestamp, _) => "TIMESTAMP",
+            (Self::DecFloat, _) => "DECFLOAT",
+            (Self::Bytes, false) => "BINARY",
+            (Self::Bytes, true) => "VARBINARY",
+            (Self::Boolean, _) => "BOOLEAN",
+            (Self::Blob, _) => "BLOB",
+            (Self::Clob, _) => "CLOB",
+            (Self::Dbclob, _) => "DBCLOB",
+        }
+    }
+
+    /// A timestamp's fractional digits from its length: 19 is 0, else
+    /// `length - 20`; 6 when the length is not a timestamp's.
+    #[must_use]
+    pub fn timestamp_precision(length: u32) -> u8 {
+        match length {
+            19 => 0,
+            21..=32 => u8::try_from(length - 20).expect("small"),
+            _ => 6,
+        }
+    }
+
+    /// The length of `TIMESTAMP(p)`.
+    #[must_use]
+    pub fn timestamp_length(precision: u8) -> u32 {
+        if precision == 0 { 19 } else { 20 + u32::from(precision) }
+    }
+
     /// From the letter in position 35.
     #[must_use]
     pub fn from_letter(ch: char) -> Option<Self> {
@@ -73,6 +160,12 @@ impl DataType {
             Self::Date => 'L',
             Self::Time => 'T',
             Self::Timestamp => 'Z',
+            Self::DecFloat => 'E',
+            Self::Bytes => 'X',
+            Self::Boolean => 'N',
+            Self::Blob => 'Q',
+            Self::Clob => 'C',
+            Self::Dbclob => 'J',
         }
     }
 
@@ -111,7 +204,7 @@ impl DataType {
     #[must_use]
     pub fn length_range(self) -> (u32, u32) {
         match self {
-            Self::Char | Self::Hex => (1, 32766),
+            Self::Char | Self::Hex | Self::Bytes => (1, 32766),
             Self::Graphic => (1, 16383),
             Self::DbcsOpen => (4, 32766),
             Self::Zoned | Self::Packed => (1, 63),
@@ -120,6 +213,10 @@ impl DataType {
             Self::Date => (6, 10),
             Self::Time => (8, 8),
             Self::Timestamp => (26, 26),
+            Self::DecFloat => (16, 34),
+            Self::Boolean => (1, 1),
+            Self::Blob | Self::Clob => (1, 2_147_483_647),
+            Self::Dbclob => (1, 1_073_741_823),
         }
     }
 
@@ -127,7 +224,18 @@ impl DataType {
     #[must_use]
     pub fn byte_len(self, length: u32, precision: FloatPrecision) -> u32 {
         match self {
-            Self::Char | Self::Hex | Self::DbcsOpen | Self::Zoned | Self::Date => length,
+            Self::Char | Self::Hex | Self::DbcsOpen | Self::Zoned | Self::Date | Self::Bytes => {
+                length
+            }
+            Self::DecFloat => {
+                if length <= 16 {
+                    8
+                } else {
+                    16
+                }
+            }
+            Self::Boolean => 1,
+            Self::Blob | Self::Clob | Self::Dbclob => LOB_REF_LEN,
             Self::Graphic => length * 2,
             Self::Packed => length / 2 + 1,
             Self::Binary => match length {
@@ -140,7 +248,8 @@ impl DataType {
                 FloatPrecision::Double => 8,
             },
             Self::Time => 8,
-            Self::Timestamp => 26,
+            Self::Timestamp if length == 0 => 26,
+            Self::Timestamp => length,
         }
     }
 }
@@ -625,6 +734,17 @@ mod tests {
             assert_eq!(D::from_letter(ch).unwrap().letter(), ch);
         }
         assert!(D::from_letter('X').is_none());
+        for ch in "AHGOSPBFLTZEXNQCJ".chars() {
+            assert_eq!(D::from_code(ch).unwrap().letter(), ch);
+        }
+        assert_eq!(D::DecFloat.byte_len(16, s), 8);
+        assert_eq!(D::DecFloat.byte_len(34, s), 16);
+        assert_eq!(D::Blob.byte_len(1 << 24, s), LOB_REF_LEN);
+        assert_eq!(D::Timestamp.byte_len(32, s), 32);
+        assert_eq!(D::timestamp_length(0), 19);
+        assert_eq!(D::timestamp_precision(32), 12);
+        assert_eq!(D::timestamp_precision(19), 0);
+        assert_eq!(D::timestamp_precision(26), 6);
     }
 
     #[test]

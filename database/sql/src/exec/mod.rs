@@ -48,8 +48,22 @@ impl TableInfo {
     /// The field named, with its index.
     #[must_use]
     pub fn field(&self, name: &str) -> Option<(usize, &FieldDef)> {
-        let n = Name::parse(name).ok()?;
-        self.format.format.field(&n)
+        let by_alias = || self.format.format.fields.iter().enumerate().find(|(_, f)| f.alias.as_deref() == Some(name));
+        match Name::parse(name) {
+            Ok(n) => self.format.format.field(&n).or_else(by_alias),
+            Err(_) => by_alias(),
+        }
+    }
+
+    /// The member whose LOB tree holds the table's LOB values.
+    pub fn lob_owner(&self, txn: &mut Txn<'_>) -> Result<ObjectId> {
+        Ok(db::member::lob::owner(txn, self.member.object)?)
+    }
+
+    /// Whether the format has LOB fields.
+    #[must_use]
+    pub fn has_lobs(&self) -> bool {
+        self.format.format.fields.iter().any(|f| f.data_type.is_lob())
     }
 }
 
@@ -251,6 +265,18 @@ impl SqlContext {
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_or(0, |d| d.as_secs())
         })
+    }
+
+    /// The clock as seconds and the picoseconds past them, as fine as
+    /// the system clock goes (a fixed clock has none).
+    #[must_use]
+    pub fn clock_picos(&self) -> (u64, u64) {
+        match self.now {
+            Some(s) => (s, 0),
+            None => std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or((0, 0), |d| (d.as_secs(), u64::from(d.subsec_nanos()) * 1000)),
+        }
     }
 
     /// An identifier as a system name.

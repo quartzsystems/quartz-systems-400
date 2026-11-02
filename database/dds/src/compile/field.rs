@@ -472,7 +472,10 @@ fn formats(spec: &Spec, f: &mut FieldDef, kws: &Kws<'_>, diags: &mut Diagnostics
                     "a timestamp",
                 ));
             }
-            f.length = 26;
+            // A referenced SQL timestamp keeps its precision.
+            if spec.length.is_some() || !(f.length == 19 || (21..=32).contains(&f.length)) {
+                f.length = 26;
+            }
         }
         _ => {
             for kw in [kws.datsep, kws.timsep].into_iter().flatten() {

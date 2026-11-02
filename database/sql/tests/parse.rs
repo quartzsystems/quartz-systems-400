@@ -421,7 +421,7 @@ fn errors() {
     );
     for (text, what) in [
         ("SELECT 1 FROM a EXCEPT SELECT 1 FROM b", "EXCEPT"),
-        ("CREATE TABLE t (c CLOB(1K))", "CLOB"),
+        ("CREATE TABLE t (c XML)", "XML"),
         ("CALL p()", "CALL"),
         ("SET OPTION COMMIT = *CHG", "SET OPTION"),
         ("DECLARE c CURSOR FOR s1", "prepared statement"),

@@ -32,6 +32,7 @@ pub fn cpyfrmimpf(
     crate::auth::check(txn, "file.open-output", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "CPYFRMIMPF")?;
+    crate::util::no_lobs(&desc, "CPYFRMIMPF")?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(
         txn,
@@ -151,6 +152,34 @@ fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
             })
             .map(Value::Num)
             .map_err(|_| bad(f, text));
+    }
+    match f.data_type {
+        DataType::DecFloat => {
+            let t = text.trim().replace(opts.decpnt, ".");
+            return qdecimal::DecFloat::parse(&t, record::decfloat_format(f))
+                .map(Value::DecFloat)
+                .map_err(|_| bad(f, text));
+        }
+        DataType::Bytes => {
+            let t = text.trim();
+            if !t.len().is_multiple_of(2) {
+                return Err(bad(f, text));
+            }
+            return (0..t.len())
+                .step_by(2)
+                .map(|i| t.get(i..i + 2).and_then(|h| u8::from_str_radix(h, 16).ok()))
+                .collect::<Option<Vec<u8>>>()
+                .map(Value::Char)
+                .ok_or_else(|| bad(f, text));
+        }
+        DataType::Boolean => {
+            return match text.trim().to_ascii_uppercase().as_str() {
+                "TRUE" | "1" | "T" | "Y" => Ok(Value::Char(vec![0xF1])),
+                "FALSE" | "0" | "F" | "N" => Ok(Value::Char(vec![0xF0])),
+                _ => Err(bad(f, text)),
+            };
+        }
+        _ => {}
     }
     let s = match f.data_type {
         DataType::Date => {

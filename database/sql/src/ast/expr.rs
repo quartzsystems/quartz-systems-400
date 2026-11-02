@@ -35,8 +35,22 @@ pub enum DataType {
     Date,
     /// `TIME`.
     Time,
-    /// `TIMESTAMP`.
-    Timestamp,
+    /// `TIMESTAMP(p)`, `p` 0 to 12 (6 when not given).
+    Timestamp(u8),
+    /// `DECFLOAT(16)` or `DECFLOAT(34)`.
+    DecFloat(u8),
+    /// `BINARY(n)`.
+    Binary(u32),
+    /// `VARBINARY(n)`, `BINARY VARYING(n)`.
+    Varbinary(u32),
+    /// `BOOLEAN`.
+    Boolean,
+    /// `BLOB(n)`.
+    Blob(u32),
+    /// `CLOB(n)`.
+    Clob(u32),
+    /// `DBCLOB(n)`.
+    Dbclob(u32),
 }
 
 /// A column data type with its options.
@@ -57,6 +71,10 @@ pub enum Literal {
     Str(String),
     /// A hexadecimal string.
     Hex(Vec<u8>),
+    /// A binary string, `BX'..'`.
+    Bin(Vec<u8>),
+    /// `TRUE` or `FALSE`.
+    Bool(bool),
     /// A number, as written.
     Num(String),
     /// `NULL`.

@@ -37,6 +37,13 @@ help = "The statement could not be parsed at the position shown."
 vars = ["*DEC 5 0", "*DEC 5 0", "*CHAR 256"]
 
 [[msg]]
+id = "SQL0107"
+sev = 30
+text = "The name &1 is too long; at most &2 characters are allowed."
+help = "Shorten the name. An SQL column name may have up to 128 characters, a system name up to 10."
+vars = ["*CHAR 256", "*DEC 5 0"]
+
+[[msg]]
 id = "SQL0117"
 sev = 30
 text = "The number of values does not match the number of columns."

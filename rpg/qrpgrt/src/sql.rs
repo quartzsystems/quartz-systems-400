@@ -249,6 +249,10 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
                 Value::Time(x) => x.render(TimeFmt::Iso, None),
                 Value::Timestamp(t) => ts_text(t),
                 Value::Num(x) => x.to_string(),
+                Value::DecFloat(x) => x.to_string(),
+                // Bit data: its bytes; a boolean as an indicator holds it.
+                Value::Bin(b) => ccsid::from_ebcdic(b),
+                Value::Bool(b) => if *b { "1" } else { "0" }.into(),
                 Value::Null => String::new(),
             };
             let e = ebcdic(&text);
@@ -295,7 +299,7 @@ fn ts_text(t: &Timestamp) -> String {
         t.time.hour,
         t.time.minute,
         t.time.second,
-        t.micros
+        t.micros()
     )
 }
 

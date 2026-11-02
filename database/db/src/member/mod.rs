@@ -9,6 +9,7 @@
 
 pub mod attr;
 pub mod join;
+pub mod lob;
 pub mod slots;
 
 pub use attr::MbrAttr;
@@ -762,7 +763,7 @@ impl Member {
         self.physical_only()?;
         self.refresh_dependents(txn)?;
         Space::truncate(txn, self.core.id, 0)?;
-        for slot in [attr::PATH_ROOT, attr::FREE_ROOT] {
+        for slot in [attr::PATH_ROOT, attr::FREE_ROOT, lob::LOB_ROOT] {
             if let Some(root) = self.core.roots[slot] {
                 btree::free_tree(txn, root)?;
                 self.core.set_root(txn, slot, None)?;

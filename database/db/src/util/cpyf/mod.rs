@@ -168,6 +168,7 @@ pub fn cpyf(
         });
     }
     let from_desc = file::describe(txn, from)?;
+    crate::util::no_lobs(&from_desc, "CPYF")?;
     let from_entry = member_of(&from_desc, opts.from_member)?;
     let mut from_m = Member::open(txn, &from_desc, &from_entry)?;
     let (to_id, created) = match to {

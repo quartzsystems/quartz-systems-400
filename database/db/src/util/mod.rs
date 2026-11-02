@@ -80,6 +80,17 @@ pub fn physical(desc: &FileDesc, command: &str) -> Result<()> {
     Ok(())
 }
 
+/// Refuse a file with LOB fields: their values are not in the record.
+pub fn no_lobs(desc: &FileDesc, command: &str) -> Result<()> {
+    let lob = desc.formats.iter().flat_map(|f| &f.format.fields).find(|f| f.data_type.is_lob());
+    match lob {
+        Some(f) => Err(DbError::Copy {
+            what: format!("{command}: field {} of {} is a LOB, which {command} does not copy", f.name, desc.name()),
+        }),
+        None => Ok(()),
+    }
+}
+
 /// Objects a utility holds while it runs; released in reverse order.
 pub struct Hold {
     job: JobHandle,

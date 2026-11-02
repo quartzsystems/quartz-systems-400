@@ -507,6 +507,14 @@ fn rpg_type(d: &dds::FieldDef) -> Ty {
             }
         }
         DataType::Graphic => Ty::Graph(d.length),
+        // SQL-only types: their record bytes.
+        DataType::DecFloat | DataType::Bytes | DataType::Boolean | DataType::Blob | DataType::Clob | DataType::Dbclob => {
+            if d.varlen.is_some() {
+                Ty::VarChar(d.length, 2)
+            } else {
+                Ty::Char(d.data_len())
+            }
+        }
         DataType::Zoned => Ty::Zoned(digits, d.decimals),
         DataType::Packed => Ty::Packed(digits, d.decimals),
         DataType::Binary => Ty::Bin(digits, d.decimals),

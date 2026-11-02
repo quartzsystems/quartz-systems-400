@@ -66,16 +66,29 @@ pub(crate) fn table_schema(t: &TableInfo, alias: &str) -> Schema {
     Schema { cols }
 }
 
-/// A record as a row: RRN first.
-pub fn row_of(fmt: &FormatDef, slot: &Slot) -> Result<Row> {
+/// A record of `t` as a row: RRN first. LOB values are read from the
+/// LOB tree of the member that holds them.
+pub fn row_of(txn: &mut Txn<'_>, t: &TableInfo, slot: &Slot) -> Result<Row> {
+    let fmt = &t.format;
     let mut row = Vec::with_capacity(fmt.format.fields.len() + 1);
     row.push(Value::int(i64::try_from(slot.rrn).expect("fits")));
+    let mut owner = None;
     for (i, f) in fmt.format.fields.iter().enumerate() {
         let v = db::record::read_field(f, &slot.record, &slot.null_map, fmt.null_index(i))
             .map_err(|e| SqlError::Conversion {
                 what: e.to_string(),
             })?;
-        row.push(Value::from_field(f, &v)?);
+        match v {
+            db::record::Value::Char(r) if f.data_type.is_lob() => {
+                let o = match owner {
+                    Some(o) => o,
+                    None => *owner.insert(t.lob_owner(txn)?),
+                };
+                let lob = db::member::lob::LobRef::decode(&r)?;
+                row.push(crate::value::lob_value(f, &db::member::lob::read(txn, o, &lob)?));
+            }
+            v => row.push(Value::from_field(f, &v)?),
+        }
     }
     Ok(row)
 }
@@ -804,7 +817,7 @@ fn scan_table_in(
                 };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
-                    rows.push(row_of(&t.format, &s)?);
+                    rows.push(row_of(txn, t, &s)?);
                 }
             }
             if ev.ctx.safe_point(txn)? {
@@ -835,7 +848,7 @@ fn scan_table_in(
                 };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
-                    rows.push(row_of(&t.format, &s)?);
+                    rows.push(row_of(txn, t, &s)?);
                 }
                 from = end + 1;
                 if ev.ctx.safe_point(txn)?
@@ -853,7 +866,7 @@ fn scan_table_in(
             })?;
             for s in &slots {
                 ev.ctx.poll_interrupt()?;
-                rows.push(row_of(&t.format, s)?);
+                rows.push(row_of(txn, t, s)?);
             }
             let _ = Core::load;
         }

@@ -7,12 +7,25 @@
 
 use dds::{DataType, FieldDef, KeyTransform};
 
+/// Bytes of a `DECFLOAT` key part: class, exponent, 34 digits.
+pub const DECFLOAT_KEY_LEN: usize = 37;
+
 /// Bytes a key field contributes to the encoded key.
 #[must_use]
 pub fn part_len(field: &FieldDef, _transform: KeyTransform) -> usize {
     let null = usize::from(field.allow_null);
     let data = match field.data_type {
-        DataType::Char | DataType::Hex | DataType::Graphic | DataType::DbcsOpen => {
+        DataType::Char
+        | DataType::Hex
+        | DataType::Graphic
+        | DataType::DbcsOpen
+        | DataType::Bytes
+        | DataType::Boolean
+        | DataType::Timestamp
+        // A LOB cannot be a key; its reference stands in.
+        | DataType::Blob
+        | DataType::Clob
+        | DataType::Dbclob => {
             // The data without the VARLEN prefix.
             usize::try_from(field.data_len()).expect("fits")
         }
@@ -21,7 +34,7 @@ pub fn part_len(field: &FieldDef, _transform: KeyTransform) -> usize {
         }
         DataType::Float | DataType::Date => 8,
         DataType::Time => 6,
-        DataType::Timestamp => 26,
+        DataType::DecFloat => DECFLOAT_KEY_LEN,
     };
     null + data
 }

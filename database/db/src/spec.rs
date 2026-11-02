@@ -26,6 +26,7 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::format::sections::JOIN_LAYOUT,
         &crate::member::attr::LAYOUT,
         &crate::member::slots::LAYOUT,
+        &crate::member::lob::LAYOUT,
         &crate::path::LAYOUT,
     ]
     .into_iter()

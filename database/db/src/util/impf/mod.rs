@@ -143,15 +143,26 @@ pub struct ImpfReport {
 pub fn fixed_width(f: &FieldDef) -> usize {
     let n = |x: u32| usize::try_from(x).expect("fits");
     match f.data_type {
-        DataType::Char | DataType::Hex | DataType::Graphic | DataType::DbcsOpen => n(f.length),
+        DataType::Char
+        | DataType::Hex
+        | DataType::Graphic
+        | DataType::DbcsOpen
+        | DataType::Blob
+        | DataType::Clob
+        | DataType::Dbclob => n(f.length),
         DataType::Zoned | DataType::Packed | DataType::Binary | DataType::Float => {
             n(f.length) + 1 + usize::from(f.decimals > 0)
         }
         DataType::Date | DataType::Time | DataType::Timestamp => n(f.byte_len),
+        // E notation: sign, digits, point, `E`, sign and exponent.
+        DataType::DecFloat => n(f.length) + 8,
+        // Two hexadecimal digits a byte.
+        DataType::Bytes => n(f.length) * 2,
+        DataType::Boolean => 5,
     }
 }
 
 /// Whether the field is written as text (quoted in `*DLM`).
 fn is_text(f: &FieldDef) -> bool {
-    !f.data_type.is_numeric()
+    !f.data_type.is_numeric() && !matches!(f.data_type, DataType::DecFloat | DataType::Boolean)
 }

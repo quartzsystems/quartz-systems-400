@@ -170,6 +170,17 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         }
         "SUBSTR" | "SUBSTRING" => {
             arity(name, args, 2, 4)?;
+            if let Value::Bin(b) = a(0) {
+                let start = usize::try_from(a(1).as_i64()?.max(1) - 1).expect("positive");
+                if start > b.len() {
+                    return Err(SqlError::Overflow { what: "SUBSTR start past the end".into() });
+                }
+                let len = match args.get(2) {
+                    Some(l) => usize::try_from(l.as_i64()?).unwrap_or(0),
+                    None => b.len() - start,
+                };
+                return Ok(Value::Bin(b[start..(start + len).min(b.len())].to_vec()));
+            }
             let s: Vec<char> = a(0).as_text().chars().collect();
             let start = a(1).as_i64()?;
             if start < 1 {
@@ -205,7 +216,10 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
             arity(name, args, 1, 1)?;
             int(match a(0) {
                 Value::Str(s) => i64::try_from(s.chars().count()).expect("fits"),
+                Value::Bin(b) => i64::try_from(b.len()).expect("fits"),
                 Value::Num(d) => i64::from(d.digits_needed().max(1)),
+                Value::DecFloat(d) => i64::try_from(d.format().byte_len()).expect("small"),
+                Value::Bool(_) => 1,
                 Value::Date(_) => 4,
                 Value::Time(_) => 3,
                 Value::Timestamp(_) => 10,
@@ -286,6 +300,8 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
             arity(name, args, 1, 1)?;
             let bytes = match a(0) {
                 Value::Str(s) => ccsid::to_ebcdic(s).unwrap_or_default(),
+                Value::Bin(b) => b.clone(),
+                Value::DecFloat(d) => d.encode(),
                 v => v.as_text().into_bytes(),
             };
             let mut s = String::with_capacity(bytes.len() * 2);
@@ -410,22 +426,60 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         "TIMESTAMP" => {
             arity(name, args, 1, 2)?;
             match args {
-                [d, t] => Value::Timestamp(Timestamp {
-                    date: d.as_date()?,
-                    time: t.as_time()?,
-                    micros: 0,
-                }),
+                // TIMESTAMP(x, p): to precision p.
+                [v, Value::Num(p)] => {
+                    let p = p.to_i128().and_then(|p| u8::try_from(p).ok()).filter(|p| *p <= 12).ok_or_else(|| {
+                        SqlError::Overflow { what: "a timestamp precision of 0 to 12 is needed".into() }
+                    })?;
+                    Value::Timestamp(v.as_timestamp()?.with_precision(p))
+                }
+                [d, t] => Value::Timestamp(Timestamp::new(d.as_date()?, t.as_time()?, 0)),
                 [v] => Value::Timestamp(v.as_timestamp()?),
                 _ => unreachable!(),
             }
         }
         "NOW" => {
-            let now = ctx.clock();
-            Value::Timestamp(Timestamp {
-                date: Date::from_unix(now),
-                time: Time::from_unix(now),
-                micros: 0,
-            })
+            let (secs, picos) = ctx.clock_picos();
+            Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos))
+        }
+        "DECFLOAT" => {
+            arity(name, args, 1, 2)?;
+            let format = match args.get(1).map(Value::as_i64).transpose()? {
+                None | Some(34) => qdecimal::DfFormat::D34,
+                Some(16) => qdecimal::DfFormat::D16,
+                Some(n) => return Err(SqlError::Overflow { what: format!("DECFLOAT({n}) is not a type") }),
+            };
+            Value::DecFloat(
+                a(0).as_decfloat(format)?.to_format(format).map_err(crate::value::decfloat_error)?,
+            )
+        }
+        "NORMALIZE_DECFLOAT" => {
+            arity(name, args, 1, 1)?;
+            Value::DecFloat(a(0).as_decfloat(a(0).decfloat_format())?.normalized())
+        }
+        "BINARY" | "VARBINARY" => {
+            arity(name, args, 1, 2)?;
+            let mut b = a(0).as_bytes()?;
+            if let Some(n) = args.get(1) {
+                let n = usize::try_from(n.as_i64()?).unwrap_or(0);
+                b.truncate(n);
+                if name == "BINARY" {
+                    b.resize(n, 0);
+                }
+            }
+            Value::Bin(b)
+        }
+        "BOOLEAN" => {
+            arity(name, args, 1, 1)?;
+            Value::Bool(a(0).as_bool()?)
+        }
+        "OCTET_LENGTH" => {
+            arity(name, args, 1, 1)?;
+            let n = match a(0) {
+                Value::Bin(b) => b.len(),
+                v => ccsid::to_ebcdic(&v.as_text()).map_or(0, |b| b.len()),
+            };
+            int(i64::try_from(n).expect("fits"))
         }
         "YEAR" | "MONTH" | "DAY" | "DAYOFMONTH" => {
             arity(name, args, 1, 1)?;
@@ -447,7 +501,7 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         }
         "MICROSECOND" => {
             arity(name, args, 1, 1)?;
-            int(i64::from(a(0).as_timestamp()?.micros))
+            int(i64::from(a(0).as_timestamp()?.micros()))
         }
         "DAYS" => {
             arity(name, args, 1, 1)?;

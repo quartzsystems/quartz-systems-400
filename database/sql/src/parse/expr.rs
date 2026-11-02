@@ -94,10 +94,19 @@ impl Parser {
         }
         if self.eat_word("IS") {
             let not = self.eat_word("NOT");
-            if self.eat_word("NULL") {
+            if self.eat_word("NULL") || self.eat_word("UNKNOWN") {
                 return Ok(Expr::IsNull(Box::new(left), not));
             }
-            return Err(self.expected("NULL"));
+            // IS TRUE: known and true; IS FALSE: known and false.
+            for (word, b) in [("TRUE", true), ("FALSE", false)] {
+                if self.eat_word(word) {
+                    let known = Expr::IsNull(Box::new(left.clone()), true);
+                    let same = Expr::Compare(Box::new(left), CmpOp::Eq, Box::new(Expr::Literal(Literal::Bool(b))), None);
+                    let e = Expr::And(Box::new(known), Box::new(same));
+                    return Ok(if not { Expr::Not(Box::new(e)) } else { e });
+                }
+            }
+            return Err(self.expected("NULL, TRUE, FALSE or UNKNOWN"));
         }
         let op = match self.tok() {
             Tok::Sym("=") => CmpOp::Eq,
@@ -222,6 +231,10 @@ impl Parser {
                 self.advance();
                 Ok(Expr::Literal(Literal::Hex(h)))
             }
+            Tok::BinHex(h) => {
+                self.advance();
+                Ok(Expr::Literal(Literal::Bin(h)))
+            }
             Tok::Num(n) => {
                 self.advance();
                 Ok(Expr::Literal(Literal::Num(n)))
@@ -266,6 +279,14 @@ impl Parser {
             "NULL" => {
                 self.advance();
                 Ok(Expr::Literal(Literal::Null))
+            }
+            "TRUE" | "FALSE" | "UNKNOWN" if !self.is_sym_at(1, "(") && !self.is_sym_at(1, ".") => {
+                self.advance();
+                Ok(Expr::Literal(match w {
+                    "TRUE" => Literal::Bool(true),
+                    "FALSE" => Literal::Bool(false),
+                    _ => Literal::Null,
+                }))
             }
             "DEFAULT" => {
                 self.advance();

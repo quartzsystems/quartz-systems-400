@@ -59,6 +59,8 @@ fn dds_literal(e: &Expr) -> Result<String> {
         Expr::Literal(Literal::Date(s) | Literal::Time(s) | Literal::Timestamp(s)) => {
             format!("'{s}'")
         }
+        Expr::Literal(Literal::Bool(b)) => format!("'{}'", if *b { "TRUE" } else { "FALSE" }),
+        Expr::Literal(Literal::Bin(b) | Literal::Hex(b)) => format!("X'{}'", crate::value::hex(b)),
         Expr::Neg(inner) => format!("-{}", dds_literal(inner)?),
         Expr::Register(_) => {
             return Err(SqlError::Unsupported {
@@ -82,10 +84,15 @@ fn system_default(t: &DataType) -> &'static str {
         | DataType::Integer
         | DataType::BigInt
         | DataType::Real
-        | DataType::Double => "0",
+        | DataType::Double
+        | DataType::DecFloat(_) => "0",
         DataType::Date => "'0001-01-01'",
         DataType::Time => "'00.00.00'",
-        DataType::Timestamp => "'0001-01-01-00.00.00.000000'",
+        DataType::Timestamp(_) => "'0001-01-01-00.00.00.000000'",
+        DataType::Boolean => "'FALSE'",
+        DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_) | DataType::Clob(_) | DataType::Dbclob(_) => {
+            "''"
+        }
         _ => "' '",
     }
 }
@@ -112,6 +119,11 @@ fn register_text(r: crate::ast::Register) -> Result<String> {
 /// What DDS cannot say about a column, set on the compiled field: the
 /// identity definition and an expression default.
 fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
+    // The SQL name when it is not the system name, up to 128 characters
+    // (`column_lines` refused a longer one).
+    if c.name.value != f.name.to_string() {
+        f.alias = Some(c.name.value.clone());
+    }
     if let Some(id) = &c.identity {
         if !matches!(
             c.type_spec.data_type,
@@ -131,11 +143,78 @@ fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
     if let Some(ColumnDefault::Value(Expr::Register(r))) = &c.default {
         f.default = Some(dds::DefaultValue::Expr(register_text(*r)?));
     }
+    if let DataType::Timestamp(p) = c.type_spec.data_type {
+        f.length = dds::DataType::timestamp_length(p);
+        f.byte_len = f.length;
+    }
+    if let Some(t) = sql_only_type(&c.type_spec.data_type) {
+        f.data_type = t;
+        f.length = match c.type_spec.data_type {
+            DataType::DecFloat(n) => u32::from(n),
+            DataType::Binary(n)
+            | DataType::Varbinary(n)
+            | DataType::Blob(n)
+            | DataType::Clob(n)
+            | DataType::Dbclob(n) => n,
+            _ => 1,
+        };
+        f.ccsid = match t {
+            dds::DataType::Bytes | dds::DataType::Blob => Some(65535),
+            dds::DataType::Dbclob => Some(1200),
+            _ => c.type_spec.ccsid,
+        };
+        if let Some(d) = c.default.as_ref().filter(|d| !matches!(d, ColumnDefault::Value(Expr::Register(_)))) {
+            f.default = match d {
+                ColumnDefault::Value(Expr::Literal(Literal::Bin(b) | Literal::Hex(b))) => {
+                    Some(dds::DefaultValue::Hex(b.clone()))
+                }
+                d => default_def(d, &c.type_spec.data_type)?,
+            };
+        }
+    }
     Ok(())
+}
+
+/// A LOB cannot be a key.
+fn no_lob_keys(rf: &dds::RecordFormat, keys: impl Iterator<Item = usize>) -> Result<()> {
+    for k in keys {
+        if let Some(f) = rf.fields.get(k).filter(|f| f.data_type.is_lob()) {
+            return Err(SqlError::Unsupported { what: format!("the LOB column {} as a key", f.name) });
+        }
+    }
+    Ok(())
+}
+
+/// The field type of an SQL type DDS has no letter for.
+fn sql_only_type(t: &DataType) -> Option<dds::DataType> {
+    Some(match t {
+        DataType::DecFloat(_) => dds::DataType::DecFloat,
+        DataType::Binary(_) | DataType::Varbinary(_) => dds::DataType::Bytes,
+        DataType::Boolean => dds::DataType::Boolean,
+        DataType::Blob(_) => dds::DataType::Blob,
+        DataType::Clob(_) => dds::DataType::Clob,
+        DataType::Dbclob(_) => dds::DataType::Dbclob,
+        _ => return None,
+    })
+}
+
+/// The bytes the stand-in character field has, and whether it is `VARLEN`.
+fn sql_only_shape(t: &DataType) -> (u32, bool) {
+    match t {
+        DataType::DecFloat(16) => (8, false),
+        DataType::DecFloat(_) => (16, false),
+        DataType::Binary(n) => (*n, false),
+        DataType::Varbinary(n) => (*n, true),
+        DataType::Blob(_) | DataType::Clob(_) | DataType::Dbclob(_) => (dds::LOB_REF_LEN, false),
+        _ => (1, false),
+    }
 }
 
 /// The DDS field line(s) of a column.
 fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
+    if c.name.value.chars().count() > db::format::sections::ALIAS_MAX {
+        return Err(SqlError::NameTooLong { name: c.name.value.clone(), max: db::format::sections::ALIAS_MAX });
+    }
     let name = sys_name(&c.name, c.system_name.as_ref())?;
     let (len, ty, dec, mut kws): (String, &str, String, Vec<String>) = match &c.type_spec.data_type
     {
@@ -162,28 +241,35 @@ fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
             String::new(),
             vec!["TIMFMT(*ISO)".into()],
         ),
-        DataType::Timestamp => (String::new(), "Z", String::new(), vec![]),
+        DataType::Timestamp(_) => (String::new(), "Z", String::new(), vec![]),
+        // DDS has no word for these: a character field of the bytes
+        // stands in, and `finish_field` gives it its type.
+        t => {
+            let (n, varlen) = sql_only_shape(t);
+            (n.to_string(), "A", String::new(), if varlen { vec!["VARLEN".into()] } else { vec![] })
+        }
     };
-    if let Some(ccsid) = c.type_spec.ccsid {
+    let sql_only = sql_only_type(&c.type_spec.data_type).is_some();
+    // FOR BIT DATA is CCSID 65535.
+    let ccsid = c.type_spec.ccsid.or(c.type_spec.bit_data.then_some(65535));
+    if let Some(ccsid) = ccsid.filter(|_| !sql_only) {
         kws.push(format!("CCSID({ccsid})"));
     }
     if !c.not_null {
         kws.push("ALWNULL".into());
     }
     match &c.default {
-        // A register is evaluated at insert; the field carries it apart.
+        // A register is evaluated at insert; the field carries it apart,
+        // as it does the default of a type DDS does not have.
         Some(ColumnDefault::Value(Expr::Register(_))) | None => {}
+        Some(_) if sql_only => {}
         Some(ColumnDefault::Value(e)) => kws.push(format!("DFT({})", dds_literal(e)?)),
         Some(ColumnDefault::System) => {
             kws.push(format!("DFT({})", system_default(&c.type_spec.data_type)));
         }
     }
-    if c.name.value != name.to_string() {
-        kws.push(format!(
-            "ALIAS({})",
-            c.name.value.chars().take(30).collect::<String>()
-        ));
-    }
+    // The SQL name is the field's ALIAS, set by `finish_field`: DDS's
+    // keyword has no room for 128 characters.
     let mut lines = Vec::new();
     let first = kws.first().cloned().unwrap_or_default();
     lines.push(dds("", &name.to_string(), &len, ty, &dec, &first));
@@ -248,6 +334,8 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
     for (f, c) in def.format.fields.iter_mut().zip(&t.columns) {
         finish_field(f, c)?;
     }
+    def.format.lay_out();
+    no_lob_keys(&def.format, def.format.keys.iter().map(|k| k.field))?;
     let id = file::create_pf(
         txn,
         library,
@@ -590,7 +678,13 @@ fn data_type_of(f: &dds::FieldDef, t: dds::DataType) -> DataType {
     match t {
         dds::DataType::Date => DataType::Date,
         dds::DataType::Time => DataType::Time,
-        dds::DataType::Timestamp => DataType::Timestamp,
+        dds::DataType::Timestamp => DataType::Timestamp(dds::DataType::timestamp_precision(f.length)),
+        dds::DataType::DecFloat => DataType::DecFloat(if f.length <= 16 { 16 } else { 34 }),
+        dds::DataType::Bytes => DataType::Varbinary(f.length),
+        dds::DataType::Boolean => DataType::Boolean,
+        dds::DataType::Blob => DataType::Blob(f.length),
+        dds::DataType::Clob => DataType::Clob(f.length),
+        dds::DataType::Dbclob => DataType::Dbclob(f.length),
         t if t.is_numeric() => DataType::Decimal(u8::try_from(f.length).unwrap_or(63), f.decimals),
         _ => DataType::Char(f.length),
     }
@@ -687,6 +781,9 @@ fn create_index_with_text(
     }
     for (c, desc) in &i.columns {
         let col = SqlContext::sys_name(c)?;
+        if let Some((_, f)) = table.format.format.field(&col).filter(|(_, f)| f.data_type.is_lob()) {
+            return Err(SqlError::Unsupported { what: format!("the LOB column {} as a key", f.name) });
+        }
         if table.format.format.field(&col).is_none() {
             return Err(SqlError::ColumnNotFound {
                 name: c.value.clone(),

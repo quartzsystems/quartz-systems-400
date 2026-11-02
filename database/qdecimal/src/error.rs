@@ -58,6 +58,21 @@ pub enum DecimalError {
         what: String,
     },
 
+    /// A decimal floating point operation that has no result (IEEE
+    /// invalid operation).
+    #[error("invalid DECFLOAT operation: {what}")]
+    Invalid {
+        /// The operation.
+        what: &'static str,
+    },
+
+    /// A decimal floating point result past the largest exponent.
+    #[error("overflow: {what}")]
+    Overflow {
+        /// What overflowed.
+        what: &'static str,
+    },
+
     /// A float that has no decimal value (NaN, infinity).
     #[error("float {what} has no decimal value")]
     NotFinite {
@@ -77,6 +92,8 @@ impl DecimalError {
             Self::Precision { .. }
             | Self::Parse { .. }
             | Self::NotFinite { .. }
+            | Self::Invalid { .. }
+            | Self::Overflow { .. }
             | Self::Edit { .. } => return None,
         })
     }
