@@ -8,6 +8,7 @@
 pub mod command;
 pub mod connection;
 pub mod signon;
+pub mod spool;
 pub mod system;
 
 use crate::envelope::Service;
@@ -40,11 +41,25 @@ pub enum Op {
     CheckCommand,
     /// `Command` 3: a command's definition, for prompting (version 2).
     DescribeCommand,
+    /// `Spool` 1: spooled files, filtered (version 3).
+    ListSpooledFiles,
+    /// `Spool` 2: a spooled file's pages as SCS, text or PDF (version 3).
+    ReadSpooledFile,
+    /// `Spool` 3: hold a spooled file (version 3).
+    HoldSpooledFile,
+    /// `Spool` 4: release a spooled file (version 3).
+    ReleaseSpooledFile,
+    /// `Spool` 5: delete a spooled file (version 3).
+    DeleteSpooledFile,
+    /// `Spool` 6: move a spooled file to another queue (version 3).
+    MoveSpooledFile,
+    /// `Spool` 7: output queues (version 3).
+    ListOutputQueues,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 12] = [
+    pub const ALL: [Op; 19] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -57,6 +72,13 @@ impl Op {
         Op::RunCommand,
         Op::CheckCommand,
         Op::DescribeCommand,
+        Op::ListSpooledFiles,
+        Op::ReadSpooledFile,
+        Op::HoldSpooledFile,
+        Op::ReleaseSpooledFile,
+        Op::DeleteSpooledFile,
+        Op::MoveSpooledFile,
+        Op::ListOutputQueues,
     ];
 
     /// Its service and code.
@@ -75,6 +97,13 @@ impl Op {
             Op::RunCommand => (Service::Command, 1),
             Op::CheckCommand => (Service::Command, 2),
             Op::DescribeCommand => (Service::Command, 3),
+            Op::ListSpooledFiles => (Service::Spool, 1),
+            Op::ReadSpooledFile => (Service::Spool, 2),
+            Op::HoldSpooledFile => (Service::Spool, 3),
+            Op::ReleaseSpooledFile => (Service::Spool, 4),
+            Op::DeleteSpooledFile => (Service::Spool, 5),
+            Op::MoveSpooledFile => (Service::Spool, 6),
+            Op::ListOutputQueues => (Service::Spool, 7),
         }
     }
 
@@ -84,6 +113,13 @@ impl Op {
         match self {
             Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::SignOff | Op::SystemInfo => 1,
             Op::TelnetTicket | Op::PasswordStatus | Op::RunCommand | Op::CheckCommand | Op::DescribeCommand => 2,
+            Op::ListSpooledFiles
+            | Op::ReadSpooledFile
+            | Op::HoldSpooledFile
+            | Op::ReleaseSpooledFile
+            | Op::DeleteSpooledFile
+            | Op::MoveSpooledFile
+            | Op::ListOutputQueues => 3,
         }
     }
 

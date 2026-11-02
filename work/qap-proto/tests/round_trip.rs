@@ -14,6 +14,10 @@ use qap_proto::ops::command::{
 };
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod};
 use qap_proto::ops::signon::{ChangePassword, PasswordStatus, Resume, SignOn, SignOnReply, TelnetTicketReply};
+use qap_proto::ops::spool::{
+    DeviceType, HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, OutputQueue, OutputQueues,
+    ReadFormat, ReadSpooledFile, SpoolStatus, SpooledData, SpooledFile, SpooledFileId, SpooledFileRef, SpooledFiles,
+};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Envelope, Kind, MAX_FRAME, Op, ProtoError, Secret, ServerMessage, Service, Status, Token};
@@ -59,13 +63,28 @@ fn enums() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
     }
-    for (i, s) in Status::ALL.iter().enumerate() {
+    // 0 to 12, then InUse 14: Exists 13 comes with a later version.
+    for (s, n) in Status::ALL.iter().zip((0u16..13).chain([14])) {
         same(s);
-        assert_eq!(encode(s), u16::try_from(i).unwrap().to_le_bytes());
+        assert_eq!(encode(s), n.to_le_bytes());
     }
     assert!(decode::<Status>(&13u16.to_le_bytes()).is_err());
+    assert!(decode::<Status>(&15u16.to_le_bytes()).is_err());
     assert!(decode::<Kind>(&[4]).is_err());
-    assert!(decode::<Service>(&[4]).is_err());
+    assert!(decode::<Service>(&[5]).is_err());
+    for (i, s) in SpoolStatus::ALL.iter().enumerate() {
+        same(s);
+        assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
+    }
+    for (i, d) in [DeviceType::Scs, DeviceType::Afp, DeviceType::Ascii, DeviceType::Line].iter().enumerate() {
+        same(d);
+        assert_eq!(encode(d), [u8::try_from(i).unwrap()]);
+    }
+    for (i, f) in [ReadFormat::Scs, ReadFormat::Text, ReadFormat::Pdf].iter().enumerate() {
+        same(f);
+        assert_eq!(encode(f), [u8::try_from(i).unwrap()]);
+    }
+    assert!(decode::<SpoolStatus>(&[9]).is_err());
     same(&SignOnMethod::Password);
     assert_eq!(encode(&SignOnMethod::Password), [0]);
 }
@@ -118,6 +137,84 @@ fn bodies() {
     });
     // The token is exactly 32 bytes on the wire.
     assert_eq!(encode(&Resume { token: Token([1; 32]) }).len(), 32);
+}
+
+#[test]
+fn spool_bodies() {
+    let id = SpooledFileId {
+        job: JobId {
+            name: "QPADEV0001".into(),
+            user: "BOB".into(),
+            number: "123456".into(),
+        },
+        file: "QSYSPRT".into(),
+        number: 3,
+    };
+    let q = ObjectName {
+        library: "QGPL".into(),
+        name: "QPRINT".into(),
+    };
+    same(&ListSpooledFiles {
+        user: "*ALL".into(),
+        outq: Some(q.clone()),
+        status: Some(SpoolStatus::Held),
+        form_type: Some("*STD".into()),
+        user_data: None,
+        start: 10,
+        max: 20,
+    });
+    same(&SpooledFiles {
+        total: 61,
+        files: vec![SpooledFile {
+            id: id.clone(),
+            status: SpoolStatus::Printing,
+            outq: q.clone(),
+            user: "BOB".into(),
+            user_data: "PAYROLL".into(),
+            form_type: "*STD".into(),
+            device_type: DeviceType::Afp,
+            pages: 30,
+            copies: 2,
+            size: 123_456,
+            created: 1_793_000_000_000,
+        }],
+    });
+    same(&ReadSpooledFile {
+        id: id.clone(),
+        format: ReadFormat::Pdf,
+        first_page: 2,
+        last_page: 0,
+    });
+    same(&SpooledData {
+        format: ReadFormat::Text,
+        pages: 30,
+        data: b"line\x0c".to_vec(),
+    });
+    same(&HoldSpooledFile {
+        id: id.clone(),
+        immediately: true,
+    });
+    same(&SpooledFileRef { id: id.clone() });
+    same(&MoveSpooledFile { id, outq: q.clone(), first: true });
+    same(&ListOutputQueues {
+        library: "*LIBL".into(),
+        start: 0,
+        max: 0,
+    });
+    same(&OutputQueues {
+        total: 1,
+        queues: vec![OutputQueue {
+            outq: q,
+            text: "Default printer queue".into(),
+            files: 60,
+            writer: "PRT01".into(),
+            held: false,
+        }],
+    });
+    // A flag is 0 or 1; any other value does not decode.
+    let mut b = encode(&HoldSpooledFile::default());
+    *b.last_mut().unwrap() = 2;
+    assert!(decode::<HoldSpooledFile>(&b).is_err());
 }
 
 #[test]
@@ -275,16 +372,29 @@ fn version_2_bodies() {
 #[test]
 fn values_by_version() {
     assert_eq!(Service::of_version(1), [Service::Connection, Service::SignOn, Service::System]);
-    assert_eq!(Service::of_version(2), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(2), Service::ALL[..4].to_vec());
+    assert_eq!(Service::of_version(3), Service::ALL.to_vec());
     assert_eq!(encode(&Service::Command), [3]);
+    assert_eq!(encode(&Service::Spool), [4]);
+    for code in 1..=7 {
+        let op = Op::of(Service::Spool, code).unwrap();
+        assert_eq!(op.since(), 3, "{op:?}");
+        assert!(!op.before_signon());
+    }
+    assert_eq!(Op::of(Service::Spool, 8), None);
+    // InUse is version 3's: older peers get Error.
+    assert_eq!(Status::InUse.for_version(1), Status::Error);
+    assert_eq!(Status::InUse.for_version(2), Status::Error);
+    assert_eq!(Status::InUse.for_version(3), Status::InUse);
     for op in [Op::TelnetTicket, Op::PasswordStatus, Op::RunCommand, Op::CheckCommand, Op::DescribeCommand] {
         assert_eq!(op.since(), 2, "{op:?}");
         assert!(!op.before_signon());
     }
     assert_eq!(Op::of(Service::SignOn, 5), Some(Op::TelnetTicket));
     assert_eq!(Op::of(Service::Command, 3), Some(Op::DescribeCommand));
-    // Version 2 adds no status: each is sent to a version-1 peer as is.
-    for s in Status::ALL {
+    // Version 2 adds no status: each of 1 and 2 is sent to a version-1
+    // peer as is.
+    for s in Status::ALL.into_iter().filter(|s| s.since() <= 2) {
         assert_eq!(s.for_version(1), s);
     }
 }

@@ -38,6 +38,8 @@ pub enum Service {
     System,
     /// CL commands (version 2).
     Command,
+    /// Spooled files and output queues (version 3).
+    Spool,
 }
 
 wire_enum!(Service {
@@ -45,11 +47,18 @@ wire_enum!(Service {
     1 => SignOn,
     2 => System,
     3 => Command,
+    4 => Spool,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 4] = [Service::Connection, Service::SignOn, Service::System, Service::Command];
+    pub const ALL: [Service; 5] = [
+        Service::Connection,
+        Service::SignOn,
+        Service::System,
+        Service::Command,
+        Service::Spool,
+    ];
 
     /// The protocol version that defines it.
     #[must_use]
@@ -57,6 +66,7 @@ impl Service {
         match self {
             Service::Connection | Service::SignOn | Service::System => 1,
             Service::Command => 2,
+            Service::Spool => 3,
         }
     }
 
@@ -96,6 +106,8 @@ pub enum Status {
     SessionExpired,
     /// The server is ending.
     ServerEnding,
+    /// Another job holds the object (version 3).
+    InUse,
 }
 
 wire_enum!(Status: u16 {
@@ -112,14 +124,19 @@ wire_enum!(Status: u16 {
     10 => Cancelled,
     11 => SessionExpired,
     12 => ServerEnding,
+    14 => InUse,
 });
 
 impl Status {
     /// The protocol version that defines it. Version 2 defines no new
-    /// status: every one its operations answer exists in version 1.
+    /// status; version 3 defines `InUse`. `Exists` (13) and `SqlError`
+    /// (15) come with the versions whose operations first use them.
     #[must_use]
     pub const fn since(self) -> u16 {
-        1
+        match self {
+            Status::InUse => 3,
+            _ => 1,
+        }
     }
 
     /// The status a version-`v` peer is sent: itself, or `Error` (with
@@ -130,7 +147,7 @@ impl Status {
     }
 
     /// Every status, in value order.
-    pub const ALL: [Status; 13] = [
+    pub const ALL: [Status; 14] = [
         Status::Ok,
         Status::Error,
         Status::VersionUnsupported,
@@ -144,5 +161,6 @@ impl Status {
         Status::Cancelled,
         Status::SessionExpired,
         Status::ServerEnding,
+        Status::InUse,
     ];
 }
