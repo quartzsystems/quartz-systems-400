@@ -92,7 +92,7 @@ Not in QAP: 5250 display and printer sessions (Telnet), the printer session's me
 - Bodies use only Wire types: structs, enums with explicit tags (one byte unless a wider tag is stated), lists, options, bytes, fixed-size byte arrays, integers, UTF-8 strings. Times are i64 milliseconds since 1970-01-01 UTC. A flag is a u8, 1 for yes and 0 for no; any other value gets `InvalidRequest`.
 - A request is one frame, so at most 1 MiB. Operations that send more (`WriteFile`, `Execute` with many rows) are repeated by the client over pieces; nothing splits a request. Replies over 1 MiB are split with `More` as in phase 0.
 - Lists that can be long take `start` (0-based) and `max` (0 for no limit) and answer `total`, the number of entries matching, beside the entries returned.
-- Every operation can also get `Error` (the message says what), `InvalidRequest` (a body that does not decode or a value out of range), `Busy`, and `Cancelled` when cancelled. The tables' Statuses column lists the others.
+- Every operation can also get `Error` (the message says what), `InvalidRequest` (a body that does not decode or a value out of range), `Busy`, and `Cancelled` when cancelled. The tables' Statuses column lists the others. For example, `ReleaseSpooledFile` of a file that is not held gets `Error` with `CPF3337`.
 - Each service, operation, status and event value is introduced by a protocol version (see Compatibility of new values). The services are planned for versions 2 to 6 in the order below; the `SignOn` additions with version 2. A version number is fixed only when QS/400 ships it.
 
 **New status values (u16), appended after `ServerEnding` 12.** `Exists` 13 (the name is taken) · `InUse` 14 (another job holds the object) · `SqlError` 15 (an SQL statement failed; the body is `SqlFailure`, the message the SQL message).
@@ -142,7 +142,7 @@ Commands run in the connection job, as the signed-on profile, with its job descr
 
 | Op | Statuses |
 | --- | --- |
-| `ListSpooledFiles`, `ListOutputQueues` | `Ok`; `NotFound` (the queue or library); `NotAuthorized` |
+| `ListSpooledFiles`, `ListOutputQueues` | `Ok`; `NotFound` (the queue or library, or for `ListSpooledFiles` an unknown user profile, `CPF2204`); `NotAuthorized` |
 | `ReadSpooledFile` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (still `Open` or `Writing`); `Error` (the format cannot be made from this file's device type, for example `Scs` from `Afp`) |
 | `HoldSpooledFile`, `ReleaseSpooledFile`, `DeleteSpooledFile`, `MoveSpooledFile` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (printing, for delete and move) |
 
