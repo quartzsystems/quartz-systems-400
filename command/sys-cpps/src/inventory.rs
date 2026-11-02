@@ -681,6 +681,7 @@ pub const JOB_SITE: &[&str] = &[
     // --- SNTP, LPD, LPR and mail out (command/netcmd.rs)
     "CHGNTPA",
     "CHGLPDA",
+    "CHGQAPA",
     "CHGHTTPA",
     "CHGSMTPA",
     "SNDTCPSPLF",

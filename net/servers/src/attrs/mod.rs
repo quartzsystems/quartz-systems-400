@@ -11,6 +11,7 @@ pub mod ftp;
 pub mod http;
 pub mod lpd;
 pub mod ntp;
+pub mod qap;
 pub mod smtp;
 pub mod telnet;
 

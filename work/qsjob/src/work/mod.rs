@@ -23,6 +23,7 @@ pub mod monitor;
 pub mod netsvc;
 pub mod ntp;
 pub mod pwdpgm;
+pub mod qap;
 pub mod scheduler;
 pub mod spawn;
 pub mod sysjob;

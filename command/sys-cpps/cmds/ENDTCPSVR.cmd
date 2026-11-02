@@ -9,7 +9,8 @@
                           SPCVAL((*ALL) (*TELNET) (*FTP) (*SMTP) +
                           (*LPD) (*HTTP) (*SNMP) (*ROUTED) (*BOOTP) +
                           (*TFTP) (*REXEC) (*DHCP) (*DNS) (*POP) +
-                          (*DDM) (*NTP) (*SSHD) (*HOSTSVR)) MAX(300) +
+                          (*DDM) (*NTP) (*SSHD) (*HOSTSVR) (*QAP)) +
+                          MAX(300) +
                           PROMPT('Server application')
              PARM       KWD(HTTPSVR) TYPE(*CHAR) LEN(32) DFT(*ALL) +
                           SPCVAL((*ALL) (*ADMIN)) PROMPT('HTTP server')

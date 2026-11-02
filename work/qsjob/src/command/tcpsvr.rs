@@ -32,6 +32,7 @@ pub fn framework() -> Framework {
     f.register(Box::new(servers::framework::Ftp));
     f.register(Box::new(servers::framework::HostSvr));
     f.register(Box::new(servers::framework::HttpServer));
+    f.register(Box::new(servers::framework::Standard::of("*QAP").expect("in the registry")));
     f
 }
 

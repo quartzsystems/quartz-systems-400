@@ -51,6 +51,12 @@ pub const SPLF_NOT_SENT: &str = "TCP1A4A";
 pub const MAIL_SENT: &str = "TCP1A4B";
 /// `E-mail not sent: &1.`
 pub const MAIL_NOT_SENT: &str = "TCP1A4C";
+/// `QAP server started on port &1.`
+pub const QAP_STARTED: &str = "TCP1A50";
+/// `QAP server ended.`
+pub const QAP_ENDED: &str = "TCP1A51";
+/// `QAP server could not be started: &1.`
+pub const QAP_NOT_STARTED: &str = "TCP1A52";
 
 /// Every identifier above.
 pub const ALL: &[&str] = &[
@@ -76,4 +82,7 @@ pub const ALL: &[&str] = &[
     SPLF_NOT_SENT,
     MAIL_SENT,
     MAIL_NOT_SENT,
+    QAP_STARTED,
+    QAP_ENDED,
+    QAP_NOT_STARTED,
 ];

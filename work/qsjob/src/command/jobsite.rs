@@ -93,7 +93,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             }
         }
         // --- SNTP, LPD, LPR and mail out (command/netcmd.rs)
-        "CHGNTPA" | "CHGLPDA" | "CHGHTTPA" | "CHGSMTPA" | "SNDTCPSPLF" | "LPR" | "SNDSMTPEMM" => {
+        "CHGNTPA" | "CHGLPDA" | "CHGQAPA" | "CHGHTTPA" | "CHGSMTPA" | "SNDTCPSPLF" | "LPR" | "SNDSMTPEMM" => {
             if let Some(res) = super::netcmd::run(job, host, r) {
                 return res;
             }

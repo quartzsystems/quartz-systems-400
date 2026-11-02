@@ -6,7 +6,7 @@
 //! oracle's (pub400, V7R5M0, `docs/NET_OPEN_QUESTIONS.md` "Server jobs
 //! and subsystems") except `QTLPD00nnn`, which no oracle runs (IBM's
 //! documentation names it; it runs as `QTMPLPD`, the profile LPD
-//! spooled files belong to).
+//! spooled files belong to) and `*QAP`, ours (docs/QAP.md).
 
 use super::{JobKind, JobSpec, Port, Readiness, ServerSpec};
 
@@ -198,6 +198,21 @@ pub static SPECS: &[ServerSpec] = &[
             tcp(9476, true),
         ],
         attrs_cmd: None,
+        app_id: None,
+        exit_points: &[],
+        start_subsystem: false,
+        instances: &[],
+        readiness: Readiness::Built,
+    },
+    ServerSpec {
+        special: "*QAP",
+        name: "QAP",
+        jobs: &[
+            job("QAPD", "QUSER", "QSYSWRK", JobKind::Listener, "QAP"),
+            job("QAPCNN", "QUSER", "QUSRWRK", JobKind::Worker, "QAPCNN"),
+        ],
+        ports: &[tcp(2320, true)],
+        attrs_cmd: Some("CHGQAPA"),
         app_id: None,
         exit_points: &[],
         start_subsystem: false,

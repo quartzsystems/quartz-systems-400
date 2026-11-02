@@ -753,3 +753,24 @@ sev = 10
 text = "Host name &1 cannot be resolved to an address."
 help = "The name is not in the host table and the name server does not know it. Check the remote system name or the TCP/IP domain settings."
 vars = ["*CHAR 24"]
+
+[[msg]]
+id = "TCP1A50"
+sev = 0
+text = "QAP server started on port &1."
+help = "The QAP listener QAPD in QSYSWRK accepts QS/400 Access connections on this port."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "TCP1A51"
+sev = 0
+text = "QAP server ended."
+help = "The QAP listener ended; its connections were told the server is ending and closed. Its sessions can no longer be resumed."
+vars = []
+
+[[msg]]
+id = "TCP1A52"
+sev = 40
+text = "QAP server could not be started: &1."
+help = "The QAP listener ended at once for the reason shown. Correct it, then start the server again with STRTCPSVR SERVER(*QAP)."
+vars = ["*CHAR 128"]

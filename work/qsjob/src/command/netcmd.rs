@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The small servers' commands and their clients, run in the job:
-//! `CHGNTPA`, `CHGLPDA`, `CHGHTTPA` and `CHGSMTPA` keep their
+//! `CHGNTPA`, `CHGLPDA`, `CHGQAPA`, `CHGHTTPA` and `CHGSMTPA` keep their
 //! attributes in the TCP/IP server table (`servers::attrs`); `CHGHTTPA`
 //! sets only the table's autostart flag. `SNDTCPSPLF` and `LPR` read
 //! a spooled file through the service and send it with `work/print`'s
@@ -22,6 +22,7 @@ use mail::{Address, Attachment, Body, Message};
 use mi::Job;
 use servers::attrs::lpd::LpdAttrs;
 use servers::attrs::ntp::{self as ntpa, NtpAttrs};
+use servers::attrs::qap::{self as qapa, QapAttrs};
 use servers::attrs::smtp::{self as smtpa, SmtpAttrs, SmtpTls};
 use servers::attrs::is_same;
 use servers::msg;
@@ -111,6 +112,18 @@ fn chglpda(host: &Host, r: &Resolved) -> Result<String, Fail> {
         a.set("NBRSVR", &text_of(v)).map_err(|e| bad(&e))?;
     }
     store(host, "*LPD", "LPD", yes_no(&parms.name("AUTOSTART")), a.to_bag())
+}
+
+/// `CHGQAPA`.
+fn chgqapa(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let parms = parms_of(r);
+    let mut a = QapAttrs::from_bag(&netsvc::bag(&host.link, "*QAP"));
+    for kwd in qapa::KEYWORDS {
+        if let Some(v) = parms.get(kwd) {
+            a.set(kwd, &text_of(v)).map_err(|e| bad(&e))?;
+        }
+    }
+    store(host, "*QAP", "QAP", yes_no(&parms.name("AUTOSTART")), a.to_bag())
 }
 
 /// `CHGHTTPA`: `AUTOSTART` only; the bag (the ports) is left alone.
@@ -384,6 +397,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fa
     Some(match r.name.as_str() {
         "CHGNTPA" => chgntpa(host, r),
         "CHGLPDA" => chglpda(host, r),
+        "CHGQAPA" => chgqapa(host, r),
         "CHGHTTPA" => chghttpa(host, r),
         "CHGSMTPA" => chgsmtpa(host, r),
         "SNDTCPSPLF" | "LPR" => sndtcpsplf(job, host, r),

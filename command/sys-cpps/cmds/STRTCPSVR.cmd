@@ -12,7 +12,7 @@
                           (*FTP) (*SMTP) (*LPD) (*HTTP) (*SNMP) +
                           (*ROUTED) (*BOOTP) (*TFTP) (*REXEC) (*DHCP) +
                           (*DNS) (*POP) (*DDM) (*NTP) (*SSHD) +
-                          (*HOSTSVR)) MAX(300) +
+                          (*HOSTSVR) (*QAP)) MAX(300) +
                           PROMPT('Server application')
              PARM       KWD(RESTART) TYPE(*CHAR) LEN(10) DFT(*NONE) +
                           SPCVAL((*NONE) (*HTTP) (*DNS)) +
