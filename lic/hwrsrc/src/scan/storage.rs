@@ -141,9 +141,77 @@ pub fn disk_key(devpath: &str, name: &str) -> (bool, String, [u32; 4], String) {
     )
 }
 
+/// What a disk is made of, as far as sysfs tells.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Medium {
+    /// A hypervisor's disk: virtio, or one emulated by `QEMU`,
+    /// `VMware`, `Hyper-V` or `VirtualBox`.
+    Virtual,
+    /// An `NVMe` namespace.
+    Nvme,
+    /// Solid state (`queue/rotational` 0).
+    Ssd,
+    /// Spinning (`queue/rotational` 1).
+    Hdd,
+    /// Nothing says.
+    Unknown,
+}
+
+impl Medium {
+    /// The word a description shows, empty when unknown.
+    #[must_use]
+    pub fn word(self) -> &'static str {
+        match self {
+            Medium::Virtual => "virtual",
+            Medium::Nvme => "NVMe",
+            Medium::Ssd => "SSD",
+            Medium::Hdd => "HDD",
+            Medium::Unknown => "",
+        }
+    }
+}
+
+/// Vendors and models of emulated disks.
+const VIRTUAL: [&str; 6] = ["QEMU", "VMware", "Msft", "VBOX", "Virtual disk", "Virtual HD"];
+
+/// A disk's medium from its kernel name and the sysfs `device/vendor`,
+/// `device/model` and `queue/rotational` values. A hypervisor's disk
+/// often claims to be rotational, so the names are checked first.
+#[must_use]
+pub fn medium(name: &str, vendor: &str, model: &str, rotational: &str) -> Medium {
+    let (vendor, model) = (vendor.trim(), model.trim());
+    if name.starts_with("vd")
+        || name.starts_with("xvd")
+        || VIRTUAL.iter().any(|v| vendor.starts_with(v) || model.starts_with(v))
+    {
+        return Medium::Virtual;
+    }
+    if name.starts_with("nvme") {
+        return Medium::Nvme;
+    }
+    match rotational.trim() {
+        "0" => Medium::Ssd,
+        "1" => Medium::Hdd,
+        _ => Medium::Unknown,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_medium_comes_from_the_name_vendor_and_rotation() {
+        assert_eq!(medium("sda", "ATA     ", "Samsung SSD 870\n", "0\n"), Medium::Ssd);
+        assert_eq!(medium("sdb", "SEAGATE", "ST2000NM0045", "1"), Medium::Hdd);
+        assert_eq!(medium("nvme0n1", "", "Samsung SSD 980 PRO 1TB", "0"), Medium::Nvme);
+        assert_eq!(medium("vda", "", "", "1"), Medium::Virtual);
+        assert_eq!(medium("sdc", "QEMU", "QEMU HARDDISK", "1"), Medium::Virtual);
+        assert_eq!(medium("sdd", "VMware,", "VMware Virtual S", "1"), Medium::Virtual);
+        assert_eq!(medium("sde", "Msft", "Virtual Disk", "1"), Medium::Virtual);
+        assert_eq!(medium("sdf", "", "", ""), Medium::Unknown);
+        assert_eq!(Medium::Unknown.word(), "");
+    }
 
     #[test]
     fn the_board_wins_over_the_chip_and_the_class_backs_both() {

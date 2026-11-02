@@ -57,19 +57,7 @@ pub fn identity(node: &Path) -> (String, String) {
             .map(|s| s.trim().to_string())
             .unwrap_or_default()
     };
-    let vendor = read("device/vendor");
-    let model = read("device/model");
-    let model = if model.is_empty() {
-        if disk.starts_with("vd") {
-            "virtio".to_string()
-        } else {
-            String::new()
-        }
-    } else if vendor.is_empty() || model.starts_with(&vendor) {
-        model
-    } else {
-        format!("{vendor} {model}")
-    };
+    let model = model_text(&disk, &read("device/vendor"), &read("device/model"));
     // SCSI disks (behind a SAS HBA or a PERC too) report the serial in
     // the unit serial number VPD page; the WWID is the last resort.
     let vpd = fs::read(sys.join("device/vpd_pg80"))
@@ -81,6 +69,21 @@ pub fn identity(node: &Path) -> (String, String) {
         .find(|s| !s.is_empty())
         .unwrap_or_default();
     (model, serial)
+}
+
+/// A disk's model as the displays show it, from sysfs `device/vendor`
+/// and `device/model` (`NVMe` has no vendor). SATA disks report the
+/// vendor `ATA`, which says nothing; it is left out.
+#[must_use]
+pub fn model_text(disk: &str, vendor: &str, model: &str) -> String {
+    let (vendor, model) = (vendor.trim(), model.trim());
+    if model.is_empty() {
+        if disk.starts_with("vd") { "virtio" } else { "" }.to_string()
+    } else if vendor.is_empty() || vendor == "ATA" || model.starts_with(vendor) {
+        model.to_string()
+    } else {
+        format!("{vendor} {model}")
+    }
 }
 
 /// The serial in a unit serial number VPD page (0x80): a four-byte
@@ -121,9 +124,8 @@ pub fn whole_disks() -> Result<Vec<DiskInfo>, Error> {
         if sectors == 0 {
             continue;
         }
-        let model = fs::read_to_string(sys.join("device/model"))
-            .map(|s| s.trim().to_string())
-            .unwrap_or_default();
+        let read = |rel: &str| fs::read_to_string(sys.join(rel)).unwrap_or_default();
+        let model = model_text(&name, &read("device/vendor"), &read("device/model"));
         let dev = Path::new("/dev").join(&name);
         let has_qs400 = types_on(&dev).is_ok_and(|t| {
             t.iter()
@@ -299,7 +301,20 @@ fn entries_on(dev: &Path) -> io::Result<Vec<(Uuid, Uuid, u64, u64)>> {
 
 #[cfg(test)]
 mod tests {
-    use super::vpd_serial;
+    use super::{model_text, vpd_serial};
+
+    #[test]
+    fn the_model_drops_the_ata_vendor() {
+        assert_eq!(model_text("sda", "ATA     ", "Samsung SSD 870\n"), "Samsung SSD 870");
+        assert_eq!(model_text("sdb", "SEAGATE", "ST2000NM0045"), "SEAGATE ST2000NM0045");
+        assert_eq!(model_text("sdc", "QEMU", "QEMU HARDDISK"), "QEMU HARDDISK");
+        assert_eq!(
+            model_text("nvme0n1", "", "Samsung SSD 980 PRO 1TB"),
+            "Samsung SSD 980 PRO 1TB"
+        );
+        assert_eq!(model_text("vda", "", ""), "virtio");
+        assert_eq!(model_text("sdd", "ATA", ""), "");
+    }
 
     #[test]
     fn the_vpd_serial_is_trimmed_ascii() {
