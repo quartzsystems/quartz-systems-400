@@ -12,7 +12,7 @@ This draft settles the decisions below. Anything it leaves open is listed under 
 | Security | TLS 1.3 only, no plaintext mode. Server certificate from the QS/400 certificate manager, application ID `QS400_ACCESS_SERVER`. The client validates it with its existing untrusted-certificate trust flow |
 | Framing and encoding | Wire, from the QS/400 repository's `ipc` crate, the same framing and serialization QSI uses. Types below are Wire types; enums use `wire_enum!`. If Wire cannot express something below, stop and ask; do not invent a second encoding |
 | Where the code lives | `qap-proto` (envelope and message types) lives in the QS/400 repository beside `ipc`. QS/400 Access pins both by commit |
-| Multiplexing | One connection carries many concurrent requests. Every request has a service ID and a request ID; replies carry the request ID, in the order operations finish, not the order requests came. No port mapper and no per-service ports. Lanes: `Command` requests run one at a time, in arrival order, in the connection job, because they share its job state (library list, `QTEMP`, job attributes); `Sql` (version 4) joins them in that lane. Every other operation runs concurrently, up to the outstanding limit, as the signed-on profile, without waiting for a command. `Ping` and `Cancel` are never queued behind anything |
+| Multiplexing | One connection carries many concurrent requests. Every request has a service ID and a request ID; replies carry the request ID, in the order operations finish, not the order requests came. No port mapper and no per-service ports. Lanes: `Command` requests and `Sql` operations 1 to 8 (version 4) run one at a time, in arrival order, in the connection job, because they share its job state (library list, `QTEMP`, job attributes, commitment definition, statements and cursors). Every other operation, `Sql` operations 9 to 11 (the catalog lists, which keep no state) included, runs concurrently, up to the outstanding limit, as the signed-on profile, without waiting for the lane. `Ping` and `Cancel` are never queued behind anything |
 | Versioning | Client hello sends the range of protocol versions it supports; server picks one or refuses. Version 1 is this document |
 | Server jobs | Listener job `QAPD` in subsystem `QSYSWRK`; one job per connection in `QUSRWRK`, running as `QUSER` until sign-on and as the signed-on user profile after it |
 | Server control | `STRTCPSVR SERVER(*QAP)`, `ENDTCPSVR SERVER(*QAP)`, autostart attribute; shown on Navigator's Servers page |
@@ -38,7 +38,7 @@ Every frame is one Wire-encoded `Envelope`. The envelope layout never changes be
 
 **Limits.** A frame is at most 1 MiB; larger results are sent as several reply frames with `More` set on all but the last. At most 64 outstanding requests per connection; beyond that the server replies `Busy`. The client sends `Ping` after 60 s without traffic; the server closes a connection after 300 s without frames. Closing a connection does not end the session: it can be resumed until its idle timeout.
 
-**Events (server to client, `request_id` 0).** `Connection` op 100 `ServerEnding` (status `ServerEnding`, message says why; the server closes after sending it) · `SignOn` op 100 `SessionEnded` (status `SessionExpired`, or `Ok` when ended by an operator, with a message).
+**Events (server to client, `request_id` 0).** `Connection` op 100 `ServerEnding` (status `ServerEnding`, message says why; the server closes after sending it) · `SignOn` op 100 `SessionEnded` (status `SessionExpired`, or `Ok` when ended by an operator or, from version 4, by `SignOff` on another of the session's connections, with a message).
 
 ## Phase 0 (this round): connection, sign-on, server information
 
@@ -155,13 +155,16 @@ Commands run in the connection job, as the signed-on profile, with its job descr
 - Clients read large files in page batches.
 - The `Text` and `Pdf` formats are optional per device type. A file whose format cannot be made gets `Error`, with a message saying so.
 
-### Service 5 `Sql`: SQL, the catalog and data transfer (planned version 4)
+### Service 5 `Sql`: SQL, the catalog and data transfer (version 4)
 
-Statements and cursors belong to the connection and end with it; changes not committed are rolled back when it closes. Data Transfer downloads with `Prepare`, `Execute` and `Fetch`, and uploads with an `INSERT` prepared once and `Execute` repeated over batches of rows, each request under 1 MiB.
+Statements run in the connection job through the system's database engine, as the signed-on profile, with the same authority checks as any SQL interface. Statements and cursors belong to the connection and end with it; changes not committed are rolled back when it closes. Data Transfer downloads with `Prepare`, `Execute` and `Fetch`, and uploads with an `INSERT` prepared once and `Execute` repeated over batches of rows, each request under 1 MiB.
 
 - `CommitLevel` enum: `None` 0, `ReadUncommitted` 1, `ReadCommitted` 2, `RepeatableRead` 3, `Serializable` 4.
 - `Naming` enum: `Sql` 0 (`schema.table`), `System` 1 (`library/file`).
-- `SqlValue` enum: `Null` 0, `Integer` 1 { `value` i64 }, `Decimal` 2 { `text` String (exact, `.` as the point) }, `Float` 3 { `text` String (shortest text that reads back as the same value) }, `Text` 4 { `text` String (character and graphic types, converted to UTF-8) }, `Binary` 5 { `data` bytes }, `Date` 6 { `ms` i64 (midnight UTC of the date) }, `Time` 7 { `ms` i64 (since midnight) }, `Timestamp` 8 { `ms` i64 (as if UTC), `micros` u16 (microseconds past `ms`, 0 to 999) }, `Boolean` 9 { `value` flag }.
+- `SqlValue` enum: `Null` 0, `Integer` 1 { `value` i64 }, `Decimal` 2 { `text` String (exact, `.` as the point) }, `Float` 3 { `text` String (shortest text that reads back as the same value) }, `Text` 4 { `text` String (character and graphic types, converted to UTF-8) }, `Binary` 5 { `data` bytes }, `Date` 6 { `ms` i64 (midnight UTC of the date) }, `Time` 7 { `ms` i64 (since midnight) }, `Timestamp` 8 { `ms` i64 (as if UTC), `picos` u32 (picoseconds past `ms`, 0 to 999 999 999) }, `Boolean` 9 { `value` flag }. `picos` carries the full fraction of `TIMESTAMP(12)`; the column's `scale` is the timestamp's precision (0 to 12), and digits past it are zero.
+- Character and graphic columns with CCSID 65535 are sent as `Binary`, the bytes as stored, and their `Column`'s `ccsid` is 65535. Parameters for them are sent as `Binary` too.
+- `DECFLOAT` is sent as `Decimal` whose `text` may use E notation (`1.5E-30`), or is `Infinity`, `-Infinity`, `NaN` or `sNaN`.
+- Every other type is sent as above: integer types as `Integer`, `DECIMAL` and `NUMERIC` as `Decimal`, `REAL` and `DOUBLE` as `Float`, other character and graphic types as `Text`, `BINARY`, `VARBINARY` and `BLOB` as `Binary`.
 - `Column` = { `name` String, `label` String, `sql_type` String (for example `DECIMAL`), `length` u32, `scale` u16, `nullable` flag, `ccsid` u16 }.
 - `SqlFailure` = { `sqlstate` String (five characters), `sqlcode` i32, `row` Option of u32 (the failing parameter row of an `Execute`) }.
 - `TableKind` enum: `Table` 0, `View` 1, `Alias` 2, `PhysicalFile` 3, `LogicalFile` 4.
@@ -186,6 +189,22 @@ Statements and cursors belong to the connection and end with it; changes not com
 | `SetOptions` | `Ok`; `InUse` (a transaction is open: commit or roll back first) |
 | `CloseCursor`, `Release` | `Ok`; `NotFound` |
 | `ListSchemas`, `ListTables`, `ListColumns` | `Ok`; `NotFound`; `NotAuthorized` |
+
+**Rules.**
+
+- Operations 1 to 8 run in the connection's lane, in arrival order, with `Command` requests (see Multiplexing). Operations 9 to 11 read the catalog with the user's authority, keep no state and run concurrently, also while a statement runs in the lane.
+- A reply larger than 1 MiB (`Fetch` rows, a catalog list) is split with `More`. `Fetch` returns at most `max_rows` rows (0 for no limit), fewer at the end of the result, with `end` 1 when the cursor has no more rows.
+- Cancel:
+  - a started `Execute` ends with `Cancelled`, its own body (`updated` the rows changed before the cancel, `cursor` none) and the SQL message for the cancel;
+  - a started `Fetch` ends with `Cancelled`, the rows produced before the cancel, `end` 0, and the cursor closed;
+  - a statement cancelled before it started gets `Cancelled` and an empty body, as any request.
+  - Changes a cancelled statement made under commitment control stay uncommitted until `Commit` or `Rollback`.
+- Commitment control:
+  - `SetOptions` is per connection; a connection starts with `None`, `Sql` naming and no default schema.
+  - Uncommitted changes are rolled back when the connection closes.
+  - A commit level other than `None` against a table that cannot use commitment control (for example one that is not journaled) gets the database's own `SqlError`. The client decides what to do.
+- A statement or type the database does not support gets the database's own `SqlError`, as it reports it.
+- An `Execute` over several parameter rows stops at the first row that fails: `SqlError`, with `SqlFailure.row` the 0-based index of that row. The rows before it stay changed (uncommitted under commitment control).
 
 ### Service 6 `Ifs`: Integrated File System files (planned version 5)
 
@@ -254,6 +273,22 @@ Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`).
 
 A ticket is 256 random bits for the session's own profile, kept by the server, good for one 5250 automatic sign-on within `expires_secs`, and only over Telnet with TLS. The client sends it, as 64 hexadecimal characters, where automatic sign-on otherwise carries the password; the client sends the RFC 4777 user variable, and the password variable carrying the ticket as 64 hexadecimal characters with an empty random-seed variable, and only over Telnet TLS. The client treats a ticket as it treats a token: never logged or stored, wiped after use.
 
+### `SignOn` addition (version 4)
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| SignOn | 7 `Attach` | `token` 32 bytes | `SignOnReply` (same token) | yes (as the first request after `Hello`) |
+
+| Op | Statuses |
+| --- | --- |
+| `Attach` | `Ok`; `SessionExpired` (no such session, or it timed out); `Busy` (the session has 16 connections); `InvalidRequest` (not the first request after `Hello`) |
+
+- `Attach` adds this connection to an existing session without taking the session from its other connections. `Resume` still moves the session's resumable connection, the one that signed on or last resumed, to the new one; attached connections stay.
+- Each attached connection has its own connection job, running as the session's profile, with its own job state: library list, `QTEMP`, commitment definition, statements and cursors.
+- A session has at most 16 connections, attached or not; beyond that `Attach` gets `Busy`.
+- The session's idle timer runs only while no connection is attached to it.
+- `SignOff` on any connection ends the session. That connection gets its reply and stays open, not signed on, as in version 1; every other connection of the session gets `SessionEnded` (status `Ok`, `TCP1A58`) and closes.
+
 ### Compatibility of new values
 
 A Wire enum fails to decode on a tag it does not know, so an older client would reject a whole envelope carrying a newer `Status`, `Service` or `Kind` value, or a newer value of any enum in a body, before it could even read the `request_id`. Rule: **a value is sent only to a peer that negotiated a version that defines it.**
@@ -273,6 +308,10 @@ Version 2 is: `Command` (service 3) operations 1 `RunCommand`, 2 `CheckCommand` 
 ### Version 3 (fixed)
 
 Version 3 is: `Spool` (service 4) operations 1 `ListSpooledFiles` to 7 `ListOutputQueues`, as above, with the reading rules above; and the status `InUse` (14), which version 3 introduces. A version 1 or 2 peer never receives `InUse`, the `Spool` service or any `Spool` body. The server accepts versions 1 to 3 and picks the highest both sides support.
+
+### Version 4 (fixed)
+
+Version 4 is: `Sql` (service 5) operations 1 `SetOptions` to 11 `ListColumns`, with the types and rules above; `SignOn` operation 7 `Attach`; and the status `SqlError` (15), which version 4 introduces. `Sql` does not use `Exists`: a name that is taken is the database's `SqlError` (for example SQLSTATE `42710`), so `Exists` (13) stays for the version that first uses it. A version 1 to 3 peer never receives `SqlError`, the `Sql` service or any `Sql` body; where `SqlError` would apply it gets `Error` with the same message. The server accepts versions 1 to 4 and picks the highest both sides support.
 
 ## Open questions
 
