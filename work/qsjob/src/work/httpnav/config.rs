@@ -153,7 +153,7 @@ fn disks(m: &Main, reset: bool) -> Disks {
                 unit,
                 resource: unit_resource(&names, &serial, unit),
                 kind: val(r, "TYPE").trim().to_string(),
-                model: String::new(),
+                model: val(r, "MODEL").trim().to_string(),
                 capacity: bytes.unwrap_or_else(|| parse::size(&format!("{} G", val(r, "SIZE")))),
                 used_pct: parse::tenths(val(r, "USED")),
                 protection: match val(r, "PROT").trim() {
@@ -172,7 +172,7 @@ fn disks(m: &Main, reset: bool) -> Disks {
     let (sys, _) = panel(m, "SYSSTS", &["*NO"]);
     let capacity = parse::size(val(&sys, "SYSASP"));
     let used_pct = parse::tenths(val(&sys, "ASPPCT"));
-    let mirrored = units.iter().any(|u| u.protection.starts_with("Mirrored"));
+    let protection = asp_protection(&units);
     Disks {
         asps: vec![Asp {
             number: 1,
@@ -180,13 +180,26 @@ fn disks(m: &Main, reset: bool) -> Disks {
             capacity,
             used: capacity / 1000 * u64::from(used_pct),
             used_pct,
-            protection: if mirrored { "Mirrored" } else { "None" }.into(),
+            protection,
             overflow: Some(false),
             threshold: 90,
         }],
         units,
         elapsed: parse::hms(val(&vars, "ELAPSED")),
     }
+}
+
+/// An ASP's protection from its units': `Mirrored`, `Device parity`,
+/// both, or `None`.
+fn asp_protection(units: &[DiskUnit]) -> String {
+    let has = |p: &str| units.iter().any(|u| u.protection.starts_with(p));
+    match (has("Mirrored"), has("Device parity")) {
+        (true, true) => "Mirrored, device parity",
+        (true, false) => "Mirrored",
+        (false, true) => "Device parity",
+        (false, false) => "None",
+    }
+    .into()
 }
 
 /// Where a kind of resource is listed.

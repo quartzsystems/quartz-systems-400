@@ -560,7 +560,17 @@ impl Table {
         let at = storage::hctl(&devpath).map_or(String::new(), |[h, c, t, l]| {
             format!(" at {h}:{c}:{t}:{l}")
         });
-        let desc = format!("{name} {mib} MiB{at}");
+        let medium = match storage::medium(
+            name,
+            &read_trim(&sys.join("device/vendor")),
+            &read_trim(&sys.join("device/model")),
+            &read_trim(&sys.join("queue/rotational")),
+        ) {
+            _ if kind == Kind::Optical => "",
+            m => m.word(),
+        };
+        let medium = if medium.is_empty() { String::new() } else { format!(" {medium}") };
+        let desc = format!("{name} {mib} MiB{medium}{at}");
         let serial = serial_of(&sys.join("device"));
         let serial = if serial.is_empty() { serial_of(&sys) } else { serial };
         let r = self.add(kind, name.to_string(), desc, devpath);

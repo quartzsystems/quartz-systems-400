@@ -65,6 +65,12 @@ fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
     fs::write(sda.join("sda1/partition"), "1\n").unwrap();
     symlink(sda.join("sda1"), root.join("class/block/sda1")).unwrap();
     fs::write(sda.join("device/wwid"), "naa.5000c500a1b2c3d4\n").unwrap();
+    // A SATA SSD: libata's vendor, not rotational.
+    let sdc = fs::canonicalize(root.join("class/block/sdc")).unwrap();
+    fs::write(sdc.join("device/vendor"), "ATA     \n").unwrap();
+    fs::write(sdc.join("device/model"), "Samsung SSD 870 \n").unwrap();
+    fs::create_dir_all(sdc.join("queue")).unwrap();
+    fs::write(sdc.join("queue/rotational"), "0\n").unwrap();
     disk(&root, &ahci, "ata1/host1/target1:0:0/1:0:0:0", "sde", 4096);
 
     let t = Table::scan(&root);
@@ -88,7 +94,7 @@ fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
     assert_eq!(t.resources[1].type_model(), ("QD03".into(), "001".into()));
     assert_eq!(t.controller_of("sdc").map(|r| r.name.as_str()), Some("DC02"));
     assert_eq!(t.controller_of("sde").map(|r| r.name.as_str()), Some("DC01"));
-    assert_eq!(t.resources[4].description, "sdc 953869 MiB at 0:0:0:0 on DC02");
+    assert_eq!(t.resources[4].description, "sdc 953869 MiB SSD at 0:0:0:0 on DC02");
     assert_eq!(t.resources[4].logical, "DC02");
     assert_eq!(t.get("dd005").unwrap().serial, "naa.5000c500a1b2c3d4");
     assert_eq!(t.path_to("DD002", false), ["CMB01", "DC02", "DD002"]);
