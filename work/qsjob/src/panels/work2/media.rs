@@ -23,7 +23,9 @@ use crate::display::uim::{Response, UimDialog};
 /// message line.
 fn act(host: &Host, d: &mut UimDialog, what: &str, args: &[&str]) {
     let args: Vec<String> = args.iter().map(|a| (*a).to_string()).collect();
-    match host.link.borrow_mut().with(|l| l.service_op(what.into(), args)).map_err(|e| refused(&e)) {
+    // The answer first: a refusal's message borrows the link again.
+    let done = host.link.borrow_mut().with(|l| l.service_op(what.into(), args));
+    match done.map_err(|e| refused(&e)) {
         Ok(lines) => {
             if let Some(m) = lines.first().and_then(|l| crate::panels::said(l)) {
                 d.send(m);
