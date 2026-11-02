@@ -41,22 +41,34 @@ const PGM: &str = "QZHBHTTP";
 
 /// The listeners, started off the job's thread (the product reads its
 /// settings through the job's thread while it starts).
-fn start_listeners(bridge: &Bridge, env: Env, a: HttpAttrs, system: String) -> Result<Vec<Running>, String> {
+fn start_listeners(
+    bridge: &Bridge,
+    env: Env,
+    (a, nav): (HttpAttrs, HttpAttrs),
+    system: String,
+) -> Result<Vec<Running>, String> {
     let settings = Settings::load(env.files.as_ref());
     // The product redirects to its settings' TLS port: listen there.
     let port = if settings.admin_tls_port == 0 { a.tls_port } else { settings.admin_tls_port };
     let now = env.system.now();
     let (d, t) = env.system.stamp(now);
+    let stamp = format!("{d} {t}");
     let tls = if a.tls_port == 0 { 0 } else { port };
-    match httpadmin::seed::ensure_admin(env.files.as_ref(), a.port, tls, &format!("{d} {t}"), now) {
-        Ok(true) => eprintln!("qsjob: ADMIN made instance ADMIN in /www/admin"),
+    let made = |name: &str, r: httpd::Result<bool>| match r {
+        Ok(true) => eprintln!("qsjob: ADMIN made instance {name}"),
         Ok(false) => {}
         Err(e) => {
             // The job log says why Server instances will not list it.
-            let text = format!("Files of HTTP server instance ADMIN could not be used: {e}");
+            let text = format!("Files of HTTP server instance {name} could not be used: {e}");
             eprintln!("qsjob: ADMIN: {text}");
             bridge.call(move |m| super::netsvc::joblog(&m.link, PGM, "HTP8106", &text));
         }
+    };
+    made("ADMIN", httpadmin::seed::ensure_admin(env.files.as_ref(), a.port, tls, &stamp, now));
+    // Navigator's instance, listed once its product is installed.
+    if env.system.product_installed(httpadmin::seed::NAVIGATOR_PRODUCT) {
+        let r = httpadmin::seed::ensure_navigator(env.files.as_ref(), nav.port, nav.tls_port, &stamp, now);
+        made(httpadmin::seed::NAVIGATOR, r);
     }
     let admin = Arc::new(Admin::new(env));
     // Not up until it binds: 2001 serves rather than redirect to it.
@@ -84,6 +96,12 @@ fn start_listeners(bridge: &Bridge, env: Env, a: HttpAttrs, system: String) -> R
 /// Run the administration server. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let a = HttpAttrs::from_rqsdta(&start.rqsdta);
+    // Navigator's ports, for the instance it lists.
+    let bag: Vec<(String, String)> = ["TLSPORT", "NAVPORT", "NAVTLSPORT"]
+        .iter()
+        .filter_map(|k| servers::attrs::keyword(&start.rqsdta, k).map(|v| ((*k).to_string(), v)))
+        .collect();
+    let nav = HttpAttrs::navigator(&bag);
     let console = crate::console::Console::new(ctl, link, start);
     let main = Main::new(link, console);
     let (bridge, rx) = Bridge::new();
@@ -97,7 +115,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         certs: Arc::new(Remote(CertLink { bridge: bridge.clone() })),
     };
     let starter = bridge.clone();
-    let setup = std::thread::spawn(move || start_listeners(&starter, env, a, name));
+    let setup = std::thread::spawn(move || start_listeners(&starter, env, (a, nav), name));
     // `bridge` stays: the job's thread is never without a caller.
     super::web::serve(main, &rx, setup, start.number)
 }

@@ -91,6 +91,18 @@ pub fn server_attrs(host: &Host, server: &str) -> ServerAttrs {
     }
 }
 
+/// Whether `product`'s `*BASE` is installed, from `licpgm_panel
+/// INSTALLED`'s rows (product, option, status, ...); a service without
+/// product records has everything, as the service's own check.
+pub fn base_installed(rows: &[Vec<String>], product: &str) -> bool {
+    rows.is_empty()
+        || rows.iter().any(|r| {
+            r.first().is_some_and(|p| p == product)
+                && r.get(1).is_some_and(|o| o == "*BASE")
+                && !matches!(r.get(2).map(String::as_str), Some("*ERROR" | "*DAMAGED"))
+        })
+}
+
 /// The hooks' view of this job.
 pub struct JobEnv<'a> {
     job: &'a mut Job,
@@ -190,6 +202,16 @@ impl Env for JobEnv<'_> {
         if let Err(e) = r {
             eprintln!("qsjob: ENDTCPSVR {instance}: {e}");
         }
+    }
+
+    fn product_installed(&mut self, product: &str) -> bool {
+        let rows = self
+            .host
+            .link
+            .borrow_mut()
+            .with(|l| l.licpgm_panel("INSTALLED".into(), Vec::new()))
+            .unwrap_or_default();
+        base_installed(&rows, product)
     }
 }
 
