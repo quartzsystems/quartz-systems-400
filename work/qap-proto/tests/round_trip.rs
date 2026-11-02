@@ -63,15 +63,16 @@ fn enums() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
     }
-    // 0 to 12, then InUse 14: Exists 13 comes with a later version.
-    for (s, n) in Status::ALL.iter().zip((0u16..13).chain([14])) {
+    // 0 to 12, then InUse 14 and SqlError 15: Exists 13 comes with a
+    // later version.
+    for (s, n) in Status::ALL.iter().zip((0u16..13).chain([14, 15])) {
         same(s);
         assert_eq!(encode(s), n.to_le_bytes());
     }
     assert!(decode::<Status>(&13u16.to_le_bytes()).is_err());
-    assert!(decode::<Status>(&15u16.to_le_bytes()).is_err());
+    assert!(decode::<Status>(&16u16.to_le_bytes()).is_err());
     assert!(decode::<Kind>(&[4]).is_err());
-    assert!(decode::<Service>(&[5]).is_err());
+    assert!(decode::<Service>(&[6]).is_err());
     for (i, s) in SpoolStatus::ALL.iter().enumerate() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
@@ -373,7 +374,8 @@ fn version_2_bodies() {
 fn values_by_version() {
     assert_eq!(Service::of_version(1), [Service::Connection, Service::SignOn, Service::System]);
     assert_eq!(Service::of_version(2), Service::ALL[..4].to_vec());
-    assert_eq!(Service::of_version(3), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(3), Service::ALL[..5].to_vec());
+    assert_eq!(Service::of_version(4), Service::ALL.to_vec());
     assert_eq!(encode(&Service::Command), [3]);
     assert_eq!(encode(&Service::Spool), [4]);
     for code in 1..=7 {

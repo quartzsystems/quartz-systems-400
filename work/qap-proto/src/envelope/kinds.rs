@@ -40,6 +40,8 @@ pub enum Service {
     Command,
     /// Spooled files and output queues (version 3).
     Spool,
+    /// SQL and the catalog (version 4).
+    Sql,
 }
 
 wire_enum!(Service {
@@ -48,16 +50,18 @@ wire_enum!(Service {
     2 => System,
     3 => Command,
     4 => Spool,
+    5 => Sql,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 5] = [
+    pub const ALL: [Service; 6] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
         Service::Command,
         Service::Spool,
+        Service::Sql,
     ];
 
     /// The protocol version that defines it.
@@ -67,6 +71,7 @@ impl Service {
             Service::Connection | Service::SignOn | Service::System => 1,
             Service::Command => 2,
             Service::Spool => 3,
+            Service::Sql => 4,
         }
     }
 
@@ -108,6 +113,8 @@ pub enum Status {
     ServerEnding,
     /// Another job holds the object (version 3).
     InUse,
+    /// An SQL statement failed; the body is `SqlFailure` (version 4).
+    SqlError,
 }
 
 wire_enum!(Status: u16 {
@@ -125,16 +132,18 @@ wire_enum!(Status: u16 {
     11 => SessionExpired,
     12 => ServerEnding,
     14 => InUse,
+    15 => SqlError,
 });
 
 impl Status {
     /// The protocol version that defines it. Version 2 defines no new
-    /// status; version 3 defines `InUse`. `Exists` (13) and `SqlError`
-    /// (15) come with the versions whose operations first use them.
+    /// status; version 3 defines `InUse`, version 4 `SqlError`. `Exists`
+    /// (13) comes with the version whose operations first use it.
     #[must_use]
     pub const fn since(self) -> u16 {
         match self {
             Status::InUse => 3,
+            Status::SqlError => 4,
             _ => 1,
         }
     }
@@ -147,7 +156,7 @@ impl Status {
     }
 
     /// Every status, in value order.
-    pub const ALL: [Status; 14] = [
+    pub const ALL: [Status; 15] = [
         Status::Ok,
         Status::Error,
         Status::VersionUnsupported,
@@ -162,5 +171,6 @@ impl Status {
         Status::SessionExpired,
         Status::ServerEnding,
         Status::InUse,
+        Status::SqlError,
     ];
 }

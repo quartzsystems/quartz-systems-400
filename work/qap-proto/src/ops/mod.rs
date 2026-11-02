@@ -9,6 +9,7 @@ pub mod command;
 pub mod connection;
 pub mod signon;
 pub mod spool;
+pub mod sql;
 pub mod system;
 
 use crate::envelope::Service;
@@ -55,11 +56,35 @@ pub enum Op {
     MoveSpooledFile,
     /// `Spool` 7: output queues (version 3).
     ListOutputQueues,
+    /// `SignOn` 7: add this connection to a session (version 4).
+    Attach,
+    /// `Sql` 1: commitment control, naming, default schema (version 4).
+    SetOptions,
+    /// `Sql` 2: prepare a statement (version 4).
+    Prepare,
+    /// `Sql` 3: run a prepared statement (version 4).
+    Execute,
+    /// `Sql` 4: rows from a cursor (version 4).
+    Fetch,
+    /// `Sql` 5: close a cursor (version 4).
+    CloseCursor,
+    /// `Sql` 6: release a prepared statement (version 4).
+    Release,
+    /// `Sql` 7: commit (version 4).
+    Commit,
+    /// `Sql` 8: roll back (version 4).
+    Rollback,
+    /// `Sql` 9: schemas in the catalog (version 4).
+    ListSchemas,
+    /// `Sql` 10: tables, views, aliases and files (version 4).
+    ListTables,
+    /// `Sql` 11: a table's columns (version 4).
+    ListColumns,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 19] = [
+    pub const ALL: [Op; 31] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -79,6 +104,18 @@ impl Op {
         Op::DeleteSpooledFile,
         Op::MoveSpooledFile,
         Op::ListOutputQueues,
+        Op::Attach,
+        Op::SetOptions,
+        Op::Prepare,
+        Op::Execute,
+        Op::Fetch,
+        Op::CloseCursor,
+        Op::Release,
+        Op::Commit,
+        Op::Rollback,
+        Op::ListSchemas,
+        Op::ListTables,
+        Op::ListColumns,
     ];
 
     /// Its service and code.
@@ -104,6 +141,18 @@ impl Op {
             Op::DeleteSpooledFile => (Service::Spool, 5),
             Op::MoveSpooledFile => (Service::Spool, 6),
             Op::ListOutputQueues => (Service::Spool, 7),
+            Op::Attach => (Service::SignOn, 7),
+            Op::SetOptions => (Service::Sql, 1),
+            Op::Prepare => (Service::Sql, 2),
+            Op::Execute => (Service::Sql, 3),
+            Op::Fetch => (Service::Sql, 4),
+            Op::CloseCursor => (Service::Sql, 5),
+            Op::Release => (Service::Sql, 6),
+            Op::Commit => (Service::Sql, 7),
+            Op::Rollback => (Service::Sql, 8),
+            Op::ListSchemas => (Service::Sql, 9),
+            Op::ListTables => (Service::Sql, 10),
+            Op::ListColumns => (Service::Sql, 11),
         }
     }
 
@@ -120,7 +169,40 @@ impl Op {
             | Op::DeleteSpooledFile
             | Op::MoveSpooledFile
             | Op::ListOutputQueues => 3,
+            Op::Attach
+            | Op::SetOptions
+            | Op::Prepare
+            | Op::Execute
+            | Op::Fetch
+            | Op::CloseCursor
+            | Op::Release
+            | Op::Commit
+            | Op::Rollback
+            | Op::ListSchemas
+            | Op::ListTables
+            | Op::ListColumns => 4,
         }
+    }
+
+    /// Whether it runs in the connection's lane, one at a time in
+    /// arrival order with the job's state: `Command` operations and
+    /// `Sql` 1 to 8 (docs/QAP.md, Multiplexing).
+    #[must_use]
+    pub const fn in_lane(self) -> bool {
+        matches!(
+            self,
+            Op::RunCommand
+                | Op::CheckCommand
+                | Op::DescribeCommand
+                | Op::SetOptions
+                | Op::Prepare
+                | Op::Execute
+                | Op::Fetch
+                | Op::CloseCursor
+                | Op::Release
+                | Op::Commit
+                | Op::Rollback
+        )
     }
 
     /// The operation a service and code name.
@@ -132,7 +214,7 @@ impl Op {
     /// Whether it is allowed before sign-on.
     #[must_use]
     pub const fn before_signon(self) -> bool {
-        matches!(self, Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume)
+        matches!(self, Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::Attach)
     }
 }
 

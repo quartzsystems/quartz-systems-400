@@ -3,7 +3,8 @@
 // root directory of this project.
 
 //! `SignOn`: sign on, change a password, resume and sign off; from
-//! version 2 a Telnet ticket and the password's expiry. `SignOff`,
+//! version 2 a Telnet ticket and the password's expiry; from version 4
+//! attach a further connection to a session. `SignOff`,
 //! `TelnetTicket` and `PasswordStatus` have no request bodies.
 
 use ipc::wire_struct;
@@ -47,7 +48,16 @@ pub struct Resume {
 
 wire_struct!(Resume { token });
 
-/// The reply to `SignOn`, `ChangePassword` and `Resume`.
+/// `Attach`'s request (version 4).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Attach {
+    /// The session's token.
+    pub token: Token,
+}
+
+wire_struct!(Attach { token });
+
+/// The reply to `SignOn`, `ChangePassword`, `Resume` and `Attach`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SignOnReply {
     /// The session's token.
