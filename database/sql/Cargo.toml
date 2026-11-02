@@ -19,6 +19,7 @@ tracing.workspace = true
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
 
 [lints]
 workspace = true

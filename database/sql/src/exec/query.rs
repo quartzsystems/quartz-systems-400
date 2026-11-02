@@ -716,6 +716,8 @@ fn scan_table_in(
     let cands = candidates(txn, t);
     let choice = choose(&cands, &scan.preds, order, &scan.alias);
     let label = format!("{}/{} ({})", t.desc.library_name, t.desc.name(), scan.alias);
+    // Reading a table needs what a read open needs: `*OBJOPR` and `*READ`.
+    db::auth::check_open(txn, t.id, db::Usage::INPUT)?;
     if !explain_only {
         let mut objects = vec![t.id, t.member.object];
         if let Some(ch) = &choice {

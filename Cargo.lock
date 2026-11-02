@@ -3229,6 +3229,7 @@ dependencies = [
  "jrn",
  "qdecimal",
  "qsname",
+ "sec",
  "store",
  "thiserror",
  "tracing",
