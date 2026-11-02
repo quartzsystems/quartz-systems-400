@@ -41,6 +41,9 @@ pub struct Attempt {
     pub now: u64,
     /// An RFC 4777 substitute in place of the password (auto-signon).
     pub proof: Option<Substitute>,
+    /// The identity is proven already: a QAP Telnet ticket was redeemed
+    /// for this user. Every other check applies.
+    pub ticket: bool,
 }
 
 /// What a TN5250E client sent to prove its password: the seeds both
@@ -229,10 +232,11 @@ pub fn sign_on(
         )));
     }
     let form = form_for(v.policy.pwdlvl);
-    let proven = match &a.proof {
-        Some(s) => crate::password::verify_substitute(&p, &user, s, v.policy.pwdlvl),
-        None => p.hash(form).is_some_and(|h| verify(h, &a.password)),
-    };
+    let proven = a.ticket
+        || match &a.proof {
+            Some(s) => crate::password::verify_substitute(&p, &user, s, v.policy.pwdlvl),
+            None => p.hash(form).is_some_and(|h| verify(h, &a.password)),
+        };
     if !proven {
         pw("P", &user, &a.device);
         p.signon_invalid += 1;

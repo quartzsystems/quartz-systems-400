@@ -679,7 +679,7 @@ group = "SEC"
 name = "QRMTSIGN"
 type = "char"
 len = 20
-default = "*FRCSIGNON"
+default = "*VERIFY"
 text = "How remote sign-on requests are handled"
 group = "SEC"
 

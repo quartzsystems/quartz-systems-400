@@ -497,6 +497,24 @@ pub fn sign_on(
     console: bool,
     proof: Option<sec::signon::Substitute>,
 ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+    sign_on_as(system, user, password, device, console, proof, false)
+}
+
+/// Sign on at `device` for a user a QAP Telnet ticket proved: every
+/// check but the password.
+pub fn sign_on_ticket(system: &mut System, user: &str, device: &str) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+    sign_on_as(system, user, "", device, false, None, true)
+}
+
+fn sign_on_as(
+    system: &mut System,
+    user: &str,
+    password: &str,
+    device: &str,
+    console: bool,
+    proof: Option<sec::signon::Substitute>,
+    ticket: bool,
+) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
     use sec::signon::{Attempt, Refused, Values};
     let fail = |text: String| Refused {
         msgid: "CPF1107".into(),
@@ -522,6 +540,7 @@ pub fn sign_on(
         sessions,
         now: crate::ipl::system::now_unix(),
         proof,
+        ticket,
     };
     let r = sec::guard::as_system(|| {
         let s = system.storage.as_mut()?;

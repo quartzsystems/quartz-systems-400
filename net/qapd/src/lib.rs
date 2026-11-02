@@ -19,6 +19,7 @@
 pub mod frames;
 pub mod host;
 pub mod sessions;
+pub mod tickets;
 
 mod conn;
 mod pump;

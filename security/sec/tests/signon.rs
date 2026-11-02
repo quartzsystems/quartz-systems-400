@@ -43,6 +43,7 @@ fn attempt(user: &str, password: &str) -> Attempt {
         sessions: 0,
         now: NOW,
         proof: None,
+        ticket: false,
     }
 }
 
@@ -209,4 +210,31 @@ fn at_console_with(password: &str) -> Attempt {
     let mut a = attempt("QSECOFR", password);
     a.console = true;
     a
+}
+
+/// A ticket proves the user without the password; every other check
+/// still applies.
+#[test]
+fn a_ticket_proves_the_user_only() {
+    let (mut store, qsys) = open_new();
+    let mut t = store.begin().unwrap();
+    shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
+    let secofr = Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
+    let env = Env {
+        qsys,
+        actor: &secofr,
+        now: NOW,
+        sysval: &sysval,
+    };
+    usrprf::crtusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[("USRPRF", "BOB"), ("PASSWORD", "Right123")]),
+    )
+    .unwrap();
+    let mut a = attempt("BOB", "");
+    a.ticket = true;
+    assert_eq!(msgid(&mut t, qsys, &a), "OK");
+    usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")])).unwrap();
+    assert_eq!(msgid(&mut t, qsys, &a), "CPF1394");
 }

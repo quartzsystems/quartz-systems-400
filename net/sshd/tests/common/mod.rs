@@ -178,6 +178,7 @@ impl Accounts for StoreAccounts {
             sessions: 0,
             now: NOW,
             proof: None,
+            ticket: false,
         };
         let v = Values::from_sysvals(&sysval);
         let none = |_: &mut store::txn::Txn<'_>, _: &str| -> Option<Auth> { None };

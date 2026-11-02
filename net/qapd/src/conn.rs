@@ -174,9 +174,11 @@ impl<H: Host> Conn<'_, H> {
                 Err(_) => Answer::status(Status::InvalidRequest),
             },
             Op::PasswordStatus => Answer::ok(&self.host.password_status()),
-            // Version 2's other operation, built in the commit that
-            // follows.
-            Op::TelnetTicket | Op::Hello => Answer::status(Status::InvalidRequest),
+            Op::TelnetTicket => match self.host.telnet_ticket() {
+                Ok(t) => Answer::ok(&t),
+                Err(r) => Answer::refused(r),
+            },
+            Op::Hello => Answer::status(Status::InvalidRequest),
         }
     }
 

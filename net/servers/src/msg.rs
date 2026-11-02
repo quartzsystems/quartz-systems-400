@@ -61,6 +61,8 @@ pub const QAP_NOT_STARTED: &str = "TCP1A52";
 pub const QAP_SESSION_GONE: &str = "TCP1A53";
 /// `QAP session of &1 ended by an operator.`
 pub const QAP_SESSION_ENDED: &str = "TCP1A54";
+/// `Automatic sign-on is not allowed for user profile &1.`
+pub const QAP_NO_AUTO_SIGNON: &str = "TCP1A55";
 
 /// Every identifier above.
 pub const ALL: &[&str] = &[
@@ -91,4 +93,5 @@ pub const ALL: &[&str] = &[
     QAP_NOT_STARTED,
     QAP_SESSION_GONE,
     QAP_SESSION_ENDED,
+    QAP_NO_AUTO_SIGNON,
 ];

@@ -14,7 +14,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
-use qap_proto::ops::signon::{PasswordStatus, SignOnReply};
+use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::types::ObjectName;
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -238,6 +238,17 @@ impl Host for JobHost {
     fn password_status(&mut self) -> PasswordStatus {
         let (expires, warning_days) = self.link.borrow_mut().with(Client::qap_pwd_status);
         PasswordStatus { expires, warning_days }
+    }
+
+    fn telnet_ticket(&mut self) -> Result<TelnetTicketReply, Refusal> {
+        let r = self.link.borrow_mut().with(Client::qap_ticket);
+        match r {
+            Ok((ticket, expires_secs)) => Ok(TelnetTicketReply {
+                ticket: Token(ticket.as_slice().try_into().unwrap_or([0; 32])),
+                expires_secs,
+            }),
+            Err(e) => Err(self.refusal(&e)),
+        }
     }
 
     fn run_command(&mut self, command: &str) -> Ran {

@@ -642,6 +642,14 @@ ipc::rpc! {
     /// When the job's user's password expires (milliseconds since 1970,
     /// `None` when it does not), and `QPWDEXPWRN`.
     746 => fn qap_pwd_status / QapPwdStatus () -> (Option<i64>, u16);
+    /// A Telnet ticket for the job's signed-on user: 32 bytes, and the
+    /// seconds it lives.
+    747 => fn qap_ticket / QapTicket () -> Result<(Vec<u8>, u32), QapRefused>;
+    /// The Telnet server redeems a ticket for `user` at `device`; `tls`
+    /// says how the client connected. The ticket is used up whatever
+    /// the answer; on success the sign-on checks follow, all but the
+    /// password. Only `QTVTELNET` may ask.
+    748 => fn telnet_ticket / TelnetTicket (user: String, ticket: Vec<u8>, device: String, tls: bool) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
 
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the

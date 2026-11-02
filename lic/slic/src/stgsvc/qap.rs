@@ -14,12 +14,13 @@ use std::sync::{Mutex, OnceLock, PoisonError};
 
 use qap_proto::Token;
 use qapd::sessions::Sessions;
+use qapd::tickets::{TICKET_SECS, Tickets};
 use servers::attrs::qap::QapAttrs;
 use stg::{QapRefused, QapSession};
 
 use super::hostsvr::{become_user, read, reset};
 use super::jobqs::qual;
-use super::security::{chg_pwd, principal, sign_on, sysval_text};
+use super::security::{chg_pwd, principal, sign_on, sign_on_ticket, sysval_text};
 use super::served::JobCtx;
 use crate::ipl::system::{System, now_unix};
 
@@ -44,6 +45,22 @@ const EXPIRED: &str = "CPD9BAE";
 fn sessions() -> &'static Mutex<Sessions> {
     static S: OnceLock<Mutex<Sessions>> = OnceLock::new();
     S.get_or_init(|| Mutex::new(Sessions::new()))
+}
+
+fn tickets() -> &'static Mutex<Tickets> {
+    static T: OnceLock<Mutex<Tickets>> = OnceLock::new();
+    T.get_or_init(|| Mutex::new(Tickets::new()))
+}
+
+/// The Telnet server's jobs.
+const TELNET: &str = "QTVTELNET";
+/// `Automatic sign-on is not allowed for user profile &1.`
+const NO_AUTO_SIGNON: &str = "TCP1A55";
+
+/// Whether `QRMTSIGN` lets a client sign on automatically.
+pub fn remote_signon_allowed(system: &System) -> bool {
+    let v = sysval_text(system, "QRMTSIGN").trim().to_ascii_uppercase();
+    v.starts_with("*VERIFY") || v.starts_with("*SAMEPRF")
 }
 
 fn refused(status: u16, msgid: &str, text: &str, data: &[&str]) -> QapRefused {
@@ -297,4 +314,72 @@ pub fn pwd_status(system: &mut System, ctx: &JobCtx) -> (Option<i64>, u16) {
             .map(|days| ms(p.pwd_changed.saturating_add(u64::from(days) * 86_400)))
     };
     (expires, warn)
+}
+
+/// `qap_ticket`: 256 random bits for the session's own profile, kept
+/// here a minute. `NotAuthorized` when `QRMTSIGN` allows no automatic
+/// sign-on or the profile could not sign on (disabled, `*NONE`
+/// password, password expired).
+pub fn ticket(system: &mut System, ctx: &JobCtx) -> Result<(Vec<u8>, u32), QapRefused> {
+    connection_job(ctx)?;
+    let user = signed_on(ctx).ok_or_else(|| refused(3, "CPF9898", "Not signed on.", &[]))?;
+    let no = || refused(NOT_AUTHORIZED, NO_AUTO_SIGNON, "", &[&user]);
+    if !remote_signon_allowed(system) {
+        return Err(no());
+    }
+    let p = read(system, &user).ok_or_else(no)?;
+    let policy = sec::password::policy::Policy::from_sysvals(&|n: &str| sysval_text(system, n));
+    if p.disabled || p.pwd_none || policy.expired(&p, now_unix()) {
+        return Err(no());
+    }
+    let token = new_token()?;
+    tickets()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .issue(&token, &user, now_unix());
+    sec::audit::record(
+        sec::audit::Event::new(sec::audit::Kind::Ps)
+            .set("ETYP", "P")
+            .set("USRP", user.as_str())
+            .set("NUSR", user.as_str()),
+    );
+    Ok((token.0.to_vec(), TICKET_SECS))
+}
+
+/// `telnet_ticket`: used up here whatever the answer; then the sign-on
+/// checks for `user`, all but the password. Refused as a wrong
+/// password reads, so a ticket says nothing about a profile.
+pub fn telnet_ticket(
+    system: &mut System,
+    ctx: &JobCtx,
+    user: &str,
+    ticket: &[u8],
+    device: &str,
+    tls: bool,
+) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+    let not = || sec::signon::Refused {
+        msgid: "CPF1107".into(),
+        text: "Password or user profile is not correct.".into(),
+        vary_off: false,
+    };
+    if ctx.job.name != TELNET {
+        return Err(not());
+    }
+    let user = user.trim().to_ascii_uppercase();
+    let token = token_of(ticket).ok_or_else(not)?;
+    let r = tickets()
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .redeem(&token, &user, now_unix(), tls);
+    sec::audit::record(
+        sec::audit::Event::new(sec::audit::Kind::Ps)
+            .set("ETYP", "V")
+            .set("USRP", user.as_str())
+            .set("NUSR", user.as_str())
+            .set("RSLT", if r.is_ok() { "A" } else { "R" }),
+    );
+    if r.is_err() || !remote_signon_allowed(system) {
+        return Err(not());
+    }
+    sign_on_ticket(system, &user, device)
 }

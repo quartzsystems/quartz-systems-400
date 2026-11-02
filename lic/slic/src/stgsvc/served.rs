@@ -584,6 +584,20 @@ impl Service for Served<'_> {
         super::qap::pwd_status(self.system, self.ctx)
     }
 
+    fn qap_ticket(&mut self) -> Result<(Vec<u8>, u32), stg::QapRefused> {
+        super::qap::ticket(self.system, self.ctx)
+    }
+
+    fn telnet_ticket(
+        &mut self,
+        user: String,
+        ticket: Vec<u8>,
+        device: String,
+        tls: bool,
+    ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+        super::qap::telnet_ticket(self.system, self.ctx, &user, &ticket, &device, tls)
+    }
+
     fn host_token(
         &mut self,
         user: String,

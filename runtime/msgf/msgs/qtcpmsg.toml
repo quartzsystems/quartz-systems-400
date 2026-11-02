@@ -788,3 +788,10 @@ sev = 0
 text = "QAP session of &1 ended by an operator."
 help = "The connection job serving the session was ended. The session cannot be resumed; sign on again."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A55"
+sev = 30
+text = "Automatic sign-on is not allowed for user profile &1."
+help = "No Telnet ticket was made. Automatic sign-on needs QRMTSIGN *VERIFY or *SAMEPRF, and a profile that can sign on: enabled, with a password that has not expired."
+vars = ["*CHAR 10"]

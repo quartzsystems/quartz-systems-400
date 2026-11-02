@@ -914,10 +914,23 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
         },
         Err(code) => return Err(format!("{peer}: no device: {code}")),
     };
-    let auto = if console {
+    // QRMTSIGN: *VERIFY and *SAMEPRF sign on automatically,
+    // *FRCSIGNON shows the sign-on display, *REJECT refuses a client
+    // that asks.
+    let rmtsign = link
+        .sysval("QRMTSIGN".into())
+        .ok()
+        .flatten()
+        .map(|v| ccsid::from_ebcdic(&v.data).trim().to_ascii_uppercase())
+        .unwrap_or_default();
+    let asks = neg.var("USER").is_some_and(|u| !u.trim().is_empty());
+    if asks && rmtsign.starts_with("*REJECT") && !console {
+        return Err(format!("{peer}: automatic sign-on refused (QRMTSIGN *REJECT)"));
+    }
+    let auto = if console || !(rmtsign.starts_with("*VERIFY") || rmtsign.starts_with("*SAMEPRF")) {
         None
     } else {
-        auto_signon(&neg, seed, link, &device)
+        auto_signon(&neg, seed, link, &device, at.secure)
     };
     let r = serve_device(
         &tr,
@@ -1119,16 +1132,27 @@ fn seed() -> [u8; 8] {
 }
 
 /// RFC 4777: the user's substitute checked against the password
-/// store; the signed-on user when it matched.
+/// store; the signed-on user when it matched. An empty seed with a
+/// 64-hex-character password variable is a QAP ticket, redeemed by the
+/// storage service (only over TLS; used up either way). A password in
+/// plain text is never accepted.
 fn auto_signon(
     neg: &Negotiated,
     seed: [u8; 8],
     link: &mut Link,
     device: &str,
+    tls: bool,
 ) -> Option<sec::signon::SignedOn> {
     let user = neg.var("USER")?.to_ascii_uppercase();
     let client_seed = neg.var_bytes("IBMRSEED")?;
     let sub = neg.var_bytes("IBMSUBSPW")?;
+    if client_seed.is_empty() {
+        let ticket = qapd::tickets::parse_hex(sub)?;
+        return match link.telnet_ticket(user, ticket.0.to_vec(), device.to_string(), tls) {
+            Ok(Ok(s)) => Some(s),
+            _ => None,
+        };
+    }
     if client_seed.len() != 8 {
         return None;
     }

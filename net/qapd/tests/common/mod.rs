@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 
 use ipc::Wire;
 use qap_proto::ops::connection::Hello;
-use qap_proto::ops::signon::{PasswordStatus, SignOnReply};
+use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Envelope, Kind, Op, Reassembly, Secret, ServerMessage, Status, Token};
 use qapd::frames::FrameReader;
@@ -301,6 +301,10 @@ impl Host for MemHost {
 
     fn password_status(&mut self) -> PasswordStatus {
         PasswordStatus::default()
+    }
+
+    fn telnet_ticket(&mut self) -> Result<TelnetTicketReply, Refusal> {
+        Err(self.refuse(Status::NotAuthorized, "TCP1A55", &[]))
     }
 
     fn run_command(&mut self, _command: &str) -> Ran {
