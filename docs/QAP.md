@@ -574,10 +574,16 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
   value is stored fitted to its field's scale, 0 for SQL's, so
   `4.5` reads back `4`; an SQL column name is kept to 30
-  characters (the field's `ALIAS`), not IBM i's 128. The storage service answers one request at a time, so while
-  a statement runs there, other jobs' storage requests and this
-  connection's catalog lists wait for it: the lanes hold in the
-  connection job, not yet end to end.
+  characters (the field's `ALIAS`), not IBM i's 128.
+- The storage service is one thread, but a query (`Execute` of a
+  `SELECT`, opened as a cursor) takes turns with every other request
+  there: between batches of its scan it lets the other jobs' requests
+  and this connection's catalog lists in (`STORAGE_SERVICE.md` "Long
+  statements"). Still waiting on it: statements that change data
+  (`UPDATE` of many rows), queries under `RepeatableRead` and
+  `Serializable` (`*ALL`), the sort or join of a query once its rows
+  are read, and a query met while another runs, which goes first (the
+  earlier window waits for it).
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

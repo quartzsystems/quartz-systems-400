@@ -56,6 +56,7 @@ pub(crate) mod wtr;
 
 pub use jobs::chgjob;
 mod served;
+mod turns;
 mod seu;
 pub(crate) mod sysdata;
 mod authdata;
@@ -67,12 +68,10 @@ mod sysdsp;
 use std::fs;
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use blockdev::{BlockDev, LinuxBlockDev};
 use ipc::chan::Chan;
-use rustix::event::{PollFd, PollFlags, Timespec, poll};
-use stg::{JobInfo, Request, Start};
+use stg::{JobInfo, Start};
 use sysval::SysVals;
 
 use crate::ipl::cmdline::Boot;
@@ -112,7 +111,7 @@ pub fn run() -> ! {
     let Some(listener) = listener else {
         std::process::exit(1);
     };
-    serve(&mut system, slic, &listener)
+    serve(system, slic, listener)
 }
 
 /// Open the units `slic` closed, a fresh temporary ASP, the system
@@ -247,8 +246,9 @@ fn listen(path: &Path) -> Result<UnixListener, String> {
     UnixListener::bind(path).map_err(|e| format!("{}: {e}", path.display()))
 }
 
-/// Serve `slic` and the jobs until `slic` asks for the close.
-fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
+/// Before the first request: the IPL's message, communications, media,
+/// the descriptor relay, `SCPF`'s job, a recovery's user data.
+fn prepare(system: &mut System) -> Option<served::JobCtx> {
     let scpf = JobInfo {
         name: "SCPF".into(),
         user: "QSYS".into(),
@@ -281,87 +281,18 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
     for line in crate::cpp::savsys::restore_user_data(system) {
         eprintln!("qsstg: {line}");
     }
-    let mut conns = vec![Conn::new(slic, ctx)];
-    loop {
-        // Background disk work (device parity, a mirror resume) runs in
-        // turns between requests, short ones while jobs wait.
-        let wait = if storage::busy(system) {
-            Duration::from_millis(2)
-        } else {
-            Duration::from_secs(5)
-        };
-        let (accept, ready) = wait_ready(listener, &conns, wait);
-        let slice = if accept || !ready.is_empty() {
-            storage::PARITY_SLICE_BUSY
-        } else {
-            storage::PARITY_SLICE
-        };
-        storage::tick_with(system, slice);
-        ifsvol::tick(system);
-        cmn::tick(system);
-        if accept {
-            match listener.accept() {
-                Ok((s, _)) => conns.push(Conn::new(Chan::new(s), None)),
-                Err(e) => eprintln!("qsstg: accept: {e}"),
-            }
-        }
-        let mut grouped = false;
-        for i in ready.into_iter().rev() {
-            let frame = conns[i].chan.recv_raw();
-            let req = frame.and_then(|b| ipc::decode::<Request>(&b));
-            let Ok(req) = req else {
-                let c = conns.remove(i);
-                if !grouped {
-                    served::group(system, true);
-                    grouped = true;
-                }
-                served::vanished(system, c);
-                continue;
-            };
-            if grouped {
-                served::group(system, false);
-                grouped = false;
-            }
-            let close = matches!(req, Request::Close {});
-            let reply = served::handle(system, &mut conns, i, req);
-            let _ = conns[i].chan.send_raw(&reply);
-            if close {
-                std::process::exit(0);
-            }
-        }
-        if grouped {
-            served::group(system, false);
-        }
-    }
+    ctx
 }
 
-/// Wait for the listener or a connection to be readable; whether to
-/// accept, and the connections to read.
-fn wait_ready(listener: &UnixListener, conns: &[Conn], wait: Duration) -> (bool, Vec<usize>) {
-    let mut fds = Vec::with_capacity(conns.len() + 1);
-    fds.push(PollFd::new(listener, PollFlags::IN));
-    for c in conns {
-        fds.push(PollFd::new(c.chan.stream(), PollFlags::IN));
+/// Serve `slic` and the jobs until `slic` asks for the close: rounds of
+/// the loop in `turns`.
+fn serve(mut system: System, slic: Chan, listener: UnixListener) -> ! {
+    let ctx = prepare(&mut system);
+    let mut svc = turns::Svc::new(system, vec![Conn::new(slic, ctx)], listener);
+    loop {
+        let wait = turns::top_wait(&svc.system);
+        svc = turns::round(svc, wait);
     }
-    let t = Timespec {
-        tv_sec: i64::try_from(wait.as_secs()).unwrap_or(i64::MAX),
-        tv_nsec: i64::from(wait.subsec_nanos()),
-    };
-    if poll(&mut fds, Some(&t)).is_err() {
-        return (false, Vec::new());
-    }
-    let hit = |f: &PollFd<'_>| {
-        f.revents()
-            .intersects(PollFlags::IN | PollFlags::HUP | PollFlags::ERR)
-    };
-    let accept = hit(&fds[0]);
-    let ready = fds[1..]
-        .iter()
-        .enumerate()
-        .filter(|(_, f)| hit(f))
-        .map(|(i, _)| i)
-        .collect();
-    (accept, ready)
 }
 
 /// The shipped work management objects that are missing.
