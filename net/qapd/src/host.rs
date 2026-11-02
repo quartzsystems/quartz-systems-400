@@ -8,7 +8,8 @@
 
 use std::sync::Arc;
 
-use qap_proto::ops::command::CommandReply;
+use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::types::ObjectName;
 use qap_proto::ops::signon::SignOnReply;
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -98,6 +99,9 @@ pub trait Host {
     /// Check a CL command without running it: `Ok` with no messages
     /// when valid, else `Error` (or `NotFound`) with the check's.
     fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>);
+    /// A command's definition as the prompter has it: `NotFound` or
+    /// `NotAuthorized` with the message why when it cannot be had.
+    fn describe_command(&mut self, command: &ObjectName) -> Result<CommandDefinition, Refusal>;
     /// What ends a running operation when the client cancels it.
     fn canceller(&mut self) -> Option<Canceller> {
         None

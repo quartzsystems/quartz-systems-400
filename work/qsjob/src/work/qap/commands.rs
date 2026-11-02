@@ -2,14 +2,17 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `RunCommand` and `CheckCommand` in the connection job: the analyzer
-//! Command Entry uses, as the signed-on profile with its library list.
+//! `RunCommand`, `CheckCommand` and `DescribeCommand` in the connection
+//! job: the analyzer Command Entry uses, as the signed-on profile with
+//! its library list, and the definition `F4` prompts from.
 //! The messages a command sent its caller are the job log's entries it
 //! added. A batch job's analyzer refuses commands allowed only
 //! interactively (`CPD0031`), so they end with `Error`.
 
-use qap_proto::ops::command::CommandReply;
-use qap_proto::types::JobId;
+use cmd::analyze::CmdSource;
+use cmd::prompt::flat;
+use qap_proto::ops::command::{CommandDefinition, CommandReply, ParmKind, ParmNode, Range, Role, Show};
+use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{ServerMessage, Status};
 use qapd::Ran;
 
@@ -131,6 +134,83 @@ pub fn check(console: &mut Console, command: &str) -> (Status, Vec<ServerMessage
                 _ => Status::Error,
             };
             (status, messages)
+        }
+    }
+}
+
+fn node_of(n: flat::Node) -> ParmNode {
+    let u16_of = |i: usize| u16::try_from(i).unwrap_or(u16::MAX);
+    ParmNode {
+        index: u16_of(n.index),
+        parent: n.parent.map(u16_of),
+        role: match n.role {
+            flat::Role::Parameter => Role::Parameter,
+            flat::Role::Element => Role::Element,
+            flat::Role::Qualifier => Role::Qualifier,
+        },
+        keyword: n.keyword,
+        prompt: n.prompt,
+        // No help panel groups ship for commands; F4 shows none either.
+        help: String::new(),
+        kind: match n.kind {
+            flat::Kind::Name => ParmKind::Name,
+            flat::Kind::Character => ParmKind::Character,
+            flat::Kind::Decimal => ParmKind::Decimal,
+            flat::Kind::Integer => ParmKind::Integer,
+            flat::Kind::Logical => ParmKind::Logical,
+            flat::Kind::Date => ParmKind::Date,
+            flat::Kind::Time => ParmKind::Time,
+            flat::Kind::Generic => ParmKind::Generic,
+            flat::Kind::Path => ParmKind::Path,
+            flat::Kind::Command => ParmKind::Command,
+        },
+        length: n.length,
+        decimals: u16::from(n.decimals),
+        required: n.required,
+        min_values: n.min,
+        max_values: n.max,
+        default: n.default,
+        special_values: n.special,
+        values: n.values,
+        range: n.range.map(|(low, high)| Range { low, high }),
+        show: match n.show {
+            flat::Show::Always => Show::Always,
+            flat::Show::Additional => Show::Additional,
+            flat::Show::Never => Show::Never,
+        },
+    }
+}
+
+/// `command`'s definition from its `*CMD` object, `CHGCMDDFT`'s
+/// defaults applied; why not as a status, message and its data.
+pub fn describe(console: &mut Console, command: &ObjectName) -> Result<CommandDefinition, (Status, String, Vec<String>)> {
+    let name = command.name.trim().to_ascii_uppercase();
+    let lib = command.library.trim().to_ascii_uppercase();
+    let lib_arg = (!lib.is_empty() && lib != "*LIBL").then_some(lib.as_str());
+    let shown_lib = if lib.is_empty() { "*LIBL".to_string() } else { lib.clone() };
+    let found = console.host.cmds.borrow_mut().lookup(&name, lib_arg);
+    match found {
+        Ok(Some((obj, found_lib))) => {
+            let def = obj.effective();
+            Ok(CommandDefinition {
+                name: ObjectName {
+                    library: found_lib,
+                    name: def.name.clone(),
+                },
+                text: def.prompt.clone(),
+                help: String::new(),
+                nodes: flat::nodes(&def).into_iter().map(node_of).collect(),
+            })
+        }
+        Ok(None) => Err((Status::NotFound, "CPD0030".into(), vec![name, shown_lib])),
+        Err(e) => {
+            let id = e.msgid().to_string();
+            let status = if NOT_AUTHORIZED.contains(&id.as_str()) {
+                Status::NotAuthorized
+            } else {
+                Status::NotFound
+            };
+            Err((status, id, vec![name, shown_lib]))
         }
     }
 }

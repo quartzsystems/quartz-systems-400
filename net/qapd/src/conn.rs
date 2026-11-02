@@ -14,7 +14,7 @@ use std::thread;
 
 use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
-use qap_proto::ops::command::{CheckReply, CommandText};
+use qap_proto::ops::command::{CheckReply, CommandText, DescribeCommand};
 use qap_proto::ops::event;
 use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
 use qap_proto::{Envelope, HELLO_ID, Op, ServerMessage, Service, Status, Token, VERSION};
@@ -166,11 +166,16 @@ impl<H: Host> Conn<'_, H> {
             Op::SystemInfo => Answer::ok(&self.host.system_info()),
             Op::RunCommand => self.run_command(req),
             Op::CheckCommand => self.check_command(req),
+            Op::DescribeCommand => match req.body_as::<DescribeCommand>() {
+                Ok(b) => match self.host.describe_command(&b.command) {
+                    Ok(d) => Answer::ok(&d),
+                    Err(r) => Answer::refused(r),
+                },
+                Err(_) => Answer::status(Status::InvalidRequest),
+            },
             // Version 2's other operations, built in the commits that
             // follow.
-            Op::TelnetTicket | Op::PasswordStatus | Op::DescribeCommand | Op::Hello => {
-                Answer::status(Status::InvalidRequest)
-            }
+            Op::TelnetTicket | Op::PasswordStatus | Op::Hello => Answer::status(Status::InvalidRequest),
         }
     }
 

@@ -22,7 +22,8 @@ use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Envelope, Kind, Op, Reassembly, Secret, ServerMessage, Status, Token};
 use qapd::frames::FrameReader;
 use qapd::sessions::Sessions;
-use qap_proto::ops::command::CommandReply;
+use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::types::ObjectName;
 use qapd::{Closed, Config, Ending, Host, Ran, Refusal, SystemId};
 
 /// Holds operations in progress while closed.
@@ -308,6 +309,10 @@ impl Host for MemHost {
 
     fn check_command(&mut self, _command: &str) -> (Status, Vec<ServerMessage>) {
         (Status::NotFound, Vec::new())
+    }
+
+    fn describe_command(&mut self, _command: &ObjectName) -> Result<CommandDefinition, Refusal> {
+        Err(self.refuse(Status::NotFound, "CPD0030", &[]))
     }
 }
 

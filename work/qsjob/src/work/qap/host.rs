@@ -13,7 +13,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ipc::chan::Chan;
+use qap_proto::ops::command::CommandDefinition;
 use qap_proto::ops::signon::SignOnReply;
+use qap_proto::types::ObjectName;
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 use qapd::{Canceller, Ending, Host, Ran, Refusal, SystemId};
@@ -220,6 +222,17 @@ impl Host for JobHost {
     fn sign_off(&mut self, token: &Token) {
         self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec()));
         self.console.swapped();
+    }
+
+    fn describe_command(&mut self, command: &ObjectName) -> Result<CommandDefinition, Refusal> {
+        match super::commands::describe(&mut self.console, command) {
+            Ok(d) => Ok(d),
+            Err((status, id, data)) => {
+                let data: Vec<&str> = data.iter().map(String::as_str).collect();
+                let message = self.message(&id, &data);
+                Err(Refusal { status, message })
+            }
+        }
     }
 
     fn run_command(&mut self, command: &str) -> Ran {

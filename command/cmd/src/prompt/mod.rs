@@ -8,6 +8,7 @@
 //! accepts or a cancel. The renderer produces a [`Screen`] the job
 //! shows through its display; it knows nothing of the display itself.
 
+pub mod flat;
 pub mod layout;
 pub mod session;
 
