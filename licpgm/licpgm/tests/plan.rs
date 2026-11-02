@@ -427,14 +427,14 @@ fn delete_refuses_what_others_need_and_spares_system_libraries() {
     assert_eq!(plan.loads.len(), 1);
     assert_eq!(plan.loads[0].1.key.load_type, LoadType::Lng);
     let req = DltLicPgm {
-        product: pid("QS00NAV"),
+        product: pid("QS00AFW"),
         option: None,
         release: None,
         lng: None,
     };
     assert_eq!(
         plan_delete(&s, &req).unwrap_err(),
-        PlanError::NotInstalled(pid("QS00NAV"))
+        PlanError::NotInstalled(pid("QS00AFW"))
     );
 }
 

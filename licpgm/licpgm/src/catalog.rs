@@ -87,6 +87,7 @@ pub fn seed(store: &mut dyn ProductStore, now: u64) -> Result<(), StoreError> {
         if p.status != Status::Shipped {
             continue;
         }
+        refresh_reserved(store, &dq, p)?;
         for (q, l) in &p.loads {
             let mut l = l.clone();
             l.state = LoadState::Installed;
@@ -99,6 +100,24 @@ pub fn seed(store: &mut dyn ProductStore, now: u64) -> Result<(), StoreError> {
         lic.sync_definition(&p.definition);
     }
     store.save_licenses(&lic)
+}
+
+/// A product shipped now but reserved when the store was seeded has
+/// the old definition and no loads: replace the definition.
+fn refresh_reserved(store: &mut dyn ProductStore, dq: &QualName, p: &Package) -> Result<(), StoreError> {
+    let id = &p.definition.product;
+    if store.loads().iter().any(|(_, l)| l.key.product == *id) {
+        return Ok(());
+    }
+    let stale = store
+        .definitions()
+        .into_iter()
+        .any(|(q, d)| q == *dq && d != p.definition);
+    if stale {
+        store.delete_definition(dq)?;
+        store.create_definition(dq, &p.definition)?;
+    }
+    Ok(())
 }
 
 /// Parse a catalog in the shipped format.
@@ -169,7 +188,12 @@ mod tests {
             .reserved()
             .map(|p| p.definition.product.as_str())
             .collect();
-        assert_eq!(reserved, ["QS00NAV", "QS00AFW", "QS00PSE"]);
+        assert_eq!(reserved, ["QS00AFW", "QS00PSE"]);
+        // Navigator is shipped, in QSYS: it has no objects of its own.
+        let nav = c.product("QS00NAV").unwrap();
+        assert_eq!(nav.status, Status::Shipped);
+        assert_eq!(nav.loads[0].1.libraries[0].installed, "QSYS");
+        assert!(nav.loads[0].1.objects.is_empty());
         let os = c.product("5770SS1").unwrap();
         let opts: Vec<u8> = os.definition.options.iter().map(|o| o.option.0).collect();
         assert_eq!(opts, [0, 12, 18, 30, 33, 34]);
@@ -199,5 +223,20 @@ mod tests {
         assert_eq!(os.loads.len(), 12);
         assert_eq!(os.loads[0].0.name, "SS100C5050");
         assert_eq!(os.loads[1].0.name, "SS100L2924");
+    }
+
+    #[test]
+    fn a_product_reserved_at_seed_time_ships_at_the_next() {
+        let mut s = crate::store::MemStore::with_libs(&["QSYS", "QUSRSYS"]);
+        let nav = shipped().product("QS00NAV").unwrap();
+        let dq = QualName::new(&nav.definition_name.name, "QSYS");
+        // An older system: the definition as reserved, no loads.
+        let mut old = nav.definition.clone();
+        old.first_copyright = None;
+        s.create_definition(&dq, &old).unwrap();
+        seed(&mut s, 1).unwrap();
+        let (_, d) = s.definitions().into_iter().find(|(q, _)| *q == dq).unwrap();
+        assert_eq!(d, nav.definition);
+        assert!(s.loads().iter().any(|(_, l)| l.key.product.as_str() == "QS00NAV" && l.state.is_installed()));
     }
 }
