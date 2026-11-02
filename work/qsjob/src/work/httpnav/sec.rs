@@ -99,7 +99,7 @@ fn entries(m: &Main, f: &AuditFilter) -> Result<Vec<AuditEntry>, Message> {
 }
 
 fn receiver(m: &Main) -> AuditReceiver {
-    let Ok(rows) = m.link.borrow_mut().with(Client::secaud_panel) else {
+    let Ok(rows) = m.ask(Client::secaud_panel) else {
         return AuditReceiver::default();
     };
     let get = |k: &str| rows.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
@@ -110,11 +110,8 @@ fn receiver(m: &Main) -> AuditReceiver {
     let receiver = get("Current receiver");
     let (lib, _) = journal.split_once('/').unwrap_or(("QSYS", ""));
     let (l, n) = (lib.to_string(), receiver.clone());
-    let offset = m.link.borrow_mut().with(Client::now).offset_min;
-    let attached = m
-        .link
-        .borrow_mut()
-        .with(|c| c.object(l, n, "*JRNRCV".into()))
+    let offset = m.ask(Client::now).offset_min;
+    let attached = m.ask(|c| c.object(l, n, "*JRNRCV".into()))
         .map_or(0, |o| cyy_secs(&o.created, offset));
     AuditReceiver {
         journal,

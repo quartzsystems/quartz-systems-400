@@ -81,14 +81,11 @@ fn catalog() -> Option<&'static Catalog> {
 
 fn sysvals(m: &Main) -> Vec<SysVal> {
     let cat = catalog();
-    let all = m.link.borrow_mut().with(Client::sysval_panel_list);
+    let all = m.ask(Client::sysval_panel_list);
     all.into_iter()
         .map(|(name, _, text)| {
             let n = name.clone();
-            let value = m
-                .link
-                .borrow_mut()
-                .with(|l| l.sysval_panel(n))
+            let value = m.ask(|l| l.sysval_panel(n))
                 .map(|(_, _, elems)| elems.iter().map(|e| e.trim()).collect::<Vec<_>>().join(" "))
                 .unwrap_or_default();
             let e = cat.and_then(|c| c.get(&name));
@@ -109,18 +106,14 @@ fn sysvals(m: &Main) -> Vec<SysVal> {
 /// `QTIMZON` and the other values Time management shows.
 fn sysval(m: &Main, name: &str) -> String {
     let n = name.to_string();
-    m.link
-        .borrow_mut()
-        .with(|l| l.sysval(n))
+    m.ask(|l| l.sysval(n))
         .map(|v| ccsid::from_ebcdic(&v.data).trim().to_string())
         .unwrap_or_default()
 }
 
 /// The units' resource names by serial number, from the hardware table.
 pub fn disk_names(m: &Main) -> Vec<(String, String)> {
-    m.link
-        .borrow_mut()
-        .with(|l| l.hw_table(false))
+    m.ask(|l| l.hw_table(false))
         .map(|t| {
             t.resources
                 .into_iter()
@@ -228,7 +221,7 @@ fn cfg_type(t: &str) -> String {
 }
 
 fn resources(m: &Main) -> Vec<Resource> {
-    let Ok(t) = m.link.borrow_mut().with(|l| l.hw_table(false)) else {
+    let Ok(t) = m.ask(|l| l.hw_table(false)) else {
         return Vec::new();
     };
     let Some(all) = view::spec("*AHW") else {
@@ -239,10 +232,7 @@ fn resources(m: &Main) -> Vec<Resource> {
         .map(|row| {
             let r = t.get(&row.name);
             let n = row.name.clone();
-            let cfg = m
-                .link
-                .borrow_mut()
-                .with(|l| l.hw_cfgds(n))
+            let cfg = m.ask(|l| l.hw_cfgds(n))
                 .into_iter()
                 .map(|(d, ty)| (d, cfg_type(&ty)))
                 .collect();
@@ -270,7 +260,7 @@ fn offset_text(secs: i32) -> String {
 
 /// `CHGNTPA`'s attributes from the server table.
 pub fn ntp_attrs(m: &Main) -> NtpAttrs {
-    match m.link.borrow_mut().with(|l| l.tcp(TcpOp::Servers)) {
+    match m.ask(|l| l.tcp(TcpOp::Servers)) {
         TcpReply::Servers { list } => list
             .into_iter()
             .find(|s| s.server == "*NTP")
@@ -281,10 +271,10 @@ pub fn ntp_attrs(m: &Main) -> NtpAttrs {
 }
 
 fn time(m: &Main) -> Time {
-    let now = m.link.borrow_mut().with(Client::now);
+    let now = m.ask(Client::now);
     let zone = sysval(m, "QTIMZON");
     let a = ntp_attrs(m);
-    let jobs = m.link.borrow_mut().with(Client::active_jobs);
+    let jobs = m.ask(Client::active_jobs);
     let mut zones: Vec<(String, String)> = sysval::tz::ZONES
         .iter()
         .map(|z| (z.name.to_string(), z.text.to_string()))

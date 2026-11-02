@@ -162,12 +162,12 @@ impl Users for LiveUsers {
 
     fn lists(&self, user: &str) -> Vec<AuthList> {
         self.link.read(user, |m| {
-            let names = m.link.borrow_mut().with(Client::autl_panel_list).unwrap_or_default();
+            let names = m.ask(Client::autl_panel_list).unwrap_or_default();
             names
                 .into_iter()
                 .map(|(n, _)| {
                     let q = n.clone();
-                    let rows = m.link.borrow_mut().with(|l| l.autl_panel(q)).unwrap_or_default();
+                    let rows = m.ask(|l| l.autl_panel(q)).unwrap_or_default();
                     let objects = u32::try_from(secured(m, &n).len()).unwrap_or(0);
                     list(n, &rows, objects)
                 })

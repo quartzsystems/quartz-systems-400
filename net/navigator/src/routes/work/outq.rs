@@ -320,7 +320,7 @@ fn file_list(rq: &Rq<'_>, all: Vec<Splf>) -> String {
                 Cell::num(&s.pages.to_string()),
                 Cell::num(&s.copies.to_string()),
                 Cell::mono(&s.form_type),
-                Cell::text(&format!("{d} {}", &t[..5])),
+                Cell::text(&format!("{d} {}", t.get(..5).unwrap_or(&t))),
                 Cell::mono(&s.job),
                 Cell::num(&s.number.to_string()),
             ]

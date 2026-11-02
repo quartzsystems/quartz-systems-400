@@ -4,7 +4,9 @@
 
 //! A web product ([`qsweb::http::Handler`]) as a listener's
 //! [`Service`]: HTTP/1.1 with keep-alive on each connection, plain or
-//! TLS, the peer's `secure` taken from the connection. The `ADMIN`
+//! TLS, the peer's `secure` taken from the connection; a request whose
+//! handler panics gets an error page and the process goes on
+//! ([`qsweb::http::guard`]). The `ADMIN`
 //! instance runs HTTP Server Administration this way on 2001 and 2010.
 
 use std::net::SocketAddr;
@@ -51,7 +53,7 @@ impl Service for Web {
             addr: peer,
             secure: conn.secure(),
         };
-        qsweb::http::serve(&mut conn, &p, self.handler.as_ref());
+        qsweb::http::serve_guarded(&mut conn, &p, &self.handler);
         conn.close();
     }
 }

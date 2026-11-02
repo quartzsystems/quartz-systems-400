@@ -47,12 +47,13 @@ pub fn route(rq: &Rq<'_>, rest: &[&str]) -> Response {
     }
 }
 
-/// The command as the list shows it.
+/// The command as the list shows it: cut at a blank within its first
+/// `COMMAND_SHOWN` characters (not bytes: the text may not be ASCII).
 fn short(cmd: &str) -> String {
-    if cmd.len() <= COMMAND_SHOWN {
+    let Some((end, c)) = cmd.char_indices().nth(COMMAND_SHOWN) else {
         return cmd.to_string();
-    }
-    let cut = cmd[..=COMMAND_SHOWN].rfind(' ').unwrap_or(COMMAND_SHOWN);
+    };
+    let cut = cmd[..end + c.len_utf8()].rfind(' ').unwrap_or(end);
     format!("{} ...", &cmd[..cut])
 }
 
@@ -91,7 +92,7 @@ fn next(rq: &Rq<'_>, e: &ScheduleEntry) -> String {
     e.next
         .map(|t| {
             let (d, t) = rq.stamp(t);
-            format!("{d} {}", &t[..5])
+            format!("{d} {}", t.get(..5).unwrap_or(&t))
         })
         .unwrap_or_default()
 }
@@ -375,4 +376,21 @@ fn act(rq: &Rq<'_>, e: &ScheduleEntry, op: &str) -> Response {
             command,
         },
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn short_commands_cut_on_characters() {
+        assert_eq!(short("DSPLIB QGPL"), "DSPLIB QGPL");
+        let ascii = format!("SNDMSG MSG('{}') TOUSR(QSYSOPR)", "A".repeat(40));
+        assert_eq!(short(&ascii), "SNDMSG ...");
+        // Non-ASCII text across the cut point (byte 52 inside a character).
+        let wide = format!("SNDMSG MSG('{}') TOUSR(QSYSOPR)", "é".repeat(45));
+        assert_eq!(short(&wide), "SNDMSG ...");
+        let exact = "é".repeat(COMMAND_SHOWN);
+        assert_eq!(short(&exact), exact);
+    }
 }

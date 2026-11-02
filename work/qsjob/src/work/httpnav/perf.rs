@@ -33,7 +33,7 @@ pub fn val<'a>(row: &'a [(String, String)], key: &str) -> &'a str {
 /// A `panel2_data` display's variables and rows, empty when refused.
 pub fn panel(m: &Main, what: &str, args: &[&str]) -> (Pairs, Vec<Pairs>) {
     let (w, a) = (what.to_string(), args.iter().map(ToString::to_string).collect());
-    m.link.borrow_mut().with(|l| l.panel2_data(w, a)).unwrap_or_default()
+    m.ask(|l| l.panel2_data(w, a)).unwrap_or_default()
 }
 
 fn num<T: std::str::FromStr + Default>(text: &str) -> T {
@@ -47,7 +47,7 @@ fn mb(text: &str) -> u64 {
 
 fn system(m: &Main) -> SysActivity {
     let (vars, rows) = panel(m, "SYSACT", &[]);
-    let active = m.link.borrow_mut().with(Client::active_jobs);
+    let active = m.ask(Client::active_jobs);
     let kind = |n: u32| {
         active
             .iter()

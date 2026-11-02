@@ -67,21 +67,19 @@ pub fn stamp_secs(text: &str) -> u64 {
 pub fn text_of(m: &Main, id: &str, data: &[&str]) -> String {
     let file = if id.starts_with("SQL") { "QSQLMSG" } else { "QCPFMSG" };
     let ask = id.to_string();
-    m.link
-        .borrow_mut()
-        .with(|l| l.describe(ask, file.into(), "QSYS".into()))
+    m.ask(|l| l.describe(ask, file.into(), "QSYS".into()))
         .map_or_else(|| id.to_string(), |d| substitute(&d.text, data))
 }
 
 /// One statement run in the job's SQL session.
 fn run(m: &Main, text: &str, naming: &str, max_rows: u32) -> IsqlReply {
     let (t, n) = (text.to_string(), naming.to_string());
-    m.link.borrow_mut().with(|l| l.isql_run(t, n, false, max_rows))
+    m.ask(|l| l.isql_run(t, n, false, max_rows))
 }
 
 /// A catalog query's rows, each column as trimmed text.
 fn catalog(m: &Main, query: &str) -> Vec<Vec<String>> {
-    let _ = m.link.borrow_mut().with(|l| l.isql_start("*SQL".into(), "*NONE".into()));
+    let _ = m.ask(|l| l.isql_start("*SQL".into(), "*NONE".into()));
     let r = run(m, query, "*SQL", CATALOG_ROWS);
     r.rows
         .into_iter()
@@ -110,10 +108,8 @@ pub fn cyy_secs(t: &str, offset_min: i32) -> u64 {
 /// When `QSYS/NAME` of type `ty` was created.
 fn created(m: &Main, lib: &str, name: &str, ty: &str) -> u64 {
     let (l, n, t) = (lib.to_string(), name.to_string(), ty.to_string());
-    let offset = m.link.borrow_mut().with(Client::now).offset_min;
-    m.link
-        .borrow_mut()
-        .with(|c| c.object(l, n, t))
+    let offset = m.ask(Client::now).offset_min;
+    m.ask(|c| c.object(l, n, t))
         .map_or(0, |o| cyy_secs(&o.created, offset))
 }
 
@@ -350,7 +346,7 @@ fn outcome(m: &Main, r: IsqlReply, elapsed_ms: u64) -> SqlOutcome {
 fn run_sql(m: &Main, user: &str, statement: &str, opts: &SqlOptions, max_rows: Option<usize>) -> SqlOutcome {
     let naming = if opts.naming.eq_ignore_ascii_case("*SYS") { "*SYS" } else { "*SQL" };
     let iso = opts.isolation.trim().to_ascii_uppercase();
-    let started = match m.link.borrow_mut().with(|l| l.isql_start(naming.into(), iso)) {
+    let started = match m.ask(|l| l.isql_start(naming.into(), iso)) {
         Ok(s) => s,
         Err(e) => {
             let (id, text) = e.split_once(' ').unwrap_or(("SQL0901", e.as_str()));
@@ -367,7 +363,7 @@ fn run_sql(m: &Main, user: &str, statement: &str, opts: &SqlOptions, max_rows: O
     let r = run(m, statement.trim().trim_end_matches(';'), naming, max);
     let ms = u64::try_from(t0.elapsed().as_millis()).unwrap_or(u64::MAX);
     if started {
-        let _ = m.link.borrow_mut().with(|l| l.isql_end(true));
+        let _ = m.ask(|l| l.isql_end(true));
     }
     outcome(m, r, ms)
 }

@@ -15,5 +15,11 @@ graviola = "0.4.1"
 # Compile-time templates: the same DOM on every request.
 askama = "0.16.1"
 
+# A failed request's thread stays parked inside the panic hook, so the
+# test owns its main: libtest's own hook handling would wait on it.
+[[test]]
+name = "guard"
+harness = false
+
 [lints]
 workspace = true
