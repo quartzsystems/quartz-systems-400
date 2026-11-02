@@ -14,6 +14,10 @@ use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
 };
+use qap_proto::ops::sql::{
+    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared, Schemas, SetOptions,
+    Tables,
+};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -22,6 +26,7 @@ use super::commands::{self, definition, find, parse};
 use super::{Crash, System, lock};
 use crate::host::{Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use crate::sessions::{EndedBy, Gone};
+use crate::sql::SqlResult;
 use crate::tickets::TICKET_SECS;
 
 /// Message `id` as job `job` of `sys` looks it up: its text says whose
@@ -48,13 +53,25 @@ pub struct MemHost {
     pub sys: Arc<System>,
     /// The job's number.
     pub job: u32,
+    /// The connection's statements, cursors and transaction.
+    pub sql: super::sql::Conn,
 }
 
 impl MemHost {
     /// Job `job` of `sys`.
     #[must_use]
     pub fn new(sys: Arc<System>, job: u32) -> Self {
-        Self { sys, job }
+        Self {
+            sys,
+            job,
+            sql: super::sql::Conn::default(),
+        }
+    }
+
+    /// What looks messages up for this job, apart from `self`.
+    fn msgs(&self) -> impl Fn(&str, &[&str]) -> ServerMessage + use<> {
+        let (sys, job) = (Arc::clone(&self.sys), self.job);
+        move |id: &str, data: &[&str]| message(&sys, job, id, data)
     }
 
     fn refuse(&mut self, status: Status, id: &str, data: &[&str]) -> Refusal {
@@ -205,6 +222,50 @@ impl Host for MemHost {
             Some(c) if !c.authorized => Err(self.refuse(Status::NotAuthorized, "CPF9802", &["*CMD", c.name])),
             Some(c) => Ok(definition(c)),
         }
+    }
+
+    fn sql_set_options(&mut self, options: &SetOptions) -> Result<(), Refusal> {
+        let msg = self.msgs();
+        self.sql.set_options(options, &msg)
+    }
+
+    fn sql_prepare(&mut self, sql: &str) -> SqlResult<Prepared> {
+        let (msg, me) = (self.msgs(), me(&self.sys, self.job).unwrap_or_default());
+        self.sql.prepare(&self.sys.sql, &me, sql, &msg)
+    }
+
+    fn sql_execute(&mut self, req: &Execute, cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
+        let msg = self.msgs();
+        self.sql.execute(&self.sys.sql, req, cancelled, &msg)
+    }
+
+    fn sql_fetch(&mut self, req: &Fetch, cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
+        let msg = self.msgs();
+        self.sql.fetch(req, cancelled, &msg)
+    }
+
+    fn sql_close_cursor(&mut self, cursor: u32) -> Result<(), Refusal> {
+        let msg = self.msgs();
+        self.sql.close_cursor(cursor, &msg)
+    }
+
+    fn sql_release(&mut self, statement: u32) -> Result<(), Refusal> {
+        let msg = self.msgs();
+        self.sql.release(statement, &msg)
+    }
+
+    fn sql_commit(&mut self) -> SqlResult<()> {
+        self.sql.commit();
+        Ok(())
+    }
+
+    fn sql_rollback(&mut self) -> SqlResult<()> {
+        self.sql.rollback(&self.sys.sql);
+        Ok(())
+    }
+
+    fn sql_end(&mut self) {
+        self.sql.end(&self.sys.sql);
     }
 
     fn threads(&mut self) -> Threads {
@@ -477,5 +538,22 @@ impl ThreadHost for MemThread {
         let me = self.me().unwrap_or_default();
         let r = lock(&self.sys.spool).queues(&me, req);
         r.map_err(|n| self.no(&n))
+    }
+
+    fn list_schemas(&mut self, req: &ListSchemas) -> Result<Schemas, Refusal> {
+        Ok(super::sql::list_schemas(&lock(&self.sys.sql), req))
+    }
+
+    fn list_tables(&mut self, req: &ListTables) -> Result<Tables, Refusal> {
+        let (sys, job) = (Arc::clone(&self.sys), self.job);
+        let msg = move |id: &str, data: &[&str]| message(&sys, job, id, data);
+        super::sql::list_tables(&lock(&self.sys.sql), req, &msg)
+    }
+
+    fn list_columns(&mut self, req: &ListColumns) -> Result<Columns, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let (sys, job) = (Arc::clone(&self.sys), self.job);
+        let msg = move |id: &str, data: &[&str]| message(&sys, job, id, data);
+        super::sql::list_columns(&lock(&self.sys.sql), &me, req, &msg)
     }
 }

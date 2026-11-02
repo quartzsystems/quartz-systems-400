@@ -22,12 +22,16 @@
 //!   ([`System::redeem_ticket`]);
 //! - output queues and spooled files ([`fixtures`]) under the rules
 //!   of the spooled-file commands ([`spool`]), so a client can try its
-//!   Printer Output in process.
+//!   Printer Output in process;
+//! - a database ([`sql`]): schemas, tables of every type, journaled and
+//!   not, slow and large ones, one `BOB` may not read, for the `Sql`
+//!   service.
 
 pub mod commands;
 pub mod fixtures;
 mod host;
 pub mod spool;
+pub mod sql;
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -121,6 +125,8 @@ pub struct System {
     pub spool: Mutex<spool::Spool>,
     /// A panic to come, once.
     pub crash: Mutex<Option<Crash>>,
+    /// The database.
+    pub sql: Mutex<sql::Db>,
     tokens: AtomicU32,
 }
 
@@ -159,6 +165,7 @@ impl System {
             curlib: Mutex::new(HashMap::new()),
             spool: Mutex::new(spool::Spool::default()),
             crash: Mutex::new(None),
+            sql: Mutex::new(sql::Db::default()),
             tokens: AtomicU32::new(0),
         };
         s.gate.set(true);

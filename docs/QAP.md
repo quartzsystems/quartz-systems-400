@@ -560,3 +560,29 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   a statement runs there, other jobs' storage requests and this
   connection's catalog lists wait for it: the lanes hold in the
   connection job, not yet end to end.
+
+The test system's database (`qapd::testing::sql`, for QS/400's tests
+and QS/400 Access's):
+
+- A small statement runner over tables in memory, not QS/400's engine:
+  the engine has no `DECFLOAT`, binary types, `BOOLEAN` or
+  `TIMESTAMP(12)`, which the client must meet. It runs `SELECT` of
+  `*` or columns with `WHERE col = x AND ...`, `INSERT ... VALUES`,
+  `UPDATE` and `DELETE` over one table; anything else is the syntax
+  error `SQL0104`, as a database that does not know the statement
+  reports it.
+- Its fixtures and the cases they give are in the module's
+  documentation: `HLINV.ASSETS` with Navigator's twelve assets in
+  service, `HLTEST.ALLTYPES`, journaled and unjournaled tables
+  (`SQL7008`, `55019`), slow tables for cancels, a table over 1 MiB,
+  keys for a multi-row failure (`SQL0803`), `HLPAY.SALARIES` (only
+  `ANN`), and enough schemas and tables for several pages.
+- A table the profile may not use is `NotAuthorized` with `SQL0551`
+  on `Prepare` and `ListColumns`, the status the operations' table
+  gives, as the real job answers the engine's `SQL0551`. The catalog
+  still lists it.
+- Simplifications: no locks (other connections see changes before
+  they are committed); a rollback puts back each table the
+  transaction changed as it was at its first change; unqualified
+  names are in the default schema, else the profile's schema (`Sql`
+  naming) or `QGPL` then `HLINV` (`System` naming).

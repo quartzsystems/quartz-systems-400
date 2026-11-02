@@ -120,6 +120,7 @@ pub fn severity(id: &str) -> u8 {
         "CPDA091" => 10,
         "CPFA096" => 20,
         "CPD0030" | "CPD0031" | "CPD0071" | "CPF0006" | "CPF1907" | "CPD9BAE" | "TCP1A53" | "TCP1A55" | "TCP1A59" => 30,
+        _ if id.starts_with("SQL") => 30,
         _ => 40,
     }
 }
