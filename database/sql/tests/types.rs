@@ -437,3 +437,16 @@ fn graphic_takes_unicode() {
     db.ok("CREATE INDEX QSTEST/GRV ON QSTEST/GR (V)");
     assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/GR WHERE V = 'ω😀'"), "1");
 }
+
+#[test]
+fn varbinary_keys_do_not_pad() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/VB (B VARBINARY(4) NOT NULL PRIMARY KEY, N INTEGER)");
+    db.ok("INSERT INTO QSTEST/VB VALUES(BX'0100', 3), (BX'01', 2), (BX'', 1), (BX'02', 5), (BX'010000', 4)");
+    // X'01' and X'0100' are different keys, the shorter first.
+    assert_eq!(db.rows("SELECT N FROM QSTEST/VB ORDER BY B"), vec![vec!["1"], vec!["2"], vec!["3"], vec!["4"], vec!["5"]]);
+    assert_eq!(db.one("SELECT N FROM QSTEST/VB WHERE B = BX'0100'"), "3");
+    assert!(db.run_with("INSERT INTO QSTEST/VB VALUES(BX'01', 9)", &[]).is_err());
+    db.ok("CREATE INDEX QSTEST/VBD ON QSTEST/VB (B DESC)");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/VB WHERE B > BX'01'"), "3");
+}

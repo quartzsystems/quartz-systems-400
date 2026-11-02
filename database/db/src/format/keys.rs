@@ -15,6 +15,8 @@ pub const DECFLOAT_KEY_LEN: usize = 37;
 pub fn part_len(field: &FieldDef, _transform: KeyTransform) -> usize {
     let null = usize::from(field.allow_null);
     let data = match field.data_type {
+        // A VARBINARY's bytes and its length.
+        DataType::Bytes if field.varlen.is_some() => usize::try_from(field.data_len()).expect("fits") + 2,
         DataType::Char
         | DataType::Hex
         | DataType::Graphic
@@ -51,6 +53,9 @@ mod tests {
     #[test]
     fn part_lengths() {
         assert_eq!(part_len(&f(DataType::Char, 30), KeyTransform::Unsigned), 30);
+        let mut vb = f(DataType::Bytes, 16);
+        vb.varlen = Some(dds::VarLen { allocated: None });
+        assert_eq!(part_len(&vb, KeyTransform::Unsigned), 18);
         assert_eq!(part_len(&f(DataType::Packed, 7), KeyTransform::Signed), 8);
         assert_eq!(part_len(&f(DataType::Zoned, 9), KeyTransform::Absval), 10);
         assert_eq!(part_len(&f(DataType::Binary, 4), KeyTransform::Signed), 5);

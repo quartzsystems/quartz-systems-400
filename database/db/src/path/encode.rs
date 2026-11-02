@@ -39,6 +39,17 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
             }
             out.extend(part);
         }
+        // A VARBINARY: its bytes 0x00 padded, then its length, so a
+        // value orders before a longer one it begins (IBM's rule: no
+        // padding for binary strings).
+        Value::Char(bytes) if is_varbinary(f) => {
+            let n = data_len - 2;
+            let mut part: Vec<u8> = bytes.iter().take(n).copied().collect();
+            let len = u16::try_from(part.len()).expect("fits");
+            part.resize(n, 0);
+            out.extend(part);
+            out.extend(len.to_be_bytes());
+        }
         Value::Char(bytes) if !f.data_type.is_datetime() => {
             // Binary strings, BOOLEAN and LOB references: the bytes, 0x00 padded.
             let mut part: Vec<u8> = bytes.iter().take(data_len).copied().collect();
@@ -66,6 +77,10 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
     }
     debug_assert_eq!(out.len() - start, part_len(f, k.transform));
     Ok(())
+}
+
+fn is_varbinary(f: &FieldDef) -> bool {
+    f.data_type == DataType::Bytes && f.varlen.is_some()
 }
 
 /// A float key part: its bits in order, the zeros alike.

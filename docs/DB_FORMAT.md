@@ -424,11 +424,13 @@ every entry is unique in the tree.
 Byte order of the encoded key is the key order DDS asks for:
 
 - Character, hexadecimal, graphic and DBCS-open fields: the bytes as
-  stored, a `VARLEN` field at its maximum length blank padded. `ZONE`
+  stored, a `VARLEN` field at its maximum length blank padded (U+0020
+  for a UTF-16 graphic field): `VARCHAR` compares with blanks added, as
+  IBM's does. `ZONE`
   keeps the high nibble of each byte and `DIGIT` the low one. `ALTSEQ`
   is not applied (`DB_OPEN_QUESTIONS.md`).
 - Zoned, packed and binary fields: 1 byte of sign then `length` digit
-  bytes. `SIGNED` (the default): 0x01 for negative, 0x02 for positive or
+  bytes (an SQL integer: 5, 10 or 19). `SIGNED` (the default): 0x01 for negative, 0x02 for positive or
   zero; positive digits as `0x30 + d`, negative digits complemented as
   `0x39 - d` so larger magnitudes sort lower. `UNSIGNED` and `ABSVAL`:
   sign byte 0x02 and the digits of the magnitude.
@@ -444,8 +446,12 @@ Byte order of the encoded key is the key order DDS asks for:
   34 digits from the first nonzero one, zero filled on the right, one
   byte each; for a negative number those 36 bytes are complemented.
   Everything else is zeros. Equal values (`1.0`, `1.00`) have equal keys.
-- `BINARY`, `VARBINARY`: the bytes as stored, a `VARBINARY` at its
-  maximum length padded with 0x00; `BOOLEAN`: its byte. A LOB cannot be
+- `BINARY`: the bytes as stored. `VARBINARY`: its bytes padded with
+  0x00 to the maximum length, then its length (2, big-endian), so
+  `X'01'` sorts before `X'0100'` and neither equals the other: binary
+  strings compare without padding, a shorter one first when it begins
+  the longer (IBM's rule). A path made before the length was added
+  must be rebuilt (recreate the index or file). `BOOLEAN`: its byte. A LOB cannot be
   a key field.
 - A null-capable field is preceded by one byte: 0x00 when it holds a
   value, 0xFF when null, so null sorts high; a null field's digits or
