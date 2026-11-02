@@ -346,6 +346,25 @@ impl Client {
         }
     }
 
+    /// The next frame as it came, not joined; `None` once the server
+    /// closed.
+    pub fn recv_frame(&mut self) -> Option<Envelope> {
+        let end = Instant::now() + Duration::from_secs(10);
+        let mut buf = vec![0u8; 64 * 1024];
+        loop {
+            if let Some(env) = self.frames.next_frame().expect("a valid frame") {
+                return Some(env);
+            }
+            assert!(Instant::now() < end, "no frame from the server");
+            match self.s.read(&mut buf) {
+                Ok(0) => return None,
+                Ok(n) => self.frames.push(&buf[..n]),
+                Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {}
+                Err(_) => return None,
+            }
+        }
+    }
+
     /// The reply to request `id`, skipping nothing: it must come next.
     pub fn reply(&mut self, id: u32) -> Envelope {
         let r = self.recv().expect("a reply");
