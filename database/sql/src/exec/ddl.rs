@@ -103,7 +103,8 @@ fn register_text(r: crate::ast::Register) -> Result<String> {
     Ok(match r {
         Register::Date => "CURRENT DATE",
         Register::Time => "CURRENT TIME",
-        Register::Timestamp => "CURRENT TIMESTAMP",
+        Register::Timestamp(6) => "CURRENT TIMESTAMP",
+        Register::Timestamp(p) => return Ok(format!("CURRENT TIMESTAMP({p})")),
         Register::User => "USER",
         Register::Server => "CURRENT SERVER",
         Register::Schema => "CURRENT SCHEMA",

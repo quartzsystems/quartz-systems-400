@@ -537,3 +537,29 @@ fn lobs_copy() {
         );
     }
 }
+
+#[test]
+fn registers_catalog_and_predicates() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/SM (K INTEGER NOT NULL, T TIMESTAMP(3) NOT NULL DEFAULT CURRENT TIMESTAMP(3))");
+    db.ok("INSERT INTO QSTEST/SM (K) VALUES(1)");
+    assert_eq!(db.one("SELECT LENGTH(CHAR(CURRENT TIMESTAMP(0))) FROM SYSIBM.SYSDUMMY1"), "19");
+    assert_eq!(db.one("SELECT LENGTH(CHAR(CURRENT_TIMESTAMP(12))) FROM SYSIBM.SYSDUMMY1"), "32");
+    assert_eq!(db.one("SELECT LENGTH(CHAR(CURRENT TIMESTAMP)) FROM SYSIBM.SYSDUMMY1"), "26");
+    assert_eq!(db.one("SELECT LENGTH(CHAR(T)) FROM QSTEST/SM"), "23");
+    assert!(prepare("SELECT CURRENT TIMESTAMP(13) FROM SYSIBM.SYSDUMMY1", Naming::Sys).is_err());
+    assert_eq!(
+        db.rows("SELECT DATA_TYPE FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'SM' ORDER BY ORDINAL_POSITION"),
+        vec![vec!["INTEGER"], vec!["TIMESTMP"]]
+    );
+    // A predicate as a value is a BOOLEAN.
+    assert_eq!(db.values("SELECT K = 1, K > 1, K IN (1, 2) FROM QSTEST/SM")[0], vec![Value::Bool(true), Value::Bool(false), Value::Bool(true)]);
+    let p = prepare("SELECT K = 1, CURRENT TIMESTAMP(9) FROM QSTEST/SM", Naming::Sys).unwrap();
+    let mut t = db.store.begin().unwrap();
+    let got: Vec<(i16, i32)> = sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false)
+        .into_iter()
+        .map(|(c, _, _)| (c.base, c.len))
+        .collect();
+    t.abort();
+    assert_eq!(got, [(2436, 1), (392, 29)]);
+}

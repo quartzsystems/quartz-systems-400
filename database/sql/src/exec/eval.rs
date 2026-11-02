@@ -522,9 +522,10 @@ impl Evaluator<'_> {
             | Expr::InList(..)
             | Expr::InSubquery(..)
             | Expr::Like(..)
+            // A predicate as a value is a BOOLEAN, as on IBM i 7.5.
             | Expr::Exists(..) => Ok(match self.truth(txn, e, env)? {
                 None => Value::Null,
-                Some(b) => Value::int(i64::from(b)),
+                Some(b) => Value::Bool(b),
             }),
         }
     }
@@ -534,9 +535,9 @@ impl Evaluator<'_> {
         match r {
             Register::Date => Value::Date(Date::from_unix(now)),
             Register::Time => Value::Time(Time::from_unix(now)),
-            Register::Timestamp => {
+            Register::Timestamp(p) => {
                 let (secs, picos) = self.ctx.clock_picos();
-                Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos))
+                Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos).with_precision(p))
             }
             Register::User => Value::Str(self.ctx.user.clone()),
             Register::Server => Value::Str("QS400".into()),

@@ -316,7 +316,7 @@ impl Parser {
             "CURRENT" | "CURRENT_DATE" | "CURRENT_TIME" | "CURRENT_TIMESTAMP" | "CURRENT_USER"
             | "CURRENT_SCHEMA" | "CURRENT_SERVER" | "CURRENT_PATH" | "CURRENT_TIMEZONE"
             | "USER" | "SESSION_USER" | "SYSTEM_USER"
-                if !self.is_sym_at(1, "(") && !self.is_sym_at(1, ".") =>
+                if (w == "CURRENT_TIMESTAMP" || !self.is_sym_at(1, "(")) && !self.is_sym_at(1, ".") =>
             {
                 self.register(w)
             }
@@ -330,7 +330,7 @@ impl Parser {
         let r = match w {
             "CURRENT_DATE" => Register::Date,
             "CURRENT_TIME" => Register::Time,
-            "CURRENT_TIMESTAMP" => Register::Timestamp,
+            "CURRENT_TIMESTAMP" => Register::Timestamp(self.timestamp_precision()?),
             "CURRENT_USER" | "USER" | "SESSION_USER" | "SYSTEM_USER" => Register::User,
             "CURRENT_SCHEMA" => Register::Schema,
             "CURRENT_SERVER" => Register::Server,
@@ -343,7 +343,7 @@ impl Parser {
                 let r = match next.as_str() {
                     "DATE" => Register::Date,
                     "TIME" => Register::Time,
-                    "TIMESTAMP" => Register::Timestamp,
+                    "TIMESTAMP" => Register::Timestamp(6),
                     "USER" => Register::User,
                     "SERVER" => Register::Server,
                     "SCHEMA" => Register::Schema,
@@ -352,10 +352,27 @@ impl Parser {
                     _ => return Err(Self::unsupported(&format!("CURRENT {next}"))),
                 };
                 self.advance();
-                r
+                match r {
+                    Register::Timestamp(_) => Register::Timestamp(self.timestamp_precision()?),
+                    r => r,
+                }
             }
         };
         Ok(Expr::Register(r))
+    }
+
+    /// The `(p)` after `CURRENT TIMESTAMP`, 0 to 12; 6 without one.
+    fn timestamp_precision(&mut self) -> Result<u8> {
+        if !self.eat_sym("(") {
+            return Ok(6);
+        }
+        let Tok::Num(n) = self.tok().clone() else {
+            return Err(self.expected("a timestamp precision"));
+        };
+        let p = n.parse::<u8>().ok().filter(|p| *p <= 12).ok_or_else(|| self.expected("a precision of 0 to 12"))?;
+        self.advance();
+        self.expect_sym(")")?;
+        Ok(p)
     }
 
     fn case(&mut self) -> Result<Expr> {

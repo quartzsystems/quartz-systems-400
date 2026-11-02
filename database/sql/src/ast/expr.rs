@@ -94,8 +94,9 @@ pub enum Register {
     Date,
     /// `CURRENT TIME`.
     Time,
-    /// `CURRENT TIMESTAMP`.
-    Timestamp,
+    /// `CURRENT TIMESTAMP`, `CURRENT TIMESTAMP(p)`: its precision, 6
+    /// when none is given.
+    Timestamp(u8),
     /// `CURRENT USER`, `USER`, `SESSION_USER`.
     User,
     /// `CURRENT SERVER`.

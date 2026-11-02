@@ -212,8 +212,8 @@ impl Tables {
                 .map_or_else(|| Col::new(448, 32740, true), of_field),
             Expr::Literal(Literal::Num(n)) => num_literal(n),
             Expr::Literal(Literal::Str(s)) => Col::new(452, i32::try_from(s.len()).unwrap_or(i32::MAX).max(1), false),
-            Expr::Literal(Literal::Date(_)) => Col::new(384, DATE_LEN, false),
-            Expr::Literal(Literal::Time(_)) => Col::new(388, 8, false),
+            Expr::Literal(Literal::Date(_)) | Expr::Register(crate::ast::Register::Date) => Col::new(384, DATE_LEN, false),
+            Expr::Literal(Literal::Time(_)) | Expr::Register(crate::ast::Register::Time) => Col::new(388, 8, false),
             Expr::Literal(Literal::Timestamp(s)) => Col::new(
                 392,
                 crate::value::Timestamp::parse(s).map_or(26, |t| timestamp_len(t.precision)),
@@ -221,6 +221,17 @@ impl Tables {
             ),
             Expr::Literal(Literal::Bin(b)) => bits(Col::new(908, i32::try_from(b.len()).unwrap_or(i32::MAX), false)),
             Expr::Literal(Literal::Bool(_)) => Col::new(BOOLEAN, 1, false),
+            Expr::And(..)
+            | Expr::Or(..)
+            | Expr::Not(_)
+            | Expr::IsNull(..)
+            | Expr::Compare(..)
+            | Expr::Between(..)
+            | Expr::InList(..)
+            | Expr::InSubquery(..)
+            | Expr::Like(..)
+            | Expr::Exists(..) => Col::new(BOOLEAN, 1, true),
+            Expr::Register(crate::ast::Register::Timestamp(p)) => Col::new(392, timestamp_len(*p), false),
             Expr::Neg(x) => self.type_of(x),
             Expr::Binary(a, op, b) => arith(&self.type_of(a), *op, &self.type_of(b)),
             Expr::Cast(_, t) => of_type(&t.data_type),

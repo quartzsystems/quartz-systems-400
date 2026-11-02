@@ -527,9 +527,9 @@ fn identity_defaults_and_alter_table() {
     assert_eq!(
         db.rows("SELECT id, note, who, at = CURRENT DATE FROM log ORDER BY id"),
         [
-            row(&["10", "a", "QSECOFR", "1"]),
-            row(&["15", "b", "QSECOFR", "1"]),
-            row(&["20", "c", "ME", "1"])
+            row(&["10", "a", "QSECOFR", "TRUE"]),
+            row(&["15", "b", "QSECOFR", "TRUE"]),
+            row(&["20", "c", "ME", "TRUE"])
         ]
     );
     // ALTER TABLE: a column added with a default, one dropped, a type

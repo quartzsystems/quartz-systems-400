@@ -607,7 +607,10 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `X'0100'`). LOB space an `UPDATE` or `DELETE` leaves is freed at
   once in a table that is not journaled and by `RGZPFM` in one that is
   (a journal's before images and `RMVJRNCHG` still need it); `CPYF`,
-  `CPYTOIMPF` and `CPYFRMIMPF` copy LOB columns.
+  `CPYTOIMPF` and `CPYFRMIMPF` copy LOB columns. `CURRENT
+  TIMESTAMP(p)` has its precision; `SYSCOLUMNS.DATA_TYPE` spells a
+  timestamp `TIMESTMP`; a predicate used as a value (`K = 1` in a select
+  list) is a `BOOLEAN` (SQLTYPE 2436), as on IBM i 7.5.
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

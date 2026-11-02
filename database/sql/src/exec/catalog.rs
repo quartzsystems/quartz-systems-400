@@ -589,8 +589,12 @@ pub fn virtual_table(
 fn data_type_name(f: &FieldDef) -> String {
     let t = sql_type(f);
     let t = t.split('(').next().unwrap_or(&t).trim();
-    // IBM's eight-character spelling.
-    if t == "VARBINARY" { "VARBIN".into() } else { t.to_string() }
+    // IBM's eight-character spellings.
+    match t {
+        "VARBINARY" => "VARBIN".into(),
+        "TIMESTAMP" => "TIMESTMP".into(),
+        t => t.to_string(),
+    }
 }
 
 /// The library and name of a file by ID.

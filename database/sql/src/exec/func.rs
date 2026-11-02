@@ -403,9 +403,14 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
             arity(name, args, 1, 1)?;
             int(a(0).as_i64()?)
         }
-        "DOUBLE" | "DOUBLE_PRECISION" | "FLOAT" | "REAL" => {
+        "DOUBLE" | "DOUBLE_PRECISION" | "FLOAT" => {
             arity(name, args, 1, 1)?;
-            num(a(0).as_decimal()?)
+            Value::Double(a(0).as_f64()?)
+        }
+        "REAL" => {
+            arity(name, args, 1, 1)?;
+            let t = crate::ast::TypeSpec { data_type: crate::ast::DataType::Real, ccsid: None, bit_data: false };
+            super::eval::cast(a(0), &t)?
         }
         "DATE" => {
             arity(name, args, 1, 1)?;
