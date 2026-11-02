@@ -19,9 +19,9 @@ use super::{ErrLvl, Hold, Order, each_record, member_of};
 use crate::error::{DbError, Result};
 use crate::file::{self, CreateFileOpts, FileDesc, FileKind, MemberOpt};
 use crate::format::FormatDef;
-use crate::member::Member;
+use crate::member::{Member, lob};
 use crate::path;
-use crate::record::Value;
+use crate::record::{self, Value};
 
 /// `MBROPT`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -168,7 +168,6 @@ pub fn cpyf(
         });
     }
     let from_desc = file::describe(txn, from)?;
-    crate::util::no_lobs(&from_desc, "CPYF")?;
     let from_entry = member_of(&from_desc, opts.from_member)?;
     let mut from_m = Member::open(txn, &from_desc, &from_entry)?;
     let (to_id, created) = match to {
@@ -330,6 +329,8 @@ fn run(
         opts.fmtopt,
     )?;
     let order = order_of(&from_fmt, opts)?;
+    let lobs = lob_steps(&plan, &from_fmt, &to_fmt)?;
+    let (from_owner, to_owner) = (lob::owner(txn, from_m.id())?, to_m.id());
     if let Some(ic) = &opts.incchar {
         ic.check(&from_fmt)?;
     }
@@ -349,9 +350,17 @@ fn run(
             return Ok(true);
         }
         seq += 1;
+        let mut lob_copies = Vec::new();
         let outcome = plan
             .apply(&from_fmt, &to_fmt, &slot, seq, &mut record, &mut nulls)
+            .and_then(|()| copy_lobs(txn, &lobs, &to_fmt, &mut record, (from_owner, to_owner), &mut lob_copies))
             .and_then(|()| put(txn, to_m, &to_fmt, &record, &nulls, updadd));
+        // A record not copied leaves no LOB copies behind.
+        if outcome.is_err() {
+            for r in &lob_copies {
+                lob::free(txn, to_owner, r)?;
+            }
+        }
         match outcome {
             Ok(()) => copied += 1,
             Err(e) if recoverable(&e) => {
@@ -367,6 +376,59 @@ fn run(
         Ok(opts.nbrrcds.is_none_or(|n| copied < n))
     })?;
     Ok((copied, excluded, errors))
+}
+
+/// The to-format's LOB fields, whose values a copy puts in the
+/// to-member's own tree; a LOB copied as bytes (`*NOCHK`, `*CVTSRC`)
+/// or to or from a field that is not a LOB is refused.
+fn lob_steps(plan: &map::Plan, from: &FormatDef, to: &FormatDef) -> Result<Vec<usize>> {
+    let is_lob = |f: &dds::FieldDef| f.data_type.is_lob();
+    let refuse = |name: &Name| DbError::Copy { what: format!("CPYF: the LOB field {name} copies only to a LOB field") };
+    let lobs: Vec<usize> = to.format.fields.iter().enumerate().filter(|(_, f)| is_lob(f)).map(|(i, _)| i).collect();
+    let from_lobs = from.format.fields.iter().find(|f| is_lob(f));
+    match plan {
+        map::Plan::Same => {}
+        map::Plan::Fields(steps) => {
+            for s in steps {
+                let tf = &to.format.fields[s.to];
+                if let Some(ff) = s.from.map(|i| &from.format.fields[i])
+                    && (is_lob(ff) != is_lob(tf) || ff.data_type != tf.data_type)
+                    && (is_lob(ff) || is_lob(tf))
+                {
+                    return Err(refuse(&tf.name));
+                }
+            }
+        }
+        _ => {
+            if let Some(f) = from_lobs.or_else(|| lobs.first().map(|i| &to.format.fields[*i])) {
+                return Err(refuse(&f.name));
+            }
+        }
+    }
+    Ok(lobs)
+}
+
+/// Copy each LOB value the record names from the from-member's tree
+/// into the to-member's, the record naming the copy.
+fn copy_lobs(
+    txn: &mut Txn<'_>,
+    lobs: &[usize],
+    to: &FormatDef,
+    record: &mut [u8],
+    (from_owner, to_owner): (ObjectId, ObjectId),
+    copies: &mut Vec<lob::LobRef>,
+) -> Result<()> {
+    for &i in lobs {
+        let f = &to.format.fields[i];
+        let r = lob::LobRef::decode(record::field_bytes(f, record))?;
+        if matches!(r, lob::LobRef::Tree { .. }) {
+            let data = lob::read(txn, from_owner, &r)?;
+            let copy = lob::put(txn, to_owner, &data)?;
+            copies.push(lob::LobRef::decode(&copy)?);
+            record::write_field(f, record, &Value::Char(copy))?;
+        }
+    }
+    Ok(())
 }
 
 fn from_m_name(f: &FormatDef) -> Name {

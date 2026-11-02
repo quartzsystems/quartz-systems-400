@@ -603,7 +603,11 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   read through, `SYSTABLES` lists as `A` and `DROP ALIAS` (or `DLTF`)
   deletes. `GRAPHIC` and `VARGRAPHIC` of CCSID 1200 or 13488 hold
   UTF-16, so any Unicode literal (`G'..'`, `N'..'` or a plain string)
-  goes in.
+  goes in. `VARBINARY` keys compare without padding (`X'01'` before
+  `X'0100'`). LOB space an `UPDATE` or `DELETE` leaves is freed at
+  once in a table that is not journaled and by `RGZPFM` in one that is
+  (a journal's before images and `RMVJRNCHG` still need it); `CPYF`,
+  `CPYTOIMPF` and `CPYFRMIMPF` copy LOB columns.
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

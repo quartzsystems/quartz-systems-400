@@ -14,7 +14,7 @@ use super::{DtaFmt, ImpfOpts, ImpfReport, csv, fixed_width};
 use crate::error::{DbError, Result};
 use crate::file;
 use crate::format::FormatDef;
-use crate::member::Member;
+use crate::member::{Member, lob};
 use crate::record::datetime::{Date, Time};
 use crate::record::{self, Value};
 use crate::util::{Hold, member_of, physical};
@@ -32,7 +32,6 @@ pub fn cpyfrmimpf(
     crate::auth::check(txn, "file.open-output", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "CPYFRMIMPF")?;
-    crate::util::no_lobs(&desc, "CPYFRMIMPF")?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(
         txn,
@@ -63,8 +62,21 @@ fn load(txn: &mut Txn<'_>, m: &mut Member, text: &str, opts: &ImpfOpts) -> Resul
             DtaFmt::Csv => csv::split(line, opts.flddlm, opts.strdlm),
             DtaFmt::Fixed => fixed_fields(&fmt, line),
         };
-        let outcome = convert(&fmt, &fields, opts, &mut record, &mut nulls)
-            .and_then(|()| m.write_new(txn, &record, &nulls).map(|_| ()));
+        // A LOB field's value goes in the member's LOB tree first; a
+        // record that then fails frees what it put.
+        let id = m.id();
+        let mut put: Vec<Vec<u8>> = Vec::new();
+        let converted = convert(&fmt, &fields, opts, &mut record, &mut nulls, &mut |data| {
+            let r = lob::put(txn, id, data)?;
+            put.push(r.clone());
+            Ok(r)
+        });
+        let outcome = converted.and_then(|()| m.write_new(txn, &record, &nulls).map(|_| ()));
+        if outcome.is_err() {
+            for r in &put {
+                lob::free(txn, id, &lob::LobRef::decode(r)?)?;
+            }
+        }
         match outcome {
             Ok(()) => report.records += 1,
             Err(e @ (DbError::DataMapping { .. } | DbError::DuplicateKey { .. })) => {
@@ -106,6 +118,7 @@ fn convert(
     opts: &ImpfOpts,
     record: &mut [u8],
     nulls: &mut [u8],
+    lob_put: &mut dyn FnMut(&[u8]) -> Result<Vec<u8>>,
 ) -> Result<()> {
     nulls.fill(0);
     record.fill(0);
@@ -121,6 +134,16 @@ fn convert(
             (Value::Num(Decimal::zero()), false)
         } else {
             (field_value(f, text, opts)?, false)
+        };
+        let value = match value {
+            Value::Char(data) if f.data_type.is_lob() => {
+                let units = if f.data_type == DataType::Dbclob { data.len() / 2 } else { data.len() };
+                if units > usize::try_from(f.length).expect("fits") {
+                    return Err(bad(f, text));
+                }
+                Value::Char(lob_put(&data)?)
+            }
+            v => v,
         };
         record::write_field(f, record, &value)?;
         if let Some(ni) = fmt.null_index(i) {
@@ -155,7 +178,7 @@ fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
                 .map(Value::DecFloat)
                 .map_err(|_| bad(f, text));
         }
-        DataType::Bytes => {
+        DataType::Bytes | DataType::Blob => {
             let t = text.trim();
             if !t.len().is_multiple_of(2) {
                 return Err(bad(f, text));
@@ -191,7 +214,7 @@ fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
         _ if f.varlen.is_some() => text.trim_end().to_string(),
         _ => text.to_string(),
     };
-    if record::is_utf16(f) {
+    if record::is_utf16(f) || f.data_type == DataType::Dbclob {
         return Ok(Value::Char(s.encode_utf16().flat_map(u16::to_be_bytes).collect()));
     }
     ccsid::to_ebcdic(&s)

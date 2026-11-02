@@ -7,6 +7,7 @@
 
 use std::rc::Rc;
 
+use db::member::lob::LobRef;
 use db::odp::Odp;
 use db::odp::Usage;
 use db::record;
@@ -148,6 +149,30 @@ pub fn build_record(
         }
     }
     Ok((rec, nulls))
+}
+
+/// Free the LOB values an update replaced or a delete left: only in a
+/// table that is not journaled (so under no commitment control), where
+/// no rollback or journal entry can want them back; a failed statement
+/// undoes the free with its transaction. A journaled table's are freed
+/// by `RGZPFM`.
+fn release_lobs(txn: &mut Txn<'_>, t: &TableInfo, old: &[u8], new: Option<&[u8]>) -> Result<()> {
+    if !t.has_lobs() || t.desc.attr.journal != store::obj::ObjectId::NONE {
+        return Ok(());
+    }
+    let mut owner = None;
+    for f in t.format.format.fields.iter().filter(|f| f.data_type.is_lob()) {
+        let was = LobRef::decode(record::field_bytes(f, old))?;
+        if !matches!(was, LobRef::Tree { .. }) || new.is_some_and(|n| record::field_bytes(f, n) == record::field_bytes(f, old)) {
+            continue;
+        }
+        let o = match owner {
+            Some(o) => o,
+            None => *owner.insert(t.lob_owner(txn)?),
+        };
+        db::member::lob::free(txn, o, &was)?;
+    }
+    Ok(())
 }
 
 /// The field index of each named column, or every field when none.
@@ -386,6 +411,7 @@ fn change_rows(
         match set {
             None => {
                 o.delete(txn)?;
+                release_lobs(txn, t, &current.data, None)?;
             }
             Some(set) => {
                 // Evaluate against the record as it is now.
@@ -405,6 +431,7 @@ fn change_rows(
                 let (rec, nulls) =
                     build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
                 o.update(txn, &rec, &nulls)?;
+                release_lobs(txn, t, &current.data, Some(&rec))?;
             }
         }
         n += 1;
@@ -533,6 +560,7 @@ pub fn merge(
                                 Some((&current.data, &current.null_map)),
                             )?;
                             o.update(txn, &rec, &nulls)?;
+                            release_lobs(txn, &t, &current.data, Some(&rec))?;
                             n += 1;
                             break;
                         }
@@ -542,8 +570,9 @@ pub fn merge(
                             {
                                 continue;
                             }
-                            if o.chain(txn, &KeyArg::Rrn(rrn), true)?.is_some() {
+                            if let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? {
                                 o.delete(txn)?;
+                                release_lobs(txn, &t, &current.data, None)?;
                                 n += 1;
                             }
                             break;

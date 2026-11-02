@@ -450,3 +450,90 @@ fn varbinary_keys_do_not_pad() {
     db.ok("CREATE INDEX QSTEST/VBD ON QSTEST/VB (B DESC)");
     assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/VB WHERE B > BX'01'"), "3");
 }
+
+/// The LOB IDs a table's member keeps.
+fn lob_ids(db: &mut Db, lib: &str, table: &str) -> Vec<u64> {
+    let mut t = db.store.begin().unwrap();
+    let info = db.ctx.resolve_table(&mut t, &sql::ast::ObjectName::qualified(lib, table)).unwrap();
+    let ids = db::member::lob::ids(&mut t, info.member.object).unwrap();
+    t.abort();
+    ids
+}
+
+#[test]
+fn lob_space_is_reclaimed() {
+    let mut db = Db::sized(40000, 12000);
+    let long = |c: char| Value::Str(c.to_string().repeat(3000));
+    // Not journaled: an update or delete frees the old value at once.
+    db.ok("CREATE TABLE QSTEST/LR (K INTEGER NOT NULL PRIMARY KEY, C CLOB(1M), B BLOB(1M))");
+    db.run_with("INSERT INTO QSTEST/LR VALUES(1, ?, BX'01')", &[long('a')]).unwrap();
+    db.run_with("INSERT INTO QSTEST/LR VALUES(2, ?, NULL)", &[long('b')]).unwrap();
+    assert_eq!(lob_ids(&mut db, "QSTEST", "LR").len(), 2);
+    db.run_with("UPDATE QSTEST/LR SET C = ? WHERE K = 1", &[long('c')]).unwrap();
+    assert_eq!(lob_ids(&mut db, "QSTEST", "LR").len(), 2);
+    db.ok("UPDATE QSTEST/LR SET B = BX'02' WHERE K = 1");
+    assert_eq!(lob_ids(&mut db, "QSTEST", "LR").len(), 2);
+    db.ok("DELETE FROM QSTEST/LR WHERE K = 2");
+    assert_eq!(lob_ids(&mut db, "QSTEST", "LR").len(), 1);
+    // A statement that fails frees nothing.
+    assert!(db.run_with("UPDATE QSTEST/LR SET C = ?, K = 1 / 0 WHERE K = 1", &[long('d')]).is_err());
+    assert_eq!(db.one("SELECT SUBSTR(C, 1, 3) FROM QSTEST/LR WHERE K = 1"), "ccc");
+
+    // Journaled: the old values stay for the journal's before images
+    // until RGZPFM, which keeps those the records name.
+    db.ok("CREATE SCHEMA LOBJ");
+    db.ok("CREATE TABLE LOBJ/LJ (K INTEGER NOT NULL PRIMARY KEY, C CLOB(1M))");
+    db.run_with("INSERT INTO LOBJ/LJ VALUES(1, ?), (2, ?), (3, ?)", &[long('x'), long('y'), long('z')]).unwrap();
+    db.run_with("UPDATE LOBJ/LJ SET C = ? WHERE K = 1", &[long('w')]).unwrap();
+    db.ok("DELETE FROM LOBJ/LJ WHERE K = 2");
+    assert_eq!(lob_ids(&mut db, "LOBJ", "LJ").len(), 4);
+    {
+        let mut t = db.store.begin().unwrap();
+        let id = db.ctx.resolve_file(&mut t, &sql::ast::ObjectName::qualified("LOBJ", "LJ")).unwrap();
+        let r = db::util::rgzpfm(&mut t, JobHandle(1), id, qsname::MemberSpec::First, &db::util::KeyFile::None).unwrap();
+        assert_eq!((r.records, r.lobs_freed), (2, 2));
+        t.commit().unwrap();
+    }
+    assert_eq!(lob_ids(&mut db, "LOBJ", "LJ").len(), 2);
+    assert_eq!(
+        db.rows("SELECT K, SUBSTR(C, 1, 2), LENGTH(C) FROM LOBJ/LJ ORDER BY K"),
+        vec![vec!["1", "ww", "3000"], vec!["3", "zz", "3000"]]
+    );
+}
+
+#[test]
+fn lobs_copy() {
+    let mut db = Db::sized(40000, 12000);
+    db.ok("CREATE TABLE QSTEST/LC (K INTEGER NOT NULL PRIMARY KEY, C CLOB(10K), B BLOB(10K), D DBCLOB(100))");
+    db.run_with(
+        "INSERT INTO QSTEST/LC VALUES(1, ?, BX'00FF10', 'Ωmega'), (2, 'short', NULL, NULL)",
+        &[Value::Str("q".repeat(2000))],
+    )
+    .unwrap();
+    db.ok("CREATE TABLE QSTEST/LI (K INTEGER NOT NULL PRIMARY KEY, C CLOB(10K), B BLOB(10K), D DBCLOB(100))");
+    let mut t = db.store.begin().unwrap();
+    let from = db.ctx.resolve_file(&mut t, &sql::ast::ObjectName::qualified("QSTEST", "LC")).unwrap();
+    let lib = db.ctx.library_for(&mut t, &sql::ast::ObjectName::qualified("QSTEST", "LC")).unwrap();
+    let to = db::util::Target::Create { library: lib, name: Name::parse("LCCOPY").unwrap() };
+    let opts = db::util::CpyfOpts { crtfile: true, ..db::util::CpyfOpts::default() };
+    let r = db::util::cpyf(&mut t, JobHandle(1), from, &to, &opts).unwrap();
+    assert_eq!(r.copied, 2);
+    let text = db::util::cpytoimpf(&mut t, JobHandle(1), from, qsname::MemberSpec::First, &db::util::ImpfOpts::default()).unwrap();
+    let text = String::from_utf8(text).unwrap();
+    assert!(text.contains(&"q".repeat(2000)), "{text}");
+    assert!(text.contains("00FF10") && text.contains("Ωmega"), "{text}");
+    let into = db.ctx.resolve_file(&mut t, &sql::ast::ObjectName::qualified("QSTEST", "LI")).unwrap();
+    let rep = db::util::cpyfrmimpf(&mut t, JobHandle(1), into, qsname::MemberSpec::First, text.as_bytes(), &db::util::ImpfOpts::default())
+        .unwrap();
+    assert_eq!(rep.records, 2);
+    t.commit().unwrap();
+    // The copy's values are its own: the original's change does not reach them.
+    db.ok("UPDATE QSTEST/LC SET C = 'changed'");
+    for table in ["LCCOPY", "LI"] {
+        assert_eq!(
+            db.rows(&format!("SELECT K, LENGTH(C), HEX(B), D FROM QSTEST/{table} ORDER BY K")),
+            vec![vec!["1", "2000", "00FF10", "Ωmega"], vec!["2", "5", "-", "-"]],
+            "{table}"
+        );
+    }
+}

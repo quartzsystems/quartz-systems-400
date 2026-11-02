@@ -34,7 +34,6 @@ pub fn cpytoimpf(
 ) -> Result<Vec<u8>> {
     crate::auth::check(txn, "file.open-input", file)?;
     let desc = file::describe(txn, file)?;
-    crate::util::no_lobs(&desc, "CPYTOIMPF")?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(
         txn,
@@ -47,6 +46,7 @@ pub fn cpytoimpf(
     )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
         let fmt = m.format().clone();
+        let owner = crate::member::lob::owner(txn, m.id())?;
         let mut out = String::new();
         if let Some(rrns) = join_order(txn, &m)? {
             for rrn in rrns {
@@ -56,14 +56,14 @@ pub fn cpytoimpf(
                     rrn,
                 };
                 for slot in m.read_entries(txn, &entry)? {
-                    out.push_str(&render(&fmt, &slot, opts)?);
+                    out.push_str(&render(txn, owner, &fmt, &slot, opts)?);
                     out.push_str(opts.rcddlm.text());
                 }
             }
             return Ok(out.into_bytes());
         }
-        each_record(txn, &mut m, &Order::default(), &mut |_, slot| {
-            out.push_str(&render(&fmt, &slot, opts)?);
+        each_record(txn, &mut m, &Order::default(), &mut |txn, slot| {
+            out.push_str(&render(txn, owner, &fmt, &slot, opts)?);
             out.push_str(opts.rcddlm.text());
             Ok(true)
         })?;
@@ -129,12 +129,21 @@ fn join_order(txn: &mut Txn<'_>, m: &Member) -> Result<Option<Vec<u64>>> {
     Ok(Some(rrns))
 }
 
-/// One record as text, without the record delimiter.
-pub fn render(fmt: &FormatDef, slot: &Slot, opts: &ImpfOpts) -> Result<String> {
+/// One record as text, without the record delimiter; a LOB field's
+/// value is read from `owner`'s LOB tree.
+pub fn render(txn: &mut Txn<'_>, owner: ObjectId, fmt: &FormatDef, slot: &Slot, opts: &ImpfOpts) -> Result<String> {
     let mut out = String::new();
     for (i, f) in fmt.format.fields.iter().enumerate() {
         let null = record::is_null(&slot.null_map, fmt.null_index(i));
-        let v = record::read_field(f, &slot.record, &[], None)?;
+        let mut v = record::read_field(f, &slot.record, &[], None)?;
+        if f.data_type.is_lob() {
+            v = Value::Char(if null {
+                Vec::new()
+            } else {
+                let r = crate::member::lob::LobRef::decode(record::field_bytes(f, &slot.record))?;
+                crate::member::lob::read(txn, owner, &r)?
+            });
+        }
         let text = if null && opts.nulls {
             String::new()
         } else {
@@ -174,7 +183,7 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
         Value::Num(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
         Value::DecFloat(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
         Value::Float(x) => record::float_shown(f, *x).replace('.', &opts.decpnt.to_string()),
-        Value::Char(bytes) if f.data_type == DataType::Bytes => bytes.iter().fold(String::new(), |mut s, b| {
+        Value::Char(bytes) if matches!(f.data_type, DataType::Bytes | DataType::Blob) => bytes.iter().fold(String::new(), |mut s, b| {
             let _ = write!(s, "{b:02X}");
             s
         }),
@@ -182,7 +191,11 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
             if bytes.first() == Some(&0xF1) { "TRUE" } else { "FALSE" }.into()
         }
         Value::Char(bytes) => {
-            let s = if record::is_utf16(f) { record::utf16_text(bytes) } else { ccsid::from_ebcdic(bytes) };
+            let s = if record::is_utf16(f) || f.data_type == DataType::Dbclob {
+                record::utf16_text(bytes)
+            } else {
+                ccsid::from_ebcdic(bytes)
+            };
             match f.data_type {
                 DataType::Date => {
                     let own = f.date_fmt.unwrap_or_default();

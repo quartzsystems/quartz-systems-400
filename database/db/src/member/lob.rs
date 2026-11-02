@@ -179,6 +179,51 @@ pub fn read(txn: &mut Txn<'_>, member: ObjectId, r: &LobRef) -> Result<Vec<u8>> 
     read_part(txn, member, r, 0, r.len())
 }
 
+/// Free a value's chunks: an update or delete that no rollback or
+/// journal entry can put back. An inline value has none.
+pub fn free(txn: &mut Txn<'_>, member: ObjectId, r: &LobRef) -> Result<()> {
+    let LobRef::Tree { id, length } = r else {
+        return Ok(());
+    };
+    let mut core = Core::load(txn, member)?;
+    let mut tree: LobTree = BTree::open(core.roots[LOB_ROOT], member);
+    for i in 0..usize::try_from(*length).expect("fits").div_ceil(CHUNK) {
+        tree.delete(txn, &((id << 24) | i as u64))?;
+    }
+    core.set_root(txn, LOB_ROOT, tree.root())?;
+    Ok(())
+}
+
+/// Free the chunks of every value not in `keep` (`RGZPFM`); the number
+/// of values freed.
+pub fn sweep<S: std::hash::BuildHasher>(txn: &mut Txn<'_>, member: ObjectId, keep: &std::collections::HashSet<u64, S>) -> Result<u64> {
+    let mut core = Core::load(txn, member)?;
+    let mut tree: LobTree = BTree::open(core.roots[LOB_ROOT], member);
+    let gone: Vec<u64> = tree.entries(txn)?.map(|e| e.map(|(k, _)| k)).collect::<store::Result<Vec<_>>>()?;
+    let gone: Vec<u64> = gone.into_iter().filter(|k| !keep.contains(&(k >> 24))).collect();
+    let mut freed = std::collections::HashSet::new();
+    for k in gone {
+        tree.delete(txn, &k)?;
+        freed.insert(k >> 24);
+    }
+    core.set_root(txn, LOB_ROOT, tree.root())?;
+    Ok(freed.len() as u64)
+}
+
+/// The IDs of the values in the member's tree, ascending.
+pub fn ids(txn: &mut Txn<'_>, member: ObjectId) -> Result<Vec<u64>> {
+    let core = Core::load(txn, member)?;
+    let tree: LobTree = BTree::open(core.roots[LOB_ROOT], member);
+    let mut out: Vec<u64> = Vec::new();
+    for e in tree.entries(txn)? {
+        let id = e?.0 >> 24;
+        if out.last() != Some(&id) {
+            out.push(id);
+        }
+    }
+    Ok(out)
+}
+
 /// Free the member's tree (`CLRPFM`).
 pub fn clear(txn: &mut Txn<'_>, member: ObjectId) -> Result<()> {
     let mut core = Core::load(txn, member)?;

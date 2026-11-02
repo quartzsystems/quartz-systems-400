@@ -14,7 +14,7 @@ use store::txn::Txn;
 use super::{Hold, Order, each_record, member_of, physical};
 use crate::error::{DbError, Result};
 use crate::file;
-use crate::member::Member;
+use crate::member::{Member, lob};
 
 /// `KEYFILE`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,6 +40,8 @@ pub struct RgzReport {
     pub records: u64,
     /// Deleted slots removed.
     pub deleted_removed: u64,
+    /// LOB values freed: no record named them.
+    pub lobs_freed: u64,
 }
 
 /// Reorganize the member. It is allocated `*EXCL` for the duration.
@@ -65,7 +67,7 @@ pub fn rgzpfm(
     )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
         m.jrn.job = job;
-        let r = reorganize(txn, &mut m, keyfile)?;
+        let r = reorganize(txn, &mut m, keyfile, &desc)?;
         crate::journal::member_event(txn, &m, "MR")?;
         Ok(r)
     });
@@ -73,7 +75,7 @@ pub fn rgzpfm(
     result
 }
 
-fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile) -> Result<RgzReport> {
+fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file::FileDesc) -> Result<RgzReport> {
     let mut records: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
     let mut seen = HashSet::new();
     match keyfile {
@@ -122,12 +124,31 @@ fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile) -> Result<Rg
         }
     }
     let deleted_removed = m.attr().deleted_count;
-    m.clear(txn)?;
+    // The records keep their LOB references; the values no record names
+    // any more (updated or deleted away) are freed.
+    let lob_fields: Vec<_> = desc
+        .formats
+        .first()
+        .map(|f| f.format.fields.iter().filter(|f| f.data_type.is_lob()).cloned().collect())
+        .unwrap_or_default();
+    if lob_fields.is_empty() {
+        m.clear(txn)?;
+    } else {
+        m.clear_keeping_lobs(txn)?;
+    }
+    let mut named = HashSet::new();
     for (record, nulls) in &records {
+        for f in &lob_fields {
+            if let lob::LobRef::Tree { id, .. } = lob::LobRef::decode(crate::record::field_bytes(f, record))? {
+                named.insert(id);
+            }
+        }
         m.write_new(txn, record, nulls)?;
     }
+    let lobs_freed = if lob_fields.is_empty() { 0 } else { lob::sweep(txn, m.id(), &named)? };
     Ok(RgzReport {
         records: records.len() as u64,
         deleted_removed,
+        lobs_freed,
     })
 }

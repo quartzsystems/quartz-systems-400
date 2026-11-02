@@ -378,16 +378,27 @@ A value longer than 24 bytes is kept in the LOB tree of the physical
 member that holds the record (header tree root slot 2): keys are
 `(lob_id << 24) | chunk` as a big-endian `u64`, values the value's bytes
 in chunks of 1024, the last one shorter. A new value takes the LOB ID
-one above the largest in the tree (1 in an empty tree); IDs are not
-reused. A record read through a logical member finds its LOBs in its
-based-on physical member's tree.
+one above the largest in the tree (1 in an empty tree); an ID freed at
+the top may be taken again. A record read through a logical member
+finds its LOBs in its based-on physical member's tree.
 
-An update or a delete leaves the old value's chunks in the tree: a
-before image the journal or a rollback puts back still finds them.
-`CLRPFM` frees the tree. `TODO(perf)`: `RGZPFM` keeps the chunks of
-values no record names. Record bytes copied between members as they
-are would name another member's chunks, so `CPYF`, `CPYTOIMPF` and
-`CPYFRMIMPF` refuse a file with LOB fields, and a journal entry's record
+When the old value of an update or a delete is freed:
+
+- A file that is not journaled (and so under no commitment control) has
+  no rollback or journal entry to want it back: the statement frees the
+  old value's chunks in its own transaction, which a failure undoes.
+- A journaled file keeps them: a rollback and a journal entry's before
+  image name them, and `RMVJRNCHG` may put them back after a commit.
+  `RGZPFM` frees every value no record names; changes cannot be
+  removed or applied across a reorganization (its `MR` entry), as on
+  IBM i.
+- `CLRPFM` frees the tree.
+
+A record names LOBs in its own member's tree, so `CPYF` puts each value
+it copies into the to-member's tree (a LOB field copies only to a LOB
+field, not with `FMTOPT(*NOCHK)` or `*CVTSRC`); `CPYTOIMPF` writes a
+LOB's value (`CLOB` and `DBCLOB` as text, `BLOB` as hexadecimal) and
+`CPYFRMIMPF` reads it into the member's tree. A journal entry's record
 image names its LOBs in the member it came from.
 
 ## 5. Format level identifier

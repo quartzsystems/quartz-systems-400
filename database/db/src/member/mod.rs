@@ -760,10 +760,21 @@ impl Member {
     /// `CLRPFM`: every record gone, the space and trees released, the
     /// dependent paths emptied.
     pub fn clear(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        self.clear_with(txn, true)
+    }
+
+    /// [`Self::clear`] that keeps the LOB tree, for records about to be
+    /// written again with their references (`RGZPFM`).
+    pub fn clear_keeping_lobs(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        self.clear_with(txn, false)
+    }
+
+    fn clear_with(&mut self, txn: &mut Txn<'_>, lobs: bool) -> Result<()> {
         self.physical_only()?;
         self.refresh_dependents(txn)?;
         Space::truncate(txn, self.core.id, 0)?;
-        for slot in [attr::PATH_ROOT, attr::FREE_ROOT, lob::LOB_ROOT] {
+        let slots: &[usize] = if lobs { &[attr::PATH_ROOT, attr::FREE_ROOT, lob::LOB_ROOT] } else { &[attr::PATH_ROOT, attr::FREE_ROOT] };
+        for &slot in slots {
             if let Some(root) = self.core.roots[slot] {
                 btree::free_tree(txn, root)?;
                 self.core.set_root(txn, slot, None)?;
