@@ -655,8 +655,25 @@ fn order_matches(c: &Candidate, order: &[OrderItem], alias: &str) -> Option<bool
 }
 
 /// Scan one table: by its chosen path within bounds, else every record.
-#[allow(clippy::too_many_lines)]
+/// The outermost scan of a statement may yield between batches
+/// ([`SqlContext::safe_point`]).
 fn scan_table(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    scan: &Scan,
+    outer: &Env,
+    order: &[OrderItem],
+    explain_only: bool,
+) -> Result<(Vec<Row>, bool)> {
+    ctx.scan_enter();
+    let r = scan_table_in(txn, ctx, params, scan, outer, order, explain_only);
+    ctx.scan_end();
+    r
+}
+
+#[allow(clippy::too_many_lines)]
+fn scan_table_in(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     params: &[Value],
@@ -686,11 +703,21 @@ fn scan_table(
     let cands = candidates(txn, t);
     let choice = choose(&cands, &scan.preds, order, &scan.alias);
     let label = format!("{}/{} ({})", t.desc.library_name, t.desc.name(), scan.alias);
-    let base_pf: Option<Member> = if t.desc.attr.kind == FileKind::Logical {
-        None
-    } else {
-        Some(Member::open(txn, &t.desc, &t.member)?)
+    if !explain_only {
+        let mut objects = vec![t.id, t.member.object];
+        if let Some(ch) = &choice {
+            objects.extend([cands[ch.cand].file, cands[ch.cand].member.object]);
+        }
+        ev.ctx.hold(txn, &objects, &label)?;
+    }
+    let open_pf = |txn: &mut Txn<'_>| -> Result<Option<Member>> {
+        if t.desc.attr.kind == FileKind::Logical {
+            Ok(None)
+        } else {
+            Ok(Some(Member::open(txn, &t.desc, &t.member)?))
+        }
     };
+    let mut base_pf = open_pf(txn)?;
     if let Some(ch) = choice {
         let c = &cands[ch.cand];
         ordered = ch.ordered.is_some();
@@ -740,10 +767,13 @@ fn scan_table(
         pm.ensure_path(txn, &mut |_, _| {})?;
         let backward = ch.ordered == Some(true);
         // The path in batches, each read as far as the bounds allow.
-        let path = pm.path().ok_or_else(|| SqlError::Database {
-            what: format!("{} has no access path", c.label),
-            msgid: None,
-        })?;
+        let path_of = |pm: &Member| {
+            pm.path().ok_or_else(|| SqlError::Database {
+                what: format!("{} has no access path", c.label),
+                msgid: None,
+            })
+        };
+        let mut path = path_of(&pm)?;
         let mut batch = if backward {
             path.scan_back(txn, Bound::Included(hi.as_slice()), KEY_BATCH)?
         } else {
@@ -777,6 +807,13 @@ fn scan_table(
                     rows.push(row_of(&t.format, &s)?);
                 }
             }
+            if ev.ctx.safe_point(txn)? {
+                // Others ran: the members as they are now.
+                base_pf = open_pf(txn)?;
+                pm = Member::open(txn, &desc, &c.member)?;
+                pm.ensure_path(txn, &mut |_, _| {})?;
+                path = path_of(&pm)?;
+            }
             batch = if backward {
                 path.scan_back_from(txn, Bound::Excluded(&last), KEY_BATCH)?
             } else {
@@ -788,10 +825,24 @@ fn scan_table(
             ev.ctx.explain.push(format!("SCAN {label} full"));
             return Ok((Vec::new(), false));
         }
-        if let Some(pf) = base_pf {
-            for s in pf.scan(txn, 1, usize::MAX)? {
-                ev.ctx.poll_interrupt()?;
-                rows.push(row_of(&t.format, &s)?);
+        if let Some(mut pf) = base_pf {
+            // In batches by RRN, a yield between them.
+            let mut from = 1;
+            loop {
+                let slots = pf.scan(txn, from, KEY_BATCH)?;
+                let Some(end) = slots.last().map(|s| s.rrn) else {
+                    break;
+                };
+                for s in slots {
+                    ev.ctx.poll_interrupt()?;
+                    rows.push(row_of(&t.format, &s)?);
+                }
+                from = end + 1;
+                if ev.ctx.safe_point(txn)?
+                    && let Some(m) = open_pf(txn)?
+                {
+                    pf = m;
+                }
             }
         } else {
             let mut m = Member::open(txn, &t.desc, &t.member)?;

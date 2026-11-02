@@ -158,6 +158,12 @@ impl<'a> Txn<'a> {
         }
     }
 
+    /// Whether the store is given back ([`Txn::suspend`]).
+    #[must_use]
+    pub fn is_suspended(&self) -> bool {
+        self.store.suspended()
+    }
+
     /// Borrow the store again after [`Txn::suspend`], as a transaction
     /// begun now.
     pub fn resume(&mut self) -> Result<()> {

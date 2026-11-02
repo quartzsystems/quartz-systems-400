@@ -23,7 +23,7 @@ use db::odp::{self, Odp, OpenOpts, Session, SharedLocks, Usage};
 use dds::FieldDef;
 use qsname::{LibSpec, MemberSpec, Name};
 use store::obj::ops::{self, NameContext};
-use store::obj::{JobHandle, ObjectId, types};
+use store::obj::{JobHandle, LockState, ObjectId, types};
 use store::txn::Txn;
 
 use crate::ast::{Naming, ObjectName, Statement};
@@ -98,7 +98,26 @@ pub struct SqlContext {
     pub interrupt: Option<Interrupt>,
     /// Rows read since the context was made.
     interrupt_ticks: u32,
+    /// Called between batches of a read-only statement's outermost
+    /// scan, with the store given back, so others can use it; true ends
+    /// the statement. `None` never yields.
+    pub yielder: Option<Yielder>,
+    /// The least time between two yields.
+    pub yield_every: std::time::Duration,
+    /// Files and members a statement that may yield holds `*SHRRD` on,
+    /// so nobody clears, reorganizes or deletes them under it.
+    pub held: Vec<ObjectId>,
+    /// Table scans in progress: only the outermost yields.
+    scans: u32,
+    /// When the last yield ended.
+    last_yield: Option<std::time::Instant>,
 }
+
+/// See [`SqlContext::yielder`].
+pub type Yielder = std::rc::Rc<dyn Fn() -> bool>;
+
+/// The default [`SqlContext::yield_every`].
+pub const YIELD_EVERY: std::time::Duration = std::time::Duration::from_millis(5);
 
 /// Rows read between two looks at [`SqlContext::interrupt`].
 pub const INTERRUPT_EVERY: u32 = 64;
@@ -155,7 +174,73 @@ impl SqlContext {
             isolation: None,
             interrupt: None,
             interrupt_ticks: 0,
+            yielder: None,
+            yield_every: YIELD_EVERY,
+            held: Vec::new(),
+            scans: 0,
+            last_yield: None,
         }
+    }
+
+    /// A table scan starts.
+    pub(crate) fn scan_enter(&mut self) {
+        self.scans += 1;
+    }
+
+    /// Under a yielder, `*SHRRD` on each object a scan reads, held until
+    /// [`SqlContext::release_held`].
+    pub(crate) fn hold(&mut self, txn: &mut Txn<'_>, objects: &[ObjectId], what: &str) -> Result<()> {
+        if self.yielder.is_none() {
+            return Ok(());
+        }
+        for &id in objects {
+            if self.held.contains(&id) {
+                continue;
+            }
+            odp::allocate(txn, self.job, id, LockState::SharedRead, what)?;
+            self.held.push(id);
+        }
+        Ok(())
+    }
+
+    /// A table scan ends.
+    pub(crate) fn scan_end(&mut self) {
+        self.scans = self.scans.saturating_sub(1);
+    }
+
+    /// Between two batches of the outermost scan of a statement that has
+    /// changed nothing: give the store back and call the yielder, at
+    /// most every [`SqlContext::yield_every`]. True when it yielded:
+    /// what the scan held from the store is stale and is read again.
+    pub(crate) fn safe_point(&mut self, txn: &mut Txn<'_>) -> Result<bool> {
+        let Some(y) = self.yielder.clone() else {
+            return Ok(false);
+        };
+        if self.scans != 1 || self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
+            return Ok(false);
+        }
+        if !txn.suspend() {
+            return Ok(false);
+        }
+        let stop = y();
+        txn.resume()?;
+        self.last_yield = Some(std::time::Instant::now());
+        if stop {
+            return Err(SqlError::Cancelled);
+        }
+        Ok(true)
+    }
+
+    /// Give back the locks a yielding statement took.
+    pub fn release_held(&mut self, txn: &mut Txn<'_>) {
+        if txn.is_suspended() && txn.resume().is_err() {
+            return;
+        }
+        for id in std::mem::take(&mut self.held) {
+            odp::deallocate(txn, self.job, id, LockState::SharedRead);
+        }
+        self.scans = 0;
+        self.last_yield = None;
     }
 
     /// The clock.
