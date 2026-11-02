@@ -12,13 +12,18 @@
 //!   disabled; `CPF1107`, `CPF1392` before the last try, `CPF1393` at
 //!   it, `CPF1394` disabled, `CPF1118` `*NONE`, `CPD9BAE` expired;
 //!   audit entries as `PW` types;
-//! - profiles `BOB` (`SECRET1`) and `WARN` (`WARNPW1`, its password
-//!   expiring inside the 7-day warning period);
+//! - profiles `BOB` (`SECRET1`), `WARN` (`WARNPW1`, its password
+//!   expiring inside the 7-day warning period) and `ANN` (`ANNPW01`,
+//!   whose spooled files `BOB` may not touch);
 //! - the commands in [`commands`];
 //! - Telnet tickets as the Telnet server takes them
-//!   ([`System::redeem_ticket`]).
+//!   ([`System::redeem_ticket`]);
+//! - output queues and spooled files ([`fixtures`]) under the rules
+//!   of the spooled-file commands ([`spool`]), so a client can try its
+//!   Printer Output in process.
 
 pub mod commands;
+pub mod fixtures;
 mod host;
 pub mod spool;
 
@@ -140,6 +145,8 @@ impl System {
         s.user("BOB", "SECRET1");
         s.user("WARN", "WARNPW1");
         s.edit("WARN", |u| u.expires = Some(EPOCH + 3 * 86_400));
+        s.user("ANN", "ANNPW01");
+        fixtures::install(&mut lock(&s.spool));
         Arc::new(s)
     }
 
