@@ -25,7 +25,7 @@ const PGM: (&str, &str) = ("QAPCNN", "QSYS");
 
 /// Escapes and diagnostics that mean the command or what it names is
 /// not there.
-const NOT_FOUND: &[&str] = &["CPD0030", "CPF9801", "CPF2105", "CPF2110", "CPF2125"];
+const NOT_FOUND: &[&str] = &["CPD0030", "CPF9801", "CPF2105", "CPF2110"];
 /// ... and that the profile may not use it.
 const NOT_AUTHORIZED: &[&str] = &["CPF9802", "CPF2189", "CPF2207", "CPD0033", "CPF22E9", "CPF2217"];
 
