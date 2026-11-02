@@ -5,6 +5,7 @@
 //! The operations of each service, their codes and bodies. Bodies not
 //! listed are empty (`()`).
 
+pub mod command;
 pub mod connection;
 pub mod signon;
 pub mod system;
@@ -28,11 +29,22 @@ pub enum Op {
     SignOff,
     /// `System` 1: the system's description.
     SystemInfo,
+    /// `SignOn` 5: a one-time ticket for 5250 automatic sign-on
+    /// (version 2).
+    TelnetTicket,
+    /// `SignOn` 6: when the password expires (version 2).
+    PasswordStatus,
+    /// `Command` 1: run a CL command (version 2).
+    RunCommand,
+    /// `Command` 2: check a CL command without running it (version 2).
+    CheckCommand,
+    /// `Command` 3: a command's definition, for prompting (version 2).
+    DescribeCommand,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 7] = [
+    pub const ALL: [Op; 12] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -40,6 +52,11 @@ impl Op {
         Op::Resume,
         Op::SignOff,
         Op::SystemInfo,
+        Op::TelnetTicket,
+        Op::PasswordStatus,
+        Op::RunCommand,
+        Op::CheckCommand,
+        Op::DescribeCommand,
     ];
 
     /// Its service and code.
@@ -53,6 +70,20 @@ impl Op {
             Op::Resume => (Service::SignOn, 3),
             Op::SignOff => (Service::SignOn, 4),
             Op::SystemInfo => (Service::System, 1),
+            Op::TelnetTicket => (Service::SignOn, 5),
+            Op::PasswordStatus => (Service::SignOn, 6),
+            Op::RunCommand => (Service::Command, 1),
+            Op::CheckCommand => (Service::Command, 2),
+            Op::DescribeCommand => (Service::Command, 3),
+        }
+    }
+
+    /// The protocol version that defines it.
+    #[must_use]
+    pub const fn since(self) -> u16 {
+        match self {
+            Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::SignOff | Op::SystemInfo => 1,
+            Op::TelnetTicket | Op::PasswordStatus | Op::RunCommand | Op::CheckCommand | Op::DescribeCommand => 2,
         }
     }
 
@@ -65,7 +96,7 @@ impl Op {
     /// Whether it is allowed before sign-on.
     #[must_use]
     pub const fn before_signon(self) -> bool {
-        !matches!(self, Op::SignOff | Op::SystemInfo)
+        matches!(self, Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume)
     }
 }
 

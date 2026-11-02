@@ -3,7 +3,8 @@
 // root directory of this project.
 
 //! The connection's thread: requests in arrival order, `Hello` first
-//! and once, the operations allowed before sign-on, replies split to
+//! and once, the version it agrees and only that version's operations
+//! and values, the operations allowed before sign-on, replies split to
 //! fit a frame, cancels honoured before and after an operation runs,
 //! and the events when the server or an operator ends the connection.
 
@@ -65,7 +66,12 @@ struct Conn<'h, H: Host> {
 }
 
 impl<H: Host> Conn<'_, H> {
-    fn send(&self, frames: Vec<Envelope>) {
+    fn send(&self, mut frames: Vec<Envelope>) {
+        // A peer gets only the statuses its version defines.
+        let v = self.version.unwrap_or(qap_proto::MIN_VERSION);
+        for f in &mut frames {
+            f.status = f.status.for_version(v);
+        }
         let _ = self.out.send(Out::Frames(frames));
     }
 
@@ -91,8 +97,11 @@ impl<H: Host> Conn<'_, H> {
             }
             return self.hello(req);
         }
+        let version = self.version.unwrap_or(qap_proto::MIN_VERSION);
         let a = match op {
             None => Answer::status(Status::InvalidRequest),
+            // An operation newer than the connection's version.
+            Some(op) if op.since() > version => Answer::status(Status::InvalidRequest),
             Some(Op::Hello) => {
                 self.reply(req, Answer::status(Status::InvalidRequest));
                 return Some(Closed::Refused);
@@ -123,7 +132,7 @@ impl<H: Host> Conn<'_, H> {
             version,
             system_name: id.system_name,
             release: id.release,
-            services: Service::ALL.to_vec(),
+            services: Service::of_version(version),
             capabilities: Vec::new(),
             signon_methods: vec![SignOnMethod::Password],
             server_time: self.host.now_ms(),
@@ -147,6 +156,10 @@ impl<H: Host> Conn<'_, H> {
             Op::Resume => self.resume(req),
             Op::SignOff => self.sign_off(),
             Op::SystemInfo => Answer::ok(&self.host.system_info()),
+            // Version 2's operations, built in the commits that follow.
+            Op::TelnetTicket | Op::PasswordStatus | Op::RunCommand | Op::CheckCommand | Op::DescribeCommand => {
+                Answer::status(Status::InvalidRequest)
+            }
             Op::Hello => Answer::status(Status::InvalidRequest),
         }
     }

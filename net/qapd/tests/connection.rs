@@ -23,7 +23,7 @@ fn hello_then_ping() {
     let h: HelloReply = r.client.hello().body_as().unwrap();
     assert_eq!(h.version, 1);
     assert_eq!(h.system_name, "QSHQ400");
-    assert_eq!(h.services, Service::ALL.to_vec());
+    assert_eq!(h.services, Service::of_version(1));
     assert_eq!(h.signon_methods, vec![SignOnMethod::Password]);
     assert_eq!(h.system_ccsid, 37);
     let p = r.client.call(Op::Ping, &());
@@ -39,7 +39,7 @@ fn version_mismatch_closes() {
     let rep = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 2,
+            min_version: 3,
             max_version: 9,
             ..Hello::default()
         },

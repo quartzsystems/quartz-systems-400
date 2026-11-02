@@ -36,17 +36,35 @@ pub enum Service {
     SignOn,
     /// Information about the system.
     System,
+    /// CL commands (version 2).
+    Command,
 }
 
 wire_enum!(Service {
     0 => Connection,
     1 => SignOn,
     2 => System,
+    3 => Command,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 3] = [Service::Connection, Service::SignOn, Service::System];
+    pub const ALL: [Service; 4] = [Service::Connection, Service::SignOn, Service::System, Service::Command];
+
+    /// The protocol version that defines it.
+    #[must_use]
+    pub const fn since(self) -> u16 {
+        match self {
+            Service::Connection | Service::SignOn | Service::System => 1,
+            Service::Command => 2,
+        }
+    }
+
+    /// The services version `v` defines, in value order.
+    #[must_use]
+    pub fn of_version(v: u16) -> Vec<Service> {
+        Service::ALL.into_iter().filter(|s| s.since() <= v).collect()
+    }
 }
 
 /// How a reply or event ended; `Ok` on requests. A `u16` on the wire.
@@ -97,6 +115,20 @@ wire_enum!(Status: u16 {
 });
 
 impl Status {
+    /// The protocol version that defines it. Version 2 defines no new
+    /// status: every one its operations answer exists in version 1.
+    #[must_use]
+    pub const fn since(self) -> u16 {
+        1
+    }
+
+    /// The status a version-`v` peer is sent: itself, or `Error` (with
+    /// the same message) when `v` does not define it.
+    #[must_use]
+    pub const fn for_version(self, v: u16) -> Status {
+        if self.since() <= v { self } else { Status::Error }
+    }
+
     /// Every status, in value order.
     pub const ALL: [Status; 13] = [
         Status::Ok,

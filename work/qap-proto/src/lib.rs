@@ -2,14 +2,20 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The Quartz Access Protocol, version 1 (docs/QAP.md): how QS/400
+//! The Quartz Access Protocol, versions 1 and 2 (docs/QAP.md): how QS/400
 //! Access talks to QS/400. Every frame is one Wire-encoded [`Envelope`]
 //! in an `ipc` length-prefixed frame of at most [`MAX_FRAME`] bytes.
 //!
 //! - [`envelope`]: the envelope, its kinds, services, statuses, flags,
 //!   the server's messages, framing and replies split with `More`.
 //! - [`ops`]: the operations of each service and their bodies.
+//! - [`types`]: types several services share.
 //! - [`secret`]: passwords and tokens, never printed and wiped on drop.
+//!
+//! Every value is defined from one protocol version (docs/QAP.md,
+//! "Compatibility of new values"): [`Op::since`], [`Service::since`],
+//! [`Status::since`]. A peer is sent only what its negotiated version
+//! defines.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -17,6 +23,7 @@
 pub mod envelope;
 pub mod ops;
 pub mod secret;
+pub mod types;
 
 mod error;
 
@@ -27,8 +34,10 @@ pub use secret::{Secret, Token};
 
 use std::time::Duration;
 
-/// The protocol version this crate speaks.
-pub const VERSION: u16 = 1;
+/// The newest protocol version this crate speaks.
+pub const VERSION: u16 = 2;
+/// The oldest.
+pub const MIN_VERSION: u16 = 1;
 /// The server's port unless configured otherwise.
 pub const DEFAULT_PORT: u16 = 2320;
 /// The longest encoded envelope: 1 MiB, not counting the length prefix.

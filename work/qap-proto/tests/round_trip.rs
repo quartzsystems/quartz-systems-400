@@ -9,9 +9,13 @@ use std::fmt::Debug;
 
 use ipc::{Wire, decode, encode};
 use qap_proto::envelope::{MORE, Reassembly};
+use qap_proto::ops::command::{
+    CheckReply, CommandDefinition, CommandReply, CommandText, DescribeCommand, ParmKind, ParmNode, Range, Role, Show,
+};
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod};
-use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
+use qap_proto::ops::signon::{ChangePassword, PasswordStatus, Resume, SignOn, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::system::{Product, SystemInfo};
+use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Envelope, Kind, MAX_FRAME, Op, ProtoError, Secret, ServerMessage, Service, Status, Token};
 
 fn same<T: Wire + PartialEq + Debug>(v: &T) {
@@ -61,7 +65,7 @@ fn enums() {
     }
     assert!(decode::<Status>(&13u16.to_le_bytes()).is_err());
     assert!(decode::<Kind>(&[4]).is_err());
-    assert!(decode::<Service>(&[3]).is_err());
+    assert!(decode::<Service>(&[4]).is_err());
     same(&SignOnMethod::Password);
     assert_eq!(encode(&SignOnMethod::Password), [0]);
 }
@@ -181,4 +185,106 @@ fn split_replies_join() {
     assert_eq!(r.pending(), 0);
     // Small replies stay one frame.
     assert_eq!(Envelope::replies(&req, Status::Ok, None, vec![1, 2]).unwrap().len(), 1);
+}
+
+#[test]
+fn version_2_bodies() {
+    same(&CommandText { command: "DSPLIB QGPL".into() });
+    same(&CommandReply {
+        job: JobId {
+            name: "QAPCNN".into(),
+            user: "QUSER".into(),
+            number: "000123".into(),
+        },
+        messages: vec![msg(), msg()],
+    });
+    same(&CheckReply { messages: vec![msg()] });
+    same(&DescribeCommand {
+        command: ObjectName {
+            library: "*LIBL".into(),
+            name: "CRTLIB".into(),
+        },
+    });
+    let node = ParmNode {
+        index: 1,
+        parent: Some(0),
+        role: Role::Qualifier,
+        keyword: String::new(),
+        prompt: "Library".into(),
+        help: String::new(),
+        kind: ParmKind::Name,
+        length: 10,
+        decimals: 0,
+        required: true,
+        min_values: 1,
+        max_values: 1,
+        default: Some("*LIBL".into()),
+        special_values: vec!["*LIBL".into(), "*CURLIB".into()],
+        values: Vec::new(),
+        range: Some(Range {
+            low: "1".into(),
+            high: "9".into(),
+        }),
+        show: Show::Additional,
+    };
+    same(&node);
+    same(&CommandDefinition {
+        name: ObjectName {
+            library: "QSYS".into(),
+            name: "CRTLIB".into(),
+        },
+        text: "Create Library".into(),
+        help: String::new(),
+        nodes: vec![ParmNode::default(), node],
+    });
+    for r in [Role::Parameter, Role::Element, Role::Qualifier] {
+        same(&r);
+    }
+    for (i, k) in [
+        ParmKind::Name,
+        ParmKind::Character,
+        ParmKind::Decimal,
+        ParmKind::Integer,
+        ParmKind::Logical,
+        ParmKind::Date,
+        ParmKind::Time,
+        ParmKind::Generic,
+        ParmKind::Path,
+        ParmKind::Command,
+    ]
+    .iter()
+    .enumerate()
+    {
+        assert_eq!(encode(k), [u8::try_from(i).unwrap()]);
+    }
+    for s in [Show::Always, Show::Additional, Show::Never] {
+        same(&s);
+    }
+    same(&TelnetTicketReply {
+        ticket: Token([3; 32]),
+        expires_secs: 60,
+    });
+    assert_eq!(encode(&TelnetTicketReply::default()).len(), 36);
+    same(&PasswordStatus {
+        expires: Some(1_793_000_000_000),
+        warning_days: 7,
+    });
+    same(&PasswordStatus::default());
+}
+
+#[test]
+fn values_by_version() {
+    assert_eq!(Service::of_version(1), [Service::Connection, Service::SignOn, Service::System]);
+    assert_eq!(Service::of_version(2), Service::ALL.to_vec());
+    assert_eq!(encode(&Service::Command), [3]);
+    for op in [Op::TelnetTicket, Op::PasswordStatus, Op::RunCommand, Op::CheckCommand, Op::DescribeCommand] {
+        assert_eq!(op.since(), 2, "{op:?}");
+        assert!(!op.before_signon());
+    }
+    assert_eq!(Op::of(Service::SignOn, 5), Some(Op::TelnetTicket));
+    assert_eq!(Op::of(Service::Command, 3), Some(Op::DescribeCommand));
+    // Version 2 adds no status: each is sent to a version-1 peer as is.
+    for s in Status::ALL {
+        assert_eq!(s.for_version(1), s);
+    }
 }

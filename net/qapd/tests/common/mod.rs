@@ -380,12 +380,17 @@ impl Client {
 
     /// Hello for version 1, ID 1.
     pub fn hello(&mut self) -> Envelope {
+        self.hello_range(1, 1)
+    }
+
+    /// Hello offering versions `min` to `max`, ID 1.
+    pub fn hello_range(&mut self, min: u16, max: u16) -> Envelope {
         self.next_id = 0;
         let r = self.call(
             Op::Hello,
             &Hello {
-                min_version: 1,
-                max_version: 1,
+                min_version: min,
+                max_version: max,
                 client_name: "test".into(),
                 client_version: "0".into(),
                 capabilities: Vec::new(),

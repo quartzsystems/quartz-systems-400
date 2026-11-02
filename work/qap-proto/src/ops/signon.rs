@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `SignOn`: sign on, change a password, resume and sign off.
-//! `SignOff` has no bodies.
+//! `SignOn`: sign on, change a password, resume and sign off; from
+//! version 2 a Telnet ticket and the password's expiry. `SignOff`,
+//! `TelnetTicket` and `PasswordStatus` have no request bodies.
 
 use ipc::wire_struct;
 
@@ -83,3 +84,26 @@ wire_struct!(SignOnReply {
     home_directory,
     special_authorities
 });
+
+/// `TelnetTicket`'s reply.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TelnetTicketReply {
+    /// The ticket, 256 random bits; never printed, wiped on drop.
+    pub ticket: Token,
+    /// Seconds it can be used in.
+    pub expires_secs: u32,
+}
+
+wire_struct!(TelnetTicketReply { ticket, expires_secs });
+
+/// `PasswordStatus`'s reply.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PasswordStatus {
+    /// When the password expires, milliseconds since 1970-01-01 UTC;
+    /// `None` when it does not expire.
+    pub expires: Option<i64>,
+    /// The system's warning period in days.
+    pub warning_days: u16,
+}
+
+wire_struct!(PasswordStatus { expires, warning_days });
