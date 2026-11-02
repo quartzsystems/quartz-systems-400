@@ -6,9 +6,11 @@
 //! encoder:
 //!
 //! - `QGPL/QPRINT`, 60 files, enough to page: `BOB`'s job log
-//!   (`QPJOBLOG`), a 132-column listing of 30 pages (`QSYSPRT`), a
-//!   landscape file (`LANDSCAPE`), one whose pitch and line density
-//!   change part-way (`MIXED`), an AFP file (`AFPINV`, neither SCS nor
+//!   (`QPJOBLOG`, three pages: page 1 runs onto page 2), a 132-column
+//!   listing of 30 pages (`QSYSPRT`), 27 pages whose page 26 starts by
+//!   running past the page length (`OVERFLOW`), a landscape file
+//!   (`LANDSCAPE`), one whose pitch and line density change part-way
+//!   (`MIXED`), an AFP file (`AFPINV`, neither SCS nor
 //!   readable), an open one (`OPENFILE`), one in every status, small
 //!   reports of `BOB`'s, and `ANN`'s, which `BOB` may not touch;
 //! - `QGPL/PRT01`, with writer `PRT01` attached: a file printing and
@@ -60,7 +62,8 @@ pub fn scs(width: u16, len: u16, lpi: u8, cpi: u8, pages: &[Vec<String>]) -> Vec
     e.out
 }
 
-/// A job log of two pages.
+/// A job log of three pages: page 1 runs past 66 lines onto page 2,
+/// then a form feed starts page 3.
 fn joblog() -> Vec<u8> {
     let head = |n: u32| {
         vec![
@@ -94,6 +97,26 @@ fn listing() -> Vec<u8> {
         })
         .collect();
     scs(132, 66, 6, 10, &pages)
+}
+
+/// 27 pages: form feeds start pages 2 to 25 and 27, and page 25 runs
+/// past the page length, so page 26, the first of a second batch of
+/// 25, is an overflow page.
+fn overflow() -> Vec<u8> {
+    let mut e = Encoder::default();
+    e.header(132, 66, 6, 10);
+    for p in 1..=25 {
+        if p > 1 {
+            e.ff();
+        }
+        let lines = if p == 25 { 70 } else { 10 };
+        for l in 1..=lines {
+            text(&mut e, &format!("OVERFLOW PAGE {p} LINE {l}"));
+        }
+    }
+    e.ff();
+    text(&mut e, "OVERFLOW LAST PAGE");
+    e.out
 }
 
 /// A landscape file: wider than it is long, 15 pitch, 8 lines per inch.
@@ -179,6 +202,7 @@ pub fn install(s: &mut Spool) {
     let (rdy, scs_dev) = (SpoolStatus::Ready, DeviceType::Scs);
     add(s, "QPJOBLOG", "BOB", rdy, qprint(), scs_dev, joblog());
     add(s, "QSYSPRT", "BOB", rdy, qprint(), scs_dev, listing());
+    add(s, "OVERFLOW", "BOB", rdy, qprint(), scs_dev, overflow());
     add(s, "LANDSCAPE", "BOB", rdy, qprint(), scs_dev, landscape());
     add(s, "MIXED", "BOB", rdy, qprint(), scs_dev, mixed());
     // AFP: structured fields, not SCS.
@@ -216,7 +240,13 @@ mod tests {
         assert_eq!(s.queues[0].files.len(), 60, "QPRINT pages");
         assert_eq!(s.queues[1].writer, "PRT01");
         assert_eq!(files("QSYSPRT").info().pages, 30);
-        assert!(files("QPJOBLOG").info().pages >= 2);
+        assert_eq!(files("QPJOBLOG").info().pages, 3);
+        // OVERFLOW's page 26 starts at a new line, not a form feed.
+        let over = files("OVERFLOW").data;
+        let idx = spool::scs::index(&over);
+        assert_eq!(idx.len(), 27);
+        assert_eq!(over[idx[25].offset], spool::scs::NL);
+        assert_eq!(over[idx[24].offset], spool::scs::FF);
         let land = spool::scs::decode(&files("LANDSCAPE").data).1;
         assert!(land.width > land.len);
         let (_, mid) = spool::scs::decode(&files("MIXED").data);

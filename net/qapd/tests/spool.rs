@@ -167,17 +167,21 @@ fn read_spooled_file_statuses() {
 #[test]
 fn page_ranges_join_into_the_whole_file() {
     let (_, mut r) = bob();
-    for name in ["QSYSPRT", "MIXED", "QPJOBLOG", "LANDSCAPE"] {
+    // In page batches, as a client reads a large file; OVERFLOW's second
+    // batch of 25 starts with its overflow page.
+    for (name, batch) in [("QSYSPRT", 7), ("MIXED", 7), ("QPJOBLOG", 7), ("LANDSCAPE", 7), ("OVERFLOW", 25)] {
         let f = file(&mut r, name);
         let whole = data(&read(&mut r, &f.id, ReadFormat::Scs, 1, 0));
         let idx = spool::scs::index(&whole.data);
         assert_eq!(idx.len(), whole.pages as usize, "{name}");
-        // In batches of 7 pages, as a client reads a large file.
+        let (pages, _) = spool::scs::decode(&whole.data);
         let mut joined = Vec::new();
         let mut first = 1;
         while first <= whole.pages {
-            let last = (first + 6).min(whole.pages);
+            let last = (first + batch - 1).min(whole.pages);
             let part = data(&read(&mut r, &f.id, ReadFormat::Scs, first, last));
+            let (got, _) = spool::scs::decode(&part.data);
+            assert_eq!(got, pages[first as usize - 1..last as usize], "{name} {first}: the pages");
             assert_eq!(part.pages, whole.pages);
             let state = idx[first as usize - 1].prefix();
             assert!(part.data.starts_with(&state), "{name} {first}: the state first");
