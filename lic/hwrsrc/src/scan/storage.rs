@@ -4,7 +4,12 @@
 
 //! Storage controllers by PCI ID, with a Quartz type and model for the
 //! `DCnn` resource, and the order disks are named in: controller by PCI
-//! address, then SCSI host:channel:target:lun.
+//! address, then SCSI host:channel:target:lun. A disk's type is its
+//! medium.
+
+use std::path::Path;
+
+use crate::scan::read_trim;
 
 /// What a storage controller is called and shown as.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -158,17 +163,31 @@ pub enum Medium {
 }
 
 impl Medium {
-    /// The word a description shows, empty when unknown.
+    /// A disk resource's type: the medium as a word. Fields four
+    /// characters wide (lists, APIs, outfiles) show `Virt` for virtual.
     #[must_use]
-    pub fn word(self) -> &'static str {
+    pub fn type_word(self) -> &'static str {
         match self {
-            Medium::Virtual => "virtual",
+            Medium::Virtual => "Virtual",
             Medium::Nvme => "NVMe",
             Medium::Ssd => "SSD",
             Medium::Hdd => "HDD",
-            Medium::Unknown => "",
+            Medium::Unknown => "Disk",
         }
     }
+}
+
+/// The medium of the disk whose sysfs directory is `dir`
+/// (`/sys/class/block/sda`).
+#[must_use]
+pub fn medium_at(dir: &Path) -> Medium {
+    let name = dir.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+    medium(
+        name,
+        &read_trim(&dir.join("device/vendor")),
+        &read_trim(&dir.join("device/model")),
+        &read_trim(&dir.join("queue/rotational")),
+    )
 }
 
 /// Vendors and models of emulated disks.
@@ -210,7 +229,8 @@ mod tests {
         assert_eq!(medium("sdd", "VMware,", "VMware Virtual S", "1"), Medium::Virtual);
         assert_eq!(medium("sde", "Msft", "Virtual Disk", "1"), Medium::Virtual);
         assert_eq!(medium("sdf", "", "", ""), Medium::Unknown);
-        assert_eq!(Medium::Unknown.word(), "");
+        assert_eq!(Medium::Unknown.type_word(), "Disk");
+        assert_eq!(Medium::Virtual.type_word(), "Virtual");
     }
 
     #[test]

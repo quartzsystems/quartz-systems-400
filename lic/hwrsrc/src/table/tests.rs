@@ -94,7 +94,10 @@ fn disks_behind_a_perc_are_named_by_scsi_address_under_their_controller() {
     assert_eq!(t.resources[1].type_model(), ("QD03".into(), "001".into()));
     assert_eq!(t.controller_of("sdc").map(|r| r.name.as_str()), Some("DC02"));
     assert_eq!(t.controller_of("sde").map(|r| r.name.as_str()), Some("DC01"));
-    assert_eq!(t.resources[4].description, "sdc 953869 MiB SSD at 0:0:0:0 on DC02");
+    assert_eq!(t.resources[4].description, "sdc 953869 MiB at 0:0:0:0 on DC02");
+    assert_eq!(t.resources[4].type_model(), ("SSD".into(), String::new()));
+    assert_eq!(crate::view::type_model(&t.resources[4]), "SSD");
+    assert_eq!(t.get("DD005").unwrap().type_model().0, "Disk");
     assert_eq!(t.resources[4].logical, "DC02");
     assert_eq!(t.get("dd005").unwrap().serial, "naa.5000c500a1b2c3d4");
     assert_eq!(t.path_to("DD002", false), ["CMB01", "DC02", "DD002"]);

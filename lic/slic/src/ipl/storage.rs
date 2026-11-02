@@ -647,8 +647,13 @@ pub fn busy(system: &System) -> bool {
         || parity_busy(system)
 }
 
-/// Blocks per step of the background device parity work.
+/// Blocks per step of the background device parity work while
+/// requests wait.
 const PARITY_BUDGET: u64 = 16;
+/// Pages a step reads over all members while nothing waits (16 MiB).
+/// Each step flushes every member, so small steps spend their time in
+/// flushes, which on terabyte units adds up to many hours.
+const PARITY_IDLE_PAGES: u64 = 4096;
 /// How long one turn of the device parity work may run while nothing
 /// waits.
 pub const PARITY_SLICE: Duration = Duration::from_millis(40);
@@ -657,6 +662,11 @@ pub const PARITY_SLICE_BUSY: Duration = Duration::from_millis(5);
 
 /// Set when the parity work failed: not retried this IPL.
 static PARITY_STALLED: AtomicBool = AtomicBool::new(false);
+
+/// Whether the device parity work failed and stopped for this IPL.
+pub fn parity_stalled() -> bool {
+    PARITY_STALLED.load(Ordering::Relaxed)
+}
 
 /// Whether a set is being synchronized or a unit rebuilt.
 fn parity_busy(system: &System) -> bool {
@@ -676,8 +686,13 @@ fn parity_busy(system: &System) -> bool {
 /// `slice`. Returns whether more may follow.
 fn parity_turn(system: &mut System, slice: Duration) -> bool {
     let start = Instant::now();
+    let budget = if slice >= PARITY_SLICE {
+        parity_idle_budget(system)
+    } else {
+        PARITY_BUDGET
+    };
     loop {
-        if !parity_step(system) {
+        if !parity_step(system, budget) {
             return false;
         }
         if start.elapsed() >= slice {
@@ -686,9 +701,27 @@ fn parity_turn(system: &mut System, slice: Duration) -> bool {
     }
 }
 
-/// One step of the device parity synchronization or rebuild. Returns
-/// whether more may follow.
-fn parity_step(system: &mut System) -> bool {
+/// Blocks per step while nothing waits: [`PARITY_IDLE_PAGES`] over the
+/// members of the set being worked on (rows of every member are read).
+fn parity_idle_budget(system: &System) -> u64 {
+    let pages_per_block = system
+        .storage
+        .as_ref()
+        .and_then(|s| {
+            s.store
+                .parity_sets()
+                .iter()
+                .find(|set| set.sync_percent.is_some() || set.members.iter().any(|m| m.rebuild_percent.is_some()))
+                .map(|set| (set.geometry.n * set.geometry.w()) as u64)
+        })
+        .unwrap_or(1)
+        .max(1);
+    (PARITY_IDLE_PAGES / pages_per_block).max(PARITY_BUDGET)
+}
+
+/// One step of `budget` blocks of the device parity synchronization or
+/// rebuild. Returns whether more may follow.
+fn parity_step(system: &mut System, budget: u64) -> bool {
     if !parity_busy(system) {
         return false;
     }
@@ -696,7 +729,7 @@ fn parity_step(system: &mut System) -> bool {
     let Some(s) = storage.as_mut() else {
         return false;
     };
-    match s.store.parity_step(PARITY_BUDGET) {
+    match s.store.parity_step(budget) {
         Ok(Some(p)) => {
             if p.complete {
                 let what = match p.unit {

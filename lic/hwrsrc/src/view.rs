@@ -158,11 +158,12 @@ impl Row {
     }
 }
 
-/// The type and model as one value, `290A-001`.
+/// The type and model as one value, `290A-001`; a disk, which has no
+/// model, shows its type alone (`SSD`).
 #[must_use]
 pub fn type_model(r: &Resource) -> String {
     let (t, m) = r.type_model();
-    format!("{t}-{m}")
+    if m.is_empty() { t } else { format!("{t}-{m}") }
 }
 
 /// The resources of a type in tree order (packaging tree).

@@ -456,7 +456,18 @@ fn asp_figures(system: &System) -> (u64, f64, u64) {
         .saturating_sub(held)
         + ifs_used / 4096;
     let temp = system.temp.as_ref().map_or(0, |_| 64);
-    ((total * 4096) >> 20, percent(used, total), temp)
+    ((total * 4096) >> 20, exact_percent(used, total), temp)
+}
+
+/// `part` of `whole` in percent, unrounded: a fresh system's few
+/// hundred MiB of a few TiB is far below a tenth of a percent.
+#[allow(clippy::cast_precision_loss)] // pages far below 2^52
+fn exact_percent(part: u64, whole: u64) -> f64 {
+    if whole == 0 {
+        0.0
+    } else {
+        part as f64 * 100.0 / whole as f64
+    }
 }
 
 /// `WRKSYSSTS [RESET(*YES)]`.
@@ -484,7 +495,7 @@ pub fn wrksyssts(system: &mut System, reset: bool) -> String {
     );
     let _ = writeln!(
         out,
-        "Jobs in system . . . . . : {jobs:>10}      % system ASP used  . . : {asp_pct:>7.1}"
+        "Jobs in system . . . . . : {jobs:>10}      % system ASP used  . . : {asp_pct:>7.4}"
     );
     let _ = writeln!(
         out,
@@ -560,7 +571,7 @@ pub fn wrkdsksts(system: &mut System, reset: bool) -> String {
             out,
             "{:>4}  {:<4}  {:>6}  {:>4.1}  {:>5.1}  {req_kb:>8.1}  {:>5.1}  {:>5.1}  {:>5.1}  {:>6.1}  {:>4}",
             u.unit + 1,
-            u.type_code,
+            u.type_code.chars().take(4).collect::<String>(),
             (u.pages * 4096) >> 20,
             percent(u.used, u.usable.max(1)),
             per_s(rqs),
@@ -824,7 +835,7 @@ pub fn dsksts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
                 pair("SIZEB", u.pages * 4096),
                 pair("SERIAL", &u.serial),
                 pair("PROT", &u.protection),
-                pair("STATUS", u.status),
+                pair("STATUS", &u.status),
             ]
         })
         .collect();

@@ -171,14 +171,18 @@ fn disks(m: &Main, reset: bool) -> Disks {
         .collect();
     let (sys, _) = panel(m, "SYSSTS", &["*NO"]);
     let capacity = parse::size(val(&sys, "SYSASP"));
+    let pct = val(&sys, "ASPPCT").trim().parse::<f64>().unwrap_or(0.0);
     let used_pct = parse::tenths(val(&sys, "ASPPCT"));
+    // From the exact percent: the tenths round a fresh system to 0.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
+    let used = (capacity as f64 * pct / 100.0).round().max(0.0) as u64;
     let protection = asp_protection(&units);
     Disks {
         asps: vec![Asp {
             number: 1,
             kind: "System".into(),
             capacity,
-            used: capacity / 1000 * u64::from(used_pct),
+            used,
             used_pct,
             protection,
             overflow: Some(false),

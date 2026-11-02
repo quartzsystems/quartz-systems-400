@@ -127,7 +127,7 @@ impl Kind {
             Kind::Bridge => ("QB01", "001"),
             Kind::Lan | Kind::Port => ("QN00", "001"),
             Kind::Storage => ("QD00", "000"),
-            Kind::Disk => ("QU00", "001"),
+            Kind::Disk => ("Disk", ""),
             Kind::Optical => ("QO01", "001"),
             Kind::Comm => ("QS01", "001"),
             Kind::Keyboard => ("QK01", "001"),
@@ -329,12 +329,11 @@ impl Table {
             "Resource  Type      Status        Location          Parent    Description\n",
         );
         for r in &self.resources {
-            let (t, m) = r.type_model();
             let _ = writeln!(
                 s,
                 "{:<9} {:<9} {:<13} {:<17} {:<9} {}",
                 r.name,
-                format!("{t}-{m}"),
+                crate::view::type_model(r),
                 format!("{:?}", r.status),
                 r.location,
                 r.parent,
@@ -560,21 +559,16 @@ impl Table {
         let at = storage::hctl(&devpath).map_or(String::new(), |[h, c, t, l]| {
             format!(" at {h}:{c}:{t}:{l}")
         });
-        let medium = match storage::medium(
-            name,
-            &read_trim(&sys.join("device/vendor")),
-            &read_trim(&sys.join("device/model")),
-            &read_trim(&sys.join("queue/rotational")),
-        ) {
-            _ if kind == Kind::Optical => "",
-            m => m.word(),
-        };
-        let medium = if medium.is_empty() { String::new() } else { format!(" {medium}") };
-        let desc = format!("{name} {mib} MiB{medium}{at}");
+        let desc = format!("{name} {mib} MiB{at}");
         let serial = serial_of(&sys.join("device"));
         let serial = if serial.is_empty() { serial_of(&sys) } else { serial };
         let r = self.add(kind, name.to_string(), desc, devpath);
         r.serial = serial;
+        // A disk's type is its medium, with no model.
+        if kind == Kind::Disk {
+            let word = storage::medium_at(&sys).type_word();
+            r.type_model = Some((word.to_string(), String::new()));
+        }
         Some(r.name.clone())
     }
 
