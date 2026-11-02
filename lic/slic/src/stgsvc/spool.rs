@@ -116,8 +116,8 @@ pub fn with_outq<T>(
     })
 }
 
-/// Put `id` on its queue in the queue's order.
-fn enqueue(system: &mut System, id: u32, q: &str) -> Result<String, String> {
+/// Put `id` on its queue in the queue's order, or `first` on it.
+fn enqueue(system: &mut System, id: u32, q: &str, first: bool) -> Result<String, String> {
     let jobs: BTreeMap<u32, u32> = system
         .spool
         .files
@@ -128,6 +128,7 @@ fn enqueue(system: &mut System, id: u32, q: &str) -> Result<String, String> {
     with_outq(system, q, |oq, real| {
         oq.files.retain(|f| *f != id);
         let at = match oq.seq {
+            _ if first => 0,
             Seq::Fifo => oq.files.len(),
             Seq::JobNbr => oq
                 .files
@@ -184,7 +185,7 @@ pub fn create(system: &mut System, mut attrs: SplfAttrs) -> Result<u32, String> 
         Ok(obj)
     })?;
     system.spool.files.insert(id, Entry { obj, attrs });
-    enqueue(system, id, &real)?;
+    enqueue(system, id, &real, false)?;
     Ok(id)
 }
 
@@ -277,8 +278,9 @@ pub fn delete(system: &mut System, id: u32) -> Result<(), String> {
     })
 }
 
-/// Move a file to another queue.
-pub fn move_to(system: &mut System, id: u32, q: &str) -> Result<String, String> {
+/// Move a file to another queue, `first` to its top (on the same
+/// queue too).
+pub fn move_to(system: &mut System, id: u32, q: &str, first: bool) -> Result<String, String> {
     let old = system
         .spool
         .files
@@ -292,7 +294,9 @@ pub fn move_to(system: &mut System, id: u32, q: &str) -> Result<String, String> 
             a.outq.clone_from(&real);
             Ok(())
         })?;
-        enqueue(system, id, &real)?;
+        enqueue(system, id, &real, first)?;
+    } else if first {
+        enqueue(system, id, &real, true)?;
     }
     Ok(real)
 }

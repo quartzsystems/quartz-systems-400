@@ -9,6 +9,8 @@
 //! and only the listener (`QAPD`) ends every session. Passwords and
 //! tokens are never logged.
 
+pub mod spool;
+
 use std::io::Read;
 use std::sync::{Mutex, OnceLock, PoisonError};
 

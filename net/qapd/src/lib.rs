@@ -14,6 +14,7 @@
 //! - `conn`: the job's own thread: commands one at a time, the events;
 //!   what the threads share.
 //! - [`host`]: what the connection reaches of the system.
+//! - [`spool`]: `ReadSpooledFile` over a file's data.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
@@ -23,6 +24,7 @@
 pub mod frames;
 pub mod host;
 pub mod sessions;
+pub mod spool;
 pub mod testing;
 pub mod tickets;
 

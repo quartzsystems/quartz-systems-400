@@ -18,6 +18,9 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
+use qap_proto::ops::spool::{
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -323,5 +326,40 @@ impl ThreadHost for JobThread {
             }),
             Err(e) => Err(self.refusal(&e)),
         }
+    }
+
+    fn list_spooled_files(&mut self, req: &ListSpooledFiles) -> Result<SpooledFiles, Refusal> {
+        let r = self.link.with(|l| l.qap_splf_list(req.clone()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn read_spooled_file(&mut self, req: &ReadSpooledFile) -> Result<SpooledData, Refusal> {
+        let r = self.link.with(|l| l.qap_splf_read(req.clone()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn hold_spooled_file(&mut self, id: &SpooledFileId, immediately: bool) -> Result<(), Refusal> {
+        let r = self.link.with(|l| l.qap_splf_hold(id.clone(), immediately));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn release_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal> {
+        let r = self.link.with(|l| l.qap_splf_release(id.clone()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn delete_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal> {
+        let r = self.link.with(|l| l.qap_splf_delete(id.clone()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal> {
+        let r = self.link.with(|l| l.qap_splf_move(id.clone(), outq.clone(), first));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal> {
+        let r = self.link.with(|l| l.qap_outq_list(req.clone()));
+        r.map_err(|e| self.refusal(&e))
     }
 }

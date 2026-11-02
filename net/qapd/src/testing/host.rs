@@ -11,6 +11,9 @@ use std::time::{Duration, Instant};
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
+use qap_proto::ops::spool::{
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -219,6 +222,12 @@ impl MemThread {
         }
     }
 
+    /// A spool refusal with its message.
+    fn no(&mut self, (status, id, data): &super::spool::No) -> Refusal {
+        let data: Vec<&str> = data.iter().map(String::as_str).collect();
+        self.refuse(*status, id, &data)
+    }
+
     fn reply(&self, token: Token, user: &str) -> SignOnReply {
         SignOnReply {
             token,
@@ -391,5 +400,48 @@ impl ThreadHost for MemThread {
             ticket: t,
             expires_secs: TICKET_SECS,
         })
+    }
+
+    fn list_spooled_files(&mut self, req: &ListSpooledFiles) -> Result<SpooledFiles, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).list(&me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn read_spooled_file(&mut self, req: &ReadSpooledFile) -> Result<SpooledData, Refusal> {
+        self.sys.gate.pass();
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).read(&me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn hold_spooled_file(&mut self, id: &SpooledFileId, _immediately: bool) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).hold(&me, id);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn release_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).release(&me, id);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn delete_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).delete(&me, id);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).move_to(&me, id, outq, first);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.spool).queues(&me, req);
+        r.map_err(|n| self.no(&n))
     }
 }

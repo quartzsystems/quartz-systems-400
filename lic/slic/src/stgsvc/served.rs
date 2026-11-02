@@ -653,6 +653,48 @@ impl Service for Served<'_> {
         super::qap::ticket(self.system, self.ctx)
     }
 
+    fn qap_splf_list(
+        &mut self,
+        req: qap_proto::ops::spool::ListSpooledFiles,
+    ) -> Result<qap_proto::ops::spool::SpooledFiles, stg::QapRefused> {
+        super::qap::spool::list(self.system, self.ctx, &req)
+    }
+
+    fn qap_splf_read(
+        &mut self,
+        req: qap_proto::ops::spool::ReadSpooledFile,
+    ) -> Result<qap_proto::ops::spool::SpooledData, stg::QapRefused> {
+        super::qap::spool::read(self.system, self.ctx, &req)
+    }
+
+    fn qap_splf_hold(&mut self, id: qap_proto::ops::spool::SpooledFileId, immediately: bool) -> Result<(), stg::QapRefused> {
+        super::qap::spool::hold(self.system, self.ctx, &id, immediately)
+    }
+
+    fn qap_splf_release(&mut self, id: qap_proto::ops::spool::SpooledFileId) -> Result<(), stg::QapRefused> {
+        super::qap::spool::release(self.system, self.ctx, &id)
+    }
+
+    fn qap_splf_delete(&mut self, id: qap_proto::ops::spool::SpooledFileId) -> Result<(), stg::QapRefused> {
+        super::qap::spool::delete(self.system, self.ctx, &id)
+    }
+
+    fn qap_splf_move(
+        &mut self,
+        id: qap_proto::ops::spool::SpooledFileId,
+        outq: qap_proto::types::ObjectName,
+        first: bool,
+    ) -> Result<(), stg::QapRefused> {
+        super::qap::spool::move_to(self.system, self.ctx, &id, &outq, first)
+    }
+
+    fn qap_outq_list(
+        &mut self,
+        req: qap_proto::ops::spool::ListOutputQueues,
+    ) -> Result<qap_proto::ops::spool::OutputQueues, stg::QapRefused> {
+        super::qap::spool::queues(self.system, self.ctx, &req)
+    }
+
     fn telnet_ticket(
         &mut self,
         user: String,

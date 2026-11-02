@@ -13,8 +13,12 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
 use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
+use qap_proto::ops::spool::{
+    HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, ReadSpooledFile, SpooledFileRef,
+};
 use qap_proto::{Envelope, HELLO_ID, Op, Service, Status, VERSION};
 
 use crate::Closed;
@@ -184,9 +188,41 @@ fn operation(shared: &Shared, host: &mut dyn ThreadHost, op: Op, req: &Envelope)
             Ok(t) => Answer::ok(&t),
             Err(r) => Answer::refused(r),
         },
+        Op::ListSpooledFiles => body(req, |b: ListSpooledFiles| ok(host.list_spooled_files(&b))),
+        Op::ReadSpooledFile => body(req, |b: ReadSpooledFile| ok(host.read_spooled_file(&b))),
+        Op::HoldSpooledFile => body(req, |b: HoldSpooledFile| done(host.hold_spooled_file(&b.id, b.immediately))),
+        Op::ReleaseSpooledFile => body(req, |b: SpooledFileRef| done(host.release_spooled_file(&b.id))),
+        Op::DeleteSpooledFile => body(req, |b: SpooledFileRef| done(host.delete_spooled_file(&b.id))),
+        Op::MoveSpooledFile => body(req, |b: MoveSpooledFile| done(host.move_spooled_file(&b.id, &b.outq, b.first))),
+        Op::ListOutputQueues => body(req, |b: ListOutputQueues| ok(host.list_output_queues(&b))),
         _ => Answer::status(Status::InvalidRequest),
     };
     shared.finish(req, a);
+}
+
+/// The request's body decoded and answered; `InvalidRequest` when it
+/// does not decode.
+fn body<B: Wire>(req: &Envelope, f: impl FnOnce(B) -> Answer) -> Answer {
+    match req.body_as::<B>() {
+        Ok(b) => f(b),
+        Err(_) => Answer::status(Status::InvalidRequest),
+    }
+}
+
+/// A reply body, or the refusal.
+fn ok(r: Result<impl Wire, Refusal>) -> Answer {
+    match r {
+        Ok(b) => Answer::ok(&b),
+        Err(r) => Answer::refused(r),
+    }
+}
+
+/// Done with no body, or the refusal.
+fn done(r: Result<(), Refusal>) -> Answer {
+    match r {
+        Ok(()) => Answer::status(Status::Ok),
+        Err(r) => Answer::refused(r),
+    }
 }
 
 /// A reply that opens or resumes a session.

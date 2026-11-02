@@ -367,3 +367,50 @@ Version 2, settled with Cody on 2026-11-02:
   the same analyzer as Command Entry. `Cancel` of a running command
   ends its request as System Request option 2 does (`CPF1907`), and
   the reply is `Cancelled` with the command's `CommandReply`.
+
+Version 3, as built on 2026-11-02 (decisions made in the build, for Cody to review):
+
+- The server accepts versions 1 to 3. `Spool` runs on the connection
+  job's secondary threads, as the signed-on profile, through the
+  storage service (`stgsvc/qap/spool.rs`). Each operation calls the
+  same functions as the spooled-file command it stands for, with that
+  command's authority checks and `SF` audit entries:
+  - `ListSpooledFiles` lists as `WRKSPLF` does, or as `WRKOUTQ` does
+    for one queue;
+  - `ReadSpooledFile` reads as `DSPSPLF` (`SF` `R`);
+  - `HoldSpooledFile` holds as `HLDSPLF` (`H`);
+  - `ReleaseSpooledFile` releases as `RLSSPLF` (`L`);
+  - `DeleteSpooledFile` deletes as `DLTSPLF` (`D`);
+  - `MoveSpooledFile` moves as `CHGSPLFA OUTQ` (`A`);
+  - `ListOutputQueues` lists as `WRKOUTQ`.
+- Status values from QS/400's: `RDY` `Ready`, `HLD` `Held`, `OPN`
+  `Open`, `CLO` `Closed`, `WTR` `Printing`, `MSGW` `Message`, `PND`
+  and `DFR` `Pending`, `SAV` `Saved`. QS/400 has no separate state
+  for a file being written, so it never sends `Writing`. Device types
+  come from `DEVTYPE`: `*SCS` is `Scs`; `*AFPDS`, `*AFPDSLINE` and
+  `*IPDS` are `Afp`; `*USERASCII` is `Ascii`; `*LINE` is `Line`.
+- The page index is computed from the data stream at each read; the
+  `*SPLF` object keeps none and its layout is unchanged. Pages start
+  where the SCS reader behind `DSPSPLF` starts them: at a form feed, a
+  line past the page length, or a move up the page.
+  - A range's leading state is the last format command of each kind
+    before the page (`SHF`, `SVF`, `SLD`, the `X'2BD1'` and `X'2BD2'`
+    commands by their first byte, any other by class), then an
+    absolute move to the line and column before the page's first
+    command.
+  - `pages` in the reply is how many pages that reader finds.
+- Only SCS files are read. `Text` and `Pdf` are the views `DSPSPLF`
+  and Navigator use (`spool::view::text`, `spool::pdf::render`), made
+  from the whole file's pages, so a range reads as those pages do in
+  the whole. Any format of a file of another device type is `Error`
+  with `TCP1A56`. A file still open is `InUse` with `TCP1A57`. Pages
+  out of range are `InvalidRequest` with `CPD0084`.
+- `HoldSpooledFile` `immediately` 0 is `HLDSPLF OPTION(*PAGEEND)`, 1 is
+  `*IMMED`. A writer hands a file to its device whole, so the two
+  hold alike: the file prints no more until released.
+- `MoveSpooledFile` `first` 1 puts the file at the top of the queue,
+  also on the queue it is already on. A printing file is not moved
+  (`InUse`), by `CHGSPLFA OUTQ` either: that command now refuses it as
+  `DLTSPLF` refuses deleting one (`CPF3330`).
+- `ListOutputQueues` `*LIBL` is the connection job's library list;
+  libraries in it that do not exist are passed over.

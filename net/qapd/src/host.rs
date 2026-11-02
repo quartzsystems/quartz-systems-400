@@ -13,6 +13,9 @@ use std::sync::Arc;
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
+use qap_proto::ops::spool::{
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+};
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -135,4 +138,22 @@ pub trait ThreadHost {
     /// A one-time ticket for 5250 automatic sign-on as the session's
     /// profile; `NotAuthorized` with the message why when it may not.
     fn telnet_ticket(&mut self) -> Result<TelnetTicketReply, Refusal>;
+
+    /// Spooled files, as `WRKSPLF` lists them, filtered and paged.
+    fn list_spooled_files(&mut self, req: &ListSpooledFiles) -> Result<SpooledFiles, Refusal>;
+    /// Pages of a spooled file ([`crate::spool::read`]), checked and
+    /// audited as `DSPSPLF` reads it.
+    fn read_spooled_file(&mut self, req: &ReadSpooledFile) -> Result<SpooledData, Refusal>;
+    /// Hold a spooled file as `HLDSPLF` does; `immediately` is
+    /// `OPTION(*IMMED)`, else `*PAGEEND`.
+    fn hold_spooled_file(&mut self, id: &SpooledFileId, immediately: bool) -> Result<(), Refusal>;
+    /// Release a spooled file as `RLSSPLF` does.
+    fn release_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal>;
+    /// Delete a spooled file as `DLTSPLF` does.
+    fn delete_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal>;
+    /// Move a spooled file to `outq` as `CHGSPLFA OUTQ` does; `first` to
+    /// the top of the queue.
+    fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal>;
+    /// Output queues, as `WRKOUTQ` lists them, paged.
+    fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal>;
 }

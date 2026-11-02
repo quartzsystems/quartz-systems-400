@@ -2280,6 +2280,7 @@ version = "0.1.0"
 dependencies = [
  "ipc",
  "qap-proto",
+ "spool",
 ]
 
 [[package]]
@@ -3275,6 +3276,7 @@ dependencies = [
  "jrn",
  "mi",
  "msgf",
+ "qap-proto",
  "qsname",
  "qsyslib",
  "regfac",

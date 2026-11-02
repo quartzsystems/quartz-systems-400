@@ -10,6 +10,10 @@
 use ipc::wire_struct;
 use mi::io::{DataAreaValue, FileInfo as IoFileInfo, IoFail, IoResult, OpenSpec, OwnedRequest};
 use msgf::MsgDesc;
+use qap_proto::ops::spool::{
+    ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
+};
+use qap_proto::types::ObjectName;
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
@@ -659,6 +663,24 @@ ipc::rpc! {
     /// password. Only `QTVTELNET` may ask.
     748 => fn telnet_ticket / TelnetTicket (user: String, ticket: Vec<u8>, device: String, tls: bool) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
 
+    // --- QAP spool (750-759; docs/QAP.md, stgsvc/qap/spool.rs). Only a
+    // QAP connection job asks; each is checked and audited as the
+    // spooled-file command it stands for, as the job's user.
+    /// `ListSpooledFiles`, as `WRKSPLF` and `WRKOUTQ` list.
+    750 => fn qap_splf_list / QapSplfList (req: ListSpooledFiles) -> Result<SpooledFiles, QapRefused>;
+    /// `ReadSpooledFile`, as `DSPSPLF` reads.
+    751 => fn qap_splf_read / QapSplfRead (req: ReadSpooledFile) -> Result<SpooledData, QapRefused>;
+    /// `HoldSpooledFile`, as `HLDSPLF`.
+    752 => fn qap_splf_hold / QapSplfHold (id: SpooledFileId, immediately: bool) -> Result<(), QapRefused>;
+    /// `ReleaseSpooledFile`, as `RLSSPLF`.
+    753 => fn qap_splf_release / QapSplfRelease (id: SpooledFileId) -> Result<(), QapRefused>;
+    /// `DeleteSpooledFile`, as `DLTSPLF`.
+    754 => fn qap_splf_delete / QapSplfDelete (id: SpooledFileId) -> Result<(), QapRefused>;
+    /// `MoveSpooledFile`, as `CHGSPLFA OUTQ`; `first` to the top.
+    755 => fn qap_splf_move / QapSplfMove (id: SpooledFileId, outq: ObjectName, first: bool) -> Result<(), QapRefused>;
+    /// `ListOutputQueues`, as `WRKOUTQ` lists.
+    756 => fn qap_outq_list / QapOutqList (req: ListOutputQueues) -> Result<OutputQueues, QapRefused>;
+
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the
     /// name or generic name), `DSPLIND` (args the line), `CFGSTS`
@@ -842,12 +864,12 @@ wire_struct!(QapSession {
     special_authorities
 });
 
-/// Why a QAP sign-on, password change or resume failed.
+/// Why a QAP operation the service answers failed.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QapRefused {
     /// What the client is told: 4 `SignOnFailed`, 5 `PasswordExpired`,
-    /// 6 `NotAuthorized`, 8 `InvalidRequest`, 11 `SessionExpired`, 1
-    /// `Error` (docs/QAP.md's values).
+    /// 6 `NotAuthorized`, 7 `NotFound`, 8 `InvalidRequest`, 11
+    /// `SessionExpired`, 14 `InUse`, 1 `Error` (docs/QAP.md's values).
     pub status: u16,
     /// The message.
     pub msgid: String,

@@ -274,25 +274,64 @@ fn status_of(oq: &OutQ) -> String {
     }
 }
 
-fn all_queues(system: &mut System) -> Result<String, String> {
-    let queues = with_store(system, |txn, qsys| {
-        let mut libs = vec![("QSYS".to_string(), qsys)];
+/// One output queue as `WRKOUTQ` lists it.
+pub(super) struct Listed {
+    /// Its library.
+    pub lib: String,
+    /// Its name.
+    pub name: String,
+    /// Its text.
+    pub text: String,
+    /// The queue.
+    pub oq: OutQ,
+}
+
+/// The output queues `WRKOUTQ` lists: in `libs` (by name, in that
+/// order), or in `QSYS` and every library when `None`. A library not
+/// found is `CPF2110` when `strict`, else passed over (a library list).
+pub(super) fn queues(system: &mut System, libs: Option<&[String]>, strict: bool) -> Result<Vec<Listed>, String> {
+    with_store(system, |txn, qsys| {
+        let mut all = vec![("QSYS".to_string(), qsys)];
         for (k, id) in ops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())? {
-            libs.push((k.name.to_string(), id));
+            all.push((k.name.to_string(), id));
         }
+        let chosen = match libs {
+            None => all,
+            Some(names) => {
+                let mut v = Vec::new();
+                for n in names {
+                    match all.iter().find(|(l, _)| l == n) {
+                        Some(l) => v.push(l.clone()),
+                        None if strict => return Err(format!("CPF2110 Library {n} not found.")),
+                        None => {}
+                    }
+                }
+                v
+            }
+        };
         let mut out = Vec::new();
-        for (lname, lid) in libs {
+        for (lname, lid) in chosen {
             for (k, id) in ops::list(txn, lid, Some(types::OUTQ)).map_err(|e| e.to_string())? {
                 let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+                let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
                 if let Ok(oq) = OutQ::decode(&b) {
-                    out.push((lname.clone(), k.name.to_string(), oq));
+                    out.push(Listed {
+                        lib: lname.clone(),
+                        name: k.name.to_string(),
+                        text: store::obj::header::text_of(&h.text),
+                        oq,
+                    });
                 }
             }
         }
         Ok(out)
-    })?;
+    })
+}
+
+fn all_queues(system: &mut System) -> Result<String, String> {
+    let queues = queues(system, None, true)?;
     let mut out = String::from("Opt  Queue       Library        Files  Writer      Status\n");
-    for (lib, name, oq) in queues {
+    for Listed { lib, name, oq, .. } in queues {
         let _ = writeln!(
             out,
             "     {name:<10}  {lib:<10}  {:>8}  {:<10}  {}",
@@ -304,6 +343,21 @@ fn all_queues(system: &mut System) -> Result<String, String> {
     Ok(out)
 }
 
+/// The spooled files `WRKSPLF` lists: `user`'s (every user's when
+/// `None`), of jobs `job` matches, oldest first.
+pub(super) fn files_of<'a>(system: &'a System, user: Option<&str>, job: Option<&str>) -> Vec<&'a SplfAttrs> {
+    let mut files: Vec<&SplfAttrs> = system
+        .spool
+        .files
+        .values()
+        .map(|e| &e.attrs)
+        .filter(|a| user.is_none_or(|u| a.job.1 == u))
+        .filter(|a| job.is_none_or(|j| spool::job_matches(j, &a.job)))
+        .collect();
+    files.sort_by_key(|a| (a.created, a.id));
+    files
+}
+
 /// `WRKSPLF [SELECT(user|*CURRENT|*ALL)] [JOB()] [VIEW(1|2|3)]`.
 fn wrksplf(system: &System, me: u32, p: &Params) -> String {
     let user = match p.upper("SELECT").as_deref() {
@@ -313,15 +367,7 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
     };
     let job = p.upper("JOB");
     let view = p.upper("VIEW").unwrap_or_else(|| "1".into());
-    let mut files: Vec<&SplfAttrs> = system
-        .spool
-        .files
-        .values()
-        .map(|e| &e.attrs)
-        .filter(|a| user.as_ref().is_none_or(|u| a.job.1 == *u))
-        .filter(|a| job.as_ref().is_none_or(|j| spool::job_matches(j, &a.job)))
-        .collect();
-    files.sort_by_key(|a| (a.created, a.id));
+    let files = files_of(system, user.as_deref(), job.as_deref());
     let mut out = String::new();
     match view.as_str() {
         "2" => {
@@ -388,9 +434,7 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
 pub fn fetch(system: &mut System, me: u32, file: &str, job: &str, splnbr: &str) -> Result<(SplfAttrs, Vec<u8>), String> {
     let p = Params::parse(&format!("{file} JOB({job}) SPLNBR({splnbr})"));
     let id = target(system, me, &p)?;
-    may_spool(system, id, true)?;
-    sf(system, id, "R");
-    spool::data(system, id)
+    display(system, id)
 }
 
 /// `DSPSPLF FILE JOB SPLNBR [VIEW(*TEXT|*FCFC|*HEX)] [PAGE(n)]`.
@@ -479,7 +523,7 @@ pub const NOT_HELD: &str = "CPF3337";
 
 /// Release spooled file `id` (`SplfAttrs::release`); `CPF3337` when it
 /// is neither held nor saved. The file's attributes after.
-fn release(system: &mut System, id: u32) -> Result<SplfAttrs, String> {
+pub(super) fn release(system: &mut System, id: u32) -> Result<SplfAttrs, String> {
     let a = system
         .spool
         .files
@@ -570,9 +614,10 @@ pub fn sndnetsplf(system: &mut System, me: u32, line: &str) -> Result<(String, u
     Ok((a.name.clone(), a.number, sent))
 }
 
-/// `CHGSPLFA`, `HLDSPLF`, `RLSSPLF`, `DLTSPLF`, `WRKSPLFA`.
-fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
-    let id = target(system, me, p)?;
+/// What `cmd` (`dltsplf`, `hldsplf`, `rlssplf`, `chgsplfa`,
+/// `wrksplfa`) checks of spooled file `id` before it acts, and its `SF`
+/// entry. QAP's operations go through it too.
+pub(super) fn may_act(system: &mut System, id: u32, cmd: &str) -> Result<(), String> {
     may_spool(system, id, false)?;
     let etyp = match cmd {
         "dltsplf" => "D",
@@ -584,33 +629,79 @@ fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String
     if !etyp.is_empty() {
         sf(system, id, etyp);
     }
-    let name = system
+    Ok(())
+}
+
+/// What `DSPSPLF` checks and audits before it reads spooled file `id`;
+/// its attributes and data.
+pub(super) fn display(system: &mut System, id: u32) -> Result<(SplfAttrs, Vec<u8>), String> {
+    may_spool(system, id, true)?;
+    sf(system, id, "R");
+    spool::data(system, id)
+}
+
+fn name_of(system: &System, id: u32) -> String {
+    system
         .spool
         .files
         .get(&id)
         .map(|e| e.attrs.name.clone())
-        .unwrap_or_default();
+        .unwrap_or_default()
+}
+
+/// `CPF3330` when spooled file `id` is being printed.
+fn not_printing(system: &System, id: u32) -> Result<(), String> {
+    if system
+        .spool
+        .files
+        .get(&id)
+        .is_some_and(|e| e.attrs.status == Status::Wtr)
+    {
+        return Err(format!("CPF3330 spooled file {} is being printed", name_of(system, id)));
+    }
+    Ok(())
+}
+
+/// Delete spooled file `id` (`DLTSPLF`); not while it prints.
+pub(super) fn delete(system: &mut System, id: u32) -> Result<(), String> {
+    not_printing(system, id)?;
+    spool::delete(system, id)
+}
+
+/// Hold spooled file `id` (`HLDSPLF`). `immediately` is `OPTION(*IMMED)`,
+/// else `*PAGEEND`: a writer hands a file to its device whole, so the
+/// two hold alike, the file printing no more until released.
+pub(super) fn hold(system: &mut System, id: u32, immediately: bool) -> Result<(), String> {
+    let _ = immediately;
+    spool::update(system, id, |a| {
+        if a.status != Status::Hld {
+            a.held_from = a.status;
+            a.status = Status::Hld;
+        }
+        Ok(())
+    })
+    .map(|_| ())
+}
+
+/// Move spooled file `id` to queue `q` (`CHGSPLFA OUTQ`), `first` to its
+/// top; not while it prints. The queue's real `lib/name`.
+pub(super) fn move_file(system: &mut System, id: u32, q: &str, first: bool) -> Result<String, String> {
+    not_printing(system, id)?;
+    spool::move_to(system, id, q, first)
+}
+
+/// `CHGSPLFA`, `HLDSPLF`, `RLSSPLF`, `DLTSPLF`, `WRKSPLFA`.
+fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
+    let id = target(system, me, p)?;
+    may_act(system, id, cmd)?;
+    let name = name_of(system, id);
     match cmd {
         "dltsplf" => {
-            if system
-                .spool
-                .files
-                .get(&id)
-                .is_some_and(|e| e.attrs.status == Status::Wtr)
-            {
-                return Err(format!("CPF3330 spooled file {name} is being printed"));
-            }
-            spool::delete(system, id)?;
+            delete(system, id)?;
             Ok(format!("Spooled file {name} deleted.\n"))
         }
         "hldsplf" => {
-            spool::update(system, id, |a| {
-                if a.status != Status::Hld {
-                    a.held_from = a.status;
-                    a.status = Status::Hld;
-                }
-                Ok(())
-            })?;
+            hold(system, id, p.upper("OPTION").as_deref() != Some("*PAGEEND"))?;
             Ok(format!("Spooled file {name} held.\n"))
         }
         "rlssplf" => {
@@ -625,7 +716,7 @@ fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String
             .unwrap_or_default()),
         _ => {
             if let Some(q) = p.upper("OUTQ") {
-                spool::move_to(system, id, &q)?;
+                move_file(system, id, &q, false)?;
             }
             spool::update(system, id, |a| a.apply(p).map_err(|e| err(&e)))?;
             Ok(format!("Spooled file {name} changed.\n"))

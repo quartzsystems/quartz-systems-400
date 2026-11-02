@@ -795,3 +795,17 @@ sev = 30
 text = "Automatic sign-on is not allowed for user profile &1."
 help = "No Telnet ticket was made. Automatic sign-on needs QRMTSIGN *VERIFY or *SAMEPRF, and a profile that can sign on: enabled, with a password that has not expired."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TCP1A56"
+sev = 40
+text = "Spooled file &1 number &2 cannot be read as &3."
+help = "The file's device type is &4. QS/400 reads SCS spooled files as SCS, text or PDF; files of other device types it does not read through QAP."
+vars = ["*CHAR 10", "*CHAR 6", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "TCP1A57"
+sev = 40
+text = "Spooled file &1 number &2 is still being written."
+help = "The program writing the file has not closed it. Read it once it is closed."
+vars = ["*CHAR 10", "*CHAR 6"]

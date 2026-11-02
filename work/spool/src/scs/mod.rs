@@ -9,7 +9,7 @@
 pub mod decode;
 pub mod encode;
 
-pub use decode::{Page, decode};
+pub use decode::{Page, PageStart, decode, index, range};
 pub use encode::Encoder;
 
 /// Form feed: line 1 of the next page.

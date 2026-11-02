@@ -177,6 +177,13 @@ pub fn as_user(req: &Request) -> bool {
             | R::SecApi { .. }
             | R::CmdLookup { .. }
             | R::RunCmd { .. }
+            | R::QapSplfList { .. }
+            | R::QapSplfRead { .. }
+            | R::QapSplfHold { .. }
+            | R::QapSplfRelease { .. }
+            | R::QapSplfDelete { .. }
+            | R::QapSplfMove { .. }
+            | R::QapOutqList { .. }
     )
 }
 

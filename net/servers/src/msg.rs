@@ -63,6 +63,10 @@ pub const QAP_SESSION_GONE: &str = "TCP1A53";
 pub const QAP_SESSION_ENDED: &str = "TCP1A54";
 /// `Automatic sign-on is not allowed for user profile &1.`
 pub const QAP_NO_AUTO_SIGNON: &str = "TCP1A55";
+/// `Spooled file &1 number &2 cannot be read as &3.`
+pub const QAP_SPLF_NO_FORMAT: &str = "TCP1A56";
+/// `Spooled file &1 number &2 is still being written.`
+pub const QAP_SPLF_IN_USE: &str = "TCP1A57";
 
 /// Every identifier above.
 pub const ALL: &[&str] = &[
@@ -94,4 +98,6 @@ pub const ALL: &[&str] = &[
     QAP_SESSION_GONE,
     QAP_SESSION_ENDED,
     QAP_NO_AUTO_SIGNON,
+    QAP_SPLF_NO_FORMAT,
+    QAP_SPLF_IN_USE,
 ];

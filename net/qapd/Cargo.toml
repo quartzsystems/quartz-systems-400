@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
+spool = { path = "../../work/spool", version = "0.1.0" }
 
 [lints]
 workspace = true

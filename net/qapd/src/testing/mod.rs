@@ -20,6 +20,7 @@
 
 pub mod commands;
 mod host;
+pub mod spool;
 
 use std::collections::HashMap;
 use std::net::{TcpListener, TcpStream};
@@ -106,6 +107,8 @@ pub struct System {
     pub libraries: Mutex<Vec<String>>,
     /// Who each connection job runs as, by job.
     pub running_as: Mutex<HashMap<u32, String>>,
+    /// The output queues and spooled files.
+    pub spool: Mutex<spool::Spool>,
     tokens: AtomicU32,
 }
 
@@ -130,6 +133,7 @@ impl System {
             products: Mutex::new(3),
             libraries: Mutex::new(Vec::new()),
             running_as: Mutex::new(HashMap::new()),
+            spool: Mutex::new(spool::Spool::default()),
             tokens: AtomicU32::new(0),
         };
         s.gate.set(true);
