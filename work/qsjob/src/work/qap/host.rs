@@ -348,6 +348,19 @@ impl ThreadHost for JobThread {
         let jobs = self.link.with(Client::active_jobs);
         let ipl = jobs.iter().find(|j| j.kind == 'X').map_or(0, |j| j.started);
         let machine = self.link.with(Client::machine);
+        // DSPSFWRSC has a row per feature (code and language): one
+        // product option each here.
+        let mut products: Vec<Product> = Vec::new();
+        for r in &rows {
+            let p = Product {
+                id: col(r, 0),
+                option: col(r, 1),
+                release: col(r, 6),
+            };
+            if !products.iter().any(|q| q.id == p.id && q.option == p.option) {
+                products.push(p);
+            }
+        }
         SystemInfo {
             system_name: sysval_text(&mut self.link, "QSYSNAME"),
             release,
@@ -360,14 +373,7 @@ impl ThreadHost for JobThread {
             // it names none; QMODEL is for programs, not clients.
             model: machine.hw_model,
             ipl_time: i64::try_from(ipl).unwrap_or(0).saturating_mul(1000),
-            products: rows
-                .iter()
-                .map(|r| Product {
-                    id: col(r, 0),
-                    option: col(r, 1),
-                    release: col(r, 6),
-                })
-                .collect(),
+            products,
         }
     }
 
