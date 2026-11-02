@@ -4,6 +4,8 @@
 
 //! `*QAP` (docs/QAP.md): role `QAP` is the listener `QAPD` in
 //! `QSYSWRK`, which accepts QS/400 Access connections on `CHGQAPA`'s
-//! port.
+//! port; role `QAPCNN` is one connection's job in `QUSRWRK`.
 
+pub mod conn;
+pub mod host;
 pub mod listener;

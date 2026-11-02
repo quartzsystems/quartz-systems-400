@@ -2275,6 +2275,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "qapd"
+version = "0.1.0"
+dependencies = [
+ "ipc",
+ "qap-proto",
+]
+
+[[package]]
 name = "qdecimal"
 version = "0.1.0"
 dependencies = [
@@ -2382,6 +2390,8 @@ dependencies = [
  "pase",
  "pdm",
  "print",
+ "qap-proto",
+ "qapd",
  "qdecimal",
  "qir",
  "qrpgrt",

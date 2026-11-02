@@ -24,6 +24,8 @@ regfac = { path = "../../net/regfac", version = "0.1.0" }
 hostserver = { path = "../../net/hostserver", version = "0.1.0" }
 hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }
 sockets = { path = "../../net/sockets", version = "0.1.0" }
+qapd = { path = "../../net/qapd", version = "0.1.0" }
+qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }

@@ -4,33 +4,47 @@
 
 //! `QAPD`: binds `CHGQAPA`'s port, TLS 1.3 only with the certificate
 //! assigned to `QS400_ACCESS_SERVER` (no plain text and no fallback
-//! certificate), says so to `QSYSOPR`, and runs until `ENDTCPSVR`,
-//! `ENDJOB` or its subsystem ends it. A start that fails says why and
-//! ends the job.
+//! certificate), says so to `QSYSOPR`, and starts a `QAPCNN` job in
+//! `QUSRWRK` as `QUSER` for each connection, handing it the socket; the
+//! connection job runs TLS. It runs until `ENDTCPSVR`, `ENDJOB` or its
+//! subsystem ends it, then tells its connection jobs to end (each sends
+//! `ServerEnding`). A start that fails says why and ends the job.
 
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
+use std::net::{SocketAddr, TcpStream};
+use std::os::fd::OwnedFd;
+use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use ipc::chan::Chan;
 use servers::attrs::qap::QapAttrs;
 use servers::listen::{self, Conn, Service};
 use servers::msg;
-use stg::Shared;
-use wm::ctl::{FromJob, Start};
+use stg::{Client, Shared};
+use wm::ctl::{FromJob, Start, ToJob};
 
+use super::super::spawn::{self, Spawned};
 use crate::work::netsvc::{self, Ender};
 
 const PGM: &str = "QAPD";
 /// The certificate application ID.
 pub const APP_ID: &str = "QS400_ACCESS_SERVER";
+/// The connection jobs' name and role.
+const CONN_JOB: &str = "QAPCNN";
+/// How long connection jobs get to say `ServerEnding` and close.
+const END_WAIT: Duration = Duration::from_secs(5);
 
-/// The accept loop's service.
-struct Accept;
+/// The accept loop's service: sockets go to the main thread, which
+/// owns the link and starts the jobs.
+struct Accept {
+    tx: Mutex<Sender<TcpStream>>,
+}
 
 impl Service for Accept {
-    fn serve(&self, mut conn: Conn, _peer: SocketAddr) {
-        conn.close();
+    fn serve(&self, conn: Conn, _peer: SocketAddr) {
+        if let Conn::Plain(s) = conn {
+            let _ = self.tx.lock().map(|tx| tx.send(s));
+        }
     }
 }
 
@@ -42,14 +56,62 @@ fn refuse(mut ctl: Chan, link: &Shared, why: &str) -> ! {
     crate::start::end(&mut ctl, why)
 }
 
+/// Start a connection job and hand it the socket.
+fn connection(link: &Shared, sock: TcpStream) -> Result<Spawned, String> {
+    let number = link.borrow_mut().with(Client::job_number)?;
+    let s = Start {
+        name: CONN_JOB.into(),
+        user: "QUSER".into(),
+        number,
+        handle: u64::from(number),
+        kind: 'B',
+        subsystem: "QUSRWRK".into(),
+        role: CONN_JOB.into(),
+        jobd: "QSYS/QSYSJOBD".into(),
+        class: "QSYS/QSYSCLS20".into(),
+        pool: "*BASE".into(),
+        ..Start::default()
+    };
+    let mut job = spawn::job(s)?;
+    spawn::ready(&mut job)?;
+    let chan = job.chan.try_clone().map_err(|e| e.to_string())?;
+    let via = sockets::Fd::from(chan.into_fd());
+    let fd = sockets::Fd::from(OwnedFd::from(sock));
+    sockets::sys::send_fd(&via, &fd).map_err(|e| format!("passing the connection: {e:?}"))?;
+    Ok(job)
+}
+
+/// Tell every connection job to end; kill the ones still there after
+/// [`END_WAIT`].
+fn end_connections(jobs: &mut Vec<Spawned>) {
+    for j in jobs.iter_mut() {
+        let _ = j.chan.send(&ToJob::End { immediate: false });
+    }
+    let until = Instant::now() + END_WAIT;
+    while Instant::now() < until {
+        jobs.retain_mut(|j| !matches!(j.child.try_wait(), Ok(Some(_))));
+        if jobs.is_empty() {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    for j in jobs.iter_mut() {
+        let _ = j.child.kill();
+        let _ = j.child.wait();
+    }
+}
+
 /// Run the listener. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let a = QapAttrs::from_bag(&netsvc::bag(link, "*QAP"));
-    let tls = match crate::work::tls::assigned_tls13(&mut link.borrow_mut(), APP_ID) {
-        Ok(c) => c,
-        Err(e) => refuse(ctl, link, &e),
-    };
-    let running = match listen::bind(a.port).and_then(|l| listen::serve(l, Some(tls), Arc::new(Accept))) {
+    // The certificate is checked here so a server without one does not
+    // start; each connection job builds its own TLS from it.
+    if let Err(e) = crate::work::tls::assigned_tls13(&mut link.borrow_mut(), APP_ID) {
+        refuse(ctl, link, &e);
+    }
+    let (tx, rx): (Sender<TcpStream>, Receiver<TcpStream>) = mpsc::channel();
+    let service = Arc::new(Accept { tx: Mutex::new(tx) });
+    let running = match listen::bind(a.port).and_then(|l| listen::serve(l, None, service)) {
         Ok(r) => r,
         Err(e) => refuse(ctl, link, &format!("port {}: {e}", a.port)),
     };
@@ -58,8 +120,21 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     netsvc::joblog(link, PGM, msg::QAP_STARTED, &text);
     stg::remote::status(link, wm::job::Status::Selw, "");
     let ender = Ender::new(&ctl, start.number);
-    while !ender.ended(link, Duration::from_millis(500)) {}
+    let mut jobs: Vec<Spawned> = Vec::new();
+    loop {
+        while let Ok(sock) = rx.try_recv() {
+            match connection(link, sock) {
+                Ok(j) => jobs.push(j),
+                Err(e) => eprintln!("qsjob: {PGM}: no connection job: {e}"),
+            }
+        }
+        jobs.retain_mut(|j| !matches!(j.child.try_wait(), Ok(Some(_))));
+        if ender.ended(link, Duration::from_millis(200)) {
+            break;
+        }
+    }
     running.stop();
+    end_connections(&mut jobs);
     netsvc::sysopr(link, msg::QAP_ENDED, 0, "QAP server ended.");
     netsvc::joblog(link, PGM, msg::QAP_ENDED, "QAP server ended.");
     let mut ctl = ctl;

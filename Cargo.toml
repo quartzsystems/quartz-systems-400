@@ -101,6 +101,7 @@ members = [
     "net/lpd",
     "net/mail",
     "net/ftp",
+    "net/qapd",
     # Save and restore: the save stream, the engine.
     "save/savfmt",
     "save/saverst",
