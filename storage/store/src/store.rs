@@ -26,6 +26,7 @@ use crate::wal::Wal;
 use crate::wal::record::WalRecord;
 use crate::{Result, StoreError};
 
+mod ifs;
 mod parity;
 
 /// Tunables.
@@ -102,6 +103,8 @@ pub struct Store {
     headers: (Option<PageNo>, HashMap<ObjectId, PageNo>),
     /// The open group commit, if any (`begin_group`).
     group: Option<Group>,
+    /// The IFS volume's smallest growth and smallest creation, pages.
+    ifs_limits: (u64, u64),
 }
 
 impl Store {
@@ -332,6 +335,7 @@ impl Store {
             guard: None,
             headers: (None, HashMap::new()),
             group: None,
+            ifs_limits: (crate::asp::ifs::ops::MIN_GROW, crate::asp::ifs::ops::CREATE_MIN),
             asp,
         }
     }

@@ -397,6 +397,7 @@ impl Store {
         // checkpoint releases them.
         fixed.extend_from_slice(self.asp().allocator().tree_pages());
         fixed.extend_from_slice(self.asp().allocator().log_pages());
+        fixed.extend_from_slice(self.asp().ifs_map_pages());
         Ok(Sweep {
             tags,
             headers,

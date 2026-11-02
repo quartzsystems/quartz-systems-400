@@ -98,6 +98,10 @@ pub struct Asp {
     sb: Superblock,
     alloc: Allocator,
     parity: parity::ParitySets,
+    /// The IFS volume (§12); empty when the IFS is not in the ASP.
+    ifs: ifs::Volume,
+    /// The pages of its map.
+    ifs_map_pages: Vec<PageNo>,
 }
 
 impl Asp {
@@ -188,6 +192,8 @@ impl Asp {
             sb,
             alloc,
             parity: parity::ParitySets::default(),
+            ifs: ifs::Volume::default(),
+            ifs_map_pages: Vec::new(),
         };
         asp.checkpoint()?;
         info!(
@@ -289,21 +295,22 @@ impl Asp {
         rewrite_renumbered(&mut io, &sb, &renumbered);
         let mut alloc = Allocator::load(&mut io, layout.clone(), sb.alloc_root, sb.free_log_head)?;
         parity::hold_all(&sb, &layout, &mut alloc)?;
+        let mut asp = Self {
+            io,
+            sb,
+            alloc,
+            parity,
+            ifs: ifs::Volume::default(),
+            ifs_map_pages: Vec::new(),
+        };
+        asp.ifs_load()?;
         debug!(
             "asp {}: opened at generation {}, {} free pages",
-            sb.asp_number,
-            sb.generation,
-            alloc.total_free()
+            asp.sb.asp_number,
+            asp.sb.generation,
+            asp.alloc.total_free()
         );
-        Ok((
-            Self {
-                io,
-                sb,
-                alloc,
-                parity,
-            },
-            events,
-        ))
+        Ok((asp, events))
     }
 
     /// Write the allocator's tree and log, then the superblock on every
@@ -342,6 +349,8 @@ impl Asp {
         }
         self.io.flush()?;
         self.alloc.finish_checkpoint();
+        // Sets formed since the last checkpoint learn their raw pages.
+        self.ifs_publish_raw();
         Ok(())
     }
 
@@ -416,6 +425,9 @@ impl Asp {
         let last = self.layout().spans().last().map(|s| s.primary);
         if last != Some(unit) || unit == 0 {
             return Err(StoreError::refused(unit, Refusal::NotLast));
+        }
+        if self.ifs_in_span(self.span_of(unit)?, 0) {
+            return Err(StoreError::refused(unit, Refusal::HoldsIfs));
         }
         Ok(())
     }

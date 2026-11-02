@@ -310,6 +310,15 @@ pub enum Refusal {
     /// The unit to replace has not failed.
     #[error("the unit has not failed")]
     NotFailed,
+    /// Pages of the unit hold the IFS, which never moves.
+    #[error("the unit holds part of the IFS")]
+    HoldsIfs,
+    /// The IFS cannot grow: the pages that fit below the ASP threshold.
+    #[error("the ASP has room for {0} more IFS page(s) below its threshold")]
+    IfsNoRoom(u64),
+    /// The IFS is in its own partition, not in the ASP.
+    #[error("the IFS is not in the ASP")]
+    IfsNotInAsp,
 }
 
 impl StoreError {

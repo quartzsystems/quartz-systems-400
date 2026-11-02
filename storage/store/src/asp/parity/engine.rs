@@ -96,6 +96,9 @@ pub struct Engine {
     events: Vec<EngineEvent>,
     /// The test hook, if armed.
     pub fault: Option<Fault>,
+    /// Per member, the runs `(lba, len)` of IFS volume pages: raw,
+    /// with no trailer to check.
+    raw: Vec<Vec<(u64, u64)>>,
 }
 
 fn err(what: impl Into<String>) -> BlockError {
@@ -166,7 +169,22 @@ impl Engine {
             next_slot: vec![0; n],
             events: Vec::new(),
             fault: None,
+            raw: vec![Vec::new(); n],
         }
+    }
+
+    /// Set a member's IFS runs, ascending.
+    pub fn set_raw(&mut self, member: usize, runs: Vec<(u64, u64)>) {
+        if let Some(r) = self.raw.get_mut(member) {
+            *r = runs;
+        }
+    }
+
+    /// Whether a member's page is an IFS volume page.
+    fn is_raw(&self, member: usize, lba: u64) -> bool {
+        let runs = &self.raw[member];
+        let i = runs.partition_point(|&(s, _)| s <= lba);
+        i > 0 && lba < runs[i - 1].0 + runs[i - 1].1
     }
 
     /// Events since the last call.
@@ -343,7 +361,7 @@ impl Engine {
         if self.in_step(member, stripe) {
             match self.read_dev(member, lba) {
                 Ok(page) => {
-                    if !self.protected(stripe) || !suspicious(&page) {
+                    if !self.protected(stripe) || self.is_raw(member, lba) || !suspicious(&page) {
                         return Ok(page);
                     }
                     // A bad page on a good unit: try the stripe.

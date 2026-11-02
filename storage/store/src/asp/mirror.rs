@@ -238,6 +238,9 @@ impl Asp {
         if usable < entry.usable_pages {
             // The larger is truncated to the smaller: only when the tail
             // of the span holds nothing.
+            if self.ifs_in_span(span, usable - 1) {
+                return Err(StoreError::refused(unit, Refusal::HoldsIfs));
+            }
             self.alloc.truncate_span(span, usable)?;
         }
         let new = u16::try_from(self.sb.units.len()).expect("checked");

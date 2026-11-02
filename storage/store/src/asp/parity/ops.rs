@@ -103,9 +103,12 @@ impl Asp {
     /// Pages of a unit the set holds for parity.
     #[must_use]
     pub fn parity_held(&self, unit: u16) -> u64 {
-        self.layout()
-            .span_of_unit(unit)
-            .map_or(0, |s| self.alloc.held_pages(s))
+        let (Some(set), Some(span)) = (self.parity_set_of(unit), self.layout().span_of_unit(unit)) else {
+            return 0;
+        };
+        geometry_of(&self.sb, set).map_or(0, |geo| {
+            self.layout().span(span).pages.saturating_sub(1 + geo.rows_end())
+        })
     }
 
     /// Every set, for the displays.
@@ -205,6 +208,9 @@ impl Asp {
             let used = self.alloc.in_use(span, geo.rows_end(), pages - 1 - geo.rows_end());
             if used > 0 {
                 return Err(StoreError::refused(u, Refusal::ParityShareInUse(used)));
+            }
+            if self.ifs_in_span(span, geo.rows_end()) {
+                return Err(StoreError::refused(u, Refusal::HoldsIfs));
             }
         }
         Ok(geo)

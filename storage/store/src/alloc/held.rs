@@ -83,6 +83,18 @@ impl Allocator {
         self.held.iter().filter(|e| e.unit == span).map(|e| e.len).sum()
     }
 
+    /// Free runs of a span as `(lba, len)`, ascending.
+    #[must_use]
+    pub fn span_runs(&self, span: u16) -> Vec<(u64, u64)> {
+        self.bitmaps[usize::from(span)].runs().collect()
+    }
+
+    /// Whether `alloc` is kept off a span.
+    #[must_use]
+    pub fn is_excluded(&self, span: u16) -> bool {
+        self.excluded[usize::from(span)]
+    }
+
     /// The tree and log pages of the last checkpoint, as runs.
     fn metadata_extents(&self) -> super::RangeSet {
         let mut out = super::RangeSet::default();

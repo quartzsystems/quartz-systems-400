@@ -249,9 +249,9 @@ mod tests {
 
     #[test]
     fn page_types_round_trip() {
-        for v in [0, 1, 2, 3, 0x10, 0x11, 0x20, 0x21, 0x22] {
+        for v in [0, 1, 2, 3, 0x10, 0x11, 0x12, 0x20, 0x21, 0x22] {
             assert_eq!(PageType::from_u16(v).unwrap().as_u16(), v);
         }
-        assert!(PageType::from_u16(0x12).is_none());
+        assert!(PageType::from_u16(0x13).is_none());
     }
 }

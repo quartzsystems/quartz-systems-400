@@ -6,5 +6,8 @@
 //! listed in the map. See `docs/STORE_FORMAT.md` §12.
 
 pub mod map;
+pub mod ops;
+pub mod volume;
 
 pub use map::IfsExtent;
+pub use volume::Volume;
