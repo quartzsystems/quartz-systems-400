@@ -217,3 +217,8 @@ text = "LGLREL on the first PMTCTL statement of label {0}."
 id = "group-orphan"
 msgid = "CPD0253"
 text = "An unlabelled {0} statement follows no labelled one."
+
+[[rule]]
+id = "value-len"
+msgid = "CPD0254"
+text = "Value {1} on {0} is longer than LEN({2}); give it a replacement value or a longer LEN."
