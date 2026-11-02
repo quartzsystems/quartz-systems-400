@@ -184,7 +184,7 @@ fn create_copy() {
 #[test]
 fn create_checks() {
     let mut b = Browser::signed_on();
-    for (name, id) in [("1BAD", "HTP8120"), ("WEBSTORE", "HTP8122")] {
+    for (name, id) in [("1BAD", "HTP8120"), ("WEBSTORE", "HTP8122"), ("navigator", "HTP8120")] {
         let r = wizard(&mut b, &[("name", name)]);
         assert_eq!(r.header("Location"), Some("/qs400/httpadmin/create/step/1"));
         assert!(b.get("/create/step/1").text().contains(id), "{name}");
@@ -649,4 +649,19 @@ fn create_starts_blank() {
     assert!(t.contains("HTP8106"), "{t}");
     assert!(t.contains("/msg/HTP8106?d=QSTEST&amp;d="), "{t}");
     assert!(blank(&mut b));
+}
+
+/// `NAVIGATOR` is listed and managed like `ADMIN` while `QS00NAV` is
+/// installed, and is not there at all once it is deleted.
+#[test]
+fn navigator_only_while_installed() {
+    let mut b = Browser::signed_on();
+    let list = b.get("/instances").text();
+    assert!(list.contains(">NAVIGATOR</a>"), "{list}");
+    assert!(list.contains("2002, 2005"), "{list}");
+    assert_eq!(b.get("/instance/NAVIGATOR/general").status, 200);
+    b.fx.system.deleted.lock().unwrap().push("QS00NAV");
+    let list = b.get("/instances").text();
+    assert!(!list.contains("NAVIGATOR"), "{list}");
+    assert_ne!(b.get("/instance/NAVIGATOR/general").status, 200);
 }

@@ -15,7 +15,7 @@ use qsweb::http::Response;
 use qsweb::partials::{Cell, Col, FilterField, List, Paging, actions, filter, list_table, paging, status};
 
 use super::Rq;
-use crate::PRODUCT;
+use crate::{PRODUCT, seed};
 use crate::env::{Env, HttpJob};
 
 /// One instance as the pages see it.
@@ -55,11 +55,23 @@ fn view(entry: Entry, env: &Env, jobs: &[HttpJob]) -> View {
     View { entry, conf, ports, job }
 }
 
+/// Whether an entry is listed: Navigator's only while its product is
+/// installed.
+fn listed(env: &Env, e: &Entry) -> bool {
+    !e.name.eq_ignore_ascii_case(seed::NAVIGATOR) || env.system.product_installed(seed::NAVIGATOR_PRODUCT)
+}
+
 /// Every instance, in registry order.
 pub fn views(env: &Env) -> Vec<View> {
     let jobs = env.jobs.active();
     Registry::load(env.files.as_ref())
-        .map(|r| r.instances.into_iter().map(|e| view(e, env, &jobs)).collect())
+        .map(|r| {
+            r.instances
+                .into_iter()
+                .filter(|e| listed(env, e))
+                .map(|e| view(e, env, &jobs))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -67,7 +79,7 @@ pub fn views(env: &Env) -> Vec<View> {
 pub fn one(env: &Env, name: &str) -> Option<View> {
     let jobs = env.jobs.active();
     let e = Registry::load(env.files.as_ref()).ok()?.get(name)?.clone();
-    Some(view(e, env, &jobs))
+    listed(env, &e).then(|| view(e, env, &jobs))
 }
 
 /// The URL of instance `name`'s page `page` (`general`, `ports`, ...).

@@ -100,6 +100,11 @@ pub trait System: Send + Sync {
     fn job(&self) -> String;
     /// The addresses of this system's TCP/IP interfaces.
     fn interfaces(&self) -> Vec<String>;
+    /// Whether licensed program `product`'s `*BASE` is installed.
+    fn product_installed(&self, product: &str) -> bool {
+        let _ = product;
+        true
+    }
 }
 
 /// How an instance ends.
