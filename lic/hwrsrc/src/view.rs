@@ -178,7 +178,8 @@ pub fn list(t: &Table, spec: &TypeSpec) -> Vec<Row> {
                 name: r.name.clone(),
                 depth: tr.depth,
                 type_col: match spec.col {
-                    TypeCol::Type => ty,
+                    // Four characters: `VIRT` for `VIRTUAL`.
+                    TypeCol::Type => ty.chars().take(4).collect(),
                     // One blank before it, as the oracle's lists show.
                     TypeCol::TypeModel => format!(" {}", type_model(r)),
                 },

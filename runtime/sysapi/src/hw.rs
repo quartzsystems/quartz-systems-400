@@ -171,7 +171,7 @@ mod tests {
         assert_eq!(text(&b[16 + 12..16 + 22]), "DC01");
         assert_eq!(text(&b[116 + 12..116 + 22]), "DD001");
         assert_eq!(crate::param::bin4_at(b, 116 + 4), 2);
-        assert_eq!(text(&b[116 + 22..116 + 29]), "Disk");
+        assert_eq!(text(&b[116 + 22..116 + 29]), "DISK");
         assert!(list_image(&t, 99).is_none());
 
         let o = info_image(&t, "DD001   ").unwrap();

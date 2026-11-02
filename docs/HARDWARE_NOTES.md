@@ -30,11 +30,11 @@ disks come up in the same order on every boot.
   name: what the kernel calls `sda` does not decide the number.
 - `WRKHDWRSC *STG` and `svc.hw` list each disk under its controller
   (`sdc 953869 MiB at 0:0:0:0 on DC02`). A disk's type is its medium,
-  `SSD`, `HDD`, `NVMe` or `Virtual` (`Disk` when sysfs does not say),
+  `SSD`, `HDD`, `NVME` or `VIRTUAL` (`DISK` when sysfs does not say),
   from the name, `device/vendor`, `device/model` and
   `queue/rotational`, with no model; four-character fields (the
   `WRKHDWRSC` all-hardware list, `QGYRHR*`, the `DSPHDWRSC` outfile's
-  `DORTYP`, `WRKDSKSTS`) show `Virt` for virtual. `WRKDSKSTS` and
+  `DORTYP`, `WRKDSKSTS`) show `VIRT` for virtual. `WRKDSKSTS` and
   Navigator show the model sysfs reports (SATA's `ATA` vendor left out). The installer's `Select Load
   Source Device` and DST's `Display Non-Configured Units` show the
   resource, the serial (sysfs `serial`, else the unit serial number VPD

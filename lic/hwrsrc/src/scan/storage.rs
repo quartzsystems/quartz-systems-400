@@ -163,16 +163,16 @@ pub enum Medium {
 }
 
 impl Medium {
-    /// A disk resource's type: the medium as a word. Fields four
-    /// characters wide (lists, APIs, outfiles) show `Virt` for virtual.
+    /// A disk resource's type: the medium as an upper-case word. Fields
+    /// four characters wide (lists, APIs, outfiles) show `VIRT`.
     #[must_use]
     pub fn type_word(self) -> &'static str {
         match self {
-            Medium::Virtual => "Virtual",
-            Medium::Nvme => "NVMe",
+            Medium::Virtual => "VIRTUAL",
+            Medium::Nvme => "NVME",
             Medium::Ssd => "SSD",
             Medium::Hdd => "HDD",
-            Medium::Unknown => "Disk",
+            Medium::Unknown => "DISK",
         }
     }
 }
@@ -229,8 +229,9 @@ mod tests {
         assert_eq!(medium("sdd", "VMware,", "VMware Virtual S", "1"), Medium::Virtual);
         assert_eq!(medium("sde", "Msft", "Virtual Disk", "1"), Medium::Virtual);
         assert_eq!(medium("sdf", "", "", ""), Medium::Unknown);
-        assert_eq!(Medium::Unknown.type_word(), "Disk");
-        assert_eq!(Medium::Virtual.type_word(), "Virtual");
+        assert_eq!(Medium::Unknown.type_word(), "DISK");
+        assert_eq!(Medium::Virtual.type_word(), "VIRTUAL");
+        assert_eq!(Medium::Nvme.type_word(), "NVME");
     }
 
     #[test]

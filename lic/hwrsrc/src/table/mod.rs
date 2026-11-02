@@ -127,7 +127,7 @@ impl Kind {
             Kind::Bridge => ("QB01", "001"),
             Kind::Lan | Kind::Port => ("QN00", "001"),
             Kind::Storage => ("QD00", "000"),
-            Kind::Disk => ("Disk", ""),
+            Kind::Disk => ("DISK", ""),
             Kind::Optical => ("QO01", "001"),
             Kind::Comm => ("QS01", "001"),
             Kind::Keyboard => ("QK01", "001"),

@@ -21,7 +21,7 @@ use crate::ipl::system::System;
 pub struct UnitView {
     /// Unit number, from 0.
     pub unit: u16,
-    /// The medium: `SSD`, `HDD`, `NVMe`, `Virtual`.
+    /// The medium: `SSD`, `HDD`, `NVME`, `VIRTUAL`, `DISK`.
     pub type_code: String,
     /// The device's model, from sysfs; empty when unknown.
     pub model: String,
