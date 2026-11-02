@@ -719,7 +719,30 @@ ipc::rpc! {
     /// The configuration descriptions that name resource `name`:
     /// `(description, *LIND|*DEVD|*CTLD)`.
     1421 => fn hw_cfgds / HwCfgds (name: String) -> Vec<(String, String)>;
+    /// The machine's identity: `QSRLNBR`, `QMODEL` and what the firmware
+    /// reports (`hwrsrc::dmi`).
+    1422 => fn machine / Machine () -> MachineInfo;
 }
+
+/// What `machine` answers. Each string is empty when unknown.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MachineInfo {
+    /// `QSRLNBR`: the firmware's serial when it fits, else derived.
+    pub serial: String,
+    /// `QMODEL`, the Quartz model code (`QS40`).
+    pub model: String,
+    /// The firmware's genuine serial in full (a Dell service tag).
+    pub hw_serial: String,
+    /// The firmware's vendor and product (`Dell Inc. PowerEdge R240`).
+    pub hw_model: String,
+}
+
+wire_struct!(MachineInfo {
+    serial,
+    model,
+    hw_serial,
+    hw_model,
+});
 
 // --- certificate types
 

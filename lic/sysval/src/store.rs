@@ -45,8 +45,10 @@ pub enum Effect {
 /// Facts about the machine that feed system-set values.
 #[derive(Clone, Debug, Default)]
 pub struct HostInfo {
-    /// DMI product UUID, if readable.
+    /// DMI product UUID, if readable: what a derived `QSRLNBR` hashes.
     pub product_uuid: Option<String>,
+    /// The firmware's genuine serial number (a Dell service tag), if any.
+    pub serial: Option<String>,
 }
 
 /// The system values.
@@ -67,9 +69,14 @@ impl SysVals {
             overrides: BTreeMap::new(),
             system: BTreeMap::new(),
         };
-        if let Some(uuid) = &host.product_uuid {
-            vals.system
-                .insert("QSRLNBR".into(), Value::Char(serial_from_uuid(uuid)));
+        let len = vals.catalog.get("QSRLNBR").and_then(|d| d.len).unwrap_or(0);
+        let serial = host
+            .serial
+            .as_deref()
+            .and_then(|s| fitting_serial(s, len))
+            .or_else(|| host.product_uuid.as_deref().map(serial_from_uuid));
+        if let Some(serial) = serial {
+            vals.system.insert("QSRLNBR".into(), Value::Char(serial));
         }
         Ok(vals)
     }
@@ -295,6 +302,14 @@ pub fn now_unix() -> u64 {
         .map_or(0, |d| d.as_secs())
 }
 
+/// The hardware serial as `QSRLNBR`, upper case, when it is letters and
+/// digits only and fits `len`; else none, and the serial is derived.
+#[must_use]
+pub fn fitting_serial(serial: &str, len: usize) -> Option<String> {
+    let s = serial.trim().to_ascii_uppercase();
+    (!s.is_empty() && s.len() <= len && s.bytes().all(|b| b.is_ascii_alphanumeric())).then_some(s)
+}
+
 /// Seven characters from a hash of the machine's product UUID.
 pub fn serial_from_uuid(uuid: &str) -> String {
     const ALPHABET: &[u8] = b"0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -445,6 +460,7 @@ mod tests {
     fn system_set_values() {
         let host = HostInfo {
             product_uuid: Some("12345678-1234-1234-1234-123456789abc".into()),
+            serial: None,
         };
         let mut v = SysVals::from_record(&Record::new(0), &host).unwrap();
         let serial = v.get("QSRLNBR").unwrap().text();
@@ -456,5 +472,22 @@ mod tests {
         v.set_system("QABNORMSW", Value::Char("1".into())).unwrap();
         assert_eq!(v.get("QABNORMSW").unwrap().text(), "1");
         assert!(v.set_system("QABNORMSW", Value::Char("9".into())).is_err());
+    }
+
+    #[test]
+    fn hardware_serial() {
+        let uuid = "4c4c4544-0057-4d10-8058-c2c04f365230";
+        let at = |serial: &str| {
+            let host = HostInfo {
+                product_uuid: Some(uuid.into()),
+                serial: Some(serial.into()),
+            };
+            SysVals::empty(&host).unwrap().get("QSRLNBR").unwrap().text()
+        };
+        assert_eq!(at("BWMX6R0"), "BWMX6R0");
+        assert_eq!(at("j300abcd"), "J300ABCD");
+        // Too long, or not letters and digits: derived as before.
+        assert_eq!(at("CZ2345678X"), serial_from_uuid(uuid));
+        assert_eq!(at("10-7A2B9C"), serial_from_uuid(uuid));
     }
 }

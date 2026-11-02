@@ -1873,6 +1873,16 @@ impl Service for Served<'_> {
         super::system2::cfg_descriptions(self.system, &name)
     }
 
+    fn machine(&mut self) -> stg::proto::MachineInfo {
+        let dmi = machine_dmi();
+        stg::proto::MachineInfo {
+            serial: super::security::sysval_text(self.system, "QSRLNBR").trim().to_string(),
+            model: super::security::sysval_text(self.system, "QMODEL").trim().to_string(),
+            hw_serial: dmi.serial().unwrap_or_default().to_string(),
+            hw_model: dmi.model(),
+        }
+    }
+
     fn sst_user_change(
         &mut self,
         op: String,
@@ -2101,4 +2111,10 @@ fn completion_message(system: &mut System, ctx: &JobCtx) {
     if let Err(e) = msgs::send(system, &lib, &name, m) {
         eprintln!("qsstg: completion message to {}: {e}", ctx.completion);
     }
+}
+
+/// The firmware's identity, read once: it does not change while up.
+fn machine_dmi() -> &'static hwrsrc::dmi::Dmi {
+    static DMI: std::sync::OnceLock<hwrsrc::dmi::Dmi> = std::sync::OnceLock::new();
+    DMI.get_or_init(hwrsrc::dmi::Dmi::read)
 }

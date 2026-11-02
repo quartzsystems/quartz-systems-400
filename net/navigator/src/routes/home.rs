@@ -83,10 +83,10 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
     vec![
         ("System name", mono(&rq.ctx.system)),
         ("Serial number", mono(&s.serial)),
-        ("Model / type", mono(&format!("{} / {}", s.model, s.machine_type))),
+        ("Model / type", model_type(s)),
         ("Release", format!("{}{ptf}", mono(&s.release))),
         ("Processors", esc(&s.processors)),
-        ("Main storage", mb(s.main_storage)),
+        ("Memory", mb(s.main_storage)),
         (
             "IPL date/time",
             format!("{id} {it} &nbsp; <span class=\"grey\">(up {})</span>", uptime(now.saturating_sub(s.ipl))),
@@ -94,6 +94,16 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
         ("IPL type / source", esc(&s.ipl_kind)),
         ("Time", format!("{nd} {nt} {} &nbsp; {}", esc(&s.zone), link(rq, "/time", "Time management"))),
     ]
+}
+
+/// The hardware's vendor and product, then the system's model and type.
+fn model_type(s: &Status) -> String {
+    let code = mono(&format!("{} / {}", s.model, s.machine_type));
+    if s.hardware.is_empty() {
+        code
+    } else {
+        format!("{} &nbsp; {code}", esc(&s.hardware))
+    }
 }
 
 fn storage_rows(rq: &Rq<'_>, s: &Status) -> Vec<(&'static str, String)> {
