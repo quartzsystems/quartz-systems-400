@@ -403,7 +403,7 @@ docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE
               TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NAVIGATOR.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
               SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md, SERVICE.md,
               LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, UPDATE_PROTOCOL.md,
-              CONSOLE.md, HARDWARE_NOTES.md, BACKUP.md, images/
+              CONSOLE.md, HARDWARE_NOTES.md, BACKUP.md, QAP.md, images/
 ```
 
 ## Commands
