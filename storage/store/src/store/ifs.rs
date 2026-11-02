@@ -7,7 +7,7 @@
 //! format at IPL; the storage service serves it through its shared I/O
 //! handle). See `docs/STORE_FORMAT.md` §12.
 
-use crate::asp::ifs::Volume;
+use crate::asp::ifs::{IfsIo, Volume};
 use crate::asp::superblock::FLAG_IFS_FORMATTED;
 use crate::page::PAGE_SIZE;
 use crate::store::Store;
@@ -37,6 +37,13 @@ impl Store {
     #[must_use]
     pub fn ifs_volume(&self) -> &Volume {
         self.asp.ifs_volume()
+    }
+
+    /// The volume for the thread that serves it: transfers through the
+    /// units, never through the store.
+    pub fn ifs_io(&mut self) -> IfsIo {
+        let volume = self.ifs_volume().clone();
+        IfsIo::new(self.asp.io().shared(), volume)
     }
 
     /// Whether the volume holds a formatted filesystem.

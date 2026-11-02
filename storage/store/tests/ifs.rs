@@ -278,20 +278,61 @@ fn parity_is_refused_over_a_volume_in_its_share() {
 }
 
 #[test]
-fn volume_reads_are_thread_safe_through_the_devices() {
-    // The volume's pages are plain pages of the units: another reader
-    // of the same devices sees what the store wrote and flushed.
-    let d = devs(1);
+fn another_thread_serves_the_volume_while_the_store_works() {
+    let d = devs(4);
     let mut store = new_store(&d);
     store.ifs_create(90).unwrap();
-    write_all(&mut store, 3);
-    let e = store.ifs_volume().extents()[0];
-    let dev = d[0].clone();
-    let lba = e.start;
-    let t = std::thread::spawn(move || {
-        let mut b = vec![0u8; 4096];
-        dev.read(lba, &mut b).unwrap();
-        b
+    store.start_parity(Level::Raid5, &[0, 1, 2, 3]).unwrap();
+    let io = store.ifs_io();
+    let pages = io.pages();
+    let server = std::thread::spawn(move || {
+        for round in 0..4u8 {
+            let mut v = 0;
+            while v < pages {
+                let n = (pages - v).min(32);
+                io.write(v, &pattern(v, n, round)).unwrap();
+                v += n;
+            }
+            io.flush().unwrap();
+            let mut v = 0;
+            while v < pages {
+                let n = (pages - v).min(32);
+                let mut buf = vec![0u8; usize::try_from(n).unwrap() * 4096];
+                io.read(v, &mut buf).unwrap();
+                assert!(buf == pattern(v, n, round), "round {round} page {v}");
+                v += n;
+            }
+        }
     });
-    assert_eq!(t.join().unwrap(), pattern(0, 1, 3));
+    // Meanwhile the store synchronizes the set and makes objects.
+    let qsys = store.asp().superblock().qsys;
+    let mut i = 0;
+    while !server.is_finished() {
+        let _ = store.parity_step(16).unwrap();
+        let mut txn = store.begin().unwrap();
+        let p = store::obj::CreateParams {
+            library: qsys,
+            name: qsname::Name::parse(&format!("T{i}")).unwrap(),
+            type_code: store::obj::types::USRSPC,
+            attribute: String::new(),
+            text: String::new(),
+            owner: "QSECOFR".into(),
+            system: "QS400".into(),
+            now: NOW,
+            by_system: false,
+        };
+        store::obj::usrspc::create(&mut txn, &p, 4064, false, 0).unwrap();
+        txn.commit().unwrap();
+        i += 1;
+    }
+    server.join().unwrap();
+    while let Some(p) = store.parity_step(1000).unwrap() {
+        if p.complete {
+            break;
+        }
+    }
+    check_all(&mut store, 3);
+    assert!(store.parity_verify(1).unwrap().is_empty());
+    let check = store.check_pages().unwrap();
+    assert!(check.bad_pages.is_empty(), "{check}");
 }

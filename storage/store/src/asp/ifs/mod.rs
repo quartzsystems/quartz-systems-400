@@ -7,7 +7,9 @@
 
 pub mod map;
 pub mod ops;
+pub mod shared;
 pub mod volume;
 
 pub use map::IfsExtent;
+pub use shared::IfsIo;
 pub use volume::Volume;

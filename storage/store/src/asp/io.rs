@@ -6,6 +6,15 @@
 //! A span backed by a mirrored pair is written to both halves and read
 //! from one; a page that fails verification on one half is read from
 //! the other and rewritten.
+//!
+//! The units sit behind a lock shared with [`SharedIo`], the handle the
+//! IFS volume's server uses from its own thread. Transfers hold the lock
+//! for reading (the devices are `Sync`); changing a unit's device or
+//! state takes it for writing, never while a transfer of the same thread
+//! holds it.
+
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use blockdev::BlockDev;
 use tracing::warn;
@@ -45,13 +54,264 @@ pub enum IoEvent {
     },
 }
 
-/// The units and the mapping onto them.
-pub struct AspIo {
+/// The units and the mapping, behind the lock.
+struct Core {
     units: Vec<UnitDev>,
     layout: Layout,
+}
+
+/// What both handles share.
+struct Shared {
+    core: RwLock<Core>,
     /// Alternates reads between the halves of a pair.
-    turn: u64,
-    events: Vec<IoEvent>,
+    turn: AtomicU64,
+    events: Mutex<Vec<IoEvent>>,
+}
+
+/// The units and the mapping onto them.
+pub struct AspIo {
+    shared: Arc<Shared>,
+    /// The layout as the store thread sees it (the same as the core's).
+    layout: Layout,
+}
+
+/// A handle on the same units for another thread: whole-page transfers
+/// with no verification, and flushes. See the module documentation.
+#[derive(Clone)]
+pub struct SharedIo {
+    shared: Arc<Shared>,
+}
+
+/// Halves to take out of service once the read lock is let go.
+type Fails = Vec<(u16, u16, String)>;
+
+impl Shared {
+    fn read(&self) -> RwLockReadGuard<'_, Core> {
+        self.core.read().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn write(&self) -> RwLockWriteGuard<'_, Core> {
+        self.core.write().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn push_event(&self, e: IoEvent) {
+        self.events
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push(e);
+    }
+
+    /// Take the failed halves out of service.
+    fn apply(&self, fails: Fails) {
+        if fails.is_empty() {
+            return;
+        }
+        let mut c = self.write();
+        for (span, unit, what) in fails {
+            if c.others(span, unit) && c.units[usize::from(unit)].state != UnitState::NotOperational {
+                warn!("asp: unit {unit} taken out of service: {what}");
+                c.units[usize::from(unit)].state = UnitState::NotOperational;
+                self.push_event(IoEvent::UnitFailed { unit, what });
+            }
+        }
+    }
+
+    /// Read `count` pages from `pno` unverified, failing over between
+    /// halves.
+    fn read_run(&self, pno: PageNo, count: u64) -> Result<blockdev::AlignedBuf> {
+        let mut fails = Fails::new();
+        let r = {
+            let c = self.read();
+            c.read_run(pno, count, &self.turn, &mut fails)
+        };
+        self.apply(fails);
+        r
+    }
+
+    /// Write whole pages from `pno` to every half.
+    fn write_bytes(&self, pno: PageNo, bytes: &[u8]) -> Result<()> {
+        let mut fails = Fails::new();
+        let r = {
+            let c = self.read();
+            c.write_bytes(pno, bytes, &mut fails)
+        };
+        self.apply(fails);
+        r
+    }
+
+    /// Flush every half of a span.
+    fn flush_span(&self, span: u16) -> Result<()> {
+        let mut fails = Fails::new();
+        let r = {
+            let c = self.read();
+            c.flush_span(span, &mut fails)
+        };
+        self.apply(fails);
+        r
+    }
+
+    fn flush(&self) -> Result<()> {
+        let spans = self.read().layout.unit_count();
+        for span in 0..spans {
+            self.flush_span(span)?;
+        }
+        Ok(())
+    }
+}
+
+impl Core {
+    fn locate(&self, pno: PageNo) -> Result<(u16, u64)> {
+        self.layout.locate(pno).ok_or_else(|| StoreError::Corrupt {
+            page: pno,
+            what: "page number beyond the ASP".into(),
+        })
+    }
+
+    fn dev(&self, unit: u16) -> Option<&dyn BlockDev> {
+        self.units[usize::from(unit)].dev.as_deref()
+    }
+
+    fn state(&self, unit: u16) -> UnitState {
+        self.units[usize::from(unit)].state
+    }
+
+    /// Members of a span that may serve reads, the preferred one first.
+    fn readers(&self, span: u16, turn: &AtomicU64) -> Vec<u16> {
+        let mut r: Vec<u16> = self
+            .layout
+            .span(span)
+            .members()
+            .filter(|&u| self.state(u).readable() && self.dev(u).is_some())
+            .collect();
+        if r.len() > 1 && turn.fetch_add(1, Ordering::Relaxed).is_multiple_of(2) {
+            r.rotate_left(1);
+        }
+        r
+    }
+
+    /// Members of a span that must be written.
+    fn writers(&self, span: u16) -> Vec<u16> {
+        self.layout
+            .span(span)
+            .members()
+            .filter(|&u| self.state(u).writable() && self.dev(u).is_some())
+            .collect()
+    }
+
+    fn missing(&self, span: u16) -> StoreError {
+        let s = self.layout.span(span);
+        StoreError::UnitMissing {
+            unit: s.primary,
+            what: "no half of the unit is available".into(),
+        }
+    }
+
+    /// Whether a span has a writable half besides `unit`.
+    fn others(&self, span: u16, unit: u16) -> bool {
+        self.layout
+            .span(span)
+            .members()
+            .any(|u| u != unit && self.state(u).writable() && self.dev(u).is_some())
+    }
+
+    /// Record a failing half to take out of service; whether the span
+    /// can go on without it (no other half failed in this call).
+    fn fail(&self, span: u16, unit: u16, what: String, fails: &mut Fails) -> bool {
+        let others = self.layout.span(span).members().any(|u| {
+            u != unit
+                && self.state(u).writable()
+                && self.dev(u).is_some()
+                && !fails.iter().any(|f| f.1 == u)
+        });
+        if others {
+            fails.push((span, unit, what));
+        }
+        others
+    }
+
+    fn read_run(
+        &self,
+        pno: PageNo,
+        count: u64,
+        turn: &AtomicU64,
+        fails: &mut Fails,
+    ) -> Result<blockdev::AlignedBuf> {
+        let (span, lba) = self.locate(pno)?;
+        let mut first_err = None;
+        for unit in self.readers(span, turn) {
+            let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
+            match self.dev(unit).expect("reader is attached").read(lba, &mut buf) {
+                Ok(()) => return Ok(buf),
+                Err(e) => {
+                    let what = format!("read {count} pages at {pno}: {e}");
+                    if !self.fail(span, unit, what, fails) {
+                        return Err(e.into());
+                    }
+                    first_err.get_or_insert(e);
+                }
+            }
+        }
+        Err(first_err.map_or_else(|| self.missing(span), StoreError::from))
+    }
+
+    fn write_bytes(&self, pno: PageNo, bytes: &[u8], fails: &mut Fails) -> Result<()> {
+        let (span, lba) = self.locate(pno)?;
+        let writers = self.writers(span);
+        if writers.is_empty() {
+            return Err(self.missing(span));
+        }
+        let mut failed = Vec::new();
+        for &unit in &writers {
+            if let Err(e) = self.dev(unit).expect("writer is attached").write(lba, bytes) {
+                failed.push((unit, e));
+            }
+        }
+        if failed.len() == writers.len() {
+            return Err(failed.remove(0).1.into());
+        }
+        for (unit, e) in failed {
+            self.fail(span, unit, format!("write page {pno}: {e}"), fails);
+        }
+        Ok(())
+    }
+
+    fn flush_span(&self, span: u16, fails: &mut Fails) -> Result<()> {
+        let writers = self.writers(span);
+        if writers.is_empty() {
+            return Err(self.missing(span));
+        }
+        let mut failed = Vec::new();
+        for &unit in &writers {
+            if let Err(e) = self.dev(unit).expect("writer is attached").flush() {
+                failed.push((unit, e));
+            }
+        }
+        if failed.len() == writers.len() {
+            return Err(failed.remove(0).1.into());
+        }
+        for (unit, e) in failed {
+            self.fail(span, unit, format!("flush: {e}"), fails);
+        }
+        Ok(())
+    }
+}
+
+impl SharedIo {
+    /// Read `count` consecutive pages from `pno` (within one span), as
+    /// they are: no checksum verification.
+    pub fn read_run(&self, pno: PageNo, count: u64) -> Result<blockdev::AlignedBuf> {
+        self.shared.read_run(pno, count)
+    }
+
+    /// Write whole pages from `pno` (within one span) to every half.
+    pub fn write_bytes(&self, pno: PageNo, bytes: &[u8]) -> Result<()> {
+        self.shared.write_bytes(pno, bytes)
+    }
+
+    /// Flush every unit: held parity writes made, write caches flushed.
+    pub fn flush(&self) -> Result<()> {
+        self.shared.flush()
+    }
 }
 
 impl AspIo {
@@ -72,10 +332,23 @@ impl AspIo {
     #[must_use]
     pub fn with_units(units: Vec<UnitDev>, layout: Layout) -> Self {
         Self {
-            units,
+            shared: Arc::new(Shared {
+                core: RwLock::new(Core {
+                    units,
+                    layout: layout.clone(),
+                }),
+                turn: AtomicU64::new(0),
+                events: Mutex::new(Vec::new()),
+            }),
             layout,
-            turn: 0,
-            events: Vec::new(),
+        }
+    }
+
+    /// A handle on the same units for another thread.
+    #[must_use]
+    pub fn shared(&self) -> SharedIo {
+        SharedIo {
+            shared: Arc::clone(&self.shared),
         }
     }
 
@@ -87,59 +360,57 @@ impl AspIo {
 
     /// Replace the layout after the unit table changed.
     pub fn set_layout(&mut self, layout: Layout) {
+        self.shared.write().layout = layout.clone();
         self.layout = layout;
     }
 
     /// Number of physical units.
     #[must_use]
     pub fn unit_count(&self) -> u16 {
-        u16::try_from(self.units.len()).expect("at most MAX_UNITS")
+        u16::try_from(self.shared.read().units.len()).expect("at most MAX_UNITS")
     }
 
     /// A unit's state.
     #[must_use]
     pub fn unit_state(&self, unit: u16) -> UnitState {
-        self.units[usize::from(unit)].state
+        self.shared.read().state(unit)
     }
 
     /// Change a unit's state.
     pub fn set_unit_state(&mut self, unit: u16, state: UnitState) {
-        self.units[usize::from(unit)].state = state;
+        self.shared.write().units[usize::from(unit)].state = state;
     }
 
     /// Whether a unit's device is attached.
     #[must_use]
     pub fn unit_attached(&self, unit: u16) -> bool {
-        self.units[usize::from(unit)].dev.is_some()
+        self.shared.read().dev(unit).is_some()
     }
 
     /// A unit's size in pages, 0 when missing.
     #[must_use]
     pub fn unit_blocks(&self, unit: u16) -> u64 {
-        self.units[usize::from(unit)]
-            .dev
-            .as_ref()
-            .map_or(0, blockdev::BlockDev::blocks)
+        self.shared.read().dev(unit).map_or(0, BlockDev::blocks)
     }
 
     /// Append a physical unit.
     pub fn push_unit(&mut self, unit: UnitDev) {
-        self.units.push(unit);
+        self.shared.write().units.push(unit);
     }
 
     /// Remove the last physical unit, giving its device back.
     pub fn pop_unit(&mut self) -> Option<UnitDev> {
-        self.units.pop()
+        self.shared.write().units.pop()
     }
 
     /// Take a unit out of the list, shifting the ones after it down.
     pub fn remove_unit_slot(&mut self, unit: u16) -> Option<Box<dyn BlockDev>> {
-        self.units.remove(usize::from(unit)).dev
+        self.shared.write().units.remove(usize::from(unit)).dev
     }
 
     /// Write whole pages to one physical unit at a unit-relative page.
     pub fn write_unit_bytes(&mut self, unit: u16, lba: u64, bytes: &[u8]) -> Result<()> {
-        match self.dev(unit) {
+        match self.shared.read().dev(unit) {
             Some(d) => Ok(d.write(lba, bytes)?),
             None => Err(StoreError::UnitMissing {
                 unit,
@@ -150,112 +421,63 @@ impl AspIo {
 
     /// Attach a device to a unit (a replaced or returned half).
     pub fn attach(&mut self, unit: u16, dev: Box<dyn BlockDev>, state: UnitState) {
-        let u = &mut self.units[usize::from(unit)];
+        let mut c = self.shared.write();
+        let u = &mut c.units[usize::from(unit)];
         u.dev = Some(dev);
         u.state = state;
     }
 
     /// Detach a unit's device, keeping its table slot.
     pub fn detach(&mut self, unit: u16, state: UnitState) -> Option<Box<dyn BlockDev>> {
-        let u = &mut self.units[usize::from(unit)];
+        let mut c = self.shared.write();
+        let u = &mut c.units[usize::from(unit)];
         u.state = state;
         u.dev.take()
     }
 
     /// Events since the last call.
     pub fn drain_events(&mut self) -> Vec<IoEvent> {
-        std::mem::take(&mut self.events)
-    }
-
-    fn locate(&self, pno: PageNo) -> Result<(u16, u64)> {
-        self.layout.locate(pno).ok_or_else(|| StoreError::Corrupt {
-            page: pno,
-            what: "page number beyond the ASP".into(),
-        })
-    }
-
-    fn dev(&self, unit: u16) -> Option<&dyn BlockDev> {
-        self.units[usize::from(unit)].dev.as_deref()
-    }
-
-    /// Members of a span that may serve reads, the preferred one first.
-    fn readers(&mut self, span: u16) -> Vec<u16> {
-        let mut r: Vec<u16> = self
-            .layout
-            .span(span)
-            .members()
-            .filter(|&u| self.unit_state(u).readable() && self.dev(u).is_some())
-            .collect();
-        if r.len() > 1 {
-            self.turn = self.turn.wrapping_add(1);
-            if self.turn % 2 == 1 {
-                r.rotate_left(1);
-            }
-        }
-        r
-    }
-
-    /// Members of a span that must be written.
-    fn writers(&self, span: u16) -> Vec<u16> {
-        self.layout
-            .span(span)
-            .members()
-            .filter(|&u| self.unit_state(u).writable() && self.dev(u).is_some())
-            .collect()
-    }
-
-    fn missing(&self, span: u16) -> StoreError {
-        let s = self.layout.span(span);
-        StoreError::UnitMissing {
-            unit: s.primary,
-            what: "no half of the unit is available".into(),
-        }
-    }
-
-    /// Take a failing half out of service. Returns whether the span
-    /// still has another half to go on with.
-    fn fail_unit(&mut self, span: u16, unit: u16, what: &str) -> bool {
-        let others = self
-            .layout
-            .span(span)
-            .members()
-            .any(|u| u != unit && self.unit_state(u).writable() && self.dev(u).is_some());
-        if others {
-            warn!("asp: unit {unit} taken out of service: {what}");
-            self.set_unit_state(unit, UnitState::NotOperational);
-            self.events.push(IoEvent::UnitFailed {
-                unit,
-                what: what.to_string(),
-            });
-        }
-        others
+        std::mem::take(
+            &mut *self
+                .shared
+                .events
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner),
+        )
     }
 
     /// Read and verify page `pno`. A page that fails on one half of a
     /// pair is read from the other and the bad half is rewritten.
     pub fn read_page(&mut self, pno: PageNo) -> Result<Page> {
-        let (span, lba) = self.locate(pno)?;
-        let readers = self.readers(span);
+        let mut fails = Fails::new();
+        let r = {
+            let c = self.shared.read();
+            Self::read_page_in(&c, &self.shared, pno, &mut fails)
+        };
+        self.shared.apply(fails);
+        r
+    }
+
+    fn read_page_in(c: &Core, shared: &Shared, pno: PageNo, fails: &mut Fails) -> Result<Page> {
+        let (span, lba) = c.locate(pno)?;
+        let readers = c.readers(span, &shared.turn);
         let mut first_err = None;
         for (i, &unit) in readers.iter().enumerate() {
             let mut page = Page::zeroed();
-            let read = self
-                .dev(unit)
-                .expect("reader is attached")
-                .read(lba, page.bytes_mut());
+            let read = c.dev(unit).expect("reader is attached").read(lba, page.bytes_mut());
             match read
                 .map_err(StoreError::from)
                 .and_then(|()| page.verify(pno).map(|_| ()))
             {
                 Ok(()) => {
                     if i > 0 {
-                        self.heal(span, readers[0], lba, pno, &mut page);
+                        Self::heal(c, shared, span, readers[0], lba, pno, &page, fails);
                     }
                     return Ok(page);
                 }
                 Err(StoreError::Block(e)) => {
                     let what = format!("read page {pno}: {e}");
-                    if !self.fail_unit(span, unit, &what) {
+                    if !c.fail(span, unit, what, fails) {
                         return Err(StoreError::Block(e));
                     }
                     first_err.get_or_insert(StoreError::Block(e));
@@ -265,24 +487,25 @@ impl AspIo {
                 }
             }
         }
-        Err(first_err.unwrap_or_else(|| self.missing(span)))
+        Err(first_err.unwrap_or_else(|| c.missing(span)))
     }
 
     /// Rewrite a page on the half that could not serve it.
-    fn heal(&mut self, span: u16, unit: u16, lba: u64, pno: PageNo, page: &mut Page) {
-        if !self.unit_state(unit).writable() {
+    #[allow(clippy::too_many_arguments)]
+    fn heal(c: &Core, shared: &Shared, span: u16, unit: u16, lba: u64, pno: PageNo, page: &Page, fails: &mut Fails) {
+        if !c.state(unit).writable() || fails.iter().any(|f| f.1 == unit) {
             return;
         }
-        let Some(dev) = self.dev(unit) else {
+        let Some(dev) = c.dev(unit) else {
             return;
         };
         match dev.write(lba, page.bytes()) {
             Ok(()) => {
                 warn!("asp: page {pno} rewritten on unit {unit} from its mirror");
-                self.events.push(IoEvent::Healed { page: pno, unit });
+                shared.push_event(IoEvent::Healed { page: pno, unit });
             }
             Err(e) => {
-                self.fail_unit(span, unit, &format!("rewrite page {pno}: {e}"));
+                c.fail(span, unit, format!("rewrite page {pno}: {e}"), fails);
             }
         }
     }
@@ -290,27 +513,7 @@ impl AspIo {
     /// Read `count` consecutive pages from `pno` (within one span), as
     /// they are: no checksum verification.
     pub fn read_run(&mut self, pno: PageNo, count: u64) -> Result<blockdev::AlignedBuf> {
-        let (span, lba) = self.locate(pno)?;
-        let readers = self.readers(span);
-        let mut first_err = None;
-        for &unit in &readers {
-            let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
-            match self
-                .dev(unit)
-                .expect("reader is attached")
-                .read(lba, &mut buf)
-            {
-                Ok(()) => return Ok(buf),
-                Err(e) => {
-                    let what = format!("read {count} pages at {pno}: {e}");
-                    if !self.fail_unit(span, unit, &what) {
-                        return Err(e.into());
-                    }
-                    first_err.get_or_insert(e);
-                }
-            }
-        }
-        Err(first_err.map_or_else(|| self.missing(span), StoreError::from))
+        self.shared.read_run(pno, count)
     }
 
     /// Read `count` pages from `pno` on one specific unit, unverified.
@@ -321,8 +524,9 @@ impl AspIo {
         pno: PageNo,
         count: u64,
     ) -> Result<Option<blockdev::AlignedBuf>> {
-        let (_, lba) = self.locate(pno)?;
-        let Some(dev) = self.dev(unit) else {
+        let c = self.shared.read();
+        let (_, lba) = c.locate(pno)?;
+        let Some(dev) = c.dev(unit) else {
             return Ok(None);
         };
         let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
@@ -350,44 +554,18 @@ impl AspIo {
 
     /// Write whole pages from `pno` to every half.
     pub fn write_bytes(&mut self, pno: PageNo, bytes: &[u8]) -> Result<()> {
-        let (span, lba) = self.locate(pno)?;
-        let writers = self.writers(span);
-        if writers.is_empty() {
-            return Err(self.missing(span));
-        }
-        let mut failed = Vec::new();
-        for &unit in &writers {
-            if let Err(e) = self
-                .dev(unit)
-                .expect("writer is attached")
-                .write(lba, bytes)
-            {
-                failed.push((unit, e));
-            }
-        }
-        if failed.len() == writers.len() {
-            return Err(failed.remove(0).1.into());
-        }
-        for (unit, e) in failed {
-            self.fail_unit(span, unit, &format!("write page {pno}: {e}"));
-        }
-        Ok(())
+        self.shared.write_bytes(pno, bytes)
     }
 
     /// Write a page to one physical unit at a unit-relative page.
     pub fn write_unit_raw(&mut self, unit: u16, lba: u64, page: &mut Page) -> Result<()> {
-        match self.dev(unit) {
-            Some(d) => Ok(d.write(lba, page.bytes())?),
-            None => Err(StoreError::UnitMissing {
-                unit,
-                what: "unit is not attached".into(),
-            }),
-        }
+        self.write_unit_bytes(unit, lba, page.bytes())
     }
 
     /// Read and verify a page from one physical unit.
     pub fn read_unit_page(&mut self, unit: u16, lba: u64) -> Result<Page> {
-        let Some(d) = self.dev(unit) else {
+        let c = self.shared.read();
+        let Some(d) = c.dev(unit) else {
             return Err(StoreError::UnitMissing {
                 unit,
                 what: "unit is not attached".into(),
@@ -401,7 +579,7 @@ impl AspIo {
 
     /// Flush one physical unit.
     pub fn flush_unit(&mut self, unit: u16) -> Result<()> {
-        match self.dev(unit) {
+        match self.shared.read().dev(unit) {
             Some(d) => Ok(d.flush()?),
             None => Ok(()),
         }
@@ -409,40 +587,20 @@ impl AspIo {
 
     /// Flush every half of a span, waiting for all of them.
     pub fn flush_span(&mut self, span: u16) -> Result<()> {
-        let writers = self.writers(span);
-        if writers.is_empty() {
-            return Err(self.missing(span));
-        }
-        let mut failed = Vec::new();
-        for &unit in &writers {
-            if let Err(e) = self.dev(unit).expect("writer is attached").flush() {
-                failed.push((unit, e));
-            }
-        }
-        if failed.len() == writers.len() {
-            return Err(failed.remove(0).1.into());
-        }
-        for (unit, e) in failed {
-            self.fail_unit(span, unit, &format!("flush: {e}"));
-        }
-        Ok(())
+        self.shared.flush_span(span)
     }
 
     /// Flush every unit.
     pub fn flush(&mut self) -> Result<()> {
-        for span in 0..self.layout.unit_count() {
-            self.flush_span(span)?;
-        }
-        Ok(())
+        self.shared.flush()
     }
 
     /// Tell the units a run is unused.
     pub fn discard(&mut self, start: PageNo, len: u64) -> Result<()> {
-        let (span, lba) = self.locate(start)?;
-        for unit in self.writers(span) {
-            self.dev(unit)
-                .expect("writer is attached")
-                .discard(lba, len)?;
+        let c = self.shared.read();
+        let (span, lba) = c.locate(start)?;
+        for unit in c.writers(span) {
+            c.dev(unit).expect("writer is attached").discard(lba, len)?;
         }
         Ok(())
     }
