@@ -679,7 +679,7 @@ needed.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSWMSPLF` in ASCII |
-| 8 | 2 | Version | 1 |
+| 8 | 2 | Version | 2 (since the published `PP` codes); 1 before, converted at IPL (see Spooling) |
 | 10 | 1 | Status | 0 `RDY`, 1 `HLD`, 2 `SAV`, 3 `WTR`, 4 `OPN`, 5 `CLO`, 6 `PND`, 7 `DFR`, 8 `MSGW` |
 | 11 | 1 | Schedule | 0 `*IMMED`, 1 `*FILEEND`, 2 `*JOBEND` |
 | 12 | 4 | Id | spool identifier; the object is `QSPL/SPnnnnnnnn` |
@@ -798,6 +798,25 @@ its spool identifier: the `SpooledFile` attributes, then SCS data. Its
 output queue lists it by identifier. The storage service indexes every
 spooled file at start; files a lost job left `OPN` (or a writer left
 `WTR`) become `RDY`.
+
+Version 1 files were written when the encoder put absolute vertical
+(`AVPP`) as `X'344C'`, which is relative vertical; it never wrote
+relative vertical. At start, before anything rewrites a file's
+attributes, each version 1 file is converted once:
+
+- its data is walked as the SCS reader walks it (`TRN` data and the
+  parameters of `X'2B'` commands are skipped), and every `PP` `X'4C'`
+  becomes `X'C4'` (`spool::scs::upgrade`);
+- the data is left as it is when it holds a `PP` `X'C4'` (the old
+  encoder never wrote one, so it already uses the published codes),
+  when its `DEVTYPE` is not `*SCS`, or when it was received by the LPD
+  server (job `QTLPD*`: the sender's SCS, kept as received);
+- the version becomes 2 either way, which records the conversion, and
+  the IPL logs how many files it rewrote.
+
+A restore (`SPLFDTA`) of a file saved at version 1 converts its data
+the same way before it is spooled again. Files written from now on are
+version 2.
 
 A program writes through a printer file (`*FILE PRTF`). The job runs
 the line printer itself (the `spool` crate) and sends the SCS to the

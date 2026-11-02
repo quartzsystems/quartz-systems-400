@@ -1199,6 +1199,10 @@ fn restore_spool(system: &mut System, q: &str, part: &[u8]) -> usize {
         let Some(data) = take(&mut at, usize::try_from(dlen).unwrap_or(usize::MAX)) else {
             break;
         };
+        // Saved before the published PP codes: converted as at IPL.
+        let old = wm::obj::splf::record_version(rec).is_ok_and(|v| v == wm::obj::splf::VERSION_OLD_PP);
+        let converted = old.then(|| crate::stgsvc::spool::published(&saved, data)).flatten();
+        let data = converted.as_deref().unwrap_or(data);
         let exists = system.spool.files.values().any(|e| {
             e.attrs.job == saved.job && e.attrs.name == saved.name && e.attrs.created == saved.created
         });
