@@ -1926,6 +1926,12 @@ impl Service for Served<'_> {
         super::webadm::audit(&self.ctx.job.user, &self.ctx.job.name, &kind, &user, &a, &b);
     }
 
+    fn web_joblog(&mut self) -> Vec<String> {
+        let mut all: Vec<&wm::joblog::Entry> = self.ctx.joblog_wrapped.iter().collect();
+        all.extend(self.ctx.joblog.entries());
+        wm::joblog::display(&all).lines().map(str::to_string).collect()
+    }
+
     fn web_certs(&mut self, call: Vec<u8>) -> Vec<u8> {
         let me = self.ctx.session.borrow().principal.clone();
         super::webadm::certs(self.system, &me, &call)

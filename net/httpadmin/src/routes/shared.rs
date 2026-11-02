@@ -6,9 +6,11 @@
 //! found.
 
 use qsweb::frame::{Page, render};
+use qsweb::html::esc;
 use qsweb::http::Response;
 use qsweb::msg::SecondLevel;
 use qsweb::pages::{Sent, second_level};
+use qsweb::partials::{Button, buttons};
 
 use super::Rq;
 use crate::{PRODUCT, help, msgs};
@@ -32,7 +34,8 @@ pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     if rq.post() {
         let f = rq.form();
         return match back {
-            Some(b) if !f.has("Close") => Response::redirect(&b),
+            _ if f.has("joblog") => rq.redirect("/joblog"),
+            Some(b) if f.has("back") => Response::redirect(&b),
             _ => rq.redirect("/instances"),
         };
     }
@@ -46,7 +49,33 @@ pub fn msg(rq: &Rq<'_>, id: &str) -> Response {
     page.h1 = format!("Message {}", sl.id);
     page.desc = None;
     page.generic = false;
+    // The shared page's buttons have no names: name them, so the post
+    // says which was pressed.
+    let bare = buttons(&[Button::bare("< Back"), Button::bare("Job log"), Button::bare("Close")]);
+    let named = buttons(&[Button::new("back", "< Back"), Button::new("joblog", "Job log"), Button::new("close", "Close")]);
+    page.body = page.body.replace(&bare, &named);
     rq.page(page)
+}
+
+/// `/joblog`: the administration server's job log, where the messages
+/// it sent are.
+pub fn job_log(rq: &Rq<'_>) -> Response {
+    let sys = &rq.env().system;
+    let lines = sys.job_log();
+    let body = if lines.is_empty() {
+        "<p>The job log has no messages.</p>".to_string()
+    } else {
+        format!("<pre class=\"out\">{}</pre>", esc(&lines.join("\n")))
+    };
+    rq.page(Page {
+        title: "Job log".into(),
+        crumb: vec!["Job log".into()],
+        h1: format!("Job log: {}", sys.job()),
+        desc: Some("The messages of the administration server's job, oldest first.".into()),
+        body,
+        help: "contents".into(),
+        ..Page::default()
+    })
 }
 
 /// The page for a URL or object that is not there.

@@ -266,6 +266,7 @@ pub fn dispatch(admin: &Admin, req: &Request, peer: &Peer) -> Response {
         ["nav"] => qsweb::frame::nav_toggle(&PRODUCT, &admin.sessions, &rq.session.id, req),
         ["help", key] => shared::help(&rq, key),
         ["msg", id] => shared::msg(&rq, id),
+        ["joblog"] => shared::job_log(&rq),
         _ => rq.not_found(r),
     }
 }

@@ -18,7 +18,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::OnceLock;
 
-use httpadmin::seed::{WWW, WWW_OWNER, WWW_PUBLIC};
+use httpadmin::seed::{REGISTRY, WWW, WWW_OWNER, WWW_PUBLIC};
 use ifs::Errno;
 use ifs::backend::linux::LinuxBackend;
 use ifs::client::{Direct, IfsClient, Unavailable};
@@ -125,7 +125,34 @@ pub fn start(system: &mut System) -> String {
         eprintln!("qsstg: {e}");
     }
     let _ = IFS.set(r);
+    if get().is_some() {
+        keep_registry(system);
+    }
     line
+}
+
+/// The HTTP instance registry is the `ADMIN` job's: one another
+/// profile took over by renaming over it (`ENDTCPSVR` did, before
+/// replaced files kept their owners) is given back.
+fn keep_registry(system: &mut System) {
+    let p = Principal {
+        user: "QSYS".into(),
+        spcaut: sec::profile::SpecialAuth::ALL.0,
+        qsecurity: 40,
+        objaud: "*NONE".into(),
+        ..Principal::default()
+    };
+    let path = REGISTRY;
+    with_client(system, 0, console_owner(0), &p, 37, |c| {
+        let Ok(a) = c.dspaut(path) else { return };
+        if a.owner == WWW_OWNER {
+            return;
+        }
+        match c.chgown(path, WWW_OWNER, true) {
+            Ok(()) => eprintln!("qsstg: {path} given back to {WWW_OWNER} from {}", a.owner),
+            Err(e) => eprintln!("qsstg: {path}: owner {}: {}", a.owner, e.text()),
+        }
+    });
 }
 
 fn build(system: &mut System) -> Result<Ifs<LinuxBackend>, String> {

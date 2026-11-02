@@ -393,6 +393,7 @@ fn every_page_carries_the_product_title() {
         PRODUCT.url("/instance/WEBSTORE/confirm?op=delete"),
         PRODUCT.url("/instance/INTRANET/confirm?op=stop"),
         PRODUCT.url("/msg/HTP8103?d=WEBSTORE"),
+        PRODUCT.url("/joblog"),
         PRODUCT.url("/nothing"),
     ]);
     let mut seen = BTreeSet::new();
@@ -415,4 +416,22 @@ fn every_page_carries_the_product_title() {
         }
     }
     assert!(framed > 20, "{framed}");
+}
+
+/// The message page's buttons say which was pressed: Job log shows
+/// the administration server's job log, Back returns, Close leaves.
+#[test]
+fn message_page_job_log() {
+    let mut b = Browser::signed_on();
+    let url = "/msg/HTP8106?d=QSTEST&d=denied&back=%2Fqs400%2Fhttpadmin%2Finstance%2FWEBSTORE%2Fgeneral";
+    let t = b.get(url).text();
+    assert!(t.contains("name=\"joblog\" value=\"Job log\"") && t.contains("name=\"back\""), "{t}");
+    let r = b.post(url, &[("joblog", "Job log")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/joblog"));
+    let t = b.get("/joblog").text();
+    assert!(t.contains("Job log: 123457/QTMHHTTP/ADMIN") && t.contains("HTP8001"), "{t}");
+    let r = b.post(url, &[("back", "< Back")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instance/WEBSTORE/general"));
+    let r = b.post(url, &[("close", "Close")]);
+    assert_eq!(r.header("Location"), Some("/qs400/httpadmin/instances"));
 }

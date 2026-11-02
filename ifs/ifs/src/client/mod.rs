@@ -591,6 +591,41 @@ pub fn read_all(c: &dyn IfsClient, fd: i32) -> Result<Vec<u8>> {
     }
 }
 
+/// Replace file `path` with `data`. A new file, or one the caller owns
+/// with no private authorities, is written beside it and renamed over
+/// it, so a reader never sees half. Any other file is rewritten in
+/// place: it keeps its owner and authorities, and the caller needs
+/// only `*W` on it (a rename would make the caller its owner and need
+/// `*OBJEXIST`).
+pub fn replace(c: &dyn IfsClient, path: &str, data: &[u8], mode: u32) -> Result<()> {
+    use crate::ops::Role;
+    use crate::ops::flags::{O_CREAT, O_TRUNC, O_WRONLY};
+    let put = |p: &str, flags: u32| -> Result<()> {
+        let fd = c.open(p, OpenArgs::new(flags).mode(mode))?;
+        let w = write_all(c, fd, data);
+        let closed = c.close(fd);
+        w.and(closed)
+    };
+    let own = match c.dspaut(path) {
+        Err(crate::errno::Errno::ENOENT) => None,
+        Err(e) => return Err(e),
+        Ok(a) => Some(a),
+    };
+    let tmp = format!("{path}.tmp");
+    put(&tmp, O_WRONLY | O_CREAT | O_TRUNC)?;
+    let me = c.dspaut(&tmp).map(|a| a.owner);
+    let swap = match (&own, &me) {
+        (None, _) => true,
+        (Some(a), Ok(me)) => a.owner == *me && a.entries.iter().all(|e| e.role != Role::Private),
+        (Some(_), Err(_)) => false,
+    };
+    if swap {
+        return c.rename(&tmp, path, RenameMode::Unlink);
+    }
+    let _ = c.unlink(&tmp);
+    put(path, O_WRONLY | O_TRUNC)
+}
+
 /// Write everything through a client, chunk by chunk.
 pub fn write_all(c: &dyn IfsClient, fd: i32, mut data: &[u8]) -> Result<()> {
     while !data.is_empty() {

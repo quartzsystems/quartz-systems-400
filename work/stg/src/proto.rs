@@ -686,6 +686,9 @@ ipc::rpc! {
     /// user); one that reads, the server's own user or those. It
     /// carries store passwords: never logged.
     1261 => fn web_certs / WebCerts (call: Vec<u8>) -> Vec<u8>;
+    /// The job's own log as the service keeps it, every entry, one
+    /// line each as `DSPJOBLOG` shows them.
+    1262 => fn web_joblog / WebJoblog () -> Vec<String>;
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;

@@ -82,6 +82,16 @@ impl System for LiveSystem {
         self.job.clone()
     }
 
+    fn job_log(&self) -> Vec<String> {
+        self.core
+            .bridge()
+            .call(|m| {
+                m.console.sync_log();
+                m.link.borrow_mut().with(stg::Client::web_joblog)
+            })
+            .unwrap_or_default()
+    }
+
     fn interfaces(&self) -> Vec<String> {
         self.core
             .bridge()
