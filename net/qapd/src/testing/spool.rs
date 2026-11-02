@@ -9,6 +9,7 @@
 //! held file goes back to what it was when released.
 
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use qap_proto::Status;
 use qap_proto::ops::spool::{
@@ -17,6 +18,7 @@ use qap_proto::ops::spool::{
 };
 use qap_proto::types::ObjectName;
 
+use super::lock;
 use crate::spool::{self, Unreadable};
 
 /// A spooled file.
@@ -36,7 +38,7 @@ pub struct File {
     pub form_type: String,
     /// Its data's kind.
     pub device: DeviceType,
-    /// Pages, for data that is not SCS.
+    /// Pages; counted from the data for SCS when the file is added.
     pub pages: u32,
     /// Copies.
     pub copies: u16,
@@ -56,10 +58,7 @@ impl File {
     /// As lists show it.
     #[must_use]
     pub fn info(&self) -> SpooledFile {
-        let pages = match self.device {
-            DeviceType::Scs => u32::try_from(::spool::scs::index(&self.data).len()).unwrap_or(u32::MAX),
-            _ => self.pages,
-        };
+        let pages = self.pages;
         SpooledFile {
             id: self.id.clone(),
             status: self.status,
@@ -137,7 +136,10 @@ impl Spool {
     }
 
     /// Add a file at the end of its queue; its key.
-    pub fn file(&mut self, f: File) -> u32 {
+    pub fn file(&mut self, mut f: File) -> u32 {
+        if f.device == DeviceType::Scs {
+            f.pages = u32::try_from(::spool::scs::index(&f.data).len()).unwrap_or(u32::MAX);
+        }
         let key = self.files.keys().next_back().map_or(1, |k| k + 1);
         if let Some(q) = self.queues.iter_mut().find(|q| same(&q.outq, &f.outq)) {
             q.files.push(key);
@@ -224,15 +226,19 @@ impl Spool {
         })
     }
 
-    /// `ReadSpooledFile` for `me`.
+    /// `ReadSpooledFile` for `me`: checked under the lock, read outside
+    /// it, so reads run side by side.
     ///
     /// # Errors
     /// `NotFound`, `NotAuthorized`, `InUse`, `Error` (the format) or
     /// `InvalidRequest` (the pages).
-    pub fn read(&self, me: &str, req: &ReadSpooledFile) -> Result<SpooledData, No> {
-        let key = self.find(&req.id)?;
-        self.may(me, key, true)?;
-        let f = &self.files[&key];
+    pub fn read(spool: &Mutex<Spool>, me: &str, req: &ReadSpooledFile) -> Result<SpooledData, No> {
+        let f = {
+            let s = lock(spool);
+            let key = s.find(&req.id)?;
+            s.may(me, key, true)?;
+            s.files[&key].clone()
+        };
         let number = f.id.number.to_string();
         spool::read(f.status, f.device, &f.data, req).map_err(|e| match e {
             Unreadable::InUse => no(Status::InUse, spool::IN_USE, &[&f.id.file, &number]),

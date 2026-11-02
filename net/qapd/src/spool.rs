@@ -59,8 +59,15 @@ pub fn read(status: SpoolStatus, device: DeviceType, data: &[u8], req: &ReadSpoo
     if device != DeviceType::Scs {
         return Err(Unreadable::Format);
     }
-    let (pages, fmt) = spool::scs::decode(data);
-    let n = pages.len();
+    // One pass: the page starts for SCS, the pages for text and PDF.
+    let (idx, decoded) = match req.format {
+        ReadFormat::Scs => (spool::scs::index(data), None),
+        ReadFormat::Text | ReadFormat::Pdf => {
+            let d = spool::scs::decode(data);
+            (Vec::new(), Some(d))
+        }
+    };
+    let n = decoded.as_ref().map_or(idx.len(), |(p, _)| p.len());
     let first = usize::try_from(req.first_page).map_err(|_| Unreadable::Range)?;
     let total = u32::try_from(n).unwrap_or(u32::MAX);
     if first == 0 || first > n.max(1) {
@@ -80,12 +87,21 @@ pub fn read(status: SpoolStatus, device: DeviceType, data: &[u8], req: &ReadSpoo
     if last < first {
         return Err(Unreadable::Range);
     }
-    let data = match req.format {
-        ReadFormat::Scs => spool::scs::range(data, first, last).ok_or(Unreadable::Range)?,
+    let data = match (req.format, decoded) {
+        // The state in effect at `first`, then the stream as spooled
+        // (what `spool::scs::range` makes, without a second pass).
+        (ReadFormat::Scs, _) => {
+            let from = &idx[first - 1];
+            let to = idx.get(last).map_or(data.len(), |p| p.offset);
+            let mut out = from.prefix();
+            out.extend_from_slice(&data[from.offset..to]);
+            out
+        }
         // The whole file's pages and format, so a range reads as the
         // same pages do in the whole.
-        ReadFormat::Text => spool::view::text(&pages[first - 1..last]).into_bytes(),
-        ReadFormat::Pdf => spool::pdf::render(&pages[first - 1..last], fmt),
+        (ReadFormat::Text, Some((pages, _))) => spool::view::text(&pages[first - 1..last]).into_bytes(),
+        (ReadFormat::Pdf, Some((pages, fmt))) => spool::pdf::render(&pages[first - 1..last], fmt),
+        (_, None) => return Err(Unreadable::Range),
     };
     Ok(SpooledData {
         format: req.format,

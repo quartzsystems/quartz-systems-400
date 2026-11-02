@@ -411,7 +411,7 @@ impl ThreadHost for MemThread {
     fn read_spooled_file(&mut self, req: &ReadSpooledFile) -> Result<SpooledData, Refusal> {
         self.sys.gate.pass();
         let me = self.me().unwrap_or_default();
-        let r = lock(&self.sys.spool).read(&me, req);
+        let r = super::spool::Spool::read(&self.sys.spool, &me, req);
         r.map_err(|n| self.no(&n))
     }
 
