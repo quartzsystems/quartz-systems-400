@@ -6171,6 +6171,13 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF2182"
+sev = 40
+text = "Library &1 may not be used by this user."
+help = "The user needs authority to the library to use objects in it. Ask the security officer for authority, or use another library."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "CPF2183"
 sev = 40
 text = "The library list is full."

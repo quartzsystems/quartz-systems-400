@@ -299,3 +299,45 @@ id = "SQL0752"
 sev = 30
 text = "The connection's SQL options cannot change while a transaction is open."
 help = "Changes made under commitment control have not been committed or rolled back. Commit or roll back, then set the options again."
+
+[[msg]]
+id = "SQL0150"
+sev = 30
+text = "Rows of &1 cannot be changed through it."
+help = "The view or table function names a result that is read-only. Change the rows through the table it is based on."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0301"
+sev = 30
+text = "A value for &1 is not of a type it can take."
+help = "The value given for the column or parameter is of a type that cannot be assigned to it. Send a value of a compatible type."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0404"
+sev = 30
+text = "A value for &1 is longer than the column allows."
+help = "The string is longer than the column's length. Shorten the value or widen the column."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0406"
+sev = 30
+text = "A value for &1 is outside the column's range."
+help = "The number does not fit the column's precision, scale or type. Send a value the column can hold."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0420"
+sev = 30
+text = "A value for &1 is not a valid number."
+help = "Character data given for a numeric column could not be read as a number. Correct the value."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL5016"
+sev = 30
+text = "&1 is not valid for the naming in use."
+help = "The qualified name uses the separator of the other naming convention. Qualify it with . under SQL naming or / under system naming."
+vars = ["*CHAR 256"]
