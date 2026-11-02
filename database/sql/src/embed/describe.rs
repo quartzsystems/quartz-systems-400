@@ -3,7 +3,9 @@
 // root directory of this project.
 
 //! `DESCRIBE`: a prepared statement's result columns, or with `INPUT`
-//! its parameter markers, as SQLDA entries (SQLTYPE, SQLLEN, SQLNAME).
+//! its parameter markers, as SQLDA entries (SQLTYPE, SQLLEN, SQLNAME,
+//! the CCSID and the label). A column's name is its SQL name (the
+//! field's `ALIAS`) when it has one, its label the heading.
 //! Types are worked out from the statement and the tables' formats,
 //! nothing is run. A null-capable entry has the odd type.
 
@@ -110,6 +112,25 @@ fn of_type(t: &DataType) -> Col {
         DataType::Time => Col::new(388, 8, true),
         DataType::Timestamp => Col::new(392, 26, true),
     }
+}
+
+/// A field's SQL name: its `ALIAS` when it has one, else its system
+/// name.
+#[must_use]
+pub fn sql_name(f: &dds::FieldDef) -> String {
+    f.alias.as_deref().map(str::trim).filter(|a| !a.is_empty()).map_or_else(|| f.name.to_string(), str::to_string)
+}
+
+/// A field's label as an SQLDA gives it: the heading's lines, each
+/// filled to 20 characters, as one text; empty when it has none.
+#[must_use]
+pub fn label(f: &dds::FieldDef) -> String {
+    let mut joined = String::new();
+    for l in &f.colhdg {
+        joined.push_str(l);
+        joined.extend(std::iter::repeat_n(' ', 20usize.saturating_sub(l.chars().count())));
+    }
+    joined.trim_end().to_string()
 }
 
 /// The tables of a `FROM`: correlation name and format fields.
@@ -372,14 +393,20 @@ fn tables_of(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement) -> Tables {
     }
 }
 
-/// The entries of `text`: its result columns, or with `input` its
-/// markers. A statement that is not a query has no result columns.
+/// The entries of `text` (type, name, label): its result columns, or
+/// with `input` its markers. A statement that is not a query has no
+/// result columns.
 #[must_use]
-pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool) -> Vec<(Col, String)> {
+pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool) -> Vec<(Col, String, String)> {
     let tabs = tables_of(txn, ctx, st);
     if input {
-        return markers(&tabs, st).into_iter().enumerate().map(|(k, (_, c))| (c, format!("{:05}", k + 1))).collect();
+        return markers(&tabs, st)
+            .into_iter()
+            .enumerate()
+            .map(|(k, (_, c))| (c, format!("{:05}", k + 1), String::new()))
+            .collect();
     }
+    let of = |f: &dds::FieldDef| (of_field(f), sql_name(f), label(f));
     let Statement::Select(query) = st else { return Vec::new() };
     let QueryBody::Select(sel) = &query.body else { return Vec::new() };
     let mut out = Vec::new();
@@ -387,21 +414,29 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
         match item {
             SelectItem::Star => {
                 for (_, fs) in &tabs.0 {
-                    out.extend(fs.iter().map(|f| (of_field(f), f.name.to_string())));
+                    out.extend(fs.iter().map(of));
                 }
             }
             SelectItem::TableStar(a) => {
                 for (_, fs) in tabs.0.iter().filter(|(n, _)| *n == a.value) {
-                    out.extend(fs.iter().map(|f| (of_field(f), f.name.to_string())));
+                    out.extend(fs.iter().map(of));
                 }
             }
             SelectItem::Expr(e, alias) => {
-                let name = match (alias, e) {
-                    (Some(a), _) => a.value.clone(),
-                    (None, Expr::Column(c)) => c.column.value.clone(),
-                    _ => format!("{:05}", out.len() + 1),
+                // A column keeps its label under a new name.
+                let field = match e {
+                    Expr::Column(c) => tabs.field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value),
+                    _ => None,
                 };
-                out.push((tabs.type_of(e), name));
+                let name = match (alias, field) {
+                    (Some(a), _) => a.value.clone(),
+                    (None, Some(f)) => sql_name(f),
+                    (None, None) => match e {
+                        Expr::Column(c) => c.column.value.clone(),
+                        _ => format!("{:05}", out.len() + 1),
+                    },
+                };
+                out.push((tabs.type_of(e), name, field.map(label).unwrap_or_default()));
             }
         }
     }
@@ -409,7 +444,7 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
 }
 
 /// `DESCRIBE` of prepared `text` as a reply: one row per entry
-/// (SQLTYPE, SQLLEN, SQLNAME, CCSID).
+/// (SQLTYPE, SQLLEN, SQLNAME, CCSID, label).
 pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming, input: bool) -> Reply {
     let p = match prepare(text, naming) {
         Ok(p) => p,
@@ -418,12 +453,13 @@ pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming
     ctx.naming = naming;
     let rows = entries(txn, ctx, &p.statement, input)
         .into_iter()
-        .map(|(c, n)| {
+        .map(|(c, n, l)| {
             vec![
                 Value::int(i64::from(c.sqltype())),
                 Value::int(i64::from(c.len)),
                 Value::Str(n),
                 Value::int(i64::from(c.ccsid)),
+                Value::Str(l),
             ]
         })
         .collect();

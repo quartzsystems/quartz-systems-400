@@ -52,7 +52,8 @@ const JOB_CCSID: u16 = 37;
 /// UTF-16, for graphic data the engine gives none.
 const GRAPHIC_CCSID: u16 = 1200;
 
-/// One `DESCRIBE` row (SQLTYPE, SQLLEN, SQLNAME, CCSID) as a column.
+/// One `DESCRIBE` row (SQLTYPE, SQLLEN, SQLNAME, CCSID, label) as a
+/// column; without a label, the name is the label.
 #[must_use]
 pub fn described(row: &[Value]) -> Described {
     let num = |i: usize| row.get(i).and_then(|v| v.as_i64().ok()).unwrap_or(0);
@@ -60,6 +61,8 @@ pub fn described(row: &[Value]) -> Described {
     let len = u32::try_from(num(1)).unwrap_or(0);
     let name = row.get(2).map(Value::as_text).unwrap_or_default().trim().to_string();
     let ccsid = u16::try_from(num(3)).unwrap_or(0);
+    let label = row.get(4).map(Value::as_text).unwrap_or_default().trim_end().to_string();
+    let label = if label.is_empty() { name.clone() } else { label };
     let base = code & !1;
     let (sql_type, kind, length, scale, ccsid) = match base {
         500 => ("SMALLINT", Kind::Int, 5, 0, 0),
@@ -88,7 +91,7 @@ pub fn described(row: &[Value]) -> Described {
     };
     Described {
         column: Column {
-            label: name.clone(),
+            label,
             name,
             sql_type: sql_type.into(),
             length,

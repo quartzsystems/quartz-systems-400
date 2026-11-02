@@ -6,8 +6,8 @@
 //! views, read with the user's authority on a secondary thread's own
 //! link: `SYSSCHEMAS`, `SYSTABLES` (indexes left out) and, for a
 //! table's columns, a `DESCRIBE` of `SELECT *` from it (the same
-//! authority check and types as `Prepare`) with `SYSCOLUMNS`' names and
-//! headings. Patterns are matched and pages cut here, names in order.
+//! authority check, types, SQL names and headings as `Prepare`).
+//! Patterns are matched and pages cut here, names in order.
 
 use qap_proto::Status;
 use qap_proto::ops::sql::{Columns, ListColumns, ListSchemas, ListTables, Schema, Schemas, Table, TableKind, Tables};
@@ -142,25 +142,6 @@ pub fn list_columns(e: &mut dyn Engine, req: &ListColumns) -> Result<Columns, Re
     if p.sqlca.is_error() {
         return Err(refused(e, &p.sqlca));
     }
-    let mut named = rows(
-        e,
-        &format!(
-            "SELECT ORDINAL_POSITION, COLUMN_NAME, COLUMN_HEADING FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = {qs} AND TABLE_NAME = {qt}"
-        ),
-    )?;
-    named.sort_by_key(|r| r.first().and_then(|v| v.as_i64().ok()).unwrap_or(0));
-    let columns = p
-        .rows
-        .iter()
-        .enumerate()
-        .map(|(i, row)| {
-            let mut c = values::described(row).column;
-            if let Some(n) = named.get(i) {
-                c.name = text(n, 1);
-                c.label = text(n, 2);
-            }
-            c
-        })
-        .collect();
+    let columns = p.rows.iter().map(|row| values::described(row).column).collect();
     Ok(Columns { columns })
 }

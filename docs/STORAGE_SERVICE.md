@@ -134,6 +134,67 @@ The rules:
 5. If the service itself ends, `slic` shows `B1001060` and halts: the
    store's WAL recovers it at the next IPL like any crash.
 
+## Long statements
+
+The serve loop is one thread over one store, and the SQL engine runs a
+statement to its end on that thread's stack: a query over a large table
+used to hold every other job's requests (a QAP connection's Run SQL
+held Run Command, spooled-file reads, other connections' SQL and its
+own catalog lists). A statement that only reads now takes turns with
+them.
+
+- Which: an embedded statement (`sql_run`) whose descriptor is a query
+  (`Query`, `Open`; `sql::embed::may_yield`) under `*NONE`, `*CHG` or
+  `*CS`. Under `*ALL` a read is one view and runs to its end, as does
+  every statement that changes data, `DESCRIBE`, the console's `sql`
+  and `RUNSQLSTM`.
+- Where it yields: between batches (256 keys, or 256 records by RRN) of
+  the statement's outermost table scan, at most every 5 ms
+  (`SqlContext::yield_every`), and only while its store transaction has
+  changed nothing (a scan that had to build an access path no longer
+  yields). Scans inside the outer one (a correlated subquery) never
+  yield, so no frame above a yield holds pages or positions read
+  before it.
+- How: the statement's transaction is `store::Txn::lent`, borrowing
+  the store through the job's lender per transaction rather than for
+  its life. At a yield it is suspended (`Txn::suspend`: the borrow is
+  given back; a clean transaction has nothing to log). The service,
+  parked in a thread-local while the engine runs (`stgsvc::turns`),
+  is set as between requests (`served::leave`: the store back in
+  `System`, the library list and `QTEMP` root reset, the statement's
+  audit entries flushed to its job, no guard session in force), answers
+  one round of whatever is ready on the other connections without
+  waiting, sets the statement's job up again (`served::enter`) and
+  returns; the transaction resumes as one begun now, and the scan opens
+  its members again and goes on from the last key or RRN it read.
+- Locks: a statement that may yield holds `*SHRRD` on every file and
+  member it scans (the table, the access path's file and member) from
+  its first read to its end, released when its transaction ends. So
+  `CLRPFM`, `RGZPFM`, `DLTF`, `CHGPF` and reclaim storage are refused
+  with the file in use while it runs, as IBM i refuses them under an
+  open cursor; inserts, updates and deletes by other jobs go on.
+- What it sees: each batch reads what is committed (and, as before,
+  what another job's open commit cycle has written) when the batch is
+  read. Rows changed or added behind the scan's position after it
+  passed are not seen; ahead of it, they are (a row whose key another
+  job moves from behind to ahead is read twice). That is a read under
+  `*CS` or below on IBM i, which gives a statement no single view
+  either; `*ALL` keeps one.
+- Its connection: busy until the statement answers, so it is not read
+  (one request at a time per connection, as always). Its job's other
+  links (`hello_thread`) are served in the turns.
+- Nesting: a statement that may yield, met in another's turn, runs
+  inside that turn and takes turns itself; the earlier one waits until
+  it ends (last in, first out, four deep; past that a statement runs to
+  its end). A `close` met in a turn waits for the loop's top and makes
+  every statement in progress end at its next yield (`SQL0952`); the
+  job's own cancel (`stg::sql_cancel_path`) works as before.
+- Background disk work (parity, a mirror resume) runs only at the top
+  of the loop, not in turns.
+- Crash safety is unchanged: every transaction, the suspended one's
+  included, ends before its request is answered, and a crash during a
+  turn leaves the statement's transaction with nothing to roll back.
+
 ## The service console
 
 `slic` keeps the serial line. After the IPL it starts `QSVCJOB` and

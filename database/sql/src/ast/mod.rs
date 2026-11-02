@@ -191,6 +191,8 @@ pub enum Statement {
     SetPath(Vec<PathEntry>),
     /// `SET CURRENT DEGREE`: accepted, ignored.
     SetCurrentDegree,
+    /// `SET TRANSACTION ISOLATION LEVEL`: the unit of work's level.
+    SetTransaction(Isolation),
     /// `EXPLAIN` (Quartz's): the plan of the statement as text.
     Explain(Box<Statement>),
 }

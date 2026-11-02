@@ -62,6 +62,13 @@ fn session() -> Session {
     };
     let r = runsqlstm(&mut store, &mut ctx, text, &opts).unwrap();
     assert_eq!(r.errors, 0, "{}", r.listing);
+    // T is journaled, for commitment control.
+    let mut t = store.begin().unwrap();
+    let rcv = jrn::rcv::crtjrnrcv(&mut t, lib, Name::parse("TRCV").unwrap(), &jrn::rcv::CrtJrnRcvOpts::default()).unwrap();
+    let jid = jrn::journal::crtjrn(&mut t, lib, Name::parse("TJRN").unwrap(), rcv, &jrn::journal::CrtJrnOpts::default()).unwrap();
+    let tid = ctx.resolve_file(&mut t, &sql::ast::ObjectName::new("T")).unwrap();
+    db::journal::strjrnpf(&mut t, JobHandle(1), tid, jid, false, true, 1).unwrap();
+    t.commit().unwrap();
     Session::new(Box::new(Rc::new(RefCell::new(store))), qsys, JobHandle(1), names)
 }
 
@@ -134,4 +141,117 @@ fn scopes_end_with_the_module_or_the_group() {
     assert_eq!(run(&mut s, "1:A", open.clone(), vec![]).sqlca.sqlcode, 0);
     assert_eq!(run(&mut s, "1:B", open.clone(), vec![]).sqlca.sqlcode, 0);
     assert_eq!(run(&mut s, "2:A", open, vec![]).sqlca.sqlcode, -502);
+}
+
+/// The lock level of the session's commitment definition.
+fn level(s: &Session) -> Option<db::cmt::LckLvl> {
+    s.ctx.session.commit_def().map(|d| d.borrow().lcklvl())
+}
+
+fn under(text: &str, commit: Option<db::cmt::LckLvl>) -> Desc {
+    Desc {
+        op: Op::Exec,
+        text: text.into(),
+        sql_naming: true,
+        commit,
+        ..Desc::default()
+    }
+}
+
+#[test]
+fn the_lock_level_changes_between_units_of_work() {
+    use db::cmt::LckLvl::{All, Chg, Cs};
+    let mut s = session();
+    let upd = "UPDATE QSTEST.T SET SAL = 1 WHERE ID = 1";
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(Chg)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(Chg));
+    // A change is pending: the unit keeps its level.
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(Chg));
+    let r = run(&mut s, "1:P", under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)), vec![]);
+    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-428, "25001"));
+    run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
+    // The next unit takes the statement's level.
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(All));
+    run(&mut s, "1:P", under("ROLLBACK", Some(All)), vec![]);
+    // SET TRANSACTION holds for its unit, over the statements' level.
+    let r = run(&mut s, "1:P", under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)), vec![]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(level(&s), Some(Cs));
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(Cs));
+    run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
+    run(&mut s, "1:P", under(upd, Some(All)), vec![]);
+    assert_eq!(level(&s), Some(All));
+    run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
+}
+
+#[test]
+fn a_default_schema_applies_under_system_naming() {
+    let mut s = session();
+    let sys = |text: &str| Desc {
+        op: Op::Exec,
+        text: text.into(),
+        ..Desc::default()
+    };
+    let count = |s: &mut Session| run(s, "1:P", op(Op::Query, "", "SELECT COUNT(*) FROM T"), vec![]).sqlca.sqlcode;
+    // The library list finds T in QSTEST.
+    assert_eq!(count(&mut s), 0);
+    // A default schema replaces the library list for table names.
+    assert_eq!(run(&mut s, "1:P", sys("SET SCHEMA QSYS"), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(count(&mut s), -204);
+    run(&mut s, "1:P", sys("SET SCHEMA DEFAULT"), vec![]);
+    assert_eq!(count(&mut s), 0);
+}
+
+#[test]
+fn a_prepared_statement_can_be_deallocated() {
+    let mut s = session();
+    assert_eq!(run(&mut s, "1:P", op(Op::Prepare, "S1", "SELECT ID FROM T"), vec![]).sqlca.sqlcode, 0);
+    let mut open = op(Op::Open, "C1", "");
+    open.stmt = "S1".into();
+    assert_eq!(run(&mut s, "1:P", open, vec![]).sqlca.sqlcode, 0);
+    // Another scope's statement of that name is not this one.
+    assert_eq!(run(&mut s, "1:Q", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, -514);
+    assert_eq!(run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(run(&mut s, "1:P", op(Op::Deallocate, "S1", ""), vec![]).sqlca.sqlcode, -514);
+    assert_eq!(run(&mut s, "1:P", op(Op::Execute, "S1", ""), vec![]).sqlca.sqlcode, -518);
+    // The cursor opened from it stays open.
+    assert_eq!(run(&mut s, "1:P", op(Op::Fetch, "C1", ""), vec![]).sqlca.sqlcode, 0);
+}
+
+#[test]
+fn describe_gives_sql_names_and_labels() {
+    let mut s = session();
+    let sql = |text: &str| Desc {
+        op: Op::Exec,
+        text: text.into(),
+        sql_naming: true,
+        ..Desc::default()
+    };
+    for text in [
+        "CREATE TABLE QSTEST.L (CUSTOMER_NAME FOR COLUMN CUSNAM VARCHAR(20), ID INT)",
+        "LABEL ON COLUMN QSTEST.L.CUSTOMER_NAME IS 'Customer            Name'",
+    ] {
+        let r = run(&mut s, "1:P", sql(text), vec![]);
+        assert_eq!(r.sqlca.sqlcode, 0, "{text}: {:?}", r.sqlca);
+    }
+    let named = |s: &mut Session, text: &str| {
+        let mut p = op(Op::Prepare, "S1", text);
+        p.into = true;
+        let r = run(s, "1:P", p, vec![]);
+        assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+        r.rows.iter().map(|row| (row[2].as_text(), row[4].as_text())).collect::<Vec<_>>()
+    };
+    let label = "Customer            Name".to_string();
+    assert_eq!(
+        named(&mut s, "SELECT * FROM L"),
+        [("CUSTOMER_NAME".to_string(), label.clone()), ("ID".into(), String::new())]
+    );
+    // By either name, and under a new name the label stays.
+    assert_eq!(
+        named(&mut s, "SELECT CUSNAM, CUSTOMER_NAME AS WHO, ID + 1 AS N FROM L"),
+        [("CUSTOMER_NAME".to_string(), label.clone()), ("WHO".into(), label), ("N".into(), String::new())]
+    );
 }

@@ -42,12 +42,17 @@ pub struct Conn {
     pub chan: Chan,
     /// The job.
     pub ctx: Option<JobCtx>,
+    /// Unique for the service's life: connections come and go while a
+    /// long statement waits its turn (`turns`).
+    pub id: u64,
 }
 
 impl Conn {
     /// A new connection.
     pub fn new(chan: Chan, ctx: Option<JobCtx>) -> Self {
-        Self { chan, ctx }
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        let id = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        Self { chan, ctx, id }
     }
 }
 
@@ -152,7 +157,7 @@ pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -
 }
 
 /// Who a job's audit entries are charged to.
-fn charged(ctx: &JobCtx) -> super::security::Charged {
+pub fn charged(ctx: &JobCtx) -> super::security::Charged {
     super::security::Charged {
         job: (ctx.job.name.clone(), ctx.job.user.clone(), ctx.job.number),
         audlvl: ctx.session.borrow().principal.audlvl.clone(),
@@ -438,15 +443,9 @@ struct Served<'a> {
 impl Served<'_> {
     /// Run `f` with the store lent to the job's sources.
     fn lent<T>(&mut self, f: impl FnOnce(&mut JobCtx) -> T) -> T {
-        let root = self.own_qtemp();
-        self.own_libl();
-        let lent = ile::lend(self.system).is_ok();
+        let entered = enter(self.system, self.ctx);
         let r = f(self.ctx);
-        if lent {
-            ile::restore(self.system);
-        }
-        ile::set_libl(None);
-        self.root_qtemp(root);
+        leave(self.system, entered);
         r
     }
 
@@ -473,6 +472,65 @@ impl Served<'_> {
         if let (Some(t), Some(r)) = (self.system.temp.as_mut(), root) {
             t.qtemp = r;
         }
+    }
+}
+
+/// What [`enter`] changed, for [`leave`].
+#[derive(Clone, Copy)]
+pub struct Entered {
+    /// The temporary ASP's root `QTEMP` the job's replaced.
+    root: Option<ObjectId>,
+    /// Whether the store was lent.
+    lent: bool,
+}
+
+/// Set the service up for one of `ctx`'s requests: its `QTEMP` as the
+/// temporary ASP's, names through its library list, the store lent to
+/// its sources.
+pub fn enter(system: &mut System, ctx: &JobCtx) -> Entered {
+    let root = match (system.temp.as_mut(), ctx.qtemp) {
+        (Some(t), Some(q)) => Some(std::mem::replace(&mut t.qtemp, q)),
+        _ => None,
+    };
+    ile::set_libl(system.attrs.get(&ctx.job.number).map(|a| a.libl.clone()));
+    let lent = ile::lend(system).is_ok();
+    Entered { root, lent }
+}
+
+/// The job's embedded SQL session, made at its first statement, with
+/// names through its library list as it is now; with the store lent.
+pub fn sql_session<'c>(
+    shared: &ile::Shared,
+    locks: db::odp::SharedLocks,
+    c: &'c mut JobCtx,
+) -> Result<&'c mut sql::embed::Session, Box<sql::embed::WireReply>> {
+    use sql::embed::{Reply, Session};
+    let Ok((names, qsys)) = with_main(shared, |txn, qsys| Ok((ile::name_context(txn, qsys), qsys))) else {
+        let e = sql::SqlError::Database { what: "the object store is not available".into(), msgid: None };
+        return Err(Box::new(Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new() }.to_wire()));
+    };
+    let handle = JobHandle(c.job.handle);
+    let s = c.sql.get_or_insert_with(|| {
+        let ctx = sql::SqlContext::with_locks(qsys, handle, names.clone(), locks);
+        Session::with_ctx(Box::new(MainStore::new(Rc::clone(shared))), ctx)
+    });
+    s.ctx.names = names;
+    // The job's own thread can be asked to end a statement.
+    if !c.thread {
+        let flag = stg::sql_cancel_path(c.job.number);
+        s.ctx.interrupt = Some(Rc::new(move || std::path::Path::new(&flag).exists()));
+    }
+    Ok(s)
+}
+
+/// Undo [`enter`]: the service as it is between requests.
+pub fn leave(system: &mut System, e: Entered) {
+    if e.lent {
+        ile::restore(system);
+    }
+    ile::set_libl(None);
+    if let (Some(t), Some(r)) = (system.temp.as_mut(), e.root) {
+        t.qtemp = r;
     }
 }
 
@@ -1251,32 +1309,19 @@ impl Service for Served<'_> {
     }
 
     fn sql_run(&mut self, scope: String, desc: String, inputs: Vec<(u8, String)>) -> sql::embed::WireReply {
-        use sql::embed::{Desc, Embedded, Reply, Request, Session, from_wire};
+        use sql::embed::{Desc, Embedded, Reply, Request, from_wire};
         let Some(desc) = Desc::decode(&desc) else {
             let e = sql::SqlError::Unsupported { what: "statement".into() };
             return Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new() }.to_wire();
         };
         let shared = Rc::clone(&self.system.lent);
         let locks = self.system.locks.clone();
-        self.lent(|c| {
-            // Names resolve through the job's library list as it is now.
-            let Ok((names, qsys)) = with_main(&shared, |txn, qsys| Ok((ile::name_context(txn, qsys), qsys))) else {
-                let e = sql::SqlError::Database { what: "the object store is not available".into(), msgid: None };
-                return Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new() }.to_wire();
-            };
-            let handle = JobHandle(c.job.handle);
-            let s = c.sql.get_or_insert_with(|| {
-                let ctx = sql::SqlContext::with_locks(qsys, handle, names.clone(), locks);
-                Session::with_ctx(Box::new(MainStore::new(Rc::clone(&shared))), ctx)
-            });
-            s.ctx.names = names;
-            // The job's own thread can be asked to end a statement.
-            if !c.thread {
-                let flag = stg::sql_cancel_path(c.job.number);
-                s.ctx.interrupt = Some(Rc::new(move || std::path::Path::new(&flag).exists()));
+        self.lent(|c| match sql_session(&shared, locks, c) {
+            Ok(s) => {
+                let req = Request { scope, desc, inputs: inputs.iter().map(from_wire).collect() };
+                s.run(&req).to_wire()
             }
-            let req = Request { scope, desc, inputs: inputs.iter().map(from_wire).collect() };
-            s.run(&req).to_wire()
+            Err(w) => *w,
         })
     }
 

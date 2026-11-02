@@ -135,6 +135,15 @@ fn a_query_in_batches_with_its_types() {
     assert!(matches!(lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never), Err(SqlStop::Refused(r)) if r.status == Status::NotFound));
     lane.release(&mut e, q.statement).unwrap();
     assert_eq!(lane.release(&mut e, q.statement).unwrap_err().status, Status::NotFound);
+    // The engine's statement went with it.
+    let open = sql::embed::Desc {
+        op: sql::embed::Op::Open,
+        name: "QAPCX".into(),
+        stmt: format!("QAPS{}", q.statement),
+        ..sql::embed::Desc::default()
+    };
+    let r = e.run(&Request { scope: super::SCOPE.into(), desc: open, inputs: Vec::new() });
+    assert_eq!(r.sqlca.sqlcode, -514);
 }
 
 #[test]
@@ -177,6 +186,71 @@ fn an_unjournaled_table_under_commitment_control() {
     lane.end_unit(&mut e, false).unwrap();
     lane.set_options(&mut e, &SetOptions::default()).unwrap();
     lane.end_unit(&mut e, true).unwrap();
+}
+
+#[test]
+fn set_options_changes_the_level_between_units() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let level = |e: &Mem| e.0.ctx.session.commit_def().map(|d| d.borrow().lcklvl().name());
+    let at = |commit| SetOptions {
+        commit,
+        ..SetOptions::default()
+    };
+    lane.set_options(&mut e, &at(CommitLevel::ReadUncommitted)).unwrap();
+    let q = lane.prepare(&mut e, "SELECT ID FROM QSTEST.T").unwrap();
+    let c = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
+    assert_eq!(level(&e), Some("*CHG"));
+    lane.set_options(&mut e, &at(CommitLevel::RepeatableRead)).unwrap();
+    lane.fetch(&mut e, &Fetch { cursor: c, max_rows: 1 }, &never).unwrap();
+    assert_eq!(level(&e), Some("*ALL"));
+}
+
+#[test]
+fn a_default_schema_under_system_naming() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let sys = |schema: Option<&str>| SetOptions {
+        commit: CommitLevel::None,
+        naming: Naming::System,
+        default_schema: schema.map(str::to_string),
+    };
+    lane.set_options(&mut e, &sys(None)).unwrap();
+    lane.prepare(&mut e, "SELECT * FROM T").unwrap();
+    lane.set_options(&mut e, &sys(Some("QSYS"))).unwrap();
+    assert_eq!(failed(lane.prepare(&mut e, "SELECT * FROM T")).0, "42704");
+    lane.set_options(&mut e, &sys(Some("QSTEST"))).unwrap();
+    lane.prepare(&mut e, "SELECT * FROM T").unwrap();
+}
+
+#[test]
+fn columns_have_sql_names_and_headings() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let sql = SetOptions {
+        naming: Naming::Sql,
+        ..SetOptions::default()
+    };
+    lane.set_options(&mut e, &sql).unwrap();
+    for text in [
+        "CREATE TABLE QSTEST.L (CUSTOMER_NAME FOR COLUMN CUSNAM VARCHAR(20), ID INT)",
+        "LABEL ON COLUMN QSTEST.L.CUSTOMER_NAME IS 'Customer            Name'",
+    ] {
+        let p = lane.prepare(&mut e, text).unwrap();
+        lane.execute(&mut e, &Execute { statement: p.statement, rows: Vec::new() }, &never).unwrap();
+    }
+    let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.L").unwrap();
+    let got: Vec<(&str, &str)> = q.columns.iter().map(|c| (c.name.as_str(), c.label.as_str())).collect();
+    assert_eq!(got, [("CUSTOMER_NAME", "Customer            Name"), ("ID", "ID")]);
+    let c = catalog::list_columns(
+        &mut e,
+        &ListColumns {
+            schema: "QSTEST".into(),
+            table: "L".into(),
+        },
+    )
+    .unwrap();
+    assert_eq!(c.columns, q.columns);
 }
 
 #[test]

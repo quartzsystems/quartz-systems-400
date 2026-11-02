@@ -59,6 +59,9 @@ pub enum Op {
     End,
     /// A statement with nothing to do at run time.
     Nothing,
+    /// The prepared statement `name` goes from the scope, as a CLI
+    /// statement handle is freed; its open cursors stay.
+    Deallocate,
 }
 
 impl Op {
@@ -76,6 +79,7 @@ impl Op {
             Self::Describe => 'B',
             Self::End => 'Z',
             Self::Nothing => 'N',
+            Self::Deallocate => 'R',
         }
     }
 
@@ -93,6 +97,7 @@ impl Op {
             'B' => Self::Describe,
             'Z' => Self::End,
             'N' => Self::Nothing,
+            'R' => Self::Deallocate,
             _ => return None,
         })
     }
@@ -415,12 +420,14 @@ impl Session {
     fn with_txn(&mut self, scope: &str, f: impl FnOnce(&mut store::txn::Txn<'_>, &mut SqlContext, &mut Scope) -> Reply) -> Reply {
         let mut sc = self.scopes.remove(scope).unwrap_or_default();
         std::mem::swap(&mut self.ctx.cursors, &mut sc.cursors);
-        let store = &self.store;
-        let mut st = store.store();
-        let reply = match st.begin() {
+        let lender = &self.store;
+        // Borrowed through the lender, so a long read can give it back
+        // between batches (`SqlContext::yielder`).
+        let reply = match store::txn::Txn::lent(Box::new(|| lender.store())) {
             Ok(mut txn) => {
                 self.ctx.nulls_eliminated = false;
                 let mut r = f(&mut txn, &mut self.ctx, &mut sc);
+                self.ctx.release_held(&mut txn);
                 if self.ctx.nulls_eliminated && r.sqlca.sqlcode == 0 {
                     r.sqlca.sqlstate = "01003".into();
                     r.sqlca.sqlwarn[0] = 'W';
@@ -433,7 +440,6 @@ impl Session {
             }
             Err(e) => Reply::of(Sqlca::from_error(&SqlError::from(e))),
         };
-        drop(st);
         std::mem::swap(&mut self.ctx.cursors, &mut sc.cursors);
         self.scopes.insert(scope.to_string(), sc);
         reply
@@ -451,13 +457,24 @@ impl Session {
     /// Commitment control for a statement: under `COMMIT(*CHG|*CS|*ALL)`
     /// the activation group's definition, started at its first
     /// statement when neither the group nor the job has one; under
-    /// `*NONE` its changes are not under commitment control.
+    /// `*NONE` its changes are not under commitment control. The level
+    /// is the statement's, or the unit's after `SET TRANSACTION`; the
+    /// definition takes it between units of work, and keeps the unit's
+    /// while changes are pending.
     fn commitment(&mut self, req: &Request) -> Option<Reply> {
         let group = format!("*SQL{}", req.scope.split(':').next().unwrap_or(""));
         self.ctx.session.set_cmt_group(Some(group.clone()));
-        self.ctx.no_commit = req.desc.commit.is_none();
-        let lcklvl = req.desc.commit?;
-        if self.ctx.session.commit_def().is_some() || matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag) {
+        let level = match self.ctx.isolation {
+            Some(iso) => crate::exec::lock_level(iso),
+            None => req.desc.commit,
+        };
+        self.ctx.no_commit = level.is_none();
+        let lcklvl = level?;
+        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag | Op::Deallocate) {
+            return None;
+        }
+        if let Some(def) = self.ctx.session.commit_def() {
+            def.borrow_mut().set_lcklvl(lcklvl);
             return None;
         }
         let now = self.ctx.clock();
@@ -477,6 +494,7 @@ impl Session {
         match d.op {
             Op::Nothing => Reply::default(),
             Op::End => self.end(&req.scope),
+            Op::Deallocate => self.deallocate(&req.scope, &d.name),
             Op::Diag => self.diagnostics(&d.text),
             Op::Describe => self.describe(req),
             Op::Query => self.with_txn(&req.scope, |txn, ctx, _| {
@@ -598,6 +616,15 @@ impl Session {
         Reply::default()
     }
 
+    /// A prepared statement goes: -514 when the scope has none of
+    /// that name.
+    fn deallocate(&mut self, scope: &str, name: &str) -> Reply {
+        match self.scopes.get_mut(scope).and_then(|sc| sc.prepared.remove(name)) {
+            Some(_) => Reply::default(),
+            None => Reply::of(code(-514, "26501")),
+        }
+    }
+
     /// `GET DIAGNOSTICS`: the items of the last statement.
     fn diagnostics(&self, items: &str) -> Reply {
         let ca = &self.last;
@@ -622,12 +649,23 @@ impl Session {
     }
 }
 
+/// Whether a statement may yield between batches (`SqlContext::yielder`):
+/// one that only reads, below `*ALL` (whose reads are one view).
+#[must_use]
+pub fn may_yield(desc: &Desc) -> bool {
+    matches!(desc.op, Op::Query | Op::Open) && desc.commit != Some(LckLvl::All)
+}
+
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
+        let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
         let r = match self.commitment(req) {
             Some(r) => r,
             None => self.run_inner(req),
         };
+        if kept.is_some() {
+            self.ctx.yielder = kept;
+        }
         if req.desc.op != Op::Diag {
             self.last = r.sqlca.clone();
         }
