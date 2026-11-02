@@ -282,6 +282,12 @@ text = "The number of parameter values does not match the statement's parameter 
 help = "Give one value for each parameter marker of the prepared statement, in order."
 
 [[msg]]
+id = "SQL0428"
+sev = 30
+text = "The statement can run only before the unit of work changes anything."
+help = "Changes made under commitment control have not been committed or rolled back. Commit or roll back, then run the statement again."
+
+[[msg]]
 id = "SQL0752"
 sev = 30
 text = "The connection's SQL options cannot change while a transaction is open."

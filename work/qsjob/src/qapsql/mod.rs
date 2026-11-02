@@ -13,7 +13,8 @@
 //!   are opened `WITH HOLD` and stay open across commits.
 //! - A commit level other than `None` is the engine's lock level
 //!   (`*CHG`, `*CS`, `*ALL`; `Serializable` is `*ALL` too); the
-//!   definition keeps the level of the first statement it ran under.
+//!   definition takes each statement's level between units of work, so
+//!   `SetOptions` changes it once the unit has ended.
 //! - `Fetch` reads in batches of [`BATCH`], looking at the cancel
 //!   between them; the engine looks at it between rows read.
 

@@ -180,6 +180,24 @@ fn an_unjournaled_table_under_commitment_control() {
 }
 
 #[test]
+fn set_options_changes_the_level_between_units() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let level = |e: &Mem| e.0.ctx.session.commit_def().map(|d| d.borrow().lcklvl().name());
+    let at = |commit| SetOptions {
+        commit,
+        ..SetOptions::default()
+    };
+    lane.set_options(&mut e, &at(CommitLevel::ReadUncommitted)).unwrap();
+    let q = lane.prepare(&mut e, "SELECT ID FROM QSTEST.T").unwrap();
+    let c = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
+    assert_eq!(level(&e), Some("*CHG"));
+    lane.set_options(&mut e, &at(CommitLevel::RepeatableRead)).unwrap();
+    lane.fetch(&mut e, &Fetch { cursor: c, max_rows: 1 }, &never).unwrap();
+    assert_eq!(level(&e), Some("*ALL"));
+}
+
+#[test]
 fn a_cancel_ends_the_running_statement() {
     let mut e = engine();
     let mut lane = Lane::default();

@@ -157,6 +157,16 @@ impl CommitDef {
         self.lcklvl
     }
 
+    /// Change the lock level between units of work: refused (false)
+    /// while the cycle has changes not committed or rolled back.
+    pub fn set_lcklvl(&mut self, lcklvl: LckLvl) -> bool {
+        if self.cycle != 0 {
+            return false;
+        }
+        self.lcklvl = lcklvl;
+        true
+    }
+
     /// The open cycle, 0 when none.
     #[must_use]
     pub fn cycle(&self) -> u64 {

@@ -62,6 +62,13 @@ fn session() -> Session {
     };
     let r = runsqlstm(&mut store, &mut ctx, text, &opts).unwrap();
     assert_eq!(r.errors, 0, "{}", r.listing);
+    // T is journaled, for commitment control.
+    let mut t = store.begin().unwrap();
+    let rcv = jrn::rcv::crtjrnrcv(&mut t, lib, Name::parse("TRCV").unwrap(), &jrn::rcv::CrtJrnRcvOpts::default()).unwrap();
+    let jid = jrn::journal::crtjrn(&mut t, lib, Name::parse("TJRN").unwrap(), rcv, &jrn::journal::CrtJrnOpts::default()).unwrap();
+    let tid = ctx.resolve_file(&mut t, &sql::ast::ObjectName::new("T")).unwrap();
+    db::journal::strjrnpf(&mut t, JobHandle(1), tid, jid, false, true, 1).unwrap();
+    t.commit().unwrap();
     Session::new(Box::new(Rc::new(RefCell::new(store))), qsys, JobHandle(1), names)
 }
 
@@ -134,4 +141,48 @@ fn scopes_end_with_the_module_or_the_group() {
     assert_eq!(run(&mut s, "1:A", open.clone(), vec![]).sqlca.sqlcode, 0);
     assert_eq!(run(&mut s, "1:B", open.clone(), vec![]).sqlca.sqlcode, 0);
     assert_eq!(run(&mut s, "2:A", open, vec![]).sqlca.sqlcode, -502);
+}
+
+/// The lock level of the session's commitment definition.
+fn level(s: &Session) -> Option<db::cmt::LckLvl> {
+    s.ctx.session.commit_def().map(|d| d.borrow().lcklvl())
+}
+
+fn under(text: &str, commit: Option<db::cmt::LckLvl>) -> Desc {
+    Desc {
+        op: Op::Exec,
+        text: text.into(),
+        sql_naming: true,
+        commit,
+        ..Desc::default()
+    }
+}
+
+#[test]
+fn the_lock_level_changes_between_units_of_work() {
+    use db::cmt::LckLvl::{All, Chg, Cs};
+    let mut s = session();
+    let upd = "UPDATE QSTEST.T SET SAL = 1 WHERE ID = 1";
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(Chg)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(Chg));
+    // A change is pending: the unit keeps its level.
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(Chg));
+    let r = run(&mut s, "1:P", under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)), vec![]);
+    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-428, "25001"));
+    run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
+    // The next unit takes the statement's level.
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(All));
+    run(&mut s, "1:P", under("ROLLBACK", Some(All)), vec![]);
+    // SET TRANSACTION holds for its unit, over the statements' level.
+    let r = run(&mut s, "1:P", under("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Some(All)), vec![]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(level(&s), Some(Cs));
+    assert_eq!(run(&mut s, "1:P", under(upd, Some(All)), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(level(&s), Some(Cs));
+    run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
+    run(&mut s, "1:P", under(upd, Some(All)), vec![]);
+    assert_eq!(level(&s), Some(All));
+    run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
 }

@@ -423,7 +423,7 @@ fn errors() {
         ("SELECT 1 FROM a EXCEPT SELECT 1 FROM b", "EXCEPT"),
         ("CREATE TABLE t (c CLOB(1K))", "CLOB"),
         ("CALL p()", "CALL"),
-        ("SET TRANSACTION ISOLATION LEVEL RR", "SET TRANSACTION"),
+        ("SET OPTION COMMIT = *CHG", "SET OPTION"),
         ("DECLARE c CURSOR FOR s1", "prepared statement"),
     ] {
         let e = parse(text, Naming::Sys).unwrap_err();
@@ -445,4 +445,20 @@ fn errors() {
         parse("UPDATE t SET (a, b) = (1, 2, 3)", Naming::Sys),
         Err(SqlError::Syntax { .. })
     ));
+}
+
+#[test]
+fn set_transaction_levels() {
+    for (text, iso) in [
+        ("SET TRANSACTION ISOLATION LEVEL NO COMMIT", Isolation::Nc),
+        ("SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED", Isolation::Ur),
+        ("SET TRANSACTION ISOLATION LEVEL READ COMMITTED", Isolation::Cs),
+        ("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ", Isolation::Rs),
+        ("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE", Isolation::Rr),
+        ("SET TRANSACTION ISOLATION LEVEL CHG", Isolation::Ur),
+        ("SET TRANSACTION ISOLATION LEVEL RR", Isolation::Rr),
+    ] {
+        assert_eq!(sys(text), Statement::SetTransaction(iso), "{text}");
+    }
+    assert!(parse("SET TRANSACTION ISOLATION LEVEL SOMETIMES", Naming::Sys).is_err());
 }

@@ -90,6 +90,9 @@ pub struct SqlContext {
     /// Changes are not under commitment control even when the job has
     /// it (a program precompiled with `COMMIT(*NONE)`).
     pub no_commit: bool,
+    /// `SET TRANSACTION`: the unit of work's level over the statements'
+    /// own, until it commits or rolls back.
+    pub isolation: Option<crate::ast::Isolation>,
     /// Asked every [`INTERRUPT_EVERY`] rows read; `None` never ends.
     pub interrupt: Option<Interrupt>,
     /// Rows read since the context was made.
@@ -148,6 +151,7 @@ impl SqlContext {
             spill: Box::new(spill::MemSpill::default()),
             nulls_eliminated: false,
             no_commit: false,
+            isolation: None,
             interrupt: None,
             interrupt_ticks: 0,
         }
@@ -257,7 +261,8 @@ impl SqlContext {
     /// Open a table for a data change, under commitment control when the
     /// job has it.
     pub fn open(&mut self, txn: &mut Txn<'_>, t: &TableInfo, usage: Usage) -> Result<Odp> {
-        let cmt = if self.no_commit { None } else { self.session.commit_def().cloned() };
+        let nc = self.no_commit || self.isolation == Some(crate::ast::Isolation::Nc);
+        let cmt = if nc { None } else { self.session.commit_def().cloned() };
         let opts = OpenOpts {
             member: MemberSpec::Name(t.member.name),
             usage,
@@ -271,6 +276,39 @@ impl SqlContext {
         }
         Ok(o)
     }
+}
+
+/// The lock level of an isolation; `None` for no commit. `RR` is
+/// `*ALL`: the engine has no `*RR`.
+#[must_use]
+pub fn lock_level(iso: crate::ast::Isolation) -> Option<db::cmt::LckLvl> {
+    use crate::ast::Isolation as I;
+    match iso {
+        I::Nc => None,
+        I::Ur => Some(db::cmt::LckLvl::Chg),
+        I::Cs => Some(db::cmt::LckLvl::Cs),
+        I::Rs | I::Rr => Some(db::cmt::LckLvl::All),
+    }
+}
+
+/// `SET TRANSACTION`: refused once the unit of work changed
+/// something; else the level of the rest of the unit, and of the
+/// commitment definition when the job has one.
+fn set_transaction(ctx: &mut SqlContext, iso: crate::ast::Isolation) -> Result<()> {
+    let refused = || SqlError::UnitOfWork {
+        what: "SET TRANSACTION".into(),
+    };
+    if let Some(def) = ctx.session.commit_def() {
+        let mut def = def.borrow_mut();
+        if def.cycle() != 0 {
+            return Err(refused());
+        }
+        if let Some(l) = lock_level(iso) {
+            def.set_lcklvl(l);
+        }
+    }
+    ctx.isolation = Some(iso);
+    Ok(())
 }
 
 /// A column of a result set, as the SQLDA would describe it.
@@ -404,6 +442,7 @@ impl Prepared {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.commit(txn, ctx.now)?;
                 }
+                ctx.isolation = None;
                 if !hold {
                     cursor::end_of_unit(ctx);
                 }
@@ -413,6 +452,7 @@ impl Prepared {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.rollbck(txn, ctx.now)?;
                 }
+                ctx.isolation = None;
                 if !hold {
                     cursor::end_of_unit(ctx);
                 }
@@ -453,6 +493,7 @@ impl Prepared {
                 Ok(Outcome::Done)
             }
             Statement::SetPath(_) | Statement::SetCurrentDegree => Ok(Outcome::Done),
+            Statement::SetTransaction(iso) => set_transaction(ctx, *iso).map(|()| Outcome::Done),
             Statement::Explain(inner) => {
                 let Statement::Select(q) = &**inner else {
                     return Err(SqlError::Unsupported {
@@ -523,6 +564,7 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::SetSchema(_) => "SET SCHEMA",
         Statement::SetPath(_) => "SET PATH",
         Statement::SetCurrentDegree => "SET CURRENT DEGREE",
+        Statement::SetTransaction(_) => "SET TRANSACTION",
         Statement::Explain(_) => "EXPLAIN",
     }
 }

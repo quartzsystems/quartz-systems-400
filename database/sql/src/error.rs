@@ -161,6 +161,14 @@ pub enum SqlError {
     #[error("the statement was cancelled")]
     Cancelled,
 
+    /// Allowed only at the start of a unit of work: changes are not
+    /// committed or rolled back.
+    #[error("{what} is allowed only before the unit of work changes anything")]
+    UnitOfWork {
+        /// The statement.
+        what: String,
+    },
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -194,6 +202,7 @@ impl SqlError {
             Self::ValueCount { .. } => -117,
             Self::NotAuthorized { .. } => -551,
             Self::Cancelled => -952,
+            Self::UnitOfWork { .. } => -428,
             Self::Database { .. } => -901,
         }
     }
@@ -220,6 +229,7 @@ impl SqlError {
             Self::ValueCount { .. } => "42802",
             Self::NotAuthorized { .. } => "42501",
             Self::Cancelled => "57014",
+            Self::UnitOfWork { .. } => "25001",
             Self::Database { .. } => "58004",
         }
     }

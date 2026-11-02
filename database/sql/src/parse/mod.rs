@@ -652,10 +652,44 @@ impl Parser {
             self.advance();
             return Ok(Statement::SetCurrentDegree);
         }
+        if self.eat_words(&["TRANSACTION", "ISOLATION", "LEVEL"]) {
+            return self.set_transaction();
+        }
         if self.eat_words(&["TRANSACTION", "ISOLATION"]) || self.eat_word("OPTION") {
             return Err(Self::unsupported("SET TRANSACTION / SET OPTION"));
         }
         Err(Self::unsupported("SET of that register or variable"))
+    }
+
+    /// The level of `SET TRANSACTION ISOLATION LEVEL`, in words or
+    /// as the short form.
+    fn set_transaction(&mut self) -> Result<Statement> {
+        let iso = if self.eat_words(&["NO", "COMMIT"]) {
+            Isolation::Nc
+        } else if self.eat_words(&["READ", "UNCOMMITTED"]) {
+            Isolation::Ur
+        } else if self.eat_words(&["READ", "COMMITTED"]) {
+            Isolation::Cs
+        } else if self.eat_words(&["REPEATABLE", "READ"]) {
+            Isolation::Rs
+        } else if self.eat_word("SERIALIZABLE") {
+            Isolation::Rr
+        } else {
+            let iso = match self.tok() {
+                Tok::Word(w) => match w.as_str() {
+                    "NC" | "NONE" => Isolation::Nc,
+                    "UR" | "CHG" => Isolation::Ur,
+                    "CS" => Isolation::Cs,
+                    "RS" | "ALL" => Isolation::Rs,
+                    "RR" => Isolation::Rr,
+                    _ => return Err(self.expected("an isolation level")),
+                },
+                _ => return Err(self.expected("an isolation level")),
+            };
+            self.advance();
+            iso
+        };
+        Ok(Statement::SetTransaction(iso))
     }
 
     fn path_entry(&mut self) -> Result<PathEntry> {

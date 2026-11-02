@@ -451,13 +451,24 @@ impl Session {
     /// Commitment control for a statement: under `COMMIT(*CHG|*CS|*ALL)`
     /// the activation group's definition, started at its first
     /// statement when neither the group nor the job has one; under
-    /// `*NONE` its changes are not under commitment control.
+    /// `*NONE` its changes are not under commitment control. The level
+    /// is the statement's, or the unit's after `SET TRANSACTION`; the
+    /// definition takes it between units of work, and keeps the unit's
+    /// while changes are pending.
     fn commitment(&mut self, req: &Request) -> Option<Reply> {
         let group = format!("*SQL{}", req.scope.split(':').next().unwrap_or(""));
         self.ctx.session.set_cmt_group(Some(group.clone()));
-        self.ctx.no_commit = req.desc.commit.is_none();
-        let lcklvl = req.desc.commit?;
-        if self.ctx.session.commit_def().is_some() || matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag) {
+        let level = match self.ctx.isolation {
+            Some(iso) => crate::exec::lock_level(iso),
+            None => req.desc.commit,
+        };
+        self.ctx.no_commit = level.is_none();
+        let lcklvl = level?;
+        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag) {
+            return None;
+        }
+        if let Some(def) = self.ctx.session.commit_def() {
+            def.borrow_mut().set_lcklvl(lcklvl);
             return None;
         }
         let now = self.ctx.clock();
