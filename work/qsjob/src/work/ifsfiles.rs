@@ -11,9 +11,9 @@ use std::io;
 
 use httpd::bridge::{self, Local};
 use httpd::files::{Entry, Files};
-use ifs::client::{IfsClient, read_all, write_all};
+use ifs::client::{IfsClient, read_all, replace, write_all};
 use ifs::errno::Errno;
-use ifs::ops::flags::{O_APPEND, O_CREAT, O_RDONLY, O_TRUNC, O_WRONLY, S_IFDIR, S_IFMT};
+use ifs::ops::flags::{O_APPEND, O_CREAT, O_RDONLY, O_WRONLY, S_IFDIR, S_IFMT};
 use ifs::ops::{OpenArgs, RenameMode};
 use stg::Shared;
 use stg::remote::RemoteIfs;
@@ -76,9 +76,8 @@ impl Local for IfsFiles {
     }
 
     fn write_atomic(&self, path: &str, data: &[u8]) -> io::Result<()> {
-        let tmp = format!("{path}.tmp");
-        self.put(&tmp, data, O_TRUNC)?;
-        self.c.rename(&tmp, path, RenameMode::Unlink).map_err(|e| err(path, e))
+        // A file another profile owns keeps its owner and authorities.
+        replace(&self.c, path, data, 0o644).map_err(|e| err(path, e))
     }
 
     fn append(&self, path: &str, data: &[u8]) -> io::Result<()> {

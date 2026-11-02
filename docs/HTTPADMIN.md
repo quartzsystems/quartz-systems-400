@@ -283,6 +283,17 @@ another profile is given, when it is created or its profile changed,
 `*RWX` on its `logs` and `*RW` on `/www/instances.json`
 (`env::authorize_commands`, run by the job as the files' owner).
 
+Files are replaced with `ifs::client::replace`: a file the writer owns
+with no private authorities through a temporary file and a rename,
+any other in place, so it keeps its owner and authorities. A rename by
+another profile made that profile the owner: `ENDTCPSVR` run as
+`QSECOFR` (its `end_delay`) took `/www/instances.json` from `QTMHHTTP`,
+which then could not replace it (a rename over a file needs
+`*OBJEXIST`), so creating, deleting and Navigator's entry failed with
+`HTP8106`. The storage service gives a registry another profile owns
+back to `QTMHHTTP` at every IPL. The message page's Job log shows the
+`ADMIN` job's log (`/joblog`, `web_joblog`).
+
 "Require TLS" redirects 2001 to the TLS port only while that port
 listens (`Admin::tls_up`), and cannot be switched on while it does not,
 so a TLS port that fails to start never locks administration out.

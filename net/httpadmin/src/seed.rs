@@ -26,6 +26,9 @@ pub const WWW_OWNER: &str = "QTMHHTTP";
 /// Its `*PUBLIC` data authority.
 pub const WWW_PUBLIC: &str = "*RX";
 
+/// The instance registry, owned by [`WWW_OWNER`] too.
+pub const REGISTRY: &str = httpd::registry::PATH;
+
 /// Navigator's instance.
 pub const NAVIGATOR: &str = "NAVIGATOR";
 /// The licensed program Navigator is: its instance is listed only while

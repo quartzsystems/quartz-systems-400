@@ -127,6 +127,13 @@ impl System for FixtureSystem {
         "123457/QTMHHTTP/ADMIN".into()
     }
 
+    fn job_log(&self) -> Vec<String> {
+        vec![
+            "TCP1A07 Information 00 10/29/26 08:00:01.000000  HTTP server starting: instance ADMIN.".into(),
+            "HTP8001 Information 00 10/29/26 08:00:02.000000  HTTP server instance ADMIN started, listening on *:2001.".into(),
+        ]
+    }
+
     fn interfaces(&self) -> Vec<String> {
         ["10.0.10.20", "10.0.10.21", "172.16.0.5", "127.0.0.1"].map(String::from).to_vec()
     }
