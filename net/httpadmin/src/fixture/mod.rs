@@ -37,12 +37,15 @@ pub struct FixtureSystem {
     pub audit: Mutex<Vec<Audit>>,
     /// Users: name, special authorities, class, groups.
     pub users: Vec<(&'static str, Vec<&'static str>, &'static str, Vec<&'static str>)>,
+    /// Licensed programs deleted (`QS00NAV` hides `NAVIGATOR`).
+    pub deleted: Mutex<Vec<&'static str>>,
 }
 
 impl Default for FixtureSystem {
     fn default() -> Self {
         Self {
             audit: Mutex::new(Vec::new()),
+            deleted: Mutex::new(Vec::new()),
             users: vec![
                 (
                     "QSECOFR",
@@ -126,6 +129,10 @@ impl System for FixtureSystem {
 
     fn interfaces(&self) -> Vec<String> {
         ["10.0.10.20", "10.0.10.21", "172.16.0.5", "127.0.0.1"].map(String::from).to_vec()
+    }
+
+    fn product_installed(&self, product: &str) -> bool {
+        !self.deleted.lock().expect("deleted").contains(&product)
     }
 }
 
@@ -262,7 +269,7 @@ const SAMPLES: &[Sample] = &[
         name: "NAVIGATOR",
         description: "Navigator for QS/400",
         listen: &["*:2002", "*:2005"],
-        autostart: true,
+        autostart: false,
     },
     Sample {
         name: "ACCESSWEB",

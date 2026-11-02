@@ -209,11 +209,17 @@ and `Net::run` as the user, as in Work management.
 
 ## The live server
 
-`STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)` starts job `NAVIGATOR` in
-`QHTTPSVR` under `QTMHHTTP` next to `ADMIN` (role `HTTPNAV`,
-`work/qsjob/src/work/httpnav/`); `ENDTCPSVR ... HTTPSVR(*ADMIN)` ends
-both and `STRTCP` starts both when `*HTTP` autostarts. It listens on
-2002 and, with TLS, 2005 (the certificate `*SYSTEM` assigns
+Navigator is licensed program `QS00NAV` `*BASE` (docs/LICPGM.md),
+installed on every new system, and HTTP server instance `NAVIGATOR`,
+off until started like any other instance: `STRTCPSVR SERVER(*HTTP)
+HTTPSVR(NAVIGATOR)` (or Start on HTTP Server Administration's Server
+instances) starts job `NAVIGATOR` in `QHTTPSVR` under `QTMHHTTP` (role
+`HTTPNAV`, `work/qsjob/src/work/httpnav/`); `ENDTCPSVR ...
+HTTPSVR(NAVIGATOR)` ends it. `HTTPSVR(*ADMIN)` no longer starts it;
+`HTTPSVR(*ALL)` and `STRTCP` do only when its registry entry is marked
+autostart (it is not when made). Without `QS00NAV` the instance does
+not exist: not listed, and the command answers `TCP1A06`. It listens
+on 2002 and, with TLS, 2005 (the certificate `*SYSTEM` assigns
 `QS400_HTTP_SERVER_NAVIGATOR`, else the system's own). The job's thread
 holds the link; connection threads hand it closures
 (`work/qsjob/src/work/web/`, shared with `ADMIN`). Every read runs with
@@ -246,12 +252,12 @@ shows it). Active jobs' notes: a job a user ended through Navigator
 (`ENDJOB` that completed) is reported to that user once, when it has
 left the active job table, as the job's `CPF1164` from the history
 log (the golden page shows `CPF1321`, the prototype's choice). QEMU step 88
-(`tools/conformance/src/navstep.rs`) signs on over 2002, checks System
+(`tools/conformance/src/navstep.rs`) starts `HTTPSVR(NAVIGATOR)`, signs on over 2002, checks System
 status against `DSPNETA`, the `NAVIGATOR` job on Active jobs against
 `DSPJOB`, `QSYSOPR`, `QSECURITY` on Security values against
 `DSPSYSVAL`, `10.0.2.15` on interfaces, `*HTTP` started on TCP servers,
 System activity, the CSRF refusal, Run SQL's result table over
-`QSYS2.SYSTABLES`, `QS00SS1` on Licensed programs, PTFs, the audit
+`QSYS2.SYSTABLES`, `QS00SS1` and `QS00NAV` on Licensed programs, PTFs, the audit
 journal and sign-off, and the sign-on page over TLS on 2005.
 ## Database, security, software
 

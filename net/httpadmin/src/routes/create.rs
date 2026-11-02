@@ -396,6 +396,10 @@ fn check(rq: &Rq<'_>, s: &Settings, a: &Answers, n: usize) -> Result<(), Message
         1 => {
             let name = instance::check_name(&a.name)
                 .map_err(|_| bad_value(&a.name, "Instance name", "1 to 10 letters and digits, starting with a letter"))?;
+            // The web products' names stay theirs, installed or not.
+            if PRODUCT_INSTANCES.contains(&name.as_str()) {
+                return Err(bad_value(&a.name, "Instance name", "a name other than ADMIN, NAVIGATOR and ACCESSWEB"));
+            }
             let reg = Registry::load(files).unwrap_or_default();
             if reg.get(&name).is_some() {
                 return Err(msgs::message(Kind::Error, "HTP8122", &[&name]));

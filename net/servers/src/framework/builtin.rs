@@ -44,8 +44,9 @@ impl TcpServer for Telnet {
 }
 
 /// `*HTTP` with `HTTPSVR(*ADMIN)`: the administration listener `ADMIN`
-/// in `QHTTPSVR` and Navigator's `NAVIGATOR` next to it, their ports
-/// in the request data; `ENDTCPSVR` ends both.
+/// in `QHTTPSVR` alone, its ports in the request data with Navigator's
+/// (`NAVPORT`, `NAVTLSPORT`, for the `NAVIGATOR` instance it lists).
+/// Navigator is an instance of its own ([`super::HttpServer`]).
 pub struct HttpAdmin;
 
 impl TcpServer for HttpAdmin {
@@ -55,20 +56,28 @@ impl TcpServer for HttpAdmin {
 
     fn jobs(&self, req: &Request, attrs: &ServerAttrs) -> Result<Vec<JobStart>, Refusal> {
         check_instance(self.spec(), req)?;
-        let mut jobs: Vec<JobStart> = listener_job(self.spec(), HttpAttrs::from_bag(&attrs.bag).rqsdta())
-            .into_iter()
-            .collect();
-        if let Some(nav) = self.spec().jobs.iter().find(|j| j.role == "HTTPNAV") {
-            jobs.push(JobStart {
-                name: nav.name.to_string(),
-                user: nav.user.to_string(),
-                subsystem: nav.subsystem.to_string(),
-                role: nav.role.to_string(),
-                rqsdta: HttpAttrs::navigator(&attrs.bag).rqsdta(),
-                ..JobStart::default()
-            });
+        let nav = HttpAttrs::navigator(&attrs.bag);
+        let rqsdta = format!(
+            "{} NAVPORT({}) NAVTLSPORT({})",
+            HttpAttrs::from_bag(&attrs.bag).rqsdta(),
+            nav.port,
+            nav.tls_port
+        );
+        Ok(listener_job(self.spec(), rqsdta).into_iter().collect())
+    }
+
+    fn end(&self, env: &mut dyn Env, req: &Request, immediate: bool) -> Result<String, Refusal> {
+        let spec = self.spec();
+        check_instance(spec, req)?;
+        if !self.active(env, req) {
+            return Ok(format!("{} {} server not active.", msg::NOT_ACTIVE, spec.name));
         }
-        Ok(jobs)
+        // `ADMIN` only: `NAVIGATOR` ends as its own instance.
+        if let Some(l) = spec.listener() {
+            env.end_job(l.name, immediate)
+                .map_err(|e| Refusal::new(msg::NOT_ACTIVE, format!("{} not ended: {e}", spec.special)))?;
+        }
+        Ok(format!("{} {} server ending.", msg::ENDING, spec.name))
     }
 }
 

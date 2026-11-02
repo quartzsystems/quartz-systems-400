@@ -97,10 +97,9 @@ fn http_admin_instance_and_subsystem() {
     assert_eq!(env.subsystems, ["QHTTPSVR"]);
     let j = &env.running[0];
     assert_eq!((j.name.as_str(), j.user.as_str(), j.role.as_str()), ("ADMIN", "QTMHHTTP", "HTTPADM"));
-    assert_eq!(j.rqsdta, "PORT(8001) TLSPORT(2010)");
-    let n = &env.running[1];
-    assert_eq!((n.name.as_str(), n.user.as_str(), n.role.as_str()), ("NAVIGATOR", "QTMHHTTP", "HTTPNAV"));
-    assert_eq!(n.rqsdta, "PORT(2002) TLSPORT(2005)");
+    assert_eq!(j.rqsdta, "PORT(8001) TLSPORT(2010) NAVPORT(2002) NAVTLSPORT(2005)");
+    // Navigator is an instance of its own: ADMIN starts alone.
+    assert_eq!(env.running.len(), 1);
     let other = Request {
         instance: Instance::Named("WEB1".into()),
         ..Request::new("*HTTP")

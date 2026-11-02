@@ -2,15 +2,16 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Step 88: Navigator from live state. `STRTCPSVR *HTTP HTTPSVR(*ADMIN)`
-//! starts `NAVIGATOR` next to `ADMIN`; from the host, over HTTP on
+//! Step 88: Navigator from live state. Navigator is an instance of its
+//! own, off until started: `STRTCPSVR *HTTP HTTPSVR(NAVIGATOR)` starts
+//! `NAVIGATOR` (QS00NAV is installed); from the host, over HTTP on
 //! 2002: `QSECOFR` signs on, System status names the system, Active
 //! jobs lists the `NAVIGATOR` job itself (which `DSPJOB` knows), the
 //! `QSYSOPR` queue loads, a POST without the form field is refused,
 //! Run SQL returns a result table from `QSYS2.SYSTABLES`, Licensed
-//! programs lists `QS00SS1`, PTFs and the audit journal load,
-//! sign-off; then the sign-on page over TLS on 2005; `ENDTCPSVR` ends
-//! both jobs.
+//! programs lists `QS00SS1` and `QS00NAV`, PTFs and the audit journal
+//! load, sign-off; then the sign-on page over TLS on 2005;
+//! `ENDTCPSVR ... HTTPSVR(NAVIGATOR)` ends the job.
 
 use std::time::{Duration, Instant};
 
@@ -63,12 +64,12 @@ impl Suite {
         // started" until they are gone.
         let end = Instant::now() + Duration::from_secs(60);
         loop {
-            let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
+            let started = s.command("STRTCPSVR SERVER(*HTTP) HTTPSVR(NAVIGATOR)", CMD)?;
             if started.contains("TCP1A07") || (started.contains("TCP1A08") && Instant::now() > end) {
                 break;
             }
             if !started.contains("TCP1A08") {
-                return Err(format!("STRTCPSVR *ADMIN:\n{started}"));
+                return Err(format!("STRTCPSVR NAVIGATOR:\n{started}"));
             }
             std::thread::sleep(Duration::from_secs(2));
         }
@@ -113,7 +114,7 @@ impl Suite {
         let result = nav(plain, "GET", "/sql", Some(&sid), None)?;
         want(&result, 200, &["class=\"list\"", "TABLE_NAME", "SQL7958"], "Run SQL's result table")?;
         let lp = nav(plain, "GET", "/licpgm", Some(&sid), None)?;
-        want(&lp, 200, &["Licensed programs", "QS00SS1"], "Licensed programs")?;
+        want(&lp, 200, &["Licensed programs", "QS00SS1", "QS00NAV"], "Licensed programs")?;
         let ptf = nav(plain, "GET", "/ptf", Some(&sid), None)?;
         want(&ptf, 200, &["PTFs"], "PTFs")?;
         let audit = nav(plain, "GET", "/audit", Some(&sid), None)?;
@@ -129,12 +130,12 @@ impl Suite {
         let secure = forward_port(self, GUEST, 2005)?;
         let t = tls_get(secure, &format!("{PREFIX}/signon"))?;
         want(&t, 200, &["name=\"password\""], "the sign-on page over TLS")?;
-        let ended = s.command("ENDTCPSVR SERVER(*HTTP) HTTPSVR(*ADMIN)", CMD)?;
+        let ended = s.command("ENDTCPSVR SERVER(*HTTP) HTTPSVR(NAVIGATOR)", CMD)?;
         if !ended.contains("TCP1A0A") {
-            return Err(format!("ENDTCPSVR *ADMIN:\n{ended}"));
+            return Err(format!("ENDTCPSVR NAVIGATOR:\n{ended}"));
         }
         Ok(format!(
-            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, {live}, a forged POST refused, Run SQL, QS00SS1 installed, PTFs, the audit journal, signed off; the sign-on page over TLS on 2005 (host {secure})"
+            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, {live}, a forged POST refused, Run SQL, QS00SS1 and QS00NAV installed, PTFs, the audit journal, signed off; the sign-on page over TLS on 2005 (host {secure})"
         ))
     }
 }

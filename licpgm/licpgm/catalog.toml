@@ -215,21 +215,29 @@ components = ["httpd (instances under /www)", "httpadmin (the ADMIN instance)", 
 ibm = "5770DG1 *BASE"
 
 # ---------------------------------------------------------------------
-# Reserved: IDs registered, nothing shipped.
+# QS00NAV: Navigator. No objects of its own (its job runs the OS's
+# program, its messages are QCPFMSG's and QZHBMSG's), so QSYS like
+# QS00TC1; installed, it lists and starts instance NAVIGATOR.
 [[package]]
 [package.product]
 id = "QS00NAV"
 text = "Quartz Systems/400 Navigator"
-library = "QNAV"
-status = "reserved"
+library = "QSYS"
+first_copyright = 2026
+current_copyright = 2026
+status = "shipped"
 
 [[package.option]]
 option = "*BASE"
 text = "Quartz Systems/400 Navigator"
 msgid = "QSZ5000"
+feature = "5001"
 requires = ["QS00SS1:*BASE", "QS00DG1:*BASE"]
+components = ["navigator (the NAVIGATOR instance)"]
 ibm = "IBM Navigator for i, part of the operating system there"
 
+# ---------------------------------------------------------------------
+# Reserved: IDs registered, nothing shipped.
 [[package]]
 [package.product]
 id = "QS00AFW"

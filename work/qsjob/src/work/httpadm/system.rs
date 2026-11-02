@@ -21,6 +21,19 @@ pub struct LiveSystem {
 }
 
 impl System for LiveSystem {
+    fn product_installed(&self, product: &str) -> bool {
+        let product = product.to_string();
+        self.core.bridge().call(move |m| {
+            let rows = m
+                .link
+                .borrow_mut()
+                .with(|l| l.licpgm_panel("INSTALLED".into(), Vec::new()))
+                .unwrap_or_default();
+            crate::command::tcpsvr::base_installed(&rows, &product)
+        })
+        .unwrap_or(true)
+    }
+
     fn name(&self) -> String {
         self.core.name()
     }

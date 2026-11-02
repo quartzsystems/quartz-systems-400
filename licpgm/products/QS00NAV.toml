@@ -1,0 +1,21 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00NAV from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal. Navigator has no
+# objects of its own: its library is QSYS, as QS00TC1's.
+
+[product]
+id = "QS00NAV"
+text = "Quartz Systems/400 Navigator"
+library = "QSYS"
+first_copyright = 2026
+current_copyright = 2026
+
+[[option]]
+option = "*BASE"
+text = "Quartz Systems/400 Navigator"
+msgid = "QSZ5000"
+feature = "5001"
+requires = ["QS00SS1:*BASE", "QS00DG1:*BASE"]

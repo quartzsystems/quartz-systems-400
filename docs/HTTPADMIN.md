@@ -30,6 +30,13 @@ password `QS400`).
   the golden pages' `/QS400/USERDATA` paths are data differences. The
   hygiene test (`tests/behavior.rs`) skips only `/QIBM/` paths.
 - `ADMIN` listens on 2001 and, with TLS, 2010 (2005 is Navigator's).
+- Server instances lists `NAVIGATOR` like `ADMIN`: a registry entry the
+  `ADMIN` job makes, its job `QTMHHTTP/NAVIGATOR` in `QHTTPSVR`, Start,
+  Stop and Restart through `STRTCPSVR`/`ENDTCPSVR ...
+  HTTPSVR(NAVIGATOR)`. It is listed only while `QS00NAV` `*BASE` is
+  installed (`System::product_installed`); `ADMIN` makes the entry when
+  it starts, so after `RSTLICPGM` of `QS00NAV` it appears once `ADMIN`
+  restarts (the command starts Navigator either way).
 - Routes: `/qs400/httpadmin/` + the prototype's file name as a path
   (`instance-ports.html` is `/instance/<name>/ports`). The stylesheet is
   `/qs400/shared/qs400.css` for every product. Help is
@@ -239,7 +246,10 @@ installed on every new system: its `*BASE` code load is library
 `QHTTPSVR` with `QZHBMSG`, made by `lic/osobjects/src/products.rs` when
 the service seeds the catalog at IPL and by `build lp` for the
 product's load, so `CHKPRDOPT PRDID(QS00DG1)` checks the file. On a new
-system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`) in
+system the job makes instance `ADMIN` (`/www/admin`, `seed.rs`) and, when
+licensed program `QS00NAV` is installed, instance `NAVIGATOR`
+(`/www/navigator`, ports 2002 and 2005 from `CHGHTTPA`'s `NAVPORT` and
+`NAVTLSPORT`, autostart off) in
 `/www`, which the storage service makes at every IPL where it is
 missing, owned by `QTMHHTTP` with `*PUBLIC *RX` (`seed::WWW`); when it
 cannot, the job log says why (`HTP8106`). A message row's link carries

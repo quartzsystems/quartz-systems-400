@@ -4,7 +4,8 @@
 
 //! `*HTTP` with registry instances against a fake job: start, already
 //! started, unknown, end with a delay, `*ALL`, `STRTCP`'s autostart,
-//! and the administration instance beside them.
+//! the administration instance beside them, and Navigator's, there
+//! only while `QS00NAV` is installed.
 
 use servers::framework::{HttpInstance, HttpServer};
 use servers::{Env, Framework, Instance, JobStart, Request};
@@ -17,6 +18,8 @@ struct Fake {
     running: Vec<JobStart>,
     subsystems: Vec<String>,
     endings: Vec<(String, bool, u32)>,
+    /// `QS00NAV` deleted.
+    no_navigator: bool,
 }
 
 impl Env for Fake {
@@ -49,6 +52,9 @@ impl Env for Fake {
     }
     fn http_ending(&mut self, instance: &str, immediate: bool, delay: u32) {
         self.endings.push((instance.into(), immediate, delay));
+    }
+    fn product_installed(&mut self, product: &str) -> bool {
+        !(self.no_navigator && product == "QS00NAV")
     }
 }
 
@@ -103,7 +109,7 @@ fn all_and_autostart() {
     let text = out[0].1.as_ref().unwrap();
     assert_eq!(text, "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1.");
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
-    assert_eq!(names, ["ADMIN", "NAVIGATOR", "WEB1"]);
+    assert_eq!(names, ["ADMIN", "WEB1"]);
     // Ending *ALL ends both, with the delay given.
     let out = fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, Some(5));
     assert_eq!(out[0].1.as_ref().unwrap().lines().count(), 2);
@@ -136,5 +142,46 @@ fn chghttpa_autostart() {
         "TCP1A07 HTTP server starting.\nTCP1A07 HTTP server starting: instance WEB1."
     );
     let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
+    assert_eq!(names, ["ADMIN", "WEB1"]);
+}
+
+/// `HTTPSVR(NAVIGATOR)` starts and ends Navigator's job, its ports from
+/// `CHGHTTPA`; its registry entry (made by `ADMIN`) is not a user
+/// instance, and it starts with `*ALL` only when marked autostart.
+#[test]
+fn navigator_is_an_instance_of_its_own() {
+    let (fw, mut env) = (fw(), env());
+    env.cfg.get_mut("*HTTP").set("NAVPORT", "8002");
+    env.instances.push(HttpInstance { name: "NAVIGATOR".into(), autostart: false, user: "QTMHHTTP".into() });
+    assert_eq!(
+        fw.start(&mut env, &named("navigator")).unwrap(),
+        "TCP1A07 HTTP server starting: instance NAVIGATOR."
+    );
+    let j = &env.running[0];
+    assert_eq!(
+        (j.name.as_str(), j.user.as_str(), j.subsystem.as_str(), j.role.as_str(), j.rqsdta.as_str()),
+        ("NAVIGATOR", "QTMHHTTP", "QHTTPSVR", "HTTPNAV", "PORT(8002) TLSPORT(2005)")
+    );
+    assert_eq!(fw.start(&mut env, &named("NAVIGATOR")).unwrap_err().msgid, "TCP1A08");
+    // Ending the administration instance leaves Navigator running.
+    fw.start(&mut env, &named("*ADMIN")).unwrap();
+    fw.end(&mut env, &named("*ADMIN"), false).unwrap();
+    let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
+    assert_eq!(names, ["NAVIGATOR"]);
+    assert_eq!(fw.end(&mut env, &named("NAVIGATOR"), true).unwrap(), "TCP1A0A HTTP server ending: instance NAVIGATOR.");
+    assert_eq!(fw.end(&mut env, &named("NAVIGATOR"), true).unwrap_err().msgid, "TCP1A09");
+    // Marked autostart, *ALL starts it with the rest.
+    env.instances.last_mut().unwrap().autostart = true;
+    fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    let names: Vec<&str> = env.running.iter().map(|j| j.name.as_str()).collect();
     assert_eq!(names, ["ADMIN", "NAVIGATOR", "WEB1"]);
+    fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, None);
+    assert!(env.running.is_empty());
+    // Without QS00NAV there is no such instance, whatever the registry says.
+    env.no_navigator = true;
+    let e = fw.start(&mut env, &named("NAVIGATOR")).unwrap_err();
+    assert_eq!(e.msgid, "TCP1A06");
+    assert!(e.text.contains("QS00NAV"), "{}", e.text);
+    fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    assert!(!env.running.iter().any(|j| j.name == "NAVIGATOR"));
 }
