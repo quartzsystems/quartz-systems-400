@@ -512,6 +512,24 @@ impl Manager<'_> {
         Ok(())
     }
 
+    /// [`Certs::register_instance`](crate::env::Certs::register_instance).
+    pub fn register_instance(&self, instance: &str) -> Result<(), CertFailure> {
+        let id = certs::apps::http_server(instance);
+        let text = format!("HTTP server instance {}", instance.trim().to_ascii_uppercase());
+        match appids::add(&self.ctx, &id, AppKind::Server, &text) {
+            Ok(_) | Err(CertError::AlreadyRegistered(_)) => Ok(()),
+            Err(e) => Err(fail(e, "*SYSTEM")),
+        }
+    }
+
+    /// [`Certs::deregister_instance`](crate::env::Certs::deregister_instance).
+    pub fn deregister_instance(&self, instance: &str) -> Result<(), CertFailure> {
+        match appids::remove(&self.ctx, &certs::apps::http_server(instance)) {
+            Ok(_) | Err(CertError::NotRegistered(_)) => Ok(()),
+            Err(e) => Err(fail(e, "*SYSTEM")),
+        }
+    }
+
     /// [`Certs::copy`](crate::env::Certs::copy).
     pub fn copy(&self, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {
         let (src, dst) = (self.keystore(from)?, self.keystore(to)?);

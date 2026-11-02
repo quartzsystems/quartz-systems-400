@@ -64,8 +64,10 @@ impl Rq<'_> {
         self.req.form()
     }
 
-    /// A page in the frame, the waiting message first.
+    /// A page in the frame, the waiting message first. Every page
+    /// carries the product's wordmark, the shared patterns too.
     pub fn page(&self, mut page: Page) -> Response {
+        page.generic = false;
         if let Some(m) = self.admin.sessions.take_flash(&self.session.id) {
             page.messages.insert(0, m);
         }

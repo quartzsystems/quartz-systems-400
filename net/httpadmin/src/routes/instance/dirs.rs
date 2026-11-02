@@ -734,7 +734,6 @@ pub fn remove(rq: &Rq<'_>, v: &View) -> Response {
         h1: "Confirm Remove".into(),
         body,
         help: "instance-directories".into(),
-        generic: true,
         ..Page::default()
     })
 }

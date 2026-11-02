@@ -425,7 +425,7 @@ fn tls_apply() {
     assert!(b.get("/instance/WEBSTORE/ports").text().contains("<td>No</td>"));
     // No TLS port to turn on.
     let r = b.post("/instance/TESTSRV/tls", &[("tls", "on"), ("t13", "on"), ("cipher", "*STRONG"), ("apply", "Apply")]);
-    assert!(shown(&mut b, &r).contains("HTP8120"));
+    assert!(shown(&mut b, &r).contains("HTP8124"));
 }
 
 #[test]

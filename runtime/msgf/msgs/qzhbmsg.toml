@@ -44,7 +44,7 @@ vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 id = "HTP8021"
 sev = 0
 text = "HTTP server instance &1 deleted."
-help = "&N Cause . . . . . :   The server root &2 and the registry entry of instance &1 were removed. &N Recovery  . . . :   None."
+help = "&N Cause . . . . . :   The server root &2, the registry entry and the certificate application ID of instance &1 were removed. &N Recovery  . . . :   None."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
@@ -53,6 +53,20 @@ sev = 0
 text = "Configuration of HTTP server instance &1 changed."
 help = "&N Cause . . . . . :   The configuration file of instance &1 was replaced. The previous file was kept as httpd.conf.bak in the same directory. &N Recovery  . . . :   A running instance uses the new configuration after it is restarted."
 vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8023"
+sev = 10
+text = "HTTP server instance &1 deleted; files under &2 remain."
+help = "&N Cause . . . . . :   The registry entry of instance &1 was removed, but its files under &2 could not all be removed: &3 &N Recovery  . . . :   Remove the directory with RMVDIR SUBTREE(*ALL) as a user authorized to it."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8024"
+sev = 10
+text = "HTTP server instance &1 deleted; certificate application &2 remains."
+help = "&N Cause . . . . . :   Instance &1 was removed, but its certificate application ID &2 could not be removed: &3 &N Recovery  . . . :   Remove the application ID on the Certificate applications page, or leave it for an instance of the same name."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8100"
@@ -130,6 +144,27 @@ sev = 30
 text = "No more HTTP server instances can be created."
 help = "&N Cause . . . . . :   The system already has &1 instances, the most Global settings allow. &N Recovery  . . . :   Delete an instance that is no longer needed, or raise the limit in Global settings."
 vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8124"
+sev = 30
+text = "HTTP server instance &1 has no TLS port."
+help = "&N Cause . . . . . :   TLS is used on the ports marked TLS on the Ports & addresses page. Instance &1 has none, so TLS was not enabled. &N Recovery  . . . :   Add a port with Use TLS checked on the Ports & addresses page, then enable TLS again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8125"
+sev = 30
+text = "No certificate chosen for application &1."
+help = "&N Cause . . . . . :   Instance &2 presents the certificate assigned to application &1 on its TLS ports. None is assigned or chosen, and store *SYSTEM has no default certificate, so TLS was not enabled. &N Recovery  . . . :   Choose a certificate on the TLS page. If the list is empty, create or import a server certificate in store *SYSTEM on the Certificate stores page."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "HTP8126"
+sev = 30
+text = "Certificate application &1 could not be registered."
+help = "&N Cause . . . . . :   The server presents the certificate of application &1 on the TLS ports of instance &2. Registering the application ID failed: &3 &N Recovery  . . . :   Apply the TLS page of the instance again; it registers the application ID. If it fails again, check the message's cause."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8201"
