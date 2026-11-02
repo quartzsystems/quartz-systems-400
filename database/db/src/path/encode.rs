@@ -107,7 +107,7 @@ fn decfloat(v: &qdecimal::DecFloat) -> Vec<u8> {
 /// Sign byte and digit bytes of a decimal key part.
 fn decimal(f: &FieldDef, transform: KeyTransform, d: &Decimal) -> Vec<u8> {
     let neg = d.is_negative() && transform == KeyTransform::Signed;
-    let digits = usize::try_from(f.length).expect("fits");
+    let digits = usize::try_from(f.digits()).expect("fits");
     let mut out = Vec::with_capacity(1 + digits);
     out.push(if neg { 0x01 } else { 0x02 });
     let scaled = d

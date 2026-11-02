@@ -549,6 +549,9 @@ fn encode_field(f: &FieldDef, null_index: Option<u16>) -> [u8; FIELD_LEN] {
     if f.usage == Some(Usage::Both) {
         flags |= 4;
     }
+    if f.int_range {
+        flags |= 8;
+    }
     put_u16(&mut b, 12, flags);
     put_u32(&mut b, 14, f.length);
     put_u32(&mut b, 18, f.byte_len);
@@ -737,6 +740,7 @@ fn decode_field(b: &[u8]) -> Result<FieldDef> {
         });
     }
     f.usage = (flags & 4 != 0).then_some(Usage::Both);
+    f.int_range = flags & 8 != 0;
     f.byte_len = get_u32(b, 18);
     f.offset = get_u32(b, 22);
     f.ccsid = Some(get_u16(b, 26)).filter(|c| *c != 0);

@@ -116,6 +116,18 @@ impl Value {
                     .to_format(db::record::decfloat_format(f))
                     .map_err(decfloat_error)?,
             )),
+            // An SQL integer: its bytes' range, the fraction cut off.
+            DataType::Binary if f.int_range => {
+                let d = self.as_decimal()?;
+                let bits = f.data_len() * 8;
+                let whole = d.rescale(0, Rounding::Truncate).ok().and_then(|w| w.to_i128());
+                match whole {
+                    Some(n) if n >= -(1i128 << (bits - 1)) && n < (1i128 << (bits - 1)) => {
+                        Ok(db::record::Value::Num(qdecimal::Decimal::new(n, 0).map_err(conversion)?))
+                    }
+                    _ => Err(SqlError::Overflow { what: format!("{d} does not fit field {}", f.name) }),
+                }
+            }
             DataType::Zoned | DataType::Packed | DataType::Binary => {
                 let d = self.as_decimal()?;
                 let shape = Shape::new(u8::try_from(f.length).unwrap_or(63), f.decimals).map_err(conversion)?;

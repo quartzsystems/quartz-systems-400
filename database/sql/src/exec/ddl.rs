@@ -143,6 +143,8 @@ fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
     if let Some(ColumnDefault::Value(Expr::Register(r))) = &c.default {
         f.default = Some(dds::DefaultValue::Expr(register_text(*r)?));
     }
+    // SQL's integers hold their bytes' whole range.
+    f.int_range = matches!(c.type_spec.data_type, DataType::SmallInt | DataType::Integer | DataType::BigInt);
     if let DataType::Timestamp(p) = c.type_spec.data_type {
         f.length = dds::DataType::timestamp_length(p);
         f.byte_len = f.length;

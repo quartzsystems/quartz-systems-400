@@ -623,6 +623,9 @@ pub struct FieldDef {
     pub usage: Option<Usage>,
     /// `VARLEN`.
     pub varlen: Option<VarLen>,
+    /// An SQL `SMALLINT`, `INTEGER` or `BIGINT`: a `B` field that holds
+    /// its bytes' whole range, not just its digits.
+    pub int_range: bool,
     /// `ALWNULL`.
     pub allow_null: bool,
     /// `CCSID`.
@@ -672,6 +675,7 @@ impl FieldDef {
             offset: 0,
             usage: None,
             varlen: None,
+            int_range: false,
             allow_null: false,
             ccsid: None,
             text: None,
@@ -688,6 +692,21 @@ impl FieldDef {
             validity: Vec::new(),
             reference: None,
             line: 0,
+        }
+    }
+
+    /// The digits a numeric value can have: an SQL integer's whole
+    /// range (5, 10 or 19), else the length.
+    #[must_use]
+    pub fn digits(&self) -> u32 {
+        if self.int_range {
+            match self.data_len() {
+                2 => 5,
+                4 => 10,
+                _ => 19,
+            }
+        } else {
+            self.length
         }
     }
 

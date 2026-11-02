@@ -146,7 +146,7 @@ source order; the next `FORMAT` section starts the next format.
 | 0 | 10 | name | CP037 |
 | 10 | 1 | data_type | the type code, ASCII: a DDS letter `A H G O S P B F L T Z`, or for SQL-only types `E` `DECFLOAT`, `X` `BINARY` (`VARBINARY` with `VARLEN`), `N` `BOOLEAN`, `Q` `BLOB`, `C` `CLOB`, `J` `DBCLOB`; see §4 Field encodings |
 | 11 | 1 | decimals | |
-| 12 | 2 | flags | bit 0 `ALWNULL`, bit 1 `VARLEN`, bit 2 usage `B` |
+| 12 | 2 | flags | bit 0 `ALWNULL`, bit 1 `VARLEN`, bit 2 usage `B`, bit 3 SQL integer: a `B` field of SQL's `SMALLINT`, `INTEGER` or `BIGINT`, holding its 2, 4 or 8 bytes' whole range rather than its digits (its key part has 5, 10 or 19 digits) |
 | 14 | 4 | length | characters or digits; a timestamp 19 or `20 + p`, `DECFLOAT` 16 or 34, a LOB its largest length |
 | 18 | 4 | byte_len | bytes in the record, `VARLEN` prefix included |
 | 22 | 4 | offset | byte offset in the record |
@@ -318,7 +318,10 @@ is `1 + record_len + null_map_len`.
 - `A H G O`: the bytes, CP037 for text, blank (0x40) padded; `G` is two
   bytes per character.
 - `S P B F`: zoned, packed, binary (big-endian, two's complement) and
-  IEEE binary floating point (big-endian), as `DECIMAL.md` §2.
+  IEEE binary floating point (big-endian), as `DECIMAL.md` §2. A `B`
+  field with the SQL integer flag (`SMALLINT` `B 4,0`, `INTEGER` `B
+  9,0`, `BIGINT` `B 18,0`) takes any value of its 2, 4 or 8 bytes, as
+  IBM's SQL integers do; a DDS `B` field keeps its digits.
 - `L T`: the text in the field's format. `Z`: `yyyy-mm-dd-hh.mm.ss`,
   then for a precision `p` above 0 a `.` and `p` digits: the field is
   `length` = 19 or `20 + p` bytes, 26 for DDS's `Z` (`p` 6). An SQL

@@ -8,7 +8,7 @@
 use std::cmp::Ordering;
 
 use dds::{DataType, FieldDef, FloatPrecision, Literal};
-use qdecimal::{Binary, DecFloat, Decimal, DfFormat, Float, Packed, Rounding, Zoned};
+use qdecimal::{Binary, DecFloat, Decimal, DfFormat, Float, Integer, Packed, Rounding, Zoned};
 
 use crate::error::{DbError, Result};
 
@@ -54,6 +54,11 @@ fn mapping(f: &FieldDef, what: impl std::fmt::Display) -> DbError {
 
 fn digits(f: &FieldDef) -> u8 {
     u8::try_from(f.length).expect("numeric length at most 63")
+}
+
+/// An SQL integer field's encoding: its bytes, signed.
+fn int_of(f: &FieldDef) -> qdecimal::Result<Integer> {
+    Integer::new(u8::try_from(f.data_len()).unwrap_or(8), true)
 }
 
 /// Whether bit `null_index` of the null map is set.
@@ -103,6 +108,7 @@ pub fn read_field(
     let num = match f.data_type {
         DataType::Zoned => Zoned::new(digits(f), f.decimals).and_then(|z| z.decode(bytes)),
         DataType::Packed => Packed::new(digits(f), f.decimals).and_then(|p| p.decode(bytes)),
+        DataType::Binary if f.int_range => int_of(f).and_then(|i| i.decode(bytes)),
         DataType::Binary => Binary::new(digits(f), f.decimals).and_then(|b| b.decode(bytes)),
         DataType::Float => match f.precision {
             FloatPrecision::Single => Float::SINGLE.decode(bytes),
@@ -173,6 +179,10 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
                 DataType::Packed => {
                     Packed::new(digits(f), f.decimals).and_then(|p| p.encode_into(d, r, out))
                 }
+                DataType::Binary if f.int_range => d
+                    .rescale(0, r)
+                    .and_then(|whole| int_of(f)?.encode(&whole))
+                    .map(|b| out.copy_from_slice(&b)),
                 DataType::Binary => {
                     Binary::new(digits(f), f.decimals).and_then(|b| b.encode_into(d, r, out))
                 }

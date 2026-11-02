@@ -236,6 +236,13 @@ pub fn virtual_table(
                             n(u64::from(DataType::timestamp_precision(f.length))),
                             Value::Null,
                         ),
+                        // An SQL integer's length is its bytes, its precision
+                        // its range's digits.
+                        DataType::Binary if f.int_range => (
+                            n(u64::from(f.data_len())),
+                            n(u64::from(f.decimals)),
+                            n(u64::from(f.digits())),
+                        ),
                         _ if numeric => (n(u64::from(f.length)), n(u64::from(f.decimals)), n(u64::from(f.length))),
                         _ => (n(u64::from(f.length)), Value::Null, Value::Null),
                     };

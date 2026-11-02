@@ -30,7 +30,7 @@ pub fn part_len(field: &FieldDef, _transform: KeyTransform) -> usize {
             usize::try_from(field.data_len()).expect("fits")
         }
         DataType::Zoned | DataType::Packed | DataType::Binary => {
-            1 + usize::try_from(field.length).expect("fits")
+            1 + usize::try_from(field.digits()).expect("fits")
         }
         DataType::Float | DataType::Date => 8,
         DataType::Time => 6,

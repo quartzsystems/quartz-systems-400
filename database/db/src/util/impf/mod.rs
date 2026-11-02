@@ -151,7 +151,7 @@ pub fn fixed_width(f: &FieldDef) -> usize {
         | DataType::Clob
         | DataType::Dbclob => n(f.length),
         DataType::Zoned | DataType::Packed | DataType::Binary | DataType::Float => {
-            n(f.length) + 1 + usize::from(f.decimals > 0)
+            n(f.digits()) + 1 + usize::from(f.decimals > 0)
         }
         DataType::Date | DataType::Time | DataType::Timestamp => n(f.byte_len),
         // E notation: sign, digits, point, `E`, sign and exponent.

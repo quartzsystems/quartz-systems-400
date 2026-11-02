@@ -308,3 +308,43 @@ fn describe_types() {
         ]
     );
 }
+
+#[test]
+fn integers_take_their_whole_range() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/IN (S SMALLINT NOT NULL PRIMARY KEY, I INTEGER, B BIGINT)");
+    db.ok("INSERT INTO QSTEST/IN VALUES(-32768, -2147483648, -9223372036854775808)");
+    db.ok("INSERT INTO QSTEST/IN VALUES(32767, 2147483647, 9223372036854775807)");
+    db.ok("INSERT INTO QSTEST/IN VALUES(10000, 1.9, -1.9)");
+    db.ok("INSERT INTO QSTEST/IN VALUES(9999, 0, 0)");
+    assert_eq!(
+        db.rows("SELECT S, I, B FROM QSTEST/IN ORDER BY S"),
+        vec![
+            vec!["-32768", "-2147483648", "-9223372036854775808"],
+            vec!["9999", "0", "0"],
+            vec!["10000", "1", "-1"],
+            vec!["32767", "2147483647", "9223372036854775807"]
+        ]
+    );
+    // The key orders the five-digit values past the four-digit ones.
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/IN WHERE S > 9999"), "2");
+    assert!(db.run_with("INSERT INTO QSTEST/IN VALUES(32768, 0, 0)", &[]).is_err());
+    assert!(db.run_with("INSERT INTO QSTEST/IN VALUES(1, 2147483648, 0)", &[]).is_err());
+    assert!(db.run_with("INSERT INTO QSTEST/IN VALUES(1, 0, 9223372036854775808)", &[]).is_err());
+    assert!(db.run_with("INSERT INTO QSTEST/IN VALUES(32767, 0, 0)", &[]).is_err());
+    assert_eq!(
+        db.rows(
+            "SELECT DATA_TYPE, LENGTH, NUMERIC_PRECISION FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'IN' \
+             ORDER BY ORDINAL_POSITION"
+        ),
+        vec![vec!["SMALLINT", "2", "5"], vec!["INTEGER", "4", "10"], vec!["BIGINT", "8", "19"]]
+    );
+    let p = prepare("SELECT * FROM QSTEST/IN", Naming::Sys).unwrap();
+    let mut t = db.store.begin().unwrap();
+    let got: Vec<(i16, i32)> = sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false)
+        .into_iter()
+        .map(|(c, _, _)| (c.base, c.len))
+        .collect();
+    t.abort();
+    assert_eq!(got, [(500, 2), (496, 4), (492, 8)]);
+}
