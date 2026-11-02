@@ -48,6 +48,7 @@ mod phase9;
 #[cfg(unix)]
 mod png;
 mod ptfstep;
+mod qap;
 mod qemu;
 pub mod qir;
 mod qsh;

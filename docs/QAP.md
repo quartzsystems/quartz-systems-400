@@ -610,6 +610,14 @@ and QS/400 Access's):
   on `Prepare` and `ListColumns`, the status the operations' table
   gives, as the real job answers the engine's `SQL0551`. The catalog
   still lists it.
+- Ends from outside, for the client's tests: `System::end(Server)`
+  reaches every connection, open or opened later (each sends
+  `ServerEnding`); `System::end(Operator)` is one job's, as `ENDJOB`
+  is. `System::drop_connection(job)` and `drop_all()` close a
+  connection's socket on the server's side mid-request, as a network
+  drop would: no reply and no event. `System::crash` still injects a
+  panic. `System::wait_running(job, timeout)` tells a test when a
+  command runs, so a cancel needs no sleep.
 - Simplifications: no locks (other connections see changes before
   they are committed); a rollback puts back each table the
   transaction changed as it was at its first change; unqualified

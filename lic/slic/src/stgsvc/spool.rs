@@ -52,12 +52,30 @@ pub fn with_store<T>(
     crate::svc::db::with_txn(&mut s.store, |txn| f(txn, qsys))
 }
 
-/// At start: index `QSPL`, and close what lost jobs left open.
+/// The data of a version 1 file with the published `PP` codes, or
+/// `None` to keep it (docs/WORKMGMT.md, Spooling): only SCS the old
+/// encoder wrote is rewritten, not another type's data nor SCS the LPD
+/// server received.
+pub fn published(attrs: &SplfAttrs, data: &[u8]) -> Option<Vec<u8>> {
+    let scs = matches!(attrs.devtype.trim(), "" | "*SCS");
+    if !scs || attrs.job.0.starts_with("QTLPD") {
+        return None;
+    }
+    spool::scs::upgrade::published_pp(data)
+}
+
+/// At start: index `QSPL`, convert version 1 files once, and close what
+/// lost jobs left open.
 pub fn load(system: &mut System) {
+    let mut upgraded = 0;
     let found = with_store(system, |txn, qsys| {
         let qspl = wm::obj::library(txn, qsys, "QSPL").map_err(|e| e.to_string())?;
         let mut out = Vec::new();
         for (_, id) in ops::list(txn, qspl, Some(types::SPLF)).map_err(|e| e.to_string())? {
+            // Before the attributes are written back below.
+            if matches!(splf::upgrade(txn, id, published), Ok(true)) {
+                upgraded += 1;
+            }
             let Ok(mut a) = splf::read_attrs(txn, id) else {
                 continue;
             };
@@ -76,6 +94,9 @@ pub fn load(system: &mut System) {
     let Ok(found) = found else {
         return;
     };
+    if upgraded > 0 {
+        eprintln!("qsstg: {upgraded} spooled file(s) written before the published PP codes converted");
+    }
     let sp = &mut system.spool;
     for e in found {
         sp.next = sp.next.max(e.attrs.id + 1);
@@ -403,4 +424,23 @@ pub fn on_queue(system: &mut System, q: &str) -> Result<(String, OutQ, Vec<SplfA
         .filter_map(|id| system.spool.files.get(id).map(|e| e.attrs.clone()))
         .collect();
     Ok((real, oq, files))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_scs_the_old_encoder_wrote_is_converted() {
+        let old = [0x34, 0x4C, 5, 0xC1];
+        let attrs = |devtype: &str, job: &str| SplfAttrs {
+            devtype: devtype.into(),
+            job: (job.into(), "BOB".into(), 1),
+            ..SplfAttrs::default()
+        };
+        assert_eq!(published(&attrs("*SCS", "QPADEV0001"), &old), Some(vec![0x34, 0xC4, 5, 0xC1]));
+        assert_eq!(published(&attrs("", "QPADEV0001"), &old).map(|d| d[1]), Some(0xC4));
+        assert_eq!(published(&attrs("*USERASCII", "QPADEV0001"), &old), None);
+        assert_eq!(published(&attrs("*SCS", "QTLPD00001"), &old), None);
+    }
 }

@@ -61,6 +61,9 @@ ftp = { path = "../../net/ftp", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
+qapd = { path = "../../net/qapd", version = "0.1.0" }
 
 [lints]
 workspace = true

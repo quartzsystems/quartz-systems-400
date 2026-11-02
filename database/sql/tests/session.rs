@@ -489,3 +489,34 @@ fn statement_files() {
     );
     let _ = Value::Null;
 }
+
+#[test]
+fn create_schema_journals_its_tables() {
+    let mut db = Db::new();
+    db.ok("CREATE SCHEMA hlsch");
+    assert_eq!(
+        db.rows("SELECT SCHEMA_NAME FROM qsys2/sysschemas WHERE SCHEMA_NAME = 'HLSCH'"),
+        [row(&["HLSCH"])]
+    );
+    assert_ne!(db.code("CREATE SCHEMA hlsch"), 0, "the name is taken");
+    db.ok("CREATE TABLE hlsch/t (k INT NOT NULL PRIMARY KEY)");
+    db.ok("CREATE TABLE qstest/plain (k INT NOT NULL)");
+    // Under commitment control the schema's table takes changes, the
+    // plain library's does not (SQL7008).
+    let cs = RunOpts {
+        commit: CommitOpt::Cs,
+        errlvl: 30,
+        ..RunOpts::default()
+    };
+    let report = runsqlstm(
+        &mut db.store,
+        &mut db.ctx,
+        "INSERT INTO hlsch/t VALUES (1); INSERT INTO qstest/plain VALUES (1);",
+        &cs,
+    )
+    .unwrap();
+    assert!(report.listing.contains("INSERT: SQLCODE 0  rows 1"), "{}", report.listing);
+    assert!(report.listing.contains("SQL7008"), "{}", report.listing);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM hlsch/t"), [row(&["1"])]);
+    assert!(prepare("CREATE SCHEMA a AUTHORIZATION b", Naming::Sys).is_err());
+}

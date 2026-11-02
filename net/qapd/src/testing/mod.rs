@@ -25,7 +25,11 @@
 //!   Printer Output in process;
 //! - a database ([`sql`]): schemas, tables of every type, journaled and
 //!   not, slow and large ones, one `BOB` may not read, for the `Sql`
-//!   service.
+//!   service;
+//! - the ends a client must meet: the server ending ([`System::end`],
+//!   every connection), an operator ending one job, a connection's
+//!   socket dropped mid-request ([`System::drop_connection`]) and a
+//!   panic in a connection's thread ([`System::crash`]).
 
 pub mod commands;
 pub mod fixtures;
@@ -34,10 +38,11 @@ pub mod spool;
 pub mod sql;
 
 use std::collections::HashMap;
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 pub use host::{MemHost, MemThread};
 
@@ -94,8 +99,12 @@ pub struct User {
 pub struct System {
     /// Holds `system_info`.
     pub gate: Gate,
-    /// Set to end the connections from outside.
+    /// An end for one connection job, the first whose poll takes it
+    /// (an operator's `ENDJOB`); [`System::end`] sets it.
     pub ending: Mutex<Option<Ending>>,
+    /// The server is ending (`ENDTCPSVR`): every connection's poll sees
+    /// it, each sends `ServerEnding` and closes.
+    pub server_ending: AtomicBool,
     /// The profiles by name.
     pub users: Mutex<HashMap<String, User>>,
     /// The sessions.
@@ -127,7 +136,25 @@ pub struct System {
     pub crash: Mutex<Option<Crash>>,
     /// The database.
     pub sql: Mutex<sql::Db>,
+    /// The commands running, by job, while they run.
+    running: Mutex<HashMap<u32, String>>,
+    started: Condvar,
+    /// The server's side of each connection's socket, by job.
+    sockets: Mutex<HashMap<u32, TcpStream>>,
     tokens: AtomicU32,
+}
+
+/// A command running in a job, from [`System::command_runs`] until
+/// dropped.
+struct RunningGuard {
+    sys: Arc<System>,
+    job: u32,
+}
+
+impl Drop for RunningGuard {
+    fn drop(&mut self) {
+        lock(&self.sys.running).remove(&self.job);
+    }
 }
 
 /// Where a connection's next panic comes, for the tests of its close.
@@ -151,6 +178,7 @@ impl System {
         let s = Self {
             gate: Gate::default(),
             ending: Mutex::new(None),
+            server_ending: AtomicBool::new(false),
             users: Mutex::new(HashMap::new()),
             sessions: Mutex::new(Sessions::new()),
             tickets: Mutex::new(Tickets::new()),
@@ -166,6 +194,9 @@ impl System {
             spool: Mutex::new(spool::Spool::default()),
             crash: Mutex::new(None),
             sql: Mutex::new(sql::Db::default()),
+            running: Mutex::new(HashMap::new()),
+            started: Condvar::new(),
+            sockets: Mutex::new(HashMap::new()),
             tokens: AtomicU32::new(0),
         };
         s.gate.set(true);
@@ -212,9 +243,58 @@ impl System {
         *lock(&self.clock) += secs;
     }
 
-    /// End every connection as the server or an operator would.
+    /// End connections from outside: [`Ending::Server`] ends every
+    /// connection, open or opened later, as `ENDTCPSVR` does; any other
+    /// end is one job's, taken by the first connection that polls.
     pub fn end(&self, how: Ending) {
-        *lock(&self.ending) = Some(how);
+        if how == Ending::Server {
+            self.server_ending.store(true, Ordering::SeqCst);
+        } else {
+            *lock(&self.ending) = Some(how);
+        }
+    }
+
+    /// Close connection job `job`'s socket on the server's side at
+    /// once, as a network drop would: whatever is in progress gets no
+    /// reply and no event, the client just sees the connection close.
+    /// False when the job has no connection open.
+    pub fn drop_connection(&self, job: u32) -> bool {
+        let Some(s) = lock(&self.sockets).remove(&job) else {
+            return false;
+        };
+        let _ = s.shutdown(Shutdown::Both);
+        true
+    }
+
+    /// [`System::drop_connection`] of every connection open; how many.
+    pub fn drop_all(&self) -> usize {
+        let all: Vec<TcpStream> = lock(&self.sockets).drain().map(|(_, s)| s).collect();
+        for s in &all {
+            let _ = s.shutdown(Shutdown::Both);
+        }
+        all.len()
+    }
+
+    /// Wait until job `job` runs a command, at most `timeout`; the
+    /// command's name, or `None` at the deadline. For tests that act
+    /// while a command runs (a cancel) without a sleep.
+    pub fn wait_running(&self, job: u32, timeout: Duration) -> Option<String> {
+        let g = lock(&self.running);
+        let (g, _) = self
+            .started
+            .wait_timeout_while(g, timeout, |r| !r.contains_key(&job))
+            .unwrap_or_else(PoisonError::into_inner);
+        g.get(&job).cloned()
+    }
+
+    /// Job `job` starts command `name`, until the guard goes.
+    fn command_runs(self: &Arc<Self>, job: u32, name: &str) -> RunningGuard {
+        lock(&self.running).insert(job, name.to_string());
+        self.started.notify_all();
+        RunningGuard {
+            sys: Arc::clone(self),
+            job,
+        }
     }
 
     /// The Telnet server's side of a ticket: `user` and the password
@@ -301,13 +381,18 @@ pub fn serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> (TcpStr
             Ok(a) => a,
             Err(e) => return Closed::Broken(format!("accept: {e}")),
         };
+        if let Ok(c) = s.try_clone() {
+            lock(&sys.sockets).insert(job, c);
+        }
         // Not a read timeout: see `Polled`.
         let s = match Polled::new(s) {
             Ok(s) => s,
             Err(e) => return Closed::Broken(format!("non-blocking: {e}")),
         };
-        let mut host = MemHost::new(sys, job);
-        crate::serve(s, &mut host, cfg, identity(job, Some(peer)))
+        let mut host = MemHost::new(Arc::clone(&sys), job);
+        let why = crate::serve(s, &mut host, cfg, identity(job, Some(peer)));
+        lock(&sys.sockets).remove(&job);
+        why
     });
     let s = TcpStream::connect(addr).expect("loopback");
     (s, server)

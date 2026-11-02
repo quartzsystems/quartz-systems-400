@@ -127,9 +127,9 @@
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             E1:        ELEM       TYPE(*DEC) LEN(5 3) MIN(1) +
+             E1:        ELEM       TYPE(*DEC) LEN(7 3) MIN(1) +
                           RANGE(1 255) PROMPT('Length')
-                        ELEM       TYPE(*DEC) LEN(5 3) MIN(1) +
+                        ELEM       TYPE(*DEC) LEN(7 3) MIN(1) +
                           RANGE(1 378) PROMPT('Width')
                         ELEM       TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*ROWCOL) VALUES(*ROWCOL *UOM) +

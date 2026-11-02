@@ -72,7 +72,12 @@ pub const LAYOUT: Layout = Layout {
 pub const DATA_OFF: u64 = 512;
 
 const MAGIC: &[u8; 8] = b"QSWMSPLF";
-const VERSION: u64 = 1;
+/// Version 2: the data's presentation position commands are the
+/// published ones (`AVPP` `X'34C4'`).
+pub const VERSION: u64 = 2;
+/// Version 1: data written when the encoder put absolute vertical as
+/// `X'344C'`; [`upgrade`] brings it to version 2 at IPL.
+pub const VERSION_OLD_PP: u64 = 1;
 
 /// A spooled file's status.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -381,7 +386,7 @@ impl SplfAttrs {
     /// Read an attribute record.
     pub fn decode(b: &[u8]) -> Result<Self> {
         let r = Rec::read(&LAYOUT, b)?;
-        if r.bytes("Magic") != MAGIC || r.uint("Version") != VERSION {
+        if r.bytes("Magic") != MAGIC || !matches!(r.uint("Version"), VERSION_OLD_PP | VERSION) {
             return Err(Error::Corrupt("not a spooled file".into()));
         }
         let small = |f: &str| u8::try_from(r.uint(f)).unwrap_or(0);
@@ -671,6 +676,37 @@ pub fn append(
     attrs.records = records;
     space.write(txn, 0, &attrs.encode())?;
     Ok(())
+}
+
+/// The version of an attribute record (a saved one too).
+pub fn record_version(b: &[u8]) -> Result<u64> {
+    Ok(Rec::read(&LAYOUT, b)?.uint("Version"))
+}
+
+/// The attributes' version as stored.
+pub fn version(txn: &mut Txn<'_>, id: ObjectId) -> Result<u64> {
+    let (space, _) = Space::load(txn, id)?;
+    record_version(&space.read(txn, 0, 512)?)
+}
+
+/// Bring a version 1 file to version 2 once: its data through `rewrite`
+/// (which answers the data with the published codes, or `None` to keep
+/// it), then the version. Before anything rewrites the attributes,
+/// which would mark the file version 2 with its data unchanged. True
+/// when the data was rewritten.
+pub fn upgrade(txn: &mut Txn<'_>, id: ObjectId, rewrite: impl FnOnce(&SplfAttrs, &[u8]) -> Option<Vec<u8>>) -> Result<bool> {
+    if version(txn, id)? != VERSION_OLD_PP {
+        return Ok(false);
+    }
+    let attrs = read_attrs(txn, id)?;
+    let data = read_data(txn, id, &attrs)?;
+    let new = rewrite(&attrs, &data).filter(|n| n.len() == data.len());
+    let (space, _) = Space::load(txn, id)?;
+    if let Some(n) = &new {
+        space.write(txn, DATA_OFF, n)?;
+    }
+    space.write(txn, 0, &attrs.encode())?;
+    Ok(new.is_some())
 }
 
 /// A spooled file's SCS data.

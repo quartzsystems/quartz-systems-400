@@ -548,6 +548,7 @@ impl Suite {
     }
 
     /// The six Phase 1 steps against the disk image.
+    #[allow(clippy::too_many_lines)] // one line per step
     fn run_disk(&self) -> Result<Vec<StepReport>, HarnessError> {
         let mut reports = Vec::new();
         let mut s = Session::spawn(&self.launch)?;
@@ -631,6 +632,9 @@ impl Suite {
         reports.push(self.step(&mut s, "86 HTTP server instance", Self::http_instance)?);
         reports.push(self.step(&mut s, "87 HTTP administration", Self::http_admin)?);
         reports.push(self.step(&mut s, "88 Navigator", Self::navigator)?);
+        reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
+        reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
+        reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         s.command("pwrdwn", CMD).ok();

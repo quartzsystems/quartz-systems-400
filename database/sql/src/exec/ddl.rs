@@ -336,7 +336,7 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
     }
     def.format.lay_out();
     no_lob_keys(&def.format, def.format.keys.iter().map(|k| k.field))?;
-    file::create_pf(
+    let id = file::create_pf(
         txn,
         library,
         name,
@@ -352,6 +352,7 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
             ..CreateFileOpts::default()
         },
     )?;
+    journal_in_schema(txn, ctx, library, id)?;
     let mut anon = 0;
     for (cname, columns) in uniques {
         if cname.is_none() {
@@ -359,6 +360,71 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
         }
         add_unique(txn, ctx, &t.name, &name, anon, cname.as_ref(), &columns)?;
     }
+    Ok(())
+}
+
+/// The journal a schema keeps for its tables.
+const SCHEMA_JOURNAL: &str = "QSQJRN";
+/// Its first receiver.
+const SCHEMA_RECEIVER: &str = "QSQJRN0001";
+
+/// `CREATE SCHEMA`: a library with the journal `QSQJRN` and its first
+/// receiver, to which tables made in it by SQL are journaled, both
+/// images.
+pub fn create_schema(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident) -> Result<()> {
+    let lib_name = SqlContext::sys_name(name)?;
+    let now = ctx.clock();
+    let lib = store::obj::ops::create(
+        txn,
+        &store::obj::CreateParams {
+            library: ctx.qsys,
+            name: lib_name,
+            type_code: store::obj::types::LIB,
+            attribute: String::new(),
+            text: String::new(),
+            owner: String::new(),
+            system: String::new(),
+            now,
+            by_system: false,
+        },
+    )?;
+    let fixed = |n: &str| Name::parse(n).expect("a valid name");
+    let rcv = jrn::rcv::crtjrnrcv(
+        txn,
+        lib,
+        fixed(SCHEMA_RECEIVER),
+        &jrn::rcv::CrtJrnRcvOpts {
+            now,
+            ..jrn::rcv::CrtJrnRcvOpts::default()
+        },
+    )
+    .map_err(db::DbError::from)?;
+    jrn::journal::crtjrn(
+        txn,
+        lib,
+        fixed(SCHEMA_JOURNAL),
+        rcv,
+        &jrn::journal::CrtJrnOpts {
+            now,
+            ..jrn::journal::CrtJrnOpts::default()
+        },
+    )
+    .map_err(db::DbError::from)?;
+    Ok(())
+}
+
+/// A table made in a library with `QSQJRN` (a schema) is journaled to it.
+fn journal_in_schema(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    library: store::obj::ObjectId,
+    file: store::obj::ObjectId,
+) -> Result<()> {
+    let lib = store::obj::library::Library::load(txn, library)?;
+    let Some(journal) = lib.lookup(txn, jrn::JRN, Name::parse(SCHEMA_JOURNAL).expect("valid"))? else {
+        return Ok(());
+    };
+    db::journal::strjrnpf(txn, ctx.job, file, journal, true, false, ctx.clock())?;
     Ok(())
 }
 

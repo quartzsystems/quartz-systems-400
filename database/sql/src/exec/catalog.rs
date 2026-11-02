@@ -90,7 +90,13 @@ fn files(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, FileDesc)>> {
         let Ok((_, h)) = ops::read_header(txn, lib) else {
             continue;
         };
-        for (_, id) in ops::list(txn, lib, Some(types::FILE))? {
+        // A library the user may not read is left out, as on the machine.
+        let list = match ops::list(txn, lib, Some(types::FILE)) {
+            Ok(l) => l,
+            Err(store::StoreError::NotAuthorized { .. }) => continue,
+            Err(e) => return Err(e.into()),
+        };
+        for (_, id) in list {
             if let Ok(desc) = file::describe(txn, id) {
                 out.push((h.name, desc));
             }

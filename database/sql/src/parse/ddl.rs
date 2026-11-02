@@ -52,7 +52,11 @@ impl Parser {
             });
         }
         if self.eat_word("SCHEMA") || self.eat_word("COLLECTION") {
-            return Err(Self::unsupported("CREATE SCHEMA; use CRTLIB"));
+            let name = self.ident()?;
+            if self.is_word("AUTHORIZATION") {
+                return Err(Self::unsupported("CREATE SCHEMA AUTHORIZATION"));
+            }
+            return Ok(Statement::CreateSchema(name));
         }
         Err(Self::unsupported("that CREATE statement"))
     }

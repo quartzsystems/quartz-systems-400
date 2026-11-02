@@ -8,6 +8,7 @@
 
 pub mod decode;
 pub mod encode;
+pub mod upgrade;
 
 pub use decode::{Page, PageStart, decode, index, range};
 pub use encode::Encoder;
