@@ -92,6 +92,7 @@ pub const SHIPPED: &[(&str, AppKind, &str)] = &[
     ("QS400_VPN_IKE_SERVER", AppKind::Server, "VPN key manager"),
     ("QS400_LPD_SERVER", AppKind::Server, "LPD server"),
     ("QS400_NTP_CLIENT", AppKind::Client, "NTP client"),
+    ("QS400_ACCESS_SERVER", AppKind::Server, "QAP server (QS/400 Access)"),
 ];
 
 /// The IBM i IDs (old) and the IDs they name here (new).

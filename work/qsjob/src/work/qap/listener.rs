@@ -2,9 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `QAPD`: binds `CHGQAPA`'s port, says so to `QSYSOPR`, and runs until
-//! `ENDTCPSVR`, `ENDJOB` or its subsystem ends it. A start that fails
-//! says why and ends the job.
+//! `QAPD`: binds `CHGQAPA`'s port, TLS 1.3 only with the certificate
+//! assigned to `QS400_ACCESS_SERVER` (no plain text and no fallback
+//! certificate), says so to `QSYSOPR`, and runs until `ENDTCPSVR`,
+//! `ENDJOB` or its subsystem ends it. A start that fails says why and
+//! ends the job.
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -20,6 +22,8 @@ use wm::ctl::{FromJob, Start};
 use crate::work::netsvc::{self, Ender};
 
 const PGM: &str = "QAPD";
+/// The certificate application ID.
+pub const APP_ID: &str = "QS400_ACCESS_SERVER";
 
 /// The accept loop's service.
 struct Accept;
@@ -41,7 +45,11 @@ fn refuse(mut ctl: Chan, link: &Shared, why: &str) -> ! {
 /// Run the listener. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let a = QapAttrs::from_bag(&netsvc::bag(link, "*QAP"));
-    let running = match listen::bind(a.port).and_then(|l| listen::serve(l, None, Arc::new(Accept))) {
+    let tls = match crate::work::tls::assigned_tls13(&mut link.borrow_mut(), APP_ID) {
+        Ok(c) => c,
+        Err(e) => refuse(ctl, link, &e),
+    };
+    let running = match listen::bind(a.port).and_then(|l| listen::serve(l, Some(tls), Arc::new(Accept))) {
         Ok(r) => r,
         Err(e) => refuse(ctl, link, &format!("port {}: {e}", a.port)),
     };

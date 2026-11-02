@@ -193,10 +193,30 @@ pub fn policy(link: &mut Link) -> tls::policy::TlsPolicy {
 /// The server configuration of `app_id`'s certificate in `*SYSTEM`;
 /// `None` when nothing is assigned (nor a store default).
 pub fn from_store(link: &mut Link, app_id: &str) -> Result<Option<Arc<rustls::ServerConfig>>, String> {
+    let p = policy(link);
+    from_store_with(link, app_id, &p, false)
+}
+
+/// The server configuration of the certificate assigned to `app_id`,
+/// TLS 1.3 only, for a server that never falls back (QAP); why not
+/// when nothing is assigned.
+pub fn assigned_tls13(link: &mut Link, app_id: &str) -> Result<Arc<rustls::ServerConfig>, String> {
+    let mut p = policy(link);
+    p.protocols = vec![tls::policy::Protocol::Tls13];
+    from_store_with(link, app_id, &p, true)?
+        .ok_or_else(|| format!("no certificate is assigned to {app_id}"))
+}
+
+fn from_store_with(
+    link: &mut Link,
+    app_id: &str,
+    policy: &tls::policy::TlsPolicy,
+    assigned: bool,
+) -> Result<Option<Arc<rustls::ServerConfig>>, String> {
     let t = link
         .cert_app(app_id.into())
         .map_err(|e| e.to_string())??;
-    if t.label.is_empty() || t.chain.is_empty() {
+    if t.label.is_empty() || t.chain.is_empty() || (assigned && !t.assigned) {
         return Ok(None);
     }
     let info = certs::x509::CertInfo::from_der(&t.chain[0]).map_err(|e| e.to_string())?;
@@ -215,7 +235,7 @@ pub fn from_store(link: &mut Link, app_id: &str) -> Result<Option<Arc<rustls::Se
         2 => tls::config::ClientAuthMode::Required,
         _ => tls::config::ClientAuthMode::None,
     };
-    tls::config::server_config(&identity, &policy(link), mode, roots)
+    tls::config::server_config(&identity, policy, mode, roots)
         .map(Some)
         .map_err(|e| format!("certificate {}: {e}", t.label))
 }

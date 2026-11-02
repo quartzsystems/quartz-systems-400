@@ -213,7 +213,7 @@ pub static SPECS: &[ServerSpec] = &[
         ],
         ports: &[tcp(2320, true)],
         attrs_cmd: Some("CHGQAPA"),
-        app_id: None,
+        app_id: Some("QS400_ACCESS_SERVER"),
         exit_points: &[],
         start_subsystem: false,
         instances: &[],

@@ -717,6 +717,9 @@ pub struct CertTrust {
     pub client_auth: u8,
     /// The trusted CAs, DER.
     pub roots: Vec<Vec<u8>>,
+    /// The certificate is assigned to the application, not the store's
+    /// default.
+    pub assigned: bool,
 }
 
 wire_struct!(CertTrust {
@@ -724,7 +727,8 @@ wire_struct!(CertTrust {
     chain,
     key,
     client_auth,
-    roots
+    roots,
+    assigned
 });
 
 // --- host server types

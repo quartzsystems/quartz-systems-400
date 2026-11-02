@@ -26,6 +26,8 @@ pub struct AppIdentity {
     pub key: Zeroizing<Vec<u8>>,
     /// Client authentication.
     pub client_auth: ClientAuth,
+    /// Assigned to the application, not the store's default.
+    pub assigned: bool,
 }
 
 /// The answer for one application ID.
@@ -91,6 +93,7 @@ pub fn for_app(ctx: &Ctx<'_>, id: &str) -> Result<AppTrust> {
                 label,
                 chain,
                 client_auth: def.client_auth,
+                assigned: def.label.is_some(),
             })
         }
         None => None,
@@ -135,10 +138,13 @@ mod tests {
         cert(&w, "FIRST", 30);
         cert(&w, "ADMIN", 30);
         let t = for_app(&w.ctx(), ADMIN).unwrap();
-        assert_eq!(t.identity.unwrap().label, "FIRST");
+        let first = t.identity.unwrap();
+        assert_eq!(first.label, "FIRST");
+        assert!(!first.assigned);
         appids::assign(&w.ctx(), ADMIN, Some("ADMIN")).unwrap();
         let id = for_app(&w.ctx(), ADMIN).unwrap().identity.unwrap();
         assert_eq!(id.label, "ADMIN");
+        assert!(id.assigned);
         assert_eq!(id.chain.len(), 1);
         let key = crate::crypto::keys::PrivateKey::from_pkcs8_der(&id.key).unwrap();
         assert_eq!(key.algorithm(), KeyAlgorithm::EcdsaP256);

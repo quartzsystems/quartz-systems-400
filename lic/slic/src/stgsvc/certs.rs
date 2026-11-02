@@ -320,6 +320,7 @@ fn to_wire(t: admin::identity::AppTrust) -> CertTrust {
         out.label = i.label;
         out.chain = i.chain;
         out.key = i.key.to_vec();
+        out.assigned = i.assigned;
         out.client_auth = match i.client_auth {
             certs::apps::ClientAuth::None => 0,
             certs::apps::ClientAuth::Optional => 1,
