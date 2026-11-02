@@ -356,3 +356,51 @@ fn time_based_checkpoint() {
     assert!(store.tick(1_767_225_600 + 140).unwrap());
     assert_eq!(store.txns_since_checkpoint(), 0);
 }
+
+#[test]
+fn a_lent_transaction_suspends_between_reads() {
+    use std::cell::RefCell;
+    let d = dev(1024, 5);
+    let store = RefCell::new(Store::format(boxed(&d), &params(16), config(100)).unwrap());
+    let cell = &store;
+    let mut model = Model::new();
+    {
+        let mut s = cell.borrow_mut();
+        let mut t = s.begin().unwrap();
+        let mut tree: BTree<u64, u64> = BTree::open(t.objdir_root(), ObjectId::NONE);
+        tree.insert(&mut t, 1, &10).unwrap();
+        t.set_root(ObjectId::NONE, tree.root());
+        t.commit().unwrap();
+        model.insert(1, 10);
+    }
+    let mut reader = store::Txn::lent(Box::new(|| cell.borrow_mut())).unwrap();
+    let tree: BTree<u64, u64> = BTree::open(reader.objdir_root(), ObjectId::NONE);
+    assert_eq!(tree.get(&mut reader, &1).unwrap(), Some(10));
+    // Held: nobody else can begin.
+    assert!(cell.try_borrow_mut().is_err());
+    assert!(reader.suspend());
+    // Suspended: another transaction commits a change.
+    {
+        let mut s = cell.borrow_mut();
+        let mut t = s.begin().unwrap();
+        let mut tree: BTree<u64, u64> = BTree::open(t.objdir_root(), ObjectId::NONE);
+        tree.insert(&mut t, 2, &20).unwrap();
+        t.set_root(ObjectId::NONE, tree.root());
+        t.commit().unwrap();
+        model.insert(2, 20);
+    }
+    reader.resume().unwrap();
+    let tree: BTree<u64, u64> = BTree::open(reader.objdir_root(), ObjectId::NONE);
+    assert_eq!(tree.get(&mut reader, &2).unwrap(), Some(20), "sees what was committed meanwhile");
+    // A transaction that changed something keeps the store.
+    reader.alloc_run(1).unwrap();
+    assert!(!reader.suspend());
+    reader.abort();
+    assert_eq!(read_all(&mut cell.borrow_mut()), model);
+    // One begun on the store itself never suspends.
+    let mut s = cell.borrow_mut();
+    let mut t = s.begin().unwrap();
+    assert!(t.is_clean());
+    assert!(!t.suspend());
+    t.commit().unwrap();
+}

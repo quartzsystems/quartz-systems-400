@@ -580,10 +580,15 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   three parts filled to 20 characters, as an SQLDA's label; a column
   without a heading, or an expression, has its name as `label`. A
   column renamed with `AS` keeps its heading.
-- Engine gaps met, left to the database: the storage service answers one request at a time, so while
-  a statement runs there, other jobs' storage requests and this
-  connection's catalog lists wait for it: the lanes hold in the
-  connection job, not yet end to end.
+- The storage service is one thread, but a query (`Execute` of a
+  `SELECT`, opened as a cursor) takes turns with every other request
+  there: between batches of its scan it lets the other jobs' requests
+  and this connection's catalog lists in (`STORAGE_SERVICE.md` "Long
+  statements"). Still waiting on it: statements that change data
+  (`UPDATE` of many rows), queries under `RepeatableRead` and
+  `Serializable` (`*ALL`), the sort or join of a query once its rows
+  are read, and a query met while another runs, which goes first (the
+  earlier window waits for it).
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

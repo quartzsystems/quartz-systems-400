@@ -433,12 +433,14 @@ impl Session {
     fn with_txn(&mut self, scope: &str, f: impl FnOnce(&mut store::txn::Txn<'_>, &mut SqlContext, &mut Scope) -> Reply) -> Reply {
         let mut sc = self.scopes.remove(scope).unwrap_or_default();
         std::mem::swap(&mut self.ctx.cursors, &mut sc.cursors);
-        let store = &self.store;
-        let mut st = store.store();
-        let reply = match st.begin() {
+        let lender = &self.store;
+        // Borrowed through the lender, so a long read can give it back
+        // between batches (`SqlContext::yielder`).
+        let reply = match store::txn::Txn::lent(Box::new(|| lender.store())) {
             Ok(mut txn) => {
                 self.ctx.nulls_eliminated = false;
                 let mut r = f(&mut txn, &mut self.ctx, &mut sc);
+                self.ctx.release_held(&mut txn);
                 if self.ctx.nulls_eliminated && r.sqlca.sqlcode == 0 {
                     r.sqlca.sqlstate = "01003".into();
                     r.sqlca.sqlwarn[0] = 'W';
@@ -451,7 +453,6 @@ impl Session {
             }
             Err(e) => Reply::of(Sqlca::from_error(&SqlError::from(e))),
         };
-        drop(st);
         std::mem::swap(&mut self.ctx.cursors, &mut sc.cursors);
         self.scopes.insert(scope.to_string(), sc);
         reply
@@ -661,12 +662,23 @@ impl Session {
     }
 }
 
+/// Whether a statement may yield between batches (`SqlContext::yielder`):
+/// one that only reads, below `*ALL` (whose reads are one view).
+#[must_use]
+pub fn may_yield(desc: &Desc) -> bool {
+    matches!(desc.op, Op::Query | Op::Open) && desc.commit != Some(LckLvl::All)
+}
+
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
+        let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
         let r = match self.commitment(req) {
             Some(r) => r,
             None => self.run_inner(req),
         };
+        if kept.is_some() {
+            self.ctx.yielder = kept;
+        }
         if req.desc.op != Op::Diag {
             self.last = r.sqlca.clone();
         }
