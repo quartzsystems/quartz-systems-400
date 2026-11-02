@@ -66,7 +66,7 @@
              PARM       KWD(NULLS) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*NO) VALUES(*NO *YES) +
                           PROMPT('Write null values')
-             PARM       KWD(STMFAUT) TYPE(*CHAR) LEN(9) RSTD(*YES) +
+             PARM       KWD(STMFAUT) TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*DFT) VALUES(*DFT *INDIR *FILE *INDIRFILE) +
                           PROMPT('Stream file authority')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)

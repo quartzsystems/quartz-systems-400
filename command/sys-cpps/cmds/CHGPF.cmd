@@ -74,7 +74,7 @@
              PARM       KWD(SRTSEQ) TYPE(Q2) DFT(*SAME) SNGVAL((*SAME) +
                           (*SRC) (*JOB) (*LANGIDSHR) (*LANGIDUNQ) (*HEX)) +
                           PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*NAME) LEN(3) DFT(*SAME) +
+             PARM       KWD(LANGID) TYPE(*NAME) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*JOB) (*JOBRUN)) +
                           PROMPT('Language identifier')
              PARM       KWD(CCSID) TYPE(*DEC) LEN(5) DFT(*SAME) +

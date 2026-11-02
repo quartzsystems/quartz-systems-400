@@ -35,7 +35,7 @@
              PARM       KWD(NETSERVER) TYPE(E1) MAX(5) DFT(*SAME) +
                           SNGVAL((*SAME) (*NONE)) +
                           PROMPT('Network node servers')
-             PARM       KWD(ALRSTS) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(ALRSTS) TYPE(*CHAR) LEN(9) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *ON *OFF *UNATTEND) +
                           PROMPT('Alert status')
              PARM       KWD(ALRPRIFP) TYPE(*CHAR) LEN(5) RSTD(*YES) +
@@ -98,13 +98,13 @@
              PARM       KWD(ALWADDCLU) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *NONE *ANY *RQSAUT) +
                           PROMPT('Allow add to cluster')
-             PARM       KWD(MDMCNTRYID) TYPE(*CHAR) LEN(2) DFT(*SAME) +
+             PARM       KWD(MDMCNTRYID) TYPE(*CHAR) LEN(5) DFT(*SAME) +
                           SPCVAL((*SAME)) +
                           PROMPT('Modem country or region ID')
              Q1:        QUAL       TYPE(*NAME) LEN(10)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             E1:        ELEM       TYPE(*CNAME) LEN(8) DFT(*LCLNETID) +
+             E1:        ELEM       TYPE(*CNAME) LEN(9) DFT(*LCLNETID) +
                           SPCVAL((*LCLNETID)) PROMPT('Network ID')
                         ELEM       TYPE(*CNAME) LEN(8) MIN(1) +
                           PROMPT('Control point name')

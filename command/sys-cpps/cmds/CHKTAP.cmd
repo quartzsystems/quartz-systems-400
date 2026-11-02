@@ -7,7 +7,7 @@
                           ALLOW(*ALL) HLPPNLGRP(QHSVCMD) HLPID(CHKTAP)
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MIN(1) +
                           PROMPT('Device')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) DFT(*MOUNTED) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(8) DFT(*MOUNTED) +
                           SPCVAL((*MOUNTED)) PROMPT('Volume identifier')
              PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*NONE) +
                           RANGE(1 16777215) SPCVAL((*NONE 0) (*END -1) +

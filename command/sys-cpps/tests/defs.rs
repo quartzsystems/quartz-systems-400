@@ -123,3 +123,69 @@ fn chgipla_values_fit_the_block() {
         assert_eq!(parms.text(&p.kwd), want, "{}", p.kwd);
     }
 }
+
+/// Values that reach the parameter block unmapped but are longer than
+/// the field that holds them.
+fn overlong(cmd: &str, path: &str, p: &cmd::def::Parm, out: &mut Vec<String>) {
+    use cmd::def::ParmType as T;
+    let path = if p.kwd.is_empty() {
+        path.to_string()
+    } else {
+        p.kwd.clone()
+    };
+    for (i, item) in p.items.iter().enumerate() {
+        overlong(cmd, &format!("{path}.{}", i + 1), item, out);
+    }
+    let text = matches!(
+        p.ty,
+        T::Char | T::Name | T::Generic | T::PName | T::SName | T::CName
+    );
+    if !text {
+        return;
+    }
+    let len = p.length().len as usize;
+    let unmapped = p
+        .spcval
+        .iter()
+        .chain(&p.sngval)
+        .filter(|s| s.to.is_none())
+        .map(|s| &s.from);
+    // A list's default names one value per item.
+    let dft = p.dft.iter().flat_map(|d| {
+        if p.is_list() && !d.starts_with('\'') {
+            d.split_whitespace().map(str::to_string).collect()
+        } else {
+            vec![d.clone()]
+        }
+    });
+    let mapped: HashSet<String> = p
+        .spcval
+        .iter()
+        .chain(&p.sngval)
+        .filter(|s| s.to.is_some())
+        .map(|s| s.from.to_uppercase())
+        .collect();
+    let mut seen = HashSet::new();
+    for v in dft.chain(p.values.iter().cloned()).chain(unmapped.cloned()) {
+        let t = v.trim_matches('\'');
+        if mapped.contains(&v.to_uppercase()) {
+            continue;
+        }
+        if t.chars().count() > len && seen.insert(t.to_string()) {
+            out.push(format!("{cmd} {path} LEN({len}): {t}"));
+        }
+    }
+}
+
+/// No shipped definition holds a value its parameter block would cut.
+#[test]
+fn unmapped_values_fit_their_length() {
+    let mut bad = Vec::new();
+    for (name, _) in defs::DEFS {
+        let def = sys_cpps::install::object(name, 0).unwrap().def;
+        for p in &def.parms {
+            overlong(name, "", p, &mut bad);
+        }
+    }
+    assert!(bad.is_empty(), "{} values:\n{}", bad.len(), bad.join("\n"));
+}

@@ -89,7 +89,7 @@
              PARM       KWD(AUTOADD) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *NO *YES) +
                           PMTCTL(PSDD) PROMPT('Automatic registration')
-             PARM       KWD(USRIDPFX) TYPE(*CNAME) LEN(3) DFT(*SAME) +
+             PARM       KWD(USRIDPFX) TYPE(*CNAME) LEN(5) DFT(*SAME) +
                           SPCVAL((*SAME) (*DFT QSM)) PMTCTL(PSDD) +
                           PROMPT('User ID prefix')
              PARM       KWD(ADDRESS) TYPE(*CNAME) LEN(8) DFT(*SAME) +
@@ -101,7 +101,7 @@
              PARM       KWD(TBLTYPE) TYPE(*CHAR) LEN(9) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *SYSTEM *PERSONAL) +
                           PMTCTL(PSDD) PROMPT('Alias table type')
-             PARM       KWD(USRIDDELIM) TYPE(*CHAR) LEN(1) +
+             PARM       KWD(USRIDDELIM) TYPE(*CHAR) LEN(5) +
                           DFT(*SAME) SPCVAL((*SAME) (*DFT)) +
                           PMTCTL(PSDD) PROMPT('User ID delimiter')
              PARM       KWD(MAILROUTER) TYPE(*CHAR) LEN(256) +

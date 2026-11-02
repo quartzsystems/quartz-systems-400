@@ -13,7 +13,7 @@
              PARM       KWD(NEWOWNID) TYPE(*CHAR) LEN(14) +
                           DFT(*BLANK) SPCVAL((*BLANK ' ')) +
                           PROMPT('New owner identifier')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) DFT(*MOUNTED) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(8) DFT(*MOUNTED) +
                           SPCVAL((*MOUNTED)) PROMPT('Volume identifier')
              PARM       KWD(CHECK) TYPE(*CHAR) LEN(6) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO *FIRST) +

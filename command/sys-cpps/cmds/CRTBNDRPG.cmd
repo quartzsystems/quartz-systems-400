@@ -50,7 +50,7 @@
              PARM       KWD(OPTIMIZE) TYPE(*CHAR) LEN(6) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *BASIC *FULL) +
                           PMTCTL(*PMTRQS) PROMPT('Optimize')
-             PARM       KWD(INDENT) TYPE(*CHAR) LEN(2) DFT(*NONE) +
+             PARM       KWD(INDENT) TYPE(*CHAR) LEN(5) DFT(*NONE) +
                           SPCVAL((*NONE)) PMTCTL(*PMTRQS) +
                           PROMPT('Listing nesting mark')
              PARM       KWD(CVTOPT) TYPE(*CHAR) LEN(13) RSTD(*YES) +
@@ -62,7 +62,7 @@
              PARM       KWD(SRTSEQ) TYPE(Q3) DFT(*HEX) SNGVAL((*HEX) +
                           (*JOB) (*JOBRUN) (*LANGIDUNQ) (*LANGIDSHR)) +
                           PMTCTL(*PMTRQS) PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*NAME) LEN(3) DFT(*JOBRUN) +
+             PARM       KWD(LANGID) TYPE(*NAME) LEN(7) DFT(*JOBRUN) +
                           SPCVAL((*JOBRUN) (*JOB)) PMTCTL(*PMTRQS) +
                           PROMPT('Language ID')
              PARM       KWD(REPLACE) TYPE(*CHAR) LEN(4) RSTD(*YES) +

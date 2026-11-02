@@ -22,7 +22,7 @@
                           PROMPT('Number of journal entries')
              PARM       KWD(JRNCDE) TYPE(E3) MAX(16) DFT(*ALL) +
                           SNGVAL((*ALL) (*CTL)) PROMPT('Journal codes')
-             PARM       KWD(ENTTYP) TYPE(*CHAR) LEN(2) MAX(50) DFT(*ALL) +
+             PARM       KWD(ENTTYP) TYPE(*CHAR) LEN(4) MAX(50) DFT(*ALL) +
                           SNGVAL((*ALL) (*RCD)) PROMPT('Journal entry types')
              PARM       KWD(JOB) TYPE(Q2) DFT(*ALL) SNGVAL((*ALL) (*)) +
                           PROMPT('Job')

@@ -53,7 +53,7 @@
              PARM       KWD(SRTSEQ) TYPE(Q3) DFT(*HEX) SNGVAL((*HEX) +
                           (*JOB) (*JOBRUN) (*LANGIDUNQ) (*LANGIDSHR)) +
                           PMTCTL(*PMTRQS) PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*NAME) LEN(3) DFT(*JOBRUN) +
+             PARM       KWD(LANGID) TYPE(*NAME) LEN(7) DFT(*JOBRUN) +
                           SPCVAL((*JOBRUN) (*JOB)) PMTCTL(*PMTRQS) +
                           PROMPT('Language ID')
              PARM       KWD(INCFILE) TYPE(Q3) DFT(*SRCFILE) +

@@ -18,7 +18,7 @@
              PARM       KWD(SCDDATE) TYPE(*DATE) DFT(*SAME) +
                           SPCVAL((*SAME) (*CURRENT) (*MONTHSTR) (*MONTHEND) +
                           (*NONE)) PROMPT('Schedule date')
-             PARM       KWD(SCDDAY) TYPE(*CHAR) LEN(4) RSTD(*YES) MAX(7) +
+             PARM       KWD(SCDDAY) TYPE(*CHAR) LEN(5) RSTD(*YES) MAX(7) +
                           DFT(*SAME) VALUES(*MON *TUE *WED *THU *FRI *SAT +
                           *SUN) SNGVAL((*SAME) (*NONE) (*ALL)) +
                           PROMPT('Schedule day')

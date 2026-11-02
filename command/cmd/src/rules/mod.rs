@@ -207,6 +207,10 @@ fn check_parm(def: &CmdDef, p: &Parm, kwd: &str, depth: u32, out: &mut Vec<Diag>
     {
         out.push(diag("dft-type", &[kwd]));
     }
+    if let Some(v) = overlong(p) {
+        let len = p.length().len.to_string();
+        out.push(diag("value-len", &[kwd, &v, &len]));
+    }
     if p.rstd && p.values.is_empty() && p.spcval.is_empty() && p.sngval.is_empty() {
         out.push(diag("rstd-values", &[kwd]));
     }
@@ -280,6 +284,55 @@ fn check_parm(def: &CmdDef, p: &Parm, kwd: &str, depth: u32, out: &mut Vec<Diag>
     }
 }
 
+/// The first value of a text parameter that reaches its fixed field
+/// as typed (a `DFT`, a `VALUES` entry, a `SPCVAL` or `SNGVAL` with no
+/// replacement) and is longer than `LEN`: the block would cut it.
+#[must_use]
+pub fn overlong(p: &Parm) -> Option<String> {
+    let text = matches!(
+        p.ty,
+        ParmType::Char
+            | ParmType::Name
+            | ParmType::Generic
+            | ParmType::PName
+            | ParmType::SName
+            | ParmType::CName
+    );
+    if !text {
+        return None;
+    }
+    let len = p.length().len as usize;
+    let specials = || p.spcval.iter().chain(&p.sngval);
+    let mapped = |v: &str| {
+        specials().any(|s| s.to.is_some() && s.from.eq_ignore_ascii_case(v))
+    };
+    // A list's default names one value per item.
+    let dft: Vec<&str> = match &p.dft {
+        Some(d) if p.is_list() && !d.starts_with('\'') => d.split_whitespace().collect(),
+        Some(d) => vec![d.as_str()],
+        None => Vec::new(),
+    };
+    let unmapped = specials().filter(|s| s.to.is_none()).map(|s| s.from.as_str());
+    dft.into_iter()
+        .chain(p.values.iter().map(String::as_str))
+        .chain(unmapped)
+        .filter(|v| !mapped(v))
+        .find(|v| value_len(v) > len)
+        .map(str::to_string)
+}
+
+/// The characters a value's source text stands for.
+fn value_len(v: &str) -> usize {
+    let n = v.chars().count();
+    if n >= 3 && (v.starts_with("X'") || v.starts_with("x'")) && v.ends_with('\'') {
+        return (n - 3).div_ceil(2);
+    }
+    if n >= 2 && v.starts_with('\'') && v.ends_with('\'') {
+        return v[1..v.len() - 1].replace("''", "'").chars().count();
+    }
+    n
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,5 +345,30 @@ mod tests {
         assert_eq!(d.msgid, "CPD0214");
         assert!(d.detail.contains("LIB"));
         assert!(kwd_ok("LIB") && kwd_ok("A$#@1") && !kwd_ok("1A") && !kwd_ok("ABCDEFGHIJK"));
+    }
+
+    #[test]
+    fn unmapped_values_fit_len() {
+        use crate::def::{Len, Special};
+        let sp = |f: &str, t: Option<&str>| Special {
+            from: f.into(),
+            to: t.map(Into::into),
+        };
+        let mut p = Parm {
+            kwd: "SEP".into(),
+            len: Some(Len { len: 1, dec: 0 }),
+            dft: Some("*SAME".into()),
+            spcval: vec![sp("*SAME", None)],
+            ..Parm::default()
+        };
+        assert_eq!(overlong(&p).as_deref(), Some("*SAME"));
+        p.spcval = vec![sp("*SAME", Some("' '"))];
+        assert_eq!(overlong(&p), None);
+        p.dft = Some("''''".into());
+        assert_eq!(overlong(&p), None);
+        p.dft = Some("X'40'".into());
+        assert_eq!(overlong(&p), None);
+        p.values = vec!["'AB'".into()];
+        assert_eq!(overlong(&p).as_deref(), Some("'AB'"));
     }
 }

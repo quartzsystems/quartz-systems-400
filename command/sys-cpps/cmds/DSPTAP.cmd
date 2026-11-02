@@ -7,7 +7,7 @@
                           HLPPNLGRP(QHSVCMD) HLPID(DSPTAP)
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MIN(1) +
                           PROMPT('Device')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) DFT(*MOUNTED) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(8) DFT(*MOUNTED) +
                           SPCVAL((*MOUNTED)) PROMPT('Volume identifier')
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(17) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('File label')

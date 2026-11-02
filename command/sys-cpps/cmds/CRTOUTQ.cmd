@@ -80,7 +80,7 @@
              PARM       KWD(USRDTATFM) TYPE(Q2) DFT(*NONE) +
                           SNGVAL((*NONE)) PMTCTL(*PMTRQS) +
                           PROMPT('User data transform')
-             PARM       KWD(SPLFASP) TYPE(*CHAR) LEN(7) RSTD(*YES) +
+             PARM       KWD(SPLFASP) TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(*OUTQASP) VALUES(*OUTQASP *SYSTEM) +
                           PMTCTL(*PMTRQS) PROMPT('Spooled file ASP')
              PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*OUTQASP) +

@@ -15,7 +15,7 @@
                           VALUES(3179 3180 3196 3197 3277 3278 3279 +
                           3476 3477 3486 3487 5251 5291 5292 5555 5962 +
                           6040 DHCF) PROMPT('Device type')
-             PARM       KWD(MODEL) TYPE(*CHAR) LEN(4) RSTD(*YES) MIN(1) +
+             PARM       KWD(MODEL) TYPE(*CHAR) LEN(5) RSTD(*YES) MIN(1) +
                           VALUES(0 1 2 4 5 11 12 23 24 25 26 27 A1 A2 +
                           B1 B2 C1 C2 D1 D2 E1 E2 F1 F2 G1 G2 H1 H2 +
                           M1 M2 W1 W2 *CALC) PROMPT('Device model')

@@ -9,7 +9,7 @@
                           HLPID(ADDTAPCTG)
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MIN(1) +
                           PROMPT('Library device')
-             PARM       KWD(CTG) TYPE(*CHAR) LEN(6) MIN(1) MAX(40) +
+             PARM       KWD(CTG) TYPE(*CHAR) LEN(7) MIN(1) MAX(40) +
                           SPCVAL((*INSERT)) PROMPT('Cartridge ID')
              PARM       KWD(CGY) TYPE(E1) PROMPT('Category')
              PARM       KWD(CHECK) TYPE(*CHAR) LEN(4) RSTD(*YES) +

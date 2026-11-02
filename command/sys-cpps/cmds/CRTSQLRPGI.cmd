@@ -66,13 +66,13 @@
                           DFT(*JOB) VALUES(*JOB *USA *ISO *EUR *JIS +
                           *MDY *DMY *YMD *JUL) PMTCTL(*PMTRQS) +
                           PROMPT('Date format')
-             PARM       KWD(DATSEP) TYPE(*CHAR) LEN(1) DFT(*JOB) +
+             PARM       KWD(DATSEP) TYPE(*CHAR) LEN(4) DFT(*JOB) +
                           SPCVAL((*JOB) (*BLANK ' ')) PMTCTL(*PMTRQS) +
                           PROMPT('Date separator')
              PARM       KWD(TIMFMT) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*HMS) VALUES(*HMS *USA *ISO *EUR *JIS) +
                           PMTCTL(*PMTRQS) PROMPT('Time format')
-             PARM       KWD(TIMSEP) TYPE(*CHAR) LEN(1) DFT(*JOB) +
+             PARM       KWD(TIMSEP) TYPE(*CHAR) LEN(4) DFT(*JOB) +
                           SPCVAL((*JOB) (*BLANK ' ')) PMTCTL(*PMTRQS) +
                           PROMPT('Time separator')
              PARM       KWD(REPLACE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
@@ -105,7 +105,7 @@
              PARM       KWD(SRTSEQ) TYPE(Q3) DFT(*JOB) SNGVAL((*JOB) +
                           (*HEX) (*JOBRUN) (*LANGIDUNQ) (*LANGIDSHR)) +
                           PMTCTL(*PMTRQS) PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*NAME) LEN(3) DFT(*JOB) +
+             PARM       KWD(LANGID) TYPE(*NAME) LEN(7) DFT(*JOB) +
                           SPCVAL((*JOB) (*JOBRUN)) PMTCTL(*PMTRQS) +
                           PROMPT('Language ID')
              PARM       KWD(DBGVIEW) TYPE(*CHAR) LEN(7) RSTD(*YES) +

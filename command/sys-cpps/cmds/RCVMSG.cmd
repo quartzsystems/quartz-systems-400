@@ -19,7 +19,7 @@
              PARM       KWD(WAIT) TYPE(*DEC) LEN(7 0) DFT(0) +
                           RANGE(0 9999999) SPCVAL((*MAX -1)) +
                           PROMPT('Wait time (seconds)')
-             PARM       KWD(RMV) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(RMV) TYPE(*CHAR) LEN(9) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO *KEEPEXCP) +
                           PROMPT('Remove message')
              PARM       KWD(CCSID) TYPE(*INT4) DFT(*JOB) RANGE(1 65535) +

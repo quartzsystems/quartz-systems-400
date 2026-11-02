@@ -11,6 +11,6 @@
                           VALUES(*ALL *CENTRAL *DATABASE *DTAQ +
                           *FILE *NETPRT *RMTCMD *SIGNON *SVRMAP) +
                           MAX(9) PROMPT('Server type')
-             PARM       KWD(RQDPCL) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+             PARM       KWD(RQDPCL) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*ANY) VALUES(*ANY *TCP *NONE) +
                           PROMPT('Required protocol')

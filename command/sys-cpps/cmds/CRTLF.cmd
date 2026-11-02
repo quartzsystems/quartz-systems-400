@@ -68,7 +68,7 @@
              PARM       KWD(SRTSEQ) TYPE(Q2) DFT(*SRC) SNGVAL((*SRC) +
                           (*JOB) (*LANGIDSHR) (*LANGIDUNQ) (*HEX)) +
                           PMTCTL(*PMTRQS) PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*NAME) LEN(3) DFT(*JOB) +
+             PARM       KWD(LANGID) TYPE(*NAME) LEN(7) DFT(*JOB) +
                           SPCVAL((*JOB) (*JOBRUN)) PMTCTL(*PMTRQS) +
                           PROMPT('Language identifier')
              PARM       KWD(LVLCHK) TYPE(*CHAR) LEN(4) RSTD(*YES) +

@@ -52,7 +52,9 @@ required parameter (CPD0229); `RSTD(*YES)` with something to restrict
 to (CPD0230); `REL` or `RANGE`, not both, and ordered (CPD0231,
 CPD0232); `SNGVAL` on lists and groups only (CPD0233); `PMTCTL` and
 `DEP` naming what exists (CPD0234, CPD0235, CPD0236); a group without
-a parameter using it (CPD0253).
+a parameter using it (CPD0253); no default, listed value or special
+value without a replacement longer than a text parameter's `LEN`, which
+the parameter block would cut (CPD0254).
 
 ## 2. The `*CMD` object
 
