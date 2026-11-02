@@ -116,7 +116,7 @@ fn outfile(system: &mut System, parms: &Parms, t: &hwrsrc::Table, spec: &TypeSpe
             ("DORLVL", (row.depth + 1).min(9).to_string()),
             ("DORNAM", r.name.clone()),
             ("DORPAR", r.parent.clone()),
-            ("DORTYP", ty),
+            ("DORTYP", ty.chars().take(4).collect()),
             ("DORMOD", md),
             ("DORSER", r.serial.chars().take(10).collect()),
             ("DORSTS", if r.operational() { "1" } else { "2" }.into()),
