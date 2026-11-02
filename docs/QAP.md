@@ -534,8 +534,15 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   control answer `Ok`.
 - `SetOptions` is `InUse` (`SQL0752`, added) once a statement other
   than a query ran under a commit level since the last `Commit` or
-  `Rollback`. The default schema is `SET SCHEMA` (none: `SET SCHEMA
-  DEFAULT`).
+  `Rollback`. Otherwise the new level holds from the next statement:
+  the engine's commitment definition takes each statement's level
+  between units of work (as `SET TRANSACTION ISOLATION LEVEL`, which
+  the engine now has and refuses with `SQL0428`, SQLSTATE `25001`,
+  once the unit changed something). The default schema is `SET
+  SCHEMA` (none: `SET SCHEMA DEFAULT`); under `System` naming as
+  under `Sql`, a default schema qualifies unqualified table, view,
+  index and alias names in place of the library list, as IBM i's
+  `DFTRDBCOL` and `SET SCHEMA` do.
 - When the connection closes, and when the job runs as another
   profile (sign-off, resume), the lane rolls back, ends the scope
   `QAP:` (its cursors and statements go) and resets the options. The
@@ -553,18 +560,21 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   out; `T` table, `V` view, `A` alias, `P` physical file, `L`
   logical file) on the thread's own link, match the `LIKE` pattern and
   cut the page in the job, sorted by name. `ListColumns` prepares
-  `SELECT *` from the table (the authority check and the types of
-  `Prepare`) and takes names and headings from `SYSCOLUMNS`.
+  `SELECT *` from the table and answers its `DESCRIBE`, as `Prepare`
+  does.
+- Column names and labels are the engine's `DESCRIBE`: `name` the
+  column's SQL name (the field's `ALIAS`, which `CREATE TABLE` keeps
+  for a name longer than its system name; else the system name),
+  `label` its heading (`LABEL ON` or DDS `COLHDG`) with each of its
+  three parts filled to 20 characters, as an SQLDA's label; a column
+  without a heading, or an expression, has its name as `label`. A
+  column renamed with `AS` keeps its heading.
 - Engine gaps met, left to the database: no `DECFLOAT`, `BINARY`,
   `VARBINARY`, `BLOB`, `CLOB` or `BOOLEAN`, and timestamps only to the
   microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
   value is stored fitted to its field's scale, 0 for SQL's, so
-  `4.5` reads back `4`; the commitment definition keeps the lock
-  level of its first statement; a default schema does not apply under
-  `System` naming; `Release` cannot drop the engine's prepared text,
-  which stays until the connection ends; `Prepare` gives no column
-  headings, so `label` is the name, and `SELECT *` gives system
-  names. The storage service answers one request at a time, so while
+  `4.5` reads back `4`; an SQL column name is kept to 30
+  characters (the field's `ALIAS`), not IBM i's 128. The storage service answers one request at a time, so while
   a statement runs there, other jobs' storage requests and this
   connection's catalog lists wait for it: the lanes hold in the
   connection job, not yet end to end.

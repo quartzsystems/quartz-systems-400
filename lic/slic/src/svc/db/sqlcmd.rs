@@ -183,7 +183,7 @@ pub fn naming(system: &mut System, args: &[&str]) -> Result<String, String> {
     }
 }
 
-/// `curlib LIB`: the current library, also the `*SQL` schema.
+/// `curlib LIB`: the current library, also the default schema (as `SET SCHEMA`).
 pub fn curlib(system: &mut System, args: &[&str]) -> Result<String, String> {
     let [lib] = args else {
         return Err("Usage: curlib LIB".into());

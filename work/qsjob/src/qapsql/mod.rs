@@ -13,7 +13,8 @@
 //!   are opened `WITH HOLD` and stay open across commits.
 //! - A commit level other than `None` is the engine's lock level
 //!   (`*CHG`, `*CS`, `*ALL`; `Serializable` is `*ALL` too); the
-//!   definition keeps the level of the first statement it ran under.
+//!   definition takes each statement's level between units of work, so
+//!   `SetOptions` changes it once the unit has ended.
 //! - `Fetch` reads in batches of [`BATCH`], looking at the cancel
 //!   between them; the engine looks at it between rows read.
 
@@ -382,12 +383,21 @@ impl Lane {
         Ok(())
     }
 
-    /// `Release`.
+    /// `Release`: the engine's prepared statement goes too; cursors
+    /// opened from it stay.
     pub fn release(&mut self, e: &mut dyn Engine, statement: u32) -> Result<(), Refusal> {
-        match self.statements.remove(&statement) {
-            Some(_) => Ok(()),
-            None => Err(Self::not_found(e, "SQL0518", &format!("QAPS{statement}"))),
-        }
+        let Some(s) = self.statements.remove(&statement) else {
+            return Err(Self::not_found(e, "SQL0518", &format!("QAPS{statement}")));
+        };
+        let _ = self.run(
+            e,
+            Desc {
+                name: s.name,
+                ..self.desc(Op::Deallocate)
+            },
+            Vec::new(),
+        );
+        Ok(())
     }
 
     /// `Commit` or `Rollback`; nothing to do without commitment control.
