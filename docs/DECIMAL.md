@@ -210,3 +210,45 @@ fifteen edit words, and seeded random operands; the program has one
 test `database/qdecimal/tests/oracle.rs` does the same and is skipped while
 `tools/conformance/oracle/qdecimal/results.csv` is absent. Numbers compare by
 value and scale, so `.5` and `0.5` agree; edited text compares exactly.
+
+## 9. Decimal floating point
+
+`DecFloat` (`src/decfloat/`) is SQL's `DECFLOAT(16)` and `DECFLOAT(34)`:
+IEEE 754 decimal64 (16 digits, exponents -398 to 369 for the last digit,
+adjusted exponents up to 384) and decimal128 (34 digits, -6176 to 6111,
+up to 6144). A value is a sign, a coefficient and an exponent, or one of
+the special values `Infinity`, `NaN` and `sNaN`, each with a sign.
+Trailing zeros are kept: `1.0` and `1.00` are equal but are different
+values and print differently.
+
+- **Rounding** is half-even, IBM i's default `DECFLOAT` rounding mode,
+  to the format's digits. Below the smallest exponent digits are dropped
+  the same way (subnormals, then zero). A result past the largest
+  exponent is padded with zeros when the coefficient has room (the
+  clamp), else it overflows.
+- **Arithmetic** (`add`, `sub`, `mul`, `div`) rounds to the wider
+  operand's format. The exact result's exponent is the smaller operand
+  exponent for addition and subtraction, their sum for multiplication
+  and as near `a - b` as the digits allow for division. A NaN operand
+  gives that NaN; an `sNaN` operand, `Infinity - Infinity`,
+  `0 * Infinity`, `0 / 0` and `Infinity / Infinity` are invalid
+  operations (`Invalid`); a nonzero number over zero is `DivideByZero`;
+  overflow is `Overflow`. An exact zero sum is positive unless both
+  operands were negative.
+- **Comparison** (`sql_cmp`) is SQL's: `-NaN < -sNaN < -Infinity <
+  numbers < Infinity < sNaN < NaN`, numbers by value (`-0 = 0`,
+  `1.0 = 1.00`). `total_cmp` is IEEE's total order, which also orders
+  `-0 < 0` and equal values by exponent.
+- **Text** is IEEE's scientific string: plain when the exponent is at
+  most 0 and the adjusted exponent (the exponent of the first digit) at
+  least -6 (`0.000001`, `-12.50`), else one digit, the rest after a
+  point and `E` with a sign (`1.5E-30`, `1.23E+5`); the special values
+  are `Infinity`, `NaN` and `SNaN` with a `-` when negative. Parsing
+  takes either form, `Inf` too, in any case.
+- **Encoding** is the IEEE interchange format with a densely packed
+  decimal coefficient, as IBM i stores it, big-endian: the sign bit, a
+  5-bit combination field (the exponent's two high bits and the first
+  digit, or `11110` infinity, `11111` NaN), the rest of the biased
+  exponent (8 bits, bias 398; 12 bits, bias 6176) with its first bit
+  set for `sNaN`, then 5 or 11 declets of three digits each. Any bit
+  pattern decodes; non-canonical declets read as their digits.
