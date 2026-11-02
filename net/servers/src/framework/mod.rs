@@ -17,7 +17,7 @@ mod starter;
 
 pub use builtin::{Ftp, HttpAdmin, Standard, Telnet};
 pub use hostsvr::{HOST_DAEMONS, HostSvr};
-pub use httpsvr::{DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer};
+pub use httpsvr::{DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR, NAVIGATOR_PRODUCT};
 pub use small::{Lpd, Ntp};
 pub use starter::Starter;
 
@@ -137,6 +137,12 @@ pub trait Env {
     /// reads them.
     fn http_ending(&mut self, instance: &str, immediate: bool, delay: u32) {
         let _ = (instance, immediate, delay);
+    }
+    /// Whether licensed program `product`'s `*BASE` is installed;
+    /// everything is where the job keeps no product records.
+    fn product_installed(&mut self, product: &str) -> bool {
+        let _ = product;
+        true
     }
 }
 
