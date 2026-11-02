@@ -177,6 +177,10 @@ pub fn as_user(req: &Request) -> bool {
             | R::SecApi { .. }
             | R::CmdLookup { .. }
             | R::RunCmd { .. }
+            | R::SqlRun { .. }
+            | R::IsqlStart { .. }
+            | R::IsqlRun { .. }
+            | R::IsqlEnd { .. }
             | R::QapSplfList { .. }
             | R::QapSplfRead { .. }
             | R::QapSplfHold { .. }
