@@ -178,6 +178,14 @@ pub fn get() -> Option<&'static Ifs<LinuxBackend>> {
     IFS.get().and_then(|r| r.as_ref().ok())
 }
 
+/// Let go of the file system so it can be unmounted (power down):
+/// every IFS request after it fails.
+pub fn shut() {
+    if let Some(i) = get() {
+        i.backend().close();
+    }
+}
+
 /// Why there is no file system, if there is none.
 pub fn why_not() -> Option<String> {
     match IFS.get() {
@@ -292,8 +300,21 @@ pub fn release_owner(system: &mut System, handle: u64, owner: Owner) {
     }
 }
 
-/// Size and used bytes of the IFS root's filesystem, for the status
-/// displays.
+/// Size and used bytes of an IFS partition outside the ASP, which the
+/// status displays add to ASP 1's figures. A volume in the ASP is ASP
+/// pages already counted, so `None` then.
+pub fn partition_capacity(system: &System) -> Option<(u64, u64)> {
+    let in_asp = system
+        .storage
+        .as_ref()
+        .is_some_and(|s| !s.store.ifs_volume().is_empty());
+    if in_asp {
+        return None;
+    }
+    capacity()
+}
+
+/// Size and used bytes of the IFS root's filesystem.
 pub fn capacity() -> Option<(u64, u64)> {
     use ifs::backend::Backend as _;
     let s = get()?.backend().statfs().ok()?;

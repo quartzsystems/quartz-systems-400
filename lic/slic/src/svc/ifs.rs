@@ -54,7 +54,12 @@ fn fail(path: &str, e: Errno) -> String {
 /// `svc.ifs [WORD ARGS]`.
 pub fn command(system: &mut System, args: &[&str], line: &str) -> String {
     let Some((&word, rest)) = args.split_first() else {
-        return format!("{}{}", crate::ipl::ifs::report(), report());
+        return format!(
+            "{}{}{}",
+            crate::ipl::ifs::report(),
+            crate::stgsvc::ifsvol::report(system),
+            report()
+        );
     };
     let p = principal();
     let number = system.current_job;

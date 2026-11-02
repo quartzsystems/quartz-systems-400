@@ -336,3 +336,31 @@ fn another_thread_serves_the_volume_while_the_store_works() {
     let check = store.check_pages().unwrap();
     assert!(check.bad_pages.is_empty(), "{check}");
 }
+
+#[test]
+fn the_volume_reads_and_writes_as_a_file() {
+    use std::io::{Read, Seek, SeekFrom, Write};
+    let d = devs(1);
+    let mut store = new_store(&d);
+    store.ifs_create(90).unwrap();
+    let pages = store.ifs_volume().pages();
+    {
+        let mut f = store.ifs_file();
+        assert_eq!(f.seek(SeekFrom::End(0)).unwrap(), pages * 4096);
+        f.seek(SeekFrom::Start(4000)).unwrap();
+        f.write_all(&[9u8; 300]).unwrap();
+        f.seek(SeekFrom::Start(8192)).unwrap();
+        f.write_all(&[5u8; 4096]).unwrap();
+        f.flush().unwrap();
+        f.seek(SeekFrom::Start(3999)).unwrap();
+        let mut b = [0u8; 302];
+        f.read_exact(&mut b).unwrap();
+        assert_eq!((b[0], b[1], b[300], b[301]), (0, 9, 9, 0));
+        f.seek(SeekFrom::Start(pages * 4096)).unwrap();
+        assert!(f.write_all(&[1]).is_err());
+    }
+    let mut back = vec![0u8; 3 * 4096];
+    store.ifs_read(0, &mut back).unwrap();
+    assert_eq!(back[4000], 9);
+    assert_eq!(back[8192 + 100], 5);
+}

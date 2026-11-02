@@ -393,6 +393,8 @@ pub const DIRECT: &[&str] = &[
     "PRTSYSINF",
     "QSPMTOVR",
     "QSBCKUP",
+    // --- the IFS volume (lic/slic/src/cpp/ifsgrow.rs)
+    "QSGROWIFS",
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
     "QSCHGUPDA",
     "QSCHKUPD",

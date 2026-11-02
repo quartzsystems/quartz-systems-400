@@ -2964,6 +2964,43 @@ text = "IPL attributes changed."
 help = "The next IPL uses them; DSPIPLA shows them."
 vars = []
 
+# The IFS volume in ASP 1 (QSGROWIFS, the storage service).
+
+[[msg]]
+id = "CPC3E20"
+sev = 0
+text = "The integrated file system grew by &1 MB to &2 MB."
+help = "The pages came from ASP 1's free space and stay with the file system; it never gives them back."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3E21"
+sev = 40
+text = "The integrated file system cannot grow: ASP 1 would pass its threshold."
+help = "Ask for less, free space in ASP 1 or the file system, or add a disk unit to ASP 1."
+vars = []
+
+[[msg]]
+id = "CPF3E22"
+sev = 40
+text = "The integrated file system cannot grow: it is in its own partition."
+help = "This system was installed before the file system moved into ASP 1. A reinstall puts it there."
+vars = []
+
+[[msg]]
+id = "CPF3E23"
+sev = 40
+text = "The integrated file system could not grow."
+help = "The storage service could not finish the growth; the reason follows the message. The file system keeps the size it had, or the size of the last step that finished."
+vars = []
+
+[[msg]]
+id = "CPI3E21"
+sev = 80
+text = "The integrated file system is nearly full and cannot grow: ASP 1 has no room below its threshold."
+help = "Writes that need more space fail. Free space in ASP 1 or the file system, or add a disk unit to ASP 1; the file system grows by itself once there is room."
+vars = []
+
 # Problems.
 
 [[msg]]

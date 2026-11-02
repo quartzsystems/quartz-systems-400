@@ -41,6 +41,10 @@ pub struct Options {
     /// The device already reads as zeros (a new image file), so the log
     /// need not be cleared.
     pub zeroed: bool,
+    /// Blocks per allocation group, instead of the size's own choice:
+    /// a device that will grow keeps one AG size (whole AGs from the
+    /// start; the rest of the device is left for the first growth).
+    pub ag_blocks: Option<u32>,
 }
 
 impl Options {
@@ -53,6 +57,7 @@ impl Options {
             sector_size: 512,
             time,
             zeroed: false,
+            ag_blocks: None,
         }
     }
 }
@@ -60,7 +65,7 @@ impl Options {
 /// Write an empty filesystem onto the first `bytes` of `dev`. The
 /// primary superblock goes last, so an interrupted format never mounts.
 pub fn format<D: Write + Seek>(dev: &mut D, bytes: u64, opts: &Options) -> Result<Geometry, Error> {
-    let g = Geometry::for_bytes(bytes, opts.sector_size)?;
+    let g = Geometry::for_bytes_with(bytes, opts.sector_size, opts.ag_blocks)?;
     if opts.label.len() > 12 {
         return Err(Error::Label(opts.label.len()));
     }

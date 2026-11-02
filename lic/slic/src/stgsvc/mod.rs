@@ -20,6 +20,7 @@ pub(crate) mod exec;
 pub(crate) mod hist;
 mod hostsvr;
 pub(crate) mod ifs;
+pub(crate) mod ifsvol;
 mod isql;
 mod joblog;
 pub(crate) mod media;
@@ -199,7 +200,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         Err(e) => format!("{text}; user profiles: {e}"),
     };
     security::guard(system);
-    let text = format!("{text}; {}", ifs::start(system));
+    let text = format!("{text}; {}", ifs_line(system));
     let text = certs::ensure_system(system).map_or_else(|| text.clone(), |made| format!("{text}; {made}"));
     system.pools = sbs::pool_table_saved(system);
     let iplsts = jobs::take_next_iplsts(system);
@@ -223,6 +224,15 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         text.push_str(&raised.join(","));
     }
     Ok(text)
+}
+
+/// The IFS volume served and mounted (when it is in ASP 1), then the
+/// service's file system over it: their line of the open reply.
+fn ifs_line(system: &mut System) -> String {
+    match ifsvol::start(system) {
+        Some(served) => format!("{served}; {}", ifs::start(system)),
+        None => ifs::start(system),
+    }
 }
 
 /// Separates the SRC codes from the text of the open reply.
@@ -287,6 +297,7 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
             storage::PARITY_SLICE
         };
         storage::tick_with(system, slice);
+        ifsvol::tick(system);
         cmn::tick(system);
         if accept {
             match listener.accept() {

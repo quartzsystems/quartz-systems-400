@@ -38,6 +38,12 @@ pub const NO_PARITY_SET: &str = "The device parity set does not exist";
 pub const PARITY_NOT_ACTIVE: &str = "The parity set is not active: a unit failed, rebuilds or syncs";
 /// The unit to replace has not failed.
 pub const NOT_FAILED: &str = "The unit has not failed";
+/// Part of the IFS lives on the unit, and the IFS never moves.
+pub const HOLDS_IFS: &str = "Part of the IFS is on the unit and cannot move";
+/// The IFS cannot grow below the ASP threshold.
+pub const IFS_NO_ROOM: &str = "The ASP has no room for the IFS below its threshold";
+/// The IFS is in its own partition.
+pub const IFS_NOT_IN_ASP: &str = "The IFS is not in the ASP";
 /// The disk is smaller than the unit needs.
 pub const TOO_SMALL: &str = "The disk is too small for the unit";
 /// The ASP has no room for the move.

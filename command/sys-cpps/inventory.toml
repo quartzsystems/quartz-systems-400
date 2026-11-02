@@ -938,6 +938,14 @@ note = "what QSYSCOMM1 runs on the QSCHGUPDA schedule: CPI3E01 to QSYSOPR, newer
 cpp = "QSZPCRT"
 note = "a PTF save file from a TOML manifest in the IFS (docs/PTF.md section 7), signed with the key file named"
 
+# ------------------------------------------------------- IFS volume
+# A Quartz extension (IBM i's IFS shares its ASP's space with nothing to
+# size): the service grows the IFS volume in ASP 1 (lic/slic/src/cpp/ifsgrow.rs
+# over stgsvc/ifsvol.rs, docs/IFS.md "The volume").
+[cmd.QSGROWIFS]
+cpp = "QSZIGROW"
+note = "SIZE(*STEP) by 2% of ASP 1, or SIZE(n) MB; never past the ASP threshold; CPC3E20, CPF3E21 to CPF3E23"
+
 # --- QSH and environment variables (work/qsjob/src/qsh/; the system-level
 # variables in the service, lic/slic/src/stgsvc/qsh.rs)
 [cmd.QSH]

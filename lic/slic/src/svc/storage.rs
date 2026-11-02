@@ -236,9 +236,10 @@ pub fn rclstg(system: &mut System, args: &[&str]) -> String {
         ),
         Err(e) => return format!("RCLSTG failed: {e}\n"),
     };
-    // A disk laid out before the IFS partition gets one, room permitting.
-    let check = matches!(mode, ReclaimMode::Check);
-    out.push_str(&crate::ipl::ifs::reclaim(check));
+    out.push_str(&crate::ipl::ifs::reclaim(system));
+    let Some(s) = system.storage.as_mut() else {
+        return out;
+    };
     // The profile indexes: verified by *CHECK, rebuilt otherwise.
     if let Some(qsys) = s.qsys {
         let r = (|| -> sec::Result<String> {

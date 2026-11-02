@@ -7,6 +7,9 @@
 //! format at IPL; the storage service serves it through its shared I/O
 //! handle). See `docs/STORE_FORMAT.md` §12.
 
+use std::collections::BTreeMap;
+use std::io::{self, Read, Seek, SeekFrom, Write};
+
 use crate::asp::ifs::{IfsIo, Volume};
 use crate::asp::superblock::FLAG_IFS_FORMATTED;
 use crate::page::PAGE_SIZE;
@@ -145,5 +148,129 @@ impl Store {
     /// Make the volume's writes durable.
     pub fn ifs_flush(&mut self) -> Result<()> {
         self.asp.io().flush()
+    }
+
+    /// The volume as a file.
+    pub fn ifs_file(&mut self) -> VolumeFile<'_> {
+        VolumeFile {
+            store: self,
+            pos: 0,
+            pages: BTreeMap::new(),
+        }
+    }
+}
+
+/// The volume as a file, for a formatter: reads and writes at any byte
+/// offset, pages gathered in memory and written in runs on
+/// [`flush`](std::io::Write::flush) (and when many are held).
+pub struct VolumeFile<'a> {
+    store: &'a mut Store,
+    pos: u64,
+    pages: BTreeMap<u64, Vec<u8>>,
+}
+
+/// Pages a [`VolumeFile`] holds before it writes them out.
+const FILE_HELD: usize = 4096;
+
+fn io_err(e: &StoreError) -> io::Error {
+    io::Error::other(e.to_string())
+}
+
+impl VolumeFile<'_> {
+    fn len(&self) -> u64 {
+        self.store.ifs_volume().pages() * PAGE_SIZE as u64
+    }
+
+    /// Page `v` as it stands: held, else read.
+    fn page(&mut self, v: u64) -> io::Result<&mut Vec<u8>> {
+        if !self.pages.contains_key(&v) {
+            let mut b = vec![0u8; PAGE_SIZE];
+            self.store.ifs_read(v, &mut b).map_err(|e| io_err(&e))?;
+            self.pages.insert(v, b);
+        }
+        Ok(self.pages.get_mut(&v).expect("inserted"))
+    }
+
+    /// Write the held pages out in runs.
+    fn spill(&mut self) -> io::Result<()> {
+        let pages = std::mem::take(&mut self.pages);
+        let mut run: Vec<u8> = Vec::new();
+        let mut start = 0;
+        let mut next = None;
+        for (v, b) in pages {
+            if next != Some(v) && !run.is_empty() {
+                self.store.ifs_write(start, &run).map_err(|e| io_err(&e))?;
+                run.clear();
+            }
+            if run.is_empty() {
+                start = v;
+            }
+            run.extend_from_slice(&b);
+            next = Some(v + 1);
+        }
+        if !run.is_empty() {
+            self.store.ifs_write(start, &run).map_err(|e| io_err(&e))?;
+        }
+        Ok(())
+    }
+}
+
+impl Write for VolumeFile<'_> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        if self.pos + buf.len() as u64 > self.len() {
+            return Err(io::Error::other("past the end of the IFS volume"));
+        }
+        let mut done = 0;
+        while done < buf.len() {
+            let v = self.pos / PAGE_SIZE as u64;
+            let off = usize::try_from(self.pos % PAGE_SIZE as u64).expect("small");
+            let n = (PAGE_SIZE - off).min(buf.len() - done);
+            if off == 0 && n == PAGE_SIZE {
+                self.pages.insert(v, buf[done..done + n].to_vec());
+            } else {
+                self.page(v)?[off..off + n].copy_from_slice(&buf[done..done + n]);
+            }
+            done += n;
+            self.pos += n as u64;
+        }
+        if self.pages.len() >= FILE_HELD {
+            self.spill()?;
+        }
+        Ok(done)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.spill()?;
+        self.store.ifs_flush().map_err(|e| io_err(&e))
+    }
+}
+
+impl Read for VolumeFile<'_> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let left = self.len().saturating_sub(self.pos);
+        let want = usize::try_from(left.min(buf.len() as u64)).expect("small");
+        let mut done = 0;
+        while done < want {
+            let v = self.pos / PAGE_SIZE as u64;
+            let off = usize::try_from(self.pos % PAGE_SIZE as u64).expect("small");
+            let n = (PAGE_SIZE - off).min(want - done);
+            let page = self.page(v)?;
+            buf[done..done + n].copy_from_slice(&page[off..off + n]);
+            done += n;
+            self.pos += n as u64;
+        }
+        Ok(done)
+    }
+}
+
+impl Seek for VolumeFile<'_> {
+    fn seek(&mut self, to: SeekFrom) -> io::Result<u64> {
+        let at = match to {
+            SeekFrom::Start(n) => Some(n),
+            SeekFrom::End(d) => self.len().checked_add_signed(d),
+            SeekFrom::Current(d) => self.pos.checked_add_signed(d),
+        };
+        self.pos = at.ok_or_else(|| io::Error::other("seek before the start"))?;
+        Ok(self.pos)
     }
 }

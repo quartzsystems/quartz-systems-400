@@ -83,6 +83,8 @@ pub const ASP_INITIALIZED: Src = src("C6001007", "ASP 1 initialized", Phase::Os)
 pub const RCLSTG_REQUIRED: Src = src("C6001008", "Reclaim storage required", Phase::Os);
 /// System values loaded.
 pub const SYSVALS_LOADED: Src = src("C6001010", "System values loaded", Phase::Os);
+/// The IFS volume created in ASP 1 and formatted.
+pub const IFS_CREATED: Src = src("C6001011", "IFS created in ASP 1", Phase::Os);
 /// The IFS filesystem mounted.
 pub const IFS_MOUNTED: Src = src("C6001012", "IFS mounted", Phase::Os);
 /// The storage service process took over the store.
@@ -191,8 +193,12 @@ pub const PARITY_EXPOSED: Src = src(
 pub const DISK_NOT_CONFIGURED: Src = src("A6001260", "Disk unit not configured", Phase::Attention);
 /// No IFS partition on any disk; the IPL goes on without the IFS.
 pub const IFS_MISSING: Src = src("A6001270", "IFS partition missing", Phase::Attention);
-/// The IFS partition would not mount; the IPL goes on without it.
+/// ASP 1 has no room for the IFS volume; the IPL goes on without it.
+pub const IFS_NOT_CREATED: Src = src("A6001271", "IFS not created: ASP 1 is too full", Phase::Attention);
+/// The IFS would not mount; the IPL goes on without it.
 pub const IFS_MOUNT_FAILED: Src = src("A6001275", "IFS mount failed", Phase::Attention);
+/// The IFS volume's block device could not be served.
+pub const IFS_NOT_SERVED: Src = src("A6001276", "IFS device could not be served", Phase::Attention);
 /// A tape or optical device failed; its resource is in the log entry.
 pub const DEVICE_ERROR: Src = src("A6006300", "Media device error", Phase::Attention);
 /// A volume could not be read or written.
@@ -251,6 +257,7 @@ pub const TABLE: &[Src] = &[
     ASP_INITIALIZED,
     RCLSTG_REQUIRED,
     SYSVALS_LOADED,
+    IFS_CREATED,
     IFS_MOUNTED,
     STG_STARTED,
     STRUP_SKIPPED,
@@ -286,7 +293,9 @@ pub const TABLE: &[Src] = &[
     MIRROR_FAILED,
     PARITY_EXPOSED,
     IFS_MISSING,
+    IFS_NOT_CREATED,
     IFS_MOUNT_FAILED,
+    IFS_NOT_SERVED,
     DEVICE_ERROR,
     MEDIA_ERROR,
     PANIC,

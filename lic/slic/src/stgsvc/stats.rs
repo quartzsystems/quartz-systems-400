@@ -445,7 +445,7 @@ fn asp_figures(system: &System) -> (u64, f64, u64) {
         return (0, 0.0, 0);
     };
     let a = s.store.asp();
-    let (ifs_size, ifs_used) = super::ifs::capacity().unwrap_or((0, 0));
+    let (ifs_size, ifs_used) = super::ifs::partition_capacity(system).unwrap_or((0, 0));
     let held = super::units::parity_held(system);
     let pages = a.layout().total_pages().saturating_sub(held);
     let total = pages + ifs_size / 4096;

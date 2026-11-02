@@ -441,8 +441,10 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         // (major options, Define or Change the System at IPL).
         install::run_options(system, rx);
     }
-    // The IFS root's filesystem, mounted before the storage service
-    // starts so the service inherits it.
+    // The IFS volume in ASP 1, made when there is none; the storage
+    // service serves and mounts it. A partition of an older install is
+    // mounted here, before the service starts, so the service has it.
+    ifs::prepare(system, installed);
     ifs::mount(system, installed);
     // The storage service takes the store over; from here on the jobs
     // and the console reach it through the service.

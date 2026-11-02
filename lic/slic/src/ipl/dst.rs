@@ -66,6 +66,9 @@ fn reason_of(e: &StoreError) -> Option<String> {
                 Refusal::NoParitySet(_) => r::NO_PARITY_SET,
                 Refusal::ParitySetNotActive(_) => r::PARITY_NOT_ACTIVE,
                 Refusal::NotFailed => r::NOT_FAILED,
+                Refusal::HoldsIfs => r::HOLDS_IFS,
+                Refusal::IfsNoRoom(_) => r::IFS_NO_ROOM,
+                Refusal::IfsNotInAsp => r::IFS_NOT_IN_ASP,
             };
             r::for_unit(text, *unit)
         }
@@ -779,7 +782,7 @@ impl DstEnv for Env<'_> {
                 format!("{y:04}-{mo:02}-{d:02} {hh:02}:{mm:02}:{ss:02}"),
             ));
         }
-        info.extend(crate::ipl::ifs::lic_info());
+        info.extend(crate::ipl::ifs::lic_info(self.system));
         info
     }
 

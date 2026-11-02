@@ -10,6 +10,7 @@
 //! reaches a symbolic link or FIFO opened with `O_PATH` as well as a file.
 
 use std::os::fd::{AsFd, OwnedFd};
+use std::sync::{PoisonError, RwLock};
 
 use rustix::fs::{
     self as rfs, AtFlags, FileType, Mode, OFlags, RenameFlags, ResolveFlags, Timespec, Timestamps,
@@ -69,7 +70,8 @@ fn bstat(s: &rfs::Stat) -> Result<BStat> {
 /// attributes (the caller is root).
 #[derive(Debug)]
 pub struct LinuxBackend {
-    top: OwnedFd,
+    /// `None` once [`close`](LinuxBackend::close)d.
+    top: RwLock<Option<OwnedFd>>,
 }
 
 impl LinuxBackend {
@@ -81,7 +83,21 @@ impl LinuxBackend {
             Mode::empty(),
         )
         .map_err(e)?;
-        Ok(Self { top })
+        Ok(Self {
+            top: RwLock::new(Some(top)),
+        })
+    }
+
+    /// Let go of the top, so the filesystem can be unmounted; every call
+    /// after it fails with `EIO`.
+    pub fn close(&self) {
+        *self.top.write().unwrap_or_else(PoisonError::into_inner) = None;
+    }
+
+    /// Run `f` on the top.
+    fn with_top<T>(&self, f: impl FnOnce(&OwnedFd) -> Result<T>) -> Result<T> {
+        let g = self.top.read().unwrap_or_else(PoisonError::into_inner);
+        f(g.as_ref().ok_or(Errno::EIO)?)
     }
 
     /// The directory holding `p`'s last name, opened `O_PATH`, and the
@@ -89,14 +105,16 @@ impl LinuxBackend {
     fn at<'p>(&self, p: &'p str) -> Result<(OwnedFd, &'p str)> {
         let dir = super::parent(p);
         let name = super::last(p);
-        let fd = rfs::openat2(
-            &self.top,
+        let fd = self.with_top(|top| {
+            rfs::openat2(
+                top,
             if dir.is_empty() { "." } else { dir },
             OFlags::PATH | OFlags::DIRECTORY | OFlags::CLOEXEC,
             Mode::empty(),
             ResolveFlags::BENEATH | ResolveFlags::NO_SYMLINKS | ResolveFlags::NO_MAGICLINKS,
-        )
-        .map_err(e)?;
+            )
+            .map_err(e)
+        })?;
         Ok((fd, if name.is_empty() { "." } else { name }))
     }
 
@@ -168,7 +186,7 @@ impl Backend for LinuxBackend {
 
     fn stat(&self, p: &str) -> Result<BStat> {
         if p.is_empty() {
-            return bstat(&rfs::fstat(&self.top).map_err(e)?);
+            return self.with_top(|top| bstat(&rfs::fstat(top).map_err(e)?));
         }
         let (dir, name) = self.at(p)?;
         bstat(&rfs::statat(&dir, name, AtFlags::SYMLINK_NOFOLLOW).map_err(e)?)
@@ -388,7 +406,7 @@ impl Backend for LinuxBackend {
 
     #[allow(clippy::unnecessary_cast)]
     fn statfs(&self) -> Result<StatFs> {
-        let s = rfs::fstatvfs(self.top.as_fd()).map_err(e)?;
+        let s = self.with_top(|top| rfs::fstatvfs(top.as_fd()).map_err(e))?;
         Ok(StatFs {
             block_size: s.f_frsize as u64,
             blocks: s.f_blocks as u64,

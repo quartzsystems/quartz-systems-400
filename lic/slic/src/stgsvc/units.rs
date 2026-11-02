@@ -6,8 +6,9 @@
 //! type and model, size and use, protection and status. Pages device
 //! parity holds (its share and a larger member's unused rest) are no
 //! capacity the ASP can use, so size and use leave them out, as IBM's
-//! displays leave out the parity share. The IFS partition sits on the
-//! load source, unit 1, and counts there.
+//! displays leave out the parity share. The IFS volume is ASP pages in
+//! use; an older system's IFS partition sits on the load source, unit
+//! 1, and counts there.
 
 use std::path::Path;
 
@@ -50,7 +51,7 @@ struct Dpy {
 
 /// Every unit in unit order; empty without a store.
 pub fn views(system: &mut System) -> Vec<UnitView> {
-    let ifs = super::ifs::capacity().map(|(size, used)| (size / 4096, used / 4096));
+    let ifs = super::ifs::partition_capacity(system).map(|(size, used)| (size / 4096, used / 4096));
     let hw = system.hw();
     let Some(s) = system.storage.as_ref() else {
         return Vec::new();

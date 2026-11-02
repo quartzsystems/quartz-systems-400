@@ -379,6 +379,8 @@ fn close(system: &mut System, conns: &mut [Conn]) -> Result<String, String> {
             end_job(system, ctx, false);
         }
     }
+    // The IFS volume's filesystem first: it writes through the store.
+    super::ifsvol::close(system);
     let storage = system
         .storage
         .take()

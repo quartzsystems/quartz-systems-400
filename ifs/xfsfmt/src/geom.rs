@@ -68,6 +68,12 @@ pub struct Geometry {
 impl Geometry {
     /// Lay out a filesystem on a device of `bytes`.
     pub fn for_bytes(bytes: u64, sector_size: u32) -> Result<Self, Error> {
+        Self::for_bytes_with(bytes, sector_size, None)
+    }
+
+    /// The same with the AG size fixed (16 MiB to 1 TiB, and the
+    /// device at least one AG long), when `ag` is given.
+    pub fn for_bytes_with(bytes: u64, sector_size: u32, ag: Option<u32>) -> Result<Self, Error> {
         if sector_size != 512 && sector_size != 4096 {
             return Err(Error::SectorSize(sector_size));
         }
@@ -86,7 +92,16 @@ impl Geometry {
         let blocks = bytes / u64::from(BLOCK_SIZE);
         // Below 128 MiB: 16 MiB AGs. Above: four AGs, more once an AG
         // would pass 1 TiB. Trailing blocks short of a whole AG go unused.
-        let (ag_count, ag_blocks) = if bytes < 128 * MIB {
+        let fixed = ag.map(|a| u64::from(a).clamp(u64::from(MIN_AG_BLOCKS), MAX_AG_BLOCKS));
+        let (ag_count, ag_blocks) = if let Some(a) = fixed {
+            if blocks < a {
+                return Err(Error::TooSmall {
+                    bytes,
+                    min: a * u64::from(BLOCK_SIZE),
+                });
+            }
+            (blocks / a, a)
+        } else if bytes < 128 * MIB {
             (blocks / u64::from(MIN_AG_BLOCKS), u64::from(MIN_AG_BLOCKS))
         } else {
             let count = blocks.div_ceil(MAX_AG_BLOCKS).max(4);
@@ -260,6 +275,15 @@ mod tests {
         assert_eq!(g.ag_count, 5);
         assert!(Geometry::for_bytes(MIN_BYTES - 1, 512).is_err());
         assert!(Geometry::for_bytes(GIB, 1024).is_err());
+    }
+
+    #[test]
+    fn a_fixed_ag_size_keeps_whole_ags_and_leaves_the_rest() {
+        let g = Geometry::for_bytes_with(GIB + 5 * MIB, 4096, Some(16_384)).unwrap();
+        assert_eq!((g.ag_count, g.ag_blocks), (16, 16_384));
+        assert_eq!(g.dblocks, 16 * 16_384);
+        assert_eq!(g.log_ag, 8);
+        assert!(Geometry::for_bytes_with(64 * MIB, 4096, Some(32_768)).is_err());
     }
 
     #[test]

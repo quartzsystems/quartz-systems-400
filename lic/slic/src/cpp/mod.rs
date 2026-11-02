@@ -48,6 +48,7 @@ pub(crate) mod tapcpy;
 mod tcpcmd;
 mod uicmd;
 pub(crate) mod updcmd;
+mod ifsgrow;
 
 use cmd::block::Parms;
 use stg::proto::{CmdMsg, CmdReply};
@@ -89,6 +90,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| savsys::run(system, name, parms))
             .or_else(|| ptfcmd::run(system, name, parms))
             .or_else(|| updcmd::run(system, name, parms))
+            .or_else(|| ifsgrow::run(system, name, parms))
             .or_else(|| ptfsvc::run(system, name, parms))
             .or_else(|| iplcmd::run(system, name, parms))
             .or_else(|| itgcmd::run(system, name, parms))
