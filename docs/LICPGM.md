@@ -26,7 +26,7 @@ build pipeline asks.
 | `QS00TC1` | shipped | `5770TC1` | Quartz Systems/400 TCP/IP Utilities |
 | `QS00ST1` | shipped | `5770ST1` | Quartz Systems/400 SQL Database Utilities |
 | `QS00DG1` | shipped | `5770DG1` | Quartz Systems/400 HTTP Server |
-| `QS00NAV` | reserved | | Quartz Systems/400 Navigator |
+| `QS00NAV` | shipped | | Quartz Systems/400 Navigator |
 | `QS00AFW` | reserved | `5770XH2` | Quartz Systems/400 Access for Web |
 | `QS00PSE` | reserved | | Quartz Systems/400 PASE Runtime |
 
@@ -89,8 +89,17 @@ the SMTP client, SNTP, the SSH server and the Telnet server; QS00ST1
 HTTP server instances and the ADMIN instance (docs/HTTPADMIN.md); its
 code load is library `QHTTPSVR` with the message file `QZHBMSG`, the
 only shipped product besides the operating system with objects of its
-own (`lic/osobjects/src/products.rs`). Every shipped product is
-installed on a new system. Every product's `*BASE` needs
+own (`lic/osobjects/src/products.rs`). QS00NAV `*BASE` (needs QS00DG1
+`*BASE`) is Navigator (docs/NAVIGATOR.md): it has no objects of its own
+(its job runs the operating system's program, its messages are
+`QCPFMSG`'s, `QSQLMSG`'s and `QZHBMSG`'s), so its library is `QSYS`, as
+QS00TC1's, not the `QNAV` the reserved entry named. Installed, it makes
+HTTP server instance `NAVIGATOR` exist (`STRTCPSVR ...
+HTTPSVR(NAVIGATOR)`, Server instances); it has no IBM alias, Navigator
+for i being part of IBM's operating system. A store seeded while a
+product was reserved gets the shipped definition at the next IPL
+(`catalog::seed` replaces a definition that differs when the product
+has no loads yet). Every shipped product is installed on a new system. Every product's `*BASE` needs
 `QS00SS1 *BASE`.
 
 ### The catalog
