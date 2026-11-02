@@ -90,7 +90,8 @@ fn cancel_ends_a_running_command() {
     let c = Controls::new();
     let mut r = signed_on(&c, "BOB", "SECRET1");
     let id = r.client.request(Op::RunCommand, &CommandText { command: "DLYJOB DLY(30)".into() });
-    std::thread::sleep(Duration::from_millis(100));
+    // Cancelled once it runs, not before.
+    assert_eq!(c.wait_running(r.job, Duration::from_secs(10)).as_deref(), Some("DLYJOB"));
     let at = Instant::now();
     r.client.send(&Envelope::cancel(id));
     let e = r.client.reply(id);

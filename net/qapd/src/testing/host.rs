@@ -109,6 +109,9 @@ impl Host for MemHost {
     }
 
     fn ending(&mut self) -> Option<Ending> {
+        if self.sys.server_ending.load(Ordering::SeqCst) {
+            return Some(Ending::Server);
+        }
         let e = lock(&self.sys.ending).take();
         e.or_else(|| lock(&self.sys.sessions).take_ended(self.job).map(Ending::Session))
     }
@@ -132,6 +135,7 @@ impl Host for MemHost {
     fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
         self.sys.crash_at(Crash::Command);
         let (name, parms) = parse(command);
+        let _running = self.sys.command_runs(self.job, &name);
         let Some(c) = find(&name) else {
             return self.ran(Status::NotFound, &[("CPD0030", &[&name, "*LIBL"]), ("CPF0006", &[])]);
         };
