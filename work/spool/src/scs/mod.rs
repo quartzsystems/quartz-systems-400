@@ -40,9 +40,9 @@ pub const AHPP: u8 = 0xC0;
 pub const RHPP: u8 = 0xC8;
 /// `PP` absolute vertical: to line `n`, on the next page when `n` is
 /// above the current line.
-pub const AVPP: u8 = 0x4C;
+pub const AVPP: u8 = 0xC4;
 /// `PP` relative vertical: down `n` lines.
-pub const RVPP: u8 = 0xC4;
+pub const RVPP: u8 = 0x4C;
 
 /// `2B C1`: set horizontal format, the maximum presentation position.
 pub const SHF: u8 = 0xC1;

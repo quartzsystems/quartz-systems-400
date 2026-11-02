@@ -109,3 +109,12 @@ fn a_file_without_pages() {
     assert!(index(&e.out).is_empty());
     let _ = scs::FF;
 }
+
+#[test]
+fn presentation_position_codes_are_the_published_ones() {
+    assert_eq!((scs::AHPP, scs::RHPP, scs::AVPP, scs::RVPP), (0xC0, 0xC8, 0xC4, 0x4C));
+    // X'34C4' 5 is line 5; X'344C' 2 is two lines further down.
+    let data = [0x34, 0xC4, 5, 0xC1, 0x15, 0x34, 0x4C, 2, 0xC2];
+    let (pages, _) = decode(&data);
+    assert_eq!(pages[0].lines.keys().copied().collect::<Vec<_>>(), [5, 8]);
+}

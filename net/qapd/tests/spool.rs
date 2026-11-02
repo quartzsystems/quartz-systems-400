@@ -239,6 +239,25 @@ fn mv(r: &mut Run, id: &SpooledFileId, outq: ObjectName, first: bool) -> Envelop
 }
 
 #[test]
+fn joblog_page_2_alone_starts_where_it_does_in_the_whole() {
+    let (_, mut r) = bob();
+    let f = file(&mut r, "QPJOBLOG");
+    let whole = data(&read(&mut r, &f.id, ReadFormat::Scs, 1, 0));
+    let (pages, _) = spool::scs::decode(&whole.data);
+    let idx = spool::scs::index(&whole.data);
+    let part = data(&read(&mut r, &f.id, ReadFormat::Scs, 2, 2));
+    // The state moves to the line absolutely: X'34C4', line.
+    let state = idx[1].prefix();
+    let line = u8::try_from(idx[1].line).unwrap();
+    assert!(state.windows(3).any(|w| w == [0x34, 0xC4, line]), "{state:02X?}");
+    assert!(part.data.starts_with(&state));
+    let (got, _) = spool::scs::decode(&part.data);
+    assert_eq!(got.len(), 1);
+    assert_eq!(got[0].lines.keys().next(), pages[1].lines.keys().next());
+    assert_eq!(got[0], pages[1]);
+}
+
+#[test]
 fn hold_release_delete_move_statuses() {
     let (_, mut r) = bob();
     let f = file(&mut r, "RPT001");

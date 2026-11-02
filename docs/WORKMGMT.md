@@ -906,8 +906,8 @@ accepted and ignored.
 | `2F` | BEL | alert; nothing printed |
 | `34 C0 n` | PP AHPP | to column `n` |
 | `34 C8 n` | PP RHPP | right `n` columns |
-| `34 4C n` | PP AVPP | to line `n`; the next page when `n` is above the line |
-| `34 C4 n` | PP RVPP | down `n` lines |
+| `34 C4 n` | PP AVPP | to line `n`; the next page when `n` is above the line |
+| `34 4C n` | PP RVPP | down `n` lines |
 | `35 n data` | TRN | `n` bytes printed as they are |
 | `2B C1 02 w` | SHF | maximum presentation position `w` |
 | `2B C2 02 l` | SVF | maximum presentation line `l` |
