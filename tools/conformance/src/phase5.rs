@@ -857,7 +857,7 @@ impl Suite {
 {wtr}"
             ));
         }
-        s.command(
+        let moved = s.command(
             "chgsplfa QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST) OUTQ(QUSRSYS/QSCAPTURE) SAVE(*YES)",
             CMD,
         )?;
@@ -876,9 +876,14 @@ impl Suite {
             .lines()
             .any(|l| l.contains("QSYSPRT") && l.contains("SAV"))
         {
+            let every = s.command("wrksplf SELECT(*ALL)", CMD)?;
             return Err(format!(
                 "QSYSPRT was not printed:
-{files}"
+{files}
+CHGSPLFA said:
+{moved}
+every spooled file:
+{every}"
             ));
         }
         let text = s.command("svc.prtcapture get QSYSPRT JOB(QSVCJOB)", CMD)?;
