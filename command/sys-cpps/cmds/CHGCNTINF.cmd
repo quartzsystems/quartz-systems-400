@@ -12,7 +12,7 @@
              PARM       KWD(TELNBR) TYPE(TEL) PROMPT('Telephone number')
              PARM       KWD(FAXTELNBR) TYPE(TEL) PROMPT('Fax telephone number')
              PARM       KWD(MAILADDR) TYPE(ADDR) PROMPT('Mailing address')
-             PARM       KWD(LNGVER) TYPE(*CHAR) LEN(4) DFT(*SAME) +
+             PARM       KWD(LNGVER) TYPE(*CHAR) LEN(5) DFT(*SAME) +
                           SPCVAL((*SAME)) PROMPT('National language version')
              PARM       KWD(MEDPTF) TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *AUTOMATIC *OPTICAL +

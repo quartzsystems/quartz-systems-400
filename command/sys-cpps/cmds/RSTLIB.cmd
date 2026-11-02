@@ -10,7 +10,7 @@
                           PROMPT('Saved library')
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MIN(1) MAX(4) +
                           SNGVAL((*SAVF) (*MEDDFN)) PROMPT('Device')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) MAX(75) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(8) MAX(75) +
                           DFT(*MOUNTED) SNGVAL((*MOUNTED)) +
                           PMTCTL(P1) PROMPT('Volume identifier')
              PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*SEARCH) +

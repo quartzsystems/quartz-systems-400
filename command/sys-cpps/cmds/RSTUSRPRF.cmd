@@ -17,7 +17,7 @@
                           MAX(3) SNGVAL((*ALL)) RSTD(*YES) +
                           VALUES(*USRPRF *PWDGRP *PVTAUT) +
                           PMTCTL(*PMTRQS) PROMPT('Security data')
-             PARM       KWD(VOL) TYPE(*CHAR) LEN(6) MAX(75) +
+             PARM       KWD(VOL) TYPE(*CHAR) LEN(8) MAX(75) +
                           DFT(*MOUNTED) SNGVAL((*MOUNTED)) +
                           PMTCTL(P1) PROMPT('Volume identifier')
              PARM       KWD(SEQNBR) TYPE(*INT4) DFT(*SEARCH) +

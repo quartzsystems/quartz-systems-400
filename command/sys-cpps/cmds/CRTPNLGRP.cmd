@@ -16,7 +16,7 @@
              PARM       KWD(TEXT) TYPE(*CHAR) LEN(50) DFT(*SRCMBRTXT) +
                           SPCVAL((*SRCMBRTXT) (*BLANK ' ')) +
                           PROMPT('Text ''description''')
-             PARM       KWD(OPTION) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(OPTION) TYPE(*CHAR) LEN(9) RSTD(*YES) +
                           DFT(*NOSRC) VALUES(*SRC *SOURCE *NOSRC +
                           *NOSOURCE *LIST *NOLIST) MAX(2) +
                           PMTCTL(*PMTRQS) PROMPT('Source listing options')

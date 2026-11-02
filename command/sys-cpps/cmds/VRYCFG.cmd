@@ -5,7 +5,7 @@
 /* VRYCFG: vary configuration objects on or off. */
              CMD        PROMPT('Vary Configuration') MAXPOS(3) +
                           ALLOW(*ALL) HLPPNLGRP(QHDCCMD1) HLPID(VRYCFG)
-             PARM       KWD(CFGOBJ) TYPE(*GENERIC) LEN(10) MIN(1) +
+             PARM       KWD(CFGOBJ) TYPE(*GENERIC) LEN(11) MIN(1) +
                           MAX(256) SNGVAL((*APPN) (*PRVCFGTYPE)) +
                           PROMPT('Configuration object')
              PARM       KWD(CFGTYPE) TYPE(*CHAR) LEN(7) RSTD(*YES) +

@@ -120,10 +120,10 @@
                           SNGVAL((*SAME) (*SYSVAL) (*HEX) (*LANGIDSHR) +
                           (*LANGIDUNQ)) PMTCTL(*PMTRQS) +
                           PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*CHAR) LEN(3) DFT(*SAME) +
+             PARM       KWD(LANGID) TYPE(*CHAR) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*SYSVAL)) PMTCTL(*PMTRQS) +
                           PROMPT('Language ID')
-             PARM       KWD(CNTRYID) TYPE(*CHAR) LEN(2) DFT(*SAME) +
+             PARM       KWD(CNTRYID) TYPE(*CHAR) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*SYSVAL)) PMTCTL(*PMTRQS) +
                           PROMPT('Country or region ID')
              PARM       KWD(CCSID) TYPE(*DEC) LEN(5) DFT(*SAME) +
@@ -178,7 +178,7 @@
                         ELEM       TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(*REPLACE) VALUES(*REPLACE *ADD *REMOVE) +
                           PROMPT('Association action')
-                        ELEM       TYPE(*CHAR) LEN(10) RSTD(*YES) +
+                        ELEM       TYPE(*CHAR) LEN(11) RSTD(*YES) +
                           DFT(*NOCRTEIMID) VALUES(*NOCRTEIMID *CRTEIMID) +
                           PROMPT('Create EIM identifier')
              DEP        CTL((&GRPPRF *EQ *NONE)) PARM(&SUPGRPPRF) +

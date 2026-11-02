@@ -14,10 +14,10 @@
              PARM       KWD(TOSEQNBR) TYPE(*INT4) DFT(*FROMSEQ) +
                           RANGE(1 16777215) SPCVAL((*FROMSEQ 0) +
                           (*END -1)) PROMPT('To sequence number')
-             PARM       KWD(FROMVOL) TYPE(*CHAR) LEN(6) MAX(50) +
+             PARM       KWD(FROMVOL) TYPE(*CHAR) LEN(8) MAX(50) +
                           DFT(*MOUNTED) SNGVAL((*MOUNTED)) +
                           PMTCTL(*PMTRQS) PROMPT('From volume identifier')
-             PARM       KWD(TOVOL) TYPE(*CHAR) LEN(6) MAX(50) +
+             PARM       KWD(TOVOL) TYPE(*CHAR) LEN(8) MAX(50) +
                           DFT(*MOUNTED) SNGVAL((*MOUNTED)) +
                           PMTCTL(*PMTRQS) PROMPT('To volume identifier')
              PARM       KWD(TODENSITY) TYPE(*CHAR) LEN(10) +

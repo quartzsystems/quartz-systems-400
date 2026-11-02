@@ -6,7 +6,7 @@
 /* type.                                                                  */
              CMD        PROMPT('Copy Audit Journal Entries') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHSYCMD) HLPID(CPYAUDJRNE)
-             PARM       KWD(ENTTYP) TYPE(*CHAR) LEN(2) RSTD(*YES) +
+             PARM       KWD(ENTTYP) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           MIN(1) MAX(80) SNGVAL((*ALL)) VALUES(AD AF AP +
                           AU AX CA CD CO CP CQ CU CV CY DI DO DS EV GR +
                           GS IM IP IR IS JD JS KF LD ML NA ND NE OM OR +

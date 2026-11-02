@@ -12,5 +12,5 @@
                           SPCVAL((*LIBL)) PROMPT('Context')
              PARM       KWD(TYPE) TYPE(*CHAR) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('Object type')
-             PARM       KWD(SUBTYPE) TYPE(*CHAR) LEN(2) DFT(*ALL) +
+             PARM       KWD(SUBTYPE) TYPE(*CHAR) LEN(4) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('Object subtype')

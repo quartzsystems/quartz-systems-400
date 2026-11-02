@@ -13,7 +13,7 @@
                           DFT(*ALL) MAX(7) SNGVAL((*ALL)) VALUES(*OPENED +
                           *READY *PREPARED *SENT *ANSWERED *VERIFIED +
                           *CLOSED) PROMPT('Status type')
-             PARM       KWD(SEV) TYPE(*CHAR) LEN(1) RSTD(*YES) DFT(*ALL) +
+             PARM       KWD(SEV) TYPE(*CHAR) LEN(4) RSTD(*YES) DFT(*ALL) +
                           MAX(4) SNGVAL((*ALL)) VALUES(1 2 3 4) +
                           PROMPT('Severity')
              PARM       KWD(PERIOD) TYPE(E1) PROMPT('Period')
@@ -30,9 +30,9 @@
              PARM       KWD(ORIGIN) TYPE(E6) PROMPT('Origin')
              PARM       KWD(SRVID) TYPE(*CHAR) LEN(20) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('Service number')
-             PARM       KWD(BRANCH) TYPE(*CHAR) LEN(3) DFT(*ALL) +
+             PARM       KWD(BRANCH) TYPE(*CHAR) LEN(4) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('Branch number')
-             PARM       KWD(COUNTRY) TYPE(*CHAR) LEN(3) DFT(*ALL) +
+             PARM       KWD(COUNTRY) TYPE(*CHAR) LEN(4) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('Country or region number')
              PARM       KWD(ASNUSER) TYPE(*CHAR) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('User assigned')

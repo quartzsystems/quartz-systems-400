@@ -89,10 +89,10 @@
                           SNGVAL((*CURRENT) (*USRPRF) (*SYSVAL) (*HEX) +
                           (*LANGIDUNQ) (*LANGIDSHR)) PMTCTL(*PMTRQS) +
                           PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*CHAR) LEN(3) DFT(*CURRENT) +
+             PARM       KWD(LANGID) TYPE(*CHAR) LEN(8) DFT(*CURRENT) +
                           SPCVAL((*CURRENT) (*USRPRF) (*SYSVAL)) +
                           PMTCTL(*PMTRQS) PROMPT('Language ID')
-             PARM       KWD(CNTRYID) TYPE(*CHAR) LEN(2) DFT(*CURRENT) +
+             PARM       KWD(CNTRYID) TYPE(*CHAR) LEN(8) DFT(*CURRENT) +
                           SPCVAL((*CURRENT) (*USRPRF) (*SYSVAL)) +
                           PMTCTL(*PMTRQS) PROMPT('Country or region ID')
              PARM       KWD(CCSID) TYPE(*INT4) DFT(*CURRENT) +

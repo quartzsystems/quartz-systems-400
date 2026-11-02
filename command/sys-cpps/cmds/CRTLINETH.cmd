@@ -63,7 +63,7 @@
                           DFT(*NONSECURE) VALUES(*NONSECURE *PKTSWTNET +
                           *UNDGRDCBL *SECURECND *GUARDCND *ENCRYPTED +
                           *MAX) PMTCTL(*PMTRQS) PROMPT('Security for line')
-             PARM       KWD(PRPDLY) TYPE(*CHAR) LEN(9) RSTD(*YES) +
+             PARM       KWD(PRPDLY) TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*LAN) VALUES(*MIN *LAN *TELEPHONE +
                           *PKTSWTNET *SATELLITE *MAX) PMTCTL(*PMTRQS) +
                           PROMPT('Propagation delay')

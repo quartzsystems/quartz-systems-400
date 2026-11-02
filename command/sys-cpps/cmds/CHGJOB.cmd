@@ -55,16 +55,16 @@
                           SPCVAL((*SAME) (*CURRENT)) PROMPT('Schedule time')
              PARM       KWD(DATE) TYPE(*DATE) DFT(*SAME) SPCVAL((*SAME)) +
                           PROMPT('Job date')
-             PARM       KWD(DATFMT) TYPE(*CHAR) LEN(6) RSTD(*YES) +
+             PARM       KWD(DATFMT) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *SYSVAL *YMD *MDY *DMY +
                           *JUL) PROMPT('Date format')
-             PARM       KWD(DATSEP) TYPE(*CHAR) LEN(1) DFT(*SAME) +
+             PARM       KWD(DATSEP) TYPE(*CHAR) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*SYSVAL) (*BLANK ' ')) +
                           PROMPT('Date separator')
-             PARM       KWD(TIMSEP) TYPE(*CHAR) LEN(1) DFT(*SAME) +
+             PARM       KWD(TIMSEP) TYPE(*CHAR) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*SYSVAL) (*BLANK ' ')) +
                           PROMPT('Time separator')
-             PARM       KWD(DECFMT) TYPE(*CHAR) LEN(1) RSTD(*YES) +
+             PARM       KWD(DECFMT) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*SAME) VALUES(I J) +
                           SPCVAL((*SAME) (*SYSVAL) (*BLANK ' ')) +
                           PROMPT('Decimal format')
@@ -92,10 +92,10 @@
              PARM       KWD(SRTSEQ) TYPE(Q1) DFT(*SAME) +
                           SNGVAL((*SAME) (*USRPRF) (*SYSVAL) (*HEX) +
                           (*LANGIDUNQ) (*LANGIDSHR)) PROMPT('Sort sequence')
-             PARM       KWD(LANGID) TYPE(*CHAR) LEN(3) DFT(*SAME) +
+             PARM       KWD(LANGID) TYPE(*CHAR) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*USRPRF) (*SYSVAL)) +
                           PROMPT('Language ID')
-             PARM       KWD(CNTRYID) TYPE(*CHAR) LEN(2) DFT(*SAME) +
+             PARM       KWD(CNTRYID) TYPE(*CHAR) LEN(7) DFT(*SAME) +
                           SPCVAL((*SAME) (*USRPRF) (*SYSVAL)) +
                           PROMPT('Country or region ID')
              PARM       KWD(CCSID) TYPE(*INT4) DFT(*SAME) RANGE(1 65535) +

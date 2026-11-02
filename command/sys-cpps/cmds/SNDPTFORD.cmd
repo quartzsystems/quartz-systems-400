@@ -34,8 +34,8 @@
                           PROMPT('Image directory')
              E1:        ELEM       TYPE(*CHAR) LEN(9) MIN(1) +
                           PROMPT('PTF identifier')
-                        ELEM       TYPE(*CHAR) LEN(7) DFT(*ONLYPRD) +
+                        ELEM       TYPE(*CHAR) LEN(8) DFT(*ONLYPRD) +
                           SPCVAL((*ONLYPRD)) PROMPT('Product')
-                        ELEM       TYPE(*CHAR) LEN(6) DFT(*ONLYRLS) +
+                        ELEM       TYPE(*CHAR) LEN(8) DFT(*ONLYRLS) +
                           SPCVAL((*ONLYRLS)) PROMPT('Release')
              P1:        PMTCTL     CTL(DLVRYFMT) COND((*EQ *IMAGE))

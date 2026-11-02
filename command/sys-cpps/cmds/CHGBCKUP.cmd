@@ -11,7 +11,7 @@
                           KEYPARM(*YES) PROMPT('Backup options')
              PARM       KWD(DEV) TYPE(*NAME) LEN(10) MAX(4) DFT(*SAME) +
                           SNGVAL((*SAME) (*NONE)) PROMPT('Device')
-             PARM       KWD(TAPSET) TYPE(*NAME) LEN(4) MAX(7) DFT(*SAME) +
+             PARM       KWD(TAPSET) TYPE(*NAME) LEN(5) MAX(7) DFT(*SAME) +
                           SNGVAL((*SAME) (*NONE)) PROMPT('Tape set')
              PARM       KWD(CLRTAP) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *YES *NO) +

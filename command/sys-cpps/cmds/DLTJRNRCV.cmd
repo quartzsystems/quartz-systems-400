@@ -7,7 +7,7 @@
                           ALLOW(*ALL) HLPPNLGRP(QHJRCMD) HLPID(DLTJRNRCV)
              PARM       KWD(JRNRCV) TYPE(Q1) MIN(1) +
                           PROMPT('Journal receiver')
-             PARM       KWD(DLTOPT) TYPE(*CHAR) LEN(10) RSTD(*YES) +
+             PARM       KWD(DLTOPT) TYPE(*CHAR) LEN(11) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *IGNINQMSG *IGNTGTRCV +
                           *IGNEXITPGM) MAX(3) PROMPT('Delete options')
              Q1:        QUAL       TYPE(*GENERIC) LEN(10) MIN(1)
