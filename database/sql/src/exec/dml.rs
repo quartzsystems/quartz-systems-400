@@ -33,6 +33,10 @@ fn default_of(f: &FieldDef) -> Result<Option<Dft>> {
         Some(DefaultValue::Null) => Some(Dft::Value(Value::Null)),
         Some(DefaultValue::Quoted(q)) => Some(Dft::Value(Value::Str(q.clone()))),
         Some(DefaultValue::Hex(h)) => Some(Dft::Value(Value::Str(ccsid::from_ebcdic(h)))),
+        // A DECFLOAT default may be past what a decimal holds: its text.
+        Some(DefaultValue::Number(n)) if f.data_type == dds::DataType::DecFloat => {
+            Some(Dft::Value(Value::Str(n.clone())))
+        }
         Some(DefaultValue::Number(n)) => Some(Dft::Value(Value::Num(
             qdecimal::Decimal::parse(n).map_err(|e| SqlError::Conversion {
                 what: e.to_string(),
@@ -86,12 +90,15 @@ fn fill_generated(
 }
 
 /// Write `values` (one per field, `None` for the default) into a record.
+/// A LOB's value goes to the LOB tree of the member the record is in.
 pub fn build_record(
+    txn: &mut Txn<'_>,
     t: &TableInfo,
     values: &[Option<Value>],
     base: Option<(&[u8], &[u8])>,
 ) -> Result<(Vec<u8>, Vec<u8>)> {
     let fmt = &t.format;
+    let mut lobs = None;
     let (mut rec, mut nulls) = match base {
         Some((r, n)) => (r.to_vec(), n.to_vec()),
         None => (
@@ -124,7 +131,15 @@ pub fn build_record(
                 column: f.name.to_string(),
             });
         }
-        let dbv = v.to_field(f)?;
+        let dbv = if f.data_type.is_lob() && !v.is_null() {
+            let owner = match lobs {
+                Some(o) => o,
+                None => *lobs.insert(t.lob_owner(txn)?),
+            };
+            DbValue::Char(db::member::lob::put(txn, owner, &v.lob_bytes(f)?)?)
+        } else {
+            v.to_field(f)?
+        };
         record::write_field(f, &mut rec, &dbv).map_err(|e| SqlError::Conversion {
             what: e.to_string(),
         })?;
@@ -204,8 +219,8 @@ pub fn insert(
             per_field[fi] = r.get(k).cloned().flatten();
         }
         let written = fill_generated(txn, ctx, params, &t, &mut o, &mut per_field)
-            .and_then(|()| build_record(&t, &per_field, None))
-            .and_then(|(rec, nulls)| o.write(txn, &rec, &nulls).map_err(SqlError::from));
+            .and_then(|()| build_record(txn, &t, &per_field, None))
+            .and_then(|(rec, nulls)| Ok(o.write(txn, &rec, &nulls)?));
         if let Err(e) = written {
             result = Err(e);
             break;
@@ -343,7 +358,7 @@ fn current_row(
     let schema = Rc::new(super::query::table_schema(t, alias));
     let m = db::Member::open(txn, &t.desc, &t.member)?;
     let rows = match m.read(txn, rrn)? {
-        Some(s) if !s.deleted => vec![row_of(&t.format, &s)?],
+        Some(s) if !s.deleted => vec![row_of(txn, t, &s)?],
         _ => Vec::new(),
     };
     Ok((schema, rows))
@@ -380,7 +395,7 @@ fn change_rows(
                     null_map: current.null_map.clone(),
                     deleted: false,
                 };
-                let row = row_of(&t.format, &slot)?;
+                let row = row_of(txn, t, &slot)?;
                 let env = Env::default().with(schema.clone(), row);
                 let assigned = assignments(txn, &mut ev, t, set, &env)?;
                 let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
@@ -388,7 +403,7 @@ fn change_rows(
                     per_field[i] = v;
                 }
                 let (rec, nulls) =
-                    build_record(t, &per_field, Some((&current.data, &current.null_map)))?;
+                    build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
                 o.update(txn, &rec, &nulls)?;
             }
         }
@@ -484,7 +499,7 @@ pub fn merge(
                             e => Some(ev.eval(txn, e, &outer)?),
                         };
                     }
-                    let (rec, nulls) = build_record(&t, &per_field, None)?;
+                    let (rec, nulls) = build_record(txn, &t, &per_field, None)?;
                     o.write(txn, &rec, &nulls)?;
                     n += 1;
                     break;
@@ -512,7 +527,7 @@ pub fn merge(
                             for (i, v) in assigned {
                                 per_field[i] = v;
                             }
-                            let (rec, nulls) = build_record(
+                            let (rec, nulls) = build_record(txn,
                                 &t,
                                 &per_field,
                                 Some((&current.data, &current.null_map)),

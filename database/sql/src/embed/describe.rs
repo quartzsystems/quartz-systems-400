@@ -20,12 +20,12 @@ use crate::sqlca::Sqlca;
 use crate::value::Value;
 
 /// One SQLDA entry's type.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Col {
     /// The even SQLTYPE.
     pub base: i16,
     /// SQLLEN: bytes, or precision * 256 + scale for a decimal.
-    pub len: i16,
+    pub len: i32,
     /// Null-capable.
     pub null: bool,
     /// The CCSID of character data: 65535 for bytes (`FOR BIT DATA`,
@@ -34,7 +34,7 @@ pub struct Col {
 }
 
 impl Col {
-    fn new(base: i16, len: i16, null: bool) -> Self {
+    fn new(base: i16, len: i32, null: bool) -> Self {
         Self { base, len, null, ccsid: 0 }
     }
 
@@ -43,7 +43,7 @@ impl Col {
     }
 
     /// The precision and scale a number takes in arithmetic.
-    fn digits(&self) -> Option<(i16, i16)> {
+    fn digits(&self) -> Option<(i32, i32)> {
         match self.base {
             484 | 488 => Some((self.len >> 8, self.len & 0xFF)),
             500 => Some((5, 0)),
@@ -60,13 +60,13 @@ impl Col {
 
 /// The length of a date in the job's format (`*MDY`: QS/400 jobs have
 /// no date format of their own yet).
-const DATE_LEN: i16 = 8;
+const DATE_LEN: i32 = 8;
 
 /// An entry for a DDS field.
 fn of_field(f: &dds::FieldDef) -> Col {
     use dds::DataType as D;
-    let len = i16::try_from(f.length).unwrap_or(i16::MAX);
-    let dec = |p: u32, s: u8| i16::try_from(p * 256 + u32::from(s)).unwrap_or(i16::MAX);
+    let len = i32::try_from(f.length).unwrap_or(i32::MAX);
+    let dec = |p: u32, s: u8| i32::try_from(p * 256 + u32::from(s)).unwrap_or(i32::MAX);
     let n = f.allow_null;
     let mut c = match f.data_type {
         D::Char | D::Hex if f.varlen.is_some() => Col::new(448, len, n),
@@ -83,19 +83,35 @@ fn of_field(f: &dds::FieldDef) -> Col {
         D::Float => Col::new(480, if f.precision == dds::FloatPrecision::Single { 4 } else { 8 }, n),
         D::Date => Col::new(384, DATE_LEN, n),
         D::Time => Col::new(388, 8, n),
-        D::Timestamp => Col::new(392, 26, n),
+        D::Timestamp => Col::new(392, len, n),
+        D::DecFloat => Col::new(996, if f.length <= 16 { 8 } else { 16 }, n),
+        D::Bytes if f.varlen.is_some() => Col::new(908, len, n),
+        D::Bytes => Col::new(912, len, n),
+        D::Boolean => Col::new(BOOLEAN, 1, n),
+        D::Blob => Col::new(404, len, n),
+        D::Clob => Col::new(408, len, n),
+        D::Dbclob => Col::new(412, len, n),
     };
     c.ccsid = match f.data_type {
-        D::Hex => 65535,
+        D::Hex | D::Bytes | D::Blob => 65535,
+        D::Dbclob => f.ccsid.unwrap_or(1200),
         _ => f.ccsid.unwrap_or(0),
     };
     c
 }
 
+/// The SQLTYPE of `BOOLEAN`.
+const BOOLEAN: i16 = 2436;
+
+/// The SQLLEN of `TIMESTAMP(p)`.
+fn timestamp_len(p: u8) -> i32 {
+    i32::try_from(dds::DataType::timestamp_length(p)).expect("small")
+}
+
 /// An entry for a `CAST` type.
 fn of_type(t: &DataType) -> Col {
-    let dec = |p: u8, s: u8| i16::from(p) * 256 + i16::from(s);
-    let len = |n: u32| i16::try_from(n).unwrap_or(i16::MAX);
+    let dec = |p: u8, s: u8| i32::from(p) * 256 + i32::from(s);
+    let len = |n: u32| i32::try_from(n).unwrap_or(i32::MAX);
     match t {
         DataType::Char(n) => Col::new(452, len(*n), true),
         DataType::Varchar(n) => Col::new(448, len(*n), true),
@@ -110,8 +126,20 @@ fn of_type(t: &DataType) -> Col {
         DataType::Double => Col::new(480, 8, true),
         DataType::Date => Col::new(384, DATE_LEN, true),
         DataType::Time => Col::new(388, 8, true),
-        DataType::Timestamp => Col::new(392, 26, true),
+        DataType::Timestamp(p) => Col::new(392, timestamp_len(*p), true),
+        DataType::DecFloat(n) => Col::new(996, if *n == 16 { 8 } else { 16 }, true),
+        DataType::Binary(n) => bits(Col::new(912, len(*n), true)),
+        DataType::Varbinary(n) => bits(Col::new(908, len(*n), true)),
+        DataType::Boolean => Col::new(BOOLEAN, 1, true),
+        DataType::Blob(n) => bits(Col::new(404, len(*n), true)),
+        DataType::Clob(n) => Col::new(408, len(*n), true),
+        DataType::Dbclob(n) => Col { ccsid: 1200, ..Col::new(412, len(*n), true) },
     }
+}
+
+/// With CCSID 65535.
+fn bits(c: Col) -> Col {
+    Col { ccsid: 65535, ..c }
 }
 
 /// A field's SQL name: its `ALIAS` when it has one, else its system
@@ -183,10 +211,16 @@ impl Tables {
                 .field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)
                 .map_or_else(|| Col::new(448, 32740, true), of_field),
             Expr::Literal(Literal::Num(n)) => num_literal(n),
-            Expr::Literal(Literal::Str(s)) => Col::new(452, i16::try_from(s.len()).unwrap_or(i16::MAX).max(1), false),
+            Expr::Literal(Literal::Str(s)) => Col::new(452, i32::try_from(s.len()).unwrap_or(i32::MAX).max(1), false),
             Expr::Literal(Literal::Date(_)) => Col::new(384, DATE_LEN, false),
             Expr::Literal(Literal::Time(_)) => Col::new(388, 8, false),
-            Expr::Literal(Literal::Timestamp(_)) => Col::new(392, 26, false),
+            Expr::Literal(Literal::Timestamp(s)) => Col::new(
+                392,
+                crate::value::Timestamp::parse(s).map_or(26, |t| timestamp_len(t.precision)),
+                false,
+            ),
+            Expr::Literal(Literal::Bin(b)) => bits(Col::new(908, i32::try_from(b.len()).unwrap_or(i32::MAX), false)),
+            Expr::Literal(Literal::Bool(_)) => Col::new(BOOLEAN, 1, false),
             Expr::Neg(x) => self.type_of(x),
             Expr::Binary(a, op, b) => arith(&self.type_of(a), *op, &self.type_of(b)),
             Expr::Cast(_, t) => of_type(&t.data_type),
@@ -217,10 +251,21 @@ impl Tables {
                     "TIMESTAMP" | "NOW" => Col::new(392, 26, true),
                     "BIGINT" => Col::new(492, 8, true),
                     "INTEGER" | "INT" | "LENGTH" | "CHAR_LENGTH" | "YEAR" | "MONTH" | "DAY" | "DAYOFMONTH" | "HOUR"
-                    | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS" | "POSSTR" | "LOCATE" => Col::new(496, 4, true),
+                    | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS" | "POSSTR" | "LOCATE" | "OCTET_LENGTH" => {
+                        Col::new(496, 4, true)
+                    }
                     "SMALLINT" => Col::new(500, 2, true),
                     "DOUBLE" | "DOUBLE_PRECISION" | "FLOAT" => Col::new(480, 8, true),
                     "REAL" => Col::new(480, 4, true),
+                    "DECFLOAT" => {
+                        let narrow = matches!(f.args.get(1), Some(Expr::Literal(Literal::Num(n))) if n == "16");
+                        Col::new(996, if narrow { 8 } else { 16 }, true)
+                    }
+                    "NORMALIZE_DECFLOAT" => arg.unwrap_or_else(|| Col::new(996, 16, true)),
+                    "BOOLEAN" => Col::new(BOOLEAN, 1, true),
+                    "BINARY" | "VARBINARY" => {
+                        bits(Col::new(908, arg.map_or(32740, |c| c.len), true))
+                    }
                     _ => arg.unwrap_or_else(|| Col::new(448, 32740, true)),
                 }
             }
@@ -236,8 +281,8 @@ fn num_literal(n: &str) -> Col {
     }
     let digits = n.chars().filter(char::is_ascii_digit).count();
     let scale = n.split_once('.').map_or(0, |(_, f)| f.chars().filter(char::is_ascii_digit).count());
-    let p = i16::try_from(digits).unwrap_or(31);
-    let s = i16::try_from(scale).unwrap_or(0);
+    let p = i32::try_from(digits).unwrap_or(31);
+    let s = i32::try_from(scale).unwrap_or(0);
     Col::new(484, p * 256 + s, false)
 }
 
@@ -247,6 +292,10 @@ fn arith(a: &Col, op: BinOp, b: &Col) -> Col {
     if op == BinOp::Concat {
         let len = a.len.saturating_add(b.len);
         return Col::new(448, len, null);
+    }
+    if a.base == 996 || b.base == 996 {
+        let wide = [a, b].iter().any(|c| (c.base == 996 && c.len == 16) || c.digits().is_some_and(|(p, _)| p > 16));
+        return Col::new(996, if wide { 16 } else { 8 }, null);
     }
     let ints = [500, 496, 492];
     if ints.contains(&a.base) && ints.contains(&b.base) {

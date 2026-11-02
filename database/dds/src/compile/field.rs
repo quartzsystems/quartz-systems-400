@@ -473,8 +473,7 @@ fn formats(spec: &Spec, f: &mut FieldDef, kws: &Kws<'_>, diags: &mut Diagnostics
                 ));
             }
             // A referenced SQL timestamp keeps its precision.
-            let sql_ts = f.length == 19 || (21..=32).contains(&f.length);
-            if spec.length.is_some() || !sql_ts {
+            if spec.length.is_some() || !(f.length == 19 || (21..=32).contains(&f.length)) {
                 f.length = 26;
             }
         }

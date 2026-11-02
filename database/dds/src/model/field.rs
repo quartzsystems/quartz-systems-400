@@ -51,7 +51,7 @@ pub enum DataType {
     Dbclob,
 }
 
-/// Bytes a LOB reference takes in the record (DB_FORMAT.md `LobRef`).
+/// Bytes a LOB reference takes in the record (`docs/DB_FORMAT.md`, `LobRef`).
 pub const LOB_REF_LEN: u32 = 32;
 
 impl DataType {
@@ -88,9 +88,8 @@ impl DataType {
     #[must_use]
     pub fn sql_name(self, varlen: bool) -> &'static str {
         match (self, varlen) {
-            (Self::Char, false) => "CHAR",
             (Self::Char | Self::Hex, true) => "VARCHAR",
-            (Self::Hex, false) => "CHAR",
+            (Self::Char | Self::Hex, false) => "CHAR",
             (Self::Graphic | Self::DbcsOpen, false) => "GRAPHIC",
             (Self::Graphic | Self::DbcsOpen, true) => "VARGRAPHIC",
             (Self::Zoned, _) => "NUMERIC",
@@ -205,7 +204,7 @@ impl DataType {
     #[must_use]
     pub fn length_range(self) -> (u32, u32) {
         match self {
-            Self::Char | Self::Hex => (1, 32766),
+            Self::Char | Self::Hex | Self::Bytes => (1, 32766),
             Self::Graphic => (1, 16383),
             Self::DbcsOpen => (4, 32766),
             Self::Zoned | Self::Packed => (1, 63),
@@ -215,7 +214,6 @@ impl DataType {
             Self::Time => (8, 8),
             Self::Timestamp => (26, 26),
             Self::DecFloat => (16, 34),
-            Self::Bytes => (1, 32766),
             Self::Boolean => (1, 1),
             Self::Blob | Self::Clob => (1, 2_147_483_647),
             Self::Dbclob => (1, 1_073_741_823),

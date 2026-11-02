@@ -232,7 +232,9 @@ impl Reply {
 }
 
 /// A value between processes: a tag (0 null, 1 number, 2 text, 3
-/// date, 4 time, 5 timestamp) and its text.
+/// date, 4 time, 5 timestamp, 6 `DECFLOAT`, 7 binary as hexadecimal, 8
+/// boolean `1` or `0`) and its text. A `DECFLOAT(16)` is sent with a
+/// `16:` prefix.
 pub type WireValue = (u8, String);
 
 /// A reply between processes: SQLCODE, SQLSTATE, SQLERRD, SQLWARN,
@@ -246,6 +248,10 @@ pub fn to_wire(v: &Value) -> WireValue {
         Value::Null => (0, String::new()),
         Value::Num(d) => (1, d.to_string()),
         Value::Str(s) => (2, s.clone()),
+        Value::DecFloat(d) if d.format() == qdecimal::DfFormat::D16 => (6, format!("16:{d}")),
+        Value::DecFloat(d) => (6, d.to_string()),
+        Value::Bin(b) => (7, crate::value::hex(b)),
+        Value::Bool(b) => (8, if *b { "1" } else { "0" }.into()),
         Value::Date(_) => (3, v.to_string()),
         Value::Time(_) => (4, v.to_string()),
         Value::Timestamp(t) => (5, t.to_string()),
@@ -261,7 +267,14 @@ pub fn from_wire(w: &WireValue) -> Value {
         2 => Value::Str(t.clone()),
         3 => crate::value::parse_date(t).map_or(Value::Null, Value::Date),
         4 => db::record::datetime::Time::parse(t, dds::TimeFmt::Iso).map_or(Value::Null, Value::Time),
-        5 => crate::value::Timestamp::parse(t).map_or(Value::Null, Value::Timestamp),
+        5 => crate::value::Timestamp::parse_exact(t).map_or(Value::Null, Value::Timestamp),
+        6 => match t.strip_prefix("16:") {
+            Some(d) => qdecimal::DecFloat::parse(d, qdecimal::DfFormat::D16),
+            None => qdecimal::DecFloat::parse(t, qdecimal::DfFormat::D34),
+        }
+        .map_or(Value::Null, Value::DecFloat),
+        7 => crate::value::unhex(t).map_or(Value::Null, Value::Bin),
+        8 => Value::Bool(t == "1"),
         _ => Value::Null,
     }
 }

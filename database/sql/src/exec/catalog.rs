@@ -68,11 +68,11 @@ fn n(v: u64) -> Value {
 }
 
 fn stamp(secs: u64) -> Value {
-    Value::Timestamp(Timestamp {
-        date: db::record::datetime::Date::from_unix(secs),
-        time: db::record::datetime::Time::from_unix(secs),
-        micros: 0,
-    })
+    Value::Timestamp(Timestamp::new(
+        db::record::datetime::Date::from_unix(secs),
+        db::record::datetime::Time::from_unix(secs),
+        0,
+    ))
 }
 
 /// Every database file in every library, with its library name.
@@ -217,23 +217,31 @@ pub fn virtual_table(
                 };
                 for (i, f) in fmt.format.fields.iter().enumerate() {
                     let numeric = f.data_type.is_numeric();
+                    let (length, scale, precision) = match f.data_type {
+                        // A DECFLOAT's length is its bytes, its precision its digits.
+                        DataType::DecFloat => (
+                            n(u64::from(f.data_len())),
+                            Value::Null,
+                            n(if f.length <= 16 { 16 } else { 34 }),
+                        ),
+                        // A timestamp's scale is its precision.
+                        DataType::Timestamp => (
+                            n(u64::from(f.length)),
+                            n(u64::from(DataType::timestamp_precision(f.length))),
+                            Value::Null,
+                        ),
+                        _ if numeric => (n(u64::from(f.length)), n(u64::from(f.decimals)), n(u64::from(f.length))),
+                        _ => (n(u64::from(f.length)), Value::Null, Value::Null),
+                    };
                     rows.push(vec![
                         s(f.alias.clone().unwrap_or_else(|| f.name.to_string())),
                         s(d.name().to_string()),
                         s(ccsid::decode_trimmed(&d.header.owner)),
                         n(i as u64 + 1),
                         s(data_type_name(f)),
-                        n(u64::from(f.length)),
-                        if numeric {
-                            n(u64::from(f.decimals))
-                        } else {
-                            Value::Null
-                        },
-                        if numeric {
-                            n(u64::from(f.length))
-                        } else {
-                            Value::Null
-                        },
+                        length,
+                        scale,
+                        precision,
                         s(if f.allow_null { "Y" } else { "N" }),
                         if f.colhdg.is_empty() {
                             Value::Null
@@ -247,7 +255,7 @@ pub fn virtual_table(
                         f.default
                             .as_ref()
                             .map_or(Value::Null, |dft| s(format!("{dft:?}"))),
-                        f.ccsid.map_or(Value::Null, |x| n(u64::from(x))),
+                        f.ccsid.or((f.data_type == DataType::Hex).then_some(65535)).map_or(Value::Null, |x| n(u64::from(x))),
                         s(if f.default.is_some() { "Y" } else { "N" }),
                     ]);
                 }
@@ -523,7 +531,9 @@ pub fn virtual_table(
 /// The SQL type name of a field, as `SYSCOLUMNS.DATA_TYPE` spells it.
 fn data_type_name(f: &FieldDef) -> String {
     let t = sql_type(f);
-    t.split('(').next().unwrap_or(&t).trim().to_string()
+    let t = t.split('(').next().unwrap_or(&t).trim();
+    // IBM's eight-character spelling.
+    if t == "VARBINARY" { "VARBIN".into() } else { t.to_string() }
 }
 
 /// The library and name of a file by ID.

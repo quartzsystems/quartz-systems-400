@@ -6,82 +6,36 @@
 //! here and CP037 in the record; the field's attributes decide the
 //! conversion both ways.
 
+mod field;
+mod timestamp;
+
 use std::cmp::Ordering;
 use std::fmt;
 
 use db::record::datetime::{Date, Time};
-use dds::{DataType, DateFmt, FieldDef, TimeFmt};
-use qdecimal::{Decimal, Rounding, Shape};
+use dds::{DateFmt, TimeFmt};
+use qdecimal::{DecFloat, Decimal, DecimalError, DfFormat, Rounding};
 
 use crate::error::{Result, SqlError};
 
-/// A timestamp.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Timestamp {
-    /// Date.
-    pub date: Date,
-    /// Time.
-    pub time: Time,
-    /// Microseconds.
-    pub micros: u32,
-}
-
-impl Timestamp {
-    /// Parse `yyyy-mm-dd hh:mm:ss[.ffffff]` or the `-`/`.` IBM spelling.
-    #[must_use]
-    pub fn parse(text: &str) -> Option<Self> {
-        let t = text.trim();
-        if t.len() < 19 {
-            return None;
-        }
-        let date = Date::parse(&t[..10], DateFmt::Iso)?;
-        let time = Time::parse(&t[11..19], TimeFmt::Hms)?;
-        let micros = match t.get(20..) {
-            Some(f) if !f.is_empty() => {
-                let mut s = f.to_string();
-                while s.len() < 6 {
-                    s.push('0');
-                }
-                s[..6].parse().ok()?
-            }
-            _ => 0,
-        };
-        Some(Self { date, time, micros })
-    }
-
-    /// `yyyy-mm-dd-hh.mm.ss.ffffff`, as a `Z` field holds it.
-    #[must_use]
-    pub fn render_field(&self) -> String {
-        format!(
-            "{}-{}.{:06}",
-            self.date.render(DateFmt::Iso, None),
-            self.time.render(TimeFmt::Iso, None),
-            self.micros
-        )
-    }
-}
-
-impl fmt::Display for Timestamp {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{} {}.{:06}",
-            self.date.render(DateFmt::Iso, None),
-            self.time.render(TimeFmt::Hms, None),
-            self.micros
-        )
-    }
-}
+pub use field::lob_value;
+pub use timestamp::{PICOS, Timestamp};
 
 /// A value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
     /// The null value.
     Null,
-    /// A number.
+    /// A number: integers, decimals and floats.
     Num(Decimal),
-    /// A character string.
+    /// A `DECFLOAT`.
+    DecFloat(DecFloat),
+    /// A character string (`CLOB` and `DBCLOB` too).
     Str(String),
+    /// A binary string: `BINARY`, `VARBINARY`, `BLOB`.
+    Bin(Vec<u8>),
+    /// A `BOOLEAN`.
+    Bool(bool),
     /// A date.
     Date(Date),
     /// A time.
@@ -102,38 +56,24 @@ pub fn cmp_time(a: &Time, b: &Time) -> Ordering {
     (a.hour, a.minute, a.second).cmp(&(b.hour, b.minute, b.second))
 }
 
-impl PartialOrd for Timestamp {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Timestamp {
-    fn cmp(&self, other: &Self) -> Ordering {
-        cmp_date(&self.date, &other.date)
-            .then_with(|| cmp_time(&self.time, &other.time))
-            .then(self.micros.cmp(&other.micros))
-    }
-}
-
 fn conversion(what: impl fmt::Display) -> SqlError {
-    SqlError::Conversion {
-        what: what.to_string(),
+    SqlError::Conversion { what: what.to_string() }
+}
+
+/// A `DECFLOAT` failure as SQL reports it.
+#[must_use]
+pub fn decfloat_error(e: DecimalError) -> SqlError {
+    match e {
+        DecimalError::DivideByZero => SqlError::DivideByZero,
+        DecimalError::Parse { text } => conversion(format!("'{text}' is not a number")),
+        e => SqlError::Overflow { what: e.to_string() },
     }
 }
 
 /// A date from text in the ISO, USA, EUR or two-digit forms.
 #[must_use]
 pub fn parse_date(text: &str) -> Option<Date> {
-    [
-        DateFmt::Iso,
-        DateFmt::Usa,
-        DateFmt::Eur,
-        DateFmt::Mdy,
-        DateFmt::Jul,
-    ]
-    .iter()
-    .find_map(|f| Date::parse(text, *f))
+    [DateFmt::Iso, DateFmt::Usa, DateFmt::Eur, DateFmt::Mdy, DateFmt::Jul].iter().find_map(|f| Date::parse(text, *f))
 }
 
 /// A finite double as a decimal, its shortest exact text; `None` past
@@ -147,6 +87,43 @@ pub fn float_decimal(f: f64) -> Option<Decimal> {
 #[must_use]
 pub fn parse_time(text: &str) -> Option<Time> {
     Time::parse(text, TimeFmt::Hms).or_else(|| Time::parse(text, TimeFmt::Usa))
+}
+
+/// The truth of a word, as `CAST(x AS BOOLEAN)` reads it.
+#[must_use]
+pub fn parse_bool(text: &str) -> Option<bool> {
+    match text.trim().to_ascii_uppercase().as_str() {
+        "TRUE" | "T" | "YES" | "Y" | "ON" | "1" => Some(true),
+        "FALSE" | "F" | "NO" | "N" | "OFF" | "0" => Some(false),
+        _ => None,
+    }
+}
+
+/// Bytes as hexadecimal digits.
+#[must_use]
+pub fn hex(bytes: &[u8]) -> String {
+    use fmt::Write as _;
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        let _ = write!(s, "{b:02X}");
+    }
+    s
+}
+
+/// Hexadecimal digits as bytes.
+#[must_use]
+pub fn unhex(text: &str) -> Option<Vec<u8>> {
+    let t = text.trim();
+    if !t.len().is_multiple_of(2) {
+        return None;
+    }
+    (0..t.len()).step_by(2).map(|i| t.get(i..i + 2).and_then(|h| u8::from_str_radix(h, 16).ok())).collect()
+}
+
+/// A decimal's format when it meets a `DECFLOAT`: 16 digits or fewer
+/// stay `DECFLOAT(16)`.
+fn format_of(d: &Decimal) -> DfFormat {
+    if d.digits_needed() <= 16 { DfFormat::D16 } else { DfFormat::D34 }
 }
 
 impl Value {
@@ -166,9 +143,20 @@ impl Value {
     pub fn as_decimal(&self) -> Result<Decimal> {
         match self {
             Self::Num(d) => Ok(d.clone()),
-            Self::Str(s) => {
-                Decimal::parse(s.trim()).map_err(|_| conversion(format!("'{s}' is not a number")))
-            }
+            Self::DecFloat(d) => d.to_decimal().map_err(|e| conversion(format!("DECFLOAT {d}: {e}"))),
+            Self::Str(s) => Decimal::parse(s.trim())
+                .or_else(|_| DecFloat::parse(s, DfFormat::D34).and_then(|d| d.to_decimal()))
+                .map_err(|_| conversion(format!("'{s}' is not a number"))),
+            v => Err(conversion(format!("{} is not a number", v.type_name()))),
+        }
+    }
+
+    /// The value as a `DECFLOAT` of `format` or wider; text is parsed.
+    pub fn as_decfloat(&self, format: DfFormat) -> Result<DecFloat> {
+        match self {
+            Self::DecFloat(d) => Ok(*d),
+            Self::Num(d) => DecFloat::from_decimal(d, format).map_err(decfloat_error),
+            Self::Str(s) => DecFloat::parse(s, format).map_err(decfloat_error),
             v => Err(conversion(format!("{} is not a number", v.type_name()))),
         }
     }
@@ -186,6 +174,27 @@ impl Value {
     #[must_use]
     pub fn as_text(&self) -> String {
         self.to_string()
+    }
+
+    /// The value as bytes: a binary string's own, text in CP037.
+    pub fn as_bytes(&self) -> Result<Vec<u8>> {
+        match self {
+            Self::Bin(b) => Ok(b.clone()),
+            Self::Str(s) => {
+                ccsid::to_ebcdic(s).map_err(|_| conversion(format!("'{s}' has characters CP037 cannot hold")))
+            }
+            v => Err(conversion(format!("{} is not a binary string", v.type_name()))),
+        }
+    }
+
+    /// The value as a truth value.
+    pub fn as_bool(&self) -> Result<bool> {
+        match self {
+            Self::Bool(b) => Ok(*b),
+            Self::Num(d) => Ok(!d.is_zero()),
+            Self::Str(s) => parse_bool(s).ok_or_else(|| conversion(format!("'{s}' is not a boolean"))),
+            v => Err(conversion(format!("{} is not a boolean", v.type_name()))),
+        }
     }
 
     /// The value as a date; text is parsed.
@@ -212,14 +221,8 @@ impl Value {
     pub fn as_timestamp(&self) -> Result<Timestamp> {
         match self {
             Self::Timestamp(t) => Ok(*t),
-            Self::Date(d) => Ok(Timestamp {
-                date: *d,
-                time: Time::new(0, 0, 0).expect("midnight"),
-                micros: 0,
-            }),
-            Self::Str(s) => {
-                Timestamp::parse(s).ok_or_else(|| conversion(format!("'{s}' is not a timestamp")))
-            }
+            Self::Date(d) => Ok(Timestamp::midnight(*d)),
+            Self::Str(s) => Timestamp::parse(s).ok_or_else(|| conversion(format!("'{s}' is not a timestamp"))),
             v => Err(conversion(format!("{} is not a timestamp", v.type_name()))),
         }
     }
@@ -230,7 +233,10 @@ impl Value {
         match self {
             Self::Null => "NULL",
             Self::Num(_) => "numeric",
+            Self::DecFloat(_) => "DECFLOAT",
             Self::Str(_) => "character",
+            Self::Bin(_) => "binary",
+            Self::Bool(_) => "boolean",
             Self::Date(_) => "date",
             Self::Time(_) => "time",
             Self::Timestamp(_) => "timestamp",
@@ -239,12 +245,24 @@ impl Value {
 
     /// Compare two values; `None` when either is null. Text compares in
     /// EBCDIC order with blank padding; text against a date, time or
-    /// timestamp is parsed; a number against text is an error.
+    /// timestamp is parsed; numbers and `DECFLOAT`s by value with SQL's
+    /// order of the special values; binary strings byte by byte, a
+    /// shorter one first; a number against text is an error.
     pub fn compare(&self, other: &Self) -> Result<Option<Ordering>> {
         Ok(Some(match (self, other) {
             (Self::Null, _) | (_, Self::Null) => return Ok(None),
             (Self::Num(a), Self::Num(b)) => a.cmp(b),
+            (Self::DecFloat(a), Self::DecFloat(b)) => a.sql_cmp(b),
+            (Self::DecFloat(a), Self::Num(b)) => a.sql_cmp(&DecFloat::from_decimal(b, DfFormat::D34).map_err(decfloat_error)?),
+            (Self::Num(a), Self::DecFloat(b)) => DecFloat::from_decimal(a, DfFormat::D34).map_err(decfloat_error)?.sql_cmp(b),
             (Self::Str(a), Self::Str(b)) => ccsid::ebcdic_cmp_str(a.trim_end(), b.trim_end()),
+            (Self::Bin(a), Self::Bin(b)) => a.cmp(b),
+            (Self::Bin(a), Self::Str(_)) => a.cmp(&other.as_bytes()?),
+            (Self::Str(_), Self::Bin(b)) => self.as_bytes()?.cmp(b),
+            (Self::Bool(a), Self::Bool(b)) => a.cmp(b),
+            // Predicates give 0 and 1.
+            (Self::Bool(a), Self::Num(_)) => a.cmp(&other.as_bool()?),
+            (Self::Num(_), Self::Bool(b)) => self.as_bool()?.cmp(b),
             (Self::Date(a), Self::Date(b)) => cmp_date(a, b),
             (Self::Time(a), Self::Time(b)) => cmp_time(a, b),
             (Self::Timestamp(a), Self::Timestamp(b)) => a.cmp(b),
@@ -255,9 +273,7 @@ impl Value {
             (Self::Timestamp(a), Self::Str(_)) => a.cmp(&other.as_timestamp()?),
             (Self::Str(_), Self::Timestamp(b)) => self.as_timestamp()?.cmp(b),
             (a, b) => {
-                return Err(SqlError::TypeMismatch {
-                    what: format!("{} with {}", a.type_name(), b.type_name()),
-                });
+                return Err(SqlError::TypeMismatch { what: format!("{} with {}", a.type_name(), b.type_name()) });
             }
         }))
     }
@@ -268,101 +284,33 @@ impl Value {
     pub fn key(&self) -> String {
         match self {
             Self::Null => "\u{0}".into(),
-            Self::Num(d) => {
-                let s = d.to_string();
-                if s.contains('.') {
-                    let t = s.trim_end_matches('0').trim_end_matches('.');
-                    if t == "-0" || t.is_empty() {
-                        "0".into()
-                    } else {
-                        t.to_string()
-                    }
-                } else {
-                    s
-                }
-            }
+            Self::Num(d) => decimal_key(d),
+            Self::DecFloat(d) => d.to_decimal().map_or_else(|_| format!("#{d}"), |x| decimal_key(&x)),
             Self::Str(s) => format!("'{}", s.trim_end()),
+            Self::Bin(b) => format!("x{}", hex(b)),
+            Self::Timestamp(t) => t.key(),
             other => other.to_string(),
         }
     }
 
-    /// From a field's stored value.
-    pub fn from_field(f: &FieldDef, v: &db::record::Value) -> Result<Self> {
-        Ok(match v {
-            db::record::Value::Null => Self::Null,
-            db::record::Value::Num(d) => Self::Num(d.clone()),
-            db::record::Value::Char(b) => {
-                let s = ccsid::from_ebcdic(b);
-                match f.data_type {
-                    DataType::Date => {
-                        Self::Date(Date::parse(&s, f.date_fmt.unwrap_or_default()).ok_or_else(
-                            || conversion(format!("field {} holds '{s}', not a date", f.name)),
-                        )?)
-                    }
-                    DataType::Time => {
-                        Self::Time(Time::parse(&s, f.time_fmt.unwrap_or_default()).ok_or_else(
-                            || conversion(format!("field {} holds '{s}', not a time", f.name)),
-                        )?)
-                    }
-                    DataType::Timestamp => {
-                        Self::Timestamp(Timestamp::parse(&s).ok_or_else(|| {
-                            conversion(format!("field {} holds '{s}', not a timestamp", f.name))
-                        })?)
-                    }
-                    _ => Self::Str(s),
-                }
-            }
-        })
+    /// The decimal format a number takes beside a `DECFLOAT`.
+    #[must_use]
+    pub fn decfloat_format(&self) -> DfFormat {
+        match self {
+            Self::DecFloat(d) => d.format(),
+            Self::Num(d) => format_of(d),
+            _ => DfFormat::D34,
+        }
     }
+}
 
-    /// Into a field's value: text to CP037, dates and times in the
-    /// field's format, numbers fitted to the field (truncated).
-    pub fn to_field(&self, f: &FieldDef) -> Result<db::record::Value> {
-        if self.is_null() {
-            return Ok(db::record::Value::Null);
-        }
-        let text = |s: &str| -> Result<db::record::Value> {
-            ccsid::to_ebcdic(s)
-                .map(db::record::Value::Char)
-                .map_err(|_| conversion(format!("'{s}' has characters CP037 cannot hold")))
-        };
-        match f.data_type {
-            // A float keeps every digit it is given; the encoding rounds
-            // to the nearest float.
-            DataType::Float => Ok(db::record::Value::Num(self.as_decimal()?)),
-            DataType::Zoned | DataType::Packed | DataType::Binary => {
-                let d = self.as_decimal()?;
-                let shape = Shape::new(u8::try_from(f.length).unwrap_or(63), f.decimals)
-                    .map_err(conversion)?;
-                let fitted = d
-                    .fit(shape, Rounding::Truncate)
-                    .map_err(|_| SqlError::Overflow {
-                        what: format!("{d} does not fit field {}", f.name),
-                    })?;
-                Ok(db::record::Value::Num(fitted))
-            }
-            DataType::Date => text(
-                &self
-                    .as_date()?
-                    .render(f.date_fmt.unwrap_or_default(), f.date_sep),
-            ),
-            DataType::Time => text(
-                &self
-                    .as_time()?
-                    .stored(f.time_fmt.unwrap_or_default(), f.time_sep),
-            ),
-            DataType::Timestamp => text(&self.as_timestamp()?.render_field()),
-            _ => {
-                let s = self.as_text();
-                let max = usize::try_from(f.length).expect("fits");
-                if s.chars().count() > max && s.trim_end().chars().count() > max {
-                    return Err(SqlError::Overflow {
-                        what: format!("'{s}' is longer than field {} ({max})", f.name),
-                    });
-                }
-                text(&s)
-            }
-        }
+fn decimal_key(d: &Decimal) -> String {
+    let s = d.to_string();
+    if s.contains('.') {
+        let t = s.trim_end_matches('0').trim_end_matches('.');
+        if t == "-0" || t.is_empty() { "0".into() } else { t.to_string() }
+    } else {
+        s
     }
 }
 
@@ -371,7 +319,10 @@ impl fmt::Display for Value {
         match self {
             Self::Null => f.write_str("NULL"),
             Self::Num(d) => write!(f, "{d}"),
+            Self::DecFloat(d) => write!(f, "{d}"),
             Self::Str(s) => f.write_str(s),
+            Self::Bin(b) => f.write_str(&hex(b)),
+            Self::Bool(b) => f.write_str(if *b { "TRUE" } else { "FALSE" }),
             Self::Date(d) => f.write_str(&d.render(DateFmt::Iso, None)),
             Self::Time(t) => f.write_str(&t.render(TimeFmt::Iso, None)),
             Self::Timestamp(t) => write!(f, "{t}"),
@@ -380,51 +331,4 @@ impl fmt::Display for Value {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn keys_and_compares() {
-        let a = Value::Num(Decimal::parse("1.50").unwrap());
-        let b = Value::Num(Decimal::parse("1.5").unwrap());
-        assert_eq!(a.key(), b.key());
-        assert_eq!(Value::Num(Decimal::parse("0.00").unwrap()).key(), "0");
-        assert_eq!(
-            Value::Str("ab  ".into()).key(),
-            Value::Str("ab".into()).key()
-        );
-        assert_eq!(a.compare(&b).unwrap(), Some(Ordering::Equal));
-        assert_eq!(Value::Null.compare(&a).unwrap(), None);
-        assert!(Value::Str("x".into()).compare(&a).is_err());
-        let d = Value::Date(Date::new(2026, 1, 2).unwrap());
-        assert_eq!(
-            d.compare(&Value::Str("2026-01-02".into())).unwrap(),
-            Some(Ordering::Equal)
-        );
-        assert_eq!(
-            d.compare(&Value::Str("01/03/2026".into())).unwrap(),
-            Some(Ordering::Less)
-        );
-        let ts = Timestamp::parse("2026-01-02-10.20.30.000123").unwrap();
-        assert_eq!(ts.to_string(), "2026-01-02 10:20:30.000123");
-        assert_eq!(ts.render_field(), "2026-01-02-10.20.30.000123");
-        assert_eq!(Timestamp::parse("2026-01-02 10:20:30").unwrap().micros, 0);
-    }
-
-    #[test]
-    fn floats_keep_their_fraction() {
-        for (prec, len) in [(dds::FloatPrecision::Single, 9), (dds::FloatPrecision::Double, 17)] {
-            let mut f = FieldDef::new(qsname::Name::parse("F").unwrap(), DataType::Float, len, 0);
-            f.precision = prec;
-            f.byte_len = f.data_len();
-            let mut rec = vec![0u8; 8];
-            for text in ["4.5", "-0.1", "1234.0625", "0.000123"] {
-                let v = Value::Num(Decimal::parse(text).unwrap());
-                db::record::write_field(&f, &mut rec, &v.to_field(&f).unwrap()).unwrap();
-                let read = db::record::read_field(&f, &rec, &[], None).unwrap();
-                let back = Value::from_field(&f, &read).unwrap();
-                assert_eq!(back.compare(&v).unwrap(), Some(Ordering::Equal), "{text}");
-            }
-        }
-    }
-}
+mod tests;

@@ -4,6 +4,7 @@
 
 //! `CPYTOIMPF`: a member as text.
 
+use std::fmt::Write as _;
 use std::ops::Bound;
 
 use dds::{DataType, FieldDef};
@@ -172,7 +173,10 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
         Value::Null => String::new(),
         Value::Num(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
         Value::DecFloat(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
-        Value::Char(bytes) if f.data_type == DataType::Bytes => bytes.iter().map(|b| format!("{b:02X}")).collect(),
+        Value::Char(bytes) if f.data_type == DataType::Bytes => bytes.iter().fold(String::new(), |mut s, b| {
+            let _ = write!(s, "{b:02X}");
+            s
+        }),
         Value::Char(bytes) if f.data_type == DataType::Boolean => {
             if bytes.first() == Some(&0xF1) { "TRUE" } else { "FALSE" }.into()
         }

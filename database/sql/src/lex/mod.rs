@@ -20,6 +20,8 @@ pub enum Tok {
     Str(String),
     /// A hexadecimal string literal.
     Hex(Vec<u8>),
+    /// A binary string literal, `BX'..'`.
+    BinHex(Vec<u8>),
     /// A numeric literal, as written.
     Num(String),
     /// `?`.
@@ -45,6 +47,7 @@ impl Tok {
             Self::Word(w) => w.clone(),
             Self::Delimited(d) => format!("\"{d}\""),
             Self::Str(s) => format!("'{s}'"),
+            Self::BinHex(h) => format!("B{}", Self::Hex(h.clone()).describe()),
             Self::Hex(h) => {
                 let mut s = String::from("X'");
                 for b in h {
@@ -225,8 +228,15 @@ impl Lexer<'_> {
         let Some(b) = self.peek() else {
             return Ok(token(Tok::End));
         };
+        // A binary string literal: BX'..'.
+        let binary = matches!(b, b'B' | b'b')
+            && matches!(self.peek2(), Some(b'X' | b'x'))
+            && self.src.get(self.at + 2) == Some(&b'\'');
+        if binary {
+            self.bump();
+        }
         // Hex and graphic string literals: X'..', G'..', N'..'.
-        if matches!(b, b'X' | b'x') && self.peek2() == Some(b'\'') {
+        if binary || (matches!(b, b'X' | b'x') && self.peek2() == Some(b'\'')) {
             self.bump();
             self.bump();
             let s = self.quoted(b'\'')?;
@@ -241,7 +251,7 @@ impl Lexer<'_> {
                 .step_by(2)
                 .map(|i| u8::from_str_radix(&digits[i..i + 2], 16).expect("hex"))
                 .collect();
-            return Ok(token(Tok::Hex(bytes)));
+            return Ok(token(if binary { Tok::BinHex(bytes) } else { Tok::Hex(bytes) }));
         }
         if matches!(b, b'G' | b'g' | b'N' | b'n') && self.peek2() == Some(b'\'') {
             self.bump();

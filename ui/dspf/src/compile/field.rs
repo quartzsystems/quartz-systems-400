@@ -489,6 +489,13 @@ fn referenced(cx: &Cx<'_>, file: Option<&FileRef>, field: &str, hidden: bool) ->
         DataType::Date => 'L',
         DataType::Time => 'T',
         DataType::Timestamp => 'Z',
+        // A display has no field for the SQL-only types.
+        DataType::DecFloat
+        | DataType::Bytes
+        | DataType::Boolean
+        | DataType::Blob
+        | DataType::Clob
+        | DataType::Dbclob => return None,
     };
     let ty = FieldType::from_letter(letter, d.data_type.is_numeric())?;
     Some((ty, d.length, d.decimals))

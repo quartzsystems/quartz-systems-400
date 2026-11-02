@@ -315,6 +315,30 @@ impl Parser {
         Ok(Some((n, s)))
     }
 
+    /// A LOB's `(n[K|M|G])`, 1M when absent.
+    fn lob_length(&mut self) -> Result<u32> {
+        if !self.eat_sym("(") {
+            return Ok(1 << 20);
+        }
+        let n = self.integer()?;
+        let unit = match self.tok().clone() {
+            Tok::Word(w) if matches!(w.as_str(), "K" | "M" | "G") => {
+                self.advance();
+                match w.as_str() {
+                    "K" => 1 << 10,
+                    "M" => 1 << 20,
+                    _ => 1 << 30,
+                }
+            }
+            _ => 1,
+        };
+        self.expect_sym(")")?;
+        u32::try_from(n * unit)
+            .ok()
+            .filter(|n| (1..=2_147_483_647).contains(n))
+            .ok_or_else(|| self.expected("a LOB length of 1 to 2G"))
+    }
+
     fn precision(&self, p: u32, s: Option<u32>) -> Result<(u8, u8)> {
         let s = s.unwrap_or(0);
         if p == 0 || p > 63 || s > p {
@@ -327,6 +351,7 @@ impl Parser {
     }
 
     /// A data type with `CCSID` and `FOR BIT DATA`.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn type_spec(&mut self) -> Result<TypeSpec> {
         let Tok::Word(w) = self.tok().clone() else {
             return Err(self.expected("a data type"));
@@ -339,6 +364,8 @@ impl Parser {
                         .length_args()?
                         .ok_or_else(|| self.expected("a length"))?;
                     DataType::Varchar(n)
+                } else if self.eat_words(&["LARGE", "OBJECT"]) {
+                    DataType::Clob(self.lob_length()?)
                 } else {
                     DataType::Char(self.length_args()?.map_or(1, |(n, _)| n))
                 }
@@ -380,12 +407,35 @@ impl Parser {
             },
             "DATE" => DataType::Date,
             "TIME" => DataType::Time,
-            "TIMESTAMP" => {
-                self.length_args()?;
-                DataType::Timestamp
+            "TIMESTAMP" => match self.length_args()? {
+                None => DataType::Timestamp(6),
+                Some((p, None)) if p <= 12 => DataType::Timestamp(u8::try_from(p).expect("small")),
+                _ => return Err(self.expected("a timestamp precision of 0 to 12")),
+            },
+            "DECFLOAT" => match self.length_args()? {
+                None | Some((34, None)) => DataType::DecFloat(34),
+                Some((16, None)) => DataType::DecFloat(16),
+                _ => return Err(self.expected("DECFLOAT(16) or DECFLOAT(34)")),
+            },
+            "BINARY" => {
+                if self.eat_word("VARYING") {
+                    let (n, _) = self.length_args()?.ok_or_else(|| self.expected("a length"))?;
+                    DataType::Varbinary(n)
+                } else if self.eat_words(&["LARGE", "OBJECT"]) {
+                    DataType::Blob(self.lob_length()?)
+                } else {
+                    DataType::Binary(self.length_args()?.map_or(1, |(n, _)| n))
+                }
             }
-            "CLOB" | "BLOB" | "DBCLOB" | "XML" | "DATALINK" | "ROWID" | "DECFLOAT" | "BINARY"
-            | "VARBINARY" => return Err(Self::unsupported(&format!("data type {w}"))),
+            "VARBINARY" => {
+                let (n, _) = self.length_args()?.ok_or_else(|| self.expected("a length"))?;
+                DataType::Varbinary(n)
+            }
+            "BOOLEAN" => DataType::Boolean,
+            "BLOB" => DataType::Blob(self.lob_length()?),
+            "CLOB" => DataType::Clob(self.lob_length()?),
+            "DBCLOB" => DataType::Dbclob(self.lob_length()?),
+            "XML" | "DATALINK" | "ROWID" => return Err(Self::unsupported(&format!("data type {w}"))),
             _ => return Err(self.expected("a data type")),
         };
         let mut spec = TypeSpec {

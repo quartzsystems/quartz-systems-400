@@ -32,7 +32,7 @@ pub use lf::compile_lf;
 pub use model::{
     CompOp, Condition, DataType, DateFmt, DefaultValue, DupOrder, EditCode, FieldDef, FieldSource,
     FileRef, FloatPrecision, IdentityDef, Join, KeyField, KeyTransform, LfDefinition, LfFormat,
-    Literal, NullKeys, PfDefinition, RecordFormat, RefSource, Reference, SelectOmit, TimeFmt,
+    LOB_REF_LEN, Literal, NullKeys, PfDefinition, RecordFormat, RefSource, Reference, SelectOmit, TimeFmt,
     Usage, Validity, VarLen,
 };
 pub use pf::compile_pf;

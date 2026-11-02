@@ -162,7 +162,7 @@ fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
         }
         DataType::Bytes => {
             let t = text.trim();
-            if t.len() % 2 != 0 {
+            if !t.len().is_multiple_of(2) {
                 return Err(bad(f, text));
             }
             return (0..t.len())

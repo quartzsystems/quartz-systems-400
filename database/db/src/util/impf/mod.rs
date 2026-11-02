@@ -143,7 +143,13 @@ pub struct ImpfReport {
 pub fn fixed_width(f: &FieldDef) -> usize {
     let n = |x: u32| usize::try_from(x).expect("fits");
     match f.data_type {
-        DataType::Char | DataType::Hex | DataType::Graphic | DataType::DbcsOpen => n(f.length),
+        DataType::Char
+        | DataType::Hex
+        | DataType::Graphic
+        | DataType::DbcsOpen
+        | DataType::Blob
+        | DataType::Clob
+        | DataType::Dbclob => n(f.length),
         DataType::Zoned | DataType::Packed | DataType::Binary | DataType::Float => {
             n(f.length) + 1 + usize::from(f.decimals > 0)
         }
@@ -153,7 +159,6 @@ pub fn fixed_width(f: &FieldDef) -> usize {
         // Two hexadecimal digits a byte.
         DataType::Bytes => n(f.length) * 2,
         DataType::Boolean => 5,
-        DataType::Blob | DataType::Clob | DataType::Dbclob => n(f.length),
     }
 }
 
