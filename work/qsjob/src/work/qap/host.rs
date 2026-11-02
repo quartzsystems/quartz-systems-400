@@ -169,8 +169,9 @@ impl Host for JobHost {
             system_name: self.sysval_text("QSYSNAME"),
             release,
             serial: if machine.serial.is_empty() { self.sysval_text("QSRLNBR") } else { machine.serial },
-            // The hardware's own model when the firmware names it.
-            model: if machine.hw_model.is_empty() { self.sysval_text("QMODEL") } else { machine.hw_model },
+            // The hardware's model as the firmware names it, empty when
+            // it names none; QMODEL is for programs, not clients.
+            model: machine.hw_model,
             ipl_time: i64::try_from(ipl).unwrap_or(0).saturating_mul(1000),
             products: rows
                 .iter()

@@ -342,7 +342,7 @@ of the golden page:
 | `nav/table-columns.html` | Generate SQL (DDL) `#` → `/ddl` | the link went nowhere |
 | `nav/table-data.html` | the list is the table's first 25 rows, all 12 columns; `12 rows returned` → `412 rows returned`; CSV `#` → `?csv=1` | the prototype pasted Run SQL's 8-column, 12-row result under `SELECT *` of a 412-row table paged 25 at a time |
 | `nav/audit-journal.html` | eleven more entries on the page; CSV `#` → `?csv=1` | the page said 25 rows of 762 but showed 14 |
-| `nav/home.html` | Model / type starts with the hardware's vendor and product (`Dell Inc. PowerEdge R650`); `Main storage` → `Memory` | `QMODEL` stays the Quartz model code (the compatibility interface programs read), so the machine the firmware names is shown beside it; Cody's wording for the row |
+| `nav/home.html` | `Model / type` → `Model`, the hardware's vendor and product (`Dell Inc. PowerEdge R650`; `Not reported` when the firmware names none); `Main storage` → `Memory` | Cody (2026-11-02): `QMODEL` and `QPRCFEAT` stay read-only system values for programs, but no display shows them; his wording for the rows |
 | `nav/licensed-programs.html`, `nav/ptfs.html`, `nav/ptf-confirm.html`, `nav/fixes.html` | product IDs `5Q00xxx` → `QS00xxx` | the system's products are `QS00SS1`, `QS00WDS`, ... (`licpgm/licpgm/catalog.toml`) |
 | `nav/licensed-programs.html`, `nav/ptfs.html` | the three buttons get names `install`, `check`, `keys` and `load`, `apply`, `level` | three nameless buttons in one form cannot be told apart |
 | `nav/ptf-confirm.html` | `QS10447`'s description → the list's (`Kernel: IPL time with large ASP`); the options moved into the form | the two pages disagreed; the radio buttons sat outside the form, so OK never sent them |

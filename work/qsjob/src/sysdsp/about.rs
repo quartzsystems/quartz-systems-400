@@ -35,6 +35,8 @@ pub fn values(host: &Host) -> Vec<(&'static str, String)> {
     let rel = os
         .and_then(|r| r.get(RELEASE).cloned())
         .unwrap_or_else(|| release::RELEASE.to_string());
+    let hw = host.link.borrow_mut().with(Client::machine).hw_model;
+    let model = if hw.is_empty() { "Not reported".to_string() } else { hw };
     vec![
         ("PRDTEXT", release::PRODUCT_TEXT.to_string()),
         ("PRODUCT", release::PRODUCT_ID.to_string()),
@@ -42,8 +44,7 @@ pub fn values(host: &Host) -> Vec<(&'static str, String)> {
         ("BUILD", release::build_id().to_string()),
         ("SYSNAME", sysval(host, "QSYSNAME")),
         ("SERIAL", sysval(host, "QSRLNBR")),
-        ("MODEL", sysval(host, "QMODEL")),
-        ("PRCFEAT", sysval(host, "QPRCFEAT")),
+        ("MODEL", model),
     ]
 }
 

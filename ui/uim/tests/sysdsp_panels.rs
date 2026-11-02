@@ -94,8 +94,13 @@ fn tfrgrpjob() {
 #[test]
 fn about() {
     let mut d = MapDialog::new();
-    d.set("RELEASE", "V1R0M0").set("SERIAL", "10A1B2C").set("MODEL", "22A");
+    d.set("RELEASE", "V1R0M0")
+        .set("SERIAL", "10A1B2C")
+        .set("MODEL", "Dell Inc. PowerEdge R240");
     let rows = title_and_keys("QUIABOUT", "ABOUT", &d, "About QS/400", &["F3=Exit", "F12=Cancel"]);
     let all = rows.join("\n");
     assert!(all.contains("V1R0M0") && all.contains("10A1B2C"));
+    // The firmware's model whole; no processor feature.
+    assert!(all.contains("Dell Inc. PowerEdge R240"), "{all}");
+    assert!(!all.contains("Processor feature"));
 }

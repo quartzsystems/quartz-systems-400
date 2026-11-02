@@ -30,14 +30,15 @@ fn home() {
     let mut b = Browser::signed_on();
     let r = b.get("/home?auto=60");
     assert_eq!(r.status, 200);
-    // The hardware's model beside the system's; main storage is Memory.
+    // The hardware's model in place of the system's codes; main storage
+    // is Memory.
     assert_golden(
         &r.text(),
         "nav/home.html",
         &[
             (
-                "<span class=\"mono\">Q400-M2 / 9Q04</span>",
-                "Dell Inc. PowerEdge R650 &nbsp; <span class=\"mono\">Q400-M2 / 9Q04</span>",
+                "Model / type</td><td><span class=\"mono\">Q400-M2 / 9Q04</span>",
+                "Model</td><td>Dell Inc. PowerEdge R650",
             ),
             ("Main storage</td><td>65,536", "Memory</td><td>65,536"),
         ],

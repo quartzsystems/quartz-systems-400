@@ -4,8 +4,9 @@
 .*
 .* QUIABOUT: About QS/400, reached from the Information Assistant
 .* (F13 on MAIN, then F14): the operating system's product, release
-.* and build as DSPSFWRSC lists them, and the machine's serial number,
-.* model and processor feature as the system values hold them.
+.* and build as DSPSFWRSC lists them, the serial number (QSRLNBR) and
+.* the machine's model as its firmware names it. QMODEL and QPRCFEAT
+.* stay system values for programs; this panel does not show them.
 :PNLGRP.
 :COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
 :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
@@ -18,8 +19,7 @@
 :VAR NAME=BUILD CLASS=TEXTCL.
 :VAR NAME=SYSNAME CLASS=NAMECL.
 :VAR NAME=SERIAL CLASS=NAMECL.
-:VAR NAME=MODEL CLASS=NAMECL.
-:VAR NAME=PRCFEAT CLASS=NAMECL.
+:VAR NAME=MODEL CLASS=TEXTCL.
 :KEYL NAME=KEYS.
 :KEYI KEY=ENTER ACTION=EXIT.
 :KEYI KEY=HELP ACTION=HELP.
@@ -40,7 +40,6 @@
 :DATAI VAR=SYSNAME USAGE=OUTPUT.System name
 :DATAI VAR=SERIAL USAGE=OUTPUT.Serial number
 :DATAI VAR=MODEL USAGE=OUTPUT.Model
-:DATAI VAR=PRCFEAT USAGE=OUTPUT.Processor feature
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.

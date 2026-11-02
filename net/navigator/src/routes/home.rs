@@ -83,7 +83,7 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
     vec![
         ("System name", mono(&rq.ctx.system)),
         ("Serial number", mono(&s.serial)),
-        ("Model / type", model_type(s)),
+        ("Model", model(s)),
         ("Release", format!("{}{ptf}", mono(&s.release))),
         ("Processors", esc(&s.processors)),
         ("Memory", mb(s.main_storage)),
@@ -96,13 +96,14 @@ fn system_rows(rq: &Rq<'_>, s: &Status, now: u64) -> Vec<(&'static str, String)>
     ]
 }
 
-/// The hardware's vendor and product, then the system's model and type.
-fn model_type(s: &Status) -> String {
-    let code = mono(&format!("{} / {}", s.model, s.machine_type));
+/// The hardware's vendor and product as the firmware names them.
+/// `QMODEL` and `QPRCFEAT` stay system values for programs; no page
+/// shows them.
+fn model(s: &Status) -> String {
     if s.hardware.is_empty() {
-        code
+        "<span class=\"grey\">Not reported</span>".to_string()
     } else {
-        format!("{} &nbsp; {code}", esc(&s.hardware))
+        esc(&s.hardware)
     }
 }
 
