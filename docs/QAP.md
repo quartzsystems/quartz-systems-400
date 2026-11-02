@@ -539,7 +539,10 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   between units of work (as `SET TRANSACTION ISOLATION LEVEL`, which
   the engine now has and refuses with `SQL0428`, SQLSTATE `25001`,
   once the unit changed something). The default schema is `SET
-  SCHEMA` (none: `SET SCHEMA DEFAULT`).
+  SCHEMA` (none: `SET SCHEMA DEFAULT`); under `System` naming as
+  under `Sql`, a default schema qualifies unqualified table, view,
+  index and alias names in place of the library list, as IBM i's
+  `DFTRDBCOL` and `SET SCHEMA` do.
 - When the connection closes, and when the job runs as another
   profile (sign-off, resume), the lane rolls back, ends the scope
   `QAP:` (its cursors and statements go) and resets the options. The
@@ -563,8 +566,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `VARBINARY`, `BLOB`, `CLOB` or `BOOLEAN`, and timestamps only to the
   microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
   value is stored fitted to its field's scale, 0 for SQL's, so
-  `4.5` reads back `4`; a default schema does not apply under
-  `System` naming; `Release` cannot drop the engine's prepared text,
+  `4.5` reads back `4`; `Release` cannot drop the engine's prepared text,
   which stays until the connection ends; `Prepare` gives no column
   headings, so `label` is the name, and `SELECT *` gives system
   names. The storage service answers one request at a time, so while

@@ -186,3 +186,21 @@ fn the_lock_level_changes_between_units_of_work() {
     assert_eq!(level(&s), Some(All));
     run(&mut s, "1:P", under("COMMIT", Some(All)), vec![]);
 }
+
+#[test]
+fn a_default_schema_applies_under_system_naming() {
+    let mut s = session();
+    let sys = |text: &str| Desc {
+        op: Op::Exec,
+        text: text.into(),
+        ..Desc::default()
+    };
+    let count = |s: &mut Session| run(s, "1:P", op(Op::Query, "", "SELECT COUNT(*) FROM T"), vec![]).sqlca.sqlcode;
+    // The library list finds T in QSTEST.
+    assert_eq!(count(&mut s), 0);
+    // A default schema replaces the library list for table names.
+    assert_eq!(run(&mut s, "1:P", sys("SET SCHEMA QSYS"), vec![]).sqlca.sqlcode, 0);
+    assert_eq!(count(&mut s), -204);
+    run(&mut s, "1:P", sys("SET SCHEMA DEFAULT"), vec![]);
+    assert_eq!(count(&mut s), 0);
+}

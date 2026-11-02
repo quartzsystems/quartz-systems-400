@@ -65,7 +65,8 @@ pub struct SqlContext {
     pub qsys: ObjectId,
     /// Current library and library list.
     pub names: NameContext,
-    /// `SET SCHEMA`, for unqualified names under `*SQL`.
+    /// `SET SCHEMA` or `DFTRDBCOL`: the default schema of unqualified
+    /// table, view, index and alias names, under either naming.
     pub current_schema: Option<Name>,
     /// The job.
     pub job: JobHandle,
@@ -181,11 +182,13 @@ impl SqlContext {
         })
     }
 
-    /// Where an unqualified name is looked up or created.
+    /// Where an unqualified name is looked up or created: the default
+    /// schema when one is set, under system naming too; else the
+    /// library list.
     fn default_library(&self) -> LibSpec {
-        match (self.naming, self.current_schema) {
-            (Naming::Sql, Some(s)) => LibSpec::Name(s),
-            _ => LibSpec::Libl,
+        match self.current_schema {
+            Some(s) => LibSpec::Name(s),
+            None => LibSpec::Libl,
         }
     }
 

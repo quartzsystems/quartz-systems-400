@@ -198,6 +198,23 @@ fn set_options_changes_the_level_between_units() {
 }
 
 #[test]
+fn a_default_schema_under_system_naming() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let sys = |schema: Option<&str>| SetOptions {
+        commit: CommitLevel::None,
+        naming: Naming::System,
+        default_schema: schema.map(str::to_string),
+    };
+    lane.set_options(&mut e, &sys(None)).unwrap();
+    lane.prepare(&mut e, "SELECT * FROM T").unwrap();
+    lane.set_options(&mut e, &sys(Some("QSYS"))).unwrap();
+    assert_eq!(failed(lane.prepare(&mut e, "SELECT * FROM T")).0, "42704");
+    lane.set_options(&mut e, &sys(Some("QSTEST"))).unwrap();
+    lane.prepare(&mut e, "SELECT * FROM T").unwrap();
+}
+
+#[test]
 fn a_cancel_ends_the_running_statement() {
     let mut e = engine();
     let mut lane = Lane::default();
