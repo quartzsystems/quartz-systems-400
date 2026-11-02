@@ -71,6 +71,8 @@ const REQUIRED_Y: &[&str] = &[
     "ATA_PIIX",
     "SCSI",
     "BLK_DEV_SD",
+    // The IFS volume (lic/ublk).
+    "BLK_DEV_UBLK",
     "CHR_DEV_ST",
     // Tape: changers through sg, Fibre Channel HBAs.
     "CHR_DEV_SG",

@@ -1,0 +1,18 @@
+[package]
+name = "ublk"
+description = "QS/400 ublk server: a block device the kernel reads and writes through a process, over io_uring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+blockdev = { path = "../blockdev", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["io_uring", "mm", "fs", "process"] }
+
+[lints]
+workspace = true
