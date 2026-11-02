@@ -104,3 +104,22 @@ fn msgf_source(file: &str) -> String {
         .join(file);
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }
+
+/// `CHGIPLA`'s values reach the service whole: a `*SAME` cut to its
+/// parameter's length (`*SAM`) made every `CHGIPLA` fail.
+#[test]
+fn chgipla_values_fit_the_block() {
+    let mut src = cmd::analyze::MemSource::default();
+    for (name, _) in defs::DEFS {
+        src.put(sys_cpps::install::object(name, 0).unwrap().def);
+    }
+    let mut env = cmd::analyze::Env::new(&mut src);
+    let r = cmd::analyze::analyze(&mut env, "CHGIPLA STRTCP(*YES)").unwrap();
+    let built = cmd::block::build(&r.def, &r.parms).unwrap();
+    let spec: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
+    let parms = cmd::block::read(&r.def, &built.segments, &spec).unwrap();
+    for p in &r.def.parms {
+        let want = if p.kwd == "STRTCP" { "*YES" } else { "*SAME" };
+        assert_eq!(parms.text(&p.kwd), want, "{}", p.kwd);
+    }
+}

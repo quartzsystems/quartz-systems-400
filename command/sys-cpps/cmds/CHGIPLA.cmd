@@ -11,7 +11,7 @@
              PARM       KWD(KEYLCKPOS) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *NORMAL *AUTO *MANUAL +
                           *SECURE) PROMPT('Keylock position')
-             PARM       KWD(HDWDIAG) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+             PARM       KWD(HDWDIAG) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*SAME) VALUES(*SAME *MIN *ALL) +
                           PROMPT('Hardware diagnostics')
              PARM       KWD(CPRJOBTBL) TYPE(*CHAR) LEN(9) RSTD(*YES) +

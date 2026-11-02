@@ -48,9 +48,9 @@ fn chgipla(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     for attr in ATTRS {
         let v = parms.text(attr.kwd);
         let v = v.trim();
-        if !v.is_empty() {
-            a.set(attr.kwd, v)
-                .map_err(|_| format!("CPD0084 {}({v}) is not valid", attr.kwd))?;
+        // The message names the parameter, not the command.
+        if !v.is_empty() && a.set(attr.kwd, v).is_err() {
+            return Ok(super::escape("CPD0084", attr.kwd, &format!("{}({v}) is not valid", attr.kwd)));
         }
     }
     let (part, record) = system.lic.as_mut().ok_or("CPF3700 the LIC partition is not attached")?;
