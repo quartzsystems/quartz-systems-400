@@ -87,6 +87,8 @@ fn hlinv_sets_up_the_test_systems_database() {
     assert_eq!(q("SELECT C_SMALLINT || ' ' || C_INTEGER FROM HLTEST.ALLTYPES WHERE ID = 1"), "-32767 2147483601");
     assert_eq!(q("SELECT C_DOUBLE || ' ' || C_REAL FROM HLTEST.ALLTYPES WHERE ID = 2"), "1E300 3.4028235E38");
     assert_eq!(q("SELECT C_DOUBLE FROM HLTEST.ALLTYPES WHERE ID = 3"), "-2.5E-308");
+    assert_eq!(q("SELECT C_GRAPHIC || '/' || C_VARGRAPH FROM HLTEST.ALLTYPES WHERE ID = 1"), "ＡＢ   /全角テキスト");
+    assert_eq!(q("SELECT C_GRAPHIC FROM HLTEST.ALLTYPES WHERE ID = 2"), "漢字");
     assert_eq!(q("SELECT LENGTH(C_BLOB) FROM HLTEST.ALLTYPES WHERE ID = 3"), "300");
     assert_eq!(q("SELECT COUNT(*) FROM HLTEST.ALLTYPES WHERE C_TS12 IS NULL"), "1");
     assert_eq!(q("SELECT COUNT(*) FROM HLPAY.SALARIES"), "2");

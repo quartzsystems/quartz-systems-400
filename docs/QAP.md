@@ -601,7 +601,9 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `*FILE` alias (attribute `DDMF`, naming a table and a member if one
   is given; `DB_FORMAT.md` `AliasAttr`), which queries and data changes
   read through, `SYSTABLES` lists as `A` and `DROP ALIAS` (or `DLTF`)
-  deletes.
+  deletes. `GRAPHIC` and `VARGRAPHIC` of CCSID 1200 or 13488 hold
+  UTF-16, so any Unicode literal (`G'..'`, `N'..'` or a plain string)
+  goes in.
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

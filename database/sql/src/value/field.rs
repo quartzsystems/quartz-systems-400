@@ -5,6 +5,7 @@
 //! Values to and from a record's fields.
 
 use db::record::datetime::{Date, Time};
+use db::record::utf16_text;
 use dds::{DataType, FieldDef};
 use qdecimal::{Rounding, Shape};
 
@@ -16,10 +17,7 @@ use crate::error::{Result, SqlError};
 pub fn lob_value(f: &FieldDef, bytes: &[u8]) -> Value {
     match f.data_type {
         DataType::Clob => Value::Str(ccsid::from_ebcdic(bytes)),
-        DataType::Dbclob => {
-            let units: Vec<u16> = bytes.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)).collect();
-            Value::Str(String::from_utf16_lossy(&units))
-        }
+        DataType::Dbclob => Value::Str(utf16_text(bytes)),
         _ => Value::Bin(bytes.to_vec()),
     }
 }
@@ -43,6 +41,7 @@ impl Value {
                 DataType::Bytes => Self::Bin(b.clone()),
                 DataType::Boolean => Self::Bool(b.first() == Some(&0xF1)),
                 t if t.is_lob() => Self::Bin(b.clone()),
+                _ if db::record::is_utf16(f) => Self::Str(utf16_text(b)),
                 _ => {
                     let s = ccsid::from_ebcdic(b);
                     match f.data_type {
@@ -162,6 +161,16 @@ impl Value {
                     v => v.as_text(),
                 };
                 let max = usize::try_from(f.length).expect("fits");
+                // A UTF-16 graphic field holds any character, counted
+                // in UTF-16 units.
+                if db::record::is_utf16(f) {
+                    let units: Vec<u16> = s.encode_utf16().collect();
+                    let trimmed = s.trim_end().encode_utf16().count();
+                    if units.len() > max && trimmed > max {
+                        return Err(SqlError::Overflow { what: format!("'{s}' is longer than field {} ({max})", f.name) });
+                    }
+                    return Ok(db::record::Value::Char(units.iter().take(max).flat_map(|u| u.to_be_bytes()).collect()));
+                }
                 if s.chars().count() > max && s.trim_end().chars().count() > max {
                     return Err(SqlError::Overflow { what: format!("'{s}' is longer than field {} ({max})", f.name) });
                 }

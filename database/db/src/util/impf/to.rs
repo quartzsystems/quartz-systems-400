@@ -182,7 +182,7 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
             if bytes.first() == Some(&0xF1) { "TRUE" } else { "FALSE" }.into()
         }
         Value::Char(bytes) => {
-            let s = ccsid::from_ebcdic(bytes);
+            let s = if record::is_utf16(f) { record::utf16_text(bytes) } else { ccsid::from_ebcdic(bytes) };
             match f.data_type {
                 DataType::Date => {
                     let own = f.date_fmt.unwrap_or_default();

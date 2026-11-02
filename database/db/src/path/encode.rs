@@ -29,7 +29,9 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
         Value::Null => out.extend(std::iter::repeat_n(0u8, data_len)),
         Value::Char(bytes) if f.data_type.is_character() => {
             let mut part: Vec<u8> = bytes.iter().take(data_len).copied().collect();
+            let n = part.len();
             part.resize(data_len, ccsid::SPACE);
+            crate::record::fill_pad(f, &mut part[n..]);
             match k.transform {
                 KeyTransform::Zone => part.iter_mut().for_each(|b| *b &= 0xF0),
                 KeyTransform::Digit => part.iter_mut().for_each(|b| *b &= 0x0F),

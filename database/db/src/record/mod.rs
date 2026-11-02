@@ -107,6 +107,31 @@ fn pad_byte(f: &FieldDef) -> u8 {
     }
 }
 
+/// A graphic field of CCSID 1200 or 13488, or none: UTF-16BE, two
+/// bytes a character, padded with U+0020.
+#[must_use]
+pub fn is_utf16(f: &FieldDef) -> bool {
+    f.data_type == DataType::Graphic && matches!(f.ccsid, None | Some(1200 | 13488))
+}
+
+/// UTF-16BE bytes as text.
+#[must_use]
+pub fn utf16_text(b: &[u8]) -> String {
+    let units: Vec<u16> = b.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c)).collect();
+    String::from_utf16_lossy(&units)
+}
+
+/// Fill with the field's padding: U+0020 for UTF-16, else its byte.
+pub fn fill_pad(f: &FieldDef, out: &mut [u8]) {
+    if is_utf16(f) {
+        for (i, b) in out.iter_mut().enumerate() {
+            *b = if i % 2 == 0 { 0x00 } else { 0x20 };
+        }
+    } else {
+        out.fill(pad_byte(f));
+    }
+}
+
 fn mapping(f: &FieldDef, what: impl std::fmt::Display) -> DbError {
     DbError::DataMapping {
         field: f.name.to_string(),
@@ -171,7 +196,9 @@ pub fn field_bytes<'r>(f: &FieldDef, record: &'r [u8]) -> &'r [u8] {
     let off = usize::try_from(f.offset).expect("fits");
     let all = &record[off..off + usize::try_from(f.byte_len).expect("fits")];
     if f.varlen.is_some() {
-        let len = usize::from(u16::from_be_bytes([all[0], all[1]])).min(all.len() - 2);
+        // A UTF-16 field's prefix counts its characters.
+        let unit = if is_utf16(f) { 2 } else { 1 };
+        let len = (usize::from(u16::from_be_bytes([all[0], all[1]])) * unit).min(all.len() - 2);
         &all[2..2 + len]
     } else {
         all
@@ -251,7 +278,6 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
         let d = v.to_decimal().map_err(|e| mapping(f, e))?;
         return write_field(f, record, &Value::Num(d));
     }
-    let pad = pad_byte(f);
     match (f.data_type.is_numeric(), value) {
         (_, Value::DecFloat(_) | Value::Float(_)) => unreachable!("handled above"),
         (_, Value::Null) => {
@@ -259,7 +285,7 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
             if f.data_type.is_numeric() {
                 return write_field(f, record, &Value::Num(Decimal::zero()));
             }
-            out.fill(pad);
+            fill_pad(f, out);
             if f.varlen.is_some() {
                 out[..2].fill(0);
             }
@@ -283,16 +309,18 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
             res.map_err(|e| mapping(f, e))
         }
         (false, Value::Char(bytes)) => {
+            // A UTF-16 field takes whole characters.
+            let unit = if is_utf16(f) { 2 } else { 1 };
             if f.varlen.is_some() {
                 let max = out.len() - 2;
-                let n = bytes.len().min(max);
-                out[..2].copy_from_slice(&u16::try_from(n).expect("fits").to_be_bytes());
+                let n = bytes.len().min(max) / unit * unit;
+                out[..2].copy_from_slice(&u16::try_from(n / unit).expect("fits").to_be_bytes());
                 out[2..2 + n].copy_from_slice(&bytes[..n]);
-                out[2 + n..].fill(pad);
+                fill_pad(f, &mut out[2 + n..]);
             } else {
-                let n = bytes.len().min(out.len());
+                let n = bytes.len().min(out.len()) / unit * unit;
                 out[..n].copy_from_slice(&bytes[..n]);
-                out[n..].fill(pad);
+                fill_pad(f, &mut out[n..]);
             }
             Ok(())
         }
@@ -346,6 +374,7 @@ pub fn fcmp(x: f64, y: f64) -> Ordering {
 /// A DDS literal as a value of field `f`.
 pub fn literal_value(f: &FieldDef, lit: &Literal) -> Result<Value> {
     Ok(match lit {
+        Literal::Quoted(q) if is_utf16(f) => Value::Char(q.encode_utf16().flat_map(u16::to_be_bytes).collect()),
         Literal::Quoted(q) => Value::Char(
             q.chars()
                 .map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE))

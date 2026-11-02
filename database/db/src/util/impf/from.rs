@@ -191,6 +191,9 @@ fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
         _ if f.varlen.is_some() => text.trim_end().to_string(),
         _ => text.to_string(),
     };
+    if record::is_utf16(f) {
+        return Ok(Value::Char(s.encode_utf16().flat_map(u16::to_be_bytes).collect()));
+    }
     ccsid::to_ebcdic(&s)
         .map(Value::Char)
         .map_err(|_| bad(f, text))

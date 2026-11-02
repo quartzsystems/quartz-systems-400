@@ -411,3 +411,29 @@ fn aliases() {
     assert!(db.run_with("SELECT * FROM QSTEST/AB", &[]).is_err());
     assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/BASE"), "2");
 }
+
+#[test]
+fn graphic_takes_unicode() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/GR (K INTEGER NOT NULL PRIMARY KEY, G GRAPHIC(5) CCSID 1200, V VARGRAPHIC(20) CCSID 13488)");
+    db.ok("INSERT INTO QSTEST/GR VALUES(1, G'ＡＢ', N'全角テキスト'), (2, '漢字', 'ω'), (3, 'Ω', ''), (4, NULL, 'Ωx')");
+    assert_eq!(
+        db.rows("SELECT K, G, V, LENGTH(V) FROM QSTEST/GR ORDER BY K"),
+        vec![
+            vec!["1", "ＡＢ", "全角テキスト", "6"],
+            vec!["2", "漢字", "ω", "1"],
+            vec!["3", "Ω", "", "0"],
+            vec!["4", "-", "Ωx", "2"]
+        ]
+    );
+    assert_eq!(db.one("SELECT K FROM QSTEST/GR WHERE G = '漢字'"), "2");
+    assert_eq!(db.one("SELECT K FROM QSTEST/GR WHERE V LIKE '全角%'"), "1");
+    db.ok("UPDATE QSTEST/GR SET V = V || '😀' WHERE K = 2");
+    assert_eq!(db.one("SELECT V FROM QSTEST/GR WHERE K = 2"), "ω😀");
+    // Five characters; past them only blanks.
+    db.ok("INSERT INTO QSTEST/GR (K, G) VALUES(5, 'ＡＢＣＤＥ  ')");
+    assert!(db.run_with("INSERT INTO QSTEST/GR (K, G) VALUES(6, 'ＡＢＣＤＥＦ')", &[]).is_err());
+    // An index over the graphic column orders by UTF-16.
+    db.ok("CREATE INDEX QSTEST/GRV ON QSTEST/GR (V)");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/GR WHERE V = 'ω😀'"), "1");
+}

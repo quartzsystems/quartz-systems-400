@@ -331,8 +331,11 @@ is `1 + record_len + null_map_len`.
 
 **Field encodings.** By the field's type code (`FieldEntry.data_type`):
 
-- `A H G O`: the bytes, CP037 for text, blank (0x40) padded; `G` is two
-  bytes per character.
+- `A H G O`: the bytes, CP037 for text, blank (0x40) padded. `G` is two
+  bytes per character: with CCSID 1200, 13488 or none, UTF-16BE padded
+  with U+0020, and a `VARLEN` prefix counting characters (UTF-16
+  units), as IBM's graphic fields; with another CCSID the bytes as
+  given.
 - `S P B F`: zoned, packed, binary (big-endian, two's complement) and
   IEEE binary floating point (big-endian), as `DECIMAL.md` §2. A `B`
   field with the SQL integer flag (`SMALLINT` `B 4,0`, `INTEGER` `B
