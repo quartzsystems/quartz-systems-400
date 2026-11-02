@@ -242,7 +242,8 @@ fn obj_crt(system: &mut System, t: &str, qual: &str, text: &str) -> Result<Strin
         types::USRIDX => usridx::create(&mut txn, &p, false, 10, 100),
         _ => ops::create(&mut txn, &p),
     }
-    .map_err(|e| e.to_string())?;
+    // The message ID first: CRTLIB and the like take it as the escape.
+    .map_err(|e| e.msgid().map_or_else(|| e.to_string(), |id| format!("{id} {e}")))?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(format!(
         "{lib}/{} {} created as {id}\n",
