@@ -35,7 +35,7 @@ pub fn command(job: &mut Job, host: &Host, cmd: &str, line: &str) -> String {
         "addbkp" => addbkp(job, &p, true),
         "rmvbkp" => addbkp(job, &p, false),
         "dspbkp" => Ok(dspbkp(job)),
-        "dspjoblog" => Ok(super::log::dspjoblog(job, host)),
+        "dspjoblog" => super::log::dspjoblog(job, host, p.upper("JOB").as_deref()),
         "strsbs" => strsbs(host, &p),
         "dlyjob" => dlyjob(job, host, &p),
         "sbmjob" => sbmjob(host, &p),
@@ -109,7 +109,7 @@ fn chgpwd(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
 }
 
 /// `WRKJOB [JOB(n/u/name)] [OPTION(...)]`: the job's displays, by
-/// option. Another job's call stack and log are its own business
+/// option. Another job's call stack is its own business
 /// (`MIGRATE(phase8)`: shown through the service).
 fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let which = p.upper("JOB");
@@ -132,10 +132,10 @@ fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
             };
             Ok(crate::command::run(job, host, &format!("WRKSPLF SELECT(*ALL) JOB({spec})")).text)
         }
-        "*JOBLOG" if own => Ok(super::log::dspjoblog(job, host)),
+        "*JOBLOG" => super::log::dspjoblog(job, host, which.as_deref()),
         "*PGMSTK" if own => Ok(job.call_stack_text()),
         "*LIBL" if own => Ok(crate::command::run(job, host, "DSPLIBL").text),
-        "*JOBLOG" | "*PGMSTK" | "*LIBL" => {
+        "*PGMSTK" | "*LIBL" => {
             Err(format!("CPF1343 {option} of another job is not shown yet"))
         }
         "*SELECT" => Ok(format!(

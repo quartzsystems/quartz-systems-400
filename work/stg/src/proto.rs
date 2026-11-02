@@ -392,6 +392,9 @@ ipc::rpc! {
     /// writer waits on). `text` says why, `diag` is the client's
     /// diagnostic bytes in hex.
     146 => fn wtr_device_error / WtrDeviceError (name: String, id: u32, lost: bool, text: String, diag: String) -> Result<(), String>;
+    /// The service's copy of active job `number`'s log, oldest first,
+    /// for `DSPJOBLOG` of another job: its own user or `*JOBCTL`.
+    147 => fn joblog_of / JoblogOf (number: u32) -> Result<Vec<wm::joblog::Entry>, String>;
     // --- panel data: messages and objects (160-179)
     /// What `DSPOBJD DETAIL(*FULL)` shows beyond `object`: `(field,
     /// value)` pairs (`CREATOR`, `SYSTEM`, `RELEASE`, `SIZE` in bytes,

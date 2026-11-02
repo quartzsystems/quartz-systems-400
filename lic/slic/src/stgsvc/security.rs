@@ -207,6 +207,20 @@ pub fn may_control(target_user: &str, job: &str) -> Result<(), String> {
     }
 }
 
+/// Reading another job's log (`DSPJOBLOG`, `WRKJOB` option 10): its
+/// own user, or `*JOBCTL`.
+pub fn may_display(target_user: &str, job: &str) -> Result<(), String> {
+    match actor() {
+        Some(p) if p.user != target_user && !p.has(sec::profile::SpecialAuth::JOBCTL) => {
+            Err(format!(
+                "CPF1343 {} may not read the log of job {job}; *JOBCTL special authority is needed",
+                p.user
+            ))
+        }
+        _ => Ok(()),
+    }
+}
+
 /// A scheduling priority beyond the actor's `PTYLMT` is refused with
 /// `CPF1337`, as the machine does (`RUNPTY` against ten times the limit).
 pub fn check_priority(kw: &str, value: &str) -> Result<(), String> {

@@ -100,10 +100,20 @@ impl Suite {
         key(s, "f12")?;
         screen_without(s, "===> crtpf")?;
         let _ = (retrieved, older);
+        // Another active job's log: the service's copy, not this job's.
+        entry(s, "dspjoblog JOB(QSYS/QSYSARB)")?;
+        let other = screen_wait(s, "Display Job Log")?;
+        if !other.contains("QSYSARB") || !other.contains("started") || other.contains("CLTEST") {
+            return Err(format!("DSPJOBLOG JOB(QSYS/QSYSARB) did not show that job's log:\n{other}"));
+        }
+        key(s, "enter")?;
+        screen_wait(s, "Command Entry")?;
+        // A job that is not there: a message, not silence.
+        entry_wait(s, "dspjoblog JOB(000001/NOBODY/NOJOB)", has(&["NOJOB", "not found"]))?;
         // A command the analyzer refuses: the diagnostic and CPF0006.
         entry_wait(s, "crtlib LIB(CLTEST) NOPE(1)", has(&["CPD0043"]))?;
         sign_off(s)?;
-        Ok("CRTLIB ran through the analyzer; ?CRTPF and F4 prompted; Enter ran CRTPF; DSPJOBLOG lists the requests; F9 retrieved; CPD0043 for a bad keyword".into())
+        Ok("CRTLIB ran through the analyzer; ?CRTPF and F4 prompted; Enter ran CRTPF; DSPJOBLOG lists the requests and shows QSYSARB's log; F9 retrieved; CPD0043 for a bad keyword".into())
     }
 
     /// Step 47: a CL program from a source member: compiled with

@@ -153,6 +153,13 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
     if let Request::Close {} = req {
         return ipc::encode(&close(system, conns));
     }
+    if let Request::JoblogOf { number } = req {
+        // Another job's copy: it lives on that job's connection.
+        return match conns[i].ctx.as_ref() {
+            Some(me) => ipc::encode(&joblog_of(system, conns, &Rc::clone(&me.session), number)),
+            None => Vec::new(),
+        };
+    }
     let Some(ctx) = conn.ctx.as_mut() else {
         // Nothing but hello before hello.
         return Vec::new();
@@ -181,6 +188,25 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
     } else {
         stg::dispatch(&mut served, req)
     }
+}
+
+/// `JoblogOf`: the service's copy of job `number`'s log, for its own
+/// user or one with `*JOBCTL`.
+fn joblog_of(
+    system: &mut System,
+    conns: &[Conn],
+    session: &Rc<RefCell<sec::auth::cache::Session>>,
+    number: u32,
+) -> Result<Vec<wm::joblog::Entry>, String> {
+    let ctx = conns
+        .iter()
+        .filter_map(|c| c.ctx.as_ref())
+        .find(|c| c.job.number == number)
+        .ok_or_else(|| format!("CPF1070 Job {number:06} is not active."))?;
+    super::security::freshen(system, session);
+    let q = ctx.job.qualified();
+    sec::guard::as_job(session, || super::security::may_display(&ctx.job.user, &q))?;
+    Ok(super::joblog::entries(ctx))
 }
 
 /// A job said hello: into the active table, with a `QTEMP` of its own.
@@ -801,25 +827,14 @@ impl Service for Served<'_> {
 
     fn job_detail(&mut self, job: String) -> Result<stg::proto::JobDetail, String> {
         let q = job.trim().to_ascii_uppercase();
-        let number = if q.is_empty() || q == "*" {
-            self.ctx.job.number
-        } else if let Some(id) = wm::job::JobId::parse(&q) {
-            id.number
+        let j = if q.is_empty() || q == "*" {
+            self.system.jobs.get(self.ctx.job.number)
         } else {
-            // A bare name: the caller's own job of that name first.
-            let all = self.system.jobs.all();
-            all.iter()
-                .find(|j| j.name == q && j.user == self.ctx.job.user)
-                .or_else(|| all.iter().find(|j| j.name == q))
-                .map(|j| j.number)
-                .ok_or_else(|| format!("CPF1070 Job {q} not found."))?
-        };
-        let j = self
-            .system
-            .jobs
-            .get(number)
-            .cloned()
-            .ok_or_else(|| format!("CPF1070 Job {q} not found."))?;
+            self.system.jobs.lookup(&q, &self.ctx.job.user)
+        }
+        .cloned()
+        .ok_or_else(|| format!("CPF1070 Job {q} not found."))?;
+        let number = j.number;
         let attrs = self.system.attrs.get(&number).cloned().unwrap_or_default();
         let (cpu_ms, threads, tmp_mb, aux_io) = super::stats::job_figures(self.system, number);
         let sbs_pool = super::sbs::list(self.system)
@@ -836,6 +851,15 @@ impl Service for Served<'_> {
             aux_io,
             sbs_pool,
         })
+    }
+
+    fn joblog_of(&mut self, number: u32) -> Result<Vec<wm::joblog::Entry>, String> {
+        // `answer` serves other jobs' logs; only the caller's reaches here.
+        if number == self.ctx.job.number {
+            Ok(super::joblog::entries(self.ctx))
+        } else {
+            Err(format!("CPF1070 Job {number:06} is not active."))
+        }
     }
 
     fn jobq_attach(&mut self) -> Vec<(String, String)> {

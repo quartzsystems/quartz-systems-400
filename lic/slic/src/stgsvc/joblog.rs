@@ -39,6 +39,32 @@ pub fn ended_here(system: &System, ctx: &mut JobCtx, data: &[u8]) {
     }
 }
 
+/// The service's copy of a job's log, oldest first, wrapped entries
+/// included. A job that logs no start of its own (a server job) gets
+/// its `CPF1124` from the table.
+pub fn entries(ctx: &JobCtx) -> Vec<joblog::Entry> {
+    let mut all: Vec<joblog::Entry> = ctx.joblog_wrapped.clone();
+    all.extend(ctx.joblog.entries().cloned());
+    if !all.iter().any(|e| e.msgid == "CPF1124") {
+        let j = &ctx.job;
+        let data = joblog::started_data((&j.name, &j.user, j.number), &j.subsystem, j.started, j.started);
+        let e = joblog::Entry {
+            msgid: "CPF1124".into(),
+            kind: "Information".into(),
+            time: j.started.saturating_mul(1_000_000),
+            from: ("QWTPIIPP".into(), "QSYS".into()),
+            from_inst: "*N".into(),
+            to: ("*EXT".into(), String::new()),
+            to_inst: "*N".into(),
+            text: super::hist::message_text("CPF1124", &data),
+            external: true,
+            ..joblog::Entry::default()
+        };
+        all.insert(0, e);
+    }
+    all
+}
+
 /// Where the job's log goes: `*JOBEND`, `*JOBLOGSVR` or `*PND`.
 fn output(system: &System, attrs: &wm::job::JobAttrs) -> String {
     if attrs.logoutput == "*SYSVAL" || attrs.logoutput.is_empty() {

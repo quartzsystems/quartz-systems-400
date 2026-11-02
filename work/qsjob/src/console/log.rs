@@ -66,10 +66,25 @@ impl Console {
     }
 }
 
-/// `DSPJOBLOG`: the log as it stands, kept by the job's `LOG`.
-pub fn dspjoblog(job: &mut Job, host: &Host) -> String {
+/// `DSPJOBLOG [JOB()]`: the log as it stands, kept by the job's `LOG`.
+/// Another job's is the service's copy, under that job's `LOG`.
+pub fn dspjoblog(job: &mut Job, host: &Host, which: Option<&str>) -> Result<String, String> {
+    let which = which.map(str::trim).filter(|w| !w.is_empty() && *w != "*");
+    if let Some(q) = which {
+        let detail = host.link.borrow_mut().with(|l| l.job_detail(q.to_string()))?;
+        if detail.job.number != host.start.number {
+            let entries = host
+                .link
+                .borrow_mut()
+                .with(|l| l.joblog_of(detail.job.number))?;
+            let all: Vec<&joblog::Entry> = entries.iter().collect();
+            let a = &detail.attrs;
+            let kept = joblog::filter(&all, a.log_level.max(1), u16::from(a.log_sev));
+            return Ok(joblog::display(&kept));
+        }
+    }
     let a = host.attrs();
     let all: Vec<&joblog::Entry> = job.joblog.entries().collect();
     let kept = joblog::filter(&all, a.log_level.max(1), u16::from(a.log_sev));
-    joblog::display(&kept)
+    Ok(joblog::display(&kept))
 }
