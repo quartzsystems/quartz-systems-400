@@ -4,11 +4,11 @@
 
 //! The connection job's [`qapd::Host`]: the system's description and
 //! messages through its link, sign-on, sessions and passwords through
-//! the storage service (`stgsvc/qap.rs`), and the end of the job: its
-//! parent's `End` (the server ending) or `ENDJOB` (an operator).
-//! Passwords and tokens go to the service and nowhere else.
+//! the storage service (`stgsvc/qap.rs`), commands in the job's own
+//! runtime (`commands.rs`), and the end of the job: its parent's `End`
+//! (the server ending) or `ENDJOB` (an operator). Passwords and tokens
+//! go to the service and nowhere else.
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -16,9 +16,11 @@ use ipc::chan::Chan;
 use qap_proto::ops::signon::SignOnReply;
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Secret, ServerMessage, Status, Token};
-use qapd::{Ending, Host, Refusal, SystemId};
+use qapd::{Canceller, Ending, Host, Ran, Refusal, SystemId};
 use stg::{Client, QapRefused, QapSession, Shared};
-use wm::ctl::ToJob;
+use wm::ctl::{Start, ToJob};
+
+use crate::console::Console;
 
 /// How often the job asks whether an operator ended it.
 const CHECK: Duration = Duration::from_millis(500);
@@ -26,31 +28,39 @@ const CHECK: Duration = Duration::from_millis(500);
 /// The connection job's reach.
 pub struct JobHost {
     pub link: Shared,
+    /// The job's runtime: commands, its job log, its control channel.
+    pub console: Console,
     me: u32,
-    told: Arc<AtomicBool>,
     checked: Instant,
 }
 
 impl JobHost {
-    /// Over `link` for job `me`, watching `ctl` for the parent's `End`.
-    pub fn new(link: Shared, me: u32, ctl: &Chan) -> Self {
-        let told = Arc::new(AtomicBool::new(false));
-        let flag = Arc::clone(&told);
-        let mut reader = ctl.try_clone().expect("ctl");
-        std::thread::spawn(move || {
-            while let Ok(m) = reader.recv::<ToJob>() {
-                if matches!(m, ToJob::End { .. }) {
-                    flag.store(true, Ordering::SeqCst);
-                    return;
-                }
-            }
-        });
+    /// The job `start` describes, over `link`; its console reads `ctl`.
+    pub fn new(link: &Shared, start: &Start, ctl: Chan) -> Self {
         Self {
-            link,
-            me,
-            told,
+            link: std::rc::Rc::clone(link),
+            console: Console::new(ctl, link, start),
+            me: start.number,
             checked: Instant::now(),
         }
+    }
+
+    /// Whether the parent sent `End`: the console's inbox and what it
+    /// put aside.
+    fn told_to_end(&self) -> bool {
+        let h = &self.console.host;
+        while let Ok(m) = h.inbox.try_recv() {
+            h.pending.borrow_mut().push_back(m);
+        }
+        h.pending.borrow().iter().any(|m| matches!(m, ToJob::End { .. }))
+    }
+
+    /// The job runs as another profile: its runtime follows.
+    fn swapped<T>(&mut self, r: Result<T, Refusal>) -> Result<T, Refusal> {
+        if r.is_ok() {
+            self.console.swapped();
+        }
+        r
     }
 
     /// A system value's text, trimmed.
@@ -189,23 +199,41 @@ impl Host for JobHost {
             .link
             .borrow_mut()
             .with(|l| l.qap_signon(user.to_string(), password.expose().to_string()));
-        self.session(r)
+        let r = self.session(r);
+        self.swapped(r)
     }
 
     fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal> {
         let r = self.link.borrow_mut().with(|l| {
             l.qap_chgpwd(user.to_string(), old.expose().to_string(), new.expose().to_string())
         });
-        self.session(r)
+        let r = self.session(r);
+        self.swapped(r)
     }
 
     fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
         let r = self.link.borrow_mut().with(|l| l.qap_resume(token.0.to_vec()));
-        self.session(r)
+        let r = self.session(r);
+        self.swapped(r)
     }
 
     fn sign_off(&mut self, token: &Token) {
         self.link.borrow_mut().with(|l| l.qap_signoff(token.0.to_vec()));
+        self.console.swapped();
+    }
+
+    fn run_command(&mut self, command: &str) -> Ran {
+        super::commands::run(&mut self.console, command)
+    }
+
+    fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>) {
+        super::commands::check(&mut self.console, command)
+    }
+
+    /// `Cancel` of a running command ends its request, as System
+    /// Request option 2 does.
+    fn canceller(&mut self) -> Option<Canceller> {
+        Some(Arc::new(crate::sysdsp::keys::end_from_outside))
     }
 
     fn detach(&mut self, token: &Token) {
@@ -213,7 +241,7 @@ impl Host for JobHost {
     }
 
     fn ending(&mut self) -> Option<Ending> {
-        if self.told.load(Ordering::SeqCst) {
+        if self.told_to_end() {
             return Some(Ending::Server);
         }
         if self.checked.elapsed() < CHECK {

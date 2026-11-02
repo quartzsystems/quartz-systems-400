@@ -26,6 +26,20 @@ use crate::display::uim::LineMsg;
 /// The escape a cancelled request's caller receives.
 pub const ENDED: &str = "CPF1907";
 
+/// End Request asked from outside the job's thread (a QAP client's
+/// `Cancel`): the running request ends at its next attention or wait.
+static OUTSIDE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Ask the running request to end, from any thread.
+pub fn end_from_outside() {
+    OUTSIDE.store(true, std::sync::atomic::Ordering::SeqCst);
+}
+
+/// Whether an end was asked from outside; asking clears it.
+pub fn take_outside_end() -> bool {
+    OUTSIDE.swap(false, std::sync::atomic::Ordering::SeqCst)
+}
+
 /// What the waiting code does after a system key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum After {

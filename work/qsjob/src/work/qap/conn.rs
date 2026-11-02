@@ -71,9 +71,10 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     let _ = sock.set_read_timeout(Some(Duration::from_millis(10)));
     let _ = sock.set_nodelay(true);
     stg::remote::status(link, wm::job::Status::Timw, "");
-    let mut host = JobHost::new(std::rc::Rc::clone(link), start.number, &ctl);
+    let mut host = JobHost::new(link, start, ctl);
     let why = qapd::serve(Tls(StreamOwned::new(tls, sock)), &mut host, qapd::Config::default());
-    let _ = ctl.send(&FromJob::Ending {
+    host.console.sync_log();
+    let _ = host.console.host.ctl.borrow_mut().send(&FromJob::Ending {
         reason: format!("{why:?}"),
     });
     std::process::exit(0)

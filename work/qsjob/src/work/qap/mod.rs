@@ -6,6 +6,7 @@
 //! `QSYSWRK`, which accepts QS/400 Access connections on `CHGQAPA`'s
 //! port; role `QAPCNN` is one connection's job in `QUSRWRK`.
 
+pub mod commands;
 pub mod conn;
 pub mod host;
 pub mod listener;

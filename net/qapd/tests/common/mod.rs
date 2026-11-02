@@ -22,7 +22,8 @@ use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Envelope, Kind, Op, Reassembly, Secret, ServerMessage, Status, Token};
 use qapd::frames::FrameReader;
 use qapd::sessions::Sessions;
-use qapd::{Closed, Config, Ending, Host, Refusal, SystemId};
+use qap_proto::ops::command::CommandReply;
+use qapd::{Closed, Config, Ending, Host, Ran, Refusal, SystemId};
 
 /// Holds operations in progress while closed.
 #[derive(Default)]
@@ -295,6 +296,18 @@ impl Host for MemHost {
         let now = *self.c.clock.lock().unwrap();
         self.c.sessions.lock().unwrap().detach(token, self.job, now);
         self.c.running_as.lock().unwrap().remove(&self.job);
+    }
+
+    fn run_command(&mut self, _command: &str) -> Ran {
+        Ran {
+            status: Status::NotFound,
+            escape: None,
+            reply: CommandReply::default(),
+        }
+    }
+
+    fn check_command(&mut self, _command: &str) -> (Status, Vec<ServerMessage>) {
+        (Status::NotFound, Vec::new())
     }
 }
 

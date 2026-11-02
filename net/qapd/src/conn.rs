@@ -9,16 +9,18 @@
 //! and the events when the server or an operator ends the connection.
 
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
+use std::sync::{Arc, PoisonError};
 use std::thread;
 
 use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
+use qap_proto::ops::command::{CheckReply, CommandText};
 use qap_proto::ops::event;
 use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
 use qap_proto::{Envelope, HELLO_ID, Op, ServerMessage, Service, Status, Token, VERSION};
 
 use crate::host::{Ending, Host, Refusal};
-use crate::pump::{self, Cancels, In, Out, cancelled};
+use crate::pump::{self, Cancels, In, Out, Running, cancelled};
 use crate::{Closed, Config, Transport};
 
 /// An operation's answer.
@@ -59,6 +61,7 @@ struct Conn<'h, H: Host> {
     host: &'h mut H,
     out: Sender<Out>,
     cancels: Cancels,
+    running: Arc<Running>,
     /// The version `Hello` agreed; `None` before it.
     version: Option<u16>,
     /// The signed-on session's token and profile.
@@ -106,7 +109,12 @@ impl<H: Host> Conn<'_, H> {
                 self.reply(req, Answer::status(Status::InvalidRequest));
                 return Some(Closed::Refused);
             }
-            Some(op) => self.operation(op, req),
+            Some(op) => {
+                *self.running.id.lock().unwrap_or_else(PoisonError::into_inner) = Some(req.request_id);
+                let a = self.operation(op, req);
+                *self.running.id.lock().unwrap_or_else(PoisonError::into_inner) = None;
+                a
+            }
         };
         let a = if cancelled(&self.cancels, req.request_id) {
             Answer::status(Status::Cancelled)
@@ -156,11 +164,13 @@ impl<H: Host> Conn<'_, H> {
             Op::Resume => self.resume(req),
             Op::SignOff => self.sign_off(),
             Op::SystemInfo => Answer::ok(&self.host.system_info()),
-            // Version 2's operations, built in the commits that follow.
-            Op::TelnetTicket | Op::PasswordStatus | Op::RunCommand | Op::CheckCommand | Op::DescribeCommand => {
+            Op::RunCommand => self.run_command(req),
+            Op::CheckCommand => self.check_command(req),
+            // Version 2's other operations, built in the commits that
+            // follow.
+            Op::TelnetTicket | Op::PasswordStatus | Op::DescribeCommand | Op::Hello => {
                 Answer::status(Status::InvalidRequest)
             }
-            Op::Hello => Answer::status(Status::InvalidRequest),
         }
     }
 
@@ -212,6 +222,30 @@ impl<H: Host> Conn<'_, H> {
         self.opened(r)
     }
 
+    fn run_command(&mut self, req: &Envelope) -> Answer {
+        let Ok(b) = req.body_as::<CommandText>() else {
+            return Answer::status(Status::InvalidRequest);
+        };
+        let ran = self.host.run_command(&b.command);
+        Answer {
+            status: ran.status,
+            message: ran.escape,
+            body: ipc::encode(&ran.reply),
+        }
+    }
+
+    fn check_command(&mut self, req: &Envelope) -> Answer {
+        let Ok(b) = req.body_as::<CommandText>() else {
+            return Answer::status(Status::InvalidRequest);
+        };
+        let (status, messages) = self.host.check_command(&b.command);
+        Answer {
+            status,
+            message: None,
+            body: ipc::encode(&CheckReply { messages }),
+        }
+    }
+
     fn sign_off(&mut self) -> Answer {
         if let Some((token, _)) = self.session.take() {
             self.host.sign_off(&token);
@@ -255,11 +289,17 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config) -> Closed {
     let (out_tx, out_rx) = mpsc::channel::<Out>();
     let cancels = Cancels::default();
     let pump_cancels = Cancels::clone(&cancels);
-    let pump = thread::spawn(move || pump::run(t, cfg, in_tx, &out_rx, pump_cancels));
+    let running = Arc::new(Running {
+        id: std::sync::Mutex::new(None),
+        cancel: host.canceller(),
+    });
+    let pump_running = Arc::clone(&running);
+    let pump = thread::spawn(move || pump::run(t, cfg, in_tx, &out_rx, pump_cancels, pump_running));
     let mut c = Conn {
         host,
         out: out_tx,
         cancels,
+        running,
         version: None,
         session: None,
     };

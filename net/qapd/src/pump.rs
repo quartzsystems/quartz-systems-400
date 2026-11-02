@@ -40,6 +40,15 @@ pub enum Out {
 /// Requests the client cancelled, by ID.
 pub type Cancels = Arc<Mutex<HashSet<u32>>>;
 
+/// The request the connection's thread is running, and what ends it.
+#[derive(Default)]
+pub struct Running {
+    /// Its ID.
+    pub id: Mutex<Option<u32>>,
+    /// The host's canceller.
+    pub cancel: Option<crate::host::Canceller>,
+}
+
 /// Whether request `id` was cancelled.
 pub fn cancelled(c: &Cancels, id: u32) -> bool {
     c.lock().unwrap_or_else(PoisonError::into_inner).contains(&id)
@@ -50,6 +59,7 @@ struct Pump<T: Transport> {
     cfg: Config,
     tx: Sender<In>,
     cancels: Cancels,
+    running: Arc<Running>,
     outstanding: HashSet<u32>,
 }
 
@@ -94,6 +104,13 @@ impl<T: Transport> Pump<T> {
                         .lock()
                         .unwrap_or_else(PoisonError::into_inner)
                         .insert(env.request_id);
+                    // Running now: end it where it is.
+                    let now = *self.running.id.lock().unwrap_or_else(PoisonError::into_inner);
+                    if now == Some(env.request_id)
+                        && let Some(c) = &self.running.cancel
+                    {
+                        c();
+                    }
                 }
                 true
             }
@@ -165,12 +182,13 @@ impl<T: Transport> Pump<T> {
 }
 
 /// Run the pump over `t` until the connection closes.
-pub fn run<T: Transport>(t: T, cfg: Config, tx: Sender<In>, rx: &Receiver<Out>, cancels: Cancels) {
+pub fn run<T: Transport>(t: T, cfg: Config, tx: Sender<In>, rx: &Receiver<Out>, cancels: Cancels, running: Arc<Running>) {
     Pump {
         t,
         cfg,
         tx,
         cancels,
+        running,
         outstanding: HashSet::new(),
     }
     .run(rx);

@@ -6,6 +6,9 @@
 //! The job implements it over its link to the storage service; tests
 //! implement it in memory.
 
+use std::sync::Arc;
+
+use qap_proto::ops::command::CommandReply;
 use qap_proto::ops::signon::SignOnReply;
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::{Secret, ServerMessage, Status, Token};
@@ -43,6 +46,22 @@ pub struct Refusal {
     pub message: ServerMessage,
 }
 
+/// How a command ended: `Ok`, `Error` (its escape message is the
+/// reply's message), `NotFound`, `NotAuthorized` or `Cancelled`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ran {
+    /// The status.
+    pub status: Status,
+    /// The escape message, when one ended it.
+    pub escape: Option<ServerMessage>,
+    /// The job and the messages.
+    pub reply: CommandReply,
+}
+
+/// Ends the operation running now, from another thread: what `Cancel`
+/// of a running request calls.
+pub type Canceller = Arc<dyn Fn() + Send + Sync>;
+
 /// The connection job's reach.
 pub trait Host {
     /// The system's name, release, time zone and CCSID.
@@ -72,4 +91,15 @@ pub trait Host {
     fn sign_off(&mut self, token: &Token);
     /// The connection closed: the session waits to be resumed.
     fn detach(&mut self, token: &Token);
+
+    /// Run a CL command as the signed-on profile; every message it sent
+    /// its caller, oldest first.
+    fn run_command(&mut self, command: &str) -> Ran;
+    /// Check a CL command without running it: `Ok` with no messages
+    /// when valid, else `Error` (or `NotFound`) with the check's.
+    fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>);
+    /// What ends a running operation when the client cancels it.
+    fn canceller(&mut self) -> Option<Canceller> {
+        None
+    }
 }

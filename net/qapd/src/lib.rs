@@ -28,7 +28,7 @@ use std::net::{Shutdown, TcpStream};
 use std::time::Duration;
 
 pub use conn::serve;
-pub use host::{Ending, Host, Refusal, SystemId};
+pub use host::{Canceller, Ending, Host, Ran, Refusal, SystemId};
 
 /// A connection's byte stream. Reads must not block for long (a read
 /// timeout of a few milliseconds): the pump also writes and watches the

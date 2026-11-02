@@ -175,6 +175,9 @@ impl Host {
     /// boundary.
     pub fn attention(&self, job: &mut Job) {
         use crate::sysdsp::keys;
+        if keys::take_outside_end() {
+            keys::cancel_running(job);
+        }
         while let Ok(m) = self.inbox.try_recv() {
             let system = match &m {
                 ToJob::Record { flags, .. } if self.display.borrow().is_some() => {

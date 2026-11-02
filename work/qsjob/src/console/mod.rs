@@ -287,6 +287,13 @@ impl Console {
         self.job.as_mut().expect("created")
     }
 
+    /// The job runs as another profile now: its attributes and library
+    /// list as the service has them.
+    pub fn swapped(&mut self) {
+        self.host.attrs_changed();
+        self.refresh_libl();
+    }
+
     /// The job's library list, as the service keeps it.
     fn refresh_libl(&mut self) {
         let a = self.host.attrs();

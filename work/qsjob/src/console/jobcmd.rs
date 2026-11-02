@@ -397,6 +397,10 @@ fn dlyjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     while std::time::Instant::now() < until {
         std::thread::sleep(std::time::Duration::from_millis(250));
         host.breaks(job);
+        if crate::sysdsp::keys::take_outside_end() {
+            stg::remote::status(&host.link, wm::job::Status::Run, "");
+            return Err(format!("{} The request was ended.", crate::sysdsp::keys::ENDED));
+        }
     }
     stg::remote::status(&host.link, wm::job::Status::Run, "");
     Ok(String::new())

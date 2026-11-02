@@ -18,6 +18,7 @@ use servers::attrs::qap::QapAttrs;
 use stg::{QapRefused, QapSession};
 
 use super::hostsvr::{become_user, read, reset};
+use super::jobqs::qual;
 use super::security::{chg_pwd, principal, sign_on, sysval_text};
 use super::served::JobCtx;
 use crate::ipl::system::{System, now_unix};
@@ -132,11 +133,39 @@ fn describe(system: &mut System, user: &str, token: &Token, idle: u32) -> QapSes
     }
 }
 
+/// The job's library list and current library from `user`'s job
+/// description, as a job of the user's starts with.
+fn libl_of(system: &mut System, ctx: &JobCtx, user: &str) {
+    let Some(p) = read(system, user) else {
+        return;
+    };
+    let (name, lib) = &p.jobd;
+    let jobd = qual(&format!("{lib}/{name}"));
+    let Ok(b) = super::sbs::wm_object(system, &jobd, "*JOBD") else {
+        return;
+    };
+    let Ok(d) = wm::obj::jobd::JobD::decode(&b) else {
+        return;
+    };
+    let prf = super::jobs::user_dft(system, user);
+    let vals: std::collections::HashMap<String, String> = ["QSYSLIBL", "QUSRLIBL", "QCCSID", "QLANGID", "QCNTRYID", "QDATFMT", "QDATSEP", "QTIMSEP", "QDECFMT"]
+        .iter()
+        .map(|n| ((*n).to_string(), sysval_text(system, n)))
+        .collect();
+    let get = |n: &str| vals.get(n).cloned().unwrap_or_else(|| sysval_text(system, n));
+    let a = wm::job::JobAttrs::resolve_for(&jobd, &d, &wm::obj::cls::Cls::default(), &get, &prf);
+    if let Some(mine) = system.attrs.get_mut(&ctx.job.number) {
+        mine.libl.usr = a.libl.usr;
+        mine.libl.cur = a.libl.cur;
+    }
+}
+
 /// Run as `user` in a new session attached to this job.
 fn open(system: &mut System, ctx: &mut JobCtx, user: &str) -> Result<QapSession, QapRefused> {
     let token = new_token()?;
     let idle = idle_secs(system);
     become_user(system, ctx, user);
+    libl_of(system, ctx, user);
     sessions()
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
@@ -212,6 +241,7 @@ pub fn resume(system: &mut System, ctx: &mut JobCtx, token: &[u8]) -> Result<Qap
         .resume(&token, ctx.job.number, now_unix(), &alive)
         .map_err(|_| gone())?;
     become_user(system, ctx, &s.user);
+    libl_of(system, ctx, &s.user);
     Ok(describe(system, &s.user, &token, s.idle_secs))
 }
 
@@ -224,6 +254,8 @@ pub fn signoff(system: &mut System, ctx: &mut JobCtx, token: &[u8]) {
         sessions().lock().unwrap_or_else(PoisonError::into_inner).end(&t);
     }
     reset(system, ctx);
+    let own = ctx.job.user.clone();
+    libl_of(system, ctx, &own);
 }
 
 /// `qap_detach`.
