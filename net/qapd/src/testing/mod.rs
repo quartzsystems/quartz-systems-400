@@ -28,18 +28,18 @@ mod host;
 pub mod spool;
 
 use std::collections::HashMap;
-use std::net::{TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
 pub use host::{MemHost, MemThread};
 
 use crate::host::Ending;
 use crate::sessions::Sessions;
 use crate::tickets::{self, Tickets};
-use crate::{Closed, Config};
+use crate::{Closed, Config, Identity, Polled};
+use qap_proto::types::JobId;
 
 /// A lock, poison or not.
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -114,7 +114,20 @@ pub struct System {
     pub running_as: Mutex<HashMap<u32, String>>,
     /// The output queues and spooled files.
     pub spool: Mutex<spool::Spool>,
+    /// A panic to come, once.
+    pub crash: Mutex<Option<Crash>>,
     tokens: AtomicU32,
+}
+
+/// Where a connection's next panic comes, for the tests of its close.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Crash {
+    /// `Ping`, on the dispatcher's thread.
+    Ping,
+    /// `SystemInfo`, on a secondary thread.
+    SystemInfo,
+    /// A command, on the job's own thread.
+    Command,
 }
 
 /// The clock's start: 2026-10-26.
@@ -139,6 +152,7 @@ impl System {
             libraries: Mutex::new(Vec::new()),
             running_as: Mutex::new(HashMap::new()),
             spool: Mutex::new(spool::Spool::default()),
+            crash: Mutex::new(None),
             tokens: AtomicU32::new(0),
         };
         s.gate.set(true);
@@ -209,6 +223,16 @@ impl System {
         r.is_ok()
     }
 
+    /// Panic if `at` is the crash set; it happens once.
+    fn crash_at(&self, at: Crash) {
+        let mut c = lock(&self.crash);
+        if *c == Some(at) {
+            *c = None;
+            drop(c);
+            panic!("test crash at {at:?}");
+        }
+    }
+
     /// A token or ticket no other has.
     fn next_token(&self, salt: u8) -> qap_proto::Token {
         let n = self.tokens.fetch_add(1, Ordering::SeqCst) + 1;
@@ -218,6 +242,28 @@ impl System {
     }
 }
 
+/// The identity of connection job `job`: `job/QUSER/QAPCNN`, its
+/// number the connection's too.
+#[must_use]
+pub fn identity(job: u32, peer: Option<SocketAddr>) -> Identity {
+    Identity {
+        connection: u64::from(job),
+        job: JobId {
+            name: "QAPCNN".into(),
+            user: "QUSER".into(),
+            number: format!("{job:06}"),
+        },
+        peer,
+    }
+}
+
+/// A connection job number no other test connection has.
+#[must_use]
+pub fn next_job() -> u32 {
+    static JOBS: AtomicU32 = AtomicU32::new(100);
+    JOBS.fetch_add(1, Ordering::SeqCst)
+}
+
 /// A server on loopback for one connection of `system`: the client's
 /// socket and the server's thread, which answers why it closed.
 ///
@@ -225,18 +271,30 @@ impl System {
 /// When loopback cannot be bound.
 #[must_use]
 pub fn serve_loopback(cfg: Config, system: &Arc<System>) -> (TcpStream, JoinHandle<Closed>) {
-    static JOBS: AtomicU32 = AtomicU32::new(100);
+    serve_loopback_as(cfg, system, next_job())
+}
+
+/// [`serve_loopback`] as connection job `job`.
+///
+/// # Panics
+/// When loopback cannot be bound.
+#[must_use]
+pub fn serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> (TcpStream, JoinHandle<Closed>) {
     let l = TcpListener::bind("127.0.0.1:0").expect("loopback");
     let addr = l.local_addr().expect("bound");
     let sys = Arc::clone(system);
-    let job = JOBS.fetch_add(1, Ordering::SeqCst);
     let server = thread::spawn(move || {
-        let Ok((s, _)) = l.accept() else {
-            return Closed::Broken;
+        let (s, peer) = match l.accept() {
+            Ok(a) => a,
+            Err(e) => return Closed::Broken(format!("accept: {e}")),
         };
-        let _ = s.set_read_timeout(Some(Duration::from_millis(5)));
+        // Not a read timeout: see `Polled`.
+        let s = match Polled::new(s) {
+            Ok(s) => s,
+            Err(e) => return Closed::Broken(format!("non-blocking: {e}")),
+        };
         let mut host = MemHost::new(sys, job);
-        crate::serve(s, &mut host, cfg)
+        crate::serve(s, &mut host, cfg, identity(job, Some(peer)))
     });
     let s = TcpStream::connect(addr).expect("loopback");
     (s, server)

@@ -7,8 +7,9 @@
 
 #![allow(dead_code)]
 
+pub mod log;
+
 use std::io::{ErrorKind, Read, Write};
-use std::net::TcpStream;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -18,11 +19,12 @@ use qap_proto::ops::connection::Hello;
 use qap_proto::{Envelope, Kind, Op, Reassembly, Status};
 use qapd::frames::FrameReader;
 pub use qapd::testing::System as Controls;
-use qapd::{Closed, Config};
+use qapd::{Closed, Config, Polled};
 
-/// A client over a TCP stream.
+/// A client over a TCP stream, non-blocking (no read timeout: see
+/// `qapd::Polled`).
 pub struct Client {
-    pub s: TcpStream,
+    pub s: Polled,
     frames: FrameReader,
     asm: Reassembly,
     next_id: u32,
@@ -161,6 +163,8 @@ pub struct Run {
     pub client: Client,
     pub c: Arc<Controls>,
     pub server: JoinHandle<Closed>,
+    /// The connection job's number, the connection's too.
+    pub job: u32,
 }
 
 /// Start a server on loopback with `cfg`.
@@ -171,17 +175,18 @@ pub fn start(cfg: Config) -> Run {
 /// Another connection job of the same system (`c`).
 pub fn start_with(cfg: Config, c: Arc<Controls>) -> Run {
     c.gate.set(true);
-    let (s, server) = qapd::testing::serve_loopback(cfg, &c);
-    s.set_read_timeout(Some(Duration::from_millis(50))).unwrap();
+    let job = qapd::testing::next_job();
+    let (s, server) = qapd::testing::serve_loopback_as(cfg, &c, job);
     Run {
         client: Client {
-            s,
+            s: Polled::new(s).unwrap(),
             frames: FrameReader::new(),
             asm: Reassembly::new(),
             next_id: 0,
         },
         c,
         server,
+        job,
     }
 }
 

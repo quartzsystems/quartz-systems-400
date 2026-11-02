@@ -11,7 +11,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
-use std::thread;
 
 use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
@@ -25,6 +24,7 @@ use crate::Closed;
 use crate::conn::{Answer, Shared, lock};
 use crate::host::{Refusal, ThreadHost, Threads};
 use crate::pump::In;
+use crate::watch::{self, Watch};
 
 /// From the dispatcher to the job's own thread.
 pub(crate) enum ToMain {
@@ -35,9 +35,9 @@ pub(crate) enum ToMain {
 }
 
 /// Route requests until the connection closes or `Hello` refuses it.
-pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Threads, main: &Sender<ToMain>) {
+pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Threads, main: &Sender<ToMain>, watch: &Arc<Watch>) {
     let mut own = threads();
-    let mut pool = Pool::new(Arc::clone(shared), Arc::clone(threads));
+    let mut pool = Pool::new(Arc::clone(shared), Arc::clone(threads), main.clone(), Arc::clone(watch));
     while let Ok(i) = rx.recv() {
         match i {
             In::Request(req) => {
@@ -52,7 +52,8 @@ pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Thread
             }
         }
     }
-    let _ = main.send(ToMain::Closed(Closed::Broken));
+    // The pump says why before it ends, or its panic is reported.
+    let _ = main.send(ToMain::Closed(Closed::Broken("the connection's reader ended".into())));
 }
 
 /// Send one request on its way; `Some` when the connection is to close.
@@ -131,10 +132,13 @@ struct Pool {
     made: usize,
     /// Requests handed over and not yet answered.
     busy: Arc<AtomicUsize>,
+    /// Where a thread's panic goes: the connection closes.
+    main: Sender<ToMain>,
+    watch: Arc<Watch>,
 }
 
 impl Pool {
-    fn new(shared: Arc<Shared>, threads: Threads) -> Self {
+    fn new(shared: Arc<Shared>, threads: Threads, main: Sender<ToMain>, watch: Arc<Watch>) -> Self {
         let (work, queue) = mpsc::channel();
         Self {
             shared,
@@ -143,6 +147,8 @@ impl Pool {
             queue: Arc::new(Mutex::new(queue)),
             made: 0,
             busy: Arc::new(AtomicUsize::new(0)),
+            main,
+            watch,
         }
     }
 
@@ -156,7 +162,8 @@ impl Pool {
                 Arc::clone(&self.queue),
                 Arc::clone(&self.busy),
             );
-            thread::spawn(move || {
+            let main = self.main.clone();
+            let body = move || {
                 let mut host = threads();
                 loop {
                     let next = lock(&queue).recv();
@@ -166,7 +173,11 @@ impl Pool {
                     operation(&shared, &mut *host, op, &req);
                     busy.fetch_sub(1, Ordering::SeqCst);
                 }
-            });
+            };
+            let report = move |why| {
+                let _ = main.send(ToMain::Closed(why));
+            };
+            watch::spawn(format!("qap-worker-{}", self.made), &self.watch, body, report);
         }
         let _ = self.work.send((op, req));
     }
@@ -230,6 +241,7 @@ fn opened(shared: &Shared, r: Result<SignOnReply, Refusal>) -> Answer {
     match r {
         Ok(reply) => {
             *lock(&shared.session) = Some((reply.token.clone(), reply.profile.clone()));
+            *lock(&shared.watch.profile) = Some(reply.profile.clone());
             shared.swapped();
             Answer::ok(&reply)
         }
@@ -281,6 +293,7 @@ fn resume(shared: &Shared, host: &mut dyn ThreadHost, req: &Envelope) -> Answer 
 fn sign_off(shared: &Shared, host: &mut dyn ThreadHost) -> Answer {
     let _one = lock(&shared.signon);
     let session = lock(&shared.session).take();
+    *lock(&shared.watch.profile) = None;
     if let Some((token, _)) = session {
         host.sign_off(&token);
         shared.swapped();

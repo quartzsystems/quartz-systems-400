@@ -11,10 +11,11 @@
 //! the client cancelled: empty before the operation started, its own
 //! reply after).
 
+use std::panic::{self, AssertUnwindSafe};
 use std::sync::atomic::{AtomicU16, AtomicU64, Ordering};
-use std::sync::mpsc::{self, RecvTimeoutError, Sender};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
-use std::thread;
+use std::time::Duration;
 
 use ipc::Wire;
 use qap_proto::ops::command::{CheckReply, CommandText, DescribeCommand};
@@ -24,6 +25,7 @@ use qap_proto::{Envelope, Op, ServerMessage, Service, Status, Token};
 use crate::host::{Ending, Host, Refusal};
 use crate::lanes::{self, ToMain};
 use crate::pump::{self, Cancels, In, Out, Running, cancelled};
+use crate::watch::{self, Identity, Watch};
 use crate::{Closed, Config, Transport};
 
 /// A lock, poison or not.
@@ -76,6 +78,8 @@ pub(crate) struct Shared {
     pub swaps: AtomicU64,
     /// Sign-on, password changes, resume and sign-off, one at a time.
     pub signon: Mutex<()>,
+    /// What the close line says.
+    pub watch: Arc<Watch>,
 }
 
 impl Shared {
@@ -235,10 +239,29 @@ impl<H: Host> Main<'_, H> {
             }
         }
     }
+
+    /// Commands and the end from outside, until the connection closes.
+    fn run(&mut self, rx: &Receiver<ToMain>, poll: Duration) -> Closed {
+        loop {
+            match rx.recv_timeout(poll) {
+                Ok(ToMain::Command(op, req)) => self.command(op, &req),
+                Ok(ToMain::Closed(why)) => return why,
+                Err(RecvTimeoutError::Timeout) => {}
+                // Every sender reports before it goes.
+                Err(RecvTimeoutError::Disconnected) => return Closed::Broken("the dispatcher ended".into()),
+            }
+            if let Some(e) = self.host.ending() {
+                return self.end(e);
+            }
+        }
+    }
 }
 
-/// Serve one connection until it closes; why it closed.
-pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config) -> Closed {
+/// Serve one connection until it closes; why it closed. The close is
+/// logged, once, with `who`.
+pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identity) -> Closed {
+    let watch = Watch::open(who);
+    let _in = watch.enter();
     let (in_tx, in_rx) = mpsc::channel::<In>();
     let (out_tx, out_rx) = mpsc::channel::<Out>();
     let (main_tx, main_rx) = mpsc::channel::<ToMain>();
@@ -249,38 +272,56 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config) -> Closed {
         session: Mutex::new(None),
         swaps: AtomicU64::new(0),
         signon: Mutex::new(()),
+        watch: Arc::clone(&watch),
     });
     let running = Arc::new(Running {
         id: Mutex::new(None),
         cancel: host.canceller(),
     });
-    let pump_cancels = Cancels::clone(&shared.cancels);
-    let pump_running = Arc::clone(&running);
-    let pump = thread::spawn(move || pump::run(t, cfg, in_tx, &out_rx, pump_cancels, pump_running));
+    let ends = pump::Ends {
+        tx: in_tx.clone(),
+        rx: out_rx,
+        cancels: Cancels::clone(&shared.cancels),
+        running: Arc::clone(&running),
+        watch: Arc::clone(&watch),
+    };
+    let pump = watch::spawn(
+        "qap-pump".into(),
+        &watch,
+        move || pump::run(t, cfg, ends),
+        move |why| {
+            let _ = in_tx.send(In::Closed(why));
+        },
+    );
     let threads = host.threads();
     let lanes_shared = Arc::clone(&shared);
-    let dispatch = thread::spawn(move || lanes::dispatch(&lanes_shared, &in_rx, &threads, &main_tx));
+    let (lanes_main, lanes_watch, report) = (main_tx.clone(), Arc::clone(&watch), main_tx);
+    let dispatch = watch::spawn(
+        "qap-lanes".into(),
+        &watch,
+        move || lanes::dispatch(&lanes_shared, &in_rx, &threads, &lanes_main, &lanes_watch),
+        move |why| {
+            let _ = report.send(ToMain::Closed(why));
+        },
+    );
     let mut m = Main {
         host,
         shared: Arc::clone(&shared),
         running,
         seen: 0,
     };
-    let why = loop {
-        match main_rx.recv_timeout(cfg.poll) {
-            Ok(ToMain::Command(op, req)) => m.command(op, &req),
-            Ok(ToMain::Closed(why)) => break why,
-            Err(RecvTimeoutError::Timeout) => {}
-            Err(RecvTimeoutError::Disconnected) => break Closed::Broken,
-        }
-        if let Some(e) = m.host.ending() {
-            break m.end(e);
-        }
+    let why = match panic::catch_unwind(AssertUnwindSafe(|| m.run(&main_rx, cfg.poll))) {
+        Ok(why) => why,
+        Err(p) => watch.panicked(&*p),
     };
     // A session outlives its connection until its idle timeout.
     let session = lock(&shared.session).take();
+    if let Some((_, profile)) = &session {
+        *lock(&watch.profile) = Some(profile.clone());
+    }
+    watch.closed(&why);
     if let Some((token, _)) = session {
-        m.host.detach(&token);
+        let _ = panic::catch_unwind(AssertUnwindSafe(|| m.host.detach(&token)));
     }
     shared.close();
     let _ = pump.join();

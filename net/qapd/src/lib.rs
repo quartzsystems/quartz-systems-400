@@ -13,6 +13,9 @@
 //!   to the job's own thread, the rest to secondary threads.
 //! - `conn`: the job's own thread: commands one at a time, the events;
 //!   what the threads share.
+//! - `watch`: the one line logged at each close, and the threads'
+//!   panics as its reason.
+//! - `polled`: a TCP stream without a read timeout, for loopback.
 //! - [`host`]: what the connection reaches of the system.
 //! - [`spool`]: `ReadSpooledFile` over a file's data.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
@@ -30,18 +33,23 @@ pub mod tickets;
 
 mod conn;
 mod lanes;
+mod polled;
 mod pump;
+mod watch;
 
+use std::fmt;
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpStream};
 use std::time::Duration;
 
 pub use conn::serve;
 pub use host::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
+pub use polled::Polled;
+pub use watch::{Identity, exiting};
 
-/// A connection's byte stream. Reads must not block for long (a read
-/// timeout of a few milliseconds): the pump also writes and watches the
-/// idle time between reads.
+/// A connection's byte stream. Reads must not block for long (a few
+/// milliseconds): the pump also writes and watches the idle time
+/// between reads. On Windows use [`Polled`], not a read timeout.
 pub trait Transport: Read + Write + Send + 'static {
     /// Close, telling the peer (TLS `close_notify`).
     fn close(&mut self) {}
@@ -56,7 +64,8 @@ impl Transport for TcpStream {
 /// The limits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Config {
-    /// Close after this long without a frame.
+    /// Close after this long without a frame either way while nothing
+    /// is outstanding.
     pub idle_close: Duration,
     /// Requests outstanding at once; beyond, `Busy`.
     pub max_outstanding: usize,
@@ -75,20 +84,40 @@ impl Default for Config {
 }
 
 /// Why a connection closed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Closed {
     /// The client closed it.
     Peer,
-    /// No frame for [`Config::idle_close`].
+    /// No frame for [`Config::idle_close`] with nothing outstanding.
     Idle,
     /// A frame over 1 MiB or one that does not decode.
     BadFrame,
-    /// A read or write failed.
-    Broken,
+    /// A read or write failed: the error.
+    Broken(String),
     /// `Hello` refused: misplaced, repeated, or no common version.
     Refused,
     /// The server is ending.
     ServerEnding,
     /// An operator ended the job.
     Operator,
+    /// One of the connection's threads panicked: which, and the panic.
+    Panic(String),
+    /// The job's process is ending under the connection: why.
+    Exit(String),
+}
+
+impl fmt::Display for Closed {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Closed::Peer => f.write_str("client closed"),
+            Closed::Idle => f.write_str("idle timeout"),
+            Closed::BadFrame => f.write_str("protocol error: bad frame"),
+            Closed::Broken(e) => write!(f, "I/O error: {e}"),
+            Closed::Refused => f.write_str("protocol error: Hello refused"),
+            Closed::ServerEnding => f.write_str("server ending"),
+            Closed::Operator => f.write_str("job ended by an operator"),
+            Closed::Panic(p) => write!(f, "panic: {p}"),
+            Closed::Exit(why) => write!(f, "job ending: {why}"),
+        }
+    }
 }

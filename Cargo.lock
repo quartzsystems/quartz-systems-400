@@ -2282,6 +2282,7 @@ dependencies = [
  "ipc",
  "qap-proto",
  "spool",
+ "tracing",
 ]
 
 [[package]]
@@ -2422,6 +2423,7 @@ dependencies = [
  "thiserror",
  "tls",
  "tn5250",
+ "tracing-subscriber",
  "uim",
  "wm",
  "x509-cert",

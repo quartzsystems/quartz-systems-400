@@ -390,6 +390,8 @@ fn inbox(ctl: &Chan) -> (std::sync::mpsc::Sender<ToJob>, Inbox) {
             while let Ok(m) = reader.recv::<ToJob>() {
                 if m == (ToJob::End { immediate: true }) {
                     // ENDJOB *IMMED: the service releases what the job held.
+                    // A QAP connection's close is logged first.
+                    qapd::exiting(&qapd::Closed::Operator);
                     std::process::exit(2);
                 }
                 if feed.send(m).is_err() {

@@ -13,6 +13,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use ipc::chan::Chan;
+use qap_proto::types::JobId;
 use rustls::{ServerConnection, StreamOwned};
 use stg::Shared;
 use wm::ctl::{FromJob, Start};
@@ -70,12 +71,35 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
     };
     let _ = sock.set_read_timeout(Some(Duration::from_millis(10)));
     let _ = sock.set_nodelay(true);
+    log_closes();
+    let who = qapd::Identity {
+        connection: u64::from(start.number),
+        job: JobId {
+            name: start.name.clone(),
+            user: start.user.clone(),
+            number: format!("{:06}", start.number),
+        },
+        peer: sock.peer_addr().ok(),
+    };
     stg::remote::status(link, wm::job::Status::Timw, "");
+    link.borrow_mut().on_lost(super::host::lost);
     let mut host = JobHost::new(link, start, ctl);
-    let why = qapd::serve(Tls(StreamOwned::new(tls, sock)), &mut host, qapd::Config::default());
+    let why = qapd::serve(Tls(StreamOwned::new(tls, sock)), &mut host, qapd::Config::default(), who);
     host.console.sync_log();
     let _ = host.console.host.ctl.borrow_mut().send(&FromJob::Ending {
-        reason: format!("{why:?}"),
+        reason: format!("QAP connection closed: {why}"),
     });
     std::process::exit(0)
+}
+
+/// `net/qapd`'s close lines, and only those, to standard error: the
+/// serial console.
+fn log_closes() {
+    use tracing_subscriber::filter::{LevelFilter, Targets};
+    use tracing_subscriber::prelude::*;
+    let layer = tracing_subscriber::fmt::layer()
+        .with_writer(io::stderr)
+        .with_ansi(false);
+    let only = Targets::new().with_target("qapd", LevelFilter::INFO);
+    let _ = tracing_subscriber::registry().with(layer).with(only).try_init();
 }

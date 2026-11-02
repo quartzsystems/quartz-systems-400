@@ -306,7 +306,12 @@ to points the draft above leaves open:
 - A first request other than `Hello` gets `InvalidRequest` and the
   connection closes. `SignOn` or `Resume` on a signed-on connection
   gets `InvalidRequest`; the connection and session stay.
-- A connection idle for 300 s is closed without an event.
+- A connection idle for 300 s is closed without an event. Idle means
+  no frame either way and no request outstanding: a request still
+  running (a long command) keeps the connection.
+- Every close is logged by the connection job (`net/qapd`, target
+  `qapd`, level `info`): the connection, the job, the client's
+  address, the profile, the reason and the requests outstanding.
 - Sessions: `idle_timeout_secs` is `CHGQAPA IDLETIMO`. The timer runs
   only while no connection is attached; an attached session never
   expires. A session whose connection job ended without detaching

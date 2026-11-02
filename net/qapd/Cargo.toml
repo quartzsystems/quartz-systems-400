@@ -11,6 +11,7 @@ ipc = { path = "../../work/ipc", version = "0.1.0" }
 qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }
+tracing.workspace = true
 
 [lints]
 workspace = true

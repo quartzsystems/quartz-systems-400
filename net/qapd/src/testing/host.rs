@@ -19,7 +19,7 @@ use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
 use super::commands::{self, definition, find, parse};
-use super::{System, lock};
+use super::{Crash, System, lock};
 use crate::host::{Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use crate::tickets::TICKET_SECS;
 
@@ -106,6 +106,7 @@ impl Host for MemHost {
     }
 
     fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
+        self.sys.crash_at(Crash::Command);
         let (name, parms) = parse(command);
         let Some(c) = find(&name) else {
             return self.ran(Status::NotFound, &[("CPD0030", &[&name, "*LIBL"]), ("CPF0006", &[])]);
@@ -299,6 +300,7 @@ impl ThreadHost for MemThread {
     }
 
     fn now_ms(&mut self) -> i64 {
+        self.sys.crash_at(Crash::Ping);
         i64::try_from(self.sys.now()).unwrap_or(0) * 1000
     }
 
@@ -308,6 +310,7 @@ impl ThreadHost for MemThread {
 
     fn system_info(&mut self) -> SystemInfo {
         self.sys.gate.pass();
+        self.sys.crash_at(Crash::SystemInfo);
         let n = *lock(&self.sys.products);
         SystemInfo {
             system_name: "QSHQ400".into(),

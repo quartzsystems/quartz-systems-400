@@ -15,6 +15,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use ipc::WireError;
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
@@ -74,6 +75,19 @@ fn message(link: &mut Link, id: &str, data: &[&str]) -> ServerMessage {
             help: String::new(),
         },
     }
+}
+
+/// The job cannot go on (its link to the service is gone): the close
+/// is logged with why, then the process ends.
+fn ending(why: &str) -> ! {
+    qapd::exiting(&qapd::Closed::Exit(why.to_string()));
+    eprintln!("qsjob: QAPCNN: {why}");
+    std::process::exit(70)
+}
+
+/// A lost link to the storage service, on any of the job's threads.
+pub fn lost(e: &WireError) -> ! {
+    ending(&format!("storage service lost: {e}"))
 }
 
 /// The connection job's own thread.
@@ -187,15 +201,12 @@ impl JobThread {
     fn open(number: u32, pid: u32) -> Self {
         let chan = match Chan::connect(Path::new(stg::SOCKET)) {
             Ok(c) => c,
-            Err(e) => {
-                eprintln!("qsjob: QAPCNN thread: storage service: {e}");
-                std::process::exit(70)
-            }
+            Err(e) => ending(&format!("a thread's link to the storage service: {e}")),
         };
         let mut link = Link::over(chan);
+        link.on_lost(lost);
         if let Err(e) = link.with(|l| l.hello_thread(number, pid)) {
-            eprintln!("qsjob: QAPCNN thread: {e}");
-            std::process::exit(70)
+            ending(&format!("a thread's hello to the storage service: {e}"));
         }
         Self { link }
     }
