@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The test system's output             .filter(|| any || q.outq.library == lib)ueues and spooled files, with the rules
+//! The test system's output queues and spooled files, with the rules
 //! the spooled-file commands follow: a file's owner and `*SPLCTL` may
 //! act on it; others may read it only on a queue that shows its data to
 //! anyone (`DSPDTA(*YES)`); a printing file is not deleted or moved; a
