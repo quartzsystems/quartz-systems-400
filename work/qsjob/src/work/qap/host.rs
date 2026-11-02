@@ -154,7 +154,7 @@ impl Host for JobHost {
     }
 
     /// `DSPSFWRSC`'s rows give the products, the system job `SCPF`'s
-    /// start the IPL.
+    /// start the IPL, the firmware the serial (`QSRLNBR`) and model.
     fn system_info(&mut self) -> SystemInfo {
         let rows = self.link.borrow_mut().with(Client::sfwrsc_panel);
         let col = |r: &[String], i: usize| r.get(i).map_or_else(String::new, |v| v.trim().to_string());
@@ -164,11 +164,13 @@ impl Host for JobHost {
             .map_or_else(|| release::RELEASE.to_string(), |r| col(r, 6));
         let jobs = self.link.borrow_mut().with(Client::active_jobs);
         let ipl = jobs.iter().find(|j| j.kind == 'X').map_or(0, |j| j.started);
+        let machine = self.link.borrow_mut().with(Client::machine);
         SystemInfo {
             system_name: self.sysval_text("QSYSNAME"),
             release,
-            serial: self.sysval_text("QSRLNBR"),
-            model: self.sysval_text("QMODEL"),
+            serial: if machine.serial.is_empty() { self.sysval_text("QSRLNBR") } else { machine.serial },
+            // The hardware's own model when the firmware names it.
+            model: if machine.hw_model.is_empty() { self.sysval_text("QMODEL") } else { machine.hw_model },
             ipl_time: i64::try_from(ipl).unwrap_or(0).saturating_mul(1000),
             products: rows
                 .iter()
