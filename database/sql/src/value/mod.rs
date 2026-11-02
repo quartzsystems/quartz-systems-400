@@ -136,6 +136,13 @@ pub fn parse_date(text: &str) -> Option<Date> {
     .find_map(|f| Date::parse(text, *f))
 }
 
+/// A finite double as a decimal, its shortest exact text; `None` past
+/// 63 digits.
+#[must_use]
+pub fn float_decimal(f: f64) -> Option<Decimal> {
+    f.is_finite().then(|| Decimal::parse(&format!("{f}")).ok()).flatten()
+}
+
 /// A time from text in any format.
 #[must_use]
 pub fn parse_time(text: &str) -> Option<Time> {
@@ -320,7 +327,10 @@ impl Value {
                 .map_err(|_| conversion(format!("'{s}' has characters CP037 cannot hold")))
         };
         match f.data_type {
-            DataType::Zoned | DataType::Packed | DataType::Binary | DataType::Float => {
+            // A float keeps every digit it is given; the encoding rounds
+            // to the nearest float.
+            DataType::Float => Ok(db::record::Value::Num(self.as_decimal()?)),
+            DataType::Zoned | DataType::Packed | DataType::Binary => {
                 let d = self.as_decimal()?;
                 let shape = Shape::new(u8::try_from(f.length).unwrap_or(63), f.decimals)
                     .map_err(conversion)?;
@@ -399,5 +409,22 @@ mod tests {
         assert_eq!(ts.to_string(), "2026-01-02 10:20:30.000123");
         assert_eq!(ts.render_field(), "2026-01-02-10.20.30.000123");
         assert_eq!(Timestamp::parse("2026-01-02 10:20:30").unwrap().micros, 0);
+    }
+
+    #[test]
+    fn floats_keep_their_fraction() {
+        for (prec, len) in [(dds::FloatPrecision::Single, 9), (dds::FloatPrecision::Double, 17)] {
+            let mut f = FieldDef::new(qsname::Name::parse("F").unwrap(), DataType::Float, len, 0);
+            f.precision = prec;
+            f.byte_len = f.data_len();
+            let mut rec = vec![0u8; 8];
+            for text in ["4.5", "-0.1", "1234.0625", "0.000123"] {
+                let v = Value::Num(Decimal::parse(text).unwrap());
+                db::record::write_field(&f, &mut rec, &v.to_field(&f).unwrap()).unwrap();
+                let read = db::record::read_field(&f, &rec, &[], None).unwrap();
+                let back = Value::from_field(&f, &read).unwrap();
+                assert_eq!(back.compare(&v).unwrap(), Some(Ordering::Equal), "{text}");
+            }
+        }
     }
 }

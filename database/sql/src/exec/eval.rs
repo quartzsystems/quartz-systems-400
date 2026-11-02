@@ -687,6 +687,16 @@ pub fn literal(l: &Literal) -> Result<Value> {
     Ok(match l {
         Literal::Str(s) => Value::Str(s.clone()),
         Literal::Hex(h) => Value::Str(ccsid::from_ebcdic(h)),
+        // A literal with an exponent is a double.
+        Literal::Num(n) if n.contains(['E', 'e']) => Value::Num(
+            n.parse::<f64>()
+                .ok()
+                .and_then(crate::value::float_decimal)
+                .ok_or_else(|| SqlError::Literal {
+                    text: n.clone(),
+                    what: "not a number the engine can hold".into(),
+                })?,
+        ),
         Literal::Num(n) => Value::Num(Decimal::parse(n).map_err(|e| SqlError::Literal {
             text: n.clone(),
             what: e.to_string(),
