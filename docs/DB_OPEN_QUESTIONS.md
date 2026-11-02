@@ -408,9 +408,18 @@ and `-`, as the DB2 reference orders them. Test: `SELECT 1 + 2 || '3'`
 on the machine (a conversion error there confirms the grouping).
 
 **Unsupported statements.** Common table expressions, `EXCEPT`,
-`INTERSECT`, `CALL`, `SET TRANSACTION`, `CREATE SCHEMA`, LOB types,
-hidden columns and derived indexes answer SQLCODE -84 (SQLSTATE 42612).
-The machine would run them. Test: none.
+`INTERSECT`, `CALL`, `SET TRANSACTION`, `CREATE SCHEMA ... AUTHORIZATION`,
+LOB types, hidden columns and derived indexes answer SQLCODE -84
+(SQLSTATE 42612). The machine would run them. Test: none.
+
+**`CREATE SCHEMA`.** Makes the library, the journal `QSQJRN` and its
+receiver `QSQJRN0001` in it; a table `CREATE TABLE` makes there is
+journaled to `QSQJRN` with both images, as on the machine, so it takes
+changes under commitment control at once. The machine also makes the
+schema's catalog views and gives the library `TYPE(*PROD)`; QS/400's
+catalog is `QSYS2`'s alone. A name that is taken is the store's
+`SQL0901` (`58004`), not `SQL0601` (`42710`). Test:
+`database/sql/tests/session.rs`, `create_schema_journals_its_tables`.
 
 **Division and `AVG` scale.** The quotient keeps the larger operand
 scale plus six decimals (at most 31), so `7 / 2` is `3.500000` and the

@@ -393,6 +393,7 @@ impl Prepared {
             Statement::Delete(d) => dml::delete(txn, ctx, params, d).map(Outcome::Count),
             Statement::CreateTable(t) => ddl::create_table(txn, ctx, t).map(|()| Outcome::Done),
             Statement::CreateIndex(i) => ddl::create_index(txn, ctx, i).map(|()| Outcome::Done),
+            Statement::CreateSchema(name) => ddl::create_schema(txn, ctx, name).map(|()| Outcome::Done),
             Statement::AlterTable(a) => ddl::alter_table(txn, ctx, a).map(|()| Outcome::Done),
             Statement::DropTable { name, cascade } => {
                 ddl::drop(txn, ctx, name, *cascade).map(|()| Outcome::Done)
@@ -504,6 +505,7 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::DropIndex(_) => "DROP INDEX",
         Statement::CreateView(_) => "CREATE VIEW",
         Statement::DropView(_) => "DROP VIEW",
+        Statement::CreateSchema(_) => "CREATE SCHEMA",
         Statement::CreateAlias { .. } => "CREATE ALIAS",
         Statement::DropAlias(_) => "DROP ALIAS",
         Statement::LabelOn(_) => "LABEL ON",

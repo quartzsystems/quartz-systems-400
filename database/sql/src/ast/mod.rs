@@ -131,6 +131,8 @@ pub enum Statement {
     CreateView(CreateView),
     /// `DROP VIEW`.
     DropView(ObjectName),
+    /// `CREATE SCHEMA`.
+    CreateSchema(Ident),
     /// `CREATE ALIAS`.
     CreateAlias {
         /// The alias.
