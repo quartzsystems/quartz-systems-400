@@ -14,14 +14,14 @@ use std::path::Path;
 use store::asp::parity::Level;
 use store::asp::superblock::NO_PARTNER;
 
-use crate::ipl::storage::unit_uuid_of;
+use crate::ipl::storage::{self, unit_uuid_of};
 use crate::ipl::system::System;
 
 /// One unit as the displays show it.
 pub struct UnitView {
     /// Unit number, from 0.
     pub unit: u16,
-    /// The hardware table's type, `QU00`.
+    /// The medium: `SSD`, `HDD`, `NVMe`, `Virtual`.
     pub type_code: String,
     /// The device's model, from sysfs; empty when unknown.
     pub model: String,
@@ -33,17 +33,19 @@ pub struct UnitView {
     pub used: u64,
     /// `None`, `Mirrored (A)`, `Device parity (RAID 5)`.
     pub protection: String,
-    /// `Active`, `Suspended`, `Rebuilding`, ...
-    pub status: &'static str,
+    /// `Active`, `Suspended`, `Synchronizing 37%`, ...
+    pub status: String,
     /// The serial number.
     pub serial: String,
 }
 
-/// A parity member's held pages, status and level.
+/// A parity member's held pages, status, level and how far its set's
+/// synchronization has come.
 struct Dpy {
     held: u64,
     status: &'static str,
     level: Level,
+    sync: Option<u8>,
 }
 
 /// Every unit in unit order; empty without a store.
@@ -63,6 +65,7 @@ pub fn views(system: &mut System) -> Vec<UnitView> {
                     held: s.store.asp().parity_held(m.unit),
                     status: m.status,
                     level: set.level,
+                    sync: set.sync_percent,
                 };
                 (m.unit, d)
             })
@@ -92,9 +95,9 @@ pub fn views(system: &mut System) -> Vec<UnitView> {
                 used: u.used_pages.saturating_sub(held) + ifs_used,
                 protection: protection(u.unit, e.mirror_partner, parity.map(|d| d.level)),
                 status: match parity {
-                    _ if !u.attached => "Not found",
-                    Some(d) => parity_status(d.status),
-                    None => unit_status(e.state),
+                    _ if !u.attached => "Not found".into(),
+                    Some(d) => parity_status(d.status, d.sync, storage::parity_stalled()),
+                    None => unit_status(e.state).into(),
                 },
                 serial: e.serial_text(),
             }
@@ -114,11 +117,11 @@ pub fn parity_held(system: &System) -> u64 {
     })
 }
 
-/// The hardware table's type for a unit's disk and the disk's model.
+/// The type of a unit's disk (its medium, as the hardware table has
+/// it, else from sysfs) and the disk's model.
 fn identity(hw: &hwrsrc::Table, device: Option<&Path>) -> (String, String) {
-    let (default, _) = hwrsrc::Kind::Disk.default_type_model();
     let Some(device) = device else {
-        return (default.to_string(), String::new());
+        return (hwrsrc::Kind::Disk.default_type_model().0.to_string(), String::new());
     };
     let disk = diskimg::locate::disk_of(device).unwrap_or_else(|| {
         device
@@ -130,7 +133,13 @@ fn identity(hw: &hwrsrc::Table, device: Option<&Path>) -> (String, String) {
         .resources
         .iter()
         .find(|r| r.kind == hwrsrc::Kind::Disk && r.location == disk)
-        .map_or_else(|| default.to_string(), |r| r.type_model().0);
+        .map_or_else(
+            || {
+                let dir = Path::new("/sys/class/block").join(&disk);
+                hwrsrc::storage::medium_at(&dir).type_word().to_string()
+            },
+            |r| r.type_model().0,
+        );
     let (model, _) = diskimg::locate::identity(device);
     (type_code, model)
 }
@@ -147,14 +156,17 @@ fn protection(unit: u16, partner: u16, parity: Option<Level>) -> String {
     }
 }
 
-/// A parity member's status from IBM's `DPY/...`.
-fn parity_status(dpy: &str) -> &'static str {
-    match dpy {
-        "DPY/Active" => "Active",
-        "DPY/Degraded" => "Degraded",
-        "DPY/Rebuild" => "Rebuilding",
-        "DPY/Failed" => "Failed",
-        _ => "Unprotected",
+/// A parity member's status from IBM's `DPY/...`, with the progress of
+/// its set's synchronization (the set has no parity until it ends).
+fn parity_status(dpy: &str, sync: Option<u8>, stalled: bool) -> String {
+    match (dpy, sync) {
+        ("DPY/Unprotected", Some(_)) if stalled => "Synchronization stopped".into(),
+        ("DPY/Unprotected", Some(p)) => format!("Synchronizing {p}%"),
+        ("DPY/Active", _) => "Active".into(),
+        ("DPY/Degraded", _) => "Degraded".into(),
+        ("DPY/Rebuild", _) => "Rebuilding".into(),
+        ("DPY/Failed", _) => "Failed".into(),
+        _ => "Unprotected".into(),
     }
 }
 
@@ -181,7 +193,10 @@ mod tests {
         assert_eq!(protection(1, 0, None), "Mirrored (B)");
         assert_eq!(protection(2, NO_PARTNER, Some(Level::Raid5)), "Device parity (RAID 5)");
         assert_eq!(protection(2, NO_PARTNER, Some(Level::Raid6)), "Device parity (RAID 6)");
-        assert_eq!(parity_status("DPY/Rebuild"), "Rebuilding");
-        assert_eq!(parity_status("DPY/Unprotected"), "Unprotected");
+        assert_eq!(parity_status("DPY/Rebuild", None, false), "Rebuilding");
+        assert_eq!(parity_status("DPY/Unprotected", None, false), "Unprotected");
+        assert_eq!(parity_status("DPY/Unprotected", Some(37), false), "Synchronizing 37%");
+        assert_eq!(parity_status("DPY/Unprotected", Some(37), true), "Synchronization stopped");
+        assert_eq!(parity_status("DPY/Active", None, false), "Active");
     }
 }

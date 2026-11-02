@@ -851,7 +851,8 @@ the next one starts at block 0 when the current one ends.
 The work runs with the system up, as IBM's controllers run it: the IPL
 does not wait for it. The storage service does it between requests in
 turns of a few milliseconds (short ones while requests wait), each turn
-a few steps of 16 blocks. A step reads each member's rows of its blocks
+steps of 16 blocks while requests wait and otherwise of as many blocks
+as make 16 MiB of rows over the members. A step reads each member's rows of its blocks
 in one run and writes each member's parity pages in one run (they are
 contiguous, see above), falling back to a stripe at a time when a
 member is not in step or a read fails. The mark is recorded by a
