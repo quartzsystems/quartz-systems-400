@@ -27,7 +27,7 @@ pub struct LiveNet {
 }
 
 fn tcp(m: &Main, op: TcpOp) -> TcpReply {
-    m.link.borrow_mut().with(|l| l.tcp(op))
+    m.ask(|l| l.tcp(op))
 }
 
 fn snapshot(m: &Main) -> Snapshot {
@@ -82,7 +82,7 @@ fn config(m: &Main) -> TcpConfig {
         )
     {
         let secs: u64 = val(&data.0, "SACT").trim().parse().unwrap_or(0);
-        let now = m.link.borrow_mut().with(Client::now).unix;
+        let now = m.ask(Client::now).unix;
         c.active_since = Some(now.saturating_sub(secs));
     }
     c
@@ -171,7 +171,7 @@ pub fn servers(m: &Main) -> Vec<Server> {
         TcpReply::Servers { list } => list,
         _ => Vec::new(),
     };
-    let jobs = m.link.borrow_mut().with(Client::active_jobs);
+    let jobs = m.ask(Client::active_jobs);
     registry::SPECS
         .iter()
         .filter(|s| s.readiness != Readiness::NotPlanned)

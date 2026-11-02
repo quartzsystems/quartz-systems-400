@@ -74,7 +74,7 @@ fn notes(m: &Main, ended: &Ended, user: &str, jobs: &[Job]) -> Vec<Message> {
     if mine.iter().all(|q| jobs.iter().any(|j| j.number.parse::<u32>().ok() == number(q))) {
         return Vec::new();
     }
-    let rows = m.link.borrow_mut().with(Client::hst_entries).unwrap_or_default();
+    let rows = m.ask(Client::hst_entries).unwrap_or_default();
     let logged = |n: u32| {
         rows.iter().rev().find(|r| {
             r.get(2).is_some_and(|id| id.trim() == "CPF1164") && r.get(7).and_then(|v| v.trim().parse::<u32>().ok()) == Some(n)
@@ -118,9 +118,7 @@ fn job_of(j: &JobInfo, cpu: u32) -> Job {
 /// Every object of a type, as `(lib, name)`.
 fn all_of(m: &Main, ty: &str) -> Vec<(String, String)> {
     let t = ty.to_string();
-    m.link
-        .borrow_mut()
-        .with(|l| l.list_objects("*ALL".into(), "*ALL".into(), t))
+    m.ask(|l| l.list_objects("*ALL".into(), "*ALL".into(), t))
         .into_iter()
         .map(|o| (o.lib, o.name))
         .collect()
@@ -128,7 +126,7 @@ fn all_of(m: &Main, ty: &str) -> Vec<(String, String)> {
 
 fn payload(m: &Main, lib: &str, name: &str, ty: &str) -> Option<Vec<u8>> {
     let (q, t) = (format!("{lib}/{name}"), ty.to_string());
-    m.link.borrow_mut().with(|l| l.wm_object(q, t)).ok()
+    m.ask(|l| l.wm_object(q, t)).ok()
 }
 
 fn nomax16(v: u16) -> Option<u32> {
@@ -184,11 +182,11 @@ fn subsystem_of(m: &Main, lib: &str, name: &str, active: &[wm::sbs::SbsInfo]) ->
 }
 
 fn desc(m: &Main, lib: &str, name: &str) -> Option<SubsystemDesc> {
-    let active = m.link.borrow_mut().with(Client::sbs_list);
+    let active = m.ask(Client::sbs_list);
     let (sbs, d) = subsystem_of(m, lib, name, &active)?;
     let a = active.iter().find(|s| s.name == name).cloned();
-    let pools = m.link.borrow_mut().with(Client::pools);
-    let jobs = m.link.borrow_mut().with(Client::active_jobs);
+    let pools = m.ask(Client::pools);
+    let jobs = m.ask(Client::active_jobs);
     let monitor = a
         .as_ref()
         .and_then(|a| jobs.iter().find(|j| j.number == a.monitor))
@@ -277,18 +275,15 @@ fn desc(m: &Main, lib: &str, name: &str) -> Option<SubsystemDesc> {
 
 fn detail(m: &Main, job: &str) -> Option<stg::proto::JobDetail> {
     let j = job.to_string();
-    m.link.borrow_mut().with(|l| l.job_detail(j)).ok()
+    m.ask(|l| l.job_detail(j)).ok()
 }
 
 fn props(m: &Main, job: &str) -> Option<JobProps> {
     let d = detail(m, job)?;
     let j = &d.job;
     let a = &d.attrs;
-    let now = m.link.borrow_mut().with(Client::now).unix;
-    let pool = m
-        .link
-        .borrow_mut()
-        .with(Client::pools)
+    let now = m.ask(Client::now).unix;
+    let pool = m.ask(Client::pools)
         .into_iter()
         .find(|p| p.name == j.pool);
     Some(JobProps {
@@ -325,10 +320,8 @@ fn props(m: &Main, job: &str) -> Option<JobProps> {
 }
 
 fn writers(m: &Main) -> Vec<Writer> {
-    let files = m.link.borrow_mut().with(|l| l.splf_list(String::new(), String::new()));
-    m.link
-        .borrow_mut()
-        .with(Client::wtr_list)
+    let files = m.ask(|l| l.splf_list(String::new(), String::new()));
+    m.ask(Client::wtr_list)
         .into_iter()
         .map(|(name, dev, status, form, outq, _)| {
             let printing = files.iter().find(|f| f.writer == name);
@@ -336,9 +329,7 @@ fn writers(m: &Main) -> Vec<Writer> {
                 None
             } else {
                 let d = dev.clone();
-                m.link
-                    .borrow_mut()
-                    .with(|l| l.cfg_status(d, "*DEV".into()))
+                m.ask(|l| l.cfg_status(d, "*DEV".into()))
                     .map(|(code, _)| code >= 30)
             };
             Writer {
@@ -414,7 +405,7 @@ impl Work for LiveWork {
     fn active_jobs(&self, user: &str, reset: bool) -> ActiveJobs {
         let (ended, u) = (Arc::clone(&self.ended), user.to_string());
         self.link.read(user, move |m| {
-            let d = m.link.borrow_mut().with(|l| l.actjob_data(reset));
+            let d = m.ask(|l| l.actjob_data(reset));
             let jobs: Vec<Job> = d.jobs.iter().map(|a| job_of(&a.job, a.cpu)).collect();
             ActiveJobs {
                 cpu: d.cpu,
@@ -458,10 +449,7 @@ impl Work for LiveWork {
             let mut seq = 0;
             let mut add = |lib: &str, kind: &str, current: bool| {
                 let name = lib.to_string();
-                let text = m
-                    .link
-                    .borrow_mut()
-                    .with(|c| c.object("QSYS".into(), name, "*LIB".into()))
+                let text = m.ask(|c| c.object("QSYS".into(), name, "*LIB".into()))
                     .map(|o| o.text)
                     .unwrap_or_default();
                 let s = if current {
@@ -488,7 +476,7 @@ impl Work for LiveWork {
     fn locks(&self, user: &str, job: &str) -> Vec<Lock> {
         let j = job.to_string();
         self.link.read(user, move |m| {
-            let Ok((_, rows)) = m.link.borrow_mut().with(|l| l.panel2_data("JOBLCK".into(), vec![j])) else {
+            let Ok((_, rows)) = m.ask(|l| l.panel2_data("JOBLCK".into(), vec![j])) else {
                 return Vec::new();
             };
             rows.into_iter()
@@ -514,8 +502,8 @@ impl Work for LiveWork {
 
     fn job_queues(&self, user: &str) -> Vec<JobQueue> {
         self.link.read(user, |m| {
-            let attach = m.link.borrow_mut().with(Client::jobq_attach);
-            let now = m.link.borrow_mut().with(Client::now).unix;
+            let attach = m.ask(Client::jobq_attach);
+            let now = m.ask(Client::now).unix;
             all_of(m, "*JOBQ")
                 .into_iter()
                 .filter_map(|(lib, name)| {
@@ -542,7 +530,7 @@ impl Work for LiveWork {
 
     fn subsystems(&self, user: &str) -> Vec<Subsystem> {
         self.link.read(user, |m| {
-            let active = m.link.borrow_mut().with(Client::sbs_list);
+            let active = m.ask(Client::sbs_list);
             all_of(m, "*SBSD")
                 .into_iter()
                 .filter_map(|(lib, name)| subsystem_of(m, &lib, &name, &active).map(|(s, _)| s))
@@ -588,9 +576,7 @@ impl Work for LiveWork {
         self.link.read(user, move |m| {
             let all = j.is_empty();
             let jb = j.clone();
-            m.link
-                .borrow_mut()
-                .with(|l| l.splf_list(String::new(), jb))
+            m.ask(|l| l.splf_list(String::new(), jb))
                 .into_iter()
                 .filter(|f| !all || f.outq == q)
                 .map(splf)
@@ -601,7 +587,7 @@ impl Work for LiveWork {
     fn spooled_text(&self, user: &str, job: &str, file: &str, number: u32) -> Option<(Splf, Vec<String>)> {
         let (j, f) = (job.to_string(), file.to_string());
         self.link.read(user, move |m| {
-            let (a, data) = m.link.borrow_mut().with(|l| l.splf_fetch(f, j, number.to_string())).ok()?;
+            let (a, data) = m.ask(|l| l.splf_fetch(f, j, number.to_string())).ok()?;
             let (pages, _) = spool::scs::decode(&data);
             let text = pages.iter().map(|p| spool::view::text(std::slice::from_ref(p))).collect();
             Some((splf(a), text))
@@ -611,7 +597,7 @@ impl Work for LiveWork {
     fn spooled_pdf(&self, user: &str, job: &str, file: &str, number: u32) -> Option<Vec<u8>> {
         let (j, f) = (job.to_string(), file.to_string());
         self.link.read(user, move |m| {
-            let (_, data) = m.link.borrow_mut().with(|l| l.splf_fetch(f, j, number.to_string())).ok()?;
+            let (_, data) = m.ask(|l| l.splf_fetch(f, j, number.to_string())).ok()?;
             let (pages, fmt) = spool::scs::decode(&data);
             Some(spool::pdf::render(&pages, fmt))
         })

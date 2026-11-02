@@ -42,7 +42,7 @@ impl LiveSoftware {
 
 fn lp_rows(m: &Main, what: &str, args: &[String]) -> Vec<Vec<String>> {
     let (w, a) = (what.to_string(), args.to_vec());
-    m.link.borrow_mut().with(|l| l.licpgm_panel(w, a)).unwrap_or_default()
+    m.ask(|l| l.licpgm_panel(w, a)).unwrap_or_default()
 }
 
 /// A display's list of `sys2_panel` data: its variables and the rows.
@@ -51,7 +51,7 @@ type Vars = HashMap<String, String>;
 
 fn sys2(m: &Main, what: &str, args: &[&str], list: &str) -> Result<(Vars, Vec<Vars>), String> {
     let (w, a) = (what.to_string(), args.iter().map(|s| (*s).to_string()).collect());
-    let (vars, lists) = m.link.borrow_mut().with(|l| l.sys2_panel(w, a))?;
+    let (vars, lists) = m.ask(|l| l.sys2_panel(w, a))?;
     let rows = lists
         .into_iter()
         .filter(|(n, _)| n == list)
@@ -113,10 +113,7 @@ fn products(m: &Main) -> Vec<Product> {
 
 fn catalogs(m: &Main) -> Vec<ImageCatalog> {
     let args = vec!["*ALL".to_string(), "*ALL".to_string()];
-    let rows = m
-        .link
-        .borrow_mut()
-        .with(|l| l.panel2_data("IMGCLG".into(), args))
+    let rows = m.ask(|l| l.panel2_data("IMGCLG".into(), args))
         .map(|(_, r)| r)
         .unwrap_or_default();
     rows.into_iter()
@@ -142,10 +139,7 @@ fn catalog_products(m: &Main, name: &str) -> Result<Vec<Product>, Message> {
             &format!("Image catalog {name} is not loaded in a virtual device (LODIMGCLG)."),
         ));
     }
-    let rows = m
-        .link
-        .borrow_mut()
-        .with(|l| l.licpgm_panel("MEDIA".into(), vec![c.device.clone()]))
+    let rows = m.ask(|l| l.licpgm_panel("MEDIA".into(), vec![c.device.clone()]))
         .map_err(|e| super::msgs::failure(&e))?;
     let have = products(m);
     let mut seen = BTreeMap::new();
@@ -263,10 +257,7 @@ fn ptf_groups(m: &Main) -> Vec<PtfGroup> {
 
 /// `key=value` lines of `QSYS/QSUPDATTR`.
 fn update_attrs(m: &Main) -> UpdateAttrs {
-    let area = m
-        .link
-        .borrow_mut()
-        .with(|l| l.api_dtaara_read("QSYS".into(), "QSUPDATTR".into()))
+    let area = m.ask(|l| l.api_dtaara_read("QSYS".into(), "QSUPDATTR".into()))
         .ok();
     let text = area.map(|a| ccsid::from_ebcdic(&a.value)).unwrap_or_default();
     let kv: HashMap<String, String> = text
@@ -368,7 +359,7 @@ impl Software for LiveSoftware {
             .link
             .bridge
             .call(move |m| {
-                let now = m.link.borrow_mut().with(Client::now).unix;
+                let now = m.ask(Client::now).unix;
                 crate::work::web::run_text_as(m, Some(&u), &line).map(|(r, text)| (r, fixes_of(&text, now)))
             })
             .unwrap_or_else(|| Err(super::gone()));

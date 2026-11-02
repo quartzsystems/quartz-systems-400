@@ -33,16 +33,14 @@ pub struct LiveSystem {
 
 fn sysval(m: &Main, name: &str) -> String {
     let n = name.to_string();
-    m.link
-        .borrow_mut()
-        .with(|l| l.sysval(n))
+    m.ask(|l| l.sysval(n))
         .map(|v| ccsid::from_ebcdic(&v.data).trim().to_string())
         .unwrap_or_default()
 }
 
 /// What System status shows, read as the signed-on user.
 fn status(m: &mut Main, reset: bool) -> Status {
-    let machine = m.link.borrow_mut().with(Client::machine);
+    let machine = m.ask(Client::machine);
     let mut s = Status {
         serial: machine.serial,
         model: machine.model,
@@ -52,7 +50,7 @@ fn status(m: &mut Main, reset: bool) -> Status {
         ..Status::default()
     };
     let arg = if reset { "*YES" } else { "*NO" };
-    if let Ok((vars, pools)) = m.link.borrow_mut().with(|l| l.panel2_data("SYSSTS".into(), vec![arg.into()])) {
+    if let Ok((vars, pools)) = m.ask(|l| l.panel2_data("SYSSTS".into(), vec![arg.into()])) {
         let v = |k: &str| vars.iter().find(|(n, _)| n == k).map_or("", |(_, x)| x.as_str());
         s.cpu = parse::tenths(v("CPUPCT"));
         s.elapsed = parse::hms(v("ELAPSED"));
@@ -69,35 +67,30 @@ fn status(m: &mut Main, reset: bool) -> Status {
             .and_then(|p| p.iter().find(|(k, _)| k == "SIZE"))
             .map_or(0, |(_, x)| parse::size(&format!("{x} M")));
     }
-    if let Ok((_, units)) = m.link.borrow_mut().with(|l| l.panel2_data("DSKSTS".into(), vec!["*NO".into()])) {
+    if let Ok((_, units)) = m.ask(|l| l.panel2_data("DSKSTS".into(), vec!["*NO".into()])) {
         s.units = u32::try_from(units.len()).unwrap_or(0);
     }
-    let now = m.link.borrow_mut().with(Client::now);
+    let now = m.ask(Client::now);
     s.zone = now.zone;
-    let jobs = m.link.borrow_mut().with(Client::active_jobs);
+    let jobs = m.ask(Client::active_jobs);
     s.active = u32::try_from(jobs.len()).unwrap_or(0);
     s.interactive = u32::try_from(jobs.iter().filter(|j| j.kind == 'I').count()).unwrap_or(0);
     s.msgw = u32::try_from(jobs.iter().filter(|j| j.job_status().code() == "MSGW").count()).unwrap_or(0);
     s.ipl = jobs.iter().find(|j| j.kind == 'X').map_or(0, |j| j.started);
-    s.subsystems = u32::try_from(m.link.borrow_mut().with(Client::sbs_list).len()).unwrap_or(0);
-    let queues = m
-        .link
-        .borrow_mut()
-        .with(|l| l.list_objects("*ALL".into(), "*ALL".into(), "*JOBQ".into()));
+    s.subsystems = u32::try_from(m.ask(Client::sbs_list).len()).unwrap_or(0);
+    let queues = m.ask(|l| l.list_objects("*ALL".into(), "*ALL".into(), "*JOBQ".into()));
     s.queued = queues
         .iter()
         .filter_map(|o| {
-            m.link
-                .borrow_mut()
-                .with(|l| l.wm_object(format!("{}/{}", o.lib, o.name), "*JOBQ".into()))
+            m.ask(|l| l.wm_object(format!("{}/{}", o.lib, o.name), "*JOBQ".into()))
                 .ok()
                 .and_then(|b| JobQ::decode(&b).ok())
         })
         .map(|q| u32::try_from(q.jobs.len()).unwrap_or(0))
         .sum();
-    let files = m.link.borrow_mut().with(|l| l.splf_list(String::new(), String::new()));
+    let files = m.ask(|l| l.splf_list(String::new(), String::new()));
     s.spooled = u32::try_from(files.iter().filter(|f| f.status.code() == "RDY").count()).unwrap_or(0);
-    if let Ok(msgs) = m.link.borrow_mut().with(|l| l.msgq_list("QSYS/QSYSOPR".into())) {
+    if let Ok(msgs) = m.ask(|l| l.msgq_list("QSYS/QSYSOPR".into())) {
         let msgs: Vec<_> = msgs.into_iter().filter(|q| q.kind != MsgKind::Rpy).collect();
         s.qsysopr = u32::try_from(msgs.len()).unwrap_or(0);
         s.inquiries = u32::try_from(
@@ -107,7 +100,7 @@ fn status(m: &mut Main, reset: bool) -> Status {
         )
         .unwrap_or(0);
     }
-    let now = m.link.borrow_mut().with(Client::now).unix;
+    let now = m.ask(Client::now).unix;
     s.failed_signons = failed_signons(m, now);
     s.ptfs_not_applied = ptfs_not_applied(m);
     s.servers_down = super::net::servers(m)
@@ -124,7 +117,7 @@ fn status(m: &mut Main, reset: bool) -> Status {
 fn failed_signons(m: &Main, now: u64) -> u32 {
     let since = now.saturating_sub(86_400);
     let line = format!("DSPAUDJRNE ENTTYP(PW) FROMTIME({})", sec::cmd::civil(since));
-    let text = m.link.borrow_mut().with(|l| l.exec(line)).text;
+    let text = m.ask(|l| l.exec(line)).text;
     u32::try_from(text.lines().filter(|l| entry_time(l).is_some_and(|t| t >= since)).count()).unwrap_or(0)
 }
 
@@ -144,7 +137,7 @@ fn entry_time(line: &str) -> Option<u64> {
 
 /// The operating system's PTFs loaded and not applied (`DSPPTF`).
 fn ptfs_not_applied(m: &Main) -> u32 {
-    let Ok((_, lists)) = m.link.borrow_mut().with(|l| l.sys2_panel("PTF".into(), vec![String::new(), String::new()]))
+    let Ok((_, lists)) = m.ask(|l| l.sys2_panel("PTF".into(), vec![String::new(), String::new()]))
     else {
         return 0;
     };
@@ -159,9 +152,7 @@ fn ptfs_not_applied(m: &Main) -> u32 {
 /// The machine type: the processor's type in the hardware table
 /// (`DSPHDWRSC TYPE(*PRC)`), else `QPRCFEAT`.
 fn machine_type(m: &Main) -> String {
-    m.link
-        .borrow_mut()
-        .with(|l| l.hw_table(false))
+    m.ask(|l| l.hw_table(false))
         .ok()
         .and_then(|t| {
             t.resources

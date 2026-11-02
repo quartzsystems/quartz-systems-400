@@ -52,7 +52,16 @@ impl Main {
 
     /// A security API's answer, its failure as the message ID.
     pub fn sec(&self, q: Query) -> Result<Answer, String> {
-        self.link.borrow_mut().with(|l| stg::Client::sec_api(l, q)).map_err(|e| e.msgid)
+        self.ask(|l| stg::Client::sec_api(l, q)).map_err(|e| e.msgid)
+    }
+
+    /// One request to the service. The link's borrow ends before the
+    /// answer is returned, so whatever the caller chains after it may
+    /// ask again; `link.borrow_mut().with(..)` in one expression keeps
+    /// the borrow to the statement's end, and a second borrow in it
+    /// panics.
+    pub fn ask<T>(&self, f: impl FnOnce(&mut stg::Link) -> Result<T, ipc::WireError>) -> T {
+        self.link.borrow_mut().with(f)
     }
 
     /// Run `f` with the job swapped to `user`'s profile (the handle

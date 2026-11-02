@@ -53,9 +53,7 @@ fn queued(m: QMsg) -> QueuedMessage {
 /// The queues of library `lib`, as `(lib, name)`.
 fn queues_in(m: &Main, lib: &str) -> Vec<(String, String)> {
     let l = lib.to_string();
-    m.link
-        .borrow_mut()
-        .with(|c| c.list_objects(l, "*ALL".into(), "*MSGQ".into()))
+    m.ask(|c| c.list_objects(l, "*ALL".into(), "*MSGQ".into()))
         .into_iter()
         .map(|o| (o.lib, o.name))
         .collect()
@@ -115,7 +113,7 @@ impl Msgs for LiveMsgs {
     fn messages(&self, user: &str, lib: &str, name: &str) -> Result<Vec<QueuedMessage>, Message> {
         let q = format!("{lib}/{name}");
         self.link
-            .read(user, move |m| Some(m.link.borrow_mut().with(|l| l.msgq_list(q))))
+            .read(user, move |m| Some(m.ask(|l| l.msgq_list(q))))
             .unwrap_or_else(|| Err("CPF9897 Navigator could not read the queue.".into()))
             .map(|all| all.into_iter().filter(|m| m.kind != MsgKind::Rpy).map(queued).collect())
             .map_err(|e| failure(&e))
@@ -123,8 +121,8 @@ impl Msgs for LiveMsgs {
 
     fn history(&self, user: &str) -> Vec<HistEntry> {
         self.link.read(user, |m| {
-            let offset = m.link.borrow_mut().with(Client::now).offset_min;
-            let rows = m.link.borrow_mut().with(Client::hst_entries).unwrap_or_default();
+            let offset = m.ask(Client::now).offset_min;
+            let rows = m.ask(Client::hst_entries).unwrap_or_default();
             rows.into_iter()
                 .map(|r| {
                     let f = |i: usize| r.get(i).map_or("", |s| s.trim());

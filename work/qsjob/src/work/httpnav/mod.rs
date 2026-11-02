@@ -116,3 +116,32 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let setup = std::thread::spawn(move || start_listeners(&starter, nav, a, name));
     super::web::serve(main, &rx, setup, start.number)
 }
+
+#[cfg(test)]
+mod tests {
+    /// Every request here goes through `Main::ask`, whose borrow of the
+    /// link ends before the answer comes back: a borrow held across a
+    /// chain that asks again panicked the job (`/writers`).
+    #[test]
+    fn the_link_only_through_ask() {
+        let sources = [
+            ("config.rs", include_str!("config.rs")),
+            ("db.rs", include_str!("db.rs")),
+            ("msgs.rs", include_str!("msgs.rs")),
+            ("net.rs", include_str!("net.rs")),
+            ("parse.rs", include_str!("parse.rs")),
+            ("perf.rs", include_str!("perf.rs")),
+            ("sec.rs", include_str!("sec.rs")),
+            ("sw.rs", include_str!("sw.rs")),
+            ("system.rs", include_str!("system.rs")),
+            ("users.rs", include_str!("users.rs")),
+            ("work.rs", include_str!("work.rs")),
+        ];
+        for (name, src) in sources {
+            for (n, line) in src.lines().enumerate() {
+                let held = line.contains(".borrow_mut()") || line.contains(".borrow()");
+                assert!(!held, "{name}:{}: use Main::ask, not the link's RefCell: {}", n + 1, line.trim());
+            }
+        }
+    }
+}
