@@ -150,6 +150,17 @@ pub enum SqlError {
         what: String,
     },
 
+    /// The user lacks the authority the statement needs.
+    #[error("{what}")]
+    NotAuthorized {
+        /// What was refused.
+        what: String,
+    },
+
+    /// The statement was ended by a cancel from outside it.
+    #[error("the statement was cancelled")]
+    Cancelled,
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -181,6 +192,8 @@ impl SqlError {
             Self::CursorState { .. } => -501,
             Self::Overflow { .. } | Self::DivideByZero => -802,
             Self::ValueCount { .. } => -117,
+            Self::NotAuthorized { .. } => -551,
+            Self::Cancelled => -952,
             Self::Database { .. } => -901,
         }
     }
@@ -205,6 +218,8 @@ impl SqlError {
             Self::TooManyRows => "21000",
             Self::CursorState { .. } => "24501",
             Self::ValueCount { .. } => "42802",
+            Self::NotAuthorized { .. } => "42501",
+            Self::Cancelled => "57014",
             Self::Database { .. } => "58004",
         }
     }

@@ -4,7 +4,8 @@
 
 //! Where requests go (docs/QAP.md, Multiplexing): `Hello` first and
 //! once, then only the agreed version's operations; `Ping` answered at
-//! once; `Command` requests to the job's own thread, one at a time;
+//! once; the lane (`Command` requests and `Sql` 1 to 8) to the job's own
+//! thread, one at a time;
 //! every other operation to a secondary thread of the job, as many at
 //! once as are outstanding, each thread made when none is free.
 //! `Attach` only as the first request after `Hello`.
@@ -29,8 +30,8 @@ use crate::watch::{self, Watch};
 
 /// From the dispatcher to the job's own thread.
 pub(crate) enum ToMain {
-    /// A `Command` request, in arrival order.
-    Command(Op, Envelope),
+    /// A request of the lane (`Op::in_lane`), in arrival order.
+    Lane(Op, Envelope),
     /// The connection is to close.
     Closed(Closed),
 }
@@ -105,8 +106,8 @@ fn route(
         Some(op) if !op.before_signon() && !shared.signed_on() => {
             shared.reply(&req, Answer::status(Status::NotSignedOn));
         }
-        Some(op) if op.code().0 == Service::Command => {
-            let _ = main.send(ToMain::Command(op, req));
+        Some(op) if op.in_lane() => {
+            let _ = main.send(ToMain::Lane(op, req));
         }
         Some(op) => pool.run(op, req),
     }
@@ -224,6 +225,7 @@ fn operation(shared: &Shared, host: &mut dyn ThreadHost, op: Op, req: &Envelope)
         Op::DeleteSpooledFile => body(req, |b: SpooledFileRef| done(host.delete_spooled_file(&b.id))),
         Op::MoveSpooledFile => body(req, |b: MoveSpooledFile| done(host.move_spooled_file(&b.id, &b.outq, b.first))),
         Op::ListOutputQueues => body(req, |b: ListOutputQueues| ok(host.list_output_queues(&b))),
+        Op::ListSchemas | Op::ListTables | Op::ListColumns => crate::sql::catalog(host, op, req),
         _ => Answer::status(Status::InvalidRequest),
     };
     shared.finish(req, a);

@@ -254,3 +254,35 @@ sev = 0
 text = "The SELECT statement ran."
 help = "The rows it returned were shown or written as the session attributes ask."
 vars = []
+
+[[msg]]
+id = "SQL0518"
+sev = 30
+text = "Prepared statement &1 is not there."
+help = "The statement was never prepared on this connection, or it was released. Prepare it again."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0551"
+sev = 30
+text = "Not authorized to &1."
+help = "The profile running the statement lacks the authority it needs to the object named. Ask the object's owner or the security officer for that authority."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0952"
+sev = 30
+text = "The statement was ended by a cancel request."
+help = "The client asked to stop the statement while it ran. Rows it changed before the cancel stay changed; under commitment control they are not committed until COMMIT or ROLLBACK."
+
+[[msg]]
+id = "SQL0313"
+sev = 30
+text = "The number of parameter values does not match the statement's parameter markers."
+help = "Give one value for each parameter marker of the prepared statement, in order."
+
+[[msg]]
+id = "SQL0752"
+sev = 30
+text = "The connection's SQL options cannot change while a transaction is open."
+help = "Changes made under commitment control have not been committed or rolled back. Commit or roll back, then set the options again."

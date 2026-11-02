@@ -10,7 +10,8 @@
 //! - `pump`: the thread that owns the stream: reads, limits, cancels,
 //!   writes, the idle close.
 //! - `lanes`: where requests go: `Hello` and `Ping` at once, commands
-//!   to the job's own thread, the rest to secondary threads.
+//!   and `Sql` 1 to 8 to the job's own thread (the lane), the rest to
+//!   secondary threads.
 //! - `conn`: the job's own thread: commands one at a time, the events;
 //!   what the threads share.
 //! - `watch`: the one line logged at each close, and the threads'
@@ -18,6 +19,7 @@
 //! - `polled`: a TCP stream without a read timeout, for loopback.
 //! - [`host`]: what the connection reaches of the system.
 //! - [`spool`]: `ReadSpooledFile` over a file's data.
+//! - [`sql`]: the `Sql` service's answers and cancel rules.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
@@ -28,6 +30,7 @@ pub mod frames;
 pub mod host;
 pub mod sessions;
 pub mod spool;
+pub mod sql;
 pub mod testing;
 pub mod tickets;
 

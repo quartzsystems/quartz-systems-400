@@ -90,9 +90,34 @@ pub struct SqlContext {
     /// Changes are not under commitment control even when the job has
     /// it (a program precompiled with `COMMIT(*NONE)`).
     pub no_commit: bool,
+    /// Asked every [`INTERRUPT_EVERY`] rows read; `None` never ends.
+    pub interrupt: Option<Interrupt>,
+    /// Rows read since the context was made.
+    interrupt_ticks: u32,
 }
 
+/// Rows read between two looks at [`SqlContext::interrupt`].
+pub const INTERRUPT_EVERY: u32 = 64;
+
+/// Asked while rows are read: true ends the statement with
+/// [`SqlError::Cancelled`].
+pub type Interrupt = std::rc::Rc<dyn Fn() -> bool>;
+
 impl SqlContext {
+    /// One row read: every [`INTERRUPT_EVERY`] rows, the first
+    /// included, ask [`SqlContext::interrupt`] whether to end.
+    pub fn poll_interrupt(&mut self) -> Result<()> {
+        let Some(f) = &self.interrupt else {
+            return Ok(());
+        };
+        let tick = self.interrupt_ticks;
+        self.interrupt_ticks = tick.wrapping_add(1);
+        if tick.is_multiple_of(INTERRUPT_EVERY) && f() {
+            return Err(SqlError::Cancelled);
+        }
+        Ok(())
+    }
+
     /// A context for `job` with a library list.
     #[must_use]
     pub fn new(qsys: ObjectId, job: JobHandle, names: NameContext) -> Self {
@@ -123,6 +148,8 @@ impl SqlContext {
             spill: Box::new(spill::MemSpill::default()),
             nulls_eliminated: false,
             no_commit: false,
+            interrupt: None,
+            interrupt_ticks: 0,
         }
     }
 
@@ -503,6 +530,9 @@ pub fn statement_name(s: &Statement) -> &'static str {
 /// A store failure is a system error to SQL.
 impl From<store::StoreError> for SqlError {
     fn from(e: store::StoreError) -> Self {
+        if matches!(e, store::StoreError::NotAuthorized { .. }) {
+            return Self::NotAuthorized { what: e.to_string() };
+        }
         Self::Database {
             what: e.to_string(),
             msgid: e.msgid().map(str::to_string),
@@ -515,6 +545,7 @@ impl From<db::DbError> for SqlError {
     fn from(e: db::DbError) -> Self {
         use db::DbError as D;
         match &e {
+            D::Store(s @ store::StoreError::NotAuthorized { .. }) => Self::NotAuthorized { what: s.to_string() },
             D::DuplicateKey { .. } => Self::DuplicateKey {
                 what: e.to_string(),
             },

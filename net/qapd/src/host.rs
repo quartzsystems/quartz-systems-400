@@ -16,11 +16,16 @@ use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
 };
+use qap_proto::ops::sql::{
+    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared, Schemas, SetOptions,
+    Tables,
+};
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
 use crate::sessions::EndedBy;
+use crate::sql::{SqlResult, SqlStop};
 
 /// Why the connection is to end, from outside it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,6 +123,47 @@ pub trait Host {
 
     /// What makes the job's secondary threads.
     fn threads(&mut self) -> Threads;
+
+    /// `SetOptions`: commitment control, naming and default schema for
+    /// the connection's next statements; `InUse` while a transaction is
+    /// open. Every `sql_` method answers [`no_database`] unless the host
+    /// has one.
+    fn sql_set_options(&mut self, _options: &SetOptions) -> Result<(), Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["SetOptions"])))
+    }
+    /// Prepare a statement as the signed-on profile.
+    fn sql_prepare(&mut self, _sql: &str) -> SqlResult<Prepared> {
+        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Prepare"]))))
+    }
+    /// Run a prepared statement once per parameter row, stopping at the
+    /// first that fails (`SqlFailure.row`); a query opens a cursor.
+    /// `cancelled` as for [`Host::run_command`].
+    fn sql_execute(&mut self, _req: &Execute, _cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
+        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Execute"]))))
+    }
+    /// Rows from a cursor, at most `max_rows` (0 for all).
+    fn sql_fetch(&mut self, _req: &Fetch, _cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
+        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Fetch"]))))
+    }
+    /// Close a cursor; `NotFound` when it is not open.
+    fn sql_close_cursor(&mut self, _cursor: u32) -> Result<(), Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["CloseCursor"])))
+    }
+    /// Release a prepared statement; `NotFound` when there is none.
+    fn sql_release(&mut self, _statement: u32) -> Result<(), Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["Release"])))
+    }
+    /// Commit the connection's transaction.
+    fn sql_commit(&mut self) -> SqlResult<()> {
+        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Commit"]))))
+    }
+    /// Roll back the connection's transaction.
+    fn sql_rollback(&mut self) -> SqlResult<()> {
+        Err(SqlStop::Refused(no_database(self.message(NO_DATABASE, &["Rollback"]))))
+    }
+    /// The connection ends or runs as another profile: changes not
+    /// committed are rolled back, its statements and cursors go.
+    fn sql_end(&mut self) {}
 }
 
 /// A secondary thread of the connection job: every operation but
@@ -170,4 +216,29 @@ pub trait ThreadHost {
     fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal>;
     /// Output queues, as `WRKOUTQ` lists them, paged.
     fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal>;
+
+    /// Schemas in the catalog, by `LIKE` pattern, paged.
+    fn list_schemas(&mut self, _req: &ListSchemas) -> Result<Schemas, Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["ListSchemas"])))
+    }
+    /// Tables, views, aliases and files of a schema, paged.
+    fn list_tables(&mut self, _req: &ListTables) -> Result<Tables, Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["ListTables"])))
+    }
+    /// A table's columns, in order.
+    fn list_columns(&mut self, _req: &ListColumns) -> Result<Columns, Refusal> {
+        Err(no_database(self.message(NO_DATABASE, &["ListColumns"])))
+    }
+}
+
+/// The message of an `Sql` operation a host without a database answers.
+pub const NO_DATABASE: &str = "SQL0084";
+
+/// The refusal of a host without a database: `Error`, `message`.
+#[must_use]
+pub fn no_database(message: ServerMessage) -> Refusal {
+    Refusal {
+        status: Status::Error,
+        message,
+    }
 }

@@ -492,3 +492,71 @@ Version 4, `Attach`, as built on 2026-11-02 (decisions made in the build, for Co
   then get `SessionEnded` with `TCP1A54` too, and close. `ENDTCPSVR`
   is unchanged: every connection gets `ServerEnding`.
 - `TCP1A58` and `TCP1A59` are in `QTCPMSG`.
+
+Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to review):
+
+- The lane: `Command` requests and `Sql` 1 to 8 (`Op::in_lane`) go to
+  the connection job's own thread in arrival order; `ListSchemas`,
+  `ListTables` and `ListColumns` run on the secondary threads. The
+  `Sql` rules live in `net/qapd/src/sql.rs` (`SqlStop`: `SqlError`
+  with `SqlFailure` and the SQL message, a `Refusal` for `NotFound`,
+  `NotAuthorized` and `InUse`, or `Cancelled` with the body so far).
+- Cancel: an `Execute` or `Fetch` the host finished after the client
+  cancelled still ends `Cancelled`: the cursor it opened or read is
+  closed, `cursor` none or `end` 0, with `SQL0952` (added to
+  `QSQLMSG`). The connection job asks the engine to end a running
+  statement with the file `/run/qs400/sqlcancel/<job number>`
+  (`stg::sql_cancel_path`); the engine looks for it every 64 rows it
+  reads (`SqlContext::interrupt`, `SQL0952`, SQLSTATE `57014`). The
+  lane also looks between parameter rows and between fetch batches of
+  100 rows.
+- Statements run through the job's embedded SQL (`sql_run`, the
+  job's own session in the storage service), so as the signed-on
+  profile with the store's authority checks. An authority failure is
+  now the engine's `SQL0551` (SQLSTATE `42501`) rather than
+  `SQL0901`; QAP answers it `NotAuthorized` with that message.
+  Every other failure is `SqlError` with the engine's SQLSTATE,
+  SQLCODE and its own text as the message text.
+- Statements and cursors are the job's embedded scope `QAP:LANE`; its
+  commitment definition is `*SQLQAP`, started at the first statement
+  under a commit level. `ReadUncommitted` is `*CHG`, `ReadCommitted`
+  `*CS`, `RepeatableRead` and `Serializable` `*ALL` (the engine has no
+  `*RR`). Cursors are opened `WITH HOLD`: they stay open across
+  `Commit` and `Rollback`. `Commit` and `Rollback` without commitment
+  control answer `Ok`.
+- `SetOptions` is `InUse` (`SQL0752`, added) once a statement other
+  than a query ran under a commit level since the last `Commit` or
+  `Rollback`. The default schema is `SET SCHEMA` (none: `SET SCHEMA
+  DEFAULT`).
+- When the connection closes, and when the job runs as another
+  profile (sign-off, resume), the lane rolls back, ends the scope
+  `QAP:` (its cursors and statements go) and resets the options. The
+  job's end rolls back any commitment definition left as well.
+- Values by the engine's `DESCRIBE` (which now also gives each
+  entry's CCSID): integers `Integer`; `DECIMAL` and `NUMERIC` the
+  engine's exact text; `REAL` and `DOUBLE` the shorter of the plain and
+  E notation that reads back the same; `CHAR`, `VARCHAR`, `GRAPHIC`,
+  `VARGRAPHIC` `Text`, with CCSID 37 (graphic 1200) when the field has
+  none; a DDS `H` field or CCSID 65535 `Binary`, its CP037 bytes;
+  dates, times and timestamps as milliseconds, timestamps with scale
+  6. A parameter the engine cannot take (a `DECFLOAT` special value,
+  digits past 63) is `SqlError` `22018` (`SQL0302`) for its row.
+- Catalog lists read `QSYS2.SYSSCHEMAS` and `SYSTABLES` (indexes left
+  out; `T` table, `V` view, `A` alias, `P` physical file, `L`
+  logical file) on the thread's own link, match the `LIKE` pattern and
+  cut the page in the job, sorted by name. `ListColumns` prepares
+  `SELECT *` from the table (the authority check and the types of
+  `Prepare`) and takes names and headings from `SYSCOLUMNS`.
+- Engine gaps met, left to the database: no `DECFLOAT`, `BINARY`,
+  `VARBINARY`, `BLOB`, `CLOB` or `BOOLEAN`, and timestamps only to the
+  microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
+  value is stored fitted to its field's scale, 0 for SQL's, so
+  `4.5` reads back `4`; the commitment definition keeps the lock
+  level of its first statement; a default schema does not apply under
+  `System` naming; `Release` cannot drop the engine's prepared text,
+  which stays until the connection ends; `Prepare` gives no column
+  headings, so `label` is the name, and `SELECT *` gives system
+  names. The storage service answers one request at a time, so while
+  a statement runs there, other jobs' storage requests and this
+  connection's catalog lists wait for it: the lanes hold in the
+  connection job, not yet end to end.

@@ -2359,6 +2359,7 @@ dependencies = [
 name = "qsjob"
 version = "0.1.0"
 dependencies = [
+ "blockdev",
  "ccsid",
  "certs",
  "cmd",
@@ -2401,6 +2402,7 @@ dependencies = [
  "qsh",
  "qsh-job",
  "qshterm",
+ "qsname",
  "qsweb",
  "regfac",
  "release",
@@ -2413,8 +2415,10 @@ dependencies = [
  "seu",
  "sockets",
  "spool",
+ "sql",
  "sst",
  "stg",
+ "store",
  "svctools",
  "sys-cpps",
  "sysapi",

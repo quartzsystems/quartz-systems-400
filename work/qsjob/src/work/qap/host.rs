@@ -10,10 +10,13 @@
 //! its own (`hello_thread`), sharing the job's security session: the
 //! system's description and messages, sign-on, sessions and passwords
 //! through the storage service (`stgsvc/qap.rs`). Passwords and tokens
-//! go to the service and nowhere else.
+//! go to the service and nowhere else. `Sql` runs in the lane over the
+//! job's own link and its catalog lists on a thread's (`sql.rs`,
+//! `crate::qapsql`).
 
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ipc::WireError;
@@ -23,15 +26,22 @@ use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
 };
+use qap_proto::ops::sql::{
+    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared, Schemas, SetOptions,
+    Tables,
+};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
 use qapd::sessions::EndedBy;
+use qapd::sql::SqlResult;
 use qapd::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use stg::{Client, Link, QapRefused, QapSession, Shared};
 use wm::ctl::{Start, ToJob};
 
+use super::sql::{COMMAND, IDLE, LaneDb, Running, SQL, ThreadDb};
 use crate::console::Console;
+use crate::qapsql::{Lane, catalog};
 
 /// How often the job asks whether an operator ended it.
 const CHECK: Duration = Duration::from_millis(500);
@@ -55,7 +65,7 @@ fn sysval_text(link: &mut Link, name: &str) -> String {
 /// Message `id`, looked up in this job, so in its user's language once
 /// the job runs as the signed-on profile (its library list finds the
 /// message files).
-fn message(link: &mut Link, id: &str, data: &[&str]) -> ServerMessage {
+pub(super) fn message(link: &mut Link, id: &str, data: &[&str]) -> ServerMessage {
     let file = sysapi::param::file_of(id);
     let desc = link.with(|l| l.describe(id.to_string(), file.into(), "*LIBL".into()));
     match desc {
@@ -99,6 +109,10 @@ pub struct JobHost {
     pub console: Console,
     me: u32,
     checked: Instant,
+    /// The connection's statements, cursors and transaction.
+    sql: Lane,
+    /// What runs in the lane, for the canceller.
+    running: Running,
 }
 
 impl JobHost {
@@ -109,6 +123,8 @@ impl JobHost {
             console: Console::new(ctl, link, start),
             me: start.number,
             checked: Instant::now(),
+            sql: Lane::default(),
+            running: Arc::new(AtomicU8::new(IDLE)),
         }
     }
 
@@ -168,7 +184,10 @@ impl Host for JobHost {
     }
 
     fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
-        super::commands::run(&mut self.console, command, cancelled)
+        self.running.store(COMMAND, Ordering::SeqCst);
+        let r = super::commands::run(&mut self.console, command, cancelled);
+        self.running.store(IDLE, Ordering::SeqCst);
+        r
     }
 
     fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>) {
@@ -187,9 +206,53 @@ impl Host for JobHost {
     }
 
     /// `Cancel` of a running command ends its request, as System
-    /// Request option 2 does.
+    /// Request option 2 does; of a running statement, asks the engine to
+    /// end it.
     fn canceller(&mut self) -> Option<Canceller> {
-        Some(Arc::new(crate::sysdsp::keys::end_from_outside))
+        let (running, number) = (Arc::clone(&self.running), self.me);
+        Some(Arc::new(move || match running.load(Ordering::SeqCst) {
+            COMMAND => crate::sysdsp::keys::end_from_outside(),
+            SQL => super::sql::ask_cancel(number),
+            _ => {}
+        }))
+    }
+
+    fn sql_set_options(&mut self, options: &SetOptions) -> Result<(), Refusal> {
+        self.sql.set_options(&mut LaneDb(&self.link), options)
+    }
+
+    fn sql_prepare(&mut self, sql: &str) -> SqlResult<Prepared> {
+        self.sql.prepare(&mut LaneDb(&self.link), sql)
+    }
+
+    fn sql_execute(&mut self, req: &Execute, cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
+        let (lane, link) = (&mut self.sql, &self.link);
+        super::sql::running(&self.running, self.me, || lane.execute(&mut LaneDb(link), req, cancelled))
+    }
+
+    fn sql_fetch(&mut self, req: &Fetch, cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
+        let (lane, link) = (&mut self.sql, &self.link);
+        super::sql::running(&self.running, self.me, || lane.fetch(&mut LaneDb(link), req, cancelled))
+    }
+
+    fn sql_close_cursor(&mut self, cursor: u32) -> Result<(), Refusal> {
+        self.sql.close_cursor(&mut LaneDb(&self.link), cursor)
+    }
+
+    fn sql_release(&mut self, statement: u32) -> Result<(), Refusal> {
+        self.sql.release(&mut LaneDb(&self.link), statement)
+    }
+
+    fn sql_commit(&mut self) -> SqlResult<()> {
+        self.sql.end_unit(&mut LaneDb(&self.link), true)
+    }
+
+    fn sql_rollback(&mut self) -> SqlResult<()> {
+        self.sql.end_unit(&mut LaneDb(&self.link), false)
+    }
+
+    fn sql_end(&mut self) {
+        self.sql.end(&mut LaneDb(&self.link));
     }
 
     fn threads(&mut self) -> Threads {
@@ -385,5 +448,17 @@ impl ThreadHost for JobThread {
     fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal> {
         let r = self.link.with(|l| l.qap_outq_list(req.clone()));
         r.map_err(|e| self.refusal(&e))
+    }
+
+    fn list_schemas(&mut self, req: &ListSchemas) -> Result<Schemas, Refusal> {
+        catalog::list_schemas(&mut ThreadDb(&mut self.link), req)
+    }
+
+    fn list_tables(&mut self, req: &ListTables) -> Result<Tables, Refusal> {
+        catalog::list_tables(&mut ThreadDb(&mut self.link), req)
+    }
+
+    fn list_columns(&mut self, req: &ListColumns) -> Result<Columns, Refusal> {
+        catalog::list_columns(&mut ThreadDb(&mut self.link), req)
     }
 }

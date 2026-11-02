@@ -26,11 +26,14 @@ pub struct Col {
     pub len: i16,
     /// Null-capable.
     pub null: bool,
+    /// The CCSID of character data: 65535 for bytes (`FOR BIT DATA`,
+    /// DDS `H`); 0 when the job's or not character.
+    pub ccsid: u16,
 }
 
 impl Col {
     fn new(base: i16, len: i16, null: bool) -> Self {
-        Self { base, len, null }
+        Self { base, len, null, ccsid: 0 }
     }
 
     fn int() -> Self {
@@ -63,7 +66,7 @@ fn of_field(f: &dds::FieldDef) -> Col {
     let len = i16::try_from(f.length).unwrap_or(i16::MAX);
     let dec = |p: u32, s: u8| i16::try_from(p * 256 + u32::from(s)).unwrap_or(i16::MAX);
     let n = f.allow_null;
-    match f.data_type {
+    let mut c = match f.data_type {
         D::Char | D::Hex if f.varlen.is_some() => Col::new(448, len, n),
         D::Char | D::Hex => Col::new(452, len, n),
         D::Graphic | D::DbcsOpen if f.varlen.is_some() => Col::new(464, len, n),
@@ -79,7 +82,12 @@ fn of_field(f: &dds::FieldDef) -> Col {
         D::Date => Col::new(384, DATE_LEN, n),
         D::Time => Col::new(388, 8, n),
         D::Timestamp => Col::new(392, 26, n),
-    }
+    };
+    c.ccsid = match f.data_type {
+        D::Hex => 65535,
+        _ => f.ccsid.unwrap_or(0),
+    };
+    c
 }
 
 /// An entry for a `CAST` type.
@@ -401,7 +409,7 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
 }
 
 /// `DESCRIBE` of prepared `text` as a reply: one row per entry
-/// (SQLTYPE, SQLLEN, SQLNAME).
+/// (SQLTYPE, SQLLEN, SQLNAME, CCSID).
 pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming, input: bool) -> Reply {
     let p = match prepare(text, naming) {
         Ok(p) => p,
@@ -410,7 +418,14 @@ pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming
     ctx.naming = naming;
     let rows = entries(txn, ctx, &p.statement, input)
         .into_iter()
-        .map(|(c, n)| vec![Value::int(i64::from(c.sqltype())), Value::int(i64::from(c.len)), Value::Str(n)])
+        .map(|(c, n)| {
+            vec![
+                Value::int(i64::from(c.sqltype())),
+                Value::int(i64::from(c.len)),
+                Value::Str(n),
+                Value::int(i64::from(c.ccsid)),
+            ]
+        })
         .collect();
     Reply { sqlca: code(0, "00000"), rows }
 }

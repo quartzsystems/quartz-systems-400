@@ -26,6 +26,8 @@ mod platform;
 mod httpenv;
 #[cfg(any(target_os = "linux", test))]
 mod printmap;
+#[cfg(any(target_os = "linux", test))]
+mod qapsql;
 #[cfg(target_os = "linux")]
 mod qsh;
 #[cfg(target_os = "linux")]

@@ -773,6 +773,7 @@ fn scan_table(
                     None => pm.read_entries(txn, k)?,
                 };
                 for s in slots {
+                    ev.ctx.poll_interrupt()?;
                     rows.push(row_of(&t.format, &s)?);
                 }
             }
@@ -789,6 +790,7 @@ fn scan_table(
         }
         if let Some(pf) = base_pf {
             for s in pf.scan(txn, 1, usize::MAX)? {
+                ev.ctx.poll_interrupt()?;
                 rows.push(row_of(&t.format, &s)?);
             }
         } else {
@@ -799,6 +801,7 @@ fn scan_table(
                 Ok(true)
             })?;
             for s in &slots {
+                ev.ctx.poll_interrupt()?;
                 rows.push(row_of(&t.format, s)?);
             }
             let _ = Core::load;
@@ -822,6 +825,7 @@ fn filter_rows(
     }
     let mut kept = Vec::with_capacity(rows.len());
     for r in rows {
+        ev.ctx.poll_interrupt()?;
         let env = outer.with(scan.schema.clone(), r);
         let mut ok = true;
         for p in &scan.preds {
@@ -972,6 +976,7 @@ fn join(
     for l in left_rows {
         let mut matched = false;
         for (ri, r) in right_rows.iter().enumerate() {
+            ev.ctx.poll_interrupt()?;
             let mut combined = l.clone();
             combined.extend(r.iter().cloned());
             let hit = match on {

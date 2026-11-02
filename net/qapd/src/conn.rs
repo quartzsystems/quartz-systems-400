@@ -2,9 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The connection job's own thread: the command lane, where `Command`
-//! requests run one at a time in arrival order (they share the job's
-//! state), and the events when the server or an operator ends the
+//! The connection job's own thread: the lane, where `Command` requests
+//! and `Sql` operations 1 to 8 run one at a time in arrival order (they
+//! share the job's state), and the events when the server or an operator ends the
 //! connection. Every other request runs in [`crate::lanes`] meanwhile.
 //! What the threads share: the version, the session, the replies
 //! (only the version's values, split to fit a frame, `Cancelled` when
@@ -159,7 +159,7 @@ struct Main<'h, H: Host> {
 }
 
 impl<H: Host> Main<'_, H> {
-    /// Run one `Command` request.
+    /// Run one request of the lane.
     fn command(&mut self, op: Op, req: &Envelope) {
         if self.shared.cancelled_before(req) {
             return;
@@ -168,6 +168,8 @@ impl<H: Host> Main<'_, H> {
         if swaps != self.seen {
             self.seen = swaps;
             self.host.swapped();
+            // Another profile: the last one's statements go.
+            self.host.sql_end();
         }
         *lock(&self.running.id) = Some(req.request_id);
         let a = match op {
@@ -180,6 +182,10 @@ impl<H: Host> Main<'_, H> {
                 },
                 Err(_) => Answer::status(Status::InvalidRequest),
             },
+            op if op.code().0 == Service::Sql => {
+                let (cancels, id) = (&self.shared.cancels, req.request_id);
+                crate::sql::lane(self.host, op, req, &|| cancelled(cancels, id))
+            }
             _ => Answer::status(Status::InvalidRequest),
         };
         *lock(&self.running.id) = None;
@@ -263,7 +269,7 @@ impl<H: Host> Main<'_, H> {
     fn run(&mut self, rx: &Receiver<ToMain>, poll: Duration) -> Closed {
         loop {
             match rx.recv_timeout(poll) {
-                Ok(ToMain::Command(op, req)) => self.command(op, &req),
+                Ok(ToMain::Lane(op, req)) => self.command(op, &req),
                 Ok(ToMain::Closed(why)) => return why,
                 Err(RecvTimeoutError::Timeout) => {}
                 // Every sender reports before it goes.
@@ -333,6 +339,8 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
         Ok(why) => why,
         Err(p) => watch.panicked(&*p),
     };
+    // Changes not committed are rolled back with the connection.
+    let _ = panic::catch_unwind(AssertUnwindSafe(|| m.host.sql_end()));
     // A session outlives its connection until its idle timeout.
     let session = lock(&shared.session).take();
     if let Some((_, profile)) = &session {

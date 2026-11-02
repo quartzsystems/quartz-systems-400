@@ -29,3 +29,11 @@ pub use wm::table::JobInfo;
 
 /// Where the service listens for job connections.
 pub const SOCKET: &str = "/run/qs400/stg";
+
+/// The file whose presence asks the service to end job `number`'s
+/// running SQL statement (QAP's cancel): the engine looks for it
+/// between rows, the job makes it and removes it.
+#[must_use]
+pub fn sql_cancel_path(number: u32) -> String {
+    format!("/run/qs400/sqlcancel/{number:06}")
+}

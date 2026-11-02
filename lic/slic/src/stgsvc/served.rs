@@ -1270,6 +1270,11 @@ impl Service for Served<'_> {
                 Session::with_ctx(Box::new(MainStore::new(Rc::clone(&shared))), ctx)
             });
             s.ctx.names = names;
+            // The job's own thread can be asked to end a statement.
+            if !c.thread {
+                let flag = stg::sql_cancel_path(c.job.number);
+                s.ctx.interrupt = Some(Rc::new(move || std::path::Path::new(&flag).exists()));
+            }
             let req = Request { scope, desc, inputs: inputs.iter().map(from_wire).collect() };
             s.run(&req).to_wire()
         })
