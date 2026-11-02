@@ -277,3 +277,24 @@ pub fn end_all(ctx: &JobCtx) {
         sessions().lock().unwrap_or_else(PoisonError::into_inner).clear();
     }
 }
+
+/// `qap_pwd_status`: the profile's password expiry (its interval, else
+/// `QPWDEXPITV`, from the last change; now when it is set expired) and
+/// `QPWDEXPWRN`.
+pub fn pwd_status(system: &mut System, ctx: &JobCtx) -> (Option<i64>, u16) {
+    let user = ctx.session.borrow().principal.user.clone();
+    let policy = sec::password::policy::Policy::from_sysvals(&|n: &str| sysval_text(system, n));
+    let warn = u16::try_from(policy.expwrn).unwrap_or(u16::MAX);
+    let Some(p) = read(system, &user) else {
+        return (None, warn);
+    };
+    let ms = |secs: u64| i64::try_from(secs).unwrap_or(i64::MAX).saturating_mul(1000);
+    let expires = if p.pwdexp {
+        Some(ms(now_unix()))
+    } else {
+        policy
+            .interval(&p)
+            .map(|days| ms(p.pwd_changed.saturating_add(u64::from(days) * 86_400)))
+    };
+    (expires, warn)
+}

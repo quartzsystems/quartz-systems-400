@@ -580,6 +580,10 @@ impl Service for Served<'_> {
         super::qap::end_all(self.ctx);
     }
 
+    fn qap_pwd_status(&mut self) -> (Option<i64>, u16) {
+        super::qap::pwd_status(self.system, self.ctx)
+    }
+
     fn host_token(
         &mut self,
         user: String,

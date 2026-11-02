@@ -639,6 +639,9 @@ ipc::rpc! {
     744 => fn qap_detach / QapDetach (token: Vec<u8>) -> ();
     /// End every session (the QAP server ended).
     745 => fn qap_end_all / QapEndAll () -> ();
+    /// When the job's user's password expires (milliseconds since 1970,
+    /// `None` when it does not), and `QPWDEXPWRN`.
+    746 => fn qap_pwd_status / QapPwdStatus () -> (Option<i64>, u16);
 
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the

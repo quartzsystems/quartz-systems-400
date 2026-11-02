@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
 use qap_proto::types::ObjectName;
-use qap_proto::ops::signon::SignOnReply;
+use qap_proto::ops::signon::{PasswordStatus, SignOnReply};
 use qap_proto::ops::system::SystemInfo;
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
@@ -92,6 +92,8 @@ pub trait Host {
     fn sign_off(&mut self, token: &Token);
     /// The connection closed: the session waits to be resumed.
     fn detach(&mut self, token: &Token);
+    /// When the signed-on profile's password expires.
+    fn password_status(&mut self) -> PasswordStatus;
 
     /// Run a CL command as the signed-on profile; every message it sent
     /// its caller, oldest first.

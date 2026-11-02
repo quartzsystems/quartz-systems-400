@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 
 use ipc::Wire;
 use qap_proto::ops::connection::Hello;
-use qap_proto::ops::signon::SignOnReply;
+use qap_proto::ops::signon::{PasswordStatus, SignOnReply};
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Envelope, Kind, Op, Reassembly, Secret, ServerMessage, Status, Token};
 use qapd::frames::FrameReader;
@@ -297,6 +297,10 @@ impl Host for MemHost {
         let now = *self.c.clock.lock().unwrap();
         self.c.sessions.lock().unwrap().detach(token, self.job, now);
         self.c.running_as.lock().unwrap().remove(&self.job);
+    }
+
+    fn password_status(&mut self) -> PasswordStatus {
+        PasswordStatus::default()
     }
 
     fn run_command(&mut self, _command: &str) -> Ran {
