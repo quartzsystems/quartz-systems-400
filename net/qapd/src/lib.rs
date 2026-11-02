@@ -12,6 +12,8 @@
 //! - `conn`: the connection's thread: the order rules, the services,
 //!   the events.
 //! - [`host`]: what the connection reaches of the system.
+//! - [`sessions`], [`tickets`]: the storage service's tables.
+//! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -19,6 +21,7 @@
 pub mod frames;
 pub mod host;
 pub mod sessions;
+pub mod testing;
 pub mod tickets;
 
 mod conn;
