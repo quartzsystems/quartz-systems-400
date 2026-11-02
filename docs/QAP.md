@@ -114,7 +114,7 @@ Commands run in the connection job, as the signed-on profile, with its job descr
 
 | Op | Statuses |
 | --- | --- |
-| `RunCommand` | `Ok`; `Error` when the command ended with an escape message (the message is that one, and the body is still `CommandReply`); `NotFound` (no such command); `NotAuthorized` (to the command or what it names); `Cancelled` (the command was ended) |
+| `RunCommand` | `Ok`; `Error` when the command ended with an escape message (the message is that one, and the body is still `CommandReply`); `NotFound` (no such command); `NotAuthorized` (to the command or what it names); `Cancelled` (the command was ended; the body is still `CommandReply`, the message the one the end caused) |
 | `CheckCommand` | `Ok`; `Error` when the check found errors (the body is still the messages); `NotFound` |
 | `DescribeCommand` | `Ok`; `NotFound`; `NotAuthorized` |
 
@@ -280,9 +280,14 @@ to points the draft above leaves open:
 - A split reply cuts the encoded body: the client joins the bodies of
   its frames in order and decodes once. Every frame carries the
   status; the message rides on the last.
-- `Cancel` gets no reply of its own. A request still outstanding ends
-  with `Cancelled` and an empty body; a cancel naming nothing
+- `Cancel` gets no reply of its own; a cancel naming nothing
   outstanding is ignored. The server reads only its `request_id`.
+- A request cancelled before it started ends with `Cancelled` and an
+  empty body.
+- A request cancelled once started ends with `Cancelled` and the
+  operation's own body and message, as far as it got: `RunCommand`'s
+  is its `CommandReply`, every message included, the one the cancel
+  caused too.
 - A first request other than `Hello` gets `InvalidRequest` and the
   connection closes. `SignOn` or `Resume` on a signed-on connection
   gets `InvalidRequest`; the connection and session stay.
@@ -336,4 +341,4 @@ Version 2, settled with Cody on 2026-11-02:
 - `RunCommand` and `CheckCommand` run in the connection job through
   the same analyzer as Command Entry. `Cancel` of a running command
   ends its request as System Request option 2 does (`CPF1907`), and
-  the reply is `Cancelled`.
+  the reply is `Cancelled` with the command's `CommandReply`.

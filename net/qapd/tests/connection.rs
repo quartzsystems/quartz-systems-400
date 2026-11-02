@@ -123,7 +123,9 @@ fn cancel_running_and_waiting() {
     let a = r.client.reply(running);
     let b = r.client.reply(waiting);
     assert_eq!((a.status, b.status), (Status::Cancelled, Status::Cancelled));
-    assert!(a.body.is_empty());
+    // Started: its own body. Not started: none.
+    assert!(!a.body.is_empty());
+    assert!(b.body.is_empty());
     assert_eq!(r.client.call(Op::Ping, &()).status, Status::Ok);
 }
 

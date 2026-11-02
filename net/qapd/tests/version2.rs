@@ -96,6 +96,13 @@ fn cancel_ends_a_running_command() {
     let e = r.client.reply(id);
     assert_eq!(e.status, Status::Cancelled);
     assert!(at.elapsed() < Duration::from_secs(5), "ended where it was");
+    // Started, so the command's own reply: the job and the end message.
+    assert_eq!(e.message.as_ref().unwrap().id, "CPF1907");
+    let reply: CommandReply = e.body_as().unwrap();
+    assert_eq!(reply.job.name, "QAPCNN");
+    let end = reply.messages.last().unwrap();
+    assert_eq!(end.id, "CPF1907");
+    assert!(!end.help.is_empty(), "second level included");
     // The next command is not cancelled by the old request.
     assert_eq!(run(&mut r, "DLYJOB DLY(1)").status, Status::Ok);
 }

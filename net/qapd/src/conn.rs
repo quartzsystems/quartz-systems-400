@@ -5,7 +5,8 @@
 //! The connection's thread: requests in arrival order, `Hello` first
 //! and once, the version it agrees and only that version's operations
 //! and values, the operations allowed before sign-on, replies split to
-//! fit a frame, cancels honoured before and after an operation runs,
+//! fit a frame, cancels honoured before an operation runs (an empty
+//! reply) and after (its own reply, status `Cancelled`),
 //! and the events when the server or an operator ends the connection.
 
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
@@ -116,8 +117,12 @@ impl<H: Host> Conn<'_, H> {
                 a
             }
         };
+        // Cancelled once started: the operation's own body and message.
         let a = if cancelled(&self.cancels, req.request_id) {
-            Answer::status(Status::Cancelled)
+            Answer {
+                status: Status::Cancelled,
+                ..a
+            }
         } else {
             a
         };
