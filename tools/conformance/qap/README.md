@@ -33,9 +33,12 @@ digits, graphic literals within CP037. The engine parses `CREATE ALIAS`
 but does not run it yet, so the fixture's alias `HLINV.HW` is left out. A column's long name takes
 a system name (`MANUFACTURER FOR COLUMN MANUFACT`), the view is
 `ASSETSACT` (the fixture's `ASSETS_ACTIVE`), and the fixture's logical
-file `ASSETSL1` has no SQL statement. `SLOW` is not slow by itself: join
-three copies (`SELECT COUNT(*) FROM HLTEST.SLOW A, HLTEST.SLOW B,
-HLTEST.SLOW C`) for a query to cancel.
+file `ASSETSL1` has no SQL statement. `SLOW` is not slow by itself: the
+query in the script's comment above it nests two correlated `EXISTS`
+over it and runs long a row at a time. Do not cancel-test with a join of
+several copies: the engine builds a join's rows in the storage
+service's memory, and an allocation that fails ends the service (and
+the IPL).
 
 `tools/conformance/tests/qap_setup.rs` runs the script over a store in
 memory, as `RUNSQLSTM` does: `cargo test -p conformance --test qap_setup`.

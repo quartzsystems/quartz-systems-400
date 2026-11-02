@@ -116,8 +116,10 @@ LABEL ON TABLE HLTEST.JRN IS 'Journaled';
 CREATE TABLE HLTEST.NOJRN (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(20));
 LABEL ON TABLE HLTEST.NOJRN IS 'Not journaled';
 
--- For cancel tests: 300 rows; a query over three copies runs long:
--- SELECT COUNT(*) FROM HLTEST.SLOW A, HLTEST.SLOW B, HLTEST.SLOW C
+-- For cancel tests: 300 rows. This runs long, a row at a time (a join
+-- would build its rows in the storage service's memory):
+-- SELECT COUNT(*) FROM HLTEST.SLOW A WHERE EXISTS (SELECT 1 FROM HLTEST.SLOW B
+--   WHERE EXISTS (SELECT 1 FROM HLTEST.SLOW C WHERE C.ID > A.ID + B.ID + 1000000))
 CREATE TABLE HLTEST.SLOW (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(20));
 LABEL ON TABLE HLTEST.SLOW IS 'Three copies joined run long';
 INSERT INTO HLTEST.SLOW VALUES
