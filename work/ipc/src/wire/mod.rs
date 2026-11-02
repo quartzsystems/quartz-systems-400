@@ -109,6 +109,27 @@ mod tests {
         2 => Line { from, to, bold },
     });
 
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    enum Code {
+        Low,
+        High { n: u8 },
+    }
+    crate::wire_enum!(Code: u16 {
+        0 => Low,
+        300 => High { n },
+    });
+
+    #[test]
+    fn wide_tags() {
+        assert_eq!(encode(&Code::Low), [0, 0]);
+        assert_eq!(encode(&Code::High { n: 9 }), [0x2C, 0x01, 9]);
+        assert_eq!(decode::<Code>(&[0x2C, 0x01, 9]).unwrap(), Code::High { n: 9 });
+        assert!(matches!(
+            decode::<Code>(&[1, 1]),
+            Err(WireError::WideTag { tag: 257, .. })
+        ));
+    }
+
     #[test]
     fn round_trip() {
         let p = Point {

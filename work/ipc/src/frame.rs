@@ -13,7 +13,12 @@ pub const MAX_FRAME: usize = 256 << 20;
 
 /// Write one frame.
 pub fn write_frame(w: &mut impl Write, payload: &[u8]) -> Result<(), WireError> {
-    if payload.len() > MAX_FRAME {
+    write_frame_max(w, payload, MAX_FRAME)
+}
+
+/// Write one frame of at most `max` bytes.
+pub fn write_frame_max(w: &mut impl Write, payload: &[u8], max: usize) -> Result<(), WireError> {
+    if payload.len() > max.min(MAX_FRAME) {
         return Err(WireError::TooLong { len: payload.len() });
     }
     let mut buf = Vec::with_capacity(4 + payload.len());
@@ -25,6 +30,12 @@ pub fn write_frame(w: &mut impl Write, payload: &[u8]) -> Result<(), WireError> 
 
 /// Read one frame; [`WireError::Closed`] at a clean end of stream.
 pub fn read_frame(r: &mut impl Read) -> Result<Vec<u8>, WireError> {
+    read_frame_max(r, MAX_FRAME)
+}
+
+/// Read one frame of at most `max` bytes; a longer one is refused
+/// before its bytes are read.
+pub fn read_frame_max(r: &mut impl Read, max: usize) -> Result<Vec<u8>, WireError> {
     let mut len = [0u8; 4];
     match r.read_exact(&mut len) {
         Ok(()) => {}
@@ -32,7 +43,7 @@ pub fn read_frame(r: &mut impl Read) -> Result<Vec<u8>, WireError> {
         Err(e) => return Err(e.into()),
     }
     let n = u32::from_le_bytes(len) as usize;
-    if n > MAX_FRAME {
+    if n > max.min(MAX_FRAME) {
         return Err(WireError::TooLong { len: n });
     }
     let mut buf = vec![0u8; n];
@@ -71,5 +82,14 @@ mod tests {
         assert!(matches!(recv::<u32>(&mut r), Err(WireError::Closed)));
         let mut cut = &buf[..6];
         assert!(matches!(read_frame(&mut cut), Err(WireError::Closed)));
+    }
+
+    #[test]
+    fn frame_limit() {
+        let mut buf = Vec::new();
+        write_frame(&mut buf, &[7; 9]).unwrap();
+        assert!(matches!(read_frame_max(&mut buf.as_slice(), 8), Err(WireError::TooLong { len: 9 })));
+        assert_eq!(read_frame_max(&mut buf.as_slice(), 9).unwrap(), [7; 9]);
+        assert!(matches!(write_frame_max(&mut Vec::new(), &[0; 9], 8), Err(WireError::TooLong { len: 9 })));
     }
 }

@@ -23,6 +23,14 @@ pub enum WireError {
         /// The tag.
         tag: u8,
     },
+    /// A wide enum tag (`wire_enum!(T: u16 { .. })`) no variant has.
+    #[error("unknown tag {tag} for {what}")]
+    WideTag {
+        /// The type.
+        what: &'static str,
+        /// The tag.
+        tag: u64,
+    },
     /// A string that is not UTF-8.
     #[error("string is not UTF-8")]
     Utf8,

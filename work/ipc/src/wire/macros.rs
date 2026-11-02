@@ -24,9 +24,31 @@ macro_rules! wire_struct {
 
 /// Implement [`Wire`](crate::Wire) for an enum of unit and struct-like
 /// variants, each with a fixed tag:
-/// `wire_enum!(Shape { 0 => Empty, 1 => Dot { at } });`.
+/// `wire_enum!(Shape { 0 => Empty, 1 => Dot { at } });`. The tag is one
+/// byte; `wire_enum!(Code: u16 { ... })` makes it a wider unsigned
+/// integer.
 #[macro_export]
 macro_rules! wire_enum {
+    ($t:ident : $w:ty { $($tag:literal => $v:ident $({ $($f:ident),* $(,)? })?),* $(,)? }) => {
+        impl $crate::Wire for $t {
+            fn put(&self, out: &mut Vec<u8>) {
+                match self {
+                    $( $t::$v $({ $($f),* })? => {
+                        let tag: $w = $tag;
+                        $crate::Wire::put(&tag, out);
+                        $($( $crate::Wire::put($f, out); )*)?
+                    } )*
+                }
+            }
+            fn get(d: &mut $crate::Dec<'_>) -> ::core::result::Result<Self, $crate::WireError> {
+                let tag = <$w as $crate::Wire>::get(d)?;
+                match tag {
+                    $( $tag => ::core::result::Result::Ok($t::$v $({ $($f: $crate::Wire::get(d)?),* })?), )*
+                    tag => ::core::result::Result::Err($crate::WireError::WideTag { what: stringify!($t), tag: u64::from(tag) }),
+                }
+            }
+        }
+    };
     ($t:ident { $($tag:literal => $v:ident $({ $($f:ident),* $(,)? })?),* $(,)? }) => {
         impl $crate::Wire for $t {
             fn put(&self, out: &mut Vec<u8>) {

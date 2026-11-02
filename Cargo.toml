@@ -37,6 +37,7 @@ members = [
     "work/qsjob",
     "work/spool",
     "work/ipc",
+    "work/qap-proto",
     "work/stg",
     "work/print",
     # Security: profiles, passwords, authority, auditing.

@@ -2267,6 +2267,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "qap-proto"
+version = "0.1.0"
+dependencies = [
+ "ipc",
+ "thiserror",
+]
+
+[[package]]
 name = "qdecimal"
 version = "0.1.0"
 dependencies = [
