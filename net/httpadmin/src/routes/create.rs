@@ -524,5 +524,11 @@ fn finish(rq: &Rq<'_>, s: &Settings, a: &Answers) -> Response {
     }
     rq.clear("create.");
     rq.audit_change(&spec.name, "instance created");
+    // Its TLS ports present the certificate of its application ID.
+    let name = spec.name.to_ascii_uppercase();
+    if let Err(e) = rq.env().certs.register_instance(&name) {
+        let app = certs::apps::http_server(&name);
+        return rq.done("/instances", msgs::message(Kind::Error, "HTP8126", &[&app, &name, &e.to_string()]));
+    }
     rq.done("/instances", msgs::message(Kind::Done, "HTP8020", &[&spec.name, &spec.root]))
 }

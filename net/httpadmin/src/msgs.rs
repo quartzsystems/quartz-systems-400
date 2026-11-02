@@ -75,7 +75,7 @@ pub const MESSAGES: &[Desc] = &[
         "HTP8021",
         0,
         "HTTP server instance &1 deleted.",
-        "The server root &2 and the registry entry of instance &1 were removed.",
+        "The server root &2, the registry entry and the certificate application ID of instance &1 were removed.",
         "None.",
     ),
     d(
@@ -84,6 +84,20 @@ pub const MESSAGES: &[Desc] = &[
         "Configuration of HTTP server instance &1 changed.",
         "The configuration file of instance &1 was replaced. The previous file was kept as httpd.conf.bak in the same directory.",
         "A running instance uses the new configuration after it is restarted.",
+    ),
+    d(
+        "HTP8023",
+        10,
+        "HTTP server instance &1 deleted; files under &2 remain.",
+        "The registry entry of instance &1 was removed, but its files under &2 could not all be removed: &3",
+        "Remove the directory with RMVDIR SUBTREE(*ALL) as a user authorized to it.",
+    ),
+    d(
+        "HTP8024",
+        10,
+        "HTTP server instance &1 deleted; certificate application &2 remains.",
+        "Instance &1 was removed, but its certificate application ID &2 could not be removed: &3",
+        "Remove the application ID on the Certificate applications page, or leave it for an instance of the same name.",
     ),
     d(
         "HTP8100",
@@ -161,6 +175,27 @@ pub const MESSAGES: &[Desc] = &[
         "No more HTTP server instances can be created.",
         "The system already has &1 instances, the most Global settings allow.",
         "Delete an instance that is no longer needed, or raise the limit in Global settings.",
+    ),
+    d(
+        "HTP8124",
+        30,
+        "HTTP server instance &1 has no TLS port.",
+        "TLS is used on the ports marked TLS on the Ports & addresses page. Instance &1 has none, so TLS was not enabled.",
+        "Add a port with Use TLS checked on the Ports & addresses page, then enable TLS again.",
+    ),
+    d(
+        "HTP8125",
+        30,
+        "No certificate chosen for application &1.",
+        "Instance &2 presents the certificate assigned to application &1 on its TLS ports. None is assigned or chosen, and store *SYSTEM has no default certificate, so TLS was not enabled.",
+        "Choose a certificate on the TLS page. If the list is empty, create or import a server certificate in store *SYSTEM on the Certificate stores page.",
+    ),
+    d(
+        "HTP8126",
+        30,
+        "Certificate application &1 could not be registered.",
+        "The server presents the certificate of application &1 on the TLS ports of instance &2. Registering the application ID failed: &3",
+        "Apply the TLS page of the instance again; it registers the application ID. If it fails again, check the message's cause.",
     ),
     d(
         "HTP8201",

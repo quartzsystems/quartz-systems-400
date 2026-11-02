@@ -54,7 +54,7 @@ impl Op {
             Op::Start => "Starting an instance submits its job to subsystem QHTTPSVR, which reads the configuration file and listens on its ports. Press OK to start the instances listed below.",
             Op::Stop => "Stopping an instance ends its job in subsystem QHTTPSVR and closes all client connections. Press OK to stop the instances listed below.",
             Op::Restart => "Restarting an instance ends its job in subsystem QHTTPSVR, closing all client connections, then starts it again with the current configuration file. Press OK to restart the instances listed below.",
-            Op::Delete => "Deleting an instance removes its configuration directory and all log files. Press OK to delete the instances listed below, or Cancel to return without deleting.",
+            Op::Delete => "Deleting an instance removes its configuration directory, all log files and its certificate application ID. Press OK to delete the instances listed below, or Cancel to return without deleting.",
         }
     }
 }
@@ -139,7 +139,6 @@ pub fn page(rq: &Rq<'_>, v: &View) -> Response {
         h1: title,
         body,
         help: if op == Op::Delete { "confirm-delete".into() } else { "confirm-instance".into() },
-        generic: op == Op::Delete,
         ..Page::default()
     })
 }
@@ -227,8 +226,17 @@ fn delete(rq: &Rq<'_>, v: &View) -> Message {
     if v.running() {
         return msgs::message(Kind::Error, "HTP8103", &[v.name()]);
     }
-    match instance::delete(rq.env().files.as_ref(), v.name()) {
-        Ok(()) => msgs::message(Kind::Done, "HTP8021", &[v.name(), &v.entry.root]),
-        Err(e) => super::io_error(v, &e.to_string()),
+    let (name, root) = (v.name(), v.entry.root.as_str());
+    let left = match instance::delete(rq.env().files.as_ref(), name) {
+        Ok(left) => left,
+        Err(e) => return super::io_error(v, &e.to_string()),
+    };
+    let app = rq.env().certs.deregister_instance(name).err();
+    match (left, app) {
+        (Some(why), _) => msgs::message(Kind::Info, "HTP8023", &[name, root, &why]),
+        (None, Some(e)) => {
+            msgs::message(Kind::Info, "HTP8024", &[name, &certs::apps::http_server(name), &e.to_string()])
+        }
+        (None, None) => msgs::message(Kind::Done, "HTP8021", &[name, root]),
     }
 }

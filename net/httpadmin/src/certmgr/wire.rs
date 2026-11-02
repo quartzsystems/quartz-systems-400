@@ -93,6 +93,16 @@ pub enum CertCall {
         /// The label, `None` to remove the assignment.
         label: Option<String>,
     },
+    /// `register_instance`.
+    RegisterInstance {
+        /// The instance.
+        instance: String,
+    },
+    /// `deregister_instance`.
+    DeregisterInstance {
+        /// The instance.
+        instance: String,
+    },
     /// `copy`.
     Copy {
         /// The store it is in.
@@ -126,6 +136,13 @@ impl CertCall {
                 | CertCall::Signers
                 | CertCall::Apps
         )
+    }
+
+    /// Whether the administration server sends it as itself: the
+    /// instances' application IDs follow the instances, which any user
+    /// with `*IOSYSCFG` creates and deletes.
+    pub fn by_server(&self) -> bool {
+        matches!(self, CertCall::RegisterInstance { .. } | CertCall::DeregisterInstance { .. })
     }
 
     /// The bytes sent.
@@ -191,6 +208,8 @@ pub fn answer(m: &Manager<'_>, call: CertCall) -> CertReply {
         CertCall::Remove { store, label } => CertReply::Done(m.remove(&store, &label)),
         CertCall::Apps => CertReply::Apps(m.apps()),
         CertCall::Assign { app, label } => CertReply::Done(m.assign(&app, label.as_deref())),
+        CertCall::RegisterInstance { instance } => CertReply::Done(m.register_instance(&instance)),
+        CertCall::DeregisterInstance { instance } => CertReply::Done(m.deregister_instance(&instance)),
         CertCall::Copy { from, label, to } => CertReply::Done(m.copy(&from, &label, &to)),
         CertCall::ExportPkcs12 { store, label, password } => {
             CertReply::Bytes(m.export_pkcs12(&store, &label, &password))
@@ -220,7 +239,15 @@ impl<T: Transport> Remote<T> {
     }
 
     fn done(&self, user: &str, call: &CertCall) -> Result<(), CertFailure> {
-        match self.ask(Some(user), call) {
+        self.done_as(Some(user), call)
+    }
+
+    fn server_done(&self, call: &CertCall) -> Result<(), CertFailure> {
+        self.done_as(None, call)
+    }
+
+    fn done_as(&self, user: Option<&str>, call: &CertCall) -> Result<(), CertFailure> {
+        match self.ask(user, call) {
             Some(CertReply::Done(r)) => r,
             Some(CertReply::Refused(f)) => Err(f),
             _ => Err(silent()),
@@ -351,6 +378,14 @@ impl<T: Transport> Certs for Remote<T> {
             label: label.map(String::from),
         };
         self.done(user, &c)
+    }
+
+    fn register_instance(&self, instance: &str) -> Result<(), CertFailure> {
+        self.server_done(&CertCall::RegisterInstance { instance: instance.into() })
+    }
+
+    fn deregister_instance(&self, instance: &str) -> Result<(), CertFailure> {
+        self.server_done(&CertCall::DeregisterInstance { instance: instance.into() })
     }
 
     fn copy(&self, user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {

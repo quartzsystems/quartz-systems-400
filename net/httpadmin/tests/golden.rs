@@ -229,7 +229,15 @@ fn confirm_delete() {
     let mut b = Browser::signed_on();
     let r = b.get("/instance/WEBSTORE/confirm?op=delete");
     assert_eq!(r.status, 200);
-    assert_golden(&r.text(), "shared/confirm.html", &[]);
+    assert_golden(
+        &r.text(),
+        "shared/confirm.html",
+        &[
+            ("Confirm Delete Instance - QS/400<", "Confirm Delete Instance - QS/400 HTTP Server Administration<"),
+            ("<td class=\"wordmark\">QS/400</td>", "<td class=\"wordmark\">QS/400 HTTP Server Administration</td>"),
+            ("configuration directory and all log files.", "configuration directory, all log files and its certificate application ID."),
+        ],
+    );
 }
 
 /// The wizard as the prototype shows it: creating `WEBSTORE` on a system
@@ -354,7 +362,14 @@ fn instance_tls() {
     let mut b = Browser::signed_on();
     let r = b.get("/instance/WEBSTORE/tls");
     assert_eq!(r.status, 200);
-    assert_golden(&r.text(), "http/instance-tls.html", &[]);
+    assert_golden(
+        &r.text(),
+        "http/instance-tls.html",
+        &[
+            ("The certificate is chosen from the certificates assigned to the instance's certificate application.", "The certificate chosen is assigned to the instance's certificate application."),
+            ("<br><input type=\"checkbox\" name=\"t11\"> TLS 1.1 (not recommended)", "<br><span class=\"small grey\">TLS 1.1 and older are not offered.</span>"),
+        ],
+    );
 }
 
 #[test]

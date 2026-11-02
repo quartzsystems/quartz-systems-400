@@ -107,11 +107,16 @@ impl Local for IfsFiles {
     }
 
     fn remove_tree(&self, path: &str) -> io::Result<()> {
-        if !self.entry(path, "")?.dir {
+        // A link is removed, not followed; an entry that cannot be
+        // looked at is the error, not a directory left non-empty.
+        let s = self.c.stat(path, false).map_err(|e| err(path, e))?;
+        if s.mode & S_IFMT != S_IFDIR {
             return self.remove(path);
         }
-        for e in Local::list(self, path)? {
-            Local::remove_tree(self, &format!("{}/{}", path.trim_end_matches('/'), e.name))?;
+        for d in self.c.read_dir(path).map_err(|e| err(path, e))? {
+            if d.name != "." && d.name != ".." {
+                Local::remove_tree(self, &format!("{}/{}", path.trim_end_matches('/'), d.name))?;
+            }
         }
         self.c.rmdir(path).map_err(|e| err(path, e))
     }

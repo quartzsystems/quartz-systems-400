@@ -476,6 +476,14 @@ pub trait Certs: Send + Sync {
     /// Assign a `*SYSTEM` certificate to an application ID, or with
     /// `None` remove its assignment.
     fn assign(&self, user: &str, app: &str, label: Option<&str>) -> Result<(), CertFailure>;
+    /// Register HTTP instance `instance`'s application ID
+    /// (`QS400_HTTP_SERVER_<NAME>`, a server); one registered already
+    /// is kept. Done as the administration server, for any user who
+    /// may manage instances.
+    fn register_instance(&self, instance: &str) -> Result<(), CertFailure>;
+    /// Remove HTTP instance `instance`'s application ID; one not
+    /// registered is no error.
+    fn deregister_instance(&self, instance: &str) -> Result<(), CertFailure>;
     /// Copy entry `label` of `from`, with its private key, into `to`
     /// under the same label.
     fn copy(&self, user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure>;

@@ -163,7 +163,7 @@ fn why_none(rq: &Rq<'_>, system: &Result<Vec<CertRow>, CertFailure>, empty: bool
 }
 
 /// The label in a certificate option (`label (expires 01/02/28)`).
-fn label_of(option: &str) -> &str {
+pub fn label_of(option: &str) -> &str {
     option.rsplit_once(" (expires ").map_or(option, |(l, _)| l)
 }
 

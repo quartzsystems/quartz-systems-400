@@ -39,8 +39,9 @@ pub fn certs(system: &mut System, principal: &Principal, call: &[u8]) -> Vec<u8>
     let Some(call) = CertCall::decode(call) else {
         return refused("the certificate call was not understood".into());
     };
-    let reader = principal.user == SERVER_USER && !call.changes();
-    if !reader && super::certs::may_manage(Some(principal)).is_err() {
+    // The server reads, and registers its instances' application IDs.
+    let server = principal.user == SERVER_USER && (!call.changes() || call.by_server());
+    if !server && super::certs::may_manage(Some(principal)).is_err() {
         return refused(format!(
             "user {} needs the *ALLOBJ and *SECADM special authorities to manage certificates",
             principal.user

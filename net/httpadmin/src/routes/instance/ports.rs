@@ -157,16 +157,18 @@ fn add(rq: &Rq<'_>, v: &View) -> Result<Message, Message> {
         None => format!("*:{port}"),
     };
     let tls = f.has("tls");
-    let name = v.name().to_string();
+    let name = v.name();
+    let app = super::tls::app_name(v.conf.as_ref(), name);
+    // The port presents the certificate of the instance's application.
+    if tls && app == certs::apps::http_server(name) {
+        rq.env()
+            .certs
+            .register_instance(name)
+            .map_err(|e| msgs::message(Kind::Error, "HTP8126", &[&app, name, &e.to_string()]))?;
+    }
     edit(rq, v, |c| {
         c.add(Directive::new("Listen", &[&listen]));
         if tls {
-            let app = c
-                .sections("VirtualHost")
-                .iter()
-                .map(|s| s.value("SSLAppName"))
-                .find(|a| !a.is_empty())
-                .unwrap_or_else(|| format!("QS400_HTTP_SERVER_{name}"));
             let mut s = Section::new("VirtualHost", &[&listen]);
             s.add(Directive::new("SSLEngine", &["On"]));
             s.add(Directive::new("SSLAppName", &[&app]));

@@ -79,6 +79,8 @@ page and is listed here:
 | `http/instance-config.html` | `47 lines` → `45 lines` | the file the page itself shows has 45 lines |
 | `http/instance-logs.html` | Download link `#` → the logs page's download route | the prototype's link goes nowhere; served, it streams the log |
 | `http/cert-store-system.html` | `Set default` gets `formaction="cert-store-system.html"` | the button posted to Create certificate with nothing to tell it apart; it opens the store's default-certificate page |
+| `shared/confirm.html` | title and wordmark `QS/400` → `QS/400 HTTP Server Administration`; the sentence names the certificate application ID | every page of the product carries its title, the shared patterns too; deleting an instance removes its application ID |
+| `http/instance-tls.html` | description: the certificate chosen is assigned; the TLS 1.1 box → `TLS 1.1 and older are not offered.` | choosing a certificate assigns it; the server never offers TLS 1.1 (`tls::policy`), so the box changed nothing |
 | `http/cert-create-result.html` | `Download`, `Download with chain`, `Assign to application...` get names `download`, `chain`, `assign` | three nameless buttons in one form cannot be told apart |
 
 ## Steps
@@ -104,6 +106,17 @@ stash, which the certificate managers' `*ALLOBJ` and `*SECADM` entitle
 them to, and the stash is rewritten under the new password. A store
 without a stash is still listed (no certificate count) so its password
 can be changed with the current one.
+
+An instance's application ID, `QS400_HTTP_SERVER_<NAME>`, is registered
+when the instance is created, and for one made before that when a TLS
+port is added or its TLS page applied; deleting the instance removes it.
+The `ADMIN` job sends those two calls as itself (`CertCall::by_server`),
+so `*IOSYSCFG` is enough. The TLS page lists the `*SYSTEM` server
+certificates; choosing one assigns it to the ID (`*ALLOBJ` and
+`*SECADM`). Enable TLS needs a TLS port (`HTP8124`) and a certificate:
+assigned, chosen, or the store's default (`HTP8125`). Delete removes
+the registry entry first, then the server root; files left are named
+(`HTP8023`).
 
 Data differences the golden tests apply (`tests/golden.rs`): the store
 paths (`/QIBM/UserData/ICSS/Cert/...`; `*SIGNATUREVERIFICATION` is

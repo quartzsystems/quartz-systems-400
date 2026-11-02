@@ -376,6 +376,14 @@ impl Certs for FixtureCerts {
         self.manager().assign(app, label)
     }
 
+    fn register_instance(&self, instance: &str) -> Result<(), CertFailure> {
+        self.manager().register_instance(instance)
+    }
+
+    fn deregister_instance(&self, instance: &str) -> Result<(), CertFailure> {
+        self.manager().deregister_instance(instance)
+    }
+
     fn copy(&self, _user: &str, from: &str, label: &str, to: &str) -> Result<(), CertFailure> {
         self.manager().copy(from, label, to)
     }
@@ -397,7 +405,7 @@ mod tests {
     impl Transport for Here {
         fn call(&self, user: Option<&str>, call: Vec<u8>) -> Option<Vec<u8>> {
             let c = CertCall::decode(&call)?;
-            assert_eq!(c.changes(), user.is_some());
+            assert_eq!(c.changes() && !c.by_server(), user.is_some());
             Some(wire::answer(&self.0.manager(), c).encode())
         }
 

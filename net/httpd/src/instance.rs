@@ -204,15 +204,18 @@ pub fn create(files: &dyn Files, s: &Spec, stamp: &str, now: u64) -> Result<()> 
     reg.save(files)
 }
 
-/// Delete an instance: its server root and its registry entry.
-pub fn delete(files: &dyn Files, name: &str) -> Result<()> {
+/// Delete an instance: its registry entry, then its server root. The
+/// instance is gone once the entry is; files that could not be removed
+/// are named in the `Some` (the error).
+pub fn delete(files: &dyn Files, name: &str) -> Result<Option<String>> {
     let mut reg = Registry::load(files)?;
     let e = reg.get(name).cloned().ok_or_else(|| Error::NotFound(name.to_string()))?;
-    if files.exists(&e.root) {
-        files.remove_tree(&e.root).map_err(io(&e.root))?;
-    }
     reg.remove(name);
-    reg.save(files)
+    reg.save(files)?;
+    if !files.exists(&e.root) {
+        return Ok(None);
+    }
+    Ok(files.remove_tree(&e.root).err().map(|x| x.to_string()))
 }
 
 /// An instance's configuration text.
@@ -348,7 +351,7 @@ mod tests {
         let p = ports(&load_conf(&f, "/www/webstore").unwrap());
         assert_eq!(p[1], Port { addr: None, port: 443, tls: true, server_name: Some("shop".into()) });
 
-        delete(&f, "webstore").unwrap();
+        assert_eq!(delete(&f, "webstore").unwrap(), None);
         assert!(!f.exists("/www/webstore"));
         assert!(Registry::load(&f).unwrap().get("WEBSTORE").is_none());
     }
