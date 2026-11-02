@@ -7,7 +7,9 @@
 //! `NAVIGATOR` (QS00NAV is installed); from the host, over HTTP on
 //! 2002: `QSECOFR` signs on, System status names the system, Active
 //! jobs lists the `NAVIGATOR` job itself (which `DSPJOB` knows), the
-//! `QSYSOPR` queue loads, a POST without the form field is refused,
+//! `QSYSOPR` queue loads, Work management's lists and each printer's
+//! page load with the `QSCAPTURE` writer started (the job once died on
+//! Printers), a POST without the form field is refused,
 //! Run SQL returns a result table from `QSYS2.SYSTABLES`, Licensed
 //! programs lists `QS00SS1` and `QS00NAV`, PTFs and the audit journal
 //! load, sign-off; then the sign-on page over TLS on 2005;
@@ -102,6 +104,7 @@ impl Suite {
         let opr = nav(plain, "GET", "/msgq/QSYS/QSYSOPR", Some(&sid), None)?;
         want(&opr, 200, &["Message queue: QSYSOPR"], "QSYSOPR")?;
         let live = live_config(s, plain, &sid)?;
+        let work = work_pages(s, plain, &sid)?;
         // A POST without the form's field is refused.
         let forged = nav(plain, "POST", "/mymsgs", Some(&sid), Some("send=Send"))?;
         want(&forged, 403, &["out of date"], "a POST without the form field")?;
@@ -135,7 +138,7 @@ impl Suite {
             return Err(format!("ENDTCPSVR NAVIGATOR:\n{ended}"));
         }
         Ok(format!(
-            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, {live}, a forged POST refused, Run SQL, QS00SS1 and QS00NAV installed, PTFs, the audit journal, signed off; the sign-on page over TLS on 2005 (host {secure})"
+            "signed on as QSECOFR over 2002 (host {plain}), System status of {name}, NAVIGATOR in {job} on Active jobs, QSYSOPR, {live}, {work}, a forged POST refused, Run SQL, QS00SS1 and QS00NAV installed, PTFs, the audit journal, signed off; the sign-on page over TLS on 2005 (host {secure})"
         ))
     }
 }
@@ -154,6 +157,71 @@ fn mono_after(body: &str, needle: &str) -> Option<String> {
     let at = row[needle.len()..].find(cell)? + needle.len() + cell.len();
     let end = row[at..].find("</td>")?;
     Some(row[at..at + end].trim().to_string())
+}
+
+/// The devices a page links to as `/writers/<dev>`.
+fn writer_links(body: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let key = format!("{PREFIX}/writers/");
+    let mut rest = body;
+    while let Some(at) = rest.find(&key) {
+        rest = &rest[at + key.len()..];
+        let dev: String = rest.chars().take_while(|c| c.is_ascii_alphanumeric() || "#@$_".contains(*c)).collect();
+        if !dev.is_empty() && !out.contains(&dev) {
+            out.push(dev);
+        }
+    }
+    out
+}
+
+/// Work management's pages, with a spooled file on hand and the
+/// capture device's writer started: every list and each printer's own
+/// page answer and the job stays up. A page that fails shows the jobs
+/// (and, read with them, what the job wrote to the serial line).
+fn work_pages(s: &mut Session, port: u16, sid: &str) -> Result<String, String> {
+    work_pages_of(s, port, sid).map_err(|e| {
+        let jobs = s.command("WRKACTJOB", CMD).unwrap_or_default();
+        format!("{e}
+WRKACTJOB:
+{jobs}")
+    })
+}
+
+fn work_pages_of(s: &mut Session, port: u16, sid: &str) -> Result<String, String> {
+    s.command("DSPLIBL OUTPUT(*PRINT)", CMD)?;
+    s.command("STRSBS QSYS/QSPL", CMD)?;
+    let started = s.command("STRPRTWTR DEV(QSCAPTURE)", CMD)?;
+    let end = Instant::now() + Duration::from_secs(10);
+    while !s.command("WRKWTR", CMD)?.lines().any(|l| l.contains("QSCAPTURE") && l.contains("STR")) {
+        if Instant::now() > end {
+            return Err(format!("the QSCAPTURE writer did not start:
+{started}"));
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    for (path, title) in [
+        ("/jobs", "Active jobs"),
+        ("/jobq", "Job queues"),
+        ("/sbs", "Subsystems"),
+        ("/outq", "Output queues"),
+        ("/outq/QGPL/QPRINT", "QPRINT"),
+        ("/jobscde", "Scheduled jobs"),
+        ("/writers", "Printers"),
+    ] {
+        let p = nav(port, "GET", path, Some(sid), None)?;
+        want(&p, 200, &[title], path)?;
+    }
+    let list = nav(port, "GET", "/writers", Some(sid), None)?;
+    want(&list, 200, &["QSCAPTURE", "Started"], "Printers with a writer started")?;
+    let devs = writer_links(&list.body);
+    for d in &devs {
+        let p = nav(port, "GET", &format!("/writers/{d}"), Some(sid), None)?;
+        want(&p, 200, &[&format!("Printer: {d}")], &format!("printer {d}"))?;
+    }
+    let start = nav(port, "GET", "/writers?start=1", Some(sid), None)?;
+    want(&start, 200, &["Start writer"], "Start writer")?;
+    s.command("ENDWTR WTR(QSCAPTURE) OPTION(*IMMED)", CMD)?;
+    Ok(format!("work management's pages and {} printer(s)", devs.len()))
 }
 
 /// System values, interfaces, servers and System activity from live
