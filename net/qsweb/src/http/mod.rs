@@ -7,12 +7,14 @@
 
 pub mod date;
 pub mod form;
+pub mod guard;
 pub mod multipart;
 pub mod request;
 pub mod response;
 
 use std::io::{Read, Write};
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 pub use form::Form;
 pub use request::{ReadError, Request};
@@ -39,6 +41,28 @@ pub trait Handler: Send + Sync {
 /// Serve requests on `conn` until the client closes, asks to close, or
 /// errs. The caller sets the read timeout and closes the socket.
 pub fn serve<C: Read + Write>(conn: &mut C, peer: &Peer, handler: &dyn Handler) {
+    serve_with(conn, &mut |req| (handler.handle(&req, peer), true));
+}
+
+/// [`serve`], each request on a thread of its own ([`guard`]): a panic
+/// answers that request with an error page, closes the connection and
+/// leaves the process running.
+pub fn serve_guarded<C: Read + Write>(conn: &mut C, peer: &Peer, handler: &Arc<dyn Handler>) {
+    serve_with(conn, &mut |req| {
+        let (method, path) = (req.method.clone(), req.path.clone());
+        match guard::handle(handler, req, *peer) {
+            Ok(r) => (r, true),
+            Err(e) => {
+                eprintln!("qsweb: {method} {path} from {}: {e}", peer.addr);
+                (guard::failed(), false)
+            }
+        }
+    });
+}
+
+/// The loop: `respond` answers a request and says whether the
+/// connection may carry another.
+fn serve_with<C: Read + Write>(conn: &mut C, respond: &mut dyn FnMut(Request) -> (Response, bool)) {
     let mut pending = Vec::new();
     for n in 1..=MAX_REQUESTS {
         let req = match request::read_request(conn, &mut pending) {
@@ -60,7 +84,8 @@ pub fn serve<C: Read + Write>(conn: &mut C, peer: &Peer, handler: &dyn Handler) 
         }
         let keep = req.keep_alive() && n < MAX_REQUESTS;
         let head_only = req.method == "HEAD";
-        let resp = handler.handle(&req, peer);
+        let (resp, more) = respond(req);
+        let keep = keep && more;
         if resp.write(conn, head_only, keep).is_err() || !keep {
             return;
         }
