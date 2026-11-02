@@ -8,25 +8,16 @@
 //! describe this IPL. Saves write through to the object and keep the
 //! IPL subset in the LIC record.
 
-use std::fs;
-
 use store::obj::sysval as sysval_obj;
 use sysval::{HostInfo, SysVals, Value};
 
 use crate::ipl::system::{Role, System, now_unix};
 
 pub(crate) fn host_info() -> HostInfo {
-    // QEMU publishes no UUID unless given one, so fall back to the serials.
+    let dmi = hwrsrc::dmi::Dmi::read();
     HostInfo {
-        product_uuid: [
-            "/sys/class/dmi/id/product_uuid",
-            "/sys/class/dmi/id/product_serial",
-            "/sys/class/dmi/id/chassis_serial",
-        ]
-        .iter()
-        .filter_map(|p| fs::read_to_string(p).ok())
-        .map(|s| s.trim().to_string())
-        .find(|s| !s.is_empty() && !s.starts_with("00000000-")),
+        product_uuid: dmi.identity().map(str::to_string),
+        serial: dmi.serial().map(str::to_string),
     }
 }
 

@@ -208,10 +208,23 @@ API (`sysval::SysVals`):
 - `store(&mut Record)` / `save(&mut LicPart<D>, &mut Record)`: only
   overrides are stored, as TLV `0x0100`, so defaults can evolve.
 
-QMODEL is `QS40`, QPRCFEAT `QS01`, QSRLNBR seven characters hashed from
-the DMI product UUID (`CONFIG_DMIID`), falling back to the product and
-chassis serials. The harness passes a fixed `-uuid`, which yields
-`VM1K2JR`.
+QMODEL is `QS40`, QPRCFEAT `QS01`: Quartz codes, the same on every
+machine, as programs read them; the hardware's own vendor and product
+(`Dell Inc. PowerEdge R240`) are shown beside them (Navigator) and come
+from `hwrsrc::dmi`, the one reader of `/sys/class/dmi/id/` (`CONFIG_DMIID`).
+QSRLNBR is the firmware's serial number (product serial, else chassis
+serial: a Dell service tag, say) when it is genuine and fits.
+Placeholders (`To Be Filled By O.E.M.`, `Not Specified`, `Default
+string`, `System Serial Number`, `None`, one character repeated, empty)
+are ignored, and it must be 1 to 8 letters and digits (kept upper case).
+Otherwise QSRLNBR is, as before, seven characters hashed from the DMI
+product UUID, falling back to the product and chassis serials. A longer
+serial (HPE's ten characters) is not cut: a truncated serial would read
+as a real one that is not the machine's. License keys are bound to
+QSRLNBR, so a machine whose firmware has a genuine serial changes
+QSRLNBR once, at its first IPL with this rule. The harness passes a
+fixed `-uuid` and no serial, which yields `VM1K2JR`. Jobs read all of
+it with the storage service's `machine` request.
 
 Time zones: 28 `Qxxxx` descriptions in [lic/sysval/src/tz/](../lic/sysval/src/tz/)
 with the US, EU, south-eastern Australian and New Zealand daylight rules

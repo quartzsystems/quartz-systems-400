@@ -9,11 +9,13 @@
 //!
 //! One process owns the table: the hardware resource service
 //! (`/init qshwr`, `lic/slic/src/hwsvc/`). Everything else asks it over
-//! [`proto`]; [`client`] connects to its socket.
+//! [`proto`]; [`client`] connects to its socket. [`dmi`] reads the
+//! machine's identity (vendor, product, serial) from the firmware.
 
 #![forbid(unsafe_code)]
 
 pub mod client;
+pub mod dmi;
 pub mod proto;
 pub mod scan;
 pub mod table;
