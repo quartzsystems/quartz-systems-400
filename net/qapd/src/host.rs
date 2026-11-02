@@ -7,6 +7,7 @@
 //! implement it in memory.
 
 use qap_proto::ops::signon::SignOnReply;
+use qap_proto::ops::system::SystemInfo;
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
 /// Why the connection is to end, from outside it.
@@ -49,8 +50,12 @@ pub trait Host {
     /// Milliseconds since 1970-01-01 UTC.
     fn now_ms(&mut self) -> i64;
     /// Message `id` with substitution data `data`, its text in the
-    /// language of the job's user now.
+    /// language of the job's user now: the system's before sign-on, the
+    /// signed-on profile's after it. The connection asks while the job
+    /// still runs as the user a message is for.
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage;
+    /// The system's description and installed products.
+    fn system_info(&mut self) -> SystemInfo;
     /// Whether the connection is to end.
     fn ending(&mut self) -> Option<Ending>;
 

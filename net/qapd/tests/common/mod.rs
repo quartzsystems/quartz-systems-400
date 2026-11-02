@@ -18,6 +18,7 @@ use std::time::{Duration, Instant};
 use ipc::Wire;
 use qap_proto::ops::connection::Hello;
 use qap_proto::ops::signon::SignOnReply;
+use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Envelope, Kind, Op, Reassembly, Secret, ServerMessage, Status, Token};
 use qapd::frames::FrameReader;
 use qapd::sessions::Sessions;
@@ -66,6 +67,8 @@ pub struct Controls {
     pub clock: Mutex<u64>,
     pub idle_secs: u32,
     pub audit: Mutex<Vec<String>>,
+    /// Products `SystemInfo` lists.
+    pub products: Mutex<usize>,
     /// Who each connection job runs as, by job.
     pub running_as: Mutex<HashMap<u32, String>>,
     tokens: AtomicU32,
@@ -75,6 +78,7 @@ impl Controls {
     pub fn new() -> Arc<Self> {
         let c = Self {
             idle_secs: 600,
+            products: Mutex::new(3),
             ..Self::default()
         };
         c.user("BOB", "SECRET1");
@@ -194,13 +198,40 @@ impl Host for MemHost {
         1_793_000_000_000
     }
 
+    /// Its text says whose language it was looked up in.
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {
+        let lang = self
+            .c
+            .running_as
+            .lock()
+            .unwrap()
+            .get(&self.job)
+            .map_or_else(|| "system".to_string(), |u| format!("lang of {u}"));
         ServerMessage {
             id: id.into(),
             severity: 0,
             data: data.join(" ").into_bytes(),
-            text: format!("{id} {}", data.join(" ")),
+            text: format!("{id} {} ({lang})", data.join(" ")),
             help: String::new(),
+        }
+    }
+
+    fn system_info(&mut self) -> SystemInfo {
+        self.c.gate.pass();
+        let n = *self.c.products.lock().unwrap();
+        SystemInfo {
+            system_name: "QSHQ400".into(),
+            release: "V1R0M0".into(),
+            serial: "1234567".into(),
+            model: "Q01".into(),
+            ipl_time: 1_792_000_000_000,
+            products: (0..n)
+                .map(|i| Product {
+                    id: format!("QS{i:05}"),
+                    option: "0000".into(),
+                    release: "V1R0M0".into(),
+                })
+                .collect(),
         }
     }
 

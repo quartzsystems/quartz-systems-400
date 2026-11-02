@@ -146,7 +146,8 @@ impl<H: Host> Conn<'_, H> {
             Op::ChangePassword => self.change_password(req),
             Op::Resume => self.resume(req),
             Op::SignOff => self.sign_off(),
-            Op::SystemInfo | Op::Hello => Answer::status(Status::InvalidRequest),
+            Op::SystemInfo => Answer::ok(&self.host.system_info()),
+            Op::Hello => Answer::status(Status::InvalidRequest),
         }
     }
 
@@ -220,8 +221,8 @@ impl<H: Host> Conn<'_, H> {
             }
             Ending::Operator => {
                 if let Some((token, profile)) = self.session.take() {
-                    self.host.sign_off(&token);
                     let m = self.host.message("TCP1A54", &[&profile]);
+                    self.host.sign_off(&token);
                     self.send(vec![Envelope::event(
                         Service::SignOn,
                         event::SESSION_ENDED,

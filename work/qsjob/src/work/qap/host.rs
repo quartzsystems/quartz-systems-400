@@ -14,6 +14,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use ipc::chan::Chan;
 use qap_proto::ops::signon::SignOnReply;
+use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 use qapd::{Ending, Host, Refusal, SystemId};
 use stg::{Client, QapRefused, QapSession, Shared};
@@ -149,6 +150,34 @@ impl Host for JobHost {
                 text: format!("{id} {}", data.join(" ")).trim().to_string(),
                 help: String::new(),
             },
+        }
+    }
+
+    /// `DSPSFWRSC`'s rows give the products, the system job `SCPF`'s
+    /// start the IPL.
+    fn system_info(&mut self) -> SystemInfo {
+        let rows = self.link.borrow_mut().with(Client::sfwrsc_panel);
+        let col = |r: &[String], i: usize| r.get(i).map_or_else(String::new, |v| v.trim().to_string());
+        let release = rows
+            .iter()
+            .find(|r| r.first().is_some_and(|id| id == release::PRODUCT_ID))
+            .map_or_else(|| release::RELEASE.to_string(), |r| col(r, 6));
+        let jobs = self.link.borrow_mut().with(Client::active_jobs);
+        let ipl = jobs.iter().find(|j| j.kind == 'X').map_or(0, |j| j.started);
+        SystemInfo {
+            system_name: self.sysval_text("QSYSNAME"),
+            release,
+            serial: self.sysval_text("QSRLNBR"),
+            model: self.sysval_text("QMODEL"),
+            ipl_time: i64::try_from(ipl).unwrap_or(0).saturating_mul(1000),
+            products: rows
+                .iter()
+                .map(|r| Product {
+                    id: col(r, 0),
+                    option: col(r, 1),
+                    release: col(r, 6),
+                })
+                .collect(),
         }
     }
 

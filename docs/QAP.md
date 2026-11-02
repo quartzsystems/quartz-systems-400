@@ -73,3 +73,45 @@ The client agent inventories which host-server functions QS/400 Access was going
 
 1. The `QAPD` job and `*QAP` server names, port 2320 and the limits above. Confirm or change before the server ships.
 2. Whether QS/400 Access must still reach real IBM i systems for anything other than 5250 and printing. This spec assumes no.
+
+## QS/400's implementation
+
+Settled with Cody on 2026-11-01, in answer to the open questions and
+to points the draft above leaves open:
+
+- Port 2320, `*QAP`, listener `QAPD` in `QSYSWRK` as `QUSER`;
+  connection jobs `QAPCNN` in `QUSRWRK`, one per connection, as `QUSER`
+  until sign-on. `CHGQAPA AUTOSTART(*NO) PORT(2320) IDLETIMO(3600)` is
+  the shipped state.
+- Enums use `wire_enum!`. `Status` is a `u16` on the wire
+  (`wire_enum!(Status: u16 { .. })`, added to `ipc` for it); `Kind`,
+  `Service` and the sign-on method are one byte.
+- The 1 MiB limit is on the Wire-encoded `Envelope`, not counting the
+  four-byte length prefix.
+- A split reply cuts the encoded body: the client joins the bodies of
+  its frames in order and decodes once. Every frame carries the
+  status; the message rides on the last.
+- `Cancel` gets no reply of its own. A request still outstanding ends
+  with `Cancelled` and an empty body; a cancel naming nothing
+  outstanding is ignored. The server reads only its `request_id`.
+- A first request other than `Hello` gets `InvalidRequest` and the
+  connection closes. `SignOn` or `Resume` on a signed-on connection
+  gets `InvalidRequest`; the connection and session stay.
+- A connection idle for 300 s is closed without an event.
+- Sessions: `idle_timeout_secs` is `CHGQAPA IDLETIMO`. The timer runs
+  only while no connection is attached; an attached session never
+  expires. A session whose connection job ended without detaching
+  counts as detached from when that is noticed. `Resume` moves a
+  session to the new connection. An operator ending a connection job
+  (`ENDJOB`) sends `SessionEnded` with status `Ok` and `TCP1A54`, and
+  ends the session. `ENDTCPSVR` ends every session.
+- `ServerMessage` text is looked up in the connection job, so in the
+  language of whoever the job runs as: the system's before sign-on,
+  the profile's after it. QS/400 ships one language of message text
+  today, so every path yields it.
+
+Code: `work/qap-proto` (the types), `net/qapd` (connections, sessions,
+the `Host` trait), `work/qsjob/src/work/qap/` (the jobs),
+`lic/slic/src/stgsvc/qap.rs` (sign-on, swap, tokens, in the storage
+service), `net/servers` (`*QAP`, `CHGQAPA`). Messages `TCP1A50` to
+`TCP1A54` are in `QTCPMSG`.
