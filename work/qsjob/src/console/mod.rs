@@ -12,7 +12,7 @@
 mod debug;
 pub mod host;
 pub mod jobcmd;
-mod log;
+pub mod log;
 
 use std::cell::RefCell;
 use std::rc::Rc;

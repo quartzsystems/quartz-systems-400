@@ -46,6 +46,10 @@ pub fn dspjoblog(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
     let mut d = crate::panels::dialog(host, GROUP)?;
     identify(&mut d, &detail);
     d.set("CANCHG", "N");
+    // Refused before the display shows: the message goes to the line.
+    if !own(host, &detail) {
+        remote_log(host, &detail)?;
+    }
     joblog(job, host, surface, &mut d, &detail)?;
     Ok(String::new())
 }
@@ -53,6 +57,18 @@ pub fn dspjoblog(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved
 /// The job named by `JOB`, blank for the job itself.
 fn target(r: &Resolved) -> String {
     parm(r, "JOB").filter(|j| j != "*").unwrap_or_default()
+}
+
+/// Another job's log as the service keeps it, or the escape saying
+/// why not (not active, not authorized).
+fn remote_log(host: &Host, detail: &JobDetail) -> Result<Vec<wm::joblog::Entry>, Fail> {
+    host.link
+        .borrow_mut()
+        .with(|l| l.joblog_of(detail.job.number))
+        .map_err(|e| {
+            let (id, text) = e.split_once(' ').unwrap_or(("CPF1070", e.as_str()));
+            Fail::new(id, text)
+        })
 }
 
 /// A job's detail, or the escape saying it is not there.
@@ -359,14 +375,13 @@ fn spooled(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog,
 }
 
 /// The job log's lines: requests with their marks, messages under
-/// them; `all` keeps the detailed ones too.
-fn log_lines(job: &Job, host: &Host, all: bool) -> Vec<Vec<(String, String)>> {
-    let a = host.attrs();
-    let entries: Vec<&wm::joblog::Entry> = job.joblog.entries().collect();
+/// them; `all` keeps the detailed ones too, else the job's `LOG`.
+fn log_lines(entries: &[wm::joblog::Entry], attrs: &wm::job::JobAttrs, all: bool) -> Vec<Vec<(String, String)>> {
+    let entries: Vec<&wm::joblog::Entry> = entries.iter().collect();
     let kept = if all {
         entries
     } else {
-        wm::joblog::filter(&entries, a.log_level.max(1), u16::from(a.log_sev))
+        wm::joblog::filter(&entries, attrs.log_level.max(1), u16::from(attrs.log_sev))
     };
     let last_request = kept.iter().rposition(|e| e.kind == "Request");
     kept.iter()
@@ -384,15 +399,24 @@ fn log_lines(job: &Job, host: &Host, all: bool) -> Vec<Vec<(String, String)>> {
 }
 
 /// Option 10 and `DSPJOBLOG`: the job's log, the basic view first.
+/// Another job's comes from the service's copy, read again each time.
 fn joblog(job: &mut Job, host: &Host, surface: &mut Surface, d: &mut UimDialog, detail: &JobDetail) -> Result<Left, Fail> {
-    if !own(host, detail) {
-        d.error("CPD9B9D", &[]);
-        return Ok(Left::Back);
-    }
+    let mine = own(host, detail);
     let mut all = false;
     let mut history = Vec::new();
     loop {
-        let rows = log_lines(job, host, all);
+        let rows = if mine {
+            let entries: Vec<wm::joblog::Entry> = job.joblog.entries().cloned().collect();
+            log_lines(&entries, &host.attrs(), all)
+        } else {
+            match remote_log(host, detail) {
+                Ok(entries) => log_lines(&entries, &detail.attrs, all),
+                Err(f) => {
+                    d.send(crate::display::msgline::of_fail(host, &f));
+                    return Ok(Left::Back);
+                }
+            }
+        };
         refill(d, "MSGS", rows);
         let panel = if all { "JOBLOGALL" } else { "JOBLOG" };
         let flow = match d.show(surface, panel).map_err(|e| render_fail(&e))? {
