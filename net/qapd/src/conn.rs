@@ -185,7 +185,8 @@ impl<H: Host> Main<'_, H> {
         let Ok(b) = req.body_as::<CommandText>() else {
             return Answer::status(Status::InvalidRequest);
         };
-        let ran = self.host.run_command(&b.command);
+        let (cancels, id) = (&self.shared.cancels, req.request_id);
+        let ran = self.host.run_command(&b.command, &|| cancelled(cancels, id));
         Answer {
             status: ran.status,
             message: ran.escape,

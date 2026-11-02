@@ -106,8 +106,6 @@ pub struct System {
     pub libraries: Mutex<Vec<String>>,
     /// Who each connection job runs as, by job.
     pub running_as: Mutex<HashMap<u32, String>>,
-    /// End the running command (a `Cancel`).
-    pub cancel: Arc<AtomicBool>,
     tokens: AtomicU32,
 }
 
@@ -132,7 +130,6 @@ impl System {
             products: Mutex::new(3),
             libraries: Mutex::new(Vec::new()),
             running_as: Mutex::new(HashMap::new()),
-            cancel: Arc::new(AtomicBool::new(false)),
             tokens: AtomicU32::new(0),
         };
         s.gate.set(true);
@@ -183,17 +180,22 @@ impl System {
     }
 
     /// The Telnet server's side of a ticket: `user` and the password
-    /// variable as the client sent them, over TLS or not. Used up
+    /// variable as the client sent them, over TLS or not, checked as the
+    /// storage service checks it ([`tickets::check`]). Used up
     /// whatever the answer; true when the user would be signed on.
     pub fn redeem_ticket(&self, user: &str, password_var: &[u8], tls: bool) -> bool {
         let Some(t) = tickets::parse_hex(password_var) else {
             return false;
         };
         let user = user.trim().to_ascii_uppercase();
-        let ok = lock(&self.tickets).redeem(&t, &user, self.now(), tls).is_ok();
+        let allowed = self.auto_signon.load(Ordering::SeqCst);
+        let profile_ok = |u: &str| {
+            let u = self.get(u);
+            !u.disabled && !u.none && !u.expired
+        };
+        let r = tickets::check(&mut lock(&self.tickets), &t, &user, self.now(), tls, allowed, profile_ok);
         lock(&self.audit).push(format!("PS V {user}"));
-        let u = self.get(&user);
-        ok && self.auto_signon.load(Ordering::SeqCst) && !u.disabled && !u.none
+        r.is_ok()
     }
 
     /// A token or ticket no other has.

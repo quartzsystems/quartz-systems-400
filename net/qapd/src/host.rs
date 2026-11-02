@@ -88,8 +88,10 @@ pub trait Host {
     fn swapped(&mut self) {}
 
     /// Run a CL command as the signed-on profile; every message it sent
-    /// its caller, oldest first.
-    fn run_command(&mut self, command: &str) -> Ran;
+    /// its caller, oldest first. `cancelled` says whether the client has
+    /// cancelled this request, by its ID on this connection; it stays
+    /// true once it is.
+    fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran;
     /// Check a CL command without running it: `Ok` with no messages
     /// when valid, else `Error` (or `NotFound`) with the check's.
     fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>);

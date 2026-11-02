@@ -226,3 +226,54 @@ fn version_2_operations_need_sign_on() {
         assert_eq!(r.client.reply(id).status, Status::NotSignedOn, "{op:?}");
     }
 }
+
+#[test]
+fn cancels_are_per_connection_and_request() {
+    let c = Controls::new();
+    let mut a = signed_on(&c, "BOB", "SECRET1");
+    let mut b = signed_on(&c, "BOB", "SECRET1");
+    let text = |s: &str| CommandText { command: s.into() };
+    let ia = a.client.request(Op::RunCommand, &text("DLYJOB DLY(2)"));
+    let ib = b.client.request(Op::RunCommand, &text("DLYJOB DLY(1)"));
+    std::thread::sleep(Duration::from_millis(100));
+    a.client.send(&Envelope::cancel(ia));
+    assert_eq!(a.client.reply(ia).status, Status::Cancelled);
+    // The other connection's command is not this cancel's.
+    assert_eq!(b.client.reply(ib).status, Status::Ok);
+    // Cancelled before it started: it never runs, and the next is not
+    // cancelled by it.
+    let first = a.client.request(Op::RunCommand, &text("DLYJOB DLY(1)"));
+    let queued = a.client.request(Op::RunCommand, &text("CRTLIB LIB(NEVER)"));
+    a.client.send(&Envelope::cancel(queued));
+    let got = a.client.replies(&[first, queued]);
+    assert_eq!((got[&first].status, got[&queued].status), (Status::Ok, Status::Cancelled));
+    assert!(got[&queued].body.is_empty());
+    assert!(c.libraries.lock().unwrap().is_empty());
+    assert_eq!(run(&mut a, "CRTLIB LIB(AFTER)").status, Status::Ok);
+}
+
+#[test]
+fn messages_carry_real_severities() {
+    let c = Controls::new();
+    let mut r = signed_on(&c, "BOB", "SECRET1");
+    let sev = |e: &Envelope| -> Vec<(String, u8)> {
+        e.body_as::<CommandReply>().unwrap().messages.into_iter().map(|m| (m.id, m.severity)).collect()
+    };
+    assert_eq!(sev(&run(&mut r, "CRTLIB LIB(SEV)")), [("CPC2102".to_string(), 0)]);
+    assert_eq!(sev(&run(&mut r, "CHGAUT OBJ('/a') USER(BOB) DTAAUT(*BAD)")), [("CPDA091".to_string(), 10)]);
+    let cut = run(&mut r, "CPYFRMSTMF FROMSTMF('/long.txt') TOMBR('/QSYS.LIB/X.LIB/F.FILE/M.MBR')");
+    assert_eq!((cut.status, cut.message.as_ref().unwrap().severity), (Status::Error, 20));
+    assert_eq!(sev(&run(&mut r, "CRTLIB")), [("CPD0071".to_string(), 30), ("CPF0006".to_string(), 30)]);
+    assert_eq!(sev(&run(&mut r, "CRTLIB LIB(SEV)")), [("CPF2111".to_string(), 40)]);
+}
+
+#[test]
+fn a_ticket_for_an_expired_password_signs_nothing_on() {
+    let c = Controls::new();
+    let mut r = signed_on(&c, "BOB", "SECRET1");
+    let t = ticket(&mut r);
+    c.edit("BOB", |u| u.expired = true);
+    assert!(!c.redeem_ticket("BOB", hex(&t.ticket).as_bytes(), true));
+    c.edit("BOB", |u| u.expired = false);
+    assert!(!c.redeem_ticket("BOB", hex(&t.ticket).as_bytes(), true), "used up");
+}

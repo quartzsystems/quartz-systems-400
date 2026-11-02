@@ -25,6 +25,11 @@ pub enum Refused {
     WrongUser,
     /// Offered over plain Telnet.
     NotTls,
+    /// `QRMTSIGN` allows no automatic sign-on.
+    NotAllowed,
+    /// The profile cannot sign on now: disabled, `*NONE` password, or
+    /// its password expired.
+    Profile,
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +91,33 @@ impl Tickets {
     }
 }
 
+/// The Telnet server's whole check of `token` for `user`, as the
+/// storage service makes it: the ticket used up whatever the answer;
+/// then `QRMTSIGN` (`allowed`) and the profile (`profile_ok`: not
+/// disabled, a password, not expired), so a ticket outliving its
+/// profile's right to sign on signs nothing on.
+///
+/// # Errors
+/// Why the ticket signs nothing on.
+pub fn check(
+    table: &mut Tickets,
+    token: &Token,
+    user: &str,
+    now: u64,
+    tls: bool,
+    allowed: bool,
+    profile_ok: impl FnOnce(&str) -> bool,
+) -> Result<(), Refused> {
+    table.redeem(token, user, now, tls)?;
+    if !allowed {
+        return Err(Refused::NotAllowed);
+    }
+    if !profile_ok(&user.trim().to_ascii_uppercase()) {
+        return Err(Refused::Profile);
+    }
+    Ok(())
+}
+
 /// A ticket from the password variable: 64 hexadecimal characters, else
 /// `None` (a password, which automatic sign-on never accepts in plain
 /// text).
@@ -121,6 +153,24 @@ mod tests {
         assert_eq!(table.redeem(&tok(4), "BOB", 110, false), Err(Refused::NotTls));
         assert_eq!(table.redeem(&tok(4), "BOB", 110, true), Err(Refused::Unknown));
         assert!(table.is_empty());
+    }
+
+    /// The service's path: an expired ticket, and a good ticket for a
+    /// profile whose password expired, sign nothing on.
+    #[test]
+    fn the_whole_check() {
+        let mut table = Tickets::new();
+        let tok = |n: u8| Token([n; 32]);
+        for n in 1..=4 {
+            table.issue(&tok(n), "BOB", 100);
+        }
+        let ok = |_: &str| true;
+        assert_eq!(check(&mut table, &tok(1), "BOB", 110, true, true, ok), Ok(()));
+        assert_eq!(check(&mut table, &tok(2), "BOB", 160, true, true, ok), Err(Refused::Expired));
+        let expired = |u: &str| u != "BOB";
+        assert_eq!(check(&mut table, &tok(3), "bob", 110, true, true, expired), Err(Refused::Profile));
+        assert_eq!(check(&mut table, &tok(4), "BOB", 110, true, false, ok), Err(Refused::NotAllowed));
+        assert!(table.is_empty(), "used up whatever the answer");
     }
 
     #[test]

@@ -331,6 +331,9 @@ Version 2, settled with Cody on 2026-11-02:
   password, password expired).
 - A ticket is checked only on a TLS connection, with the seed variable
   present and empty; it is used up by its first use, accepted or not.
+  At its use, as at its issue, `QRMTSIGN` and the profile are checked
+  again: a ticket for a profile since disabled, or whose password has
+  expired, signs nothing on.
   A plain-text password through automatic sign-on is never accepted.
   Issue and use are audited (`PS` entries `P` and `V`); ticket values
   are never logged.

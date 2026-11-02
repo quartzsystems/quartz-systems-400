@@ -238,3 +238,39 @@ fn a_ticket_proves_the_user_only() {
     usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")])).unwrap();
     assert_eq!(msgid(&mut t, qsys, &a), "CPF1394");
 }
+
+/// What the storage service asks of a profile before a ticket is
+/// issued or redeemed: enabled, a password, not expired.
+#[test]
+fn automatic_sign_on_needs_a_profile_that_can_sign_on() {
+    let (mut store, qsys) = open_new();
+    let mut t = store.begin().unwrap();
+    shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
+    let secofr = Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
+    let env = Env {
+        qsys,
+        actor: &secofr,
+        now: NOW,
+        sysval: &sysval,
+    };
+    let policy = Values::from_sysvals(&sysval).policy;
+    let bob = |t: &mut Txn<'_>| objects::read(t, qsys, "BOB").unwrap().1;
+    usrprf::crtusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[("USRPRF", "BOB"), ("PASSWORD", "Right123")]),
+    )
+    .unwrap();
+    assert!(signon::automatic_allowed(&bob(&mut t), &policy, NOW));
+    usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("PWDEXP", "*YES")])).unwrap();
+    assert!(!signon::automatic_allowed(&bob(&mut t), &policy, NOW), "expired");
+    usrprf::chgusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[("USRPRF", "BOB"), ("PASSWORD", "Other456"), ("PWDEXP", "*NO")]),
+    )
+    .unwrap();
+    assert!(signon::automatic_allowed(&bob(&mut t), &policy, NOW));
+    usrprf::chgusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB"), ("STATUS", "*DISABLED")])).unwrap();
+    assert!(!signon::automatic_allowed(&bob(&mut t), &policy, NOW), "disabled");
+}

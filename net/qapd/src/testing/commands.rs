@@ -14,10 +14,15 @@
 //!   list, `SIZE` under Additional Parameters;
 //! - `STRSEU`: allowed only interactively, so it ends with `CPD0031`;
 //! - `DLYJOB DLY(seconds)`: waits, and a `Cancel` ends it (`CPF1907`);
-//! - `DLTUSRPRF USRPRF()`: the profile may not use it (`CPF9802`).
+//! - `DLTUSRPRF USRPRF()`: the profile may not use it (`CPF9802`);
+//! - `CPYFRMSTMF FROMSTMF() TOMBR()`: `CPCA081` (00), or `CPFA096`
+//!   (20) when the stream file's name has `long` in it (lines cut);
+//! - `CHGAUT OBJ() USER() DTAAUT()`: `CPDA091` (10) for a `DTAAUT` it
+//!   does not take.
 //!
 //! A missing required parameter is `CPD0071` then `CPF0006`; a command
-//! not here, `CPD0030`.
+//! not here, `CPD0030`. Messages carry the severities QS/400's message
+//! files give them ([`severity`]), so every level from 00 to 40 shows.
 
 use qap_proto::ops::command::{CommandDefinition, ParmKind, ParmNode, Range, Role, Show};
 use qap_proto::types::ObjectName;
@@ -80,7 +85,34 @@ pub const COMMANDS: &[Cmd] = &[
         authorized: false,
         required: &["USRPRF"],
     },
+    Cmd {
+        name: "CPYFRMSTMF",
+        text: "Copy From Stream File",
+        interactive_only: false,
+        authorized: true,
+        required: &["FROMSTMF", "TOMBR"],
+    },
+    Cmd {
+        name: "CHGAUT",
+        text: "Change Authority",
+        interactive_only: false,
+        authorized: true,
+        required: &["OBJ", "USER"],
+    },
 ];
+
+/// Message `id`'s severity as QS/400's message files give it (the
+/// ones the test system sends); 40 for any other.
+#[must_use]
+pub fn severity(id: &str) -> u8 {
+    match id {
+        "CPC2102" | "CPCA081" | "TCP1A0A" | "TCP1A54" => 0,
+        "CPDA091" => 10,
+        "CPFA096" => 20,
+        "CPD0030" | "CPD0031" | "CPD0071" | "CPF0006" | "CPF1907" | "CPD9BAE" | "TCP1A53" | "TCP1A55" => 30,
+        _ => 40,
+    }
+}
 
 /// The command `name`.
 #[must_use]
@@ -197,6 +229,18 @@ pub fn definition(c: &Cmd) -> CommandDefinition {
                 low: "1".into(),
                 high: "999999".into(),
             });
+            n.push(d);
+        }
+        "CPYFRMSTMF" => {
+            n.push(required(node(0, None, Role::Parameter, "FROMSTMF", "From stream file", ParmKind::Path, 5000)));
+            n.push(required(node(1, None, Role::Parameter, "TOMBR", "To file member or save file", ParmKind::Path, 5000)));
+        }
+        "CHGAUT" => {
+            n.push(required(node(0, None, Role::Parameter, "OBJ", "Object", ParmKind::Path, 5000)));
+            n.push(required(node(1, None, Role::Parameter, "USER", "User", ParmKind::Name, 10)));
+            let mut d = node(2, None, Role::Parameter, "DTAAUT", "New data authorities", ParmKind::Character, 10);
+            d.default = Some("*SAME".into());
+            d.special_values = vec!["*SAME".into(), "*RWX".into(), "*RX".into(), "*R".into(), "*EXCLUDE".into()];
             n.push(d);
         }
         _ => n.push(required(node(0, None, Role::Parameter, "USRPRF", "User profile", ParmKind::Name, 10))),

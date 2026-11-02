@@ -327,9 +327,7 @@ pub fn ticket(system: &mut System, ctx: &JobCtx) -> Result<(Vec<u8>, u32), QapRe
     if !remote_signon_allowed(system) {
         return Err(no());
     }
-    let p = read(system, &user).ok_or_else(no)?;
-    let policy = sec::password::policy::Policy::from_sysvals(&|n: &str| sysval_text(system, n));
-    if p.disabled || p.pwd_none || policy.expired(&p, now_unix()) {
+    if !may_sign_on(system, &user) {
         return Err(no());
     }
     let token = new_token()?;
@@ -346,9 +344,21 @@ pub fn ticket(system: &mut System, ctx: &JobCtx) -> Result<(Vec<u8>, u32), QapRe
     Ok((token.0.to_vec(), TICKET_SECS))
 }
 
-/// `telnet_ticket`: used up here whatever the answer; then the sign-on
-/// checks for `user`, all but the password. Refused as a wrong
-/// password reads, so a ticket says nothing about a profile.
+/// Whether `user` may sign on automatically now: enabled, a password,
+/// not expired.
+fn may_sign_on(system: &mut System, user: &str) -> bool {
+    let Some(p) = read(system, user) else {
+        return false;
+    };
+    let policy = sec::password::policy::Policy::from_sysvals(&|n: &str| sysval_text(system, n));
+    sec::signon::automatic_allowed(&p, &policy, now_unix())
+}
+
+/// `telnet_ticket`: used up here whatever the answer; `QRMTSIGN` and
+/// the profile as at issue (`qapd::tickets::check`), so an expired
+/// password signs nothing on; then the sign-on checks for `user`, all
+/// but the password. Refused as a wrong password reads, so a ticket
+/// says nothing about a profile.
 pub fn telnet_ticket(
     system: &mut System,
     ctx: &JobCtx,
@@ -367,10 +377,16 @@ pub fn telnet_ticket(
     }
     let user = user.trim().to_ascii_uppercase();
     let token = token_of(ticket).ok_or_else(not)?;
-    let r = tickets()
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .redeem(&token, &user, now_unix(), tls);
+    let allowed = remote_signon_allowed(system);
+    let r = qapd::tickets::check(
+        &mut tickets().lock().unwrap_or_else(PoisonError::into_inner),
+        &token,
+        &user,
+        now_unix(),
+        tls,
+        allowed,
+        |u| may_sign_on(system, u),
+    );
     sec::audit::record(
         sec::audit::Event::new(sec::audit::Kind::Ps)
             .set("ETYP", "V")
@@ -378,7 +394,7 @@ pub fn telnet_ticket(
             .set("NUSR", user.as_str())
             .set("RSLT", if r.is_ok() { "A" } else { "R" }),
     );
-    if r.is_err() || !remote_signon_allowed(system) {
+    if r.is_err() {
         return Err(not());
     }
     sign_on_ticket(system, &user, device)

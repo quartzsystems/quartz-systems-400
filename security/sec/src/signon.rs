@@ -295,6 +295,14 @@ pub fn sign_on(
     Ok(Ok(signed_on(&p, v, a.now, previous, invalid)))
 }
 
+/// Whether profile `p` may sign on automatically now (a QAP Telnet
+/// ticket, issued or redeemed): enabled, with a password, and that
+/// password not expired. `QRMTSIGN` is the caller's to ask.
+#[must_use]
+pub fn automatic_allowed(p: &UsrPrf, policy: &Policy, now: u64) -> bool {
+    !p.disabled && !p.pwd_none && !policy.expired(p, now)
+}
+
 fn qual((n, l): &(String, String)) -> String {
     if n.starts_with('*') || l.is_empty() || l == "*LIBL" {
         n.clone()

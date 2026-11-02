@@ -142,8 +142,8 @@ impl Host for JobHost {
         self.console.swapped();
     }
 
-    fn run_command(&mut self, command: &str) -> Ran {
-        super::commands::run(&mut self.console, command)
+    fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
+        super::commands::run(&mut self.console, command, cancelled)
     }
 
     fn check_command(&mut self, command: &str) -> (Status, Vec<ServerMessage>) {

@@ -76,10 +76,15 @@ fn job_id(console: &mut Console) -> JobId {
     }
 }
 
-/// Run `command`.
-pub fn run(console: &mut Console, command: &str) -> Ran {
-    // A cancel asked before this command started is not for it.
+/// Run `command`; `cancelled` says whether the client cancelled this
+/// request.
+pub fn run(console: &mut Console, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
+    // An end asked for an earlier request is not for this one; one asked
+    // for this request before it started is.
     let _ = keys::take_outside_end();
+    if cancelled() {
+        keys::end_from_outside();
+    }
     let _request = keys::Request::enter();
     let before = console.job().joblog.len();
     console.job().log_request(command, PGM);

@@ -17,7 +17,7 @@ use qap_proto::{Secret, ServerMessage, Status, Token};
 
 use super::commands::{self, definition, find, parse};
 use super::{System, lock};
-use crate::host::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
+use crate::host::{Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use crate::tickets::TICKET_SECS;
 
 /// Message `id` as job `job` of `sys` looks it up: its text says whose
@@ -26,7 +26,7 @@ fn message(sys: &System, job: u32, id: &str, data: &[&str]) -> ServerMessage {
     let lang = me(sys, job).map_or_else(|| "system".to_string(), |u| format!("lang of {u}"));
     ServerMessage {
         id: id.into(),
-        severity: 0,
+        severity: commands::severity(id),
         data: data.join(" ").into_bytes(),
         text: format!("{id} {} ({lang})", data.join(" ")),
         help: format!("Help for {id}."),
@@ -102,8 +102,7 @@ impl Host for MemHost {
         lock(&self.sys.running_as).remove(&self.job);
     }
 
-    fn run_command(&mut self, command: &str) -> Ran {
-        self.sys.cancel.store(false, Ordering::SeqCst);
+    fn run_command(&mut self, command: &str, cancelled: &dyn Fn() -> bool) -> Ran {
         let (name, parms) = parse(command);
         let Some(c) = find(&name) else {
             return self.ran(Status::NotFound, &[("CPD0030", &[&name, "*LIBL"]), ("CPF0006", &[])]);
@@ -137,12 +136,29 @@ impl Host for MemHost {
                 let secs = get("DLY").and_then(|d| d.trim().parse::<u64>().ok()).unwrap_or(1);
                 let until = Instant::now() + Duration::from_secs(secs);
                 while Instant::now() < until {
-                    if self.sys.cancel.swap(false, Ordering::SeqCst) {
+                    if cancelled() {
                         return self.ran(Status::Cancelled, &[("CPF1907", &[])]);
                     }
                     std::thread::sleep(Duration::from_millis(10));
                 }
                 self.ran(Status::Ok, &[])
+            }
+            "CPYFRMSTMF" => {
+                let from = get("FROMSTMF").unwrap_or_default();
+                let to = get("TOMBR").unwrap_or_default();
+                if from.to_ascii_lowercase().contains("long") {
+                    self.ran(Status::Error, &[("CPFA096", &[&from, &to, "3", "80"])])
+                } else {
+                    self.ran(Status::Ok, &[("CPCA081", &[&from, &to, "10"])])
+                }
+            }
+            "CHGAUT" => {
+                let dta = get("DTAAUT").unwrap_or_else(|| "*SAME".into()).to_ascii_uppercase();
+                if matches!(dta.as_str(), "*SAME" | "*RWX" | "*RW" | "*RX" | "*R" | "*WX" | "*W" | "*X" | "*EXCLUDE" | "*NONE") {
+                    self.ran(Status::Ok, &[])
+                } else {
+                    self.ran(Status::Error, &[("CPDA091", &[])])
+                }
             }
             _ => self.ran(Status::Ok, &[]),
         }
@@ -170,11 +186,6 @@ impl Host for MemHost {
             Some(c) if !c.authorized => Err(self.refuse(Status::NotAuthorized, "CPF9802", &["*CMD", c.name])),
             Some(c) => Ok(definition(c)),
         }
-    }
-
-    fn canceller(&mut self) -> Option<Canceller> {
-        let flag = Arc::clone(&self.sys.cancel);
-        Some(Arc::new(move || flag.store(true, Ordering::SeqCst)))
     }
 
     fn threads(&mut self) -> Threads {
