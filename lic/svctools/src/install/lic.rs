@@ -208,7 +208,7 @@ pub fn confirm_as(disk: NonConfigured, kind: LicKind, auto: bool) -> Confirm {
             ],
         ),
     };
-    let lines = vec![
+    let mut lines = vec![
         what[0].to_string(),
         what[1].to_string(),
         String::new(),
@@ -216,6 +216,11 @@ pub fn confirm_as(disk: NonConfigured, kind: LicKind, auto: bool) -> Confirm {
         String::new(),
         "The system re-IPLs from the load source when the install completes.".to_string(),
     ];
+    if kind == LicKind::Initialize {
+        lines.push(String::new());
+        lines.push("ASP 1 takes the unit after the LIC. The integrated file system is".into());
+        lines.push("made inside ASP 1 at the first IPL and grows with it.".into());
+    }
     Confirm::new(
         name,
         title,

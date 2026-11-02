@@ -77,8 +77,8 @@ fn env() -> MemEnv {
         ("Last good slot".into(), "A".into()),
         ("IPLs".into(), "3 (1 abnormal)".into()),
         ("Installed".into(), "2026-01-01 00:00:00".into()),
-        ("IFS".into(), "vda4, 943 MiB, xfs".into()),
-        ("IFS state".into(), "Mounted, 921 MiB free".into()),
+        ("IFS".into(), "In ASP 1, 1024 MiB, xfs".into()),
+        ("IFS state".into(), "Mounted, 1024 MiB, 1001 MiB free".into()),
     ];
     e
 }

@@ -174,8 +174,9 @@ option.
   written as for option 2, ASP 1 is opened on its other units, and the
   new disk's ASP 1 partition replaces the missing half (C6004070); the
   copy from the partner runs in the background as a resume does. The
-  IFS partition of the failed disk is not mirrored and comes back empty
-  (restore it with `RST`).
+  IFS is in ASP 1 and comes back with it. On a system installed before
+  the IFS moved into ASP 1, the IFS partition of the failed disk was not
+  mirrored and comes back empty (restore it with `RST`).
 
 ## 3. Automatic install and the response file
 

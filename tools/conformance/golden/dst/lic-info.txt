@@ -7,8 +7,8 @@
  Last good slot .  :  A                                                         
  IPLs . . . . . .  :  3 (1 abnormal)                                            
  Installed . . . . :  2026-01-01 00:00:00                                       
- IFS . . . . . . . :  vda4, 943 MiB, xfs                                        
- IFS state . . . . :  Mounted, 921 MiB free                                     
+ IFS . . . . . . . :  In ASP 1, 1024 MiB, xfs                                   
+ IFS state . . . . :  Mounted, 1024 MiB, 1001 MiB free                          
                                                                                 
  Installing fixes to the Licensed Internal Code is not available in this        
  release; the installation media replaces it whole.                             

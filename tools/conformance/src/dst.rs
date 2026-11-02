@@ -55,21 +55,14 @@ pub(crate) fn first_sign_on(s: &mut Session) -> Result<(), String> {
     Ok(())
 }
 
-/// Write a QS/400 disk layout (GPT, ESP, LIC, IFS, ASP1) onto `path`.
+/// Write a QS/400 disk layout (GPT, ESP, LIC, ASP1) onto `path`.
 fn old_install(path: &std::path::Path) -> Result<(), HarnessError> {
     let other = |e: diskimg::Error| std::io::Error::other(e.to_string());
     let mut f = fs::OpenOptions::new().read(true).write(true).open(path)?;
     let bytes = f.metadata()?.len();
     let plan = diskimg::Plan::for_bytes(bytes).map_err(other)?;
     let esp = diskimg::fat::build(&diskimg::fat::DISK_ESP, &[]).map_err(other)?;
-    let ifs = diskimg::IfsFormat {
-        time: diskimg::xfsfmt::Timestamp {
-            secs: 1_767_225_600,
-            nsecs: 0,
-        },
-        zeroed: true,
-    };
-    diskimg::write_image(&mut f, &plan, &diskimg::Guids::FIXED, &esp, &ifs).map_err(other)?;
+    diskimg::write_image(&mut f, &plan, &diskimg::Guids::FIXED, &esp).map_err(other)?;
     Ok(())
 }
 

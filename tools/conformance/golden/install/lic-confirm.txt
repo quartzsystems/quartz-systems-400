@@ -8,8 +8,8 @@
                                                                                 
  The system re-IPLs from the load source when the install completes.            
                                                                                 
-                                                                                
-                                                                                
+ ASP 1 takes the unit after the LIC. The integrated file system is              
+ made inside ASP 1 at the first IPL and grows with it.                          
                                                                                 
                                                                                 
                                                                                 

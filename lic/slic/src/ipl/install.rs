@@ -541,17 +541,8 @@ impl Env<'_> {
             storage::fresh_uuid(),
             storage::fresh_uuid(),
             storage::fresh_uuid(),
-            storage::fresh_uuid(),
-            storage::fresh_uuid(),
         ]);
-        // A used disk: the IFS log is cleared, the root stamped now.
-        let ifs = diskimg::IfsFormat {
-            time: diskimg::xfsfmt::Timestamp {
-                secs: i64::try_from(now).unwrap_or(0),
-                nsecs: 0,
-            },
-            zeroed: false,
-        };
+        // The IFS is made in ASP 1 at the first IPL of the new system.
         storage::close(self.system);
         crate::ipl::ifs::unmount(self.system);
         storage::release_lic_on(self.system, &name);
@@ -562,7 +553,7 @@ impl Env<'_> {
             .map_err(fail("Installing the Licensed Internal Code"))?;
         let mut last = 0u8;
         report(LicEvent::DiskPercent(0), self);
-        diskimg::write_image_with(&mut file, &plan, &guids, &esp, &ifs, &mut |done, total| {
+        diskimg::write_image_with(&mut file, &plan, &guids, &esp, &mut |done, total| {
             let p = u8::try_from(done * 100 / total.max(1)).unwrap_or(100);
             if p / 5 != last / 5 {
                 last = p;
@@ -576,7 +567,7 @@ impl Env<'_> {
         drop(file);
         self.system.emit(&src::INSTALL_PARTITIONED);
         report(LicEvent::StepDone(0), self);
-        for n in [2, 3, diskimg::IFS_INDEX] {
+        for n in [2, 3] {
             if !crate::platform::blk::wait_for_block(&part_name(&name, n), Duration::from_secs(10)) {
                 return Err(format!("partition {} did not appear", part_name(&name, n)));
             }

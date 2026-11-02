@@ -8,7 +8,7 @@
 //! | Step | What |
 //! |---|---|
 //! | 12 | mirrored protection started over the four units (1 with 4, 2 with 3, data moved off 3 and 4 first), the copies at the re-IPL, the IPL with disk 4 pulled, then disk 4 back and resumed with the system up across a power down |
-//! | 13 | device parity (RAID 5) over the four units, synchronized with the system up (written and read meanwhile, a power down part way), an IPL with disk 4 pulled (exposed, A6001257), the disk back and rebuilt with the system up |
+//! | 13 | device parity (RAID 5) over the four units, synchronized with the system up (written and read meanwhile, a power down part way), an IPL with disk 4 pulled (exposed, A6001257), the disk back and rebuilt with the system up; IFS files (the IFS volume is in ASP 1) written and read back at each stage |
 //!
 //! Every disk action goes through the DST screens over serial.
 
@@ -198,6 +198,30 @@ fn verify(s: &mut Session, lib: &str, n: u32, kib: u32) -> Result<(), String> {
     } else {
         Err(format!("obj verify {lib}:\n{out}"))
     }
+}
+
+/// A stream file in the IFS, whose volume is in ASP 1: written through
+/// the service, so through the device parity set.
+fn ifs_put(s: &mut Session, tag: &str) -> Result<(), String> {
+    let text = format!("{tag} ").repeat(200);
+    let out = s.command(&format!("svc.ifs put /tmp/par13{tag}.txt {text}"), CMD)?;
+    if out.contains("CPE") || out.contains("error") {
+        return Err(format!("ifs put {tag}:
+{out}"));
+    }
+    Ok(())
+}
+
+/// The stream files `ifs_put` wrote read back.
+fn ifs_check(s: &mut Session, tags: &[&str]) -> Result<(), String> {
+    for tag in tags {
+        let out = s.command(&format!("svc.ifs cat /tmp/par13{tag}.txt"), CMD)?;
+        if out.matches(&format!("{tag} ")).count() < 200 {
+            return Err(format!("ifs cat {tag}:
+{out}"));
+        }
+    }
+    Ok(())
 }
 
 fn chkstg(s: &mut Session) -> Result<(), String> {
@@ -461,6 +485,12 @@ impl Suite {
         let mut s = Session::spawn(&all)?;
         let r = (|| -> Result<String, String> {
             let filled = configure(&mut s, boot)?;
+            let vol = s.command("svc.ifs", CMD)?;
+            if !vol.contains("volume in ASP 1") {
+                return Err(format!("the IFS is not in ASP 1:
+{vol}"));
+            }
+            ifs_put(&mut s, "a")?;
             enter_dst(&mut s, boot)?;
             disk_configuration(&mut s)?;
             s.send("5")?;
@@ -498,6 +528,8 @@ impl Suite {
                 return Err(format!("obj fill QPAR2:\n{out}"));
             }
             verify(&mut s, FILL.0, FILL.1, FILL.2)?;
+            ifs_check(&mut s, &["a"])?;
+            ifs_put(&mut s, "b")?;
             let after = s.command("svc.asp", CMD)?;
             let p1 = sync_percent(&after);
             Ok(format!(
@@ -525,9 +557,10 @@ impl Suite {
             let waited = wait_active(&mut s, 4)?;
             verify(&mut s, FILL.0, FILL.1, FILL.2)?;
             verify(&mut s, "QPAR2", 300, 32)?;
+            ifs_check(&mut s, &["a", "b"])?;
             chkstg(&mut s)?;
             Ok(format!(
-                "{first}; after a power down the next IPL {}; DPY/Active {waited}s later; data intact; chkstg clean",
+                "{first}; after a power down the next IPL {}; DPY/Active {waited}s later; data and IFS files intact; chkstg clean",
                 resumed.map_or_else(
                     || "found it synchronized".to_string(),
                     |p| format!("went on from {p}%")
@@ -561,7 +594,10 @@ impl Suite {
                 return Err(format!("obj fill QPAR3 exposed:\n{out}"));
             }
             verify(&mut s, "QPAR3", 100, 32)?;
-            Ok(format!("{first}; disk 4 pulled: A6001257, DPY/Failed, every page read through parity, written exposed"))
+            ifs_check(&mut s, &["a", "b"])?;
+            ifs_put(&mut s, "c")?;
+            ifs_check(&mut s, &["c"])?;
+            Ok(format!("{first}; disk 4 pulled: A6001257, DPY/Failed, every page and IFS file read through parity, written exposed"))
         })();
         let second = match r {
             Ok(d) => d,
@@ -597,6 +633,7 @@ impl Suite {
             verify(&mut s, "QPAR2", 300, 32)?;
             verify(&mut s, "QPAR3", 100, 32)?;
             verify(&mut s, "QPAR4", 300, 32)?;
+            ifs_check(&mut s, &["a", "b", "c"])?;
             chkstg(&mut s)?;
             Ok(format!(
                 "{second}; disk 4 back: the IPL completed at {r0}% rebuilt, data read and QPAR4 written during the rebuild (then {}), DPY/Active {waited}s later, data intact, chkstg clean",

@@ -17,7 +17,7 @@ use tracing::info;
 use crate::ctx::Ctx;
 use crate::host::hash::{sha256_file, short};
 use crate::host::paths;
-use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
+use crate::kernel::UkiKind;
 
 /// Slot A: the removable-media default boot path.
 const SLOT_A: &str = "BOOTX64.EFI";
@@ -69,25 +69,16 @@ pub fn disk(ctx: &Ctx, bytes: Option<u64>) -> Result<PathBuf> {
         .open(&out)
         .with_context(|| format!("cannot create {}", out.display()))?;
     file.set_len(plan.total_sectors * diskimg::SECTOR)?;
-    // A new, truncated file reads as zeros; the IFS is stamped with the
-    // build epoch so the image stays reproducible.
-    let ifs = diskimg::IfsFormat {
-        time: diskimg::xfsfmt::Timestamp {
-            secs: SOURCE_DATE_EPOCH.parse()?,
-            nsecs: 0,
-        },
-        zeroed: true,
-    };
-    diskimg::write_image(&mut file, &plan, &Guids::FIXED, &esp, &ifs)?;
+    // The IFS is made in ASP 1 at the first IPL.
+    diskimg::write_image(&mut file, &plan, &Guids::FIXED, &esp)?;
     file.sync_all()?;
     paths::write_pointer(&ctx.paths.disk_pointer(), &out)?;
     info!(
-        "disk: {} ({} bytes: ESP {} MiB, LIC {} MiB, IFS {} MiB, ASP1 {} MiB; sha256 {})",
+        "disk: {} ({} bytes: ESP {} MiB, LIC {} MiB, ASP1 {} MiB; sha256 {})",
         out.display(),
         fs::metadata(&out)?.len(),
         plan.esp.bytes() >> 20,
         plan.lic.bytes() >> 20,
-        plan.ifs.bytes() >> 20,
         plan.asp1.bytes() >> 20,
         sha256_file(&out)?
     );

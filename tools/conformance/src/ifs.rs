@@ -4,6 +4,8 @@
 
 //! Phase 10 QEMU step: the IFS root's filesystem mounted at IPL.
 
+use std::time::Duration;
+
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
 
@@ -13,8 +15,9 @@ const MOUNT_POINT: &str = "/run/qs400/ifs";
 // The steps share one signature so `step` can take them as fn pointers.
 #[allow(clippy::unused_self)]
 impl Suite {
-    /// Step 59: the QS400-IFS partition is mounted read-write as xfs,
-    /// C6001012 was raised, and the capacity is the partition's.
+    /// Step 59: the IFS volume in ASP 1, served as `/dev/ublkbN`, is
+    /// mounted read-write as xfs (C6001012) with a plausible capacity;
+    /// `QSGROWIFS` grows it and the filesystem with it.
     pub(crate) fn ifs_mount(&self, s: &mut Session) -> Result<String, String> {
         let srcs = s.command("srcs", CMD)?;
         if !srcs.contains("C6001012") {
@@ -23,34 +26,40 @@ impl Suite {
         let out = s.command("svc.ifs", CMD)?;
         let mount = out
             .lines()
-            .find(|l| l.starts_with("IFS /dev/"))
-            .ok_or_else(|| format!("svc.ifs shows no mount:\n{out}"))?;
+            .find(|l| l.starts_with("IFS /dev/ublkb"))
+            .ok_or_else(|| format!("svc.ifs shows no ublk mount:\n{out}"))?;
         if !mount.contains(&format!("on {MOUNT_POINT} type xfs (rw")) {
             return Err(format!("not xfs read-write at {MOUNT_POINT}: {mount}"));
         }
-        if !out.contains("label QS400-IFS") {
-            return Err(format!("svc.ifs shows no label:\n{out}"));
+        if !out.contains("label QS400-IFS") || !out.contains("volume in ASP 1") {
+            return Err(format!("svc.ifs shows no label or volume:\n{out}"));
         }
-        let mib = |key: &str| -> Option<u64> {
-            let at = out.find(key)? + key.len();
-            out[at..]
-                .split_whitespace()
-                .next()?
-                .parse::<u64>()
-                .ok()
-                .map(|b| b >> 20)
-        };
-        let (Some(size), Some(free)) = (mib("capacity "), mib("free ")) else {
-            return Err(format!("svc.ifs shows no capacity:\n{out}"));
-        };
+        let (size, free) = capacity(&out)?;
         if size < 400 || free == 0 || free > size {
             return Err(format!(
                 "implausible capacity {size} MiB, {free} MiB free:\n{out}"
             ));
         }
+        let grow = s.command("QSGROWIFS SIZE(64)", Duration::from_mins(2))?;
+        if !grow.contains("CPC3E20") {
+            return Err(format!("QSGROWIFS:\n{grow}"));
+        }
+        let after = s.command("svc.ifs", CMD)?;
+        let (grown, _) = capacity(&after)?;
+        if grown < size + 60 {
+            return Err(format!(
+                "the filesystem did not grow: {size} MiB, then {grown} MiB:\n{after}"
+            ));
+        }
+        // Still usable after the growth.
+        let put = s.command("svc.ifs put /tmp/qs59.txt grown", CMD)?;
+        let cat = s.command("svc.ifs cat /tmp/qs59.txt", CMD)?;
+        if !cat.contains("grown") {
+            return Err(format!("a file after the growth:\n{put}\n{cat}"));
+        }
         let source = mount.split_whitespace().nth(1).unwrap_or("?");
         Ok(format!(
-            "{source} mounted rw at {MOUNT_POINT}, {size} MiB, {free} MiB free"
+            "{source} (in ASP 1) mounted rw at {MOUNT_POINT}, {size} MiB, {free} MiB free; QSGROWIFS SIZE(64) made it {grown} MiB"
         ))
     }
 
@@ -100,6 +109,23 @@ impl Suite {
         }
         s.command("svc.dltf QGPL/QIFSSRC", CMD).ok();
         Ok("MD, a member to a stream file and back (CPYTOSTMF, CPYFRMSTMF), WRKLNK and DSPF text, DEL by pattern, RD".into())
+    }
+}
+
+/// `svc.ifs`'s capacity and free space, MiB.
+fn capacity(out: &str) -> Result<(u64, u64), String> {
+    let mib = |key: &str| -> Option<u64> {
+        let at = out.find(key)? + key.len();
+        out[at..]
+            .split_whitespace()
+            .next()?
+            .parse::<u64>()
+            .ok()
+            .map(|b| b >> 20)
+    };
+    match (mib("capacity "), mib("free ")) {
+        (Some(size), Some(free)) => Ok((size, free)),
+        _ => Err(format!("svc.ifs shows no capacity:\n{out}")),
     }
 }
 

@@ -109,8 +109,11 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
   svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
                 src/dst/ (disk/, environment, tools, security), src/install/, src/users/
-  diskimg/      GPT layout (ESP, LIC, IFS, ASP1), FAT volumes, partition lookup, the IFS
-                partition and its RCLSTG migration (migrate.rs); build + installer
+  diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup (an older
+                system's IFS partition too); build + installer
+  ublk/         the ublk server the storage service serves the IFS volume with: abi.rs the
+                kernel's layouts, target.rs requests to block calls, device.rs add, start,
+                resize, stop; sys.rs the io_uring rings, the descriptor map, xfs growfs
   hwrsrc/       hardware resources: src/scan/ (pci, nic, storage), src/table/ names, rescans,
                 packaging and logical trees, uevent.rs, proto.rs and client.rs the service's
                 socket (/run/qs400/hwrsrc.sock), view.rs what WRKHDWRSC/DSPHDWRSC and QGYRHR* show
@@ -186,7 +189,8 @@ service/      service: the problem log (docs/SERVICE.md)
                 analyze.rs (QSYSOPR messages, hardware, dumps, ANZPRB). The service side is
                 lic/slic/src/stgsvc/prblog.rs and cpp/prbcmd.rs
 storage/      the object store and the names and code pages it holds
-  store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
+  store/        object store: src/page/, src/btree/, src/asp/ (units, superblock, io.rs with
+                SharedIo, src/asp/ifs/ the IFS volume: map, extents, growth, IfsIo),
                 src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
   qsname/       object, library and member name rules; 10-byte CP037 Name
   ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv.rs the
@@ -544,6 +548,8 @@ otherwise logs go to `target/logs/`.
   `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call),
   `runtime/mi/src/act.rs` (calling into generated code: entries and handlers),
   `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler),
+  `lic/ublk/src/sys.rs` (the `io_uring` rings and the ublk descriptors mapped
+  from the kernel, xfs's grow ioctl),
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
   `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls) and
   `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks).

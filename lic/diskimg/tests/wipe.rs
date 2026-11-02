@@ -7,8 +7,8 @@
 
 use blockdev::{BLOCK_SIZE, BlockDev, BlockError, MemBlockDev};
 use diskimg::wipe::{EDGE_BYTES, wipe};
-use diskimg::xfsfmt::{SparseDev, Timestamp};
-use diskimg::{Guids, IfsFormat, MIN_DISK_BYTES, Plan, fat, write_image};
+use diskimg::xfsfmt::SparseDev;
+use diskimg::{Guids, MIN_DISK_BYTES, Plan, fat, write_image};
 
 const BS: u64 = BLOCK_SIZE as u64;
 const MARK: &[u8] = b"QS400 UNIT HEADER";
@@ -20,14 +20,7 @@ fn qs400_disk() -> (MemBlockDev, Plan, Vec<u64>) {
     let bytes = plan.total_sectors * 512;
     let mut img = SparseDev::new(bytes);
     let esp = fat::build(&fat::DISK_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"uki")]).unwrap();
-    let ifs = IfsFormat {
-        time: Timestamp {
-            secs: 1_767_225_600,
-            nsecs: 0,
-        },
-        zeroed: true,
-    };
-    write_image(&mut img, &plan, &Guids::FIXED, &esp, &ifs).unwrap();
+    write_image(&mut img, &plan, &Guids::FIXED, &esp).unwrap();
     let dev = MemBlockDev::new(bytes / BS);
     let mut written = Vec::new();
     for (at, page) in img.pages() {
@@ -60,7 +53,7 @@ fn assert_blank_signatures(dev: &dyn BlockDev, plan: &Plan) {
     let last = dev.blocks() * BS / 512 - 1;
     assert_ne!(&sector(dev, 1)[..8], b"EFI PART", "primary GPT");
     assert_ne!(&sector(dev, last)[..8], b"EFI PART", "backup GPT");
-    for part in [&plan.esp, &plan.lic, &plan.ifs, &plan.asp1] {
+    for part in [&plan.esp, &plan.lic, &plan.asp1] {
         assert!(block_is_zero(dev, part.offset() / BS), "head of {part:?}");
     }
 }
@@ -73,7 +66,7 @@ fn a_qs400_disk_comes_out_blank() {
     assert_eq!(&sector(&dev, last)[..8], b"EFI PART");
     let mut seen = Vec::new();
     let w = wipe(&dev, &mut |p| seen.push(p)).unwrap();
-    assert_eq!(w.partitions, 4);
+    assert_eq!(w.partitions, 3);
     assert_eq!(w.discarded, dev.blocks());
     assert_eq!(seen.first(), Some(&0));
     assert_eq!(seen.last(), Some(&100));
@@ -119,9 +112,9 @@ fn without_discard_the_tables_and_headers_still_go() {
     let dev = NoDiscard(dev);
     let w = wipe(&dev, &mut |_| {}).unwrap();
     assert_eq!(w.discarded, 0);
-    assert_eq!(w.partitions, 4);
-    // Both edges and four 1 MiB heads (the ESP's lies in the first edge).
-    assert_eq!(w.zeroed, 2 * EDGE_BYTES / BS + 3 * (1 << 20) / BS);
+    assert_eq!(w.partitions, 3);
+    // Both edges and three 1 MiB heads (the ESP's lies in the first edge).
+    assert_eq!(w.zeroed, 2 * EDGE_BYTES / BS + 2 * (1 << 20) / BS);
     assert_blank_signatures(&dev, &plan);
     let mut b = vec![0u8; BLOCK_SIZE as usize];
     dev.read(plan.asp1.offset() / BS, &mut b).unwrap();
