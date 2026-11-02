@@ -8,7 +8,7 @@
 use std::cmp::Ordering;
 
 use dds::{DataType, FieldDef, FloatPrecision, Literal};
-use qdecimal::{Binary, Decimal, Float, Packed, Rounding, Zoned};
+use qdecimal::{Binary, DecFloat, Decimal, DfFormat, Float, Packed, Rounding, Zoned};
 
 use crate::error::{DbError, Result};
 
@@ -22,8 +22,27 @@ pub enum Value {
     /// A numeric field.
     Num(Decimal),
     /// Character, hexadecimal, graphic, DBCS-open, date, time or
-    /// timestamp bytes, CP037 for text, without `VARLEN` padding.
+    /// timestamp bytes, CP037 for text, without `VARLEN` padding; the
+    /// bytes of a binary string or a `BOOLEAN`; a LOB's `LobRef`.
     Char(Vec<u8>),
+    /// A `DECFLOAT` field.
+    DecFloat(DecFloat),
+}
+
+/// The format of a `DECFLOAT` field.
+#[must_use]
+pub fn decfloat_format(f: &FieldDef) -> DfFormat {
+    if f.length <= 16 { DfFormat::D16 } else { DfFormat::D34 }
+}
+
+/// What a byte field is padded with: 0x00 for binary strings, blanks
+/// for text.
+fn pad_byte(f: &FieldDef) -> u8 {
+    if matches!(f.data_type, DataType::Bytes | DataType::Boolean) || f.data_type.is_lob() {
+        0
+    } else {
+        ccsid::SPACE
+    }
 }
 
 fn mapping(f: &FieldDef, what: impl std::fmt::Display) -> DbError {
@@ -89,6 +108,11 @@ pub fn read_field(
             FloatPrecision::Single => Float::SINGLE.decode(bytes),
             FloatPrecision::Double => Float::DOUBLE.decode(bytes),
         },
+        DataType::DecFloat => {
+            return DecFloat::decode(bytes, decfloat_format(f))
+                .map(Value::DecFloat)
+                .map_err(|e| mapping(f, e));
+        }
         _ => return Ok(Value::Char(bytes.to_vec())),
     };
     num.map(Value::Num).map_err(|e| mapping(f, e))
@@ -99,13 +123,42 @@ pub fn read_field(
 pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()> {
     let off = usize::try_from(f.offset).expect("fits");
     let out = &mut record[off..off + usize::try_from(f.byte_len).expect("fits")];
+    if f.data_type == DataType::DecFloat {
+        let fmt = decfloat_format(f);
+        let v = match value {
+            Value::Null => DecFloat::zero(fmt),
+            Value::DecFloat(v) => v.to_format(fmt).map_err(|e| mapping(f, e))?,
+            Value::Num(d) => DecFloat::from_decimal(d, fmt).map_err(|e| mapping(f, e))?,
+            Value::Char(_) => return Err(mapping(f, "bytes into a DECFLOAT field")),
+        };
+        out.copy_from_slice(&v.encode());
+        return Ok(());
+    }
+    if f.data_type == DataType::Boolean {
+        out[0] = match value {
+            Value::Null => 0xF0,
+            Value::Char(b) if matches!(b.first(), Some(0xF0 | 0xF1)) => b[0],
+            Value::Num(d) => if d.is_zero() { 0xF0 } else { 0xF1 },
+            _ => return Err(mapping(f, "not a BOOLEAN")),
+        };
+        return Ok(());
+    }
+    if let Value::DecFloat(v) = value {
+        if !f.data_type.is_numeric() {
+            return Err(mapping(f, format!("number {v} into a character field")));
+        }
+        let d = v.to_decimal().map_err(|e| mapping(f, e))?;
+        return write_field(f, record, &Value::Num(d));
+    }
+    let pad = pad_byte(f);
     match (f.data_type.is_numeric(), value) {
+        (_, Value::DecFloat(_)) => unreachable!("handled above"),
         (_, Value::Null) => {
             // The null map says null; the bytes hold the type's zero.
             if f.data_type.is_numeric() {
                 return write_field(f, record, &Value::Num(Decimal::zero()));
             }
-            out.fill(ccsid::SPACE);
+            out.fill(pad);
             if f.varlen.is_some() {
                 out[..2].fill(0);
             }
@@ -139,11 +192,11 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
                 let n = bytes.len().min(max);
                 out[..2].copy_from_slice(&u16::try_from(n).expect("fits").to_be_bytes());
                 out[2..2 + n].copy_from_slice(&bytes[..n]);
-                out[2 + n..].fill(ccsid::SPACE);
+                out[2 + n..].fill(pad);
             } else {
                 let n = bytes.len().min(out.len());
                 out[..n].copy_from_slice(&bytes[..n]);
-                out[n..].fill(ccsid::SPACE);
+                out[n..].fill(pad);
             }
             Ok(())
         }
@@ -167,9 +220,16 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
 pub fn compare(a: &Value, b: &Value) -> Ordering {
     match (a, b) {
         (Value::Null, Value::Null) => Ordering::Equal,
-        (Value::Null, _) | (Value::Char(_), Value::Num(_)) => Ordering::Greater,
-        (_, Value::Null) | (Value::Num(_), Value::Char(_)) => Ordering::Less,
+        (Value::Null, _) | (Value::Char(_), Value::Num(_) | Value::DecFloat(_)) => Ordering::Greater,
+        (_, Value::Null) | (Value::Num(_) | Value::DecFloat(_), Value::Char(_)) => Ordering::Less,
         (Value::Num(x), Value::Num(y)) => x.cmp(y),
+        (Value::DecFloat(x), Value::DecFloat(y)) => x.sql_cmp(y),
+        (Value::DecFloat(x), Value::Num(y)) => {
+            DecFloat::from_decimal(y, DfFormat::D34).map_or(Ordering::Greater, |y| x.sql_cmp(&y))
+        }
+        (Value::Num(x), Value::DecFloat(y)) => {
+            DecFloat::from_decimal(x, DfFormat::D34).map_or(Ordering::Less, |x| x.sql_cmp(y))
+        }
         (Value::Char(x), Value::Char(y)) => ccsid::ebcdic_cmp(x, y),
     }
 }
@@ -183,6 +243,9 @@ pub fn literal_value(f: &FieldDef, lit: &Literal) -> Result<Value> {
                 .collect(),
         ),
         Literal::Hex(h) => Value::Char(h.clone()),
+        Literal::Word(w) if f.data_type == DataType::DecFloat => Value::DecFloat(
+            DecFloat::parse(w, decfloat_format(f)).map_err(|e| mapping(f, e))?,
+        ),
         Literal::Word(w) if f.data_type.is_numeric() => {
             Value::Num(Decimal::parse(w).map_err(|e| mapping(f, e))?)
         }
@@ -269,6 +332,32 @@ mod tests {
         assert_eq!(read_field(&a, &rec, &nulls, Some(3)).unwrap(), Value::Null);
         set_null(&mut nulls, 3, false);
         assert_eq!(nulls, [0]);
+    }
+
+    #[test]
+    fn sql_only_types() {
+        let mut rec = vec![0u8; 40];
+        let df = f(DataType::DecFloat, 16, 0, 0);
+        assert_eq!(df.byte_len, 8);
+        let v = Value::DecFloat(DecFloat::parse("-1.50E+3", DfFormat::D16).unwrap());
+        write_field(&df, &mut rec, &v).unwrap();
+        assert_eq!(read_field(&df, &rec, &[], None).unwrap(), v);
+        write_field(&df, &mut rec, &Value::Num(Decimal::parse("2.5").unwrap())).unwrap();
+        assert_eq!(
+            compare(&read_field(&df, &rec, &[], None).unwrap(), &Value::Num(Decimal::parse("2.50").unwrap())),
+            Ordering::Equal
+        );
+        write_field(&df, &mut rec, &Value::Null).unwrap();
+        assert_eq!(read_field(&df, &rec, &[], None).unwrap(), Value::DecFloat(DecFloat::zero(DfFormat::D16)));
+        let b = f(DataType::Bytes, 4, 0, 8);
+        write_field(&b, &mut rec, &Value::Char(vec![0x40, 0xFF])).unwrap();
+        assert_eq!(&rec[8..12], &[0x40, 0xFF, 0, 0]);
+        let t = f(DataType::Boolean, 1, 0, 12);
+        write_field(&t, &mut rec, &Value::Char(vec![0xF1])).unwrap();
+        assert_eq!(rec[12], 0xF1);
+        write_field(&t, &mut rec, &Value::Null).unwrap();
+        assert_eq!(rec[12], 0xF0);
+        assert!(write_field(&t, &mut rec, &Value::Char(vec![0x40])).is_err());
     }
 
     #[test]

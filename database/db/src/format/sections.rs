@@ -702,7 +702,7 @@ fn decode_field(b: &[u8]) -> Result<FieldDef> {
         return Err(corrupt("field entry size"));
     }
     let name = name_of(b);
-    let data_type = DataType::from_letter(char::from(b[10]))
+    let data_type = DataType::from_code(char::from(b[10]))
         .ok_or_else(|| corrupt(format!("field {name} type {:#04x}", b[10])))?;
     let flags = get_u16(b, 12);
     let mut f = FieldDef::new(name, data_type, get_u32(b, 14), b[11]);

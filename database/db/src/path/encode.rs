@@ -37,7 +37,18 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
             }
             out.extend(part);
         }
+        Value::Char(bytes) if !f.data_type.is_datetime() => {
+            // Binary strings, BOOLEAN and LOB references: the bytes, 0x00 padded.
+            let mut part: Vec<u8> = bytes.iter().take(data_len).copied().collect();
+            part.resize(data_len, 0);
+            out.extend(part);
+        }
         Value::Char(bytes) => out.extend(datetime(f, bytes)?),
+        Value::DecFloat(v) => out.extend(decfloat(v)),
+        Value::Num(d) if f.data_type == DataType::DecFloat => {
+            let v = qdecimal::DecFloat::from_decimal(d, qdecimal::DfFormat::D34).map_err(|e| mapping(f, e))?;
+            out.extend(decfloat(&v));
+        }
         Value::Num(d) if f.data_type == DataType::Float => {
             let x: f64 = d.to_string().parse().map_err(|_| mapping(f, "float"))?;
             let bits = x.to_bits();
@@ -57,6 +68,40 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
     }
     debug_assert_eq!(out.len() - start, part_len(f, k.transform));
     Ok(())
+}
+
+/// A `DECFLOAT` key part: class, adjusted exponent, 34 digits; a
+/// negative number's bytes after the class complemented.
+fn decfloat(v: &qdecimal::DecFloat) -> Vec<u8> {
+    use qdecimal::DfKind;
+    let mut out = vec![0u8; crate::format::keys::DECFLOAT_KEY_LEN];
+    let neg = v.is_negative();
+    out[0] = match (v.kind(), neg) {
+        (DfKind::NaN, true) => 0x01,
+        (DfKind::SNaN, true) => 0x02,
+        (DfKind::Infinity, true) => 0x03,
+        (DfKind::Finite, _) if v.is_zero() => 0x05,
+        (DfKind::Finite, true) => 0x04,
+        (DfKind::Finite, false) => 0x06,
+        (DfKind::Infinity, false) => 0x07,
+        (DfKind::SNaN, false) => 0x08,
+        (DfKind::NaN, false) => 0x09,
+    };
+    if out[0] == 0x04 || out[0] == 0x06 {
+        let digits = v.coefficient().to_string();
+        let adj = v.exponent() + i32::try_from(digits.len()).expect("small") - 1;
+        let e = u16::try_from(adj + 0x8000).expect("exponent in range");
+        out[1..3].copy_from_slice(&e.to_be_bytes());
+        for (i, d) in digits.bytes().enumerate() {
+            out[3 + i] = d - b'0';
+        }
+        if neg {
+            for b in &mut out[1..] {
+                *b = !*b;
+            }
+        }
+    }
+    out
 }
 
 /// Sign byte and digit bytes of a decimal key part.
@@ -191,6 +236,26 @@ mod tests {
 
     fn n(s: &str) -> Value {
         Value::Num(Decimal::parse(s).unwrap())
+    }
+
+    #[test]
+    fn decfloats_order_bytewise() {
+        use qdecimal::{DecFloat, DfFormat};
+        let f = fld(DataType::DecFloat, 34, 0);
+        let vals = [
+            "-NaN", "-sNaN", "-Infinity", "-1E+10", "-2.5", "-2", "-1E-10", "0", "1E-10", "2", "2.5", "1E+10", "Infinity",
+            "sNaN", "NaN",
+        ];
+        let keys: Vec<Vec<u8>> = vals
+            .iter()
+            .map(|v| key(&f, KeyTransform::Signed, false, &Value::DecFloat(DecFloat::parse(v, DfFormat::D34).unwrap())))
+            .collect();
+        for (w, v) in keys.windows(2).zip(vals) {
+            assert!(w[0] < w[1], "{v}");
+        }
+        let one = |s: &str| key(&f, KeyTransform::Signed, false, &Value::DecFloat(DecFloat::parse(s, DfFormat::D34).unwrap()));
+        assert_eq!(one("1.0"), one("1.00"));
+        assert_eq!(one("1.0"), key(&f, KeyTransform::Signed, false, &n("1")));
     }
 
     #[test]

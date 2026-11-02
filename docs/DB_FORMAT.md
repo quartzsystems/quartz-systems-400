@@ -144,10 +144,10 @@ source order; the next `FORMAT` section starts the next format.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 10 | name | CP037 |
-| 10 | 1 | data_type | the DDS letter, ASCII: `A H G O S P B F L T Z` |
+| 10 | 1 | data_type | the type code, ASCII: a DDS letter `A H G O S P B F L T Z`, or for SQL-only types `E` `DECFLOAT`, `X` `BINARY` (`VARBINARY` with `VARLEN`), `N` `BOOLEAN`, `Q` `BLOB`, `C` `CLOB`, `J` `DBCLOB`; see §4 Field encodings |
 | 11 | 1 | decimals | |
 | 12 | 2 | flags | bit 0 `ALWNULL`, bit 1 `VARLEN`, bit 2 usage `B` |
-| 14 | 4 | length | characters or digits |
+| 14 | 4 | length | characters or digits; a timestamp 19 or `20 + p`, `DECFLOAT` 16 or 34, a LOB its largest length |
 | 18 | 4 | byte_len | bytes in the record, `VARLEN` prefix included |
 | 22 | 4 | offset | byte offset in the record |
 | 26 | 2 | ccsid | 0 for the file's |
@@ -288,7 +288,7 @@ the attribute area, `base_count` × `ObjectId`, one per format of the
 logical file in format order (every format of a `PFILE` list uses its
 first file). Header tree roots: slot 0 the access path (§6), slot 1 the
 free-slot tree (`REUSEDLT(*YES)`): keys are RRNs of deleted slots, values
-empty.
+empty; slot 2 the LOB tree of a physical member (below).
 
 ### `RecordSlot` (variable)
 
@@ -304,6 +304,61 @@ is `1 + record_len + null_map_len`.
 
 `TODO(perf)`: a `VARLEN` field is stored at its maximum length; the
 `ALLOCATE` length and an overflow extent are not used.
+
+**Field encodings.** By the field's type code (`FieldEntry.data_type`):
+
+- `A H G O`: the bytes, CP037 for text, blank (0x40) padded; `G` is two
+  bytes per character.
+- `S P B F`: zoned, packed, binary (big-endian, two's complement) and
+  IEEE binary floating point (big-endian), as `DECIMAL.md` §2.
+- `L T`: the text in the field's format. `Z`: `yyyy-mm-dd-hh.mm.ss`,
+  then for a precision `p` above 0 a `.` and `p` digits: the field is
+  `length` = 19 or `20 + p` bytes, 26 for DDS's `Z` (`p` 6). An SQL
+  `TIMESTAMP(p)` has `p` 0 to 12; a file made before precisions existed
+  is 26 bytes and reads as `p` 6.
+- `E` (`DECFLOAT`): `length` 16 is IEEE 754 decimal64 (8 bytes), 34 is
+  decimal128 (16 bytes), big-endian with a densely packed decimal
+  coefficient (`DECIMAL.md` §9). The special values are stored as IEEE
+  encodes them. A null field holds positive zero, exponent 0.
+- `X` (`BINARY`, `VARBINARY` with `VARLEN`): the bytes, padded with 0x00
+  (`BINARY` to `length`; `VARBINARY` past its 2-byte length). Its CCSID
+  is 65535.
+- `N` (`BOOLEAN`): one byte, 0xF1 true and 0xF0 false (as an RPG
+  indicator holds `'1'` and `'0'`); a null field holds 0xF0.
+- `Q C J` (`BLOB`, `CLOB`, `DBCLOB`): a 32-byte `LobRef`. `length` is
+  the largest value in bytes (`BLOB`, `CLOB`) or UTF-16 characters
+  (`DBCLOB`). A `CLOB` holds CP037 bytes, a `DBCLOB` UTF-16BE (CCSID
+  1200), a `BLOB` bytes (CCSID 65535).
+
+The SQL-only types (`E X N Q C J`) have no DDS letter: SQL's `CREATE
+TABLE` makes them and a DDS reference (`REF`, `REFFLD`) copies them.
+
+### `LobRef` (32 bytes)
+
+A LOB field's bytes in the record, big-endian.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | length | bytes of the value |
+| 4 | 1 | kind | 0 inline, 1 in the member's LOB tree |
+| 5 | 3 | reserved | 0 |
+| 8 | 24 | data | inline: the value's `length` bytes (at most 24), zero padded; in the tree: the LOB ID (8), then 16 bytes of 0 |
+
+A value longer than 24 bytes is kept in the LOB tree of the physical
+member that holds the record (header tree root slot 2): keys are
+`(lob_id << 24) | chunk` as a big-endian `u64`, values the value's bytes
+in chunks of 1024, the last one shorter. A new value takes the LOB ID
+one above the largest in the tree (1 in an empty tree); IDs are not
+reused. A record read through a logical member finds its LOBs in its
+based-on physical member's tree.
+
+An update or a delete leaves the old value's chunks in the tree: a
+before image the journal or a rollback puts back still finds them.
+`CLRPFM` frees the tree. `TODO(perf)`: `RGZPFM` keeps the chunks of
+values no record names. Record bytes copied between members as they
+are would name another member's chunks, so `CPYF`, `CPYTOIMPF` and
+`CPYFRMIMPF` refuse a file with LOB fields, and a journal entry's record
+image names its LOBs in the member it came from.
 
 ## 5. Format level identifier
 
@@ -351,7 +406,17 @@ Byte order of the encoded key is the key order DDS asks for:
   positive and every bit flipped when negative.
 - Date: 8 ASCII digits `yyyymmdd` (`*JUL` as `yyyy0ddd`), a two-digit
   year read as 1940 to 2039; time: 6 ASCII digits `hhmmss` on the
-  24-hour clock; timestamp: its 26 stored bytes.
+  24-hour clock; timestamp: its stored bytes (19 to 32).
+- `DECFLOAT`: 37 bytes. A class byte: 0x01 `-NaN`, 0x02 `-sNaN`, 0x03
+  `-Infinity`, 0x04 negative, 0x05 zero, 0x06 positive, 0x07
+  `Infinity`, 0x08 `sNaN`, 0x09 `NaN`; for a nonzero number the
+  adjusted exponent plus 0x8000 (2, big-endian) and the coefficient's
+  34 digits from the first nonzero one, zero filled on the right, one
+  byte each; for a negative number those 36 bytes are complemented.
+  Everything else is zeros. Equal values (`1.0`, `1.00`) have equal keys.
+- `BINARY`, `VARBINARY`: the bytes as stored, a `VARBINARY` at its
+  maximum length padded with 0x00; `BOOLEAN`: its byte. A LOB cannot be
+  a key field.
 - A null-capable field is preceded by one byte: 0x00 when it holds a
   value, 0xFF when null, so null sorts high; a null field's digits or
   bytes are zeros.

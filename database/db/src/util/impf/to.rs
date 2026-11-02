@@ -33,6 +33,7 @@ pub fn cpytoimpf(
 ) -> Result<Vec<u8>> {
     crate::auth::check(txn, "file.open-input", file)?;
     let desc = file::describe(txn, file)?;
+    crate::util::no_lobs(&desc, "CPYTOIMPF")?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(
         txn,
@@ -170,6 +171,11 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
     match v {
         Value::Null => String::new(),
         Value::Num(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
+        Value::DecFloat(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
+        Value::Char(bytes) if f.data_type == DataType::Bytes => bytes.iter().map(|b| format!("{b:02X}")).collect(),
+        Value::Char(bytes) if f.data_type == DataType::Boolean => {
+            if bytes.first() == Some(&0xF1) { "TRUE" } else { "FALSE" }.into()
+        }
         Value::Char(bytes) => {
             let s = ccsid::from_ebcdic(bytes);
             match f.data_type {

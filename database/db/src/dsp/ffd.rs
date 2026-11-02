@@ -123,6 +123,22 @@ fn field_info(fmt: &FormatDef, i: usize, f: &FieldDef) -> FieldInfo {
                 .filter(|_| f.time_fmt.unwrap_or_default().fixed_separator().is_none())
                 .map_or(String::new(), |c| format!("TIMSEP('{c}')"))
         )),
+        // The SQL type where DDS has no word for it.
+        DataType::Timestamp if f.length != 26 => Some(format!(
+            "TIMESTAMP({})",
+            DataType::timestamp_precision(f.length)
+        )),
+        t if t.is_sql_only() => Some(format!(
+            "{}({}){}",
+            t.sql_name(f.varlen.is_some()),
+            f.length,
+            match t {
+                DataType::Bytes | DataType::Blob => " CCSID 65535",
+                DataType::Dbclob => " CCSID 1200",
+                _ => "",
+            }
+        ))
+        .map(|s| s.replace("BOOLEAN(1)", "BOOLEAN")),
         _ => None,
     }
     .map(|s| s.trim_end().to_string());
@@ -217,7 +233,7 @@ impl FieldDescription {
                     f.name,
                     f.data_type,
                     f.length,
-                    if f.data_type == 'A' || f.data_type == 'H' || f.data_type == 'G' {
+                    if "AHGEXNQCJ".contains(f.data_type) {
                         String::new()
                     } else {
                         f.decimals.to_string()

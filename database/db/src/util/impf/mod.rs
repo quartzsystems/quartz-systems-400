@@ -148,10 +148,16 @@ pub fn fixed_width(f: &FieldDef) -> usize {
             n(f.length) + 1 + usize::from(f.decimals > 0)
         }
         DataType::Date | DataType::Time | DataType::Timestamp => n(f.byte_len),
+        // E notation: sign, digits, point, `E`, sign and exponent.
+        DataType::DecFloat => n(f.length) + 8,
+        // Two hexadecimal digits a byte.
+        DataType::Bytes => n(f.length) * 2,
+        DataType::Boolean => 5,
+        DataType::Blob | DataType::Clob | DataType::Dbclob => n(f.length),
     }
 }
 
 /// Whether the field is written as text (quoted in `*DLM`).
 fn is_text(f: &FieldDef) -> bool {
-    !f.data_type.is_numeric()
+    !f.data_type.is_numeric() && !matches!(f.data_type, DataType::DecFloat | DataType::Boolean)
 }
