@@ -5,7 +5,9 @@
 //! A transaction: the [`Pager`] the trees and objects write through,
 //! and the in-place patches, roots and serials it publishes at commit.
 
+use std::cell::RefMut;
 use std::collections::{BTreeSet, HashMap};
+use std::ops::{Deref, DerefMut};
 
 use crate::alloc::Run;
 use crate::obj::ObjectId;
@@ -15,9 +17,49 @@ use crate::store::Store;
 use crate::wal::record::{Patch, WalRecord};
 use crate::{Result, StoreError};
 
+/// How a transaction reaches its store.
+enum Host<'a> {
+    /// Borrowed for the transaction's life.
+    Owned(&'a mut Store),
+    /// Borrowed through a cell; given back while the transaction is
+    /// suspended (`Txn::suspend`).
+    Cell {
+        get: Box<dyn Fn() -> RefMut<'a, Store> + 'a>,
+        held: Option<RefMut<'a, Store>>,
+    },
+}
+
+const SUSPENDED: &str = "a suspended transaction is resumed before it is used";
+
+impl Deref for Host<'_> {
+    type Target = Store;
+
+    fn deref(&self) -> &Store {
+        match self {
+            Self::Owned(s) => s,
+            Self::Cell { held, .. } => held.as_deref().expect(SUSPENDED),
+        }
+    }
+}
+
+impl DerefMut for Host<'_> {
+    fn deref_mut(&mut self) -> &mut Store {
+        match self {
+            Self::Owned(s) => s,
+            Self::Cell { held, .. } => held.as_deref_mut().expect(SUSPENDED),
+        }
+    }
+}
+
+impl Host<'_> {
+    fn suspended(&self) -> bool {
+        matches!(self, Self::Cell { held: None, .. })
+    }
+}
+
 /// One transaction. Dropping it without `commit` aborts it.
 pub struct Txn<'a> {
-    store: &'a mut Store,
+    store: Host<'a>,
     id: u64,
     roots: Vec<(ObjectId, Option<PageNo>)>,
     /// Pages allocated by this transaction and not freed again.
@@ -36,6 +78,23 @@ pub struct Txn<'a> {
 
 impl<'a> Txn<'a> {
     pub(crate) fn new(store: &'a mut Store, id: u64) -> Self {
+        Self::on(Host::Owned(store), id)
+    }
+
+    /// A transaction on a store that lives in a cell: `get` borrows it.
+    /// Unlike one from [`Store::begin`], it can give the store back
+    /// between reads ([`Txn::suspend`]), so a long read lets others in.
+    pub fn lent(get: Box<dyn Fn() -> RefMut<'a, Store> + 'a>) -> Result<Self> {
+        let held = get();
+        if held.is_quiesced() {
+            return Err(StoreError::Quiesced);
+        }
+        held.check()?;
+        let id = held.next_txn_id();
+        Ok(Self::on(Host::Cell { get, held: Some(held) }, id))
+    }
+
+    fn on(store: Host<'a>, id: u64) -> Self {
         let next_serial = store.next_serial();
         Self {
             store,
@@ -65,7 +124,55 @@ impl<'a> Txn<'a> {
 
     /// The store, for callers that need more than a transaction.
     pub fn store(&mut self) -> &mut Store {
-        self.store
+        &mut self.store
+    }
+
+    /// Whether the transaction has changed nothing yet.
+    #[must_use]
+    pub fn is_clean(&self) -> bool {
+        self.owned.is_empty()
+            && self.frees.is_empty()
+            && self.patched.is_empty()
+            && self.roots.is_empty()
+            && !self.wrote
+            && self.next_serial == self.store.next_serial()
+    }
+
+    /// Give the store back to its cell so others can use it. What the
+    /// transaction reads after [`Txn::resume`] is what others committed
+    /// meanwhile. Only a transaction from [`Txn::lent`] that has changed
+    /// nothing can; false otherwise.
+    pub fn suspend(&mut self) -> bool {
+        if self.done || self.store.suspended() || !self.is_clean() {
+            return false;
+        }
+        match &mut self.store {
+            Host::Owned(_) => false,
+            Host::Cell { held, .. } => {
+                if let Some(s) = held.as_mut() {
+                    let _ = s.commit_empty();
+                }
+                *held = None;
+                true
+            }
+        }
+    }
+
+    /// Borrow the store again after [`Txn::suspend`], as a transaction
+    /// begun now.
+    pub fn resume(&mut self) -> Result<()> {
+        if let Host::Cell { get, held } = &mut self.store
+            && held.is_none()
+        {
+            *held = Some(get());
+        }
+        if self.store.is_quiesced() {
+            return Err(StoreError::Quiesced);
+        }
+        self.store.check()?;
+        self.id = self.store.next_txn_id();
+        self.next_serial = self.store.next_serial();
+        Ok(())
     }
 
     /// Allocate up to `pages` contiguous pages.
@@ -212,14 +319,11 @@ impl<'a> Txn<'a> {
     /// Make the transaction durable.
     pub fn commit(mut self) -> Result<()> {
         self.done = true;
+        if self.store.suspended() {
+            return Ok(());
+        }
         // A transaction that only read has nothing to log.
-        if self.owned.is_empty()
-            && self.frees.is_empty()
-            && self.patched.is_empty()
-            && self.roots.is_empty()
-            && !self.wrote
-            && self.next_serial == self.store.next_serial()
-        {
+        if self.is_clean() {
             return self.store.commit_empty();
         }
         let asp = self.store.asp();
@@ -273,6 +377,10 @@ impl<'a> Txn<'a> {
     }
 
     fn rollback(&mut self) {
+        // Suspended, it holds nothing to undo.
+        if self.store.suspended() {
+            return;
+        }
         self.store.note_abort();
         if self.roots.iter().any(|(o, _)| o.is_none()) {
             self.store.headers_changed();

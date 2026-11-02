@@ -386,7 +386,12 @@ impl Store {
         Ok(())
     }
 
-    fn check(&self) -> Result<()> {
+    /// The ID the next transaction begun gets.
+    pub(crate) fn next_txn_id(&self) -> u64 {
+        self.next_txn
+    }
+
+    pub(crate) fn check(&self) -> Result<()> {
         match self.broken {
             Some(op) => Err(StoreError::Broken { op }),
             None => Ok(()),
