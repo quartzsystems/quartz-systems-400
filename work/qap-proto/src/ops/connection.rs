@@ -7,6 +7,7 @@
 use ipc::{wire_enum, wire_struct};
 
 use crate::envelope::Service;
+use crate::types::JobId;
 
 /// How a client may sign on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,6 +86,17 @@ pub struct PingReply {
 }
 
 wire_struct!(PingReply { server_time });
+
+/// `JobInfo`'s reply (version 4): the connection's job.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct JobInfoReply {
+    /// The connection job, as the system names it.
+    pub job: JobId,
+    /// The profile it runs as now: the signed-on one, else the job's user.
+    pub user: String,
+}
+
+wire_struct!(JobInfoReply { job, user });
 
 /// The version to speak: the newest the server has in the client's
 /// range.

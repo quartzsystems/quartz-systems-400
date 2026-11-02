@@ -15,11 +15,12 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 
 use ipc::Wire;
-use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
+use qap_proto::ops::connection::{Hello, HelloReply, JobInfoReply, PingReply, SignOnMethod, choose_version};
 use qap_proto::ops::signon::{Attach, ChangePassword, Resume, SignOn, SignOnReply};
 use qap_proto::ops::spool::{
     HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, ReadSpooledFile, SpooledFileRef,
 };
+use qap_proto::types::JobId;
 use qap_proto::{Envelope, HELLO_ID, Op, Service, Status, VERSION};
 
 use crate::Closed;
@@ -47,7 +48,7 @@ pub(crate) fn dispatch(shared: &Arc<Shared>, rx: &Receiver<In>, threads: &Thread
         match i {
             In::Request(req) => {
                 routed += 1;
-                if let Some(why) = route(shared, &mut *own, &mut pool, main, req, routed == 2) {
+                if let Some(why) = route(shared, &mut *own, &mut pool, main, req, routed == 2, watch.job()) {
                     let _ = main.send(ToMain::Closed(why));
                     return;
                 }
@@ -71,6 +72,7 @@ fn route(
     main: &Sender<ToMain>,
     req: Envelope,
     first: bool,
+    job: &JobId,
 ) -> Option<Closed> {
     if shared.cancelled_before(&req) {
         return None;
@@ -99,6 +101,11 @@ fn route(
                 server_time: own.now_ms(),
             }),
         ),
+        // Answered where it is routed, as Ping.
+        Some(Op::JobInfo) => {
+            let user = lock(&shared.session).as_ref().map_or_else(|| job.user.clone(), |(_, p)| p.clone());
+            shared.finish(&req, Answer::ok(&JobInfoReply { job: job.clone(), user }));
+        }
         // Only first after Hello; signed on it cannot be.
         Some(Op::Attach) if !first || shared.signed_on() => {
             shared.reply(&req, Answer::status(Status::InvalidRequest));

@@ -289,6 +289,14 @@ A ticket is 256 random bits for the session's own profile, kept by the server, g
 - The session's idle timer runs only while no connection is attached to it.
 - `SignOff` on any connection ends the session. That connection gets its reply and stays open, not signed on, as in version 1; every other connection of the session gets `SessionEnded` (status `Ok`, `TCP1A58`) and closes.
 
+### `Connection` addition (version 4)
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| Connection | 3 `JobInfo` | — | `job` JobId (the connection job as the system names it), `user` String (the profile it runs as now: the signed-on one, else the job's user) | yes |
+
+`JobInfo` is answered at once, never queued, as `Ping` is. A client that will `Attach` sends `Attach` first: it must be the first request after `Hello`.
+
 ### Compatibility of new values
 
 A Wire enum fails to decode on a tag it does not know, so an older client would reject a whole envelope carrying a newer `Status`, `Service` or `Kind` value, or a newer value of any enum in a body, before it could even read the `request_id`. Rule: **a value is sent only to a peer that negotiated a version that defines it.**
@@ -311,7 +319,7 @@ Version 3 is: `Spool` (service 4) operations 1 `ListSpooledFiles` to 7 `ListOutp
 
 ### Version 4 (fixed)
 
-Version 4 is: `Sql` (service 5) operations 1 `SetOptions` to 11 `ListColumns`, with the types and rules above; `SignOn` operation 7 `Attach`; and the status `SqlError` (15), which version 4 introduces. `Sql` does not use `Exists`: a name that is taken is the database's `SqlError` (for example SQLSTATE `42710`), so `Exists` (13) stays for the version that first uses it. A version 1 to 3 peer never receives `SqlError`, the `Sql` service or any `Sql` body; where `SqlError` would apply it gets `Error` with the same message. The server accepts versions 1 to 4 and picks the highest both sides support.
+Version 4 is: `Sql` (service 5) operations 1 `SetOptions` to 11 `ListColumns`, with the types and rules above; `SignOn` operation 7 `Attach`; `Connection` operation 3 `JobInfo`; and the status `SqlError` (15), which version 4 introduces. `Sql` does not use `Exists`: a name that is taken is the database's `SqlError` (for example SQLSTATE `42710`), so `Exists` (13) stays for the version that first uses it. A version 1 to 3 peer never receives `SqlError`, the `Sql` service or any `Sql` body; where `SqlError` would apply it gets `Error` with the same message. The server accepts versions 1 to 4 and picks the highest both sides support.
 
 ## Open questions
 

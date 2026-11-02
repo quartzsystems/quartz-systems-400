@@ -12,6 +12,7 @@ mod common;
 use std::sync::Arc;
 
 use qap_proto::ops::command::{CommandReply, CommandText};
+use qap_proto::ops::connection::JobInfoReply;
 use qap_proto::ops::event;
 use qap_proto::ops::signon::{Attach, Resume, SignOn, SignOnReply};
 use qap_proto::{Envelope, Kind, Op, Secret, Service, Status, Token};
@@ -266,4 +267,22 @@ fn an_operator_ending_one_job_ends_the_session() {
     assert_eq!(why, [Closed::Operator, Closed::SessionEnded]);
     let mut three = hello(&sys, 4);
     assert_eq!(attach(&mut three, &token).status, Status::SessionExpired);
+}
+
+#[test]
+fn job_info_names_each_connections_own_job() {
+    let sys = Controls::new();
+    let (mut main, token) = bob(&sys);
+    let mut other = attached(&sys, &token);
+    let a: JobInfoReply = main.client.call(Op::JobInfo, &()).body_as().unwrap();
+    let b: JobInfoReply = other.client.call(Op::JobInfo, &()).body_as().unwrap();
+    assert_eq!((a.user.as_str(), b.user.as_str()), ("BOB", "BOB"));
+    assert_ne!(a.job.number, b.job.number);
+    // Before sign-on: the job's own user.
+    let mut fresh = hello(&sys, 4);
+    let c: JobInfoReply = fresh.client.call(Op::JobInfo, &()).body_as().unwrap();
+    assert_eq!(c.user, c.job.user);
+    // Not a version 3 operation.
+    let mut v3 = hello(&sys, 3);
+    assert_eq!(v3.client.call(Op::JobInfo, &()).status, Status::InvalidRequest);
 }

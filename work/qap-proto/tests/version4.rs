@@ -203,3 +203,21 @@ fn negotiation_of_1_to_4() {
     assert_eq!(choose_version(4, 4, VERSION), Some(4));
     assert_eq!(choose_version(5, 9, VERSION), None);
 }
+
+#[test]
+fn job_info() {
+    use qap_proto::ops::connection::JobInfoReply;
+    use qap_proto::types::JobId;
+    assert_eq!(Op::of(Service::Connection, 3), Some(Op::JobInfo));
+    assert_eq!(Op::JobInfo.since(), 4);
+    assert!(Op::JobInfo.before_signon());
+    assert!(!Op::JobInfo.in_lane());
+    same(&JobInfoReply {
+        job: JobId {
+            name: "QAPCNN".into(),
+            user: "QUSER".into(),
+            number: "000123".into(),
+        },
+        user: "BOB".into(),
+    });
+}

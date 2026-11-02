@@ -80,11 +80,13 @@ pub enum Op {
     ListTables,
     /// `Sql` 11: a table's columns (version 4).
     ListColumns,
+    /// `Connection` 3: the connection's job (version 4).
+    JobInfo,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 31] = [
+    pub const ALL: [Op; 32] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -116,6 +118,7 @@ impl Op {
         Op::ListSchemas,
         Op::ListTables,
         Op::ListColumns,
+        Op::JobInfo,
     ];
 
     /// Its service and code.
@@ -153,6 +156,7 @@ impl Op {
             Op::ListSchemas => (Service::Sql, 9),
             Op::ListTables => (Service::Sql, 10),
             Op::ListColumns => (Service::Sql, 11),
+            Op::JobInfo => (Service::Connection, 3),
         }
     }
 
@@ -180,7 +184,8 @@ impl Op {
             | Op::Rollback
             | Op::ListSchemas
             | Op::ListTables
-            | Op::ListColumns => 4,
+            | Op::ListColumns
+            | Op::JobInfo => 4,
         }
     }
 
@@ -214,7 +219,7 @@ impl Op {
     /// Whether it is allowed before sign-on.
     #[must_use]
     pub const fn before_signon(self) -> bool {
-        matches!(self, Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::Attach)
+        matches!(self, Op::Hello | Op::Ping | Op::SignOn | Op::ChangePassword | Op::Resume | Op::Attach | Op::JobInfo)
     }
 }
 

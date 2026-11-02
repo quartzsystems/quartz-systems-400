@@ -68,6 +68,11 @@ impl Watch {
         w
     }
 
+    /// The connection job.
+    pub fn job(&self) -> &JobId {
+        &self.who.job
+    }
+
     /// This thread works for the connection until the guard drops.
     pub fn enter(self: &Arc<Self>) -> Entered {
         let before = CURRENT.with(|c| c.replace(Some(Arc::clone(self))));
