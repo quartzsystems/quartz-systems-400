@@ -105,6 +105,47 @@ fn files(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, FileDesc)>> {
     Ok(out)
 }
 
+/// The `SYSTABLES` rows of the aliases (`A`): their columns and row
+/// length the table's they name, 0 when it is not there.
+fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
+    let mut rows = Vec::new();
+    let mut libraries: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
+    if !libraries.contains(&ctx.qsys) {
+        libraries.insert(0, ctx.qsys);
+    }
+    for lib in libraries {
+        let Ok((_, lh)) = ops::read_header(txn, lib) else {
+            continue;
+        };
+        let Ok(list) = ops::list(txn, lib, Some(types::FILE)) else {
+            continue;
+        };
+        for (_, id) in list {
+            let Ok(Some(def)) = file::alias_of(txn, id) else {
+                continue;
+            };
+            let (_, h) = ops::read_header(txn, id)?;
+            let (count, len) = ctx
+                .resolve_table(txn, &super::alias::target(&def))
+                .map_or((0, 0), |t| (t.format.format.fields.len() as u64, u64::from(t.desc.attr.record_len)));
+            rows.push(vec![
+                s(h.name.to_string()),
+                s(ccsid::decode_trimmed(&h.owner)),
+                s("A"),
+                n(count),
+                n(len),
+                s(ccsid::decode_trimmed(&h.text)),
+                s(lh.name.to_string()),
+                stamp(h.changed.max(h.created)),
+                s(h.name.to_string()),
+                s(lh.name.to_string()),
+                s("D"),
+            ]);
+        }
+    }
+    Ok(rows)
+}
+
 /// How SQL sees a file: table (`T`), view (`V`), index (`I`), logical (`L`).
 fn table_type(desc: &FileDesc) -> &'static str {
     let text = ccsid::decode_trimmed(&desc.header.text);
@@ -158,8 +199,8 @@ pub fn virtual_table(
         col(alias, nm, ty, len, dec, nullable)
     };
     let (cols, rows): (Vec<ColInfo>, Vec<Row>) = match which {
-        "SYSTABLES" => (
-            vec![
+        "SYSTABLES" => {
+            let cols = vec![
                 c("TABLE_NAME", DataType::Char, 128, 0, false),
                 c("TABLE_OWNER", DataType::Char, 10, 0, false),
                 c("TABLE_TYPE", DataType::Char, 1, 0, false),
@@ -171,8 +212,9 @@ pub fn virtual_table(
                 c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, false),
                 c("FILE_TYPE", DataType::Char, 1, 0, false),
-            ],
-            all.iter()
+            ];
+            let mut rows: Vec<Row> = all
+                .iter()
                 .map(|(lib, d)| {
                     vec![
                         s(d.name().to_string()),
@@ -194,8 +236,10 @@ pub fn virtual_table(
                         }),
                     ]
                 })
-                .collect(),
-        ),
+                .collect();
+            rows.extend(alias_rows(txn, ctx)?);
+            (cols, rows)
+        }
         "SYSCOLUMNS" => {
             let cols = vec![
                 c("COLUMN_NAME", DataType::Char, 128, 0, false),

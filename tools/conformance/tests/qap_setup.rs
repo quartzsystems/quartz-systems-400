@@ -76,6 +76,8 @@ fn hlinv_sets_up_the_test_systems_database() {
     let mut q = |s: &str| one(&mut store, &mut ctx, s);
     assert_eq!(q("SELECT COUNT(*) FROM HLINV.ASSETS"), "12");
     assert_eq!(q("SELECT COUNT(*) FROM HLINV.ASSETSACT"), "11");
+    assert_eq!(q("SELECT COUNT(*) FROM HLINV.HW"), "12");
+    assert_eq!(q("SELECT TABLE_TYPE FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLINV' AND TABLE_NAME = 'HW'"), "A");
     assert_eq!(q("SELECT MODEL FROM HLINV.ASSETS WHERE ASSET_TAG = 'QS000302'"), "UR20-FBC-EIP");
     assert_eq!(q("SELECT COUNT(*) FROM HLTEST.ALLTYPES"), "7");
     assert_eq!(q("SELECT C_VARCHAR FROM HLTEST.ALLTYPES WHERE ID = 2"), "na\u{ef}ve caf\u{e9}");

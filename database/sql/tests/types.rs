@@ -364,3 +364,50 @@ fn integers_take_their_whole_range() {
     t.abort();
     assert_eq!(got, [(500, 2), (496, 4), (492, 8)]);
 }
+
+#[test]
+fn aliases() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/BASE (K INTEGER NOT NULL PRIMARY KEY, V VARCHAR(10))");
+    db.ok("INSERT INTO QSTEST/BASE VALUES(1, 'one'), (2, 'two')");
+    db.ok("CREATE ALIAS QSTEST/AB FOR QSTEST/BASE");
+    assert_eq!(db.one("SELECT V FROM QSTEST/AB WHERE K = 2"), "two");
+    db.ok("INSERT INTO QSTEST/AB VALUES(3, 'three')");
+    db.ok("UPDATE QSTEST/AB SET V = 'uno' WHERE K = 1");
+    db.ok("DELETE FROM QSTEST/AB WHERE K = 2");
+    assert_eq!(db.rows("SELECT K, V FROM QSTEST/BASE ORDER BY K"), vec![vec!["1", "uno"], vec!["3", "three"]]);
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/AB A JOIN QSTEST/BASE B ON A.K = B.K"), "2");
+    db.ok("LABEL ON ALIAS QSTEST/AB IS 'Base by another name'");
+    assert_eq!(
+        db.rows(
+            "SELECT TABLE_TYPE, COLUMN_COUNT, TABLE_TEXT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST' \
+             AND TABLE_NAME = 'AB'"
+        ),
+        vec![vec!["A", "2", "Base by another name"]]
+    );
+    // An alias over a member: the second member's rows.
+    {
+        let mut t = db.store.begin().unwrap();
+        let id = db.ctx.resolve_file(&mut t, &sql::ast::ObjectName::qualified("QSTEST", "BASE")).unwrap();
+        db::file::change_attr(&mut t, id, &mut |a| a.max_members = 0).unwrap();
+        db::file::add_member(&mut t, id, Name::parse("M2").unwrap(), "", None, 1_767_225_600).unwrap();
+        t.commit().unwrap();
+    }
+    db.ok("CREATE ALIAS QSTEST/AM FOR QSTEST/BASE (M2)");
+    db.ok("INSERT INTO QSTEST/AM VALUES(9, 'nine')");
+    assert_eq!(db.rows("SELECT K FROM QSTEST/AM"), vec![vec!["9"]]);
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/BASE"), "2");
+    // The alias can name a table made later; OR REPLACE points it elsewhere.
+    db.ok("CREATE ALIAS QSTEST/LATER FOR QSTEST/NOTYET");
+    assert!(db.run_with("SELECT * FROM QSTEST/LATER", &[]).is_err());
+    db.ok("CREATE TABLE QSTEST/NOTYET (X INTEGER)");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/LATER"), "0");
+    assert!(db.run_with("CREATE ALIAS QSTEST/LATER FOR QSTEST/BASE", &[]).is_err());
+    db.ok("CREATE OR REPLACE ALIAS QSTEST/LATER FOR QSTEST/BASE");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/LATER"), "2");
+    assert!(db.run_with("CREATE OR REPLACE ALIAS QSTEST/BASE FOR QSTEST/NOTYET", &[]).is_err());
+    assert!(db.run_with("DROP ALIAS QSTEST/BASE", &[]).is_err());
+    db.ok("DROP ALIAS QSTEST/AB");
+    assert!(db.run_with("SELECT * FROM QSTEST/AB", &[]).is_err());
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/BASE"), "2");
+}

@@ -96,6 +96,22 @@ maintains. Added by `ADDLFM` (and `CRTLF` with a member), removed by
 | 16 | 16 | lf_member | `ObjectId` of its member |
 | 32 | 16 | base_member | `ObjectId` of the physical member it depends on |
 
+### `AliasAttr` (64 bytes)
+
+An SQL alias (`CREATE ALIAS`) is a `*FILE` of attribute `DDMF`, as
+IBM i keeps one, with no byte space and no members. It names a file by
+name, resolved each time the alias is used, so the file need not exist
+when the alias is made. At offset 0 of its attribute area:
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400ALS` |
+| 8 | 2 | version | 1 |
+| 10 | 10 | library | CP037; blanks for the library list |
+| 20 | 10 | file | CP037 |
+| 30 | 10 | member | CP037; blanks for the first member |
+| 40 | 24 | reserved | 0 |
+
 ## 3. Record formats
 
 The format sections are a sequence of `Section` headers each followed by

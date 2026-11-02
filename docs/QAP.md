@@ -597,7 +597,11 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   values (`1E300`, `-2.5E-308`), a literal with an exponent a `DOUBLE`,
   a float beside a decimal a `DOUBLE` and beside a `DECFLOAT` a
   `DECFLOAT`; their wire tags are 9 and 10 (`embed::to_wire`), and a
-  float's value reaches the client as it is.
+  float's value reaches the client as it is. `CREATE ALIAS` makes the
+  `*FILE` alias (attribute `DDMF`, naming a table and a member if one
+  is given; `DB_FORMAT.md` `AliasAttr`), which queries and data changes
+  read through, `SYSTABLES` lists as `A` and `DROP ALIAS` (or `DLTF`)
+  deletes.
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

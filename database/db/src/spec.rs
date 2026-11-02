@@ -12,6 +12,7 @@ pub use store::spec::{Field, Layout, field};
 pub fn layouts() -> Vec<&'static Layout> {
     vec![
         &crate::file::attr::LAYOUT,
+        &crate::file::alias::LAYOUT,
         &crate::file::members::LAYOUT,
         &crate::file::dependents::LAYOUT,
         &crate::format::sections::SECTION_LAYOUT,

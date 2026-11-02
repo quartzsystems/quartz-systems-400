@@ -5,11 +5,13 @@
 //! `*FILE` objects: creation from a compiled definition, description,
 //! the member and dependents tables, and deletion.
 
+pub mod alias;
 pub mod attr;
 mod change;
 pub mod dependents;
 pub mod members;
 
+pub use alias::{AliasDef, alias_of, create_alias, delete_alias};
 pub use attr::{FileAttr, FileKind, Maint, Recover, Size, Wait};
 pub use change::{change_attr, chgpfm, replace_formats};
 pub use dependents::DependentEntry;
@@ -817,6 +819,10 @@ pub fn rename_member(
 /// logical members is refused.
 pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<()> {
     crate::auth::check(txn, "obj.delete", file)?;
+    // `DLTF` of an alias, as of a DDM file.
+    if alias_of(txn, file)?.is_some() {
+        return delete_alias(txn, job, file);
+    }
     let desc = describe(txn, file)?;
     if desc.attr.kind == FileKind::Logical {
         for m in &desc.members {

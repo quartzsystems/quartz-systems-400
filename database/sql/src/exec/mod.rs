@@ -6,6 +6,7 @@
 //! and `Prepared::execute`. Queries are planned in `query`, data
 //! changes in `dml`, definitions in `ddl`, expressions in `eval`.
 
+pub mod alias;
 pub mod catalog;
 pub mod cursor;
 pub mod ddl;
@@ -358,13 +359,21 @@ impl SqlContext {
 
     /// Resolve a table to its first member.
     pub fn resolve_table(&self, txn: &mut Txn<'_>, name: &ObjectName) -> Result<TableInfo> {
-        let id = self.resolve_file(txn, name)?;
+        let mut id = self.resolve_file(txn, name)?;
+        // An alias stands for the table it names, and its member.
+        let mut spec = MemberSpec::First;
+        if let Some(def) = file::alias_of(txn, id)? {
+            id = self.resolve_file(txn, &alias::target(&def))?;
+            if let Some(m) = def.member {
+                spec = MemberSpec::Name(m);
+            }
+        }
         let desc = file::describe(txn, id).map_err(|_| SqlError::ObjectNotFound {
             name: name.to_string(),
             kind: "table",
         })?;
         let member = *desc
-            .member(MemberSpec::First)
+            .member(spec)
             .ok_or_else(|| SqlError::ObjectNotFound {
                 name: format!("{name} (no member)"),
                 kind: "table",
@@ -566,6 +575,7 @@ impl Prepared {
             Statement::DropIndex(name) | Statement::DropView(name) => {
                 ddl::drop(txn, ctx, name, false).map(|()| Outcome::Done)
             }
+            st @ (Statement::CreateAlias { .. } | Statement::DropAlias(_)) => alias::run(txn, ctx, st).map(|()| Outcome::Done),
             Statement::Commit { hold } => {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.commit(txn, ctx.now)?;
@@ -640,7 +650,7 @@ impl Prepared {
                     rows: lines.into_iter().map(|l| vec![Value::Str(l)]).collect(),
                 }))
             }
-            other => Err(SqlError::Unsupported {
+            other @ Statement::Rename(_) => Err(SqlError::Unsupported {
                 what: format!("running {}", statement_name(other)),
             }),
         }

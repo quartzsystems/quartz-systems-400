@@ -71,6 +71,10 @@ INSERT INTO HLINV.LOCATIONS VALUES
 CREATE VIEW HLINV.ASSETSACT AS SELECT * FROM HLINV.ASSETS WHERE STATUS = 'ACTIVE';
 LABEL ON TABLE HLINV.ASSETSACT IS 'Assets in service';
 
+-- An alias: the assets by another name.
+CREATE ALIAS HLINV.HW FOR HLINV.ASSETS;
+LABEL ON ALIAS HLINV.HW IS 'Hardware assets';
+
 -- HLTEST.ALLTYPES: one column of every type, as qapd::testing has it.
 -- Six rows of values (DECFLOAT 1234.5678, 1.5E-30, Infinity, -Infinity,
 -- NaN, sNaN), row 7 null but for its key. C_BITS is CCSID 65535.

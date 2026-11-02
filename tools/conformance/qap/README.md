@@ -28,8 +28,7 @@ To run it again, delete the libraries first (`DLTLIB HLINV`, and so on).
 `QSQJRN`, so `JRN` needs nothing and `NOJRN` is ended by `hlinv.cl`.
 Where today's engine cannot hold the fixture's values, the script keeps
 the column and uses another value, each noted in the script:
-graphic literals within CP037. The engine parses `CREATE ALIAS`
-but does not run it yet, so the fixture's alias `HLINV.HW` is left out. A column's long name takes
+graphic literals within CP037. A column's long name takes
 a system name (`MANUFACTURER FOR COLUMN MANUFACT`), the view is
 `ASSETSACT` (the fixture's `ASSETS_ACTIVE`), and the fixture's logical
 file `ASSETSL1` has no SQL statement. `SLOW` is not slow by itself: the
