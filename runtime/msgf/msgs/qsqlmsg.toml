@@ -277,6 +277,12 @@ help = "The profile running the statement lacks the authority it needs to the ob
 vars = ["*CHAR 128"]
 
 [[msg]]
+id = "SQL0904"
+sev = 30
+text = "The statement needed more working storage than one statement may hold."
+help = "The rows the statement had to keep at once, for a join, a grouping, DISTINCT or a union, passed the limit set for one statement, and the statement was ended. Add predicates that join the tables or narrow the rows, or fetch fewer columns."
+
+[[msg]]
 id = "SQL0952"
 sev = 30
 text = "The statement was ended by a cancel request."

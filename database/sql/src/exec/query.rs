@@ -4,8 +4,10 @@
 
 //! Running a query: scans with access path selection, joins, grouping,
 //! projection, `DISTINCT`, ordering and row limits. Scans read their
-//! paths in batches; `ORDER BY` is an external merge sort that spills
-//! past the job's row budget (`sort`); the other steps hold their rows.
+//! paths in batches; joins keep only the rows that match (`join`);
+//! `ORDER BY` is an external merge sort that spills past the job's row
+//! budget (`sort`); what the other steps hold counts against the
+//! statement's working-storage limit (`mem`).
 
 use std::collections::{HashMap, HashSet};
 use std::ops::Bound;
@@ -20,6 +22,7 @@ use store::obj::ObjectId;
 use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema, has_aggregate, sql_type};
+use super::join::{self, Item};
 use super::sort::{KeySpec, Sorter};
 use super::{ColumnDesc, ResultSet, SqlContext, TableInfo};
 use crate::ast::{
@@ -302,9 +305,12 @@ fn body(
             let schema = Rc::new(Schema {
                 cols: ls.cols.iter().filter(|c| !c.hidden).cloned().collect(),
             });
+            let mut charge = ctx.charge();
+            for p in &all_rows {
+                charge.row(&p.out)?;
+            }
             if !*all {
-                let mut seen = HashSet::new();
-                all_rows.retain(|p| seen.insert(row_key(&p.out)));
+                distinct(&mut charge, &mut all_rows)?;
             }
             if explain_only {
                 ctx.explain
@@ -318,6 +324,23 @@ fn body(
 
 fn visible_count(s: &Schema) -> usize {
     s.cols.iter().filter(|c| !c.hidden).count()
+}
+
+/// Keep the first of each set of equal rows; the keys count against
+/// the statement's working storage.
+fn distinct(charge: &mut super::mem::Charge, rows: &mut Vec<Produced>) -> Result<()> {
+    let mut seen = HashSet::new();
+    let mut kept = Vec::with_capacity(rows.len());
+    for p in rows.drain(..) {
+        let key = row_key(&p.out);
+        if !seen.contains(&key) {
+            charge.add(key.len() + 32)?;
+            seen.insert(key);
+            kept.push(p);
+        }
+    }
+    *rows = kept;
+    Ok(())
 }
 
 fn row_key(r: &Row) -> String {
@@ -372,6 +395,15 @@ fn aliases_of(e: &Expr, scans: &[Scan]) -> Option<HashSet<String>> {
         return None;
     }
     Some(out)
+}
+
+/// Whether a FROM item holds a derived table.
+fn has_derived(t: &TableRef) -> bool {
+    match t {
+        TableRef::Table { .. } => false,
+        TableRef::Subquery { .. } => true,
+        TableRef::Join { left, right, .. } => has_derived(left) || has_derived(right),
+    }
 }
 
 fn has_subquery(e: &Expr) -> bool {
@@ -695,6 +727,7 @@ fn scan_table_in(
     order: &[OrderItem],
     explain_only: bool,
 ) -> Result<(Vec<Row>, bool)> {
+    let mut charge = ctx.charge();
     let mut ev = Evaluator { ctx, params };
     let mut rows = Vec::new();
     let mut ordered = false;
@@ -819,7 +852,9 @@ fn scan_table_in(
                 };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
-                    rows.push(row_of(txn, t, &s)?);
+                    let r = row_of(txn, t, &s)?;
+                    charge.row(&r)?;
+                    rows.push(r);
                 }
             }
             if ev.ctx.safe_point(txn)? {
@@ -850,7 +885,9 @@ fn scan_table_in(
                 };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
-                    rows.push(row_of(txn, t, &s)?);
+                    let r = row_of(txn, t, &s)?;
+                    charge.row(&r)?;
+                    rows.push(r);
                 }
                 from = end + 1;
                 if ev.ctx.safe_point(txn)?
@@ -868,7 +905,9 @@ fn scan_table_in(
             })?;
             for s in &slots {
                 ev.ctx.poll_interrupt()?;
-                rows.push(row_of(txn, t, s)?);
+                let r = row_of(txn, t, s)?;
+                charge.row(&r)?;
+                rows.push(r);
             }
             let _ = Core::load;
         }
@@ -995,10 +1034,10 @@ fn from_rows(
                 ctx.explain.push(format!("JOIN {kind:?} nested loop"));
                 return Ok((schema, Vec::new(), lord));
             }
-            let rows = join(
+            let mut ev = Evaluator { ctx, params };
+            let rows = join::join(
                 txn,
-                ctx,
-                params,
+                &mut ev,
                 &schema,
                 &ls,
                 &rs,
@@ -1018,79 +1057,6 @@ fn from_rows(
             ))
         }
     }
-}
-
-#[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
-fn join(
-    txn: &mut Txn<'_>,
-    ctx: &mut SqlContext,
-    params: &[Value],
-    schema: &Rc<Schema>,
-    ls: &Schema,
-    rs: &Schema,
-    left_rows: &[Row],
-    right_rows: &[Row],
-    kind: JoinKind,
-    on: Option<&Expr>,
-    outer: &Env,
-) -> Result<Vec<Row>> {
-    let mut ev = Evaluator { ctx, params };
-    let mut out = Vec::new();
-    let lnull = vec![Value::Null; ls.cols.len()];
-    let rnull = vec![Value::Null; rs.cols.len()];
-    let mut right_matched = vec![false; right_rows.len()];
-    for l in left_rows {
-        let mut matched = false;
-        for (ri, r) in right_rows.iter().enumerate() {
-            ev.ctx.poll_interrupt()?;
-            let mut combined = l.clone();
-            combined.extend(r.iter().cloned());
-            let hit = match on {
-                None => true,
-                Some(e) => {
-                    let env = outer.with(schema.clone(), combined.clone());
-                    ev.truth(txn, e, &env)? == Some(true)
-                }
-            };
-            if hit {
-                matched = true;
-                right_matched[ri] = true;
-                if matches!(
-                    kind,
-                    JoinKind::Inner
-                        | JoinKind::Cross
-                        | JoinKind::Left
-                        | JoinKind::Right
-                        | JoinKind::Full
-                ) {
-                    out.push(combined);
-                }
-            }
-        }
-        if !matched
-            && matches!(
-                kind,
-                JoinKind::Left | JoinKind::LeftException | JoinKind::Full
-            )
-        {
-            let mut row = l.clone();
-            row.extend(rnull.iter().cloned());
-            out.push(row);
-        }
-    }
-    if matches!(
-        kind,
-        JoinKind::Right | JoinKind::RightException | JoinKind::Full
-    ) {
-        for (ri, r) in right_rows.iter().enumerate() {
-            if !right_matched[ri] {
-                let mut row = lnull.clone();
-                row.extend(r.iter().cloned());
-                out.push(row);
-            }
-        }
-    }
-    Ok(out)
 }
 
 /// The name of a select-list item.
@@ -1116,8 +1082,11 @@ fn select(
 ) -> Result<(Rc<Schema>, Vec<Produced>)> {
     // The tables and what each may filter.
     let mut scans = Vec::new();
-    for t in &sel.from {
+    // Which FROM item each scan belongs to.
+    let mut item_of = Vec::new();
+    for (i, t) in sel.from.iter().enumerate() {
         collect_scans(txn, ctx, t, true, &mut scans)?;
+        item_of.resize(scans.len(), i);
     }
     let mut rest = Vec::new();
     if let Some(w) = &sel.where_clause {
@@ -1145,31 +1114,44 @@ fn select(
         } else {
             &[]
         };
-    // FROM: the cross product of the items, each with its joins.
-    let mut schema = Rc::new(Schema::default());
-    let mut rows: Vec<Row> = vec![Vec::new()];
+    // FROM: each item with its joins, then the items joined depth first
+    // with each remaining conjunct tested once the items it names are
+    // bound (`join::product`); no cross product is built.
+    let mut items = Vec::with_capacity(sel.from.len());
+    let mut item_charge = ctx.charge();
     let mut ordered = false;
     for (i, t) in sel.from.iter().enumerate() {
         let (s, r, o) = from_rows(txn, ctx, params, t, &scans, outer, order_hint, explain_only)?;
-        if i == 0 {
-            schema = s;
-            rows = r;
-            ordered = o;
-        } else {
-            let mut cols = schema.cols.clone();
-            cols.extend(s.cols.iter().cloned());
-            schema = Rc::new(Schema { cols });
-            let mut product = Vec::with_capacity(rows.len() * r.len());
-            for l in &rows {
-                for x in &r {
-                    let mut row = l.clone();
-                    row.extend(x.iter().cloned());
-                    product.push(row);
-                }
-            }
-            rows = product;
-            ordered = false;
+        for row in &r {
+            item_charge.row(row)?;
         }
+        if i == 0 {
+            ordered = o;
+        }
+        items.push(Item { schema: s, rows: r });
+    }
+    if items.len() > 1 {
+        ordered = false;
+    }
+    // A derived table's columns are not among the scans: its conjuncts
+    // wait for every item.
+    let last = sel.from.len().saturating_sub(1);
+    let derived = sel.from.iter().any(has_derived);
+    let mut levels: Vec<Vec<Expr>> = vec![Vec::new(); sel.from.len().max(1)];
+    for p in &rest {
+        let level = match aliases_of(p, &scans) {
+            Some(set) if !derived && !set.is_empty() => set
+                .iter()
+                .filter_map(|a| scans.iter().position(|s| &s.alias == a))
+                .map(|i| item_of[i])
+                .max()
+                .unwrap_or(last),
+            _ => last,
+        };
+        levels[level].push(p.clone());
+    }
+    if explain_only && items.len() > 1 {
+        ctx.explain.push(format!("JOIN {} items depth first", items.len()));
     }
     if explain_only {
         if !rest.is_empty() {
@@ -1195,24 +1177,15 @@ fn select(
         }
     }
     let mut ev = Evaluator { ctx, params };
-    // The remaining WHERE.
-    if !rest.is_empty() {
-        let mut kept = Vec::with_capacity(rows.len());
-        for r in rows {
-            let env = outer.with(schema.clone(), r);
-            let mut ok = true;
-            for p in &rest {
-                if ev.truth(txn, p, &env)? != Some(true) {
-                    ok = false;
-                    break;
-                }
-            }
-            if ok {
-                kept.push(env.frames.last().expect("row").1.clone());
-            }
-        }
-        rows = kept;
+    // The rows of FROM that pass the remaining WHERE.
+    if items.is_empty() {
+        items.push(Item {
+            schema: Rc::new(Schema::default()),
+            rows: vec![Vec::new()],
+        });
     }
+    let (schema, rows, mut charge) = join::product(txn, &mut ev, outer, items, &levels)?;
+    drop(item_charge);
     // Grouping.
     let grouped = !sel.group_by.is_empty()
         || sel
@@ -1234,6 +1207,7 @@ fn select(
             if let Some(&gi) = index.get(&key) {
                 groups[gi].1.push(r);
             } else {
+                charge.add(2 * key.len() + super::mem::row_bytes(&r) + 64)?;
                 index.insert(key, groups.len());
                 groups.push((r.clone(), vec![r]));
             }
@@ -1328,14 +1302,14 @@ fn select(
                 row.push(env.frames.last().expect("row").1[*direct].clone());
             }
         }
+        charge.row(&row)?;
         produced.push(Produced {
             out: row,
             source: env,
         });
     }
     if sel.distinct {
-        let mut seen = HashSet::new();
-        produced.retain(|p| seen.insert(row_key(&p.out)));
+        distinct(&mut charge, &mut produced)?;
     }
     if !order.is_empty() && !ordered {
         order_rows(txn, ev.ctx, params, &out_schema, &mut produced, order)?;

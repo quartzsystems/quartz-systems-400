@@ -151,9 +151,10 @@ DB2 for i subset below. `SqlContext` carries the job, the naming mode
 (`*SYS` or `*SQL`), the current schema and the session. The planner
 scores the access paths of a table against the predicates and the
 `ORDER BY` and picks a keyed scan, a range or a full scan; joins are
-nested loops with the inner side probed through a path when one fits;
-grouping, `DISTINCT`, ordering and `FETCH FIRST` materialize between
-steps. DML runs through the open data path, so journaling, commitment
+nested loops that keep only matching rows, the inner side found by a
+hash of an equality's column when one fits; grouping, `DISTINCT`,
+ordering and `FETCH FIRST` materialize between steps, under the
+statement's working-storage limit (`SQL0904` past it). DML runs through the open data path, so journaling, commitment
 control and locks are the same as for RPG. Views become select/omit
 logical files; the catalogs under `QSYS2` are computed from the store
 on every query. The `SQLCA` carries SQLCODE, SQLSTATE, the message
@@ -319,8 +320,28 @@ cargo run -p build -- test                          # the disk suite with steps 
   (`sql::exec::spill`) is memory-backed, as the temporary ASP is on
   this system; `FileSpill` writes runs to a directory for a host whose
   temporary storage is a file system. Keyed scans read their paths in
-  batches. Joins, grouping, projection and `DISTINCT` still hold their
-  rows between steps, so a query without a sort is bounded by memory.
+  batches.
+- Joins never build the cross product (`sql::exec::join`). Each `FROM`
+  item is read once; the comma-separated items are walked depth first
+  and each `WHERE` conjunct is tested as soon as the items it names are
+  bound, so a three-way join of 400-row tables holds its 400 answers,
+  not 64 million combinations. An equality between a column of the rows
+  so far and a column of the next item finds that item's rows by a hash
+  of the column's values (numbers, text, binary, dates, times and
+  timestamps of one kind, whose canonical keys are equal exactly when
+  they compare equal); every condition is still evaluated on the rows
+  found, so results and their order are the nested loop's. An explicit
+  `JOIN` probes its right side the same way from its `ON` conjuncts. The
+  join loops yield like the outermost scan (`SqlContext::safe_point`).
+- What a statement keeps (scanned rows, join output, groups, `DISTINCT`
+  and `UNION` keys, the select list's rows) is charged against its
+  working-storage limit, `SqlContext::memory_limit`, by default
+  `sql::exec::mem::STATEMENT_MEMORY` (256 MiB as estimated from the
+  rows' values), and given back when the step's rows go. Past it the
+  statement ends with `SQL0904` (SQLSTATE `57011`) instead of the
+  storage service, which runs every job's SQL, failing to allocate.
+  Grouping and `DISTINCT` do not spill: the spill area is memory too on
+  this system.
 - `OPNQRYF` (`sql::exec::opnqryf`) selects and orders at open time
   into the job's shared open data path; `FORMAT`, `MAPFLD`, `GRPFLD`
   and `JFLD` are not taken. `ALTER TABLE` changes the format through

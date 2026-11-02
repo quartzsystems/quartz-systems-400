@@ -12,6 +12,8 @@ pub mod ddl;
 pub mod dml;
 pub mod eval;
 pub mod func;
+mod join;
+pub mod mem;
 pub mod opnqryf;
 pub mod query;
 mod sort;
@@ -123,6 +125,10 @@ pub struct SqlContext {
     pub held: Vec<ObjectId>,
     /// Table scans in progress: only the outermost yields.
     scans: u32,
+    /// The working storage a statement may hold ([`mem::STATEMENT_MEMORY`]).
+    pub memory_limit: usize,
+    /// What the statements of this context hold now.
+    meter: mem::Meter,
     /// When the last yield ended.
     last_yield: Option<std::time::Instant>,
 }
@@ -192,8 +198,15 @@ impl SqlContext {
             yield_every: YIELD_EVERY,
             held: Vec::new(),
             scans: 0,
+            memory_limit: mem::STATEMENT_MEMORY,
+            meter: mem::Meter::default(),
             last_yield: None,
         }
+    }
+
+    /// A charge against the statement's working storage.
+    pub(crate) fn charge(&self) -> mem::Charge {
+        mem::Charge::new(&self.meter, self.memory_limit)
     }
 
     /// A table scan starts.

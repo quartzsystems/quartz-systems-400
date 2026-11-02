@@ -234,3 +234,20 @@ fn ending_at_a_yield_cancels_and_releases() {
     s.ctx.yielder = None;
     run_script(&f, 2, "DROP TABLE QSTEST.T").unwrap();
 }
+
+#[test]
+fn a_join_yields_between_its_outer_rows() {
+    let f = fixture();
+    let mut s = session(&f);
+    let n = Rc::new(Cell::new(0u32));
+    let seen = Rc::clone(&n);
+    s.ctx.yielder = Some(Rc::new(move || {
+        seen.set(seen.get() + 1);
+        false
+    }));
+    let r = run(&mut s, Op::Query, "", "SELECT COUNT(*) FROM QSTEST.T A, QSTEST.K B WHERE A.ID = B.ID");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(r.rows[0][0].as_i64().unwrap(), ROWS);
+    // The two scans yield a few times each; the join once per outer row.
+    assert!(n.get() > u32::try_from(ROWS).unwrap(), "{} yields", n.get());
+}

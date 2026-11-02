@@ -166,7 +166,12 @@ them.
   one round of whatever is ready on the other connections without
   waiting, sets the statement's job up again (`served::enter`) and
   returns; the transaction resumes as one begun now, and the scan opens
-  its members again and goes on from the last key or RRN it read.
+  its members again and goes on from the last key or RRN it read. A
+  join's loop over rows already read yields the same way, once per row
+  of its outer side, when no scan is in progress around it.
+- Memory: one statement holds at most `SqlContext::memory_limit` of
+  rows (256 MiB by default, `sql::exec::mem`) and past it ends with
+  `SQL0904`, so one user's query cannot exhaust the service's process.
 - Locks: a statement that may yield holds `*SHRRD` on every file and
   member it scans (the table, the access path's file and member) from
   its first read to its end, released when its transaction ends. So

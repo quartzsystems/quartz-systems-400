@@ -166,6 +166,13 @@ pub enum SqlError {
         what: String,
     },
 
+    /// The statement needed more working storage than one may hold.
+    #[error("{what}")]
+    ResourceLimit {
+        /// What ran out.
+        what: String,
+    },
+
     /// The statement was ended by a cancel from outside it.
     #[error("the statement was cancelled")]
     Cancelled,
@@ -212,6 +219,7 @@ impl SqlError {
             Self::ValueCount { .. } => -117,
             Self::NotAuthorized { .. } => -551,
             Self::Cancelled => -952,
+            Self::ResourceLimit { .. } => -904,
             Self::UnitOfWork { .. } => -428,
             Self::Database { .. } => -901,
         }
@@ -240,6 +248,7 @@ impl SqlError {
             Self::ValueCount { .. } => "42802",
             Self::NotAuthorized { .. } => "42501",
             Self::Cancelled => "57014",
+            Self::ResourceLimit { .. } => "57011",
             Self::UnitOfWork { .. } => "25001",
             Self::Database { .. } => "58004",
         }
