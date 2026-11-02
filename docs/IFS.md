@@ -130,25 +130,61 @@ is the view's answer (the Phase 6 search) mapped to `*RWX` as below.
 ## Disk format
 
 The IFS root (`/`, and `/QOpenSys` beneath it) lives on an xfs
-filesystem in its own GPT partition. Everything in this section sits
-below the path resolver: the partition, the filesystem `xfsfmt` writes
-into it, and how `slic` mounts it.
+filesystem on pages of ASP 1: the IFS volume. The store holds the pages
+(`STORE_FORMAT.md` §12), the storage service serves them to the kernel
+as a block device through ublk, and the kernel's xfs runs on that
+device. The ASP's mirroring or device parity protects the IFS like any
+other data, and the IFS grows into the ASP's free space. Everything in
+this section sits below the path resolver.
 
-### The partition
+Systems installed before the IFS moved into the ASP keep it in its own
+GPT partition until they are reinstalled ("The IFS partition" below).
 
-| | |
+### The volume
+
+The store's map lists the volume's extents (§12 of the store format):
+runs of ASP pages, in volume order, held so the store never uses them.
+The volume's pages are raw 4096-byte blocks; xfs checksums its own
+metadata, and the store's page checksums do not apply to them.
+
+| Event | Size |
 |---|---|
-| Name | `QS400-IFS` (also the filesystem label) |
-| Type GUID | `90afa14f-9e50-4da1-99ae-515334304946` (Quartz, generated once) |
-| GPT entry | 4 (ASP1 keeps entry 3, as on disks laid out before the IFS) |
-| On disk | ESP, LIC, **IFS**, ASP1 |
-| Size | a quarter of the space after the LIC partition, clamped to 512 MiB .. 256 GiB, in whole 4 KiB |
+| Created | a tenth of ASP 1's usable pages, at least 1 GiB, never past the ASP threshold; not created below 64 MiB |
+| Grows | when less than a tenth of the filesystem is free: 2% of ASP 1 per step (whole parity blocks in a parity set), or what is left below the ASP threshold |
+| Never | shrinks: pages given to the IFS stay the IFS's |
 
-The 4 GiB development image gets 943.5 MiB; the smallest disk the
-layout accepts (`diskimg::MIN_DISK_BYTES`, about 898 MiB) gets 512 MiB.
-`diskimg::Plan` lays it out, `diskimg::write_image` formats it (the
-built image and the installer both), `diskimg::locate::ifs` finds it,
-preferring the one on the same disk as the LIC partition.
+The ASP threshold is DST's (Work with ASP threshold, 90% unless
+changed). Once a growth would pass it, the IFS stops growing; writes
+that need more space fail with `ENOSPC` inside the IFS and the store
+keeps its own reserve. The storage service sends `CPI3E21` to
+`QSYSOPR` the first time a growth is refused for want of space, and
+again only after a growth succeeds.
+
+**Creation.** At IPL, after `slic` opens ASP 1 and before the storage
+service starts: when the superblock names no IFS map and no IFS
+partition exists, the store sets the extents aside, and `slic` formats
+xfs onto the volume directly through the store (no block device is
+needed for that) and marks the volume formatted (C6001011). The
+installer's first IPL does this, as does the first IPL of a built
+image. A volume that is set aside but not marked formatted (a crash
+during the format) is formatted again; a marked one never is. When the
+ASP is too full to hold 64 MiB, A6001271 and the IPL goes on without
+the IFS.
+
+**Growth.** The storage service checks the filesystem's free space once
+a minute. A growth holds the new extents and checkpoints the new map,
+tells the kernel the device's new size (`UBLK_U_CMD_UPDATE_SIZE`), then
+grows xfs over it (`XFS_IOC_FSGROWFSDATA`, the call `xfs_growfs`
+makes). The command `QSGROWIFS` grows it now: `SIZE(*STEP)` by one
+step, or `SIZE(n)` by `n` MiB (at least 64), within the same limits.
+
+| Message | Sent | Meaning |
+|---|---|---|
+| `CPC3E20` | completion | the IFS grew by `&1` MiB to `&2` MiB |
+| `CPF3E21` | escape | the IFS cannot grow: ASP 1 would pass its threshold |
+| `CPF3E22` | escape | the IFS cannot grow: it is in its own partition |
+| `CPF3E23` | escape | the IFS cannot grow: `&1` |
+| `CPI3E21` | to `QSYSOPR` | the IFS needs to grow and ASP 1 has no room below its threshold |
 
 ### The filesystem
 
@@ -166,12 +202,12 @@ let info = xfsfmt::probe(&mut dev)?; // Some(Info { uuid, label, dblocks, .. })
 | Features | CRCs, ftype (incompat), bigtime (incompat), finobt and inobtcount (ro-compat). No rmapbt, reflink, sparse inodes, nrext64, exchange, parent pointers, metadir, quotas, realtime. |
 | Block | 4096 bytes; directory blocks the same |
 | Inode | 512 bytes, 8 per block, chunks of 64 aligned to 4 blocks |
-| Sector | 512 by default, 4096 by option (`Options::sector_size`); the log uses the same |
-| AGs | 16 MiB each below 128 MiB; otherwise 4, more once one would pass 1 TiB. All AGs equal; blocks short of a whole AG at the end go unused. |
+| Sector | 512 by default, 4096 by option (`Options::sector_size`); the log uses the same. The IFS volume uses 4096. |
+| AGs | 16 MiB each below 128 MiB; otherwise 4, more once one would pass 1 TiB. All AGs equal; blocks short of a whole AG at the end go unused. `Options::ag_blocks` fixes the AG size instead: the IFS volume's is a fortieth of ASP 1's usable space when it is created (16 MiB to 1 TiB, and small enough for four AGs), so the volume starts with about four AGs and a growth to the whole ASP makes about forty. |
 | Log | internal, in AG `agcount / 2` right after its btree roots: the larger of 1/2048 of the filesystem and 10 MiB (64 MiB at 300 MiB and up), at most 1 GiB. Well above the kernel's computed minimum for this geometry. |
 | Root | inode 96: AG 0 block 12, where `xfs_repair` computes mkfs would put it. The chunk also holds the empty realtime bitmap (97, `NEWRTBM`) and summary (98) inodes. |
 | Label | `QS400-IFS` |
-| UUID | given: `51533430-0000-4000-8000-000000000006` in built images (`Guids::FIXED.ifs_fs`), random at install |
+| UUID | random at creation; `51533430-0000-4000-8000-000000000006` in built images that still carry a partition (`Guids::FIXED.ifs_fs`) |
 
 Each AG: superblock, AGF, AGI and AGFL in sectors 0 to 3; then one leaf
 each for the free space btrees (by block, by size) and the inode and
@@ -192,60 +228,104 @@ The order of writes protects a device that held a filesystem before:
 the old primary superblock is zeroed first and the new one written
 last, after a flush, so an interrupted format never mounts.
 
-Determinism: the output depends only on the size and the options. The
-built image passes a fixed UUID, the build's `SOURCE_DATE_EPOCH` as the
-root's creation time, and `zeroed` (a new image file reads as zeros, so
-the log is not written out and the image stays sparse). The installer
-passes a random UUID, the current time, and clears the log.
+Determinism: the output depends only on the size and the options. A
+built image's partition passes a fixed UUID, the build's
+`SOURCE_DATE_EPOCH` as the root's creation time, and `zeroed` (a new
+image file reads as zeros, so the log is not written out and the image
+stays sparse). The IFS volume and the installer pass a random UUID,
+the current time, and clear the log.
+
+### The block device
+
+`lic/ublk` is the ublk server: one device (`/dev/ublkbN`, the number
+the kernel picks), one hardware queue of depth 64, I/O of at most
+512 KiB, 4096-byte logical and physical blocks, a volatile write cache
+with FUA (`UBLK_ATTR_VOLATILE_CACHE`, `UBLK_ATTR_FUA`), no discard. Its
+features are `UBLK_F_CMD_IOCTL_ENCODE` and `UBLK_F_UPDATE_SIZE`; the
+kernel copies data to and from the server's buffers (no user copy, no
+zero copy). Control commands go through `/dev/ublk-control` on an
+io_uring of 128-byte entries, I/O commands through `/dev/ublkcN` on a
+ring of its own; the rings are rustix's raw `io_uring` calls, and every
+`unsafe` block of the crate is in `lic/ublk/src/sys.rs`.
+
+The server runs on two threads of the storage service, never the one
+that answers requests: that thread makes IFS calls into the very xfs
+the device carries, so a server that waited on it could never finish.
+The queue thread reaches the units through the store's shared I/O
+handle (`store::asp::io::SharedIo`), which takes no lock the request
+thread holds across an IFS call. It is marked an I/O flusher
+(`PR_SET_IO_FLUSHER`), so the kernel's memory reclaim does not wait on
+the device it serves.
+
+| Request | What the server does |
+|---|---|
+| read | the volume pages, each from its unit (from the other half or the stripe when the unit fails) |
+| write | the pages to every half, or held by the parity set for its next epoch; with FUA, then a flush of every unit |
+| flush | a flush of every unit: the parity sets' held writes made in epochs, every device's write cache flushed |
+| discard, write zeroes | refused (not advertised) |
+
+A request that fails answers `EIO`; xfs then shuts down, as on a failed
+disk. A request past the volume's end answers `EINVAL`.
 
 ### Mounting
 
-At IPL `slic` mounts the partition as xfs at `/run/qs400/ifs`
-(`nosuid,nodev,noexec`) just before the storage service starts; the
-service inherits the mount namespace. Once the service has started
-(it makes `/QOpenSys` on a new IFS), its `QOpenSys` directory is
-mounted again at `/run/qs400/qopensys` (`nosuid,nodev`, programs
-allowed) for PASE (`docs/QSH.md`); it is unmounted first at power
-down. A D IPL from the media does not
-mount it, since it may repartition the disk. At power down it is
-unmounted once the service has ended and the store is closed; the
-installer unmounts it before writing a disk. Neither a missing nor an
-unmountable IFS stops the IPL.
+The storage service starts the device after it opens ASP 1, then
+mounts it as xfs at `/run/qs400/ifs` (`nosuid,nodev,noexec`) and
+builds the IFS over it (C6001012). The mount is in the namespace every
+process shares. `slic` then mounts `/QOpenSys` again at
+`/run/qs400/qopensys` (`nosuid,nodev`, programs allowed) for PASE
+(`docs/QSH.md`). At power down, before the service closes the store, it
+unmounts `/run/qs400/qopensys` and `/run/qs400/ifs` (D1001012), stops
+the device and deletes it; the server's queue thread ends once the
+kernel aborts its fetches. Neither a device that cannot be served nor
+an unmountable volume stops the IPL.
 
 | Code | Phase | Meaning |
 |---|---|---|
+| C6001011 | OS | IFS created in ASP 1 |
 | C6001012 | OS | IFS mounted |
-| A6001270 | attention | IFS partition missing (IPL continues) |
+| A6001270 | attention | IFS partition missing (a store from before §12 that lost its partition; IPL continues) |
+| A6001271 | attention | IFS not created: ASP 1 is too full (IPL continues) |
 | A6001275 | attention | IFS mount failed (IPL continues) |
+| A6001276 | attention | IFS device could not be served (IPL continues) |
 | D1001012 | power down | IFS unmounted |
 
-The service console's `svc.ifs` prints the mount, the label and UUID,
-and the capacity and free space from `statvfs`. DST's `Work with
-Licensed Internal Code` display shows the partition, its size and
-whether it is mounted; IBM's disk configuration displays describe ASP
-units, which the IFS partition is not, so it is not shown there.
+The service console's `svc.ifs` prints the device, the mount, the label
+and UUID, the volume's size in the ASP and the filesystem's capacity
+and free space. DST's `Work with Licensed Internal Code` display shows
+the IFS as part of ASP 1 with its size; IBM's disk configuration
+displays describe units, and the IFS counts in ASP 1's use there.
 
-### Disks laid out before the IFS
+### The IFS partition
 
-RCLSTG (without `*CHECK`) adds the partition to a load source that has
-none, when at least 512 MiB is unused after its last partition (a disk
-that has grown): the filesystem is written into the unused space first,
-then the partition table is rewritten for the disk's present size with
-every existing entry unchanged and the IFS in the first free entry from
-4. The kernel sees it at the next IPL, which mounts it. `RCLSTG
-*CHECK` only reports whether the partition is there.
+A store formatted before §12 names no IFS map. When such a system
+boots this code and its load source carries a `QS400-IFS` partition,
+the partition stays its IFS: `slic` mounts it as before, just before
+the storage service starts, and unmounts it at power down once the
+service has closed. It does not grow, and `QSGROWIFS` says so
+(`CPF3E22`). A reinstall lays the disk out again without the
+partition and creates the IFS in the ASP. No migration is attempted.
 
-BLOCKED(phase10): when the disk has no such space, RCLSTG says so and
-changes nothing. Making room by shrinking ASP1 would need the store to
-give back the tail of its unit (it can truncate a span only when the
-tail is free, as mirroring does) and the kernel to resize a partition
-that is in use (`BLKPG`, a new unsafe ioctl); neither is in place.
+| | |
+|---|---|
+| Name | `QS400-IFS` (also the filesystem label) |
+| Type GUID | `90afa14f-9e50-4da1-99ae-515334304946` (Quartz, generated once) |
+| GPT entry | 4 |
+
+`diskimg::locate::ifs` finds it, preferring the one on the same disk as
+the LIC partition. A store with no map and no partition is a new
+system: the IFS is created in the ASP.
+
+New layouts are ESP, LIC, ASP1: `diskimg::Plan` makes no IFS partition,
+and RCLSTG no longer adds one to an older disk.
 
 ### Kernel
 
-`CONFIG_XFS_FS=y` was already required. Nothing else is: the
-filesystem uses no ACLs (`XFS_POSIX_ACL` stays off), no quotas and no
-realtime volume, and v5 needs no option beyond what `XFS_FS` selects.
+`CONFIG_XFS_FS=y` was already required, and `CONFIG_IO_URING=y`.
+`CONFIG_BLK_DEV_UBLK=y` serves the volume; the build's config check
+requires it. The filesystem uses no ACLs (`XFS_POSIX_ACL` stays off),
+no quotas and no realtime volume, and v5 needs no option beyond what
+`XFS_FS` selects.
 
 ### Verification
 
@@ -253,14 +333,26 @@ realtime volume, and v5 needs no option beyond what `XFS_FS` selects.
   `xfs_format.h`/`xfs_log_format.h`, and the superblock, AGF, root inode
   and log record byte for byte against `mkfs.xfs` 6.18 for the same
   geometry and UUID; geometry and determinism tests.
+- `cargo test -p store`: the map's codec against §12's tables, creation,
+  growth and placement on unprotected, mirrored and parity ASPs, the
+  holds at open and after RCLSTG, the refusals, volume reads and writes
+  through the shared handle from another thread, a crash before and
+  after each checkpoint.
+- `cargo test -p ublk`: the ABI's sizes and offsets against
+  `ublk_cmd.h`, the request decoding and the server's dispatch over a
+  volume in memory.
 - `tools/conformance/xfs/verify.sh build|check DIR` (Linux, `check` as
   root with xfsprogs): images of 64 MiB, 512 MiB, 1 GiB, 20 GiB (sparse)
   and an odd size, at both sector sizes, must pass `xfs_repair -n`,
   mount read-write with no kernel complaint, take file traffic (a large
   file, 500 small ones, hard and symbolic links, xattrs, renames,
   deletes), unmount, pass `xfs_repair -n` again and remount.
-- QEMU step 59 (`59 IFS mount`): C6001012 in the SRC log and `svc.ifs`
-  showing a read-write xfs at `/run/qs400/ifs` with plausible capacity.
+- QEMU step 59 (`59 IFS mount`): C6001011 at the first IPL and C6001012,
+  and `svc.ifs` showing a read-write xfs on `/dev/ublkb0` at
+  `/run/qs400/ifs` inside ASP 1 with plausible capacity; `QSGROWIFS`
+  grows it and `svc.ifs` shows the new size. Install step 13 (device
+  parity over four disks) checks the IFS across the synchronization,
+  the disk pulled and the rebuild.
 
 ## Metadata
 
@@ -608,12 +700,14 @@ stream file tagged 1208), `mkdir`, `rm` (a file or an empty
 directory), `stat` (attributes and `DSPAUT`'s rows) and `df [PATH]`
 run through the same `Ifs` as the job whose line it is.
 
-IBM keeps the IFS in the system ASP, so its capacity shows where the
-ASP's does. `WRKSYSSTS` (the console form, the panel and `QWCRSSTS`)
-counts the IFS partition's size and use in `System ASP`, `% system ASP
-used` and `Total`. `WRKDSKSTS` adds them to unit 1's `Size` and `%
-Used`: the partition is on the load source, which IBM's unit 1 is. No
-row is invented for it; IBM's screen lists disk units only.
+IBM keeps the IFS in the system ASP, and so does QS/400: the volume's
+pages are ASP pages in use, so `WRKSYSSTS` (the console form, the panel
+and `QWCRSSTS`) and `WRKDSKSTS` count them in `System ASP`, `% system
+ASP used` and each unit's `% Used` with no adjustment. On a system that
+keeps its IFS partition, `WRKSYSSTS` adds the partition's size and use
+to `System ASP`, `% system ASP used` and `Total`, and `WRKDSKSTS` to
+unit 1's `Size` and `% Used` (the partition is on the load source). No
+row is invented for the IFS; IBM's screen lists disk units only.
 
 ## APIs
 

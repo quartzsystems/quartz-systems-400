@@ -77,5 +77,7 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::asp::parity::ppl::HEADER_LAYOUT,
         &crate::asp::parity::ppl::ENTRY_LAYOUT,
         &crate::asp::parity::ppl::STATE_LAYOUT,
+        &crate::asp::ifs::map::HEADER_LAYOUT,
+        &crate::asp::ifs::map::EXTENT_LAYOUT,
     ]
 }

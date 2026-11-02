@@ -35,6 +35,8 @@ pub const NO_PARTNER: u16 = 0xFFFF;
 pub const FLAG_NEEDS_RECOVERY: u32 = 1;
 /// `flags` bit: RCLSTG should run.
 pub const FLAG_RCLSTG_REQUIRED: u32 = 2;
+/// `flags` bit: the IFS volume holds a formatted filesystem (§12).
+pub const FLAG_IFS_FORMATTED: u32 = 4;
 
 /// `protection`: no unit is mirrored.
 pub const PROTECTION_NONE: u8 = 0;
@@ -71,6 +73,8 @@ const OFF_WORK_SET: usize = 168;
 const OFF_WORK_KIND: usize = 169;
 const OFF_WORK_MEMBER: usize = 170;
 const OFF_WORK_DONE: usize = 176;
+const OFF_IFS_MAP: usize = 184;
+const OFF_IFS_PAGES: usize = 192;
 
 const ENTRY_UUID: usize = 0;
 const ENTRY_PAGES: usize = 16;
@@ -118,7 +122,9 @@ pub static LAYOUT: Layout = Layout {
         field("parity_work_member", OFF_WORK_MEMBER, 1),
         field("reserved3", 171, 5),
         field("parity_work_done", OFF_WORK_DONE, 8),
-        field("reserved2", 184, 72),
+        field("ifs_map", OFF_IFS_MAP, 8),
+        field("ifs_pages", OFF_IFS_PAGES, 8),
+        field("reserved2", 200, 56),
     ],
 };
 
@@ -263,6 +269,10 @@ pub struct Superblock {
     pub units: Vec<UnitEntry>,
     /// Device parity: membership, by unit UUID, and the work under way.
     pub parity: ParityTable,
+    /// First IFS map page; `None` when the IFS is not in the ASP.
+    pub ifs_map: Option<PageNo>,
+    /// Pages of the IFS volume.
+    pub ifs_pages: u64,
 }
 
 fn opt(v: u64) -> Option<PageNo> {
@@ -325,6 +335,8 @@ impl Superblock {
             body[OFF_WORK_MEMBER] = w.member;
             put_u64(body, OFF_WORK_DONE, w.done);
         }
+        put_u64(body, OFF_IFS_MAP, self.ifs_map.unwrap_or(0));
+        put_u64(body, OFF_IFS_PAGES, self.ifs_pages);
         for (i, u) in self.units.iter().enumerate() {
             let at = HEADER_LEN + i * UNIT_ENTRY_LEN;
             body[at + ENTRY_UUID..at + ENTRY_UUID + 16].copy_from_slice(&u.unit_uuid);
@@ -405,6 +417,8 @@ impl Superblock {
             sysval: ObjectId::from_bytes(&body[OFF_SYSVAL..OFF_SYSVAL + 16]),
             units,
             parity,
+            ifs_map: opt(get_u64(body, OFF_IFS_MAP)),
+            ifs_pages: get_u64(body, OFF_IFS_PAGES),
         })
     }
 }
@@ -510,6 +524,8 @@ mod tests {
                     done: 12,
                 }),
             },
+            ifs_map: Some(46),
+            ifs_pages: 262_144,
         };
         sb.update_protection();
         assert_eq!(sb.protection, PROTECTION_MIRRORED | PROTECTION_PARITY);

@@ -41,6 +41,8 @@ pub enum PageType {
     BTreeNode = 0x0010,
     /// Free-log page (see the format spec, free space).
     FreeLog = 0x0011,
+    /// IFS map page (see the format spec, the IFS in the ASP).
+    IfsMap = 0x0012,
     /// Object header.
     ObjectHeader = 0x0020,
     /// Object data.
@@ -62,6 +64,7 @@ impl PageType {
             0x0003 => Self::Wal,
             0x0010 => Self::BTreeNode,
             0x0011 => Self::FreeLog,
+            0x0012 => Self::IfsMap,
             0x0020 => Self::ObjectHeader,
             0x0021 => Self::ObjectData,
             0x0022 => Self::ExtentOverflow,

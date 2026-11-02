@@ -47,6 +47,8 @@ Page types:
 | 0x0001 | unit header |
 | 0x0002 | superblock |
 | 0x0003 | WAL page |
+| 0x0011 | free-log page (§7) |
+| 0x0012 | IFS map page (§12) |
 | 0x0010 | B+tree node (leaf or internal, see the node header) |
 | 0x0020 | object header |
 | 0x0021 | object data |
@@ -173,7 +175,8 @@ configuration displays use:
 Every write to a span goes to each half that is Active or Resuming and
 `flush` waits for all of them. Reads alternate between Active halves; a
 page that fails verification on one half is read from the other and,
-when that copy verifies, rewritten on the first. A half that fails I/O
+when that copy verifies, rewritten on the first. IFS volume pages (§12)
+are not verified: only a read that fails goes to the other half. A half that fails I/O
 while the other half works becomes Not operational and the pair goes on
 with one half.
 
@@ -221,7 +224,7 @@ At offset 0 of the body.
 |---|---|---|---|
 | 0 | 8 | magic | `QS400SUP` |
 | 8 | 4 | format_version | 2 |
-| 12 | 4 | flags | bit 0 `needs_recovery`, bit 1 `rclstg_required` |
+| 12 | 4 | flags | bit 0 `needs_recovery`, bit 1 `rclstg_required`, bit 2 `ifs_formatted` (§12) |
 | 16 | 8 | generation | checkpoint number; newest valid copy wins |
 | 24 | 16 | asp_uuid | |
 | 40 | 2 | asp_number | |
@@ -248,7 +251,9 @@ At offset 0 of the body.
 | 170 | 1 | parity_work_member | member being rebuilt; 0 for a synchronization |
 | 171 | 5 | reserved3 | 0 |
 | 176 | 8 | parity_work_done | blocks of the set done, as of this checkpoint |
-| 184 | 72 | reserved2 | 0 |
+| 184 | 8 | ifs_map | first IFS map page (§12), 0 when the IFS is not in the ASP |
+| 192 | 8 | ifs_pages | pages of the IFS volume: the sum of its extents |
+| 200 | 56 | reserved2 | 0 |
 
 The unit table follows at body offset 256: `unit_count` entries, one
 per unit in unit-number order. Units are added, removed and paired only
@@ -789,7 +794,8 @@ pages of one partial-parity slot (below):
 
 Pages from `3 + B * w` to the span's last page are held by the
 allocator: never allocated, never in the free-space tree, never freed
-by RCLSTG. Starting protection needs them to hold no data. Pages 0, 1, 2
+by RCLSTG. Starting protection needs them to hold no data and no IFS
+extent (§12). Pages 0, 1, 2
 and the last page are the unit's own and are in no stripe.
 
 **Stripes.** Block `b` holds `N` stripes `s = b * N + j`, `j` from 0 to
@@ -928,8 +934,8 @@ gets there.
 
 **Reads.** A data page is read from its unit when the unit is in step
 for that stripe. When it is not, or the read fails, or the page is not
-zero and its trailer checksum fails, it is computed from the rest of
-the stripe; a page computed this way that verifies is written back to
+zero and its trailer checksum fails (never asked of an IFS volume page,
+which has no trailer, §12), it is computed from the rest of the stripe; a page computed this way that verifies is written back to
 its unit when the unit answers.
 
 ### `PplHeader` (64 bytes)
@@ -982,3 +988,96 @@ it.
 | 40 | 8 | blocks | `B` |
 | 48 | 4 | crc | CRC32C of these 64 bytes with `crc` zero |
 | 52 | 12 | reserved | 0 |
+
+## 12. The IFS in the ASP
+
+The IFS root's xfs (docs/IFS.md "Disk format") lives on pages of the
+ASP set aside for it: the IFS volume. The storage service serves the
+volume to the kernel as a block device; the store's mirroring and
+device parity protect it like any other page, and it grows into the
+ASP's free space. Stores formatted before this section have
+`ifs_map` 0 and keep their IFS in its own partition (docs/IFS.md).
+
+**Extents.** The volume is a list of extents, each a run of logical
+pages within one span. Volume page `v` is page `v - s` of the extent
+whose first volume page `s` is the largest not above `v`, extents taken
+in map order. Extents never overlap one another, the reserved pages of
+a span (0, 1, 2, the WAL, the last page) or the pages device parity
+holds. Volume pages are raw: all 4096 bytes are the filesystem's, with
+no trailer and no checksum the store checks (xfs checksums its own
+metadata). They never pass through the page cache or the WAL.
+
+**Holding.** The allocator holds every extent (§11 describes holds):
+never handed out, never free in the tree, never freed by RCLSTG, never
+moved. Holds are not persisted; at open the ASP holds each extent the
+map lists before anything allocates. Held pages count as used in the
+ASP's figures.
+
+**Placement.** An extent added while its span is a device parity member
+comes with one extent on every member of the set at the same rows,
+covering whole blocks: rows `3 + b0 * w .. 3 + b1 * w` of each member
+for blocks `b0 .. b1`. Every stripe of those blocks then holds volume
+pages only. Extents placed before a set was started keep their pages:
+the set treats each volume page as raw wherever it lies. Elsewhere an
+extent is any free run of a span. Placement takes the lowest addresses
+that fit, in unit order, and runs of at least 256 pages (whole blocks
+in a set), so the map stays short.
+
+**Creation.** When an ASP that has no IFS map opens at IPL and no IFS
+partition exists, the IFS is created: a tenth of the ASP's usable pages
+(device parity's held pages excluded), at least 262144 pages (1 GiB),
+never past the ASP threshold (below), and not at all when fewer than
+16384 pages (64 MiB) would fit. The extents are held, the map is
+written and a checkpoint publishes it; then the filesystem is formatted
+on the volume and a second checkpoint sets the superblock's
+`ifs_formatted` flag. A crash before the first checkpoint leaves no IFS
+and the next IPL starts again; a crash before the second formats the
+volume again. A volume whose flag is set is never formatted again.
+
+**Growth.** The volume grows by extents appended to the map; extents
+are never removed and the volume never shrinks. A growth is a step of
+2% of the ASP's usable pages, rounded up to whole blocks inside a
+parity set, or what is left below the ASP threshold when that is less
+(at least 16384 pages; otherwise there is no growth). The ASP threshold
+is the percentage of the ASP's usable pages that may be in use, 90 by
+default (DST's Work with ASP threshold); held IFS pages count as used.
+The new extents are held, a new map is written and a checkpoint
+publishes it before the volume's new size is given to the kernel. A
+crash before the checkpoint loses the growth and nothing else; the
+filesystem only learns of the new pages after it.
+
+**Unit changes.** A unit whose span holds an IFS extent cannot leave the
+configuration, and cannot be paired when pairing would move its pages
+or shorten its span below an extent's end. Starting device parity over
+units is refused when the pages the set would hold (§11) overlap an IFS
+extent. Mirror resumes copy volume pages as they copy every held page;
+parity synchronization and rebuild cover them as they cover every row.
+
+**The map.** A chain of map pages (type 0x0012, ordinary pages with a
+trailer, owner zero), each a header and up to 252 extents. The map is
+never changed in place: a change writes a new chain on pages the
+allocator hands out, frees the old chain's pages and checkpoints; the
+superblock's `ifs_map` and `ifs_pages` name the new chain. A crash
+before the checkpoint leaves the old chain in force, its pages still
+allocated in the durable free tree.
+
+### `IfsMapHeader` (32 bytes)
+
+At offset 0 of the body of each map page.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400IFS` |
+| 8 | 8 | next | next map page, 0 for the last |
+| 16 | 2 | count | extents in this page, at most 252 |
+| 18 | 6 | reserved | 0 |
+| 24 | 8 | first_volume_page | volume page of this page's first extent |
+
+### `IfsExtent` (16 bytes)
+
+From body offset 32, `count` entries, in volume order.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | start | first logical page |
+| 8 | 8 | pages | length; the run lies within one span |

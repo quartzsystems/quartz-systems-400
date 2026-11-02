@@ -7,6 +7,7 @@
 //! logical page space. A span is one unprotected unit or a mirrored
 //! pair. See `docs/STORE_FORMAT.md` §4, §5 and §7.
 
+pub mod ifs;
 pub mod io;
 pub mod layout;
 pub mod mirror;
@@ -166,6 +167,8 @@ impl Asp {
             sysval: ObjectId::NONE,
             units,
             parity: parity::ParityTable::default(),
+            ifs_map: None,
+            ifs_pages: 0,
         };
         // The WAL of a store that used these units before would replay
         // into this one: its pages carry the sequence numbers this one
