@@ -94,6 +94,30 @@ impl Client {
         r
     }
 
+    /// The replies to requests `ids`, in whatever order they come, by
+    /// ID; nothing else may come between.
+    pub fn replies(&mut self, ids: &[u32]) -> std::collections::HashMap<u32, Envelope> {
+        let mut got = std::collections::HashMap::new();
+        while got.len() < ids.len() {
+            let r = self.recv().expect("a reply");
+            assert!(r.kind == Kind::Reply && ids.contains(&r.request_id), "{r:?}");
+            assert!(got.insert(r.request_id, r).is_none(), "one reply each");
+        }
+        got
+    }
+
+    /// Sign on as `user`.
+    pub fn sign_on(&mut self, user: &str, password: &str) {
+        let s = self.call(
+            Op::SignOn,
+            &qap_proto::ops::signon::SignOn {
+                user: user.into(),
+                password: qap_proto::Secret::from(password),
+            },
+        );
+        assert_eq!(s.status, Status::Ok);
+    }
+
     /// Send a request and take its reply.
     pub fn call<B: Wire>(&mut self, op: Op, body: &B) -> Envelope {
         let id = self.request(op, body);

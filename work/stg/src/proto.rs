@@ -116,6 +116,11 @@ ipc::rpc! {
 
     /// First request on a connection: who is speaking.
     0 => fn hello / Hello (job: JobInfo) -> Result<(), String>;
+    /// First request on a secondary thread's link, instead of `hello`:
+    /// a thread of active job `number`, process `pid`. The same job, its
+    /// security session shared (a profile swap reaches every thread),
+    /// no `QTEMP` or job log of its own; the link closing ends nothing.
+    9 => fn hello_thread / HelloThread (number: u32, pid: u32) -> Result<(), String>;
     /// A service console command, run in the service.
     1 => fn exec / Exec (line: String) -> ExecReply;
     /// Checkpoint and close the store; the service exits after the

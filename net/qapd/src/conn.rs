@@ -2,27 +2,34 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The connection's thread: requests in arrival order, `Hello` first
-//! and once, the version it agrees and only that version's operations
-//! and values, the operations allowed before sign-on, replies split to
-//! fit a frame, cancels honoured before an operation runs (an empty
-//! reply) and after (its own reply, status `Cancelled`),
-//! and the events when the server or an operator ends the connection.
+//! The connection job's own thread: the command lane, where `Command`
+//! requests run one at a time in arrival order (they share the job's
+//! state), and the events when the server or an operator ends the
+//! connection. Every other request runs in [`crate::lanes`] meanwhile.
+//! What the threads share: the version, the session, the replies
+//! (only the version's values, split to fit a frame, `Cancelled` when
+//! the client cancelled: empty before the operation started, its own
+//! reply after).
 
+use std::sync::atomic::{AtomicU16, AtomicU64, Ordering};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
-use std::sync::{Arc, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread;
 
 use ipc::Wire;
-use qap_proto::ops::connection::{Hello, HelloReply, PingReply, SignOnMethod, choose_version};
 use qap_proto::ops::command::{CheckReply, CommandText, DescribeCommand};
 use qap_proto::ops::event;
-use qap_proto::ops::signon::{ChangePassword, Resume, SignOn, SignOnReply};
-use qap_proto::{Envelope, HELLO_ID, Op, ServerMessage, Service, Status, Token, VERSION};
+use qap_proto::{Envelope, Op, ServerMessage, Service, Status, Token};
 
 use crate::host::{Ending, Host, Refusal};
+use crate::lanes::{self, ToMain};
 use crate::pump::{self, Cancels, In, Out, Running, cancelled};
 use crate::{Closed, Config, Transport};
+
+/// A lock, poison or not.
+pub(crate) fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(PoisonError::into_inner)
+}
 
 /// An operation's answer.
 pub(crate) struct Answer {
@@ -57,67 +64,65 @@ impl Answer {
     }
 }
 
-/// What the connection knows.
-struct Conn<'h, H: Host> {
-    host: &'h mut H,
-    out: Sender<Out>,
-    cancels: Cancels,
-    running: Arc<Running>,
-    /// The version `Hello` agreed; `None` before it.
-    version: Option<u16>,
+/// What the connection's threads share.
+pub(crate) struct Shared {
+    out: Mutex<Sender<Out>>,
+    pub cancels: Cancels,
+    /// The version `Hello` agreed; 0 before it.
+    version: AtomicU16,
     /// The signed-on session's token and profile.
-    session: Option<(Token, String)>,
+    pub session: Mutex<Option<(Token, String)>>,
+    /// Bumped each time the job runs as another profile.
+    pub swaps: AtomicU64,
+    /// Sign-on, password changes, resume and sign-off, one at a time.
+    pub signon: Mutex<()>,
 }
 
-impl<H: Host> Conn<'_, H> {
-    fn send(&self, mut frames: Vec<Envelope>) {
+impl Shared {
+    pub fn version(&self) -> Option<u16> {
+        match self.version.load(Ordering::SeqCst) {
+            0 => None,
+            v => Some(v),
+        }
+    }
+
+    pub fn set_version(&self, v: u16) {
+        self.version.store(v, Ordering::SeqCst);
+    }
+
+    pub fn signed_on(&self) -> bool {
+        lock(&self.session).is_some()
+    }
+
+    pub fn send(&self, mut frames: Vec<Envelope>) {
         // A peer gets only the statuses its version defines.
-        let v = self.version.unwrap_or(qap_proto::MIN_VERSION);
+        let v = self.version().unwrap_or(qap_proto::MIN_VERSION);
         for f in &mut frames {
             f.status = f.status.for_version(v);
         }
-        let _ = self.out.send(Out::Frames(frames));
+        let _ = lock(&self.out).send(Out::Frames(frames));
     }
 
-    fn reply(&self, req: &Envelope, a: Answer) {
+    pub fn reply(&self, req: &Envelope, a: Answer) {
         match Envelope::replies(req, a.status, a.message, a.body) {
             Ok(frames) => self.send(frames),
             Err(_) => self.send(vec![Envelope::reply(req, Status::Error, None, Vec::new())]),
         }
     }
 
-    /// Answer one request; `Some` when the connection is to close.
-    fn request(&mut self, req: &Envelope) -> Option<Closed> {
-        if cancelled(&self.cancels, req.request_id) {
+    /// Whether the client cancelled `req`; if so, its empty reply is
+    /// sent. Asked before an operation starts.
+    pub fn cancelled_before(&self, req: &Envelope) -> bool {
+        let c = cancelled(&self.cancels, req.request_id);
+        if c {
             self.reply(req, Answer::status(Status::Cancelled));
-            return None;
         }
-        let op = req.operation();
-        if self.version.is_none() {
-            // The first request is Hello, ID 1; anything else closes.
-            if op != Some(Op::Hello) || req.request_id != HELLO_ID {
-                self.reply(req, Answer::status(Status::InvalidRequest));
-                return Some(Closed::Refused);
-            }
-            return self.hello(req);
-        }
-        let version = self.version.unwrap_or(qap_proto::MIN_VERSION);
-        let a = match op {
-            None => Answer::status(Status::InvalidRequest),
-            // An operation newer than the connection's version.
-            Some(op) if op.since() > version => Answer::status(Status::InvalidRequest),
-            Some(Op::Hello) => {
-                self.reply(req, Answer::status(Status::InvalidRequest));
-                return Some(Closed::Refused);
-            }
-            Some(op) => {
-                *self.running.id.lock().unwrap_or_else(PoisonError::into_inner) = Some(req.request_id);
-                let a = self.operation(op, req);
-                *self.running.id.lock().unwrap_or_else(PoisonError::into_inner) = None;
-                a
-            }
-        };
-        // Cancelled once started: the operation's own body and message.
+        c
+    }
+
+    /// Reply with an operation's answer; `Cancelled` with the
+    /// operation's own body and message when cancelled once started.
+    pub fn finish(&self, req: &Envelope, a: Answer) {
         let a = if cancelled(&self.cancels, req.request_id) {
             Answer {
                 status: Status::Cancelled,
@@ -127,48 +132,40 @@ impl<H: Host> Conn<'_, H> {
             a
         };
         self.reply(req, a);
-        None
     }
 
-    fn hello(&mut self, req: &Envelope) -> Option<Closed> {
-        let Ok(h) = req.body_as::<Hello>() else {
-            self.reply(req, Answer::status(Status::InvalidRequest));
-            return Some(Closed::Refused);
-        };
-        let Some(version) = choose_version(h.min_version, h.max_version, VERSION) else {
-            self.reply(req, Answer::status(Status::VersionUnsupported));
-            return Some(Closed::Refused);
-        };
-        self.version = Some(version);
-        let id = self.host.system_id();
-        let reply = HelloReply {
-            version,
-            system_name: id.system_name,
-            release: id.release,
-            services: Service::of_version(version),
-            capabilities: Vec::new(),
-            signon_methods: vec![SignOnMethod::Password],
-            server_time: self.host.now_ms(),
-            time_zone: id.time_zone,
-            system_ccsid: id.ccsid,
-        };
-        self.reply(req, Answer::ok(&reply));
-        None
+    /// The job now runs as another profile.
+    pub fn swapped(&self) {
+        self.swaps.fetch_add(1, Ordering::SeqCst);
     }
 
-    fn operation(&mut self, op: Op, req: &Envelope) -> Answer {
-        if self.session.is_none() && !op.before_signon() {
-            return Answer::status(Status::NotSignedOn);
+    fn close(&self) {
+        let _ = lock(&self.out).send(Out::Close);
+    }
+}
+
+/// The command lane and the job's end.
+struct Main<'h, H: Host> {
+    host: &'h mut H,
+    shared: Arc<Shared>,
+    running: Arc<Running>,
+    /// The swaps the job's runtime has followed.
+    seen: u64,
+}
+
+impl<H: Host> Main<'_, H> {
+    /// Run one `Command` request.
+    fn command(&mut self, op: Op, req: &Envelope) {
+        if self.shared.cancelled_before(req) {
+            return;
         }
-        match op {
-            Op::Ping => Answer::ok(&PingReply {
-                server_time: self.host.now_ms(),
-            }),
-            Op::SignOn => self.sign_on(req),
-            Op::ChangePassword => self.change_password(req),
-            Op::Resume => self.resume(req),
-            Op::SignOff => self.sign_off(),
-            Op::SystemInfo => Answer::ok(&self.host.system_info()),
+        let swaps = self.shared.swaps.load(Ordering::SeqCst);
+        if swaps != self.seen {
+            self.seen = swaps;
+            self.host.swapped();
+        }
+        *lock(&self.running.id) = Some(req.request_id);
+        let a = match op {
             Op::RunCommand => self.run_command(req),
             Op::CheckCommand => self.check_command(req),
             Op::DescribeCommand => match req.body_as::<DescribeCommand>() {
@@ -178,61 +175,10 @@ impl<H: Host> Conn<'_, H> {
                 },
                 Err(_) => Answer::status(Status::InvalidRequest),
             },
-            Op::PasswordStatus => Answer::ok(&self.host.password_status()),
-            Op::TelnetTicket => match self.host.telnet_ticket() {
-                Ok(t) => Answer::ok(&t),
-                Err(r) => Answer::refused(r),
-            },
-            Op::Hello => Answer::status(Status::InvalidRequest),
-        }
-    }
-
-    /// A reply that opens or resumes a session.
-    fn opened(&mut self, r: Result<SignOnReply, Refusal>) -> Answer {
-        match r {
-            Ok(reply) => {
-                self.session = Some((reply.token.clone(), reply.profile.clone()));
-                Answer::ok(&reply)
-            }
-            Err(r) => Answer::refused(r),
-        }
-    }
-
-    fn sign_on(&mut self, req: &Envelope) -> Answer {
-        let Ok(b) = req.body_as::<SignOn>() else {
-            return Answer::status(Status::InvalidRequest);
+            _ => Answer::status(Status::InvalidRequest),
         };
-        if self.session.is_some() {
-            return Answer::status(Status::InvalidRequest);
-        }
-        let r = self.host.sign_on(&b.user, &b.password);
-        self.opened(r)
-    }
-
-    fn change_password(&mut self, req: &Envelope) -> Answer {
-        let Ok(b) = req.body_as::<ChangePassword>() else {
-            return Answer::status(Status::InvalidRequest);
-        };
-        let r = self.host.change_password(&b.user, &b.old_password, &b.new_password);
-        match (&self.session, r) {
-            // Signed on: the session and its token go on.
-            (Some((token, _)), Ok(mut reply)) => {
-                reply.token = token.clone();
-                Answer::ok(&reply)
-            }
-            (_, r) => self.opened(r),
-        }
-    }
-
-    fn resume(&mut self, req: &Envelope) -> Answer {
-        let Ok(b) = req.body_as::<Resume>() else {
-            return Answer::status(Status::InvalidRequest);
-        };
-        if self.session.is_some() {
-            return Answer::status(Status::InvalidRequest);
-        }
-        let r = self.host.resume(&b.token);
-        self.opened(r)
+        *lock(&self.running.id) = None;
+        self.shared.finish(req, a);
     }
 
     fn run_command(&mut self, req: &Envelope) -> Answer {
@@ -259,19 +205,12 @@ impl<H: Host> Conn<'_, H> {
         }
     }
 
-    fn sign_off(&mut self) -> Answer {
-        if let Some((token, _)) = self.session.take() {
-            self.host.sign_off(&token);
-        }
-        Answer::status(Status::Ok)
-    }
-
     /// The server or an operator ends the connection.
     fn end(&mut self, why: Ending) -> Closed {
         match why {
             Ending::Server => {
                 let m = self.host.message("TCP1A0A", &["QAP"]);
-                self.send(vec![Envelope::event(
+                self.shared.send(vec![Envelope::event(
                     Service::Connection,
                     event::SERVER_ENDING,
                     Status::ServerEnding,
@@ -280,10 +219,11 @@ impl<H: Host> Conn<'_, H> {
                 Closed::ServerEnding
             }
             Ending::Operator => {
-                if let Some((token, profile)) = self.session.take() {
+                let session = lock(&self.shared.session).take();
+                if let Some((token, profile)) = session {
                     let m = self.host.message("TCP1A54", &[&profile]);
                     self.host.sign_off(&token);
-                    self.send(vec![Envelope::event(
+                    self.shared.send(vec![Envelope::event(
                         Service::SignOn,
                         event::SESSION_ENDED,
                         Status::Ok,
@@ -300,42 +240,49 @@ impl<H: Host> Conn<'_, H> {
 pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config) -> Closed {
     let (in_tx, in_rx) = mpsc::channel::<In>();
     let (out_tx, out_rx) = mpsc::channel::<Out>();
-    let cancels = Cancels::default();
-    let pump_cancels = Cancels::clone(&cancels);
+    let (main_tx, main_rx) = mpsc::channel::<ToMain>();
+    let shared = Arc::new(Shared {
+        out: Mutex::new(out_tx),
+        cancels: Cancels::default(),
+        version: AtomicU16::new(0),
+        session: Mutex::new(None),
+        swaps: AtomicU64::new(0),
+        signon: Mutex::new(()),
+    });
     let running = Arc::new(Running {
-        id: std::sync::Mutex::new(None),
+        id: Mutex::new(None),
         cancel: host.canceller(),
     });
+    let pump_cancels = Cancels::clone(&shared.cancels);
     let pump_running = Arc::clone(&running);
     let pump = thread::spawn(move || pump::run(t, cfg, in_tx, &out_rx, pump_cancels, pump_running));
-    let mut c = Conn {
+    let threads = host.threads();
+    let lanes_shared = Arc::clone(&shared);
+    let dispatch = thread::spawn(move || lanes::dispatch(&lanes_shared, &in_rx, &threads, &main_tx));
+    let mut m = Main {
         host,
-        out: out_tx,
-        cancels,
+        shared: Arc::clone(&shared),
         running,
-        version: None,
-        session: None,
+        seen: 0,
     };
     let why = loop {
-        match in_rx.recv_timeout(cfg.poll) {
-            Ok(In::Request(req)) => {
-                if let Some(why) = c.request(&req) {
-                    break why;
-                }
-            }
-            Ok(In::Closed(why)) => break why,
+        match main_rx.recv_timeout(cfg.poll) {
+            Ok(ToMain::Command(op, req)) => m.command(op, &req),
+            Ok(ToMain::Closed(why)) => break why,
             Err(RecvTimeoutError::Timeout) => {}
             Err(RecvTimeoutError::Disconnected) => break Closed::Broken,
         }
-        if let Some(e) = c.host.ending() {
-            break c.end(e);
+        if let Some(e) = m.host.ending() {
+            break m.end(e);
         }
     };
     // A session outlives its connection until its idle timeout.
-    if let Some((token, _)) = c.session.take() {
-        c.host.detach(&token);
+    let session = lock(&shared.session).take();
+    if let Some((token, _)) = session {
+        m.host.detach(&token);
     }
-    let _ = c.out.send(Out::Close);
+    shared.close();
     let _ = pump.join();
+    let _ = dispatch.join();
     why
 }

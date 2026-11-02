@@ -80,6 +80,7 @@ client trait. `stg::proto` is that list:
 |---|---|
 | 0-3 | `hello` (who the connection speaks for), `exec` (a console command run in the service), `close` (slic only), `ping` |
 | 4-8 | the job: a number, its status (the activity-level gate), the active jobs, its attributes, `CHGJOB` |
+| 9 | `hello_thread`: a secondary thread of an active job, on a link of its own |
 | 10-12 | programs and system pointers |
 | 20-24 | user spaces |
 | 30 | message descriptions |
@@ -95,7 +96,11 @@ client trait. `stg::proto` is that list:
 | 690 | TCP/IP: one request carrying a `stg::tcp::TcpOp` (`STRTCP`, `ENDTCP`, `QTCPWRK`'s heartbeat, the status snapshot, the panels' data, the resolver's configuration, the port restrictions, the services table, the servers' attributes, `svc.tcp`), answered as a `TcpReply` (`docs/TCPIP.md`) |
 
 Every connection starts with `hello`, naming the job and the lock
-handle its locks are taken under. Nothing else is answered before it.
+handle its locks are taken under. A secondary thread of a job starts
+with `hello_thread` instead, naming the job and its process. It shares
+the job (number, `QTEMP`, lock handle) and its security session, so a
+profile swap on any of the job's links reaches them all. Its link
+closing ends nothing. Nothing else is answered before either.
 Requests are answered in order, one at a time per connection.
 
 `slic`'s own connection is the job process's standard-input pattern in

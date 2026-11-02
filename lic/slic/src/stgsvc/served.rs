@@ -81,6 +81,9 @@ pub struct JobCtx {
     pub handles: std::collections::HashMap<Vec<u8>, String>,
     /// Its programs' embedded SQL: cursors and prepared statements.
     pub sql: Option<sql::embed::Session>,
+    /// A secondary thread's link (`hello_thread`): closing it ends
+    /// nothing.
+    pub thread: bool,
 }
 
 impl JobCtx {
@@ -119,9 +122,25 @@ impl JobCtx {
             session: Rc::new(RefCell::new(sec::auth::cache::Session::default())),
             handles: std::collections::HashMap::new(),
             sql: None,
+            thread: false,
             job,
         }
     }
+}
+
+/// `hello_thread`: a secondary thread of active job `number` in
+/// process `pid`, sharing the job's security session and `QTEMP`.
+fn thread_of(system: &System, conns: &[Conn], number: u32, pid: u32) -> Result<JobCtx, String> {
+    let main = conns
+        .iter()
+        .filter_map(|c| c.ctx.as_ref())
+        .find(|c| !c.thread && c.job.number == number && c.job.pid == pid)
+        .ok_or_else(|| format!("job number {number:06} is not active in process {pid}"))?;
+    let mut ctx = JobCtx::new(system, main.job.clone());
+    ctx.session = Rc::clone(&main.session);
+    ctx.qtemp = main.qtemp;
+    ctx.thread = true;
+    Ok(ctx)
 }
 
 /// Answer one request on connection `i`, then audit what it did.
@@ -147,6 +166,14 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
             Err("this connection already said hello".into())
         } else {
             begin_job(system, job).map(|ctx| conn.ctx = Some(ctx))
+        };
+        return ipc::encode(&r);
+    }
+    if let Request::HelloThread { number, pid } = req {
+        let r = if conns[i].ctx.is_some() {
+            Err("this connection already said hello".into())
+        } else {
+            thread_of(system, conns, number, pid).map(|ctx| conns[i].ctx = Some(ctx))
         };
         return ipc::encode(&r);
     }
@@ -201,7 +228,7 @@ fn joblog_of(
     let ctx = conns
         .iter()
         .filter_map(|c| c.ctx.as_ref())
-        .find(|c| c.job.number == number)
+        .find(|c| !c.thread && c.job.number == number)
         .ok_or_else(|| format!("CPF1070 Job {number:06} is not active."))?;
     super::security::freshen(system, session);
     let q = ctx.job.qualified();
@@ -290,6 +317,10 @@ pub fn vanished(system: &mut System, conn: Conn) {
     let Some(mut ctx) = conn.ctx else {
         return;
     };
+    // A thread's link: the job goes on.
+    if ctx.thread {
+        return;
+    }
     end_job(system, &mut ctx, true);
     let who = charged(&ctx);
     super::security::flush(system, Some(who));
@@ -375,7 +406,7 @@ fn close(system: &mut System, conns: &mut [Conn]) -> Result<String, String> {
     // The close checkpoint makes the job ends durable together.
     group(system, true);
     for c in conns.iter_mut() {
-        if let Some(ctx) = c.ctx.as_mut() {
+        if let Some(ctx) = c.ctx.as_mut().filter(|c| !c.thread) {
             end_job(system, ctx, false);
         }
     }
@@ -447,6 +478,10 @@ impl Served<'_> {
 
 impl Service for Served<'_> {
     fn hello(&mut self, _job: JobInfo) -> Result<(), String> {
+        Err("this connection already said hello".into())
+    }
+
+    fn hello_thread(&mut self, _number: u32, _pid: u32) -> Result<(), String> {
         Err("this connection already said hello".into())
     }
 

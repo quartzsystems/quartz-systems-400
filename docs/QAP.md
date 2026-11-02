@@ -12,7 +12,7 @@ This draft settles the decisions below. Anything it leaves open is listed under 
 | Security | TLS 1.3 only, no plaintext mode. Server certificate from the QS/400 certificate manager, application ID `QS400_ACCESS_SERVER`. The client validates it with its existing untrusted-certificate trust flow |
 | Framing and encoding | Wire, from the QS/400 repository's `ipc` crate, the same framing and serialization QSI uses. Types below are Wire types; enums use `wire_enum!`. If Wire cannot express something below, stop and ask; do not invent a second encoding |
 | Where the code lives | `qap-proto` (envelope and message types) lives in the QS/400 repository beside `ipc`. QS/400 Access pins both by commit |
-| Multiplexing | One connection carries many concurrent requests. Every request has a service ID and a request ID; replies carry the request ID. No port mapper and no per-service ports |
+| Multiplexing | One connection carries many concurrent requests. Every request has a service ID and a request ID; replies carry the request ID, in the order operations finish, not the order requests came. No port mapper and no per-service ports. Lanes: `Command` requests run one at a time, in arrival order, in the connection job, because they share its job state (library list, `QTEMP`, job attributes); `Sql` (version 4) joins them in that lane. Every other operation runs concurrently, up to the outstanding limit, as the signed-on profile, without waiting for a command. `Ping` and `Cancel` are never queued behind anything |
 | Versioning | Client hello sends the range of protocol versions it supports; server picks one or refuses. Version 1 is this document |
 | Server jobs | Listener job `QAPD` in subsystem `QSYSWRK`; one job per connection in `QUSRWRK`, running as `QUSER` until sign-on and as the signed-on user profile after it |
 | Server control | `STRTCPSVR SERVER(*QAP)`, `ENDTCPSVR SERVER(*QAP)`, autostart attribute; shown on Navigator's Servers page |
@@ -338,6 +338,13 @@ Version 2, settled with Cody on 2026-11-02:
   panel groups for commands yet, and the 5250 prompter shows none
   either. Elements and qualifiers have the prompt text their
   definitions give.
+- The lanes: `Command` requests run on the connection job's own
+  thread. Every other operation runs on a secondary thread of the same
+  job, made when none is free. Each secondary thread has its own link
+  to the storage service (`hello_thread`). The link shares the job's
+  security session, so a sign-on on any thread swaps the profile for
+  all of them, and the job's runtime follows before its next command.
+  `Hello` and `Ping` are answered where requests are routed.
 - `RunCommand` and `CheckCommand` run in the connection job through
   the same analyzer as Command Entry. `Cancel` of a running command
   ends its request as System Request option 2 does (`CPF1907`), and

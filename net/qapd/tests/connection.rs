@@ -87,19 +87,18 @@ fn signed_on_operations_are_refused() {
 fn more_than_64_outstanding_is_busy() {
     let mut r = start(cfg());
     r.client.hello();
+    r.client.sign_on("BOB", "SECRET1");
     r.c.gate.set(false);
-    let ids: Vec<u32> = (0..65).map(|_| r.client.request(Op::Ping, &())).collect();
+    let ids: Vec<u32> = (0..65).map(|_| r.client.request(Op::SystemInfo, &())).collect();
     // The 65th is refused at once; the first 64 wait.
     let busy = r.client.recv().unwrap();
     assert_eq!((busy.request_id, busy.status), (ids[64], Status::Busy));
     r.c.gate.set(true);
-    for id in &ids[..64] {
-        assert_eq!(r.client.reply(*id).status, Status::Ok);
-    }
+    assert!(r.client.replies(&ids[..64]).values().all(|e| e.status == Status::Ok));
     // A request ID still outstanding cannot be used again.
     r.c.gate.set(false);
-    let a = r.client.request(Op::Ping, &());
-    r.client.send(&Envelope::request(a, Op::Ping, &()));
+    let a = r.client.request(Op::SystemInfo, &());
+    r.client.send(&Envelope::request(a, Op::SystemInfo, &()));
     let dup = r.client.recv().unwrap();
     assert_eq!((dup.request_id, dup.status), (a, Status::InvalidRequest));
     r.c.gate.set(true);
@@ -109,10 +108,14 @@ fn more_than_64_outstanding_is_busy() {
 #[test]
 fn cancel_running_and_waiting() {
     let mut r = start(cfg());
-    r.client.hello();
+    r.client.hello_range(1, 2);
+    r.client.sign_on("BOB", "SECRET1");
+    let text = |c: &str| qap_proto::ops::command::CommandText { command: c.into() };
+    // Running: held at the gate. Waiting: a command behind a command.
     r.c.gate.set(false);
-    let running = r.client.request(Op::Ping, &());
-    let waiting = r.client.request(Op::Ping, &());
+    let running = r.client.request(Op::SystemInfo, &());
+    let first = r.client.request(Op::RunCommand, &text("DLYJOB DLY(1)"));
+    let waiting = r.client.request(Op::RunCommand, &text("CRTLIB LIB(NEVER)"));
     std::thread::sleep(Duration::from_millis(100));
     r.client.send(&Envelope::cancel(waiting));
     r.client.send(&Envelope::cancel(running));
@@ -120,12 +123,14 @@ fn cancel_running_and_waiting() {
     r.client.send(&Envelope::cancel(999));
     std::thread::sleep(Duration::from_millis(100));
     r.c.gate.set(true);
-    let a = r.client.reply(running);
-    let b = r.client.reply(waiting);
+    let got = r.client.replies(&[running, first, waiting]);
+    let (a, b) = (&got[&running], &got[&waiting]);
     assert_eq!((a.status, b.status), (Status::Cancelled, Status::Cancelled));
-    // Started: its own body. Not started: none.
+    assert_eq!(got[&first].status, Status::Ok);
+    // Started: its own body. Not started: none, and it never ran.
     assert!(!a.body.is_empty());
     assert!(b.body.is_empty());
+    assert!(r.c.libraries.lock().unwrap().is_empty());
     assert_eq!(r.client.call(Op::Ping, &()).status, Status::Ok);
 }
 

@@ -28,7 +28,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-pub use host::MemHost;
+pub use host::{MemHost, MemThread};
 
 use crate::host::Ending;
 use crate::sessions::Sessions;
@@ -40,8 +40,8 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-/// Holds operations in progress while closed (`now_ms` and
-/// `system_info` pass through it).
+/// Holds operations in progress while closed (`system_info` passes
+/// through it).
 #[derive(Default)]
 pub struct Gate {
     open: Mutex<bool>,
@@ -80,7 +80,7 @@ pub struct User {
 
 /// The system: what every connection shares.
 pub struct System {
-    /// Holds `now_ms` and `system_info`.
+    /// Holds `system_info`.
     pub gate: Gate,
     /// Set to end the connections from outside.
     pub ending: Mutex<Option<Ending>>,

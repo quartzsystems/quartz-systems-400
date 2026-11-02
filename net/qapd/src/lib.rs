@@ -9,8 +9,10 @@
 //! - [`frames`]: frames from a stream that arrives in pieces.
 //! - `pump`: the thread that owns the stream: reads, limits, cancels,
 //!   writes, the idle close.
-//! - `conn`: the connection's thread: the order rules, the services,
-//!   the events.
+//! - `lanes`: where requests go: `Hello` and `Ping` at once, commands
+//!   to the job's own thread, the rest to secondary threads.
+//! - `conn`: the job's own thread: commands one at a time, the events;
+//!   what the threads share.
 //! - [`host`]: what the connection reaches of the system.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
@@ -25,6 +27,7 @@ pub mod testing;
 pub mod tickets;
 
 mod conn;
+mod lanes;
 mod pump;
 
 use std::io::{Read, Write};
@@ -32,7 +35,7 @@ use std::net::{Shutdown, TcpStream};
 use std::time::Duration;
 
 pub use conn::serve;
-pub use host::{Canceller, Ending, Host, Ran, Refusal, SystemId};
+pub use host::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 
 /// A connection's byte stream. Reads must not block for long (a read
 /// timeout of a few milliseconds): the pump also writes and watches the
