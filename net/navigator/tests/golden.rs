@@ -30,7 +30,18 @@ fn home() {
     let mut b = Browser::signed_on();
     let r = b.get("/home?auto=60");
     assert_eq!(r.status, 200);
-    assert_golden(&r.text(), "nav/home.html", &[]);
+    // The hardware's model beside the system's; main storage is Memory.
+    assert_golden(
+        &r.text(),
+        "nav/home.html",
+        &[
+            (
+                "<span class=\"mono\">Q400-M2 / 9Q04</span>",
+                "Dell Inc. PowerEdge R650 &nbsp; <span class=\"mono\">Q400-M2 / 9Q04</span>",
+            ),
+            ("Main storage</td><td>65,536", "Memory</td><td>65,536"),
+        ],
+    );
     // Off: no reload.
     assert!(!b.get("/home").text().contains("http-equiv=\"refresh\""));
 }

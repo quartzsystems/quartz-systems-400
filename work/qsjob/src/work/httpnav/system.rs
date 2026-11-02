@@ -5,7 +5,7 @@
 //! `navigator::env::System` over the job's thread: the common part
 //! (`web::system::Core`) and System status, read as the user from what
 //! `WRKSYSSTS` (`panel2_data SYSSTS`), `WRKDSKSTS` (`DSKSTS`),
-//! `DSPSYSVAL` (`QSRLNBR`, `QMODEL`), `WRKACTJOB` (`active_jobs`),
+//! `machine` (`QSRLNBR`, `QMODEL`, the firmware's model), `WRKACTJOB` (`active_jobs`),
 //! `WRKSBS` (`sbs_list`), `WRKJOBQ`, `WRKSPLF` (`splf_list`) and
 //! `DSPMSG QSYSOPR` (`msgq_list`) show; failed sign-ons from
 //! `DSPAUDJRNE ENTTYP(PW)`, PTFs from `DSPPTF` (`sys2_panel PTF`), the
@@ -42,9 +42,11 @@ fn sysval(m: &Main, name: &str) -> String {
 
 /// What System status shows, read as the signed-on user.
 fn status(m: &mut Main, reset: bool) -> Status {
+    let machine = m.link.borrow_mut().with(Client::machine);
     let mut s = Status {
-        serial: sysval(m, "QSRLNBR"),
-        model: sysval(m, "QMODEL"),
+        serial: machine.serial,
+        model: machine.model,
+        hardware: machine.hw_model,
         release: release::RELEASE.to_string(),
         processors: std::thread::available_parallelism().map_or(1, std::num::NonZero::get).to_string(),
         ..Status::default()

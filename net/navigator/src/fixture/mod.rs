@@ -139,6 +139,7 @@ impl System for FixtureSystem {
             serial: "10-7A2B9C".into(),
             model: "Q400-M2".into(),
             machine_type: "9Q04".into(),
+            hardware: "Dell Inc. PowerEdge R650".into(),
             release: release::RELEASE.to_string(),
             ptf_level: "QS400-CUM-26290".into(),
             processors: "8 (shared, uncapped)".into(),

@@ -126,13 +126,16 @@ pub struct Status {
     pub model: String,
     /// `9Q04`.
     pub machine_type: String,
+    /// The firmware's vendor and product (`Dell Inc. PowerEdge R650`),
+    /// empty when it names neither.
+    pub hardware: String,
     /// `V1R0M0`.
     pub release: String,
     /// The cumulative PTF level (`QS400-CUM-26290`), empty for none.
     pub ptf_level: String,
     /// `8 (shared, uncapped)`.
     pub processors: String,
-    /// Main storage.
+    /// Main storage (shown as Memory).
     pub main_storage: u64,
     /// When the last IPL started, seconds since 1970.
     pub ipl: u64,
