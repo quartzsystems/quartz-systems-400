@@ -106,7 +106,7 @@ fn setup(suite: &Suite, s: &mut Session) -> Result<Server, String> {
 
 /// A failure with the history log's last lines, which say how a
 /// connection job ended.
-fn with_history(s: &mut Session, e: String) -> String {
+fn with_history(s: &mut Session, e: &str) -> String {
     let log = s.command("DSPLOG", CMD).unwrap_or_default();
     let tail: Vec<&str> = log.lines().rev().take(25).collect::<Vec<_>>().into_iter().rev().collect();
     format!("{e}\nDSPLOG (last lines):\n{}", tail.join("\n"))
@@ -135,7 +135,7 @@ fn command_fails(c: &mut Conn, line: &str) -> Result<(Status, String), String> {
 impl Suite {
     /// Step 89: the QAP server.
     pub(crate) fn qap_server(&self, s: &mut Session) -> Result<String, String> {
-        self.qap_server_run(s).map_err(|e| with_history(s, e))
+        self.qap_server_run(s).map_err(|e| with_history(s, &e))
     }
 
     fn qap_server_run(&self, s: &mut Session) -> Result<String, String> {
