@@ -224,6 +224,36 @@ fn a_default_schema_under_system_naming() {
 }
 
 #[test]
+fn columns_have_sql_names_and_headings() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let sql = SetOptions {
+        naming: Naming::Sql,
+        ..SetOptions::default()
+    };
+    lane.set_options(&mut e, &sql).unwrap();
+    for text in [
+        "CREATE TABLE QSTEST.L (CUSTOMER_NAME FOR COLUMN CUSNAM VARCHAR(20), ID INT)",
+        "LABEL ON COLUMN QSTEST.L.CUSTOMER_NAME IS 'Customer            Name'",
+    ] {
+        let p = lane.prepare(&mut e, text).unwrap();
+        lane.execute(&mut e, &Execute { statement: p.statement, rows: Vec::new() }, &never).unwrap();
+    }
+    let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.L").unwrap();
+    let got: Vec<(&str, &str)> = q.columns.iter().map(|c| (c.name.as_str(), c.label.as_str())).collect();
+    assert_eq!(got, [("CUSTOMER_NAME", "Customer            Name"), ("ID", "ID")]);
+    let c = catalog::list_columns(
+        &mut e,
+        &ListColumns {
+            schema: "QSTEST".into(),
+            table: "L".into(),
+        },
+    )
+    .unwrap();
+    assert_eq!(c.columns, q.columns);
+}
+
+#[test]
 fn a_cancel_ends_the_running_statement() {
     let mut e = engine();
     let mut lane = Lane::default();

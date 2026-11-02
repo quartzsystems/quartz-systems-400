@@ -560,15 +560,21 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   out; `T` table, `V` view, `A` alias, `P` physical file, `L`
   logical file) on the thread's own link, match the `LIKE` pattern and
   cut the page in the job, sorted by name. `ListColumns` prepares
-  `SELECT *` from the table (the authority check and the types of
-  `Prepare`) and takes names and headings from `SYSCOLUMNS`.
+  `SELECT *` from the table and answers its `DESCRIBE`, as `Prepare`
+  does.
+- Column names and labels are the engine's `DESCRIBE`: `name` the
+  column's SQL name (the field's `ALIAS`, which `CREATE TABLE` keeps
+  for a name longer than its system name; else the system name),
+  `label` its heading (`LABEL ON` or DDS `COLHDG`) with each of its
+  three parts filled to 20 characters, as an SQLDA's label; a column
+  without a heading, or an expression, has its name as `label`. A
+  column renamed with `AS` keeps its heading.
 - Engine gaps met, left to the database: no `DECFLOAT`, `BINARY`,
   `VARBINARY`, `BLOB`, `CLOB` or `BOOLEAN`, and timestamps only to the
   microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
   value is stored fitted to its field's scale, 0 for SQL's, so
-  `4.5` reads back `4`; `Prepare` gives no column
-  headings, so `label` is the name, and `SELECT *` gives system
-  names. The storage service answers one request at a time, so while
+  `4.5` reads back `4`; an SQL column name is kept to 30
+  characters (the field's `ALIAS`), not IBM i's 128. The storage service answers one request at a time, so while
   a statement runs there, other jobs' storage requests and this
   connection's catalog lists wait for it: the lanes hold in the
   connection job, not yet end to end.

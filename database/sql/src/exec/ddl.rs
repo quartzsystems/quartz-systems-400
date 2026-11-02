@@ -966,11 +966,11 @@ pub fn label(txn: &mut Txn<'_>, ctx: &mut SqlContext, l: &crate::ast::Label) -> 
         changes.push((c, t, *is_text));
     }
     for (c, text, is_text) in changes {
-        let cname = SqlContext::sys_name(c)?;
+        // The column by its system name or its SQL name.
         let Some(f) = formats
             .iter_mut()
             .flat_map(|fm| fm.format.fields.iter_mut())
-            .find(|f| f.name == cname)
+            .find(|f| f.name.to_string() == c.value || f.alias.as_deref() == Some(c.value.as_str()))
         else {
             return Err(SqlError::ColumnNotFound {
                 name: c.value.clone(),

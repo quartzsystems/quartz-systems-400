@@ -220,3 +220,38 @@ fn a_prepared_statement_can_be_deallocated() {
     // The cursor opened from it stays open.
     assert_eq!(run(&mut s, "1:P", op(Op::Fetch, "C1", ""), vec![]).sqlca.sqlcode, 0);
 }
+
+#[test]
+fn describe_gives_sql_names_and_labels() {
+    let mut s = session();
+    let sql = |text: &str| Desc {
+        op: Op::Exec,
+        text: text.into(),
+        sql_naming: true,
+        ..Desc::default()
+    };
+    for text in [
+        "CREATE TABLE QSTEST.L (CUSTOMER_NAME FOR COLUMN CUSNAM VARCHAR(20), ID INT)",
+        "LABEL ON COLUMN QSTEST.L.CUSTOMER_NAME IS 'Customer            Name'",
+    ] {
+        let r = run(&mut s, "1:P", sql(text), vec![]);
+        assert_eq!(r.sqlca.sqlcode, 0, "{text}: {:?}", r.sqlca);
+    }
+    let named = |s: &mut Session, text: &str| {
+        let mut p = op(Op::Prepare, "S1", text);
+        p.into = true;
+        let r = run(s, "1:P", p, vec![]);
+        assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+        r.rows.iter().map(|row| (row[2].as_text(), row[4].as_text())).collect::<Vec<_>>()
+    };
+    let label = "Customer            Name".to_string();
+    assert_eq!(
+        named(&mut s, "SELECT * FROM L"),
+        [("CUSTOMER_NAME".to_string(), label.clone()), ("ID".into(), String::new())]
+    );
+    // By either name, and under a new name the label stays.
+    assert_eq!(
+        named(&mut s, "SELECT CUSNAM, CUSTOMER_NAME AS WHO, ID + 1 AS N FROM L"),
+        [("CUSTOMER_NAME".to_string(), label.clone()), ("WHO".into(), label), ("N".into(), String::new())]
+    );
+}
