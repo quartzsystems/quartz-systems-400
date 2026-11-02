@@ -6,9 +6,8 @@ database its in-process tests get from `qapd::testing`
 
 | File | What |
 | --- | --- |
-| `hlinv.sql` | `RUNSQLSTM` script: schemas `HLINV`, `HLTEST`, `HLPAY`, `HLMANY` and `ARCH001` to `ARCH140`; `HLINV.ASSETS` (the twelve assets), `LOCATIONS`, the view `ASSETSACT`; `HLTEST.ALLTYPES`, `JRN`, `NOJRN`, `SLOW`, `SLOWLOG`, `BIG` (over 1 MiB); `HLPAY.SALARIES`; `HLMANY.T001` to `T150` |
+| `hlinv.sql` | `RUNSQLSTM` script: schemas `HLINV`, `HLTEST`, `HLPAY`, `HLMANY` and `ARCH001` to `ARCH140`; `HLINV.ASSETS` (the twelve assets), `LOCATIONS`, the view `ASSETSACT`; `HLTEST.ALLTYPES` (one column of every type: `DECFLOAT` with its special values, a `CCSID 65535` `CHAR`, `BINARY`, `VARBINARY`, `BLOB`, `CLOB`, `TIMESTAMP(12)`, `BOOLEAN`, a row of nulls), `JRN`, `NOJRN`, `SLOW`, `SLOWLOG`, `BIG` (over 1 MiB); `HLPAY.SALARIES`; `HLMANY.T001` to `T150` |
 | `hlinv.cl` | The CL that SQL cannot say: `NOJRN` unjournaled, profiles `BOB` and `ANN`, `SALARIES` for `ANN` only |
-| `hlinv-types.sql` | **Not runnable yet.** `HLTEST.NEWTYPES` (`DECFLOAT`, `CLOB`, `BINARY`, `VARBINARY`, `BLOB`, `TIMESTAMP(12)`, `BOOLEAN`) and the alias `HLINV.HW`, for when the engine has them |
 
 ## Running it
 
@@ -21,11 +20,6 @@ where none of the schemas exist:
    It ends at the first error (`ERRLVL(10)`); the listing says which.
 3. Each command of `hlinv.cl`, one at a time (Command Entry, or the
    client's Run Command). Change the two passwords first.
-4. Once the engine has the new types: `RUNSQLSTM
-   SRCSTMF('/home/QSECOFR/hlinv-types.sql') COMMIT(*NONE) NAMING(*SQL)`,
-   and remove the `#[ignore]` from `hlinv_types_runs_after_hlinv` in
-   `tools/conformance/tests/qap_setup.rs`.
-
 To run it again, delete the libraries first (`DLTLIB HLINV`, and so on).
 
 ## What differs from `qapd::testing`
@@ -33,9 +27,10 @@ To run it again, delete the libraries first (`DLTLIB HLINV`, and so on).
 `CREATE SCHEMA` journals every table made in it to the schema's
 `QSQJRN`, so `JRN` needs nothing and `NOJRN` is ended by `hlinv.cl`.
 Where today's engine cannot hold the fixture's values, the script keeps
-the column and uses another value, each noted in the script: no E
-notation in `REAL` and `DOUBLE` literals, `SMALLINT` and `INTEGER` to 4
-and 9 digits, graphic literals within CP037. A column's long name takes
+the column and uses another value, each noted in the script: literals of
+at most 63 digits (no `1E300`), `SMALLINT` and `INTEGER` to 4 and 9
+digits, graphic literals within CP037. The engine parses `CREATE ALIAS`
+but does not run it yet, so the fixture's alias `HLINV.HW` is left out. A column's long name takes
 a system name (`MANUFACTURER FOR COLUMN MANUFACT`), the view is
 `ASSETSACT` (the fixture's `ASSETS_ACTIVE`), and the fixture's logical
 file `ASSETSL1` has no SQL statement. `SLOW` is not slow by itself: join

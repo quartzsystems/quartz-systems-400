@@ -4,8 +4,7 @@
 
 //! The QAP live checklist's setup scripts (`tools/conformance/qap/`) run
 //! as `RUNSQLSTM` runs them, over a store in memory: `hlinv.sql` with no
-//! error and the rows `qapd::testing` has; `hlinv-types.sql` waits for
-//! the engine's new types (ignored until then).
+//! error and the rows `qapd::testing` has.
 
 use std::path::Path;
 use std::sync::Arc;
@@ -82,30 +81,10 @@ fn hlinv_sets_up_the_test_systems_database() {
     assert_eq!(q("SELECT C_VARCHAR FROM HLTEST.ALLTYPES WHERE ID = 2"), "na\u{ef}ve caf\u{e9}");
     assert_eq!(q("SELECT COUNT(*) FROM HLTEST.SLOW"), "300");
     assert_eq!(q("SELECT SUM(LENGTH(DATA)) FROM HLTEST.BIG"), "1100000");
+    assert_eq!(q("SELECT C_BOOLEAN FROM HLTEST.ALLTYPES WHERE ID = 2"), "FALSE");
+    assert_eq!(q("SELECT LENGTH(C_BLOB) FROM HLTEST.ALLTYPES WHERE ID = 3"), "300");
+    assert_eq!(q("SELECT COUNT(*) FROM HLTEST.ALLTYPES WHERE C_TS12 IS NULL"), "1");
     assert_eq!(q("SELECT COUNT(*) FROM HLPAY.SALARIES"), "2");
     assert_eq!(q("SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLMANY'"), "150");
     assert_eq!(q("SELECT COUNT(*) FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME LIKE 'ARCH%'"), "140");
-}
-
-/// Enable once the engine has `DECFLOAT`, the binary and LOB types,
-/// `BOOLEAN`, `TIMESTAMP(12)` and runs `CREATE ALIAS`.
-#[test]
-#[ignore = "the engine's new types are not merged yet"]
-fn hlinv_types_runs_after_hlinv() {
-    let (mut store, mut ctx) = open();
-    let r = run(&mut store, &mut ctx, "hlinv.sql");
-    assert_eq!(r.errors, 0, "{}", r.listing);
-    let r = run(&mut store, &mut ctx, "hlinv-types.sql");
-    assert_eq!((r.errors, r.severity), (0, 0), "{}", r.listing);
-    assert_eq!(one(&mut store, &mut ctx, "SELECT COUNT(*) FROM HLTEST.NEWTYPES"), "7");
-    assert_eq!(one(&mut store, &mut ctx, "SELECT COUNT(*) FROM HLINV.HW"), "12");
-}
-
-#[test]
-fn hlinv_types_waits_for_the_engine() {
-    // Today the engine refuses the file before running any of it; when
-    // this fails, enable the test above.
-    let (mut store, mut ctx) = open();
-    let r = run(&mut store, &mut ctx, "hlinv-types.sql");
-    assert_eq!((r.statements, r.severity), (0, 40), "{}", r.listing);
 }
