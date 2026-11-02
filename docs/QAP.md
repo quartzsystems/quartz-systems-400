@@ -102,7 +102,7 @@ Not in QAP: 5250 display and printer sessions (Telnet), the printer session's me
 - `JobId` = { `name` String, `user` String, `number` String (six digits) }.
 - `ObjectName` = { `library` String, `name` String }. `library` may be `*LIBL` or `*CURLIB` where a library list search applies.
 
-### Service 3 `Command`: run CL commands (planned version 2)
+### Service 3 `Command`: run CL commands (version 2)
 
 Commands run in the connection job, as the signed-on profile, with its job description's library list. A command that only runs interactively ends with `Error` and its escape message.
 
@@ -122,7 +122,7 @@ Commands run in the connection job, as the signed-on profile, with its job descr
 
 `ParmNode` = { `index` u16, `parent` Option of u16, `role` enum (`Parameter` 0, `Element` 1, `Qualifier` 2), `keyword` String (empty for elements and qualifiers), `prompt` String, `help` String, `kind` enum (`Name` 0, `Character` 1, `Decimal` 2, `Integer` 3, `Logical` 4, `Date` 5, `Time` 6, `Generic` 7, `Path` 8, `Command` 9), `length` u32, `decimals` u16, `required` flag, `min_values` u16, `max_values` u16 (more than 1 = a list), `default` Option of String, `special_values` list of String, `values` list of String (when only listed values are valid), `range` Option of { `low` String, `high` String }, `show` enum (`Always` 0, `Additional` 1, `Never` 2) }.
 
-### Service 4 `Spool`: spooled files and output queues (planned version 3)
+### Service 4 `Spool`: spooled files and output queues (version 3)
 
 - `SpooledFileId` = { `job` JobId, `file` String, `number` u32 }.
 - `SpoolStatus` enum: `Ready` 0, `Held` 1, `Open` 2, `Closed` 3, `Writing` 4, `Printing` 5, `Message` 6 (waiting for a reply), `Pending` 7, `Saved` 8.
@@ -145,6 +145,15 @@ Commands run in the connection job, as the signed-on profile, with its job descr
 | `ListSpooledFiles`, `ListOutputQueues` | `Ok`; `NotFound` (the queue or library); `NotAuthorized` |
 | `ReadSpooledFile` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (still `Open` or `Writing`); `Error` (the format cannot be made from this file's device type, for example `Scs` from `Afp`) |
 | `HoldSpooledFile`, `ReleaseSpooledFile`, `DeleteSpooledFile`, `MoveSpooledFile` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (printing, for delete and move) |
+
+**Reading pages.**
+
+- `ReadSpooledFile` with `first_page` and `last_page` returns exactly those pages, and `pages` is how many the whole file has. A `first_page` of 0 or past the last page gets `InvalidRequest`. A `last_page` of 0, or past the last page, reads to the end. A file with no pages answers `first_page` 1 with no data.
+- For `Scs`, the data is the data stream from the start of `first_page` to the end of `last_page`, as it was spooled.
+  - A range starting after page 1 is preceded by the state that applies at that point: the page format, pitch, line density and font settings in effect at `first_page`. That state is sent as SCS controls, so the range renders exactly as it would inside the whole file.
+  - The ranges of consecutive reads join, byte for byte after their leading state, into the whole file.
+- Clients read large files in page batches.
+- The `Text` and `Pdf` formats are optional per device type. A file whose format cannot be made gets `Error`, with a message saying so.
 
 ### Service 5 `Sql`: SQL, the catalog and data transfer (planned version 4)
 
@@ -229,7 +238,9 @@ Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`).
 
 **Event (`request_id` 0).** `Messages` op 100 `MessageArrived` (status `Ok`; body `queue` Queue, `message` QueuedMessage), for each queue watched on the connection. A watch ends with its connection.
 
-### `SignOn` additions (planned version 2)
+**Spool events (planned for a later version).** Spool change events are planned for a later version: a watch on an output queue, like `WatchQueue`, with an event when a file arrives, changes status or leaves. Version 3 has none; version 3 clients poll with `ListSpooledFiles`.
+
+### `SignOn` additions (version 2)
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
 | --- | --- | --- | --- | --- |
@@ -257,7 +268,11 @@ This keeps Wire and the envelope as they are; the cost is that the server encode
 
 ### Version 2 (fixed)
 
-Version 2 is: `Command` (service 3) operations 1 `RunCommand`, 2 `CheckCommand` and 3 `DescribeCommand`; `SignOn` operations 5 `TelnetTicket` and 6 `PasswordStatus`; and the new status values those operations use, which are none: every status they answer exists in version 1. `Exists`, `InUse` and `SqlError` belong to the versions whose operations first use them. The server accepts versions 1 and 2 and picks the highest both sides support.
+Version 2 is: `Command` (service 3) operations 1 `RunCommand`, 2 `CheckCommand` and 3 `DescribeCommand`; `SignOn` operations 5 `TelnetTicket` and 6 `PasswordStatus`; and the new status values those operations use, which are none: every status they answer exists in version 1. `Exists`, `InUse` and `SqlError` belong to the versions whose operations first use them.
+
+### Version 3 (fixed)
+
+Version 3 is: `Spool` (service 4) operations 1 `ListSpooledFiles` to 7 `ListOutputQueues`, as above, with the reading rules above; and the status `InUse` (14), which version 3 introduces. A version 1 or 2 peer never receives `InUse`, the `Spool` service or any `Spool` body. The server accepts versions 1 to 3 and picks the highest both sides support.
 
 ## Open questions
 
