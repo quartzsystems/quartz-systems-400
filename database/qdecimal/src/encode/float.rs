@@ -38,6 +38,30 @@ impl Float {
         })
     }
 
+    /// Encode a binary float as it is; a single rounds to the nearest
+    /// single, and a finite value past its range is an error.
+    pub fn encode_f64(&self, value: f64) -> Result<Vec<u8>> {
+        if self.double {
+            return Ok(value.to_be_bytes().to_vec());
+        }
+        #[allow(clippy::cast_possible_truncation)] // rounding to a single is the point
+        let f = value as f32;
+        if f.is_infinite() && value.is_finite() {
+            return Err(DecimalError::SizeOverflow { value: format!("{value:e}"), digits: 0, scale: 0 });
+        }
+        Ok(f.to_be_bytes().to_vec())
+    }
+
+    /// Decode to a binary float, special values included.
+    pub fn decode_f64(&self, bytes: &[u8]) -> Result<f64> {
+        check_len(bytes, self.byte_len())?;
+        Ok(if self.double {
+            f64::from_be_bytes(bytes.try_into().expect("8 bytes"))
+        } else {
+            f64::from(f32::from_be_bytes(bytes.try_into().expect("4 bytes")))
+        })
+    }
+
     /// Decode: the shortest decimal that reads back as the same float.
     pub fn decode(&self, bytes: &[u8]) -> Result<Decimal> {
         check_len(bytes, self.byte_len())?;
@@ -92,5 +116,17 @@ mod tests {
         assert!(g.decode(&f64::NAN.to_be_bytes()).is_err());
         assert!(g.decode(&f64::INFINITY.to_be_bytes()).is_err());
         assert!(f.decode(&[0; 8]).is_err());
+    }
+
+    #[test]
+    fn binary_floats() {
+        let g = Float::DOUBLE;
+        let back = |f: Float, x: f64| f.decode_f64(&f.encode_f64(x).unwrap()).unwrap().to_bits();
+        assert_eq!(back(g, 1e300), 1e300f64.to_bits());
+        assert_eq!(back(g, -2.5e-308), (-2.5e-308f64).to_bits());
+        let f = Float::SINGLE;
+        assert_eq!(back(f, 1e-45), f64::from(1e-45f32).to_bits());
+        assert!(f.encode_f64(1e300).is_err());
+        assert!(f.decode_f64(&f.encode_f64(f64::INFINITY).unwrap()).unwrap().is_infinite());
     }
 }

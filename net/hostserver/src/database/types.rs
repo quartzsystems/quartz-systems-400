@@ -186,7 +186,12 @@ pub fn encode(v: &Value, c: &ColType) -> Vec<u8> {
                 text::ebcdic_fixed(&text_of(v, c), n)
             }
         }
-        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT | sqltype::FLOAT => {
+        // A float as it is, past a decimal's digits too.
+        sqltype::FLOAT => {
+            let x = v.as_f64().unwrap_or(0.0);
+            if c.len == 4 { Float::SINGLE } else { Float::DOUBLE }.encode_f64(x).unwrap_or_default()
+        }
+        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT => {
             let d = v.as_decimal().unwrap_or_else(|_| Decimal::zero());
             number(&d, c)
         }
@@ -261,7 +266,13 @@ pub fn decode(b: &[u8], c: &ColType) -> Value {
                 .collect();
             Timestamp::parse(&fixed).map_or(Value::Null, Value::Timestamp)
         }
-        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT | sqltype::FLOAT => {
+        #[allow(clippy::cast_possible_truncation)] // a single's bytes
+        sqltype::FLOAT => match if b.len() == 4 { Float::SINGLE } else { Float::DOUBLE }.decode_f64(b) {
+            Ok(x) if b.len() == 4 => Value::Real(x as f32),
+            Ok(x) => Value::Double(x),
+            Err(_) => Value::Null,
+        },
+        sqltype::DECIMAL | sqltype::NUMERIC | sqltype::BIGINT | sqltype::INTEGER | sqltype::SMALLINT => {
             let (p, s) = c.digits();
             let r = match c.base {
                 sqltype::DECIMAL => Packed::new(p, s).and_then(|k| k.decode(b)),

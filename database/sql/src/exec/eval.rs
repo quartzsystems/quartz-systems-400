@@ -372,6 +372,7 @@ impl Evaluator<'_> {
                 Ok(match v {
                     Value::Null => None,
                     Value::Num(d) => Some(!d.is_zero()),
+                    Value::Double(_) | Value::Real(_) => Some(v.as_bool()?),
                     Value::Bool(b) => Some(b),
                     v => {
                         return Err(SqlError::TypeMismatch {
@@ -429,6 +430,8 @@ impl Evaluator<'_> {
             Expr::Neg(a) => match self.eval(txn, a, env)? {
                 Value::Null => Ok(Value::Null),
                 Value::DecFloat(d) => Ok(Value::DecFloat(d.negated())),
+                Value::Double(x) => Ok(Value::Double(-x)),
+                Value::Real(x) => Ok(Value::Real(-x)),
                 v => Ok(Value::Num(v.as_decimal()?.negated())),
             },
             Expr::Binary(a, op, b) => {
@@ -637,7 +640,7 @@ impl Evaluator<'_> {
                 if values.is_empty() {
                     return Ok(Value::Null);
                 }
-                if values.iter().any(|v| matches!(v, Value::DecFloat(_))) {
+                if values.iter().any(|v| matches!(v, Value::DecFloat(_)) || v.is_float()) {
                     let mut sum = values[0].clone();
                     for v in &values[1..] {
                         sum = binary(&sum, BinOp::Add, v)?;
@@ -708,14 +711,11 @@ pub fn literal(l: &Literal) -> Result<Value> {
         Literal::Bin(b) => Value::Bin(b.clone()),
         Literal::Bool(b) => Value::Bool(*b),
         // A literal with an exponent is a double.
-        Literal::Num(n) if n.contains(['E', 'e']) => Value::Num(
-            n.parse::<f64>()
-                .ok()
-                .and_then(crate::value::float_decimal)
-                .ok_or_else(|| SqlError::Literal {
-                    text: n.clone(),
-                    what: "not a number the engine can hold".into(),
-                })?,
+        Literal::Num(n) if n.contains(['E', 'e']) => Value::Double(
+            n.parse::<f64>().ok().filter(|x| x.is_finite()).ok_or_else(|| SqlError::Literal {
+                text: n.clone(),
+                what: "out of range for a double".into(),
+            })?,
         ),
         Literal::Num(n) => Value::Num(Decimal::parse(n).map_err(|e| SqlError::Literal {
             text: n.clone(),
@@ -768,6 +768,10 @@ pub fn binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
     if op != BinOp::Concat && (matches!(a, Value::DecFloat(_)) || matches!(b, Value::DecFloat(_))) {
         return decfloat_binary(a, op, b);
     }
+    // A float with a number other than a `DECFLOAT`: a double.
+    if op != BinOp::Concat && (a.is_float() || b.is_float()) {
+        return float_binary(a, op, b);
+    }
     match op {
         BinOp::Concat => match (a, b) {
             (Value::Bin(x), Value::Bin(y)) => Ok(Value::Bin([x.as_slice(), y].concat())),
@@ -811,6 +815,24 @@ pub fn binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
             Ok(Value::Num(x.div_to_scale(&y, scale).map_err(overflow)?))
         }
     }
+}
+
+/// Arithmetic with a float operand, in doubles; a result past the
+/// double's range is an overflow.
+fn float_binary(lhs: &Value, op: BinOp, rhs: &Value) -> Result<Value> {
+    let (x, y) = (lhs.as_f64()?, rhs.as_f64()?);
+    let out = match op {
+        BinOp::Add => x + y,
+        BinOp::Sub => x - y,
+        BinOp::Mul => x * y,
+        BinOp::Div if y == 0.0 => return Err(SqlError::DivideByZero),
+        BinOp::Div => x / y,
+        BinOp::Concat => unreachable!("not arithmetic"),
+    };
+    if out.is_infinite() && x.is_finite() && y.is_finite() {
+        return Err(overflow("the result is past a double's range"));
+    }
+    Ok(Value::Double(out))
 }
 
 /// Arithmetic with a `DECFLOAT` operand: the other converted, the
@@ -1023,7 +1045,16 @@ pub fn cast(v: &Value, t: &TypeSpec) -> Result<Value> {
         DataType::SmallInt => fit(5, 0).and_then(|x| range(&x, 32_767))?,
         DataType::Integer => fit(10, 0).and_then(|x| range(&x, 2_147_483_647))?,
         DataType::BigInt => fit(19, 0).and_then(|x| range(&x, i64::MAX))?,
-        DataType::Real | DataType::Double => Value::Num(v.as_decimal()?),
+        DataType::Double => Value::Double(v.as_f64()?),
+        DataType::Real => {
+            let x = v.as_f64()?;
+            #[allow(clippy::cast_possible_truncation)] // the single it rounds to
+            let r = x as f32;
+            if r.is_infinite() && x.is_finite() {
+                return Err(SqlError::Overflow { what: format!("{} does not fit REAL", v.as_text()) });
+            }
+            Value::Real(r)
+        }
         DataType::Date => Value::Date(v.as_date()?),
         DataType::Time => Value::Time(v.as_time()?),
         DataType::Timestamp(p) => Value::Timestamp(v.as_timestamp()?.with_precision(*p)),

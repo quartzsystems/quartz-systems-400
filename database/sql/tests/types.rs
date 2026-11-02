@@ -109,6 +109,22 @@ fn floats_round_trip() {
         vec![vec!["4.5", "4.5"], vec!["-0.1", "0.1"], vec!["1234.0625", "0.00001"]]
     );
     assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/FL WHERE R = 4.5"), "1");
+    // IEEE values past a decimal's 63 digits.
+    db.ok("INSERT INTO QSTEST/FL VALUES(3.4028235E38, 1E300), (1E-45, -2.5E-308), (-0E0, -0E0)");
+    assert_eq!(
+        db.rows("SELECT R, D FROM QSTEST/FL WHERE D > 1E200 OR D < 0 ORDER BY D"),
+        vec![vec!["1E-45", "-2.5E-308"], vec!["3.4028235E38", "1E300"]]
+    );
+    assert_eq!(db.one("SELECT D * 10 FROM QSTEST/FL WHERE D > 1E200"), "1E301");
+    assert_eq!(db.one("SELECT D / 2 FROM QSTEST/FL WHERE D > 1E200"), "5E299");
+    // Mixed with a decimal: a double.
+    assert_eq!(db.one("SELECT D + 1 FROM QSTEST/FL WHERE D = 4.5"), "5.5");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/FL WHERE D = 0"), "1");
+    assert!(db.run_with("SELECT D * D FROM QSTEST/FL WHERE D > 1E200", &[]).is_err());
+    assert!(db.run_with("INSERT INTO QSTEST/FL (R) VALUES(1E39)", &[]).is_err());
+    assert!(db.run_with("SELECT CAST(D AS DECIMAL(31, 0)) FROM QSTEST/FL WHERE D > 1E200", &[]).is_err());
+    assert_eq!(db.one("SELECT CAST(D AS INTEGER) FROM QSTEST/FL WHERE D = 4.5"), "4");
+    assert_eq!(db.one("SELECT MAX(D) FROM QSTEST/FL"), "1E300");
 }
 
 #[test]

@@ -173,6 +173,7 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
         Value::Null => String::new(),
         Value::Num(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
         Value::DecFloat(d) => d.to_string().replace('.', &opts.decpnt.to_string()),
+        Value::Float(x) => record::float_shown(f, *x).replace('.', &opts.decpnt.to_string()),
         Value::Char(bytes) if f.data_type == DataType::Bytes => bytes.iter().fold(String::new(), |mut s, b| {
             let _ = write!(s, "{b:02X}");
             s

@@ -82,10 +82,7 @@ fn read_value(addr: u64, d: &Desc, extra: i64) -> Value {
         Kind::Char => Value::Str(text_of(addr, d.size())),
         Kind::VarChar => Value::Str(ccsid::from_ebcdic(d.var_data(bytes(addr, d.size())))),
         Kind::Ind => Value::Str(text_of(addr, 1)),
-        Kind::Float => {
-            let f = read_f64(addr, d).unwrap_or(0.0);
-            Decimal::parse(&format!("{f}")).map_or(Value::Null, Value::Num)
-        }
+        Kind::Float => Value::Double(read_f64(addr, d).unwrap_or(0.0)),
         Kind::Date => {
             let (f, _) = date_fmt(extra);
             Date::parse(&text_of(addr, d.size()), f).map_or(Value::Null, Value::Date)
@@ -249,6 +246,7 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
                 Value::Time(x) => x.render(TimeFmt::Iso, None),
                 Value::Timestamp(t) => ts_text(t),
                 Value::Num(x) => x.to_string(),
+                Value::Double(_) | Value::Real(_) => v.to_string(),
                 Value::DecFloat(x) => x.to_string(),
                 // Bit data: its bytes; a boolean as an indicator holds it.
                 Value::Bin(b) => ccsid::from_ebcdic(b),
@@ -283,6 +281,12 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
             let mut t = ebcdic(&ts_text(&x));
             t.resize(n, 0xF0);
             Ok((t, Put::Ok))
+        }
+        // A float host variable takes a float as it is.
+        Kind::Float => {
+            let f = v.as_f64().map_err(|_| (-420, "22018"))?;
+            #[allow(clippy::cast_possible_truncation)]
+            Ok((if d.len == 4 { (f as f32).to_be_bytes().to_vec() } else { f.to_be_bytes().to_vec() }, Put::Ok))
         }
         _ => {
             let x = v.as_decimal().map_err(|_| (-420, "22018"))?;

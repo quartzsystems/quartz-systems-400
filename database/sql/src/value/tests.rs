@@ -42,9 +42,29 @@ fn floats_keep_their_fraction() {
         f.byte_len = f.data_len();
         for text in ["4.5", "-0.1", "1234.0625", "0.000123"] {
             let v = Value::Num(Decimal::parse(text).unwrap());
-            assert_eq!(round_trip(&f, &v).compare(&v).unwrap(), Some(Ordering::Equal), "{text}");
+            assert_eq!(round_trip(&f, &v).to_string(), text);
+        }
+        // Past a decimal's 63 digits.
+        for text in ["1E30", "-2.5E-30", "3.4028235E38"] {
+            let v = Value::Double(text.parse().unwrap());
+            assert_eq!(round_trip(&f, &v).to_string(), text);
         }
     }
+    let mut d = field(DataType::Float, 17);
+    d.precision = dds::FloatPrecision::Double;
+    d.byte_len = d.data_len();
+    for text in ["1E300", "-2.5E-308", "0.1"] {
+        let v = Value::Double(text.parse().unwrap());
+        assert_eq!(round_trip(&d, &v).to_string(), text);
+    }
+    // A single is a double beside a decimal, as IBM promotes it.
+    let r = Value::Real(0.1);
+    assert_eq!(r.compare(&Value::Num(Decimal::parse("0.1").unwrap())).unwrap(), Some(Ordering::Greater));
+    assert_eq!(r.compare(&Value::Real(0.1)).unwrap(), Some(Ordering::Equal));
+    assert_eq!(Value::Double(1e300).compare(&Value::int(1)).unwrap(), Some(Ordering::Greater));
+    assert_eq!(Value::Double(-0.0).compare(&Value::Double(0.0)).unwrap(), Some(Ordering::Equal));
+    assert_eq!(Value::Double(2.0).key(), Value::int(2).key());
+    assert!(Value::Double(1e300).as_decimal().is_err());
 }
 
 #[test]

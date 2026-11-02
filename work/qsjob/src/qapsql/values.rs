@@ -195,6 +195,8 @@ pub fn to_sql(kind: Kind, v: &Value) -> SqlValue {
     match (kind, v) {
         (_, Value::Null) => return SqlValue::Null,
         (_, Value::DecFloat(d)) => return SqlValue::Decimal { text: decfloat_text(d) },
+        (_, Value::Real(f)) => return SqlValue::Float { text: shortest(format!("{f}"), format!("{f:e}")) },
+        (_, Value::Double(f)) => return SqlValue::Float { text: shortest(format!("{f}"), format!("{f:e}")) },
         (Kind::Binary | Kind::Text | Kind::Bits, Value::Bin(data)) => return SqlValue::Binary { data: data.clone() },
         (_, Value::Bool(value)) => return SqlValue::Boolean { value: *value },
         (Kind::Boolean, v) => {
@@ -263,14 +265,14 @@ pub fn from_sql(kind: Kind, v: &SqlValue) -> Option<Value> {
         SqlValue::Decimal { text } if kind == Kind::DecFloat => {
             Value::DecFloat(DecFloat::parse(text, DfFormat::D34).ok()?)
         }
-        SqlValue::Decimal { text } | SqlValue::Float { text } => {
+        // A float as the double it reads as.
+        SqlValue::Float { text } => Value::Double(text.trim().parse::<f64>().ok()?),
+        SqlValue::Decimal { text } => {
             let t = text.trim();
             match qdecimal::Decimal::parse(t) {
                 Ok(d) => Value::Num(d),
-                // E notation, as a double reads it.
-                Err(_) => Value::Num(
-                    qdecimal::Decimal::parse(&format!("{:.17}", t.parse::<f64>().ok().filter(|f| f.is_finite())?)).ok()?,
-                ),
+                // E notation: a double.
+                Err(_) => Value::Double(t.parse::<f64>().ok().filter(|f| f.is_finite())?),
             }
         }
         SqlValue::Text { text } => match kind {
@@ -335,6 +337,12 @@ mod tests {
         assert_eq!(to_sql(Kind::Int, &Value::int(7)), SqlValue::Integer { value: 7 });
         let f = from_sql(Kind::Double, &SqlValue::Float { text: "0.1".into() }).unwrap();
         assert_eq!(to_sql(Kind::Double, &f), SqlValue::Float { text: "0.1".into() });
+        // Past a decimal's 63 digits, as IEEE holds them.
+        for text in ["1e300", "-2.5e-308", "1e-45"] {
+            let f = from_sql(Kind::Double, &SqlValue::Float { text: text.into() }).unwrap();
+            assert_eq!(to_sql(Kind::Double, &f), SqlValue::Float { text: text.into() });
+        }
+        assert_eq!(to_sql(Kind::Real, &Value::Real(3.402_823_5e38)), SqlValue::Float { text: "3.4028235e38".into() });
         assert_eq!(from_sql(Kind::Dec, &SqlValue::Decimal { text: "NaN".into() }), None);
         let bits = SqlValue::Binary { data: vec![0x00, 0xC1, 0xFF, 0x40] };
         assert_eq!(to_sql(Kind::Bits, &from_sql(Kind::Bits, &bits).unwrap()), bits);

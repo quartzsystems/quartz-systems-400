@@ -27,8 +27,8 @@ To run it again, delete the libraries first (`DLTLIB HLINV`, and so on).
 `CREATE SCHEMA` journals every table made in it to the schema's
 `QSQJRN`, so `JRN` needs nothing and `NOJRN` is ended by `hlinv.cl`.
 Where today's engine cannot hold the fixture's values, the script keeps
-the column and uses another value, each noted in the script: literals of
-at most 63 digits (no `1E300`), graphic literals within CP037. The engine parses `CREATE ALIAS`
+the column and uses another value, each noted in the script:
+graphic literals within CP037. The engine parses `CREATE ALIAS`
 but does not run it yet, so the fixture's alias `HLINV.HW` is left out. A column's long name takes
 a system name (`MANUFACTURER FOR COLUMN MANUFACT`), the view is
 `ASSETSACT` (the fixture's `ASSETS_ACTIVE`), and the fixture's logical

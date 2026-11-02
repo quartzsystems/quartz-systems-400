@@ -22,12 +22,16 @@ pub use field::lob_value;
 pub use timestamp::{PICOS, Timestamp};
 
 /// A value.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// The null value.
     Null,
-    /// A number: integers, decimals and floats.
+    /// A number: integers and decimals.
     Num(Decimal),
+    /// A `DOUBLE` (`FLOAT`), IEEE binary.
+    Double(f64),
+    /// A `REAL`, IEEE single.
+    Real(f32),
     /// A `DECFLOAT`.
     DecFloat(DecFloat),
     /// A character string (`CLOB` and `DBCLOB` too).
@@ -43,6 +47,9 @@ pub enum Value {
     /// A timestamp.
     Timestamp(Timestamp),
 }
+
+// Floats compare by value.
+impl Eq for Value {}
 
 /// Dates in order.
 #[must_use]
@@ -80,7 +87,34 @@ pub fn parse_date(text: &str) -> Option<Date> {
 /// 63 digits.
 #[must_use]
 pub fn float_decimal(f: f64) -> Option<Decimal> {
+    db::record::float_decimal(f)
+}
+
+/// A finite single as a decimal, its shortest text as a single.
+fn real_decimal(f: f32) -> Option<Decimal> {
     f.is_finite().then(|| Decimal::parse(&format!("{f}")).ok()).flatten()
+}
+
+/// A float from its text: digits, E notation, `Infinity`, `-Infinity`
+/// or `NaN`.
+#[must_use]
+pub fn parse_float(text: &str) -> Option<f64> {
+    match text.trim() {
+        "Infinity" | "+Infinity" | "INF" => Some(f64::INFINITY),
+        "-Infinity" | "-INF" => Some(f64::NEG_INFINITY),
+        "NaN" => Some(f64::NAN),
+        t => t.parse().ok(),
+    }
+}
+
+/// A single's shortest text that reads back the same, E notation.
+fn real_text(f: f32) -> String {
+    if f.is_finite() { format!("{f:E}") } else { db::record::float_text(f64::from(f)) }
+}
+
+/// A float too large for a decimal.
+fn float_range(x: f64) -> SqlError {
+    SqlError::Overflow { what: format!("{} is out of range for a decimal", db::record::float_text(x)) }
 }
 
 /// A time from text in any format.
@@ -143,6 +177,8 @@ impl Value {
     pub fn as_decimal(&self) -> Result<Decimal> {
         match self {
             Self::Num(d) => Ok(d.clone()),
+            Self::Double(x) => float_decimal(*x).ok_or_else(|| float_range(*x)),
+            Self::Real(x) => real_decimal(*x).ok_or_else(|| float_range(f64::from(*x))),
             Self::DecFloat(d) => d.to_decimal().map_err(|e| conversion(format!("DECFLOAT {d}: {e}"))),
             Self::Str(s) => Decimal::parse(s.trim())
                 .or_else(|_| DecFloat::parse(s, DfFormat::D34).and_then(|d| d.to_decimal()))
@@ -156,13 +192,45 @@ impl Value {
         match self {
             Self::DecFloat(d) => Ok(*d),
             Self::Num(d) => DecFloat::from_decimal(d, format).map_err(decfloat_error),
+            // A float's shortest digits.
+            Self::Double(x) => DecFloat::parse(&db::record::float_text(*x), format).map_err(decfloat_error),
+            Self::Real(x) => DecFloat::parse(&real_text(*x), format).map_err(decfloat_error),
             Self::Str(s) => DecFloat::parse(s, format).map_err(decfloat_error),
             v => Err(conversion(format!("{} is not a number", v.type_name()))),
         }
     }
 
+    /// The value as a double: a decimal or `DECFLOAT` to the nearest,
+    /// text parsed.
+    pub fn as_f64(&self) -> Result<f64> {
+        match self {
+            Self::Double(x) => Ok(*x),
+            Self::Real(x) => Ok(f64::from(*x)),
+            Self::Num(d) => Ok(db::record::decimal_f64(d)),
+            Self::DecFloat(d) => Ok(d.to_f64()),
+            Self::Str(s) => parse_float(s).ok_or_else(|| conversion(format!("'{s}' is not a number"))),
+            v => Err(conversion(format!("{} is not a number", v.type_name()))),
+        }
+    }
+
+    /// Whether a `REAL` or `DOUBLE`.
+    #[must_use]
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::Double(_) | Self::Real(_))
+    }
+
     /// The value as an integer.
     pub fn as_i64(&self) -> Result<i64> {
+        if self.is_float() {
+            let x = self.as_f64()?.trunc();
+            // i64::MAX as a double is 2^63, one past the range.
+            #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
+            return if x >= -(i64::MAX as f64) - 1.0 && x < i64::MAX as f64 {
+                Ok(x as i64)
+            } else {
+                Err(conversion(format!("{} is too large for an integer", self.as_text())))
+            };
+        }
         let d = self.as_decimal()?;
         let t = d.rescale(0, Rounding::Truncate).map_err(conversion)?;
         t.to_i128()
@@ -192,6 +260,7 @@ impl Value {
         match self {
             Self::Bool(b) => Ok(*b),
             Self::Num(d) => Ok(!d.is_zero()),
+            Self::Double(_) | Self::Real(_) => Ok(self.as_f64()? != 0.0),
             Self::Str(s) => parse_bool(s).ok_or_else(|| conversion(format!("'{s}' is not a boolean"))),
             v => Err(conversion(format!("{} is not a boolean", v.type_name()))),
         }
@@ -233,6 +302,7 @@ impl Value {
         match self {
             Self::Null => "NULL",
             Self::Num(_) => "numeric",
+            Self::Double(_) | Self::Real(_) => "floating-point",
             Self::DecFloat(_) => "DECFLOAT",
             Self::Str(_) => "character",
             Self::Bin(_) => "binary",
@@ -252,6 +322,12 @@ impl Value {
         Ok(Some(match (self, other) {
             (Self::Null, _) | (_, Self::Null) => return Ok(None),
             (Self::Num(a), Self::Num(b)) => a.cmp(b),
+            // A float beside a decimal: both as doubles; beside a
+            // `DECFLOAT`: both as `DECFLOAT`.
+            (Self::Double(_) | Self::Real(_), Self::Double(_) | Self::Real(_) | Self::Num(_))
+            | (Self::Num(_), Self::Double(_) | Self::Real(_)) => db::record::fcmp(self.as_f64()?, other.as_f64()?),
+            (Self::Double(_) | Self::Real(_), Self::DecFloat(b)) => self.as_decfloat(DfFormat::D34)?.sql_cmp(b),
+            (Self::DecFloat(a), Self::Double(_) | Self::Real(_)) => a.sql_cmp(&other.as_decfloat(DfFormat::D34)?),
             (Self::DecFloat(a), Self::DecFloat(b)) => a.sql_cmp(b),
             (Self::DecFloat(a), Self::Num(b)) => a.sql_cmp(&DecFloat::from_decimal(b, DfFormat::D34).map_err(decfloat_error)?),
             (Self::Num(a), Self::DecFloat(b)) => DecFloat::from_decimal(a, DfFormat::D34).map_err(decfloat_error)?.sql_cmp(b),
@@ -261,8 +337,8 @@ impl Value {
             (Self::Str(_), Self::Bin(b)) => self.as_bytes()?.cmp(b),
             (Self::Bool(a), Self::Bool(b)) => a.cmp(b),
             // Predicates give 0 and 1.
-            (Self::Bool(a), Self::Num(_)) => a.cmp(&other.as_bool()?),
-            (Self::Num(_), Self::Bool(b)) => self.as_bool()?.cmp(b),
+            (Self::Bool(a), Self::Num(_) | Self::Double(_) | Self::Real(_)) => a.cmp(&other.as_bool()?),
+            (Self::Num(_) | Self::Double(_) | Self::Real(_), Self::Bool(b)) => self.as_bool()?.cmp(b),
             (Self::Date(a), Self::Date(b)) => cmp_date(a, b),
             (Self::Time(a), Self::Time(b)) => cmp_time(a, b),
             (Self::Timestamp(a), Self::Timestamp(b)) => a.cmp(b),
@@ -285,6 +361,8 @@ impl Value {
         match self {
             Self::Null => "\u{0}".into(),
             Self::Num(d) => decimal_key(d),
+            Self::Double(x) => float_decimal(*x).map_or_else(|| db::record::float_text(*x), |d| decimal_key(&d)),
+            Self::Real(x) => real_decimal(*x).map_or_else(|| real_text(*x), |d| decimal_key(&d)),
             Self::DecFloat(d) => d.to_decimal().map_or_else(|_| format!("#{d}"), |x| decimal_key(&x)),
             Self::Str(s) => format!("'{}", s.trim_end()),
             Self::Bin(b) => format!("x{}", hex(b)),
@@ -319,6 +397,8 @@ impl fmt::Display for Value {
         match self {
             Self::Null => f.write_str("NULL"),
             Self::Num(d) => write!(f, "{d}"),
+            Self::Double(x) => f.write_str(&db::record::float_display(*x)),
+            Self::Real(x) => f.write_str(&db::record::single_display(*x)),
             Self::DecFloat(d) => write!(f, "{d}"),
             Self::Str(s) => f.write_str(s),
             Self::Bin(b) => f.write_str(&hex(b)),

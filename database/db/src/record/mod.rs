@@ -15,18 +15,80 @@ use crate::error::{DbError, Result};
 pub mod datetime;
 
 /// A field's value.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     /// The field is null.
     Null,
-    /// A numeric field.
+    /// A zoned, packed or binary field.
     Num(Decimal),
+    /// A floating point field, a single widened.
+    Float(f64),
     /// Character, hexadecimal, graphic, DBCS-open, date, time or
     /// timestamp bytes, CP037 for text, without `VARLEN` padding; the
     /// bytes of a binary string or a `BOOLEAN`; a LOB's `LobRef`.
     Char(Vec<u8>),
     /// A `DECFLOAT` field.
     DecFloat(DecFloat),
+}
+
+// Floats compare by value; a NaN is never written by the database.
+impl Eq for Value {}
+
+/// A finite float as a decimal, its shortest text that reads back the
+/// same; `None` past 63 digits or for a special value.
+#[must_use]
+pub fn float_decimal(x: f64) -> Option<Decimal> {
+    x.is_finite().then(|| Decimal::parse(&format!("{x}")).ok()).flatten()
+}
+
+/// A float's shortest text that reads back the same, in E notation
+/// (`1.5E-30`), or `Infinity`, `-Infinity`, `NaN`.
+#[must_use]
+pub fn float_text(x: f64) -> String {
+    if x.is_nan() {
+        "NaN".into()
+    } else if x.is_infinite() {
+        if x < 0.0 { "-Infinity" } else { "Infinity" }.into()
+    } else {
+        format!("{x:E}")
+    }
+}
+
+/// A float as it is shown: plain digits when its exponent is -7 to
+/// 20 (`4.5`, `0.00001`), else [`float_text`] (`1E300`).
+#[must_use]
+pub fn float_display(x: f64) -> String {
+    if x.is_finite() && (x == 0.0 || (1e-7..1e21).contains(&x.abs())) {
+        format!("{x}")
+    } else {
+        float_text(x)
+    }
+}
+
+/// A single as it is shown, its own shortest digits, as
+/// [`float_display`] shows a double.
+#[must_use]
+pub fn single_display(x: f32) -> String {
+    if x.is_finite() && (x == 0.0 || (1e-7..1e21).contains(&f64::from(x).abs())) {
+        format!("{x}")
+    } else if x.is_finite() {
+        format!("{x:E}")
+    } else {
+        float_text(f64::from(x))
+    }
+}
+
+/// A float field's value as it is shown.
+#[must_use]
+pub fn float_shown(f: &FieldDef, x: f64) -> String {
+    #[allow(clippy::cast_possible_truncation)] // a single, widened when read
+    if f.precision == FloatPrecision::Single { single_display(x as f32) } else { float_display(x) }
+}
+
+/// A decimal as the nearest double.
+#[must_use]
+pub fn decimal_f64(d: &Decimal) -> f64 {
+    d.to_string().parse().expect("decimal text parses as a float")
 }
 
 /// The format of a `DECFLOAT` field.
@@ -54,6 +116,28 @@ fn mapping(f: &FieldDef, what: impl std::fmt::Display) -> DbError {
 
 fn digits(f: &FieldDef) -> u8 {
     u8::try_from(f.length).expect("numeric length at most 63")
+}
+
+/// Write a float field.
+fn write_float(f: &FieldDef, out: &mut [u8], value: &Value) -> Result<()> {
+    let x = match value {
+        Value::Null => 0.0,
+        Value::Float(x) => *x,
+        Value::Num(d) => decimal_f64(d),
+        Value::DecFloat(v) => v.to_f64(),
+        Value::Char(_) => return Err(mapping(f, "bytes into a float field")),
+    };
+    let b = float_of(f).encode_f64(x).map_err(|e| mapping(f, e))?;
+    out.copy_from_slice(&b);
+    Ok(())
+}
+
+/// A float field's encoding.
+fn float_of(f: &FieldDef) -> Float {
+    match f.precision {
+        FloatPrecision::Single => Float::SINGLE,
+        FloatPrecision::Double => Float::DOUBLE,
+    }
 }
 
 /// An SQL integer field's encoding: its bytes, signed.
@@ -110,10 +194,9 @@ pub fn read_field(
         DataType::Packed => Packed::new(digits(f), f.decimals).and_then(|p| p.decode(bytes)),
         DataType::Binary if f.int_range => int_of(f).and_then(|i| i.decode(bytes)),
         DataType::Binary => Binary::new(digits(f), f.decimals).and_then(|b| b.decode(bytes)),
-        DataType::Float => match f.precision {
-            FloatPrecision::Single => Float::SINGLE.decode(bytes),
-            FloatPrecision::Double => Float::DOUBLE.decode(bytes),
-        },
+        DataType::Float => {
+            return float_of(f).decode_f64(bytes).map(Value::Float).map_err(|e| mapping(f, e));
+        }
         DataType::DecFloat => {
             return DecFloat::decode(bytes, decfloat_format(f))
                 .map(Value::DecFloat)
@@ -135,6 +218,7 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
             Value::Null => DecFloat::zero(fmt),
             Value::DecFloat(v) => v.to_format(fmt).map_err(|e| mapping(f, e))?,
             Value::Num(d) => DecFloat::from_decimal(d, fmt).map_err(|e| mapping(f, e))?,
+            Value::Float(x) => DecFloat::parse(&float_text(*x), fmt).map_err(|e| mapping(f, e))?,
             Value::Char(_) => return Err(mapping(f, "bytes into a DECFLOAT field")),
         };
         out.copy_from_slice(&v.encode());
@@ -145,9 +229,20 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
             Value::Null => 0xF0,
             Value::Char(b) if matches!(b.first(), Some(0xF0 | 0xF1)) => b[0],
             Value::Num(d) => if d.is_zero() { 0xF0 } else { 0xF1 },
+            Value::Float(x) => if *x == 0.0 { 0xF0 } else { 0xF1 },
             _ => return Err(mapping(f, "not a BOOLEAN")),
         };
         return Ok(());
+    }
+    if f.data_type == DataType::Float {
+        return write_float(f, out, value);
+    }
+    if let Value::Float(x) = value {
+        if !f.data_type.is_numeric() {
+            return Err(mapping(f, format!("number {x:e} into a character field")));
+        }
+        let d = float_decimal(*x).ok_or_else(|| mapping(f, format!("{x:e} is out of range")))?;
+        return write_field(f, record, &Value::Num(d));
     }
     if let Value::DecFloat(v) = value {
         if !f.data_type.is_numeric() {
@@ -158,7 +253,7 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
     }
     let pad = pad_byte(f);
     match (f.data_type.is_numeric(), value) {
-        (_, Value::DecFloat(_)) => unreachable!("handled above"),
+        (_, Value::DecFloat(_) | Value::Float(_)) => unreachable!("handled above"),
         (_, Value::Null) => {
             // The null map says null; the bytes hold the type's zero.
             if f.data_type.is_numeric() {
@@ -183,16 +278,7 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
                     .rescale(0, r)
                     .and_then(|whole| int_of(f)?.encode(&whole))
                     .map(|b| out.copy_from_slice(&b)),
-                DataType::Binary => {
-                    Binary::new(digits(f), f.decimals).and_then(|b| b.encode_into(d, r, out))
-                }
-                _ => {
-                    let fl = match f.precision {
-                        FloatPrecision::Single => Float::SINGLE,
-                        FloatPrecision::Double => Float::DOUBLE,
-                    };
-                    fl.encode(d).map(|b| out.copy_from_slice(&b))
-                }
+                _ => Binary::new(digits(f), f.decimals).and_then(|b| b.encode_into(d, r, out)),
             };
             res.map_err(|e| mapping(f, e))
         }
@@ -230,9 +316,16 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
 pub fn compare(a: &Value, b: &Value) -> Ordering {
     match (a, b) {
         (Value::Null, Value::Null) => Ordering::Equal,
-        (Value::Null, _) | (Value::Char(_), Value::Num(_) | Value::DecFloat(_)) => Ordering::Greater,
-        (_, Value::Null) | (Value::Num(_) | Value::DecFloat(_), Value::Char(_)) => Ordering::Less,
+        (Value::Null, _) | (Value::Char(_), Value::Num(_) | Value::DecFloat(_) | Value::Float(_)) => {
+            Ordering::Greater
+        }
+        (_, Value::Null) | (Value::Num(_) | Value::DecFloat(_) | Value::Float(_), Value::Char(_)) => Ordering::Less,
         (Value::Num(x), Value::Num(y)) => x.cmp(y),
+        (Value::Float(x), Value::Float(y)) => fcmp(*x, *y),
+        (Value::Float(x), Value::Num(y)) => fcmp(*x, decimal_f64(y)),
+        (Value::Num(x), Value::Float(y)) => fcmp(decimal_f64(x), *y),
+        (Value::Float(x), Value::DecFloat(y)) => fcmp(*x, y.to_f64()),
+        (Value::DecFloat(x), Value::Float(y)) => fcmp(x.to_f64(), *y),
         (Value::DecFloat(x), Value::DecFloat(y)) => x.sql_cmp(y),
         (Value::DecFloat(x), Value::Num(y)) => {
             DecFloat::from_decimal(y, DfFormat::D34).map_or(Ordering::Greater, |y| x.sql_cmp(&y))
@@ -242,6 +335,12 @@ pub fn compare(a: &Value, b: &Value) -> Ordering {
         }
         (Value::Char(x), Value::Char(y)) => ccsid::ebcdic_cmp(x, y),
     }
+}
+
+/// Floats by value, zeros alike; a NaN after every number.
+#[must_use]
+pub fn fcmp(x: f64, y: f64) -> Ordering {
+    x.partial_cmp(&y).unwrap_or_else(|| x.is_nan().cmp(&y.is_nan()))
 }
 
 /// A DDS literal as a value of field `f`.

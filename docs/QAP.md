@@ -589,6 +589,15 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `Serializable` (`*ALL`), the sort or join of a query once its rows
   are read, and a query met while another runs, which goes first (the
   earlier window waits for it).
+- Engine limits the build met, now lifted as IBM i has them:
+  `SMALLINT`, `INTEGER` and `BIGINT` columns made by SQL take their
+  whole 16, 32 and 64-bit range (a field flag, `DB_FORMAT.md`; a DDS
+  `B` field keeps its digits), `SYSCOLUMNS` giving `LENGTH` 2, 4, 8 and
+  `NUMERIC_PRECISION` 5, 10, 19. `REAL` and `DOUBLE` are IEEE binary
+  values (`1E300`, `-2.5E-308`), a literal with an exponent a `DOUBLE`,
+  a float beside a decimal a `DOUBLE` and beside a `DECFLOAT` a
+  `DECFLOAT`; their wire tags are 9 and 10 (`embed::to_wire`), and a
+  float's value reaches the client as it is.
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):

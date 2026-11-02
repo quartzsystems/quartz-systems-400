@@ -274,9 +274,13 @@ impl Tables {
     }
 }
 
-/// A numeric literal: an integer, or a decimal of its digits.
+/// A numeric literal: an integer, a double with an exponent, or a
+/// decimal of its digits.
 fn num_literal(n: &str) -> Col {
-    if !n.contains(['.', 'E', 'e']) {
+    if n.contains(['E', 'e']) {
+        return Col::new(480, 8, false);
+    }
+    if !n.contains('.') {
         return if n.trim_start_matches(['-', '+']).len() > 9 { Col::new(492, 8, false) } else { Col::int() };
     }
     let digits = n.chars().filter(char::is_ascii_digit).count();

@@ -233,8 +233,8 @@ impl Reply {
 
 /// A value between processes: a tag (0 null, 1 number, 2 text, 3
 /// date, 4 time, 5 timestamp, 6 `DECFLOAT`, 7 binary as hexadecimal, 8
-/// boolean `1` or `0`) and its text. A `DECFLOAT(16)` is sent with a
-/// `16:` prefix.
+/// boolean `1` or `0`, 9 `DOUBLE` and 10 `REAL` in their shortest E
+/// notation) and its text. A `DECFLOAT(16)` is sent with a `16:` prefix.
 pub type WireValue = (u8, String);
 
 /// A reply between processes: SQLCODE, SQLSTATE, SQLERRD, SQLWARN,
@@ -252,6 +252,8 @@ pub fn to_wire(v: &Value) -> WireValue {
         Value::DecFloat(d) => (6, d.to_string()),
         Value::Bin(b) => (7, crate::value::hex(b)),
         Value::Bool(b) => (8, if *b { "1" } else { "0" }.into()),
+        Value::Double(x) => (9, db::record::float_text(*x)),
+        Value::Real(x) => (10, if x.is_finite() { format!("{x:E}") } else { db::record::float_text(f64::from(*x)) }),
         Value::Date(_) => (3, v.to_string()),
         Value::Time(_) => (4, v.to_string()),
         Value::Timestamp(t) => (5, t.to_string()),
@@ -275,6 +277,9 @@ pub fn from_wire(w: &WireValue) -> Value {
         .map_or(Value::Null, Value::DecFloat),
         7 => crate::value::unhex(t).map_or(Value::Null, Value::Bin),
         8 => Value::Bool(t == "1"),
+        9 => crate::value::parse_float(t).map_or(Value::Null, Value::Double),
+        #[allow(clippy::cast_possible_truncation)] // a single's text
+        10 => crate::value::parse_float(t).map_or(Value::Null, |x| Value::Real(x as f32)),
         _ => Value::Null,
     }
 }

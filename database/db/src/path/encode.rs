@@ -49,15 +49,11 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
             let v = qdecimal::DecFloat::from_decimal(d, qdecimal::DfFormat::D34).map_err(|e| mapping(f, e))?;
             out.extend(decfloat(&v));
         }
-        Value::Num(d) if f.data_type == DataType::Float => {
-            let x: f64 = d.to_string().parse().map_err(|_| mapping(f, "float"))?;
-            let bits = x.to_bits();
-            let ordered = if x.is_sign_negative() {
-                !bits
-            } else {
-                bits ^ (1 << 63)
-            };
-            out.extend(ordered.to_be_bytes());
+        Value::Num(d) if f.data_type == DataType::Float => out.extend(float(crate::record::decimal_f64(d))),
+        Value::Float(x) if f.data_type == DataType::Float => out.extend(float(*x)),
+        Value::Float(x) => {
+            let d = crate::record::float_decimal(*x).ok_or_else(|| mapping(f, "float out of range"))?;
+            out.extend(decimal(f, k.transform, &d));
         }
         Value::Num(d) => out.extend(decimal(f, k.transform, d)),
     }
@@ -68,6 +64,14 @@ pub fn key_part(f: &FieldDef, k: &KeyField, value: &Value, out: &mut Vec<u8>) ->
     }
     debug_assert_eq!(out.len() - start, part_len(f, k.transform));
     Ok(())
+}
+
+/// A float key part: its bits in order, the zeros alike.
+fn float(x: f64) -> [u8; 8] {
+    let x = if x == 0.0 { 0.0 } else { x };
+    let bits = x.to_bits();
+    let ordered = if x.is_sign_negative() { !bits } else { bits ^ (1 << 63) };
+    ordered.to_be_bytes()
 }
 
 /// A `DECFLOAT` key part: class, adjusted exponent, 34 digits; a

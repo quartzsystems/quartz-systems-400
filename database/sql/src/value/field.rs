@@ -35,6 +35,9 @@ impl Value {
         Ok(match v {
             db::record::Value::Null => Self::Null,
             db::record::Value::Num(d) => Self::Num(d.clone()),
+            #[allow(clippy::cast_possible_truncation)] // a single, widened when read
+            db::record::Value::Float(x) if f.precision == dds::FloatPrecision::Single => Self::Real(*x as f32),
+            db::record::Value::Float(x) => Self::Double(*x),
             db::record::Value::DecFloat(d) => Self::DecFloat(*d),
             db::record::Value::Char(b) => match f.data_type {
                 DataType::Bytes => Self::Bin(b.clone()),
@@ -100,17 +103,16 @@ impl Value {
                 .map_err(|_| conversion(format!("'{s}' has characters CP037 cannot hold")))
         };
         match f.data_type {
-            // A float keeps every digit it is given; the encoding rounds
-            // to the nearest float.
-            DataType::Float => match self {
-                Self::DecFloat(d) if !d.is_finite() => {
-                    Err(conversion(format!("DECFLOAT {d} into the float field {}", f.name)))
+            // A float: its IEEE value; a single's range is checked
+            // when it is encoded.
+            DataType::Float => {
+                let x = self.as_f64()?;
+                #[allow(clippy::cast_possible_truncation)] // the single it rounds to
+                if f.precision == dds::FloatPrecision::Single && x.is_finite() && (x as f32).is_infinite() {
+                    return Err(SqlError::Overflow { what: format!("{} does not fit field {}", self.as_text(), f.name) });
                 }
-                Self::DecFloat(d) => super::float_decimal(d.to_f64())
-                    .map(db::record::Value::Num)
-                    .ok_or_else(|| conversion(format!("{d} is out of range for field {}", f.name))),
-                _ => Ok(db::record::Value::Num(self.as_decimal()?)),
-            },
+                Ok(db::record::Value::Float(x))
+            }
             DataType::DecFloat => Ok(db::record::Value::DecFloat(
                 self.as_decfloat(db::record::decfloat_format(f))?
                     .to_format(db::record::decfloat_format(f))
