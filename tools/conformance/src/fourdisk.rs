@@ -203,7 +203,7 @@ fn verify(s: &mut Session, lib: &str, n: u32, kib: u32) -> Result<(), String> {
 /// A stream file in the IFS, whose volume is in ASP 1: written through
 /// the service, so through the device parity set.
 fn ifs_put(s: &mut Session, tag: &str) -> Result<(), String> {
-    let text = format!("{tag} ").repeat(200);
+    let text = format!("qsifs{tag} ").repeat(200);
     let out = s.command(&format!("svc.ifs put /tmp/par13{tag}.txt {text}"), CMD)?;
     if out.contains("CPE") || out.contains("error") {
         return Err(format!("ifs put {tag}:
@@ -216,7 +216,7 @@ fn ifs_put(s: &mut Session, tag: &str) -> Result<(), String> {
 fn ifs_check(s: &mut Session, tags: &[&str]) -> Result<(), String> {
     for tag in tags {
         let out = s.command(&format!("svc.ifs cat /tmp/par13{tag}.txt"), CMD)?;
-        if out.matches(&format!("{tag} ")).count() < 200 {
+        if out.matches(&format!("qsifs{tag}")).count() < 200 {
             return Err(format!("ifs cat {tag}:
 {out}"));
         }

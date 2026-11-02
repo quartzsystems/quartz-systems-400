@@ -114,6 +114,8 @@ pub fn whole_disks() -> Result<Vec<DiskInfo>, Error> {
             || name.starts_with("ram")
             || name.starts_with("sr")
             || name.starts_with("zram")
+            // The IFS volume's device, which is ASP 1 itself.
+            || name.starts_with("ublkb")
         {
             continue;
         }

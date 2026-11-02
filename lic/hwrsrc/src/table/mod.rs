@@ -540,11 +540,11 @@ impl Table {
     }
 
     /// One whole disk or optical drive. Partitions and virtual devices
-    /// are skipped.
+    /// (the IFS volume's `ublkbN` among them) are skipped.
     fn add_block(&mut self, root: &Path, name: &str) -> Option<String> {
         let sys = root.join("class/block").join(name);
         if sys.join("partition").exists()
-            || ["loop", "ram", "zram", "dm-", "md"].iter().any(|p| name.starts_with(p))
+            || ["loop", "ram", "zram", "dm-", "md", "ublkb"].iter().any(|p| name.starts_with(p))
         {
             return None;
         }

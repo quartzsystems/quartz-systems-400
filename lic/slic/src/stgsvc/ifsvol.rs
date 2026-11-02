@@ -208,28 +208,32 @@ pub fn grow(system: &mut System, pages: Option<u64>) -> Result<(u64, u64), GrowE
     Ok((added, total))
 }
 
+/// What the close reply says when the IFS was unmounted cleanly; `slic`
+/// shows D1001012 for it.
+pub const UNMOUNTED: &str = "IFS unmounted";
+
 /// Before the store closes: everything written, `/QOpenSys`'s second
-/// mount and the IFS unmounted (D1001012), the device stopped.
-pub fn close(system: &mut System) {
-    let Some(sv) = served().take() else {
-        return;
-    };
+/// mount and the IFS unmounted, the device stopped. A line for the
+/// close reply.
+pub fn close() -> Option<String> {
+    let sv = served().take()?;
     rustix::fs::sync();
     if plat::mounted(QOPENSYS_EXEC).is_some() {
         let _ = plat::unmount_xfs(QOPENSYS_EXEC);
     }
     super::ifs::shut();
-    match plat::unmount_xfs(MOUNT_POINT) {
-        Ok(()) => system.emit(&src::IFS_UNMOUNTED),
+    let line = match plat::unmount_xfs(MOUNT_POINT) {
+        Ok(()) => UNMOUNTED.to_string(),
         Err(e) => {
-            eprintln!("qsstg: unmount IFS: {e}; detached");
             let _ = rustix::mount::unmount(MOUNT_POINT, rustix::mount::UnmountFlags::DETACH);
+            format!("IFS detached: {e}")
         }
-    }
+    };
     if let Err(e) = sv.device.stop() {
         eprintln!("qsstg: IFS device: {e}");
     }
     let _ = sv.io.flush();
+    Some(line)
 }
 
 /// `svc.ifs`'s lines about the volume.

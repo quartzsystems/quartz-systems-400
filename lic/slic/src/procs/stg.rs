@@ -93,6 +93,9 @@ pub fn close(system: &mut System) {
     match p.close() {
         Ok(Ok(text)) => {
             system.out.serial(&format!("slic: {text}\n"));
+            if text.contains(crate::stgsvc::ifsvol::UNMOUNTED) {
+                system.emit(&src::IFS_UNMOUNTED);
+            }
             system.emit(&src::STORE_CLOSED);
         }
         Ok(Err(e)) => system.out.serial(&format!("slic: close store: {e}\n")),

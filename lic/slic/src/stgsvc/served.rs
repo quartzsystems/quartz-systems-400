@@ -380,7 +380,7 @@ fn close(system: &mut System, conns: &mut [Conn]) -> Result<String, String> {
         }
     }
     // The IFS volume's filesystem first: it writes through the store.
-    super::ifsvol::close(system);
+    let ifs = super::ifsvol::close();
     let storage = system
         .storage
         .take()
@@ -391,9 +391,11 @@ fn close(system: &mut System, conns: &mut [Conn]) -> Result<String, String> {
         .close()
         .map_err(|e| format!("close store: {e}"))?;
     system.temp = None;
-    Ok(format!(
-        "storage service closed the store at generation {generation}"
-    ))
+    let text = format!("storage service closed the store at generation {generation}");
+    Ok(match ifs {
+        Some(line) => format!("{text}; {line}"),
+        None => text,
+    })
 }
 
 /// A request being answered for a job.
