@@ -125,8 +125,7 @@ fn a_query_in_batches_with_its_types() {
     assert_eq!(r[2], SqlValue::Date { ms: 1_793_577_600_000 });
     assert_eq!(r[3], SqlValue::Timestamp { ms: 1_793_610_843_123, picos: 456_000_000 });
     assert_eq!(r[4], SqlValue::Decimal { text: "10.50".into() });
-    // The engine keeps a DOUBLE to the scale of its field (0): 4, not 4.5.
-    assert_eq!(r[5], SqlValue::Float { text: "4".into() });
+    assert_eq!(r[5], SqlValue::Float { text: "4.5".into() });
     let rest = lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never).unwrap();
     assert_eq!((rest.rows.len(), rest.end), (251, true));
     assert!(rest.rows[0][1..].iter().all(|v| *v == SqlValue::Null));
@@ -333,4 +332,47 @@ fn the_catalog() {
         table: "NOSUCH".into(),
     };
     assert_eq!(catalog::list_columns(&mut e, &none).unwrap_err().status, Status::NotFound);
+}
+
+#[test]
+fn the_newer_types_both_ways() {
+    let mut e = engine();
+    let mut lane = Lane::default();
+    let ddl = lane
+        .prepare(
+            &mut e,
+            "CREATE TABLE QSTEST.N (K INT, DF DECFLOAT(16), VB VARBINARY(8), B BOOLEAN, T TIMESTAMP(12), \
+             L BLOB(1M), C CLOB(1K))",
+        )
+        .unwrap();
+    lane.execute(&mut e, &Execute { statement: ddl.statement, rows: Vec::new() }, &never).unwrap();
+    let ins = lane.prepare(&mut e, "INSERT INTO QSTEST.N VALUES (?, ?, ?, ?, ?, ?, ?)").unwrap();
+    let kinds: Vec<&str> = ins.parameters.iter().map(|c| c.sql_type.as_str()).collect();
+    assert_eq!(kinds, ["INTEGER", "DECFLOAT", "VARBINARY", "BOOLEAN", "TIMESTAMP", "BLOB", "CLOB"]);
+    let blob: Vec<u8> = (0..5000u32).map(|i| u8::try_from(i % 256).unwrap()).collect();
+    let row = |k: i64, df: &str| {
+        vec![
+            SqlValue::Integer { value: k },
+            SqlValue::Decimal { text: df.into() },
+            SqlValue::Binary { data: vec![0, 0xFF, 7] },
+            SqlValue::Boolean { value: k == 1 },
+            SqlValue::Timestamp { ms: 1_793_610_843_123, picos: 456_789_012 },
+            SqlValue::Binary { data: blob.clone() },
+            SqlValue::Text { text: "a character LOB".into() },
+        ]
+    };
+    let rows = vec![row(1, "1.5E-30"), row(2, "-Infinity"), row(3, "sNaN")];
+    lane.execute(&mut e, &Execute { statement: ins.statement, rows }, &never).unwrap();
+    let q = lane.prepare(&mut e, "SELECT * FROM QSTEST.N ORDER BY K").unwrap();
+    let t = &q.columns[4];
+    assert_eq!((t.sql_type.as_str(), t.scale), ("TIMESTAMP", 12));
+    assert_eq!((q.columns[1].sql_type.as_str(), q.columns[1].length), ("DECFLOAT", 16));
+    assert_eq!(q.columns[2].ccsid, 65535);
+    let cursor = lane.execute(&mut e, &Execute { statement: q.statement, rows: Vec::new() }, &never).unwrap().cursor.unwrap();
+    let got = lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never).unwrap();
+    assert_eq!(got.rows.len(), 3);
+    assert_eq!(got.rows[0], row(1, "1.5E-30"));
+    assert_eq!(got.rows[1][1], SqlValue::Decimal { text: "-Infinity".into() });
+    assert_eq!(got.rows[2][1], SqlValue::Decimal { text: "sNaN".into() });
+    assert_eq!(got.rows[1][3], SqlValue::Boolean { value: false });
 }

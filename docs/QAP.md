@@ -549,13 +549,24 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   job's end rolls back any commitment definition left as well.
 - Values by the engine's `DESCRIBE` (which now also gives each
   entry's CCSID): integers `Integer`; `DECIMAL` and `NUMERIC` the
-  engine's exact text; `REAL` and `DOUBLE` the shorter of the plain and
-  E notation that reads back the same; `CHAR`, `VARCHAR`, `GRAPHIC`,
-  `VARGRAPHIC` `Text`, with CCSID 37 (graphic 1200) when the field has
-  none; a DDS `H` field or CCSID 65535 `Binary`, its CP037 bytes;
-  dates, times and timestamps as milliseconds, timestamps with scale
-  6. A parameter the engine cannot take (a `DECFLOAT` special value,
-  digits past 63) is `SqlError` `22018` (`SQL0302`) for its row.
+  engine's exact text; `DECFLOAT` (SQLTYPE 996, `length` its 16 or 34
+  digits) `Decimal` with the engine's scientific text (`1.5E-30`,
+  `-12.50`) or `Infinity`, `-Infinity`, `NaN`, `sNaN`; `REAL` and
+  `DOUBLE` the shorter of the plain and E notation that reads back the
+  same; `CHAR`, `VARCHAR`, `GRAPHIC`, `VARGRAPHIC`, `CLOB` (408) and
+  `DBCLOB` (412) `Text`, with CCSID 37 (graphic and `DBCLOB` 1200) when
+  the field has none; a DDS `H` field, `FOR BIT DATA` or CCSID 65535
+  `Binary`, its CP037 bytes; `BINARY` (912), `VARBINARY` (908) and
+  `BLOB` (404) `Binary`, CCSID 65535; `BOOLEAN` (2436) `Boolean`;
+  dates, times and timestamps as milliseconds, a timestamp with the
+  picoseconds past them and `scale` its precision, 0 to 12 (SQLLEN
+  19, or 20 plus the precision). Parameters come back the same way: a
+  `Decimal` for a `DECFLOAT` column is read as `DECFLOAT(34)` (special
+  values too), `Binary` is bytes, `Boolean` a boolean, a `Timestamp`
+  keeps every picosecond for the column to cut to its precision. A
+  parameter the engine cannot take (a special value for a column that
+  is not `DECFLOAT`, digits past 63) is `SqlError` `22018`
+  (`SQL0302`) for its row.
 - Catalog lists read `QSYS2.SYSSCHEMAS` and `SYSTABLES` (indexes left
   out; `T` table, `V` view, `A` alias, `P` physical file, `L`
   logical file) on the thread's own link, match the `LIKE` pattern and
@@ -569,11 +580,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   three parts filled to 20 characters, as an SQLDA's label; a column
   without a heading, or an expression, has its name as `label`. A
   column renamed with `AS` keeps its heading.
-- Engine gaps met, left to the database: no `DECFLOAT`, `BINARY`,
-  `VARBINARY`, `BLOB`, `CLOB` or `BOOLEAN`, and timestamps only to the
-  microsecond (`TIMESTAMP(12)` is not a type); a `REAL` or `DOUBLE`
-  value is stored fitted to its field's scale, 0 for SQL's, so
-  `4.5` reads back `4`; an SQL column name is kept to 30
+- Engine gaps met, left to the database: an SQL column name is kept to 30
   characters (the field's `ALIAS`), not IBM i's 128. The storage service answers one request at a time, so while
   a statement runs there, other jobs' storage requests and this
   connection's catalog lists wait for it: the lanes hold in the
@@ -583,7 +590,7 @@ The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):
 
 - A small statement runner over tables in memory, not QS/400's engine:
-  the engine has no `DECFLOAT`, binary types, `BOOLEAN` or
+  its tables carry `DECFLOAT`, binary types, `BOOLEAN` and
   `TIMESTAMP(12)`, which the client must meet. It runs `SELECT` of
   `*` or columns with `WHERE col = x AND ...`, `INSERT ... VALUES`,
   `UPDATE` and `DELETE` over one table; anything else is the syntax
