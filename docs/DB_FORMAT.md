@@ -139,7 +139,7 @@ source order; the next `FORMAT` section starts the next format.
 | 38 | 8 | reserved2 | 0 |
 | 46 | 50 | text | `TEXT`, CP037 |
 
-### `FieldEntry` (256 bytes)
+### `FieldEntry` (384 bytes)
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
@@ -160,7 +160,7 @@ source order; the next `FORMAT` section starts the next format.
 | 34 | 2 | varlen_alloc | `VARLEN` allocated length, 0 for none |
 | 36 | 2 | null_index | bit in the null map, 0xFFFF when not null-capable |
 | 38 | 50 | text | `TEXT`, CP037 |
-| 88 | 30 | alias | `ALIAS`, CP037 |
+| 88 | 30 | alias | `ALIAS` (an SQL column name), its first 30 characters, CP037 |
 | 118 | 60 | colhdg | `COLHDG`, three CP037 lines of 20 |
 | 178 | 1 | dft_kind | `DFT`: 0 none, 1 `*NULL`, 2 quoted, 3 hexadecimal, 4 numeric, 5 an SQL expression evaluated at insert (a special register) |
 | 179 | 1 | dft_len | bytes used in `dft` |
@@ -169,6 +169,14 @@ source order; the next `FORMAT` section starts the next format.
 | 245 | 4 | id_start | `START WITH`, signed |
 | 249 | 4 | id_incr | `INCREMENT BY`, signed |
 | 253 | 3 | reserved | 0 |
+| 256 | 98 | alias_rest | characters 31 to 128 of `ALIAS`, CP037, blank padded |
+| 354 | 30 | reserved2 | 0 |
+
+A `FIELD` section of 256 bytes, as files made before SQL names past 30
+characters have, is the entry up to `reserved`: its `ALIAS` is the 30
+characters at 88. DDS's `ALIAS` keyword takes 30 characters; an SQL
+column name takes up to 128 (`CREATE TABLE` refuses a longer one with
+`SQL0107`, SQLSTATE `42622`).
 
 Validity keywords (`CHECK`, `VALUES`, `RANGE`, `COMP`) and `EDTWRD` are
 not kept in the file. `TODO(phase3)`: DSPFFD shows them when kept.

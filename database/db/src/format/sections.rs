@@ -22,7 +22,11 @@ pub const SECTION_LEN: usize = 8;
 /// Bytes of a `FormatEntry`.
 pub const FORMAT_LEN: usize = 96;
 /// Bytes of a `FieldEntry`.
-pub const FIELD_LEN: usize = 256;
+pub const FIELD_LEN: usize = 384;
+/// Bytes of a `FieldEntry` written before names past 30 characters.
+pub const FIELD_LEN_V1: usize = 256;
+/// The longest `ALIAS`: an SQL name.
+pub const ALIAS_MAX: usize = 128;
 /// Bytes of a `KeyEntry`.
 pub const KEY_LEN: usize = 16;
 /// Bytes of a `BasedOnEntry`.
@@ -116,6 +120,8 @@ pub static FIELD_LAYOUT: Layout = Layout {
         field("id_start", 245, 4),
         field("id_incr", 249, 4),
         field("reserved", 253, 3),
+        field("alias_rest", 256, 98),
+        field("reserved2", 354, 30),
     ],
 };
 
@@ -255,6 +261,23 @@ fn put_text(b: &mut [u8], off: usize, len: usize, s: &str) {
 
 fn get_text(b: &[u8], off: usize, len: usize) -> Option<String> {
     let s = ccsid::decode_trimmed(&b[off..off + len]);
+    (!s.is_empty()).then_some(s)
+}
+
+/// `ALIAS`: 30 characters at 88, the rest of 128 at 256.
+fn put_alias(b: &mut [u8], s: &str) {
+    let head: String = s.chars().take(30).collect();
+    let rest: String = s.chars().skip(30).take(ALIAS_MAX - 30).collect();
+    put_text(b, 88, 30, &head);
+    put_text(b, 256, 98, &rest);
+}
+
+fn alias_of(b: &[u8]) -> Option<String> {
+    let mut bytes = b[88..118].to_vec();
+    if b.len() >= FIELD_LEN {
+        bytes.extend_from_slice(&b[256..354]);
+    }
+    let s = ccsid::decode_trimmed(&bytes);
     (!s.is_empty()).then_some(s)
 }
 
@@ -551,7 +574,7 @@ fn encode_field(f: &FieldDef, null_index: Option<u16>) -> [u8; FIELD_LEN] {
     );
     put_u16(&mut b, 36, null_index.unwrap_or(0xFFFF));
     put_text(&mut b, 38, 50, f.text.as_deref().unwrap_or(""));
-    put_text(&mut b, 88, 30, f.alias.as_deref().unwrap_or(""));
+    put_alias(&mut b, f.alias.as_deref().unwrap_or(""));
     for i in 0..3 {
         put_text(
             &mut b,
@@ -698,7 +721,7 @@ fn decode_format(b: &[u8]) -> Result<FormatDef> {
 }
 
 fn decode_field(b: &[u8]) -> Result<FieldDef> {
-    if b.len() != FIELD_LEN {
+    if b.len() != FIELD_LEN && b.len() != FIELD_LEN_V1 {
         return Err(corrupt("field entry size"));
     }
     let name = name_of(b);
@@ -737,7 +760,7 @@ fn decode_field(b: &[u8]) -> Result<FieldDef> {
         });
     }
     f.text = get_text(b, 38, 50);
-    f.alias = get_text(b, 88, 30);
+    f.alias = alias_of(b);
     f.colhdg = (0..3)
         .filter_map(|i| get_text(b, 118 + i * 20, 20))
         .collect();

@@ -580,8 +580,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   three parts filled to 20 characters, as an SQLDA's label; a column
   without a heading, or an expression, has its name as `label`. A
   column renamed with `AS` keeps its heading.
-- Engine gaps met, left to the database: an SQL column name is kept to 30
-  characters (the field's `ALIAS`), not IBM i's 128. The storage service answers one request at a time, so while
+- Engine gaps met, left to the database: the storage service answers one request at a time, so while
   a statement runs there, other jobs' storage requests and this
   connection's catalog lists wait for it: the lanes hold in the
   connection job, not yet end to end.

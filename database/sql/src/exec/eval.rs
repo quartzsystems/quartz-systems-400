@@ -53,7 +53,9 @@ impl Schema {
     pub fn find(&self, table: Option<&str>, name: &str) -> Result<Option<usize>> {
         let mut found = None;
         for (i, c) in self.cols.iter().enumerate() {
-            if c.name != name || table.is_some_and(|t| c.table.as_deref() != Some(t)) {
+            // A column by its system name or its SQL name.
+            let named = c.name == name || c.field.as_ref().is_some_and(|f| f.alias.as_deref() == Some(name));
+            if !named || table.is_some_and(|t| c.table.as_deref() != Some(t)) {
                 continue;
             }
             if found.is_some() {

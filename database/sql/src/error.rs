@@ -38,6 +38,15 @@ pub enum SqlError {
         name: String,
     },
 
+    /// A name longer than its kind allows.
+    #[error("the name {name} is longer than {max} characters")]
+    NameTooLong {
+        /// The name.
+        name: String,
+        /// The most characters allowed.
+        max: usize,
+    },
+
     /// A literal that cannot be a value.
     #[error("literal {text} is not valid: {what}")]
     Literal {
@@ -186,6 +195,7 @@ impl SqlError {
         match self {
             Self::Syntax { .. } | Self::ThreePartName { .. } => -104,
             Self::Unsupported { .. } => -84,
+            Self::NameTooLong { .. } => -107,
             Self::Literal { .. } | Self::Conversion { .. } => -302,
             Self::ObjectNotFound { .. } => -204,
             Self::ColumnNotFound { .. } => -206,
@@ -213,6 +223,7 @@ impl SqlError {
         match self {
             Self::Syntax { .. } | Self::ThreePartName { .. } => "42601",
             Self::Unsupported { .. } => "42612",
+            Self::NameTooLong { .. } => "42622",
             Self::Literal { .. } | Self::Conversion { .. } => "22018",
             Self::ObjectNotFound { .. } => "42704",
             Self::ColumnNotFound { .. } => "42703",

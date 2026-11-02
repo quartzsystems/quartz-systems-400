@@ -259,6 +259,26 @@ fn lobs() {
 }
 
 #[test]
+fn column_names_up_to_128() {
+    let mut db = Db::new();
+    let long = format!("A_COLUMN_NAME_{}", "X".repeat(100));
+    assert_eq!(long.len(), 114);
+    db.ok(&format!("CREATE TABLE QSTEST/LN ({long} FOR COLUMN SHORT INT, B INT)"));
+    db.ok(&format!("INSERT INTO QSTEST/LN ({long}, B) VALUES(7, 8)"));
+    assert_eq!(db.one(&format!("SELECT {long} FROM QSTEST/LN")), "7");
+    assert_eq!(db.one("SELECT COLUMN_NAME FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'LN' AND SYSTEM_COLUMN_NAME = 'SHORT'"), long);
+    let p = prepare("SELECT * FROM QSTEST/LN", Naming::Sys).unwrap();
+    let mut t = db.store.begin().unwrap();
+    let names: Vec<String> =
+        sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false).into_iter().map(|(_, n, _)| n).collect();
+    t.abort();
+    assert_eq!(names, [long.clone(), "B".into()]);
+    let too_long = "Y".repeat(129);
+    let e = db.run_with(&format!("CREATE TABLE QSTEST/LN2 ({too_long} FOR COLUMN Y INT)"), &[]).unwrap_err();
+    assert_eq!((e.sqlcode(), e.sqlstate()), (-107, "42622"));
+}
+
+#[test]
 fn describe_types() {
     let mut db = Db::new();
     db.ok(

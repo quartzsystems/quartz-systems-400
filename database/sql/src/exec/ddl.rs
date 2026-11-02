@@ -119,6 +119,11 @@ fn register_text(r: crate::ast::Register) -> Result<String> {
 /// What DDS cannot say about a column, set on the compiled field: the
 /// identity definition and an expression default.
 fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
+    // The SQL name when it is not the system name, up to 128 characters
+    // (`column_lines` refused a longer one).
+    if c.name.value != f.name.to_string() {
+        f.alias = Some(c.name.value.clone());
+    }
     if let Some(id) = &c.identity {
         if !matches!(
             c.type_spec.data_type,
@@ -207,6 +212,9 @@ fn sql_only_shape(t: &DataType) -> (u32, bool) {
 
 /// The DDS field line(s) of a column.
 fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
+    if c.name.value.chars().count() > db::format::sections::ALIAS_MAX {
+        return Err(SqlError::NameTooLong { name: c.name.value.clone(), max: db::format::sections::ALIAS_MAX });
+    }
     let name = sys_name(&c.name, c.system_name.as_ref())?;
     let (len, ty, dec, mut kws): (String, &str, String, Vec<String>) = match &c.type_spec.data_type
     {
@@ -260,12 +268,8 @@ fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
             kws.push(format!("DFT({})", system_default(&c.type_spec.data_type)));
         }
     }
-    if c.name.value != name.to_string() {
-        kws.push(format!(
-            "ALIAS({})",
-            c.name.value.chars().take(30).collect::<String>()
-        ));
-    }
+    // The SQL name is the field's ALIAS, set by `finish_field`: DDS's
+    // keyword has no room for 128 characters.
     let mut lines = Vec::new();
     let first = kws.first().cloned().unwrap_or_default();
     lines.push(dds("", &name.to_string(), &len, ty, &dec, &first));

@@ -48,8 +48,11 @@ impl TableInfo {
     /// The field named, with its index.
     #[must_use]
     pub fn field(&self, name: &str) -> Option<(usize, &FieldDef)> {
-        let n = Name::parse(name).ok()?;
-        self.format.format.field(&n)
+        let by_alias = || self.format.format.fields.iter().enumerate().find(|(_, f)| f.alias.as_deref() == Some(name));
+        match Name::parse(name) {
+            Ok(n) => self.format.format.field(&n).or_else(by_alias),
+            Err(_) => by_alias(),
+        }
     }
 
     /// The member whose LOB tree holds the table's LOB values.
