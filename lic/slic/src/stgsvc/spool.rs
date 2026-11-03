@@ -244,8 +244,12 @@ pub fn update(
         .cloned()
         .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
     f(&mut e.attrs)?;
-    with_store(system, |txn, _| {
-        splf::write_attrs(txn, e.obj, &e.attrs).map_err(|x| x.to_string())
+    // The spooled-file commands' rules decided (`splcmd::may_act`);
+    // `QSPL` is the system's books.
+    sec::guard::as_system(|| {
+        with_store(system, |txn, _| {
+            splf::write_attrs(txn, e.obj, &e.attrs).map_err(|x| x.to_string())
+        })
     })?;
     let a = e.attrs.clone();
     system.spool.files.insert(id, e);
@@ -294,8 +298,12 @@ pub fn delete(system: &mut System, id: u32) -> Result<(), String> {
         .remove(&id)
         .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
     dequeue(system, id, &e.attrs.outq);
-    with_store(system, |txn, _| {
-        ops::delete(txn, JobHandle(0), e.obj).map_err(|x| x.to_string())
+    // As `update`: the user's authority was checked to the file, not to
+    // `QSPL`.
+    sec::guard::as_system(|| {
+        with_store(system, |txn, _| {
+            ops::delete(txn, JobHandle(0), e.obj).map_err(|x| x.to_string())
+        })
     })
 }
 
