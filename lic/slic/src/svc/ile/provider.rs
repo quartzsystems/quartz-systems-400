@@ -72,6 +72,18 @@ fn stamp(unix: u64) -> String {
         .unwrap_or_default()
 }
 
+/// Minutes east of UTC from `QUTCOFFSET` (`-0500`; `-05:00` too).
+fn utc_offset_min(s: &str) -> Option<i32> {
+    let s = s.trim();
+    let sign = s.get(..1)?;
+    let digits: String = s[1..].chars().filter(char::is_ascii_digit).collect();
+    if digits.len() != 4 || !matches!(sign, "+" | "-") {
+        return None;
+    }
+    let v = digits[..2].parse::<i32>().ok()? * 60 + digits[2..].parse::<i32>().ok()?;
+    Some(if sign == "-" { -v } else { v })
+}
+
 impl Provider for StoreProvider {
     fn hardware(&mut self) -> ApiResult<hwrsrc::Table> {
         hwrsrc::client::table(false)
@@ -606,23 +618,28 @@ impl Provider for StoreProvider {
 
     fn now(&mut self) -> LocalNow {
         let unix = crate::ipl::system::now_unix();
-        let offset_min = self
-            .sysval("QUTCOFFSET")
-            .map(|v| ccsid::decode_trimmed(&v.data))
-            .and_then(|s| {
-                let (sign, rest) = s.split_at(1);
-                let (h, m) = rest.split_once(':')?;
-                let v: i32 = h.parse::<i32>().ok()? * 60 + m.parse::<i32>().ok()?;
-                Some(if sign == "-" { -v } else { v })
-            })
-            .unwrap_or(0);
+        let zone = self
+            .sysval("QTIMZON")
+            .map_or_else(|| "QN0000UTC".into(), |v| ccsid::decode_trimmed(&v.data));
+        // The zone's rules give the offset and daylight saving; a zone
+        // not in the table falls back to QUTCOFFSET.
+        let (offset_min, dst) = match sysval::tz::find(&zone) {
+            Some(z) => {
+                let off = z.offset_at(unix);
+                (off / 60, off != z.std_offset)
+            }
+            None => (
+                self.sysval("QUTCOFFSET")
+                    .and_then(|v| utc_offset_min(&ccsid::decode_trimmed(&v.data)))
+                    .unwrap_or(0),
+                false,
+            ),
+        };
         LocalNow {
             unix,
             offset_min,
-            zone: self
-                .sysval("QTIMZON")
-                .map_or_else(|| "QN0000UTC".into(), |v| ccsid::decode_trimmed(&v.data)),
-            dst: false,
+            zone,
+            dst,
         }
     }
 
@@ -744,5 +761,18 @@ impl Provider for StoreProvider {
             special: vec!["*ALLOBJ".into(), "*SECADM".into()],
             text: "Service profile".into(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::utc_offset_min;
+
+    #[test]
+    fn utc_offsets() {
+        assert_eq!(utc_offset_min("-0500"), Some(-300));
+        assert_eq!(utc_offset_min("+05:30"), Some(330));
+        assert_eq!(utc_offset_min("+0000"), Some(0));
+        assert_eq!(utc_offset_min("junk"), None);
     }
 }
