@@ -1,6 +1,6 @@
 # QAP: Quartz Access Protocol, version 1 (draft)
 
-QAP is how QS/400 Access talks to QS/400 for everything except 5250 and printer sessions, which stay on TN5250E (RFC 4777). It is an original Quartz design: it takes nothing from any other access protocol or from any other protocol's sources.
+QAP is how QS/400 Access talks to QS/400 for everything except display and printer sessions, which stay on the system's Telnet server. It is an original Quartz design.
 
 This draft settles the decisions below. Anything it leaves open is listed under Open questions; the first agent to reach one stops and asks Cody.
 
@@ -34,7 +34,7 @@ Every frame is one Wire-encoded `Envelope`. The envelope layout never changes be
 
 `ServerMessage` = { `id`: String (seven characters, for example `CPF2204`), `severity`: u8, `data`: bytes (substitution data), `text`: String (first level), `help`: String (second level: cause and recovery) }, in the user's language once signed on, the system's before.
 
-**Status values (u16).** `Ok` 0 · `Error` 1 (the message says what) · `VersionUnsupported` 2 · `NotSignedOn` 3 · `SignOnFailed` 4 · `PasswordExpired` 5 · `NotAuthorized` 6 · `NotFound` 7 · `InvalidRequest` 8 · `Busy` 9 · `Cancelled` 10 · `SessionExpired` 11 · `ServerEnding` 12. Sign-on failures carry the same message a 5250 sign-on would show for the same case, and nothing more.
+**Status values (u16).** `Ok` 0 · `Error` 1 (the message says what) · `VersionUnsupported` 2 · `NotSignedOn` 3 · `SignOnFailed` 4 · `PasswordExpired` 5 · `NotAuthorized` 6 · `NotFound` 7 · `InvalidRequest` 8 · `Busy` 9 · `Cancelled` 10 · `SessionExpired` 11 · `ServerEnding` 12. Sign-on failures carry the same message the sign-on display would show for the same case, and nothing more.
 
 **Limits.** A frame is at most 1 MiB; larger results are sent as several reply frames with `More` set on all but the last. At most 64 outstanding requests per connection; beyond that the server replies `Busy`. The client sends `Ping` after 60 s without traffic; the server closes a connection after 300 s without frames. Closing a connection does not end the session: it can be resumed until its idle timeout.
 
@@ -59,7 +59,7 @@ Every frame is one Wire-encoded `Envelope`. The envelope layout never changes be
 **Rules.**
 
 - A `Hello` that is not the first request, or a second `Hello`, gets `InvalidRequest` and the connection closes. No version in the client's range gets `VersionUnsupported`, then the connection closes.
-- `SignOn` applies the same checks as a 5250 sign-on: `QMAXSIGN` and its action, disabled profiles, password expiry, `*NONE` passwords refused, and the same audit journal entries. An expired password gets `PasswordExpired` and no token; the client then sends `ChangePassword`, which applies the system password rules and on success returns a `SignOnReply`.
+- `SignOn` applies the same checks as the sign-on display: `QMAXSIGN` and its action, disabled profiles, password expiry, `*NONE` passwords refused, and the same audit journal entries. An expired password gets `PasswordExpired` and no token; the client then sends `ChangePassword`, which applies the system password rules and on success returns a `SignOnReply`.
 - `ChangePassword` is also allowed in a signed-on session for that session's own profile.
 - The token is 256 random bits, stored server-side only. `Resume` re-attaches a new connection to the session until the idle timeout; after it, `SessionExpired`. `SignOff` ends the session and invalidates the token.
 - Anything other than the operations marked "yes" before sign-on gets `NotSignedOn`. Before sign-on the connection job runs as `QUSER`; after it, as the signed-on profile.
@@ -67,11 +67,11 @@ Every frame is one Wire-encoded `Envelope`. The envelope layout never changes be
 
 ## Later phases (spec now, build later)
 
-The client agent inventories which system functions QS/400 Access uses, and adds each as a QAP service with its requests and replies to this document before building it. Expected, in this order: remote command (run CL, return messages and the job), spooled files (list, read as SCS, text or PDF, hold, release, delete, move), SQL, IFS files, message queues. Optional: a one-time `TelnetTicket` from a signed-on session that the Telnet server accepts for 5250 auto sign-on, which would remove the need for password substitution on Telnet.
+The client agent inventories which system functions QS/400 Access uses, and adds each as a QAP service with its requests and replies to this document before building it. Expected, in this order: remote command (run CL, return messages and the job), spooled files (list, read as SCS, text or PDF, hold, release, delete, move), SQL, IFS files, message queues. Optional: a one-time `TelnetTicket` from a signed-on session that the Telnet server accepts for automatic sign-on, which would remove the need for password substitution on Telnet.
 
 ### Inventory
 
-What QS/400 Access needs of the system besides 5250, from its task pane, README and messages, and the service each becomes:
+What QS/400 Access needs of the system besides display sessions, from its task pane, README and messages, and the service each becomes:
 
 | Function in QS/400 Access | Service |
 | --- | --- |
@@ -81,9 +81,9 @@ What QS/400 Access needs of the system besides 5250, from its task pane, README 
 | Integrated File System task | `Ifs` (6) |
 | Message queues: the user's own and `QSYSOPR`, inquiry replies | `Messages` (7) |
 | Password expiry warning (`QAD4031`), which the phase 0 `SignOnReply` cannot give | `SignOn` op 6 `PasswordStatus` |
-| 5250 automatic sign-on without a password on Telnet (the optional ticket) | `SignOn` op 5 `TelnetTicket` |
+| Automatic sign-on of a display session without a password on Telnet (the optional ticket) | `SignOn` op 5 `TelnetTicket` |
 
-Not in QAP: 5250 display and printer sessions (Telnet), the printer session's message queue (named in the TN5250E startup), the 5250 Console and Control Panel tasks (the service console), and Key and Certificate Management (this computer's trust store).
+Not in QAP: display and printer sessions (Telnet), the printer session's message queue (named in the Telnet session's startup), the Console and Control Panel tasks (the service console), and Key and Certificate Management (this computer's trust store).
 
 ### Rules for these additions
 
@@ -271,7 +271,7 @@ Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`).
 | `TelnetTicket` | `Ok`; `NotAuthorized` (the profile may not sign on automatically) |
 | `PasswordStatus` | `Ok` |
 
-A ticket is 256 random bits for the session's own profile, kept by the server, good for one 5250 automatic sign-on within `expires_secs`, and only over Telnet with TLS. The client sends it, as 64 hexadecimal characters, where automatic sign-on otherwise carries the password; the client sends the RFC 4777 user variable, and the password variable carrying the ticket as 64 hexadecimal characters with an empty random-seed variable, and only over Telnet TLS. The client treats a ticket as it treats a token: never logged or stored, wiped after use.
+A ticket is 256 random bits for the session's own profile, kept by the server, good for one automatic sign-on of a display session within `expires_secs`, and only over Telnet with TLS. The client sends it, as 64 hexadecimal characters, where automatic sign-on otherwise carries the password; the client sends the Telnet environment's user variable, and the password variable carrying the ticket as 64 hexadecimal characters with an empty random-seed variable, and only over Telnet TLS. The client treats a ticket as it treats a token: never logged or stored, wiped after use.
 
 ### `SignOn` addition (version 4)
 
@@ -389,7 +389,7 @@ Version 2, settled with Cody on 2026-11-02:
   `services` lists only what the chosen version defines, and a
   request for an operation the version does not define gets
   `InvalidRequest`.
-- `QRMTSIGN` decides automatic sign-on, for tickets and the RFC 4777
+- `QRMTSIGN` decides automatic sign-on, for tickets and the Telnet
   password substitute alike: `*VERIFY` and `*SAMEPRF` allow it,
   `*FRCSIGNON` shows the sign-on display, `*REJECT` refuses the
   connection. It ships as `*VERIFY`. `TelnetTicket` answers
@@ -405,7 +405,7 @@ Version 2, settled with Cody on 2026-11-02:
   Issue and use are audited (`PS` entries `P` and `V`); ticket values
   are never logged.
 - `DescribeCommand`'s `help` strings are empty: QS/400 ships no help
-  panel groups for commands yet, and the 5250 prompter shows none
+  panel groups for commands yet, and the display prompter shows none
   either. Elements and qualifiers have the prompt text their
   definitions give.
 - The lanes: `Command` requests run on the connection job's own
@@ -541,8 +541,8 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   once the unit changed something). The default schema is `SET
   SCHEMA` (none: `SET SCHEMA DEFAULT`); under `System` naming as
   under `Sql`, a default schema qualifies unqualified table, view,
-  index and alias names in place of the library list, as IBM i's
-  `DFTRDBCOL` and `SET SCHEMA` do.
+  index and alias names in place of the library list, as the
+  `DFTRDBCOL` parameter and `SET SCHEMA` do.
 - When the connection closes, and when the job runs as another
   profile (sign-off, resume), the lane rolls back, ends the scope
   `QAP:` (its cursors and statements go) and resets the options. The
@@ -577,7 +577,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   column's SQL name (the field's `ALIAS`, which `CREATE TABLE` keeps
   for a name longer than its system name; else the system name),
   `label` its heading (`LABEL ON` or DDS `COLHDG`) with each of its
-  three parts filled to 20 characters, as an SQLDA's label; a column
+  three parts filled to 20 characters, as a descriptor area's label; a column
   without a heading, or an expression, has its name as `label`. A
   column renamed with `AS` keeps its heading.
 - The storage service is one thread, but a query (`Execute` of a
@@ -589,7 +589,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `Serializable` (`*ALL`), the sort or join of a query once its rows
   are read, and a query met while another runs, which goes first (the
   earlier window waits for it).
-- Engine limits the build met, now lifted as IBM i has them:
+- Engine limits the build met, now lifted as the database rules have them:
   `SMALLINT`, `INTEGER` and `BIGINT` columns made by SQL take their
   whole 16, 32 and 64-bit range (a field flag, `DB_FORMAT.md`; a DDS
   `B` field keeps its digits), `SYSCOLUMNS` giving `LENGTH` 2, 4, 8 and
@@ -610,7 +610,7 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `CPYTOIMPF` and `CPYFRMIMPF` copy LOB columns. `CURRENT
   TIMESTAMP(p)` has its precision; `SYSCOLUMNS.DATA_TYPE` spells a
   timestamp `TIMESTMP`; a predicate used as a value (`K = 1` in a select
-  list) is a `BOOLEAN` (SQLTYPE 2436), as on IBM i 7.5.
+  list) is a `BOOLEAN` (SQLTYPE 2436).
 
 The test system's database (`qapd::testing::sql`, for QS/400's tests
 and QS/400 Access's):
