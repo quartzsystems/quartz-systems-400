@@ -13,9 +13,10 @@ use store::txn::Txn;
 use crate::error::{DbError, Result};
 use crate::file::{self, FileDesc, FileKind, Maint, Recover, Size, Wait};
 use crate::format::FormatDef;
-use crate::member::Member;
+use crate::file::MemberEntry;
+use crate::member::{Member, rebuild};
 use crate::util::Hold;
-use crate::util::cpyf::{FmtOpt, map};
+use crate::util::cpyf::{FmtOpt, copy_lobs, map};
 
 /// `CHGPF` parameters; `None` leaves the attribute as it is.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -248,7 +249,7 @@ pub fn chgpf_srcfile_paused(
     let r = if same {
         file::replace_formats(txn, file, &[new])
     } else {
-        convert(txn, &desc, old, new, pause)
+        convert(txn, job, &desc, old, new, pause)
     };
     hold.release(txn);
     r?;
@@ -261,10 +262,23 @@ pub fn chgpf_srcfile_paused(
     Ok(())
 }
 
-/// Every member's records into the new format, by field name: all of
-/// them read and converted first (pausing between batches), then
-/// written.
-fn convert(txn: &mut Txn<'_>, desc: &FileDesc, old: &FormatDef, new: FormatDef, pause: crate::Pause<'_>) -> Result<()> {
+/// Every member's records into the new format, by field name, each
+/// member rebuilt beside the old one (`member::rebuild`): the records
+/// read, converted and written in batches, pausing between them, the
+/// old members as they were until the switch at the end, one short
+/// step. A rebuild that fails or is ended deletes what it made.
+fn convert(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    desc: &FileDesc,
+    old: &FormatDef,
+    new: FormatDef,
+    pause: crate::Pause<'_>,
+) -> Result<()> {
+    // What a rebuild cut short by a crash left.
+    for e in &desc.members {
+        rebuild::abandon(txn, job, e.object)?;
+    }
     let plan = map::plan(
         old,
         &new,
@@ -272,41 +286,84 @@ fn convert(txn: &mut Txn<'_>, desc: &FileDesc, old: &FormatDef, new: FormatDef, 
         FileKind::Physical,
         FmtOpt::MapDrop,
     )?;
-    let batch = usize::try_from(crate::PAUSE_EVERY).expect("fits");
-    let mut converted = Vec::with_capacity(desc.members.len());
+    let mut shadows = Vec::with_capacity(desc.members.len());
     for e in &desc.members {
-        let mut m = Member::open(txn, desc, e)?;
-        let mut rows = Vec::new();
-        let mut from = 1;
-        loop {
-            let slots = m.scan(txn, from, batch)?;
-            for s in &slots {
-                let mut rec = vec![0u8; usize::try_from(new.format.record_len).expect("fits")];
-                let mut nulls = vec![0u8; usize::from(new.null_map_len)];
-                plan.apply(old, &new, s, 0, &mut rec, &mut nulls)?;
-                rows.push((rec, nulls));
-            }
-            match slots.last() {
-                Some(last) if slots.len() == batch => from = last.rrn + 1,
-                _ => break,
-            }
-            if pause(txn)? {
-                m = Member::open(txn, desc, e)?;
-            }
+        shadows.push(rebuild::begin(txn, desc, e, &new)?);
+    }
+    // The new members, read by nobody: no journal, no dependents.
+    let mut beside = desc.clone();
+    beside.formats = vec![new.clone()];
+    beside.attr.journal = ObjectId::NONE;
+    beside.dependents.clear();
+    let mut parted = false;
+    let copied = desc.members.iter().zip(&shadows).try_for_each(|(e, s)| {
+        let to = MemberEntry { object: *s, ..*e };
+        copy_converted(txn, (desc, e), (&beside, &to), (old, &plan), &mut |t| {
+            let p = pause(t)?;
+            parted |= p;
+            Ok(p)
+        })
+    });
+    if let Err(err) = copied {
+        for e in &desc.members {
+            rebuild::abandon(txn, job, e.object)?;
         }
-        converted.push((*e, rows));
+        // Parts were committed: so is their undoing.
+        if parted {
+            txn.commit_part()?;
+        }
+        return Err(err);
     }
-    for (e, _) in &converted {
-        Member::open(txn, desc, e)?.clear(txn)?;
+    // The switch.
+    for (e, s) in desc.members.iter().zip(&shadows) {
+        rebuild::finish(txn, job, e.object)?;
+        file::set_member_object(txn, desc.id, e.name, *s)?;
     }
-    file::replace_formats(txn, desc.id, &[new])?;
-    let desc = file::describe(txn, desc.id)?;
-    for (e, rows) in converted {
-        crate::member::reformat(txn, e.object, &desc.formats[0])?;
-        let mut m = Member::open(txn, &desc, &e)?;
-        for (rec, nulls) in rows {
-            m.write_new(txn, &rec, &nulls)?;
+    file::replace_formats(txn, desc.id, &[new])
+}
+
+/// One member's records converted into its new member, in batches.
+fn copy_converted(
+    txn: &mut Txn<'_>,
+    (desc, from_e): (&FileDesc, &MemberEntry),
+    (beside, to_e): (&FileDesc, &MemberEntry),
+    (old, plan): (&FormatDef, &map::Plan),
+    pause: crate::Pause<'_>,
+) -> Result<()> {
+    let new = &beside.formats[0];
+    let lobs: Vec<usize> = new
+        .format
+        .fields
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| f.data_type.is_lob())
+        .map(|(i, _)| i)
+        .collect();
+    let batch = usize::try_from(crate::PAUSE_EVERY).expect("fits");
+    let mut from = Member::open(txn, desc, from_e)?;
+    let mut to = Member::open(txn, beside, to_e)?;
+    let mut copies = Vec::new();
+    let mut next = 1;
+    loop {
+        let slots = from.scan(txn, next, batch)?;
+        for s in &slots {
+            let mut rec = vec![0u8; usize::try_from(new.format.record_len).expect("fits")];
+            let mut nulls = vec![0u8; usize::from(new.null_map_len)];
+            plan.apply(old, new, s, 0, &mut rec, &mut nulls)?;
+            copy_lobs(txn, &lobs, new, &mut rec, (from_e.object, to_e.object), &mut copies)?;
+            to.write_new(txn, &rec, &nulls).map_err(|e| match e {
+                // A unique key the old records repeat.
+                DbError::DuplicateKey { file, member, key } => DbError::DuplicateKeys { file, member, key },
+                e => e,
+            })?;
+        }
+        match slots.last() {
+            Some(last) if slots.len() == batch => next = last.rrn + 1,
+            _ => return Ok(()),
+        }
+        if pause(txn)? {
+            from = Member::open(txn, desc, from_e)?;
+            to = Member::open(txn, beside, to_e)?;
         }
     }
-    Ok(())
 }

@@ -410,7 +410,7 @@ fn lob_steps(plan: &map::Plan, from: &FormatDef, to: &FormatDef) -> Result<Vec<u
 
 /// Copy each LOB value the record names from the from-member's tree
 /// into the to-member's, the record naming the copy.
-fn copy_lobs(
+pub(crate) fn copy_lobs(
     txn: &mut Txn<'_>,
     lobs: &[usize],
     to: &FormatDef,

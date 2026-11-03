@@ -600,6 +600,8 @@ fn a_unique_index_over_repeated_keys_is_refused() {
         "CREATE UNIQUE INDEX QSTEST.TU ON QSTEST.T (NAME)",
         "ALTER TABLE QSTEST.T ADD CONSTRAINT TUQ UNIQUE (NAME)",
         "ALTER TABLE QSTEST.T ADD UNIQUE (NAME)",
+        // Rebuilt beside itself: the table stays as it was.
+        "ALTER TABLE QSTEST.T ADD PRIMARY KEY (NAME)",
     ] {
         let r = run(&mut s, Op::Exec, "", text);
         assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-603, "23515"), "{text}: {:?}", r.sqlca);

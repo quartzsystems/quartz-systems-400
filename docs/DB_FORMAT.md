@@ -305,7 +305,7 @@ At offset 0 of the attribute area of a `*MBR`.
 | 88 | 8 | last_save | Unix seconds, 0 for never |
 | 96 | 8 | last_restore | Unix seconds, 0 for never |
 | 104 | 8 | identity_next | the next value of the format's identity column, signed; 0 when it has none |
-| 112 | 16 | reserved2 | 0 |
+| 112 | 16 | rebuild | `ObjectId` of the member a rebuild in progress writes this member's records into, all zeros when none (below) |
 
 A logical member's based-on physical members follow at offset 128 of
 the attribute area, `base_count` × `ObjectId`, one per format of the
@@ -313,6 +313,29 @@ logical file in format order (every format of a `PFILE` list uses its
 first file). Header tree roots: slot 0 the access path (§6), slot 1 the
 free-slot tree (`REUSEDLT(*YES)`): keys are RRNs of deleted slots, values
 empty; slot 2 the LOB tree of a physical member (below).
+
+**A rebuild beside the member.** A change of record format that
+converts the records (`ALTER TABLE`, `CHGPF SRCFILE`) builds each
+member anew beside the old one and switches at the end, so it can
+commit in parts and a crash never loses records:
+
+1. For each member a new `*MBR` is made, owned by the file and of the
+   same name but not in the file's member table, with the new format's
+   slot layout and the old member's size, `REUSEDLT`, identity counter,
+   save dates, text and creation time; the old member's `rebuild`
+   names it. This step and the first part of the copy commit together.
+2. The records are read in batches, converted, and written into the new
+   member (their LOB values copied into its LOB tree); parts commit
+   between batches. Nobody reads the new member: it is in no table.
+3. The switch, one transaction: each old member's `rebuild` is cleared,
+   the old member deleted (its storage freed, as a member is), the
+   member table names the new one, and the file's formats are replaced.
+
+A rebuild that fails or is ended deletes the new members and clears
+`rebuild`. One cut short by a crash leaves the old members and format
+as they were, each naming its unfinished new member: the next format
+change of the file, and the member's deletion (`RMVM`, `DLTF`,
+`DROP`), delete it first. A reader ignores `rebuild`.
 
 ### `RecordSlot` (variable)
 

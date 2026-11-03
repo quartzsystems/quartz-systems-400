@@ -204,11 +204,16 @@ every other request, and with the other statements in progress.
     nobody can find. A `UNIQUE` index refuses repeated keys as they
     meet in the merge (`SQL0603`). A build that fails or is ended
     deletes the index, the parts it committed included.
-  - `ALTER TABLE` that changes the record format: the table is held
-    `*EXCL`; its records are read and converted with pauses, then
-    written in the new format in one step. That step cannot be split:
-    the members are cleared before the converted records go in, and a
-    part committed alone would lose records at a crash.
+  - `ALTER TABLE` that changes the record format (and `CHGPF
+    SRCFILE`): the table is held `*EXCL`; each member is rebuilt beside
+    itself (`db::member::rebuild`, `docs/DB_FORMAT.md` §4): a new
+    member the old one names takes the records read, converted and
+    written with pauses, the old member and format untouched; then one
+    short step deletes the old members, names the new ones in the
+    member table and replaces the format. A crash part way leaves the
+    table as it was (the next format change or the member's deletion
+    removes what the rebuild made); a rebuild that fails (a `PRIMARY
+    KEY` over repeated keys: `SQL0603`) or is ended deletes it at once.
   - `ROLLBACK`: the cycle's changes are undone newest first with
     pauses, its record locks held until the end. A rollback cut short
     by a crash is finished by the IPL's recovery: the undoing entries

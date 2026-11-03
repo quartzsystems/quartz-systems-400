@@ -176,6 +176,84 @@ fn records_converted_with_pauses() {
     assert_eq!(names, want);
 }
 
+/// Names of a member's records in the field `NAME`, by RRN.
+fn names_of(store: &mut store::Store, file: ObjectId) -> Vec<String> {
+    let mut t = store.begin().unwrap();
+    let m = Member::open_by(&mut t, file, MemberSpec::First).unwrap();
+    let fmt = m.format().clone();
+    let (_, nf) = fmt.format.field(&name("NAME")).unwrap();
+    m.scan(&mut t, 1, 100_000).unwrap().iter().map(|s| ccsid::decode_trimmed(db::record::field_bytes(nf, &s.record))).collect()
+}
+
+#[test]
+fn a_rebuild_cut_short_loses_nothing() {
+    let (d, mut store, lib) = open_new();
+    let cust = customers(&mut store, lib);
+    let want: Vec<String> = (1..=ROWS).map(|n| format!("N{:05}", ROWS - n)).collect();
+    let new = pf(&[
+        rec("CUSREC", ""),
+        fld("CUSNO", "7", "P", "0", ""),
+        fld("NAME", "40", "A", "", ""),
+        fld("EXTRA", "5", "A", "", ""),
+    ]);
+    let level = |store: &mut store::Store| {
+        let mut t = store.begin().unwrap();
+        file::describe(&mut t, cust).unwrap().formats[0].level_id.clone()
+    };
+    let before = level(&mut store);
+    let member = |store: &mut store::Store| {
+        let mut t = store.begin().unwrap();
+        file::describe(&mut t, cust).unwrap().members[0].object
+    };
+    let old_member = member(&mut store);
+    // A crash at its second pause, one part committed: the process goes
+    // (a panic here, the transaction dropped with the rest).
+    let crashed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut t = store.begin().unwrap();
+        let mut n = 0;
+        let _ = db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut |t| {
+            n += 1;
+            assert!(n < 2, "the crash");
+            t.commit_part()?;
+            Ok(true)
+        });
+    }));
+    assert!(crashed.is_err());
+    drop(store);
+    let mut store = reopen(&d);
+    // The records and format are as they were; the member names what the
+    // rebuild made, deleted by the next one.
+    assert_eq!(level(&mut store), before);
+    assert_eq!(member(&mut store), old_member);
+    assert_eq!(names_of(&mut store, cust), want);
+    let shadow = {
+        let mut t = store.begin().unwrap();
+        db::member::Core::load(&mut t, old_member).unwrap().attr.rebuild
+    };
+    assert_ne!(shadow, ObjectId::NONE);
+    // Ended without a crash: what it made is gone at once.
+    let mut t = store.begin().unwrap();
+    let mut pauses = 0;
+    let e = db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut pausing(&mut pauses, 1)).unwrap_err();
+    assert!(matches!(e, DbError::Ended), "{e:?}");
+    t.commit().unwrap();
+    let mut t = store.begin().unwrap();
+    assert!(store::obj::ops::read_header(&mut t, shadow).is_err(), "the crash's rebuild is deleted");
+    assert_eq!(db::member::Core::load(&mut t, old_member).unwrap().attr.rebuild, ObjectId::NONE);
+    drop(t);
+    assert_eq!(names_of(&mut store, cust), want);
+    // Whole: the new member in the old one's place, in the new format.
+    let mut t = store.begin().unwrap();
+    let mut pauses = 0;
+    db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    t.commit().unwrap();
+    assert_ne!(level(&mut store), before);
+    assert_ne!(member(&mut store), old_member);
+    assert_eq!(names_of(&mut store, cust), want);
+    let mut t = store.begin().unwrap();
+    assert!(store::obj::ops::read_header(&mut t, old_member).is_err(), "the old member is deleted");
+}
+
 #[test]
 fn a_rollback_ended_part_way_is_finished_by_recovery() {
     let (d, mut store, lib) = open_new();

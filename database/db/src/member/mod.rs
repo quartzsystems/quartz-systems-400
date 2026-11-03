@@ -10,6 +10,7 @@
 pub mod attr;
 pub mod join;
 pub mod lob;
+pub mod rebuild;
 pub mod slots;
 
 pub use attr::MbrAttr;
@@ -235,6 +236,7 @@ fn new_attr(format: &FormatDef, file: ObjectId, mp: MemberParams) -> MbrAttr {
         last_save: 0,
         last_restore: 0,
         identity_next: identity_start(format),
+        rebuild: ObjectId::NONE,
     }
 }
 
@@ -333,6 +335,8 @@ pub fn reformat(txn: &mut Txn<'_>, member: ObjectId, format: &FormatDef) -> Resu
 
 /// Delete a member object with everything it holds.
 pub fn destroy(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<()> {
+    // An unfinished rebuild's member goes with it.
+    rebuild::abandon(txn, job, id)?;
     ops::delete(txn, job, id)?;
     Ok(())
 }
