@@ -596,7 +596,7 @@ fn not_before_sign_on() {
     let c = Controls::new();
     let mut r = start_with(cfg(), Arc::clone(&c));
     r.client.hello_range(5, 5);
-    for op in Op::ALL.into_iter().filter(|o| o.code().0 == Service::Ifs) {
+    for op in Op::ALL.into_iter().filter(|o| o.code().0 == Service::Ifs && o.since() <= 5) {
         assert_eq!(r.client.call(op, &PathRef::default()).status, Status::NotSignedOn, "{op:?}");
     }
     r.client.sign_on("BOB", "SECRET1");

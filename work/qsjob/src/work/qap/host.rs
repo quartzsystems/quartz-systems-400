@@ -15,6 +15,8 @@
 //! `crate::qapsql`). `Ifs` runs on a thread's link through the IFS
 //! requests every job uses (`stg::remote::RemoteIfs`), so its authority
 //! checks and audit entries are the file-system commands' (`qapd::files`).
+//! `Messages` runs on a thread's link through the service's message
+//! queue functions, the message commands' (`messages.rs`).
 
 use std::cell::{RefCell, RefMut};
 use std::path::Path;
@@ -29,6 +31,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use ipc::WireError;
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
+use qap_proto::ops::messages::{ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
@@ -523,5 +526,35 @@ impl ThreadHost for JobThread {
 
     fn list_columns(&mut self, req: &ListColumns) -> Result<Columns, Refusal> {
         catalog::list_columns(&mut ThreadDb(&mut self.link()), req)
+    }
+
+    fn list_messages(&mut self, req: &ListMessages) -> Result<Messages, Refusal> {
+        let r = self
+            .link()
+            .with(|l| l.qap_msg_list(req.queue.clone(), req.newest_first, req.start, req.max));
+        let (total, msgs) = r.map_err(|e| self.refusal(&e))?;
+        let mut texts = super::messages::Texts::default();
+        let mut link = self.link();
+        let messages = msgs.iter().map(|m| super::messages::queued(&mut link, &mut texts, m)).collect();
+        Ok(Messages { total, messages })
+    }
+
+    fn reply_message(&mut self, req: &ReplyMessage) -> Result<(), Refusal> {
+        let key = u32::from_be_bytes(req.key);
+        let r = self.link().with(|l| l.qap_msg_reply(req.queue.clone(), key, req.reply.clone()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn remove_messages(&mut self, req: &RemoveMessages) -> Result<(), Refusal> {
+        let keys = req.keys.iter().map(|k| u32::from_be_bytes(*k)).collect();
+        let r = self.link().with(|l| l.qap_msg_remove(req.queue.clone(), keys));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn send_message(&mut self, req: &SendMessage) -> Result<Sent, Refusal> {
+        let r = self
+            .link()
+            .with(|l| l.qap_msg_send(req.to.clone(), req.text.clone(), req.inquiry));
+        r.map(|k| Sent { key: k.map(u32::to_be_bytes) }).map_err(|e| self.refusal(&e))
     }
 }

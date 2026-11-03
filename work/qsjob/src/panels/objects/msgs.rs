@@ -28,6 +28,7 @@ fn kind_text(k: MsgKind) -> &'static str {
         MsgKind::Diag => "Diagnostic",
         MsgKind::Notify => "Notify",
         MsgKind::Escape => "Escape",
+        MsgKind::Copy => "Sender copy",
     }
 }
 

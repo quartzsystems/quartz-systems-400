@@ -16,6 +16,8 @@
 //!   what the threads share.
 //! - `watch`: the one line logged at each close, and the threads'
 //!   panics as its reason.
+//! - `watches`: the watches of message queues and spooled files
+//!   (version 6) and the thread that sends their events.
 //! - `polled`: a TCP stream without a read timeout, for loopback.
 //! - [`host`]: what the connection reaches of the system.
 //! - [`spool`]: `ReadSpooledFile` over a file's data.
@@ -41,6 +43,7 @@ mod lanes;
 mod polled;
 mod pump;
 mod watch;
+mod watches;
 
 use std::fmt;
 use std::io::{Read, Write};
@@ -76,6 +79,8 @@ pub struct Config {
     pub max_outstanding: usize,
     /// How often the connection's thread looks for an end from outside.
     pub poll: Duration,
+    /// How often the watches look at their queues and targets.
+    pub watch_poll: Duration,
 }
 
 impl Default for Config {
@@ -84,6 +89,7 @@ impl Default for Config {
             idle_close: qap_proto::IDLE_CLOSE,
             max_outstanding: qap_proto::MAX_OUTSTANDING,
             poll: Duration::from_millis(100),
+            watch_poll: Duration::from_millis(250),
         }
     }
 }

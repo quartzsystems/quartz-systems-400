@@ -188,6 +188,10 @@ pub fn as_user(req: &Request) -> bool {
             | R::QapSplfDelete { .. }
             | R::QapSplfMove { .. }
             | R::QapOutqList { .. }
+            | R::QapMsgList { .. }
+            | R::QapMsgReply { .. }
+            | R::QapMsgRemove { .. }
+            | R::QapMsgSend { .. }
     )
 }
 

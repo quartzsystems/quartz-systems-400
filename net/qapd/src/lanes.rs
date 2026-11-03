@@ -6,8 +6,9 @@
 //! once, then only the agreed version's operations; `Ping` answered at
 //! once; the lane (`Command` requests and `Sql` 1 to 8) to the job's own
 //! thread, one at a time;
-//! every other operation (`Ifs` included) to a secondary thread of the job, as many at
-//! once as are outstanding, each thread made when none is free.
+//! every other operation (`Ifs` and `Messages` included) to a secondary
+//! thread of the job, as many at once as are outstanding, each thread
+//! made when none is free; watches to [`crate::watches`].
 //! `Attach` only as the first request after `Hello`.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -16,6 +17,7 @@ use std::sync::{Arc, Mutex};
 
 use ipc::Wire;
 use qap_proto::ops::connection::{Hello, HelloReply, JobInfoReply, PingReply, SignOnMethod, choose_version};
+use qap_proto::ops::messages::{ListMessages, RemoveMessages, ReplyMessage, SendMessage};
 use qap_proto::ops::signon::{Attach, ChangePassword, Resume, SignOn, SignOnReply};
 use qap_proto::ops::spool::{
     HoldSpooledFile, ListOutputQueues, ListSpooledFiles, MoveSpooledFile, ReadSpooledFile, SpooledFileRef,
@@ -28,6 +30,7 @@ use crate::conn::{Answer, Shared, lock};
 use crate::host::{Refusal, ThreadHost, Threads};
 use crate::pump::In;
 use crate::watch::{self, Watch};
+use crate::watches;
 
 /// From the dispatcher to the job's own thread.
 pub(crate) enum ToMain {
@@ -209,7 +212,7 @@ impl Pool {
 }
 
 /// Answer one operation on a secondary thread.
-fn operation(shared: &Shared, host: &mut dyn ThreadHost, op: Op, req: &Envelope) {
+fn operation(shared: &Arc<Shared>, host: &mut dyn ThreadHost, op: Op, req: &Envelope) {
     if shared.cancelled_before(req) {
         return;
     }
@@ -234,6 +237,12 @@ fn operation(shared: &Shared, host: &mut dyn ThreadHost, op: Op, req: &Envelope)
         Op::ListOutputQueues => body(req, |b: ListOutputQueues| ok(host.list_output_queues(&b))),
         Op::ListSchemas | Op::ListTables | Op::ListColumns => crate::sql::catalog(host, op, req),
         op if op.code().0 == Service::Ifs => crate::files::serve(host, &shared.files, op, req),
+        Op::ListMessages => body(req, |b: ListMessages| ok(host.list_messages(&b))),
+        Op::ReplyMessage => body(req, |b: ReplyMessage| done(host.reply_message(&b))),
+        Op::RemoveMessages => body(req, |b: RemoveMessages| done(host.remove_messages(&b))),
+        Op::SendMessage => body(req, |b: SendMessage| ok(host.send_message(&b))),
+        Op::WatchQueue => watches::watch_queue(shared, host, req),
+        Op::UnwatchQueue => watches::unwatch_queue(shared, host, req),
         _ => Answer::status(Status::InvalidRequest),
     };
     shared.finish(req, a);
@@ -334,6 +343,8 @@ fn sign_off(shared: &Shared, host: &mut dyn ThreadHost) -> Answer {
     let _one = lock(&shared.signon);
     let session = lock(&shared.session).take();
     *lock(&shared.watch.profile) = None;
+    // The watches were the profile's.
+    watches::clear(shared);
     if let Some((token, _)) = session {
         host.sign_off(&token);
         shared.swapped();

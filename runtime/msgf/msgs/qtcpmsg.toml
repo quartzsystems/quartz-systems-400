@@ -830,3 +830,17 @@ sev = 40
 text = "Data in CCSID &1 cannot be converted to CCSID &2."
 help = "QAP converts file data only between CCSIDs the system has conversion tables for, and never to or from 65535, which marks binary data. Read or write the data as stored, or name another CCSID."
 vars = ["*CHAR 5", "*CHAR 5"]
+
+[[msg]]
+id = "TCP1A5B"
+sev = 40
+text = "&1 is not watched on this connection."
+help = "Only what this connection watches can be unwatched. A watch ends with the connection that made it and with a sign-off on it; watch again after resuming a session."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP1A5C"
+sev = 40
+text = "Message queues are not available through this QAP server."
+help = "The server has no message queue support. Use a display session to work with messages."
+vars = []

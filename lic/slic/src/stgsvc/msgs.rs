@@ -6,7 +6,8 @@
 //! break delivery. A queue in `*BREAK` delivery is allocated to the job
 //! that set it; a message that arrives on it at or above its severity
 //! waits in that job's break list until the job asks, at its next wait
-//! point.
+//! point. An inquiry whose reply goes to another queue leaves a sender's
+//! copy there, which its reply answers too.
 
 use store::obj::{ObjectId, types};
 use wm::obj::msgq::{MsgKind, MsgQ, QMsg};
@@ -85,6 +86,7 @@ pub fn send(system: &mut System, lib: &str, name: &str, mut m: QMsg) -> Result<u
             MsgKind::Notify => "14",
             MsgKind::Escape => "15",
             MsgKind::Info => "04",
+            MsgKind::Copy => "06",
         };
         let h = super::hist::Hist {
             time: m.time / 1_000_000,
@@ -163,3 +165,130 @@ pub fn take_breaks(system: &mut System, job: u32) -> Vec<Break> {
 
 /// A break waiting: the queue, its break program and the message.
 pub type Break = (String, (String, String), QMsg);
+
+/// Message `msgid`'s description in `msgf` (`*LIBL` when no library),
+/// from the store or the built-in sources behind it.
+pub fn description(system: &mut System, msgid: &str, msgf: &(String, String)) -> Option<msgf::MsgDesc> {
+    let (file, lib) = (msgf.0.trim(), msgf.1.trim());
+    let found = system.storage.as_mut().and_then(|s| {
+        let qsys = s.qsys?;
+        crate::svc::db::with_txn(&mut s.store, |txn| {
+            let names = crate::svc::ile::name_context(txn, qsys);
+            let f = qsname::Name::parse(file).map_err(|e| e.to_string())?;
+            let spec = match lib {
+                "*LIBL" | "" => qsname::LibSpec::Libl,
+                l => qsname::LibSpec::Name(qsname::Name::parse(l).map_err(|e| e.to_string())?),
+            };
+            msgf::store::rtvmsg(txn, qsys, &names, msgid, f, spec).map_err(|e| e.to_string())
+        })
+        .ok()
+        .flatten()
+    });
+    found.or_else(|| msgf::MsgLookup::describe(&mut msgf::BuiltinMsgs::new(), msgid, file, if lib.is_empty() { "*LIBL" } else { lib }))
+}
+
+/// A message-queue function refused: the message and its values.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Refused {
+    /// The message identifier.
+    pub msgid: String,
+    /// Its substitution values, in order.
+    pub data: Vec<String>,
+    /// The text the service's console shows.
+    pub text: String,
+}
+
+impl Refused {
+    /// From a function's `CPFnnnn text` error.
+    #[must_use]
+    pub fn of(e: &str) -> Self {
+        let (id, text) = e.split_once(' ').unwrap_or((e, ""));
+        Self {
+            msgid: id.to_string(),
+            data: Vec::new(),
+            text: text.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for Refused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.msgid, self.text)
+    }
+}
+
+/// Answer the inquiry `key` on `lib/name` as `from`, the reply checked
+/// against the message's valid replies (`CPF2420`); the reply's key.
+/// An empty reply is the default one. When the reply goes to another
+/// queue, the sender's copy there is answered too.
+pub fn reply(system: &mut System, lib: &str, name: &str, key: u32, reply: &str, from: (String, String, u32)) -> Result<u32, Refused> {
+    let (inq, text) = with_queue(system, "msgq.reply", lib, name, |q, _| {
+        let i = q.inquiry(key).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
+        Ok(((q.msgs[i].clone(), q.reply_text(i, reply)), false))
+    })
+    .map_err(|e| Refused::of(&e))?;
+    if !inq.msgid.is_empty()
+        && let Some(d) = description(system, &inq.msgid, &inq.msgf)
+        && !d.reply_ok(&text)
+    {
+        return Err(Refused {
+            msgid: "CPF2420".into(),
+            data: vec![text.clone(), inq.msgid.clone()],
+            text: format!("reply {text} is not valid for message {}", inq.msgid),
+        });
+    }
+    let time = now_micros();
+    let rkey = with_queue(system, "msgq.reply", lib, name, |q, _| {
+        let k = q
+            .reply(key, &text, from.clone(), time)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
+        Ok((k, true))
+    })
+    .map_err(|e| Refused::of(&e))?;
+    let to = (inq.reply_to.1.clone(), inq.reply_to.0.clone());
+    if !to.1.is_empty() && (to.0.as_str(), to.1.as_str()) != (lib, name) {
+        // The sender's copy, when the sender left one: the system's
+        // doing, whoever replied.
+        let of = (name.to_string(), lib.to_string());
+        let _ = sec::guard::as_system(|| {
+            with_queue(system, "obj.check", &to.0, &to.1, |q, _| match q.copy_of(&of, key) {
+                Some(c) => {
+                    q.answer_copy(c, &text, from, time).map_err(|e| e.to_string())?;
+                    Ok(((), true))
+                }
+                None => Ok(((), false)),
+            })
+        });
+    }
+    Ok(rkey)
+}
+
+/// Send the inquiry `m` to `lib/name`, its reply going to `reply_to`
+/// (library, name): when that is another queue, a sender's copy goes
+/// there. The key the reply will answer: the copy's, else the inquiry's.
+pub fn send_inquiry(system: &mut System, lib: &str, name: &str, mut m: QMsg, reply_to: (&str, &str)) -> Result<u32, String> {
+    m.kind = MsgKind::Inq;
+    m.reply_to = (reply_to.1.to_string(), reply_to.0.to_string());
+    let copy = QMsg {
+        kind: MsgKind::Copy,
+        reply_to: (name.to_string(), lib.to_string()),
+        reply: String::new(),
+        ..m.clone()
+    };
+    let key = send(system, lib, name, m)?;
+    if reply_to == (lib, name) {
+        return Ok(key);
+    }
+    let copy = QMsg { reply_key: key, ..copy };
+    match with_queue(system, "msgq.send", reply_to.0, reply_to.1, |q, _| {
+        let k = q.send(copy).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2460")))?;
+        Ok((k, true))
+    }) {
+        Ok(k) => Ok(k),
+        Err(e) => {
+            // No copy, no inquiry: its reply would go nowhere.
+            let _ = sec::guard::as_system(|| with_queue(system, "obj.check", lib, name, |q, _| Ok((q.remove(key).is_ok(), true))));
+            Err(e)
+        }
+    }
+}

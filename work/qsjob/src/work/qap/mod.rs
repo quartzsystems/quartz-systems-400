@@ -10,4 +10,5 @@ pub mod commands;
 pub mod conn;
 pub mod host;
 pub mod listener;
+pub mod messages;
 pub mod sql;

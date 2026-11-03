@@ -14,7 +14,7 @@
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::atomic::{AtomicU16, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
 use ipc::Wire;
@@ -22,11 +22,12 @@ use qap_proto::ops::command::{CheckReply, CommandText, DescribeCommand};
 use qap_proto::ops::event;
 use qap_proto::{Envelope, Kind, Op, ServerMessage, Service, Status, Token};
 
-use crate::host::{Ending, Host, Refusal};
+use crate::host::{Ending, Host, Refusal, Threads};
 use crate::lanes::{self, ToMain};
 use crate::pump::{self, Cancels, In, Out, Running, cancelled};
 use crate::sessions::EndedBy;
 use crate::watch::{self, Identity, Watch};
+use crate::watches::{self, Watches};
 use crate::{Closed, Config, Transport};
 
 /// A lock, poison or not.
@@ -83,6 +84,16 @@ pub(crate) struct Shared {
     pub signon: Mutex<()>,
     /// What the close line says.
     pub watch: Arc<Watch>,
+    /// The queues and targets watched (version 6).
+    pub watches: Mutex<Watches>,
+    /// Wakes the watches' thread when the connection closes.
+    pub wake: Condvar,
+    /// How often the watches look.
+    pub watch_poll: Duration,
+    /// What makes a secondary thread's reach, the watches' too.
+    pub threads: Threads,
+    /// Where a thread's panic goes: the connection closes.
+    pub report: Mutex<Sender<ToMain>>,
 }
 
 impl Shared {
@@ -295,6 +306,7 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
     let (in_tx, in_rx) = mpsc::channel::<In>();
     let (out_tx, out_rx) = mpsc::channel::<Out>();
     let (main_tx, main_rx) = mpsc::channel::<ToMain>();
+    let threads = host.threads();
     let shared = Arc::new(Shared {
         out: Mutex::new(out_tx),
         cancels: Cancels::default(),
@@ -304,6 +316,11 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
         files: crate::files::Memo::default(),
         signon: Mutex::new(()),
         watch: Arc::clone(&watch),
+        watches: Mutex::new(Watches::default()),
+        wake: Condvar::new(),
+        watch_poll: cfg.watch_poll,
+        threads: Arc::clone(&threads),
+        report: Mutex::new(main_tx.clone()),
     });
     let running = Arc::new(Running {
         id: Mutex::new(None),
@@ -324,7 +341,6 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
             let _ = in_tx.send(In::Closed(why));
         },
     );
-    let threads = host.threads();
     let lanes_shared = Arc::clone(&shared);
     let (lanes_main, lanes_watch, report) = (main_tx.clone(), Arc::clone(&watch), main_tx);
     let dispatch = watch::spawn(
@@ -356,6 +372,7 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
     if let Some((token, _)) = session {
         let _ = panic::catch_unwind(AssertUnwindSafe(|| m.host.detach(&token)));
     }
+    watches::close(&shared);
     shared.close();
     let _ = pump.join();
     let _ = dispatch.join();

@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use ifs::client::IfsClient;
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::ops::messages::{ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
@@ -246,7 +247,39 @@ pub trait ThreadHost {
         m.data = data.to_vec();
         m
     }
+
+    /// A queue's messages as `DSPMSG` reads them, in arrival order
+    /// (strictly newest first when asked), paged, their text in the
+    /// job's language. Watches list through it too. Every message
+    /// method answers `Error` with [`NO_MESSAGES`] unless the host has
+    /// message queues.
+    fn list_messages(&mut self, _req: &ListMessages) -> Result<Messages, Refusal> {
+        Err(no_database(self.message(NO_MESSAGES, &[])))
+    }
+    /// Answer an inquiry as `SNDRPYMSG` does, the reply checked against
+    /// the message's valid replies.
+    fn reply_message(&mut self, _req: &ReplyMessage) -> Result<(), Refusal> {
+        Err(no_database(self.message(NO_MESSAGES, &[])))
+    }
+    /// Remove messages as `RMVMSG` does: all, or none when a key is not
+    /// on the queue.
+    fn remove_messages(&mut self, _req: &RemoveMessages) -> Result<(), Refusal> {
+        Err(no_database(self.message(NO_MESSAGES, &[])))
+    }
+    /// Send a message as `SNDMSG` does; an inquiry's reply comes to the
+    /// profile's own queue.
+    fn send_message(&mut self, _req: &SendMessage) -> Result<Sent, Refusal> {
+        Err(no_database(self.message(NO_MESSAGES, &[])))
+    }
 }
+
+/// The message of a `Messages` operation a host without message queues
+/// answers.
+pub const NO_MESSAGES: &str = "TCP1A5C";
+
+/// What `UnwatchQueue` and `UnwatchSpool` answer for something not
+/// watched on the connection.
+pub const NOT_WATCHED: &str = "TCP1A5B";
 
 /// The message of an `Ifs` operation a host without a file system
 /// answers: the function is not supported.

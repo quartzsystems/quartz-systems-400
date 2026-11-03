@@ -849,6 +849,45 @@ impl Service for Served<'_> {
         super::qap::spool::queues(self.system, self.ctx, &req)
     }
 
+    fn qap_msg_list(
+        &mut self,
+        queue: qap_proto::ops::messages::Queue,
+        newest_first: bool,
+        start: u32,
+        max: u32,
+    ) -> Result<(u32, Vec<QMsg>), stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::messages::list(self.system, self.ctx, &queue, newest_first, start, max);
+        ile::set_libl(None);
+        r
+    }
+
+    fn qap_msg_reply(&mut self, queue: qap_proto::ops::messages::Queue, key: u32, reply: String) -> Result<(), stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::messages::reply(self.system, self.ctx, &queue, key, &reply);
+        ile::set_libl(None);
+        r
+    }
+
+    fn qap_msg_remove(&mut self, queue: qap_proto::ops::messages::Queue, keys: Vec<u32>) -> Result<(), stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::messages::remove(self.system, self.ctx, &queue, &keys);
+        ile::set_libl(None);
+        r
+    }
+
+    fn qap_msg_send(
+        &mut self,
+        to: qap_proto::ops::messages::Recipient,
+        text: String,
+        inquiry: bool,
+    ) -> Result<Option<u32>, stg::QapRefused> {
+        self.own_libl();
+        let r = super::qap::messages::send(self.system, self.ctx, &to, &text, inquiry);
+        ile::set_libl(None);
+        r
+    }
+
     fn telnet_ticket(
         &mut self,
         user: String,
@@ -970,12 +1009,7 @@ impl Service for Served<'_> {
         let from = msgs::sender(self.system, self.ctx.job.number);
         let (lib, name) = msgs::queue_name(&queue);
         self.own_libl();
-        let r = msgs::with_queue(self.system, "msgq.reply", &lib, &name, |q, _| {
-            let k = q
-                .reply(key, &reply, from, msgs::now_micros())
-                .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
-            Ok((k, true))
-        });
+        let r = msgs::reply(self.system, &lib, &name, key, &reply, from).map_err(|e| e.to_string());
         ile::set_libl(None);
         r
     }

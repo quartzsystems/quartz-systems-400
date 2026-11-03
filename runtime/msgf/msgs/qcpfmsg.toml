@@ -6451,6 +6451,13 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF2420"
+sev = 40
+text = "Reply &1 is not one message &2 takes."
+help = "The message's description lists the replies it takes. Send one of those, or an empty reply for its default."
+vars = ["*CHAR *VARY 2", "*CHAR 7"]
+
+[[msg]]
 id = "CPF2422"
 sev = 40
 text = "Message &1 is not an inquiry."

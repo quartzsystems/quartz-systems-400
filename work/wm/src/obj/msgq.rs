@@ -90,6 +90,10 @@ pub enum MsgKind {
     Notify,
     /// `*ESCAPE`.
     Escape,
+    /// `*COPY`: the sender's copy of an inquiry, on the queue its reply
+    /// goes to. Its `reply_to` names the queue the inquiry went to and
+    /// its `reply_key` the inquiry's key there.
+    Copy,
 }
 
 impl MsgKind {
@@ -102,11 +106,13 @@ impl MsgKind {
             Self::Diag => 5,
             Self::Notify => 6,
             Self::Escape => 7,
+            Self::Copy => 8,
         }
     }
 
     fn of(c: u8) -> Self {
         match c {
+            8 => Self::Copy,
             2 => Self::Inq,
             3 => Self::Rpy,
             4 => Self::Comp,
@@ -128,6 +134,7 @@ impl MsgKind {
             Self::Diag => "*DIAG",
             Self::Notify => "*NOTIFY",
             Self::Escape => "*ESCAPE",
+            Self::Copy => "*COPY",
         }
     }
 
@@ -142,6 +149,7 @@ impl MsgKind {
             "*DIAG" => Self::Diag,
             "*NOTIFY" => Self::Notify,
             "*ESCAPE" => Self::Escape,
+            "*COPY" => Self::Copy,
             _ => return None,
         })
     }
@@ -204,7 +212,8 @@ impl ipc::Wire for Status {
 pub struct QMsg {
     /// Its key on the queue.
     pub key: u32,
-    /// For an inquiry, its reply's key; for a reply, the inquiry's.
+    /// For an inquiry, its reply's key; for a reply, the key of what it
+    /// answers; for a sender's copy, the inquiry's on its queue.
     pub reply_key: u32,
     /// Type.
     pub kind: MsgKind,
@@ -494,9 +503,8 @@ impl MsgQ {
                 self.msgs.remove(i);
             }
         }
-        m.key = self.next_key;
-        self.next_key = self.next_key.wrapping_add(1).max(1);
-        if m.kind == MsgKind::Inq {
+        m.key = self.take_key();
+        if matches!(m.kind, MsgKind::Inq | MsgKind::Copy) {
             m.status = Status::Unanswered;
         }
         let key = m.key;
@@ -513,26 +521,101 @@ impl MsgQ {
         from: (String, String, u32),
         time: u64,
     ) -> Result<u32> {
-        let i = self
-            .msgs
-            .iter()
-            .position(|m| m.key == key && m.kind == MsgKind::Inq)
-            .ok_or_else(|| {
-                Error::value("CPF2422", format!("message {key:08X} is not an inquiry"))
-            })?;
-        if self.msgs[i].status != Status::Unanswered {
-            return Err(Error::value(
-                "CPF2422",
-                format!("message {key:08X} has its reply already"),
-            ));
+        let i = self.waiting(key, MsgKind::Inq)?;
+        let reply = self.reply_text(i, reply);
+        Ok(self.answer(i, reply, from, time))
+    }
+
+    /// The inquiry `key` waiting for its reply: its place. `CPF2410`
+    /// when there is no such message, `CPF2422` when it is not an
+    /// inquiry or has its reply.
+    pub fn inquiry(&self, key: u32) -> Result<usize> {
+        if !self.msgs.iter().any(|m| m.key == key) {
+            return Err(Error::value("CPF2410", format!("message key {key:08X} not found")));
         }
-        let reply = if reply.trim().is_empty() {
+        self.waiting(key, MsgKind::Inq)
+    }
+
+    /// The reply an inquiry at `i` gets for `reply`: trimmed, or its
+    /// default when empty.
+    #[must_use]
+    pub fn reply_text(&self, i: usize, reply: &str) -> String {
+        if reply.trim().is_empty() {
             self.msgs[i].dft.clone()
         } else {
             reply.trim().to_string()
+        }
+    }
+
+    /// The sender's copy of the inquiry `inquiry` on queue `of` (name,
+    /// library), waiting for its reply: its key.
+    #[must_use]
+    pub fn copy_of(&self, of: &(String, String), inquiry: u32) -> Option<u32> {
+        self.msgs
+            .iter()
+            .find(|m| m.kind == MsgKind::Copy && m.status == Status::Unanswered && m.reply_key == inquiry && &m.reply_to == of)
+            .map(|m| m.key)
+    }
+
+    /// Answer the sender's copy `key` with `reply`: the reply goes on
+    /// the queue after it; the reply's key.
+    pub fn answer_copy(&mut self, key: u32, reply: &str, from: (String, String, u32), time: u64) -> Result<u32> {
+        let i = self.waiting(key, MsgKind::Copy)?;
+        let rkey = self.take_key();
+        let m = &mut self.msgs[i];
+        m.status = Status::Answered;
+        m.reply = reply.to_string();
+        let rpy = QMsg {
+            key: rkey,
+            reply_key: key,
+            kind: MsgKind::Rpy,
+            status: Status::New,
+            time,
+            job: from,
+            text: reply.to_string(),
+            ..QMsg::default()
         };
-        let rkey = self.next_key;
-        self.next_key = self.next_key.wrapping_add(1).max(1);
+        self.msgs.insert(i + 1, rpy);
+        Ok(rkey)
+    }
+
+    /// Messages in arrival order, oldest first: by key, counted back
+    /// from the next one (keys go up as messages arrive, past a wrap).
+    #[must_use]
+    pub fn by_arrival(&self) -> Vec<&QMsg> {
+        let mut v: Vec<&QMsg> = self.msgs.iter().collect();
+        v.sort_by_key(|m| std::cmp::Reverse(self.next_key.wrapping_sub(m.key)));
+        v
+    }
+
+    /// The message `key` of `kind` waiting for its reply: its place.
+    fn waiting(&self, key: u32, kind: MsgKind) -> Result<usize> {
+        let i = self
+            .msgs
+            .iter()
+            .position(|m| m.key == key && m.kind == kind)
+            .ok_or_else(|| Error::value("CPF2422", format!("message {key:08X} is not an inquiry")))?;
+        if self.msgs[i].status != Status::Unanswered {
+            return Err(Error::value("CPF2422", format!("message {key:08X} has its reply already")));
+        }
+        Ok(i)
+    }
+
+    /// The next key: never 0, never one a message on the queue has.
+    fn take_key(&mut self) -> u32 {
+        let mut k = self.next_key.max(1);
+        while self.msgs.iter().any(|m| m.key == k) {
+            k = k.wrapping_add(1).max(1);
+        }
+        self.next_key = k.wrapping_add(1).max(1);
+        k
+    }
+
+    /// Answer the inquiry at `i` with `reply`: the reply goes on the
+    /// queue after it; the reply's key.
+    fn answer(&mut self, i: usize, reply: String, from: (String, String, u32), time: u64) -> u32 {
+        let key = self.msgs[i].key;
+        let rkey = self.take_key();
         let m = &mut self.msgs[i];
         m.status = Status::Answered;
         m.reply.clone_from(&reply);
@@ -548,7 +631,7 @@ impl MsgQ {
             ..QMsg::default()
         };
         self.msgs.insert(i + 1, rpy);
-        Ok(rkey)
+        rkey
     }
 
     /// Receive: the oldest new message of a kind (any when `None`), or
@@ -640,6 +723,51 @@ mod tests {
         assert_eq!(back.msgs[1].reply, "C");
         assert_eq!(back.msgs[2].kind, MsgKind::Rpy);
         assert!(q.reply(k, "G", ("A".into(), "B".into(), 1), 6).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::many_single_char_names)] // queue and keys
+    fn keys_and_arrival() {
+        let mut q = MsgQ {
+            next_key: u32::MAX,
+            ..MsgQ::default()
+        };
+        let a = q.send(info("a")).unwrap();
+        // Past the wrap, 0 is skipped and so is a key still in use.
+        q.msgs.push(QMsg { key: 1, ..info("held") });
+        let b = q.send(QMsg { kind: MsgKind::Inq, dft: "Y".into(), ..info("b") }).unwrap();
+        assert_eq!((a, b), (u32::MAX, 2));
+        let c = q.send(info("c")).unwrap();
+        // The reply goes after its inquiry, but arrives last.
+        let r = q.reply(b, "", ("J".into(), "U".into(), 1), 9).unwrap();
+        assert_eq!(q.msgs.iter().map(|m| m.key).collect::<Vec<_>>(), [a, 1, b, r, c]);
+        let order: Vec<u32> = q.by_arrival().iter().map(|m| m.key).collect();
+        assert_eq!(order, [a, 1, b, c, r]);
+        assert_eq!(q.msgs[3].text, "Y");
+        assert!(q.inquiry(b).is_err());
+        assert_eq!(q.inquiry(77).unwrap_err().msgid(), Some("CPF2410"));
+    }
+
+    #[test]
+    fn sender_copy() {
+        let mut q = MsgQ::default();
+        let to = ("ANN".to_string(), "QUSRSYS".to_string());
+        let k = q
+            .send(QMsg {
+                kind: MsgKind::Copy,
+                reply_key: 5,
+                reply_to: to.clone(),
+                ..info("Lunch?")
+            })
+            .unwrap();
+        assert_eq!(q.copy_of(&to, 4), None);
+        assert_eq!(q.copy_of(&to, 5), Some(k));
+        let r = q.answer_copy(k, "YES", ("J".into(), "ANN".into(), 2), 3).unwrap();
+        assert_eq!(q.msgs[0].reply, "YES");
+        assert_eq!((q.msgs[1].kind, q.msgs[1].reply_key, q.msgs[1].key), (MsgKind::Rpy, k, r));
+        assert_eq!(q.copy_of(&to, 5), None);
+        let back = MsgQ::decode(&q.encode()).unwrap();
+        assert_eq!(back, q);
     }
 
     #[test]

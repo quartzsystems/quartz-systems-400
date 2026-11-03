@@ -278,9 +278,9 @@ kept: it ends with the job, so the storage service holds it in memory.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
-| 0 | 4 | Key | unique on the queue |
-| 4 | 4 | ReplyKey | an inquiry's reply, a reply's inquiry |
-| 8 | 1 | Type | 1 info, 2 inquiry, 3 reply, 4 completion, 5 diagnostic, 6 notify, 7 escape |
+| 0 | 4 | Key | unique on the queue while the message is on it; never 0; keys go up as messages arrive, so arrival order is key order counted back from NextKey |
+| 4 | 4 | ReplyKey | an inquiry's reply, a reply's inquiry or sender's copy, a sender's copy's inquiry on the queue it went to |
+| 8 | 1 | Type | 1 info, 2 inquiry, 3 reply, 4 completion, 5 diagnostic, 6 notify, 7 escape, 8 sender's copy (`*COPY`) |
 | 9 | 1 | Severity | |
 | 10 | 1 | Status | 0 new, 1 old, 2 unanswered, 3 answered |
 | 11 | 1 | Reserved | zero |
@@ -293,7 +293,7 @@ kept: it ends with the job, so the storage service holds it in memory.
 | 58 | 10 | JobUser | |
 | 68 | 4 | JobNumber | |
 | 72 | 10 | FromPgm | |
-| 82 | 10 | ReplyTo | the queue the reply goes to |
+| 82 | 10 | ReplyTo | the queue the reply goes to; for a sender's copy, the queue its inquiry went to |
 | 92 | 10 | ReplyToLib | |
 | 102 | 2 | DataLen | |
 | 104 | 2 | TextLen | |

@@ -13,6 +13,7 @@ use msgf::MsgDesc;
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
 };
+use qap_proto::ops::messages::{Queue, Recipient};
 use qap_proto::types::ObjectName;
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
@@ -689,6 +690,21 @@ ipc::rpc! {
     755 => fn qap_splf_move / QapSplfMove (id: SpooledFileId, outq: ObjectName, first: bool) -> Result<(), QapRefused>;
     /// `ListOutputQueues`, as `WRKOUTQ` lists.
     756 => fn qap_outq_list / QapOutqList (req: ListOutputQueues) -> Result<OutputQueues, QapRefused>;
+
+    // --- QAP messages (760-769; docs/QAP.md, stgsvc/qap/messages.rs).
+    // Only a QAP connection job asks; each is checked as the message
+    // command it stands for, as the job's user. Messages come as the
+    // queue keeps them; the job puts their text in its language.
+    /// `ListMessages`, as `DSPMSG`: the count, and the page in arrival
+    /// order (newest first when asked).
+    760 => fn qap_msg_list / QapMsgList (queue: Queue, newest_first: bool, start: u32, max: u32) -> Result<(u32, Vec<QMsg>), QapRefused>;
+    /// `ReplyMessage`, as `SNDRPYMSG`.
+    761 => fn qap_msg_reply / QapMsgReply (queue: Queue, key: u32, reply: String) -> Result<(), QapRefused>;
+    /// `RemoveMessages`, as `RMVMSG`: all or none.
+    762 => fn qap_msg_remove / QapMsgRemove (queue: Queue, keys: Vec<u32>) -> Result<(), QapRefused>;
+    /// `SendMessage`, as `SNDMSG`; an inquiry's reply comes to the
+    /// user's own queue: the key it will answer.
+    763 => fn qap_msg_send / QapMsgSend (to: Recipient, text: String, inquiry: bool) -> Result<Option<u32>, QapRefused>;
 
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the

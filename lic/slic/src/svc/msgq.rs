@@ -190,21 +190,17 @@ fn sndmsg(system: &mut System, p: &Params, brk: bool) -> Result<String, String> 
     };
     let me = system.current_job;
     let mut m = msgs::immediate(system, me, kind, &text);
-    if kind == MsgKind::Inq {
-        m.reply_to = p.upper("RPYMSGQ").map_or_else(
-            || ("QSYSOPR".into(), "QSYS".into()),
-            |r| {
-                let (l, n) = queue_name(&r);
-                (n, l)
-            },
-        );
-    }
     if brk {
         // Break messages reach the queue whatever its delivery.
         m.severity = 99;
     }
     let (lib, name) = queue_name(&to);
-    let key = msgs::send(system, &lib, &name, m)?;
+    let key = if kind == MsgKind::Inq {
+        let (rl, rn) = queue_name(&p.upper("RPYMSGQ").unwrap_or_else(|| "*SYSOPR".into()));
+        msgs::send_inquiry(system, &lib, &name, m, (&rl, &rn))?
+    } else {
+        msgs::send(system, &lib, &name, m)?
+    };
     Ok(format!("Message sent to {lib}/{name}, key {key:08X}.\n"))
 }
 
@@ -225,12 +221,7 @@ fn sndrpymsg(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.upper("MSGQ").unwrap_or_else(|| "*SYSOPR".into()));
     let reply = text_kw(p, "RPY");
     let from = msgs::sender(system, system.current_job);
-    let rkey = with_queue(system, "msgq.reply", &lib, &name, |q, _| {
-        let k = q
-            .reply(key, &reply, from, msgs::now_micros())
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
-        Ok((k, true))
-    })?;
+    let rkey = msgs::reply(system, &lib, &name, key, &reply, from).map_err(|e| e.to_string())?;
     Ok(format!(
         "Reply sent to message {key:08X}, reply key {rkey:08X}.\n"
     ))
