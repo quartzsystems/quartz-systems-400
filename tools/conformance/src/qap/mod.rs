@@ -23,8 +23,12 @@
 //! lists and query answer within a bound, and the earlier statement is
 //! cancelled while the later still runs (`docs/STORAGE_SERVICE.md` "Long
 //! statements"). Then the aggregate again under `RepeatableRead`: the
-//! third's command, catalog lists and query answer as before, and its
-//! change of a row the query read is refused (`SQL0913`).
+//! third's command, catalog lists and query answer as before, and a
+//! change of a row the query read waits for it on the second, until its
+//! unit of work ends. Then an `UPDATE` whose condition has subqueries
+//! and a `CREATE INDEX` over a large table, each on one connection while
+//! the third's command and catalog lists answer; a change of the table
+//! being indexed is refused meanwhile (`SQL0913`).
 //!
 //! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
 
@@ -281,7 +285,8 @@ impl Suite {
         let mut third = srv.open()?;
         third.attach(&session.token)?;
         let r = lanes(&mut a, &mut b, &mut third)
-            .and_then(|l| Ok(format!("{l}; {}", repeatable(&mut a, &mut third)?)));
+            .and_then(|l| Ok(format!("{l}; {}", repeatable(&mut a, &mut b, &mut third)?)))
+            .and_then(|l| Ok(format!("{l}; {}", long_changes(&mut a, &mut b, &mut third)?)));
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r
@@ -345,9 +350,10 @@ fn lanes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
 }
 
 /// The aggregate under `RepeatableRead` (`*ALL`): it takes turns too.
-/// What it read is read-locked, so another job's change of it is
-/// refused, while that job's command, lists and query answer.
-fn repeatable(a: &mut Conn, c: &mut Conn) -> Result<String, String> {
+/// What it read is read-locked, so another job's change of it waits
+/// (on `b`) until the unit of work ends, while a third's command, lists
+/// and query answer.
+fn repeatable(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
     sql::options(a, CommitLevel::RepeatableRead, None)?;
     let (agg, _) = sql::start_long(a, "QAPLANE")?;
     sql::still_running(a, agg, Duration::from_secs(1))?;
@@ -364,30 +370,105 @@ fn repeatable(a: &mut Conn, c: &mut Conn) -> Result<String, String> {
     if rows != 1000 || took.iter().any(|t| *t > LANE_BOUND) {
         return Err(format!("under RepeatableRead, the third connection's query: {rows} rows in {:?}", at.elapsed()));
     }
-    // Row N = 0 is the first the aggregate read.
-    let stmt = sql::prepare(c, "UPDATE QAPLANE.BIG SET N = 0 WHERE N = 0")?;
-    let at = Instant::now();
-    let reply = sql::execute(c, stmt.statement, Vec::new())?;
-    let refused = at.elapsed();
-    let code = reply.body_as::<SqlFailure>().map(|f| f.sqlcode).unwrap_or_default();
-    if reply.status != Status::SqlError || code != -913 {
-        return Err(format!("another job changed a row read under RepeatableRead: {}", sql::failure(&reply)));
+    // Row N = 0 is the first the aggregate read: a change of it waits
+    // (the table's WAITRCD is 60 s) while others go on.
+    let upd = sql::start_exec(b, "UPDATE QAPLANE.BIG SET N = 0 WHERE N = 0")?;
+    if let Some(r) = b.poll_reply(upd, Duration::from_secs(2))? {
+        return Err(format!("another job's change of a row read under RepeatableRead did not wait: {}", sql::failure(&r)));
     }
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: stmt.statement })?;
+    let waiting = within(c, "CHKOBJ while a change waits", Op::RunCommand, &check)?;
     if a.poll_reply(agg, Duration::ZERO)?.is_some() {
         return Err("the RepeatableRead aggregate ended before its cancel".into());
     }
     let (_, stop) = sql::cancel(a, agg)?;
-    // The unit of work ends: its read locks go.
+    // The unit of work ends: its read locks go, and the change runs.
+    let at = Instant::now();
     a.ok::<_, ()>(Op::Rollback, &())?;
+    sql::done(b, upd, "the waiting UPDATE after the ROLLBACK", LANE_BOUND)?;
+    let then = at.elapsed();
     sql::options(a, CommitLevel::None, None)?;
-    sql::run(c, "UPDATE QAPLANE.BIG SET N = 0 WHERE N = 0")?;
     let most = took.iter().max().copied().unwrap_or_default();
     Ok(format!(
-        "under RepeatableRead the aggregate took turns: the third's CHKOBJ, ListTables, ListColumns and a query answered in at most {} ms, its UPDATE of a row read was refused SQL0913 in {} ms and ran after the ROLLBACK; cancelled in {} ms",
+        "under RepeatableRead the aggregate took turns: the third's CHKOBJ, ListTables, ListColumns and a query answered in at most {} ms; another job's UPDATE of a row read waited, a CHKOBJ answering in {} ms meanwhile, and ran {} ms after the ROLLBACK; cancelled in {} ms",
         most.as_millis(),
-        refused.as_millis(),
+        waiting.as_millis(),
+        then.as_millis(),
         stop.as_millis()
+    ))
+}
+
+/// Rows of the table step 90 indexes.
+const WIDE_ROWS: i64 = 256_000;
+
+/// An `UPDATE` whose condition has subqueries (on `b`) and a `CREATE
+/// INDEX` over a large table (on `a`), each while the third's command
+/// and catalog lists answer.
+fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
+    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
+    let tables = ListTables { schema: "QAPLANE".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
+    let columns = ListColumns { schema: "QAPLANE".into(), table: "BIG".into() };
+    // The subquery UPDATE: its rows are found first, a read as long as
+    // the aggregate's.
+    let upd = sql::start_exec(
+        b,
+        "UPDATE QAPLANE.BIG A SET N = N WHERE EXISTS (SELECT 1 FROM QAPLANE.BIG B WHERE EXISTS \
+         (SELECT 1 FROM QAPLANE.BIG C WHERE C.N > A.N + B.N + 1000000))",
+    )?;
+    sql::still_running(b, upd, Duration::from_secs(1))?;
+    let mut took = vec![
+        within(c, "CHKOBJ", Op::RunCommand, &check)?,
+        within(c, "ListTables", Op::ListTables, &tables)?,
+        within(c, "ListColumns", Op::ListColumns, &columns)?,
+    ];
+    sql::still_running(b, upd, Duration::ZERO)?;
+    let (_, stop_upd) = sql::cancel(b, upd)?;
+    // A table large enough that its index takes a while, in a library
+    // of its own (not journaled); kept between runs.
+    let _ = c.call(Op::RunCommand, &CommandText { command: "CRTLIB LIB(QAPLANEX)".into() })?;
+    sql::run_or(a, "CREATE TABLE QAPLANEX.WIDE (N INTEGER NOT NULL, PAD CHAR(40) NOT NULL DEFAULT 'x')", &["42710", "58004"])?;
+    let mut have = sql::count(a, "SELECT COUNT(*) FROM QAPLANEX.WIDE")?;
+    if have == 0 {
+        sql::run(a, "INSERT INTO QAPLANEX.WIDE (N) SELECT N FROM QAPLANE.BIG")?;
+        have = sql::count(a, "SELECT COUNT(*) FROM QAPLANEX.WIDE")?;
+    }
+    while have < WIDE_ROWS {
+        sql::run(a, &format!("INSERT INTO QAPLANEX.WIDE (N) SELECT N + {have} FROM QAPLANEX.WIDE"))?;
+        have = sql::count(a, "SELECT COUNT(*) FROM QAPLANEX.WIDE")?;
+    }
+    sql::run_or(a, "DROP INDEX QAPLANEX.WIDEIX", &["42704"])?;
+    let at = Instant::now();
+    let idx = sql::start_exec(a, "CREATE INDEX QAPLANEX.WIDEIX ON QAPLANEX.WIDE (PAD, N DESC)")?;
+    took.push(within(c, "CHKOBJ beside CREATE INDEX", Op::RunCommand, &check)?);
+    took.push(within(c, "ListTables beside CREATE INDEX", Op::ListTables, &tables)?);
+    took.push(within(c, "ListColumns beside CREATE INDEX", Op::ListColumns, &columns)?);
+    // The table being indexed is read, not changed, by others.
+    let stmt = sql::prepare(c, "UPDATE QAPLANEX.WIDE SET N = N WHERE N = -1")?;
+    let reply = sql::execute(c, stmt.statement, Vec::new())?;
+    c.ok::<_, ()>(Op::Release, &StatementRef { statement: stmt.statement })?;
+    let building = a.poll_reply(idx, Duration::ZERO)?;
+    if let Some(r) = building {
+        return Err(format!(
+            "CREATE INDEX over {have} rows ended ({}) in {} ms, before the third connection's requests were answered",
+            sql::failure(&r),
+            at.elapsed().as_millis()
+        ));
+    }
+    let code = reply.body_as::<SqlFailure>().map(|f| f.sqlcode).unwrap_or_default();
+    if reply.status != Status::SqlError || code != -913 {
+        return Err(format!("a change of the table being indexed: {}", sql::failure(&reply)));
+    }
+    sql::done(a, idx, "CREATE INDEX", SLOW)?;
+    let built = at.elapsed();
+    let n = sql::count(c, "SELECT COUNT(*) FROM QAPLANEX.WIDEIX")?;
+    if n != have {
+        return Err(format!("the index has {n} rows of {have}"));
+    }
+    let most = took.iter().max().copied().unwrap_or_default();
+    Ok(format!(
+        "an UPDATE with subqueries in its condition and a CREATE INDEX over {have} rows ({} ms) each ran beside the third's CHKOBJ, ListTables and ListColumns, answered in at most {} ms; a change of the table being indexed was refused SQL0913; the UPDATE cancelled in {} ms",
+        built.as_millis(),
+        most.as_millis(),
+        stop_upd.as_millis()
     ))
 }
 

@@ -189,6 +189,22 @@ pub fn start_query(c: &mut Conn, sql: &str) -> Result<(u32, Op), String> {
     Ok((id, Op::Execute))
 }
 
+/// Start statement `sql` on `c` without waiting for its reply: the
+/// request running it.
+pub fn start_exec(c: &mut Conn, sql: &str) -> Result<u32, String> {
+    let p = prepare(c, sql)?;
+    c.request(Op::Execute, &Execute { statement: p.statement, rows: Vec::new() })
+}
+
+/// The reply to `id`, which must be `Ok`, within `limit`.
+pub fn done(c: &mut Conn, id: u32, what: &str, limit: Duration) -> Result<(), String> {
+    match c.poll_reply(id, limit)? {
+        Some(r) if r.status == Status::Ok => Ok(()),
+        Some(r) => Err(format!("{what}: {}", failure(&r))),
+        None => Err(format!("{what}: no reply in {} s", limit.as_secs())),
+    }
+}
+
 /// Cancel `id` and wait for its `Cancelled` reply; how long that took.
 pub fn cancel(c: &mut Conn, id: u32) -> Result<(Envelope, Duration), String> {
     let at = Instant::now();
