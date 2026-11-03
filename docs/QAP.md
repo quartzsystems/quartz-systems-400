@@ -623,11 +623,12 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   at most every 5 ms; meanwhile the other jobs' requests and this
   connection's catalog lists are answered. Still one view, running to
   its end: a query under `RepeatableRead` or `Serializable` (`*ALL`,
-  whether `SetOptions` or `SET TRANSACTION` chose it), `MERGE`, and
-  every other statement (DDL, `COMMIT`, `CREATE TABLE ... AS`). An
-  `UPDATE` or `DELETE` whose condition has a subquery takes turns too,
-  decided as of its start: it finds its rows first, its subqueries'
-  answers kept, and never sees its own changes. Step 90 runs an
+  whether `SetOptions` or `SET TRANSACTION` chose it), and every other
+  statement (DDL, `COMMIT`, `CREATE TABLE ... AS`). An `UPDATE` or
+  `DELETE` whose condition has a subquery takes turns too, and so does
+  `MERGE`, each decided as of its start: it finds its rows (and a
+  merge's matches and actions) first, its subqueries' answers kept, and
+  never sees its own changes. Step 90 runs an
   aggregate over `EXISTS` and a slow select on two connections and the
   third's command, catalog lists and query beside them.
 - Engine limits the build met, now lifted as the database rules have them:

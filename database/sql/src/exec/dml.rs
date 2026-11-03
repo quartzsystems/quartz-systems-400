@@ -2,13 +2,14 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `INSERT`, `UPDATE` and `DELETE` through the open data path, so the
+//! `INSERT`, `UPDATE`, `DELETE` and `MERGE` through the open data path, so the
 //! journal sees what it would from RPG. Under a yielder a change takes
 //! turns between rows: what it wrote is committed to the store first
 //! (`SqlContext::change_point`), and once others have run each row's
 //! search condition is tested again as the row is now. A condition
 //! with a subquery is decided as of the statement's start: read first,
-//! its subqueries' answers kept, then written (`Recheck`).
+//! its subqueries' answers kept, then written (`Recheck`); so is a
+//! `MERGE`, its matches and actions chosen before it writes.
 
 use std::rc::Rc;
 
@@ -524,22 +525,67 @@ fn still_holds(
     Ok(holds)
 }
 
+/// One change a `MERGE` decided as it read: the source row, and for a
+/// target row matched its RRN and row as read.
+struct MergeStep {
+    source: Row,
+    target: Option<Row>,
+    action: usize,
+}
+
 /// `MERGE`: for each source row, the matching target rows take the
 /// first `WHEN MATCHED` whose condition holds; a row without a match
 /// takes the first `WHEN NOT MATCHED`. Returns rows changed.
-#[allow(clippy::too_many_lines, clippy::many_single_char_names)]
+///
+/// Decided as of the statement's start: every source row is matched and
+/// its action chosen first, taking turns as a query does, its
+/// subqueries' answers kept ([`super::answers`]); then the changes are
+/// written, taking turns between them. A target row another job changed
+/// meanwhile is matched and its action chosen again as it is now, the
+/// subqueries answered as kept (when one has no kept answer the first
+/// decision stands).
 pub fn merge(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     params: &[Value],
     m: &crate::ast::Merge,
 ) -> Result<u64> {
-    use crate::ast::{MergeAction, Query, QueryBody, Select, SelectItem};
     let t = ctx.resolve_table(txn, &m.target)?;
     let alias = m
         .alias
         .as_ref()
         .map_or_else(|| m.target.name.value.clone(), |a| a.value.clone());
+    ctx.answers = Some(Answers::recording());
+    let plan = merge_plan(txn, ctx, params, m, &t, &alias);
+    let answers = ctx.answers.take();
+    let (src_schema, tschema, steps) = plan?;
+    let mut o = ctx.open(txn, &t, Usage::ALL)?;
+    ctx.hold_open();
+    let mut w = MergeWrite {
+        t: &t,
+        m,
+        src_schema: &src_schema,
+        tschema: &tschema,
+        answers,
+        changed: std::collections::HashSet::new(),
+    };
+    let result = w.run(txn, ctx, params, &mut o, steps);
+    ctx.release_open();
+    o.close(txn);
+    result
+}
+
+/// The source's and target's schemas and the steps, read before any
+/// change.
+fn merge_plan(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    m: &crate::ast::Merge,
+    t: &TableInfo,
+    alias: &str,
+) -> Result<(Rc<Schema>, Rc<Schema>, Vec<MergeStep>)> {
+    use crate::ast::{Query, QueryBody, Select, SelectItem};
     // The source as a query of its own.
     let src_alias = match &m.source {
         crate::ast::TableRef::Table { name, alias, .. } => alias
@@ -574,101 +620,177 @@ pub fn merge(
             })
             .collect(),
     });
-    let mut o = ctx.open(txn, &t, Usage::ALL)?;
-    let mut n = 0u64;
-    let result = (|| {
-        for srow in src.rows {
-            let outer = Env::default().with(src_schema.clone(), srow);
-            let (tschema, matches) =
-                matching_rows(txn, ctx, params, &t, &alias, Some(&m.on), &outer)?;
-            if matches.is_empty() {
-                for a in &m.actions {
-                    let MergeAction::Insert {
-                        cond,
-                        columns,
-                        values,
-                    } = a
-                    else {
-                        continue;
-                    };
-                    let mut ev = Evaluator { ctx, params };
-                    if let Some(c) = cond
-                        && ev.truth(txn, c, &outer)? != Some(true)
-                    {
-                        continue;
-                    }
-                    let idx = column_indexes(&t, columns)?;
-                    if values.len() != idx.len() {
-                        return Err(SqlError::ValueCount {
-                            what: format!("{} values for {} columns", values.len(), idx.len()),
-                        });
-                    }
-                    let mut per_field: Vec<Option<Value>> =
-                        vec![None; t.format.format.fields.len()];
-                    for (k, &fi) in idx.iter().enumerate() {
-                        per_field[fi] = match &values[k] {
-                            Expr::Default => None,
-                            e => Some(eval_for(txn, &mut ev, e, &outer, &t.format.format.fields[fi])?),
-                        };
-                    }
-                    let (rec, nulls) = build_record(txn, &t, &per_field, None)?;
-                    o.write(txn, &rec, &nulls)?;
-                    n += 1;
-                    break;
-                }
-                continue;
+    let mut tschema = Rc::new(super::query::table_schema(t, alias));
+    let mut steps = Vec::new();
+    for srow in src.rows {
+        ctx.tick(txn)?;
+        let outer = Env::default().with(src_schema.clone(), srow);
+        let (ts, matches) = matching_rows(txn, ctx, params, t, alias, Some(&m.on), &outer)?;
+        tschema = ts;
+        let source = outer.frames[0].1.clone();
+        if matches.is_empty() {
+            let mut ev = Evaluator { ctx, params };
+            if let Some(action) = merge_action(txn, &mut ev, m, false, &outer)? {
+                steps.push(MergeStep { source, target: None, action });
             }
-            for trow in matches {
-                let rrn = u64::try_from(trow[0].as_i64()?).expect("positive");
-                let env = outer.with(tschema.clone(), trow);
-                for a in &m.actions {
-                    let mut ev = Evaluator { ctx, params };
-                    match a {
-                        MergeAction::Update { cond, set } => {
-                            if let Some(c) = cond
-                                && ev.truth(txn, c, &env)? != Some(true)
-                            {
-                                continue;
-                            }
-                            let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
-                                break;
-                            };
-                            let assigned = assignments(txn, &mut ev, &t, set, &env)?;
-                            let mut per_field: Vec<Option<Value>> =
-                                vec![None; t.format.format.fields.len()];
-                            for (i, v) in assigned {
-                                per_field[i] = v;
-                            }
-                            let (rec, nulls) = build_record(txn,
-                                &t,
-                                &per_field,
-                                Some((&current.data, &current.null_map)),
-                            )?;
-                            o.update(txn, &rec, &nulls)?;
-                            release_lobs(txn, &t, &current.data, Some(&rec))?;
-                            n += 1;
-                            break;
-                        }
-                        MergeAction::Delete { cond } => {
-                            if let Some(c) = cond
-                                && ev.truth(txn, c, &env)? != Some(true)
-                            {
-                                continue;
-                            }
-                            if let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? {
-                                o.delete(txn)?;
-                                release_lobs(txn, &t, &current.data, None)?;
-                                n += 1;
-                            }
-                            break;
-                        }
-                        MergeAction::Insert { .. } => {}
-                    }
+            continue;
+        }
+        for trow in matches {
+            ctx.tick(txn)?;
+            let env = outer.with(tschema.clone(), trow);
+            let mut ev = Evaluator { ctx, params };
+            if let Some(action) = merge_action(txn, &mut ev, m, true, &env)? {
+                let target = Some(env.frames[1].1.clone());
+                steps.push(MergeStep { source: source.clone(), target, action });
+            }
+        }
+    }
+    Ok((src_schema, tschema, steps))
+}
+
+/// The first `WHEN MATCHED` (or `WHEN NOT MATCHED`) action whose
+/// condition holds in `env`.
+fn merge_action(
+    txn: &mut Txn<'_>,
+    ev: &mut Evaluator<'_>,
+    m: &crate::ast::Merge,
+    matched: bool,
+    env: &Env,
+) -> Result<Option<usize>> {
+    use crate::ast::MergeAction;
+    for (i, a) in m.actions.iter().enumerate() {
+        let cond = match a {
+            MergeAction::Update { cond, .. } | MergeAction::Delete { cond } if matched => cond,
+            MergeAction::Insert { cond, .. } if !matched => cond,
+            _ => continue,
+        };
+        if let Some(c) = cond
+            && ev.truth(txn, c, env)? != Some(true)
+        {
+            continue;
+        }
+        return Ok(Some(i));
+    }
+    Ok(None)
+}
+
+/// The writing half of a `MERGE`.
+struct MergeWrite<'a> {
+    t: &'a TableInfo,
+    m: &'a crate::ast::Merge,
+    src_schema: &'a Rc<Schema>,
+    tschema: &'a Rc<Schema>,
+    /// The subqueries' answers as of the start.
+    answers: Option<Answers>,
+    /// Target rows this statement changed.
+    changed: std::collections::HashSet<u64>,
+}
+
+impl MergeWrite<'_> {
+    fn run(
+        &mut self,
+        txn: &mut Txn<'_>,
+        ctx: &mut SqlContext,
+        params: &[Value],
+        o: &mut Odp,
+        steps: Vec<MergeStep>,
+    ) -> Result<u64> {
+        use crate::ast::MergeAction;
+        let t = self.t;
+        let mut n = 0u64;
+        for step in steps {
+            ctx.poll_interrupt()?;
+            ctx.change_point(txn)?;
+            let outer = Env::default().with(self.src_schema.clone(), step.source);
+            let mut ev = Evaluator { ctx, params };
+            let Some(was) = step.target else {
+                let MergeAction::Insert { columns, values, .. } = &self.m.actions[step.action] else {
+                    continue;
+                };
+                let idx = column_indexes(t, columns)?;
+                if values.len() != idx.len() {
+                    return Err(SqlError::ValueCount {
+                        what: format!("{} values for {} columns", values.len(), idx.len()),
+                    });
                 }
+                let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
+                for (k, &fi) in idx.iter().enumerate() {
+                    per_field[fi] = match &values[k] {
+                        Expr::Default => None,
+                        e => Some(eval_for(txn, &mut ev, e, &outer, &t.format.format.fields[fi])?),
+                    };
+                }
+                let (rec, nulls) = build_record(txn, t, &per_field, None)?;
+                o.write(txn, &rec, &nulls)?;
+                n += 1;
+                continue;
+            };
+            let rrn = u64::try_from(was[0].as_i64()?).expect("positive");
+            let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
+                continue;
+            };
+            let slot = db::Slot {
+                rrn,
+                record: current.data.clone(),
+                null_map: current.null_map.clone(),
+                deleted: false,
+            };
+            let now = row_of(txn, t, &slot)?;
+            let env = outer.with(self.tschema.clone(), now);
+            let mut action = Some(step.action);
+            if env.frames[1].1 != was && !self.changed.contains(&rrn) {
+                // Another job changed it: matched and chosen again.
+                action = self.again(txn, &mut ev, &env, step.action)?;
+            }
+            match action.map(|a| &self.m.actions[a]) {
+                Some(MergeAction::Update { set, .. }) => {
+                    let assigned = assignments(txn, &mut ev, t, set, &env)?;
+                    let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
+                    for (i, v) in assigned {
+                        per_field[i] = v;
+                    }
+                    let (rec, nulls) =
+                        build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
+                    o.update(txn, &rec, &nulls)?;
+                    release_lobs(txn, t, &current.data, Some(&rec))?;
+                    self.changed.insert(rrn);
+                    n += 1;
+                }
+                Some(MergeAction::Delete { .. }) => {
+                    o.delete(txn)?;
+                    release_lobs(txn, t, &current.data, None)?;
+                    n += 1;
+                }
+                _ => o.unlock(),
             }
         }
         Ok(n)
-    })();
-    o.close(txn);
-    result
+    }
+
+    /// The `ON` condition and the action for a row as it is now, the
+    /// subqueries answered as kept; `first` when one has no kept answer.
+    fn again(
+        &mut self,
+        txn: &mut Txn<'_>,
+        ev: &mut Evaluator<'_>,
+        env: &Env,
+        first: usize,
+    ) -> Result<Option<usize>> {
+        let mut answers = self.answers.take().unwrap_or_else(Answers::recording);
+        answers.replay();
+        ev.ctx.answers = Some(answers);
+        let r = (|| {
+            if ev.truth(txn, &self.m.on, env)? != Some(true) {
+                return Ok(None);
+            }
+            merge_action(txn, ev, self.m, true, env)
+        })();
+        let answers = ev.ctx.answers.take().expect("put back");
+        let missed = answers.missed();
+        self.answers = Some(answers);
+        if missed {
+            return Ok(Some(first));
+        }
+        r
+    }
 }

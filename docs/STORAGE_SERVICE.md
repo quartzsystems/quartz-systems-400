@@ -148,8 +148,8 @@ every other request, and with the other statements in progress.
   `sql::embed::may_yield`) at `*NONE`, `*CHG` or `*CS`, the level
   `SET TRANSACTION` chose over the program's. Among statements run,
   `SELECT`, cursor `OPEN`, `INSERT`, `UPDATE` and `DELETE` (a condition
-  with a subquery included) take turns; the rest run to their end (DDL,
-  `COMMIT`, `CREATE TABLE ... AS`, `MERGE`), as do every statement under
+  with a subquery included) and `MERGE` take turns; the rest run to
+  their end (DDL, `COMMIT`, `CREATE TABLE ... AS`), as do every statement under
   `*ALL` (a read there is one view), `DESCRIBE`, the console's `sql` and
   `RUNSQLSTM`.
 - Where it yields, at most every 5 ms (`SqlContext::yield_every`):
@@ -220,7 +220,16 @@ every other request, and with the other statements in progress.
   again; when one has no kept answer (it reads the row's columns, or
   was not reached the first time) the first decision stands, as a
   change that lists its rows before it writes them decides. A row
-  another job deleted is passed by. Under
+  another job deleted is passed by.
+- `MERGE` decides the same way: it reads the source, matches each
+  source row against the target (`ON`) and chooses its action (the
+  `WHEN` conditions), all before it writes and taking turns as a query
+  does, so it never matches a row it inserted or changed itself; then
+  it writes the changes in order, taking turns between them. A matched
+  target row another job changed meanwhile is matched and its action
+  chosen again as it is now, the subqueries answered as kept (when one
+  has no kept answer the first choice stands); a row it changed itself
+  for an earlier source row takes the later action as it is now. Under
   `*NONE` the rows already changed stay changed if the statement ends
   early, as when it fails part way.
 - Its connection: busy until the statement answers, so it is not read

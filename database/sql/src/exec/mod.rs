@@ -618,6 +618,7 @@ impl Prepared {
             | Statement::Insert(_)
             | Statement::Update(_)
             | Statement::Delete(_)
+            | Statement::Merge(_)
             | Statement::Open { .. } => self.dispatch(txn, ctx, params),
             _ => ctx.no_yield(|ctx| self.dispatch(txn, ctx, params)),
         }

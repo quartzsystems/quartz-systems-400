@@ -259,13 +259,7 @@ fn what_runs_in_one_view_never_yields() {
         seen.set(seen.get() + 1);
         false
     }));
-    // MERGE and statements other than queries and changes.
-    run(
-        &mut s,
-        Op::Exec,
-        "",
-        "MERGE INTO QSTEST.T A USING QSTEST.K B ON A.ID = B.ID WHEN MATCHED THEN UPDATE SET NAME = B.NAME",
-    );
+    // Statements other than queries and changes.
     run(&mut s, Op::Exec, "", "CREATE TABLE QSTEST.C AS (SELECT * FROM QSTEST.T) WITH DATA");
     assert_eq!(n.get(), 0, "no yield");
     // Under *ALL a read is one view: no yield, by the program's level or
@@ -452,6 +446,81 @@ fn a_subquery_change_never_holds_others_up() {
         "UPDATE QSTEST.T SET NAME = 'Sub' WHERE ID IN (SELECT ID FROM QSTEST.K WHERE ID <= 900)",
     );
     assert_eq!(r.sqlca.sqlerrd[2], 900, "{:?}", r.sqlca);
+    assert!(yields >= 10, "{yields} yields in {total:?}");
+    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+}
+
+/// Merges whose `ON` reads the table they change, which would match
+/// later rows differently if it saw its own changes, and one that
+/// inserts and updates.
+const MERGES: &[(&str, &str, &str, i32)] = &[
+    (
+        "K",
+        "SELECT COUNT(*) FROM QSTEST.K WHERE ID > 2000",
+        "MERGE INTO QSTEST.K A USING (SELECT ID FROM QSTEST.T) B ON A.ID = B.ID AND A.ID > (SELECT AVG(ID) FROM QSTEST.K) \
+         WHEN MATCHED THEN UPDATE SET ID = A.ID + 2000",
+        500,
+    ),
+    (
+        "K",
+        "SELECT COUNT(*) FROM QSTEST.K WHERE ID > 1000",
+        "MERGE INTO QSTEST.K A USING (SELECT ID + 50 AS ID, NAME FROM QSTEST.T WHERE ID > 900) B ON A.ID = B.ID \
+         WHEN MATCHED AND A.ID > 990 THEN DELETE WHEN MATCHED THEN UPDATE SET NAME = 'Merged' \
+         WHEN NOT MATCHED THEN INSERT VALUES (B.ID, 'Inserted')",
+        100,
+    ),
+];
+
+#[test]
+fn a_merge_takes_turns_as_of_its_start() {
+    for &(table, probe, text, want) in MERGES {
+        let plain = fixture();
+        let mut s = session(&plain);
+        let r = run(&mut s, Op::Exec, "", text);
+        assert_eq!(r.sqlca.sqlerrd[2], want, "{text}: {:?}", r.sqlca);
+        let expected = ids_as_other(&plain, table);
+
+        let f = fixture();
+        let mut s = session(&f);
+        let turns = Rc::new(Cell::new(0u32));
+        let fx = Fixture {
+            store: Rc::clone(&f.store),
+            qsys: f.qsys,
+            names: f.names.clone(),
+        };
+        let seen = Rc::clone(&turns);
+        let fired = Rc::new(Cell::new(0u32));
+        let shot = Rc::clone(&fired);
+        s.ctx.yielder = Some(Rc::new(move || {
+            let turn = seen.get() + 1;
+            seen.set(turn);
+            // Once it writes (its first changes are seen), another job
+            // changes the rows still to come, a few times.
+            if turn.is_multiple_of(20) && shot.get() < 3 && count_as_other(&fx, probe) > 0 {
+                shot.set(shot.get() + 1);
+                let text = format!("UPDATE QSTEST.{table} SET NAME = 'Other {turn}' WHERE ID BETWEEN 600 AND 1000");
+                run_script(&fx, 2, &text).unwrap();
+            }
+            false
+        }));
+        let r = run(&mut s, Op::Exec, "", text);
+        assert_eq!(r.sqlca.sqlerrd[2], want, "{text}: {:?}", r.sqlca);
+        assert!(turns.get() > 10, "{text}: {} yields", turns.get());
+        assert!(fired.get() > 0, "{text}: no changes by the other job while it wrote");
+        assert_eq!(ids_as_other(&f, table), expected, "{text}: the same rows as without turns");
+    }
+}
+
+#[test]
+fn a_merge_never_holds_others_up() {
+    let f = fixture();
+    let (gap, total, yields, r) = longest_wait(
+        &f,
+        Op::Exec,
+        "MERGE INTO QSTEST.T A USING (SELECT * FROM QSTEST.K WHERE ID <= 200) B ON A.ID = B.ID \
+         WHEN MATCHED THEN UPDATE SET NAME = B.NAME",
+    );
+    assert_eq!(r.sqlca.sqlerrd[2], 200, "{:?}", r.sqlca);
     assert!(yields >= 10, "{yields} yields in {total:?}");
     assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
 }
