@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Version negotiation (docs/QAP.md, "Compatibility of new values"):
-//! the server speaks 1 to 5 and picks the highest both sides do; a
+//! the server speaks 1 to 6 and picks the highest both sides do; a
 //! version-1 client sees exactly the version-1 protocol.
 
 mod common;
@@ -16,7 +16,7 @@ use common::{cfg, start};
 
 #[test]
 fn the_highest_common_version() {
-    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 5, 5), (5, 5, 5), (1, 9, 5), (3, 9, 5)] {
+    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 5, 5), (5, 5, 5), (1, 6, 6), (6, 6, 6), (1, 9, 6), (3, 9, 6)] {
         let mut r = start(cfg());
         let h: HelloReply = r.client.hello_range(min, max).body_as().unwrap();
         assert_eq!(h.version, want, "{min}..{max}");
@@ -26,7 +26,7 @@ fn the_highest_common_version() {
     let refused = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 6,
+            min_version: 7,
             max_version: 9,
             ..Hello::default()
         },
@@ -44,6 +44,21 @@ fn version_4_sees_no_ifs() {
     r.client.sign_on("BOB", "SECRET1");
     for op in Op::ALL.into_iter().filter(|o| o.code().0 == Service::Ifs) {
         let rep = r.client.call(op, &qap_proto::ops::ifs::PathRef::default());
+        assert_eq!(rep.status, Status::InvalidRequest, "{op:?}");
+        assert!(rep.body.is_empty());
+    }
+}
+
+#[test]
+fn version_5_sees_no_messages() {
+    let mut r = start(cfg());
+    let h: HelloReply = r.client.hello_range(1, 5).body_as().unwrap();
+    assert_eq!(h.version, 5);
+    assert!(!h.services.contains(&Service::Messages));
+    r.client.sign_on("BOB", "SECRET1");
+    // Version 6's operations, in services version 5 has or not.
+    for op in Op::ALL.into_iter().filter(|o| o.since() == 6) {
+        let rep = r.client.call(op, &());
         assert_eq!(rep.status, Status::InvalidRequest, "{op:?}");
         assert!(rep.body.is_empty());
     }

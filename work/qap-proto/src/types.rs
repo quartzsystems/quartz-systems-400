@@ -7,7 +7,7 @@
 use ipc::wire_struct;
 
 /// A job: name, user, six-digit number.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct JobId {
     /// The job name.
     pub name: String,
@@ -21,7 +21,7 @@ wire_struct!(JobId { name, user, number });
 
 /// An object by library and name; the library may be `*LIBL` or
 /// `*CURLIB` where a library list search applies.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct ObjectName {
     /// The library.
     pub library: String,

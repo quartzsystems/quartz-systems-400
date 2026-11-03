@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `Ifs` (version 5): integrated file system files. Paths are absolute
+//! `Ifs` (version 5; `Stat` version 6): integrated file system files. Paths are absolute
 //! and UTF-8. Flags are `bool`s: one byte, 0 or 1, any other value does
 //! not decode.
 
@@ -224,3 +224,14 @@ pub struct FromTo {
 }
 
 wire_struct!(FromTo { from, to, replace });
+
+/// `Stat`'s reply (version 6).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Stat {
+    /// What `GetInfo` answers.
+    pub entry: Entry,
+    /// The object's change counter: up on every change, never reused.
+    pub change: u64,
+}
+
+wire_struct!(Stat { entry, change });

@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `Spool` (version 3): spooled files and output queues. Flags are
+//! `Spool` (version 3; the watches version 6): spooled files and
+//! output queues. Flags are
 //! `bool`s: one byte, 0 or 1, any other value does not decode.
 
 use ipc::{wire_enum, wire_struct};
@@ -10,7 +11,7 @@ use ipc::{wire_enum, wire_struct};
 use crate::types::{JobId, ObjectName};
 
 /// A spooled file: its job, its name and its number in the job.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct SpooledFileId {
     /// The job that made it.
     pub job: JobId,
@@ -305,3 +306,83 @@ pub struct OutputQueues {
 }
 
 wire_struct!(OutputQueues { total, queues });
+
+/// What a spool watch watches (version 6).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum SpoolTarget {
+    /// The files on an output queue.
+    Queue {
+        /// The queue.
+        outq: ObjectName,
+    },
+    /// A user's files.
+    User {
+        /// `*CURRENT` or a profile.
+        profile: String,
+    },
+}
+
+impl Default for SpoolTarget {
+    fn default() -> Self {
+        Self::User {
+            profile: "*CURRENT".into(),
+        }
+    }
+}
+
+wire_enum!(SpoolTarget {
+    0 => Queue { outq },
+    1 => User { profile },
+});
+
+/// How a watched file changed (version 6).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum SpoolChange {
+    /// It came to the target.
+    #[default]
+    Added,
+    /// Its status, queue or attributes changed.
+    Changed,
+    /// It left the target.
+    Removed,
+}
+
+wire_enum!(SpoolChange {
+    0 => Added,
+    1 => Changed,
+    2 => Removed,
+});
+
+impl SpoolChange {
+    /// Every change, in value order.
+    pub const ALL: [SpoolChange; 3] = [SpoolChange::Added, SpoolChange::Changed, SpoolChange::Removed];
+}
+
+/// The request of `WatchSpool` and `UnwatchSpool` (version 6).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct WatchSpool {
+    /// What to watch.
+    pub target: SpoolTarget,
+}
+
+wire_struct!(WatchSpool { target });
+
+/// `SpooledFileChanged`'s body (version 6).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SpooledFileChanged {
+    /// The watched target.
+    pub target: SpoolTarget,
+    /// How the file changed.
+    pub change: SpoolChange,
+    /// The file as listed after the change; none when `Removed`.
+    pub file: Option<SpooledFile>,
+    /// The file.
+    pub id: SpooledFileId,
+}
+
+wire_struct!(SpooledFileChanged {
+    target,
+    change,
+    file,
+    id
+});

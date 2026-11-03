@@ -123,7 +123,6 @@ fn flags_are_0_or_1() {
 
 #[test]
 fn version_5_values() {
-    assert_eq!(VERSION, 5);
     assert_eq!(encode(&Service::Ifs), [6]);
     assert_eq!(Service::Ifs.since(), 5);
     let names = [
@@ -144,7 +143,9 @@ fn version_5_values() {
         // Every Ifs operation runs concurrently, never in the lane.
         assert!(!op.in_lane(), "{op:?}");
     }
-    assert_eq!(Op::of(Service::Ifs, 9), None);
+    // 9, Stat, is version 6's.
+    assert_eq!(Op::of(Service::Ifs, 9).map(Op::since), Some(6));
+    assert_eq!(Op::of(Service::Ifs, 10), None);
     assert_eq!(Op::of(Service::Ifs, 0), None);
     // Exists is 13 and version 5's: older peers get Error.
     assert_eq!(encode(&Status::Exists), [13, 0]);
@@ -156,7 +157,7 @@ fn version_5_values() {
     assert_eq!(Status::Exists.for_version(5), Status::Exists);
     assert_eq!(Status::InUse.for_version(5), Status::InUse);
     assert_eq!(Status::SqlError.for_version(5), Status::SqlError);
-    assert_eq!(Service::of_version(5), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(5), Service::ALL[..7].to_vec());
     // Every status's value is its place.
     for (i, s) in Status::ALL.iter().enumerate() {
         assert_eq!(encode(s), u16::try_from(i).unwrap().to_le_bytes());
@@ -169,9 +170,10 @@ fn negotiation_of_1_to_5() {
         assert_eq!(choose_version(1, max, VERSION), Some(max));
         assert_eq!(choose_version(max, max, VERSION), Some(max));
     }
-    assert_eq!(choose_version(1, 9, VERSION), Some(5));
-    assert_eq!(choose_version(5, 5, VERSION), Some(5));
-    assert_eq!(choose_version(6, 9, VERSION), None);
+    // A version-5 server picks 5 for any range reaching it.
+    assert_eq!(choose_version(1, 9, 5), Some(5));
+    assert_eq!(choose_version(5, 5, 5), Some(5));
+    assert_eq!(choose_version(6, 9, 5), None);
 }
 
 #[test]

@@ -70,7 +70,7 @@ fn enums() {
     }
     assert!(decode::<Status>(&16u16.to_le_bytes()).is_err());
     assert!(decode::<Kind>(&[4]).is_err());
-    assert!(decode::<Service>(&[7]).is_err());
+    assert!(decode::<Service>(&[8]).is_err());
     for (i, s) in SpoolStatus::ALL.iter().enumerate() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
@@ -374,7 +374,8 @@ fn values_by_version() {
     assert_eq!(Service::of_version(2), Service::ALL[..4].to_vec());
     assert_eq!(Service::of_version(3), Service::ALL[..5].to_vec());
     assert_eq!(Service::of_version(4), Service::ALL[..6].to_vec());
-    assert_eq!(Service::of_version(5), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(5), Service::ALL[..7].to_vec());
+    assert_eq!(Service::of_version(6), Service::ALL.to_vec());
     assert_eq!(encode(&Service::Command), [3]);
     assert_eq!(encode(&Service::Spool), [4]);
     for code in 1..=7 {
@@ -382,7 +383,9 @@ fn values_by_version() {
         assert_eq!(op.since(), 3, "{op:?}");
         assert!(!op.before_signon());
     }
-    assert_eq!(Op::of(Service::Spool, 8), None);
+    // 8 and 9, the watches, are version 6's.
+    assert_eq!(Op::of(Service::Spool, 8).map(Op::since), Some(6));
+    assert_eq!(Op::of(Service::Spool, 10), None);
     // InUse is version 3's: older peers get Error.
     assert_eq!(Status::InUse.for_version(1), Status::Error);
     assert_eq!(Status::InUse.for_version(2), Status::Error);

@@ -8,6 +8,7 @@
 pub mod command;
 pub mod connection;
 pub mod ifs;
+pub mod messages;
 pub mod signon;
 pub mod spool;
 pub mod sql;
@@ -99,11 +100,29 @@ pub enum Op {
     Rename,
     /// `Ifs` 8: copy a file on the system (version 5).
     Copy,
+    /// `Messages` 1: a queue's messages (version 6).
+    ListMessages,
+    /// `Messages` 2: answer an inquiry (version 6).
+    ReplyMessage,
+    /// `Messages` 3: remove messages (version 6).
+    RemoveMessages,
+    /// `Messages` 4: send a message (version 6).
+    SendMessage,
+    /// `Messages` 5: report the messages that arrive on a queue (version 6).
+    WatchQueue,
+    /// `Messages` 6: stop watching a queue (version 6).
+    UnwatchQueue,
+    /// `Spool` 8: report changes to a queue's or a user's files (version 6).
+    WatchSpool,
+    /// `Spool` 9: stop watching them (version 6).
+    UnwatchSpool,
+    /// `Ifs` 9: one entry and its change counter (version 6).
+    Stat,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 40] = [
+    pub const ALL: [Op; 49] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -144,6 +163,15 @@ impl Op {
         Op::Delete,
         Op::Rename,
         Op::Copy,
+        Op::ListMessages,
+        Op::ReplyMessage,
+        Op::RemoveMessages,
+        Op::SendMessage,
+        Op::WatchQueue,
+        Op::UnwatchQueue,
+        Op::WatchSpool,
+        Op::UnwatchSpool,
+        Op::Stat,
     ];
 
     /// Its service and code.
@@ -190,6 +218,15 @@ impl Op {
             Op::Delete => (Service::Ifs, 6),
             Op::Rename => (Service::Ifs, 7),
             Op::Copy => (Service::Ifs, 8),
+            Op::ListMessages => (Service::Messages, 1),
+            Op::ReplyMessage => (Service::Messages, 2),
+            Op::RemoveMessages => (Service::Messages, 3),
+            Op::SendMessage => (Service::Messages, 4),
+            Op::WatchQueue => (Service::Messages, 5),
+            Op::UnwatchQueue => (Service::Messages, 6),
+            Op::WatchSpool => (Service::Spool, 8),
+            Op::UnwatchSpool => (Service::Spool, 9),
+            Op::Stat => (Service::Ifs, 9),
         }
     }
 
@@ -227,6 +264,15 @@ impl Op {
             | Op::Delete
             | Op::Rename
             | Op::Copy => 5,
+            Op::ListMessages
+            | Op::ReplyMessage
+            | Op::RemoveMessages
+            | Op::SendMessage
+            | Op::WatchQueue
+            | Op::UnwatchQueue
+            | Op::WatchSpool
+            | Op::UnwatchSpool
+            | Op::Stat => 6,
         }
     }
 
@@ -266,8 +312,25 @@ impl Op {
 
 /// Event codes, server to client.
 pub mod event {
+    use crate::envelope::Service;
+
     /// `Connection` 100: the server is ending and closes the connection.
     pub const SERVER_ENDING: u16 = 100;
     /// `SignOn` 100: the session ended.
     pub const SESSION_ENDED: u16 = 100;
+    /// `Messages` 100: a message arrived on a watched queue (version 6).
+    pub const MESSAGE_ARRIVED: u16 = 100;
+    /// `Spool` 100: a watched target's file changed (version 6).
+    pub const SPOOLED_FILE_CHANGED: u16 = 100;
+
+    /// The protocol version that defines event `op` of `service`;
+    /// `None` when there is no such event.
+    #[must_use]
+    pub const fn since(service: Service, op: u16) -> Option<u16> {
+        match (service, op) {
+            (Service::Connection, SERVER_ENDING) | (Service::SignOn, SESSION_ENDED) => Some(1),
+            (Service::Messages, MESSAGE_ARRIVED) | (Service::Spool, SPOOLED_FILE_CHANGED) => Some(6),
+            _ => None,
+        }
+    }
 }

@@ -44,6 +44,8 @@ pub enum Service {
     Sql,
     /// Integrated file system files (version 5).
     Ifs,
+    /// Message queues (version 6).
+    Messages,
 }
 
 wire_enum!(Service {
@@ -54,11 +56,12 @@ wire_enum!(Service {
     4 => Spool,
     5 => Sql,
     6 => Ifs,
+    7 => Messages,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 7] = [
+    pub const ALL: [Service; 8] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
@@ -66,6 +69,7 @@ impl Service {
         Service::Spool,
         Service::Sql,
         Service::Ifs,
+        Service::Messages,
     ];
 
     /// The protocol version that defines it.
@@ -77,6 +81,7 @@ impl Service {
             Service::Spool => 3,
             Service::Sql => 4,
             Service::Ifs => 5,
+            Service::Messages => 6,
         }
     }
 

@@ -103,6 +103,23 @@ impl Envelope {
         }
     }
 
+    /// The same frame with `body` encoded as its body.
+    #[must_use]
+    pub fn with_body<B: Wire>(self, body: &B) -> Self {
+        Self {
+            body: encode(body),
+            ..self
+        }
+    }
+
+    /// Whether a version-`v` peer may be sent it: its kind, service,
+    /// status and, for an event, the event are all defined in `v`.
+    #[must_use]
+    pub fn defined_in(&self, v: u16) -> bool {
+        let event = self.kind != Kind::Event || crate::ops::event::since(self.service, self.op).is_some_and(|s| s <= v);
+        event && self.service.since() <= v && self.status.since() <= v
+    }
+
     /// Cancel request `request_id`. The server reads only the ID.
     #[must_use]
     pub fn cancel(request_id: u32) -> Self {

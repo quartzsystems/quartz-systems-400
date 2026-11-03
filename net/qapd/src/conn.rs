@@ -20,7 +20,7 @@ use std::time::Duration;
 use ipc::Wire;
 use qap_proto::ops::command::{CheckReply, CommandText, DescribeCommand};
 use qap_proto::ops::event;
-use qap_proto::{Envelope, Op, ServerMessage, Service, Status, Token};
+use qap_proto::{Envelope, Kind, Op, ServerMessage, Service, Status, Token};
 
 use crate::host::{Ending, Host, Refusal};
 use crate::lanes::{self, ToMain};
@@ -102,12 +102,15 @@ impl Shared {
     }
 
     pub fn send(&self, mut frames: Vec<Envelope>) {
-        // A peer gets only the statuses its version defines.
+        // A peer gets only the statuses and events its version defines.
         let v = self.version().unwrap_or(qap_proto::MIN_VERSION);
+        frames.retain(|f| f.kind != Kind::Event || f.defined_in(v));
         for f in &mut frames {
             f.status = f.status.for_version(v);
         }
-        let _ = lock(&self.out).send(Out::Frames(frames));
+        if !frames.is_empty() {
+            let _ = lock(&self.out).send(Out::Frames(frames));
+        }
     }
 
     pub fn reply(&self, req: &Envelope, a: Answer) {
