@@ -832,7 +832,7 @@ impl Suite {
     /// Step 29: writers and the capture device: `STRPRTWTR QSCAPTURE` in
     /// `QSPL`, a spooled file moved to its queue printed to text and a
     /// PDF whose structure checks, the writer held, released and ended.
-    #[allow(clippy::unused_self)] // every step has the same shape
+    #[allow(clippy::unused_self, clippy::too_many_lines)] // every step has the same shape
     pub(crate) fn writers(&self, s: &mut Session) -> Result<String, String> {
         s.command("strsbs QSYS/QSPL", CMD)?;
         let started = s.command("strprtwtr DEV(QSCAPTURE)", CMD)?;
