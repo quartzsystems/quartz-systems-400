@@ -405,6 +405,22 @@ impl ThreadHost for MemThread {
         message(&self.sys, self.job, id, data)
     }
 
+    /// The command's message: its identifier and data as the command
+    /// lays it out, the text saying whose language.
+    fn message_data(&mut self, id: &str, data: &[u8]) -> ServerMessage {
+        let mut m = message(&self.sys, self.job, id, &[]);
+        m.data = data.to_vec();
+        m
+    }
+
+    /// The test system's IFS, as the signed-on profile, the job one
+    /// owner of descriptors and locks for all its threads.
+    fn with_ifs(&mut self, f: &mut dyn FnMut(&dyn ifs::client::IfsClient)) -> Result<(), Refusal> {
+        let user = self.me().unwrap_or_else(|| "QUSER".into());
+        self.sys.files.as_user(&user, u64::from(self.job), |c| f(c));
+        Ok(())
+    }
+
     fn system_info(&mut self) -> SystemInfo {
         self.sys.gate.pass();
         self.sys.crash_at(Crash::SystemInfo);

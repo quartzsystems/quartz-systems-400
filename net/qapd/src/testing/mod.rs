@@ -26,6 +26,11 @@
 //! - a database ([`sql`]): schemas, tables of every type, journaled and
 //!   not, slow and large ones, one `BOB` may not read, for the `Sql`
 //!   service;
+//! - an integrated file system ([`files`]): QS/400's own `ifs` crate in
+//!   memory, with home directories, a directory of 1,200 files, text in
+//!   several CCSIDs (one mixed), links, a directory `BOB` may not use, a
+//!   file another job holds, `/QSYS.LIB` and a 200 MiB file made on
+//!   demand, for the `Ifs` service;
 //! - the ends a client must meet: the server ending ([`System::end`]:
 //!   every connection gets `ServerEnding` and the [`Listener`] refuses
 //!   connects until [`System::restart`]), an operator ending one job, a
@@ -34,6 +39,7 @@
 //!   ([`System::crash`]).
 
 pub mod commands;
+pub mod files;
 pub mod fixtures;
 mod host;
 mod listen;
@@ -149,6 +155,8 @@ pub struct System {
     pub crash: Mutex<Option<Crash>>,
     /// The database.
     pub sql: Mutex<sql::Db>,
+    /// The integrated file system ([`files`]).
+    pub files: files::Files,
     /// The commands running, by job, while they run.
     running: Mutex<HashMap<u32, String>>,
     started: Condvar,
@@ -210,6 +218,7 @@ impl System {
             spool: Mutex::new(spool::Spool::default()),
             crash: Mutex::new(None),
             sql: Mutex::new(sql::Db::default()),
+            files: files::Files::new(),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
             sockets: Mutex::new(HashMap::new()),
@@ -380,6 +389,17 @@ impl System {
         let r = tickets::check(&mut lock(&self.tickets), &t, &user, self.now(), tls, allowed, profile_ok);
         lock(&self.audit).push(format!("PS V {user}"));
         r.is_ok()
+    }
+
+    /// The 200 MiB file ([`files::BIG`]), made the first time a test
+    /// asks; its path.
+    pub fn big_file(&self) -> &'static str {
+        self.files.big_file()
+    }
+
+    /// The other job holding [`files::LOCKED`] lets it go.
+    pub fn release_lock(&self) {
+        self.files.release_lock();
     }
 
     /// Panic if `at` is the crash set; it happens once.
