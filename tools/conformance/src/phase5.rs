@@ -1307,7 +1307,7 @@ L0:
 ";
 
 /// Assemble and bind a program into `QGPL`.
-fn build(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
+pub(crate) fn build(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
     crate::qir::qemu::push(s, name, text)?;
     let m = s.command(&format!("svc.qir asm {name} MODULE(QGPL/{name})"), CMD)?;
     let p = s.command(&format!("crtpgm QGPL/{name} MODULE(QGPL/{name})"), CMD)?;

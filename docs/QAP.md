@@ -947,9 +947,10 @@ Version 6, as built on 2026-11-03 (decisions made in the build, for Cody to revi
   and `spool_remove` change spooled files from outside. Watches in
   tests look every 20 ms (`Config::watch_poll`).
 - QEMU step 93 runs the `Messages` service and a spool watch through the
-  real connection jobs as `QAPTEST` and `QAPTEST2`. It does not reach a
-  message with valid replies (only a writer's device error sends one);
-  the test system's `CPA0701` covers the check.
+  real connection jobs as `QAPTEST` and `QAPTEST2`, and answers a batch
+  job's `CEE9901` on `QSYSOPR` (a job with `INQMSGRPY(*RQD)` whose
+  program fails unmonitored waits in `MSGW` for it): `X` is refused
+  with `CPF2420`, `C` lets the job go on.
 - `Stat` (`net/qapd/src/files/entries.rs`) answers `GetInfo`'s entry,
   with its checks and messages, and the object's change counter
   (`IFS.md`, "Change counter"): one counter for the whole volume, kept

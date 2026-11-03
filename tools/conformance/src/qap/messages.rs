@@ -9,7 +9,10 @@
 //! answers; a second reply is refused (`CPF2422`); a queue not there
 //! is `NotFound`; removal is all or none; lists are strictly newest
 //! first; a watch of `QAPTEST`'s spooled files sees a batch job's log
-//! arrive and its deletion; an unwatch stops a watch once.
+//! arrive and its deletion; an unwatch stops a watch once. Then a batch
+//! job's program fails unmonitored: its `CEE9901` inquiry arrives on a
+//! watch of `QSYSOPR`, a reply its description does not take is `Error`
+//! (`CPF2420`), `C` is taken and the job goes on to its end.
 
 use std::time::Duration;
 
@@ -169,13 +172,14 @@ pub fn run(s: &mut Session, a: &mut Conn, b: &mut Conn) -> Result<String, String
         return Err("the copy stayed after RemoveMessages".into());
     }
     let spool = spool_watch(s, a, &mut skipped)?;
+    let batch = batch_inquiry(s, a, &mut skipped)?;
     status(&a.call(Op::UnwatchQueue, &QueueRef { queue: Queue::Own })?, Status::Ok, "UnwatchQueue")?;
     let twice = a.call(Op::UnwatchQueue, &QueueRef { queue: Queue::Own })?;
     if twice.status != Status::NotFound || msgid(&twice) != "TCP1A5B" {
         return Err(format!("a second UnwatchQueue: {}", brief(&twice)));
     }
     Ok(format!(
-        "a console message arrived as an event; an inquiry to {USER2} found its reply through its sender's copy (key {:08X}), a second reply CPF2422; CPF2403, CPF2410 all or none; newest first over {} messages; {spool}; {skipped} other events passed by",
+        "a console message arrived as an event; an inquiry to {USER2} found its reply through its sender's copy (key {:08X}), a second reply CPF2422; CPF2403, CPF2410 all or none; newest first over {} messages; {spool}; {batch}; {skipped} other events passed by",
         u32::from_be_bytes(key),
         own.messages.len()
     ))
@@ -214,4 +218,84 @@ fn spool_watch(s: &mut Session, a: &mut Conn, skipped: &mut usize) -> Result<Str
     }
     status(&a.call(Op::UnwatchSpool, &WatchSpool { target: me })?, Status::Ok, "UnwatchSpool")?;
     Ok(format!("{} {} arrived and was removed under a spool watch", added.id.file, added.id.number))
+}
+
+/// A program that fails unmonitored: a decimal divide by zero.
+const FAILING: &str = "\
+module QAP93F
+static $z: packed(3,0)
+proc QAP93F() entry {
+L0:
+  dec.div $z, 1, 0 prec(3,0)
+  ret
+}
+";
+
+/// A batch job's `CEE9901` on `QSYSOPR`: seen on a watch, a reply it
+/// does not take refused with the system's message, `C` taken, and the
+/// job no longer waiting.
+fn batch_inquiry(s: &mut Session, a: &mut Conn, skipped: &mut usize) -> Result<String, String> {
+    crate::phase5::build(s, "QAP93F", FAILING)?;
+    let w = a.call(
+        Op::WatchQueue,
+        &QueueRef {
+            queue: Queue::SystemOperator,
+        },
+    )?;
+    status(&w, Status::Ok, "WatchQueue QSYSOPR")?;
+    s.command("STRSBS QSYS/QBATCH", CMD)?;
+    let sent = s.command(
+        "SBMJOB CMD('call QGPL/QAP93F') JOB(QAP93F) JOBQ(QGPL/QBATCH) INQMSGRPY(*RQD)",
+        CMD,
+    )?;
+    let inq = wait(a, "the batch job's CEE9901", skipped, |e| {
+        arrived(e).filter(|m| m.queue == Queue::SystemOperator && m.message.id == "CEE9901" && m.message.needs_reply)
+    })
+    .map_err(|e| format!("{e}\nSBMJOB: {sent}"))?;
+    if !inq.message.text.contains("QAP93F") || inq.message.help.is_empty() {
+        return Err(format!("CEE9901's text: {:?}", inq.message));
+    }
+    let answer = |c: &mut Conn, text: &str| {
+        c.call(
+            Op::ReplyMessage,
+            &ReplyMessage {
+                queue: Queue::SystemOperator,
+                key: inq.message.key,
+                reply: text.into(),
+            },
+        )
+    };
+    let bad = answer(a, "X")?;
+    if bad.status != Status::Error || msgid(&bad) != "CPF2420" {
+        return Err(format!("reply X to CEE9901: {}", brief(&bad)));
+    }
+    status(&answer(a, "C")?, Status::Ok, "reply C to CEE9901")?;
+    // The job takes the reply and ends; no longer in MSGW.
+    let mut left = String::new();
+    for _ in 0..80 {
+        left = s.command("WRKACTJOB", CMD)?;
+        if !left.lines().any(|l| l.contains("QAP93F") && l.contains("MSGW")) {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    if left.lines().any(|l| l.contains("QAP93F") && l.contains("MSGW")) {
+        return Err(format!("QAP93F still waits after the reply:\n{left}"));
+    }
+    let after = list(a, Queue::SystemOperator, true)?;
+    let m = after.messages.iter().find(|m| m.key == inq.message.key).ok_or("CEE9901 left QSYSOPR")?;
+    if m.reply.as_deref() != Some("C") || m.needs_reply {
+        return Err(format!("CEE9901 after the reply: {m:?}"));
+    }
+    status(
+        &a.call(
+            Op::UnwatchQueue,
+            &QueueRef {
+                queue: Queue::SystemOperator,
+            },
+        )?,
+        Status::Ok,
+        "UnwatchQueue QSYSOPR",
+    )?;
+    Ok("a batch job's CEE9901 arrived on QSYSOPR, X was refused (CPF2420), C let the job go on".into())
 }
