@@ -536,6 +536,35 @@ with EBCDIC `0x15` as U+0085 as IBM's tables have it, and CP1252's five
 undefined bytes as the C1 controls of the same value. An unmappable
 character becomes `0x3F` (EBCDIC), `0x1A` (ASCII) or U+FFFD.
 
+It also converts the Japanese CCSIDs: 930 and 5026 (Katakana mixed), 939
+and 5035 (Latin mixed) and 300 (double-byte only, no shift codes). Their
+tables were generated once the same way, from Java's x-IBM300, x-IBM930
+and x-IBM939 (Temurin 25): `cp/cp0300.dbcs` holds the double-byte code
+page as sorted `BYTES CODEPOINT` pairs (runs folded, `>CODEPOINT BYTES`
+for code points that only encode), `cp/mixed/cp0930.csv` and
+`cp0939.csv` the single-byte halves (again with `0x15` as U+0085), and
+`cp/mixed/cp0930.dbcs` and `cp0939.dbcs` where each double-byte half
+differs from 300. The three double-byte tables agree but for `0x4260`,
+U+2212 in 930 and U+FF0D in 939 and 300 (each encodes the other one
+there too), and a few fallbacks 930 and 939 add (930 also takes 300's
+fallback for U+8346, which Java's 930 lacks). Java has no charsets for
+5026 and 5035; they use the same code pages as 930 and 939 (IBM varies
+the size of the user-defined double-byte area between them), so they
+share those tables and convert to each other unchanged.
+
+In mixed data SO (`0x0E`) enters double-byte state and SI (`0x0F`)
+leaves it; each double-byte character is a pair, `0x4040` the
+double-byte space. An unmapped pair (or a lone byte before a shift
+code) decodes to U+FFFD. Encoding shifts only when the next character
+needs the other state; an unmappable character becomes `0x3F` when it
+is U+0000 to U+00FF and the double-byte `0xFEFE` otherwise (always
+`0xFEFE` in 300). A `Converter` keeps both shift states across `feed`
+calls: `with_shift` starts it inside a double-byte run, `input_shift`
+says where the input stands, `flush_shift` closes the output's run and
+`finish` closes it too. `Codec::is_ebcdic` is true for the mixed and
+double-byte CCSIDs (their controls never occur inside a pair);
+`Codec::is_mixed` tells the mixed ones apart.
+
 ## Errors and messages
 
 `Errno` has IBM's numbers (`EACCES` 3401 ...); `errno::linux` maps the

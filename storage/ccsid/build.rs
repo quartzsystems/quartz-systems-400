@@ -9,6 +9,15 @@
 //! (Temurin 25), with EBCDIC 0x15 as U+0085 the way IBM's tables and
 //! `cp037.csv` have it, and the five undefined CP1252 bytes as the C1
 //! controls of the same value, as IBM's CCSID 1252 maps them.
+//!
+//! The Japanese tables were written the same way, from Java's x-IBM300,
+//! x-IBM930 and x-IBM939 (Temurin 25): `cp/cp0300.dbcs` the double-byte
+//! code page, `cp/mixed/cpNNNN.csv` the single-byte half of a mixed CCSID
+//! (0x15 as U+0085 again) and `cp/mixed/cpNNNN.dbcs` where its double-byte
+//! half differs from 300. A `.dbcs` line is `BYTES CODEPOINT` (four hex
+//! digits each), `BYTES CODEPOINT N` for N further pairs counting up by
+//! one on both sides, or `>CODEPOINT BYTES` for a code point that only
+//! encodes (a fallback); `#` starts a comment.
 
 use std::env;
 use std::fmt::Write as _;
@@ -53,6 +62,54 @@ fn parse(path: &Path, full: bool) -> Vec<u32> {
     to_unicode
 }
 
+/// Pairs of two 16-bit values.
+type Pairs = Vec<(u16, u16)>;
+
+/// A `.dbcs` file: its pairs (bytes, code point) in byte order and its
+/// fallbacks (code point, bytes).
+fn parse_dbcs(path: &Path) -> (Pairs, Pairs) {
+    let text = fs::read_to_string(path).unwrap_or_else(|_| panic!("{}", path.display()));
+    let hex = |s: &str, n: usize| {
+        u16::from_str_radix(s, 16)
+            .unwrap_or_else(|_| panic!("{} line {n}: bad hex {s}", path.display()))
+    };
+    let pair_ok = |b: u16| b == 0x4040 || ((b >> 8) >= 0x41 && (b >> 8) <= 0xFE && (b & 0xFF) >= 0x41 && (b & 0xFF) <= 0xFE);
+    let (mut pairs, mut enc) = (Vec::new(), Vec::new());
+    for (i, line) in text.lines().enumerate() {
+        let n = i + 1;
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix('>') {
+            let mut f = rest.split_whitespace();
+            let cp = hex(f.next().expect("code point"), n);
+            let b = hex(f.next().expect("bytes"), n);
+            assert!(pair_ok(b), "{} line {n}: bad pair", path.display());
+            enc.push((cp, b));
+            continue;
+        }
+        let mut f = line.split_whitespace();
+        let b = hex(f.next().expect("bytes"), n);
+        let cp = hex(f.next().expect("code point"), n);
+        let run: u16 = f.next().map_or(0, |r| r.parse().expect("run"));
+        for k in 0..=run {
+            let (b, cp) = (b + k, cp + k);
+            assert!(pair_ok(b), "{} line {n}: bad pair {b:04X}", path.display());
+            assert!(!(0xD800..0xE000).contains(&cp), "{} line {n}: surrogate", path.display());
+            if let Some(&(last, _)) = pairs.last() {
+                assert!(b > last, "{} line {n}: pairs out of order", path.display());
+            }
+            pairs.push((b, cp));
+        }
+    }
+    let mut seen = std::collections::HashSet::new();
+    for (_, cp) in &pairs {
+        assert!(seen.insert(*cp), "{}: U+{cp:04X} mapped twice", path.display());
+    }
+    (pairs, enc)
+}
+
 fn emit(out: &mut String, doc: &str, name: &str, table: &[u32]) {
     writeln!(out, "/// {doc}\npub static {name}: [u32; 256] = [").expect("string");
     for row in table.chunks(8) {
@@ -69,9 +126,32 @@ fn emit(out: &mut String, doc: &str, name: &str, table: &[u32]) {
     out.push_str("];\n");
 }
 
+fn emit_dbcs(out: &mut String, doc: &str, name: &str, path: &Path) {
+    let (pairs, enc) = parse_dbcs(path);
+    let list = |out: &mut String, v: &[(u16, u16)]| {
+        for row in v.chunks(6) {
+            out.push_str("        ");
+            for (a, b) in row {
+                write!(out, "(0x{a:04X}, 0x{b:04X}), ").expect("string");
+            }
+            out.push('\n');
+        }
+    };
+    writeln!(
+        out,
+        "/// {doc}\npub static {name}: crate::conv::dbcs::Layer = crate::conv::dbcs::Layer {{\n    pairs: &["
+    )
+    .expect("string");
+    list(out, &pairs);
+    out.push_str("    ],\n    fallbacks: &[\n");
+    list(out, &enc);
+    out.push_str("    ],\n};\n");
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=cp037.csv");
     println!("cargo:rerun-if-changed=cp");
+    println!("cargo:rerun-if-changed=cp/mixed");
     let dest = Path::new(&env::var("OUT_DIR").expect("OUT_DIR")).to_path_buf();
 
     let cp037 = parse(Path::new("cp037.csv"), true);
@@ -113,5 +193,30 @@ fn main() {
     }
     index.push_str("];\n");
     out.push_str(&index);
+
+    emit_dbcs(
+        &mut out,
+        "The double-byte code page 300.",
+        "DB0300",
+        Path::new("cp/cp0300.dbcs"),
+    );
+    for n in [930u16, 939] {
+        let sb = parse(Path::new(&format!("cp/mixed/cp{n:04}.csv")), false);
+        for b in [0x0E, 0x0F] {
+            assert!(sb[b] == NONE, "cp{n:04}.csv maps a shift code");
+        }
+        emit(
+            &mut out,
+            &format!("The single-byte half of CCSID {n}; `u32::MAX` is unmapped."),
+            &format!("SB{n:04}"),
+            &sb,
+        );
+        emit_dbcs(
+            &mut out,
+            &format!("Where CCSID {n}'s double-byte half differs from 300."),
+            &format!("DB{n:04}"),
+            Path::new(&format!("cp/mixed/cp{n:04}.dbcs")),
+        );
+    }
     fs::write(dest.join("tables.rs"), out).expect("write tables");
 }
