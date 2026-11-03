@@ -116,14 +116,15 @@ pub fn put_records(
         let width = f[2].length as usize;
         let mut record = vec![0u8; usize::try_from(fmt.format.record_len).expect("fits")];
         let date = srcdat(now);
+        let file_ccsid = desc.attr.ccsid;
         let mut n = 0u64;
         for line in lines {
             n += 1;
             let seq = Decimal::new(i128::from(n), 0).expect("small");
             record::write_field(&f[0], &mut record, &Value::Num(seq))?;
             record::write_field(&f[1], &mut record, &Value::Num(date.clone()))?;
-            let mut bytes = line[..line.len().min(width)].to_vec();
-            bytes.resize(width, ccsid::SPACE);
+            // A mixed line keeps its double-byte runs whole.
+            let bytes = ccsid::conv::fit(file_ccsid, line, width, ccsid::SPACE).bytes;
             record::write_field(&f[2], &mut record, &Value::Char(bytes))?;
             m.write_new(txn, &record, &[])?;
         }

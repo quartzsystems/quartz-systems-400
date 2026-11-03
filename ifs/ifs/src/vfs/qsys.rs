@@ -256,6 +256,8 @@ pub fn member_size(m: &MemberData) -> u64 {
 /// before a line end is dropped, each line padded or cut to the record
 /// length. Otherwise the stream is records back to back, the last one
 /// padded, as IBM i stores a binary write (`docs/NET_OPEN_QUESTIONS.md`).
+/// A source member's records of a mixed CCSID keep double-byte runs
+/// whole ([`ccsid::conv::fit`]); a data member's are raw bytes.
 #[must_use]
 pub fn stream_to_records(m: &MemberData, data: &[u8], text: bool) -> Vec<Vec<u8>> {
     let len = m.record_len.max(1);
@@ -265,7 +267,10 @@ pub fn stream_to_records(m: &MemberData, data: &[u8], text: bool) -> Vec<Vec<u8>
         (false, true) => 0x20,
         (false, false) => 0,
     };
-    if !m.source || !text {
+    if m.source && !text {
+        return ccsid::conv::wrap(m.ccsid, data, len, pad);
+    }
+    if !m.source {
         return data
             .chunks(len)
             .map(|c| {
@@ -289,9 +294,7 @@ pub fn stream_to_records(m: &MemberData, data: &[u8], text: bool) -> Vec<Vec<u8>
         if l.last() == Some(&cr) {
             l = &l[..l.len() - 1];
         }
-        let mut r = l[..l.len().min(len)].to_vec();
-        r.resize(len, pad);
-        out.push(r);
+        out.push(ccsid::conv::fit(m.ccsid, l, len, pad).bytes);
     }
     out
 }

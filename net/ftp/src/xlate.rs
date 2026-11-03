@@ -226,12 +226,7 @@ pub fn member_in(rep: Rep, c: Codes, file_ccsid: u16, rec_len: usize, data: &[u8
     let from = rep.ccsid(c).unwrap_or(c.ascii);
     lines(from, data)
         .into_iter()
-        .map(|l| {
-            let mut r = convert(from, file_ccsid, &l);
-            r.truncate(len);
-            r.resize(len, pad);
-            r
-        })
+        .map(|l| ccsid::conv::fit(file_ccsid, &convert(from, file_ccsid, &l), len, pad).bytes)
         .collect()
 }
 
@@ -281,5 +276,18 @@ mod tests {
         assert_eq!(bin.len(), 3);
         assert_eq!(bin[2][5..], [0; 5]);
         assert!(too_long(Rep::Ascii, C, 10, TEXT));
+    }
+
+    #[test]
+    fn mixed_members_keep_double_byte_runs_whole() {
+        let c = Codes { ascii: 1208, ebcdic: 37 };
+        let text = "QS/400 は日本語を変換します。\r\n";
+        let full = ccsid::conv::from_str(939, text.trim_end()).unwrap();
+        for len in 1..full.len() + 2 {
+            let r = &member_in(Rep::Ascii, c, 939, len, text.as_bytes())[0];
+            assert_eq!(r, &ccsid::conv::fit(939, &full, len, 0x40).bytes, "{len}");
+            let t = ccsid::conv::to_string(939, r).unwrap();
+            assert!(text.starts_with(t.trim_end()), "{len} {t:?}");
+        }
     }
 }

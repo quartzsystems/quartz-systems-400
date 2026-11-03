@@ -175,10 +175,8 @@ fn add_lines(side: &mut JobSide<'_>, lib: &str, file: &str, mbr: &str, lines: &[
     let desc = side.file(lib, file).ok_or_else(|| format!("{lib}/{file} cannot be used"))?;
     let mut recs = ftp::objects::read_member(side, lib, file, mbr).map(|r| r.0).unwrap_or_default();
     for l in lines {
-        let mut r = ccsid::conv::from_str(desc.ccsid, l).unwrap_or_default();
-        r.truncate(desc.rec_len);
-        r.resize(desc.rec_len, 0x40);
-        recs.push(r);
+        let b = ccsid::conv::from_str(desc.ccsid, l).unwrap_or_default();
+        recs.push(ccsid::conv::fit(desc.ccsid, &b, desc.rec_len, 0x40).bytes);
     }
     ftp::objects::write_member(side, lib, file, mbr, &recs).map_err(|e| format!("{e:?}"))
 }
