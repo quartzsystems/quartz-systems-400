@@ -61,6 +61,7 @@ impl MemHost {
     /// Job `job` of `sys`.
     #[must_use]
     pub fn new(sys: Arc<System>, job: u32) -> Self {
+        sys.opened(job);
         Self {
             sys,
             job,
@@ -109,7 +110,7 @@ impl Host for MemHost {
     }
 
     fn ending(&mut self) -> Option<Ending> {
-        if self.sys.server_ending.load(Ordering::SeqCst) {
+        if self.sys.server_ended_for(self.job) {
             return Some(Ending::Server);
         }
         let e = lock(&self.sys.ending).take();

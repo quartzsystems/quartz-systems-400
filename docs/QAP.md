@@ -656,10 +656,18 @@ and QS/400 Access's):
   on `Prepare` and `ListColumns`, the status the operations' table
   gives, as the real job answers the engine's `SQL0551`. The catalog
   still lists it.
-- Ends from outside, for the client's tests: `System::end(Server)`
-  reaches every connection, open or opened later (each sends
-  `ServerEnding`); `System::end(Operator)` is one job's, as `ENDJOB`
-  is. `System::drop_connection(job)` and `drop_all()` close a
+- Ends from outside, for the client's tests: `System::end(Server)` is
+  `ENDTCPSVR` as the real system has it. Every open connection sends
+  `ServerEnding` and closes, and the listener is gone: a
+  `testing::Listener` (`System::listen`, one port, a job per
+  connection, as `QAPD` listens) closes its port, so connects are
+  refused, and `try_serve_loopback_as` answers `ConnectionRefused`
+  (`serve_loopback` panics). `System::restart()` is `STRTCPSVR`: the
+  listeners open the same ports again. A connection opened before an
+  end still ends with it when the restart comes before its next poll.
+  The real `QAPD` stops its accept loop, closing the port, before it
+  ends its connections (`servers` test `listen_stop`, QEMU step 89).
+  `System::end(Operator)` is one job's, as `ENDJOB` is. `System::drop_connection(job)` and `drop_all()` close a
   connection's socket on the server's side mid-request, as a network
   drop would: no reply and no event. `System::crash` still injects a
   panic. `System::wait_running(job, timeout)` tells a test when a

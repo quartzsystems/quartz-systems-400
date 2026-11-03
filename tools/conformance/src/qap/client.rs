@@ -37,6 +37,11 @@ pub struct Conn {
 /// or empty to take the one the server presents (whose common name
 /// must be `cn`). The certificate presented.
 pub fn connect(port: u16, cn: &str, pin: &[u8]) -> Result<(Conn, Vec<u8>), String> {
+    connect_for(port, cn, pin, Duration::from_secs(60))
+}
+
+/// [`connect`], trying for at most `wait` (zero: once).
+pub fn connect_for(port: u16, cn: &str, pin: &[u8], wait: Duration) -> Result<(Conn, Vec<u8>), String> {
     let policy = tls::policy::TlsPolicy::opsys();
     let cfg = tls::config::client_config(
         &policy,
@@ -46,7 +51,7 @@ pub fn connect(port: u16, cn: &str, pin: &[u8]) -> Result<(Conn, Vec<u8>), Strin
     )
     .map_err(|e| e.to_string())?;
     let name = tls::config::server_name(cn).map_err(|e| e.to_string())?;
-    let end = Instant::now() + Duration::from_secs(60);
+    let end = Instant::now() + wait;
     let tls = loop {
         let r = TcpStream::connect(("127.0.0.1", port))
             .map_err(|e| e.to_string())

@@ -15,7 +15,7 @@ use qap_proto::ops::event;
 use qap_proto::{Kind, Op, Service, Status};
 use qapd::{Closed, Ending};
 
-use common::{Controls, Run, cfg, start_with};
+use common::{Client, Controls, Run, cfg, start_with};
 
 /// A version 4 connection of `sys`, signed on as `BOB`.
 fn bob(sys: &Arc<Controls>) -> Run {
@@ -42,10 +42,52 @@ fn server_ending_reaches_every_connection() {
         assert!(r.client.closed());
         assert_eq!(r.server.join().unwrap(), Closed::ServerEnding);
     }
-    // A connection made after the end ends at once.
-    let mut late = start_with(cfg(), Arc::clone(&sys));
-    let e = late.client.recv().expect("ServerEnding");
-    assert_eq!(e.status, Status::ServerEnding);
+    // A connection made after the end is refused.
+    let late = qapd::testing::try_serve_loopback_as(cfg(), &sys, qapd::testing::next_job());
+    assert_eq!(late.err().map(|e| e.kind()), Some(std::io::ErrorKind::ConnectionRefused));
+}
+
+#[test]
+fn an_ended_listener_refuses_until_restarted() {
+    let sys = Controls::new();
+    let l = sys.listen(cfg()).expect("listen");
+    let addr = l.addr();
+    let mut open = Client::over(l.connect().expect("connect"));
+    open.hello_range(1, 4);
+    sys.end(Ending::Server);
+    // Refused at connect, as the real port is once QAPD is gone.
+    assert!(!l.accepting());
+    let refused = l.connect();
+    assert!(refused.is_err(), "connected while ended: {refused:?}");
+    // The open connection gets ServerEnding, as before.
+    let e = open.recv().expect("ServerEnding");
+    assert_eq!((e.kind, e.service, e.status), (Kind::Event, Service::Connection, Status::ServerEnding));
+    assert!(open.closed());
+    assert_eq!(l.next_close(Duration::from_secs(10)).map(|(_, why)| why), Some(Closed::ServerEnding));
+    // A restart opens the same port again; new connections work.
+    sys.restart().expect("restart");
+    assert!(l.accepting());
+    assert_eq!(l.addr(), addr);
+    let mut again = Client::over(l.connect().expect("connect after restart"));
+    assert_eq!(again.hello_range(1, 4).status, Status::Ok);
+    again.sign_on("BOB", "SECRET1");
+    assert_eq!(again.call(Op::Ping, &()).status, Status::Ok);
+    // And a second end reaches it.
+    sys.end(Ending::Server);
+    assert_eq!(again.recv().map(|e| e.status), Some(Status::ServerEnding));
+}
+
+#[test]
+fn a_restart_does_not_save_a_connection_from_the_end() {
+    let sys = Controls::new();
+    let l = sys.listen(cfg()).expect("listen");
+    let mut open = Client::over(l.connect().expect("connect"));
+    open.hello_range(1, 4);
+    // Ended and restarted before the connection polls: it still ends.
+    sys.end(Ending::Server);
+    sys.restart().expect("restart");
+    assert_eq!(open.recv().map(|e| e.status), Some(Status::ServerEnding));
+    assert!(open.closed());
 }
 
 #[test]

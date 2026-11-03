@@ -112,6 +112,35 @@ fn with_history(s: &mut Session, e: &str) -> String {
     format!("{e}\nDSPLOG (last lines):\n{}", tail.join("\n"))
 }
 
+/// After `ENDTCPSVR` (its `ServerEnding` already seen) the listener is
+/// gone: a new connection gets no TLS session. The forwarded host port
+/// accepts and then closes, so the guest's refusal shows as that.
+/// `STRTCPSVR` then takes connections again; it ends the server after.
+fn refused_then_restarted(s: &mut Session, srv: &mut Server) -> Result<String, String> {
+    if client::connect_for(srv.port, CN, &srv.pin, Duration::ZERO).is_ok() {
+        return Err("a connection got a TLS session after ENDTCPSVR".into());
+    }
+    // STRTCPSVR says TCP1A08 while the ended QAPD is still finishing.
+    let until = Instant::now() + Duration::from_secs(60);
+    loop {
+        let out = expect(s, "STRTCPSVR SERVER(*QAP)", &["TCP1A07", "TCP1A08"])?;
+        if out.contains("TCP1A07") {
+            break;
+        }
+        if Instant::now() > until {
+            return Err(format!("STRTCPSVR after ENDTCPSVR:\n{out}"));
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    }
+    let mut c = srv.open()?;
+    let ping = c.call(Op::Ping, &())?;
+    if ping.status != Status::Ok {
+        return Err(format!("Ping after STRTCPSVR: {}", brief(&ping)));
+    }
+    expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+    Ok("a connection after ENDTCPSVR was refused and STRTCPSVR took one again".into())
+}
+
 /// Run a command; its reply's messages' IDs, which must be `Ok`.
 fn command(c: &mut Conn, line: &str) -> Result<Vec<String>, String> {
     let r = c.call(Op::RunCommand, &CommandText { command: line.into() })?;
@@ -192,8 +221,9 @@ impl Suite {
         if (ending.service, ending.status) != (Service::Connection, Status::ServerEnding) {
             return Err(format!("A's event at ENDTCPSVR: {:?} {}", ending.service, brief(&ending)));
         }
+        let restarted = refused_then_restarted(s, &mut srv)?;
         Ok(format!(
-            "TLS on 2320 (host {}), jobs {} and {} as {USER}; {cmds}; {log}; {libl}; {sql}; {cancelled}; {kinds}; SignOff ended the attached connection (TCP1A58), ENDTCPSVR sent ServerEnding",
+            "TLS on 2320 (host {}), jobs {} and {} as {USER}; {cmds}; {log}; {libl}; {sql}; {cancelled}; {kinds}; SignOff ended the attached connection (TCP1A58), ENDTCPSVR sent ServerEnding; {restarted}",
             srv.port, job_a.job.number, job_b.job.number
         ))
     }

@@ -26,25 +26,30 @@
 //! - a database ([`sql`]): schemas, tables of every type, journaled and
 //!   not, slow and large ones, one `BOB` may not read, for the `Sql`
 //!   service;
-//! - the ends a client must meet: the server ending ([`System::end`],
-//!   every connection), an operator ending one job, a connection's
-//!   socket dropped mid-request ([`System::drop_connection`]) and a
-//!   panic in a connection's thread ([`System::crash`]).
+//! - the ends a client must meet: the server ending ([`System::end`]:
+//!   every connection gets `ServerEnding` and the [`Listener`] refuses
+//!   connects until [`System::restart`]), an operator ending one job, a
+//!   connection's socket dropped mid-request
+//!   ([`System::drop_connection`]) and a panic in a connection's thread
+//!   ([`System::crash`]).
 
 pub mod commands;
 pub mod fixtures;
 mod host;
+mod listen;
 pub mod spool;
 pub mod sql;
 
 use std::collections::HashMap;
+use std::io;
 use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError, Weak};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 pub use host::{MemHost, MemThread};
+pub use listen::Listener;
 
 use crate::host::Ending;
 use crate::sessions::Sessions;
@@ -102,9 +107,17 @@ pub struct System {
     /// An end for one connection job, the first whose poll takes it
     /// (an operator's `ENDJOB`); [`System::end`] sets it.
     pub ending: Mutex<Option<Ending>>,
-    /// The server is ending (`ENDTCPSVR`): every connection's poll sees
-    /// it, each sends `ServerEnding` and closes.
+    /// The server is ended (`ENDTCPSVR`) until [`System::restart`]:
+    /// every connection's poll sees it, each sends `ServerEnding` and
+    /// closes, and listeners refuse connects.
     pub server_ending: AtomicBool,
+    /// Server ends so far; a connection opened before one ends with it,
+    /// a restart after it or not.
+    server_ends: AtomicU64,
+    /// [`System::server_ends`] when each connection job started.
+    opened_at: Mutex<HashMap<u32, u64>>,
+    /// The listeners' ports.
+    ports: Mutex<Vec<Weak<listen::Port>>>,
     /// The profiles by name.
     pub users: Mutex<HashMap<String, User>>,
     /// The sessions.
@@ -179,6 +192,9 @@ impl System {
             gate: Gate::default(),
             ending: Mutex::new(None),
             server_ending: AtomicBool::new(false),
+            server_ends: AtomicU64::new(0),
+            opened_at: Mutex::new(HashMap::new()),
+            ports: Mutex::new(Vec::new()),
             users: Mutex::new(HashMap::new()),
             sessions: Mutex::new(Sessions::new()),
             tickets: Mutex::new(Tickets::new()),
@@ -243,15 +259,65 @@ impl System {
         *lock(&self.clock) += secs;
     }
 
-    /// End connections from outside: [`Ending::Server`] ends every
-    /// connection, open or opened later, as `ENDTCPSVR` does; any other
-    /// end is one job's, taken by the first connection that polls.
+    /// End connections from outside. [`Ending::Server`] is `ENDTCPSVR`:
+    /// every listener closes its port, so connects are refused until
+    /// [`System::restart`], and every open connection sends
+    /// `ServerEnding` and closes. Any other end is one job's, taken by
+    /// the first connection that polls.
     pub fn end(&self, how: Ending) {
         if how == Ending::Server {
             self.server_ending.store(true, Ordering::SeqCst);
+            for p in self.live_ports() {
+                p.close();
+            }
+            self.server_ends.fetch_add(1, Ordering::SeqCst);
         } else {
             *lock(&self.ending) = Some(how);
         }
+    }
+
+    /// Start the server again after [`System::end`] with
+    /// [`Ending::Server`], as `STRTCPSVR` does: every listener opens its
+    /// port again, at the same address.
+    ///
+    /// # Errors
+    /// A port that cannot be bound again.
+    pub fn restart(&self) -> io::Result<()> {
+        self.server_ending.store(false, Ordering::SeqCst);
+        for p in self.live_ports() {
+            p.open()?;
+        }
+        Ok(())
+    }
+
+    /// Listen on a free loopback port, as `QAPD` does: a connection job
+    /// for each connection, connects refused while the server is ended.
+    ///
+    /// # Errors
+    /// Loopback cannot be bound.
+    pub fn listen(self: &Arc<Self>, cfg: Config) -> io::Result<Listener> {
+        Listener::start(self, cfg)
+    }
+
+    /// Whether connection job `job` must end with the server: it is
+    /// ended now, or was since the job started.
+    fn server_ended_for(&self, job: u32) -> bool {
+        if self.server_ending.load(Ordering::SeqCst) {
+            return true;
+        }
+        let at = lock(&self.opened_at).get(&job).copied().unwrap_or(0);
+        self.server_ends.load(Ordering::SeqCst) > at
+    }
+
+    /// Connection job `job` starts now.
+    fn opened(&self, job: u32) {
+        lock(&self.opened_at).insert(job, self.server_ends.load(Ordering::SeqCst));
+    }
+
+    fn live_ports(&self) -> Vec<Arc<listen::Port>> {
+        let mut ports = lock(&self.ports);
+        ports.retain(|w| w.strong_count() > 0);
+        ports.iter().filter_map(Weak::upgrade).collect()
     }
 
     /// Close connection job `job`'s socket on the server's side at
@@ -361,7 +427,8 @@ pub fn next_job() -> u32 {
 /// socket and the server's thread, which answers why it closed.
 ///
 /// # Panics
-/// When loopback cannot be bound.
+/// When loopback cannot be bound, or the server is ended (connects are
+/// refused; see [`try_serve_loopback_as`]).
 #[must_use]
 pub fn serve_loopback(cfg: Config, system: &Arc<System>) -> (TcpStream, JoinHandle<Closed>) {
     serve_loopback_as(cfg, system, next_job())
@@ -370,30 +437,45 @@ pub fn serve_loopback(cfg: Config, system: &Arc<System>) -> (TcpStream, JoinHand
 /// [`serve_loopback`] as connection job `job`.
 ///
 /// # Panics
-/// When loopback cannot be bound.
+/// As [`serve_loopback`].
 #[must_use]
 pub fn serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> (TcpStream, JoinHandle<Closed>) {
-    let l = TcpListener::bind("127.0.0.1:0").expect("loopback");
-    let addr = l.local_addr().expect("bound");
+    try_serve_loopback_as(cfg, system, job).expect("loopback")
+}
+
+/// [`serve_loopback_as`], answering an error rather than panicking.
+///
+/// # Errors
+/// `ConnectionRefused` while the server is ended, as a connect to the
+/// real system's port is; loopback failures.
+pub fn try_serve_loopback_as(cfg: Config, system: &Arc<System>, job: u32) -> io::Result<(TcpStream, JoinHandle<Closed>)> {
+    if system.server_ending.load(Ordering::SeqCst) {
+        return Err(io::Error::new(io::ErrorKind::ConnectionRefused, "the QAP server is ended"));
+    }
+    let l = TcpListener::bind("127.0.0.1:0")?;
+    let addr = l.local_addr()?;
     let sys = Arc::clone(system);
-    let server = thread::spawn(move || {
-        let (s, peer) = match l.accept() {
-            Ok(a) => a,
-            Err(e) => return Closed::Broken(format!("accept: {e}")),
-        };
-        if let Ok(c) = s.try_clone() {
-            lock(&sys.sockets).insert(job, c);
-        }
-        // Not a read timeout: see `Polled`.
-        let s = match Polled::new(s) {
-            Ok(s) => s,
-            Err(e) => return Closed::Broken(format!("non-blocking: {e}")),
-        };
-        let mut host = MemHost::new(Arc::clone(&sys), job);
-        let why = crate::serve(s, &mut host, cfg, identity(job, Some(peer)));
-        lock(&sys.sockets).remove(&job);
-        why
+    let server = thread::spawn(move || match l.accept() {
+        Ok((s, peer)) => serve_socket(cfg, &sys, job, s, peer),
+        Err(e) => Closed::Broken(format!("accept: {e}")),
     });
-    let s = TcpStream::connect(addr).expect("loopback");
-    (s, server)
+    let s = TcpStream::connect(addr)?;
+    Ok((s, server))
+}
+
+/// Serve one accepted connection as job `job` until it closes.
+fn serve_socket(cfg: Config, sys: &Arc<System>, job: u32, s: TcpStream, peer: SocketAddr) -> Closed {
+    if let Ok(c) = s.try_clone() {
+        lock(&sys.sockets).insert(job, c);
+    }
+    // Not a read timeout: see `Polled`.
+    let s = match Polled::new(s) {
+        Ok(s) => s,
+        Err(e) => return Closed::Broken(format!("non-blocking: {e}")),
+    };
+    let mut host = MemHost::new(Arc::clone(sys), job);
+    let why = crate::serve(s, &mut host, cfg, identity(job, Some(peer)));
+    lock(&sys.sockets).remove(&job);
+    lock(&sys.opened_at).remove(&job);
+    why
 }

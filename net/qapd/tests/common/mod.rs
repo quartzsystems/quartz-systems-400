@@ -190,6 +190,18 @@ pub fn start_with(cfg: Config, c: Arc<Controls>) -> Run {
     }
 }
 
+impl Client {
+    /// A client over `s`, a connection to a test listener.
+    pub fn over(s: std::net::TcpStream) -> Self {
+        Self {
+            s: Polled::new(s).unwrap(),
+            frames: FrameReader::new(),
+            asm: Reassembly::new(),
+            next_id: 0,
+        }
+    }
+}
+
 /// Quick limits for tests.
 pub fn cfg() -> Config {
     Config {
