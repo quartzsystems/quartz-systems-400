@@ -243,8 +243,15 @@ values and print differently.
   most 0 and the adjusted exponent (the exponent of the first digit) at
   least -6 (`0.000001`, `-12.50`), else one digit, the rest after a
   point and `E` with a sign (`1.5E-30`, `1.23E+5`); the special values
-  are `Infinity`, `NaN` and `SNaN` with a `-` when negative. Parsing
-  takes either form, `Inf` too, in any case.
+  are `Infinity`, `NaN` and `SNaN` with a `-` when negative
+  (`to_sci_string` spells the last `sNaN`, as QAP sends it). Parsing
+  takes either form, `Inf` too, in any case, and keeps the exponent
+  written: `1E+2` is coefficient 1, exponent 2 and prints `1E+2`, apart
+  from `100`; `1.00E+2` is coefficient 100, exponent 0, so `100`;
+  `0E+3`, `0.00` and `-0` stay as they are.
+- **From binary floats** (`from_f64`, `from_f32`): the float's shortest
+  digits. A float has no exponent of its own, so a whole number takes
+  exponent 0 when its digits fit the format (`100`, not `1E+2`).
 - **Encoding** is the IEEE interchange format with a densely packed
   decimal coefficient, as IBM i stores it, big-endian: the sign bit, a
   5-bit combination field (the exponent's two high bits and the first

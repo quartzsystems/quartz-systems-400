@@ -177,7 +177,7 @@ pub fn render(txn: &mut Txn<'_>, owner: ObjectId, fmt: &FormatDef, slot: &Slot, 
 }
 
 /// A value as the text of its field.
-fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
+pub(super) fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
     match v {
         Value::Null => String::new(),
         Value::Num(d) => d.to_string().replace('.', &opts.decpnt.to_string()),

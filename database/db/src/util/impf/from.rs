@@ -161,7 +161,7 @@ fn bad(f: &FieldDef, text: &str) -> DbError {
 }
 
 /// The text as the field's value.
-fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
+pub(super) fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
     // A float field also takes exponent notation.
     if f.data_type == DataType::Float {
         let t = text.trim().replace(opts.decpnt, ".");

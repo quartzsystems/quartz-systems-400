@@ -218,10 +218,10 @@ pub fn insert(
                     });
                 }
                 let mut row = Vec::with_capacity(r.len());
-                for e in r {
+                for (e, &fi) in r.iter().zip(&idx) {
                     row.push(match e {
                         Expr::Default => None,
-                        e => Some(ev.eval(txn, e, &env)?),
+                        e => Some(eval_for(txn, &mut ev, e, &env, &t.format.format.fields[fi])?),
                     });
                 }
                 rows.push(row);
@@ -266,6 +266,12 @@ pub fn insert(
     result.map(|()| n)
 }
 
+/// The value of `e` for field `f`: into a `DECFLOAT`, an exponent
+/// literal keeps the exponent written.
+fn eval_for(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, e: &Expr, env: &Env, f: &FieldDef) -> Result<Value> {
+    if f.data_type == dds::DataType::DecFloat { ev.eval_decfloat(txn, e, env) } else { ev.eval(txn, e, env) }
+}
+
 /// Evaluate the `SET` assignments against a row: field index to value.
 fn assignments(
     txn: &mut Txn<'_>,
@@ -287,10 +293,12 @@ fn assignments(
             }
         } else {
             let mut v = Vec::with_capacity(a.values.len());
-            for e in &a.values {
-                v.push(match e {
-                    Expr::Default => None,
-                    e => Some(ev.eval(txn, e, env)?),
+            for (k, e) in a.values.iter().enumerate() {
+                let field = a.columns.get(k).and_then(|c| t.field(&c.value)).map(|(_, f)| f);
+                v.push(match (e, field) {
+                    (Expr::Default, _) => None,
+                    (e, Some(f)) => Some(eval_for(txn, ev, e, env, f)?),
+                    (e, None) => Some(ev.eval(txn, e, env)?),
                 });
             }
             v
@@ -569,7 +577,7 @@ pub fn merge(
                     for (k, &fi) in idx.iter().enumerate() {
                         per_field[fi] = match &values[k] {
                             Expr::Default => None,
-                            e => Some(ev.eval(txn, e, &outer)?),
+                            e => Some(eval_for(txn, &mut ev, e, &outer, &t.format.format.fields[fi])?),
                         };
                     }
                     let (rec, nulls) = build_record(txn, &t, &per_field, None)?;

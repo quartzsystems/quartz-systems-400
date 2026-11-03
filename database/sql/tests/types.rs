@@ -563,3 +563,96 @@ fn registers_catalog_and_predicates() {
     t.abort();
     assert_eq!(got, [(2436, 1), (392, 29)]);
 }
+
+/// Values equal but for the exponent, with the text each reads back as.
+const EXPONENTS: [(&str, &str); 14] = [
+    ("1.5", "1.5"),
+    ("1.50", "1.50"),
+    ("1.500", "1.500"),
+    ("1E+2", "1E+2"),
+    ("100", "100"),
+    ("1.00E+2", "100"),
+    ("10E+1", "1.0E+2"),
+    ("0", "0"),
+    ("0.00", "0.00"),
+    ("0E+3", "0E+3"),
+    ("-0", "-0"),
+    ("-1.50", "-1.50"),
+    ("0.000001", "0.000001"),
+    ("1E-7", "1E-7"),
+];
+
+fn df(text: &str) -> Value {
+    Value::DecFloat(qdecimal::DecFloat::parse(text, qdecimal::DfFormat::D34).unwrap())
+}
+
+#[test]
+fn decfloat_keeps_its_exponent() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/DX (K INTEGER NOT NULL, A DECFLOAT(16), B DECFLOAT(34), PRIMARY KEY(K))");
+    let both = |db: &mut Db, k: usize| db.rows(&format!("SELECT A, B FROM QSTEST/DX WHERE K = {k}"))[0].clone();
+    for (i, &(text, back)) in EXPONENTS.iter().enumerate() {
+        let want = vec![back.to_string(), back.to_string()];
+        // A literal: `-0` is the integer 0, so `-0E0` stands for it.
+        let lit = if text == "-0" { "-0E0" } else { text };
+        db.ok(&format!("INSERT INTO QSTEST/DX VALUES({}, {lit}, {lit})", 100 + i));
+        assert_eq!(both(&mut db, 100 + i), want, "literal {text}");
+        // A string.
+        db.ok(&format!("INSERT INTO QSTEST/DX VALUES({}, '{text}', '{text}')", 200 + i));
+        assert_eq!(both(&mut db, 200 + i), want, "string {text}");
+        // Parameters: a DECFLOAT(34), as a client's DECFLOAT arrives, and text.
+        let k = Value::int(i64::try_from(300 + i).unwrap());
+        db.run_with("INSERT INTO QSTEST/DX VALUES(?, ?, ?)", &[k, df(text), Value::Str(text.into())]).unwrap();
+        assert_eq!(both(&mut db, 300 + i), want, "parameter {text}");
+        // Update, by literal, by parameter, and column to column.
+        db.ok(&format!("INSERT INTO QSTEST/DX VALUES({}, 7, 7)", 400 + i));
+        db.ok(&format!("UPDATE QSTEST/DX SET B = {lit} WHERE K = {}", 400 + i));
+        db.run_with(&format!("UPDATE QSTEST/DX SET A = ? WHERE K = {}", 400 + i), &[df(text)]).unwrap();
+        assert_eq!(both(&mut db, 400 + i), want, "update {text}");
+        db.ok(&format!("UPDATE QSTEST/DX SET A = 7, B = 7 WHERE K = {}", 400 + i));
+        db.ok(&format!("UPDATE QSTEST/DX SET B = '{text}' WHERE K = {}", 400 + i));
+        db.ok(&format!("UPDATE QSTEST/DX SET A = B WHERE K = {}", 400 + i));
+        assert_eq!(both(&mut db, 400 + i), want, "column to column {text}");
+        // Expressions that keep the exponent.
+        let neg = back.strip_prefix('-').map_or_else(|| format!("-{back}"), str::to_string);
+        assert_eq!(
+            db.rows(&format!(
+                "SELECT CAST(B AS DECFLOAT(16)), DECFLOAT(A), CAST('{text}' AS DECFLOAT), CAST({lit} AS DECFLOAT(16)), -B, \
+                 NORMALIZE_DECFLOAT(B) = B FROM QSTEST/DX WHERE K = {}",
+                200 + i
+            ))[0],
+            [back, back, back, back, neg.as_str(), "TRUE"].map(String::from).to_vec(),
+            "expressions {text}"
+        );
+        // Fetched values cross processes as they are.
+        for v in &db.values(&format!("SELECT A, B FROM QSTEST/DX WHERE K = {}", 300 + i))[0] {
+            let w = sql::embed::to_wire(v);
+            assert_eq!(w.1.trim_start_matches("16:"), back, "{text}");
+            assert_eq!(sql::embed::from_wire(&w), *v, "{text}");
+        }
+    }
+    // Equal values compare equal whatever their exponents.
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/DX WHERE B = 1.5 AND K < 200"), "3");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/DX WHERE B = 100 AND K < 200"), "4");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/DX WHERE A = 0 AND K < 200"), "4");
+    assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/DX WHERE B = 1E+2 AND K < 200"), "4");
+    assert_eq!(db.rows("SELECT B FROM QSTEST/DX WHERE K < 103 ORDER BY B DESC, K"), [["1.5"], ["1.50"], ["1.500"]]);
+    // Arithmetic's own exponents, an exponent literal beside a DECFLOAT
+    // kept as written.
+    let ex = |db: &mut Db, e: &str| db.one(&format!("SELECT {e} FROM QSTEST/DX WHERE K = 101"));
+    assert_eq!(ex(&mut db, "B + 1E+2"), "101.50");
+    assert_eq!(ex(&mut db, "B * 1E+2"), "150");
+    assert_eq!(ex(&mut db, "B * 1E+3"), "1.50E+3");
+    assert_eq!(ex(&mut db, "B - B"), "0.00");
+    assert_eq!(ex(&mut db, "A * 2.0"), "3.000");
+    assert_eq!(ex(&mut db, "0E+3 + B"), "1.50");
+    assert_eq!(ex(&mut db, "B / 1E+2"), "0.0150");
+    assert_eq!(ex(&mut db, "SUM(B)"), "1.50");
+    assert_eq!(ex(&mut db, "CAST(1.00E+2 AS DOUBLE)"), "100");
+    // A double has no exponent: a whole one becomes a DECFLOAT with 0.
+    assert_eq!(ex(&mut db, "CAST(CAST(1E+2 AS DOUBLE) AS DECFLOAT)"), "100");
+    assert_eq!(ex(&mut db, "CAST(CAST(1.5 AS DOUBLE) AS DECFLOAT)"), "1.5");
+    // A DECFLOAT(16) on the wire keeps its format.
+    let w = sql::embed::to_wire(&db.values("SELECT A FROM QSTEST/DX WHERE K = 103")[0][0]);
+    assert_eq!(w, (6, "16:1E+2".to_string()));
+}

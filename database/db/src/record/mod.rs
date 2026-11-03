@@ -245,7 +245,7 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
             Value::Null => DecFloat::zero(fmt),
             Value::DecFloat(v) => v.to_format(fmt).map_err(|e| mapping(f, e))?,
             Value::Num(d) => DecFloat::from_decimal(d, fmt).map_err(|e| mapping(f, e))?,
-            Value::Float(x) => DecFloat::parse(&float_text(*x), fmt).map_err(|e| mapping(f, e))?,
+            Value::Float(x) => DecFloat::from_f64(*x, fmt).map_err(|e| mapping(f, e))?,
             Value::Char(_) => return Err(mapping(f, "bytes into a DECFLOAT field")),
         };
         out.copy_from_slice(&v.encode());
@@ -470,6 +470,30 @@ mod tests {
         assert_eq!(read_field(&a, &rec, &nulls, Some(3)).unwrap(), Value::Null);
         set_null(&mut nulls, 3, false);
         assert_eq!(nulls, [0]);
+    }
+
+    #[test]
+    fn decfloat_fields_keep_the_exponent() {
+        let text_of = |v: &Value| match v {
+            Value::DecFloat(d) => d.to_string(),
+            v => panic!("{v:?}"),
+        };
+        let mut rec = vec![0u8; 16];
+        for (len, format) in [(16, DfFormat::D16), (34, DfFormat::D34)] {
+            let df = f(DataType::DecFloat, len, 0, 0);
+            for text in ["1.5", "1.50", "1.500", "1E+2", "100", "0", "0.00", "0E+3", "-0", "-1.50", "-1E+2"] {
+                let v = Value::DecFloat(DecFloat::parse(text, DfFormat::D34).unwrap());
+                write_field(&df, &mut rec, &v).unwrap();
+                let back = read_field(&df, &rec, &[], None).unwrap();
+                let Value::DecFloat(d) = back else { panic!("{back:?}") };
+                assert_eq!((d.to_string(), d.format()), (text.to_string(), format), "{text}");
+            }
+            write_field(&df, &mut rec, &Value::Num(Decimal::parse("-2.50").unwrap())).unwrap();
+            assert_eq!(text_of(&read_field(&df, &rec, &[], None).unwrap()), "-2.50");
+            // A double has no exponent: a whole one is stored with 0.
+            write_field(&df, &mut rec, &Value::Float(100.0)).unwrap();
+            assert_eq!(text_of(&read_field(&df, &rec, &[], None).unwrap()), "100");
+        }
     }
 
     #[test]

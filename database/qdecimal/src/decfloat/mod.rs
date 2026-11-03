@@ -283,7 +283,9 @@ impl DecFloat {
         }
     }
 
-    /// From a double: its shortest text.
+    /// From a double: its shortest digits. A double has no exponent of
+    /// its own, so a whole number that fits the format's digits takes
+    /// exponent 0, as an integer does (`100`, not `1E+2`).
     pub fn from_f64(f: f64, format: DfFormat) -> Result<Self> {
         if f.is_nan() {
             return Ok(Self::special(DfKind::NaN, false, format));
@@ -291,7 +293,32 @@ impl DecFloat {
         if f.is_infinite() {
             return Ok(Self::special(DfKind::Infinity, f < 0.0, format));
         }
-        Self::parse(&format!("{f:e}"), format)
+        Self::parse(&format!("{f:e}"), format).map(Self::whole)
+    }
+
+    /// From a single, as [`Self::from_f64`]: its own shortest digits.
+    pub fn from_f32(f: f32, format: DfFormat) -> Result<Self> {
+        if !f.is_finite() {
+            return Self::from_f64(f64::from(f), format);
+        }
+        Self::parse(&format!("{f:e}"), format).map(Self::whole)
+    }
+
+    /// A positive exponent folded into the coefficient when the digits
+    /// allow.
+    fn whole(self) -> Self {
+        if !self.is_finite() || self.exp <= 0 {
+            return self;
+        }
+        if self.coeff == 0 {
+            return Self { exp: 0, ..self };
+        }
+        let len = i32::try_from(digits::from_u128(self.coeff).len()).expect("small");
+        if len + self.exp > self.format.p() {
+            return self;
+        }
+        let coeff = self.coeff * 10u128.pow(self.exp.unsigned_abs());
+        Self { coeff, exp: 0, ..self }
     }
 
     /// Parse `[+-]digits[.digits][E[+-]n]`, `Infinity`, `Inf`, `NaN` or
@@ -453,6 +480,19 @@ fn cmp_magnitude(a: &DecFloat, b: &DecFloat) -> Ordering {
     let wa = digits::shl(&ma, usize::try_from(a.exp - e).expect("small"));
     let wb = digits::shl(&mb, usize::try_from(b.exp - e).expect("small"));
     digits::cmp(&wa, &wb)
+}
+
+impl DecFloat {
+    /// The to-scientific-string text with the special values spelled
+    /// `Infinity`, `NaN` and `sNaN`, as QAP sends a `Decimal`.
+    /// [`fmt::Display`] differs only in spelling `SNaN`.
+    #[must_use]
+    pub fn to_sci_string(&self) -> String {
+        match self.kind {
+            DfKind::SNaN => format!("{}sNaN", if self.neg { "-" } else { "" }),
+            _ => self.to_string(),
+        }
+    }
 }
 
 impl fmt::Display for DecFloat {

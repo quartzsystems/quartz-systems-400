@@ -193,8 +193,8 @@ impl Value {
             Self::DecFloat(d) => Ok(*d),
             Self::Num(d) => DecFloat::from_decimal(d, format).map_err(decfloat_error),
             // A float's shortest digits.
-            Self::Double(x) => DecFloat::parse(&db::record::float_text(*x), format).map_err(decfloat_error),
-            Self::Real(x) => DecFloat::parse(&real_text(*x), format).map_err(decfloat_error),
+            Self::Double(x) => DecFloat::from_f64(*x, format).map_err(decfloat_error),
+            Self::Real(x) => DecFloat::from_f32(*x, format).map_err(decfloat_error),
             Self::Str(s) => DecFloat::parse(s, format).map_err(decfloat_error),
             v => Err(conversion(format!("{} is not a number", v.type_name()))),
         }

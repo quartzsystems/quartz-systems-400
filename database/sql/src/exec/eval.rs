@@ -393,6 +393,15 @@ impl Evaluator<'_> {
         }
     }
 
+    /// The value of an expression bound for a `DECFLOAT`: an exponent
+    /// literal is read from its text ([`decfloat_literal`]).
+    pub fn eval_decfloat(&mut self, txn: &mut Txn<'_>, e: &Expr, env: &Env) -> Result<Value> {
+        match decfloat_literal(e) {
+            Some(v) => v,
+            None => self.eval(txn, e, env),
+        }
+    }
+
     /// The value of an expression.
     #[allow(clippy::too_many_lines, clippy::many_single_char_names)]
     pub fn eval(&mut self, txn: &mut Txn<'_>, e: &Expr, env: &Env) -> Result<Value> {
@@ -457,8 +466,20 @@ impl Evaluator<'_> {
                     }
                     return add_duration(&x, n.as_i64()?, *unit);
                 }
-                let x = self.eval(txn, a, env)?;
-                let y = self.eval(txn, b, env)?;
+                let mut x = self.eval(txn, a, env)?;
+                let mut y = self.eval(txn, b, env)?;
+                // Beside a `DECFLOAT`, an exponent literal keeps its exponent.
+                if *op != BinOp::Concat {
+                    if matches!(x, Value::DecFloat(_))
+                        && let Some(v) = decfloat_literal(b)
+                    {
+                        y = v?;
+                    } else if matches!(y, Value::DecFloat(_))
+                        && let Some(v) = decfloat_literal(a)
+                    {
+                        x = v?;
+                    }
+                }
                 binary(&x, *op, &y)
             }
             Expr::Duration(a, unit) => {
@@ -494,7 +515,10 @@ impl Evaluator<'_> {
                 }
             }
             Expr::Cast(a, t) => {
-                let v = self.eval(txn, a, env)?;
+                let v = match t.data_type {
+                    DataType::DecFloat(_) => self.eval_decfloat(txn, a, env)?,
+                    _ => self.eval(txn, a, env)?,
+                };
                 cast(&v, t)
             }
             Expr::Function(f) => self.function(txn, f, env),
@@ -595,6 +619,10 @@ impl Evaluator<'_> {
                 )
             {
                 args.push(Value::Str(c.column.value.clone()));
+                continue;
+            }
+            if i == 0 && matches!(name, "DECFLOAT" | "NORMALIZE_DECFLOAT") {
+                args.push(self.eval_decfloat(txn, a, env)?);
                 continue;
             }
             args.push(self.eval(txn, a, env)?);
@@ -703,6 +731,27 @@ fn column_length(env: &Env, c: &crate::ast::ColumnRef) -> Option<usize> {
         }
     }
     None
+}
+
+/// A number literal with an exponent (`1.00E+2`, `-0E3`), or its
+/// negation, as the `DECFLOAT(34)` its text spells. Such a literal is a
+/// double, which has no exponent; into or beside a `DECFLOAT` the
+/// exponent written is kept. `None` for any other expression.
+pub fn decfloat_literal(e: &Expr) -> Option<Result<Value>> {
+    match e {
+        Expr::Literal(Literal::Num(n)) if n.contains(['E', 'e']) => Some(
+            qdecimal::DecFloat::parse(n, qdecimal::DfFormat::D34)
+                .map(Value::DecFloat)
+                .map_err(crate::value::decfloat_error),
+        ),
+        Expr::Neg(a) => decfloat_literal(a).map(|v| {
+            v.map(|v| match v {
+                Value::DecFloat(d) => Value::DecFloat(d.negated()),
+                v => v,
+            })
+        }),
+        _ => None,
+    }
 }
 
 /// A literal's value.

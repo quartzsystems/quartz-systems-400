@@ -133,6 +133,16 @@ fn tokens(text: &str) -> Result<Vec<Tok>, Syntax> {
             while i < c.len() && (c[i].is_ascii_digit() || c[i] == '.') {
                 i += 1;
             }
+            // An exponent: `1E+2`, `1.50e-3`.
+            if matches!(c.get(i), Some('E' | 'e')) {
+                let sign = usize::from(matches!(c.get(i + 1), Some('+' | '-')));
+                if c.get(i + 1 + sign).is_some_and(char::is_ascii_digit) {
+                    i += 1 + sign;
+                    while c.get(i).is_some_and(char::is_ascii_digit) {
+                        i += 1;
+                    }
+                }
+            }
             out.push(Tok::Num(c[s..i].iter().collect()));
         } else if ch == '\'' {
             let mut s = String::new();

@@ -575,7 +575,15 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   entry's CCSID): integers `Integer`; `DECIMAL` and `NUMERIC` the
   engine's exact text; `DECFLOAT` (SQLTYPE 996, `length` its 16 or 34
   digits) `Decimal` with the engine's scientific text (`1.5E-30`,
-  `-12.50`) or `Infinity`, `-Infinity`, `NaN`, `sNaN`; `REAL` and
+  `-12.50`) or `Infinity`, `-Infinity`, `NaN`, `sNaN`; a `DECFLOAT`
+  keeps its coefficient and exponent from insert to fetch (`1.50`,
+  `1E+2` apart from `100`, `0E+3`, `-0`; `DECIMAL.md` §9), and so do
+  `UPDATE`, column-to-column assignment, `CAST` to `DECFLOAT`, unary
+  minus and arithmetic's own exponents, while `=` compares by value
+  (`1.5 = 1.50`). A number literal with an exponent is a `DOUBLE`, but
+  into or beside a `DECFLOAT` it is read from its text, so `1E+2` stays
+  `1E+2` there; a `DOUBLE` value becomes a `DECFLOAT` of its shortest
+  digits, a whole one with exponent 0; `REAL` and
   `DOUBLE` the shorter of the plain and E notation that reads back the
   same; `CHAR`, `VARCHAR`, `GRAPHIC`, `VARGRAPHIC`, `CLOB` (408) and
   `DBCLOB` (412) `Text`, with CCSID 37 (graphic and `DBCLOB` 1200) when
@@ -653,6 +661,12 @@ and QS/400 Access's):
   `UPDATE` and `DELETE` over one table; anything else is the syntax
   error `SQL0104`, as a database that does not know the statement
   reports it.
+- A `DECFLOAT` is assigned and compared with the engine's own code
+  (`qdecimal`'s `DecFloat`): a `Decimal` or literal read as
+  `DECFLOAT(34)` from its text and rounded to the column's 16 or 34
+  digits, its exponent kept and its text the engine's (`sNaN` for a
+  signaling NaN); `=` by value. So a value reads back the same here as
+  from QS/400.
 - Its fixtures and the cases they give are in the module's
   documentation: `HLINV.ASSETS` with Navigator's twelve assets in
   service, `HLTEST.ALLTYPES`, journaled and unjournaled tables

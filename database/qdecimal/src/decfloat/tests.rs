@@ -40,6 +40,67 @@ fn text_forms() {
 }
 
 #[test]
+fn exponents_kept() {
+    // (text, coefficient, exponent, text back): equal values that
+    // differ in exponent stay apart through text and the encodings.
+    let cases: [(&str, u128, i32, &str); 15] = [
+        ("1.5", 15, -1, "1.5"),
+        ("1.50", 150, -2, "1.50"),
+        ("1.500", 1500, -3, "1.500"),
+        ("1E+2", 1, 2, "1E+2"),
+        ("100", 100, 0, "100"),
+        ("1.00E+2", 100, 0, "100"),
+        ("10E+1", 10, 1, "1.0E+2"),
+        ("0", 0, 0, "0"),
+        ("0.00", 0, -2, "0.00"),
+        ("0E+3", 0, 3, "0E+3"),
+        ("-0", 0, 0, "-0"),
+        ("-1.50", 150, -2, "-1.50"),
+        ("-1E+2", 1, 2, "-1E+2"),
+        ("0.000001", 1, -6, "0.000001"),
+        ("1E-7", 1, -7, "1E-7"),
+    ];
+    for format in [DfFormat::D16, DfFormat::D34] {
+        for (text, coeff, exp, back) in cases {
+            let v = DecFloat::parse(text, format).unwrap();
+            assert_eq!((v.coefficient(), v.exponent(), v.to_string()), (coeff, exp, back.to_string()), "{text} {format:?}");
+            let again = DecFloat::decode(&v.encode(), format).unwrap();
+            assert_eq!((again, again.to_string()), (v, back.to_string()), "{text} {format:?}");
+            assert_eq!(DecFloat::parse(&v.to_string(), format).unwrap(), v, "{text} {format:?}");
+            let neg = v.negated();
+            assert_eq!(neg.exponent(), exp, "{text}");
+            assert_eq!(DecFloat::decode(&neg.encode(), format).unwrap(), neg, "{text}");
+        }
+    }
+    // Another format keeps the exponent while the digits fit.
+    assert_eq!(d34("1.500").to_format(DfFormat::D16).unwrap().to_string(), "1.500");
+    assert_eq!(d16("0E+3").to_format(DfFormat::D34).unwrap().to_string(), "0E+3");
+    // Equal by value, apart in the total order.
+    assert_eq!(d34("1.5").sql_cmp(&d34("1.50")), Ordering::Equal);
+    assert_eq!(d34("1E+2").sql_cmp(&d34("100")), Ordering::Equal);
+    assert_ne!(d34("1E+2"), d34("100"));
+    // Arithmetic's ideal exponents.
+    let s = |r: Result<DecFloat>| r.unwrap().to_string();
+    assert_eq!(s(add(&d34("1.50"), &d34("1E+2"))), "101.50");
+    assert_eq!(s(sub(&d34("1E+2"), &d34("1E+2"))), "0E+2");
+    assert_eq!(s(mul(&d34("1.50"), &d34("1E+2"))), "150");
+    assert_eq!(s(mul(&d34("1.50"), &d34("1E+3"))), "1.50E+3");
+    assert_eq!(s(mul(&d16("1.5"), &d16("2.0"))), "3.00");
+    assert_eq!(s(div(&d34("1.50"), &d34("1E+2"))), "0.0150");
+    assert_eq!(s(add(&d34("-0"), &d34("-0.00"))), "-0.00");
+    // Special values in the standard's spelling.
+    assert_eq!(d34("-snan").to_sci_string(), "-sNaN");
+    assert_eq!(d34("1E+2").to_sci_string(), "1E+2");
+    // A double has no exponent: a whole one takes exponent 0.
+    for (x, back) in [(100.0, "100"), (1.5, "1.5"), (0.0, "0"), (-0.0, "-0"), (1e300, "1E+300"), (1e-7, "1E-7")] {
+        assert_eq!(DecFloat::from_f64(x, DfFormat::D34).unwrap().to_string(), back, "{x}");
+    }
+    assert_eq!(DecFloat::from_f64(1e20, DfFormat::D16).unwrap().to_string(), "1E+20");
+    assert_eq!(DecFloat::from_f32(250.0, DfFormat::D16).unwrap().to_string(), "250");
+    assert_eq!(DecFloat::from_f32(0.1, DfFormat::D16).unwrap().to_string(), "0.1");
+}
+
+#[test]
 fn rounding_half_even() {
     assert_eq!(d16("1234567890123456.5").to_string(), "1234567890123456");
     assert_eq!(d16("1234567890123457.5").to_string(), "1234567890123458");

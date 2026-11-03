@@ -5,9 +5,11 @@
 //! The test database's column types and how a value becomes one: the
 //! assignment rules a database applies (padding, scale, range, the
 //! timestamp's precision), and the failures it reports when a value
-//! does not fit.
+//! does not fit. `DECFLOAT` is the engine's own (`qdecimal`), so its
+//! exponent and text are what QS/400 gives.
 
 use qap_proto::ops::sql::{Column, SqlValue};
+use qdecimal::{DecFloat, DecimalError, DfFormat};
 
 use super::parse::Lit;
 
@@ -203,11 +205,24 @@ fn real_text(v: f32) -> String {
     if exp.len() < plain.len() { exp } else { plain }
 }
 
-/// Whether `t` is a `DECFLOAT` value: a number, maybe in E notation, or
-/// one of the special values.
-fn decfloat_ok(t: &str) -> bool {
-    matches!(t, "Infinity" | "-Infinity" | "NaN" | "-NaN" | "sNaN" | "-sNaN")
-        || (t.parse::<f64>().is_ok() && !t.contains(['i', 'I', 'n', 'N']))
+/// `v` as a `DECFLOAT` of column `c`, by the engine's own rules: a
+/// `Decimal` (and a literal) read as `DECFLOAT(34)` from its text, its
+/// exponent kept; an integer exact; a float its shortest digits; text
+/// parsed; then rounded to the column's 16 or 34 digits.
+fn decfloat(c: &Column, v: &SqlValue) -> Result<DecFloat, Misfit> {
+    let format = DfFormat::of_digits(c.length).unwrap_or(DfFormat::D34);
+    let misfit = |e: DecimalError| if matches!(e, DecimalError::Parse { .. }) { NOT_A_NUMBER } else { OUT_OF_RANGE };
+    let d = match v {
+        SqlValue::Integer { value } => Ok(DecFloat::from_i64(*value, DfFormat::D34)),
+        SqlValue::Decimal { text } => DecFloat::parse(text, DfFormat::D34),
+        SqlValue::Float { text } => {
+            let f: f64 = text.trim().parse().map_err(|_| NOT_A_NUMBER)?;
+            DecFloat::from_f64(f, format)
+        }
+        SqlValue::Text { text } => DecFloat::parse(text, format),
+        _ => return Err(WRONG_TYPE),
+    };
+    d.and_then(|d| d.to_format(format)).map_err(misfit)
 }
 
 fn number_text(v: &SqlValue) -> Option<String> {
@@ -263,13 +278,7 @@ pub fn assign(c: &Col, v: SqlValue) -> Result<SqlValue, Misfit> {
             let text = if s == 0 { format!("{sign}{i}") } else { format!("{sign}{i}.{f}") };
             SqlValue::Decimal { text }
         }
-        (Kind::DecFloat, v) => {
-            let t = number_text(&v).ok_or(WRONG_TYPE)?;
-            if !decfloat_ok(&t) {
-                return Err(NOT_A_NUMBER);
-            }
-            SqlValue::Decimal { text: t }
-        }
+        (Kind::DecFloat, v) => SqlValue::Decimal { text: decfloat(&c.column, &v)?.to_sci_string() },
         (Kind::Real | Kind::Double, v) => {
             let t = number_text(&v).ok_or(WRONG_TYPE)?;
             let f: f64 = t.parse().map_err(|_| NOT_A_NUMBER)?;
@@ -340,9 +349,16 @@ pub fn same(a: &SqlValue, b: &SqlValue) -> bool {
         (SqlValue::Text { text: x }, SqlValue::Text { text: y }) => x.trim_end() == y.trim_end(),
         (SqlValue::Decimal { text: x }, SqlValue::Decimal { text: y }) => match (decimal_parts(x), decimal_parts(y)) {
             (Some((n1, i1, f1)), Some((n2, i2, f2))) => {
-                (n1, i1, f1.trim_end_matches('0')) == (n2, i2, f2.trim_end_matches('0'))
+                let (f1, f2) = (f1.trim_end_matches('0'), f2.trim_end_matches('0'));
+                // A zero's sign does not count (`-0 = 0`).
+                let zero = |i: &str, f: &str| i == "0" && f.is_empty();
+                (n1 && !zero(&i1, f1), i1.as_str(), f1) == (n2 && !zero(&i2, f2), i2.as_str(), f2)
             }
-            _ => x == y,
+            // A `DECFLOAT`: by value, as the engine compares (`1E+2 = 100`).
+            _ => match (DecFloat::parse(x, DfFormat::D34), DecFloat::parse(y, DfFormat::D34)) {
+                (Ok(a), Ok(b)) => a.sql_cmp(&b) == std::cmp::Ordering::Equal,
+                _ => x == y,
+            },
         },
         _ => a == b,
     }
@@ -374,5 +390,46 @@ mod tests {
         assert_eq!(date_ms(1970, 1, 2), 86_400_000);
         assert_eq!(float_text(1e300), "1e300");
         assert_eq!(float_text(0.1), "0.1");
+    }
+
+    #[test]
+    fn decfloat_keeps_its_exponent() {
+        let dec = |t: &str| SqlValue::Decimal { text: t.into() };
+        for ty in ["DECFLOAT(16)", "DECFLOAT(34)"] {
+            let c = col("DF", "", ty, true);
+            for (input, back) in [
+                ("1.5", "1.5"),
+                ("1.50", "1.50"),
+                ("1.500", "1.500"),
+                ("1E+2", "1E+2"),
+                ("1e2", "1E+2"),
+                ("100", "100"),
+                ("1.00E+2", "100"),
+                ("0", "0"),
+                ("0.00", "0.00"),
+                ("0E+3", "0E+3"),
+                ("-0", "-0"),
+                ("-1.50", "-1.50"),
+                ("+0.000001", "0.000001"),
+                ("0.0000001", "1E-7"),
+                ("sNaN", "sNaN"),
+                ("-Infinity", "-Infinity"),
+            ] {
+                assert_eq!(assign(&c, dec(input)), Ok(dec(back)), "{ty} {input}");
+                assert_eq!(assign(&c, SqlValue::Text { text: input.into() }), Ok(dec(back)), "{ty} {input}");
+            }
+            assert_eq!(assign(&c, SqlValue::Integer { value: -7 }), Ok(dec("-7")));
+            // A float has no exponent of its own.
+            assert_eq!(assign(&c, SqlValue::Float { text: "1e2".into() }), Ok(dec("100")));
+            assert_eq!(assign(&c, dec("1.2.3")), Err(NOT_A_NUMBER));
+            assert_eq!(assign(&c, SqlValue::Boolean { value: true }), Err(WRONG_TYPE));
+            assert!(same(&dec("1E+2"), &dec("100")) && same(&dec("1.5"), &dec("1.50")) && !same(&dec("1E+2"), &dec("10")));
+            assert!(same(&dec("-0"), &dec("0.00")) && same(&dec("0E+3"), &dec("-0")) && !same(&dec("-1.5"), &dec("1.5")));
+        }
+        let d16 = col("DF", "", "DECFLOAT(16)", true);
+        assert_eq!(assign(&d16, dec("12345678901234567")), Ok(dec("1.234567890123457E+16")));
+        assert_eq!(assign(&d16, dec("1E+400")), Err(OUT_OF_RANGE));
+        let d34 = col("DF", "", "DECFLOAT(34)", true);
+        assert_eq!(assign(&d34, dec("1E+400")), Ok(dec("1E+400")));
     }
 }

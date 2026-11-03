@@ -352,6 +352,52 @@ fn every_type_round_trips() {
 }
 
 #[test]
+fn decfloat_keeps_its_exponent() {
+    let (_c, mut r) = bob();
+    let d = |t: &str| SqlValue::Decimal { text: t.into() };
+    let cases = [
+        ("1.5", "1.5"),
+        ("1.50", "1.50"),
+        ("1.500", "1.500"),
+        ("1E+2", "1E+2"),
+        ("100", "100"),
+        ("1.00E+2", "100"),
+        ("0", "0"),
+        ("0.00", "0.00"),
+        ("0E+3", "0E+3"),
+        ("-0", "-0"),
+        ("-1.50", "-1.50"),
+        ("0.000001", "0.000001"),
+        ("1E-7", "1E-7"),
+    ];
+    let ins = prepared(&mut r, "INSERT INTO HLTEST.ALLTYPES (ID, C_DECFLOAT) VALUES (?, ?)");
+    let upd = prepared(&mut r, "UPDATE HLTEST.ALLTYPES SET C_DECFLOAT = ? WHERE ID = ?");
+    let get = |r: &mut Run, id: i64| query(r, "SELECT C_DECFLOAT FROM HLTEST.ALLTYPES WHERE ID = ?", vec![int(id)]);
+    for (n, (input, back)) in (0i64..).zip(cases) {
+        // A parameter in, fetched back as written.
+        executed(&mut r, ins.statement, vec![vec![int(200 + n), d(input)]]);
+        assert_eq!(get(&mut r, 200 + n), [vec![d(back)]], "insert {input}");
+        // A literal in, and an update by parameter.
+        let lit = if input == "-0" { "-0E0" } else { input };
+        let sql = format!("INSERT INTO HLTEST.ALLTYPES (ID, C_DECFLOAT) VALUES ({}, {lit})", 300 + n);
+        let lit_ins = prepared(&mut r, &sql);
+        executed(&mut r, lit_ins.statement, Vec::new());
+        assert_eq!(get(&mut r, 300 + n), [vec![d(back)]], "literal {input}");
+        executed(&mut r, upd.statement, vec![vec![d("7"), int(300 + n)]]);
+        executed(&mut r, upd.statement, vec![vec![d(input), int(300 + n)]]);
+        assert_eq!(get(&mut r, 300 + n), [vec![d(back)]], "update {input}");
+    }
+    // Equal values match whatever their exponents; each keeps its own.
+    let by_value = |r: &mut Run, v: &str| {
+        let rows = query(r, "SELECT ID, C_DECFLOAT FROM HLTEST.ALLTYPES WHERE C_DECFLOAT = ?", vec![d(v)]);
+        rows.into_iter().filter(|row| matches!(row[0], SqlValue::Integer { value } if (200..300).contains(&value))).collect::<Vec<_>>()
+    };
+    assert_eq!(by_value(&mut r, "1.5"), [vec![int(200), d("1.5")], vec![int(201), d("1.50")], vec![int(202), d("1.500")]]);
+    assert_eq!(by_value(&mut r, "1E+2"), [vec![int(203), d("1E+2")], vec![int(204), d("100")], vec![int(205), d("100")]]);
+    assert_eq!(by_value(&mut r, "0").len(), 4);
+}
+
+#[test]
 fn a_fetch_over_a_megabyte_is_split() {
     let (_c, mut r) = bob();
     let p = prepared(&mut r, "SELECT * FROM HLTEST.BIG");
