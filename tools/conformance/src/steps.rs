@@ -635,6 +635,7 @@ impl Suite {
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
+        reports.push(self.step(&mut s, "92 QAP IFS", Self::qap_ifs)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         s.command("pwrdwn", CMD).ok();

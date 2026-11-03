@@ -23,8 +23,11 @@
 //! lists and query answer within a bound, and the earlier statement is
 //! cancelled while the later still runs (`docs/STORAGE_SERVICE.md` "Long
 //! statements").
+//!
+//! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
 
 mod client;
+mod ifs;
 mod sql;
 
 use std::time::{Duration, Instant};
@@ -241,6 +244,24 @@ impl Suite {
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r
+    }
+
+    /// Step 92: the `Ifs` service through the real job (`ifs.rs`).
+    pub(crate) fn qap_ifs(&self, s: &mut Session) -> Result<String, String> {
+        // A directory USER may not use, made by the security officer.
+        s.command(&format!("MKDIR DIR('{}')", ifs::EXCLUDED), CMD)?;
+        s.command(
+            &format!("CHGAUT OBJ('{}') USER(*PUBLIC) DTAAUT(*EXCLUDE) OBJAUT(*NONE)", ifs::EXCLUDED),
+            CMD,
+        )?;
+        let mut srv = setup(self, s)?;
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let r = ifs::run(&mut a).map_err(|e| format!("IFS: {e}"));
+        let _ = a.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        s.command(&format!("RMDIR DIR('{}')", ifs::EXCLUDED), CMD)?;
+        r.map_err(|e| with_history(s, &e))
     }
 
     /// Step 90: no statement holds up another job. While an aggregate
