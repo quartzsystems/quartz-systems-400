@@ -112,6 +112,10 @@ pub trait BFile: Send + Sync {
     fn set_len(&self, len: u64) -> Result<()>;
     /// Force data (and with `!data_only` the attributes) to disk.
     fn sync(&self, data_only: bool) -> Result<()>;
+    /// An extended attribute of the open file, `None` when absent.
+    fn xattr_get(&self, name: &str) -> Result<Option<Vec<u8>>>;
+    /// Set an extended attribute of the open file.
+    fn xattr_set(&self, name: &str, value: &[u8]) -> Result<()>;
 }
 
 /// The directory tree.

@@ -388,6 +388,7 @@ tags are skipped (later versions add fields); the owner is required.
 | 18 | created | i64 nanoseconds |
 | 19 | generation | u32 (with the inode number, the file ID) |
 | 20 | text | text, 50 characters |
+| 21 | change counter | u64; absent for 0 (written before counters, or never changed) |
 
 | Flag | Attribute |
 |---|---|
@@ -411,6 +412,29 @@ not decode gets a defined record: owner from the mirrored UID (the
 profile with it, else `QDFTOWN`), group from the GID, data authorities
 from the mode bits, every object authority for the owner, none for
 others, CCSID 1208. `RCLLNK` writes it.
+
+**Change counter.** Tag 21 rises on every change to the object's data
+or attributes (QAP's `Stat`, `ifs::meta::change`): a new object gets a
+value; data written and truncation (`write`, `pwrite`, `ftruncate`,
+`O_TRUNC`), a rename or move (the object, its old and its new
+directory), an entry added or removed in a directory (`link`, `unlink`,
+`mkdir`, `rmdir`, `symlink`, `CRTUDFS`, `DLTUDFS`) and every change to
+the record itself (owner, group, authorities, authorization list, CCSID,
+the other attributes, `CHKIN`, `STRJRN`, a restore) each set it to the
+next value. Values come from one counter of the whole volume, so a file
+deleted and made again at a path never shows an earlier value. The
+counter reserves values in blocks of 1024 and keeps the top of its
+reservation in the extended attribute `trusted.qs400.change` (u64 LE)
+on the volume's top directory; after a restart it starts above it, a
+crash skipping at most one block, never reusing one. A record without
+the tag (written before counters) reads 0 and takes a value at its next
+change. A node with no valid record has no counter: it reads 0, and only
+an attribute change or `RCLLNK` writing its record starts one.
+
+In `/QSYS.LIB` the counter is the object's last-changed time in
+nanoseconds: it rises with each change the store records, but the store
+keeps that time in seconds, so two changes within one second may share
+a value. Optical volumes and the devices under `/dev` answer 0.
 
 ## Authority
 

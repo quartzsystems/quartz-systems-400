@@ -94,7 +94,9 @@ impl<B: Backend> Ifs<B> {
         m.flags.set(Flags::CASE_SENSITIVE, case_sensitive);
         m.crtobjaud = crtobjaud;
         m.text = text.chars().take(50).collect();
+        m.change = self.next_change()?;
         meta::write(&self.b, &rel, Kind::Dir, &m, cx.env)?;
+        self.touch(&asp_rel);
         Ok(())
     }
 
@@ -127,7 +129,9 @@ impl<B: Backend> Ifs<B> {
         }
         st.index.drop_tree(&rel);
         drop(st);
-        remove_rel(&self.b, &rel)
+        remove_rel(&self.b, &rel)?;
+        self.touch(&backend::join(UDFS_BASE, &asp));
+        Ok(())
     }
 
     /// `MOUNT TYPE(*UDFS)`: needs `*IOSYSCFG`; `over` must be a

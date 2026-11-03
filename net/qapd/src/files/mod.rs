@@ -7,7 +7,8 @@
 //! operation is the calls those commands make, so QAP's answers,
 //! authority checks and audit entries are theirs.
 //!
-//! - `entries`: `ListDirectory` and `GetInfo`, as `WRKLNK` reads them.
+//! - `entries`: `ListDirectory`, `GetInfo` and `Stat` (version 6), as
+//!   `WRKLNK` reads them.
 //! - `read`: `ReadFile`, as stored or converted, with the shift-state
 //!   memo of mixed files.
 //! - `write`: `WriteFile`, converted per request, the shift-in and
@@ -144,6 +145,7 @@ fn run(c: &dyn IfsClient, memo: &Memo, op: Op, req: &Envelope) -> Done {
     match op {
         Op::ListDirectory => entries::list(c, &decode::<ListDirectory>(req)?),
         Op::GetInfo => entries::info(c, &decode::<PathRef>(req)?.path),
+        Op::Stat => entries::stat(c, &decode::<PathRef>(req)?.path),
         Op::ReadFile => read::read(c, memo, &decode::<ReadFile>(req)?),
         Op::WriteFile => write::write(c, &decode::<WriteFile>(req)?),
         Op::CreateDirectory => names::create_directory(c, &decode::<CreateDirectory>(req)?),

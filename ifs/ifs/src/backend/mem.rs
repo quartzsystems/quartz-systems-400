@@ -304,6 +304,21 @@ impl BFile for MemFile {
     fn sync(&self, _data_only: bool) -> Result<()> {
         Ok(())
     }
+
+    fn xattr_get(&self, name: &str) -> Result<Option<Vec<u8>>> {
+        Ok(self.lock().node(self.ino)?.xattrs.get(name).cloned())
+    }
+
+    fn xattr_set(&self, name: &str, value: &[u8]) -> Result<()> {
+        let mut i = self.lock();
+        if i.fail_xattr_set {
+            return Err(Errno::EIO);
+        }
+        i.node_mut(self.ino)?
+            .xattrs
+            .insert(name.to_string(), value.to_vec());
+        Ok(())
+    }
 }
 
 impl Backend for MemBackend {

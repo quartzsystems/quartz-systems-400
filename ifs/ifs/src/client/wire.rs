@@ -109,7 +109,8 @@ wire_struct!(Stat {
     ino_gen,
     owner,
     group,
-    crtime
+    crtime,
+    change
 });
 wire_struct!(StatVfs {
     bsize,
@@ -449,6 +450,7 @@ mod tests {
         round(&Stat {
             objtype: "*STMF".into(),
             group: Some("DEV".into()),
+            change: 1 << 33,
             ..Stat::default()
         });
         round(&DirEnt {

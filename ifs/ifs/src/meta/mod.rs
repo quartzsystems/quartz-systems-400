@@ -10,6 +10,7 @@
 //! tools, never read for decisions. An object without a valid record
 //! gets [`fallback`] and `RCLLNK` ([`reclaim`]) writes one.
 
+pub mod change;
 pub mod codec;
 pub mod reclaim;
 
@@ -222,6 +223,8 @@ pub struct Meta {
     pub generation: u32,
     /// Text description (`*TEXT`, 50 characters).
     pub text: String,
+    /// The change counter ([`change`]): 0 until the first change.
+    pub change: u64,
 }
 
 impl Meta {
@@ -252,6 +255,7 @@ impl Meta {
             created,
             generation: 0,
             text: String::new(),
+            change: 0,
         }
     }
 

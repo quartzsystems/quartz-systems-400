@@ -60,6 +60,10 @@ pub struct Stat {
     pub group: Option<String>,
     /// Creation time (not in `stat`).
     pub crtime: Nanos,
+    /// The change counter (not in `stat`; `meta::change`): up on every
+    /// change to the data or attributes, never reused. In `/QSYS.LIB`
+    /// the object's change time in nanoseconds; 0 where there is none.
+    pub change: u64,
 }
 
 /// `struct statvfs`.
@@ -111,6 +115,7 @@ pub(crate) fn stat_of(node: &Node, m: &Meta, ids: &dyn IdMap) -> Stat {
         owner: m.owner.clone(),
         group: m.group.clone(),
         crtime: m.created,
+        change: m.change,
         ..Stat::default()
     };
     if node.ntype() == NodeType::Symlink {
@@ -138,6 +143,7 @@ pub(crate) fn stat_of(node: &Node, m: &Meta, ids: &dyn IdMap) -> Stat {
             s.ctime = e.changed;
             s.atime = e.changed;
             s.crtime = e.created;
+            s.change = u64::try_from(e.changed).unwrap_or(0);
             s.codepage = ccsid::conv::codepage_of(e.ccsid);
         }
         Node::Opt { entry, .. } => s.size = entry.size,
@@ -167,7 +173,7 @@ impl<B: Backend> Ifs<B> {
 
     /// `fstat()`.
     pub fn fstat(&self, cx: &Ctx<'_>, fd: i32) -> Result<Stat> {
-        let (path, fs, bst, len) = {
+        let (path, fs, bst, len, change) = {
             let mut st = self.lock();
             let rest = &mut st.rest;
             let id = rest
@@ -177,9 +183,9 @@ impl<B: Backend> Ifs<B> {
                 .ok_or(Errno::EBADF)?
                 .open;
             let o = rest.opens.get(&id).ok_or(Errno::EBADF)?;
-            let bst = match &o.kind {
-                OpenKind::File(file) => Some(file.stat()?),
-                _ => None,
+            let (bst, change) = match &o.kind {
+                OpenKind::File(file) => (Some(file.stat()?), crate::meta::change::of_file(file)),
+                _ => (None, 0),
             };
             let len = match &o.kind {
                 OpenKind::Member { data, .. } | OpenKind::Stream { data, .. } => {
@@ -187,7 +193,7 @@ impl<B: Backend> Ifs<B> {
                 }
                 _ => None,
             };
-            (o.path.clone(), o.key.fs, bst, len)
+            (o.path.clone(), o.key.fs, bst, len, change)
         };
         let Some(bst) = bst else {
             let mut s = self.lstat_system(cx, &path)?;
@@ -214,6 +220,7 @@ impl<B: Backend> Ifs<B> {
         s.atime = bst.atime;
         s.ctime = bst.ctime;
         s.allocsize = bst.alloc;
+        s.change = change;
         Ok(s)
     }
 

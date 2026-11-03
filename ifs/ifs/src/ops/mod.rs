@@ -299,6 +299,7 @@ pub struct Ifs<B: Backend> {
     opt: Box<dyn OpticalView>,
     cfg: Config,
     st: Mutex<State<B::File>>,
+    clock: Mutex<meta::change::Clock>,
 }
 
 /// The directories every system has, with their `*PUBLIC` data
@@ -344,6 +345,7 @@ impl<B: Backend> Ifs<B> {
                     next_gen: 1,
                 },
             }),
+            clock: Mutex::new(meta::change::Clock::default()),
         }
     }
 
@@ -562,15 +564,50 @@ impl<B: Backend> Ifs<B> {
         Ok((r, m))
     }
 
-    /// Write a backend node's record (and its mirror).
+    /// Write a backend node's changed record (and its mirror), with the
+    /// next change value.
     pub(crate) fn put_meta(&self, cx: &Ctx<'_>, node: &Node, m: &Meta) -> Result<()> {
-        match node {
-            Node::Back { rel, st, .. } => meta::write(&self.b, rel, st.kind, m, cx.env),
-            Node::UdfsFile { asp, name, .. } => {
-                let rel = crate::backend::join(&crate::backend::join(UDFS_BASE, asp), name);
-                meta::write(&self.b, &rel, Kind::Dir, m, cx.env)
+        let (rel, kind) = match node {
+            Node::Back { rel, st, .. } => (rel.clone(), st.kind),
+            Node::UdfsFile { asp, name, .. } => (
+                crate::backend::join(&crate::backend::join(UDFS_BASE, asp), name),
+                Kind::Dir,
+            ),
+            _ => return Err(Errno::ENOTSUP),
+        };
+        let mut m = m.clone();
+        m.change = self.next_change()?;
+        meta::write(&self.b, &rel, kind, &m, cx.env)
+    }
+
+    /// The next change value (`meta::change`).
+    pub(crate) fn next_change(&self) -> Result<u64> {
+        self.clock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take(&self.b)
+    }
+
+    /// A change to the data of the backend node at `rel` (a directory's
+    /// entries too): its record takes the next change value.
+    pub(crate) fn touch(&self, rel: &str) {
+        let r = self
+            .next_change()
+            .and_then(|v| meta::change::stamp(&self.b, rel, v));
+        if let Err(e) = r {
+            tracing::warn!(error = %e, "IFS change counter not updated");
+        }
+    }
+
+    /// A change to an open file's data.
+    pub(crate) fn touch_open(&self, o: &Open<B::File>) {
+        if let OpenKind::File(file) = &o.kind {
+            let r = self
+                .next_change()
+                .and_then(|v| meta::change::stamp_file(file, v));
+            if let Err(e) = r {
+                tracing::warn!(error = %e, "IFS change counter not updated");
             }
-            _ => Err(Errno::ENOTSUP),
         }
     }
 

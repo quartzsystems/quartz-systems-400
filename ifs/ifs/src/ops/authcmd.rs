@@ -154,8 +154,11 @@ impl<B: Backend> Ifs<B> {
         if Self::read_only(&sys, r.node.fs()) {
             return Err(Errno::EROFS);
         }
+        let before = m.clone();
         let detail = f(&mut m, cx)?;
-        self.put_meta(cx, &r.node, &m)?;
+        if m != before {
+            self.put_meta(cx, &r.node, &m)?;
+        }
         cx.audit_always(kind, &m, &r.node, &r.path(), oper, detail);
         Ok(())
     }

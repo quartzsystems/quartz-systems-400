@@ -259,7 +259,7 @@ impl<B: Backend> Ifs<B> {
                         };
                         let generation = Self::next_generation(rest);
                         let inherit = a.oflag & f::O_INHERITMODE != 0;
-                        let m = new_meta(
+                        let mut m = new_meta(
                             cx,
                             &dm,
                             Kind::File,
@@ -270,8 +270,10 @@ impl<B: Backend> Ifs<B> {
                         );
                         let crel = backend::join(rel, &name);
                         let file = self.b.create(&crel, crate::auth::data::mode_of(&m))?;
+                        m.change = self.next_change()?;
                         crate::meta::write(&self.b, &crel, Kind::File, &m, cx.env)?;
                         sys.index.added(sys.b, rel, &name);
+                        self.touch(rel);
                         created = Some(file);
                         let r = sys.child(&dir, &name)?;
                         cx.audit_always(
@@ -404,15 +406,13 @@ impl<B: Backend> Ifs<B> {
         Ok(fd)
     }
 
-    /// The archive flags after a change.
+    /// The archive flags and change counter after a truncation.
     pub(crate) fn mark_changed(&self, cx: &Ctx<'_>, node: &Node, m: &Meta) {
-        if !m.flags.has(Flags::PCARCHIVE) || !m.flags.has(Flags::SYSARCHIVE) {
-            let mut m = m.clone();
-            m.flags.set(Flags::PCARCHIVE, true);
-            m.flags.set(Flags::SYSARCHIVE, true);
-            if let Err(e) = self.put_meta(cx, node, &m) {
-                tracing::warn!(error = %e, "IFS archive flags not updated");
-            }
+        let mut m = m.clone();
+        m.flags.set(Flags::PCARCHIVE, true);
+        m.flags.set(Flags::SYSARCHIVE, true);
+        if let Err(e) = self.put_meta(cx, node, &m) {
+            tracing::warn!(error = %e, "IFS archive flags not updated");
         }
     }
 
@@ -509,6 +509,7 @@ impl<B: Backend> Ifs<B> {
             if !tail.is_empty() {
                 let pos = o.pos;
                 Self::raw_write(&mut o, &tail, pos)?;
+                self.touch_open(&o);
             }
         }
         self.flush(&mut o)

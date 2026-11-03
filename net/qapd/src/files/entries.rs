@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `ListDirectory` and `GetInfo`: the directory read and each link's
+//! `ListDirectory`, `GetInfo` and `Stat`: the directory read and each link's
 //! attributes, as `WRKLNK` and `DSPLNK` read them (`*R` on the
 //! directory, `*X` on the path), names matched and ordered as they
 //! match and order them.
@@ -32,14 +32,18 @@ fn ms(ns: i64) -> i64 {
 
 /// The entry for `path`, named `name`, not following a link.
 pub(super) fn entry(c: &dyn IfsClient, path: &str, name: &str) -> Result<Entry, ifs::Errno> {
-    let s = c.stat(path, false)?;
+    Ok(entry_of(c, path, name, c.stat(path, false)?))
+}
+
+/// The entry of a link whose attributes are `s`.
+fn entry_of(c: &dyn IfsClient, path: &str, name: &str, s: Stat) -> Entry {
     let kind = kind_of(&s);
     let target = if kind == EntryKind::Symlink {
         c.readlink(path).ok()
     } else {
         None
     };
-    Ok(Entry {
+    Entry {
         name: name.to_string(),
         kind,
         size: s.size,
@@ -47,7 +51,7 @@ pub(super) fn entry(c: &dyn IfsClient, path: &str, name: &str) -> Result<Entry, 
         owner: s.owner,
         ccsid: s.ccsid,
         target,
-    })
+    }
 }
 
 /// `ListDirectory`: the names matching, ordered as the displays order
@@ -91,4 +95,17 @@ pub(super) fn info(c: &dyn IfsClient, path: &str) -> Done {
     let (_, name) = split(path);
     let e = entry(c, path, &name).map_err(|e| Stop::errno(e, path))?;
     Ok(ipc::encode(&e))
+}
+
+/// `Stat`: what `GetInfo` answers and the change counter.
+pub(super) fn stat(c: &dyn IfsClient, path: &str) -> Done {
+    let (_, name) = split(path);
+    let (entry, change) = c
+        .stat(path, false)
+        .map(|s| {
+            let change = s.change;
+            (entry_of(c, path, &name, s), change)
+        })
+        .map_err(|e| Stop::errno(e, path))?;
+    Ok(ipc::encode(&qap_proto::ops::ifs::Stat { entry, change }))
 }

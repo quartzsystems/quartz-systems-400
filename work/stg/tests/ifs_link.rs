@@ -140,6 +140,10 @@ fn files_over_the_link() {
     assert_eq!(st.owner, "BOB");
     assert_eq!(st.uid, 100);
     assert_eq!(st.ccsid, 1208);
+    // The change counter comes over the link, and rises.
+    assert!(st.change > 0);
+    c.chmod("/home/bob/a.txt", 0o600).unwrap();
+    assert!(c.stat("/home/bob/a.txt", true).unwrap().change > st.change);
     let fd = c.open("/home/bob/a.txt", OpenArgs::new(O_RDONLY)).unwrap();
     assert_eq!(read_all(&c, fd).unwrap(), big);
     assert_eq!(c.lseek(fd, 5, SEEK_SET).unwrap(), 5);

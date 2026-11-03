@@ -166,6 +166,27 @@ impl BFile for LinuxFile {
             rfs::fsync(&self.fd).map_err(e)
         }
     }
+
+    fn xattr_get(&self, name: &str) -> Result<Option<Vec<u8>>> {
+        let mut buf = vec![0u8; 512];
+        loop {
+            match rfs::fgetxattr(&self.fd, name, &mut buf[..]) {
+                Ok(n) => {
+                    buf.truncate(n);
+                    return Ok(Some(buf));
+                }
+                Err(rustix::io::Errno::NODATA) => return Ok(None),
+                Err(rustix::io::Errno::RANGE) if buf.len() < 1 << 16 => {
+                    buf.resize(buf.len() * 4, 0);
+                }
+                Err(err) => return Err(e(err)),
+            }
+        }
+    }
+
+    fn xattr_set(&self, name: &str, value: &[u8]) -> Result<()> {
+        rfs::fsetxattr(&self.fd, name, value, XattrFlags::empty()).map_err(e)
+    }
 }
 
 fn ts(t: Option<Nanos>) -> Timespec {

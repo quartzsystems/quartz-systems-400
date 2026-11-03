@@ -59,6 +59,8 @@ pub mod tag {
     pub const GENERATION: u8 = 19;
     /// Text.
     pub const TEXT: u8 = 20;
+    /// The change counter.
+    pub const CHANGE: u8 = 21;
 }
 
 /// Why a record would not decode.
@@ -148,6 +150,9 @@ pub fn encode(m: &Meta) -> Vec<u8> {
     w.field(tag::GENERATION, &m.generation.to_le_bytes());
     if !m.text.is_empty() {
         w.field(tag::TEXT, s(&m.text));
+    }
+    if m.change != 0 {
+        w.field(tag::CHANGE, &m.change.to_le_bytes());
     }
     w.0
 }
@@ -273,6 +278,7 @@ pub fn decode(raw: &[u8]) -> Result<Meta, DecodeError> {
             tag::CREATED => m.created = i64::from_le_bytes(arr(v)?),
             tag::GENERATION => m.generation = u32v()?,
             tag::TEXT => m.text = text(v)?,
+            tag::CHANGE => m.change = u64::from_le_bytes(arr(v)?),
             _ => {}
         }
     }
@@ -317,6 +323,7 @@ mod tests {
         });
         m.generation = 9;
         m.text = "Payroll data".into();
+        m.change = 1 << 40;
         m
     }
 

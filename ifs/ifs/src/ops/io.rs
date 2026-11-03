@@ -162,6 +162,7 @@ impl<B: Backend> Ifs<B> {
         };
         let pos = o.pos;
         let n = Self::raw_write(o, &raw, pos)?;
+        self.touch_open(o);
         o.pos += n as u64;
         Ok(if o.text.is_some() { data.len() } else { n })
     }
@@ -207,6 +208,7 @@ impl<B: Backend> Ifs<B> {
             None => data.to_vec(),
         };
         let n = Self::raw_write(o, &raw, off)?;
+        self.touch_open(o);
         Ok(if o.text.is_some() { data.len() } else { n })
     }
 
@@ -255,7 +257,11 @@ impl<B: Backend> Ifs<B> {
             return Err(Errno::EFBIG);
         }
         match &mut o.kind {
-            OpenKind::File(file) => file.set_len(len),
+            OpenKind::File(file) => {
+                file.set_len(len)?;
+                self.touch_open(o);
+                Ok(())
+            }
             OpenKind::Member { data, dirty, .. }
             | OpenKind::Stream { data, dirty, .. }
             | OpenKind::Opt {

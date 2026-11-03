@@ -28,6 +28,12 @@ fn exercise<B: Backend>(b: &B) {
     f.set_len(5).unwrap();
     f.sync(true).unwrap();
     f.sync(false).unwrap();
+    // Extended attributes through the open file.
+    assert_eq!(f.xattr_get("trusted.qs400.t").unwrap(), None);
+    f.xattr_set("trusted.qs400.t", b"fd").unwrap();
+    assert_eq!(f.xattr_get("trusted.qs400.t").unwrap(), Some(b"fd".to_vec()));
+    assert_eq!(b.xattr_get("t/a", "trusted.qs400.t").unwrap(), Some(b"fd".to_vec()));
+    b.xattr_remove("t/a", "trusted.qs400.t").unwrap();
     drop(f);
     let st = b.stat("t/a").unwrap();
     assert_eq!(
@@ -137,7 +143,11 @@ fn ifs_over<B: Backend>(b: B) {
     ifs.mkdir(&cx(&sec), "/home/bob", 0o755).unwrap();
     ifs.chgown(&cx(&sec), "/home/bob", "BOB", true).unwrap();
     let fd = ifs.creat(&cx(&p), "/home/BOB/Data.txt", 0o640).unwrap();
+    let made = ifs.fstat(&cx(&p), fd).unwrap().change;
     ifs.write(&cx(&p), fd, b"x").unwrap();
+    // The change counter, through the open file and on the backend's top.
+    assert!(ifs.fstat(&cx(&p), fd).unwrap().change > made);
+    assert!(ifs::meta::change::mark(ifs.backend()).unwrap() > made);
     ifs.close(&cx(&p), fd).unwrap();
     let st = ifs.backend().stat("root/home/bob/Data.txt").unwrap();
     // No primary group: the group bits show as none.
