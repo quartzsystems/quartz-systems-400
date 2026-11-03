@@ -39,7 +39,7 @@ fn version_mismatch_closes() {
     let rep = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 5,
+            min_version: 6,
             max_version: 9,
             ..Hello::default()
         },

@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Version negotiation (docs/QAP.md, "Compatibility of new values"):
-//! the server speaks 1 to 4 and picks the highest both sides do; a
+//! the server speaks 1 to 5 and picks the highest both sides do; a
 //! version-1 client sees exactly the version-1 protocol.
 
 mod common;
@@ -16,7 +16,7 @@ use common::{cfg, start};
 
 #[test]
 fn the_highest_common_version() {
-    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 9, 4), (3, 9, 4)] {
+    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 5, 5), (5, 5, 5), (1, 9, 5), (3, 9, 5)] {
         let mut r = start(cfg());
         let h: HelloReply = r.client.hello_range(min, max).body_as().unwrap();
         assert_eq!(h.version, want, "{min}..{max}");
@@ -26,13 +26,27 @@ fn the_highest_common_version() {
     let refused = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 5,
+            min_version: 6,
             max_version: 9,
             ..Hello::default()
         },
     );
     assert_eq!(refused.status, Status::VersionUnsupported);
     assert!(r.client.closed());
+}
+
+#[test]
+fn version_4_sees_no_ifs() {
+    let mut r = start(cfg());
+    let h: HelloReply = r.client.hello_range(1, 4).body_as().unwrap();
+    assert_eq!(h.version, 4);
+    assert!(!h.services.contains(&Service::Ifs));
+    r.client.sign_on("BOB", "SECRET1");
+    for op in Op::ALL.into_iter().filter(|o| o.code().0 == Service::Ifs) {
+        let rep = r.client.call(op, &qap_proto::ops::ifs::PathRef::default());
+        assert_eq!(rep.status, Status::InvalidRequest, "{op:?}");
+        assert!(rep.body.is_empty());
+    }
 }
 
 #[test]

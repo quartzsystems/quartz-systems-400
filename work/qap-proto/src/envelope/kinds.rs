@@ -42,6 +42,8 @@ pub enum Service {
     Spool,
     /// SQL and the catalog (version 4).
     Sql,
+    /// Integrated file system files (version 5).
+    Ifs,
 }
 
 wire_enum!(Service {
@@ -51,17 +53,19 @@ wire_enum!(Service {
     3 => Command,
     4 => Spool,
     5 => Sql,
+    6 => Ifs,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 6] = [
+    pub const ALL: [Service; 7] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
         Service::Command,
         Service::Spool,
         Service::Sql,
+        Service::Ifs,
     ];
 
     /// The protocol version that defines it.
@@ -72,6 +76,7 @@ impl Service {
             Service::Command => 2,
             Service::Spool => 3,
             Service::Sql => 4,
+            Service::Ifs => 5,
         }
     }
 
@@ -111,6 +116,8 @@ pub enum Status {
     SessionExpired,
     /// The server is ending.
     ServerEnding,
+    /// The name is taken (version 5).
+    Exists,
     /// Another job holds the object (version 3).
     InUse,
     /// An SQL statement failed; the body is `SqlFailure` (version 4).
@@ -131,19 +138,21 @@ wire_enum!(Status: u16 {
     10 => Cancelled,
     11 => SessionExpired,
     12 => ServerEnding,
+    13 => Exists,
     14 => InUse,
     15 => SqlError,
 });
 
 impl Status {
     /// The protocol version that defines it. Version 2 defines no new
-    /// status; version 3 defines `InUse`, version 4 `SqlError`. `Exists`
-    /// (13) comes with the version whose operations first use it.
+    /// status; version 3 defines `InUse`, version 4 `SqlError`, version 5
+    /// `Exists`.
     #[must_use]
     pub const fn since(self) -> u16 {
         match self {
             Status::InUse => 3,
             Status::SqlError => 4,
+            Status::Exists => 5,
             _ => 1,
         }
     }
@@ -156,7 +165,7 @@ impl Status {
     }
 
     /// Every status, in value order.
-    pub const ALL: [Status; 15] = [
+    pub const ALL: [Status; 16] = [
         Status::Ok,
         Status::Error,
         Status::VersionUnsupported,
@@ -170,6 +179,7 @@ impl Status {
         Status::Cancelled,
         Status::SessionExpired,
         Status::ServerEnding,
+        Status::Exists,
         Status::InUse,
         Status::SqlError,
     ];

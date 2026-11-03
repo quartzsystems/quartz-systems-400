@@ -173,23 +173,20 @@ impl Envelope {
     /// body cut in order, `More` on all but the last, the message on
     /// the last.
     pub fn replies(req: &Envelope, status: Status, message: Option<ServerMessage>, body: Vec<u8>) -> Result<Vec<Self>, ProtoError> {
-        let whole = Self::reply(req, status, message, body);
-        let head = encode(&Self {
-            body: Vec::new(),
-            ..whole.clone()
-        })
-        .len();
-        if head + whole.body.len() <= MAX_FRAME {
-            return Ok(vec![whole]);
+        // The head without the body, so a large body is not copied twice.
+        let empty = Self::reply(req, status, message, Vec::new());
+        let head = encode(&empty).len();
+        if head + body.len() <= MAX_FRAME {
+            return Ok(vec![Self { body, ..empty }]);
         }
         let room = MAX_FRAME.checked_sub(head).filter(|n| *n > 0).ok_or(ProtoError::TooLong { len: head })?;
-        let n = whole.body.len().div_ceil(room);
+        let n = body.len().div_ceil(room);
         let mut out = Vec::with_capacity(n);
-        for (i, part) in whole.body.chunks(room).enumerate() {
+        for (i, part) in body.chunks(room).enumerate() {
             let last = i + 1 == n;
             out.push(Self {
                 flags: if last { 0 } else { MORE },
-                message: if last { whole.message.clone() } else { None },
+                message: if last { empty.message.clone() } else { None },
                 body: part.to_vec(),
                 ..Self::reply(req, status, None, Vec::new())
             });

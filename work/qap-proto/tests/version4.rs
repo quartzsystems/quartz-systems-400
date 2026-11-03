@@ -15,7 +15,7 @@ use qap_proto::ops::sql::{
     MAX_PICOS, Naming, Prepare, Prepared, Schema, Schemas, SetOptions, SqlFailure, SqlValue, StatementRef, Table,
     TableKind, Tables,
 };
-use qap_proto::{Op, Service, Status, Token, VERSION};
+use qap_proto::{Op, Service, Status, Token};
 
 fn same<T: Wire + PartialEq + Debug>(v: &T) {
     assert_eq!(&decode::<T>(&encode(v)).unwrap(), v);
@@ -166,7 +166,6 @@ fn flags_are_0_or_1() {
 
 #[test]
 fn version_4_values() {
-    assert_eq!(VERSION, 4);
     assert_eq!(encode(&Service::Sql), [5]);
     assert_eq!(Service::Sql.since(), 4);
     for code in 1..=11 {
@@ -197,11 +196,11 @@ fn version_4_values() {
 #[test]
 fn negotiation_of_1_to_4() {
     for max in 1..=4 {
-        assert_eq!(choose_version(1, max, VERSION), Some(max));
+        assert_eq!(choose_version(1, max, 4), Some(max));
     }
-    assert_eq!(choose_version(1, 9, VERSION), Some(4));
-    assert_eq!(choose_version(4, 4, VERSION), Some(4));
-    assert_eq!(choose_version(5, 9, VERSION), None);
+    assert_eq!(choose_version(1, 9, 4), Some(4));
+    assert_eq!(choose_version(4, 4, 4), Some(4));
+    assert_eq!(choose_version(5, 9, 4), None);
 }
 
 #[test]

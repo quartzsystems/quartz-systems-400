@@ -7,6 +7,7 @@
 
 pub mod command;
 pub mod connection;
+pub mod ifs;
 pub mod signon;
 pub mod spool;
 pub mod sql;
@@ -82,11 +83,27 @@ pub enum Op {
     ListColumns,
     /// `Connection` 3: the connection's job (version 4).
     JobInfo,
+    /// `Ifs` 1: a directory's entries (version 5).
+    ListDirectory,
+    /// `Ifs` 2: one entry (version 5).
+    GetInfo,
+    /// `Ifs` 3: a file's data, converted or not (version 5).
+    ReadFile,
+    /// `Ifs` 4: write a file (version 5).
+    WriteFile,
+    /// `Ifs` 5: make a directory (version 5).
+    CreateDirectory,
+    /// `Ifs` 6: delete a file, a link or an empty directory (version 5).
+    Delete,
+    /// `Ifs` 7: rename or move (version 5).
+    Rename,
+    /// `Ifs` 8: copy a file on the system (version 5).
+    Copy,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 32] = [
+    pub const ALL: [Op; 40] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -119,6 +136,14 @@ impl Op {
         Op::ListTables,
         Op::ListColumns,
         Op::JobInfo,
+        Op::ListDirectory,
+        Op::GetInfo,
+        Op::ReadFile,
+        Op::WriteFile,
+        Op::CreateDirectory,
+        Op::Delete,
+        Op::Rename,
+        Op::Copy,
     ];
 
     /// Its service and code.
@@ -157,6 +182,14 @@ impl Op {
             Op::ListTables => (Service::Sql, 10),
             Op::ListColumns => (Service::Sql, 11),
             Op::JobInfo => (Service::Connection, 3),
+            Op::ListDirectory => (Service::Ifs, 1),
+            Op::GetInfo => (Service::Ifs, 2),
+            Op::ReadFile => (Service::Ifs, 3),
+            Op::WriteFile => (Service::Ifs, 4),
+            Op::CreateDirectory => (Service::Ifs, 5),
+            Op::Delete => (Service::Ifs, 6),
+            Op::Rename => (Service::Ifs, 7),
+            Op::Copy => (Service::Ifs, 8),
         }
     }
 
@@ -186,6 +219,14 @@ impl Op {
             | Op::ListTables
             | Op::ListColumns
             | Op::JobInfo => 4,
+            Op::ListDirectory
+            | Op::GetInfo
+            | Op::ReadFile
+            | Op::WriteFile
+            | Op::CreateDirectory
+            | Op::Delete
+            | Op::Rename
+            | Op::Copy => 5,
         }
     }
 
