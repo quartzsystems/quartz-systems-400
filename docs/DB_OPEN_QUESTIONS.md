@@ -380,7 +380,15 @@ rolled back first. Test: `ENDCMTCTL` from a program with the file open.
 
 **Lock levels.** `*CHG` locks records read for update and keeps changed
 ones to the boundary; `*CS` locks every record read until the next read
-and changed ones to the boundary; `*ALL` keeps every record read. The
+and changed ones to the boundary; `*ALL` keeps every record read. On a
+path opened for update the record is locked for update; on an input
+path, and for an SQL query, `*ALL` takes a read lock instead
+(`db::odp::locks`): other jobs read the record, at `*ALL` too, but a
+lock for update waits for every other job's read lock (`01218`, then
+`CPF5027` after `WAITRCD`; `SQL0913` in SQL), and a job's own read lock
+gives way to its own update when no other job shares it. `*CS` input
+paths and queries take no read locks (a record being changed is still
+locked for update). The
 record a path still holds at `COMMIT` is released too. Message IDs
 CPF4293, CPF4328, CPF8350, CPF8351 and CPF8367 are placeholders. Test: `*CS` with
 two jobs reading the same record.

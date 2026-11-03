@@ -849,7 +849,12 @@ impl Odp {
     fn take_lock(&mut self, k: &PathKey, lock: bool) -> Result<()> {
         self.unlock();
         let lock = lock || matches!(self.lcklvl(), Some(LckLvl::Cs | LckLvl::All));
-        if !(lock && (self.opts.usage.update || self.opts.usage.delete)) {
+        let changes = self.opts.usage.update || self.opts.usage.delete;
+        if !changes && self.lcklvl() == Some(LckLvl::All) {
+            // A read-only path under `*ALL`: a read lock to the cycle's end.
+            return self.lock_read(k);
+        }
+        if !(lock && changes) {
             return Ok(());
         }
         let member = self.lock_member(k.format);
@@ -874,6 +879,28 @@ impl Odp {
         }
         self.locked = Some((member, k.clone()));
         Ok(())
+    }
+
+    /// The commit definition's read lock on a record this path read.
+    fn lock_read(&mut self, k: &PathKey) -> Result<()> {
+        let Some(c) = self.cmt.clone() else {
+            return Ok(());
+        };
+        let member = self.lock_member(k.format);
+        match c.borrow_mut().lock_read(member, k.rrn) {
+            Ok(()) => Ok(()),
+            Err(Refused::Job(holder)) => Err(DbError::RecordLocked {
+                file: self.member.file.name().to_string(),
+                member: self.member.name().to_string(),
+                rrn: k.rrn,
+                holder: holder.0,
+            }),
+            Err(Refused::SameJob) => Err(DbError::RecordLockedInJob {
+                file: self.member.file.name().to_string(),
+                member: self.member.name().to_string(),
+                rrn: k.rrn,
+            }),
+        }
     }
 
     /// Release the record lock held, if any; under `LCKLVL(*ALL)` the

@@ -368,6 +368,115 @@ fn lock_levels() {
 }
 
 #[test]
+fn all_reads_take_shared_locks() {
+    let (_d, mut store, lib) = open_new();
+    let (cust, _jid) = setup(&mut store, lib, false);
+    let locks = odp::new_shared();
+    let mut resolve = resolve_in(name("QSTEST"), vec![(name("CUST"), cust)]);
+    let fr = FileRef::parse("CUST").unwrap();
+    let mut t = store.begin().unwrap();
+    let input = OpenOpts {
+        usage: Usage::INPUT,
+        commit: true,
+        ..OpenOpts::input(JobHandle(0))
+    };
+    let update = OpenOpts {
+        usage: Usage::UPDATE,
+        commit: true,
+        ..OpenOpts::input(JobHandle(0))
+    };
+    // *ALL on an input path: each record read is read-locked to the commit.
+    let mut s1 = Session::new(JobHandle(1), locks.clone());
+    s1.strcmtctl(&mut t, LckLvl::All, None, NOW).unwrap();
+    let r1 = s1.open(&mut t, &fr, &mut resolve, input.clone()).unwrap();
+    {
+        let mut o = r1.borrow_mut();
+        o.read(&mut t, false).unwrap();
+        o.read(&mut t, false).unwrap();
+        // Read again in the unit: still one lock.
+        o.chain(&mut t, &key("1"), false).unwrap();
+    }
+    let member = r1.borrow().member().id();
+    let table = || locks.lock().unwrap().readers(member, 1);
+    assert_eq!(table(), [JobHandle(1)]);
+    assert_eq!(locks.lock().unwrap().holder(member, 1), None);
+    assert_eq!(s1.commit_def().unwrap().borrow().reads().len(), 2);
+    // A second *ALL reader shares the records.
+    let mut s2 = Session::new(JobHandle(2), locks.clone());
+    s2.strcmtctl(&mut t, LckLvl::All, None, NOW).unwrap();
+    let r2 = s2.open(&mut t, &fr, &mut resolve, input).unwrap();
+    assert!(r2.borrow_mut().chain(&mut t, &key("1"), false).unwrap().is_some());
+    assert_eq!(table(), [JobHandle(1), JobHandle(2)]);
+    // A third job may not change them (it waits, as WAITRCD says, then
+    // fails); a record nobody read it may.
+    let mut s3 = Session::new(JobHandle(3), locks.clone());
+    let w3 = s3
+        .open(
+            &mut t,
+            &fr,
+            &mut resolve,
+            OpenOpts {
+                usage: Usage::UPDATE,
+                ..OpenOpts::input(JobHandle(0))
+            },
+        )
+        .unwrap();
+    let e = w3.borrow_mut().chain(&mut t, &key("1"), true).unwrap_err();
+    assert!(matches!(e, DbError::RecordLocked { holder: 1, .. }));
+    assert_eq!(e.msgid(), Some("CPF5027"));
+    assert_eq!(w3.borrow().fb.status, odp::status::LOCKED);
+    assert!(w3.borrow_mut().chain(&mut t, &key("3"), true).unwrap().is_some());
+    w3.borrow_mut().update(&mut t, &record(3, "Carla"), &[0]).unwrap();
+    // The reader's own update waits while the other reader shares it.
+    let u1 = s1.open(&mut t, &fr, &mut resolve, update).unwrap();
+    assert!(matches!(
+        u1.borrow_mut().chain(&mut t, &key("1"), true),
+        Err(DbError::RecordLocked { holder: 2, .. })
+    ));
+    s2.commit(&mut t, None).unwrap();
+    assert_eq!(table(), [JobHandle(1)]);
+    // Alone, it takes the record for update.
+    u1.borrow_mut().chain(&mut t, &key("1"), true).unwrap();
+    u1.borrow_mut().unlock_op(&mut t).unwrap();
+    assert_eq!(locks.lock().unwrap().holder(member, 1), Some(JobHandle(1)));
+    s1.rollbck(&mut t, None).unwrap();
+    assert!(locks.lock().unwrap().is_empty());
+    // *CS and *CHG input paths take no read locks.
+    for lvl in [LckLvl::Cs, LckLvl::Chg] {
+        let mut s = Session::new(JobHandle(4), locks.clone());
+        s.strcmtctl(&mut t, lvl, None, NOW).unwrap();
+        let o = s
+            .open(
+                &mut t,
+                &fr,
+                &mut resolve,
+                OpenOpts {
+                    usage: Usage::INPUT,
+                    commit: true,
+                    ..OpenOpts::input(JobHandle(0))
+                },
+            )
+            .unwrap();
+        o.borrow_mut().read(&mut t, false).unwrap();
+        assert!(locks.lock().unwrap().is_empty(), "{lvl:?}");
+        s.close(&mut t, &o);
+        s.end(&mut t);
+    }
+    // The end of a job releases its read locks.
+    r2.borrow_mut().chain(&mut t, &key("2"), false).unwrap();
+    assert_eq!(locks.lock().unwrap().readers(member, 2), [JobHandle(2)]);
+    s2.close(&mut t, &r2);
+    s2.end(&mut t);
+    assert!(locks.lock().unwrap().is_empty());
+    s1.close(&mut t, &r1);
+    s1.close(&mut t, &u1);
+    s3.close(&mut t, &w3);
+    s1.end(&mut t);
+    s3.end(&mut t);
+    t.commit().unwrap();
+}
+
+#[test]
 fn apply_remove_and_recover() {
     let (d, mut store, lib) = open_new();
     let (cust, jid) = setup(&mut store, lib, true);

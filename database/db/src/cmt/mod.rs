@@ -22,7 +22,7 @@ use crate::file::{FileDesc, MemberEntry};
 use crate::journal::undo::{ChangeReport, MemberMap, undo};
 use crate::journal::{JrnCtx, cycle_entry};
 use crate::member::Member;
-use crate::odp::{Holder, SharedLocks};
+use crate::odp::{Holder, Refused, SharedLocks};
 
 /// `LCKLVL`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -87,6 +87,8 @@ pub struct CommitDef {
     touched: HashMap<(Name, Name, Name), (FileDesc, MemberEntry)>,
     /// Record locks held until the cycle ends, with their holders.
     held: Vec<(ObjectId, u64, Holder)>,
+    /// Read locks held until the cycle ends (`*ALL`), the definition's.
+    reads: Vec<(ObjectId, u64)>,
     /// Changes made in the cycle.
     changes: u64,
     /// The definition's owner number in the record lock table.
@@ -101,6 +103,7 @@ impl std::fmt::Debug for CommitDef {
             .field("cycle", &self.cycle)
             .field("changes", &self.changes)
             .field("held", &self.held.len())
+            .field("reads", &self.reads.len())
             .finish_non_exhaustive()
     }
 }
@@ -123,6 +126,7 @@ impl CommitDef {
             journals: Vec::new(),
             touched: HashMap::new(),
             held: Vec::new(),
+            reads: Vec::new(),
             changes: 0,
             owner: crate::odp::locks::next_owner(),
         }
@@ -183,6 +187,22 @@ impl CommitDef {
     #[must_use]
     pub fn held(&self) -> &[(ObjectId, u64, Holder)] {
         &self.held
+    }
+
+    /// Read locks held for the cycle.
+    #[must_use]
+    pub fn reads(&self) -> &[(ObjectId, u64)] {
+        &self.reads
+    }
+
+    /// A record read under `*ALL`: read-locked by the definition until
+    /// the cycle ends, so no other job changes it meanwhile.
+    pub fn lock_read(&mut self, member: ObjectId, rrn: u64) -> std::result::Result<(), Refused> {
+        let who = Holder::new(self.job, self.owner);
+        if self.locks.lock().expect("lock table").lock_read(member, rrn, who)? {
+            self.reads.push((member, rrn));
+        }
+        Ok(())
     }
 
     /// Whether the cycle holds a record.
@@ -246,6 +266,10 @@ impl CommitDef {
         let mut table = self.locks.lock().expect("lock table");
         for (member, rrn, who) in self.held.drain(..) {
             table.unlock(member, rrn, who);
+        }
+        let reader = Holder::new(self.job, self.owner);
+        for (member, rrn) in self.reads.drain(..) {
+            table.unlock_read(member, rrn, reader);
         }
     }
 
