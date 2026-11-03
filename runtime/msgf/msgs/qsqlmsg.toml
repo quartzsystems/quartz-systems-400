@@ -120,6 +120,13 @@ help = "OPEN, FETCH and CLOSE name a cursor that a DECLARE CURSOR statement earl
 vars = ["*CHAR 30"]
 
 [[msg]]
+id = "SQL0603"
+sev = 30
+text = "Unique index &1 not created: rows of the table repeat its key."
+help = "Two or more rows have the same values in the index's key columns. Change or delete the repeated rows, then create the index or constraint again."
+vars = ["*CHAR 30"]
+
+[[msg]]
 id = "SQL0802"
 sev = 30
 text = "Arithmetic overflow or division by zero."

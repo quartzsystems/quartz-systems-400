@@ -586,6 +586,38 @@ fn an_index_build_never_holds_others_up() {
 }
 
 #[test]
+fn a_unique_index_over_repeated_keys_is_refused() {
+    let f = fixture();
+    run_script(&f, 2, "INSERT INTO QSTEST.T VALUES (5000, 'Row 7')").unwrap();
+    let mut s = session(&f);
+    let n = Rc::new(Cell::new(0u32));
+    let turns = Rc::clone(&n);
+    s.ctx.yielder = Some(Rc::new(move || {
+        turns.set(turns.get() + 1);
+        false
+    }));
+    for text in [
+        "CREATE UNIQUE INDEX QSTEST.TU ON QSTEST.T (NAME)",
+        "ALTER TABLE QSTEST.T ADD CONSTRAINT TUQ UNIQUE (NAME)",
+        "ALTER TABLE QSTEST.T ADD UNIQUE (NAME)",
+    ] {
+        let r = run(&mut s, Op::Exec, "", text);
+        assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-603, "23515"), "{text}: {:?}", r.sqlca);
+    }
+    assert!(n.get() >= 3, "{} turns", n.get());
+    // Nothing of them stays; the table is free and whole.
+    assert!(!works(&f, "DROP INDEX QSTEST.TU"));
+    assert!(!works(&f, "ALTER TABLE QSTEST.T DROP CONSTRAINT TUQ"));
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSYS2.SYSINDEXES WHERE TABLE_NAME = 'T'"), 0);
+    assert!(works(&f, "UPDATE QSTEST.T SET NAME = 'Row 5000' WHERE ID = 5000"));
+    // Without the repeat, both are made.
+    let r = run(&mut s, Op::Exec, "", "CREATE UNIQUE INDEX QSTEST.TU ON QSTEST.T (NAME)");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert!(!works(&f, "INSERT INTO QSTEST.T VALUES (5001, 'Row 9')"));
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T"), ROWS + 1);
+}
+
+#[test]
 fn a_table_is_altered_taking_turns() {
     let f = fixture();
     let mut s = session(&f);

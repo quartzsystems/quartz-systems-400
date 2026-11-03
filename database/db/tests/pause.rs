@@ -184,3 +184,43 @@ fn a_rollback_ended_part_way_is_finished_by_recovery() {
         assert_eq!(count(&mut store), 0, "the rest undone at recovery");
     }
 }
+
+#[test]
+fn a_unique_path_over_repeated_keys_is_not_built() {
+    let (_d, mut store, lib) = open_new();
+    let cust = customers(&mut store, lib);
+    // Two customers with one name.
+    let mut t = store.begin().unwrap();
+    let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    m.write_new(&mut t, &record(ROWS + 1, "N00007"), &[0]).unwrap();
+    t.commit().unwrap();
+    let mut refs = MapRefs::default();
+    refs.insert_pf("QSTEST", "CUST", &customer_def());
+    let def = lf(&[common::file_kw("UNIQUE"), rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")], &refs);
+    let opts = CreateFileOpts { now: NOW, ..CreateFileOpts::default() };
+    // CRTLF: refused with the duplicate, nothing made.
+    let mut t = store.begin().unwrap();
+    let e = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap_err();
+    assert!(matches!(e, DbError::DuplicateKeys { .. }), "{e:?}");
+    assert_eq!(e.msgid(), Some("CPF5090"));
+    t.abort();
+    // Built with pauses committing parts: the error comes at the end, the
+    // path still marked invalid, for the caller to delete.
+    let mut t = store.begin().unwrap();
+    let parts = CreateFileOpts { now: NOW, member: MemberOpt::None, ..CreateFileOpts::default() };
+    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &parts).unwrap();
+    let mut pauses = 0;
+    let e = file::add_lf_member_paused(&mut t, lfid, name("BYNAME"), "", None, NOW, &mut pausing(&mut pauses, u32::MAX)).unwrap_err();
+    assert!(matches!(e, DbError::DuplicateKeys { .. }), "{e:?}");
+    assert!(pauses >= 2);
+    file::delete_file(&mut t, JobHandle(1), lfid).unwrap();
+    t.commit().unwrap();
+    // The same keys without the repeat build.
+    let mut t = store.begin().unwrap();
+    let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    m.delete(&mut t, u64::try_from(ROWS + 1).unwrap()).unwrap();
+    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    t.commit().unwrap();
+    let mut t = store.begin().unwrap();
+    assert_eq!(by_name(&mut t, lfid).len(), usize::try_from(ROWS).unwrap());
+}

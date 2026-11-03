@@ -100,6 +100,18 @@ pub enum DbError {
         key: String,
     },
 
+    /// A unique access path cannot be built: two records have the same
+    /// key.
+    #[error("member {member} of file {file} has records with the same key {key}; the unique access path was not built")]
+    DuplicateKeys {
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+        /// The repeated key, hexadecimal.
+        key: String,
+    },
+
     /// A field's bytes are not valid for its type.
     #[error("field {field}: {what}")]
     DataMapping {
@@ -256,7 +268,7 @@ impl DbError {
             Self::RecordNotFound { .. } | Self::RecordDeleted { .. } => "CPF5006",
             Self::DuplicateKey { .. } => "CPF5026",
             Self::DataMapping { .. } => "CPF5029",
-            Self::PathInvalid { .. } => "CPF5090",
+            Self::PathInvalid { .. } | Self::DuplicateKeys { .. } => "CPF5090",
             Self::LevelCheck { .. } => "CPF4131",
             Self::RecordLocked { .. } => "CPF5027",
             Self::RecordLockedInJob { .. } => "CPF5032",

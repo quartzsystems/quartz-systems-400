@@ -1143,6 +1143,8 @@ impl Member {
             self.core.save(txn)?;
         }
         let mut entries = Vec::new();
+        // The keys a unique path may hold once.
+        let mut once: Vec<Vec<u8>> = Vec::new();
         if self.is_logical() {
             let total: u64 = {
                 let mut t = 0;
@@ -1176,8 +1178,12 @@ impl Member {
                     {
                         continue;
                     }
+                    let key = path::record_key(lf_fmt, &rec, &nulls)?;
+                    if counts_once(lf_fmt, &nulls) {
+                        once.push(key.clone());
+                    }
                     entries.push(PathKey {
-                        key: path::record_key(lf_fmt, &rec, &nulls)?,
+                        key,
                         format: u16::try_from(fi).expect("few"),
                         rrn,
                     });
@@ -1197,18 +1203,41 @@ impl Member {
                 if slot.deleted {
                     continue;
                 }
-                entries.push(PathKey {
-                    key: path::record_key(&fmt, &slot.record, &slot.null_map)?,
-                    format: 0,
-                    rrn,
-                });
+                let key = path::record_key(&fmt, &slot.record, &slot.null_map)?;
+                if counts_once(&fmt, &slot.null_map) {
+                    once.push(key.clone());
+                }
+                entries.push(PathKey { key, format: 0, rrn });
             }
         }
+        self.check_once(once)?;
         let n = u64::try_from(entries.len()).expect("fits");
         p.load(txn, entries)?;
         self.core.attr.path_invalid = false;
         self.core.store_path(txn, &p, n)
     }
+}
+
+impl Member {
+    /// A unique path refuses keys two records share: the path is not
+    /// built and stays as it was (marked invalid).
+    fn check_once(&self, mut once: Vec<Vec<u8>>) -> Result<()> {
+        once.sort_unstable();
+        match once.windows(2).find(|w| w[0] == w[1]) {
+            Some(w) => Err(DbError::DuplicateKeys {
+                file: self.file.name().to_string(),
+                member: self.core.name.to_string(),
+                key: hex(&w[0]),
+            }),
+            None => Ok(()),
+        }
+    }
+}
+
+/// Whether a record's key counts against a `UNIQUE` path: the path is
+/// unique and, when null keys are left out, no key part is null.
+fn counts_once(fmt: &FormatDef, null_map: &[u8]) -> bool {
+    fmt.unique.is_some() && !(fmt.unique == Some(dds::NullKeys::Exclude) && path::key_has_null(fmt, null_map))
 }
 
 fn hex(bytes: &[u8]) -> String {

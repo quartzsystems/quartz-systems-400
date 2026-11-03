@@ -626,7 +626,11 @@ fn indexes_and_plans() {
         [row(&["GRPTAG", "UNIQUE"]), row(&["Q_QSTEST_TAGS_ID_00001", "PRIMARY KEY"]), row(&["Q_TAGS_1", "UNIQUE"])]
     );
     db.ok("DROP TABLE qstest/tags");
-    // A unique index refuses a duplicate.
+    // A unique index over rows that repeat a key (two null notes count
+    // as one key) is not made; once they differ it is, and refuses a
+    // duplicate.
+    assert_eq!(db.code("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)"), -603);
+    db.ok("UPDATE cust SET note = 'dave' WHERE cusno = 4");
     db.ok("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)");
     assert_eq!(
         db.code("INSERT INTO cust (cusno, name, note) VALUES (5, 'Eve', 'vip')"),

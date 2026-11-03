@@ -114,6 +114,13 @@ pub enum SqlError {
         what: String,
     },
 
+    /// A unique index over rows that repeat its key: not created.
+    #[error("the rows repeat a key of the unique index: {what}")]
+    DuplicateRows {
+        /// Which.
+        what: String,
+    },
+
     /// A row or object another job holds.
     #[error("locked: {what}")]
     Locked {
@@ -211,6 +218,7 @@ impl SqlError {
             Self::NullNotAllowed { .. } => -407,
             Self::IdentityValue { .. } => -798,
             Self::DuplicateKey { .. } => -803,
+            Self::DuplicateRows { .. } => -603,
             Self::Locked { .. } => -913,
             Self::NotJournaled { .. } => -7008,
             Self::TooManyRows => -811,
@@ -241,6 +249,7 @@ impl SqlError {
             Self::NullNotAllowed { .. } => "23502",
             Self::IdentityValue { .. } => "428C9",
             Self::DuplicateKey { .. } => "23505",
+            Self::DuplicateRows { .. } => "23515",
             Self::Locked { .. } => "57033",
             Self::NotJournaled { .. } => "55019",
             Self::TooManyRows => "21000",

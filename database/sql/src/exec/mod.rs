@@ -933,6 +933,9 @@ impl From<db::DbError> for SqlError {
             D::DuplicateKey { .. } => Self::DuplicateKey {
                 what: e.to_string(),
             },
+            D::DuplicateKeys { .. } => Self::DuplicateRows {
+                what: e.to_string(),
+            },
             D::RecordLocked { .. } | D::RecordLockedInJob { .. } | D::FileLocked { .. } => Self::Locked {
                 what: e.to_string(),
             },

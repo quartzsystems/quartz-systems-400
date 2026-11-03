@@ -485,6 +485,16 @@ bit 0 of its `MbrAttr`) and is rebuilt by bulk load at the next open
 (`*DLY`) or when a keyed open asks for it (`*REBLD`); a rebuild reports
 progress per based-on record.
 
+**Unique keys at a build.** A path built from the records (a new
+logical member, `CRTLF`, `ADDLFM`, `CREATE INDEX`, a `UNIQUE`
+constraint's index, a rebuild at open) checks `UNIQUE` by the same rule
+before its entries go in: two records whose keys count (`*INCNULL`: all
+of them, nulls equal; `*EXCNULL`: those without a null key field) with
+the same key bytes refuse the build with `CPF5090` (`SQL0603` in SQL,
+`SQLSTATE` 23515). The path is left marked invalid and holds nothing new;
+`CRTLF`, `CREATE INDEX` and the constraint delete the file they made, so
+nothing of them stays.
+
 **Logical records.** A logical format's record is derived from the
 based-on record field by field: a based-on field's value converted to
 the logical field's type and length, a `CONCAT` as the parts' bytes in
