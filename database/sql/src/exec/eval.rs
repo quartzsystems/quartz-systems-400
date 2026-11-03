@@ -18,7 +18,7 @@ use super::func;
 use super::query::run_query;
 use super::{ColumnDesc, SqlContext};
 use crate::ast::{
-    BinOp, CmpOp, DataType, DurationUnit, Expr, Function, Literal, Quantifier, Register, TypeSpec,
+    BinOp, CmpOp, DataType, DurationUnit, Expr, Function, Literal, Quantifier, Query, Register, TypeSpec,
 };
 use crate::error::{Result, SqlError};
 use crate::value::{Timestamp, Value};
@@ -299,7 +299,7 @@ impl Evaluator<'_> {
                 let x = self.eval(txn, a, env)?;
                 let rows = self.subquery_rows(txn, b, env)?;
                 let mut unknown = false;
-                for r in rows {
+                for r in rows.iter() {
                     match compare(&x, *op, &r[0])? {
                         Some(true) if *q == Quantifier::Any => return Ok(Some(true)),
                         Some(false) if *q == Quantifier::All => return Ok(Some(false)),
@@ -339,9 +339,9 @@ impl Evaluator<'_> {
             }
             Expr::InSubquery(a, q, not) => {
                 let x = self.eval(txn, a, env)?;
-                let rs = run_query(txn, self.ctx, self.params, q, env)?;
+                let rows = self.subquery(txn, q, env)?;
                 let mut unknown = false;
-                for r in rs.rows {
+                for r in rows.iter() {
                     match compare(&x, CmpOp::Eq, &r[0])? {
                         Some(true) => return Ok(Some(!*not)),
                         None => unknown = true,
@@ -364,8 +364,8 @@ impl Evaluator<'_> {
                 Ok(Some(like(&x.as_text(), &pat.as_text(), esc_char) != *not))
             }
             Expr::Exists(q, not) => {
-                let rs = run_query(txn, self.ctx, self.params, q, env)?;
-                Ok(Some(rs.rows.is_empty() == *not))
+                let rows = self.subquery(txn, q, env)?;
+                Ok(Some(rows.is_empty() == *not))
             }
             other => {
                 let v = self.eval(txn, other, env)?;
@@ -384,9 +384,26 @@ impl Evaluator<'_> {
         }
     }
 
-    fn subquery_rows(&mut self, txn: &mut Txn<'_>, e: &Expr, env: &Env) -> Result<Vec<Row>> {
+    /// A subquery's rows: the statement's kept answer when it has one
+    /// (`SqlContext::answers`), else run against the outer rows.
+    fn subquery(&mut self, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<Rc<Vec<Row>>> {
+        let Some(a) = self.ctx.answers.as_mut() else {
+            return Ok(Rc::new(run_query(txn, self.ctx, self.params, q, env)?.rows));
+        };
+        if let Some(rows) = a.lookup(q) {
+            return Ok(rows);
+        }
+        let entered = a.enter();
+        let r = run_query(txn, self.ctx, self.params, q, env).map(|rs| Rc::new(rs.rows));
+        if let Some(a) = self.ctx.answers.as_mut() {
+            a.leave(entered, q, env.frames.len(), r.as_ref().ok());
+        }
+        r
+    }
+
+    fn subquery_rows(&mut self, txn: &mut Txn<'_>, e: &Expr, env: &Env) -> Result<Rc<Vec<Row>>> {
         match e {
-            Expr::Subquery(q) => Ok(run_query(txn, self.ctx, self.params, q, env)?.rows),
+            Expr::Subquery(q) => self.subquery(txn, q, env),
             _ => Err(SqlError::Unsupported {
                 what: "a quantified comparison without a subquery".into(),
             }),
@@ -410,8 +427,11 @@ impl Evaluator<'_> {
             Expr::Column(c) => {
                 let name = c.column.value.as_str();
                 let table = c.table.as_ref().map(|t| t.value.as_str());
-                for (schema, row) in env.frames.iter().rev() {
+                for (fi, (schema, row)) in env.frames.iter().enumerate().rev() {
                     if let Some(i) = schema.find(table, name)? {
+                        if let Some(a) = self.ctx.answers.as_mut() {
+                            a.touch(fi);
+                        }
                         return Ok(row[i].clone());
                     }
                     if table.is_some_and(|t| schema.has_table(t)) {
@@ -523,10 +543,10 @@ impl Evaluator<'_> {
             }
             Expr::Function(f) => self.function(txn, f, env),
             Expr::Subquery(q) => {
-                let rs = run_query(txn, self.ctx, self.params, q, env)?;
-                match rs.rows.len() {
+                let rows = self.subquery(txn, q, env)?;
+                match rows.len() {
                     0 => Ok(Value::Null),
-                    1 => Ok(rs.rows[0][0].clone()),
+                    1 => Ok(rows[0][0].clone()),
                     _ => Err(SqlError::TooManyRows),
                 }
             }
@@ -593,12 +613,15 @@ impl Evaluator<'_> {
                 });
             };
             let alias = c.column.value.as_str();
-            for (schema, row) in env.frames.iter().rev() {
+            for (fi, (schema, row)) in env.frames.iter().enumerate().rev() {
                 if let Some(i) = schema
                     .cols
                     .iter()
                     .position(|col| col.hidden && col.table.as_deref() == Some(alias))
                 {
+                    if let Some(a) = self.ctx.answers.as_mut() {
+                        a.touch(fi);
+                    }
                     return Ok(row[i].clone());
                 }
             }

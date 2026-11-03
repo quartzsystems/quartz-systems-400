@@ -7,6 +7,7 @@
 //! changes in `dml`, definitions in `ddl`, expressions in `eval`.
 
 pub mod alias;
+mod answers;
 pub mod catalog;
 pub mod cursor;
 pub mod ddl;
@@ -130,6 +131,8 @@ pub struct SqlContext {
     open: u32,
     /// Yields since the context was made.
     yields: u64,
+    /// The subquery answers of a change decided as of its start.
+    pub(crate) answers: Option<answers::Answers>,
     /// The working storage a statement may hold ([`mem::STATEMENT_MEMORY`]).
     pub memory_limit: usize,
     /// What the statements of this context hold now.
@@ -204,6 +207,7 @@ impl SqlContext {
             held: Vec::new(),
             open: 0,
             yields: 0,
+            answers: None,
             memory_limit: mem::STATEMENT_MEMORY,
             meter: mem::Meter::default(),
             last_yield: None,
@@ -317,6 +321,7 @@ impl SqlContext {
             odp::deallocate(txn, self.job, id, LockState::SharedRead);
         }
         self.open = 0;
+        self.answers = None;
         self.last_yield = None;
     }
 

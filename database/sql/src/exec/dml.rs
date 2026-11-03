@@ -7,7 +7,8 @@
 //! turns between rows: what it wrote is committed to the store first
 //! (`SqlContext::change_point`), and once others have run each row's
 //! search condition is tested again as the row is now. A condition
-//! with a subquery is decided in one view, and `MERGE` runs to its end.
+//! with a subquery is decided as of the statement's start: read first,
+//! its subqueries' answers kept, then written (`Recheck`).
 
 use std::rc::Rc;
 
@@ -19,6 +20,7 @@ use db::{KeyArg, Value as DbValue};
 use dds::{DefaultValue, FieldDef};
 use store::txn::Txn;
 
+use super::answers::Answers;
 use super::eval::{Env, Evaluator, Row, Schema};
 use super::query::{has_subquery, matching_rows, row_of, run_query};
 use super::{SqlContext, TableInfo};
@@ -337,20 +339,13 @@ pub fn update(
     params: &[Value],
     u: &Update,
 ) -> Result<u64> {
-    if one_view(&u.where_clause) {
-        return ctx.no_yield(|ctx| change(txn, ctx, params, &u.table, u.alias.as_ref(), &u.where_clause, Some(&u.set)));
-    }
     change(txn, ctx, params, &u.table, u.alias.as_ref(), &u.where_clause, Some(&u.set))
 }
 
-/// Whether a search condition is decided in one view: it has a
-/// subquery, which may read the table being changed.
-fn one_view(w: &Where) -> bool {
-    matches!(w, Where::Cond(c) if has_subquery(c))
-}
-
 /// `UPDATE` (with `set`) or `DELETE`: the rows that match, then each
-/// changed through the path.
+/// changed through the path. A condition with a subquery is decided as
+/// of the statement's start: its subqueries' answers are kept while the
+/// rows are read ([`super::answers`]), before anything is written.
 fn change(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
@@ -363,13 +358,18 @@ fn change(
     let t = ctx.resolve_table(txn, table)?;
     let alias = alias.map_or_else(|| table.name.value.clone(), |a| a.value.clone());
     let mark = ctx.yields();
-    let (schema, rows) = match w {
-        Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default())?,
-        Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default())?,
-        Where::CurrentOf(c) => current_row(txn, ctx, &t, &alias, &c.value)?,
+    if matches!(w, Where::Cond(c) if has_subquery(c)) {
+        ctx.answers = Some(Answers::recording());
+    }
+    let read = match w {
+        Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default()),
+        Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default()),
+        Where::CurrentOf(c) => current_row(txn, ctx, &t, &alias, &c.value),
     };
+    let answers = ctx.answers.take();
+    let (schema, rows) = read?;
     let cond = match w {
-        Where::Cond(c) => Some((c, mark)),
+        Where::Cond(c) => Some(Recheck { cond: c, mark, answers }),
         _ => None,
     };
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
@@ -380,6 +380,19 @@ fn change(
     result
 }
 
+/// How a change tests its condition again on a row it locked once
+/// others have run (since `mark`, a yield count). Without `answers` it
+/// is tested as the row is now. With them (a subquery's, kept as of the
+/// start) only a row another job changed meanwhile is tested, its
+/// subqueries answered as kept; one with no answer kept (it reads the
+/// row's columns, or was never reached) leaves the first decision
+/// standing.
+struct Recheck<'a> {
+    cond: &'a Expr,
+    mark: u64,
+    answers: Option<Answers>,
+}
+
 /// `DELETE`: rows deleted.
 pub fn delete(
     txn: &mut Txn<'_>,
@@ -387,9 +400,6 @@ pub fn delete(
     params: &[Value],
     d: &Delete,
 ) -> Result<u64> {
-    if one_view(&d.where_clause) {
-        return ctx.no_yield(|ctx| change(txn, ctx, params, &d.table, d.alias.as_ref(), &d.where_clause, None));
-    }
     change(txn, ctx, params, &d.table, d.alias.as_ref(), &d.where_clause, None)
 }
 
@@ -424,9 +434,8 @@ fn current_row(
     Ok((schema, rows))
 }
 
-/// Update (with `set`) or delete each row by RRN through the path. When
-/// others ran since the rows were read (`cond`'s yield count), the
-/// condition is tested again against the row as it is now.
+/// Update (with `set`) or delete each row by RRN through the path,
+/// testing the condition again as [`Recheck`] says.
 #[allow(clippy::too_many_arguments)]
 fn change_rows(
     txn: &mut Txn<'_>,
@@ -437,7 +446,7 @@ fn change_rows(
     rows: Vec<Row>,
     o: &mut db::Odp,
     set: Option<&[Assignment]>,
-    cond: Option<(&Expr, u64)>,
+    mut cond: Option<Recheck<'_>>,
 ) -> Result<u64> {
     let mut ev = Evaluator { ctx, params };
     let mut n = 0u64;
@@ -448,25 +457,20 @@ fn change_rows(
         let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
             continue;
         };
-        let stale = cond.filter(|(_, mark)| ev.ctx.yields() != *mark).map(|(c, _)| c);
-        let now = if set.is_some() || stale.is_some() {
-            let slot = db::Slot {
-                rrn,
-                record: current.data.clone(),
-                null_map: current.null_map.clone(),
-                deleted: false,
-            };
-            Some(row_of(txn, t, &slot)?)
-        } else {
-            None
+        let slot = db::Slot {
+            rrn,
+            record: current.data.clone(),
+            null_map: current.null_map.clone(),
+            deleted: false,
         };
-        if let (Some(c), Some(row)) = (stale, &now) {
-            let env = Env::default().with(schema.clone(), row.clone());
-            if ev.truth(txn, c, &env)? != Some(true) {
-                // Changed by another job: no longer one to change.
-                o.unlock();
-                continue;
-            }
+        let stale = cond.as_ref().is_some_and(|c| ev.ctx.yields() != c.mark);
+        let now = if set.is_some() || stale { Some(row_of(txn, t, &slot)?) } else { None };
+        if let (Some(c), Some(row)) = (cond.as_mut().filter(|_| stale), &now)
+            && !still_holds(txn, &mut ev, c, schema, &r, row)?
+        {
+            // Changed by another job: no longer one to change.
+            o.unlock();
+            continue;
         }
         match set {
             None => {
@@ -491,6 +495,33 @@ fn change_rows(
         n += 1;
     }
     Ok(n)
+}
+
+/// Whether the condition still holds for a row read as `was` and locked
+/// as `now`, as [`Recheck`] says.
+fn still_holds(
+    txn: &mut Txn<'_>,
+    ev: &mut Evaluator<'_>,
+    c: &mut Recheck<'_>,
+    schema: &Rc<Schema>,
+    was: &Row,
+    now: &Row,
+) -> Result<bool> {
+    let env = Env::default().with(schema.clone(), now.clone());
+    let Some(mut answers) = c.answers.take() else {
+        return Ok(ev.truth(txn, c.cond, &env)? == Some(true));
+    };
+    if was == now {
+        c.answers = Some(answers);
+        return Ok(true);
+    }
+    answers.replay();
+    ev.ctx.answers = Some(answers);
+    let r = ev.truth(txn, c.cond, &env);
+    let answers = ev.ctx.answers.take().expect("put back");
+    let holds = answers.missed() || r? == Some(true);
+    c.answers = Some(answers);
+    Ok(holds)
 }
 
 /// `MERGE`: for each source row, the matching target rows take the

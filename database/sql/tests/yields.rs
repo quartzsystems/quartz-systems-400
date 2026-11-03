@@ -5,8 +5,9 @@
 //! A long statement gives the store back at its safe points: another
 //! job's changes made meanwhile are seen as committed reads see them, the
 //! files read cannot be dropped under it, a change commits what it wrote
-//! before it yields and tests its condition again after, what must be
-//! one view never yields, and no other job waits long for any of them.
+//! before it yields and tests its condition again after (one with a
+//! subquery as of its start), what must be one view never yields, and no
+//! other job waits long for any of them.
 
 use std::cell::{Cell, RefCell};
 use std::fmt::Write as _;
@@ -258,15 +259,7 @@ fn what_runs_in_one_view_never_yields() {
         seen.set(seen.get() + 1);
         false
     }));
-    // A condition with a subquery is decided in one view.
-    let r = run(
-        &mut s,
-        Op::Exec,
-        "",
-        "UPDATE QSTEST.T SET NAME = 'Sub' WHERE ID IN (SELECT ID FROM QSTEST.K WHERE ID <= 10)",
-    );
-    assert_eq!(r.sqlca.sqlerrd[2], 10, "{:?}", r.sqlca);
-    // MERGE and statements other than queries and changes too.
+    // MERGE and statements other than queries and changes.
     run(
         &mut s,
         Op::Exec,
@@ -383,4 +376,82 @@ fn a_join_yields_between_its_outer_rows() {
     assert_eq!(r.rows[0][0].as_i64().unwrap(), ROWS);
     // The two scans yield a few times each; the join once per outer row.
     assert!(n.get() > u32::try_from(ROWS).unwrap(), "{} yields", n.get());
+}
+
+/// Every ID of `table` in order, read as job 2.
+fn ids_as_other(f: &Fixture, table: &str) -> Vec<i64> {
+    let mut ctx = SqlContext::new(f.qsys, JobHandle(2), f.names.clone());
+    ctx.now = Some(NOW);
+    ctx.naming = Naming::Sql;
+    let mut st = f.store.borrow_mut();
+    let mut txn = st.begin().unwrap();
+    let p = sql::prepare(&format!("SELECT ID FROM QSTEST.{table} ORDER BY ID"), Naming::Sql).unwrap();
+    let ids = match p.execute(&mut txn, &mut ctx, &[]).unwrap() {
+        sql::Outcome::Rows(rs) => rs.rows.iter().map(|r| r[0].as_i64().unwrap()).collect(),
+        o => panic!("{o:?}"),
+    };
+    txn.commit().unwrap();
+    ids
+}
+
+/// Changes whose condition reads the table they change, each of which
+/// would decide later rows differently if it saw its own changes.
+const SUBQUERY_CHANGES: &[(&str, &str, i32)] = &[
+    // Its own updates raise the average past the rows still to come.
+    ("T", "UPDATE QSTEST.T SET ID = ID + 2000 WHERE ID > (SELECT AVG(ID) FROM QSTEST.T)", 500),
+    // Its own deletes take out the IDs later rows are matched by.
+    ("T", "DELETE FROM QSTEST.T WHERE ID IN (SELECT ID + 1 FROM QSTEST.T WHERE ID < 600)", 599),
+    // The same through a correlated subquery (by key).
+    ("K", "DELETE FROM QSTEST.K A WHERE EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID = A.ID - 1)", 999),
+    ("T", "UPDATE QSTEST.T SET ID = ID + 1 WHERE ID < (SELECT AVG(ID) FROM QSTEST.T)", 500),
+];
+
+#[test]
+fn a_subquery_change_decides_as_of_its_start() {
+    for &(table, text, want) in SUBQUERY_CHANGES {
+        // Without turns, as the rules decide it.
+        let plain = fixture();
+        let mut s = session(&plain);
+        let r = run(&mut s, Op::Exec, "", text);
+        assert_eq!(r.sqlca.sqlerrd[2], want, "{text}: {:?}", r.sqlca);
+        let expected = ids_as_other(&plain, table);
+
+        // Taking turns, with another job changing the rows still to come
+        // (not in what the condition reads), so each is tested again.
+        let f = fixture();
+        let mut s = session(&f);
+        let turns = Rc::new(Cell::new(0u32));
+        let fx = Fixture {
+            store: Rc::clone(&f.store),
+            qsys: f.qsys,
+            names: f.names.clone(),
+        };
+        let seen = Rc::clone(&turns);
+        s.ctx.yielder = Some(Rc::new(move || {
+            let turn = seen.get() + 1;
+            seen.set(turn);
+            if turn % 100 == 1 && turn < 1000 {
+                let text = format!("UPDATE QSTEST.{table} SET NAME = 'Other {turn}' WHERE ID BETWEEN 400 AND 600 OR ID > 900");
+                run_script(&fx, 2, &text).unwrap();
+            }
+            false
+        }));
+        let r = run(&mut s, Op::Exec, "", text);
+        assert_eq!(r.sqlca.sqlerrd[2], want, "{text}: {:?}", r.sqlca);
+        assert!(turns.get() > 10, "{text}: {} yields", turns.get());
+        assert_eq!(ids_as_other(&f, table), expected, "{text}: the same rows as without turns");
+    }
+}
+
+#[test]
+fn a_subquery_change_never_holds_others_up() {
+    let f = fixture();
+    let (gap, total, yields, r) = longest_wait(
+        &f,
+        Op::Exec,
+        "UPDATE QSTEST.T SET NAME = 'Sub' WHERE ID IN (SELECT ID FROM QSTEST.K WHERE ID <= 900)",
+    );
+    assert_eq!(r.sqlca.sqlerrd[2], 900, "{:?}", r.sqlca);
+    assert!(yields >= 10, "{yields} yields in {total:?}");
+    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
 }

@@ -147,11 +147,11 @@ every other request, and with the other statements in progress.
   or a statement run (`Query`, `Open`, `Exec`, `ExecImm`, `Execute`;
   `sql::embed::may_yield`) at `*NONE`, `*CHG` or `*CS`, the level
   `SET TRANSACTION` chose over the program's. Among statements run,
-  `SELECT`, cursor `OPEN`, `INSERT`, `UPDATE` and `DELETE` take turns;
-  the rest run to their end (DDL, `COMMIT`, `CREATE TABLE ... AS`,
-  `MERGE`), as do an `UPDATE` or `DELETE` whose condition has a
-  subquery (decided in one view), every statement under `*ALL` (a read
-  there is one view), `DESCRIBE`, the console's `sql` and `RUNSQLSTM`.
+  `SELECT`, cursor `OPEN`, `INSERT`, `UPDATE` and `DELETE` (a condition
+  with a subquery included) take turns; the rest run to their end (DDL,
+  `COMMIT`, `CREATE TABLE ... AS`, `MERGE`), as do every statement under
+  `*ALL` (a read there is one view), `DESCRIBE`, the console's `sql` and
+  `RUNSQLSTM`.
 - Where it yields, at most every 5 ms (`SqlContext::yield_every`):
   between batches (256 keys, or 256 records by RRN) of every table scan,
   a correlated subquery's included; between rows of each step that
@@ -207,7 +207,20 @@ every other request, and with the other statements in progress.
   `*CS` or below on IBM i, which gives a statement no single view
   either; `*ALL` keeps one. A change that yielded tests its condition
   again against each row as it is when the row is locked to be changed,
-  so a row another job moved out of it meanwhile is left alone. Under
+  so a row another job moved out of it meanwhile is left alone.
+- A change whose condition has a subquery decides as of its start, as
+  the rules require (its subqueries never see what it changed). It
+  reads first, taking turns as a query does, and finds every row the
+  condition takes, the subqueries' answers kept as they are reached
+  (`sql::exec::answers`; one that reads no column of the row being
+  tested is kept once, so `v < (SELECT AVG(v) FROM t)` is computed one
+  time). Then it writes, taking turns between rows. A row it locks just
+  as it read it is changed. A row another job changed meanwhile is
+  tested again as it is now, each subquery answered as kept, never run
+  again; when one has no kept answer (it reads the row's columns, or
+  was not reached the first time) the first decision stands, as a
+  change that lists its rows before it writes them decides. A row
+  another job deleted is passed by. Under
   `*NONE` the rows already changed stay changed if the statement ends
   early, as when it fails part way.
 - Its connection: busy until the statement answers, so it is not read
