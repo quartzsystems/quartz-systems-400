@@ -12,7 +12,7 @@ This draft settles the decisions below. Anything it leaves open is listed under 
 | Security | TLS 1.3 only, no plaintext mode. Server certificate from the QS/400 certificate manager, application ID `QS400_ACCESS_SERVER`. The client validates it with its existing untrusted-certificate trust flow |
 | Framing and encoding | Wire, from the QS/400 repository's `ipc` crate, the same framing and serialization QSI uses. Types below are Wire types; enums use `wire_enum!`. If Wire cannot express something below, stop and ask; do not invent a second encoding |
 | Where the code lives | `qap-proto` (envelope and message types) lives in the QS/400 repository beside `ipc`. QS/400 Access pins both by commit |
-| Multiplexing | One connection carries many concurrent requests. Every request has a service ID and a request ID; replies carry the request ID, in the order operations finish, not the order requests came. No port mapper and no per-service ports. Lanes: `Command` requests and `Sql` operations 1 to 8 (version 4) run one at a time, in arrival order, in the connection job, because they share its job state (library list, `QTEMP`, job attributes, commitment definition, statements and cursors). Every other operation, `Sql` operations 9 to 11 (the catalog lists, which keep no state) included, runs concurrently, up to the outstanding limit, as the signed-on profile, without waiting for the lane. `Ping` and `Cancel` are never queued behind anything |
+| Multiplexing | One connection carries many concurrent requests. Every request has a service ID and a request ID; replies carry the request ID, in the order operations finish, not the order requests came. No port mapper and no per-service ports. Lanes: `Command` requests and `Sql` operations 1 to 8 (version 4) run one at a time, in arrival order, in the connection job, because they share its job state (library list, `QTEMP`, job attributes, commitment definition, statements and cursors). Every other operation, `Sql` operations 9 to 11 (the catalog lists, which keep no state) and every `Ifs` operation (version 5) included, runs concurrently, up to the outstanding limit, as the signed-on profile, without waiting for the lane. `Ping` and `Cancel` are never queued behind anything |
 | Versioning | Client hello sends the range of protocol versions it supports; server picks one or refuses. Version 1 is this document |
 | Server jobs | Listener job `QAPD` in subsystem `QSYSWRK`; one job per connection in `QUSRWRK`, running as `QUSER` until sign-on and as the signed-on user profile after it |
 | Server control | `STRTCPSVR SERVER(*QAP)`, `ENDTCPSVR SERVER(*QAP)`, autostart attribute; shown on Navigator's Servers page |
@@ -206,9 +206,9 @@ Statements run in the connection job through the system's database engine, as th
 - A statement or type the database does not support gets the database's own `SqlError`, as it reports it.
 - An `Execute` over several parameter rows stops at the first row that fails: `SqlError`, with `SqlFailure.row` the 0-based index of that row. The rows before it stay changed (uncommitted under commitment control).
 
-### Service 6 `Ifs`: Integrated File System files (planned version 5)
+### Service 6 `Ifs`: Integrated File System files (version 5)
 
-Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`).
+Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`). Every `Ifs` operation runs concurrently (see Multiplexing), as the signed-on profile, never in the lane.
 
 - `EntryKind` enum: `File` 0, `Directory` 1, `Symlink` 2, `Other` 3.
 - `Entry` = { `name` String, `kind` EntryKind, `size` u64, `modified` i64, `owner` String, `ccsid` u16, `target` Option of String (a symbolic link's) }.
@@ -218,18 +218,38 @@ Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`).
 | --- | --- | --- | --- | --- |
 | Ifs | 1 `ListDirectory` | `path` String, `pattern` String (`*` and `?` wildcards), `start` u32, `max` u32 | `total` u32, `entries` list of `Entry` | no |
 | Ifs | 2 `GetInfo` | `path` String | `Entry` | no |
-| Ifs | 3 `ReadFile` | `path` String, `offset` u64, `length` u64 (0 for to the end) | `size` u64 (the file's size now), `data` bytes (split with `More` when large) | no |
-| Ifs | 4 `WriteFile` | `path` String, `mode` WriteMode, `offset` u64, `ccsid` u16 (for a file created; 0 for 1208), `data` bytes | `size` u64 | no |
+| Ifs | 3 `ReadFile` | `path` String, `offset` u64, `length` u64 (0 for to the end), `as_ccsid` Option of u16 | `size` u64 (the file's size now), `next_offset` u64, `data` bytes (split with `More` when large) | no |
+| Ifs | 4 `WriteFile` | `path` String, `mode` WriteMode, `offset` u64, `ccsid` u16 (for a file created; 0 for 1208), `data` bytes, `data_ccsid` Option of u16 | `size` u64 | no |
 | Ifs | 5 `CreateDirectory` | `path` String, `parents` flag | — | no |
 | Ifs | 6 `Delete` | `path` String (a file, a symbolic link or an empty directory) | — | no |
 | Ifs | 7 `Rename` | `from` String, `to` String, `replace` flag | — | no |
+| Ifs | 8 `Copy` | `from` String, `to` String, `replace` flag | — | no |
 
 | Op | Statuses |
 | --- | --- |
-| `ListDirectory`, `GetInfo`, `ReadFile` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (`ReadFile` of a file locked for writing) |
-| `WriteFile` | `Ok`; `NotFound` (the directory, or the file for `Update`); `NotAuthorized`; `Exists` (`Create`); `InUse` |
+| `ListDirectory`, `GetInfo`, `ReadFile` | `Ok`; `NotFound`; `NotAuthorized`; `InUse` (`ReadFile` of a file locked for writing); `Error` (`ReadFile` with an `as_ccsid` the file's CCSID cannot be converted to) |
+| `WriteFile` | `Ok`; `NotFound` (the directory, or the file for `Update`); `NotAuthorized`; `Exists` (`Create`); `InUse`; `Error` (a `data_ccsid` that cannot be converted to the file's CCSID) |
 | `CreateDirectory`, `Rename` | `Ok`; `NotFound`; `NotAuthorized`; `Exists` (`Rename` without `replace`) |
 | `Delete` | `Ok`; `NotFound`; `NotAuthorized`; `InUse`; `Error` (a directory that is not empty) |
+| `Copy` | `Ok`; `NotFound`; `NotAuthorized`; `Exists` (without `replace`); `InUse` |
+
+**Reading with conversion.**
+
+- With `as_ccsid`, the server converts the file's data from the file's CCSID to `as_ccsid` (for example 1208 for UTF-8). `length` counts the file's bytes, not the converted ones.
+- A reply holds only whole characters. `next_offset` is the file offset just past the last byte converted; it may be less than `offset + length` when the range ends inside a character. The client continues from `next_offset`, never from `offset + length`. Without `as_ccsid`, `next_offset` is `offset` plus the bytes returned.
+- In a mixed single- and double-byte file, the server converts from `offset` in the shift state the file has at that offset, so reads that each start at the previous reply's `next_offset` join into exactly the whole file's conversion. When `as_ccsid` is itself a mixed CCSID, each reply's data starts and ends in single-byte state.
+- An `as_ccsid` equal to the file's CCSID returns the data as stored. A file whose CCSID cannot be converted to `as_ccsid` (for example 65535, binary) gets `Error` with the message.
+
+**Writing with conversion.**
+
+- With `data_ccsid`, `data` is in that CCSID and the server converts it to the file's CCSID: the `ccsid` given for a file created, or the existing file's. Without it, `data` is written as it is.
+- Conversion is per request; the client splits text only on whole characters.
+- For a mixed single- and double-byte target, each request's converted output ends in single-byte state. When a converted write lands at the end of the file, the file ends in the shift-in an earlier write left and the new output starts with a shift-out, the two are dropped, so text written in pieces makes the same file as one write.
+- `size` in the reply is the file's size in its own CCSID.
+
+**Copy.** `Copy` copies a file, not a directory, on the system, keeping its CCSID and data as stored, without sending the data to the client. `Exists` answers a `to` that exists when `replace` is 0; with `replace` 1 the copy replaces it.
+
+**Paths and authority.** Every operation applies the same authority checks as the system's own file-system commands for the same action: listing and reading as displaying a link, `WriteFile` as writing a stream file, `CreateDirectory` as creating a directory, `Delete` as removing a link or a directory, `Rename` as renaming or moving, `Copy` as copying. Paths under `/QSYS.LIB` behave as those commands allow; anything not allowed there gets `Error` with the system's message.
 
 ### Service 7 `Messages`: message queues (planned version 6)
 
@@ -320,6 +340,10 @@ Version 3 is: `Spool` (service 4) operations 1 `ListSpooledFiles` to 7 `ListOutp
 ### Version 4 (fixed)
 
 Version 4 is: `Sql` (service 5) operations 1 `SetOptions` to 11 `ListColumns`, with the types and rules above; `SignOn` operation 7 `Attach`; `Connection` operation 3 `JobInfo`; and the status `SqlError` (15), which version 4 introduces. `Sql` does not use `Exists`: a name that is taken is the database's `SqlError` (for example SQLSTATE `42710`), so `Exists` (13) stays for the version that first uses it. A version 1 to 3 peer never receives `SqlError`, the `Sql` service or any `Sql` body; where `SqlError` would apply it gets `Error` with the same message. The server accepts versions 1 to 4 and picks the highest both sides support.
+
+### Version 5 (fixed)
+
+Version 5 is: `Ifs` (service 6) operations 1 `ListDirectory` to 8 `Copy`, with the types and rules above, `ReadFile`'s `as_ccsid` and `next_offset` and `WriteFile`'s `data_ccsid` included; and the status `Exists` (13), which version 5 introduces. `InUse` is version 3's. A version 1 to 4 peer never receives `Exists`, the `Ifs` service or any `Ifs` body; where `Exists` would apply it gets `Error` with the same message. The server accepts versions 1 to 5 and picks the highest both sides support.
 
 ## Open questions
 
