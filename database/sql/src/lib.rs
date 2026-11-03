@@ -24,6 +24,6 @@ pub use ast::{Naming, Statement};
 pub use error::{Result, SqlError};
 pub use exec::{ColumnDesc, Outcome, Prepared, ResultSet, SqlContext, prepare};
 pub use parse::{parse, parse_all};
-pub use run::{CommitOpt, RunOpts, RunReport, runsqlstm};
+pub use run::{CommitOpt, RunOpts, RunReport, runsqlstm, runsqlstm_lent};
 pub use sqlca::Sqlca;
 pub use value::Value;

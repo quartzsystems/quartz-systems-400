@@ -473,6 +473,94 @@ impl Served<'_> {
             t.qtemp = r;
         }
     }
+
+    /// Run `f` as one of the job's commands: its `QTEMP`, library list
+    /// and console state in place. The prompt to show next with it.
+    fn as_command<T>(&mut self, f: impl FnOnce(&mut System) -> T) -> (T, String) {
+        let root = self.own_qtemp();
+        self.system.current_job = self.ctx.job.number;
+        self.own_libl();
+        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        let r = f(self.system);
+        let prompt = svc::db::prompt(self.system).to_string();
+        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        ile::set_libl(None);
+        self.root_qtemp(root);
+        (r, prompt)
+    }
+
+    /// What a command's reply carries at its end: the codes it raised,
+    /// the system values when they changed, its parameter block.
+    fn end_command(&mut self, reply: &mut stg::proto::CmdReply, segments: Vec<Option<Vec<u8>>>) {
+        reply.srcs = std::mem::take(&mut self.system.raised)
+            .into_iter()
+            .map(|s| s.code.to_string())
+            .collect();
+        if self.system.sysvals_changed {
+            super::security::refresh(self.system);
+        }
+        reply.sysvals = if std::mem::take(&mut self.system.sysvals_changed) {
+            self.system.sysvals.as_ref().map(sysval::SysVals::to_blob)
+        } else {
+            None
+        };
+        reply.segments = segments;
+    }
+}
+
+/// A command's parameters from its block, or the escape that ends it.
+fn command_parms(
+    name: &str,
+    segments: &[Option<Vec<u8>>],
+    specified: &[bool],
+) -> Result<cmd::block::Parms, Box<stg::proto::CmdReply>> {
+    let def = match sys_cpps::install::object(name, 0) {
+        Ok(o) => o.def,
+        Err(_) => {
+            return Err(Box::new(crate::cpp::escape(
+                "CPF0006",
+                name,
+                &format!("{name} has no shipped definition"),
+            )));
+        }
+    };
+    cmd::block::read(&def, segments, specified).map_err(|e| Box::new(crate::cpp::escape(e.msgid(), name, &e.to_string())))
+}
+
+/// A long command started (`stgsvc::turns`): its work, prepared as one
+/// of the job's commands, with its parameter block for the reply; or
+/// the reply when it ended (or ran) at once.
+pub fn long_command(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    (name, segments, specified, typed): (&str, Vec<Option<Vec<u8>>>, &[bool], &str),
+) -> Result<crate::cpp::longcmd::Started, Box<stg::proto::CmdReply>> {
+    let parms = command_parms(name, &segments, specified)?;
+    let job = JobHandle(ctx.job.handle);
+    let mut served = Served { system, ctx };
+    let (r, prompt) = served.as_command(|s| crate::cpp::longcmd::prepare(s, name, &parms, typed, job));
+    match r {
+        Ok(long) => Ok((long, segments)),
+        Err(mut reply) => {
+            reply.prompt = prompt;
+            served.end_command(&mut reply, segments);
+            Err(reply)
+        }
+    }
+}
+
+/// A long command's end: `finish` run as one of the job's commands.
+pub fn long_finish(
+    system: &mut System,
+    ctx: &mut JobCtx,
+    finish: crate::cpp::longcmd::Finish,
+    segments: Vec<Option<Vec<u8>>>,
+) -> stg::proto::CmdReply {
+    let mut served = Served { system, ctx };
+    let (mut reply, prompt) = served.as_command(finish);
+    reply.prompt = prompt;
+    served.end_command(&mut reply, segments);
+    reply
 }
 
 /// What [`enter`] changed, for [`leave`].
@@ -1502,27 +1590,12 @@ impl Service for Served<'_> {
         specified: Vec<bool>,
         typed: String,
     ) -> stg::proto::CmdReply {
-        let def = match sys_cpps::install::object(&name, 0) {
-            Ok(o) => o.def,
-            Err(_) => {
-                return crate::cpp::escape(
-                    "CPF0006",
-                    &name,
-                    &format!("{name} has no shipped definition"),
-                );
-            }
-        };
-        let parms = match cmd::block::read(&def, &segments, &specified) {
+        let parms = match command_parms(&name, &segments, &specified) {
             Ok(p) => p,
-            Err(e) => return crate::cpp::escape(e.msgid(), &name, &e.to_string()),
+            Err(r) => return *r,
         };
-        let root = self.own_qtemp();
-        self.system.current_job = self.ctx.job.number;
-        self.own_libl();
-        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
-        let mut reply = crate::cpp::run(self.system, &name, &parms, &typed);
-        reply.prompt = svc::db::prompt(self.system).to_string();
-        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        let (mut reply, prompt) = self.as_command(|s| crate::cpp::run(s, &name, &parms, &typed));
+        reply.prompt = prompt;
         if matches!(name.as_str(), "OVRDBF" | "DLTOVR" | "OVRMSGF") {
             if let Some(sql) = self.ctx.svc.sql.as_ref() {
                 let table = sql.session.overrides().to_vec();
@@ -1533,21 +1606,7 @@ impl Service for Served<'_> {
                 .overrides
                 .clone_from(&self.ctx.svc.msgf_overrides);
         }
-        ile::set_libl(None);
-        self.root_qtemp(root);
-        reply.srcs = std::mem::take(&mut self.system.raised)
-            .into_iter()
-            .map(|s| s.code.to_string())
-            .collect();
-        if self.system.sysvals_changed {
-            super::security::refresh(self.system);
-        }
-        reply.sysvals = if std::mem::take(&mut self.system.sysvals_changed) {
-            self.system.sysvals.as_ref().map(sysval::SysVals::to_blob)
-        } else {
-            None
-        };
-        reply.segments = segments;
+        self.end_command(&mut reply, segments);
         reply
     }
 

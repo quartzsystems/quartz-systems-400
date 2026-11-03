@@ -29,6 +29,21 @@ pub fn cpyfrmimpf(
     text: &[u8],
     opts: &ImpfOpts,
 ) -> Result<ImpfReport> {
+    cpyfrmimpf_paused(txn, job, file, member, text, opts, &mut crate::no_pause)
+}
+
+/// [`cpyfrmimpf`] pausing every [`crate::PAUSE_EVERY`] records, each
+/// pause committing those added so far: a copy ended part way keeps
+/// them, as one ended by an error does.
+pub fn cpyfrmimpf_paused(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    member: MemberSpec,
+    text: &[u8],
+    opts: &ImpfOpts,
+    pause: crate::Pause<'_>,
+) -> Result<ImpfReport> {
     crate::auth::check(txn, "file.open-output", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "CPYFRMIMPF")?;
@@ -45,19 +60,22 @@ pub fn cpyfrmimpf(
     let text = String::from_utf8_lossy(text);
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
         m.jrn.job = job;
-        load(txn, &mut m, &text, opts)
+        load(txn, &mut m, &text, opts, pause)
     });
     hold.release(txn);
     result
 }
 
-fn load(txn: &mut Txn<'_>, m: &mut Member, text: &str, opts: &ImpfOpts) -> Result<ImpfReport> {
+fn load(txn: &mut Txn<'_>, m: &mut Member, text: &str, opts: &ImpfOpts, pause: crate::Pause<'_>) -> Result<ImpfReport> {
     let fmt = m.format().clone();
     let mut report = ImpfReport::default();
     let mut record = vec![0u8; usize::try_from(fmt.format.record_len).expect("fits")];
     let mut nulls = vec![0u8; usize::from(fmt.null_map_len)];
     for (i, line) in csv::records(text, opts.rcddlm).iter().enumerate() {
         let number = i as u64 + 1;
+        if number.is_multiple_of(crate::PAUSE_EVERY) && pause(txn)? {
+            m.reopen(txn)?;
+        }
         let fields = match opts.dtafmt {
             DtaFmt::Csv => csv::split(line, opts.flddlm, opts.strdlm),
             DtaFmt::Fixed => fixed_fields(&fmt, line),

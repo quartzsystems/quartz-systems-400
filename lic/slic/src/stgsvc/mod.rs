@@ -58,6 +58,8 @@ pub use jobs::chgjob;
 mod served;
 mod fiber;
 mod turns;
+#[cfg(test)]
+mod longtests;
 mod seu;
 pub(crate) mod sysdata;
 mod authdata;

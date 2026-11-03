@@ -15,7 +15,7 @@ use qsname::{MemberSpec, Name};
 use store::obj::{JobHandle, LockState, ObjectId};
 use store::txn::Txn;
 
-use super::{ErrLvl, Hold, Order, each_record, member_of};
+use super::{ErrLvl, Hold, Order, each_record_paused, member_of};
 use crate::error::{DbError, Result};
 use crate::file::{self, CreateFileOpts, FileDesc, FileKind, MemberOpt};
 use crate::format::FormatDef;
@@ -159,6 +159,21 @@ pub fn cpyf(
     to: &Target,
     opts: &CpyfOpts,
 ) -> Result<CpyfReport> {
+    cpyf_paused(txn, job, from, to, opts, &mut crate::no_pause)
+}
+
+/// [`cpyf`] pausing every [`crate::PAUSE_EVERY`] records read, the
+/// locks it takes held throughout. A pause commits the records copied
+/// so far: a copy ended part way (an error past `ERRLVL`, a crash)
+/// keeps them, as one ended by an error does.
+pub fn cpyf_paused(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    from: ObjectId,
+    to: &Target,
+    opts: &CpyfOpts,
+    pause: crate::Pause<'_>,
+) -> Result<CpyfReport> {
     crate::auth::check(txn, "file.open-input", from)?;
     if opts.fromkey.is_some() && opts.fromrcd.is_some()
         || opts.tokey.is_some() && opts.torcd.is_some()
@@ -238,7 +253,7 @@ pub fn cpyf(
     )?;
     let result = Member::open(txn, &to_desc, &to_entry).and_then(|mut to_m| {
         to_m.jrn.job = job;
-        run(txn, &mut from_m, &mut to_m, opts)
+        run(txn, &mut from_m, &mut to_m, opts, pause)
     });
     hold.release(txn);
     let (copied, excluded, errors) = result?;
@@ -309,6 +324,7 @@ fn run(
     from_m: &mut Member,
     to_m: &mut Member,
     opts: &CpyfOpts,
+    pause: crate::Pause<'_>,
 ) -> Result<(u64, u64, u64)> {
     match opts.mbropt {
         MbrOpt::None if to_m.attr().record_count > 0 => {
@@ -344,7 +360,17 @@ fn run(
     let updadd = opts.mbropt == MbrOpt::UpdAdd && to_fmt.unique.is_some();
     let mut record = vec![0u8; usize::try_from(to_fmt.format.record_len).expect("fits")];
     let mut nulls = vec![0u8; usize::from(to_fmt.null_map_len)];
-    each_record(txn, from_m, &order, &mut |txn, slot| {
+    // After a pause the to-member is read again too.
+    let stale = std::cell::Cell::new(false);
+    let mut paused = |t: &mut Txn<'_>| {
+        let p = pause(t)?;
+        stale.set(stale.get() || p);
+        Ok(p)
+    };
+    each_record_paused(txn, from_m, &order, &mut |txn, slot| {
+        if stale.replace(false) {
+            to_m.reopen(txn)?;
+        }
         if !select::passes(&from_fmt, &slot, opts.incchar.as_ref(), &opts.increl)? {
             excluded += 1;
             return Ok(true);
@@ -374,7 +400,7 @@ fn run(
             Err(e) => return Err(e),
         }
         Ok(opts.nbrrcds.is_none_or(|n| copied < n))
-    })?;
+    }, &mut paused)?;
     Ok((copied, excluded, errors))
 }
 

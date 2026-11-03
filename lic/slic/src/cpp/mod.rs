@@ -25,6 +25,7 @@ pub(crate) mod lpapi;
 pub(crate) mod lpcmd;
 pub(crate) mod iplcmd;
 mod itgcmd;
+pub(crate) mod longcmd;
 pub(crate) mod medcmd;
 pub(crate) mod meddsp;
 mod medout;

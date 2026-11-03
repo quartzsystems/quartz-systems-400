@@ -11,7 +11,7 @@ use qsname::MemberSpec;
 use store::obj::{JobHandle, LockState, ObjectId};
 use store::txn::Txn;
 
-use super::{Hold, Order, each_record, member_of, physical};
+use super::{Hold, Order, each_record_paused, member_of, physical};
 use crate::error::{DbError, Result};
 use crate::file;
 use crate::member::{Member, lob};
@@ -52,6 +52,21 @@ pub fn rgzpfm(
     member: MemberSpec,
     keyfile: &KeyFile,
 ) -> Result<RgzReport> {
+    rgzpfm_paused(txn, job, file, member, keyfile, &mut crate::no_pause)
+}
+
+/// [`rgzpfm`] whose reading pauses every [`crate::PAUSE_EVERY`]
+/// records, the member held `*EXCL` throughout. What it writes (the
+/// member cleared, the records written again in their new order) is
+/// one step: a part of it committed alone would lose records.
+pub fn rgzpfm_paused(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    member: MemberSpec,
+    keyfile: &KeyFile,
+    pause: crate::Pause<'_>,
+) -> Result<RgzReport> {
     crate::auth::check(txn, "file.reorganize", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "RGZPFM")?;
@@ -67,7 +82,7 @@ pub fn rgzpfm(
     )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
         m.jrn.job = job;
-        let r = reorganize(txn, &mut m, keyfile, &desc)?;
+        let r = reorganize(txn, &mut m, keyfile, &desc, pause)?;
         crate::journal::member_event(txn, &m, "MR")?;
         Ok(r)
     });
@@ -75,7 +90,7 @@ pub fn rgzpfm(
     result
 }
 
-fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file::FileDesc) -> Result<RgzReport> {
+fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file::FileDesc, pause: crate::Pause<'_>) -> Result<RgzReport> {
     let mut records: Vec<(Vec<u8>, Vec<u8>)> = Vec::new();
     let mut seen = HashSet::new();
     match keyfile {
@@ -90,11 +105,11 @@ fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file:
                 keyed: true,
                 ..Order::default()
             };
-            each_record(txn, m, &keyed, &mut |_, s| {
+            each_record_paused(txn, m, &keyed, &mut |_, s| {
                 seen.insert(s.rrn);
                 records.push((s.record, s.null_map));
                 Ok(true)
-            })?;
+            }, pause)?;
         }
         KeyFile::Logical { file, member } => {
             let mut lf = Member::open_by(txn, *file, *member)?;
@@ -118,9 +133,21 @@ fn reorganize(txn: &mut Txn<'_>, m: &mut Member, keyfile: &KeyFile, desc: &file:
         }
     }
     // Arrival sequence for the rest (everything, for *NONE).
-    for s in m.scan(txn, 1, usize::MAX)? {
-        if !seen.contains(&s.rrn) {
-            records.push((s.record, s.null_map));
+    let batch = usize::try_from(crate::PAUSE_EVERY).expect("fits");
+    let mut next = 1;
+    loop {
+        let slots = m.scan(txn, next, batch)?;
+        for s in &slots {
+            if !seen.contains(&s.rrn) {
+                records.push((s.record.clone(), s.null_map.clone()));
+            }
+        }
+        match slots.last() {
+            Some(last) if slots.len() == batch => next = last.rrn + 1,
+            _ => break,
+        }
+        if pause(txn)? {
+            m.reopen(txn)?;
         }
     }
     let deleted_removed = m.attr().deleted_count;

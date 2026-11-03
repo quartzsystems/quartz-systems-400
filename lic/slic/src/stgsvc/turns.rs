@@ -25,6 +25,8 @@ use sql::embed::{Desc, Embedded, Op};
 use stg::Request;
 
 use super::fiber::{self, Fiber};
+use crate::cpp::longcmd;
+use crate::svc::ile::MainStore;
 use super::served::{self, Conn};
 use super::{cmn, ifsvol};
 use crate::ipl::storage;
@@ -186,17 +188,20 @@ fn answer(svc: &mut Svc, i: usize, req: Request) {
     }
 }
 
-/// Whether a request is a statement that may take turns: the engine
-/// decides at its safe points whether it does.
+/// Whether a request is a statement or a command that may take turns:
+/// the engine (or the database) decides at its safe points whether it
+/// does.
 fn long(svc: &Svc, i: usize, req: &Request) -> bool {
-    let Request::SqlRun { desc, .. } = req else {
+    if svc.closing || svc.conns[i].ctx.is_none() {
         return false;
-    };
-    !svc.closing
-        && svc.conns[i].ctx.is_some()
-        && Desc::decode(desc).is_some_and(|d| {
+    }
+    match req {
+        Request::SqlRun { desc, .. } => Desc::decode(desc).is_some_and(|d| {
             matches!(d.op, Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute)
-        })
+        }),
+        Request::RunCmd { name, .. } => longcmd::NAMES.contains(&name.as_str()),
+        _ => false,
+    }
 }
 
 /// Give each statement in progress one turn: until its next yield or
@@ -224,21 +229,29 @@ struct Turn {
     entered: Cell<served::Entered>,
 }
 
-/// Start `sql_run` as `served::handle` would, on a fiber with the
-/// yielder letting the others in, and give it its first turn.
+/// Start a long request on a fiber with the yielder letting the others
+/// in, and give it its first turn.
 fn start(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
     let Some(i) = svc.index(id) else {
         svc.busy.retain(|b| *b != id);
         return svc;
     };
+    if svc.closing {
+        // Too late to take turns: answered as any request.
+        svc.busy.retain(|b| *b != id);
+        answer(&mut svc, i, req);
+        return svc;
+    }
+    if matches!(req, Request::RunCmd { .. }) {
+        return start_cmd(svc, id, i, req);
+    }
+    start_sql(svc, id, i, req)
+}
+
+/// Start `sql_run` as `served::handle` would.
+fn start_sql(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let stack = match fiber::stack() {
-        Ok(s) if !svc.closing => s,
-        Ok(_) => {
-            // Too late to take turns: answered as any request.
-            svc.busy.retain(|b| *b != id);
-            answer(&mut svc, i, req);
-            return svc;
-        }
+        Ok(s) => s,
         Err(e) => {
             // No stack to be had: this one runs to its end.
             eprintln!("qsstg: no stack for a statement: {e}");
@@ -289,7 +302,11 @@ fn start(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
         engine.ctx.yielder = None;
         park(finish(unpark(), &turn, engine, &reply));
     };
-    let mut f = Fiber::on(stack, body);
+    first_turn(svc, id, Fiber::on(stack, body))
+}
+
+/// A fiber's first turn; one that has not ended goes with the others.
+fn first_turn(mut svc: Box<Svc>, id: u64, mut f: Fiber) -> Box<Svc> {
     park(svc);
     let ended = f.resume();
     svc = unpark();
@@ -298,6 +315,115 @@ fn start(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
     } else {
         svc.fibers.push((id, f));
     }
+    svc
+}
+
+/// Start `run_cmd` of a command that takes turns: what it reads from
+/// the job prepared as `served::handle` would run the command, then its
+/// work on a fiber.
+fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
+    let user = super::security::as_user(&req);
+    let number = svc.conns[i].ctx.as_ref().map_or(0, |c| c.job.number);
+    super::trace::request(number, &req);
+    let Request::RunCmd { name, segments, specified, typed } = req else {
+        unreachable!("start() said a command");
+    };
+    let Svc { system, conns, .. } = &mut *svc;
+    let ctx = conns[i].ctx.as_mut().expect("long() said a job");
+    *system.stats.aux_io.entry(number).or_default() += 1;
+    let session = Rc::clone(&ctx.session);
+    super::security::freshen(system, &session);
+    let as_user = |f: &mut dyn FnMut()| {
+        if user {
+            sec::guard::as_job(&session, f);
+        } else {
+            f();
+        }
+    };
+    let mut prepared = None;
+    as_user(&mut || prepared = Some(served::long_command(system, ctx, (&name, segments.clone(), &specified, &typed))));
+    let (work, segments) = match prepared.expect("ran") {
+        Ok(v) => v,
+        Err(reply) => {
+            // Ended (or ran) at once.
+            super::security::flush(system, Some(served::charged(ctx)));
+            let _ = conns[i].chan.send_raw(&ipc::encode(&*reply));
+            svc.busy.retain(|b| *b != id);
+            return svc;
+        }
+    };
+    let entered = served::enter(system, ctx);
+    let stack = match fiber::stack() {
+        Ok(s) => s,
+        Err(e) => {
+            // No stack to be had: this one runs to its end.
+            eprintln!("qsstg: no stack for a command: {e}");
+            let lender = MainStore::new(Rc::clone(&system.lent));
+            let mut finish = None;
+            as_user(&mut || {
+                let w = longcmd::Work::new(&lender, Rc::new(|| false));
+                finish = Some(work_once(&w, &mut None));
+            });
+            drop(lender);
+            served::leave(system, entered);
+            let mut reply = None;
+            as_user(&mut || reply = Some(served::long_finish(system, ctx, finish.take().expect("ran"), segments.clone())));
+            super::security::flush(system, Some(served::charged(ctx)));
+            let _ = conns[i].chan.send_raw(&ipc::encode(&reply.expect("ran")));
+            svc.busy.retain(|b| *b != id);
+            return svc;
+        }
+    };
+    let turn = Rc::new(Turn {
+        id,
+        entered: Cell::new(entered),
+    });
+    let y = yielder(Rc::clone(&turn));
+    let shared = Rc::clone(&system.lent);
+    let mut work = Some(work);
+    let body = move || {
+        let lender = MainStore::new(shared);
+        let w = longcmd::Work::new(&lender, y);
+        let finish = if user {
+            sec::guard::as_job(&session, || work_once(&w, &mut work))
+        } else {
+            work_once(&w, &mut work)
+        };
+        drop(w);
+        drop(lender);
+        park(finish_cmd(unpark(), &turn, (finish, segments), user.then_some(&session)));
+    };
+    first_turn(svc, id, Fiber::on(stack, body))
+}
+
+/// Run a command's work, once.
+fn work_once(w: &longcmd::Work<'_>, work: &mut Option<longcmd::Long>) -> longcmd::Finish {
+    match work.take() {
+        Some(f) => f(w),
+        None => Box::new(|_: &mut crate::ipl::system::System| stg::proto::CmdReply::default()),
+    }
+}
+
+/// A command ended: the service as between requests, its end run as one
+/// of the job's commands, the reply sent.
+fn finish_cmd(
+    mut svc: Box<Svc>,
+    turn: &Turn,
+    (finish, segments): (longcmd::Finish, Vec<Option<Vec<u8>>>),
+    session: Option<&Rc<RefCell<sec::auth::cache::Session>>>,
+) -> Box<Svc> {
+    svc.busy.retain(|b| *b != turn.id);
+    let i = svc.index(turn.id).expect("a busy connection stays");
+    let Svc { system, conns, .. } = &mut *svc;
+    let ctx = conns[i].ctx.as_mut().expect("a job");
+    served::leave(system, turn.entered.get());
+    let reply = match session {
+        Some(s) => sec::guard::as_job(s, || served::long_finish(system, ctx, finish, segments)),
+        None => served::long_finish(system, ctx, finish, segments),
+    };
+    let who = served::charged(ctx);
+    super::security::flush(system, Some(who));
+    let _ = conns[i].chan.send_raw(&ipc::encode(&reply));
     svc
 }
 

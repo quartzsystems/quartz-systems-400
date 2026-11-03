@@ -637,12 +637,24 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   An `UPDATE` or `DELETE` whose condition has a subquery takes turns
   too, and so does `MERGE`, each decided as of its start: it finds its
   rows (and a merge's matches and actions) first, its subqueries'
-  answers kept, and never sees its own changes. Still running to their
-  end, each short: `CREATE TABLE`, `CREATE VIEW`, `LABEL ON`, `COMMIT`,
-  `DROP`. Step 90 runs an aggregate over `EXISTS` and a slow select on
-  two connections and the third's command, catalog lists and query
-  beside them, then the aggregate under `RepeatableRead` with the
-  third's requests beside it and its change of a row read refused.
+  answers kept, and never sees its own changes. An index is loaded in
+  steps too (its keys sorted in runs, its tree written a few pages at a
+  time), and an altered table is rebuilt beside itself in parts and
+  switched in one short step at the end, so a crash leaves it as it
+  was. Still running to their end, each short: `CREATE TABLE`, `CREATE
+  VIEW`, `LABEL ON`, `COMMIT`, `DROP`. The long commands `RunCommand`
+  sends take turns the same way: `RUNSQL` and `RUNSQLSTM` (inside each
+  statement and between them), `CPYF`, `CPYFRMIMPF`, `CPYTOIMPF`,
+  `CRTLF` (its path built in steps) and `RGZPFM` (its reading; it
+  writes the reorganized member in one step), each holding the locks
+  its rules give throughout. Others still run to their end
+  (`STORAGE_SERVICE.md` lists them and why). Step 90 runs an aggregate
+  over `EXISTS` and a slow select on two connections and the third's
+  command, catalog lists and query beside them, then the aggregate
+  under `RepeatableRead` with the third's requests beside it and its
+  change of a row read refused, then a subquery `UPDATE`, a `CREATE
+  INDEX` and a `CPYF` over a large table with the third's requests
+  beside each.
 - Engine limits the build met, now lifted as the database rules have them:
   `SMALLINT`, `INTEGER` and `BIGINT` columns made by SQL take their
   whole 16, 32 and 64-bit range (a field flag, `DB_FORMAT.md`; a DDS

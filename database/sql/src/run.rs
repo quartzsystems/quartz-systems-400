@@ -7,10 +7,14 @@
 
 use std::fmt::Write as _;
 
+use std::cell::{RefCell, RefMut};
+
 use db::cmt::LckLvl;
 use store::Store;
+use store::txn::Txn;
 
 use crate::ast::Naming;
+use crate::embed::StoreLend;
 use crate::error::Result;
 use crate::exec::{Outcome, Prepared, SqlContext};
 use crate::parse::parse_all;
@@ -73,6 +77,30 @@ pub fn runsqlstm(
     text: &str,
     opts: &RunOpts,
 ) -> Result<RunReport> {
+    runsqlstm_lent(&Owned(RefCell::new(store)), ctx, text, opts)
+}
+
+/// A store borrowed for the run: lent to each statement in turn.
+struct Owned<'s>(RefCell<&'s mut Store>);
+
+impl StoreLend for Owned<'_> {
+    fn store(&self) -> RefMut<'_, Store> {
+        RefMut::map(self.0.borrow_mut(), |s| &mut **s)
+    }
+}
+
+/// [`runsqlstm`] over a store lent for each statement. Under a yielder
+/// ([`SqlContext::yielder`]) each statement takes turns as an embedded
+/// one does, and the run gives a turn between statements; a statement
+/// that failed after it committed parts keeps them, as a change ended
+/// part way does.
+pub fn runsqlstm_lent(
+    lender: &dyn StoreLend,
+    ctx: &mut SqlContext,
+    text: &str,
+    opts: &RunOpts,
+) -> Result<RunReport> {
+    let begin = || Txn::lent(Box::new(|| lender.store()));
     let mut report = RunReport::default();
     ctx.naming = opts.naming;
     let statements = match parse_all(text, opts.naming) {
@@ -95,7 +123,7 @@ pub fn runsqlstm(
     if let Some(l) = lcklvl
         && ctx.session.commit_def().is_none()
     {
-        let mut t = store.begin()?;
+        let mut t = begin()?;
         ctx.session.strcmtctl(&mut t, l, None, ctx.clock())?;
         t.commit()?;
     }
@@ -103,16 +131,28 @@ pub fn runsqlstm(
         ctx.current_schema = qsname::Name::parse(schema).ok();
     }
     let mut stopped = false;
-    for st in statements {
+    for (n, st) in statements.into_iter().enumerate() {
+        // A turn for the others between statements.
+        if n > 0
+            && let Err(e) = ctx.between()
+        {
+            let _ = writeln!(report.listing, "{}", Sqlca::from_error(&e).line());
+            report.errors += 1;
+            report.severity = 40;
+            stopped = true;
+            break;
+        }
         report.statements += 1;
         let p = Prepared {
             statement: st,
             naming: opts.naming,
         };
         let name = crate::exec::statement_name(&p.statement);
-        let mut t = store.begin()?;
+        let mut t = begin()?;
+        let yields = ctx.yields();
         let (ca, outcome) = p.run(&mut t, ctx, &[]);
-        if ca.is_error() {
+        ctx.release_held(&mut t);
+        if ca.is_error() && ctx.yields() == yields {
             t.abort();
         } else {
             t.commit()?;
@@ -132,7 +172,7 @@ pub fn runsqlstm(
         report.severity = report.severity.max(sev);
         if ca.is_error() {
             report.errors += 1;
-            if sev > opts.errlvl {
+            if sev > opts.errlvl || ca.sqlcode == -952 {
                 report
                     .listing
                     .push_str("Run ended: the error exceeds ERRLVL\n");
@@ -143,7 +183,7 @@ pub fn runsqlstm(
         }
     }
     if lcklvl.is_some() {
-        let mut t = store.begin()?;
+        let mut t = begin()?;
         if stopped {
             ctx.session.rollbck(&mut t, ctx.now)?;
             report.listing.push_str("ROLLBACK\n");

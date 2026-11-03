@@ -15,7 +15,8 @@ use db::util::{
 use dds::{CompileOpts, DateFmt, FileRef, MapRefs, RefResolver, TimeFmt, compile_lf, compile_pf};
 use qsname::{LibSpec, MemberSpec, Name};
 use sql::SqlContext;
-use store::obj::ObjectId;
+use db::util::Hold;
+use store::obj::{JobHandle, LockState, ObjectId};
 use store::txn::Txn;
 
 use super::{Params, db, db_err, file_id, member_spec, now, object_name, with_txn};
@@ -197,47 +198,109 @@ pub fn crtsrcpf(system: &mut System, p: &Params) -> Result<String, String> {
 
 /// `crtlf LIB/FILE SRCFILE(...) [SRCMBR(M)]`.
 pub fn crtlf(system: &mut System, p: &Params) -> Result<String, String> {
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| crtlf_in(txn, ctx, super::JOB, p, &mut db::no_pause))
+}
+
+/// `CRTLF` in a transaction: the file made, then its member's path
+/// built pausing (`pause`), the based-on files held against change
+/// and the new file `*EXCL`; a build that fails deletes the file.
+pub fn crtlf_in(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    job: JobHandle,
+    p: &Params,
+    pause: db::Pause<'_>,
+) -> Result<String, String> {
     let qual = p.pos_or(0, "FILE")?;
     let name = object_name(&qual)?;
     let opts = create_opts(p)?;
-    let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
-        let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
-        let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
-        let (src, text) = source(txn, ctx, p, fname)?;
-        let (refs, ids) = refs_for(txn, ctx, &text);
-        let comp = compile_lf(
-            &src,
-            &refs,
-            &CompileOpts {
-                file: Some(fname.to_string()),
-                ..CompileOpts::default()
-            },
-        );
-        let Some(def) = comp.definition else {
-            return Err(format!("File {qual} not created.\n{}", comp.listing));
+    let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
+    let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
+    let (src, text) = source(txn, ctx, p, fname)?;
+    let (refs, ids) = refs_for(txn, ctx, &text);
+    let comp = compile_lf(
+        &src,
+        &refs,
+        &CompileOpts {
+            file: Some(fname.to_string()),
+            ..CompileOpts::default()
+        },
+    );
+    let Some(def) = comp.definition else {
+        return Err(format!("File {qual} not created.\n{}", comp.listing));
+    };
+    let mut bases = Vec::new();
+    let mut resolve = |fr: &FileRef| -> db::Result<ObjectId> {
+        let key = match fr.library {
+            LibSpec::Name(l) => (Some(l), fr.file),
+            _ => (None, fr.file),
         };
-        let resolve = |fr: &FileRef| -> db::Result<ObjectId> {
-            let key = match fr.library {
-                LibSpec::Name(l) => (Some(l), fr.file),
-                _ => (None, fr.file),
-            };
-            ids.get(&key)
-                .or_else(|| ids.get(&(None, fr.file)))
-                .copied()
-                .ok_or_else(|| db::DbError::Definition {
-                    what: format!("based-on file {fr} not found"),
-                })
-        };
-        let mut resolve = resolve;
-        file::create_lf(txn, lib, fname, &def, &mut resolve, &opts).map_err(|e| db_err(&e))?;
-        let _ = refs.formats(&LibSpec::Libl, &fname);
-        Ok(format!(
-            "File {qual} created: {} format(s), {} diagnostic(s).",
-            def.formats.len(),
-            comp.diagnostics.len()
-        ))
-    })
+        let id = ids
+            .get(&key)
+            .or_else(|| ids.get(&(None, fr.file)))
+            .copied()
+            .ok_or_else(|| db::DbError::Definition {
+                what: format!("based-on file {fr} not found"),
+            })?;
+        bases.push(id);
+        Ok(id)
+    };
+    let member = match opts.member {
+        MemberOpt::None => None,
+        MemberOpt::File => Some(fname),
+        MemberOpt::Named(m) => Some(m),
+    };
+    let made = CreateFileOpts {
+        member: MemberOpt::None,
+        ..opts.clone()
+    };
+    let lf = file::create_lf(txn, lib, fname, &def, &mut resolve, &made).map_err(|e| db_err(&e))?;
+    if let Some(m) = member {
+        let built = build_lf_member(txn, job, (lf, m), &bases, (&opts, pause));
+        if let Err(e) = built {
+            // Nothing of it stays, the parts it committed included.
+            let _ = file::delete_file(txn, job, lf);
+            return Err(db_err(&e));
+        }
+    }
+    let _ = refs.formats(&LibSpec::Libl, &fname);
+    Ok(format!(
+        "File {qual} created: {} format(s), {} diagnostic(s).",
+        def.formats.len(),
+        comp.diagnostics.len()
+    ))
+}
+
+/// A new logical file's member, its path built pausing: the based-on
+/// files and members held `*SHRNUP` (read, never changed, by others),
+/// the new file `*EXCL`.
+fn build_lf_member(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    (lf, member): (ObjectId, Name),
+    bases: &[ObjectId],
+    (opts, pause): (&CreateFileOpts, db::Pause<'_>),
+) -> db::Result<ObjectId> {
+    let mut held = Vec::new();
+    for &b in bases {
+        if held.iter().any(|(id, _)| *id == b) {
+            continue;
+        }
+        held.push((b, LockState::SharedNoUpdate));
+        for m in file::describe(txn, b)?.members {
+            held.push((m.object, LockState::SharedNoUpdate));
+        }
+    }
+    let what = member.to_string();
+    let base_hold = Hold::take(txn, job, &held, &what)?;
+    let r = Hold::take(txn, job, &[(lf, LockState::Exclusive)], &what).and_then(|hold| {
+        let r = file::add_lf_member_paused(txn, lf, member, &opts.text, None, opts.now, pause);
+        hold.release(txn);
+        r
+    });
+    base_hold.release(txn);
+    r
 }
 
 /// `dltf LIB/FILE`.
@@ -347,26 +410,35 @@ pub fn chgpf(system: &mut System, p: &Params) -> Result<String, String> {
 
 /// `rgzpfm LIB/FILE [MBR(M)] [KEYFILE(*FILE|LIB/LF)]`.
 pub fn rgzpfm(system: &mut System, p: &Params) -> Result<String, String> {
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| rgzpfm_in(txn, ctx, super::JOB, p, &mut db::no_pause))
+}
+
+/// `RGZPFM` in a transaction, its reading pausing (`pause`).
+pub fn rgzpfm_in(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    job: JobHandle,
+    p: &Params,
+    pause: db::Pause<'_>,
+) -> Result<String, String> {
     let qual = p.pos_or(0, "FILE")?;
     let mbr = member_spec(p, "MBR")?;
     let keyfile = p.upper("KEYFILE");
-    let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
-        let id = file_id(txn, ctx, &qual)?;
-        let kf = match keyfile.as_deref() {
-            None | Some("*NONE") => KeyFile::None,
-            Some("*FILE") => KeyFile::File,
-            Some(lf) => KeyFile::Logical {
-                file: file_id(txn, ctx, lf)?,
-                member: MemberSpec::First,
-            },
-        };
-        let r = util::rgzpfm(txn, super::JOB, id, mbr, &kf).map_err(|e| db_err(&e))?;
-        Ok(format!(
-            "Member reorganized: {} records kept, {} deleted slots removed.",
-            r.records, r.deleted_removed
-        ))
-    })
+    let id = file_id(txn, ctx, &qual)?;
+    let kf = match keyfile.as_deref() {
+        None | Some("*NONE") => KeyFile::None,
+        Some("*FILE") => KeyFile::File,
+        Some(lf) => KeyFile::Logical {
+            file: file_id(txn, ctx, lf)?,
+            member: MemberSpec::First,
+        },
+    };
+    let r = util::rgzpfm_paused(txn, job, id, mbr, &kf, pause).map_err(|e| db_err(&e))?;
+    Ok(format!(
+        "Member reorganized: {} records kept, {} deleted slots removed.",
+        r.records, r.deleted_removed
+    ))
 }
 
 fn errlvl(p: &Params) -> Result<ErrLvl, String> {
@@ -382,6 +454,19 @@ fn errlvl(p: &Params) -> Result<ErrLvl, String> {
 
 /// `cpyf FROMFILE(LIB/F) TOFILE(LIB/F) [...]`.
 pub fn cpyf(system: &mut System, p: &Params) -> Result<String, String> {
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| cpyf_in(txn, ctx, super::JOB, p, &mut db::no_pause))
+}
+
+/// `CPYF` in a transaction, pausing (`pause`) between batches of the
+/// records it copies.
+pub fn cpyf_in(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    job: JobHandle,
+    p: &Params,
+    pause: db::Pause<'_>,
+) -> Result<String, String> {
     let from = p.pos_or(0, "FROMFILE")?;
     let to = p.pos_or(1, "TOFILE")?;
     let mut opts = CpyfOpts {
@@ -424,8 +509,7 @@ pub fn cpyf(system: &mut System, p: &Params) -> Result<String, String> {
     opts.fromrcd = p.num("FROMRCD")?;
     opts.torcd = p.num("TORCD")?;
     opts.nbrrcds = p.num("NBRRCDS")?;
-    let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
+    {
         let from_id = file_id(txn, ctx, &from)?;
         let to_name = object_name(&to)?;
         let target = match ctx.resolve_file(txn, &to_name) {
@@ -436,7 +520,7 @@ pub fn cpyf(system: &mut System, p: &Params) -> Result<String, String> {
             },
             Err(e) => return Err(e.to_string()),
         };
-        let r = util::cpyf(txn, super::JOB, from_id, &target, &opts).map_err(|e| db_err(&e))?;
+        let r = util::cpyf_paused(txn, job, from_id, &target, &opts, pause).map_err(|e| db_err(&e))?;
         Ok(format!(
             "{} records copied to member {}, {} excluded, {} not copied{}.",
             r.copied,
@@ -449,7 +533,7 @@ pub fn cpyf(system: &mut System, p: &Params) -> Result<String, String> {
                 ""
             }
         ))
-    })
+    }
 }
 
 fn impf_opts(p: &Params) -> Result<ImpfOpts, String> {
@@ -511,20 +595,43 @@ fn impf_opts(p: &Params) -> Result<ImpfOpts, String> {
 /// a `/`) is a stream file of the job's IFS (`STMFOPT`, `STMFCCSID` or
 /// `STMFCODPAG`, `STMFAUT`); a plain name is an `xfer` buffer.
 pub fn cpytoimpf(system: &mut System, p: &Params) -> Result<String, String> {
+    let text = {
+        let (store, ctx) = db(system)?;
+        with_txn(store, |txn| cpytoimpf_in(txn, ctx, super::JOB, p, &mut db::no_pause))?
+    };
+    cpytoimpf_out(system, p, text)
+}
+
+/// `CPYTOIMPF`'s reading in a transaction, pausing (`pause`): the text.
+pub fn cpytoimpf_in(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    job: JobHandle,
+    p: &Params,
+    pause: db::Pause<'_>,
+) -> Result<String, String> {
     let from = p.pos_or(0, "FROMFILE")?;
     let mbr = member_spec(p, "FROMMBR")?;
     let opts = impf_opts(p)?;
+    stmf_target(p)?;
+    let id = file_id(txn, ctx, &from)?;
+    let bytes = util::cpytoimpf_paused(txn, job, id, mbr, &opts, pause).map_err(|e| db_err(&e))?;
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
+}
+
+/// Where `TOSTMF` writes: the path and how, for a stream file.
+fn stmf_target(p: &Params) -> Result<(Option<String>, Option<ifscmd::stmf::impf::Write>), String> {
     let stmf = p.kw("TOSTMF").map(unquoted);
     let write = match &stmf {
         Some(path) if path.contains('/') => Some(stmf_write(p)?),
         _ => None,
     };
-    let (store, ctx) = db(system)?;
-    let text = with_txn(store, |txn| {
-        let id = file_id(txn, ctx, &from)?;
-        let bytes = util::cpytoimpf(txn, super::JOB, id, mbr, &opts).map_err(|e| db_err(&e))?;
-        Ok(String::from_utf8_lossy(&bytes).into_owned())
-    })?;
+    Ok((stmf, write))
+}
+
+/// `CPYTOIMPF`'s text to its stream file, buffer or the output.
+pub fn cpytoimpf_out(system: &mut System, p: &Params, text: String) -> Result<String, String> {
+    let (stmf, write) = stmf_target(p)?;
     let n = text.lines().count();
     match (stmf, write) {
         (Some(path), Some(w)) => {
@@ -546,34 +653,49 @@ pub fn cpytoimpf(system: &mut System, p: &Params) -> Result<String, String> {
 /// from the job's IFS in its CCSID (or `STMFCCSID`'s); a name is an
 /// `xfer` buffer.
 pub fn cpyfrmimpf(system: &mut System, p: &Params) -> Result<String, String> {
+    let text = cpyfrmimpf_text(system, p)?;
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| cpyfrmimpf_in(txn, ctx, super::JOB, p, &text, &mut db::no_pause))
+}
+
+/// The text `CPYFRMIMPF` reads, from the job's IFS or a buffer.
+pub fn cpyfrmimpf_text(system: &mut System, p: &Params) -> Result<String, String> {
     let stmf = unquoted(&p.pos_or(0, "FROMSTMF")?);
-    let to = p.pos_or(1, "TOFILE")?;
-    let mbr = member_spec(p, "TOMBR")?;
-    let opts = impf_opts(p)?;
-    let text = if stmf.contains('/') {
+    if stmf.contains('/') {
         let ccsid = from_ccsid(p)?;
         let b = job_ifs(system, |c| ifscmd::stmf::impf::read_text(c, &stmf, ccsid))
             .map_err(|m| stmf_refused(&m, &stmf))?;
-        String::from_utf8_lossy(&b).into_owned()
+        Ok(String::from_utf8_lossy(&b).into_owned())
     } else {
         system
             .svc
             .xfer
             .get(&stmf)
             .cloned()
-            .ok_or_else(|| format!("{stmf}: no such buffer; xfer put it first"))?
-    };
-    let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
-        let id = file_id(txn, ctx, &to)?;
-        let r = util::cpyfrmimpf(txn, super::JOB, id, mbr, text.as_bytes(), &opts)
-            .map_err(|e| db_err(&e))?;
-        let mut out = format!("{} records copied, {} not copied.", r.records, r.errors);
-        for (n, why) in r.skipped.iter().take(20) {
-            let _ = write!(out, "\n  record {n}: {why}");
-        }
-        Ok(out)
-    })
+            .ok_or_else(|| format!("{stmf}: no such buffer; xfer put it first"))
+    }
+}
+
+/// `CPYFRMIMPF` in a transaction, pausing (`pause`) between batches of
+/// the records it adds.
+pub fn cpyfrmimpf_in(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    job: JobHandle,
+    p: &Params,
+    text: &str,
+    pause: db::Pause<'_>,
+) -> Result<String, String> {
+    let to = p.pos_or(1, "TOFILE")?;
+    let mbr = member_spec(p, "TOMBR")?;
+    let opts = impf_opts(p)?;
+    let id = file_id(txn, ctx, &to)?;
+    let r = util::cpyfrmimpf_paused(txn, job, id, mbr, text.as_bytes(), &opts, pause).map_err(|e| db_err(&e))?;
+    let mut out = format!("{} records copied, {} not copied.", r.records, r.errors);
+    for (n, why) in r.skipped.iter().take(20) {
+        let _ = write!(out, "\n  record {n}: {why}");
+    }
+    Ok(out)
 }
 
 /// A value without its apostrophes, doubled ones made single.

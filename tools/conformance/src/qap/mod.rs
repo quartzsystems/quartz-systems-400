@@ -28,7 +28,8 @@
 //! unit of work ends. Then an `UPDATE` whose condition has subqueries
 //! and a `CREATE INDEX` over a large table, each on one connection while
 //! the third's command, catalog lists and a read of the table being
-//! indexed answer.
+//! indexed answer; then a `CPYF` of that table (a command that takes
+//! turns) while they answer again.
 //!
 //! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
 
@@ -463,13 +464,56 @@ fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, Stri
     if n != have {
         return Err(format!("the index has {n} rows of {have}"));
     }
+    let copied = long_command(a, c, have, &mut took)?;
     let most = took.iter().max().copied().unwrap_or_default();
     Ok(format!(
-        "an UPDATE with subqueries in its condition and a CREATE INDEX over {have} rows ({} ms) each ran beside the third's CHKOBJ, ListTables, ListColumns and a read of the table being indexed, answered in at most {} ms; the UPDATE cancelled in {} ms",
+        "an UPDATE with subqueries in its condition, a CREATE INDEX over {have} rows ({} ms) and a CPYF of them ({} ms) each ran beside the third's CHKOBJ, ListTables, ListColumns and a read of the table being indexed or copied, answered in at most {} ms; the UPDATE cancelled in {} ms",
         built.as_millis(),
+        copied.as_millis(),
         most.as_millis(),
         stop_upd.as_millis()
     ))
+}
+
+/// A long command on `a`: `CPYF` of the wide table, while the third's
+/// command, catalog lists and a read of the table copied answer. How
+/// long the copy took.
+fn long_command(a: &mut Conn, c: &mut Conn, have: i64, took: &mut Vec<Duration>) -> Result<Duration, String> {
+    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
+    let tables = ListTables { schema: "QAPLANEX".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
+    let columns = ListColumns { schema: "QAPLANEX".into(), table: "WIDE".into() };
+    let _ = c.call(Op::RunCommand, &CommandText { command: "DLTF FILE(QAPLANEX/WIDECPY)".into() })?;
+    let at = Instant::now();
+    let copy = CommandText {
+        command: "CPYF FROMFILE(QAPLANEX/WIDE) TOFILE(QAPLANEX/WIDECPY) CRTFILE(*YES)".into(),
+    };
+    let id = a.request(Op::RunCommand, &copy)?;
+    took.push(within(c, "CHKOBJ beside CPYF", Op::RunCommand, &check)?);
+    took.push(within(c, "ListTables beside CPYF", Op::ListTables, &tables)?);
+    took.push(within(c, "ListColumns beside CPYF", Op::ListColumns, &columns)?);
+    let at_read = Instant::now();
+    let read = sql::count(c, "SELECT COUNT(*) FROM QAPLANEX.WIDE WHERE N < 10")?;
+    took.push(at_read.elapsed());
+    if let Some(r) = a.poll_reply(id, Duration::ZERO)? {
+        return Err(format!(
+            "CPYF of {have} rows ended ({}) in {} ms, before the third connection's requests were answered",
+            brief(&r),
+            at.elapsed().as_millis()
+        ));
+    }
+    if read != 10 {
+        return Err(format!("the table being copied read {read} rows of 10"));
+    }
+    let r = a.poll_reply(id, SLOW)?.ok_or_else(|| format!("CPYF of {have} rows got no reply in {} s", SLOW.as_secs()))?;
+    if r.status != Status::Ok {
+        return Err(format!("CPYF of {have} rows: {}", brief(&r)));
+    }
+    let done = at.elapsed();
+    let n = sql::count(c, "SELECT COUNT(*) FROM QAPLANEX.WIDECPY")?;
+    if n != have {
+        return Err(format!("CPYF copied {n} rows of {have}"));
+    }
+    Ok(done)
 }
 
 /// `RunCommand`, `CheckCommand` and `DescribeCommand`.

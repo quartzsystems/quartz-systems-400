@@ -390,6 +390,21 @@ impl Member {
     }
 
     /// Open the member a `MBR` parameter names.
+    /// Read the member again after a pause (others may have changed
+    /// what it holds); its journal context stays.
+    pub fn reopen(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        let entry = MemberEntry {
+            name: self.core.name,
+            srctype: None,
+            object: self.core.id,
+        };
+        let jrn = self.jrn;
+        *self = Self::open(txn, &self.file, &entry)?;
+        self.jrn = jrn;
+        Ok(())
+    }
+
+    /// Open member `spec` of `file`.
     pub fn open_by(txn: &mut Txn<'_>, file: ObjectId, spec: MemberSpec) -> Result<Self> {
         let desc = file::describe(txn, file)?;
         let entry = *desc.member(spec).ok_or_else(|| DbError::MemberNotFound {

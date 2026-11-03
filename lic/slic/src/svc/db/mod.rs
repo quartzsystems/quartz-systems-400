@@ -9,7 +9,7 @@
 
 mod bench;
 pub(crate) mod dspf;
-mod files;
+pub mod files;
 mod journal;
 pub(crate) mod prtf;
 mod rla;
@@ -193,6 +193,11 @@ pub fn intercept(system: &mut System, line: &str) -> Option<String> {
             Some(String::new())
         }
     }
+}
+
+/// Whether the console takes lines as commands (not capturing them).
+pub fn idle(system: &System) -> bool {
+    matches!(system.svc.mode, Mode::Normal)
 }
 
 /// Dispatch a database command; `None` when `cmd` is not one.

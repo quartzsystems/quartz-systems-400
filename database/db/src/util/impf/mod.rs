@@ -12,8 +12,8 @@ mod csv;
 mod from;
 mod to;
 
-pub use from::cpyfrmimpf;
-pub use to::cpytoimpf;
+pub use from::{cpyfrmimpf, cpyfrmimpf_paused};
+pub use to::{cpytoimpf, cpytoimpf_paused};
 
 use dds::{DataType, DateFmt, FieldDef, TimeFmt};
 

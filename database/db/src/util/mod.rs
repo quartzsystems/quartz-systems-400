@@ -17,12 +17,14 @@ pub mod rgzpfm;
 
 pub use chkpath::{PathReport, verify_all, verify_file};
 pub use clrpfm::clrpfm;
-pub use cpyf::{CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf};
-pub use impf::{DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpytoimpf};
+pub use cpyf::{CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf, cpyf_paused};
+pub use impf::{
+    DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpyfrmimpf_paused, cpytoimpf, cpytoimpf_paused,
+};
 pub use inzpfm::{default_record, inzpfm};
 pub use lines::put_lines;
 pub use putrcds::put_records;
-pub use rgzpfm::{KeyFile, RgzReport, rgzpfm};
+pub use rgzpfm::{rgzpfm_paused, KeyFile, RgzReport, rgzpfm};
 
 use std::ops::Bound;
 
@@ -141,8 +143,34 @@ pub fn each_record(
     order: &Order,
     f: &mut dyn FnMut(&mut Txn<'_>, Slot) -> Result<bool>,
 ) -> Result<()> {
+    each_record_paused(txn, m, order, f, &mut crate::no_pause)
+}
+
+/// [`each_record`] with a pause every [`crate::PAUSE_EVERY`] records
+/// read; after one that gave the store to others the member is read
+/// again and the walk goes on from the RRN or key it reached.
+pub fn each_record_paused(
+    txn: &mut Txn<'_>,
+    m: &mut Member,
+    order: &Order,
+    f: &mut dyn FnMut(&mut Txn<'_>, Slot) -> Result<bool>,
+    pause: crate::Pause<'_>,
+) -> Result<()> {
+    let mut seen = 0u64;
+    let mut step = |txn: &mut Txn<'_>, m: &mut Member, n: u64| -> Result<bool> {
+        seen += n;
+        if seen < crate::PAUSE_EVERY {
+            return Ok(false);
+        }
+        seen = 0;
+        if pause(txn)? {
+            m.reopen(txn)?;
+            return Ok(true);
+        }
+        Ok(false)
+    };
     if order.keyed {
-        return each_keyed(txn, m, order, f);
+        return each_keyed(txn, m, order, f, &mut step);
     }
     let slots = if m.is_logical() {
         Core::load(txn, m.bases[0].member)?.attr.slots
@@ -171,6 +199,7 @@ pub fn each_record(
                 return Ok(());
             }
         }
+        step(txn, m, 1)?;
     }
     Ok(())
 }
@@ -180,9 +209,10 @@ fn each_keyed(
     m: &mut Member,
     order: &Order,
     f: &mut dyn FnMut(&mut Txn<'_>, Slot) -> Result<bool>,
+    step: &mut dyn FnMut(&mut Txn<'_>, &mut Member, u64) -> Result<bool>,
 ) -> Result<()> {
     m.ensure_path(txn, &mut |_, _| {})?;
-    let p = m.path().ok_or_else(|| DbError::Copy {
+    let mut p = m.path().ok_or_else(|| DbError::Copy {
         what: format!("member {} is in arrival sequence", m.name()),
     })?;
     let lo = order
@@ -203,6 +233,11 @@ fn each_keyed(
                     return Ok(());
                 }
             }
+        }
+        let n = u64::try_from(batch.len()).expect("fits");
+        if step(txn, m, n)? {
+            m.ensure_path(txn, &mut |_, _| {})?;
+            p = m.path().expect("keyed");
         }
         batch = p.scan_from(txn, Bound::Excluded(&last), BATCH)?;
     }

@@ -154,12 +154,58 @@ every other request, and with the other statements in progress.
   VIEW`, `CREATE SCHEMA`, `CREATE ALIAS`, `LABEL ON`, `COMMENT ON`,
   `SET`, `DECLARE`, `FETCH`, `CLOSE`), `COMMIT` (its cycle's entries
   and its locks released), and `DROP` (see "Definitions" below). `CREATE
-  TABLE ... AS` is refused by the engine. `DESCRIBE`, the console's
-  `sql` and `RUNSQLSTM` run to their end too: `RUNSQLSTM`, `RUNSQL` and
-  the database commands (`CPYF`, `RGZPFM`, `CLRPFM`, `CPYTOIMPF`,
-  `CPYFRMIMPF`, `CRTLF`) are commands, run by the service's processing
-  programs over the store it owns for the whole command, not on a
-  statement's fiber.
+  TABLE ... AS` is refused by the engine. `DESCRIBE` and the console's
+  `sql` and `sqlrun` words run to their end too.
+- Commands (`run_cmd`) that can run long take turns the same way
+  (`cpp::longcmd`): `RUNSQL`, `RUNSQLSTM`, `CPYF`, `CPYFRMIMPF`,
+  `CPYTOIMPF`, `CRTLF` and `RGZPFM`. What a command reads from its job
+  and the system (its parameters, the statements of a source member or
+  stream file, the text `CPYFRMIMPF` reads, the library list) is read
+  first, as the command would; its work then runs on a fiber on the
+  store lent to it (`longcmd::Work`), with a context of its own under
+  its job's handle, so its locks are its job's; what it gives back (an
+  `xfer` buffer, `CPYTOIMPF`'s stream file, the reply and its
+  completion message) is done at the end with the job set up as for
+  any command. At the database's pauses (every 256 records, at most
+  every 5 ms) the work commits what it did so far and yields as a
+  statement does. A command whose work fails after it committed parts
+  commits the rest too (what the failure undid included); one that
+  failed with nothing committed is dropped, as before.
+  - `RUNSQL`, `RUNSQLSTM`: each statement runs as an embedded one does,
+    taking turns inside it, with a turn between statements; a statement
+    that failed after it committed parts keeps them. Its context is the
+    job's own, not the console's (its overrides copied).
+  - `CPYF`, `CPYFRMIMPF`: records are written in parts, the from-file
+    held `*SHRRD` and the to-member `*SHRUPD` (`*EXCL` under
+    `MBROPT(*REPLACE)`) throughout; others read the from-file and may
+    change it, as the rules allow. A copy ended part way (an error past
+    `ERRLVL`, an end, a crash) keeps the records copied so far, as an
+    error part way does.
+  - `CPYTOIMPF`: reads in parts under `*SHRRD`; the text is written at
+    the end.
+  - `CRTLF`: the file is made, then its member's path built as `CREATE
+    INDEX` builds one (above), the based-on files and their members held
+    `*SHRNUP` and the new file `*EXCL`; a build that fails (`CPF5090` for
+    a `UNIQUE` file over repeated keys) or is ended deletes the file.
+  - `RGZPFM`: the member is held `*EXCL`; its records are read with
+    pauses, then cleared and written again in one step. That step is not
+    split: the records get new numbers in the same member, and rebuilding
+    it beside itself would change the member object its logical files
+    and LOB values name (`ALTER TABLE` refuses a file with dependents;
+    `RGZPFM` must not).
+  Still running to their end: `CLRPFM` (one step whose cost goes by
+  extents and path pages, as `DROP`'s; a member cleared in parts would
+  be half there), `INZPFM`, `CHGPF SRCFILE` (one transaction, crash safe
+  by the same rebuild beside the member as `ALTER TABLE`), the save and
+  restore commands (`SAVLIB`, `SAVOBJ`, `RSTLIB`, `RSTOBJ`: the save
+  engine takes its save locks and reads or writes the save file or media
+  with the store and its history in the system for the whole command; a
+  save that let changes in between parts would need save-while-active
+  checkpoints the engine does not have, and a restore half done would
+  be seen), `CPYTOSTMF` and `CPYFRMSTMF` (they go through the service's
+  `Ifs`, which borrows the store per operation from the system, not
+  from a lender a fiber can give back), and `RCLSTG` (it quiesces the
+  store: no other request may run under it).
 - Where it yields, at most every 5 ms (`SqlContext::yield_every`):
   between batches (256 keys, or 256 records by RRN) of every table scan,
   a correlated subquery's included; between rows of each step that
@@ -251,7 +297,7 @@ every other request, and with the other statements in progress.
   what it wrote so far committed first), so the holder runs and can
   commit or roll back meanwhile. `*IMMED` waits not at all, `*NOMAX`
   until the record is free or the statement is cancelled; with no
-  turns to give (the console's `sql`, `RUNSQLSTM`) there is nothing to
+  turns to give (the console's `sql` and `sqlrun`) there is nothing to
   wait for and the conflict is `SQL0913` at once. While every
   statement in progress is waiting for a record, the loop waits up to
   10 ms for requests between its turns rather than spinning

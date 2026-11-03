@@ -3,10 +3,11 @@
 // root directory of this project.
 
 //! Long operations that pause ([`db::Pause`]): a path built, records
-//! converted for a new format and a rollback undone, each committing
-//! what it did so far at its pauses, give what they give without pauses;
-//! and one ended part way (a crash after a pause) leaves nothing a
-//! rebuild or the IPL's recovery does not put right.
+//! converted for a new format, a rollback undone and the copy and
+//! reorganize commands, each committing what it did so far at its
+//! pauses, give what they give without pauses; and one ended part way
+//! (a crash after a pause) leaves nothing a rebuild or the IPL's
+//! recovery does not put right.
 
 #![allow(clippy::too_many_lines, clippy::many_single_char_names)]
 
@@ -350,4 +351,65 @@ fn a_unique_path_over_repeated_keys_is_not_built() {
     t.commit().unwrap();
     let mut t = store.begin().unwrap();
     assert_eq!(by_name(&mut t, lfid).len(), usize::try_from(ROWS).unwrap());
+}
+
+/// Every record of a member, by RRN.
+fn slots_of(store: &mut Store, file: ObjectId) -> Vec<db::Slot> {
+    let mut t = store.begin().unwrap();
+    Member::open_by(&mut t, file, MemberSpec::First).unwrap().scan(&mut t, 1, 100_000).unwrap()
+}
+
+#[test]
+fn copies_and_a_reorganize_with_pauses() {
+    use db::util::{self, CpyfOpts, ImpfOpts, KeyFile, MbrOpt, Target};
+    let job = JobHandle(1);
+    let mut without = Vec::new();
+    for paused in [false, true] {
+        let (_d, mut store, lib) = open_new();
+        let cust = customers(&mut store, lib);
+        let mut pauses = 0;
+        let mut counting = pausing(&mut pauses, u32::MAX);
+        let mut none = db::no_pause;
+        let pause: db::Pause<'_> = if paused { &mut counting } else { &mut none };
+        // CPYF into a new file, then again over it with *REPLACE.
+        let mut t = store.begin().unwrap();
+        let opts = CpyfOpts { crtfile: true, now: NOW, ..CpyfOpts::default() };
+        let to = Target::Create { library: lib, name: name("COPY") };
+        let r = util::cpyf_paused(&mut t, job, cust, &to, &opts, pause).unwrap();
+        assert_eq!(r.copied, u64::try_from(ROWS).unwrap());
+        let copy = r.created.unwrap();
+        let opts = CpyfOpts { mbropt: MbrOpt::Replace, now: NOW, ..CpyfOpts::default() };
+        let r = util::cpyf_paused(&mut t, job, cust, &Target::File(copy), &opts, pause).unwrap();
+        assert_eq!(r.copied, u64::try_from(ROWS).unwrap());
+        t.commit().unwrap();
+        assert_eq!(slots_of(&mut store, copy), slots_of(&mut store, cust));
+        // Out as text and back in.
+        let mut t = store.begin().unwrap();
+        let text = util::cpytoimpf_paused(&mut t, job, cust, MemberSpec::First, &ImpfOpts::default(), pause).unwrap();
+        let back = file::create_pf(&mut t, lib, name("BACK"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
+            .unwrap();
+        let r = util::cpyfrmimpf_paused(&mut t, job, back, MemberSpec::First, &text, &ImpfOpts::default(), pause).unwrap();
+        assert_eq!((r.records, r.errors), (u64::try_from(ROWS).unwrap(), 0));
+        t.commit().unwrap();
+        assert_eq!(slots_of(&mut store, back), slots_of(&mut store, cust));
+        // Every third record deleted, then the rest squeezed together in
+        // key order.
+        let mut t = store.begin().unwrap();
+        let mut m = Member::open_by(&mut t, copy, MemberSpec::First).unwrap();
+        for rrn in (3..=u64::try_from(ROWS).unwrap()).step_by(3) {
+            m.delete(&mut t, rrn).unwrap();
+        }
+        let r = util::rgzpfm_paused(&mut t, job, copy, MemberSpec::First, &KeyFile::File, pause).unwrap();
+        assert_eq!(r.records, u64::try_from(ROWS - ROWS / 3).unwrap());
+        t.commit().unwrap();
+        let left: Vec<String> = slots_of(&mut store, copy).iter().map(|s| format!("{:?}", s.record)).collect();
+        assert_eq!(left.len(), usize::try_from(ROWS - ROWS / 3).unwrap());
+        drop(counting);
+        if paused {
+            assert!(pauses >= 10, "{pauses} pauses");
+            assert_eq!(left, without, "the same records in the same order");
+        } else {
+            without = left;
+        }
+    }
 }

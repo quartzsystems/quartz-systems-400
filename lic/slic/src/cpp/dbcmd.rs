@@ -12,7 +12,7 @@ use cmd::block::Parms;
 use db::chg::{ChgLf, ChgPf};
 use db::file::{Maint, Recover, Size, Wait};
 use qsname::{MemberSpec, Name};
-use sql::run::{CommitOpt, RunOpts, runsqlstm};
+use sql::run::{CommitOpt, RunOpts, RunReport, runsqlstm};
 use stg::proto::CmdReply;
 use store::obj::{JobHandle, ObjectId, ops, types};
 use store::txn::Txn;
@@ -340,9 +340,13 @@ fn runsql(system: &mut System, parms: &Parms) -> CmdReply {
         Ok(o) => o,
         Err(e) => return failed("RUNSQL", &e),
     };
-    let report = match crate::svc::db::db(system)
-        .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()))
-    {
+    let report = crate::svc::db::db(system)
+        .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()));
+    runsql_reply(report)
+}
+
+fn runsql_reply(report: Result<RunReport, String>) -> CmdReply {
+    let report = match report {
         Ok(r) => r,
         Err(e) => return failed("RUNSQL", &e),
     };
@@ -352,34 +356,35 @@ fn runsql(system: &mut System, parms: &Parms) -> CmdReply {
     plain(report.listing)
 }
 
-/// `RUNSQLSTM SRCFILE(lib/file) SRCMBR(m)` or `SRCSTMF(path)`: the statements;
-/// `SQL9006` when errors passed `ERRLVL`.
-fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
+/// The statements `RUNSQLSTM` runs: its source member or stream file.
+fn runsqlstm_text(system: &mut System, parms: &Parms) -> Result<String, String> {
     let q = parms.qual("SRCFILE");
-    let mbr = match member(parms, "SRCMBR") {
-        Ok(m) => m,
-        Err(e) => return failed("RUNSQLSTM", &e),
-    };
+    let mbr = member(parms, "SRCMBR")?;
     // SRCSTMF: the statements are a stream file read in the job's name.
     let stmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
-    let text = match stmf {
+    match stmf {
         Some(path) => super::stmf::read_as_job(system, &path),
         None => in_store(system, |txn, qsys, names| {
             let id = file(txn, qsys, names, &q)?;
             db::source::srcget(txn, id, mbr).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))
         }),
-    };
-    let text = match text {
-        Ok(t) => t,
+    }
+}
+
+/// `RUNSQLSTM SRCFILE(lib/file) SRCMBR(m)` or `SRCSTMF(path)`: the statements;
+/// `SQL9006` when errors passed `ERRLVL`.
+fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
+    let (text, opts) = match runsqlstm_text(system, parms).and_then(|t| Ok((t, run_opts(parms, system)?))) {
+        Ok(v) => v,
         Err(e) => return failed("RUNSQLSTM", &e),
     };
-    let opts = match run_opts(parms, system) {
-        Ok(o) => o,
-        Err(e) => return failed("RUNSQLSTM", &e),
-    };
-    let report = match crate::svc::db::db(system)
-        .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()))
-    {
+    let report = crate::svc::db::db(system)
+        .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()));
+    runsqlstm_reply(report, opts.errlvl)
+}
+
+fn runsqlstm_reply(report: Result<RunReport, String>, errlvl: u8) -> CmdReply {
+    let report = match report {
         Ok(r) => r,
         Err(e) => return failed("RUNSQLSTM", &e),
     };
@@ -387,10 +392,34 @@ fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
         "{}{} statement(s), {} error(s), severity {}\n",
         report.listing, report.statements, report.errors, report.severity
     );
-    if report.severity > opts.errlvl {
+    if report.severity > errlvl {
         return escape("SQL9006", "RUNSQLSTM", &summary);
     }
     plain(summary)
+}
+
+/// `RUNSQL` and `RUNSQLSTM` taking turns (`super::longcmd`): the
+/// statements read now, run on the store lent to them, each statement
+/// yielding as an embedded one does, a turn between statements.
+pub(super) fn runsql_long(
+    system: &mut System,
+    name: &str,
+    parms: &Parms,
+    job: JobHandle,
+) -> Result<super::longcmd::Long, Box<CmdReply>> {
+    let runsql = name == "RUNSQL";
+    let text = if runsql { Ok(parms.text("SQL")) } else { runsqlstm_text(system, parms) };
+    let prepared = text.and_then(|t| Ok((t, run_opts(parms, system)?, super::longcmd::context(system, job)?)));
+    let (text, opts, mut ctx) = match prepared {
+        Ok(v) => v,
+        Err(e) => return Err(Box::new(failed(name, &e))),
+    };
+    Ok(Box::new(move |w: &super::longcmd::Work<'_>| {
+        ctx.yielder = Some(w.yielder());
+        let report = sql::runsqlstm_lent(w.lender(), &mut ctx, &text, &opts).map_err(|e| e.to_string());
+        let reply = if runsql { runsql_reply(report) } else { runsqlstm_reply(report, opts.errlvl) };
+        Box::new(move |_: &mut System| reply)
+    }))
 }
 
 fn sndjrne(system: &mut System, parms: &Parms) -> Result<String, String> {

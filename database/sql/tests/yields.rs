@@ -781,3 +781,87 @@ fn a_change_waits_for_a_held_record() {
     assert!(at.elapsed() < Duration::from_secs(1));
     holder.borrow_mut().run(&under_chg("ROLLBACK"));
 }
+
+/// A script of long statements, as `RUNSQLSTM` runs it.
+const SCRIPT: &str = "CREATE TABLE QSTEST.C (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL);
+     INSERT INTO QSTEST.C SELECT ID, NAME FROM QSTEST.T;
+     INSERT INTO QSTEST.C SELECT ID + 5000, NAME FROM QSTEST.T WHERE ID IN (SELECT ID FROM QSTEST.K WHERE ID > 300);
+     ALTER TABLE QSTEST.C ADD COLUMN EXTRA CHAR(3) NOT NULL DEFAULT 'E';
+     CREATE INDEX QSTEST.CI ON QSTEST.C (NAME, ID);
+     UPDATE QSTEST.C SET NAME = 'Odd' WHERE MOD(ID, 2) = 1;
+     DELETE FROM QSTEST.C WHERE ID > 5900";
+
+/// The rows of `C` in key order, as text.
+fn rows_of_c(f: &Fixture) -> Vec<String> {
+    let mut ctx = SqlContext::new(f.qsys, JobHandle(2), f.names.clone());
+    ctx.now = Some(NOW);
+    ctx.naming = Naming::Sql;
+    let mut st = f.store.borrow_mut();
+    let mut txn = st.begin().unwrap();
+    let p = sql::prepare("SELECT ID, NAME, EXTRA FROM QSTEST.C ORDER BY ID", Naming::Sql).unwrap();
+    let rows = match p.execute(&mut txn, &mut ctx, &[]).unwrap() {
+        sql::Outcome::Rows(rs) => rs.rows.iter().map(|r| format!("{r:?}")).collect(),
+        o => panic!("{o:?}"),
+    };
+    txn.commit().unwrap();
+    rows
+}
+
+#[test]
+fn a_script_takes_turns_inside_and_between_statements() {
+    // Without turns.
+    let plain = fixture();
+    run_script(&plain, 1, SCRIPT).unwrap();
+    let want = rows_of_c(&plain);
+    assert_eq!(want.len(), 1600);
+
+    // Taking turns: another job's query, catalog list and change answer
+    // at every yield, none waiting past the bound.
+    let f = fixture();
+    let mut ctx = SqlContext::new(f.qsys, JobHandle(1), f.names.clone());
+    ctx.now = Some(NOW);
+    ctx.yield_every = sql::exec::YIELD_EVERY;
+    let marks = Rc::new(RefCell::new(vec![std::time::Instant::now()]));
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
+    let log = Rc::clone(&marks);
+    ctx.yielder = Some(Rc::new(move || {
+        log.borrow_mut().push(std::time::Instant::now());
+        assert_eq!(count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K"), ROWS);
+        assert!(count_as_other(&fx, "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'") >= 2);
+        run_script(&fx, 2, "UPDATE QSTEST.K SET NAME = NAME WHERE ID = 1").unwrap();
+        false
+    }));
+    let opts = RunOpts {
+        naming: Naming::Sql,
+        ..RunOpts::default()
+    };
+    let lender = Rc::clone(&f.store);
+    let report = sql::runsqlstm_lent(&lender, &mut ctx, SCRIPT, &opts).unwrap();
+    assert_eq!(report.errors, 0, "{}", report.listing);
+    let mut marks = marks.borrow().clone();
+    marks.push(std::time::Instant::now());
+    let gap = marks.windows(2).map(|w| w[1] - w[0]).max().unwrap();
+    assert!(marks.len() >= 20, "{} yields", marks.len() - 2);
+    assert!(gap < BOUND, "others waited {gap:?}");
+    assert_eq!(rows_of_c(&f), want);
+
+    // Ended at a yield: the run stops there.
+    let f = fixture();
+    let mut ctx = SqlContext::new(f.qsys, JobHandle(1), f.names.clone());
+    ctx.now = Some(NOW);
+    ctx.yield_every = Duration::ZERO;
+    let n = Rc::new(Cell::new(0u32));
+    let turns = Rc::clone(&n);
+    ctx.yielder = Some(Rc::new(move || {
+        turns.set(turns.get() + 1);
+        turns.get() == 3
+    }));
+    let lender = Rc::clone(&f.store);
+    let report = sql::runsqlstm_lent(&lender, &mut ctx, SCRIPT, &opts).unwrap();
+    assert_eq!(report.severity, 40, "{}", report.listing);
+    assert!(report.statements < 7, "{}", report.listing);
+}

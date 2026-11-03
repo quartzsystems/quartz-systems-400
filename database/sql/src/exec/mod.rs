@@ -430,6 +430,21 @@ impl SqlContext {
         Ok(if stop { None } else { Some(true) })
     }
 
+    /// A turn for the others between two statements of a run, when it
+    /// is time: no transaction is open. The yielder may end the run.
+    pub fn between(&mut self) -> Result<()> {
+        let Some(y) = self.yielder.clone() else {
+            return Ok(());
+        };
+        if self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
+            return Ok(());
+        }
+        let stop = y();
+        self.yields += 1;
+        self.last_yield = Some(std::time::Instant::now());
+        if stop { Err(SqlError::Cancelled) } else { Ok(()) }
+    }
+
     /// Give back the locks a yielding statement took.
     pub fn release_held(&mut self, txn: &mut Txn<'_>) {
         self.release_stmt_reads();

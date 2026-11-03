@@ -20,7 +20,7 @@ use crate::member::{Member, Slot};
 use crate::path::PathKey;
 use crate::record::datetime::{Date, Time};
 use crate::record::{self, Value};
-use crate::util::{Hold, Order, each_record, member_of};
+use crate::util::{Hold, Order, each_record_paused, member_of};
 
 /// Write the member's records as UTF-8 text in arrival sequence, as the
 /// machine does even for a keyed file (the pub400 capture); a join
@@ -31,6 +31,19 @@ pub fn cpytoimpf(
     file: ObjectId,
     member: MemberSpec,
     opts: &ImpfOpts,
+) -> Result<Vec<u8>> {
+    cpytoimpf_paused(txn, job, file, member, opts, &mut crate::no_pause)
+}
+
+/// [`cpytoimpf`] pausing every [`crate::PAUSE_EVERY`] records read,
+/// the member held `*SHRRD` throughout.
+pub fn cpytoimpf_paused(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    member: MemberSpec,
+    opts: &ImpfOpts,
+    pause: crate::Pause<'_>,
 ) -> Result<Vec<u8>> {
     crate::auth::check(txn, "file.open-input", file)?;
     let desc = file::describe(txn, file)?;
@@ -49,7 +62,10 @@ pub fn cpytoimpf(
         let owner = crate::member::lob::owner(txn, m.id())?;
         let mut out = String::new();
         if let Some(rrns) = join_order(txn, &m)? {
-            for rrn in rrns {
+            for (i, rrn) in (1u64..).zip(rrns) {
+                if i.is_multiple_of(crate::PAUSE_EVERY) && pause(txn)? {
+                    m.reopen(txn)?;
+                }
                 let entry = PathKey {
                     key: Vec::new(),
                     format: 0,
@@ -62,11 +78,11 @@ pub fn cpytoimpf(
             }
             return Ok(out.into_bytes());
         }
-        each_record(txn, &mut m, &Order::default(), &mut |txn, slot| {
+        each_record_paused(txn, &mut m, &Order::default(), &mut |txn, slot| {
             out.push_str(&render(txn, owner, &fmt, &slot, opts)?);
             out.push_str(opts.rcddlm.text());
             Ok(true)
-        })?;
+        }, pause)?;
         Ok(out.into_bytes())
     });
     hold.release(txn);
