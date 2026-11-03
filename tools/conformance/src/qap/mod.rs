@@ -22,7 +22,9 @@
 //! session and a slow select on a second, the third's command, catalog
 //! lists and query answer within a bound, and the earlier statement is
 //! cancelled while the later still runs (`docs/STORAGE_SERVICE.md` "Long
-//! statements").
+//! statements"). Then the aggregate again under `RepeatableRead`: the
+//! third's command, catalog lists and query answer as before, and its
+//! change of a row the query read is refused (`SQL0913`).
 //!
 //! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
 
@@ -278,7 +280,8 @@ impl Suite {
         b.attach(&session.token)?;
         let mut third = srv.open()?;
         third.attach(&session.token)?;
-        let r = lanes(&mut a, &mut b, &mut third);
+        let r = lanes(&mut a, &mut b, &mut third)
+            .and_then(|l| Ok(format!("{l}; {}", repeatable(&mut a, &mut third)?)));
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r
@@ -338,6 +341,53 @@ fn lanes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
         most.as_millis(),
         stop_agg.as_millis(),
         stop_slow.as_millis()
+    ))
+}
+
+/// The aggregate under `RepeatableRead` (`*ALL`): it takes turns too.
+/// What it read is read-locked, so another job's change of it is
+/// refused, while that job's command, lists and query answer.
+fn repeatable(a: &mut Conn, c: &mut Conn) -> Result<String, String> {
+    sql::options(a, CommitLevel::RepeatableRead, None)?;
+    let (agg, _) = sql::start_long(a, "QAPLANE")?;
+    sql::still_running(a, agg, Duration::from_secs(1))?;
+    let mut took = Vec::new();
+    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
+    took.push(within(c, "CHKOBJ", Op::RunCommand, &check)?);
+    let tables = ListTables { schema: "QAPLANE".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
+    took.push(within(c, "ListTables", Op::ListTables, &tables)?);
+    let columns = ListColumns { schema: "QAPLANE".into(), table: "BIG".into() };
+    took.push(within(c, "ListColumns", Op::ListColumns, &columns)?);
+    let at = Instant::now();
+    let rows = sql::count(c, "SELECT COUNT(*) FROM QAPLANE.BIG")?;
+    took.push(at.elapsed());
+    if rows != 1000 || took.iter().any(|t| *t > LANE_BOUND) {
+        return Err(format!("under RepeatableRead, the third connection's query: {rows} rows in {:?}", at.elapsed()));
+    }
+    // Row N = 0 is the first the aggregate read.
+    let stmt = sql::prepare(c, "UPDATE QAPLANE.BIG SET N = 0 WHERE N = 0")?;
+    let at = Instant::now();
+    let reply = sql::execute(c, stmt.statement, Vec::new())?;
+    let refused = at.elapsed();
+    let code = reply.body_as::<SqlFailure>().map(|f| f.sqlcode).unwrap_or_default();
+    if reply.status != Status::SqlError || code != -913 {
+        return Err(format!("another job changed a row read under RepeatableRead: {}", sql::failure(&reply)));
+    }
+    c.ok::<_, ()>(Op::Release, &StatementRef { statement: stmt.statement })?;
+    if a.poll_reply(agg, Duration::ZERO)?.is_some() {
+        return Err("the RepeatableRead aggregate ended before its cancel".into());
+    }
+    let (_, stop) = sql::cancel(a, agg)?;
+    // The unit of work ends: its read locks go.
+    a.ok::<_, ()>(Op::Rollback, &())?;
+    sql::options(a, CommitLevel::None, None)?;
+    sql::run(c, "UPDATE QAPLANE.BIG SET N = 0 WHERE N = 0")?;
+    let most = took.iter().max().copied().unwrap_or_default();
+    Ok(format!(
+        "under RepeatableRead the aggregate took turns: the third's CHKOBJ, ListTables, ListColumns and a query answered in at most {} ms, its UPDATE of a row read was refused SQL0913 in {} ms and ran after the ROLLBACK; cancelled in {} ms",
+        most.as_millis(),
+        refused.as_millis(),
+        stop.as_millis()
     ))
 }
 

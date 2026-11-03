@@ -7,6 +7,7 @@
 //! files read cannot be dropped under it, a change commits what it wrote
 //! before it yields and tests its condition again after, what must be
 //! one view never yields, and no other job waits long for any of them.
+//! (A query under `*ALL` takes turns too: `tests/all_reads.rs`.)
 
 use std::cell::{Cell, RefCell};
 use std::fmt::Write as _;
@@ -275,20 +276,20 @@ fn what_runs_in_one_view_never_yields() {
     );
     run(&mut s, Op::Exec, "", "CREATE TABLE QSTEST.C AS (SELECT * FROM QSTEST.T) WITH DATA");
     assert_eq!(n.get(), 0, "no yield");
-    // Under *ALL a read is one view: no yield, by the program's level or
-    // the unit's.
+    // Under *ALL a query takes turns too: what it read is read-locked.
     let all = Desc {
         op: Op::Open,
         commit: Some(db::cmt::LckLvl::All),
         ..Desc::default()
     };
-    assert!(!sql::embed::may_yield(&all));
+    assert!(sql::embed::may_yield(&all));
     assert!(sql::embed::may_yield(&Desc { op: Op::Open, ..Desc::default() }));
     assert!(sql::embed::may_yield(&Desc { op: Op::ExecImm, ..Desc::default() }));
+    assert!(!sql::embed::may_yield(&Desc { op: Op::Describe, ..Desc::default() }));
     run(&mut s, Op::Exec, "", "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
     let r = run(&mut s, Op::Query, "", "SELECT COUNT(*) FROM QSTEST.T");
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert_eq!(n.get(), 0, "no yield under *ALL");
+    assert!(n.get() > 0, "yields under *ALL");
 }
 
 /// The longest wait any other job's request had: the gaps between the

@@ -621,13 +621,19 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   steps after them (filters, `EXISTS`, joins, grouping and aggregates,
   the select list, the sort's keys) and between rows a change writes,
   at most every 5 ms; meanwhile the other jobs' requests and this
-  connection's catalog lists are answered. Still one view, running to
-  its end: a query under `RepeatableRead` or `Serializable` (`*ALL`,
-  whether `SetOptions` or `SET TRANSACTION` chose it), an `UPDATE` or
-  `DELETE` whose condition has a subquery, `MERGE`, and every other
-  statement (DDL, `COMMIT`, `CREATE TABLE ... AS`). Step 90 runs an
-  aggregate over `EXISTS` and a slow select on two connections and the
-  third's command, catalog lists and query beside them.
+  connection's catalog lists are answered. A query under
+  `RepeatableRead` or `Serializable` (`*ALL`, whether `SetOptions` or
+  `SET TRANSACTION` chose it) takes turns too: each row it reads is
+  read-locked until `Commit` or `Rollback`, so its reads repeat; other
+  jobs read those rows, but a change to one fails with `SQL0913` until
+  then. Rows other jobs add meanwhile may be read (both levels are
+  `*ALL`; no table lock). Still one view, running to its end: an
+  `UPDATE` or `DELETE` whose condition has a subquery, `MERGE`, and
+  every other statement (DDL, `COMMIT`, `CREATE TABLE ... AS`). Step 90
+  runs an aggregate over `EXISTS` and a slow select on two connections
+  and the third's command, catalog lists and query beside them, then
+  the aggregate under `RepeatableRead` with the third's requests beside
+  it and its change of a row read refused.
 - Engine limits the build met, now lifted as the database rules have them:
   `SMALLINT`, `INTEGER` and `BIGINT` columns made by SQL take their
   whole 16, 32 and 64-bit range (a field flag, `DB_FORMAT.md`; a DDS

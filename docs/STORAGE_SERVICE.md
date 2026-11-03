@@ -145,13 +145,12 @@ every other request, and with the other statements in progress.
 
 - Which: an embedded statement (`sql_run`) whose descriptor is a query
   or a statement run (`Query`, `Open`, `Exec`, `ExecImm`, `Execute`;
-  `sql::embed::may_yield`) at `*NONE`, `*CHG` or `*CS`, the level
-  `SET TRANSACTION` chose over the program's. Among statements run,
+  `sql::embed::may_yield`) at any commitment level. Among statements run,
   `SELECT`, cursor `OPEN`, `INSERT`, `UPDATE` and `DELETE` take turns;
   the rest run to their end (DDL, `COMMIT`, `CREATE TABLE ... AS`,
   `MERGE`), as do an `UPDATE` or `DELETE` whose condition has a
-  subquery (decided in one view), every statement under `*ALL` (a read
-  there is one view), `DESCRIBE`, the console's `sql` and `RUNSQLSTM`.
+  subquery (decided in one view), `DESCRIBE`, the console's `sql` and
+  `RUNSQLSTM`.
 - Where it yields, at most every 5 ms (`SqlContext::yield_every`):
   between batches (256 keys, or 256 records by RRN) of every table scan,
   a correlated subquery's included; between rows of each step that
@@ -197,15 +196,33 @@ every other request, and with the other statements in progress.
   updates and deletes by other jobs go on. No lock is taken for the
   turns themselves: jobs wait only for the record and object locks the
   database rules give (`STRJRNPF` and `ENDJRNPF` take `*EXCL`, a record
-  being changed is locked to its job), and the engine never waits for
-  one: a conflict is `SQL0913` at once.
+  being changed is locked to its job, a record read under `*ALL` is
+  read-locked), and the engine never waits for one: a conflict is
+  `SQL0913` at once.
+- Under `*ALL` (`RepeatableRead` and `Serializable` over QAP, `SET
+  TRANSACTION` RS or RR, `COMMIT(*ALL)`): each record a scan reads is
+  read-locked as it is read, in the same turn and before any yield
+  (`SqlContext::lock_read`), by the job's commit definition until
+  `COMMIT` or `ROLLBACK` (`CommitDef::lock_read`), or by the statement
+  until its end when the job has none. Read locks share: another job
+  reads those records, at `*ALL` too, but its change of one is refused
+  (`SQL0913`; a program's record I/O waits its `WAITRCD`, then
+  `CPF5027`), and so is an `*ALL` read of a record another job holds
+  for update. The job's own change of a record it read takes it when
+  no other job shares it. The locks are in the service's record lock
+  table (`db::odp::locks`, memory only), released at commit, rollback
+  and the end of the job. Nothing else is locked: rows other jobs add
+  meanwhile may be read (phantoms, as the level allows).
 - What it sees: each batch reads what is committed (and, as before,
   what another job's open commit cycle has written) when the batch is
   read. Rows changed or added behind the scan's position after it
   passed are not seen; ahead of it, they are (a row whose key another
   job moves from behind to ahead is read twice). That is a read under
   `*CS` or below on IBM i, which gives a statement no single view
-  either; `*ALL` keeps one. A change that yielded tests its condition
+  either. Under `*ALL` a record read cannot change until the unit of
+  work ends, so the rows read are the same at every yield and read
+  again the same; only rows added or moved ahead of the scan are new.
+  A change that yielded tests its condition
   again against each row as it is when the row is locked to be changed,
   so a row another job moved out of it meanwhile is left alone. Under
   `*NONE` the rows already changed stay changed if the statement ends
