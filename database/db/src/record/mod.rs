@@ -107,6 +107,30 @@ fn pad_byte(f: &FieldDef) -> u8 {
     }
 }
 
+/// Whether a CCSID's text can hold double-byte pairs a byte cut would
+/// split: a mixed or double-byte EBCDIC one.
+fn splits_pairs(c: u16) -> bool {
+    matches!(
+        ccsid::conv::Codec::of(c),
+        Ok(Some(ccsid::conv::Codec {
+            form: ccsid::conv::Form::Mixed { .. } | ccsid::conv::Form::Dbcs { .. },
+            ..
+        }))
+    )
+}
+
+/// Write mixed or double-byte `bytes` (CCSID `c`) into field `out`,
+/// cut on a character with balanced shifts.
+fn write_whole(f: &FieldDef, c: u16, bytes: &[u8], out: &mut [u8]) {
+    let at = if f.varlen.is_some() { 2 } else { 0 };
+    let kept = ccsid::conv::cut(c, bytes, out.len() - at).bytes;
+    if at == 2 {
+        out[..2].copy_from_slice(&u16::try_from(kept.len()).expect("fits").to_be_bytes());
+    }
+    out[at..at + kept.len()].copy_from_slice(&kept);
+    fill_pad(f, &mut out[at + kept.len()..]);
+}
+
 /// A graphic field of CCSID 1200 or 13488, or none: UTF-16BE, two
 /// bytes a character, padded with U+0020.
 #[must_use]
@@ -311,6 +335,11 @@ pub fn write_field(f: &FieldDef, record: &mut [u8], value: &Value) -> Result<()>
         (false, Value::Char(bytes)) => {
             // A UTF-16 field takes whole characters.
             let unit = if is_utf16(f) { 2 } else { 1 };
+            // A mixed or double-byte value keeps whole characters.
+            if let Some(c) = f.ccsid.filter(|&c| !is_utf16(f) && splits_pairs(c)) {
+                write_whole(f, c, bytes, out);
+                return Ok(());
+            }
             if f.varlen.is_some() {
                 let max = out.len() - 2;
                 let n = bytes.len().min(max) / unit * unit;
@@ -441,6 +470,20 @@ mod tests {
             read_field(&z, &rec, &[], None),
             Err(DbError::DataMapping { .. })
         ));
+    }
+
+    #[test]
+    fn mixed_values_keep_double_byte_runs_whole() {
+        let mut rec = vec![0u8; 6];
+        let mut m = f(DataType::Char, 6, 0, 0);
+        m.ccsid = Some(939);
+        let v = ccsid::conv::from_str(939, "aああ").unwrap();
+        write_field(&m, &mut rec, &Value::Char(v)).unwrap();
+        assert_eq!(rec, [0x81, 0x0E, 0x44, 0x81, 0x0F, 0x40]);
+        // A single-byte field still cuts at the length.
+        let s = f(DataType::Char, 3, 0, 0);
+        write_field(&s, &mut rec, &Value::Char(vec![0xC1, 0x0E, 0x44, 0x81])).unwrap();
+        assert_eq!(&rec[..3], [0xC1, 0x0E, 0x44]);
     }
 
     #[test]

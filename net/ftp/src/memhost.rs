@@ -338,10 +338,8 @@ impl MemHost {
         let records = lines
             .iter()
             .map(|l| {
-                let mut r = ccsid::conv::from_str(d.ccsid, l).unwrap_or_default();
-                r.resize(d.rec_len, 0x40);
-                r.truncate(d.rec_len);
-                r
+                let b = ccsid::conv::from_str(d.ccsid, l).unwrap_or_default();
+                ccsid::conv::fit(d.ccsid, &b, d.rec_len, 0x40).bytes
             })
             .collect();
         self.qsys.add_member(

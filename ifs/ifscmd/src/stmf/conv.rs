@@ -165,14 +165,14 @@ pub fn expand_tabs(s: &str) -> String {
     out
 }
 
-/// One record from line bytes: cut or padded to `len`.
-fn record(mut b: Vec<u8>, len: usize, blank: u8, cut: &mut usize) -> Vec<u8> {
-    if b.len() > len {
-        b.truncate(len);
+/// One record from line bytes in `ccsid`: cut or padded to `len`, a
+/// mixed record's double-byte runs kept whole ([`ccsid::conv::fit`]).
+fn record(ccsid: u16, b: &[u8], len: usize, blank: u8, cut: &mut usize) -> Vec<u8> {
+    let f = ccsid::conv::fit(ccsid, b, len, blank);
+    if f.cut {
         *cut += 1;
     }
-    b.resize(len, blank);
-    b
+    f.bytes
 }
 
 /// Lines of raw bytes in `ccsid`'s encoding.
@@ -234,25 +234,25 @@ pub fn to_records(
     let mut out = Records::default();
     if cvt == Cvt::None {
         if e == EndLin::Fixed {
-            out.records = data.chunks(len).map(|c| record(c.to_vec(), len, b, &mut 0)).collect();
+            out.records = ccsid::conv::wrap(dbf, data, len, b);
             return Ok(out);
         }
         for l in split_bytes(data, dbf, e) {
-            let r = record(l, len, b, &mut out.truncated);
+            let r = record(dbf, &l, len, b, &mut out.truncated);
             out.records.push(r);
         }
         return Ok(out);
     }
     if e == EndLin::Fixed {
         let bytes = convert(stmf, dbf, data)?;
-        out.records = bytes.chunks(len).map(|c| record(c.to_vec(), len, b, &mut 0)).collect();
+        out.records = ccsid::conv::wrap(dbf, &bytes, len, b);
         return Ok(out);
     }
     let text = decode(stmf, data)?;
     for l in split_text(&text, e) {
         let l = if tabs { expand_tabs(&l) } else { l };
         let bytes = encode(dbf, &l)?;
-        let r = record(bytes, len, b, &mut out.truncated);
+        let r = record(dbf, &bytes, len, b, &mut out.truncated);
         out.records.push(r);
     }
     Ok(out)
@@ -295,6 +295,63 @@ mod tests {
         assert_eq!(r.records.len(), 2);
         let f = to_records(b"abcdef", 819, 37, 4, Cvt::Auto, EndLin::Fixed, false).unwrap();
         assert_eq!(f.records, [ccsid::conv::from_str(37, "abcd").unwrap(), ccsid::conv::from_str(37, "ef  ").unwrap()]);
+    }
+
+    /// Whether a mixed record's shifts balance.
+    fn balanced(r: &[u8]) -> bool {
+        let (mut dbl, mut i) = (false, 0);
+        while i < r.len() {
+            match r[i] {
+                0x0E if !dbl => dbl = true,
+                0x0F if dbl => dbl = false,
+                0x0E | 0x0F => return false,
+                _ if dbl => i += 1,
+                _ => {}
+            }
+            i += 1;
+        }
+        !dbl && i == r.len()
+    }
+
+    #[test]
+    fn mixed_records_keep_double_byte_runs_whole() {
+        let lines = ["QS/400 は日本語を変換します。", "ｶﾀｶﾅ ABC 東京都千代田区", "abc"];
+        let utf8 = lines.join("\n") + "\n";
+        for c in [930, 939] {
+            for len in 4..40 {
+                let r = to_records(utf8.as_bytes(), 1208, c, len, Cvt::Auto, EndLin::Lf, false).unwrap();
+                let mut cut = 0;
+                for (rec, line) in r.records.iter().zip(lines) {
+                    assert_eq!(rec.len(), len);
+                    assert!(balanced(rec), "{c} {len} {rec:02X?}");
+                    let t = ccsid::conv::to_string(c, rec).unwrap();
+                    let t = t.trim_end();
+                    assert!(line.starts_with(t), "{c} {len} {t:?}");
+                    cut += usize::from(t != line);
+                }
+                assert_eq!(r.truncated, cut);
+                // Back to a stream: the lines, cut where the records cut them.
+                let m = MemberData {
+                    records: r.records.clone(),
+                    record_len: len,
+                    source: true,
+                    ccsid: c,
+                };
+                let s = to_stream(&m, c, 1208, Cvt::Auto, EndLin::Lf).unwrap();
+                let back = to_records(&s, 1208, c, len, Cvt::Auto, EndLin::Lf, false).unwrap();
+                assert_eq!(back.records, r.records, "{c} {len}");
+                // *FIXED wraps the whole text: every record balanced, nothing lost.
+                let text = lines.concat();
+                let f = to_records(text.as_bytes(), 1208, c, len, Cvt::Auto, EndLin::Fixed, false).unwrap();
+                assert!(f.records.iter().all(|r| r.len() == len && balanced(r)), "{c} {len}");
+                let joined: String = f
+                    .records
+                    .iter()
+                    .map(|r| ccsid::conv::to_string(c, r).unwrap())
+                    .collect();
+                assert_eq!(joined.replace(' ', ""), text.replace(' ', ""), "{c} {len}");
+            }
+        }
     }
 
     #[test]

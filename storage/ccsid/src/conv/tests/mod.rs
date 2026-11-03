@@ -4,6 +4,7 @@
 
 //! Conversion tests.
 
+mod fit;
 mod mixed;
 mod sbcs;
 mod stream;

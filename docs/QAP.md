@@ -621,21 +621,26 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   steps after them (filters, `EXISTS`, joins, grouping and aggregates,
   the select list, the sort's keys) and between rows a change writes,
   at most every 5 ms; meanwhile the other jobs' requests and this
-  connection's catalog lists are answered. Still one view, running to
-  its end: a query under `RepeatableRead` or `Serializable` (`*ALL`,
-  whether `SetOptions` or `SET TRANSACTION` chose it), and the short
-  statements (`CREATE TABLE`, `CREATE VIEW`, `LABEL ON`, `COMMIT`,
-  `DROP`). `CREATE INDEX`, `ALTER TABLE` and `ROLLBACK` take turns too,
-  holding the locks the rules give meanwhile: an index being built
-  keeps its table from change (it is read) and is itself out of reach,
-  an altered table is the statement's alone, a rolled-back unit keeps
-  its rows locked; other tables and jobs go on. An `UPDATE` or
-  `DELETE` whose condition has a subquery takes turns too, and so does
-  `MERGE`, each decided as of its start: it finds its rows (and a
-  merge's matches and actions) first, its subqueries' answers kept, and
-  never sees its own changes. Step 90 runs an
-  aggregate over `EXISTS` and a slow select on two connections and the
-  third's command, catalog lists and query beside them.
+  connection's catalog lists are answered. A query under
+  `RepeatableRead` or `Serializable` (`*ALL`, whether `SetOptions` or
+  `SET TRANSACTION` chose it) takes turns too: each row it reads is
+  read-locked until `Commit` or `Rollback`, so its reads repeat; other
+  jobs read those rows, but a change to one fails with `SQL0913` until
+  then. Rows other jobs add meanwhile may be read (both levels are
+  `*ALL`; no table lock). `CREATE INDEX`, `ALTER TABLE` and `ROLLBACK`
+  take turns too, holding the locks the rules give meanwhile: an index
+  being built keeps its table from change (it is read) and is itself
+  out of reach, an altered table is the statement's alone, a
+  rolled-back unit keeps its rows locked; other tables and jobs go on.
+  An `UPDATE` or `DELETE` whose condition has a subquery takes turns
+  too, and so does `MERGE`, each decided as of its start: it finds its
+  rows (and a merge's matches and actions) first, its subqueries'
+  answers kept, and never sees its own changes. Still running to their
+  end, each short: `CREATE TABLE`, `CREATE VIEW`, `LABEL ON`, `COMMIT`,
+  `DROP`. Step 90 runs an aggregate over `EXISTS` and a slow select on
+  two connections and the third's command, catalog lists and query
+  beside them, then the aggregate under `RepeatableRead` with the
+  third's requests beside it and its change of a row read refused.
 - Engine limits the build met, now lifted as the database rules have them:
   `SMALLINT`, `INTEGER` and `BIGINT` columns made by SQL take their
   whole 16, 32 and 64-bit range (a field flag, `DB_FORMAT.md`; a DDS
@@ -776,4 +781,11 @@ Version 5, as built on 2026-11-02 (decisions made in the build, for Cody to revi
 - The test system's file system (`qapd::testing::files`) is the `ifs`
   crate over a `MemBackend` with `MemQsys`, its fixtures in the
   module's documentation; each connection job is one owner of
-  descriptors and locks.
+  descriptors and locks. `Delete` of a file another job holds open
+  succeeds, as `RMVLNK` does; `InUse` (`CPFA09E`) comes from a file
+  checked out to another user. `CHECKED_OUT` is such a file in `BOB`'s
+  home (checked out to `ANN`), refusing `Delete`, `Rename` and
+  `WriteFile` but not reads; `TREE` is a folder with two levels of
+  subfolders whose file `TREE_HELD`, deep inside, is checked out to
+  `ANN`, so a client's depth-first recursive delete removes what comes
+  before it and stops there with the system's message.

@@ -776,6 +776,15 @@ fn scan_table_in(
         }
     };
     let mut base_pf = open_pf(txn)?;
+    // Under `*ALL` each record read is read-locked as it is read, before
+    // any yield: no other job changes it while the unit of work runs.
+    let lock = ev.ctx.locks_reads().then(|| (t.desc.name().to_string(), t.member.name.to_string()));
+    let lock_read = |ctx: &mut SqlContext, member: Option<ObjectId>, rrn: u64| -> Result<()> {
+        match (&lock, member) {
+            (Some((file, mbr)), Some(m)) => ctx.lock_read(m, rrn, file, mbr),
+            _ => Ok(()),
+        }
+    };
     if let Some(ch) = choice {
         let c = &cands[ch.cand];
         ordered = ch.ordered.is_some();
@@ -863,8 +872,10 @@ fn scan_table_in(
                         .collect(),
                     None => pm.read_entries(txn, k)?,
                 };
+                let held = if base_pf.is_some() { Some(t.member.object) } else { base_of(&pm, k.format) };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
+                    lock_read(ev.ctx, held, s.rrn)?;
                     let r = row_of(txn, t, &s)?;
                     charge.row(&r)?;
                     rows.push(r);
@@ -898,6 +909,7 @@ fn scan_table_in(
                 };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
+                    lock_read(ev.ctx, Some(t.member.object), s.rrn)?;
                     let r = row_of(txn, t, &s)?;
                     charge.row(&r)?;
                     rows.push(r);
@@ -916,8 +928,10 @@ fn scan_table_in(
                 slots.push(s);
                 Ok(true)
             })?;
+            let held = base_of(&m, 0);
             for s in &slots {
                 ev.ctx.poll_interrupt()?;
+                lock_read(ev.ctx, held, s.rrn)?;
                 let r = row_of(txn, t, s)?;
                 charge.row(&r)?;
                 rows.push(r);
@@ -926,6 +940,19 @@ fn scan_table_in(
         }
     }
     Ok((rows, ordered))
+}
+
+/// The physical member a record read through `m` lives in, by format;
+/// `None` for a join logical file, whose records are not locked one by one.
+fn base_of(m: &Member, format: u16) -> Option<ObjectId> {
+    if !m.is_logical() {
+        return Some(m.id());
+    }
+    let fi = usize::from(format);
+    match m.logical(fi) {
+        Ok(l) if !l.join => m.bases.get(fi).map(|b| b.member),
+        _ => None,
+    }
 }
 
 /// Keep the rows that pass every pushed predicate (all of them: bounds

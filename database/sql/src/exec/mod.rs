@@ -133,6 +133,11 @@ pub struct SqlContext {
     yields: u64,
     /// The subquery answers of a change decided as of its start.
     pub(crate) answers: Option<answers::Answers>,
+    /// Read locks a statement under `*ALL` holds with no commit
+    /// definition to keep them: released when it ends.
+    stmt_reads: Vec<(ObjectId, u64)>,
+    /// Their owner number in the record lock table.
+    stmt_owner: u64,
     /// The working storage a statement may hold ([`mem::STATEMENT_MEMORY`]).
     pub memory_limit: usize,
     /// What the statements of this context hold now.
@@ -208,6 +213,8 @@ impl SqlContext {
             open: 0,
             yields: 0,
             answers: None,
+            stmt_reads: Vec::new(),
+            stmt_owner: odp::locks::next_owner(),
             memory_limit: mem::STATEMENT_MEMORY,
             meter: mem::Meter::default(),
             last_yield: None,
@@ -257,6 +264,64 @@ impl SqlContext {
             self.held.push(id);
         }
         Ok(())
+    }
+
+    /// Whether the records a statement reads are read-locked: at
+    /// `*ALL`, the commit definition's level, or the unit's after
+    /// `SET TRANSACTION` when the job has none.
+    pub(crate) fn locks_reads(&self) -> bool {
+        if self.no_commit || self.isolation == Some(crate::ast::Isolation::Nc) {
+            return false;
+        }
+        let level = match self.session.commit_def() {
+            Some(d) => Some(d.borrow().lcklvl()),
+            None => self.isolation.and_then(lock_level),
+        };
+        level == Some(db::cmt::LckLvl::All)
+    }
+
+    /// Read-lock record `rrn` of physical member `member`: by the commit
+    /// definition until the unit of work ends, else until the statement
+    /// ends. Another job's update lock refuses it (`SQL0913`).
+    pub(crate) fn lock_read(&mut self, member: ObjectId, rrn: u64, file: &str, mbr: &str) -> Result<()> {
+        let r = if let Some(d) = self.session.commit_def() {
+            d.borrow_mut().lock_read(member, rrn)
+        } else {
+            let who = odp::Holder::new(self.job, self.stmt_owner);
+            let r = self.locks.lock().expect("lock table").lock_read(member, rrn, who);
+            if r == Ok(true) {
+                self.stmt_reads.push((member, rrn));
+            }
+            r.map(|_| ())
+        };
+        r.map_err(|e| {
+            let e = match e {
+                odp::Refused::Job(h) => db::DbError::RecordLocked {
+                    file: file.to_string(),
+                    member: mbr.to_string(),
+                    rrn,
+                    holder: h.0,
+                },
+                odp::Refused::SameJob => db::DbError::RecordLockedInJob {
+                    file: file.to_string(),
+                    member: mbr.to_string(),
+                    rrn,
+                },
+            };
+            SqlError::from(e)
+        })
+    }
+
+    /// The statement ended: the read locks it kept itself go.
+    fn release_stmt_reads(&mut self) {
+        if self.stmt_reads.is_empty() {
+            return;
+        }
+        let who = odp::Holder::new(self.job, self.stmt_owner);
+        let mut table = self.locks.lock().expect("lock table");
+        for (member, rrn) in self.stmt_reads.drain(..) {
+            table.unlock_read(member, rrn, who);
+        }
     }
 
     /// A row of a step that holds nothing from the store (a filter,
@@ -329,6 +394,7 @@ impl SqlContext {
 
     /// Give back the locks a yielding statement took.
     pub fn release_held(&mut self, txn: &mut Txn<'_>) {
+        self.release_stmt_reads();
         if txn.is_suspended() && txn.resume().is_err() {
             return;
         }
@@ -639,7 +705,7 @@ impl Prepared {
         ctx.naming = self.naming;
         // Queries, changes and the long definitions take turns at their
         // safe points; any other statement runs to its end.
-        match &self.statement {
+        let r = match &self.statement {
             Statement::Select(_)
             | Statement::Insert(_)
             | Statement::Update(_)
@@ -650,7 +716,9 @@ impl Prepared {
             | Statement::Rollback { .. }
             | Statement::Open { .. } => self.dispatch(txn, ctx, params),
             _ => ctx.no_yield(|ctx| self.dispatch(txn, ctx, params)),
-        }
+        };
+        ctx.release_stmt_reads();
+        r
     }
 
     fn dispatch(&self, txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value]) -> Result<Outcome> {

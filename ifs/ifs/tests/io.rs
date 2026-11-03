@@ -463,3 +463,90 @@ fn default_ccsid_and_members() {
     );
     s.ifs.rmdir(&cx, "/QSYS.LIB/MYLIB.LIB").unwrap();
 }
+
+/// Whether a mixed record's shifts balance.
+fn balanced(r: &[u8]) -> bool {
+    let (mut dbl, mut i) = (false, 0);
+    while i < r.len() {
+        match r[i] {
+            0x0E if !dbl => dbl = true,
+            0x0F if dbl => dbl = false,
+            0x0E | 0x0F => return false,
+            _ if dbl => i += 1,
+            _ => {}
+        }
+        i += 1;
+    }
+    !dbl && i == r.len()
+}
+
+#[test]
+fn mixed_member_writes_keep_double_byte_runs_whole() {
+    let lines = ["QS/400 は日本語を変換します。", "東京都千代田区 abc", "x"];
+    for c in [930, 939] {
+        for len in 4..36 {
+            let q = ifs::vfs::qsys::MemQsys::new(sec::auth::bits::Auth::USE);
+            q.add_lib("QGPL");
+            q.add_obj("QGPL", "JPSRC", "*FILE", "PF-SRC", "QSYS");
+            q.add_member(
+                "QGPL",
+                "JPSRC",
+                "M",
+                ifs::vfs::qsys::MemberData {
+                    records: Vec::new(),
+                    record_len: len,
+                    source: true,
+                    ccsid: c,
+                },
+            );
+            let env = common::env();
+            let ifs = Ifs::new(ifs::backend::mem::MemBackend::new(), Box::new(q), Config::default());
+            ifs.ensure_layout(&env).unwrap();
+            let p = user("QSECOFR");
+            let audit = ifs::ops::audit::NoAudit;
+            let cx = ifs::Ctx {
+                owner: ifs::Owner(1),
+                principal: &p,
+                env: &env,
+                audit: &audit,
+                job_ccsid: 37,
+            };
+            let m = "/QSYS.LIB/QGPL.LIB/JPSRC.FILE/M.MBR";
+            let rw = |flags, data: Option<&[u8]>| {
+                let fd = ifs.open(&cx, m, OpenArgs::new(flags).conv(1208)).unwrap();
+                let mut out = Vec::new();
+                if let Some(d) = data {
+                    ifs.write(&cx, fd, d).unwrap();
+                } else {
+                    let mut b = [0u8; 256];
+                    loop {
+                        let n = ifs.read(&cx, fd, &mut b).unwrap();
+                        if n == 0 {
+                            break;
+                        }
+                        out.extend_from_slice(&b[..n]);
+                    }
+                }
+                ifs.close(&cx, fd).unwrap();
+                out
+            };
+            // Text mode: one record a line, each cut on a character.
+            let text = lines.join("\n") + "\n";
+            rw(O_WRONLY | O_TRUNC | O_TEXTDATA | O_CCSID, Some(text.as_bytes()));
+            let raw = rw(O_RDONLY, None);
+            assert_eq!(raw.len(), len * lines.len(), "{c} {len}");
+            let mut cut = Vec::new();
+            for (r, l) in raw.chunks(len).zip(lines) {
+                assert!(balanced(r), "{c} {len} {r:02X?}");
+                let t = ccsid::conv::to_string(c, r).unwrap();
+                assert!(l.starts_with(t.trim_end()), "{c} {len} {t:?}");
+                cut.push(t);
+            }
+            let back = rw(O_RDONLY | O_TEXTDATA | O_CCSID, None);
+            assert_eq!(String::from_utf8(back).unwrap(), cut.join("\n") + "\n");
+            // A binary write of the records back to back keeps them.
+            rw(O_WRONLY | O_TRUNC, Some(&raw));
+            assert_eq!(rw(O_RDONLY, None), raw, "{c} {len}");
+        }
+    }
+}

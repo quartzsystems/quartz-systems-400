@@ -23,6 +23,14 @@
 //! - [`LOCKED`]: a file another job (owner [`HOLDER`], as `QSECOFR`)
 //!   holds open with `O_SHARE_NONE`, so reading or writing it is
 //!   `InUse` (`CPFA09E`); [`System::release_lock`] lets it go;
+//! - [`CHECKED_OUT`]: a file of `BOB`'s checked out (`CHKOUT`) to
+//!   `ANN`, so `BOB`'s `Delete`, `Rename` and `WriteFile` of it are
+//!   `InUse` (`CPFA09E`) as `RMVLNK`, `MOV` and an open for writing
+//!   answer; reading it is not refused;
+//! - [`TREE`]: a folder of `BOB`'s with two levels of subfolders
+//!   ([`TREE_DIRS`]) and files ([`TREE_FILES`]), one of them deep inside,
+//!   [`TREE_HELD`], checked out to `ANN`: a depth-first delete of the
+//!   tree removes the files before it and stops there with `InUse`;
 //! - `/QSYS.LIB`: libraries `QGPL` (source file `QCLSRC` with member
 //!   `HELLO`, a data area) and `HLINV` (a file `ASSETS`);
 //! - [`BIG`]: a file of [`BIG_SIZE`] bytes (about 200 MiB, byte `i` is
@@ -79,6 +87,30 @@ pub const PRIVATE_FILE: &str = "/home/ANN/private/secret.txt";
 pub const LOCKED: &str = "/home/BOB/locked.txt";
 /// The owner (job) that holds [`LOCKED`].
 pub const HOLDER: u64 = 1;
+/// A file of `BOB`'s checked out to `ANN`.
+pub const CHECKED_OUT: &str = "/home/BOB/checkedout.txt";
+/// The profile [`CHECKED_OUT`] and [`TREE_HELD`] are checked out to.
+pub const CHECKED_OUT_TO: &str = "ANN";
+/// A folder tree of `BOB`'s.
+pub const TREE: &str = "/home/BOB/tree";
+/// Its subfolders, parents first.
+pub const TREE_DIRS: [&str; 4] = [
+    "/home/BOB/tree/docs",
+    "/home/BOB/tree/docs/old",
+    "/home/BOB/tree/src",
+    "/home/BOB/tree/src/lib",
+];
+/// Its files but [`TREE_HELD`].
+pub const TREE_FILES: [&str; 6] = [
+    "/home/BOB/tree/readme.txt",
+    "/home/BOB/tree/docs/guide.txt",
+    "/home/BOB/tree/docs/old/notes.txt",
+    "/home/BOB/tree/src/main.txt",
+    "/home/BOB/tree/src/lib/a.txt",
+    "/home/BOB/tree/src/lib/z.txt",
+];
+/// The file deep in [`TREE`] checked out to `ANN`.
+pub const TREE_HELD: &str = "/home/BOB/tree/src/lib/m.txt";
 /// The large file.
 pub const BIG: &str = "/home/BOB/big.bin";
 /// Its size: 200 MiB.
@@ -209,10 +241,25 @@ impl Files {
             c.symlink(&text_file(1208), LINK).expect("link");
             c.symlink(BROKEN_TARGET, BROKEN).expect("broken link");
             put(c, LOCKED, 1208, b"held by another job\n");
+            c.mkdir(TREE, 0o755).expect("tree");
+            for d in TREE_DIRS {
+                c.mkdir(d, 0o755).expect("tree folder");
+            }
+            for f in TREE_FILES {
+                put(c, f, 1208, f.as_bytes());
+            }
+            // ANN may check out only what she may change.
+            for f in [CHECKED_OUT, TREE_HELD] {
+                put(c, f, 1208, b"checked out to ANN\n");
+                c.chmod(f, 0o666).expect("ANN may change it");
+            }
         });
-        self.as_user("ANN", MAKER, |c| {
+        self.as_user(CHECKED_OUT_TO, MAKER, |c| {
             c.mkdir(PRIVATE, 0o700).expect("private");
             put(c, PRIVATE_FILE, 1208, b"ANN's only\n");
+            for f in [CHECKED_OUT, TREE_HELD] {
+                c.check_out(f).expect("checked out");
+            }
         });
         self.hold_lock();
     }

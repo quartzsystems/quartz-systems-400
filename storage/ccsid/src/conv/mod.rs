@@ -7,9 +7,12 @@
 //! double-byte 300, UTF-8 (1208), UTF-16 big-endian (1200, 13488) and
 //! binary (65535, no conversion). A character the target cannot hold
 //! becomes the target's substitution character, as IBM's conversions do;
-//! line ends are just characters and convert like any other.
+//! line ends are just characters and convert like any other. Text cut
+//! to a record or field length goes through [`fit`], [`cut`] or
+//! [`wrap`], which keep a mixed record's double-byte runs whole.
 
 pub(crate) mod dbcs;
+mod fit;
 mod mixed;
 mod stream;
 mod unicode;
@@ -20,6 +23,7 @@ use std::sync::OnceLock;
 use crate::tables::{SB0930, SB0939, TABLES};
 
 pub use dbcs::DbcsTable;
+pub use fit::{Fitted, cut, fit, wrap};
 pub use mixed::{DBCS_SPACE, DBCS_SUB, SI, SO};
 pub use stream::{Converter, Shift};
 
