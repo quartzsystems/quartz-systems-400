@@ -23,7 +23,7 @@ use sec::profile::shipped;
 use sql::embed::{Desc, Embedded, Op, Request, Session};
 use sql::{Naming, RunOpts, SqlContext, runsqlstm};
 use store::obj::ops::{self, NameContext};
-use store::obj::{CreateParams, JobHandle, types};
+use store::obj::{CreateParams, JobHandle, ObjectId, types};
 use store::{FormatParams, Store, StoreConfig};
 
 const NOW: u64 = 1_767_225_600;
@@ -48,8 +48,11 @@ fn query(s: &mut Session) -> i32 {
     .sqlcode
 }
 
-#[test]
-fn a_query_needs_read_authority() {
+/// The store, `QSYS`, the names, `BOB`'s session and `QSTEST/SECRET`,
+/// which `*PUBLIC` (so `BOB`) may not use.
+type Excluded = (Rc<RefCell<Store>>, ObjectId, NameContext, Rc<RefCell<AuthSession>>, ObjectId);
+
+fn excluded() -> Excluded {
     let d = Arc::new(MemBlockDev::with_seed(32768, 41));
     let params = FormatParams {
         asp_number: 1,
@@ -120,8 +123,12 @@ fn a_query_needs_read_authority() {
     grant::set_public(&mut t, table, Some(Auth::EXCLUDE)).unwrap();
     let bob = Rc::new(RefCell::new(AuthSession::new(Principal::load(&mut t, qsys, "BOB", 40).unwrap())));
     t.commit().unwrap();
+    (Rc::new(RefCell::new(store)), qsys, names, bob, table)
+}
 
-    let store = Rc::new(RefCell::new(store));
+#[test]
+fn a_query_needs_read_authority() {
+    let (store, qsys, names, bob, table) = excluded();
     let mut s = Session::new(Box::new(Rc::clone(&store)), qsys, JobHandle(1), names.clone());
     s.ctx.now = Some(NOW);
     assert_eq!(as_job(&bob, || query(&mut s)), -551);
@@ -136,4 +143,26 @@ fn a_query_needs_read_authority() {
     let mut s = Session::new(Box::new(Rc::clone(&store)), qsys, JobHandle(3), names);
     s.ctx.now = Some(NOW);
     assert_eq!(as_job(&bob, || query(&mut s)), 0);
+}
+
+#[test]
+fn a_query_is_checked_as_it_is_prepared() {
+    // As above: the guard refuses BOB at PREPARE, before any row is read.
+    let (store, qsys, names, bob, _) = excluded();
+    let mut s = Session::new(Box::new(Rc::clone(&store)), qsys, JobHandle(4), names);
+    s.ctx.now = Some(NOW);
+    let r = as_job(&bob, || {
+        s.run(&Request {
+            scope: "1:P".into(),
+            desc: Desc {
+                op: Op::Prepare,
+                name: "S1".into(),
+                text: "SELECT * FROM QSTEST.SECRET".into(),
+                sql_naming: true,
+                ..Desc::default()
+            },
+            inputs: Vec::new(),
+        })
+    });
+    assert_eq!(r.sqlca.sqlcode, -551);
 }

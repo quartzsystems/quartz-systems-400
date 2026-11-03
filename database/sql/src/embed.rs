@@ -555,12 +555,18 @@ impl Session {
                         Ok(p) => p,
                         Err(e) => return Reply::of(Sqlca::from_error(&e)),
                     };
+                    // A query's tables are read: checked as they are prepared.
+                    let query = matches!(p.statement, Statement::Select(_) | Statement::DeclareCursor(_));
                     for t in tables(&p.statement) {
                         ctx.naming = naming;
-                        if let Err(e) = ctx.resolve_file(txn, &t)
-                            && !crate::exec::catalog::is_view(&t)
-                        {
-                            return Reply::of(Sqlca::from_error(&e));
+                        match ctx.resolve_file(txn, &t) {
+                            Err(e) if !crate::exec::catalog::is_view(&t) => return Reply::of(Sqlca::from_error(&e)),
+                            Ok(id) if query => {
+                                if let Err(e) = db::auth::check_open(txn, id, db::Usage::INPUT) {
+                                    return Reply::of(Sqlca::from_error(&SqlError::from(e)));
+                                }
+                            }
+                            _ => {}
                         }
                     }
                     sc.prepared.insert(d.name.clone(), text.clone());
