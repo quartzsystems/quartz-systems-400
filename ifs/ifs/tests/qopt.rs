@@ -125,3 +125,34 @@ fn writable_volumes_take_changes() {
     assert_eq!(s.ifs.creat(&cx, "/QOPT/SAVE01/x", 0o644), Err(Errno::EROFS));
     assert_eq!(s.ifs.mkdir(&cx, "/QOPT/SAVE01/d", 0o755), Err(Errno::EROFS));
 }
+
+#[test]
+fn change_counters() {
+    let (s, _, _) = setup();
+    let p = common::user("QSECOFR");
+    let cx = s.cx(&p, 1);
+    let chg = |path: &str| s.ifs.lstat(&cx, path).unwrap().change;
+    // A read-only image never changes: one constant, not 0.
+    let cd = chg("/QOPT/CDVOL/README");
+    assert!(cd > 0);
+    assert_eq!(chg("/QOPT/CDVOL/docs/Guide.txt"), cd);
+    assert_eq!(chg("/QOPT/CDVOL"), cd);
+    s.get(&cx, "/QOPT/CDVOL/README");
+    assert_eq!(chg("/QOPT/CDVOL/README"), cd);
+    // A writable volume rises on every change, two within a second too.
+    s.put(&cx, "/QOPT/SAVE01/a.txt", b"one");
+    let a0 = chg("/QOPT/SAVE01/a.txt");
+    s.put(&cx, "/QOPT/SAVE01/a.txt", b"two");
+    let a1 = chg("/QOPT/SAVE01/a.txt");
+    assert!(a1 > a0, "{a0} {a1}");
+    s.ifs.mkdir(&cx, "/QOPT/SAVE01/d", 0o755).unwrap();
+    let a2 = chg("/QOPT/SAVE01/a.txt");
+    assert!(a2 > a1);
+    s.ifs.unlink(&cx, "/QOPT/SAVE01/a.txt").unwrap();
+    s.put(&cx, "/QOPT/SAVE01/a.txt", b"one");
+    assert!(chg("/QOPT/SAVE01/a.txt") > a2, "made again: higher");
+    assert_eq!(chg("/QOPT/CDVOL/README"), cd);
+    // Devices and the virtual directories: a constant.
+    assert_eq!(chg("/QOPT"), 1);
+    assert_eq!(chg("/dev/null"), 1);
+}

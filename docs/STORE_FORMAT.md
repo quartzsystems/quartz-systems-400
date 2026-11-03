@@ -533,7 +533,8 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 916 | 64 | signature | ed25519 signature over the object's content digest (`docs/SAVE_FORMAT.md` §5) |
 | 980 | 8 | sig_key | first 8 bytes of the SHA-256 of the signer's public key |
 | 988 | 4 | sig_flags | bit 0 signed, bit 1 signed by a key the system trusts for system objects |
-| 992 | 32 | reserved7 | 0 |
+| 992 | 8 | change | the ID of the last transaction that changed the object; 0 for none yet |
+| 1000 | 24 | reserved7 | 0 |
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,
@@ -542,6 +543,18 @@ Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 authorization list. Phase 6 enforces them; `docs/SECURITY.md` has the
 search order. The private authority overflow tree's pages are B+tree
 nodes owned by the object; RCLSTG walks it and delete frees it.
+
+`change` is the object's change stamp. A transaction that writes,
+patches or publishes a root for any page owned by an object (its
+header, attribute area, extents, trees, records) sets, at commit, the
+`change` of each such object still in the directory to its own
+transaction ID, in the same WAL record. Transaction IDs rise and are
+never reused for a committed transaction (the superblock's `last_txn`
+and the WAL carry them over a restart), so the stamp rises on every
+committed change and never repeats; changes in one transaction are one
+change. A header written before the stamp existed reads 0 and is
+stamped at its next change. The IFS answers it as `/QSYS.LIB`'s change
+counter (`docs/IFS.md`).
 
 ### `PrivateAuth` (16 bytes)
 

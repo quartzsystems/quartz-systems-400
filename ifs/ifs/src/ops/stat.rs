@@ -61,8 +61,8 @@ pub struct Stat {
     /// Creation time (not in `stat`).
     pub crtime: Nanos,
     /// The change counter (not in `stat`; `meta::change`): up on every
-    /// change to the data or attributes, never reused. In `/QSYS.LIB`
-    /// the object's change time in nanoseconds; 0 where there is none.
+    /// change to the data or attributes, never reused (`docs/IFS.md`,
+    /// "Change counter"); 0 for an object not changed since counters.
     pub change: u64,
 }
 
@@ -132,6 +132,7 @@ pub(crate) fn stat_of(node: &Node, m: &Meta, ids: &dyn IdMap) -> Stat {
             s.blksize = st.blksize;
         }
         Node::Dev { dev, .. } => {
+            s.change = 1;
             s.rdev = dev.rdev();
             s.ccsid = 65535;
             s.codepage = 65535;
@@ -143,11 +144,15 @@ pub(crate) fn stat_of(node: &Node, m: &Meta, ids: &dyn IdMap) -> Stat {
             s.ctime = e.changed;
             s.atime = e.changed;
             s.crtime = e.created;
-            s.change = u64::try_from(e.changed).unwrap_or(0);
+            s.change = e.change;
             s.codepage = ccsid::conv::codepage_of(e.ccsid);
         }
-        Node::Opt { entry, .. } => s.size = entry.size,
-        _ => {}
+        Node::Opt { entry, .. } => {
+            s.size = entry.size;
+            s.change = entry.change;
+        }
+        // The devices and the virtual directories never change.
+        _ => s.change = 1,
     }
     if node.is_dir() {
         s.nlink = s.nlink.max(2);

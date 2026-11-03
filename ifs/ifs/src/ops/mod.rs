@@ -590,10 +590,10 @@ impl<B: Backend> Ifs<B> {
 
     /// A change to the data of the backend node at `rel` (a directory's
     /// entries too): its record takes the next change value.
-    pub(crate) fn touch(&self, rel: &str) {
+    pub(crate) fn touch(&self, ids: &dyn meta::IdMap, rel: &str) {
         let r = self
             .next_change()
-            .and_then(|v| meta::change::stamp(&self.b, rel, v));
+            .and_then(|v| meta::change::stamp(&self.b, rel, v, ids));
         if let Err(e) = r {
             tracing::warn!(error = %e, "IFS change counter not updated");
         }

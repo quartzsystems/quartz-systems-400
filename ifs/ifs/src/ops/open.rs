@@ -273,7 +273,7 @@ impl<B: Backend> Ifs<B> {
                         m.change = self.next_change()?;
                         crate::meta::write(&self.b, &crel, Kind::File, &m, cx.env)?;
                         sys.index.added(sys.b, rel, &name);
-                        self.touch(rel);
+                        self.touch(cx.env, rel);
                         created = Some(file);
                         let r = sys.child(&dir, &name)?;
                         cx.audit_always(
@@ -335,6 +335,14 @@ impl<B: Backend> Ifs<B> {
             {
                 return Err(Errno::EBUSY);
             }
+        }
+        // A file without a valid record gets one now, so that its
+        // changes count (meta::change).
+        if writes
+            && created.is_none()
+            && let Node::Back { rel, .. } = &r.node
+        {
+            crate::meta::change::complete(&self.b, rel, cx.env)?;
         }
         // Text conversion.
         let text = if a.oflag & f::O_TEXTDATA != 0 {

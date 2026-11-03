@@ -50,6 +50,9 @@ pub struct Volume {
     protect: bool,
     tree: Option<Dir>,
     dirty: bool,
+    seq: u64,
+    /// Nanoseconds for the change counter (`None`: the system's).
+    clock: Option<crate::mount::Clock>,
 }
 
 impl std::fmt::Debug for Volume {
@@ -147,6 +150,11 @@ impl Volume {
             }
             _ => None,
         };
+        let seq = match &label {
+            Some(l) if l.seq > 0 => l.seq,
+            Some(l) => l.changed.saturating_mul(1_000_000_000).max(1),
+            None => fingerprint(image.info()),
+        };
         Ok(Self {
             store,
             image,
@@ -154,7 +162,35 @@ impl Volume {
             protect: write_protect,
             tree: None,
             dirty: false,
+            seq,
+            clock: None,
         })
+    }
+
+    /// The volume's change counter, what `/QOPT` answers for each of its
+    /// files: constant for a read-only image (from its descriptor), and
+    /// for a writable volume rising on every change, never repeating
+    /// (at least the time in nanoseconds, kept in the label).
+    #[must_use]
+    pub fn change(&self) -> u64 {
+        self.seq
+    }
+
+    /// Use `clock` (nanoseconds) for the change counter.
+    pub fn set_clock(&mut self, clock: crate::mount::Clock) {
+        self.clock = Some(clock);
+    }
+
+    /// A change: the counter rises past the clock.
+    fn changed(&mut self) {
+        self.dirty = true;
+        let now = match &self.clock {
+            Some(c) => c(),
+            None => std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or(0, |d| u64::try_from(d.as_nanos()).unwrap_or(u64::MAX)),
+        };
+        self.seq = self.seq.saturating_add(1).max(now);
     }
 
     /// Initialize `store` as a new empty writable volume and open it.
@@ -171,6 +207,7 @@ impl Volume {
             capacity,
             created: epoch,
             changed: epoch,
+            seq: 0,
         };
         write_tree(store.as_ref(), &label, &mut Dir::default())?;
         Self::open(store, false)
@@ -449,7 +486,7 @@ impl Volume {
                 return Err(e);
             }
         }
-        self.dirty = true;
+        self.changed();
         Ok(())
     }
 
@@ -478,7 +515,7 @@ impl Volume {
                 .remove(&name);
             return Err(e);
         }
-        self.dirty = true;
+        self.changed();
         Ok(())
     }
 
@@ -496,7 +533,7 @@ impl Volume {
             return Err(Error::NotEmpty(path.to_string()));
         }
         d.entries.remove(name);
-        self.dirty = true;
+        self.changed();
         Ok(())
     }
 
@@ -514,7 +551,7 @@ impl Volume {
         let buf = Self::bytes_mut(tree, &p)?;
         let o = usize::try_from(off).map_err(|_| Error::Invalid("offset too large".into()))?;
         buf[o..o + data.len()].copy_from_slice(data);
-        self.dirty = true;
+        self.changed();
         Ok(data.len())
     }
 
@@ -551,7 +588,7 @@ impl Volume {
             Self::bytes_mut(tree, &p)?.truncate(old);
             return Err(e);
         }
-        self.dirty = true;
+        self.changed();
         Ok(())
     }
 
@@ -560,7 +597,7 @@ impl Volume {
         self.writable()?;
         let l = self.label.as_mut().expect("writable has a label");
         l.text = text.chars().take(MAX_TEXT).collect();
-        self.dirty = true;
+        self.changed();
         Ok(())
     }
 
@@ -572,13 +609,15 @@ impl Volume {
         }
         let mut label = self.label.clone().ok_or(Error::ReadOnly)?;
         label.changed = epoch;
+        label.seq = self.seq;
         let mut tree = self.tree.take().expect("dirty means loaded");
         if let Err(e) = write_tree(self.store.as_ref(), &label, &mut tree) {
             // The image is unchanged; the changes stay pending.
             self.tree = Some(tree);
             return Err(e);
         }
-        let fresh = Self::open(self.store.clone(), self.protect)?;
+        let mut fresh = Self::open(self.store.clone(), self.protect)?;
+        fresh.clock = self.clock.take();
         *self = fresh;
         Ok(true)
     }
@@ -602,4 +641,18 @@ fn entry_of(name: &str, n: &Node) -> VolEntry {
             size: 0,
         },
     }
+}
+
+/// A read-only image's constant change counter: a hash of its primary
+/// descriptor (identifiers, size, creation time), never 0.
+fn fingerprint(info: &crate::iso::read::VolumeInfo) -> u64 {
+    let text = format!(
+        "{}|{}|{}|{}|{:?}",
+        info.volume_id, info.volume_set_id, info.system_id, info.sectors, info.created
+    );
+    // FNV-1a.
+    let h = text.bytes().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
+        (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+    });
+    h.max(1)
 }

@@ -353,6 +353,7 @@ impl<B: Backend> Sys<'_, B> {
                             name: vol.clone(),
                             kind: Kind::Dir,
                             size: 0,
+                            change: self.opt.change(vol),
                         }
                     } else {
                         self.opt.stat(vol, path)?
@@ -376,10 +377,12 @@ impl<B: Backend> Sys<'_, B> {
 
     fn qsys_entry(&self, n: &QsysNode) -> Result<QsysEntry> {
         match n {
+            // The library QSYS: its list of libraries is its data.
             QsysNode::Root => Ok(QsysEntry {
                 name: "QSYS".into(),
                 objtype: "*LIB".into(),
                 owner: "QSYS".into(),
+                change: self.qsys.object("QSYS", "QSYS", "*LIB").map_or(0, |e| e.change),
                 ..QsysEntry::default()
             }),
             QsysNode::Lib(l) => self.qsys.object("QSYS", l, "*LIB"),

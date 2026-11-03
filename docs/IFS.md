@@ -426,15 +426,40 @@ deleted and made again at a path never shows an earlier value. The
 counter reserves values in blocks of 1024 and keeps the top of its
 reservation in the extended attribute `trusted.qs400.change` (u64 LE)
 on the volume's top directory; after a restart it starts above it, a
-crash skipping at most one block, never reusing one. A record without
-the tag (written before counters) reads 0 and takes a value at its next
-change. A node with no valid record has no counter: it reads 0, and only
-an attribute change or `RCLLNK` writing its record starts one.
+crash skipping at most one block, never reusing one.
 
-In `/QSYS.LIB` the counter is the object's last-changed time in
-nanoseconds: it rises with each change the store records, but the store
-keeps that time in seconds, so two changes within one second may share
-a value. Optical volumes and the devices under `/dev` answer 0.
+An object whose record has no tag 21 (written before counters) or that
+has no valid record at all reads 0. Its first change of any kind gives
+it a value: a data or directory change writes its record then (the
+fallback above, as `RCLLNK` would, with the counter), and opening it for
+writing writes the fallback record first so that the writes through the
+descriptor count. Reading, `stat` and listing never write.
+
+Elsewhere the counter comes from what holds the object:
+
+- `/QSYS.LIB`: the store object's change stamp (`STORE_FORMAT.md` §8),
+  the ID of the last committed transaction that changed any page the
+  object owns (its header and attributes, owner, authority, text, its
+  data, a member's records). Transaction IDs rise and never repeat, so
+  two changes within one second give two values. A member's path
+  answers the `*MBR` object's stamp, which its record writes raise; a
+  file's path answers the file's own (its attributes and its list of
+  members), not its members' records. A library's rises when objects
+  are added to it or removed. Objects stamped before the field existed
+  read 0 until their next change.
+- `/QOPT`: a read-only volume (an ISO 9660 image, media) never changes;
+  each of its files answers one constant value, a hash of the volume's
+  primary descriptor (identifiers, size, creation time). A writable
+  virtual volume has a counter of its own kept in its label (`seq`,
+  `docs/MEDIA.md`): every change in the volume (a file written, made,
+  removed, a directory, the text) raises it to the larger of one more
+  and the time in nanoseconds, and each file answers it, so a file's
+  value rises on its every change (and on its neighbours'), never
+  repeating, a change lost in a crash before the volume is written
+  included.
+- The devices under `/dev`, `/dev/QASPnn` and the virtual directories
+  answer 1: they hold no data. `/QOPT` itself answers 1 too; what it
+  lists is the volumes loaded in the devices, not data of its own.
 
 ## Authority
 

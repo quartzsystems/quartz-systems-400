@@ -63,8 +63,11 @@ impl VolumeSet {
         (self.clock)()
     }
 
-    /// Add a volume; its identifier must be free.
-    pub fn insert(&self, v: Volume) -> Result<()> {
+    /// Add a volume; its identifier must be free. Its change counter
+    /// follows the set's clock.
+    pub fn insert(&self, mut v: Volume) -> Result<()> {
+        let c = self.clock.clone();
+        v.set_clock(Arc::new(move || c().saturating_mul(1_000_000_000)));
         let id = v.id();
         let mut g = self.lock()?;
         if g.contains_key(&id) {

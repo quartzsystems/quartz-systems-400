@@ -13,7 +13,7 @@ pub const LABEL_FILE: &str = "QS400VOL.LBL";
 /// The label's first line.
 pub const LABEL_MAGIC: &str = "QS400-OPTVOL 1";
 /// The label's keys, in the order written.
-pub const LABEL_KEYS: [&str; 5] = ["volid", "text", "capacity", "created", "changed"];
+pub const LABEL_KEYS: [&str; 6] = ["volid", "text", "capacity", "created", "changed", "seq"];
 /// Longest volume identifier.
 pub const MAX_VOLUME_ID: usize = 32;
 /// Longest text description.
@@ -36,6 +36,9 @@ pub struct Label {
     pub created: u64,
     /// Unix time of the last change.
     pub changed: u64,
+    /// The volume's change counter as last written (0 in labels made
+    /// before it): what `/QOPT` answers as each file's change counter.
+    pub seq: u64,
 }
 
 /// Escape a value for a one-line field: `\\`, `\t`, `\n`, `\r`.
@@ -85,6 +88,7 @@ impl Label {
             self.capacity.to_string(),
             self.created.to_string(),
             self.changed.to_string(),
+            self.seq.to_string(),
         ];
         let mut s = format!("{LABEL_MAGIC}\n");
         for (k, v) in LABEL_KEYS.iter().zip(vals) {
@@ -119,6 +123,7 @@ impl Label {
                 "capacity" => l.capacity = num(&v)?,
                 "created" => l.created = num(&v)?,
                 "changed" => l.changed = num(&v)?,
+                "seq" => l.seq = num(&v)?,
                 _ => {}
             }
         }
@@ -203,6 +208,7 @@ mod tests {
             capacity: 1 << 30,
             created: 5,
             changed: 6,
+            seq: 7,
         };
         assert_eq!(Label::parse(&l.to_text()).unwrap(), l);
         assert!(Label::parse("x").is_err());

@@ -112,6 +112,7 @@ fn entry_of(txn: &mut Txn<'_>, h: &ObjectHeader) -> QsysEntry {
         changed: i64::try_from(h.changed).unwrap_or(0) * 1_000_000_000,
         ccsid,
         text: text_of(&h.text),
+        change: h.change,
     }
 }
 
@@ -146,6 +147,8 @@ fn member_entry(
         changed: i64::try_from(desc.header.changed).unwrap_or(0) * 1_000_000_000,
         ccsid: desc.attr.ccsid,
         text: String::new(),
+        // The member object's stamp: its records are its pages.
+        change: store::obj::ops::describe(txn, e.object).map_or(desc.header.change, |h| h.change),
     }
 }
 

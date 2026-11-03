@@ -638,6 +638,7 @@ are ignored.
 | `capacity` | the image may grow to this many bytes (`IMGSIZ`) |
 | `created` | Unix time of `INZOPT` or the `*NEW` image |
 | `changed` | Unix time of the last write; every timestamp in the image is this one |
+| `seq` | the volume's change counter when written (absent or 0 in older labels: `changed` in nanoseconds); `/QOPT` answers it as every file's change counter (`docs/IFS.md`) |
 
 A volume identifier is 1 to 32 characters of `A-Z 0-9 $ # @ _ . -`,
 upper-cased, starting with a letter, a digit, `$`, `#` or `@` (Quartz's
@@ -649,8 +650,11 @@ label carries it whole and wins. File and directory names are Joliet's:
 Writing is a session (`optical::Volume`): unchanged files stay extents
 of the image, changed files are held in memory, and `flush` rewrites the
 whole image through `ImageStore::replace` (a file image is written beside
-the old one and renamed over it). The same tree and the same `changed`
-time give the same bytes. Each change is checked against the capacity
+the old one and renamed over it). The same tree, the same `changed`
+time and the same `seq` give the same bytes. Each change raises the
+volume's counter to the larger of one more and the time in nanoseconds,
+so a change lost in a crash before `flush` never gives a value that
+comes again. Each change is checked against the capacity
 first and refused whole (`OPT1335`) when the rewritten image would not
 fit; a write-protected volume refuses every change (`OPT1520`).
 

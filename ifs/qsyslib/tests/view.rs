@@ -441,3 +441,50 @@ fn behind_the_ifs() {
         Err(ifs::Errno::ENOENT)
     );
 }
+
+#[test]
+fn change_counters_rise_within_one_second() {
+    let v = view();
+    let mbr = |v: &StoreQsys<MemAccess>| v.members("QGPL", "QCLSRC").unwrap()[0].change;
+    let file = |v: &StoreQsys<MemAccess>| v.object("QGPL", "QCLSRC", "*FILE").unwrap().change;
+    let m0 = mbr(&v);
+    let f0 = file(&v);
+    assert!(m0 > 0 && f0 > 0);
+    // A member's records written twice, then the file's text changed,
+    // all in the same second (the store keeps `changed` in seconds).
+    let rec = |s: &str| ccsid::to_ebcdic(&format!("{s:<80}")).unwrap();
+    v.write_member("QGPL", "QCLSRC", "HELLO", vec![rec("PGM")]).unwrap();
+    let m1 = mbr(&v);
+    v.write_member("QGPL", "QCLSRC", "HELLO", vec![rec("PGM"), rec("ENDPGM")]).unwrap();
+    let m2 = mbr(&v);
+    assert!(m0 < m1 && m1 < m2, "{m0} {m1} {m2}");
+    let id = v.access().with_main(&mut |t, qsys| {
+        let lib = ops::find_library(t, qsys, name("QGPL")).unwrap().id;
+        let l = store::obj::library::Library::load(t, lib).unwrap();
+        Ok(l.lookup(t, types::FILE, name("QCLSRC")).unwrap().unwrap())
+    });
+    let id = id.unwrap();
+    v.access()
+        .with_main(&mut |t, _| {
+            ops::change_text(t, id, "changed", NOW).unwrap();
+            Ok(())
+        })
+        .unwrap();
+    let f1 = file(&v);
+    assert!(f1 > f0);
+    v.access()
+        .with_main(&mut |t, _| {
+            ops::change_text(t, id, "again", NOW).unwrap();
+            Ok(())
+        })
+        .unwrap();
+    assert!(file(&v) > f1);
+    // A user space's bytes.
+    let s0 = v.object("QGPL", "SPACE", "*USRSPC").unwrap().change;
+    v.write_stream("QGPL", "SPACE", "*USRSPC", &[1; 16]).unwrap();
+    assert!(v.object("QGPL", "SPACE", "*USRSPC").unwrap().change > s0);
+    // Reading changes nothing.
+    let m = mbr(&v);
+    v.read_member("QGPL", "QCLSRC", "HELLO").unwrap();
+    assert_eq!(mbr(&v), m);
+}

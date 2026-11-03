@@ -165,6 +165,9 @@ pub struct QsysEntry {
     pub ccsid: u16,
     /// Text.
     pub text: String,
+    /// The change counter: rises on every change to the object, never
+    /// repeats (the store's change stamp, `docs/STORE_FORMAT.md` §8).
+    pub change: u64,
 }
 
 /// A member's data.
@@ -314,6 +317,9 @@ struct MemObj {
 #[derive(Debug, Default)]
 pub struct MemQsys {
     libs: Mutex<Libs>,
+    /// Change counters by `LIB`, `LIB/NAME TYPE` and `LIB/FILE/MBR`.
+    changes: Mutex<BTreeMap<String, u64>>,
+    seq: std::sync::atomic::AtomicU64,
     /// What [`QsysView::authority`] answers for users other than the
     /// owner.
     pub public: Auth,
@@ -325,10 +331,41 @@ impl MemQsys {
     pub fn new(public: Auth) -> Self {
         let m = Self {
             libs: Mutex::default(),
+            changes: Mutex::default(),
+            seq: std::sync::atomic::AtomicU64::new(0),
             public,
         };
         m.lock().insert("QSYS".into(), BTreeMap::new());
+        m.bump("QSYS".into());
         m
+    }
+
+    /// Give `key` the next change value.
+    fn bump(&self, key: String) {
+        let v = self.seq.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+        self.changes
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(key, v);
+    }
+
+    fn change_of(&self, key: &str) -> u64 {
+        self.changes
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(key)
+            .copied()
+            .unwrap_or(0)
+    }
+
+    /// A change to an object's attributes (owner, authority, text) as
+    /// a command would make it: its counter rises.
+    pub fn touch(&self, lib: &str, name: &str, objtype: &str) {
+        if objtype == "*LIB" {
+            self.bump(name.into());
+        } else {
+            self.bump(format!("{lib}/{name} {objtype}"));
+        }
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, Libs> {
@@ -340,6 +377,8 @@ impl MemQsys {
     /// Add a library.
     pub fn add_lib(&self, name: &str) {
         self.lock().entry(name.into()).or_default();
+        self.bump(name.into());
+        self.bump("QSYS".into());
     }
 
     /// Add an object.
@@ -360,6 +399,9 @@ impl MemQsys {
                 ..MemObj::default()
             },
         );
+        drop(l);
+        self.bump(format!("{lib}/{name} {objtype}"));
+        self.bump(lib.into());
     }
 
     /// Add a member to a file.
@@ -371,6 +413,9 @@ impl MemQsys {
         {
             o.members.insert(mbr.into(), data);
         }
+        drop(l);
+        self.bump(format!("{lib}/{file}/{mbr}"));
+        self.bump(format!("{lib}/{file} *FILE"));
     }
 }
 
@@ -385,6 +430,7 @@ impl QsysView for MemQsys {
                 objtype: "*LIB".into(),
                 owner: "QSYS".into(),
                 ccsid: 37,
+                change: self.change_of(l),
                 ..QsysEntry::default()
             })
             .collect())
@@ -393,10 +439,26 @@ impl QsysView for MemQsys {
     fn objects(&self, lib: &str) -> Result<Vec<QsysEntry>> {
         let l = self.lock();
         let objs = l.get(lib).ok_or(Errno::ENOENT)?;
-        Ok(objs.values().map(|o| o.entry.clone()).collect())
+        Ok(objs
+            .values()
+            .map(|o| QsysEntry {
+                change: self.change_of(&format!("{lib}/{} {}", o.entry.name, o.entry.objtype)),
+                ..o.entry.clone()
+            })
+            .collect())
     }
 
     fn object(&self, lib: &str, name: &str, objtype: &str) -> Result<QsysEntry> {
+        if objtype == "*LIB" && name == "QSYS" {
+            return Ok(QsysEntry {
+                name: name.into(),
+                objtype: "*LIB".into(),
+                owner: "QSYS".into(),
+                ccsid: 37,
+                change: self.change_of("QSYS"),
+                ..QsysEntry::default()
+            });
+        }
         if objtype == "*LIB" {
             return self
                 .libraries()?
@@ -410,6 +472,7 @@ impl QsysView for MemQsys {
             .and_then(|objs| objs.get(&(name.into(), objtype.into())))
             .ok_or(Errno::ENOENT)?;
         let mut e = o.entry.clone();
+        e.change = self.change_of(&format!("{lib}/{name} {objtype}"));
         if !o.stream.is_empty() {
             e.size = o.stream.len() as u64;
         }
@@ -430,6 +493,7 @@ impl QsysView for MemQsys {
                 size: member_size(d),
                 owner: o.entry.owner.clone(),
                 ccsid: d.ccsid,
+                change: self.change_of(&format!("{lib}/{file}/{n}")),
                 ..QsysEntry::default()
             })
             .collect())
@@ -452,6 +516,8 @@ impl QsysView for MemQsys {
             .and_then(|o| o.members.get_mut(mbr))
             .ok_or(Errno::ENOENT)?;
         m.records = records;
+        drop(l);
+        self.bump(format!("{lib}/{file}/{mbr}"));
         Ok(())
     }
 
@@ -470,6 +536,8 @@ impl QsysView for MemQsys {
             .and_then(|objs| objs.get_mut(&(name.into(), objtype.into())))
             .ok_or(Errno::ENOENT)?;
         o.stream = data.to_vec();
+        drop(l);
+        self.bump(format!("{lib}/{name} {objtype}"));
         Ok(())
     }
 
@@ -492,6 +560,9 @@ impl QsysView for MemQsys {
             return Err(Errno::EEXIST);
         }
         l.insert(name.into(), BTreeMap::new());
+        drop(l);
+        self.bump(name.into());
+        self.bump("QSYS".into());
         Ok(())
     }
 
@@ -514,10 +585,28 @@ impl QsysView for MemQsys {
                 ..shape
             },
         );
+        drop(l);
+        self.bump(format!("{lib}/{file}/{mbr}"));
+        self.bump(format!("{lib}/{file} *FILE"));
         Ok(())
     }
 
     fn delete(&self, node: &QsysNode, _who: &Principal) -> Result<()> {
+        let r = self.remove(node);
+        if r.is_ok() {
+            // The directory that held it changed.
+            match node {
+                QsysNode::Mbr(lib, f, _) => self.bump(format!("{lib}/{f} *FILE")),
+                QsysNode::Obj(lib, ..) => self.bump(lib.clone()),
+                _ => self.bump("QSYS".into()),
+            }
+        }
+        r
+    }
+}
+
+impl MemQsys {
+    fn remove(&self, node: &QsysNode) -> Result<()> {
         let mut l = self.lock();
         match node {
             QsysNode::Mbr(lib, f, m) => l

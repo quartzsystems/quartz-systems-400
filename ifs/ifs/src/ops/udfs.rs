@@ -96,7 +96,7 @@ impl<B: Backend> Ifs<B> {
         m.text = text.chars().take(50).collect();
         m.change = self.next_change()?;
         meta::write(&self.b, &rel, Kind::Dir, &m, cx.env)?;
-        self.touch(&asp_rel);
+        self.touch(cx.env, &asp_rel);
         Ok(())
     }
 
@@ -130,7 +130,7 @@ impl<B: Backend> Ifs<B> {
         st.index.drop_tree(&rel);
         drop(st);
         remove_rel(&self.b, &rel)?;
-        self.touch(&backend::join(UDFS_BASE, &asp));
+        self.touch(cx.env, &backend::join(UDFS_BASE, &asp));
         Ok(())
     }
 

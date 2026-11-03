@@ -21,6 +21,8 @@ pub struct OptEntry {
     pub kind: Kind,
     /// Size in bytes.
     pub size: u64,
+    /// The change counter: the volume's ([`OpticalView::change`]).
+    pub change: u64,
 }
 
 /// Optical volumes. The writing calls fail with `EROFS` unless a view
@@ -35,6 +37,12 @@ pub trait OpticalView: Send + Sync {
     /// A file's bytes from `off`.
     fn read(&self, vol: &str, path: &[String], off: u64, buf: &mut [u8]) -> Result<usize>;
 
+    /// The volume's change counter, every file's in it: constant for a
+    /// volume that never changes, rising on every change of one that
+    /// does, never 0.
+    fn change(&self, _vol: &str) -> u64 {
+        1
+    }
     /// Whether the volume takes writes.
     fn writable(&self, _vol: &str) -> bool {
         false
@@ -112,8 +120,9 @@ pub fn errno_of(e: &optical::Error) -> Errno {
     }
 }
 
-fn entry(e: optical::VolEntry) -> OptEntry {
+fn entry(e: optical::VolEntry, change: u64) -> OptEntry {
     OptEntry {
+        change,
         name: e.name,
         kind: if e.kind == EntryKind::Dir {
             Kind::Dir
@@ -134,15 +143,18 @@ impl OpticalView for Volumes {
     }
     fn readdir(&self, vol: &str, path: &[String]) -> Result<Vec<OptEntry>> {
         self.set
-            .with(vol, |v| v.list(&p(path)))
-            .map(|v| v.into_iter().map(entry).collect())
+            .with(vol, |v| Ok((v.list(&p(path))?, v.change())))
+            .map(|(l, c)| l.into_iter().map(|e| entry(e, c)).collect())
             .map_err(|e| errno_of(&e))
     }
     fn stat(&self, vol: &str, path: &[String]) -> Result<OptEntry> {
         self.set
-            .with(vol, |v| v.stat(&p(path)))
-            .map(entry)
+            .with(vol, |v| Ok((v.stat(&p(path))?, v.change())))
+            .map(|(e, c)| entry(e, c))
             .map_err(|e| errno_of(&e))
+    }
+    fn change(&self, vol: &str) -> u64 {
+        self.set.with(vol, |v| Ok(v.change())).unwrap_or(1)
     }
     fn read(&self, vol: &str, path: &[String], off: u64, buf: &mut [u8]) -> Result<usize> {
         self.set

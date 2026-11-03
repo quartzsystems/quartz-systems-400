@@ -72,6 +72,7 @@ pub fn inzopt(store: Arc<dyn ImageStore>, p: &InzOpt) -> Result<Volume> {
         capacity,
         created: p.epoch,
         changed: p.epoch,
+        seq: 0,
     };
     write_tree(store.as_ref(), &label, &mut Dir::default())?;
     Volume::open(store, false)
@@ -329,6 +330,7 @@ pub fn dupopt(from: &Volume, to: Arc<dyn ImageStore>, p: &DupOpt) -> Result<Volu
         capacity,
         created: p.epoch,
         changed: p.epoch,
+        seq: 0,
     };
     // A copy onto the store being read would lose the data under it.
     if Arc::ptr_eq(&(from.store().clone() as Arc<dyn ImageStore>), &to) {

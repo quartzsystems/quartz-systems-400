@@ -395,3 +395,53 @@ fn many_objects_and_a_reopen() {
     assert_eq!(ops::describe(&mut t, lib).unwrap().name, name("BIG"));
     t.abort();
 }
+
+#[test]
+fn change_stamps_rise_and_never_repeat() {
+    let (d, mut store, qsys) = open_new();
+    let stamp = |s: &mut Store, id| {
+        let mut t = s.begin().unwrap();
+        let c = ops::describe(&mut t, id).unwrap().change;
+        t.abort();
+        c
+    };
+    let mut t = store.begin().unwrap();
+    let lib = ops::create(&mut t, &params(qsys, "STAMPS", types::LIB)).unwrap();
+    t.commit().unwrap();
+    let lib0 = stamp(&mut store, lib);
+    assert!(lib0 > 0);
+    // Two changes, each its own transaction, within one second.
+    let mut t = store.begin().unwrap();
+    let a = ops::create(&mut t, &params(lib, "A", types::DTAARA)).unwrap();
+    t.commit().unwrap();
+    let a0 = stamp(&mut store, a);
+    assert!(stamp(&mut store, lib) > lib0, "an entry added changes the library");
+    let mut t = store.begin().unwrap();
+    ops::change_text(&mut t, a, "new text", 1_767_225_700).unwrap();
+    t.commit().unwrap();
+    let a1 = stamp(&mut store, a);
+    assert!(a1 > a0);
+    let mut t = store.begin().unwrap();
+    ops::grow(&mut t, a, 2).unwrap();
+    t.commit().unwrap();
+    let a2 = stamp(&mut store, a);
+    assert!(a2 > a1);
+    // Reading changes nothing; an aborted change neither.
+    let mut t = store.begin().unwrap();
+    ops::change_text(&mut t, a, "lost", 1_767_225_700).unwrap();
+    t.abort();
+    assert_eq!(stamp(&mut store, a), a2);
+    // Deleted and made again: higher, and higher again after a reopen.
+    let mut t = store.begin().unwrap();
+    ops::delete(&mut t, JobHandle(1), a).unwrap();
+    let b = ops::create(&mut t, &params(lib, "A", types::DTAARA)).unwrap();
+    t.commit().unwrap();
+    let b0 = stamp(&mut store, b);
+    assert!(b0 > a2);
+    drop(store);
+    let mut store = reopen(&d);
+    let mut t = store.begin().unwrap();
+    ops::change_text(&mut t, b, "after", 1_767_225_700).unwrap();
+    t.commit().unwrap();
+    assert!(stamp(&mut store, b) > b0);
+}

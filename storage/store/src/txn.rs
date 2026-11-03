@@ -74,6 +74,8 @@ pub struct Txn<'a> {
     done: bool,
     /// A page was written in place outside the WAL.
     wrote: bool,
+    /// Objects whose pages this transaction changed: stamped at commit.
+    touched: BTreeSet<ObjectId>,
 }
 
 impl<'a> Txn<'a> {
@@ -108,6 +110,7 @@ impl<'a> Txn<'a> {
             next_serial,
             done: false,
             wrote: false,
+            touched: BTreeSet::new(),
         }
     }
 
@@ -242,6 +245,8 @@ impl<'a> Txn<'a> {
     pub fn set_root(&mut self, owner: ObjectId, root: Option<PageNo>) {
         if owner.is_none() {
             self.store.headers_changed();
+        } else {
+            self.touched.insert(owner);
         }
         self.roots.retain(|(o, _)| *o != owner);
         self.roots.push((owner, root));
@@ -299,6 +304,7 @@ impl<'a> Txn<'a> {
                 t.owner,
                 self.id,
             );
+            self.touched.insert(t.owner);
             return Ok(());
         }
         if !self.patched.contains_key(&page) {
@@ -309,6 +315,7 @@ impl<'a> Txn<'a> {
         p.body_mut()[offset..offset + bytes.len()].copy_from_slice(bytes);
         // Keep the private copy verifiable for this transaction's reads.
         let t = p.trailer();
+        self.touched.insert(t.owner);
         p.seal(
             PageType::from_u16(t.page_type).unwrap_or(PageType::ObjectData),
             t.owner,
@@ -361,13 +368,39 @@ impl<'a> Txn<'a> {
         self.patched.clear();
         self.patches.clear();
         self.wrote = false;
+        self.touched.clear();
         self.id = self.store.next_txn_id();
         self.next_serial = self.store.next_serial();
         Ok(())
     }
 
+    /// Set the change stamp of every object this transaction changed
+    /// (`docs/STORE_FORMAT.md` §8) to its ID. An object no longer in
+    /// the directory (deleted here) or without a header is skipped.
+    fn stamp_changes(&mut self) {
+        let ids = std::mem::take(&mut self.touched);
+        let stamp = self.id.to_le_bytes();
+        for id in ids {
+            if id.is_none() {
+                continue;
+            }
+            let Ok(page) = crate::obj::dir::header_page(self, id) else {
+                continue;
+            };
+            let ok = self.read(page).is_ok_and(|p| {
+                p.trailer().page_type == PageType::ObjectHeader as u16
+                    && ObjectId::from_bytes(&p.body()[16..32]) == id
+            });
+            if ok {
+                let _ = self.patch(page, crate::obj::header::OFF_CHANGE, &stamp);
+            }
+        }
+        self.touched.clear();
+    }
+
     /// Log and write what the transaction changed.
     fn publish(&mut self) -> Result<()> {
+        self.stamp_changes();
         let asp = self.store.asp();
         let allocs = self
             .owned_runs()
@@ -446,6 +479,7 @@ impl<'a> Txn<'a> {
         }
         self.patched.clear();
         self.patches.clear();
+        self.touched.clear();
     }
 }
 
@@ -477,6 +511,7 @@ impl Pager for Txn<'_> {
         owner: ObjectId,
     ) -> Result<()> {
         self.patched.remove(&pno);
+        self.touched.insert(owner);
         if self.owned.contains(&pno) {
             page.seal(kind, owner, self.id);
             self.dirty.insert(pno, page.clone());

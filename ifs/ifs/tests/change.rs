@@ -15,7 +15,7 @@ use ifs::auth::data::DataAuth;
 use ifs::backend::mem::MemBackend;
 use ifs::ops::flags::{O_CREAT, O_RDONLY, O_TRUNC, O_WRONLY};
 use ifs::ops::{Attr, ChgAut, Config, Ctx, Ifs, OpenArgs, RenameMode, Who};
-use ifs::vfs::qsys::MemQsys;
+use ifs::vfs::qsys::{MemQsys, QsysView};
 use sec::auth::bits::Auth;
 
 fn chg(s: &Sys, cx: &Ctx<'_>, p: &str) -> u64 {
@@ -212,12 +212,76 @@ fn a_record_without_a_counter_reads_zero_and_counts_on() {
 }
 
 #[test]
-fn qsys_lib_answers_its_change_time() {
+fn objects_without_a_record_count_their_first_change() {
     let s = sys();
     let p = user("QSECOFR");
     let cx = s.cx(&p, 1);
-    let c = s.ifs.lstat(&cx, "/QSYS.LIB/QGPL.LIB/QCLSRC.FILE").unwrap();
-    assert_eq!(c.change, u64::try_from(c.mtime).unwrap());
+    // Made outside QS/400: no records at all.
+    let b = s.ifs.backend();
+    ifs::backend::Backend::mkdir(b, "root/home/raw", 0o755).unwrap();
+    let f = ifs::backend::Backend::create(b, "root/home/raw/f", 0o644).unwrap();
+    drop(f);
+    let none = |p: &str| {
+        ifs::backend::Backend::xattr_get(b, p, ifs::meta::XATTR)
+            .unwrap()
+            .is_none()
+    };
+    assert_eq!(chg(&s, &cx, "/home/raw/f"), 0);
+    assert_eq!(chg(&s, &cx, "/home/raw"), 0);
+    // Reading writes nothing.
+    assert!(s.get(&cx, "/home/raw/f").is_empty());
+    s.ifs.read_dir(&cx, "/home/raw").unwrap();
+    assert!(none("root/home/raw/f") && none("root/home/raw"));
+    // A data change.
+    rises(&s, &cx, "/home/raw/f", || {
+        let fd = s.ifs.open(&cx, "/home/raw/f", OpenArgs::new(O_WRONLY)).unwrap();
+        s.ifs.write(&cx, fd, b"data").unwrap();
+        s.ifs.close(&cx, fd).unwrap();
+    });
+    // A directory's first entry change.
+    rises(&s, &cx, "/home/raw", || s.put(&cx, "/home/raw/g", b"x"));
+    assert!(!none("root/home/raw"));
+    // The record written is the fallback's: the owner as the mirror says.
+    assert_eq!(s.ifs.lstat(&cx, "/home/raw/f").unwrap().owner, "QSYS");
+}
+
+#[test]
+fn qsys_lib_counts_every_change() {
+    let q = MemQsys::new(Auth::USE);
+    q.add_lib("QGPL");
+    q.add_obj("QGPL", "QCLSRC", "*FILE", "PF-SRC", "QSYS");
+    q.add_member(
+        "QGPL",
+        "QCLSRC",
+        "HELLO",
+        ifs::vfs::qsys::MemberData {
+            records: Vec::new(),
+            record_len: 20,
+            source: true,
+            ccsid: 37,
+        },
+    );
+    // An attribute change as a command makes it.
+    let f0 = q.object("QGPL", "QCLSRC", "*FILE").unwrap().change;
+    q.touch("QGPL", "QCLSRC", "*FILE");
+    assert!(q.object("QGPL", "QCLSRC", "*FILE").unwrap().change > f0);
+    let s = Sys {
+        ifs: Ifs::new(MemBackend::new(), Box::new(q), Config::default()),
+        env: common::env(),
+        audit: ifs::ops::audit::MemAudit::default(),
+    };
+    s.ifs.ensure_layout(&s.env).unwrap();
+    let p = user("QSECOFR");
+    let cx = s.cx(&p, 1);
+    let m = "/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR";
+    let m0 = chg(&s, &cx, m);
+    assert!(m0 > 0);
+    // Two member writes within one second.
+    let m1 = rises(&s, &cx, m, || s.put(&cx, m, b"one"));
+    rises(&s, &cx, m, || s.put(&cx, m, b"two"));
+    assert!(m1 > m0);
+    // A library gains an entry.
+    rises(&s, &cx, "/QSYS.LIB", || s.ifs.mkdir(&cx, "/QSYS.LIB/NEW.LIB", 0o755).unwrap());
     // Created with O_CREAT on a new name: a new file with a value.
     let fd = s
         .ifs

@@ -26,7 +26,8 @@ fn store() -> Arc<dyn ImageStore> {
 
 fn fresh(cap: u64) -> (Arc<dyn ImageStore>, Volume) {
     let s = store();
-    let v = Volume::create(s.clone(), "save01", "nightly saves", cap, 100).unwrap();
+    let mut v = Volume::create(s.clone(), "save01", "nightly saves", cap, 100).unwrap();
+    v.set_clock(std::sync::Arc::new(|| 7));
     (s, v)
 }
 

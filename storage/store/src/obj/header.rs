@@ -75,6 +75,8 @@ const OFF_GROUP_AUTH: usize = 824;
 const OFF_AUTH_GEN: usize = 832;
 const OFF_SAVE: usize = 840;
 const OFF_SIGNATURE: usize = 916;
+/// Body offset of the change stamp, set at commit (`Txn`).
+pub const OFF_CHANGE: usize = 992;
 /// `auth_flags`: the owner's authority was reduced from `*ALL`.
 const OWNER_REDUCED: u32 = 1;
 
@@ -144,7 +146,8 @@ pub static LAYOUT: Layout = Layout {
         field("signature", 916, 64),
         field("sig_key", 980, 8),
         field("sig_flags", 988, 4),
-        field("reserved7", 992, 32),
+        field("change", OFF_CHANGE, 8),
+        field("reserved7", 1000, 24),
     ],
 };
 
@@ -320,6 +323,9 @@ pub struct ObjectHeader {
     pub save: SaveInfo,
     /// The object's signature, when it has one.
     pub signature: Option<Signature>,
+    /// The ID of the last transaction that changed the object (0: none
+    /// since the stamp was added). Set at commit; never repeats.
+    pub change: u64,
 }
 
 /// An object's signature: ed25519 over its content digest
@@ -448,6 +454,7 @@ impl ObjectHeader {
             auth_gen: 0,
             save: SaveInfo::default(),
             signature: None,
+            change: 0,
         }
     }
 
@@ -519,6 +526,7 @@ impl ObjectHeader {
             b[OFF_SIGNATURE + 64..OFF_SIGNATURE + 72].copy_from_slice(&sig.key_id);
             put_u32(b, OFF_SIGNATURE + 72, 1 | u32::from(sig.system) << 1);
         }
+        put_u64(b, OFF_CHANGE, self.change);
     }
 
     /// Decode the fixed part of a page body. `page` is for errors.
@@ -613,6 +621,7 @@ impl ObjectHeader {
                     .expect("8"),
                 system: get_u32(body, OFF_SIGNATURE + 72) & 2 != 0,
             }),
+            change: get_u64(body, OFF_CHANGE),
         })
     }
 }

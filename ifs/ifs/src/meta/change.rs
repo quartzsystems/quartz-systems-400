@@ -8,13 +8,15 @@
 //! again at the same path. The clock reserves values in blocks of
 //! [`BLOCK`] and keeps the top of its reservation in [`XATTR`] on the
 //! backend's top: after a restart it starts above it, a crash skipping
-//! at most one block. A node without a valid record has no counter
-//! (it reads 0) until an attribute change or `RCLLNK` writes one.
+//! at most one block. A node without a record, or with one written
+//! before counters, reads 0; its first change of any kind writes the
+//! record ([`super::fallback`], as `RCLLNK` would) with a value.
+//! Reading never writes.
 
 use crate::backend::{BFile, Backend};
 use crate::errno::{Errno, Result};
 
-use super::codec;
+use super::{IdMap, codec};
 
 /// The extended attribute on the backend's top holding the highest
 /// value reserved, u64 little-endian.
@@ -58,17 +60,29 @@ pub fn mark<B: Backend>(b: &B) -> Result<u64> {
     }
 }
 
-/// Set the stored record of the node at `p` to `value`; a node without
-/// a valid record is left alone. Returns whether it was set.
-pub fn stamp<B: Backend>(b: &B, p: &str, value: u64) -> Result<bool> {
-    let Some(raw) = b.xattr_get(p, super::XATTR)? else {
-        return Ok(false);
-    };
-    let Ok(mut m) = codec::decode(&raw) else {
-        return Ok(false);
-    };
+/// Set the record of the node at `p` to `value`. A node without a
+/// valid record gets its fallback written (with the mirror) first.
+pub fn stamp<B: Backend>(b: &B, p: &str, value: u64, ids: &dyn IdMap) -> Result<()> {
+    let st = b.stat(p)?;
+    let (mut m, src) = super::read(b, p, &st, ids)?;
     m.change = value;
-    b.xattr_set(p, super::XATTR, &codec::encode(&m))?;
+    if src == super::Source::Stored {
+        b.xattr_set(p, super::XATTR, &codec::encode(&m))
+    } else {
+        super::write(b, p, st.kind, &m, ids)
+    }
+}
+
+/// Write the fallback record of a node that has no valid one, so that
+/// an open file's changes can be stamped through it. Returns whether
+/// it wrote.
+pub fn complete<B: Backend>(b: &B, p: &str, ids: &dyn IdMap) -> Result<bool> {
+    let st = b.stat(p)?;
+    let (m, src) = super::read(b, p, &st, ids)?;
+    if src == super::Source::Stored {
+        return Ok(false);
+    }
+    super::write(b, p, st.kind, &m, ids)?;
     Ok(true)
 }
 

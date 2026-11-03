@@ -81,7 +81,7 @@ impl<B: Backend> Ifs<B> {
         m.change = self.next_change()?;
         meta::write(&self.b, &crel, kind, &m, cx.env)?;
         sys.index.added(sys.b, rel, name);
-        self.touch(rel);
+        self.touch(cx.env, rel);
         let r = sys.child(dir, name)?;
         cx.audit_always(
             AuditKind::Create,
@@ -244,7 +244,7 @@ impl<B: Backend> Ifs<B> {
             (Node::Back { rel: drel, .. }, Node::Back { rel, .. }) => {
                 self.b.unlink(rel)?;
                 sys.index.removed(sys.b, drel, backend::last(rel));
-                self.touch(drel);
+                self.touch(cx.env, drel);
             }
             (_, Node::Qsys(n, _)) => self.qsys.delete(n, cx.principal)?,
             (_, Node::Opt { vol, path, .. }) => {
@@ -281,7 +281,7 @@ impl<B: Backend> Ifs<B> {
                 self.b.rmdir(rel)?;
                 sys.index.removed(sys.b, drel, backend::last(rel));
                 sys.index.drop_tree(rel);
-                self.touch(drel);
+                self.touch(cx.env, drel);
             }
             (_, Node::Qsys(n @ QsysNode::Lib(_), _)) => self.qsys.delete(n, cx.principal)?,
             (_, Node::Opt { vol, path, .. }) if !path.is_empty() => {
@@ -342,7 +342,7 @@ impl<B: Backend> Ifs<B> {
         cx.require(&m, &src.node, &src.path(), Op::Link)?;
         self.b.link(rel, &backend::join(drel, &name))?;
         sys.index.added(sys.b, drel, &name);
-        self.touch(drel);
+        self.touch(cx.env, drel);
         cx.audit_access(&m, &src.node, &src.path(), Op::Link);
         Ok(())
     }
@@ -446,10 +446,10 @@ impl<B: Backend> Ifs<B> {
         if moving_dir {
             sys.index.drop_tree(rel);
         }
-        self.touch(&new_rel);
-        self.touch(odrel);
+        self.touch(cx.env, &new_rel);
+        self.touch(cx.env, odrel);
         if ndrel != odrel {
-            self.touch(ndrel);
+            self.touch(cx.env, ndrel);
         }
         let mut new_comps = ndir.comps.clone();
         new_comps.push(nname.clone());

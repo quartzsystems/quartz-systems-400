@@ -953,18 +953,21 @@ Version 6, as built on 2026-11-03 (decisions made in the build, for Cody to revi
   with `CPF2420`, `C` lets the job go on.
 - `Stat` (`net/qapd/src/files/entries.rs`) answers `GetInfo`'s entry,
   with its checks and messages, and the object's change counter
-  (`IFS.md`, "Change counter"): one counter for the whole volume, kept
-  in the metadata record (tag 21), handed out in reserved blocks of
-  1024 whose top is kept on the volume, so a restart never repeats a
-  value and a file deleted and made again at the same path gets a
-  higher one. Data writes, truncation, a rename (and both directories),
-  owner, group, authority, CCSID and the other attributes raise it;
-  entries made, removed or renamed raise their directory's. An object
-  written before the counter existed reads 0 until its next attribute
-  change. Not met everywhere, for Cody to decide: under `/QSYS.LIB`
-  `change` is the object's last-changed time in nanoseconds, which the
-  store keeps only to the second, so two changes within a second can
-  share a value; under `/QOPT` and the devices it is 0.
+  (`IFS.md`, "Change counter"). In root, `/QOpenSys` and user-defined
+  file systems it is the metadata record's (tag 21), from one counter
+  of the volume handed out in reserved blocks whose top is kept on the
+  volume: data writes, truncation, a rename (and both directories),
+  owner, group, authority, CCSID and the other attributes raise it,
+  entries made, removed or renamed raise their directory's, and an
+  object without a record or a counter gets one at its first change of
+  any kind. Under `/QSYS.LIB` it is the store object's change stamp,
+  the ID of the last transaction that changed it (`STORE_FORMAT.md`
+  §8): every change to the object's header, attributes, data or records
+  raises it, a member's records raising the member's. Under `/QOPT` a
+  read-only volume's files have a constant value from its descriptor,
+  a writable volume's the volume's counter, kept in its label and
+  raised by every change in it; devices and the virtual directories
+  answer 1. No value repeats for an object.
 - The test system's `Files::change_twice(path)` changes a file twice
   with its `modified` held, for the client's test of two changes in one
   millisecond.
