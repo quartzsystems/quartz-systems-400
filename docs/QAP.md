@@ -698,3 +698,74 @@ and QS/400 Access's):
   transaction changed as it was at its first change; unqualified
   names are in the default schema, else the profile's schema (`Sql`
   naming) or `QGPL` then `HLINV` (`System` naming).
+
+Version 5, as built on 2026-11-02 (decisions made in the build, for Cody to review):
+
+- The server accepts versions 1 to 5. `Ifs` runs on the connection
+  job's secondary threads, never in the lane, through the IFS requests
+  every job already makes of the storage service
+  (`stg::remote::RemoteIfs` on the thread's link). A thread's link
+  shares the job's handle and security session, so its calls are the
+  job's own: the signed-on profile, the service's one `Ifs`, its
+  authority checks and its `QAUDJRN` entries. No new rpc was needed.
+- The service's rules live in `net/qapd/src/files/`, over an
+  `IfsClient`; the job and the test system both answer through it.
+  Each operation makes the calls of the command it stands for:
+  - `ListDirectory` and `GetInfo` read as `WRKLNK` (`*R` on the
+    directory, `*X` on the path); names match as `WRKLNK`'s patterns
+    do (without case except under `/QOpenSys`) and come in its order
+    (by name without case, then with it). An empty `pattern` is `*`.
+    `GetInfo` does not follow a symbolic link; `ReadFile` does.
+    `kind` is by the mode: regular `File`, directory `Directory`
+    (`/QSYS.LIB` libraries and files too), link `Symlink`, anything
+    else `Other`. An entry whose attributes cannot be read is listed
+    by name, `Other`.
+  - `CreateDirectory` is `MD` with its defaults (`*INDIR`). A name
+    taken is `Exists`. With `parents` 1 each missing directory above
+    is made the same way, and a directory already there is `Ok` (as
+    `mkdir -p`); a component that is not a directory is `Error`.
+  - `Delete` is `RD` for a directory (empty only: `Error`, `CPFA0AC`)
+    and `RMVLNK` for anything else, a link and not what it names. As
+    those commands, it removes a file another job has open; `InUse`
+    is a file checked out to another user.
+  - `Rename` is `MOV`: a rename, or a copy and delete across file
+    systems; `replace` 1 replaces `to`.
+  - `Copy` is `CPY SUBTREE(*NODIR)` with `OWNER(*NEW)` and no
+    `DTAFMT`: a directory is `Error` (`CPFA0DA`).
+- A failure is the command's message for the `errno`: the `CPFA0xx`
+  escape with its substitution data as the command lays it out (a
+  path as `*CCHAR *VARY 4`). The status is by the message: `CPFA0A9`
+  `NotFound`, `CPFA09C` `NotAuthorized`, `CPFA0A0` `Exists`, `CPFA09E`
+  `InUse`, any other `Error`. For `Copy` that is the message `CPY`
+  gives as its diagnostic, not its `CPFA097` escape. `ThreadHost`
+  gained `with_ifs` and `message_data` (a message from data already
+  laid out).
+- `InUse`: another job's open whose share mode refuses this one, or a
+  byte-range lock of another job over the range read or written
+  (asked with `F_GETLK` once the file is open).
+- `ReadFile` opens the file for reading only, with the default share
+  mode. `as_ccsid` 0 is `InvalidRequest`. A file and an `as_ccsid`
+  that differ and cannot be converted (either 65535, or no table) is
+  `Error` with `TCP1A5A` (added to `QTCPMSG`). When the range reaches
+  the end of the file and a partial character is left, it is
+  converted as one substitution and `next_offset` is the file's
+  size, so a client reading on from `next_offset` always ends; a
+  `length` shorter than one character can make no progress inside
+  the file, which the client avoids. The memo of mixed files keeps 32
+  marks per connection (path, offset, the file's change time, the
+  state); a read from anywhere else scans from the start. The body is
+  built as it is read, so a large reply is copied once into frames.
+- `WriteFile` opens as the FTP server writes a stream file: a new file
+  tagged with `ccsid` (0: 1208), its data authorities from its
+  directory (`O_INHERITMODE`). `Replace` and `Append` make the file
+  when missing, `Update` does not; an existing file keeps its CCSID.
+  `data_ccsid` 0 is `InvalidRequest`; a request's data ends in whole
+  characters, so a partial one at its end is one substitution. The
+  shift-in/shift-out join applies to `Append`, and to `Update` at the
+  file's end. It reads the file's last byte, so such a write opens the
+  file for reading too; a profile without `*R` gets the data written
+  as converted, not joined.
+- The test system's file system (`qapd::testing::files`) is the `ifs`
+  crate over a `MemBackend` with `MemQsys`, its fixtures in the
+  module's documentation; each connection job is one owner of
+  descriptors and locks.
