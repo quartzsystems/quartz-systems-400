@@ -1,45 +1,91 @@
 # QS/400 (Quartz Systems/400)
 
 A from-scratch operating system on the Linux kernel, written entirely in Rust,
-source-compatible with IBM i and screen-identical at a 5250 terminal.
-Phase 0 built the build system and a booting kernel with a Rust PID 1
-(`slic`). Phase 1 made `slic` a real IPL with persistent state, system
-values and a local 5250-style console. Phase 2 added the object store
-(`store`), the disk layout with an ASP partition, system values in the
-`QSYSVAL` object, RCLSTG, the service console's object commands and the
-ISO installer. Addendum 2.5 added mirrored protection, Dedicated Service
-Tools (`svctools`) and the IBM-style install flow. Phase 3 added the
-database: DDS, decimal arithmetic, files and access paths, record-level
-access, journaling, commitment control, SQL and the QSTEST conformance kit. Phase 4 added
-the ILE runtime: the IR (`qir`), the Cranelift code generator (`codegen`), ILE objects
-and the binder (`ile`), the runtime with its job stand-in, exception model, heaps, user
-spaces, messages, file I/O and debugger (`mi`), message files (`msgf`), the system APIs
-(`sysapi`), the service console's ILE commands and the IR conformance kit. Phase 5 added
-work management: the storage service (`/init qsstg`) and one `qsjob` process per job,
-job descriptions, classes, library lists, `*LDA`, job logs, message queues, `QSYSOPR`,
-`QHST`, the reply list, subsystems with pools as cgroups, routing, the console's
-sign-on and Command Entry, job queues, `SBMJOB`, the job scheduler, output queues,
-spooled files, printer files (SCS, DDS), writers with the capture device and PDF, the
-system jobs, `QSTRUP`, `PWRDWNSYS`, and the statistics displays. Phase 6 added
-security: user profiles and passwords (`sec`), the authority model with private
-authorities, authorization lists and IBM's search, enforced by a guard inside the
-store, adopted authority, `QSECURITY` 40 and 50 domain and state checks, the audit
-journal `QAUDJRN`, the security system values, a real console sign-on with the
-interim `MAIN` menu, the security APIs and the console's security commands. Phase 7 added
-commands: `*CMD` objects and the definition compiler, the one command analyzer
-behind every line (`cmd`), the prompter, the 343 shipped definitions and the
-inventory of where each runs (`sys-cpps`), the ILE CL compiler to the IR (`cl`),
-the service's and the job's processing programs, Command Entry as `QCMD`,
-`QCMDEXC`/`QCMDCHK`/`QCAPCMD`, `QSTRUP` in CL, the analyzer and CL kits. Phase 8
-added the display interface: a TN5250E server (`QTVTELNET`, virtual devices,
-printer sessions, TLS) with the console as its client, display files (`dspf`:
-DDS compiler and runtime, `SNDRCVF`, the shipped sign-on), UIM (`uim`: panel
-groups, the renderer and dialog engine, the `QUI*` APIs) with the system's
-panels, menus (`menus`: `*MENU`, `GO`, generated command menus, task menus),
-System Request, Attention and group jobs, the developer tools (SEU, PDM, SDA,
-DFU, RLU, STRDBG, STRSQL, STRSST), the oracle driver and the 200-session load
-run. Code
-waiting for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
+source-compatible with IBM i and screen-identical at a 5250 terminal. The
+kernel is the only inherited component; every process above it is ours.
+
+## The phases as built
+
+| Phase | What it built | Record |
+|---|---|---|
+| 0 | the build system (`tools/build`), the pinned kernel, a booting UKI with a Rust PID 1 (`slic`) | `PHASE0.md` |
+| 1 | `slic` as an IPL with SRC codes, the LIC partition, system values, the framebuffer and serial consoles | `PHASE1.md` |
+| 2, 2.5 | the object store (`store`), the GPT layout with ASP 1, `QSYSVAL`, RCLSTG, mirrored protection, DST (`svctools`) | `PHASE2.md`, `DST.md` |
+| 3 | the database: DDS, decimal arithmetic, files, members, access paths, record-level access, journaling, commitment control, SQL, the QSTEST kit | `PHASE3.md` |
+| 4 | ILE: the IR (`qir`), Cranelift code generation, `*MODULE`/`*PGM`/`*SRVPGM` and the binder, the runtime (`mi`), message files, the system APIs | `PHASE4.md` |
+| 5 | work management: the storage service and one `qsjob` process per job, subsystems and pools as cgroups, job queues, message queues, spooling, writers, `QSTRUP`, `PWRDWNSYS` | `PHASE5.md`, `WORKMGMT.md` |
+| 6 | security: profiles and passwords, the authority search enforced by a guard inside the store, adopted authority, `QSECURITY` 40/50, `QAUDJRN` | `PHASE6.md`, `SECURITY.md` |
+| 7 | commands: `*CMD` objects, the one analyzer behind every command line, the prompter, the shipped definitions and where each runs, the CL compiler | `PHASE7.md`, `CMD.md`, `CL.md` |
+| 8 | the display interface: TN5250E (`QTVTELNET`) with the console as its client, display files, UIM panel groups, menus, the developer tools (SEU, PDM, SDA, DFU, STRDBG, STRSQL, STRSST) | `PHASE8.md` |
+| 9 | ILE RPG: front end, compiler, runtime (`qrpgrt`), the SQL precompiler, listings and debug views, the corpus against pub400, HLINV | `PHASE9.md`, `RPG.md` |
+| 10 | the IFS on xfs with `/QSYS.LIB`, TCP/IP and communications objects, sockets, TLS and certificates, telnet, FTP, SSH, NTP, LPD, DDM/DRDA, the host servers, network printers, QSH and PASE | `PHASE10.md` |
+| 11 | save and restore, tape and optical (virtual, physical code ready), image catalogs, licensed programs and `GO LICPGM`, PTFs and the update service, the problem log and service tools, install media and recovery, cleanup and backup | `PHASE11.md` |
+| after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6; the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
+| 12 | release engineering for V1R1M0 (in progress) | `PHASE12.md` |
+
+Code waiting for later work is marked `BLOCKED(phaseN)` (with the
+reason), `MIGRATE(phaseN)` or `TODO(phaseN)`; `NEEDS-CODY` marks what
+needs Cody's hardware or sign-off. `PHASE12.md` § Carried items lists
+every one.
+
+## How it fits together
+
+**Processes.** The UKI boots `slic` as PID 1. It runs the IPL (SRCs from
+`lic/slic/src/src.rs`, the LIC partition through `licpart`, the A/B
+slots), opens ASP 1, replays the WAL, runs database recovery, then
+checkpoints and re-executes itself as the storage service (`/init
+qsstg`) and the hardware resource service (`/init qshwr`). The storage
+service is the only process that touches pages: the store, the database,
+locks, the job table, queues, subsystems, spooling and the IFS (served
+to the kernel as an xfs volume through `lic/ublk`). Every job is one
+`/qsjob` process (`work/qsjob`) in a role (system job, subsystem monitor,
+batch, interactive, writer, server); it links the runtime (`mi`,
+`codegen`, `sysapi`, `qrpgrt`) but reaches every object through
+`stg::remote`, requests over `/run/qs400/stg` (`work/stg`, `work/ipc`).
+`STORAGE_SERVICE.md` has the tree of processes.
+
+**A job starts** when a monitor takes it from a job queue, a workstation
+entry or a prestart entry (`WORKMGMT.md` §1): the monitor spawns
+`/qsjob` into the subsystem's pool cgroup, the job says hello on the
+control channel (`wm::ctl`), gets its attributes, library list and role,
+and runs its routing program (`QCMD` for Command Entry,
+`QWCSTRUP` for the startup program). Interactive jobs come through
+`QTVTELNET` (the console display is a TN5250 client too), sign on
+through the shipped display file and land on `MAIN` or the profile's
+initial menu.
+
+**A command** typed anywhere (Command Entry, a CL program, `QCMDEXC`,
+the service console, a host-server remote command, QAP) goes through
+the one analyzer in `command/cmd` against its `*CMD` object: tokenize,
+bind to the definition, convert, check dependencies, build the parameter
+block (`CMD.md`). `command/sys-cpps/inventory.toml` says where the
+processing program runs: in the storage service (`lic/slic/src/cpp/`,
+each area's file there) or in the job (`work/qsjob/src/command/`); a
+user's `*CMD` names a `*PGM` the job calls with the block. Screens are
+UIM panel groups (`ui/uim/pnlgrp/`) or display files driven from
+`work/qsjob/src/panels/`, filled from the service's data.
+
+**Data paths.** Every change is a store transaction (`storage/store`:
+pages, B+trees, WAL; `STORE_FORMAT.md`). Database members, access paths
+and journals sit on it (`database/db`, `database/jrn`); a journaled
+change writes its entry in the same transaction, commitment control
+groups them, and IPL recovery replays or undoes them (`DB_FORMAT.md`).
+Saves walk libraries in IBM's order into the save stream
+(`save/savfmt`, `save/saverst`; `SAVE_FORMAT.md`), which goes to a save
+file, virtual or physical tape, or optical through `media/medio`.
+Licensed programs are signed save streams (`licpgm/`), PTFs signed
+packages (`ptf/`); both restore through the same engine and are checked
+against the trusted keys.
+
+**Oracles.** Two IBM i systems settle behaviour (credentials only in
+`tools/conformance/oracle/.env`): Cody's V7R1M0 box (the primary;
+`QSECOFR`, only `QSTEST` and `/home/QSTEST` writable, telnet and the host
+servers; no RPG compiler) and pub400.com (V7R5M0, read-only, throttled,
+the account's own libraries; the only RPG oracle). Screens are captured
+with `tools/tn5250-driver` into `tools/conformance/golden/`, RPG runs
+with `tools/rpg-oracle`, data and host-server traces with the Java
+helpers under `tools/conformance/`. Every capture lives under
+`tools/conformance/`; tests compare against it.
 
 ## Ground rules
 
@@ -91,7 +137,15 @@ tools/        host-side tools
                 src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
                 db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
                 src/qir/ the IR kit runner (cases, the in-memory job with CUST, *LDA,
-                COUNTER, Q1 and the APIs); qir/ the kit: programs/*.qir, expected/*.out
+                COUNTER, Q1 and the APIs); qir/ the kit: programs/*.qir, expected/*.out;
+                golden/ every oracle screen capture; oracle/ the captures and their README;
+                cl/, cmd/, rpg/, hlinv/, ddm/, ftp/, hostsvr/, ifs/, qsh/, qap/, jtopen/ kits
+  tn5250-driver/ the scripted 5250 display: the harness drives QEMU with it, the binary
+                drives the oracles (`run --target pub400|oracle`), `ftp`, host-server and DDM
+                recorders
+  rpg-oracle/   the RPG differential oracle: cases, operator keys, listing masks, outcomes,
+                the grammar fuzzer's programs; the binary fills outcomes from pub400
+  pase-probe/   what a PASE program sees (built for musl and run by step 65)
 lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   slic/         PID 1, as `/init qsstg` the storage service and as `/init qshwr` the hardware
                 resource service (src/hwsvc/: the one sysfs walk, uevents, its socket): src/ipl/,
@@ -184,10 +238,13 @@ ptf/          PTFs (docs/PTF.md)
                 signed PTF stream, db.rs the PTF database, apply.rs LODPTF/APYPTF/RMVPTF
                 with QRPLOBJ, group.rs signed PTF groups. The service's commands are
                 lic/slic/src/cpp/ptfcmd.rs (the database in QSYS/QSPTFDB, delayed PTFs at IPL)
+  update/       the update service (docs/UPDATE_PROTOCOL.md): the signed catalog, orders,
+                the HTTP client SNDPTFORD and QSCHKUPD use, a reference server over a directory
 service/      service: the problem log (docs/SERVICE.md)
   prb/          problem entries and statuses, the log (create, list, delete, report) and
-                analyze.rs (QSYSOPR messages, hardware, dumps, ANZPRB). The service side is
-                lic/slic/src/stgsvc/prblog.rs and cpp/prbcmd.rs
+                analyze.rs (QSYSOPR messages, hardware, dumps, ANZPRB), contact information.
+                The service side is lic/slic/src/stgsvc/ prblog.rs, dumps.rs, trace.rs,
+                liclog.rs, svcop.rs and lic/slic/src/cpp/ prbcmd.rs, svccmd.rs
 storage/      the object store and the names and code pages it holds
   store/        object store: src/page/, src/btree/, src/asp/ (units, superblock, io.rs with
                 SharedIo, src/asp/ifs/ the IFS volume: map, extents, growth, IfsIo),
@@ -291,6 +348,8 @@ work/         work management: jobs, spooling, process messages
                 frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
   stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
                 src/remote/ the runtime's source traits answered by the service
+  qap-proto/    QAP, the Quartz Access Protocol (docs/QAP.md), versions 1 to 6: the
+                envelope, services and operations, types, the sign-on secret
 security/     users, authorities, auditing
   sec/          security: src/profile/ the *USRPRF payload, special authorities, the profile
                 objects and indexes, the shipped profiles, groups and limits; src/password/
@@ -300,6 +359,8 @@ security/     users, authorities, auditing
                 writer and QAUDENDACN; sysval.rs; level.rs; signon.rs; api.rs the APIs'
                 questions; src/cmd/ the commands as library functions (usrprf, object,
                 dltusrprf, audit); required.toml, exempt.toml; tests/
+  pwdsub/       RFC 4777 password substitutes (DES and SHA), shared by TN5250E and the
+                password store
 command/      commands and CL
   cmd/          command definitions: src/token/ the tokenizer, src/def/ the model,
                 src/source/ the definition compiler (rules.toml), src/payload/ the *CMD
@@ -328,10 +389,23 @@ ui/           the display interface
   menus/        menus: src/payload/ *MENU, src/stack/ GO, src/generate/ and bin/genmenus
                 (command menus from the inventories), sys/ task menus, pnlgrp/ generated
 devtools/     developer tools, pure logic (drivers in work/qsjob/src/devtools/): seu/, pdm/,
-              sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/, edtf/ (EDTF, DSPF)
-service/      problems: prb/ the problem log, analysis, the report hook, contact information
-              (docs/SERVICE.md); the service side is lic/slic/src/stgsvc/ prblog.rs,
-              dumps.rs, trace.rs, liclog.rs, svcop.rs and lic/slic/src/cpp/svccmd.rs
+              sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/, edtf/ (EDTF,
+              DSPF), qshterm/ (the QSH terminal session)
+rpg/          ILE RPG (docs/RPG.md, PHASE9.md)
+  specs/        the specification column layouts as data (specs/rpgle.toml), shared with SEU
+  front/        the front end: reader (/COPY, conditional compilation), lexer, parser, tree,
+                RNF diagnostics
+  compiler/     CRTRPGMOD, CRTBNDRPG, CRTSQLRPGI: declarations with IBM's layouts, files,
+                control options, codegen/ to the IR, the listing
+  qrpgrt/       the RPG runtime: `_QRNX_*` bound procedures (moves, strings, dates, arrays,
+                exceptions, XML, SQL)
+  sqlpre/       the SQL precompiler: EXEC SQL statements, host variables, its listing.
+                The service side is lic/slic/src/cpp/rpg/
+qsh/          Qshell and PASE (docs/QSH.md)
+  qsh/          the language: syntax, expansion, the interpreter, builtins, sessions
+  qsh-utils/    the utilities over qsh::sys::Sys (file, text, archive, net, proc, ibmi)
+  qsh-job/      QSH in a job: the broker between the shell's threads and the job's runtime
+  pase/         PASE: an IFS program in user, mount and PID namespaces under seccomp
 ifs/          the integrated file system
   ifs/          src/errno/ IBM errno values and messages, src/path/ paths and folding,
                 src/backend/ (MemBackend, LinuxBackend), src/meta/ the one metadata record
@@ -348,6 +422,20 @@ ifs/          the integrated file system
                 admin), display.rs what the displays show, text.rs their text forms,
                 src/stmf/ CPYTOSTMF/CPYFRMSTMF and the IMPF stream files, msg.rs IBM's messages
 net/          TCP/IP: configuration, sockets, TLS, servers
+  netlink/      the kernel's network layer: a netlink client, nftables, /proc/net and sysctl
+  cmncfg/       communications objects: *LIND, controller and device names, line status
+  tcpcfg/       TCP/IP configuration without the store or kernel: interfaces, routes, host
+                table, CHGTCPA, the QUSRSYS files, apply.rs to the kernel, the CFGTCP panels
+  sockets/      IBM's socket API over Linux: constants, layouts, errno, port rules, resolver
+  tls/          rustls over graviola, QSSLPCL/QSSLCSL policy, the GSKit and SSL_ APIs
+  certs/        the certificate store (DCM's equivalent): stores, CA, PKCS#12, X.509
+  regfac/       the registration facility: exit points and programs (QUSRSYS/QUSEXRGOBJ)
+  hostsvr/      the host server datastream codec (docs/HOSTSVR.md), traces
+  hostserver/   the host servers' request loops over backend traits the job implements
+                (work/qsjob/src/work/hostsvr/)
+  ddm/          DDM and DRDA (docs/DDM.md): DSS, code points, FD:OCA, security, the
+                application server and requester, *RDB directory, *DDMF
+  qapd/         the QAP server's connections (docs/QAP.md) over a Host the job implements
   servers/      the TCP servers framework (docs/SERVERS.md): src/registry/ every server, its
                 jobs, ports and readiness; src/framework/ the TcpServer hooks, the Env, the
                 Framework and Starter (small.rs *NTP, *LPD); src/attrs/ CHGTELNA, CHGNTPA,
@@ -400,15 +488,19 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 list.rs LISTFMT layouts, src/net/ (tcp, mem) the connections, server.rs,
                 block.rs, src/client/ the FTP command's client, memhost.rs a Host in memory;
                 tests/ sessions in memory and the client against the server over loopback
-docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
-              STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
-              SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
-              CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
-              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NAVIGATOR.md, NET_OPEN_QUESTIONS.md, PRINT.md, SERVERS.md,
-              SSHD.md, TCPIP.md, DDM.md, HOSTSVR.md, QSH.md, FTP.md, PHASE10.md, SERVICE.md,
-              LICPGM.md, SVC_OPEN_QUESTIONS.md, SAVE_FORMAT.md, MEDIA.md, PTF.md, UPDATE_PROTOCOL.md,
-              CONSOLE.md, HARDWARE_NOTES.md, BACKUP.md, QAP.md, images/
+docs/         ABI.md, ARCHITECTURE.md, BACKUP.md, CERTS.md, CL.md, CMD.md,
+              CMD_OPEN_QUESTIONS.md, CONSOLE.md, CPP_AUDIT.md, DB_FORMAT.md,
+              DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md, DSPF.md, DST.md, FTP.md,
+              HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md, HTTPADMIN_HANDOFF.md, IFS.md,
+              ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md, LICPGM.md, MEDIA.md, MENUS.md,
+              MSGF.md, NAVIGATOR.md, NAVIGATOR_HANDOFF.md, NET_OPEN_QUESTIONS.md, PHASE0.md,
+              PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
+              PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md, PRINT.md,
+              PTF.md, QAP.md, QIR.md, QSH.md, RECOVERY.md, RPG.md, RPG_OPEN_QUESTIONS.md,
+              SAVE_FORMAT.md, SEC_OPEN_QUESTIONS.md, SECURITY.md, SERVERS.md, SERVICE.md,
+              SSHD.md, STORAGE_SERVICE.md, STORE_FORMAT.md, SVC_OPEN_QUESTIONS.md,
+              SYSAPI.md, TCPIP.md, TN5250.md, TOOLS.md, UI_OPEN_QUESTIONS.md, UIM.md,
+              UPDATE_PROTOCOL.md, WEB_STYLE.md, WM_OPEN_QUESTIONS.md, WORKMGMT.md, images/
 ```
 
 ## Commands
