@@ -27,8 +27,8 @@
 //! change of a row the query read waits for it on the second, until its
 //! unit of work ends. Then an `UPDATE` whose condition has subqueries
 //! and a `CREATE INDEX` over a large table, each on one connection while
-//! the third's command and catalog lists answer; a change of the table
-//! being indexed is refused meanwhile (`SQL0913`).
+//! the third's command, catalog lists and a read of the table being
+//! indexed answer.
 //!
 //! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
 
@@ -441,10 +441,11 @@ fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, Stri
     took.push(within(c, "CHKOBJ beside CREATE INDEX", Op::RunCommand, &check)?);
     took.push(within(c, "ListTables beside CREATE INDEX", Op::ListTables, &tables)?);
     took.push(within(c, "ListColumns beside CREATE INDEX", Op::ListColumns, &columns)?);
-    // The table being indexed is read, not changed, by others.
-    let stmt = sql::prepare(c, "UPDATE QAPLANEX.WIDE SET N = N WHERE N = -1")?;
-    let reply = sql::execute(c, stmt.statement, Vec::new())?;
-    c.ok::<_, ()>(Op::Release, &StatementRef { statement: stmt.statement })?;
+    // The table being indexed is read meanwhile. (Its change is refused
+    // to other jobs; the connections of one session are one job.)
+    let at_read = Instant::now();
+    let read = sql::count(c, "SELECT COUNT(*) FROM QAPLANEX.WIDE WHERE N < 10")?;
+    took.push(at_read.elapsed());
     let building = a.poll_reply(idx, Duration::ZERO)?;
     if let Some(r) = building {
         return Err(format!(
@@ -453,9 +454,8 @@ fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, Stri
             at.elapsed().as_millis()
         ));
     }
-    let code = reply.body_as::<SqlFailure>().map(|f| f.sqlcode).unwrap_or_default();
-    if reply.status != Status::SqlError || code != -913 {
-        return Err(format!("a change of the table being indexed: {}", sql::failure(&reply)));
+    if read != 10 {
+        return Err(format!("the table being indexed read {read} rows of 10"));
     }
     sql::done(a, idx, "CREATE INDEX", SLOW)?;
     let built = at.elapsed();
@@ -465,7 +465,7 @@ fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, Stri
     }
     let most = took.iter().max().copied().unwrap_or_default();
     Ok(format!(
-        "an UPDATE with subqueries in its condition and a CREATE INDEX over {have} rows ({} ms) each ran beside the third's CHKOBJ, ListTables and ListColumns, answered in at most {} ms; a change of the table being indexed was refused SQL0913; the UPDATE cancelled in {} ms",
+        "an UPDATE with subqueries in its condition and a CREATE INDEX over {have} rows ({} ms) each ran beside the third's CHKOBJ, ListTables, ListColumns and a read of the table being indexed, answered in at most {} ms; the UPDATE cancelled in {} ms",
         built.as_millis(),
         most.as_millis(),
         stop_upd.as_millis()
