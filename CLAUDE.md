@@ -193,8 +193,9 @@ storage/      the object store and the names and code pages it holds
                 SharedIo, src/asp/ifs/ the IFS volume: map, extents, growth, IfsIo),
                 src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
   qsname/       object, library and member name rules; 10-byte CP037 Name
-  ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv.rs the
-                CCSID conversions (tables from cp/*.csv, UTF-8, UTF-16, 65535)
+  ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv/ the
+                CCSID conversions (tables from cp/*.csv, double-byte cp/*.dbcs and the
+                mixed cp/mixed/, shift states; UTF-8, UTF-16, 65535)
 database/     DDS, decimal, files, journals, SQL
   db/           database: src/file/ *FILE attributes, member and dependents tables, LF
                 creation; src/format/ sections and level IDs; src/record/ field values;
@@ -551,8 +552,9 @@ otherwise logs go to `target/logs/`.
   `lic/ublk/src/sys.rs` (the `io_uring` rings and the ublk descriptors mapped
   from the kernel, xfs's grow ioctl),
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
-  `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls) and
-  `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks).
+  `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls),
+  `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks) and
+  `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in
