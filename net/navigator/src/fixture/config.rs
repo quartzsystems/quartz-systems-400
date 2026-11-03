@@ -995,6 +995,7 @@ impl Config for FixtureConfig {
             ],
             ntp_servers: self.ntp.lock().expect("ntp").clone(),
             last_sync: Some((secs(2026, 10, 29, 14, 0, 0), 4_000)),
+            last_fail: None,
             ntp_active: true,
         }
     }

@@ -258,22 +258,36 @@ fn offset_text(secs: i32) -> String {
     format!("{sign}{:02}:{:02}", a / 3600, a % 3600 / 60)
 }
 
-/// `CHGNTPA`'s attributes from the server table.
-pub fn ntp_attrs(m: &Main) -> NtpAttrs {
+/// The `*NTP` server table bag.
+fn ntp_bag(m: &Main) -> Vec<(String, String)> {
     match m.ask(|l| l.tcp(TcpOp::Servers)) {
         TcpReply::Servers { list } => list
             .into_iter()
             .find(|s| s.server == "*NTP")
-            .map(|s| NtpAttrs::from_bag(&s.bag))
+            .map(|s| s.bag)
             .unwrap_or_default(),
-        _ => NtpAttrs::default(),
+        _ => Vec::new(),
     }
+}
+
+/// `QTOTNTP`'s last poll from the bag: `LASTSYNC` (`seconds
+/// offset-µs`) and `LASTFAIL`.
+fn last_poll(bag: &[(String, String)]) -> (Option<(u64, i64)>, Option<String>) {
+    let get = |k: &str| bag.iter().find(|(x, _)| x == k).map(|(_, v)| v.trim());
+    let sync = get("LASTSYNC").and_then(|v| {
+        let (at, us) = v.split_once(' ')?;
+        Some((at.parse().ok()?, us.trim().parse().ok()?))
+    });
+    let fail = get("LASTFAIL").filter(|v| !v.is_empty()).map(str::to_string);
+    (sync, fail)
 }
 
 fn time(m: &Main) -> Time {
     let now = m.ask(Client::now);
     let zone = sysval(m, "QTIMZON");
-    let a = ntp_attrs(m);
+    let bag = ntp_bag(m);
+    let a = NtpAttrs::from_bag(&bag);
+    let (last_sync, last_fail) = last_poll(&bag);
     let jobs = m.ask(Client::active_jobs);
     let mut zones: Vec<(String, String)> = sysval::tz::ZONES
         .iter()
@@ -301,8 +315,8 @@ fn time(m: &Main) -> Time {
         adjust,
         adjusters,
         ntp_servers: a.rmtsys,
-        // The client logs each synchronization; nothing keeps the last.
-        last_sync: None,
+        last_sync,
+        last_fail,
         ntp_active: jobs.iter().any(|j| j.name == "QTOTNTP"),
     }
 }
@@ -352,5 +366,8 @@ mod tests {
         assert_eq!(shipped(v), "*ALL");
         assert_eq!(offset_text(-4 * 3600), "-04:00");
         assert_eq!(offset_text(5 * 3600 + 1800), "+05:30");
+        let bag = |s: &str, f: &str| vec![("LASTSYNC".to_string(), s.to_string()), ("LASTFAIL".to_string(), f.to_string())];
+        assert_eq!(last_poll(&bag("1793000000 -4000", "")), (Some((1_793_000_000, -4000)), None));
+        assert_eq!(last_poll(&bag("", "h: timed out")), (None, Some("h: timed out".into())));
     }
 }

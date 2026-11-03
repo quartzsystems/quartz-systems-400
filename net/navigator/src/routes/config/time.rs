@@ -125,10 +125,13 @@ pub fn page(rq: &Rq<'_>) -> Response {
     } else {
         esc(&t.offset)
     };
-    let sync = t.last_sync.map_or_else(
+    let mut sync = t.last_sync.map_or_else(
         || "Never".to_string(),
         |(at, us)| format!("{}, offset {}", rq.when(at), offset(us)),
     );
+    if let Some(why) = &t.last_fail {
+        sync = format!("{sync} &nbsp; (last poll: {})", esc(why));
+    }
     let ntp_status = format!(
         "{} &nbsp; <a href=\"{}\">Servers</a>",
         if t.ntp_active {

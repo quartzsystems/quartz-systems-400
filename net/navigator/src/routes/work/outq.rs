@@ -415,8 +415,24 @@ pub fn job_files(rq: &Rq<'_>, job: &str) -> Response {
 pub fn splf(rq: &Rq<'_>, job: &str, file: &str, nbr: &str, rest: &[&str]) -> Response {
     let w = &rq.env().work;
     let n: u32 = nbr.parse().unwrap_or(0);
+    let missing = || rq.not_found(&format!("spooled file {file} number {nbr} of job {job}"));
+    // The actions need the attributes only, not the file's data.
+    if let [op @ ("hold" | "release" | "confirm" | "move")] = rest {
+        let Some(f) = w
+            .spooled_files(rq.user(), "", job)
+            .into_iter()
+            .find(|s| s.file == file && s.number == n)
+        else {
+            return missing();
+        };
+        return if *op == "move" {
+            move_splf(rq, &f)
+        } else {
+            act_splf(rq, &f, op)
+        };
+    }
     let Some((f, pages)) = w.spooled_text(rq.user(), job, file, n) else {
-        return rq.not_found(&format!("spooled file {file} number {nbr} of job {job}"));
+        return missing();
     };
     match rest {
         [] => view(rq, &f, &pages),
@@ -429,8 +445,6 @@ pub fn splf(rq: &Rq<'_>, job: &str, file: &str, nbr: &str, rest: &[&str]) -> Res
             "text/plain; charset=utf-8",
             pages.concat().into_bytes(),
         ),
-        [op @ ("hold" | "release" | "confirm")] => act_splf(rq, &f, op),
-        ["move"] => move_splf(rq, &f),
         _ => rq.not_found(&format!("page {} of spooled file {file}", rest.join("/"))),
     }
 }

@@ -191,6 +191,48 @@ fn report(link: &Shared, a: &NtpAttrs, p: &Polled, may_adjust: bool, quiet: &mut
     }
 }
 
+/// Keep the poll's outcome in the `*NTP` bag for Navigator: `LASTSYNC`
+/// as `seconds offset-µs`, `LASTFAIL` the reason the last poll did not
+/// synchronize (blank when it did).
+fn record(link: &Shared, p: &Polled, may_adjust: bool) {
+    let mut bag = Vec::new();
+    match p {
+        Polled::Sample {
+            sample,
+            decision,
+            applied,
+        } => match (decision, applied) {
+            _ if !may_adjust => bag.push(("LASTFAIL".into(), "QTIMADJ names another adjuster".into())),
+            (Decision::TooFar(_), _) => bag.push((
+                "LASTFAIL".into(),
+                format!("{} differs by {} s, more than MAXADJ", sample.server, secs(sample.offset)),
+            )),
+            (_, Err(e)) => bag.push(("LASTFAIL".into(), format!("adjusting the clock: {e}"))),
+            (_, Ok(())) => {
+                let at = netsvc::now_micros() / 1_000_000;
+                bag.push(("LASTSYNC".into(), format!("{at} {}", sample.offset / 1000)));
+                bag.push(("LASTFAIL".into(), String::new()));
+            }
+        },
+        Polled::Failed(why) => {
+            let text = if why.is_empty() {
+                "no remote system resolved".to_string()
+            } else {
+                why.iter().map(|(h, e)| format!("{h}: {e}")).collect::<Vec<_>>().join("; ")
+            };
+            bag.push(("LASTFAIL".into(), text));
+        }
+    }
+    let op = stg::tcp::TcpOp::SetServer {
+        server: "*NTP".into(),
+        autostart: None,
+        bag,
+    };
+    if let stg::tcp::TcpReply::Failed { note } = link.borrow_mut().with(|l| l.tcp(op)) {
+        eprintln!("qsjob: QTOTNTP: recording the poll: {}", note.line());
+    }
+}
+
 /// The server on UDP `port`, its requests reported back when logged.
 fn start_server(a: &NtpAttrs, up: &Upstream, tx: &Sender<Event>) -> Result<server::Running, String> {
     let sock = UdpSocket::bind(("0.0.0.0", a.port)).map_err(|e| format!("UDP port {}: {e}", a.port))?;
@@ -246,6 +288,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
                 Event::Polled(p) => {
                     in_flight = false;
                     report(link, &a, &p, may_adjust == Some(true), &mut quiet);
+                    record(link, &p, may_adjust == Some(true));
                     next = Instant::now() + Duration::from_secs(u64::from(a.pollitv.max(1)) * 60);
                 }
                 Event::Served(peer, answered) => netsvc::joblog(

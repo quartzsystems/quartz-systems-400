@@ -587,7 +587,10 @@ impl Work for LiveWork {
     fn spooled_text(&self, user: &str, job: &str, file: &str, number: u32) -> Option<(Splf, Vec<String>)> {
         let (j, f) = (job.to_string(), file.to_string());
         self.link.read(user, move |m| {
-            let (a, data) = m.ask(|l| l.splf_fetch(f, j, number.to_string())).ok()?;
+            let (a, data) = m
+                .ask(|l| l.splf_fetch(f, j, number.to_string()))
+                .map_err(|e| eprintln!("qsjob: navigator: spooled file: {e}"))
+                .ok()?;
             let (pages, _) = spool::scs::decode(&data);
             let text = pages.iter().map(|p| spool::view::text(std::slice::from_ref(p))).collect();
             Some((splf(a), text))

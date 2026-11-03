@@ -205,6 +205,8 @@ pub struct Time {
     /// The last synchronization: when, the offset applied in
     /// microseconds.
     pub last_sync: Option<(u64, i64)>,
+    /// Why the last poll did not synchronize; `None` when it did.
+    pub last_fail: Option<String>,
     /// The `*NTP` server is active.
     pub ntp_active: bool,
 }
