@@ -269,6 +269,10 @@ pub fn reply(system: &mut System, lib: &str, name: &str, key: u32, reply: &str, 
 pub fn send_inquiry(system: &mut System, lib: &str, name: &str, mut m: QMsg, reply_to: (&str, &str)) -> Result<u32, String> {
     m.kind = MsgKind::Inq;
     m.reply_to = (reply_to.1.to_string(), reply_to.0.to_string());
+    // The copy is sent when the inquiry is.
+    if m.time == 0 {
+        m.time = now_micros();
+    }
     let copy = QMsg {
         kind: MsgKind::Copy,
         reply_to: (name.to_string(), lib.to_string()),
