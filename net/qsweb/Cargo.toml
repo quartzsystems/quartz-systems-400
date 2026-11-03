@@ -13,7 +13,8 @@ hex.workspace = true
 # Session IDs and CSRF tokens.
 graviola = "0.4.1"
 # Compile-time templates: the same DOM on every request.
-askama = "0.16.1"
+# No config-file support: it needs an unmaintained TOML parser.
+askama = { version = "0.16.1", default-features = false, features = ["derive", "std", "urlencode"] }
 
 # A failed request's thread stays parked inside the panic hook, so the
 # test owns its main: libtest's own hook handling would wait on it.
