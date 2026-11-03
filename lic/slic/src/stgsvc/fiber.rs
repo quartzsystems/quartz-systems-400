@@ -44,6 +44,9 @@ pub fn stack() -> std::io::Result<DefaultStack> {
 impl Fiber {
     /// A fiber that runs `body` on `stack` when first resumed.
     pub fn on(stack: DefaultStack, body: impl FnOnce() + 'static) -> Self {
+        // Boxed: what the coroutine starts with goes on its stack, at
+        // most 1 KiB; a statement's session is more.
+        let body: Box<dyn FnOnce()> = Box::new(body);
         let co = Coroutine::with_stack(stack, move |y: &Yielder<(), ()>, ()| {
             CURRENT.with(|c| c.set(ptr::from_ref(y)));
             body();
@@ -130,5 +133,15 @@ mod tests {
         // A recycled stack runs the next.
         let mut c = fiber("c", 0);
         assert!(c.resume());
+    }
+
+    #[test]
+    fn a_body_holding_much_runs() {
+        let big = [7u8; 4096];
+        let sum = Rc::new(Cell::new(0u32));
+        let out = Rc::clone(&sum);
+        let mut f = Fiber::on(stack().unwrap(), move || out.set(big.iter().map(|&b| u32::from(b)).sum()));
+        assert!(f.resume());
+        assert_eq!(sum.get(), 7 * 4096);
     }
 }
