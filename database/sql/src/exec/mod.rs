@@ -149,6 +149,20 @@ pub struct SqlContext {
 /// See [`SqlContext::yielder`].
 pub type Yielder = std::rc::Rc<dyn Fn() -> bool>;
 
+thread_local! {
+    /// Statements yielding while they wait for a record.
+    static RECORD_WAITS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// How many statements of this thread are in a turn taken while they
+/// wait for a record another job holds: when every statement in
+/// progress is, the service may wait a little for requests rather than
+/// spin.
+#[must_use]
+pub fn record_waits() -> usize {
+    RECORD_WAITS.with(std::cell::Cell::get)
+}
+
 /// The default [`SqlContext::yield_every`].
 pub const YIELD_EVERY: std::time::Duration = std::time::Duration::from_millis(5);
 
@@ -364,6 +378,30 @@ impl SqlContext {
             Ok(None) => Err(db::DbError::Ended),
             Err(e) => Err(e.into()),
         }
+    }
+
+    /// A change waiting for a record another job holds: what it wrote
+    /// so far committed, then a turn for the others now, the holder
+    /// among them. False without a yielder: nobody else can run, so
+    /// there is nothing to wait for.
+    pub(crate) fn wait_turn(&mut self, txn: &mut Txn<'_>) -> Result<bool> {
+        let Some(y) = self.yielder.clone() else {
+            return Ok(false);
+        };
+        txn.commit_part()?;
+        if !txn.suspend() {
+            return Ok(false);
+        }
+        RECORD_WAITS.with(|w| w.set(w.get() + 1));
+        let stop = y();
+        RECORD_WAITS.with(|w| w.set(w.get() - 1));
+        txn.resume()?;
+        self.yields += 1;
+        self.last_yield = Some(std::time::Instant::now());
+        if stop {
+            return Err(SqlError::Cancelled);
+        }
+        Ok(true)
     }
 
     fn yield_at(&mut self, txn: &mut Txn<'_>, own: u32, commit: bool) -> Result<bool> {

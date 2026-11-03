@@ -103,7 +103,15 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
             }
         }
     }
-    let wait = if top { wait } else { Duration::ZERO };
+    // With statements in progress the loop does not wait, unless every
+    // one waits for a record another job holds: then a little.
+    let wait = if top {
+        wait
+    } else if sql::exec::record_waits() >= svc.fibers.len() {
+        Duration::from_millis(10).min(wait)
+    } else {
+        Duration::ZERO
+    };
     let (accept, ready) = wait_ready(&svc, wait);
     if top {
         // Background disk work (device parity, a mirror resume) runs in

@@ -232,18 +232,29 @@ every other request, and with the other statements in progress.
   turns themselves: jobs wait only for the record and object locks the
   database rules give (`STRJRNPF` and `ENDJRNPF` take `*EXCL`, a record
   being changed is locked to its job, a record read under `*ALL` is
-  read-locked), and the engine never waits for one: a conflict is
-  `SQL0913` at once.
+  read-locked). A change (`UPDATE`, `DELETE`, `MERGE`) that meets a
+  record another job holds waits for it up to the file's `WAITRCD`, as
+  a program's record I/O does, then fails with `SQL0913`: it tries
+  again after each turn it gives the others (`SqlContext::wait_turn`,
+  what it wrote so far committed first), so the holder runs and can
+  commit or roll back meanwhile. `*IMMED` waits not at all, `*NOMAX`
+  until the record is free or the statement is cancelled; with no
+  turns to give (the console's `sql`, `RUNSQLSTM`) there is nothing to
+  wait for and the conflict is `SQL0913` at once. While every
+  statement in progress is waiting for a record, the loop waits up to
+  10 ms for requests between its turns rather than spinning
+  (`sql::exec::record_waits`). Other conflicts (an object lock, an
+  `*ALL` read of a record held for update) are `SQL0913` at once.
 - Under `*ALL` (`RepeatableRead` and `Serializable` over QAP, `SET
   TRANSACTION` RS or RR, `COMMIT(*ALL)`): each record a scan reads is
   read-locked as it is read, in the same turn and before any yield
   (`SqlContext::lock_read`), by the job's commit definition until
   `COMMIT` or `ROLLBACK` (`CommitDef::lock_read`), or by the statement
   until its end when the job has none. Read locks share: another job
-  reads those records, at `*ALL` too, but its change of one is refused
-  (`SQL0913`; a program's record I/O waits its `WAITRCD`, then
-  `CPF5027`), and so is an `*ALL` read of a record another job holds
-  for update. The job's own change of a record it read takes it when
+  reads those records, at `*ALL` too, but its change of one waits (an
+  SQL change, as above, and a program's record I/O: its `WAITRCD`, then
+  `SQL0913` or `CPF5027`); an `*ALL` read of a record another job
+  holds for update is refused. The job's own change of a record it read takes it when
   no other job shares it. The locks are in the service's record lock
   table (`db::odp::locks`, memory only), released at commit, rollback
   and the end of the job. Nothing else is locked: rows other jobs add

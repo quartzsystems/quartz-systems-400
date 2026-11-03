@@ -455,7 +455,7 @@ fn change_rows(
         ev.ctx.poll_interrupt()?;
         ev.ctx.change_point(txn)?;
         let rrn = u64::try_from(r[0].as_i64()?).expect("positive");
-        let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
+        let Some(current) = chain_waiting(txn, ev.ctx, t, o, rrn)? else {
             continue;
         };
         let slot = db::Slot {
@@ -496,6 +496,29 @@ fn change_rows(
         n += 1;
     }
     Ok(n)
+}
+
+/// The record at `rrn` read and locked for a change. One another job
+/// holds is waited for up to the file's `WAITRCD`, taking turns so the
+/// holder can end its unit of work; past it (or with no turns to take)
+/// the lock error stands (`SQL0913`).
+fn chain_waiting(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, o: &mut Odp, rrn: u64) -> Result<Option<db::Record>> {
+    let limit = match t.desc.attr.wait_rcd {
+        db::Wait::Immed => Some(std::time::Duration::ZERO),
+        db::Wait::Seconds(s) => Some(std::time::Duration::from_secs(u64::from(s))),
+        db::Wait::NoMax => None,
+    };
+    let start = std::time::Instant::now();
+    loop {
+        match o.chain(txn, &KeyArg::Rrn(rrn), true) {
+            Err(e @ db::DbError::RecordLocked { .. }) => {
+                if limit.is_some_and(|l| start.elapsed() >= l) || !ctx.wait_turn(txn)? {
+                    return Err(e.into());
+                }
+            }
+            r => return Ok(r?),
+        }
+    }
 }
 
 /// Whether the condition still holds for a row read as `was` and locked
@@ -726,7 +749,7 @@ impl MergeWrite<'_> {
                 continue;
             };
             let rrn = u64::try_from(was[0].as_i64()?).expect("positive");
-            let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
+            let Some(current) = chain_waiting(txn, ev.ctx, t, o, rrn)? else {
                 continue;
             };
             let slot = db::Slot {

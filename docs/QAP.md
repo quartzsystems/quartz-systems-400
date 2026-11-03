@@ -625,8 +625,10 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   `RepeatableRead` or `Serializable` (`*ALL`, whether `SetOptions` or
   `SET TRANSACTION` chose it) takes turns too: each row it reads is
   read-locked until `Commit` or `Rollback`, so its reads repeat; other
-  jobs read those rows, but a change to one fails with `SQL0913` until
-  then. Rows other jobs add meanwhile may be read (both levels are
+  jobs read those rows, but a change to one waits until then, up to
+  the table's record wait (`WAITRCD`, 60 s for a table SQL made) and
+  then fails with `SQL0913`; meanwhile everything else goes on, the
+  holder's `Commit` or `Rollback` included. Rows other jobs add meanwhile may be read (both levels are
   `*ALL`; no table lock). `CREATE INDEX`, `ALTER TABLE` and `ROLLBACK`
   take turns too, holding the locks the rules give meanwhile: an index
   being built keeps its table from change (it is read) and is itself

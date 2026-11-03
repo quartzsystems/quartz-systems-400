@@ -662,3 +662,88 @@ fn a_rollback_is_undone_taking_turns() {
     assert!(seen.iter().all(|&(upd, k)| !upd && k == ROWS), "{seen:?}");
     assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSJ.R"), 0);
 }
+
+/// A request under `*CHG` in `scope`.
+fn under_chg(text: &str) -> Request {
+    Request {
+        scope: "2:H".into(),
+        desc: Desc {
+            op: Op::Exec,
+            text: text.into(),
+            sql_naming: true,
+            commit: Some(db::cmt::LckLvl::Chg),
+            ..Desc::default()
+        },
+        inputs: Vec::new(),
+    }
+}
+
+/// `WAITRCD` of a file, as `CHGPF` sets it.
+fn set_waitrcd(f: &Fixture, lib: &str, file: &str, wait: db::Wait) {
+    let mut st = f.store.borrow_mut();
+    let mut txn = st.begin().unwrap();
+    let spec = qsname::LibSpec::Name(Name::parse(lib).unwrap());
+    let id = ops::resolve(&mut txn, f.qsys, &f.names, spec, Name::parse(file).unwrap(), types::FILE).unwrap().id;
+    let c = db::chg::ChgPf { wait_rcd: Some(wait), ..db::chg::ChgPf::default() };
+    db::chg::chgpf(&mut txn, JobHandle(9), id, &c).unwrap();
+    txn.commit().unwrap();
+}
+
+#[test]
+fn a_change_waits_for_a_held_record() {
+    let f = fixture();
+    run_script(&f, 2, "CREATE SCHEMA QSJ; CREATE TABLE QSJ.R (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL)").unwrap();
+    run_script(&f, 2, "INSERT INTO QSJ.R SELECT ID, NAME FROM QSTEST.T WHERE ID <= 10").unwrap();
+    let mut s = session(&f);
+    // The holder: job 2 under commitment control, sharing the record locks.
+    let ctx = SqlContext::with_locks(f.qsys, JobHandle(2), f.names.clone(), s.ctx.locks.clone());
+    let holder = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&f.store)), ctx)));
+    let hold = |h: &Rc<RefCell<Session>>| {
+        let r = h.borrow_mut().run(&under_chg("UPDATE QSJ.R SET NAME = 'Held' WHERE ID = 5"));
+        assert_eq!(r.sqlca.sqlerrd[2], 1, "{:?}", r.sqlca);
+    };
+
+    // The holder commits within the wait: the change goes on.
+    hold(&holder);
+    let turns = Rc::new(Cell::new(0u32));
+    let (seen, h) = (Rc::clone(&turns), Rc::clone(&holder));
+    let fx = Fixture { store: Rc::clone(&f.store), qsys: f.qsys, names: f.names.clone() };
+    s.ctx.yielder = Some(Rc::new(move || {
+        seen.set(seen.get() + 1);
+        // Others are answered meanwhile.
+        assert_eq!(count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K"), ROWS);
+        if seen.get() == 20 {
+            let r = h.borrow_mut().run(&under_chg("COMMIT"));
+            assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+        }
+        false
+    }));
+    let r = run(&mut s, Op::Exec, "", "UPDATE QSJ.R SET NAME = 'Mine'");
+    assert_eq!(r.sqlca.sqlerrd[2], 10, "{:?}", r.sqlca);
+    assert!(turns.get() >= 20, "{} turns", turns.get());
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSJ.R WHERE NAME = 'Mine'"), 10);
+
+    // Held past the file's wait: SQL0913, the rows before it changed.
+    set_waitrcd(&f, "QSJ", "R", db::Wait::Seconds(1));
+    hold(&holder);
+    let turns = Rc::new(Cell::new(0u32));
+    let seen = Rc::clone(&turns);
+    s.ctx.yielder = Some(Rc::new(move || {
+        seen.set(seen.get() + 1);
+        false
+    }));
+    let at = std::time::Instant::now();
+    let r = run(&mut s, Op::Exec, "", "DELETE FROM QSJ.R");
+    assert_eq!(r.sqlca.sqlcode, -913, "{:?}", r.sqlca);
+    assert!(at.elapsed() >= Duration::from_secs(1), "waited {:?}", at.elapsed());
+    assert!(turns.get() > 10, "{} turns while it waited", turns.get());
+    holder.borrow_mut().run(&under_chg("ROLLBACK"));
+    // *IMMED: no wait.
+    set_waitrcd(&f, "QSJ", "R", db::Wait::Immed);
+    hold(&holder);
+    let at = std::time::Instant::now();
+    let r = run(&mut s, Op::Exec, "", "UPDATE QSJ.R SET NAME = 'Now'");
+    assert_eq!(r.sqlca.sqlcode, -913, "{:?}", r.sqlca);
+    assert!(at.elapsed() < Duration::from_secs(1));
+    holder.borrow_mut().run(&under_chg("ROLLBACK"));
+}
