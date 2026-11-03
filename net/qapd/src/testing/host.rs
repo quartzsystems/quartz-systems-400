@@ -22,6 +22,10 @@ use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::{JobId, ObjectName};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
+use ifs::client::IfsClient;
+use ifscmd::cmds::{Subtree, auth, yes};
+use ifscmd::{Msg, Reply};
+
 use super::commands::{self, definition, find, parse};
 use super::{Crash, System, lock};
 use crate::host::{Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
@@ -39,6 +43,15 @@ fn message(sys: &System, job: u32, id: &str, data: &[&str]) -> ServerMessage {
         data: data.join(" ").into_bytes(),
         text: format!("{id} {} ({lang})", data.join(" ")),
         help: format!("Help for {id}."),
+    }
+}
+
+/// A value with its apostrophes taken off (`'/a b'` is `/a b`).
+fn unquote(v: &str) -> String {
+    let v = v.trim();
+    match v.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')) {
+        Some(inner) => inner.replace("''", "'"),
+        None => v.to_string(),
     }
 }
 
@@ -87,6 +100,29 @@ impl MemHost {
             name: "QAPCNN".into(),
             user: "QUSER".into(),
             number: format!("{:06}", self.job),
+        }
+    }
+
+    /// An `ifscmd` command over the file system as the signed-on
+    /// profile: its messages in order, the escape last; `Error` when
+    /// there is one, as the job's commands answer.
+    fn ifs_command(&mut self, f: impl FnOnce(&dyn IfsClient) -> Reply) -> Ran {
+        let user = me(&self.sys, self.job).unwrap_or_else(|| "QUSER".into());
+        let r = self.sys.files.as_user(&user, u64::from(self.job), f);
+        let msg = |m: Msg| {
+            let mut s = message(&self.sys, self.job, &m.id, &[]);
+            s.data = m.data;
+            s
+        };
+        let failed = r.escape.is_some();
+        let messages: Vec<ServerMessage> = r.messages.into_iter().map(|(_, m)| m).chain(r.escape).map(msg).collect();
+        Ran {
+            status: if failed { Status::Error } else { Status::Ok },
+            escape: messages.last().filter(|_| failed).cloned(),
+            reply: CommandReply {
+                job: self.job_id(),
+                messages,
+            },
         }
     }
 
@@ -192,6 +228,25 @@ impl Host for MemHost {
                 }
                 lock(&self.sys.curlib).insert(self.job, lib);
                 self.ran(Status::Ok, &[])
+            }
+            "CHGOWN" => {
+                let (obj, own) = (unquote(&get("OBJ").unwrap_or_default()), get("NEWOWN").unwrap_or_default());
+                let rvk = get("RVKOLDAUT").is_none_or(|v| yes(&v));
+                let sym = get("SYMLNK").is_some_and(|v| yes(&v));
+                let sub = Subtree::of(&get("SUBTREE").unwrap_or_default());
+                self.ifs_command(|c| auth::chgown(c, &obj, &own, rvk, sub, sym))
+            }
+            "CHGPGP" => {
+                let a = auth::Chgpgp {
+                    obj: unquote(&get("OBJ").unwrap_or_default()),
+                    newpgp: get("NEWPGP").unwrap_or_default(),
+                    dtaaut: get("DTAAUT").unwrap_or_else(|| "*OLDPGP".into()),
+                    objaut: get("OBJAUT").map_or_else(Vec::new, |v| v.split_whitespace().map(String::from).collect()),
+                    rvkoldaut: get("RVKOLDAUT").is_none_or(|v| yes(&v)),
+                    subtree: Subtree::of(&get("SUBTREE").unwrap_or_default()),
+                    symlnk: get("SYMLNK").is_some_and(|v| yes(&v)),
+                };
+                self.ifs_command(|c| auth::chgpgp(c, &a))
             }
             "CHGAUT" => {
                 let dta = get("DTAAUT").unwrap_or_else(|| "*SAME".into()).to_ascii_uppercase();

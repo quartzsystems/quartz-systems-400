@@ -11,6 +11,7 @@
 //!
 //! Fixtures, each a case a client meets:
 //!
+//! - the group profile [`GROUP`], `BOB` a member of it, for `CHGPGP`;
 //! - `/home/BOB`, `/home/ANN`, `/home/WARN`, each owned by its profile
 //!   (`*PUBLIC` `*RX`);
 //! - [`MANY`]: 1,200 files `f0000.txt` to `f1199.txt`, for paging;
@@ -129,11 +130,14 @@ pub fn text_file(ccsid: u16) -> String {
     format!("{TEXT_DIR}/text{ccsid}.txt")
 }
 
+/// The group profile `BOB` is in.
+pub const GROUP: &str = "DEV";
+
 /// The profiles: name and UID.
 const PROFILES: [(&str, u32); 6] = [("QSYS", 0), ("QSECOFR", 1), ("QDFTOWN", 3), ("BOB", 100), ("ANN", 101), ("WARN", 102)];
 
 /// The profile `user` as the IFS checks it: `QSECOFR` with `*ALLOBJ`
-/// and `*SECADM`, every other with none.
+/// and `*SECADM`, every other with none; `BOB` in [`GROUP`].
 #[must_use]
 pub fn principal(user: &str) -> Principal {
     let mut p = Principal {
@@ -144,6 +148,9 @@ pub fn principal(user: &str) -> Principal {
     };
     if user == "QSECOFR" || user == "QSYS" {
         p.spcaut = SpecialAuth::ALLOBJ.0 | SpecialAuth::SECADM.0 | SpecialAuth::IOSYSCFG.0 | SpecialAuth::AUDIT.0;
+    }
+    if user == "BOB" {
+        p.groups = vec![GROUP.into()];
     }
     p
 }
@@ -187,7 +194,10 @@ impl Files {
         );
         q.add_obj("QGPL", "QAPDATA", "*DTAARA", "", "BOB");
         q.add_obj("HLINV", "ASSETS", "*FILE", "PF-DTA", "QSYS");
-        let env = PROFILES.iter().fold(MemEnv::default(), |e, (n, uid)| e.user(n, *uid));
+        let env = PROFILES
+            .iter()
+            .fold(MemEnv::default(), |e, (n, uid)| e.user(n, *uid))
+            .group(GROUP, 200, 500);
         let ifs = Ifs::new(MemBackend::new(), Box::new(q), Config::default());
         ifs.ensure_layout(&env).expect("layout");
         let f = Self {

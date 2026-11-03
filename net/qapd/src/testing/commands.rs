@@ -19,6 +19,12 @@
 //!   (20) when the stream file's name has `long` in it (lines cut);
 //! - `CHGAUT OBJ() USER() DTAAUT()`: `CPDA091` (10) for a `DTAAUT` it
 //!   does not take;
+//! - `CHGOWN OBJ() NEWOWN() RVKOLDAUT() SYMLNK() SUBTREE()` and
+//!   `CHGPGP OBJ() NEWPGP() DTAAUT() OBJAUT() RVKOLDAUT() SYMLNK()
+//!   SUBTREE()`: `ifscmd`'s commands over the test system's file system
+//!   ([`super::files`]) as the signed-on profile, with their messages;
+//!   `SUBTREE(*ALL)` goes on past what it may not change, a diagnostic
+//!   each, then the escape `CPFA0AB` (`Error`);
 //! - `CHGCURLIB CURLIB(name)`: the job's current library
 //!   ([`super::System::curlib`]); `CPF2110` for a library `CRTLIB` did
 //!   not make.
@@ -103,6 +109,20 @@ pub const COMMANDS: &[Cmd] = &[
         required: &["OBJ", "USER"],
     },
     Cmd {
+        name: "CHGOWN",
+        text: "Change Owner",
+        interactive_only: false,
+        authorized: true,
+        required: &["OBJ", "NEWOWN"],
+    },
+    Cmd {
+        name: "CHGPGP",
+        text: "Change Primary Group",
+        interactive_only: false,
+        authorized: true,
+        required: &["OBJ", "NEWPGP"],
+    },
+    Cmd {
         name: "CHGCURLIB",
         text: "Change Current Library",
         interactive_only: false,
@@ -176,6 +196,59 @@ fn qualified(out: &mut Vec<ParmNode>, owner: u16) {
     lib.default = Some("*LIBL".into());
     lib.special_values = vec!["*LIBL".into(), "*CURLIB".into()];
     out.push(lib);
+}
+
+/// A `*NO`/`*YES` parameter at `index` defaulting to `dft`.
+fn yes_no(index: u16, keyword: &str, prompt: &str, dft: &str) -> ParmNode {
+    let mut p = node(index, None, Role::Parameter, keyword, prompt, ParmKind::Integer, 2);
+    p.default = Some(dft.into());
+    p.special_values = vec!["*NO".into(), "*YES".into()];
+    p
+}
+
+/// `SUBTREE(*NONE|*ALL)` at `index`.
+fn subtree(index: u16) -> ParmNode {
+    let mut p = node(index, None, Role::Parameter, "SUBTREE", "Directory subtree", ParmKind::Character, 10);
+    p.default = Some("*NONE".into());
+    p.values = vec!["*NONE".into(), "*ALL".into()];
+    p
+}
+
+/// `CHGOWN`'s or `CHGPGP`'s nodes, as the shipped definitions give them.
+fn owner_or_group(name: &str, out: &mut Vec<ParmNode>) {
+    let mut obj = node(0, None, Role::Parameter, "OBJ", "Object", ParmKind::Path, 5000);
+    obj.required = true;
+    obj.min_values = 1;
+    out.push(obj);
+    if name == "CHGOWN" {
+        let mut own = node(1, None, Role::Parameter, "NEWOWN", "New owner", ParmKind::Name, 10);
+        own.required = true;
+        own.min_values = 1;
+        out.push(own);
+        out.push(yes_no(2, "RVKOLDAUT", "Revoke current owner authority", "*YES"));
+        out.push(yes_no(3, "SYMLNK", "Symbolic link", "*NO"));
+        out.push(subtree(4));
+        return;
+    }
+    let mut group = node(1, None, Role::Parameter, "NEWPGP", "New primary group", ParmKind::Name, 10);
+    group.required = true;
+    group.min_values = 1;
+    group.special_values = vec!["*NONE".into()];
+    out.push(group);
+    let mut data = node(2, None, Role::Parameter, "DTAAUT", "New data authority", ParmKind::Integer, 2);
+    data.default = Some("*OLDPGP".into());
+    data.special_values = ["*OLDPGP", "*PRIVATE", "*RWX", "*RX", "*RW", "*WX", "*R", "*W", "*X", "*EXCLUDE", "*NONE"]
+        .map(String::from)
+        .to_vec();
+    out.push(data);
+    let mut objaut = node(3, None, Role::Parameter, "OBJAUT", "New object authority", ParmKind::Integer, 2);
+    objaut.default = Some("*NONE".into());
+    objaut.max_values = 4;
+    objaut.special_values = ["*NONE", "*ALL", "*OBJEXIST", "*OBJMGT", "*OBJALTER", "*OBJREF"].map(String::from).to_vec();
+    out.push(objaut);
+    out.push(yes_no(4, "RVKOLDAUT", "Revoke old authority", "*YES"));
+    out.push(yes_no(5, "SYMLNK", "Symbolic link", "*NO"));
+    out.push(subtree(6));
 }
 
 /// `name`'s definition.
@@ -254,6 +327,7 @@ pub fn definition(c: &Cmd) -> CommandDefinition {
             d.special_values = vec!["*SAME".into(), "*RWX".into(), "*RX".into(), "*R".into(), "*EXCLUDE".into()];
             n.push(d);
         }
+        "CHGOWN" | "CHGPGP" => owner_or_group(c.name, &mut n),
         "CHGCURLIB" => {
             let mut c = required(node(0, None, Role::Parameter, "CURLIB", "Current library", ParmKind::Name, 10));
             c.special_values = vec!["*CRTDFT".into()];

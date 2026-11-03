@@ -189,3 +189,33 @@ fn unmapped_values_fit_their_length() {
     }
     assert!(bad.is_empty(), "{} values:\n{}", bad.len(), bad.join("\n"));
 }
+
+/// `CHGOWN` and `CHGPGP` take `SUBTREE(*NONE|*ALL)`: the analyzer
+/// accepts it, the block carries the word the service maps, and the
+/// flattened definition (`DescribeCommand`) shows it on the first
+/// display with its values.
+#[test]
+fn chgown_and_chgpgp_take_subtree() {
+    use cmd::prompt::flat;
+    let mut src = cmd::analyze::MemSource::default();
+    for (name, _) in defs::DEFS {
+        src.put(sys_cpps::install::object(name, 0).unwrap().def);
+    }
+    let mut env = cmd::analyze::Env::new(&mut src);
+    for (text, want) in [
+        ("CHGOWN OBJ('/d') NEWOWN(ANN) SUBTREE(*ALL)", "*ALL"),
+        ("CHGOWN OBJ('/d') NEWOWN(ANN)", "*NONE"),
+        ("CHGPGP OBJ('/d') NEWPGP(DEV) SUBTREE(*ALL)", "*ALL"),
+        ("CHGPGP OBJ('/d') NEWPGP(DEV) SUBTREE(*none)", "*NONE"),
+    ] {
+        let r = cmd::analyze::analyze(&mut env, text).unwrap_or_else(|e| panic!("{text}: {e}"));
+        let built = cmd::block::build(&r.def, &r.parms).unwrap();
+        let spec: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
+        let parms = cmd::block::read(&r.def, &built.segments, &spec).unwrap();
+        assert_eq!(parms.name("SUBTREE"), want, "{text}");
+        let n = flat::nodes(&r.def).into_iter().find(|n| n.keyword == "SUBTREE").expect("SUBTREE");
+        assert_eq!((n.default.as_deref(), n.show), (Some("*NONE"), flat::Show::Always), "{text}");
+        assert_eq!(n.values, ["*NONE", "*ALL"], "{text}");
+    }
+    assert!(cmd::analyze::analyze(&mut env, "CHGOWN OBJ('/d') NEWOWN(ANN) SUBTREE(*SOME)").is_err());
+}

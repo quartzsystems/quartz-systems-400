@@ -71,6 +71,8 @@ const PROMPTED: &[(&str, &str)] = &[
     ("wrklnk", "WRKLNK OBJ('/home/*')"),
     ("md", "MD DIR('/home/qstest')"),
     ("chgaut", "CHGAUT OBJ('/home/qstest') USER(*PUBLIC) DTAAUT(*RX)"),
+    ("chgown", "CHGOWN OBJ('/home/qstest') NEWOWN(ANNE) SUBTREE(*ALL)"),
+    ("chgpgp", "CHGPGP OBJ('/home/qstest') NEWPGP(DEV) SUBTREE(*ALL)"),
     ("cpytostmf", "CPYTOSTMF FROMMBR('/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR') TOSTMF('/tmp/hello.txt')"),
     ("edtf", "EDTF STMF('/tmp/hello.txt')"),
     ("addrdbdire", "ADDRDBDIRE RDB(REMOTE1) RMTLOCNAME(remote.example.com *IP)"),

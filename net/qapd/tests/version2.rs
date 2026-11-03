@@ -278,3 +278,60 @@ fn a_ticket_for_an_expired_password_signs_nothing_on() {
     c.edit("BOB", |u| u.expired = false);
     assert!(!c.redeem_ticket("BOB", hex(&t.ticket).as_bytes(), true), "used up");
 }
+
+/// The `SUBTREE` node of `name`'s definition.
+fn subtree_node(r: &mut Run, name: &str) -> qap_proto::ops::command::ParmNode {
+    let d: CommandDefinition = describe(r, "*LIBL", name).body_as().unwrap();
+    d.nodes.into_iter().find(|n| n.keyword == "SUBTREE").unwrap_or_else(|| panic!("{name}: no SUBTREE"))
+}
+
+#[test]
+fn chgown_and_chgpgp_take_subtree() {
+    use qapd::testing::files::{GROUP, TREE, TREE_DIRS, TREE_FILES, TREE_HELD};
+    let c = Controls::new();
+    let mut r = signed_on(&c, "BOB", "SECRET1");
+    for name in ["CHGOWN", "CHGPGP"] {
+        let n = subtree_node(&mut r, name);
+        assert_eq!((n.default.as_deref(), n.values.as_slice()), (Some("*NONE"), ["*NONE".to_string(), "*ALL".into()].as_slice()));
+        assert_eq!((n.role, n.show, n.parent), (Role::Parameter, Show::Always, None), "{name}");
+    }
+    // One file in BOB's tree is WARN's: BOB may not change it.
+    let theirs = TREE_FILES[0];
+    let given = c.files.as_user("QSECOFR", 50, |cl| cl.chgown(theirs, "WARN", false));
+    assert!(given.is_ok());
+    let all: Vec<&str> = std::iter::once(TREE).chain(TREE_DIRS).chain(TREE_FILES).chain([TREE_HELD]).collect();
+    let stat = |p: &str| c.files.as_user("QSECOFR", 50, |cl| cl.stat(p, true)).unwrap();
+    let expect_partial = |e: &Envelope| {
+        assert_eq!(e.status, Status::Error, "{e:?}");
+        let escape = e.message.as_ref().unwrap();
+        assert_eq!(escape.id, "CPFA0AB");
+        assert_eq!(escape.data, ifscmd::Msg::path("CPFA0AB", theirs).data);
+        let reply: CommandReply = e.body_as().unwrap();
+        let got: Vec<(&str, &[u8])> = reply.messages.iter().map(|m| (m.id.as_str(), m.data.as_slice())).collect();
+        let diag = ifscmd::Msg::path("CPFA09C", theirs);
+        assert_eq!(got, [("CPFA09C", diag.data.as_slice()), ("CPFA0AB", escape.data.as_slice())]);
+    };
+    // CHGPGP first, while BOB still owns the rest.
+    let e = run(&mut r, &format!("CHGPGP OBJ('{TREE}') NEWPGP({GROUP}) SUBTREE(*ALL)"));
+    expect_partial(&e);
+    let group = |p: &str| c.files.as_user("QSECOFR", 50, |cl| cl.dspaut(p)).unwrap().group;
+    for p in all.iter().filter(|p| **p != theirs) {
+        assert_eq!(group(p).as_deref(), Some(GROUP), "{p}");
+    }
+    assert_eq!(group(theirs), None);
+    // CHGOWN the same way.
+    let e = run(&mut r, &format!("CHGOWN OBJ('{TREE}') NEWOWN(ANN) RVKOLDAUT(*NO) SUBTREE(*ALL)"));
+    expect_partial(&e);
+    for p in all.iter().filter(|p| **p != theirs) {
+        assert_eq!(stat(p).owner, "ANN", "{p}");
+    }
+    assert_eq!(stat(theirs).owner, "WARN");
+    // SUBTREE(*NONE): the one object; refused alone, its own escape.
+    let one = run(&mut r, &format!("CHGOWN OBJ('{theirs}') NEWOWN(BOB)"));
+    assert_eq!((one.status, ids(&one)), (Status::Error, vec!["CPFA09C".to_string()]));
+    let mine = "/home/BOB/text";
+    let ok = run(&mut r, &format!("CHGOWN OBJ('{mine}') NEWOWN(ANN) SUBTREE(*NONE)"));
+    assert_eq!(ok.status, Status::Ok, "{ok:?}");
+    assert_eq!(stat(mine).owner, "ANN");
+    assert_eq!(stat(&format!("{mine}/text37.txt")).owner, "BOB");
+}

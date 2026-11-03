@@ -1314,7 +1314,7 @@ gets the service's text forms (`ifscmd::text`).
 | `CPY` | service | `copy`; `SUBTREE(*NODIR, *NONE or *ALL)`, `REPLACE`, `OWNER`, `DTAFMT(*TEXT)` | `CPCA087`; several: `CPCA082` with the count, `CPFA0BB`; one failed: `CPFA097` after the cause |
 | `ADDLNK` | service | `symlink` or `link` (`LNKTYPE`) | `CPCA088` |
 | `CHGAUT` | service | `chgaut`; `DTAAUT(*NONE) OBJAUT(*NONE)` for a user revokes the private authority | text; `CPFA091`, `CPFA0B9`, `CPFA0C3` |
-| `CHGOWN`, `CHGPGP` | service | `chgown`, `chgpgp` (then the given authority for the group) | text |
+| `CHGOWN`, `CHGPGP` | service | `chgown`, `chgpgp` (then the given authority for the group); `SUBTREE(*NONE or *ALL)`, `*ALL` the directory and everything under it, going on past what it may not change | text; one object: its escape (`CPFA09C` ...); `*ALL`: a diagnostic for each object not changed, then `CPFA0AB` naming the first, as `CHGAUT`, `CHGATR` |
 | `CHGATR` | service | `set_attr` for each `ATR`; `*USECOUNT *RESET` accepted, `*RUNEXIT`/`*CRTRUNEXIT` refused | text; `CPDA03C`, `CPDA03D`, `CPDA0C1`, `CPDA0C2`, `CPFA0ED` |
 | `CHKOUT`, `CHKIN` | service | `check_out`, `check_in`; `SUBTREE(*ALL)` the files under | `CPCA08F`, `CPCA08A`; `CPFA0BF`, `CPFA0BE` |
 | `STRJRN`, `ENDJRN` | service | the journaling attributes stored on each object (`JRN` a `/QSYS.LIB` journal path) | text |

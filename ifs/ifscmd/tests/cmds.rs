@@ -306,6 +306,78 @@ fn authority_owner_and_group() {
     refused(&r, "CPFA09C");
 }
 
+/// The diagnostics' identifiers and the paths they name.
+fn diagnostics(r: &Reply) -> Vec<(String, String)> {
+    r.messages
+        .iter()
+        .filter(|(k, _)| *k == ifscmd::msg::DIAGNOSTIC)
+        .map(|(_, m)| (m.id.clone(), first_path(m)))
+        .collect()
+}
+
+/// `SUBTREE(*ALL)` changes what it may and goes on past the rest: one
+/// diagnostic each, then `CPFA0AB` naming the first, as `CHGAUT` does.
+#[test]
+fn owner_and_group_subtrees_go_on_past_failures() {
+    let s = Sys::new();
+    let sec = s.as_user("QSECOFR", 1);
+    for d in ["/t", "/t/s"] {
+        sec.mkdir(d, 0o755).unwrap();
+    }
+    put(&sec, "/t/s/c", b"x", 819);
+    // ANN owns /t and two files; QSECOFR keeps /t/s and /t/s/c.
+    assert!(!sec.with(|c| auth::chgown(c, "/t", "ANN", true, Subtree::None, false)).failed());
+    let ann = s.as_user("ANN", 4);
+    put(&ann, "/t/a", b"a", 819);
+    put(&ann, "/t/b", b"b", 819);
+    let owner = |p: &str| sec.with(|c| c.stat(p, true)).unwrap().owner;
+
+    // CHGOWN: everything ANN owns goes to BOB, the rest is reported.
+    let r = ann.with(|c| auth::chgown(c, "/t", "BOB", false, Subtree::All, false));
+    refused(&r, "CPFA0AB");
+    assert_eq!(first_path(r.escape.as_ref().unwrap()), "/t/s");
+    assert_eq!(
+        diagnostics(&r),
+        [("CPFA09C".to_string(), "/t/s".to_string()), ("CPFA09C".into(), "/t/s/c".into())]
+    );
+    for p in ["/t", "/t/a", "/t/b"] {
+        assert_eq!(owner(p), "BOB", "{p}");
+    }
+    for p in ["/t/s", "/t/s/c"] {
+        assert_eq!(owner(p), "QSECOFR", "{p}");
+    }
+    // SUBTREE(*NONE) is the object alone.
+    let r = sec.with(|c| auth::chgown(c, "/t", "ANN", false, Subtree::None, false));
+    assert!(r.text.contains("1 object."), "{r:?}");
+    assert_eq!(owner("/t/a"), "BOB");
+
+    // CHGPGP: ANN (in DEV) owns /t again and its files; the same pattern.
+    for p in ["/t/a", "/t/b"] {
+        assert!(!sec.with(|c| auth::chgown(c, p, "ANN", true, Subtree::None, false)).failed());
+    }
+    let g = auth::Chgpgp {
+        obj: "/t".into(),
+        newpgp: "DEV".into(),
+        dtaaut: "*OLDPGP".into(),
+        rvkoldaut: true,
+        subtree: Subtree::All,
+        ..auth::Chgpgp::default()
+    };
+    let r = ann.with(|c| auth::chgpgp(c, &g));
+    refused(&r, "CPFA0AB");
+    let failed: Vec<String> = diagnostics(&r).into_iter().map(|(_, p)| p).collect();
+    assert_eq!(failed, ["/t/s", "/t/s/c"]);
+    let group = |p: &str| sec.with(|c| c.dspaut(p)).unwrap().group;
+    for p in ["/t", "/t/a", "/t/b"] {
+        assert_eq!(group(p).as_deref(), Some("DEV"), "{p}");
+    }
+    assert_eq!(group("/t/s"), None);
+    // All of it as QSECOFR: done, counted.
+    let r = sec.with(|c| auth::chgpgp(c, &g));
+    assert!(!r.failed() && r.text.contains("5 objects"), "{r:?}");
+    assert_eq!(group("/t/s/c").as_deref(), Some("DEV"));
+}
+
 #[test]
 fn attributes_checkout_and_journaling() {
     let s = Sys::new();
