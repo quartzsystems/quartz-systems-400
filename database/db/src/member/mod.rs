@@ -30,6 +30,7 @@ use crate::error::{DbError, Result};
 use crate::file::{self, FileDesc, Maint, MemberEntry};
 use crate::format::FormatDef;
 use crate::lf;
+use crate::path::load::Built;
 use crate::path::{self, MULTI_FORMAT, Path, PathKey};
 
 /// Bytes a space grows by when `SIZE` gives no increment.
@@ -1138,13 +1139,10 @@ impl Member {
             self.core.attr.path_invalid = false;
             return self.core.save(txn);
         };
-        if !self.core.attr.path_invalid {
-            self.core.attr.path_invalid = true;
-            self.core.save(txn)?;
-        }
-        let mut entries = Vec::new();
-        // The keys a unique path may hold once.
-        let mut once: Vec<Vec<u8>> = Vec::new();
+        self.core.attr.path_invalid = true;
+        p.free(txn)?;
+        self.core.store_path(txn, &p, 0)?;
+        let mut gather = p.gather();
         if self.is_logical() {
             let total: u64 = {
                 let mut t = 0;
@@ -1178,15 +1176,12 @@ impl Member {
                     {
                         continue;
                     }
-                    let key = path::record_key(lf_fmt, &rec, &nulls)?;
-                    if counts_once(lf_fmt, &nulls) {
-                        once.push(key.clone());
-                    }
-                    entries.push(PathKey {
-                        key,
+                    let key = PathKey {
+                        key: path::record_key(lf_fmt, &rec, &nulls)?,
                         format: u16::try_from(fi).expect("few"),
                         rrn,
-                    });
+                    };
+                    gather.push(&key, counts_once(lf_fmt, &nulls));
                 }
             }
         } else {
@@ -1203,33 +1198,29 @@ impl Member {
                 if slot.deleted {
                     continue;
                 }
-                let key = path::record_key(&fmt, &slot.record, &slot.null_map)?;
-                if counts_once(&fmt, &slot.null_map) {
-                    once.push(key.clone());
-                }
-                entries.push(PathKey { key, format: 0, rrn });
+                let key = PathKey {
+                    key: path::record_key(&fmt, &slot.record, &slot.null_map)?,
+                    format: 0,
+                    rrn,
+                };
+                gather.push(&key, counts_once(&fmt, &slot.null_map));
             }
         }
-        self.check_once(once)?;
-        let n = u64::try_from(entries.len()).expect("fits");
-        p.load(txn, entries)?;
-        self.core.attr.path_invalid = false;
-        self.core.store_path(txn, &p, n)
-    }
-}
-
-impl Member {
-    /// A unique path refuses keys two records share: the path is not
-    /// built and stays as it was (marked invalid).
-    fn check_once(&self, mut once: Vec<Vec<u8>>) -> Result<()> {
-        once.sort_unstable();
-        match once.windows(2).find(|w| w[0] == w[1]) {
-            Some(w) => Err(DbError::DuplicateKeys {
+        // Loaded in steps, the root published before each pause: a
+        // build cut short leaves a tree the next rebuild frees.
+        let core = &mut self.core;
+        let built = gather.load(txn, &mut |t, root| core.set_root(t, attr::PATH_ROOT, root), pause)?;
+        match built {
+            Built::Tree { root, entries } => {
+                p.root = root;
+                self.core.attr.path_invalid = false;
+                self.core.store_path(txn, &p, entries)
+            }
+            Built::Repeated(key) => Err(DbError::DuplicateKeys {
                 file: self.file.name().to_string(),
                 member: self.core.name.to_string(),
-                key: hex(&w[0]),
+                key: hex(&key),
             }),
-            None => Ok(()),
         }
     }
 }

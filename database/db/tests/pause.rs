@@ -58,7 +58,7 @@ fn pausing(count: &mut u32, stop: u32) -> impl FnMut(&mut store::Txn<'_>) -> db:
 
 fn by_name(t: &mut store::Txn<'_>, lfid: ObjectId) -> Vec<u64> {
     let lm = Member::open_by(t, lfid, MemberSpec::First).unwrap();
-    lm.keys(t, Bound::Unbounded, Bound::Unbounded, 10_000).unwrap().iter().map(|k| k.rrn).collect()
+    lm.keys(t, Bound::Unbounded, Bound::Unbounded, 100_000).unwrap().iter().map(|k| k.rrn).collect()
 }
 
 #[test]
@@ -87,6 +87,55 @@ fn a_path_built_with_pauses_and_one_ended_part_way() {
     let lf2 = file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
     let mut pauses = 0;
     let e = file::add_lf_member_paused(&mut t, lf2, name("BYNAME2"), "", None, NOW, &mut pausing(&mut pauses, 1)).unwrap_err();
+    assert!(matches!(e, DbError::Ended), "{e:?}");
+    drop(t);
+    drop(store);
+    let mut store = reopen(&d);
+    let mut t = store.begin().unwrap();
+    let mut lm = Member::open_by(&mut t, lf2, MemberSpec::First).unwrap();
+    assert!(lm.attr().path_invalid);
+    assert!(lm.ensure_path(&mut t, &mut |_, _| {}).unwrap());
+    t.commit().unwrap();
+    let mut t = store.begin().unwrap();
+    assert_eq!(by_name(&mut t, lf2), want);
+}
+
+/// A path over many records: its load pauses too, and one ended in the
+/// load is rebuilt whole.
+#[test]
+fn a_large_path_is_loaded_in_steps() {
+    let (d, mut store, lib) = open_new();
+    let mut t = store.begin().unwrap();
+    let cust = file::create_pf(&mut t, lib, name("CUST"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
+        .unwrap();
+    let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    let big: i64 = 12_000;
+    for n in 1..=big {
+        m.write_new(&mut t, &record(n, &format!("N{:06}", big - n)), &[0]).unwrap();
+    }
+    t.commit().unwrap();
+    let mut refs = MapRefs::default();
+    refs.insert_pf("QSTEST", "CUST", &customer_def());
+    let def = lf(&[rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")], &refs);
+    let want: Vec<u64> = (1..=big).rev().map(|n| u64::try_from(n).unwrap()).collect();
+    let opts = CreateFileOpts { now: NOW, member: MemberOpt::None, ..CreateFileOpts::default() };
+    let read_pauses = u32::try_from(big).unwrap() / 256;
+    // Whole, with pauses in the reading and in the load.
+    let mut t = store.begin().unwrap();
+    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let mut pauses = 0;
+    file::add_lf_member_paused(&mut t, lfid, name("BYNAME"), "", None, NOW, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    t.commit().unwrap();
+    assert!(pauses >= read_pauses + 2, "{pauses} pauses: the load takes some");
+    let mut t = store.begin().unwrap();
+    assert_eq!(by_name(&mut t, lfid), want);
+    drop(t);
+    // Ended at a pause in the load, the tree part loaded and committed:
+    // rebuilt whole when next opened.
+    let mut t = store.begin().unwrap();
+    let lf2 = file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let mut n = 0;
+    let e = file::add_lf_member_paused(&mut t, lf2, name("BYNAME2"), "", None, NOW, &mut pausing(&mut n, read_pauses + 1)).unwrap_err();
     assert!(matches!(e, DbError::Ended), "{e:?}");
     drop(t);
     drop(store);

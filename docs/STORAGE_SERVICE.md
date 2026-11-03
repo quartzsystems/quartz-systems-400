@@ -194,9 +194,16 @@ every other request, and with the other statements in progress.
     creation (nobody opens, uses or drops it; a query's plan passes it
     by). Its member's path is marked invalid before the first pause,
     so a build cut short by a crash leaves an index rebuilt when next
-    opened; the records are read with pauses, and the path loaded in
-    one step at the end. A build that fails or is ended deletes the
-    index, the parts it committed included.
+    opened. Every step takes turns: the records are read with pauses,
+    their keys sorted in runs of 16,384 as they come
+    (`db::path::load`), and the runs merged into the tree by a loader
+    in steps (`store::btree::Loader`) with a pause every 32 leaves;
+    before each such pause the tree so far is made whole (the open
+    leaf and the right edge written) and its root stored in the member,
+    so what a crash leaves is a tree the rebuild frees, never pages
+    nobody can find. A `UNIQUE` index refuses repeated keys as they
+    meet in the merge (`SQL0603`). A build that fails or is ended
+    deletes the index, the parts it committed included.
   - `ALTER TABLE` that changes the record format: the table is held
     `*EXCL`; its records are read and converted with pauses, then
     written in the new format in one step. That step cannot be split:

@@ -6,6 +6,7 @@
 //! `PathKey`s. See `docs/DB_FORMAT.md` §6.
 
 pub mod encode;
+pub mod load;
 
 use std::ops::Bound;
 

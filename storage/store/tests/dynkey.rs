@@ -99,6 +99,69 @@ fn short_keys() {
     exercise(12, 3000, 8);
 }
 
+/// A load in steps: after each snapshot (committed, as a long load does
+/// between parts) the root holds every entry so far; a load cut short
+/// after one frees whole from its root; the finished tree is the one
+/// `bulk_load` makes, and nothing is left over.
+#[test]
+fn a_load_in_steps() {
+    for (key_len, count) in [(12, 20_000), (248, 3000), (2010, 300)] {
+        let mut p = MemPager::new(64 * 1024);
+        let keys: Vec<DynKey> = (0..count)
+            .map(|i: u64| {
+                let mut k = vec![0u8; key_len];
+                k[key_len - 8..].copy_from_slice(&i.to_be_bytes());
+                DynKey(k)
+            })
+            .collect();
+        let mut l: btree::Loader<DynKey, ()> = btree::Loader::new(ObjectId::NONE, key_len);
+        let base = p.in_use();
+        let mut cut = None;
+        for (i, k) in keys.iter().enumerate() {
+            l.push(&mut p, k.clone(), &()).unwrap();
+            if l.leaves() >= 7 {
+                let root = l.snapshot(&mut p).unwrap();
+                p.commit().unwrap();
+                let tree: BTree<DynKey, ()> = BTree::with_key_len(root, ObjectId::NONE, key_len);
+                let got: Vec<DynKey> = tree.entries(&mut p).unwrap().map(|r| r.unwrap().0).collect();
+                assert_eq!(got, keys[..=i], "{key_len}: after {i}");
+                if cut.is_none() {
+                    cut = Some((root, i + 1));
+                }
+            }
+        }
+        let tree = l.finish(&mut p).unwrap();
+        p.commit().unwrap();
+        let got: Vec<DynKey> = tree.entries(&mut p).unwrap().map(|r| r.unwrap().0).collect();
+        assert_eq!(got, keys);
+        assert_eq!(
+            tree.pages(&mut p).unwrap().len() as u64 + base,
+            p.in_use(),
+            "{key_len}: only the tree's pages are in use"
+        );
+        let mut q = MemPager::new(64 * 1024);
+        let bulk = BTree::<DynKey, ()>::bulk_load_with_key_len(&mut q, ObjectId::NONE, key_len, keys.iter().map(|k| (k.clone(), ()))).unwrap();
+        assert!(tree.pages(&mut p).unwrap().len() <= bulk.pages(&mut q).unwrap().len() + usize::try_from(count).unwrap() / 50 + 2);
+        // A load cut short after its first snapshot: freed from that root,
+        // nothing of it stays.
+        let mut p = MemPager::new(64 * 1024);
+        let mut l: btree::Loader<DynKey, ()> = btree::Loader::new(ObjectId::NONE, key_len);
+        let mut root = None;
+        for k in &keys {
+            l.push(&mut p, k.clone(), &()).unwrap();
+            if l.leaves() >= 7 {
+                root = l.snapshot(&mut p).unwrap();
+                p.commit().unwrap();
+                break;
+            }
+        }
+        p.crash();
+        btree::free_tree(&mut p, root.unwrap()).unwrap();
+        p.commit().unwrap();
+        assert_eq!(p.in_use(), 0, "{key_len}: {cut:?}");
+    }
+}
+
 #[test]
 fn medium_keys_with_rrn_tail() {
     exercise(248, 1500, 0);

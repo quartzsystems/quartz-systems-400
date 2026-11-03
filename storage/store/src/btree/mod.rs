@@ -10,6 +10,7 @@
 
 pub mod codec;
 mod iter;
+mod load;
 pub mod node;
 
 use std::marker::PhantomData;
@@ -22,6 +23,7 @@ use crate::{Result, StoreError};
 
 pub use codec::{DynKey, FixedKey, Value};
 pub use iter::Iter;
+pub use load::Loader;
 use node::{MAX_KEY_LEN, MAX_VALUE_LEN, Node, NodeView};
 
 /// A tree: its root page and owner. Cheap to copy; the pages are on the
@@ -251,57 +253,11 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     where
         I: IntoIterator<Item = (K, V)>,
     {
-        let mut tree = Self::with_key_len(None, owner, key_len);
-        // Leaves.
-        let mut level: Vec<(K, PageNo)> = Vec::new();
-        let mut leaf: Vec<(K, Vec<u8>)> = Vec::new();
-        let mut used = node::HEADER_LEN;
-        let mut prev: Option<K> = None;
+        let mut l = Loader::new(owner, key_len);
         for (k, v) in items {
-            if prev.as_ref().is_some_and(|q| q >= &k) {
-                return Err(StoreError::Unsorted);
-            }
-            prev = Some(k.clone());
-            let bytes = v.to_bytes();
-            if bytes.len() > MAX_VALUE_LEN {
-                return Err(StoreError::ValueTooLong { len: bytes.len() });
-            }
-            let cost = key_len + node::SLOT_EXTRA + bytes.len();
-            if !leaf.is_empty() && used + cost > node::BULK_FILL {
-                let node = Node::Leaf(std::mem::take(&mut leaf));
-                level.push((
-                    node.first_key().expect("non-empty").clone(),
-                    tree.store(p, &node)?,
-                ));
-                used = node::HEADER_LEN;
-            }
-            used += cost;
-            leaf.push((k, bytes));
+            l.push(p, k, &v)?;
         }
-        if leaf.is_empty() {
-            return Ok(tree);
-        }
-        let node = Node::Leaf(leaf);
-        level.push((
-            node.first_key().expect("non-empty").clone(),
-            tree.store(p, &node)?,
-        ));
-        // Internal levels until one node remains.
-        let per_node =
-            ((node::BULK_FILL - node::HEADER_LEN - 8) / (key_len + node::ENTRY_EXTRA)).max(1) + 1;
-        while level.len() > 1 {
-            let mut next = Vec::new();
-            for group in level.chunks(per_node) {
-                let node = Node::Internal {
-                    first: group[0].1,
-                    entries: group[1..].to_vec(),
-                };
-                next.push((group[0].0.clone(), tree.store(p, &node)?));
-            }
-            level = next;
-        }
-        tree.root = Some(level[0].1);
-        Ok(tree)
+        l.finish(p)
     }
 
     /// Free every page of the tree.

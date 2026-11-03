@@ -485,6 +485,17 @@ bit 0 of its `MbrAttr`) and is rebuilt by bulk load at the next open
 (`*DLY`) or when a keyed open asks for it (`*REBLD`); a rebuild reports
 progress per based-on record.
 
+**Builds in steps.** A build first frees the old tree and stores the
+member with no root and the invalid bit set. The keys are sorted in
+runs as the records are read, then merged into a bulk load (leaves
+about 90% full, as before). A build that may pause publishes the tree
+so far before each pause: the open leaf is written and the nodes of
+the right edge are written to pages of their own (freed at the next
+publish), and the root goes in the member's header slot 0 with the
+invalid bit still set. A build cut short leaves that tree; the next
+rebuild frees it from that root like any old tree. Only the finished
+build clears the bit.
+
 **Unique keys at a build.** A path built from the records (a new
 logical member, `CRTLF`, `ADDLFM`, `CREATE INDEX`, a `UNIQUE`
 constraint's index, a rebuild at open) checks `UNIQUE` by the same rule
