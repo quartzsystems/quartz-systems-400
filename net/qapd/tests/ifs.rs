@@ -18,7 +18,7 @@ use std::sync::Arc;
 use ifs::ops::audit::AuditKind;
 use ifscmd::Msg;
 use ifscmd::cmds::dirs::{Md, md};
-use ifscmd::cmds::links::del;
+use ifscmd::cmds::links::{Mov, del, mov};
 use qap_proto::ops::connection::HelloReply;
 use qap_proto::ops::ifs::{
     CreateDirectory, Entries, Entry, EntryKind, FileData, FromTo, ListDirectory, PathRef, ReadFile, WriteFile,
@@ -26,8 +26,9 @@ use qap_proto::ops::ifs::{
 };
 use qap_proto::{Envelope, Op, Service, Status};
 use qapd::testing::files::{
-    BIG_SIZE, BINARY_FILE, BROKEN, BROKEN_TARGET, JAPANESE, LINK, LOCKED, MANY, MANY_COUNT, MIXED, PRIVATE,
-    PRIVATE_FILE, TEXT, TEXT_CCSIDS, TEXT_DIR, big_byte, text_file,
+    BIG_SIZE, BINARY_FILE, BROKEN, BROKEN_TARGET, CHECKED_OUT, CHECKED_OUT_TO, JAPANESE, LINK, LOCKED, MANY,
+    MANY_COUNT, MIXED, PRIVATE, PRIVATE_FILE, TEXT, TEXT_CCSIDS, TEXT_DIR, TREE, TREE_DIRS, TREE_FILES, TREE_HELD,
+    big_byte, text_file,
 };
 
 use common::{Controls, Run, cfg, start_with};
@@ -606,4 +607,98 @@ fn not_before_sign_on() {
     };
     r.client.send(&e);
     assert_eq!(r.client.reply(90).status, Status::InvalidRequest);
+}
+
+#[test]
+fn a_file_checked_out_to_another_user_is_in_use() {
+    let (c, mut r) = bob();
+    let del_ = |r: &mut Run, path: &str| r.client.call(Op::Delete, &PathRef { path: path.into() });
+    // Delete answers as RMVLNK does.
+    let e = del_(&mut r, CHECKED_OUT);
+    assert_eq!(said(&e), (Status::InUse, "CPFA09E".into()));
+    let cmd = c.files.as_user("BOB", 50, |cl| del(cl, CHECKED_OUT));
+    same_message(&e, &cmd.escape.unwrap());
+    // Rename as MOV, a write as an open for writing.
+    let e = from_to(&mut r, Op::Rename, CHECKED_OUT, "/home/BOB/moved.txt", false);
+    assert_eq!(said(&e), (Status::InUse, "CPFA09E".into()));
+    let cmd = c.files.as_user("BOB", 50, |cl| {
+        mov(
+            cl,
+            &Mov {
+                obj: CHECKED_OUT.into(),
+                todir: String::new(),
+                toobj: Some("/home/BOB/moved.txt".into()),
+                to_ccsid: None,
+            },
+        )
+    });
+    same_message(&e, &cmd.escape.unwrap());
+    for mode in [WriteMode::Update, WriteMode::Append, WriteMode::Replace] {
+        let e = write(&mut r, CHECKED_OUT, mode, 0, b"x", None);
+        assert_eq!(said(&e), (Status::InUse, "CPFA09E".into()), "{mode:?}");
+    }
+    // Reading it is not refused, and nothing changed.
+    assert_eq!(data(&read(&mut r, CHECKED_OUT, 0, 0, None)).data, b"checked out to ANN\n");
+    let e: Entry = info(&mut r, CHECKED_OUT).body_as().unwrap();
+    assert_eq!(e.owner, "BOB");
+    assert_eq!(said(&info(&mut r, "/home/BOB/moved.txt")).0, Status::NotFound);
+    // The user it is checked out to may change it.
+    c.files.as_user(CHECKED_OUT_TO, 51, |cl| {
+        let fd = cl.open(CHECKED_OUT, ifs::ops::OpenArgs::new(ifs::ops::flags::O_WRONLY)).unwrap();
+        cl.close(fd).unwrap();
+    });
+}
+
+/// A client's depth-first delete of `path`: each folder's entries in
+/// listing order, subfolders first deleted whole, then the folder; the
+/// first refusal stops it with its path, status and message ID. `done`
+/// gets what went.
+fn delete_tree(r: &mut Run, path: &str, done: &mut Vec<String>) -> Result<(), (String, (Status, String))> {
+    let entries: Entries = list(r, path, "*", 0, 0).body_as().unwrap();
+    for e in entries.entries {
+        let p = format!("{path}/{}", e.name);
+        if e.kind == EntryKind::Directory {
+            delete_tree(r, &p, done)?;
+            continue;
+        }
+        let d = r.client.call(Op::Delete, &PathRef { path: p.clone() });
+        if d.status != Status::Ok {
+            return Err((p, said(&d)));
+        }
+        done.push(p);
+    }
+    let d = r.client.call(Op::Delete, &PathRef { path: path.into() });
+    if d.status != Status::Ok {
+        return Err((path.into(), said(&d)));
+    }
+    done.push(path.into());
+    Ok(())
+}
+
+#[test]
+fn a_recursive_delete_stops_at_a_checked_out_file() {
+    let (_c, mut r) = bob();
+    let mut done = Vec::new();
+    let (at, e) = delete_tree(&mut r, TREE, &mut done).unwrap_err();
+    assert_eq!(at, TREE_HELD);
+    assert_eq!(e, (Status::InUse, "CPFA09E".into()));
+    // What came before it is gone; it and the tree are still there.
+    assert!(!done.is_empty());
+    for p in &done {
+        assert_eq!(said(&info(&mut r, p)).0, Status::NotFound, "{p}");
+    }
+    assert_eq!(info(&mut r, TREE_HELD).status, Status::Ok);
+    let e = r.client.call(Op::Delete, &PathRef { path: TREE.into() });
+    assert_eq!(said(&e), (Status::Error, "CPFA0AC".into()));
+    // Every other file deletes; the held file's folder stays.
+    for f in TREE_FILES {
+        if !done.iter().any(|d| d == f) {
+            assert_eq!(r.client.call(Op::Delete, &PathRef { path: f.into() }).status, Status::Ok, "{f}");
+        }
+    }
+    let lib = TREE_DIRS[3];
+    let left: Entries = list(&mut r, lib, "*", 0, 0).body_as().unwrap();
+    let names: Vec<&str> = left.entries.iter().map(|e| e.name.as_str()).collect();
+    assert_eq!(names, ["m.txt"]);
+    assert_eq!(said(&r.client.call(Op::Delete, &PathRef { path: lib.into() })).0, Status::Error);
 }

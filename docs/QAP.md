@@ -768,4 +768,11 @@ Version 5, as built on 2026-11-02 (decisions made in the build, for Cody to revi
 - The test system's file system (`qapd::testing::files`) is the `ifs`
   crate over a `MemBackend` with `MemQsys`, its fixtures in the
   module's documentation; each connection job is one owner of
-  descriptors and locks.
+  descriptors and locks. `Delete` of a file another job holds open
+  succeeds, as `RMVLNK` does; `InUse` (`CPFA09E`) comes from a file
+  checked out to another user. `CHECKED_OUT` is such a file in `BOB`'s
+  home (checked out to `ANN`), refusing `Delete`, `Rename` and
+  `WriteFile` but not reads; `TREE` is a folder with two levels of
+  subfolders whose file `TREE_HELD`, deep inside, is checked out to
+  `ANN`, so a client's depth-first recursive delete removes what comes
+  before it and stops there with the system's message.
