@@ -19,6 +19,7 @@
 //! - `polled`: a TCP stream without a read timeout, for loopback.
 //! - [`host`]: what the connection reaches of the system.
 //! - [`spool`]: `ReadSpooledFile` over a file's data.
+//! - [`files`]: the `Ifs` service over an `IfsClient`.
 //! - [`sql`]: the `Sql` service's answers and cancel rules.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
@@ -26,6 +27,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod files;
 pub mod frames;
 pub mod host;
 pub mod sessions;

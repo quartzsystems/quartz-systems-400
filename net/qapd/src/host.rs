@@ -11,6 +11,7 @@
 
 use std::sync::Arc;
 
+use ifs::client::IfsClient;
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
@@ -229,7 +230,27 @@ pub trait ThreadHost {
     fn list_columns(&mut self, _req: &ListColumns) -> Result<Columns, Refusal> {
         Err(no_database(self.message(NO_DATABASE, &["ListColumns"])))
     }
+
+    /// Run `f` with the integrated file system as the job's profile sees
+    /// it: the client the job's file-system commands use, so the `Ifs`
+    /// service ([`crate::files`]) has their authority checks and audit
+    /// entries. A host without one answers `Error` with [`NO_IFS`].
+    fn with_ifs(&mut self, _f: &mut dyn FnMut(&dyn IfsClient)) -> Result<(), Refusal> {
+        Err(no_database(self.message(NO_IFS, &[])))
+    }
+    /// Message `id` with substitution data `data` laid out as its
+    /// variables are (a command's message), its text in the job's
+    /// language as [`ThreadHost::message`]'s.
+    fn message_data(&mut self, id: &str, data: &[u8]) -> ServerMessage {
+        let mut m = self.message(id, &[]);
+        m.data = data.to_vec();
+        m
+    }
 }
+
+/// The message of an `Ifs` operation a host without a file system
+/// answers: the function is not supported.
+pub const NO_IFS: &str = "CPFA0AD";
 
 /// The message of an `Sql` operation a host without a database answers.
 pub const NO_DATABASE: &str = "SQL0084";

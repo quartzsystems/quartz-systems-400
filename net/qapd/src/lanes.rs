@@ -6,7 +6,7 @@
 //! once, then only the agreed version's operations; `Ping` answered at
 //! once; the lane (`Command` requests and `Sql` 1 to 8) to the job's own
 //! thread, one at a time;
-//! every other operation to a secondary thread of the job, as many at
+//! every other operation (`Ifs` included) to a secondary thread of the job, as many at
 //! once as are outstanding, each thread made when none is free.
 //! `Attach` only as the first request after `Hello`.
 
@@ -233,6 +233,7 @@ fn operation(shared: &Shared, host: &mut dyn ThreadHost, op: Op, req: &Envelope)
         Op::MoveSpooledFile => body(req, |b: MoveSpooledFile| done(host.move_spooled_file(&b.id, &b.outq, b.first))),
         Op::ListOutputQueues => body(req, |b: ListOutputQueues| ok(host.list_output_queues(&b))),
         Op::ListSchemas | Op::ListTables | Op::ListColumns => crate::sql::catalog(host, op, req),
+        op if op.code().0 == Service::Ifs => crate::files::serve(host, &shared.files, op, req),
         _ => Answer::status(Status::InvalidRequest),
     };
     shared.finish(req, a);

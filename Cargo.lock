@@ -2295,9 +2295,12 @@ name = "qapd"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "ifs",
+ "ifscmd",
  "ipc",
  "qap-proto",
  "qdecimal",
+ "sec",
  "spool",
  "tracing",
 ]

@@ -12,10 +12,17 @@
 //! through the storage service (`stgsvc/qap.rs`). Passwords and tokens
 //! go to the service and nowhere else. `Sql` runs in the lane over the
 //! job's own link and its catalog lists on a thread's (`sql.rs`,
-//! `crate::qapsql`).
+//! `crate::qapsql`). `Ifs` runs on a thread's link through the IFS
+//! requests every job uses (`stg::remote::RemoteIfs`), so its authority
+//! checks and audit entries are the file-system commands' (`qapd::files`).
 
+use std::cell::{RefCell, RefMut};
 use std::path::Path;
+use std::rc::Rc;
 use std::sync::Arc;
+
+use ifs::client::IfsClient;
+use stg::remote::RemoteIfs;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -84,6 +91,29 @@ pub(super) fn message(link: &mut Link, id: &str, data: &[&str]) -> ServerMessage
             severity: 40,
             data: Vec::new(),
             text: format!("{id} {}", data.join(" ")).trim().to_string(),
+            help: String::new(),
+        },
+    }
+}
+
+/// Message `id` with substitution data already laid out (a command's),
+/// looked up as [`message`] looks it up.
+fn message_bytes(link: &mut Link, id: &str, data: &[u8]) -> ServerMessage {
+    let file = sysapi::param::file_of(id);
+    let desc = link.with(|l| l.describe(id.to_string(), file.into(), "*LIBL".into()));
+    match desc {
+        Some(d) => ServerMessage {
+            id: id.to_string(),
+            severity: u8::try_from(d.severity).unwrap_or(99),
+            text: d.format(data),
+            help: d.format_help(data),
+            data: data.to_vec(),
+        },
+        None => ServerMessage {
+            id: id.to_string(),
+            severity: 40,
+            data: data.to_vec(),
+            text: id.to_string(),
             help: String::new(),
         },
     }
@@ -263,7 +293,9 @@ impl Host for JobHost {
 
 /// A secondary thread of the connection job.
 pub struct JobThread {
-    link: Link,
+    shared: Shared,
+    /// The IFS over the thread's link, as the job's profile.
+    ifs: RemoteIfs,
 }
 
 impl JobThread {
@@ -279,7 +311,16 @@ impl JobThread {
         if let Err(e) = link.with(|l| l.hello_thread(number, pid)) {
             ending(&format!("a thread's hello to the storage service: {e}"));
         }
-        Self { link }
+        let shared = Rc::new(RefCell::new(link));
+        Self {
+            ifs: RemoteIfs::new(Rc::clone(&shared)),
+            shared,
+        }
+    }
+
+    /// The thread's link, for one call.
+    fn link(&self) -> RefMut<'_, Link> {
+        self.shared.borrow_mut()
     }
 
     /// A refusal from the service: its status, and the message as a 5250
@@ -318,11 +359,14 @@ fn reply_of(s: &QapSession) -> SignOnReply {
 
 impl ThreadHost for JobThread {
     fn system_id(&mut self) -> SystemId {
+        let system_name = sysval_text(&mut self.link(), "QSYSNAME");
+        let time_zone = sysval_text(&mut self.link(), "QTIMZON");
+        let ccsid = sysval_text(&mut self.link(), "QCCSID").parse().unwrap_or(65535);
         SystemId {
-            system_name: sysval_text(&mut self.link, "QSYSNAME"),
+            system_name,
             release: release::RELEASE.to_string(),
-            time_zone: sysval_text(&mut self.link, "QTIMZON"),
-            ccsid: sysval_text(&mut self.link, "QCCSID").parse().unwrap_or(65535),
+            time_zone,
+            ccsid,
         }
     }
 
@@ -333,21 +377,32 @@ impl ThreadHost for JobThread {
     }
 
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {
-        message(&mut self.link, id, data)
+        message(&mut self.link(), id, data)
+    }
+
+    fn message_data(&mut self, id: &str, data: &[u8]) -> ServerMessage {
+        message_bytes(&mut self.link(), id, data)
+    }
+
+    /// The IFS as the job's file-system commands reach it: the service's
+    /// one `Ifs`, as the job's profile, its audit entries in `QAUDJRN`.
+    fn with_ifs(&mut self, f: &mut dyn FnMut(&dyn IfsClient)) -> Result<(), Refusal> {
+        f(&self.ifs);
+        Ok(())
     }
 
     /// `DSPSFWRSC`'s rows give the products, the system job `SCPF`'s
     /// start the IPL, the firmware the serial (`QSRLNBR`) and model.
     fn system_info(&mut self) -> SystemInfo {
-        let rows = self.link.with(Client::sfwrsc_panel);
+        let rows = self.link().with(Client::sfwrsc_panel);
         let col = |r: &[String], i: usize| r.get(i).map_or_else(String::new, |v| v.trim().to_string());
         let release = rows
             .iter()
             .find(|r| r.first().is_some_and(|id| id == release::PRODUCT_ID))
             .map_or_else(|| release::RELEASE.to_string(), |r| col(r, 6));
-        let jobs = self.link.with(Client::active_jobs);
+        let jobs = self.link().with(Client::active_jobs);
         let ipl = jobs.iter().find(|j| j.kind == 'X').map_or(0, |j| j.started);
-        let machine = self.link.with(Client::machine);
+        let machine = self.link().with(Client::machine);
         // DSPSFWRSC has a row per feature (code and language): one
         // product option each here.
         let mut products: Vec<Product> = Vec::new();
@@ -361,14 +416,16 @@ impl ThreadHost for JobThread {
                 products.push(p);
             }
         }
+        let system_name = sysval_text(&mut self.link(), "QSYSNAME");
+        let serial = if machine.serial.is_empty() {
+            sysval_text(&mut self.link(), "QSRLNBR")
+        } else {
+            machine.serial
+        };
         SystemInfo {
-            system_name: sysval_text(&mut self.link, "QSYSNAME"),
+            system_name,
             release,
-            serial: if machine.serial.is_empty() {
-                sysval_text(&mut self.link, "QSRLNBR")
-            } else {
-                machine.serial
-            },
+            serial,
             // The hardware's model as the firmware names it, empty when
             // it names none; QMODEL is for programs, not clients.
             model: machine.hw_model,
@@ -379,39 +436,39 @@ impl ThreadHost for JobThread {
 
     fn sign_on(&mut self, user: &str, password: &Secret) -> Result<SignOnReply, Refusal> {
         let r = self
-            .link
+            .link()
             .with(|l| l.qap_signon(user.to_string(), password.expose().to_string()));
         self.session(r)
     }
 
     fn change_password(&mut self, user: &str, old: &Secret, new: &Secret) -> Result<SignOnReply, Refusal> {
-        let r = self.link.with(|l| {
+        let r = self.link().with(|l| {
             l.qap_chgpwd(user.to_string(), old.expose().to_string(), new.expose().to_string())
         });
         self.session(r)
     }
 
     fn resume(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
-        let r = self.link.with(|l| l.qap_resume(token.0.to_vec()));
+        let r = self.link().with(|l| l.qap_resume(token.0.to_vec()));
         self.session(r)
     }
 
     fn attach(&mut self, token: &Token) -> Result<SignOnReply, Refusal> {
-        let r = self.link.with(|l| l.qap_attach(token.0.to_vec()));
+        let r = self.link().with(|l| l.qap_attach(token.0.to_vec()));
         self.session(r)
     }
 
     fn sign_off(&mut self, token: &Token) {
-        self.link.with(|l| l.qap_signoff(token.0.to_vec(), false));
+        self.link().with(|l| l.qap_signoff(token.0.to_vec(), false));
     }
 
     fn password_status(&mut self) -> PasswordStatus {
-        let (expires, warning_days) = self.link.with(Client::qap_pwd_status);
+        let (expires, warning_days) = self.link().with(Client::qap_pwd_status);
         PasswordStatus { expires, warning_days }
     }
 
     fn telnet_ticket(&mut self) -> Result<TelnetTicketReply, Refusal> {
-        let r = self.link.with(Client::qap_ticket);
+        let r = self.link().with(Client::qap_ticket);
         match r {
             Ok((ticket, expires_secs)) => Ok(TelnetTicketReply {
                 ticket: Token(ticket.as_slice().try_into().unwrap_or([0; 32])),
@@ -422,49 +479,49 @@ impl ThreadHost for JobThread {
     }
 
     fn list_spooled_files(&mut self, req: &ListSpooledFiles) -> Result<SpooledFiles, Refusal> {
-        let r = self.link.with(|l| l.qap_splf_list(req.clone()));
+        let r = self.link().with(|l| l.qap_splf_list(req.clone()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn read_spooled_file(&mut self, req: &ReadSpooledFile) -> Result<SpooledData, Refusal> {
-        let r = self.link.with(|l| l.qap_splf_read(req.clone()));
+        let r = self.link().with(|l| l.qap_splf_read(req.clone()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn hold_spooled_file(&mut self, id: &SpooledFileId, immediately: bool) -> Result<(), Refusal> {
-        let r = self.link.with(|l| l.qap_splf_hold(id.clone(), immediately));
+        let r = self.link().with(|l| l.qap_splf_hold(id.clone(), immediately));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn release_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal> {
-        let r = self.link.with(|l| l.qap_splf_release(id.clone()));
+        let r = self.link().with(|l| l.qap_splf_release(id.clone()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn delete_spooled_file(&mut self, id: &SpooledFileId) -> Result<(), Refusal> {
-        let r = self.link.with(|l| l.qap_splf_delete(id.clone()));
+        let r = self.link().with(|l| l.qap_splf_delete(id.clone()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn move_spooled_file(&mut self, id: &SpooledFileId, outq: &ObjectName, first: bool) -> Result<(), Refusal> {
-        let r = self.link.with(|l| l.qap_splf_move(id.clone(), outq.clone(), first));
+        let r = self.link().with(|l| l.qap_splf_move(id.clone(), outq.clone(), first));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn list_output_queues(&mut self, req: &ListOutputQueues) -> Result<OutputQueues, Refusal> {
-        let r = self.link.with(|l| l.qap_outq_list(req.clone()));
+        let r = self.link().with(|l| l.qap_outq_list(req.clone()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn list_schemas(&mut self, req: &ListSchemas) -> Result<Schemas, Refusal> {
-        catalog::list_schemas(&mut ThreadDb(&mut self.link), req)
+        catalog::list_schemas(&mut ThreadDb(&mut self.link()), req)
     }
 
     fn list_tables(&mut self, req: &ListTables) -> Result<Tables, Refusal> {
-        catalog::list_tables(&mut ThreadDb(&mut self.link), req)
+        catalog::list_tables(&mut ThreadDb(&mut self.link()), req)
     }
 
     fn list_columns(&mut self, req: &ListColumns) -> Result<Columns, Refusal> {
-        catalog::list_columns(&mut ThreadDb(&mut self.link), req)
+        catalog::list_columns(&mut ThreadDb(&mut self.link()), req)
     }
 }

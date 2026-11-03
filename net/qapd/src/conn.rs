@@ -77,6 +77,8 @@ pub(crate) struct Shared {
     pub session: Mutex<Option<(Token, String)>>,
     /// Bumped each time the job runs as another profile.
     pub swaps: AtomicU64,
+    /// Where `ReadFile`s of mixed files stopped, and in which state.
+    pub files: crate::files::Memo,
     /// Sign-on, password changes, resume and sign-off, one at a time.
     pub signon: Mutex<()>,
     /// What the close line says.
@@ -296,6 +298,7 @@ pub fn serve<T: Transport, H: Host>(t: T, host: &mut H, cfg: Config, who: Identi
         version: AtomicU16::new(0),
         session: Mutex::new(None),
         swaps: AtomicU64::new(0),
+        files: crate::files::Memo::default(),
         signon: Mutex::new(()),
         watch: Arc::clone(&watch),
     });

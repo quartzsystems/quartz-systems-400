@@ -11,6 +11,9 @@ ipc = { path = "../../work/ipc", version = "0.1.0" }
 qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+ifscmd = { path = "../../ifs/ifscmd", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
 spool = { path = "../../work/spool", version = "0.1.0" }
 tracing.workspace = true
 
