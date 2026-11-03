@@ -2,10 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! A long read gives the store back between batches: another job's
-//! changes made meanwhile are seen as committed reads see them, the files
-//! read cannot be dropped under it, and statements that change data
-//! never yield.
+//! A long statement gives the store back at its safe points: another
+//! job's changes made meanwhile are seen as committed reads see them, the
+//! files read cannot be dropped under it, a change commits what it wrote
+//! before it yields and tests its condition again after, what must be
+//! one view never yields, and no other job waits long for any of them.
 
 use std::cell::{Cell, RefCell};
 use std::fmt::Write as _;
@@ -194,34 +195,166 @@ fn a_long_query_yields_and_sees_committed_changes() {
     }
 }
 
+/// The value of a one-row, one-column query run as job 2.
+fn count_as_other(f: &Fixture, text: &str) -> i64 {
+    let mut ctx = SqlContext::new(f.qsys, JobHandle(2), f.names.clone());
+    ctx.now = Some(NOW);
+    ctx.naming = Naming::Sql;
+    let mut st = f.store.borrow_mut();
+    let mut txn = st.begin().unwrap();
+    let p = sql::prepare(text, Naming::Sql).unwrap();
+    let v = match p.execute(&mut txn, &mut ctx, &[]).unwrap() {
+        sql::Outcome::Rows(rs) => rs.rows[0][0].as_i64().unwrap(),
+        o => panic!("{o:?}"),
+    };
+    txn.commit().unwrap();
+    v
+}
+
 #[test]
-fn changes_and_nested_scans_never_yield() {
+fn a_change_takes_turns_between_rows() {
     let f = fixture();
     let mut s = session(&f);
-    let log = Rc::new(Log::default());
-    s.ctx.yielder = Some(yielder(&f, "T", &log));
+    let seen = Rc::new(RefCell::new(Vec::new()));
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
+    let log = Rc::clone(&seen);
+    s.ctx.yielder = Some(Rc::new(move || {
+        // What the change wrote so far is committed: another job sees it.
+        let done = count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.T WHERE NAME = 'All'");
+        log.borrow_mut().push(done);
+        if log.borrow().len() == 1 {
+            // A row ahead moves out of the condition.
+            run_script(&fx, 2, "UPDATE QSTEST.T SET ID = -999 WHERE ID = 999").unwrap();
+        }
+        false
+    }));
     let r = run(&mut s, Op::Exec, "", "UPDATE QSTEST.T SET NAME = 'All' WHERE ID > 0");
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert_eq!(r.sqlca.sqlerrd[2], i32::try_from(ROWS).unwrap());
-    assert_eq!(log.yields.get(), 0, "a change does not yield");
-    // A correlated subquery's scan runs inside the outer one: only the
-    // outer yields, and the answer is the one a single view gives.
+    let seen = seen.borrow();
+    assert!(seen.len() > 10, "{} yields", seen.len());
+    assert!(seen.iter().any(|&n| n > 0 && n < ROWS), "partial changes seen: {seen:?}");
+    // The row that left the condition while it ran is not changed.
+    assert_eq!(r.sqlca.sqlerrd[2], i32::try_from(ROWS - 1).unwrap());
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T WHERE ID = -999 AND NAME = 'All'"), 0);
+    // A DELETE takes turns the same way.
+    s.ctx.yielder = Some(Rc::new(|| false));
+    let r = run(&mut s, Op::Exec, "", "DELETE FROM QSTEST.T WHERE ID > 500");
+    // (Row 999 is -999 now.)
+    assert_eq!(r.sqlca.sqlerrd[2], 499, "{:?}", r.sqlca);
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T"), 501);
+}
+
+#[test]
+fn what_runs_in_one_view_never_yields() {
+    let f = fixture();
+    let mut s = session(&f);
+    let n = Rc::new(Cell::new(0u32));
+    let seen = Rc::clone(&n);
+    s.ctx.yielder = Some(Rc::new(move || {
+        seen.set(seen.get() + 1);
+        false
+    }));
+    // A condition with a subquery is decided in one view.
     let r = run(
         &mut s,
-        Op::Query,
+        Op::Exec,
         "",
-        "SELECT COUNT(*) FROM QSTEST.T A WHERE ID <= 3 AND EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID = A.ID)",
+        "UPDATE QSTEST.T SET NAME = 'Sub' WHERE ID IN (SELECT ID FROM QSTEST.K WHERE ID <= 10)",
     );
-    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
-    assert_eq!(r.rows[0][0].as_i64().unwrap(), 3);
-    // Under *ALL a read is one view: no yield.
-    let d = Desc {
+    assert_eq!(r.sqlca.sqlerrd[2], 10, "{:?}", r.sqlca);
+    // MERGE and statements other than queries and changes too.
+    run(
+        &mut s,
+        Op::Exec,
+        "",
+        "MERGE INTO QSTEST.T A USING QSTEST.K B ON A.ID = B.ID WHEN MATCHED THEN UPDATE SET NAME = B.NAME",
+    );
+    run(&mut s, Op::Exec, "", "CREATE TABLE QSTEST.C AS (SELECT * FROM QSTEST.T) WITH DATA");
+    assert_eq!(n.get(), 0, "no yield");
+    // Under *ALL a read is one view: no yield, by the program's level or
+    // the unit's.
+    let all = Desc {
         op: Op::Open,
         commit: Some(db::cmt::LckLvl::All),
         ..Desc::default()
     };
-    assert!(!sql::embed::may_yield(&d));
+    assert!(!sql::embed::may_yield(&all));
     assert!(sql::embed::may_yield(&Desc { op: Op::Open, ..Desc::default() }));
+    assert!(sql::embed::may_yield(&Desc { op: Op::ExecImm, ..Desc::default() }));
+    run(&mut s, Op::Exec, "", "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+    let r = run(&mut s, Op::Query, "", "SELECT COUNT(*) FROM QSTEST.T");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(n.get(), 0, "no yield under *ALL");
+}
+
+/// The longest wait any other job's request had: the gaps between the
+/// statement's start, its yields and its end. While it yields the
+/// yielder runs another job's query, a catalog list and a change, as
+/// the service would answer them in its turns.
+fn longest_wait(f: &Fixture, op: Op, text: &str) -> (Duration, Duration, u32, Reply) {
+    let mut s = session(f);
+    s.ctx.yield_every = sql::exec::YIELD_EVERY;
+    let marks = Rc::new(RefCell::new(vec![std::time::Instant::now()]));
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
+    let log = Rc::clone(&marks);
+    s.ctx.yielder = Some(Rc::new(move || {
+        log.borrow_mut().push(std::time::Instant::now());
+        assert_eq!(count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K"), ROWS);
+        assert!(count_as_other(&fx, "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST'") >= 2);
+        run_script(&fx, 2, "UPDATE QSTEST.K SET NAME = NAME WHERE ID = 1").unwrap();
+        false
+    }));
+    let start = std::time::Instant::now();
+    let r = run(&mut s, op, "C1", text);
+    let total = start.elapsed();
+    let mut marks = marks.borrow().clone();
+    marks.push(std::time::Instant::now());
+    let gap = marks.windows(2).map(|w| w[1] - w[0]).max().unwrap();
+    let yields = u32::try_from(marks.len() - 2).unwrap();
+    (gap, total, yields, r)
+}
+
+/// No wait past this, debug build included.
+const BOUND: Duration = Duration::from_millis(250);
+
+#[test]
+fn an_aggregate_over_exists_never_holds_others_up() {
+    let f = fixture();
+    // The one row's subquery reads 300 rows of K, each with a subquery
+    // reading all of K (no path over NAME): the grouping step's input
+    // is long to make, all of it inside one outer row.
+    let (gap, total, yields, r) = longest_wait(
+        &f,
+        Op::Query,
+        "SELECT COUNT(*) FROM QSTEST.T A WHERE A.ID <= 1 AND EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID <= 300 \
+         AND EXISTS (SELECT 1 FROM QSTEST.K C WHERE C.NAME = B.NAME AND C.ID = -A.ID))",
+    );
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(r.rows[0][0].as_i64().unwrap(), 0);
+    assert!(yields >= 10, "{yields} yields in {total:?}");
+    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+}
+
+#[test]
+fn a_slow_select_never_holds_others_up() {
+    let f = fixture();
+    // A select list that is slow to make for each row.
+    let (gap, total, yields, r) = longest_wait(
+        &f,
+        Op::Open,
+        "SELECT A.ID, (SELECT COUNT(*) FROM QSTEST.K B WHERE B.NAME >= A.NAME) FROM QSTEST.T A WHERE A.ID <= 300",
+    );
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert!(yields >= 10, "{yields} yields in {total:?}");
+    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
 }
 
 #[test]

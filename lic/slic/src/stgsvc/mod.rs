@@ -56,6 +56,7 @@ pub(crate) mod wtr;
 
 pub use jobs::chgjob;
 mod served;
+mod fiber;
 mod turns;
 mod seu;
 pub(crate) mod sysdata;

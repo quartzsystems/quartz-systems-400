@@ -404,3 +404,50 @@ fn a_lent_transaction_suspends_between_reads() {
     assert!(!t.suspend());
     t.commit().unwrap();
 }
+
+#[test]
+fn a_part_commit_lets_a_changing_transaction_suspend() {
+    use std::cell::RefCell;
+    let d = dev(1024, 7);
+    let store = RefCell::new(Store::format(boxed(&d), &params(16), config(100)).unwrap());
+    let cell = &store;
+    let mut model = Model::new();
+    let mut writer = store::Txn::lent(Box::new(|| cell.borrow_mut())).unwrap();
+    let mut tree: BTree<u64, u64> = BTree::open(writer.objdir_root(), ObjectId::NONE);
+    tree.insert(&mut writer, 1, &10).unwrap();
+    writer.set_root(ObjectId::NONE, tree.root());
+    model.insert(1, 10);
+    assert!(!writer.suspend(), "changed: keeps the store");
+    writer.commit_part().unwrap();
+    assert!(writer.is_clean());
+    assert!(writer.suspend(), "its changes published: it lets others in");
+    {
+        let mut s = cell.borrow_mut();
+        assert_eq!(read_all(&mut s), model, "the part is committed");
+        let mut t = s.begin().unwrap();
+        let mut tree: BTree<u64, u64> = BTree::open(t.objdir_root(), ObjectId::NONE);
+        tree.insert(&mut t, 2, &20).unwrap();
+        t.set_root(ObjectId::NONE, tree.root());
+        t.commit().unwrap();
+        model.insert(2, 20);
+    }
+    writer.resume().unwrap();
+    let mut tree: BTree<u64, u64> = BTree::open(writer.objdir_root(), ObjectId::NONE);
+    tree.insert(&mut writer, 3, &30).unwrap();
+    writer.set_root(ObjectId::NONE, tree.root());
+    model.insert(3, 30);
+    writer.commit().unwrap();
+    assert_eq!(read_all(&mut cell.borrow_mut()), model);
+    // A part rolled back after a part commit leaves the earlier one.
+    let mut writer = store::Txn::lent(Box::new(|| cell.borrow_mut())).unwrap();
+    let mut tree: BTree<u64, u64> = BTree::open(writer.objdir_root(), ObjectId::NONE);
+    tree.insert(&mut writer, 4, &40).unwrap();
+    writer.set_root(ObjectId::NONE, tree.root());
+    writer.commit_part().unwrap();
+    model.insert(4, 40);
+    let mut tree: BTree<u64, u64> = BTree::open(writer.objdir_root(), ObjectId::NONE);
+    tree.insert(&mut writer, 5, &50).unwrap();
+    writer.set_root(ObjectId::NONE, tree.root());
+    writer.abort();
+    assert_eq!(read_all(&mut cell.borrow_mut()), model);
+}

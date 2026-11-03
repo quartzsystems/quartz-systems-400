@@ -406,7 +406,7 @@ fn has_derived(t: &TableRef) -> bool {
     }
 }
 
-fn has_subquery(e: &Expr) -> bool {
+pub(crate) fn has_subquery(e: &Expr) -> bool {
     match e {
         Expr::Subquery(_) | Expr::InSubquery(..) | Expr::Exists(..) => true,
         Expr::Compare(a, _, b, q) => q.is_some() || has_subquery(a) || has_subquery(b),
@@ -699,9 +699,12 @@ fn order_matches(c: &Candidate, order: &[OrderItem], alias: &str) -> Option<bool
     dir
 }
 
-/// Scan one table: by its chosen path within bounds, else every record.
-/// The outermost scan of a statement may yield between batches
-/// ([`SqlContext::safe_point`]).
+/// Scan one table: by its chosen path within bounds, else every record,
+/// then its pushed predicates. While it reads it holds its members, and
+/// yields only between batches ([`SqlContext::own_point`]), reading them
+/// again after; the predicates hold nothing and yield between rows. A
+/// scan under a correlated subquery yields the same way: the frames
+/// above it hold only rows already read.
 fn scan_table(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
@@ -711,10 +714,12 @@ fn scan_table(
     order: &[OrderItem],
     explain_only: bool,
 ) -> Result<(Vec<Row>, bool)> {
-    ctx.scan_enter();
+    ctx.hold_open();
     let r = scan_table_in(txn, ctx, params, scan, outer, order, explain_only);
-    ctx.scan_end();
-    r
+    ctx.release_open();
+    let (rows, ordered) = r?;
+    let mut ev = Evaluator { ctx, params };
+    Ok((filter_rows(txn, &mut ev, scan, outer, rows)?, ordered))
 }
 
 #[allow(clippy::too_many_lines)]
@@ -743,8 +748,7 @@ fn scan_table_in(
             .as_ref()
             .map(|r| r.as_ref().clone())
             .unwrap_or_default();
-        let kept = filter_rows(txn, &mut ev, scan, outer, all)?;
-        return Ok((kept, false));
+        return Ok((all, false));
     };
     let cands = candidates(txn, t);
     let choice = choose(&cands, &scan.preds, order, &scan.alias);
@@ -857,7 +861,7 @@ fn scan_table_in(
                     rows.push(r);
                 }
             }
-            if ev.ctx.safe_point(txn)? {
+            if ev.ctx.own_point(txn)? {
                 // Others ran: the members as they are now.
                 base_pf = open_pf(txn)?;
                 pm = Member::open(txn, &desc, &c.member)?;
@@ -890,7 +894,7 @@ fn scan_table_in(
                     rows.push(r);
                 }
                 from = end + 1;
-                if ev.ctx.safe_point(txn)?
+                if ev.ctx.own_point(txn)?
                     && let Some(m) = open_pf(txn)?
                 {
                     pf = m;
@@ -912,12 +916,11 @@ fn scan_table_in(
             let _ = Core::load;
         }
     }
-    // The pushed predicates, all of them: bounds may be loose.
-    let rows = filter_rows(txn, &mut ev, scan, outer, rows)?;
     Ok((rows, ordered))
 }
 
-/// Keep the rows that pass every pushed predicate.
+/// Keep the rows that pass every pushed predicate (all of them: bounds
+/// may be loose).
 fn filter_rows(
     txn: &mut Txn<'_>,
     ev: &mut Evaluator<'_>,
@@ -930,7 +933,7 @@ fn filter_rows(
     }
     let mut kept = Vec::with_capacity(rows.len());
     for r in rows {
-        ev.ctx.poll_interrupt()?;
+        ev.ctx.tick(txn)?;
         let env = outer.with(scan.schema.clone(), r);
         let mut ok = true;
         for p in &scan.preds {
@@ -1198,6 +1201,7 @@ fn select(
         let mut groups: Vec<(Row, Vec<Row>)> = Vec::new();
         let mut index: HashMap<String, usize> = HashMap::new();
         for r in rows {
+            ev.ctx.tick(txn)?;
             let env = outer.with(schema.clone(), r.clone());
             let mut key_vals = Vec::with_capacity(sel.group_by.len());
             for g in &sel.group_by {
@@ -1217,6 +1221,7 @@ fn select(
             groups.push((vec![Value::Null; schema.cols.len()], Vec::new()));
         }
         for (first, members) in groups {
+            ev.ctx.tick(txn)?;
             let mut env = outer.with(schema.clone(), first);
             env.group = Some(Rc::new(members));
             if let Some(h) = &sel.having
@@ -1294,6 +1299,7 @@ fn select(
     let out_schema = Rc::new(Schema { cols: out_cols });
     let mut produced = Vec::with_capacity(envs.len());
     for env in envs {
+        ev.ctx.tick(txn)?;
         let mut row = Vec::with_capacity(plan.len());
         for (e, direct) in &plan {
             if *direct == usize::MAX {
@@ -1343,6 +1349,7 @@ fn order_rows(
     let mut ev = Evaluator { ctx, params };
     let mut keys: Vec<Vec<Value>> = Vec::with_capacity(produced.len());
     for p in produced.iter() {
+        ev.ctx.tick(txn)?;
         let mut env = p.source.clone();
         env.frames.push((out_schema.clone(), p.out.clone()));
         let mut k = Vec::with_capacity(order.len());
@@ -1421,6 +1428,7 @@ pub fn matching_rows(
         let mut ev = Evaluator { ctx, params };
         let mut kept = Vec::new();
         for r in rows {
+            ev.ctx.tick(txn)?;
             let env = outer.with(schema.clone(), r);
             let mut ok = true;
             for p in &rest {

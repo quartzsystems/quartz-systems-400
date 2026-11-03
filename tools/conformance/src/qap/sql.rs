@@ -156,7 +156,20 @@ pub fn still_running(c: &mut Conn, id: u32, settle: Duration) -> Result<(), Stri
 /// Start the long query on `c`: the request running it (an `Execute`,
 /// or a `Fetch` when `Execute` returned at once with the cursor).
 pub fn start_long(c: &mut Conn, schema: &str) -> Result<(u32, Op), String> {
-    let p = prepare(c, &long_query(schema))?;
+    start_query(c, &long_query(schema))
+}
+
+/// A plain select that makes its rows slowly: each row's value is a
+/// subquery as long as one outer row of [`long_query`].
+pub fn slow_select(schema: &str) -> String {
+    format!(
+        "SELECT A.N, (SELECT COUNT(*) FROM {schema}.BIG B WHERE EXISTS (SELECT 1 FROM {schema}.BIG C WHERE C.N > A.N + B.N + 1000000)) FROM {schema}.BIG A"
+    )
+}
+
+/// Start query `sql` on `c` as [`start_long`] does.
+pub fn start_query(c: &mut Conn, sql: &str) -> Result<(u32, Op), String> {
+    let p = prepare(c, sql)?;
     let id = c.request(
         Op::Execute,
         &Execute {

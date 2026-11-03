@@ -673,16 +673,30 @@ impl Session {
     }
 }
 
-/// Whether a statement may yield between batches (`SqlContext::yielder`):
-/// one that only reads, below `*ALL` (whose reads are one view).
+/// Whether a statement may take turns at its safe points
+/// (`SqlContext::yielder`): a query, a cursor's open or a statement run
+/// (`INSERT`, `UPDATE`, `DELETE`; any other runs to its end), below
+/// `*ALL`, whose reads are one view.
 #[must_use]
 pub fn may_yield(desc: &Desc) -> bool {
-    matches!(desc.op, Op::Query | Op::Open) && desc.commit != Some(LckLvl::All)
+    matches!(desc.op, Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute) && desc.commit != Some(LckLvl::All)
+}
+
+impl Session {
+    /// [`may_yield`] at the level in force: `SET TRANSACTION` over the
+    /// statement's.
+    fn yields(&self, desc: &Desc) -> bool {
+        let level = match self.ctx.isolation {
+            Some(i) => crate::exec::lock_level(i),
+            None => desc.commit,
+        };
+        may_yield(&Desc { commit: level, ..desc.clone() })
+    }
 }
 
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
-        let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
+        let kept = if self.yields(&req.desc) { None } else { self.ctx.yielder.take() };
         let r = match self.commitment(req) {
             Some(r) => r,
             None => self.run_inner(req),

@@ -160,15 +160,6 @@ fn passes(
     Ok((ok, env.frames.pop().expect("pushed").1))
 }
 
-/// Run `f` as a scan of its own: the outermost one may yield at
-/// [`super::SqlContext::safe_point`], and scans under it do not.
-fn as_scan<T>(ev: &mut Evaluator<'_>, f: impl FnOnce(&mut Evaluator<'_>) -> Result<T>) -> Result<T> {
-    ev.ctx.scan_enter();
-    let r = f(ev);
-    ev.ctx.scan_end();
-    r
-}
-
 /// An explicit `JOIN` of two items' rows: the matches, left rows in
 /// order, each with its right rows in order, then the unmatched ones an
 /// outer join keeps.
@@ -200,42 +191,41 @@ pub(super) fn join(
     let keeps_right = matches!(kind, JoinKind::Right | JoinKind::RightException | JoinKind::Full);
     let mut right_matched = vec![false; right_rows.len()];
     let all: Vec<usize> = (0..right_rows.len()).collect();
-    let mut out = as_scan(ev, |ev| {
-        let mut out = Vec::new();
-        for l in left_rows {
-            let mut matched = false;
-            let cands = probe.as_ref().and_then(|p| p.lookup(l)).unwrap_or(&all);
-            for &ri in cands {
-                ev.ctx.poll_interrupt()?;
-                let mut combined = l.clone();
-                combined.extend(right_rows[ri].iter().cloned());
-                let (hit, combined) = match on {
-                    None => (true, combined),
-                    Some(e) => {
-                        let mut env = outer.with(schema.clone(), combined);
-                        let hit = ev.truth(txn, e, &env)? == Some(true);
-                        (hit, env.frames.pop().expect("pushed").1)
-                    }
-                };
-                if hit {
-                    matched = true;
-                    right_matched[ri] = true;
-                    if keeps_match {
-                        charge.row(&combined)?;
-                        out.push(combined);
-                    }
+    // Rows already read: nothing held from the store, a yield between
+    // any two pairs.
+    let mut out = Vec::new();
+    for l in left_rows {
+        let mut matched = false;
+        let cands = probe.as_ref().and_then(|p| p.lookup(l)).unwrap_or(&all);
+        for &ri in cands {
+            ev.ctx.tick(txn)?;
+            let mut combined = l.clone();
+            combined.extend(right_rows[ri].iter().cloned());
+            let (hit, combined) = match on {
+                None => (true, combined),
+                Some(e) => {
+                    let mut env = outer.with(schema.clone(), combined);
+                    let hit = ev.truth(txn, e, &env)? == Some(true);
+                    (hit, env.frames.pop().expect("pushed").1)
+                }
+            };
+            if hit {
+                matched = true;
+                right_matched[ri] = true;
+                if keeps_match {
+                    charge.row(&combined)?;
+                    out.push(combined);
                 }
             }
-            if !matched && keeps_left {
-                let mut row = l.clone();
-                row.extend(rnull.iter().cloned());
-                charge.row(&row)?;
-                out.push(row);
-            }
-            ev.ctx.safe_point(txn)?;
         }
-        Ok(out)
-    })?;
+        if !matched && keeps_left {
+            let mut row = l.clone();
+            row.extend(rnull.iter().cloned());
+            charge.row(&row)?;
+            out.push(row);
+        }
+        ev.ctx.tick(txn)?;
+    }
     if keeps_right {
         let lnull = vec![Value::Null; ls.cols.len()];
         for (ri, r) in right_rows.iter().enumerate() {
@@ -303,17 +293,13 @@ pub(super) fn product(
         probes: &probes,
     };
     let mut out = Vec::new();
-    as_scan(ev, |ev| {
-        for row in first {
-            ev.ctx.poll_interrupt()?;
-            let (ok, row) = passes(txn, ev, outer, &schemas[0], &preds[0], row)?;
-            if ok {
-                walk.descend(txn, ev, 1, row, &mut out, &mut charge)?;
-            }
-            ev.ctx.safe_point(txn)?;
+    for row in first {
+        ev.ctx.tick(txn)?;
+        let (ok, row) = passes(txn, ev, outer, &schemas[0], &preds[0], row)?;
+        if ok {
+            walk.descend(txn, ev, 1, row, &mut out, &mut charge)?;
         }
-        Ok(())
-    })?;
+    }
     Ok((schema, out, charge))
 }
 
@@ -345,7 +331,7 @@ impl Walk<'_> {
         let rows = &self.items[k].rows;
         let found = self.probes[k].as_ref().and_then(|p| p.lookup(&row));
         let mut each = |txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, r: &Row| -> Result<()> {
-            ev.ctx.poll_interrupt()?;
+            ev.ctx.tick(txn)?;
             let mut next = Vec::with_capacity(row.len() + r.len());
             next.extend(row.iter().cloned());
             next.extend(r.iter().cloned());

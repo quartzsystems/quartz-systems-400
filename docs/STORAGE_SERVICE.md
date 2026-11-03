@@ -137,68 +137,93 @@ The rules:
 ## Long statements
 
 The serve loop is one thread over one store, and the SQL engine runs a
-statement to its end on that thread's stack: a query over a large table
-used to hold every other job's requests (a QAP connection's Run SQL
-held Run Command, spooled-file reads, other connections' SQL and its
-own catalog lists). A statement that only reads now takes turns with
-them.
+statement on a stack: a query over a large table used to hold every
+other job's requests (a QAP connection's Run SQL held Run Command,
+spooled-file reads, other connections' SQL and its own catalog lists).
+No statement holds up another job now: a statement takes turns with
+every other request, and with the other statements in progress.
 
 - Which: an embedded statement (`sql_run`) whose descriptor is a query
-  (`Query`, `Open`; `sql::embed::may_yield`) under `*NONE`, `*CHG` or
-  `*CS`. Under `*ALL` a read is one view and runs to its end, as does
-  every statement that changes data, `DESCRIBE`, the console's `sql`
-  and `RUNSQLSTM`.
-- Where it yields: between batches (256 keys, or 256 records by RRN) of
-  the statement's outermost table scan, at most every 5 ms
-  (`SqlContext::yield_every`), and only while its store transaction has
-  changed nothing (a scan that had to build an access path no longer
-  yields). Scans inside the outer one (a correlated subquery) never
-  yield, so no frame above a yield holds pages or positions read
-  before it.
+  or a statement run (`Query`, `Open`, `Exec`, `ExecImm`, `Execute`;
+  `sql::embed::may_yield`) at `*NONE`, `*CHG` or `*CS`, the level
+  `SET TRANSACTION` chose over the program's. Among statements run,
+  `SELECT`, cursor `OPEN`, `INSERT`, `UPDATE` and `DELETE` take turns;
+  the rest run to their end (DDL, `COMMIT`, `CREATE TABLE ... AS`,
+  `MERGE`), as do an `UPDATE` or `DELETE` whose condition has a
+  subquery (decided in one view), every statement under `*ALL` (a read
+  there is one view), `DESCRIBE`, the console's `sql` and `RUNSQLSTM`.
+- Where it yields, at most every 5 ms (`SqlContext::yield_every`):
+  between batches (256 keys, or 256 records by RRN) of every table scan,
+  a correlated subquery's included; between rows of each step that
+  works on rows already read (pushed predicates and `EXISTS`, the rest
+  of `WHERE`, joins, grouping, `HAVING`, aggregates, the select list, a
+  sort's keys); between rows a change writes. A frame that holds what
+  it read from the store (a scan's open members while it reads a batch,
+  a change's open path) marks itself (`SqlContext::hold_open`): nothing
+  under it yields but itself at its own point, so no frame above a
+  yield holds pages or positions read before it.
 - How: the statement's transaction is `store::Txn::lent`, borrowing
   the store through the job's lender per transaction rather than for
   its life. At a yield it is suspended (`Txn::suspend`: the borrow is
-  given back; a clean transaction has nothing to log). The service,
-  parked in a thread-local while the engine runs (`stgsvc::turns`),
-  is set as between requests (`served::leave`: the store back in
-  `System`, the library list and `QTEMP` root reset, the statement's
-  audit entries flushed to its job, no guard session in force), answers
-  one round of whatever is ready on the other connections without
-  waiting, sets the statement's job up again (`served::enter`) and
-  returns; the transaction resumes as one begun now, and the scan opens
-  its members again and goes on from the last key or RRN it read. A
-  join's loop over rows already read yields the same way, once per row
-  of its outer side, when no scan is in progress around it.
+  given back; a clean transaction has nothing to log). A change first
+  commits what it wrote so far (`Txn::commit_part`), so its transaction
+  is clean; its record locks and commit cycle are the job's and go on
+  as they were, and the journal has its entries in the order written.
+  The yielder sets the service as between requests (`served::leave`:
+  the store back in `System`, the library list and `QTEMP` root reset,
+  the statement's audit entries flushed to its job, no guard session
+  in force) and suspends the statement's fiber; when the loop resumes
+  it, it sets the job up again (`served::enter`), the transaction
+  resumes as one begun now, and a scan opens its members again and
+  goes on from the last key or RRN it read.
+- Fibers (`stgsvc::fiber`): each such statement runs on a stack of its
+  own (8 MiB, kept for reuse), with the service parked in a
+  thread-local while it runs (`stgsvc::turns`). A pass of the loop
+  answers whatever is ready on the connections that are not busy
+  (without waiting while statements are in progress), then gives each
+  statement in progress one turn, until its next yield or its end, in
+  the order they started. So statements interleave in any order: an
+  earlier one goes on, and may end, while a later one runs. Sixty-four
+  run at once; past that a statement waits for one to end.
 - Memory: one statement holds at most `SqlContext::memory_limit` of
   rows (256 MiB by default, `sql::exec::mem`) and past it ends with
   `SQL0904`, so one user's query cannot exhaust the service's process.
 - Locks: a statement that may yield holds `*SHRRD` on every file and
   member it scans (the table, the access path's file and member) from
-  its first read to its end, released when its transaction ends. So
-  `CLRPFM`, `RGZPFM`, `DLTF`, `CHGPF` and reclaim storage are refused
-  with the file in use while it runs, as IBM i refuses them under an
-  open cursor; inserts, updates and deletes by other jobs go on.
+  its first read to its end, released when its transaction ends; a
+  change holds its path's `*SHRUPD` as before. So `CLRPFM`, `RGZPFM`,
+  `DLTF`, `CHGPF` and reclaim storage are refused with the file in use
+  while it runs, as IBM i refuses them under an open cursor; inserts,
+  updates and deletes by other jobs go on. No lock is taken for the
+  turns themselves: jobs wait only for the record and object locks the
+  database rules give (`STRJRNPF` and `ENDJRNPF` take `*EXCL`, a record
+  being changed is locked to its job), and the engine never waits for
+  one: a conflict is `SQL0913` at once.
 - What it sees: each batch reads what is committed (and, as before,
   what another job's open commit cycle has written) when the batch is
   read. Rows changed or added behind the scan's position after it
   passed are not seen; ahead of it, they are (a row whose key another
   job moves from behind to ahead is read twice). That is a read under
   `*CS` or below on IBM i, which gives a statement no single view
-  either; `*ALL` keeps one.
+  either; `*ALL` keeps one. A change that yielded tests its condition
+  again against each row as it is when the row is locked to be changed,
+  so a row another job moved out of it meanwhile is left alone. Under
+  `*NONE` the rows already changed stay changed if the statement ends
+  early, as when it fails part way.
 - Its connection: busy until the statement answers, so it is not read
   (one request at a time per connection, as always). Its job's other
   links (`hello_thread`) are served in the turns.
-- Nesting: a statement that may yield, met in another's turn, runs
-  inside that turn and takes turns itself; the earlier one waits until
-  it ends (last in, first out, four deep; past that a statement runs to
-  its end). A `close` met in a turn waits for the loop's top and makes
-  every statement in progress end at its next yield (`SQL0952`); the
-  job's own cancel (`stg::sql_cancel_path`) works as before.
-- Background disk work (parity, a mirror resume) runs only at the top
-  of the loop, not in turns.
-- Crash safety is unchanged: every transaction, the suspended one's
-  included, ends before its request is answered, and a crash during a
-  turn leaves the statement's transaction with nothing to roll back.
+- A `close` met while statements run waits until none is in progress
+  and makes each end at its next yield (`SQL0952`); the job's own
+  cancel (`stg::sql_cancel_path`) is asked between rows, so it ends a
+  statement while later ones run.
+- Background disk work (parity, a mirror resume) runs only when no
+  statement is in progress.
+- Crash safety: every transaction, the suspended one's included, ends
+  before its request is answered. A crash during a turn leaves a query
+  nothing to roll back, and a change the parts it committed, as a crash
+  between two of a commit cycle's requests would.
+
 
 ## The service console
 

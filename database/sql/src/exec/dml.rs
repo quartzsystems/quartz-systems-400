@@ -3,7 +3,11 @@
 // root directory of this project.
 
 //! `INSERT`, `UPDATE` and `DELETE` through the open data path, so the
-//! journal sees what it would from RPG.
+//! journal sees what it would from RPG. Under a yielder a change takes
+//! turns between rows: what it wrote is committed to the store first
+//! (`SqlContext::change_point`), and once others have run each row's
+//! search condition is tested again as the row is now. A condition
+//! with a subquery is decided in one view, and `MERGE` runs to its end.
 
 use std::rc::Rc;
 
@@ -16,7 +20,7 @@ use dds::{DefaultValue, FieldDef};
 use store::txn::Txn;
 
 use super::eval::{Env, Evaluator, Row, Schema};
-use super::query::{matching_rows, row_of, run_query};
+use super::query::{has_subquery, matching_rows, row_of, run_query};
 use super::{SqlContext, TableInfo};
 use crate::ast::{Assignment, Delete, Expr, Insert, InsertSource, Update, Where};
 use crate::error::{Result, SqlError};
@@ -238,7 +242,12 @@ pub fn insert(
     let mut o = ctx.open(txn, &t, Usage::OUTPUT)?;
     let mut n = 0u64;
     let mut result = Ok(());
+    ctx.hold_open();
     for r in rows {
+        if let Err(e) = ctx.poll_interrupt().and_then(|()| ctx.change_point(txn)) {
+            result = Err(e);
+            break;
+        }
         let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
         for (k, &fi) in idx.iter().enumerate() {
             per_field[fi] = r.get(k).cloned().flatten();
@@ -252,6 +261,7 @@ pub fn insert(
         }
         n += 1;
     }
+    ctx.release_open();
     o.close(txn);
     result.map(|()| n)
 }
@@ -319,18 +329,45 @@ pub fn update(
     params: &[Value],
     u: &Update,
 ) -> Result<u64> {
-    let t = ctx.resolve_table(txn, &u.table)?;
-    let alias = u
-        .alias
-        .as_ref()
-        .map_or_else(|| u.table.name.value.clone(), |a| a.value.clone());
-    let (schema, rows) = match &u.where_clause {
+    if one_view(&u.where_clause) {
+        return ctx.no_yield(|ctx| change(txn, ctx, params, &u.table, u.alias.as_ref(), &u.where_clause, Some(&u.set)));
+    }
+    change(txn, ctx, params, &u.table, u.alias.as_ref(), &u.where_clause, Some(&u.set))
+}
+
+/// Whether a search condition is decided in one view: it has a
+/// subquery, which may read the table being changed.
+fn one_view(w: &Where) -> bool {
+    matches!(w, Where::Cond(c) if has_subquery(c))
+}
+
+/// `UPDATE` (with `set`) or `DELETE`: the rows that match, then each
+/// changed through the path.
+fn change(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    table: &crate::ast::ObjectName,
+    alias: Option<&crate::ast::Ident>,
+    w: &Where,
+    set: Option<&[Assignment]>,
+) -> Result<u64> {
+    let t = ctx.resolve_table(txn, table)?;
+    let alias = alias.map_or_else(|| table.name.value.clone(), |a| a.value.clone());
+    let mark = ctx.yields();
+    let (schema, rows) = match w {
         Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default())?,
         Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default())?,
         Where::CurrentOf(c) => current_row(txn, ctx, &t, &alias, &c.value)?,
     };
+    let cond = match w {
+        Where::Cond(c) => Some((c, mark)),
+        _ => None,
+    };
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
-    let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, Some(&u.set));
+    ctx.hold_open();
+    let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, set, cond);
+    ctx.release_open();
     o.close(txn);
     result
 }
@@ -342,20 +379,10 @@ pub fn delete(
     params: &[Value],
     d: &Delete,
 ) -> Result<u64> {
-    let t = ctx.resolve_table(txn, &d.table)?;
-    let alias = d
-        .alias
-        .as_ref()
-        .map_or_else(|| d.table.name.value.clone(), |a| a.value.clone());
-    let (schema, rows) = match &d.where_clause {
-        Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default())?,
-        Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default())?,
-        Where::CurrentOf(c) => current_row(txn, ctx, &t, &alias, &c.value)?,
-    };
-    let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
-    let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, None);
-    o.close(txn);
-    result
+    if one_view(&d.where_clause) {
+        return ctx.no_yield(|ctx| change(txn, ctx, params, &d.table, d.alias.as_ref(), &d.where_clause, None));
+    }
+    change(txn, ctx, params, &d.table, d.alias.as_ref(), &d.where_clause, None)
 }
 
 /// The row a cursor stands on, for `WHERE CURRENT OF`.
@@ -389,7 +416,9 @@ fn current_row(
     Ok((schema, rows))
 }
 
-/// Update (with `set`) or delete each row by RRN through the path.
+/// Update (with `set`) or delete each row by RRN through the path. When
+/// others ran since the rows were read (`cond`'s yield count), the
+/// condition is tested again against the row as it is now.
 #[allow(clippy::too_many_arguments)]
 fn change_rows(
     txn: &mut Txn<'_>,
@@ -400,14 +429,37 @@ fn change_rows(
     rows: Vec<Row>,
     o: &mut db::Odp,
     set: Option<&[Assignment]>,
+    cond: Option<(&Expr, u64)>,
 ) -> Result<u64> {
     let mut ev = Evaluator { ctx, params };
     let mut n = 0u64;
     for r in rows {
+        ev.ctx.poll_interrupt()?;
+        ev.ctx.change_point(txn)?;
         let rrn = u64::try_from(r[0].as_i64()?).expect("positive");
         let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
             continue;
         };
+        let stale = cond.filter(|(_, mark)| ev.ctx.yields() != *mark).map(|(c, _)| c);
+        let now = if set.is_some() || stale.is_some() {
+            let slot = db::Slot {
+                rrn,
+                record: current.data.clone(),
+                null_map: current.null_map.clone(),
+                deleted: false,
+            };
+            Some(row_of(txn, t, &slot)?)
+        } else {
+            None
+        };
+        if let (Some(c), Some(row)) = (stale, &now) {
+            let env = Env::default().with(schema.clone(), row.clone());
+            if ev.truth(txn, c, &env)? != Some(true) {
+                // Changed by another job: no longer one to change.
+                o.unlock();
+                continue;
+            }
+        }
         match set {
             None => {
                 o.delete(txn)?;
@@ -415,13 +467,7 @@ fn change_rows(
             }
             Some(set) => {
                 // Evaluate against the record as it is now.
-                let slot = db::Slot {
-                    rrn,
-                    record: current.data.clone(),
-                    null_map: current.null_map.clone(),
-                    deleted: false,
-                };
-                let row = row_of(txn, t, &slot)?;
+                let row = now.expect("read for the assignments");
                 let env = Env::default().with(schema.clone(), row);
                 let assigned = assignments(txn, &mut ev, t, set, &env)?;
                 let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];

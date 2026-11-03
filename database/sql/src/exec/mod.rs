@@ -115,17 +115,21 @@ pub struct SqlContext {
     pub interrupt: Option<Interrupt>,
     /// Rows read since the context was made.
     interrupt_ticks: u32,
-    /// Called between batches of a read-only statement's outermost
-    /// scan, with the store given back, so others can use it; true ends
-    /// the statement. `None` never yields.
+    /// Called at a statement's safe points (between batches of a scan,
+    /// between rows of the steps after it, between rows a change
+    /// writes) with the store given back, so others can use it; true
+    /// ends the statement. `None` never yields.
     pub yielder: Option<Yielder>,
     /// The least time between two yields.
     pub yield_every: std::time::Duration,
     /// Files and members a statement that may yield holds `*SHRRD` on,
     /// so nobody clears, reorganizes or deletes them under it.
     pub held: Vec<ObjectId>,
-    /// Table scans in progress: only the outermost yields.
-    scans: u32,
+    /// Frames holding what they read from the store (a scan's open
+    /// members, a change's open path): a yield needs none above it.
+    open: u32,
+    /// Yields since the context was made.
+    yields: u64,
     /// The working storage a statement may hold ([`mem::STATEMENT_MEMORY`]).
     pub memory_limit: usize,
     /// What the statements of this context hold now.
@@ -198,7 +202,8 @@ impl SqlContext {
             yielder: None,
             yield_every: YIELD_EVERY,
             held: Vec::new(),
-            scans: 0,
+            open: 0,
+            yields: 0,
             memory_limit: mem::STATEMENT_MEMORY,
             meter: mem::Meter::default(),
             last_yield: None,
@@ -210,9 +215,28 @@ impl SqlContext {
         mem::Charge::new(&self.meter, self.memory_limit)
     }
 
-    /// A table scan starts.
-    pub(crate) fn scan_enter(&mut self) {
-        self.scans += 1;
+    /// A frame starts holding what it read from the store: no yield
+    /// under it but its own ([`SqlContext::own_point`]).
+    pub(crate) fn hold_open(&mut self) {
+        self.open += 1;
+    }
+
+    /// The frame of [`SqlContext::hold_open`] lets go.
+    pub(crate) fn release_open(&mut self) {
+        self.open = self.open.saturating_sub(1);
+    }
+
+    /// Run `f` holding the store's state: nothing under it yields.
+    pub(crate) fn no_yield<T>(&mut self, f: impl FnOnce(&mut Self) -> T) -> T {
+        self.hold_open();
+        let r = f(self);
+        self.release_open();
+        r
+    }
+
+    /// Yields so far, to tell whether others ran since.
+    pub(crate) fn yields(&self) -> u64 {
+        self.yields
     }
 
     /// Under a yielder, `*SHRRD` on each object a scan reads, held until
@@ -231,27 +255,52 @@ impl SqlContext {
         Ok(())
     }
 
-    /// A table scan ends.
-    pub(crate) fn scan_end(&mut self) {
-        self.scans = self.scans.saturating_sub(1);
+    /// A row of a step that holds nothing from the store (a filter,
+    /// grouping, the select list, a join over rows read, a sort's keys):
+    /// the interrupt asked, and a yield when it is time.
+    pub(crate) fn tick(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        self.poll_interrupt()?;
+        self.safe_point(txn).map(|_| ())
     }
 
-    /// Between two batches of the outermost scan of a statement that has
-    /// changed nothing: give the store back and call the yielder, at
-    /// most every [`SqlContext::yield_every`]. True when it yielded:
-    /// what the scan held from the store is stale and is read again.
+    /// A safe point with no frame holding the store's state: give the
+    /// store back and call the yielder, at most every
+    /// [`SqlContext::yield_every`], when the statement's transaction
+    /// has changed nothing. True when it yielded.
     pub(crate) fn safe_point(&mut self, txn: &mut Txn<'_>) -> Result<bool> {
+        self.yield_at(txn, 0, false)
+    }
+
+    /// The safe point of the one frame holding the store's state (a
+    /// scan between batches): true when it yielded, and that frame
+    /// reads what it held again.
+    pub(crate) fn own_point(&mut self, txn: &mut Txn<'_>) -> Result<bool> {
+        self.yield_at(txn, 1, false)
+    }
+
+    /// The safe point of a change between two rows: what it wrote so
+    /// far is committed to the store first (its commit cycle and record
+    /// locks go on as they were), then it yields as [`Self::own_point`].
+    pub(crate) fn change_point(&mut self, txn: &mut Txn<'_>) -> Result<bool> {
+        self.yield_at(txn, 1, true)
+    }
+
+    fn yield_at(&mut self, txn: &mut Txn<'_>, own: u32, commit: bool) -> Result<bool> {
         let Some(y) = self.yielder.clone() else {
             return Ok(false);
         };
-        if self.scans != 1 || self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
+        if self.open != own || self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
             return Ok(false);
+        }
+        if commit {
+            txn.commit_part()?;
         }
         if !txn.suspend() {
             return Ok(false);
         }
         let stop = y();
         txn.resume()?;
+        self.yields += 1;
         self.last_yield = Some(std::time::Instant::now());
         if stop {
             return Err(SqlError::Cancelled);
@@ -267,7 +316,7 @@ impl SqlContext {
         for id in std::mem::take(&mut self.held) {
             odp::deallocate(txn, self.job, id, LockState::SharedRead);
         }
-        self.scans = 0;
+        self.open = 0;
         self.last_yield = None;
     }
 
@@ -557,6 +606,19 @@ impl Prepared {
         params: &[Value],
     ) -> Result<Outcome> {
         ctx.naming = self.naming;
+        // Queries and changes take turns at their safe points; any other
+        // statement runs to its end.
+        match &self.statement {
+            Statement::Select(_)
+            | Statement::Insert(_)
+            | Statement::Update(_)
+            | Statement::Delete(_)
+            | Statement::Open { .. } => self.dispatch(txn, ctx, params),
+            _ => ctx.no_yield(|ctx| self.dispatch(txn, ctx, params)),
+        }
+    }
+
+    fn dispatch(&self, txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value]) -> Result<Outcome> {
         match &self.statement {
             Statement::Select(q) => {
                 let rs = query::run_query(txn, ctx, params, q, &eval::Env::default())?;

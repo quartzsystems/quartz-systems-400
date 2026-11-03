@@ -17,10 +17,12 @@
 //! one connection ends the other with `SessionEnded`, and `ENDTCPSVR`
 //! ends the last with `ServerEnding`.
 //!
-//! Step 90, the lanes end to end: a command on one connection finishes
-//! while a long query runs on another of the session. It fails while
-//! the storage service answers one request at a time (docs/QAP.md,
-//! "Version 4 Sql"), which is why it is a step of its own.
+//! Step 90, the lanes end to end: no statement holds up another job.
+//! While an aggregate over `EXISTS` runs on one connection of the
+//! session and a slow select on a second, the third's command, catalog
+//! lists and query answer within a bound, and the earlier statement is
+//! cancelled while the later still runs (`docs/STORAGE_SERVICE.md` "Long
+//! statements").
 
 mod client;
 mod sql;
@@ -241,8 +243,11 @@ impl Suite {
         r
     }
 
-    /// Step 90: a command on one connection completes while a long
-    /// query runs on another.
+    /// Step 90: no statement holds up another job. While an aggregate
+    /// over `EXISTS` runs on one connection and a slow select on a
+    /// second, a third's command, catalog lists and query answer
+    /// within a bound; the earlier statement is cancelled while the
+    /// later one still runs.
     pub(crate) fn qap_lanes(&self, s: &mut Session) -> Result<String, String> {
         let mut srv = setup(self, s)?;
         let mut a = srv.open()?;
@@ -250,32 +255,69 @@ impl Suite {
         sql::big_table(&mut a, "QAPLANE", 1000)?;
         let mut b = srv.open()?;
         b.attach(&session.token)?;
-        let (id, op) = sql::start_long(&mut a, "QAPLANE")?;
-        sql::still_running(&mut a, id, Duration::from_secs(1))?;
-        let at = Instant::now();
-        let cmd = b.request(Op::RunCommand, &CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() })?;
-        let done = b.poll_reply(cmd, Duration::from_secs(20))?;
-        let took = at.elapsed();
-        let running = a.poll_reply(id, Duration::ZERO)?.is_none();
-        let (_, stop) = sql::cancel(&mut a, id)?;
-        // The command's reply, if it waited for the query to end.
-        let late = if done.is_none() { b.poll_reply(cmd, Duration::from_secs(60))? } else { None };
+        let mut third = srv.open()?;
+        third.attach(&session.token)?;
+        let r = lanes(&mut a, &mut b, &mut third);
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
-        match done {
-            Some(r) if r.status == Status::Ok && running => Ok(format!(
-                "CHKOBJ answered in {} ms on the attached connection while the {op:?} ran; the query cancelled in {} ms",
-                took.as_millis(),
-                stop.as_millis()
-            )),
-            Some(r) => Err(format!("CHKOBJ answered {} (the query still running: {running})", brief(&r))),
-            None => Err(format!(
-                "LANES: CHKOBJ on the attached connection got no reply in 20 s while the long {op:?} ran on the other; after the cancel ({} ms) it answered {}",
-                stop.as_millis(),
-                late.as_ref().map_or_else(|| "nothing".to_string(), brief)
-            )),
-        }
+        r
     }
+}
+
+/// The longest any request of step 90 may wait for another job's
+/// statement: generous for an emulated guest, short of the statements.
+const LANE_BOUND: Duration = Duration::from_secs(10);
+
+/// One request on `c`, answered `Ok` within [`LANE_BOUND`]; how long.
+fn within<B: ipc::Wire>(c: &mut Conn, what: &str, op: Op, body: &B) -> Result<Duration, String> {
+    let at = Instant::now();
+    let id = c.request(op, body)?;
+    match c.poll_reply(id, LANE_BOUND)? {
+        Some(r) if r.status == Status::Ok => Ok(at.elapsed()),
+        Some(r) => Err(format!("{what}: {}", brief(&r))),
+        None => Err(format!("LANES: {what} got no reply in {} s while the long statements ran", LANE_BOUND.as_secs())),
+    }
+}
+
+/// Step 90's body: the two long statements, the third connection's
+/// requests, then the earlier statement cancelled under the later.
+fn lanes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
+    let (agg, agg_op) = sql::start_long(a, "QAPLANE")?;
+    sql::still_running(a, agg, Duration::from_secs(1))?;
+    let (slow, slow_op) = sql::start_query(b, &sql::slow_select("QAPLANE"))?;
+    sql::still_running(b, slow, Duration::from_secs(1))?;
+    let mut took = Vec::new();
+    let check = CommandText { command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into() };
+    took.push(within(c, "CHKOBJ", Op::RunCommand, &check)?);
+    let schemas = ListSchemas { pattern: "QAP%".into(), start: 0, max: 0 };
+    took.push(within(c, "ListSchemas", Op::ListSchemas, &schemas)?);
+    let tables = ListTables { schema: "QAPLANE".into(), pattern: "%".into(), kinds: Vec::new(), start: 0, max: 0 };
+    took.push(within(c, "ListTables", Op::ListTables, &tables)?);
+    let columns = ListColumns { schema: "QAPLANE".into(), table: "BIG".into() };
+    took.push(within(c, "ListColumns", Op::ListColumns, &columns)?);
+    let at = Instant::now();
+    let n = sql::count(c, "SELECT COUNT(*) FROM QAPLANE.BIG")?;
+    took.push(at.elapsed());
+    if n != 1000 || took.iter().any(|t| *t > LANE_BOUND) {
+        return Err(format!("the third connection's query: {n} rows in {:?}", at.elapsed()));
+    }
+    if a.poll_reply(agg, Duration::ZERO)?.is_some() || b.poll_reply(slow, Duration::ZERO)?.is_some() {
+        return Err("a long statement ended before its cancel".into());
+    }
+    // The earlier statement ends under the later one, which goes on.
+    let (_, stop_agg) = sql::cancel(a, agg)?;
+    if stop_agg > LANE_BOUND {
+        return Err(format!("the aggregate's cancel took {stop_agg:?} under the later select"));
+    }
+    sql::still_running(b, slow, Duration::ZERO)?;
+    let (_, stop_slow) = sql::cancel(b, slow)?;
+    let most = took.iter().max().copied().unwrap_or_default();
+    Ok(format!(
+        "while the aggregate's {agg_op:?} and the slow select's {slow_op:?} ran on two connections, the third's CHKOBJ, ListSchemas, ListTables, ListColumns and a query answered in at most {} ms; the aggregate cancelled in {} ms with the select still running, the select in {} ms",
+        most.as_millis(),
+        stop_agg.as_millis(),
+        stop_slow.as_millis()
+    ))
 }
 
 /// `RunCommand`, `CheckCommand` and `DescribeCommand`.

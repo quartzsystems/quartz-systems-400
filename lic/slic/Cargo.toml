@@ -80,6 +80,9 @@ httpadmin = { path = "../../net/httpadmin", version = "0.1.0" }
 rustix = { version = "1.1.5", features = ["event", "fs", "mount", "net", "process", "system", "time"] }
 # Used only inside platform::sys for signal handling.
 libc = "0.2.190"
+# Stackful coroutines: a long statement runs on a stack of its own
+# (stgsvc::fiber), so statements take turns in any order.
+corosensei = "0.3.4"
 
 [lints]
 workspace = true

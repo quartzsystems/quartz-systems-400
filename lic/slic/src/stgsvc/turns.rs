@@ -3,34 +3,36 @@
 // root directory of this project.
 
 //! Long statements take turns with every other request. The serve loop
-//! is one thread over one store; a query that reads a large table would
-//! hold every job's requests until it ended. So an embedded statement
-//! that only reads runs with a yielder: between batches of its outermost
-//! scan the engine gives the store back and calls it, and the yielder
-//! puts the service as it is between requests, answers what is ready on
-//! the other connections, and sets the statement's job up again. While a
-//! statement runs the service is parked here, owned by nobody's frame,
-//! so the yield can reach it. `docs/STORAGE_SERVICE.md` "Long
-//! statements" has the rules.
+//! is one thread over one store; a statement over a large table would
+//! hold every job's requests until it ended. So an embedded query or
+//! change runs on a fiber of its own with a yielder: at its safe points
+//! the engine gives the store back and calls it, and the yielder puts
+//! the service as it is between requests and suspends the fiber. The
+//! loop then answers what is ready on the other connections and resumes
+//! each statement in progress once, in turn, whichever started first.
+//! While a fiber runs the service is parked here, so its yielder can
+//! reach it. `docs/STORAGE_SERVICE.md` "Long statements" has the rules.
 
 use std::cell::{Cell, RefCell};
+use std::collections::VecDeque;
 use std::os::unix::net::UnixListener;
 use std::rc::Rc;
 use std::time::Duration;
 
 use ipc::chan::Chan;
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
-use sql::embed::{Desc, Embedded};
+use sql::embed::{Desc, Embedded, Op};
 use stg::Request;
 
+use super::fiber::{self, Fiber};
 use super::served::{self, Conn};
 use super::{cmn, ifsvol};
 use crate::ipl::storage;
 use crate::ipl::system::System;
 
-/// Long statements in progress at once, each inside the one before's
-/// turn; past it a statement runs to its end without yielding.
-const MAX_DEPTH: u32 = 4;
+/// Statements in progress at once; past it a statement waits for one
+/// to end before it starts.
+const MAX_FIBERS: usize = 64;
 
 /// What the serve loop owns.
 pub struct Svc {
@@ -41,17 +43,29 @@ pub struct Svc {
     listener: UnixListener,
     /// Connections whose request is in progress or deferred: not read.
     busy: Vec<u64>,
-    /// Requests left for the top of the loop (`close`).
+    /// Requests left for when no statement is in progress (`close`).
     deferred: Vec<(u64, Request)>,
-    /// Long statements in progress.
-    depth: u32,
+    /// Long statements waiting for a fiber.
+    queued: VecDeque<(u64, Request)>,
+    /// Statements in progress, each with its connection.
+    fibers: Vec<(u64, Fiber)>,
     /// A close waits: statements in progress end at their next yield.
     closing: bool,
 }
 
 thread_local! {
-    /// The service while a long statement runs.
+    /// The service while a fiber runs.
     static PARKED: RefCell<Option<Box<Svc>>> = const { RefCell::new(None) };
+}
+
+fn park(svc: Box<Svc>) {
+    PARKED.with(|p| *p.borrow_mut() = Some(svc));
+}
+
+fn unpark() -> Box<Svc> {
+    PARKED
+        .with(|p| p.borrow_mut().take())
+        .expect("the service is parked while a fiber runs")
 }
 
 impl Svc {
@@ -63,7 +77,8 @@ impl Svc {
             listener,
             busy: Vec::new(),
             deferred: Vec::new(),
-            depth: 0,
+            queued: VecDeque::new(),
+            fibers: Vec::new(),
             closing: false,
         })
     }
@@ -73,11 +88,13 @@ impl Svc {
     }
 }
 
-/// One pass of the loop: wait up to `wait` for a connection, accept,
-/// answer every connection that is ready. At the top (no statement in
-/// progress) deferred requests go first and background disk work runs.
+/// One pass of the loop: wait up to `wait` for a connection (not at all
+/// while statements are in progress), accept, answer every connection
+/// that is ready, then give each statement in progress one turn. With
+/// none in progress deferred requests go first and background disk work
+/// runs.
 pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
-    let top = svc.depth == 0;
+    let top = svc.fibers.is_empty();
     if top {
         for (id, req) in std::mem::take(&mut svc.deferred) {
             svc.busy.retain(|b| *b != id);
@@ -86,6 +103,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
             }
         }
     }
+    let wait = if top { wait } else { Duration::ZERO };
     let (accept, ready) = wait_ready(&svc, wait);
     if top {
         // Background disk work (device parity, a mirror resume) runs in
@@ -124,7 +142,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
             served::group(&mut svc.system, false);
             grouped = false;
         }
-        if !top && matches!(req, Request::Close {}) {
+        if !svc.fibers.is_empty() && matches!(req, Request::Close {}) {
             // The close ends every job's database use: not under a
             // statement still running.
             svc.closing = true;
@@ -133,7 +151,8 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
             continue;
         }
         if long(&svc, i, &req) {
-            svc = run_long(svc, id, req);
+            svc.busy.push(id);
+            svc.queued.push_back((id, req));
         } else {
             answer(&mut svc, i, req);
         }
@@ -141,7 +160,12 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
     if grouped {
         served::group(&mut svc.system, false);
     }
-    svc
+    while svc.fibers.len() < MAX_FIBERS
+        && let Some((id, req)) = svc.queued.pop_front()
+    {
+        svc = start(svc, id, req);
+    }
+    turns(svc)
 }
 
 /// Answer one request in the ordinary way.
@@ -154,15 +178,34 @@ fn answer(svc: &mut Svc, i: usize, req: Request) {
     }
 }
 
-/// Whether a request is a statement that may take turns.
+/// Whether a request is a statement that may take turns: the engine
+/// decides at its safe points whether it does.
 fn long(svc: &Svc, i: usize, req: &Request) -> bool {
     let Request::SqlRun { desc, .. } = req else {
         return false;
     };
-    svc.depth < MAX_DEPTH
-        && !svc.closing
+    !svc.closing
         && svc.conns[i].ctx.is_some()
-        && Desc::decode(desc).is_some_and(|d| sql::embed::may_yield(&d))
+        && Desc::decode(desc).is_some_and(|d| {
+            matches!(d.op, Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute)
+        })
+}
+
+/// Give each statement in progress one turn: until its next yield or
+/// its end.
+fn turns(mut svc: Box<Svc>) -> Box<Svc> {
+    for _ in 0..svc.fibers.len() {
+        let (id, mut f) = svc.fibers.remove(0);
+        park(svc);
+        let ended = f.resume();
+        svc = unpark();
+        if ended {
+            f.recycle();
+        } else {
+            svc.fibers.push((id, f));
+        }
+    }
+    svc
 }
 
 /// What a statement taking turns keeps across its yields.
@@ -173,11 +216,30 @@ struct Turn {
     entered: Cell<served::Entered>,
 }
 
-/// Run `sql_run` as `served::handle` would, with the service parked
-/// while the engine runs and the yielder letting the others in.
-fn run_long(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
+/// Start `sql_run` as `served::handle` would, on a fiber with the
+/// yielder letting the others in, and give it its first turn.
+fn start(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
+    let Some(i) = svc.index(id) else {
+        svc.busy.retain(|b| *b != id);
+        return svc;
+    };
+    let stack = match fiber::stack() {
+        Ok(s) if !svc.closing => s,
+        Ok(_) => {
+            // Too late to take turns: answered as any request.
+            svc.busy.retain(|b| *b != id);
+            answer(&mut svc, i, req);
+            return svc;
+        }
+        Err(e) => {
+            // No stack to be had: this one runs to its end.
+            eprintln!("qsstg: no stack for a statement: {e}");
+            svc.busy.retain(|b| *b != id);
+            answer(&mut svc, i, req);
+            return svc;
+        }
+    };
     let user = super::security::as_user(&req);
-    let i = svc.index(id).expect("ready");
     let number = svc.conns[i].ctx.as_ref().map_or(0, |c| c.job.number);
     super::trace::request(number, &req);
     let Request::SqlRun { scope, desc, inputs } = req else {
@@ -195,7 +257,8 @@ fn run_long(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
         Ok(_) => ctx.sql.take().expect("just made"),
         Err(w) => {
             served::leave(system, entered);
-            let _ = conns[i].chan.send_raw(&ipc::encode(&*w));
+            svc.busy.retain(|b| *b != id);
+            let _ = svc.conns[i].chan.send_raw(&ipc::encode(&*w));
             return svc;
         }
     };
@@ -204,26 +267,42 @@ fn run_long(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
         entered: Cell::new(entered),
     });
     engine.ctx.yielder = Some(yielder(Rc::clone(&turn)));
-    svc.busy.push(id);
-    svc.depth += 1;
-    PARKED.with(|p| *p.borrow_mut() = Some(svc));
     let req = sql::embed::Request {
         scope,
         desc,
         inputs: inputs.iter().map(sql::embed::from_wire).collect(),
     };
-    let reply = if user {
-        sec::guard::as_job(&session, || engine.run(&req))
-    } else {
-        engine.run(&req)
+    let body = move || {
+        let reply = if user {
+            sec::guard::as_job(&session, || engine.run(&req))
+        } else {
+            engine.run(&req)
+        };
+        engine.ctx.yielder = None;
+        park(finish(unpark(), &turn, engine, &reply));
     };
-    let mut svc = PARKED
-        .with(|p| p.borrow_mut().take())
-        .expect("the service is parked while a statement runs");
-    svc.depth -= 1;
-    svc.busy.retain(|b| *b != id);
-    engine.ctx.yielder = None;
-    let i = svc.index(id).expect("a busy connection stays");
+    let mut f = Fiber::on(stack, body);
+    park(svc);
+    let ended = f.resume();
+    svc = unpark();
+    if ended {
+        f.recycle();
+    } else {
+        svc.fibers.push((id, f));
+    }
+    svc
+}
+
+/// A statement ended: its engine back with its job, the service as
+/// between requests, the reply sent.
+fn finish(
+    mut svc: Box<Svc>,
+    turn: &Turn,
+    engine: sql::embed::Session,
+    reply: &sql::embed::Reply,
+) -> Box<Svc> {
+    svc.busy.retain(|b| *b != turn.id);
+    let i = svc.index(turn.id).expect("a busy connection stays");
     let Svc { system, conns, .. } = &mut *svc;
     let ctx = conns[i].ctx.as_mut().expect("a job");
     ctx.sql = Some(engine);
@@ -234,9 +313,9 @@ fn run_long(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
     svc
 }
 
-/// The statement's yield: the service as between requests, one round
-/// without waiting, then the statement's job set up again. True ends
-/// the statement (a close waits).
+/// The statement's yield: the service as between requests, the fiber
+/// suspended until the loop gives it its next turn, then the statement's
+/// job set up again. True ends the statement (a close waits).
 fn yielder(turn: Rc<Turn>) -> sql::exec::Yielder {
     Rc::new(move || {
         let Some(mut svc) = PARKED.with(|p| p.borrow_mut().take()) else {
@@ -250,13 +329,17 @@ fn yielder(turn: Rc<Turn>) -> sql::exec::Yielder {
             let who = served::charged(ctx);
             super::security::flush(&mut svc.system, Some(who));
         }
-        let mut svc = sec::guard::as_system(|| round(svc, Duration::ZERO));
+        park(svc);
+        // The loop and the others run as the system; this statement's
+        // session comes back with its turn.
+        sec::guard::as_system(fiber::suspend);
+        let mut svc = unpark();
         let i = svc.index(turn.id).expect("a busy connection stays");
         let Svc { system, conns, .. } = &mut *svc;
         let ctx = conns[i].ctx.as_ref().expect("a job");
         turn.entered.set(served::enter(system, ctx));
         let stop = svc.closing;
-        PARKED.with(|p| *p.borrow_mut() = Some(svc));
+        park(svc);
         stop
     })
 }

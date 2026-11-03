@@ -604,15 +604,22 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   three parts filled to 20 characters, as a descriptor area's label; a column
   without a heading, or an expression, has its name as `label`. A
   column renamed with `AS` keeps its heading.
-- The storage service is one thread, but a query (`Execute` of a
-  `SELECT`, opened as a cursor) takes turns with every other request
-  there: between batches of its scan it lets the other jobs' requests
-  and this connection's catalog lists in (`STORAGE_SERVICE.md` "Long
-  statements"). Still waiting on it: statements that change data
-  (`UPDATE` of many rows), queries under `RepeatableRead` and
-  `Serializable` (`*ALL`), the sort or join of a query once its rows
-  are read, and a query met while another runs, which goes first (the
-  earlier window waits for it).
+- The storage service is one thread, but no statement holds up
+  another job: each query and each `INSERT`, `UPDATE` or `DELETE` runs
+  on a stack of its own and takes turns with every other request
+  there, and with the other statements in progress in any order
+  (`STORAGE_SERVICE.md` "Long statements"). It yields between batches
+  of every scan (a correlated subquery's too), between rows of the
+  steps after them (filters, `EXISTS`, joins, grouping and aggregates,
+  the select list, the sort's keys) and between rows a change writes,
+  at most every 5 ms; meanwhile the other jobs' requests and this
+  connection's catalog lists are answered. Still one view, running to
+  its end: a query under `RepeatableRead` or `Serializable` (`*ALL`,
+  whether `SetOptions` or `SET TRANSACTION` chose it), an `UPDATE` or
+  `DELETE` whose condition has a subquery, `MERGE`, and every other
+  statement (DDL, `COMMIT`, `CREATE TABLE ... AS`). Step 90 runs an
+  aggregate over `EXISTS` and a slow select on two connections and the
+  third's command, catalog lists and query beside them.
 - Engine limits the build met, now lifted as the database rules have them:
   `SMALLINT`, `INTEGER` and `BIGINT` columns made by SQL take their
   whole 16, 32 and 64-bit range (a field flag, `DB_FORMAT.md`; a DDS

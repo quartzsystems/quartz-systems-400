@@ -623,6 +623,7 @@ impl Evaluator<'_> {
             return Ok(Value::int(i64::try_from(group.len()).expect("fits")));
         }
         for row in group.iter() {
+            self.ctx.tick(txn)?;
             let e = env.replaced(row.clone());
             let v = self.eval(txn, &f.args[0], &e)?;
             if v.is_null() {

@@ -324,6 +324,10 @@ impl<'a> Txn<'a> {
 
     /// Make the transaction durable.
     pub fn commit(mut self) -> Result<()> {
+        if self.done {
+            // A part commit failed: nothing more is published.
+            return Err(StoreError::Broken { op: "transaction" });
+        }
         self.done = true;
         if self.store.suspended() {
             return Ok(());
@@ -332,6 +336,38 @@ impl<'a> Txn<'a> {
         if self.is_clean() {
             return self.store.commit_empty();
         }
+        self.publish()
+    }
+
+    /// Make what the transaction changed so far durable and go on as a
+    /// transaction begun now, clean, so it can be suspended. A long
+    /// change commits between rows this way. On failure the transaction
+    /// is spent: its `commit` fails too.
+    pub fn commit_part(&mut self) -> Result<()> {
+        if self.done || self.store.suspended() {
+            return Ok(());
+        }
+        if self.is_clean() {
+            return Ok(());
+        }
+        if let Err(e) = self.publish() {
+            self.done = true;
+            return Err(e);
+        }
+        self.roots.clear();
+        self.owned.clear();
+        self.dirty.clear();
+        self.frees.clear();
+        self.patched.clear();
+        self.patches.clear();
+        self.wrote = false;
+        self.id = self.store.next_txn_id();
+        self.next_serial = self.store.next_serial();
+        Ok(())
+    }
+
+    /// Log and write what the transaction changed.
+    fn publish(&mut self) -> Result<()> {
         let asp = self.store.asp();
         let allocs = self
             .owned_runs()
