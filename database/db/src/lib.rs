@@ -37,3 +37,23 @@ pub use odp::{
 };
 pub use path::{Path, PathKey};
 pub use record::Value;
+
+/// Called between the steps of a long operation (a path built, records
+/// converted, a rollback undone) with its transaction. It may commit
+/// what was done so far and give the store to other jobs: `Ok(true)`
+/// when it did, and what the caller read from the store is read again;
+/// the caller holds the locks that keep the objects it works on as they
+/// were. [`DbError::Ended`] ends the operation.
+pub type Pause<'a> = &'a mut dyn FnMut(&mut store::txn::Txn<'_>) -> Result<bool>;
+
+/// A [`Pause`] that never pauses.
+///
+/// # Errors
+///
+/// None.
+pub fn no_pause(_: &mut store::txn::Txn<'_>) -> Result<bool> {
+    Ok(false)
+}
+
+/// Steps between two calls of a [`Pause`].
+pub const PAUSE_EVERY: u64 = 256;

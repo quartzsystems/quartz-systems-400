@@ -1,0 +1,186 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! Long operations that pause ([`db::Pause`]): a path built, records
+//! converted for a new format and a rollback undone, each committing
+//! what it did so far at its pauses, give what they give without pauses;
+//! and one ended part way (a crash after a pause) leaves nothing a
+//! rebuild or the IPL's recovery does not put right.
+
+#![allow(clippy::too_many_lines, clippy::many_single_char_names)]
+
+mod common;
+
+use std::ops::Bound;
+
+use common::{customer_def, fld, key, lf, name, open_new, pf, rec, record, reopen};
+use db::cmt::LckLvl;
+use db::file::{self, CreateFileOpts, MemberOpt};
+use db::journal::{recover_all, strjrnpf};
+use db::odp::{self, OpenOpts, Session, Usage, session::resolve_in};
+use db::{DbError, Member};
+use dds::{FileRef, MapRefs};
+use jrn::journal::{CrtJrnOpts, crtjrn};
+use jrn::rcv::{CrtJrnRcvOpts, crtjrnrcv};
+use qsname::MemberSpec;
+use store::Store;
+use store::obj::{JobHandle, ObjectId};
+
+const NOW: u64 = 1_767_225_600;
+const ROWS: i64 = 700;
+
+/// CUST with `ROWS` customers, named in reverse of their numbers.
+fn customers(store: &mut Store, lib: ObjectId) -> ObjectId {
+    let mut t = store.begin().unwrap();
+    let cust = file::create_pf(&mut t, lib, name("CUST"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
+        .unwrap();
+    let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    for n in 1..=ROWS {
+        m.write_new(&mut t, &record(n, &format!("N{:05}", ROWS - n)), &[0]).unwrap();
+    }
+    t.commit().unwrap();
+    cust
+}
+
+/// A pause that commits what was done so far and counts; past `stop`
+/// pauses it ends the operation.
+fn pausing(count: &mut u32, stop: u32) -> impl FnMut(&mut store::Txn<'_>) -> db::Result<bool> + '_ {
+    move |t| {
+        t.commit_part()?;
+        *count += 1;
+        if *count > stop {
+            return Err(DbError::Ended);
+        }
+        Ok(true)
+    }
+}
+
+fn by_name(t: &mut store::Txn<'_>, lfid: ObjectId) -> Vec<u64> {
+    let lm = Member::open_by(t, lfid, MemberSpec::First).unwrap();
+    lm.keys(t, Bound::Unbounded, Bound::Unbounded, 10_000).unwrap().iter().map(|k| k.rrn).collect()
+}
+
+#[test]
+fn a_path_built_with_pauses_and_one_ended_part_way() {
+    let (d, mut store, lib) = open_new();
+    let cust = customers(&mut store, lib);
+    let mut refs = MapRefs::default();
+    refs.insert_pf("QSTEST", "CUST", &customer_def());
+    let def = lf(&[rec("CUSBYNAME", "PFILE(QSTEST/CUST)"), key("NAME", "")], &refs);
+    let want: Vec<u64> = (1..=ROWS).rev().map(|n| u64::try_from(n).unwrap()).collect();
+    let opts = CreateFileOpts { now: NOW, member: MemberOpt::None, ..CreateFileOpts::default() };
+    // Built with a pause every batch, each committing the part before.
+    let mut t = store.begin().unwrap();
+    let lfid = file::create_lf(&mut t, lib, name("BYNAME"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let mut pauses = 0;
+    file::add_lf_member_paused(&mut t, lfid, name("BYNAME"), "", None, NOW, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    t.commit().unwrap();
+    assert_eq!(pauses, 2, "{ROWS} records, a pause every 256");
+    let mut t = store.begin().unwrap();
+    assert_eq!(by_name(&mut t, lfid), want);
+    drop(t);
+    // Ended at its second pause, the rest never written: what the first
+    // committed is a member whose path is marked invalid, built again
+    // when it is next opened.
+    let mut t = store.begin().unwrap();
+    let lf2 = file::create_lf(&mut t, lib, name("BYNAME2"), &def, &mut |_| Ok(cust), &opts).unwrap();
+    let mut pauses = 0;
+    let e = file::add_lf_member_paused(&mut t, lf2, name("BYNAME2"), "", None, NOW, &mut pausing(&mut pauses, 1)).unwrap_err();
+    assert!(matches!(e, DbError::Ended), "{e:?}");
+    drop(t);
+    drop(store);
+    let mut store = reopen(&d);
+    let mut t = store.begin().unwrap();
+    let mut lm = Member::open_by(&mut t, lf2, MemberSpec::First).unwrap();
+    assert!(lm.attr().path_invalid);
+    assert!(lm.ensure_path(&mut t, &mut |_, _| {}).unwrap());
+    t.commit().unwrap();
+    let mut t = store.begin().unwrap();
+    assert_eq!(by_name(&mut t, lf2), want);
+}
+
+#[test]
+fn records_converted_with_pauses() {
+    let (_d, mut store, lib) = open_new();
+    let cust = customers(&mut store, lib);
+    // NAME widened, BAL dropped, a column added: every record converted.
+    let new = pf(&[
+        rec("CUSREC", ""),
+        fld("CUSNO", "7", "P", "0", ""),
+        fld("NAME", "40", "A", "", ""),
+        fld("EXTRA", "5", "A", "", ""),
+    ]);
+    let mut t = store.begin().unwrap();
+    let mut pauses = 0;
+    db::chg::chgpf_srcfile_paused(&mut t, JobHandle(1), cust, &new, &mut pausing(&mut pauses, u32::MAX)).unwrap();
+    t.commit().unwrap();
+    assert_eq!(pauses, 2);
+    let mut t = store.begin().unwrap();
+    let m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    let fmt = m.format().clone();
+    assert_eq!(m.attr().record_count, u64::try_from(ROWS).unwrap());
+    let (_, nf) = fmt.format.field(&name("NAME")).unwrap();
+    let rows = m.scan(&mut t, 1, 10_000).unwrap();
+    let names: Vec<String> = rows.iter().map(|s| ccsid::decode_trimmed(db::record::field_bytes(nf, &s.record))).collect();
+    let want: Vec<String> = (1..=ROWS).map(|n| format!("N{:05}", ROWS - n)).collect();
+    assert_eq!(names, want);
+}
+
+#[test]
+fn a_rollback_ended_part_way_is_finished_by_recovery() {
+    let (d, mut store, lib) = open_new();
+    let mut t = store.begin().unwrap();
+    let cust = file::create_pf(&mut t, lib, name("CUST"), &customer_def(), &CreateFileOpts { now: NOW, ..CreateFileOpts::default() })
+        .unwrap();
+    let rcv = crtjrnrcv(&mut t, lib, name("QSTRCV001"), &CrtJrnRcvOpts { now: NOW, ..CrtJrnRcvOpts::default() }).unwrap();
+    let jid = crtjrn(&mut t, lib, name("QSTJRN"), rcv, &CrtJrnOpts { now: NOW, ..CrtJrnOpts::default() }).unwrap();
+    strjrnpf(&mut t, JobHandle(1), cust, jid, true, true, NOW).unwrap();
+    t.commit().unwrap();
+    let count = |store: &mut Store| {
+        let mut t = store.begin().unwrap();
+        Member::open_by(&mut t, cust, MemberSpec::First).unwrap().attr().record_count
+    };
+    for stop in [u32::MAX, 1] {
+        // A cycle of ROWS inserts, then its rollback with pauses.
+        let mut t = store.begin().unwrap();
+        let mut s = Session::new(JobHandle(1), odp::new_shared());
+        s.strcmtctl(&mut t, LckLvl::Chg, None, NOW).unwrap();
+        let mut resolve = resolve_in(name("QSTEST"), vec![(name("CUST"), cust)]);
+        let opts = OpenOpts { usage: Usage::ALL, commit: true, ..OpenOpts::input(JobHandle(0)) };
+        let o = s.open(&mut t, &FileRef::parse("CUST").unwrap(), &mut resolve, opts).unwrap();
+        for n in 1..=ROWS {
+            o.borrow_mut().write(&mut t, &record(n, "New"), &[0]).unwrap();
+        }
+        t.commit().unwrap();
+        let mut t = store.begin().unwrap();
+        let mut pauses = 0;
+        let r = s.rollbck_paused(&mut t, Some(NOW), &mut pausing(&mut pauses, stop));
+        if stop == u32::MAX {
+            assert_eq!(r.unwrap().applied, u64::try_from(ROWS).unwrap());
+            t.commit().unwrap();
+            assert_eq!(pauses, 2);
+            assert_eq!(count(&mut store), 0);
+            drop(o);
+            s.end(&mut store.begin().unwrap());
+            continue;
+        }
+        // Ended at the second pause: the first part's undoing is
+        // committed, the rest is not; the job goes away (a crash).
+        assert!(matches!(r, Err(DbError::Ended)));
+        drop(t);
+        drop(o);
+        drop(s);
+        drop(store);
+        store = reopen(&d);
+        let left = count(&mut store);
+        assert!(left > 0 && left < u64::try_from(ROWS).unwrap(), "{left} part undone");
+        let mut t = store.begin().unwrap();
+        let qsys = file::describe(&mut t, cust).unwrap().header.library;
+        let qsys = store::obj::ops::read_header(&mut t, qsys).unwrap().1.library;
+        let r = recover_all(&mut t, qsys, NOW + 100).unwrap();
+        assert_eq!(r.cycles_rolled_back, 1);
+        t.commit().unwrap();
+        assert_eq!(count(&mut store), 0, "the rest undone at recovery");
+    }
+}

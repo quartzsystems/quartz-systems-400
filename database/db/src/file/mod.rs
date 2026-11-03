@@ -589,6 +589,21 @@ pub fn add_lf_member(
     bases: Option<&[ObjectId]>,
     now: u64,
 ) -> Result<ObjectId> {
+    add_lf_member_paused(txn, file, name, text, bases, now, &mut crate::no_pause)
+}
+
+/// [`add_lf_member`] whose path build pauses between batches of records
+/// read ([`Member::rebuild_path_paused`]): the caller holds the file
+/// `*EXCL` and the based-on files against change.
+pub fn add_lf_member_paused(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    name: Name,
+    text: &str,
+    bases: Option<&[ObjectId]>,
+    now: u64,
+    pause: crate::Pause<'_>,
+) -> Result<ObjectId> {
     let mut desc = describe(txn, file)?;
     check_new_member(&desc, name)?;
     let mut base_members = Vec::new();
@@ -641,7 +656,7 @@ pub fn add_lf_member(
     write_members(txn, &mut desc)?;
     let desc = describe(txn, file)?;
     let mut m = Member::open(txn, &desc, &entry)?;
-    m.rebuild_path(txn, &mut |_, _| {})?;
+    m.rebuild_path_paused(txn, &mut |_, _| {}, pause)?;
     Ok(object)
 }
 

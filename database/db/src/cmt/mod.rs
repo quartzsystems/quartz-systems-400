@@ -19,7 +19,7 @@ use store::txn::Txn;
 
 use crate::error::{DbError, Result};
 use crate::file::{FileDesc, MemberEntry};
-use crate::journal::undo::{ChangeReport, MemberMap, undo};
+use crate::journal::undo::{ChangeReport, MemberMap, undo_paused};
 use crate::journal::{JrnCtx, cycle_entry};
 use crate::member::Member;
 use crate::odp::{Holder, SharedLocks};
@@ -275,6 +275,14 @@ impl CommitDef {
     /// `ROLLBACK`: undo the cycle from its journal entries newest first,
     /// then `C RB`.
     pub fn rollback(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
+        self.rollback_paused(txn, now, &mut crate::no_pause)
+    }
+
+    /// [`Self::rollback`] that pauses between batches of changes undone,
+    /// the cycle's record locks held throughout. A cycle left part undone
+    /// (a crash) is rolled back the rest of the way at the next IPL: the
+    /// undoing entries are the cycle's, and undone in turn.
+    pub fn rollback_paused(&mut self, txn: &mut Txn<'_>, now: Option<u64>, pause: crate::Pause<'_>) -> Result<ChangeReport> {
         if self.cycle == 0 {
             self.release_locks();
             return Ok(ChangeReport::default());
@@ -295,7 +303,7 @@ impl CommitDef {
             rollback: true,
             ..self.ctx(now)
         };
-        let report = undo(txn, &entries, &map, ctx)?;
+        let report = undo_paused(txn, &entries, &map, ctx, pause)?;
         self.close_cycle(txn, "RB", now)?;
         Ok(report)
     }

@@ -623,8 +623,13 @@ Version 4 Sql, as built on 2026-11-02 (decisions made in the build, for Cody to 
   at most every 5 ms; meanwhile the other jobs' requests and this
   connection's catalog lists are answered. Still one view, running to
   its end: a query under `RepeatableRead` or `Serializable` (`*ALL`,
-  whether `SetOptions` or `SET TRANSACTION` chose it), and every other
-  statement (DDL, `COMMIT`, `CREATE TABLE ... AS`). An `UPDATE` or
+  whether `SetOptions` or `SET TRANSACTION` chose it), and the short
+  statements (`CREATE TABLE`, `CREATE VIEW`, `LABEL ON`, `COMMIT`,
+  `DROP`). `CREATE INDEX`, `ALTER TABLE` and `ROLLBACK` take turns too,
+  holding the locks the rules give meanwhile: an index being built
+  keeps its table from change (it is read) and is itself out of reach,
+  an altered table is the statement's alone, a rolled-back unit keeps
+  its rows locked; other tables and jobs go on. An `UPDATE` or
   `DELETE` whose condition has a subquery takes turns too, and so does
   `MERGE`, each decided as of its start: it finds its rows (and a
   merge's matches and actions) first, its subqueries' answers kept, and

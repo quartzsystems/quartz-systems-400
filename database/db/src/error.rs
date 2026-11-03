@@ -236,6 +236,10 @@ pub enum DbError {
         /// What was wrong.
         what: String,
     },
+
+    /// A long operation ended at one of its pauses ([`crate::Pause`]).
+    #[error("the operation was ended before it finished")]
+    Ended,
 }
 
 impl DbError {
@@ -270,6 +274,7 @@ impl DbError {
             | Self::RecordLength { .. }
             | Self::HasDependents { .. }
             | Self::Closed
+            | Self::Ended
             | Self::Definition { .. } => return None,
         })
     }

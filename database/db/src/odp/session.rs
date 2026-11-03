@@ -451,8 +451,13 @@ impl Session {
 
     /// `ROLLBACK`.
     pub fn rollbck(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
+        self.rollbck_paused(txn, now, &mut crate::no_pause)
+    }
+
+    /// [`Self::rollbck`] pausing between batches of changes undone.
+    pub fn rollbck_paused(&mut self, txn: &mut Txn<'_>, now: Option<u64>, pause: crate::Pause<'_>) -> Result<ChangeReport> {
         let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
-        let r = c.borrow_mut().rollback(txn, now)?;
+        let r = c.borrow_mut().rollback_paused(txn, now, pause)?;
         self.refresh_odps(txn)?;
         Ok(r)
     }

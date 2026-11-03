@@ -194,6 +194,21 @@ pub fn chgpf_srcfile(
     file: ObjectId,
     def: &PfDefinition,
 ) -> Result<()> {
+    chgpf_srcfile_paused(txn, job, file, def, &mut crate::no_pause)
+}
+
+/// [`chgpf_srcfile`] that pauses between batches of the records it
+/// reads to convert, the file held `*EXCL` throughout. What it writes
+/// (the members cleared, the format replaced, the records written in
+/// the new one) is one step: a part of it committed alone would lose
+/// records.
+pub fn chgpf_srcfile_paused(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    def: &PfDefinition,
+    pause: crate::Pause<'_>,
+) -> Result<()> {
     crate::auth::check(txn, "file.change", file)?;
     let desc = file::describe(txn, file)?;
     if desc.attr.kind != FileKind::Physical {
@@ -233,7 +248,7 @@ pub fn chgpf_srcfile(
     let r = if same {
         file::replace_formats(txn, file, &[new])
     } else {
-        convert(txn, &desc, old, new)
+        convert(txn, &desc, old, new, pause)
     };
     hold.release(txn);
     r?;
@@ -246,8 +261,10 @@ pub fn chgpf_srcfile(
     Ok(())
 }
 
-/// Every member's records into the new format, by field name.
-fn convert(txn: &mut Txn<'_>, desc: &FileDesc, old: &FormatDef, new: FormatDef) -> Result<()> {
+/// Every member's records into the new format, by field name: all of
+/// them read and converted first (pausing between batches), then
+/// written.
+fn convert(txn: &mut Txn<'_>, desc: &FileDesc, old: &FormatDef, new: FormatDef, pause: crate::Pause<'_>) -> Result<()> {
     let plan = map::plan(
         old,
         &new,
@@ -255,19 +272,32 @@ fn convert(txn: &mut Txn<'_>, desc: &FileDesc, old: &FormatDef, new: FormatDef) 
         FileKind::Physical,
         FmtOpt::MapDrop,
     )?;
+    let batch = usize::try_from(crate::PAUSE_EVERY).expect("fits");
     let mut converted = Vec::with_capacity(desc.members.len());
     for e in &desc.members {
         let mut m = Member::open(txn, desc, e)?;
-        let slots = m.scan(txn, 1, usize::MAX)?;
-        let mut rows = Vec::with_capacity(slots.len());
-        for s in &slots {
-            let mut rec = vec![0u8; usize::try_from(new.format.record_len).expect("fits")];
-            let mut nulls = vec![0u8; usize::from(new.null_map_len)];
-            plan.apply(old, &new, s, 0, &mut rec, &mut nulls)?;
-            rows.push((rec, nulls));
+        let mut rows = Vec::new();
+        let mut from = 1;
+        loop {
+            let slots = m.scan(txn, from, batch)?;
+            for s in &slots {
+                let mut rec = vec![0u8; usize::try_from(new.format.record_len).expect("fits")];
+                let mut nulls = vec![0u8; usize::from(new.null_map_len)];
+                plan.apply(old, &new, s, 0, &mut rec, &mut nulls)?;
+                rows.push((rec, nulls));
+            }
+            match slots.last() {
+                Some(last) if slots.len() == batch => from = last.rrn + 1,
+                _ => break,
+            }
+            if pause(txn)? {
+                m = Member::open(txn, desc, e)?;
+            }
         }
-        m.clear(txn)?;
         converted.push((*e, rows));
+    }
+    for (e, _) in &converted {
+        Member::open(txn, desc, e)?.clear(txn)?;
     }
     file::replace_formats(txn, desc.id, &[new])?;
     let desc = file::describe(txn, desc.id)?;

@@ -524,3 +524,140 @@ fn a_merge_never_holds_others_up() {
     assert!(yields >= 10, "{yields} yields in {total:?}");
     assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
 }
+
+/// `text` run as job 2: whether it worked.
+fn works(f: &Fixture, text: &str) -> bool {
+    run_script(f, 2, text).is_ok()
+}
+
+#[test]
+fn an_index_is_built_taking_turns() {
+    let f = fixture();
+    let mut s = session(&f);
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
+    let seen = Rc::new(RefCell::new(Vec::new()));
+    let log = Rc::clone(&seen);
+    s.ctx.yielder = Some(Rc::new(move || {
+        // The table is read by others, never changed or dropped; other
+        // tables are changed; the index being built is not there to use.
+        log.borrow_mut().push((
+            count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.T"),
+            works(&fx, "UPDATE QSTEST.T SET NAME = 'X' WHERE ID = 1"),
+            works(&fx, "DROP TABLE QSTEST.T"),
+            works(&fx, "UPDATE QSTEST.K SET NAME = 'Y' WHERE ID = 1"),
+            works(&fx, "DROP INDEX QSTEST.TI"),
+        ));
+        false
+    }));
+    let r = run(&mut s, Op::Exec, "", "CREATE INDEX QSTEST.TI ON QSTEST.T (NAME DESC)");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    let seen = seen.borrow();
+    assert!(seen.len() >= 3, "{} yields", seen.len());
+    assert!(seen.iter().all(|&(n, upd, drop, other, idx)| n == ROWS && !upd && !drop && other && !idx), "{seen:?}");
+    // Built, and the table is free again.
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.TI"), ROWS);
+    assert!(works(&f, "UPDATE QSTEST.T SET NAME = 'Row 1' WHERE ID = 1"));
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.TI WHERE NAME = 'Row 1'"), 1);
+
+    // Ended part way, after it committed a part: nothing of it stays.
+    let n = Rc::new(Cell::new(0u32));
+    let turns = Rc::clone(&n);
+    s.ctx.yielder = Some(Rc::new(move || {
+        turns.set(turns.get() + 1);
+        turns.get() == 2
+    }));
+    let r = run(&mut s, Op::Exec, "", "CREATE INDEX QSTEST.TJ ON QSTEST.T (NAME)");
+    assert_eq!(r.sqlca.sqlstate, "57014", "{:?}", r.sqlca);
+    assert!(!works(&f, "DROP INDEX QSTEST.TJ"), "the index is gone");
+    assert!(works(&f, "UPDATE QSTEST.T SET NAME = 'Row 2' WHERE ID = 2"));
+}
+
+#[test]
+fn an_index_build_never_holds_others_up() {
+    let f = fixture();
+    let (gap, total, yields, r) = longest_wait(&f, Op::Exec, "CREATE INDEX QSTEST.TI ON QSTEST.T (NAME)");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert!(gap < BOUND, "others waited {gap:?} (statement {total:?}, {yields} yields)");
+}
+
+#[test]
+fn a_table_is_altered_taking_turns() {
+    let f = fixture();
+    let mut s = session(&f);
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
+    let seen = Rc::new(RefCell::new(Vec::new()));
+    let log = Rc::clone(&seen);
+    s.ctx.yielder = Some(Rc::new(move || {
+        // The table is the statement's alone; others go on.
+        log.borrow_mut().push((
+            works(&fx, "UPDATE QSTEST.T SET NAME = 'X' WHERE ID = 1"),
+            works(&fx, "UPDATE QSTEST.K SET NAME = 'Y' WHERE ID = 1"),
+        ));
+        false
+    }));
+    let r = run(&mut s, Op::Exec, "", "ALTER TABLE QSTEST.T ADD COLUMN EXTRA CHAR(5) NOT NULL DEFAULT 'E'");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    let seen = seen.borrow();
+    assert!(seen.len() >= 3, "{} yields", seen.len());
+    assert!(seen.iter().all(|&(t, k)| !t && k), "{seen:?}");
+    assert_eq!(ids_as_other(&f, "T"), (1..=ROWS).collect::<Vec<_>>());
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSTEST.T WHERE EXTRA = 'E' AND NAME LIKE 'Row %'"), ROWS);
+}
+
+#[test]
+fn a_rollback_is_undone_taking_turns() {
+    let f = fixture();
+    run_script(&f, 2, "CREATE SCHEMA QSJ; CREATE TABLE QSJ.R (ID INT NOT NULL, NAME VARCHAR(20) NOT NULL)").unwrap();
+    let mut s = session(&f);
+    let chg = |text: &str| Request {
+        scope: "1:Y".into(),
+        desc: Desc {
+            op: Op::Exec,
+            text: text.into(),
+            sql_naming: true,
+            commit: Some(db::cmt::LckLvl::Chg),
+            ..Desc::default()
+        },
+        inputs: Vec::new(),
+    };
+    let r = s.run(&chg("INSERT INTO QSJ.R SELECT ID, NAME FROM QSTEST.T"));
+    assert_eq!(r.sqlca.sqlerrd[2], i32::try_from(ROWS).unwrap(), "{:?}", r.sqlca);
+    let fx = Fixture {
+        store: Rc::clone(&f.store),
+        qsys: f.qsys,
+        names: f.names.clone(),
+    };
+    let locks = s.ctx.locks.clone();
+    let seen = Rc::new(RefCell::new(Vec::new()));
+    let log = Rc::clone(&seen);
+    s.ctx.yielder = Some(Rc::new(move || {
+        // The rows still to undo stay locked to the unit of work; other
+        // tables are read.
+        let mut ctx = SqlContext::with_locks(fx.qsys, JobHandle(2), fx.names.clone(), locks.clone());
+        ctx.now = Some(NOW);
+        let opts = RunOpts {
+            naming: Naming::Sql,
+            ..RunOpts::default()
+        };
+        let upd = {
+            let mut st = fx.store.borrow_mut();
+            runsqlstm(&mut st, &mut ctx, "UPDATE QSJ.R SET NAME = 'X' WHERE ID = 1", &opts).unwrap().errors == 0
+        };
+        log.borrow_mut().push((upd, count_as_other(&fx, "SELECT COUNT(*) FROM QSTEST.K")));
+        false
+    }));
+    let r = s.run(&chg("ROLLBACK"));
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    let seen = seen.borrow();
+    assert!(seen.len() >= 3, "{} yields", seen.len());
+    assert!(seen.iter().all(|&(upd, k)| !upd && k == ROWS), "{seen:?}");
+    assert_eq!(count_as_other(&f, "SELECT COUNT(*) FROM QSJ.R"), 0);
+}

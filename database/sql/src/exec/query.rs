@@ -18,7 +18,7 @@ use db::format::FormatDef;
 use db::member::{Core, Member, Slot};
 use db::util::{Order, each_record};
 use dds::FieldDef;
-use store::obj::ObjectId;
+use store::obj::{LockState, ObjectId};
 use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema, has_aggregate, sql_type};
@@ -512,6 +512,12 @@ struct Candidate {
 
 /// The paths over a table: its own and those of dependent logical files
 /// that select nothing and rename nothing.
+/// Whether a file is held `*EXCL`: an index whose path is being built
+/// (`ddl::build_index`), not to be read or built again by others.
+fn in_build(txn: &mut Txn<'_>, file: ObjectId) -> bool {
+    txn.store().locks_mut().holders(file).iter().any(|h| h.state == LockState::Exclusive)
+}
+
 fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
     let mut out = Vec::new();
     let key_names = |fmt: &FormatDef| -> Vec<(String, bool)> {
@@ -534,7 +540,7 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
         return out;
     }
     for d in &t.desc.dependents {
-        if d.base_member != t.member.object {
+        if d.base_member != t.member.object || in_build(txn, d.lf_file) {
             continue;
         }
         let Ok(lf) = file::describe(txn, d.lf_file) else {
@@ -816,6 +822,9 @@ fn scan_table_in(
         }
         let desc = file::describe(txn, c.file)?;
         let mut pm = Member::open(txn, &desc, &c.member)?;
+        if pm.attr().path_invalid && in_build(txn, c.file) {
+            return Err(SqlError::Locked { what: format!("{} is being built", c.label) });
+        }
         pm.ensure_path(txn, &mut |_, _| {})?;
         let backward = ch.ordered == Some(true);
         // The path in batches, each read as far as the bounds allow.

@@ -105,13 +105,30 @@ pub fn undo(
     map: &MemberMap,
     ctx: JrnCtx,
 ) -> Result<ChangeReport> {
+    undo_paused(txn, entries, map, ctx, &mut crate::no_pause)
+}
+
+/// [`undo`] that pauses between batches of entries undone; after a
+/// pause the members are opened again.
+pub fn undo_paused(
+    txn: &mut Txn<'_>,
+    entries: &[Entry],
+    map: &MemberMap,
+    ctx: JrnCtx,
+    pause: crate::Pause<'_>,
+) -> Result<ChangeReport> {
     let mut cache = Cache {
         members: HashMap::new(),
     };
     let mut report = ChangeReport::default();
+    let mut steps = 0u64;
     for e in entries.iter().rev() {
         if e.code != code::RECORD {
             continue;
+        }
+        steps += 1;
+        if steps.is_multiple_of(crate::PAUSE_EVERY) && pause(txn)? {
+            cache.members.clear();
         }
         report.saw(e.seq);
         let Some(m) = cache.get(txn, map, e, ctx)? else {

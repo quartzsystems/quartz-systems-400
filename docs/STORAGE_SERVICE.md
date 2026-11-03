@@ -147,11 +147,21 @@ every other request, and with the other statements in progress.
   or a statement run (`Query`, `Open`, `Exec`, `ExecImm`, `Execute`;
   `sql::embed::may_yield`) at `*NONE`, `*CHG` or `*CS`, the level
   `SET TRANSACTION` chose over the program's. Among statements run,
-  `SELECT`, cursor `OPEN`, `INSERT`, `UPDATE` and `DELETE` (a condition
-  with a subquery included) and `MERGE` take turns; the rest run to
-  their end (DDL, `COMMIT`, `CREATE TABLE ... AS`), as do every statement under
-  `*ALL` (a read there is one view), `DESCRIBE`, the console's `sql` and
-  `RUNSQLSTM`.
+  `SELECT`, cursor `OPEN`, `INSERT` (from a query too), `UPDATE` and
+  `DELETE` (a condition with a subquery included), `MERGE`, `CREATE
+  INDEX` (a `UNIQUE` constraint's index too), `ALTER TABLE` and
+  `ROLLBACK` take turns. The rest run to their end, each short: one
+  that only names objects or describes them (`CREATE TABLE`, `CREATE
+  VIEW`, `CREATE SCHEMA`, `CREATE ALIAS`, `LABEL ON`, `COMMENT ON`,
+  `SET`, `DECLARE`, `FETCH`, `CLOSE`), `COMMIT` (its cycle's entries
+  and its locks released), and `DROP` (see "Definitions" below). `CREATE
+  TABLE ... AS` is refused by the engine. Every statement under `*ALL`
+  (a read there is one view), `DESCRIBE`, the console's `sql` and
+  `RUNSQLSTM` run to their end too: `RUNSQLSTM`, `RUNSQL` and the
+  database commands (`CPYF`, `RGZPFM`, `CLRPFM`, `CPYTOIMPF`,
+  `CPYFRMIMPF`, `CRTLF`) are commands, run by the service's processing
+  programs over the store it owns for the whole command, not on a
+  statement's fiber.
 - Where it yields, at most every 5 ms (`SqlContext::yield_every`):
   between batches (256 keys, or 256 records by RRN) of every table scan,
   a correlated subquery's included; between rows of each step that
@@ -176,6 +186,32 @@ every other request, and with the other statements in progress.
   it, it sets the job up again (`served::enter`), the transaction
   resumes as one begun now, and a scan opens its members again and
   goes on from the last key or RRN it read.
+- Definitions and maintenance take turns through `db::Pause`, called
+  every 256 steps of their long loops (`db::PAUSE_EVERY`): it commits
+  what was done so far and yields as a change does
+  (`SqlContext::pause`); the locks the rules give are held throughout.
+  - `CREATE INDEX`: the table is held `*SHRNUP` from the start (others
+    read it; a change, `CLRPFM`, `DROP` or another `*EXCL` use of it is
+    refused with the file in use), the new index `*EXCL` from its
+    creation (nobody opens, uses or drops it; a query's plan passes it
+    by). Its member's path is marked invalid before the first pause,
+    so a build cut short by a crash leaves an index rebuilt when next
+    opened; the records are read with pauses, and the path loaded in
+    one step at the end. A build that fails or is ended deletes the
+    index, the parts it committed included.
+  - `ALTER TABLE` that changes the record format: the table is held
+    `*EXCL`; its records are read and converted with pauses, then
+    written in the new format in one step. That step cannot be split:
+    the members are cleared before the converted records go in, and a
+    part committed alone would lose records at a crash.
+  - `ROLLBACK`: the cycle's changes are undone newest first with
+    pauses, its record locks held until the end. A rollback cut short
+    by a crash is finished by the IPL's recovery: the undoing entries
+    belong to the cycle, so recovery undoes them and then the rest. The
+    journal entries of the cycle are read in one step first.
+  - `DROP`: one step. An object is freed in one transaction (its header
+    names its pages; a part freed alone would leave it naming freed
+    pages); the cost goes by extents and path pages, not records.
 - Fibers (`stgsvc::fiber`): each such statement runs on a stack of its
   own (8 MiB, kept for reuse), with the service parked in a
   thread-local while it runs (`stgsvc::turns`). A pass of the loop

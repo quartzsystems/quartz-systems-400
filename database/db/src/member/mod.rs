@@ -1125,10 +1125,23 @@ impl Member {
 
     /// Rebuild the path from the records, by bulk load.
     pub fn rebuild_path(&mut self, txn: &mut Txn<'_>, progress: Progress<'_>) -> Result<()> {
+        self.rebuild_path_paused(txn, progress, &mut crate::no_pause)
+    }
+
+    /// [`Self::rebuild_path`] that pauses between batches of records
+    /// read. The path is marked invalid first, so one committed at a
+    /// pause and never finished (a crash) is rebuilt when next opened;
+    /// the entries go in at the end in one step. The caller holds the
+    /// based-on members against change.
+    pub fn rebuild_path_paused(&mut self, txn: &mut Txn<'_>, progress: Progress<'_>, pause: crate::Pause<'_>) -> Result<()> {
         let Some(mut p) = self.core.path() else {
             self.core.attr.path_invalid = false;
             return self.core.save(txn);
         };
+        if !self.core.attr.path_invalid {
+            self.core.attr.path_invalid = true;
+            self.core.save(txn)?;
+        }
         let mut entries = Vec::new();
         if self.is_logical() {
             let total: u64 = {
@@ -1142,10 +1155,13 @@ impl Member {
             for (fi, base) in self.bases.iter().enumerate() {
                 let lf_fmt = &self.file.formats[fi];
                 let log = self.logical(fi)?;
-                let core = Core::load(txn, base.member)?;
+                let mut core = Core::load(txn, base.member)?;
                 for rrn in 1..=core.attr.slots {
                     done += 1;
                     progress(done, total);
+                    if done.is_multiple_of(crate::PAUSE_EVERY) && pause(txn)? {
+                        core = Core::load(txn, base.member)?;
+                    }
                     let Some(slot) = core.read_slot(txn, rrn)? else {
                         continue;
                     };
@@ -1172,6 +1188,9 @@ impl Member {
             let total = self.core.attr.slots;
             for rrn in 1..=total {
                 progress(rrn, total);
+                if rrn.is_multiple_of(crate::PAUSE_EVERY) {
+                    pause(txn)?;
+                }
                 let Some(slot) = self.core.read_slot(txn, rrn)? else {
                     continue;
                 };

@@ -5,7 +5,9 @@
 //! `CREATE TABLE`, `CREATE INDEX` and `DROP`: the statement becomes DDS,
 //! the DDS compiler checks it, the database creates the file.
 
-use db::file::{self, CreateFileOpts, FileKind};
+use db::file::{self, CreateFileOpts, FileKind, MemberOpt};
+use db::util::Hold;
+use store::obj::LockState;
 use dds::{CompileOpts, MapRefs, NoRefs, Source, compile_lf, compile_pf};
 use qsname::Name;
 use store::txn::Txn;
@@ -660,7 +662,10 @@ pub fn alter_table(
             ccsid: None,
             text: None,
         };
-        db::chg::chgpf_srcfile(txn, ctx.job, table.id, &def)?;
+        // The records are read and converted taking turns, the table
+        // held `*EXCL`; they are written in one step.
+        let job = ctx.job;
+        db::chg::chgpf_srcfile_paused(txn, job, table.id, &def, &mut |t| ctx.pause(t))?;
     }
     for name in &drops {
         drop_constraint(txn, ctx, &table, name)?;
@@ -820,19 +825,57 @@ fn create_index_with_text(
             msgid: None,
         });
     };
+    build_index(txn, ctx, &table, library, name, &def, text)
+}
+
+/// The index file over `table`, its path built taking turns: the table
+/// held `*SHRNUP` throughout (read, never changed, by others), the new
+/// file `*EXCL` from its creation, and the file gone again when the
+/// build fails or is ended.
+fn build_index(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    table: &TableInfo,
+    library: store::obj::ObjectId,
+    name: Name,
+    def: &dds::LfDefinition,
+    text: &str,
+) -> Result<()> {
     let base = table.id;
-    file::create_lf(
+    let job = ctx.job;
+    let now = ctx.clock();
+    let text: String = text.chars().take(50).collect();
+    let what = table.desc.name().to_string();
+    let base_hold = Hold::take(
         txn,
-        library,
-        name,
-        &def,
-        &mut |_| Ok(base),
-        &CreateFileOpts {
-            now: ctx.clock(),
-            text: text.chars().take(50).collect(),
-            ..CreateFileOpts::default()
-        },
+        job,
+        &[(base, LockState::SharedNoUpdate), (table.member.object, LockState::SharedNoUpdate)],
+        &what,
     )?;
+    let opts = CreateFileOpts {
+        now,
+        text: text.clone(),
+        member: MemberOpt::None,
+        ..CreateFileOpts::default()
+    };
+    let lf = match file::create_lf(txn, library, name, def, &mut |_| Ok(base), &opts) {
+        Ok(id) => id,
+        Err(e) => {
+            base_hold.release(txn);
+            return Err(e.into());
+        }
+    };
+    let built = Hold::take(txn, job, &[(lf, LockState::Exclusive)], &name.to_string()).and_then(|hold| {
+        let r = file::add_lf_member_paused(txn, lf, name, &text, None, now, &mut |t| ctx.pause(t));
+        hold.release(txn);
+        r
+    });
+    if built.is_err() {
+        // Nothing of it stays, the parts it committed included.
+        let _ = file::delete_file(txn, job, lf);
+    }
+    base_hold.release(txn);
+    built?;
     Ok(())
 }
 

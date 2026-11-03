@@ -289,27 +289,42 @@ impl SqlContext {
         self.yield_at(txn, 1, true)
     }
 
+    /// The pause of a long definition or maintenance step in the
+    /// database ([`db::Pause`]): what it did so far committed, then a
+    /// turn for the others as at [`Self::safe_point`]. Its locks keep
+    /// what it works on as it was.
+    pub(crate) fn pause(&mut self, txn: &mut Txn<'_>) -> db::Result<bool> {
+        match self.turn(txn, 0, true) {
+            Ok(Some(yielded)) => Ok(yielded),
+            Ok(None) => Err(db::DbError::Ended),
+            Err(e) => Err(e.into()),
+        }
+    }
+
     fn yield_at(&mut self, txn: &mut Txn<'_>, own: u32, commit: bool) -> Result<bool> {
+        self.turn(txn, own, commit)?.ok_or(SqlError::Cancelled)
+    }
+
+    /// A turn for the others when it is time: whether it yielded, `None`
+    /// when the yielder ended the statement.
+    fn turn(&mut self, txn: &mut Txn<'_>, own: u32, commit: bool) -> std::result::Result<Option<bool>, store::StoreError> {
         let Some(y) = self.yielder.clone() else {
-            return Ok(false);
+            return Ok(Some(false));
         };
         if self.open != own || self.last_yield.is_some_and(|t| t.elapsed() < self.yield_every) {
-            return Ok(false);
+            return Ok(Some(false));
         }
         if commit {
             txn.commit_part()?;
         }
         if !txn.suspend() {
-            return Ok(false);
+            return Ok(Some(false));
         }
         let stop = y();
         txn.resume()?;
         self.yields += 1;
         self.last_yield = Some(std::time::Instant::now());
-        if stop {
-            return Err(SqlError::Cancelled);
-        }
-        Ok(true)
+        Ok(if stop { None } else { Some(true) })
     }
 
     /// Give back the locks a yielding statement took.
@@ -481,6 +496,17 @@ pub fn lock_level(iso: crate::ast::Isolation) -> Option<db::cmt::LckLvl> {
     }
 }
 
+/// `ROLLBACK` of the job's unit of work, undone taking turns with its
+/// record locks held.
+fn rollback(txn: &mut Txn<'_>, ctx: &mut SqlContext) -> Result<()> {
+    let now = ctx.now;
+    let mut session = std::mem::replace(&mut ctx.session, Session::new(ctx.job, ctx.locks.clone()));
+    let r = session.rollbck_paused(txn, now, &mut |t| ctx.pause(t));
+    ctx.session = session;
+    r?;
+    Ok(())
+}
+
 /// `SET TRANSACTION`: refused once the unit of work changed
 /// something; else the level of the rest of the unit, and of the
 /// commitment definition when the job has one.
@@ -611,14 +637,17 @@ impl Prepared {
         params: &[Value],
     ) -> Result<Outcome> {
         ctx.naming = self.naming;
-        // Queries and changes take turns at their safe points; any other
-        // statement runs to its end.
+        // Queries, changes and the long definitions take turns at their
+        // safe points; any other statement runs to its end.
         match &self.statement {
             Statement::Select(_)
             | Statement::Insert(_)
             | Statement::Update(_)
             | Statement::Delete(_)
             | Statement::Merge(_)
+            | Statement::CreateIndex(_)
+            | Statement::AlterTable(_)
+            | Statement::Rollback { .. }
             | Statement::Open { .. } => self.dispatch(txn, ctx, params),
             _ => ctx.no_yield(|ctx| self.dispatch(txn, ctx, params)),
         }
@@ -656,7 +685,7 @@ impl Prepared {
             }
             Statement::Rollback { hold } => {
                 if ctx.session.commit_def().is_some() {
-                    ctx.session.rollbck(txn, ctx.now)?;
+                    rollback(txn, ctx)?;
                 }
                 ctx.isolation = None;
                 if !hold {
@@ -807,6 +836,7 @@ impl From<db::DbError> for SqlError {
             D::DataMapping { .. } => Self::Conversion {
                 what: e.to_string(),
             },
+            D::Ended => Self::Cancelled,
             D::NotAFile { .. } | D::MemberNotFound { .. } => Self::ObjectNotFound {
                 name: e.to_string(),
                 kind: "table",
