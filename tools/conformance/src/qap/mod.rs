@@ -32,9 +32,13 @@
 //! turns) while they answer again.
 //!
 //! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
+//!
+//! Step 93, the `Messages` service and the spool watches as `QAPTEST`
+//! and `QAPTEST2`: see `messages.rs`.
 
 mod client;
 mod ifs;
+mod messages;
 mod sql;
 
 use std::time::{Duration, Instant};
@@ -268,6 +272,30 @@ impl Suite {
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         s.command(&format!("RMDIR DIR('{}')", ifs::EXCLUDED), CMD)?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
+    /// Step 93: `Messages` and the spool watches through the real jobs
+    /// (`messages.rs`).
+    pub(crate) fn qap_messages(&self, s: &mut Session) -> Result<String, String> {
+        let mut srv = setup(self, s)?;
+        expect(
+            s,
+            &format!(
+                "CRTUSRPRF USRPRF({}) PASSWORD('{}') PWDEXP(*NO) TEXT('QAP step 93')",
+                messages::USER2,
+                messages::PASSWORD2
+            ),
+            &["QAPTEST2 created", "CPF2214", "exists"],
+        )?;
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let mut b = srv.open()?;
+        b.sign_on(messages::USER2, messages::PASSWORD2)?;
+        let r = messages::run(s, &mut a, &mut b).map_err(|e| format!("MESSAGES: {e}"));
+        let _ = a.call(Op::SignOff, &());
+        let _ = b.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r.map_err(|e| with_history(s, &e))
     }
 

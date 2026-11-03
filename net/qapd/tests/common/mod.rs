@@ -70,6 +70,29 @@ impl Client {
         }
     }
 
+    /// The next whole reply or event within `wait`; `None` when none
+    /// came by then or the server closed.
+    pub fn try_recv(&mut self, wait: Duration) -> Option<Envelope> {
+        let end = Instant::now() + wait;
+        let mut buf = vec![0u8; 64 * 1024];
+        loop {
+            while let Some(env) = self.frames.next_frame().expect("a valid frame") {
+                if let Some(whole) = self.asm.push(env) {
+                    return Some(whole);
+                }
+            }
+            if Instant::now() >= end {
+                return None;
+            }
+            match self.s.read(&mut buf) {
+                Ok(0) => return None,
+                Ok(n) => self.frames.push(&buf[..n]),
+                Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {}
+                Err(_) => return None,
+            }
+        }
+    }
+
     /// The next frame as it came, not joined; `None` once the server
     /// closed.
     pub fn recv_frame(&mut self) -> Option<Envelope> {

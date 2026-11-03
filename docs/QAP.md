@@ -863,3 +863,107 @@ Version 5, as built on 2026-11-02 (decisions made in the build, for Cody to revi
   subfolders whose file `TREE_HELD`, deep inside, is checked out to
   `ANN`, so a client's depth-first recursive delete removes what comes
   before it and stops there with the system's message.
+
+Version 6, as built on 2026-11-03 (decisions made in the build, for Cody to review):
+
+- The server accepts versions 1 to 6. `Messages` runs on the connection
+  job's secondary threads, never in the lane, through rpcs 760 to 763
+  (`stgsvc/qap/messages.rs`) over the functions the message commands
+  use (`stgsvc/msgs.rs`), as the signed-on profile: `ListMessages` and
+  `WatchQueue` check as `DSPMSG` (`msgq.receive`), `ReplyMessage` as
+  `SNDRPYMSG` (`msgq.reply`), `RemoveMessages` as `RMVMSG`
+  (`msgq.remove`), `SendMessage` as `SNDMSG` (`msgq.send`). A queue not
+  there is `NotFound` with `CPF2403`, a key `CPF2410`; a refused queue
+  `NotAuthorized` with `CPF9802` naming it (`CPF9820` for its library);
+  not an inquiry waiting `InvalidRequest` with `CPF2422`.
+- `Own` is the queue the profile's `MSGQ` names (`*USRPRF`: its own in
+  `QUSRSYS`). A profile's own queue is made at its first sign-on, as
+  before; a `User` recipient who never signed on has none yet and is
+  `NotFound` (`CPF2403`).
+- The job gives each message the client's form: an identifier's text
+  and second-level text are its message file's description with the
+  message's data, looked up in the job, so in its language; an
+  impromptu message's are as sent.
+- Keys: a queue hands out the key after the last, never 0 and never
+  one a message on it has, so keys go up as messages arrive (a wrap
+  past 2^32 included). Lists are in that order, counted back from the
+  queue's next key; a reply, kept just after its inquiry on the queue,
+  lists where it arrived.
+- Inquiries and replies (`stgsvc/msgs.rs`, so the commands do the
+  same): a reply is checked against the valid replies of the message's
+  description (`MsgDesc::reply_ok`; an impromptu inquiry takes any),
+  `CPF2420` when refused (added to `QCPFMSG`); `SNDRPYMSG` and the
+  replies typed on `DSPMSG` are now checked the same way. An inquiry
+  whose reply goes to another queue leaves a sender's copy there: a
+  new `*MSGQ` message type, `*COPY` (8), its `ReplyTo` the queue the
+  inquiry went to and its `ReplyKey` the inquiry's key there
+  (`WORKMGMT.md`, `MessageEntry`). Answering the inquiry answers the
+  copy too, as the system, whatever the replier may do with the
+  sender's queue. `SNDMSG MSGTYPE(*INQ)` leaves a copy on its
+  `RPYMSGQ` (by default `QSYSOPR`) as well. If the copy cannot be put,
+  the inquiry is taken back and the send fails.
+- `RemoveMessages` removes exactly the keys given, all or none; an
+  inquiry removed before its reply gets none, as `RMVMSG` removes it.
+- `SendMessage` with empty text is `InvalidRequest` (`CPD0071`). Its
+  messages name `QAPCNN` as the sending program. A message or reply sent
+  through QAP names the signed-on profile as its sender's user, and so
+  as `from_user` and `from_job`'s user: a queue entry keeps one user
+  for its sender, and the connection job's own (`QUSER`) would say
+  nothing of who sent it.
+- Watches (`net/qapd/src/watches.rs`): a connection's first watch makes
+  one more secondary thread, which looks at every watch each 250 ms
+  (`Config::watch_poll`) through the same calls as `ListMessages` and
+  `ListSpooledFiles`, with the profile's authority, and sends the
+  events. Nothing is allocated and no delivery mode changes, so a job
+  holding the queue in break mode keeps it.
+  - Messages: a look lists newest first, in pages of 32, until a key
+    the watch knows; what came before it is sent, oldest first. When
+    the keys known outgrow the queue by 256 (messages removed), the
+    next look lists it whole and keeps only what is there.
+  - Spool: a look lists the target's files and compares them with the
+    last: `Removed`, `Changed` (any field of `SpooledFile` differs),
+    then `Added`, each in the order the files were made.
+  - What changes and changes back between two looks is not seen: a
+    message sent and removed, a file added and deleted, within one
+    look's interval sends nothing; several changes to a file between
+    two looks send one `Changed`.
+  - A watch is of the `Queue` or `SpoolTarget` value given: `Own` and a
+    `Named` queue that is the same queue are two watches. A watch whose
+    queue or target can no longer be listed (deleted, authority
+    revoked) stays and sends nothing until it can be again.
+  - `UnwatchQueue` and `UnwatchSpool` of what is not watched are
+    `NotFound` with `TCP1A5B`; a host without message queues answers
+    `Error` with `TCP1A5C` (both added to `QTCPMSG`).
+  - `SignOff` ends the connection's watches with its profile (the
+    spec's rule says a watch ends with its connection; a watch carried
+    across a sign-off would list as nobody).
+- The test system (`qapd::testing::messages`): message queues under the
+  same rules, its fixtures in the module's documentation (`QSYSOPR` and
+  `BOB`'s own with every type, `CPA0701` taking `C`, `D`, `I`, `R`
+  with default `C`, `CPA5305` taking `Y` or `N`, 149 messages on
+  `QSYSOPR`, `QGPL/SECRETQ` only `ANN` may use, `QGPL/TEAMQ` held in
+  break mode by job 4242). `System::inject_message` puts a message on a
+  queue as another job sends it; `System::spool_add`, `spool_change`
+  and `spool_remove` change spooled files from outside. Watches in
+  tests look every 20 ms (`Config::watch_poll`).
+- QEMU step 93 runs the `Messages` service and a spool watch through the
+  real connection jobs as `QAPTEST` and `QAPTEST2`. It does not reach a
+  message with valid replies (only a writer's device error sends one);
+  the test system's `CPA0701` covers the check.
+- `Stat` (`net/qapd/src/files/entries.rs`) answers `GetInfo`'s entry,
+  with its checks and messages, and the object's change counter
+  (`IFS.md`, "Change counter"): one counter for the whole volume, kept
+  in the metadata record (tag 21), handed out in reserved blocks of
+  1024 whose top is kept on the volume, so a restart never repeats a
+  value and a file deleted and made again at the same path gets a
+  higher one. Data writes, truncation, a rename (and both directories),
+  owner, group, authority, CCSID and the other attributes raise it;
+  entries made, removed or renamed raise their directory's. An object
+  written before the counter existed reads 0 until its next attribute
+  change. Not met everywhere, for Cody to decide: under `/QSYS.LIB`
+  `change` is the object's last-changed time in nanoseconds, which the
+  store keeps only to the second, so two changes within a second can
+  share a value; under `/QOPT` and the devices it is 0.
+- The test system's `Files::change_twice(path)` changes a file twice
+  with its `modified` held, for the client's test of two changes in one
+  millisecond.
