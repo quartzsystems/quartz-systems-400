@@ -6,7 +6,7 @@
 //! TLS 1.3 on the guest's 2320, with a certificate the step assigns to
 //! `QS400_ACCESS_SERVER` and pins.
 //!
-//! Step 89: `Hello` (version 4), `JobInfo` before and after `SignOn` as
+//! Step 89: `Hello` (the newest version), `JobInfo` before and after `SignOn` as
 //! `QAPTEST`, `SystemInfo`, `RunCommand`, `CheckCommand`,
 //! `DescribeCommand`; a job log listed and read as SCS (whole, page 1,
 //! from page 2 on) and as text; a second connection attached, its own
@@ -71,14 +71,14 @@ struct Server {
 }
 
 impl Server {
-    /// A new connection, hello'd at version 4.
+    /// A new connection, hello'd at the newest version.
     fn open(&mut self) -> Result<Conn, String> {
         let (mut c, der) = client::connect(self.port, CN, &self.pin)?;
         if self.pin.is_empty() {
             self.pin = der;
         }
         let h = c.hello()?;
-        if h.version != 4 {
+        if h.version != qap_proto::VERSION {
             return Err(format!("Hello chose version {}", h.version));
         }
         Ok(c)

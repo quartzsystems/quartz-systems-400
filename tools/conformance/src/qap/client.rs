@@ -206,7 +206,7 @@ impl Conn {
         false
     }
 
-    /// `Hello` for versions 1 to 4, request ID 1.
+    /// `Hello` for versions 1 to the newest, request ID 1.
     pub fn hello(&mut self) -> Result<HelloReply, String> {
         self.next_id = 0;
         self.ok(
