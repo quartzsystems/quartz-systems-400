@@ -11,6 +11,10 @@ use std::fmt::Write as _;
 
 use crate::listing::Diag;
 
+/// The version of the outcome text (frozen at V1R1M0). Outcomes hold no
+/// credential or account name; the account is written `{user}`.
+pub const FORMAT_VERSION: u16 = 1;
+
 /// How the call ended.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Run {

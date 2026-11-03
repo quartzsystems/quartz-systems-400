@@ -11,6 +11,10 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 
+/// The version of the golden files' layout (frozen at V1R1M0). Goldens
+/// hold no credential; the account is masked as `{user}`.
+pub const FORMAT_VERSION: u16 = 1;
+
 /// One index entry.
 #[derive(Clone, Debug)]
 pub struct Entry {

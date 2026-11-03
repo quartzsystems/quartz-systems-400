@@ -581,3 +581,9 @@ Record format of `QASRRSTO`, the restore outfile, as IBM i V7R1M0's `DSPFFD` sho
 | 4390 | 10 | RSOPVR | ZONED 10 0 |
 | 4400 | 1 | RSODFR | CHAR 1 |
 | 4401 | 10 | RSODFI | CHAR 10 |
+
+## Frozen at V1R1M0
+
+Frozen: the media header, records, object descriptors, parts, references, the index and trailer, chunk compression, the content digest and the `QSRSAV`/`QSRRST` outfile layouts. The version is the media header's `VERSION`. A V1R1M0 system restores every save written by V1R0M0, which has the same version.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

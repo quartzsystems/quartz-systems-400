@@ -1094,3 +1094,9 @@ From body offset 32, `count` entries, in volume order.
 |---|---|---|---|
 | 0 | 8 | start | first logical page |
 | 8 | 8 | pages | length; the run lies within one span |
+
+## Frozen at V1R1M0
+
+Frozen: the page and its trailer, the unit label, the superblock, the WAL pages and records, B+tree nodes and their key and value codecs, the allocation bitmaps and free log, the parity table and partial-parity log, the IFS map, and the object header with the type codes and the payloads the store itself defines (authority, data areas, data queues, user indexes, system values). The versions are the superblock's and unit's `FORMAT_VERSION` and the object header's `HEADER_VERSION`.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

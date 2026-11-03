@@ -10,6 +10,21 @@ use tracing::{error, info};
 use crate::ctx::Ctx;
 use crate::host::paths;
 
+/// The format freeze (`tools/fmtcheck`): a frozen format changed without
+/// a version bump fails the run before anything boots.
+fn freeze(ctx: &Ctx) -> Result<()> {
+    let rows = fmtcheck::check(&ctx.paths.repo)?;
+    let bad: Vec<&str> = rows.iter().filter(|r| r.fails()).map(|r| r.name.as_str()).collect();
+    if !bad.is_empty() {
+        anyhow::bail!(
+            "frozen formats changed without a version bump: {} (cargo run -p fmtcheck)",
+            bad.join(", ")
+        );
+    }
+    info!("fmtcheck: {} frozen formats unchanged", rows.len());
+    Ok(())
+}
+
 /// Run the Phase 1 suite for `media`.
 pub fn test(
     ctx: &Ctx,
@@ -18,6 +33,7 @@ pub fn test(
     bench: u64,
     pulls: u32,
 ) -> Result<()> {
+    freeze(ctx)?;
     let image = paths::read_pointer(&ctx.paths.disk_pointer())
         .context("no disk image; run `disk` first")?;
     let iso = paths::read_pointer(&ctx.paths.iso_pointer()).ok();

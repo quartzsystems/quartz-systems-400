@@ -1,0 +1,358 @@
+# Every persistent or wire format frozen at a release. `fmtcheck` hashes
+# the listed sources (tokens only: comments and #[cfg(test)] items do not
+# count) and fails when a hash moves without one of `version` moving too.
+# After a deliberate change: bump the version, add the migration (or the
+# reader of the old version), then `cargo run -p fmtcheck -- update`.
+
+# --- On disk: the object store and the LIC partition ---
+
+[[format]]
+name = "store"
+frozen_at = "V1R1M0"
+doc = "docs/STORE_FORMAT.md"
+version = [
+    "storage/store/src/asp/superblock.rs::FORMAT_VERSION",
+    "storage/store/src/asp/unit.rs::FORMAT_VERSION",
+    "storage/store/src/obj/header.rs::HEADER_VERSION",
+]
+files = [
+    "storage/store/src/page/mod.rs",
+    "storage/store/src/page/trailer.rs",
+    "storage/store/src/asp/superblock.rs",
+    "storage/store/src/asp/unit.rs",
+    "storage/store/src/asp/layout.rs",
+    "storage/store/src/asp/ifs/map.rs",
+    "storage/store/src/asp/parity/ppl.rs",
+    "storage/store/src/asp/parity/geometry.rs",
+    "storage/store/src/asp/parity/table.rs",
+    "storage/store/src/wal/mod.rs",
+    "storage/store/src/wal/record.rs",
+    "storage/store/src/btree/node.rs",
+    "storage/store/src/btree/codec.rs",
+    "storage/store/src/alloc/bitmap.rs",
+    "storage/store/src/alloc/freelog.rs",
+    "storage/store/src/obj/header.rs",
+    "storage/store/src/obj/types.rs",
+    "storage/store/src/obj/id.rs",
+    "storage/store/src/obj/auth.rs",
+    "storage/store/src/obj/dtaara.rs",
+    "storage/store/src/obj/dtaq.rs",
+    "storage/store/src/obj/usridx.rs",
+    "storage/store/src/obj/sysval.rs",
+]
+
+[[format]]
+name = "licpart"
+frozen_at = "V1R1M0"
+version = [
+    "lic/licpart/src/format/mod.rs::FORMAT_VERSION",
+    "lic/licpart/src/format/keyslot.rs::KEYSLOT_VERSION",
+]
+files = [
+    "lic/licpart/src/format/mod.rs",
+    "lic/licpart/src/format/header.rs",
+    "lic/licpart/src/format/history.rs",
+    "lic/licpart/src/format/keyslot.rs",
+    "lic/licpart/src/format/pal.rs",
+    "lic/licpart/src/format/tlv.rs",
+]
+
+# --- The database and journals ---
+
+[[format]]
+name = "database"
+frozen_at = "V1R1M0"
+doc = "docs/DB_FORMAT.md"
+version = [
+    "database/db/src/file/attr.rs::VERSION",
+    "database/db/src/file/alias.rs::VERSION",
+    "database/db/src/member/attr.rs::VERSION",
+]
+files = [
+    "database/db/src/file/attr.rs",
+    "database/db/src/file/alias.rs",
+    "database/db/src/file/members.rs",
+    "database/db/src/file/dependents.rs",
+    "database/db/src/format/sections.rs",
+    "database/db/src/format/level_id.rs",
+    "database/db/src/member/attr.rs",
+    "database/db/src/member/slots.rs",
+    "database/db/src/member/lob.rs",
+    "database/db/src/path/encode.rs",
+]
+
+[[format]]
+name = "journal"
+frozen_at = "V1R1M0"
+doc = "docs/DB_FORMAT.md"
+version = [
+    "database/jrn/src/journal/mod.rs::VERSION",
+    "database/jrn/src/rcv/mod.rs::VERSION",
+]
+files = [
+    "database/jrn/src/entry/mod.rs",
+    "database/jrn/src/journal/mod.rs",
+    "database/jrn/src/rcv/mod.rs",
+]
+
+# --- Save, PTFs, the update protocol, licensed programs, media ---
+
+[[format]]
+name = "save"
+frozen_at = "V1R1M0"
+doc = "docs/SAVE_FORMAT.md"
+version = ["save/savfmt/src/header.rs::VERSION"]
+files = [
+    "save/savfmt/src/header.rs",
+    "save/savfmt/src/record.rs",
+    "save/savfmt/src/object.rs",
+    "save/savfmt/src/codec.rs",
+    "save/savfmt/src/digest.rs",
+    "save/savfmt/src/be.rs",
+    "save/savfmt/src/outfile.rs",
+]
+
+[[format]]
+name = "ptf"
+frozen_at = "V1R1M0"
+doc = "docs/PTF.md"
+version = ["ptf/ptf/src/header.rs::VERSION"]
+files = [
+    "ptf/ptf/src/header.rs",
+    "ptf/ptf/src/package.rs",
+    "ptf/ptf/src/manifest.rs",
+    "ptf/ptf/src/group.rs",
+]
+
+[[format]]
+name = "update-protocol"
+frozen_at = "V1R1M0"
+doc = "docs/UPDATE_PROTOCOL.md"
+version = ["ptf/update/src/catalog.rs::FORMAT"]
+files = [
+    "ptf/update/src/catalog.rs",
+    "ptf/update/src/order.rs",
+]
+
+[[format]]
+name = "licpgm"
+frozen_at = "V1R1M0"
+version = [
+    "licpgm/licpgm/src/payload/prddfn.rs::VERSION",
+    "licpgm/licpgm/src/payload/prdlod.rs::VERSION",
+]
+files = [
+    "licpgm/licpgm/src/payload/codec.rs",
+    "licpgm/licpgm/src/payload/prddfn.rs",
+    "licpgm/licpgm/src/payload/prdlod.rs",
+]
+
+[[format]]
+name = "virtual-tape"
+frozen_at = "V1R1M0"
+version = ["media/tape/src/virt/format.rs::VERSION"]
+files = ["media/tape/src/virt/format.rs"]
+
+[[format]]
+name = "media-labels"
+frozen_at = "V1R1M0"
+version = [
+    "media/optical/src/manifest.rs::MAGIC",
+    "media/optical/src/volume/layout.rs::LABEL_MAGIC",
+    "media/imgclg/src/model.rs::META_MAGIC",
+    "media/instmedia/src/rsp.rs::MAGIC",
+]
+files = [
+    "media/optical/src/manifest.rs",
+    "media/optical/src/volume/layout.rs",
+]
+
+# --- Wire: QAP, host servers ---
+
+[[format]]
+name = "qap"
+frozen_at = "V1R1M0"
+doc = "docs/QAP.md"
+version = ["work/qap-proto/src/lib.rs::VERSION"]
+files = [
+    "work/qap-proto/src/lib.rs",
+    "work/qap-proto/src/types.rs",
+    "work/qap-proto/src/secret.rs",
+    "work/qap-proto/src/envelope/mod.rs",
+    "work/qap-proto/src/envelope/kinds.rs",
+    "work/qap-proto/src/envelope/message.rs",
+    "work/qap-proto/src/ops/mod.rs",
+    "work/qap-proto/src/ops/command.rs",
+    "work/qap-proto/src/ops/connection.rs",
+    "work/qap-proto/src/ops/ifs.rs",
+    "work/qap-proto/src/ops/messages.rs",
+    "work/qap-proto/src/ops/signon.rs",
+    "work/qap-proto/src/ops/spool.rs",
+    "work/qap-proto/src/ops/sql.rs",
+    "work/qap-proto/src/ops/system.rs",
+]
+
+[[format]]
+name = "host-servers"
+frozen_at = "V1R1M0"
+doc = "docs/HOSTSVR.md"
+version = ["net/hostsvr/src/lib.rs::FORMAT_VERSION"]
+files = [
+    "net/hostsvr/src/frame/mod.rs",
+    "net/hostsvr/src/frame/header.rs",
+    "net/hostsvr/src/frame/param.rs",
+    "net/hostsvr/src/cp.rs",
+    "net/hostsvr/src/codec.rs",
+    "net/hostsvr/src/template.rs",
+    "net/hostsvr/src/rle.rs",
+    "net/hostsvr/src/database/format.rs",
+    "net/hostsvr/src/database/data.rs",
+    "net/hostsvr/src/database/param.rs",
+    "net/hostsvr/src/database/sqlca.rs",
+]
+
+# --- Work management, spooling ---
+
+[[format]]
+name = "spool"
+frozen_at = "V1R1M0"
+version = ["work/wm/src/obj/splf.rs::VERSION"]
+files = ["work/wm/src/obj/splf.rs"]
+
+[[format]]
+name = "wm-objects"
+frozen_at = "V1R1M0"
+doc = "docs/WORKMGMT.md"
+version = [
+    "work/wm/src/obj/cls.rs::VERSION",
+    "work/wm/src/obj/ctld.rs::VERSION",
+    "work/wm/src/obj/devd.rs::VERSION",
+    "work/wm/src/obj/jobd.rs::VERSION",
+    "work/wm/src/obj/jobq.rs::VERSION",
+    "work/wm/src/obj/jobscd.rs::VERSION",
+    "work/wm/src/obj/msgq.rs::VERSION",
+    "work/wm/src/obj/outq.rs::VERSION",
+    "work/wm/src/obj/prtf.rs::VERSION",
+    "work/wm/src/obj/sbsd.rs::VERSION",
+]
+files = [
+    "work/wm/src/obj/cls.rs",
+    "work/wm/src/obj/ctld.rs",
+    "work/wm/src/obj/devd.rs",
+    "work/wm/src/obj/devmed.rs",
+    "work/wm/src/obj/devprt.rs",
+    "work/wm/src/obj/jobd.rs",
+    "work/wm/src/obj/jobq.rs",
+    "work/wm/src/obj/jobscd.rs",
+    "work/wm/src/obj/msgq.rs",
+    "work/wm/src/obj/outq.rs",
+    "work/wm/src/obj/outqrmt.rs",
+    "work/wm/src/obj/prtf.rs",
+    "work/wm/src/obj/rpyl.rs",
+    "work/wm/src/obj/sbsd.rs",
+]
+
+# --- Security ---
+
+[[format]]
+name = "audit"
+frozen_at = "V1R1M0"
+doc = "docs/SECURITY.md"
+version = ["security/sec/src/audit/layout.rs::FORMAT_VERSION"]
+files = [
+    "security/sec/src/audit/layout.rs",
+    "security/sec/src/audit/kind.rs",
+]
+
+[[format]]
+name = "usrprf"
+frozen_at = "V1R1M0"
+doc = "docs/SECURITY.md"
+version = ["security/sec/src/profile/payload.rs::VERSION"]
+files = ["security/sec/src/profile/payload.rs"]
+
+[[format]]
+name = "authority"
+frozen_at = "V1R1M0"
+doc = "docs/SECURITY.md"
+version = ["security/sec/src/auth/mod.rs::FORMAT_VERSION"]
+files = [
+    "security/sec/src/auth/bits.rs",
+    "security/sec/src/auth/autl.rs",
+]
+
+# --- Object payloads ---
+
+[[format]]
+name = "ile-objects"
+frozen_at = "V1R1M0"
+version = [
+    "runtime/ile/src/object/module.rs::VERSION",
+    "runtime/ile/src/object/program.rs::VERSION",
+    "runtime/ile/src/object/bnddir.rs::VERSION",
+    "runtime/qir/src/module/mod.rs::FORMAT_VERSION",
+]
+files = [
+    "runtime/ile/src/object/module.rs",
+    "runtime/ile/src/object/program.rs",
+    "runtime/ile/src/object/bnddir.rs",
+    "runtime/ile/src/object/code.rs",
+    "runtime/qir/src/binary/read.rs",
+    "runtime/qir/src/binary/write.rs",
+]
+
+[[format]]
+name = "ui-objects"
+frozen_at = "V1R1M0"
+version = [
+    "command/cmd/src/payload/mod.rs::VERSION",
+    "runtime/msgf/src/payload.rs::VERSION",
+    "ui/dspf/src/payload/mod.rs::VERSION",
+    "ui/uim/src/payload/mod.rs::VERSION",
+    "ui/menus/src/payload/mod.rs::VERSION",
+]
+files = [
+    "command/cmd/src/payload/mod.rs",
+    "runtime/msgf/src/payload.rs",
+    "ui/dspf/src/payload/mod.rs",
+    "ui/dspf/src/payload/codec.rs",
+    "ui/uim/src/payload/mod.rs",
+    "ui/uim/src/payload/codec.rs",
+    "ui/menus/src/payload/mod.rs",
+    "ui/menus/src/payload/rec.rs",
+]
+
+[[format]]
+name = "ifs-meta"
+frozen_at = "V1R1M0"
+doc = "docs/IFS.md"
+version = ["ifs/ifs/src/meta/codec.rs::VERSION"]
+files = ["ifs/ifs/src/meta/codec.rs"]
+
+[[format]]
+name = "net-objects"
+frozen_at = "V1R1M0"
+version = [
+    "net/cmncfg/src/lind/codec.rs::VERSION",
+    "net/regfac/src/payload.rs::VERSION",
+    "net/certs/src/store/format.rs::FORMAT_VERSION",
+    "work/print/src/wscst.rs::VERSION",
+]
+files = [
+    "net/cmncfg/src/lind/codec.rs",
+    "net/regfac/src/payload.rs",
+    "net/certs/src/store/format.rs",
+]
+
+# --- Oracle fixtures (no credentials; the account is `{user}`) ---
+
+[[format]]
+name = "oracle-fixtures"
+frozen_at = "V1R1M0"
+version = [
+    "tools/rpg-oracle/src/outcome.rs::FORMAT_VERSION",
+    "tools/tn5250-driver/src/golden.rs::FORMAT_VERSION",
+]
+items = [
+    "tools/rpg-oracle/src/outcome.rs::struct Outcome",
+]

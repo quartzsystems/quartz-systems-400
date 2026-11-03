@@ -1411,3 +1411,9 @@ blank, as the capture shows it.
   no entries.
 - Scanning attributes are stored; there are no scan exit points.
 - The service holds one lock for the whole IFS state; I/O runs under it.
+
+## Frozen at V1R1M0
+
+Frozen: the metadata record (`ifs/ifs/src/meta/codec.rs`, `VERSION`) and the IFS map in the ASP (`STORE_FORMAT.md` section 12).
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

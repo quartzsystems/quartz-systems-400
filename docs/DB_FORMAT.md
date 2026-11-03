@@ -662,3 +662,9 @@ record written, `R UB` the record before an update (under
 `IMAGES(*BOTH)`), `R UP` the record after, `R DL` the record deleted.
 `J PR` and `J NR` name the previous and next receiver in `object`.
 File-level entries (`F`) carry no data.
+
+## Frozen at V1R1M0
+
+Frozen: the `*FILE` attribute and alias payloads, the member and dependents tables, the format sections and level identifiers, the member attribute, record slots, LOB storage and the key encoding of access paths (`database`); the `*JRN` and `*JRNRCV` payloads and the journal entry layout (`journal`). Each payload carries its own `VERSION`.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

@@ -7,6 +7,10 @@
 //! ([`autl`]), what operations need ([`required`]), the search
 //! ([`search`]) and a job's cache of its answers ([`cache`]).
 
+/// The version of the stored authority structures: private authorities
+/// and authorization lists (frozen at V1R1M0, `docs/SECURITY.md`).
+pub const FORMAT_VERSION: u16 = 1;
+
 pub mod autl;
 pub mod bits;
 pub mod cache;

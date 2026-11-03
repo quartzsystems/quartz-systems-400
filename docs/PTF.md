@@ -245,3 +245,9 @@ when = "migration"           # before-apply, after-apply, before-remove,
 Unknown keys are refused, so a misspelt field does not build a PTF that
 silently lacks it. The objects are signed where they are (their headers
 carry the signature they are saved with) and saved in library order.
+
+## Frozen at V1R1M0
+
+Frozen: the PTF header (now with an explicit `VERSION` constant, the value the header always carried), the signed package, the manifest of `QSCRTPTF` and PTF groups.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

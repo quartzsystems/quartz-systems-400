@@ -124,6 +124,7 @@ members = [
     "licpgm/lpbuild",
     # The PASE test fixture, built by the harness and never shipped.
     "tools/pase-probe",
+    "tools/fmtcheck",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",

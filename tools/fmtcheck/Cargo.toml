@@ -1,0 +1,28 @@
+[package]
+name = "fmtcheck"
+description = "QS/400 format freeze check: hashes every frozen format's definitions and fails on a change without a version bump"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "fmtcheck"
+path = "src/main.rs"
+
+[dependencies]
+syn = { version = "2.0.119", default-features = false, features = ["full", "parsing", "printing"] }
+quote = "1.0.47"
+proc-macro2 = "1.0.107"
+serde.workspace = true
+sha2.workspace = true
+hex.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "display", "serde"] }
+
+[lints]
+workspace = true

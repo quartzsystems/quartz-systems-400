@@ -222,3 +222,9 @@ it on loopback.
   (`CPF8C24`); `CHKPTF` is accepted and not acted on.
 - `SNDSRVRQS ACTION(*REPORT)` is refused (`CPF3700`); only `*TEST`
   reaches the service.
+
+## Frozen at V1R1M0
+
+Frozen: the signed catalog (`FORMAT`) and the order request and reply (their first lines name their version).
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

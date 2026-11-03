@@ -12,6 +12,8 @@ pub const HEADER_LEN: usize = 128;
 const REF_LEN: usize = 16;
 const EXIT_LEN: usize = 32;
 const MAGIC: &[u8; 8] = b"QS400PTF";
+/// The header version (frozen at V1R1M0, `docs/PTF.md`).
+pub const VERSION: u16 = 1;
 
 /// `PtfHeader`.
 pub static HEADER_LAYOUT: Layout = Layout {
@@ -181,7 +183,7 @@ impl PtfHeader {
     pub fn encode(&self) -> Vec<u8> {
         let mut b = vec![0u8; HEADER_LEN];
         b[0..8].copy_from_slice(MAGIC);
-        b[8..10].copy_from_slice(&1u16.to_be_bytes());
+        b[8..10].copy_from_slice(&VERSION.to_be_bytes());
         b[10] = u8::from(self.kind == PtfKind::Delayed);
         b[11] = u8::from(self.lic) | u8::from(self.migration) << 1 | u8::from(self.cover_only) << 2;
         b[12..20].copy_from_slice(&ascii::<8>(&self.ptf));
@@ -218,7 +220,7 @@ impl PtfHeader {
         if b.len() < HEADER_LEN || &b[0..8] != MAGIC {
             return Err(bad("no PTF header"));
         }
-        if u16::from_be_bytes([b[8], b[9]]) != 1 {
+        if u16::from_be_bytes([b[8], b[9]]) != VERSION {
             return Err(bad("header version"));
         }
         let n = |at: usize| usize::from(u16::from_be_bytes([b[at], b[at + 1]]));

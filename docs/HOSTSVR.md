@@ -2063,3 +2063,8 @@ Every format starts with `EXTIHeader`; `CONTH` is blank when every entry fit, el
 | 1 | Input | `CHAR(*)` | Device description information |
 | 2 | Input | `CHAR(*)` | Connection description information |
 
+## Frozen at V1R1M0
+
+IBM defines these datastreams; what is frozen is QS/400's codec of them: the 20-byte header, LL/CP parameters, the templates, RLE, and the database server's formats, data, parameters and SQLCA (`net/hostsvr`, `FORMAT_VERSION`). A change of what QS/400 sends or accepts bumps it.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

@@ -971,3 +971,9 @@ Version 6, as built on 2026-11-03 (decisions made in the build, for Cody to revi
 - The test system's `Files::change_twice(path)` changes a file twice
   with its `modified` held, for the client's test of two changes in one
   millisecond.
+
+## Frozen at V1R1M0
+
+Frozen: the envelope and versions 1 to 6 as specified above, the `qap-proto` crate's types for them, and the rules under "Compatibility of new values". A new operation, service, status or event is a new protocol version; nothing in versions 1 to 6 changes meaning. Draft: anything added after version 6 (the management API of Phase 12 Section 7 is specified in its own section and is draft until QS/400 ships it); the "Later phases" inventory describes what was planned and is history, not specification.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

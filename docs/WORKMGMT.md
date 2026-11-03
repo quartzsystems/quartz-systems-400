@@ -1032,3 +1032,9 @@ start.
 - `SSTS0400`, `SSTS0500`: as `SSTS0300` with 104-byte entries that add
   the active and ineligible jobs, the defined size, the defined
   activity level and a reserved word.
+
+## Frozen at V1R1M0
+
+Frozen: the payloads of section 2 (job descriptions, classes, job queues, message queues and entries, the reply list, subsystem descriptions and their entries, job schedules, output queues, printer files, device and controller descriptions) and the spooled file payload (`work/wm/src/obj/splf.rs`, `VERSION` 2, which still reads version 1). Each payload carries its own `VERSION`.
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

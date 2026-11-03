@@ -22,6 +22,11 @@ macro_rules! consts {
 }
 
 /// Declare named `u32` constants and their `ALL` table.
+/// The version of this codec's datastreams as QS/400 speaks them (frozen
+/// at V1R1M0, `docs/HOSTSVR.md`). IBM defines the bytes; a bump means a
+/// deliberate change of what QS/400 sends or accepts.
+pub const FORMAT_VERSION: u16 = 1;
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! consts32 {

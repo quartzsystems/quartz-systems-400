@@ -949,3 +949,9 @@ USER PASSWORD`, checked as DST checks it, audited `ST` `SC` or `PW`
 the harness; a `--release` image never has that flag. DST sign-ons
 (`ST` `DS`) and password resets (`DS`) are kept by `slic` until the
 storage service runs, then audited (`audit_lic`, request 128).
+
+## Frozen at V1R1M0
+
+Frozen: the `*USRPRF` payload (`profile/payload.rs`), the stored authority structures (private authorities in the object store, authority bits, authorization lists; `auth::FORMAT_VERSION`) and the `QAUDJRN` entry-specific layouts of section 7 (`audit::layout::FORMAT_VERSION`).
+
+Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

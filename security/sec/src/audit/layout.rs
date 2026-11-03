@@ -10,6 +10,9 @@
 use crate::audit::kind::Kind;
 use crate::rec::{Layout, field};
 
+/// The version of these layouts (frozen at V1R1M0, `docs/SECURITY.md` §7).
+pub const FORMAT_VERSION: u16 = 1;
+
 /// `AF`: authority failure.
 pub static AF: Layout = Layout {
     name: "AuditAF",
