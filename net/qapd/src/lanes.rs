@@ -243,6 +243,8 @@ fn operation(shared: &Arc<Shared>, host: &mut dyn ThreadHost, op: Op, req: &Enve
         Op::SendMessage => body(req, |b: SendMessage| ok(host.send_message(&b))),
         Op::WatchQueue => watches::watch_queue(shared, host, req),
         Op::UnwatchQueue => watches::unwatch_queue(shared, host, req),
+        Op::WatchSpool => watches::watch_spool(shared, host, req),
+        Op::UnwatchSpool => watches::unwatch_spool(shared, host, req),
         _ => Answer::status(Status::InvalidRequest),
     };
     shared.finish(req, a);
