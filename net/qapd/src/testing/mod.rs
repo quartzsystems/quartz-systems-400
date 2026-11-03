@@ -26,6 +26,14 @@
 //! - a database ([`sql`]): schemas, tables of every type, journaled and
 //!   not, slow and large ones, one `BOB` may not read, for the `Sql`
 //!   service;
+//! - message queues ([`messages`]): the profiles' own and `QSYSOPR`
+//!   with messages of every type, inquiries with valid replies and a
+//!   default, more than a page, a queue `BOB` may not use, one held in
+//!   break mode; [`System::inject_message`] puts a message on any queue
+//!   for event tests;
+//! - spooled files changed from outside, for event tests:
+//!   [`System::spool_add`], [`System::spool_change`],
+//!   [`System::spool_remove`];
 //! - an integrated file system ([`files`]): QS/400's own `ifs` crate in
 //!   memory, with home directories, a directory of 1,200 files, text in
 //!   several CCSIDs (one mixed), links, a directory `BOB` may not use, a
@@ -43,6 +51,7 @@ pub mod files;
 pub mod fixtures;
 mod host;
 mod listen;
+pub mod messages;
 pub mod spool;
 pub mod sql;
 
@@ -151,6 +160,8 @@ pub struct System {
     pub curlib: Mutex<HashMap<u32, String>>,
     /// The output queues and spooled files.
     pub spool: Mutex<spool::Spool>,
+    /// The message queues.
+    pub messages: Mutex<messages::Queues>,
     /// A panic to come, once.
     pub crash: Mutex<Option<Crash>>,
     /// The database.
@@ -216,6 +227,7 @@ impl System {
             running_as: Mutex::new(HashMap::new()),
             curlib: Mutex::new(HashMap::new()),
             spool: Mutex::new(spool::Spool::default()),
+            messages: Mutex::new(messages::Queues::default()),
             crash: Mutex::new(None),
             sql: Mutex::new(sql::Db::default()),
             files: files::Files::new(),
@@ -230,6 +242,7 @@ impl System {
         s.edit("WARN", |u| u.expires = Some(EPOCH + 3 * 86_400));
         s.user("ANN", "ANNPW01");
         fixtures::install(&mut lock(&s.spool));
+        messages::install(&mut lock(&s.messages));
         Arc::new(s)
     }
 
@@ -395,6 +408,42 @@ impl System {
     /// asks; its path.
     pub fn big_file(&self) -> &'static str {
         self.files.big_file()
+    }
+
+    /// Put `m` on queue `lib/name` from outside, as another job sends
+    /// it (its key filled in): for event tests. `None` when there is
+    /// no such queue.
+    pub fn inject_message(&self, lib: &str, name: &str, m: messages::Msg) -> Option<qap_proto::ops::messages::Key> {
+        let mut qs = lock(&self.messages);
+        let i = qs.find(lib, name)?;
+        Some(messages::key(qs.queues[i].put(m)))
+    }
+
+    /// The job holding queue `lib/name` in break mode, if any.
+    #[must_use]
+    pub fn break_holder(&self, lib: &str, name: &str) -> Option<u32> {
+        let qs = lock(&self.messages);
+        qs.find(lib, name).and_then(|i| qs.queues[i].break_job)
+    }
+
+    /// Add spooled file `f` at the end of its queue from outside, as a
+    /// job's printer file would: for event tests.
+    pub fn spool_add(&self, f: spool::File) -> qap_proto::ops::spool::SpooledFileId {
+        let id = f.id.clone();
+        lock(&self.spool).file(f);
+        id
+    }
+
+    /// Change spooled file `id` from outside (its status, attributes or
+    /// queue): for event tests. False when there is no such file.
+    pub fn spool_change(&self, id: &qap_proto::ops::spool::SpooledFileId, f: impl FnOnce(&mut spool::File)) -> bool {
+        lock(&self.spool).change(id, f)
+    }
+
+    /// Remove spooled file `id` from outside: for event tests. False
+    /// when there is no such file.
+    pub fn spool_remove(&self, id: &qap_proto::ops::spool::SpooledFileId) -> bool {
+        lock(&self.spool).remove(id)
     }
 
     /// The other job holding [`files::LOCKED`] lets it go.

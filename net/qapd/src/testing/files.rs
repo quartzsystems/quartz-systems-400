@@ -38,6 +38,11 @@
 //!   [`big_byte`]`(i)`), made the first time [`System::big_file`] is
 //!   called and never otherwise.
 //!
+//! `Stat`'s change counters are the `ifs` crate's, as on a system. For
+//! a client that must not trust `modified` alone, [`Files::change_twice`]
+//! changes a file twice within one millisecond: a `Stat` before and
+//! after shows the same size, data and `modified`, and a higher `change`.
+//!
 //! [`System::release_lock`]: super::System::release_lock
 //! [`System::big_file`]: super::System::big_file
 
@@ -112,6 +117,8 @@ pub const TREE_FILES: [&str; 6] = [
 ];
 /// The file deep in [`TREE`] checked out to `ANN`.
 pub const TREE_HELD: &str = "/home/BOB/tree/src/lib/m.txt";
+/// The owner (job) the fixtures and test calls change files as.
+const MAKER: u64 = 2;
 /// The large file.
 pub const BIG: &str = "/home/BOB/big.bin";
 /// Its size: 200 MiB.
@@ -226,8 +233,6 @@ impl Files {
     }
 
     fn install(&self) {
-        // The fixtures are made by an owner of their own.
-        const MAKER: u64 = 2;
         self.as_user("QSECOFR", MAKER, |c| {
             for u in ["BOB", "ANN", "WARN"] {
                 let home = format!("/home/{u}");
@@ -284,6 +289,36 @@ impl Files {
     /// Job [`HOLDER`] lets every file go.
     pub fn release_lock(&self) {
         self.ifs.release_owner(Owner(HOLDER));
+    }
+
+    /// Change the file at `path` twice within one millisecond, as
+    /// `QSECOFR`: its first byte is overwritten and put back (an empty
+    /// file grows to one byte and back) with the clock held at its last
+    /// modification time, so only `Stat`'s `change` tells it changed.
+    /// Other jobs' changes meanwhile get that time too.
+    ///
+    /// # Panics
+    /// When `path` is not a file `QSECOFR` may open for writing.
+    pub fn change_twice(&self, path: &str) {
+        let b = self.ifs.backend();
+        self.as_user("QSECOFR", MAKER, |c| {
+            let s = c.stat(path, false).unwrap_or_else(|e| panic!("{path}: {e:?}"));
+            b.set_clock(Some(s.mtime));
+            let r = (|| {
+                let fd = c.open(path, OpenArgs::new(O_RDWR))?;
+                let first = c.pread(fd, 1, 0)?;
+                if let Some(&x) = first.first() {
+                    c.pwrite(fd, &[!x], 0)?;
+                    c.pwrite(fd, &[x], 0)?;
+                } else {
+                    c.ftruncate(fd, 1)?;
+                    c.ftruncate(fd, 0)?;
+                }
+                c.close(fd)
+            })();
+            b.set_clock(None);
+            r.unwrap_or_else(|e| panic!("{path}: {e:?}"));
+        });
     }
 
     /// [`BIG`], made the first time it is asked for; its path.

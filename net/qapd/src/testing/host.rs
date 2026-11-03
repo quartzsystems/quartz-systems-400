@@ -10,6 +10,9 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::ops::messages::{
+    ListMessages, MessageType, Messages, QueuedMessage, RemoveMessages, ReplyMessage, SendMessage, Sent,
+};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
@@ -365,6 +368,41 @@ impl MemThread {
         self.refuse(*status, id, &data)
     }
 
+    /// The connection job, as the messages it sends name it.
+    fn sender(&self) -> JobId {
+        JobId {
+            name: "QAPCNN".into(),
+            user: self.me().unwrap_or_else(|| "QUSER".into()),
+            number: format!("{:06}", self.job),
+        }
+    }
+
+    /// A queue's message as the client sees it: an identifier's text
+    /// in the job's language.
+    fn queued(&self, m: &super::messages::Msg) -> QueuedMessage {
+        let (text, help) = if m.id.is_empty() {
+            (m.text.clone(), m.help.clone())
+        } else {
+            let data: Vec<&str> = m.data.iter().map(String::as_str).collect();
+            let s = message(&self.sys, self.job, &m.id, &data);
+            (s.text, s.help)
+        };
+        QueuedMessage {
+            key: super::messages::key(m.key),
+            id: m.id.clone(),
+            kind: m.kind,
+            severity: m.severity,
+            text,
+            help,
+            sent: m.sent,
+            from_user: m.from.user.clone(),
+            from_job: m.from.clone(),
+            needs_reply: m.kind == MessageType::Inquiry && m.waiting,
+            reply: m.reply.clone(),
+            answers: m.answers.map(super::messages::key),
+        }
+    }
+
     fn reply(&self, token: Token, user: &str) -> SignOnReply {
         SignOnReply {
             token,
@@ -571,6 +609,35 @@ impl ThreadHost for MemThread {
             ticket: t,
             expires_secs: TICKET_SECS,
         })
+    }
+
+    fn list_messages(&mut self, req: &ListMessages) -> Result<Messages, Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.messages).list(&me, req);
+        let (total, msgs) = r.map_err(|n| self.no(&n))?;
+        let messages = msgs.iter().map(|m| self.queued(m)).collect();
+        Ok(Messages { total, messages })
+    }
+
+    fn reply_message(&mut self, req: &ReplyMessage) -> Result<(), Refusal> {
+        let (me, from, now) = (self.me().unwrap_or_default(), self.sender(), self.now_ms());
+        let r = lock(&self.sys.messages).reply(&me, &from, now, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn remove_messages(&mut self, req: &RemoveMessages) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let r = lock(&self.sys.messages).remove(&me, req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn send_message(&mut self, req: &SendMessage) -> Result<Sent, Refusal> {
+        let (me, from, now) = (self.me().unwrap_or_default(), self.sender(), self.now_ms());
+        let r = lock(&self.sys.messages).send(&me, &from, now, req);
+        r.map(|k| Sent {
+            key: k.map(super::messages::key),
+        })
+        .map_err(|n| self.no(&n))
     }
 
     fn list_spooled_files(&mut self, req: &ListSpooledFiles) -> Result<SpooledFiles, Refusal> {

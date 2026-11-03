@@ -148,6 +148,39 @@ impl Spool {
         key
     }
 
+    /// Change file `id`, from outside; a queue changed moves it to the
+    /// end of the new one. False when there is no such file.
+    pub fn change(&mut self, id: &SpooledFileId, f: impl FnOnce(&mut File)) -> bool {
+        let Ok(key) = self.find(id) else {
+            return false;
+        };
+        let file = self.files.get_mut(&key).expect("found");
+        let before = file.outq.clone();
+        f(file);
+        let after = file.outq.clone();
+        if !same(&after, &before) {
+            for q in &mut self.queues {
+                q.files.retain(|k| *k != key);
+            }
+            if let Some(q) = self.queues.iter_mut().find(|q| same(&q.outq, &after)) {
+                q.files.push(key);
+            }
+        }
+        true
+    }
+
+    /// Remove file `id`, from outside. False when there is no such file.
+    pub fn remove(&mut self, id: &SpooledFileId) -> bool {
+        let Ok(key) = self.find(id) else {
+            return false;
+        };
+        self.files.remove(&key);
+        for q in &mut self.queues {
+            q.files.retain(|k| *k != key);
+        }
+        true
+    }
+
     fn find_queue(&self, outq: &ObjectName) -> Result<usize, No> {
         self.queues
             .iter()
