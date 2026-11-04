@@ -153,9 +153,9 @@ impl Restorer for SaveRestorer<'_, '_> {
             .collect())
     }
 
-    /// `MIGRATE(phase11)`: IFS directories in product streams wait for
-    /// the save engine's stream files; the system's own directories
-    /// exist already.
+    /// The directories' stream files are not in the product stream yet:
+    /// the system's own directories exist already. BLOCKED(phase12):
+    /// `SAVLICPGM` writes no IFS records, `RSTLICPGM` restores none.
     fn restore_directory(
         &mut self,
         _stream: &[u8],
