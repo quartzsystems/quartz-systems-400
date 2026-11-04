@@ -648,6 +648,7 @@ impl Suite {
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
         reports.push(self.step(&mut s, "92 QAP IFS", Self::qap_ifs)?);
         reports.push(self.step(&mut s, "93 QAP messages", Self::qap_messages)?);
+        reports.push(self.step(&mut s, "123 QAP manage", Self::qap_manage)?);
         reports.push(self.step(&mut s, "96 DHCP client", Self::dhcp_client)?);
         reports.push(self.step(&mut s, "97 telnet automatic sign-on", Self::telnet_auto_signon)?);
         reports.push(self.step(&mut s, "98 SMTP relay credentials", Self::smtp_relay_auth)?);

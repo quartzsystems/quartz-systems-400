@@ -33,11 +33,15 @@
 //!
 //! Step 92, the `Ifs` service as `QAPTEST`: see `ifs.rs`.
 //!
+//! Step 123, the `Manage` service as `QAPTEST` and `QSECOFR`: see
+//! `manage.rs`.
+//!
 //! Step 93, the `Messages` service and the spool watches as `QAPTEST`
 //! and `QAPTEST2`: see `messages.rs`.
 
 mod client;
 mod ifs;
+mod manage;
 mod messages;
 mod sql;
 
@@ -295,6 +299,20 @@ impl Suite {
         let r = messages::run(s, &mut a, &mut b).map_err(|e| format!("MESSAGES: {e}"));
         let _ = a.call(Op::SignOff, &());
         let _ = b.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
+    /// Step 123: `Manage` through the real jobs (`manage.rs`).
+    pub(crate) fn qap_manage(&self, s: &mut Session) -> Result<String, String> {
+        let mut srv = setup(self, s)?;
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let mut sec = srv.open()?;
+        sec.sign_on("QSECOFR", crate::phase5::SECOFR_PASSWORD)?;
+        let r = manage::run(&mut a, &mut sec).map_err(|e| format!("MANAGE: {e}"));
+        let _ = a.call(Op::SignOff, &());
+        let _ = sec.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r.map_err(|e| with_history(s, &e))
     }
