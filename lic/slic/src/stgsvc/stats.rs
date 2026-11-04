@@ -217,7 +217,19 @@ fn disk_paths(system: &System) -> Vec<String> {
 /// A look shared by the displays and the collector: the last one when
 /// it is less than half a second old.
 pub fn sample(system: &mut System) -> Sample {
-    if let Some(s) = system.stats.latest.as_ref().filter(|s| s.at.elapsed() < Duration::from_millis(500)) {
+    sample_after(system, None)
+}
+
+/// [`sample`], but newer than `base`: an interval never ends where it
+/// starts.
+pub fn sample_after(system: &mut System, base: Option<&Sample>) -> Sample {
+    if let Some(s) = system
+        .stats
+        .latest
+        .as_ref()
+        .filter(|s| s.at.elapsed() < Duration::from_millis(500))
+        .filter(|s| base.is_none_or(|b| s.at > b.at))
+    {
         return s.clone();
     }
     let s = look(system);
@@ -407,7 +419,8 @@ fn interval(
     which: fn(&mut Stats) -> &mut Option<Sample>,
     advance: bool,
 ) -> (Sample, Sample) {
-    let now = sample(system);
+    let base = which(&mut system.stats).clone();
+    let now = sample_after(system, base.as_ref());
     let slot = which(&mut system.stats);
     let base = slot.clone().unwrap_or_else(|| now.clone());
     if advance || slot.is_none() {

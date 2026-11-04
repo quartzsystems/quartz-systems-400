@@ -38,8 +38,7 @@ pub fn run(system: &mut System, line: &str) -> String {
         "wrksysact" => {
             return match super::stats::performance_tools(system) {
                 Ok(()) => super::stats::wrksysact(system),
-                Err(e) => format!("{e}
-"),
+                Err(e) => format!("{e}\n"),
             };
         }
         "wmstats" => return system.stats.report(),

@@ -277,12 +277,15 @@ fn append(txn: &mut Txn<'_>, id: ObjectId, bytes: &[u8], count: u32, ended: Opti
 
 /// Record one interval of the active collection, ending now.
 fn record(system: &mut System, ended: Option<u64>) -> Result<(), String> {
-    let now = stats::sample(system);
+    let Some(base) = system.stats.perf.active.as_ref().map(|a| a.base.clone()) else {
+        return Ok(());
+    };
+    let now = stats::sample_after(system, Some(&base));
     let end = local_now(system);
     let Some(a) = system.stats.perf.active.as_ref() else {
         return Ok(());
     };
-    let (number, base, mask) = (a.intervals + 1, a.base.clone(), a.header.categories);
+    let (number, mask) = (a.intervals + 1, a.header.categories);
     let interval = stats::interval_data(system, &now, &base, number, end).keep(mask);
     let a = system.stats.perf.active.as_mut().expect("active");
     a.intervals = number;
@@ -364,8 +367,9 @@ fn adjust_tick(system: &mut System) {
     if !due {
         return;
     }
-    let now = stats::sample(system);
-    if let Some((_, base)) = system.stats.perf.adjust.take() {
+    let base = system.stats.perf.adjust.take().map(|(_, b)| b);
+    let now = stats::sample_after(system, base.as_ref());
+    if let Some(base) = base {
         let i = stats::interval_data(system, &now, &base, 0, 0);
         apply(system, &i);
     }
