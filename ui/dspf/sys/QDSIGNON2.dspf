@@ -5,6 +5,18 @@
      A                                      DSPSIZ(24 80 *DS3)
      A                                      CHGINPDFT
      A          R SIGNON
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SIGNON QDSIGNON)
+     A          H                           HLPARA(*FLD USERID)
+     A                                      HLPPNLGRP('SIGNON/USER' QDSIGNON)
+     A          H                           HLPARA(*FLD PASSWRD)
+     A                                      HLPPNLGRP('SIGNON/PWD' QDSIGNON)
+     A          H                           HLPARA(*FLD PROGRAM)
+     A                                      HLPPNLGRP('SIGNON/PROGRAM' QDSIGNON)
+     A          H                           HLPARA(*FLD MENU)
+     A                                      HLPPNLGRP('SIGNON/MENU' QDSIGNON)
+     A          H                           HLPARA(*FLD CURLIB)
+     A                                      HLPPNLGRP('SIGNON/CURLIB' QDSIGNON)
      A                                  1 36'Sign On'
      A                                      DSPATR(HI)
      A                                  2 48'System  . . . . . :'

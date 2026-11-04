@@ -95,6 +95,10 @@ pub enum Problem {
     /// The format is not on the display.
     #[error("record format {0} is not on the display")]
     NotShown(String),
+    /// Help was pressed where a help specification applies and the
+    /// record does not return Help to the program: show the module.
+    #[error("help module {}", .0.module)]
+    Help(crate::help::HelpSpec),
 }
 
 /// A typed value as the field's bytes.

@@ -284,6 +284,7 @@ fn data_items(o: &Openings, plan: &mut Plan, nodes: &[DataNode], area: bool) {
     }
 }
 
+#[allow(clippy::many_single_char_names, clippy::too_many_lines)] // one arm per area
 fn plan_group(o: &Openings, groups: &Groups, g: &PanelGroup) -> Plan {
     let mut plan = Plan {
         modules: Vec::new(),

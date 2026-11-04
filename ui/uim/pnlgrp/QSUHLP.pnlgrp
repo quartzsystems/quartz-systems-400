@@ -1,0 +1,65 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QSUHLP: the help of the Source Entry Utility's display files (QSUSEU,
+.* QSUDFT, QSUFND, QSUBRW, QSUEXIT, QSUSYS, QSUSEL in ui/dspf/sys/).
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:HELP NAME=SEUEDIT.Source Entry Utility
+:P.The edit display shows the records of a source member, one per line,
+with the sequence number at the left. Type over a record to change it.
+:P.On the SEU command line (SEU==>) you can type commands such as
+FIND, CHANGE, TOP, BOTTOM, SAVE and FILE. In the sequence number area
+you can type line commands: I to insert, D to delete, C and M to copy
+and move with A or B as the target, R to repeat, P to prompt the
+record, and others.
+:P.F3 leaves SEU through the Exit display; F4 prompts the record the
+cursor is on; F5 refreshes; F10 moves the cursor to the top line; F11
+moves between the two halves of a wide record; F13 changes the session
+defaults; F14 and F16 find and change; F15 browses or copies another
+member, spooled file or output queue; F21 runs a system command; F24
+shows the other keys.
+:EHELP.
+:HELP NAME=SEUPROMPT.Prompt
+:P.The prompt shows the fields of the record the cursor was on, laid
+out by the prompt type of the member's source type. Type the values
+and press Enter to put them back in the record; F12 leaves the record
+as it was.
+:EHELP.
+:HELP NAME=SEUDFT.Change Session Defaults
+:P.The defaults of this editing session: how far the page keys move,
+whether lower case stays as typed, the tab stops, the increment of
+inserted records, whether full screen mode is on, the syntax checking
+of added and changed records, and the date that marks changed records.
+Press Enter to use the values for the rest of the session.
+:EHELP.
+:HELP NAME=SEUFIND.Find/Change Options
+:P.The string to find and the string to change it to, the columns to
+search, which occurrences to process, which records to search and
+whether case matters. F14 finds the next occurrence; F16 repeats the
+last find; F17 changes the occurrence found.
+:EHELP.
+:HELP NAME=SEUBROWSE.Browse/Copy Options
+:P.Selection 1 shows another source member in the lower part of the
+display; 2 shows a spooled file; 3 shows an output queue's spooled
+files to choose from. With copy all records Y, the member's records
+are copied into the member being edited, after the cursor's record.
+:EHELP.
+:HELP NAME=SEUEXIT.Exit
+:P.Choose how the session ends. Change/create member Y saves the
+records to the member named, which can be another member, file or
+library; resequence Y numbers the records from Start by Increment.
+Print member Y prints the member. Return to editing Y goes back to the
+edit display. Press Enter to leave with these choices; F12 returns to
+editing.
+:EHELP.
+:HELP NAME=SEUSYS.System Command
+:P.Type a command and press Enter to run it without leaving SEU. F4
+prompts it; F9 retrieves the last one; F12 returns to the member.
+:EHELP.
+:HELP NAME=SEUSELECT.Select Prompt
+:P.The prompts available for the record. Type the prompt type and press
+Enter to prompt the record with it.
+:EHELP.
+:EPNLGRP.

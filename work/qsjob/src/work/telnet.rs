@@ -1334,6 +1334,7 @@ pub(crate) fn level_of(kind: sysapi::SysValKind, data: &[u8]) -> Option<u8> {
 /// job's (`cancel`) leaves with F3 or F12; the jobs' events that arrive
 /// meanwhile wait in `stash`.
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_lines)] // the display, its help and the checks of one sign-on
 fn sign_on_display(
     tr: &Transport,
     server: &mut Server,
@@ -1360,8 +1361,16 @@ fn sign_on_display(
         .and_then(|(b, _)| dspf::decode(&b).ok())
         .map(|df| dspf::rt::Runtime::new(df, model.wide()));
     let env = sign_on_env(link, host);
+    // Help or F1 on the sign-on: the help specification's module, full
+    // screen, until the next key.
+    let mut help: Option<dspf::help::HelpSpec> = None;
     loop {
-        if let Some(rt) = rt.as_mut() {
+        if let Some(h) = help.as_ref()
+            && let Some(screen) = sign_on_help(h, model.wide())
+        {
+            m = ScreenModel::new(model.wide());
+            display::uim::apply(&screen, &mut m);
+        } else if let Some(rt) = rt.as_mut() {
             let rec = rt.file().record("SIGNON").cloned();
             let Some(rec) = rec else {
                 return Err("QDSIGNON has no SIGNON format".into());
@@ -1401,6 +1410,16 @@ fn sign_on_display(
             continue;
         };
         let key = display::key_of(rec.flags, inb.aid);
+        if help.take().is_some() {
+            m = ScreenModel::new(model.wide());
+            continue;
+        }
+        if matches!(key, Some(1 | wm::dev::key::HELP))
+            && let Some(h) = rt.as_ref().and_then(|r| r.help_at(inb.row, inb.col))
+        {
+            help = Some(h);
+            continue;
+        }
         if cancel && matches!(key, Some(3 | 12)) {
             return Ok(SignOn::Cancelled);
         }
@@ -1439,6 +1458,20 @@ fn sign_on_display(
             Err(r) => message = r.text,
         }
     }
+}
+
+/// The sign-on's help module as a full-screen help display, from the
+/// shipped panel group (the sign-on runs before any job can open one).
+fn sign_on_help(h: &dspf::help::HelpSpec, wide: bool) -> Option<uim::Screen> {
+    let name = h.group.rsplit('/').next().unwrap_or(&h.group);
+    let src = uim::shipped::source(name)?;
+    let c = uim::compile(src, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+    let g = c.group?;
+    let opts = uim::render::Options {
+        wide,
+        ..uim::render::Options::default()
+    };
+    uim::render_help(&g, &h.module, &opts).ok()
 }
 
 /// The sign-on display's environment: the clock and the system's date

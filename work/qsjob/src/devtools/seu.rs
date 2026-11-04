@@ -86,9 +86,18 @@ impl Ctx<'_> {
         let env = self.env.clone();
         let screens = &mut self.screens;
         self.surface.with_model(|m| f(screens, m, &env));
-        self.surface.flush(Read::MdtFields);
-        let (a, (r, c)) = self.surface.wait()?;
-        Some((a, (usize::from(r), usize::from(c))))
+        loop {
+            self.surface.flush(Read::MdtFields);
+            let (a, (r, c)) = self.surface.wait()?;
+            // Help and F1 show the display files' help, not the session's.
+            if (a == tn5250::ds::aid::HELP || tn5250::ds::aid::function_of(a) == Some(1))
+                && let Some(h) = self.screens.help_at(r, c)
+            {
+                crate::sysdsp::dds_help(self.host, &mut self.surface, &h, (r, c));
+                continue;
+            }
+            return Some((a, (usize::from(r), usize::from(c))));
+        }
     }
 
     /// Read the model with `f`.

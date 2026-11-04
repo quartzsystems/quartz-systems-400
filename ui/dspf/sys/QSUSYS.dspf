@@ -4,6 +4,8 @@
      A          R SYSCMD
      A                                      WINDOW(18 2 5 74)
      A                                      OVERLAY
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUSYS QSUHLP)
      A                                  1 31'System Command'
      A                                      DSPATR(HI)
      A                                  3  2'===>'

@@ -3,6 +3,8 @@
      A                                      DSPSIZ(24 80 *DS3)
      A                                      INDARA
      A          R SELECT
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUSELECT QSUHLP)
      A                                  1 33'Select Prompt'
      A                                      DSPATR(HI)
      A                                  3  2'Type choice, press Enter.'

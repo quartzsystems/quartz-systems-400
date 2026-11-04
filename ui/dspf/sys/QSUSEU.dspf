@@ -5,6 +5,8 @@
      A                                      DSPSIZ(24 80 *DS3)
      A                                      INDARA
      A          R HEADER
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUEDIT QSUHLP)
      A                                  1  2'Columns . . . :'
      A            COLS           8A  O  1 18
      A            TITLE         25A  O  1 28DSPATR(HI)
@@ -19,6 +21,8 @@
      A                                      OVERLAY
      A                                      CLRL(*NO)
      A                                      CHGINPDFT
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUEDIT QSUHLP)
      A            LINENO         2A  H
      A            SEQ            7A  B  2  1CHECK(LC)
      A            DATA          71A  B  2  9CHECK(LC)
@@ -27,6 +31,8 @@
      A                                      SLNO(*VAR)
      A                                      OVERLAY
      A                                      CLRL(*NO)
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUPROMPT QSUHLP)
      A            LINENO         2A  H
      A                                  1  2'Prompt type . . .'
      A            PTYPE          2A  O  1 22DSPATR(HI)
@@ -35,6 +41,8 @@
      A          R KEYS
      A                                      OVERLAY
      A                                      CLRL(*NO)
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUEDIT QSUHLP)
      A            KEYS1         79A  O 22  2COLOR(BLU)
      A            KEYS2         79A  O 23  2COLOR(BLU)
      A  40                             24 42'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'

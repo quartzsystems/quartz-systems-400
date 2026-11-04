@@ -1,0 +1,40 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QDSIGNON: the help of the sign-on display, display files QSYS/QDSIGNON
+.* and QDSIGNON2 (ui/dspf/sys/). Their help specifications name these
+.* modules; the telnet server shows them when Help or F1 is pressed.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:HELP NAME=SIGNON.Sign On
+:P.The sign-on display starts an interactive job at this display. Type
+your user profile and password and press Enter. The other fields are
+optional: they override, for this job only, what your user profile
+says the job starts with.
+:P.The upper right shows the system, the subsystem that will run the
+job and the name of the display device.
+:EHELP.
+:HELP NAME='SIGNON/USER'.User
+:P.Your user profile name, up to 10 characters. Ask your security
+officer for one if you have none.
+:EHELP.
+:HELP NAME='SIGNON/PWD'.Password
+:P.The password of the user profile. It is not shown as you type it.
+Passwords are case sensitive when the system allows mixed-case
+passwords. After too many wrong passwords the profile is disabled, as
+the system value QMAXSIGN says.
+:EHELP.
+:HELP NAME='SIGNON/PROGRAM'.Program/procedure
+:P.A program to call when the job starts, in place of the initial
+program of your user profile. Leave it blank to use the profile's.
+:EHELP.
+:HELP NAME='SIGNON/MENU'.Menu
+:P.The menu to show when the job starts, in place of the initial menu
+of your user profile. Leave it blank to use the profile's.
+:EHELP.
+:HELP NAME='SIGNON/CURLIB'.Current library
+:P.The current library of the job, in place of the one your user
+profile names. Leave it blank to use the profile's.
+:EHELP.
+:EPNLGRP.

@@ -8,6 +8,8 @@
      A                                      CA12(12)
      A                                      HELP
      A          R SYSRQ
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(HLPSYSRQ QWSSYSRQ)
      A                                  1 34'System Request'
      A                                      DSPATR(HI)
      A                                  2 62'System:'
@@ -41,6 +43,8 @@
      A                                 23  2'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
      A                                      DSPATR(HI)
      A          R SYSRQ2
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(HLPSYSRQ QWSSYSRQ)
      A                                  1 34'System Request'
      A                                      DSPATR(HI)
      A                                  2 62'System:'

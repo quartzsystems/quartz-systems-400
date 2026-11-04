@@ -91,6 +91,51 @@ fn parm_text(r: &Resolved, kwd: &str) -> String {
         .to_string()
 }
 
+/// Show help over the screen as it stands, in a window at the cursor
+/// (1-based), as UIM does: field help for `names[0]` (`GROUP/MODULE` or
+/// `LIB/GROUP/MODULE`), and with `extended` (title and modules) F2 and
+/// the title row's extended help. `under` is the screen's text.
+pub fn help_window(
+    host: &Host,
+    names: &[String],
+    extended: Option<(String, Vec<String>)>,
+    show_extended: bool,
+    under: &[String],
+    cursor: Option<(u8, u8)>,
+) {
+    use std::rc::Rc;
+    let mut term = Surface::new(host.clone());
+    let system = crate::display::dds::system_name(host);
+    let mut e = uim::engine::Engine::new(Rc::new(uim::PanelGroup::default()), &system);
+    let cols = under.first().map_or(80, |r| r.chars().count().max(80));
+    let mut shown = uim::Screen::new(under.len().max(24), cols);
+    for (i, row) in under.iter().enumerate() {
+        shown.put(i + 1, 1, uim::render::Attr::Normal, row.trim_end());
+    }
+    e.under = Some(shown);
+    if let Some((r, c)) = cursor {
+        e.cursor = (usize::from(r), usize::from(c));
+    }
+    e.extended_help.clone_from(&extended);
+    let _ = match (show_extended, extended) {
+        (true, Some((_, all))) => e.show_help(&mut term, &all, true, false),
+        _ => e.show_help(&mut term, names, false, false),
+    };
+}
+
+/// A display file's help (`H` specifications) over the screen, then the
+/// screen put back as it was.
+pub fn dds_help(host: &Host, surface: &mut Surface, spec: &dspf::help::HelpSpec, cursor: (u8, u8)) {
+    let saved = surface.with_model(|m| m.clone());
+    let rows = surface.with_model(|m| m.text_rows());
+    let name = format!("{}/{}", spec.group, spec.module);
+    help_window(host, &[name], None, false, &rows, Some(cursor));
+    surface.with_model(|m| {
+        *m = saved;
+        m.invalidate();
+    });
+}
+
 /// Show help module `module` of system panel group `group` until F3,
 /// F12 or Enter; `false` when the job is to end.
 pub fn help(host: &Host, surface: &mut Surface, group: &str, module: &str) -> bool {

@@ -2,6 +2,8 @@
      A                                      DSPSIZ(24 80 *DS3)
      A                                      INDARA
      A          R EXIT
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUEXIT QSUHLP)
      A                                  1 38'Exit'
      A                                      DSPATR(HI)
      A                                  3  2'Type choices, press Enter.'

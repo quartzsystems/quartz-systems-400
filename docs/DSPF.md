@@ -152,10 +152,10 @@ allowed on every keyword.
 | `FRCDTA` | record | supported |  |
 | `GETRETAIN` | record | accepted and stored |  |
 | `HELP` | file, record | supported |  |
-| `HLPARA` | record | accepted and stored |  |
+| `HLPARA` | record | supported | `*RCD`, `*FLD name`, `*CNST n` or a box; `dspf::help` |
 | `HLPCLR` | file, record | accepted and stored |  |
 | `HLPCMDKEY` | file, record | accepted and stored |  |
-| `HLPPNLGRP` | file, record | accepted and stored |  |
+| `HLPPNLGRP` | file, record | supported | the module and panel group F1 shows |
 | `HLPRCD` | record | accepted and stored |  |
 | `HLPRTN` | file, record | accepted and stored |  |
 | `HLPSCHIDX` | file | accepted and stored |  |
@@ -509,6 +509,21 @@ operation (`mi::rtlib::io::dev_io`).
 compile and are kept in the model but the runtime ignores them. The
 shipped `QDSIGNON`/`QDSIGNON2` are the first display files written in
 DDS (`ui/dspf/sys/`).
+
+### Help specifications
+
+A line with `H` in position 17 under a record starts a help
+specification: `HLPARA` names what it covers (`*RCD`, `*FLD name`,
+`*CNST n`, or `r1 c1 r2 c2`) and `HLPPNLGRP(module group)` the UIM help
+module that explains it. The keywords join the record's in order
+(`dspf::help::specs`). When Help (or the `ALTHELP` key) is pressed, the
+record does not return Help to the program (no `HELP` keyword enabled)
+and a specification covers the cursor, `Runtime::input` answers
+`Problem::Help` with it: the job shows the module in a window over the
+display (`sysdsp::dds_help`) and reads again; the sign-on shows it full
+screen. A specification for the cursor's field or area wins over the
+record's own. Every shipped display file has one per record
+(`tools/helpaudit` checks).
 
 ## Payload
 

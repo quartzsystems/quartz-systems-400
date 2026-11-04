@@ -3,6 +3,8 @@
      A                                      DSPSIZ(24 80 *DS3)
      A                                      INDARA
      A          R BRWCPY
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUBROWSE QSUHLP)
      A                                  1 28'Browse/Copy Options'
      A                                      DSPATR(HI)
      A                                  3  2'Type choices, press Enter.'
@@ -47,6 +49,8 @@
      A            KEYS1         79A  O 22  2COLOR(BLU)
      A            KEYS2         79A  O 23  2COLOR(BLU)
      A          R BRW
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUBROWSE QSUHLP)
      A                                  1 31'Browse Options'
      A                                      DSPATR(HI)
      A                                  3  2'Type choices, press Enter.'

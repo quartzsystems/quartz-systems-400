@@ -72,24 +72,14 @@ pub fn session(job: &mut Job, host: &Host, r: &Resolved) -> Result<Option<Resolv
 /// Show the prompter's help (F1 field help in a window over the
 /// prompt, F2 extended help) until the operator leaves it.
 pub fn show_help(host: &Host, h: &HelpRequest, under: &Screen) {
-    use std::rc::Rc;
-    let mut term = crate::display::surface::Surface::new(host.clone());
-    let system = crate::display::dds::system_name(host);
-    let mut e = uim::engine::Engine::new(Rc::new(uim::PanelGroup::default()), &system);
-    let mut shown = uim::Screen::new(24, 80);
-    for (i, row) in under.rows.iter().enumerate() {
-        shown.put(i + 1, 1, uim::render::Attr::Normal, row.trim_end());
-    }
-    e.under = Some(shown);
-    if let Some((r, c)) = host.cursor() {
-        e.cursor = (usize::from(r), usize::from(c));
-    }
-    e.extended_help = Some((h.title.clone(), h.extended.clone()));
-    let _ = if h.extended_first {
-        e.show_help(&mut term, &h.extended, true, false)
-    } else {
-        e.show_help(&mut term, std::slice::from_ref(&h.module), false, false)
-    };
+    crate::sysdsp::help_window(
+        host,
+        std::slice::from_ref(&h.module),
+        Some((h.title.clone(), h.extended.clone())),
+        h.extended_first,
+        &under.rows,
+        host.cursor(),
+    );
 }
 
 /// A prompter screen as a panel.

@@ -254,6 +254,10 @@ impl DisplaySource for DdsDisplay {
                 Err(Problem::NotShown(_)) => {
                     break Err(IoFail::new(1299, "CPD9D08", &[format, &open.lib]));
                 }
+                Err(Problem::Help(h)) => {
+                    let host = self.surface.host().clone();
+                    crate::sysdsp::dds_help(&host, &mut self.surface, &h, cursor);
+                }
                 Err(p) => self.surface.with_model(|m| open.rt.show_problem(m, &p)),
             }
         };

@@ -3,6 +3,8 @@
      A                                      DSPSIZ(24 80 *DS3)
      A                                      INDARA
      A          R DFT1
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUDFT QSUHLP)
      A                                  1 31'Change Session Defaults'
      A                                      DSPATR(HI)
      A                                  3  2'Type choices, press Enter.'
@@ -49,6 +51,8 @@
      A            KEYS1         79A  O 22  2COLOR(BLU)
      A            KEYS2         79A  O 23  2COLOR(BLU)
      A          R DFT2
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUDFT QSUHLP)
      A                                  1 31'Change Session Defaults'
      A                                      DSPATR(HI)
      A                                  3  2'Type choices, press Enter.'
@@ -72,6 +76,8 @@
      A            KEYS1         79A  O 22  2COLOR(BLU)
      A            KEYS2         79A  O 23  2COLOR(BLU)
      A          R DFTB
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(SEUDFT QSUHLP)
      A                                  1 31'Change Session Defaults'
      A                                      DSPATR(HI)
      A                                  3  2'Type choices, press Enter.'

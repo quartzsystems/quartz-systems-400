@@ -29,6 +29,17 @@ pub struct Screens {
     sel: Runtime,
 }
 
+impl Screens {
+    /// The help specification under the cursor (1-based) on whichever
+    /// of SEU's display files shows there.
+    #[must_use]
+    pub fn help_at(&self, row: u8, col: u8) -> Option<dspf::help::HelpSpec> {
+        [&self.sel, &self.sys, &self.exit, &self.brw, &self.fnd, &self.dft, &self.seu]
+            .iter()
+            .find_map(|rt| rt.help_at(row, col))
+    }
+}
+
 /// The browse options display's values.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BrowseForm {

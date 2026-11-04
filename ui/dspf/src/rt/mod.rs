@@ -133,6 +133,36 @@ impl Runtime {
         }
     }
 
+    /// The help specification under the cursor (1-based) among the
+    /// records on the display, the last written first.
+    #[must_use]
+    pub fn help_at(&self, row: u8, col: u8) -> Option<crate::help::HelpSpec> {
+        self.shown.iter().rev().find_map(|s| {
+            let rec = self.df.record(&s.name)?;
+            let r = i32::from(row) - s.row_shift;
+            let c = i32::from(col) - s.col_shift;
+            let r = u8::try_from(r).ok()?;
+            let c = u8::try_from(c).ok()?;
+            crate::help::help_at(rec, r, c)
+        })
+    }
+
+    /// Help with help specifications and no `HELP` keyword: the system
+    /// shows the module; the program does not see the key.
+    fn system_help(&self, rec: &Record, key: KeyPressed, cursor: (u8, u8)) -> Option<crate::help::HelpSpec> {
+        let help_key = key == KeyPressed::Help
+            || matches!(key, KeyPressed::F(n) if self.df.file.alt_help.and_then(KeyName::number) == Some(n));
+        let returned = rec
+            .keys
+            .iter()
+            .chain(self.df.file.keys.iter())
+            .any(|k| k.key == KeyName::Help);
+        if !help_key || returned {
+            return None;
+        }
+        self.help_at(cursor.0, cursor.1)
+    }
+
     /// The file.
     #[must_use]
     pub fn file(&self) -> &DisplayFile {
@@ -1061,6 +1091,7 @@ impl Runtime {
 
     /// Build a record format's input from the display after a key.
     /// `cursor` is where the cursor was, 1-based.
+    #[allow(clippy::too_many_lines)] // the checks of one read, in order
     pub fn input(
         &mut self,
         m: &mut ScreenModel,
@@ -1076,6 +1107,9 @@ impl Runtime {
             .ok_or_else(|| Problem::NotShown(format.to_string()))?;
         let inds = self.last_inds.get(&rec.name).copied().unwrap_or([false; 100]);
         let key = KeyPressed::from_aid(aid);
+        if let Some(h) = self.system_help(&rec, key, cursor) {
+            return Err(Problem::Help(h));
+        }
         if rec.kind == RecordKind::SubfileControl
             && matches!(key, KeyPressed::RollUp | KeyPressed::RollDown)
             && self.key_check(&rec, key, &inds).is_err()
@@ -1287,7 +1321,7 @@ impl Runtime {
                 m.error_line("That key is not allowed here.", attr::WHITE);
                 m.alarm();
             }
-            Problem::Rolled | Problem::NotShown(_) => {}
+            Problem::Rolled | Problem::NotShown(_) | Problem::Help(_) => {}
         }
     }
 
@@ -1439,6 +1473,25 @@ mod tests {
         );
         assert_eq!(ccsid::from_ebcdic(&input.record[30..35]), "HIDE!");
         assert_eq!(input.sfl_rrn, 0);
+    }
+
+    #[test]
+    fn help_specifications_answer_the_help_key() {
+        let (src, _) = Source::from_text(crate::sys::QDSIGNON);
+        let df = compile_dspf(&src, &crate::NoRefs, &crate::CompileOpts::default())
+            .definition
+            .expect("the sign-on compiles");
+        let mut rt = Runtime::new(df, false);
+        let mut m = ScreenModel::new(false);
+        let rec = rt.file().record("SIGNON").cloned().unwrap();
+        let out = vec![0x40u8; rec.layout.output.len as usize];
+        rt.write(&mut m, &env(), "SIGNON", &out, &[]).unwrap();
+        assert_eq!(rt.help_at(6, 55).map(|h| h.module), Some("SIGNON/USER".to_string()));
+        assert_eq!(rt.help_at(1, 2).map(|h| h.module), Some("SIGNON".to_string()));
+        match rt.input(&mut m, &env(), "SIGNON", tn5250::ds::aid::HELP, (7, 53)) {
+            Err(Problem::Help(h)) => assert_eq!((h.module.as_str(), h.group.as_str()), ("SIGNON/PWD", "QDSIGNON")),
+            other => panic!("{other:?}"),
+        }
     }
 
     #[test]
