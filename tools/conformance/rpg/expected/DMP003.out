@@ -1,0 +1,93 @@
+# DMP003 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: RNF3530 00 line 5 seq 000500
+run: ok
+spool: QPPGMDMP
+  |1/1                                                                                                                              Page    1
+  |1/2    ILE RPG FORMATTED DUMP
+  |1/4    Program Status Area:
+  |1/5    Procedure Name . . . . . . . . . . . . :   DMP003
+  |1/6    Program Name . . . . . . . . . . . . . :   DMP003
+  |1/7       Library . . . . . . . . . . . . . . :   *
+  |1/8    Module Name. . . . . . . . . . . . . . :   DMP003
+  |1/9    Program Status . . . . . . . . . . . . :   00000
+  |1/10   Previous Status  . . . . . . . . . . . :   00000
+  |1/11   Statement in Error . . . . . . . . . . :   00000000
+  |1/12   RPG Routine  . . . . . . . . . . . . . :   *DETC
+  |1/13   Number of Parameters . . . . . . . . . :
+  |1/14   Message Type . . . . . . . . . . . . . :
+  |1/15   Additional Message Info  . . . . . . . :
+  |1/16   Message Data . . . . . . . . . . . . . :
+  |1/18   Status that caused RNX9001 . . . . . . :
+  |1/19   Last File Used . . . . . . . . . . . . :
+  |1/20   Last File Status . . . . . . . . . . . :
+  |1/21   Last File Operation  . . . . . . . . . :
+  |1/22   Last File Routine  . . . . . . . . . . :
+  |1/23   Last File Statement  . . . . . . . . . :
+  |1/24   Last File Record Name  . . . . . . . . :
+  |1/25   Job Name . . . . . . . . . . . . . . . :   *
+  |1/26   User Name  . . . . . . . . . . . . . . :   *
+  |1/27   Job Number . . . . . . . . . . . . . . :   *
+  |1/28   Date Entered System  . . . . . . . . . :   *
+  |1/29      Century . . . . . . . . . . . . . . :   20
+  |1/30   Date Started . . . . . . . . . . . . . :   *N/A*
+  |1/31   Time Started . . . . . . . . . . . . . :   *N/A*
+  |1/32   Compile Date . . . . . . . . . . . . . :   *
+  |1/33   Compile Time . . . . . . . . . . . . . :   *
+  |1/34   Compiler Level . . . . . . . . . . . . :   0001
+  |1/35   Source File  . . . . . . . . . . . . . :   QRPGLESRC
+  |1/36      Library . . . . . . . . . . . . . . :   *
+  |1/37   Member . . . . . . . . . . . . . . . . :   DMP003
+  |2/1                                                                                                                              Page    2
+  |2/2    ILE RPG FORMATTED DUMP
+  |2/3    Module Name. . . . . . . . . . . . . . :   DMP003
+  |2/4    Optimization Level . . . . . . . . . . :   *NONE
+  |2/5    Halt Indicators:
+  |2/6    H1 '1'    H2 '0'    H3 '0'    H4 '0'    H5 '0'    H6 '0'    H7 '0'    H8 '0'    H9 '0'
+  |2/7    Command/Function Key Indicators:
+  |2/8    KA '0'    KB '0'    KC '0'    KD '0'    KE '0'    KF '0'    KG '0'    KH '0'    KI '0'    KJ '0'
+  |2/9    KK '0'    KL '0'    KM '0'    KN '0'    KP '0'    KQ '0'    KR '0'    KS '0'    KT '0'    KU '0'
+  |2/10   KV '0'    KW '0'    KX '0'    KY '0'
+  |2/11   Control Level Indicators:
+  |2/12   L1 '0'    L2 '0'    L3 '0'    L4 '0'    L5 '0'    L6 '0'    L7 '0'    L8 '0'    L9 '0'
+  |2/13   Overflow Indicators:
+  |2/14   OA '0'    OB '0'    OC '0'    OD '0'    OE '0'    OF '0'    OG '0'    OV '0'
+  |2/15   External Indicators:
+  |2/16   U1 '0'    U2 '0'    U3 '0'    U4 '0'    U5 '0'    U6 '0'    U7 '0'    U8 '0'
+  |2/17   General Indicators:
+  |2/18   01 '0'    02 '0'    03 '0'    04 '0'    05 '0'    06 '0'    07 '0'    08 '0'    09 '0'    10 '1'
+  |2/19   11 '0'    12 '0'    13 '0'    14 '0'    15 '0'    16 '0'    17 '0'    18 '0'    19 '0'    20 '0'
+  |2/20   21 '0'    22 '0'    23 '0'    24 '0'    25 '0'    26 '0'    27 '0'    28 '0'    29 '0'    30 '0'
+  |2/21   31 '0'    32 '0'    33 '0'    34 '0'    35 '0'    36 '0'    37 '0'    38 '0'    39 '0'    40 '0'
+  |2/22   41 '0'    42 '0'    43 '0'    44 '0'    45 '0'    46 '0'    47 '0'    48 '0'    49 '0'    50 '0'
+  |2/23   51 '0'    52 '0'    53 '0'    54 '0'    55 '0'    56 '0'    57 '0'    58 '0'    59 '0'    60 '0'
+  |2/24   61 '0'    62 '0'    63 '0'    64 '0'    65 '0'    66 '0'    67 '0'    68 '0'    69 '0'    70 '0'
+  |2/25   71 '0'    72 '0'    73 '0'    74 '0'    75 '0'    76 '0'    77 '0'    78 '0'    79 '0'    80 '0'
+  |2/26   81 '0'    82 '0'    83 '0'    84 '0'    85 '0'    86 '0'    87 '0'    88 '0'    89 '0'    90 '0'
+  |2/27   91 '0'    92 '0'    93 '0'    94 '0'    95 '0'    96 '0'    97 '0'    98 '0'    99 '0'
+  |2/28   Internal Indicators:
+  |2/29   LR '0'    MR '0'    RT '0'    1P '0'
+  |2/31   NAME                  ATTRIBUTES           VALUE
+  |2/32   B                     INT(3)               -2               'FE'X
+  |2/33   BN                    BIN(4,1)             -012.5           'FF83'X
+  |2/34   C14                   CHAR(14)             'fourteen chars'
+  |2/35                         VALUE IN HEX         '8696A499A38585954083888199A2'X
+  |2/36   C15                   CHAR(15)             'fifteen chars  '
+  |2/37                         VALUE IN HEX         '868986A38585954083888199A24040'X
+  |2/38   FB                    CHAR(80)             '                                                                                '
+  |2/39                         VALUE IN HEX         '40404040404040404040404040404040404040404040404040404040404040404040404040404040'X
+  |2/40                           41                 '40404040404040404040404040404040404040404040404040404040404040404040404040404040'X
+  |2/41   H                     INT(20)              -12345678901
+  |2/42                         VALUE IN HEX         'FFFFFFFD2023E3CB'X
+  |2/43   LONG                  CHAR(70)             'this value is longer than one line of the dump so it wraps            '
+  |2/44                         VALUE IN HEX         'A38889A240A58193A4854089A24093969587859940A388819540969585409389958540968640A388'X
+  |2/45                           41                 '854084A4949740A2964089A340A6998197A2404040404040404040404040'X
+  |2/46   T                     TIME(8)              '10.20.30'       'F1F04BF2F04BF3F0'X
+  |2/47   TS                    TIMESTAMP(26)        '2026-01-02-03.04.05.000006'
+  |2/48                         VALUE IN HEX         'F2F0F2F660F0F160F0F260F0F34BF0F44BF0F54BF0F0F0F0F0F6'X
+  |2/49   U                     UCS2(3) CCSID(13488) 'ab '            '006100620020'X
+  |2/50   VR                    CHAR(5) VARYING(2)   'ab'             '00028182000000'X
+  |2/51   W                     UNS(20)              9
+  |2/52                         VALUE IN HEX         '0000000000000009'X
+  |2/54               * * * * *   E N D   O F   R P G   D U M P   * * * * *
