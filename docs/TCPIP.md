@@ -208,8 +208,8 @@ checks them) with our prompt texts. A change needs `*IOSYSCFG`.
 | `STRTCPIFC`, `ENDTCPIFC` | start (`*AUTOSTART`: every autostart one) and end interfaces; a line that is off is varied on first |
 | `ADDTCPRTE`, `CHGTCPRTE`, `RMVTCPRTE` | routes, found by destination, mask (prefix length for IPv6), type of service and next hop |
 | `ADDTCPHTE`, `CHGTCPHTE`, `RMVTCPHTE`, `RNMTCPHTE` | the host table; names are kept upper case, up to 65 an address; `CHGTCPHTE HOSTNAME` rebuilds the list position by position (`*SAME` keeps a name, `*BLANK` drops it) |
-| `MRGTCPHT` | merges a file: `*OPSYS`/`*AS400` records in the `QHOSTS` format, `*AIX` (`address name...  # text`) or `*NIC` (`HOST : address : names :`) lines; `REPLACE(*YES)` replaces the table, otherwise an address present gains the names it lacks and a new one is added; `FROMOBJ` (a stream file) waits for the IFS service |
-| `CPYTCPHT` | copies the IPv4 entries to a file in the `QHOSTS` format |
+| `MRGTCPHT` | merges a file: `*OPSYS`/`*AS400` records in the `QHOSTS` format, `*AIX` (`address name...  # text`) or `*NIC` (`HOST : address : names :`) lines; `REPLACE(*YES)` replaces the table, otherwise an address present gains the names it lacks and a new one is added; `FROMOBJ` reads a stream file (in its CCSID) as `*AIX` lines, or `*NIC` with `FILEFMT(*NIC)` |
+| `CPYTCPHT` | copies the IPv4 entries to a file in the `QHOSTS` format, or with `TOOBJ` to a stream file as `/etc/hosts` lines in UTF-8 (CCSID 1208; an existing file only with `REPLACE(*YES)`) |
 | `CHGTCPDMN` | the local names, the search list, `*LOCAL`/`*REMOTE`, up to three name servers, port, protocol, retries |
 | `CHGTCPA` | every attribute of the definition; below |
 | `ADDTCPPORT`, `RMVTCPPORT` | port restrictions (at most 100); a range of a protocol may repeat for more profiles but not overlap partly |

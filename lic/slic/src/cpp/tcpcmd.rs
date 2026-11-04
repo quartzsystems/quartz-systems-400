@@ -606,19 +606,66 @@ fn records(system: &mut System, lib: &str, file: &str, mbr: &str) -> Result<Vec<
     .map_err(fail)
 }
 
-fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
-    if parms.specified("FROMOBJ") {
-        return Err(Error::new(
-            msg::BAD_VALUE,
-            "Value not valid: merging from a stream file (FROMOBJ) is not available in this release; use FROMFILE.",
-        ));
+/// Run `f` against the IFS as the job whose request this is.
+fn job_ifs<T>(system: &mut System, f: impl FnOnce(&dyn ifs::client::IfsClient) -> T) -> T {
+    let n = system.current_job;
+    let h = u64::from(n);
+    let p = crate::svc::ifs::principal();
+    let ccsid = crate::stgsvc::ifs::job_ccsid(system, n);
+    crate::stgsvc::ifs::with_client(system, h, crate::stgsvc::ifs::owner_of(h), &p, ccsid, f)
+}
+
+/// A stream file's text, converted from its CCSID to UTF-8.
+fn read_stmf(system: &mut System, path: &str) -> Result<String, Error> {
+    use ifs::ops::flags::{O_CCSID, O_RDONLY, O_TEXTDATA};
+    let bytes = job_ifs(system, |c| {
+        let fd = c.open(path, ifs::ops::OpenArgs::new(O_RDONLY | O_TEXTDATA | O_CCSID).conv(1208))?;
+        let data = ifs::client::read_all(c, fd);
+        let _ = c.close(fd);
+        data
+    })
+    .map_err(|e| Error::new("CPFA0A9", format!("Object {path} not read: {}.", e.text())))?;
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
+}
+
+/// The host table in the `*AIX` (`/etc/hosts`) form: the address, its
+/// names, the text as a comment.
+fn aix_hosts(cfg: &Config) -> String {
+    let mut out = String::new();
+    for e in cfg.hosts.sorted() {
+        let mut line = format!("{} {}", e.addr, e.names.join(" "));
+        if !e.text.is_empty() {
+            line.push_str("  # ");
+            line.push_str(&e.text);
+        }
+        out.push_str(&line);
+        out.push('\n');
     }
-    let (file, lib) = parms.qual("FROMFILE");
-    let mbr = parms.name("FROMMBR");
+    out
+}
+
+fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let fmt = parms.name("FILEFMT");
     let replace = yes_no(&parms.text("REPLACE"), "REPLACE")?;
-    let recs = records(system, &lib.to_ascii_uppercase(), &file.to_ascii_uppercase(), &mbr)?;
+    let stmf = parms.specified("FROMOBJ").then(|| parms.text("FROMOBJ"));
+    let recs = match &stmf {
+        Some(_) => Vec::new(),
+        None => {
+            let (file, lib) = parms.qual("FROMFILE");
+            let mbr = parms.name("FROMMBR");
+            records(system, &lib.to_ascii_uppercase(), &file.to_ascii_uppercase(), &mbr)?
+        }
+    };
     let from = match fmt.as_str() {
+        // A stream file is a host file in its own form: *AIX unless *NIC.
+        _ if stmf.is_some() => {
+            let text = read_stmf(system, stmf.as_deref().unwrap_or_default())?;
+            if fmt == "*NIC" {
+                tcpcfg::model::host::parse_nic(&text)
+            } else {
+                tcpcfg::model::host::parse_aix(&text)
+            }
+        }
         "*AIX" | "*NIC" => {
             let text = recs.iter().fold(String::new(), |mut s, r| {
                 s.push_str(&ccsid::decode_trimmed(r));
@@ -654,10 +701,7 @@ fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
 
 fn cpy_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     if parms.specified("TOOBJ") {
-        return Err(Error::new(
-            msg::BAD_VALUE,
-            "Value not valid: copying to a stream file (TOOBJ) is not available in this release; use TOFILE.",
-        ));
+        return cpy_ht_stmf(system, &parms.text("TOOBJ"), parms.text("REPLACE").contains("YES") || parms.text("REPLACE") == "1");
     }
     let (file, lib) = parms.qual("TOFILE");
     let file = if file.is_empty() { "QTCPHT".to_string() } else { file.to_ascii_uppercase() };
@@ -680,6 +724,33 @@ fn cpy_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
         &format!("{n} host table records copied to {lib}/{file}."),
         &[],
     ))
+}
+
+/// `CPYTCPHT TOOBJ(path)`: the host table as an `/etc/hosts` file in
+/// UTF-8; an existing file only with `REPLACE(*YES)`.
+fn cpy_ht_stmf(system: &mut System, path: &str, replace: bool) -> Result<CmdReply, Error> {
+    use ifs::ops::flags::{O_CCSID, O_CREAT, O_EXCL, O_TEXT_CREAT, O_TRUNC, O_WRONLY};
+    let cfg = tcp::config(system).map_err(|e| Error::new("CPF9898", e))?;
+    let text = aix_hosts(&cfg);
+    let n = cfg.hosts.sorted().len();
+    let mode = if replace { O_TRUNC } else { O_EXCL };
+    job_ifs(system, |c| {
+        let fd = c.open(
+            path,
+            ifs::ops::OpenArgs::new(O_WRONLY | O_CREAT | mode | O_CCSID | O_TEXT_CREAT)
+                .mode(0o644)
+                .conv(1208)
+                .text_conv(1208),
+        )?;
+        let w = ifs::client::write_all(c, fd, text.as_bytes());
+        let _ = c.close(fd);
+        w
+    })
+    .map_err(|e| match e {
+        ifs::Errno::EEXIST => Error::new("CPFA0A0", format!("Object {path} already exists; REPLACE(*YES) replaces it.")),
+        e => Error::new("CPFA0A9", format!("Object {path} not written: {}.", e.text())),
+    })?;
+    Ok(completed(msg::ADDED, "Host table", &format!("{n} host table entries copied to {path}."), &[]))
 }
 
 // --- domain and attributes
