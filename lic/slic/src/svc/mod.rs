@@ -373,50 +373,57 @@ fn sysval(system: &mut System, args: &[&str]) -> String {
                 Err(e) => format!("{e}\n"),
             }
         }
-        [name, rest @ ..] => {
-            let name = name.to_ascii_uppercase();
-            let security = vals.catalog().get(&name).is_some_and(|e| e.group == sysval::Group::Sec);
-            let actor = crate::stgsvc::security::actor();
-            let dst = crate::stgsvc::security::dst_allows_sysval_changes(system.lic.as_ref().map(|(_, r)| r));
-            if let Err(e) = sec::sysval::require_change(actor.as_ref(), &name, security, dst) {
-                return format!("{e}\n");
+        [name, rest @ ..] => sysval_set(system, name, &rest.join(" ")),
+    }
+}
+
+/// Change system value `name` to `value` (a blank one too): checked,
+/// audited and saved. The line the console shows.
+pub(crate) fn sysval_set(system: &mut System, name: &str, value: &str) -> String {
+    let Some(vals) = system.sysvals.as_mut() else {
+        return "System values not loaded\n".to_string();
+    };
+    let name = name.to_ascii_uppercase();
+    let security = vals.catalog().get(&name).is_some_and(|e| e.group == sysval::Group::Sec);
+    let actor = crate::stgsvc::security::actor();
+    let dst = crate::stgsvc::security::dst_allows_sysval_changes(system.lic.as_ref().map(|(_, r)| r));
+    if let Err(e) = sec::sysval::require_change(actor.as_ref(), &name, security, dst) {
+        return format!("{e}\n");
+    }
+    let journal = crate::stgsvc::security::audit_journal_exists(system);
+    if let Err(e) = sec::sysval::validate(&name, value, journal) {
+        return format!("{e}\n");
+    }
+    let Some(vals) = system.sysvals.as_mut() else {
+        return "System values not loaded\n".to_string();
+    };
+    let before = vals.get(&name).map(|v| v.text()).unwrap_or_default();
+    match vals.set_text(&name, value) {
+        Ok(effect) => {
+            let now = vals.get(&name).map(|v| v.text()).unwrap_or_default();
+            sec::audit::record(
+                sec::audit::Event::new(sec::audit::Kind::Sv)
+                    .set("ETYP", "A")
+                    .set("SYSV", name.as_str())
+                    .set("NVAL", now.as_str())
+                    .set("OVAL", before.as_str()),
+            );
+            let saved = crate::ipl::sysvals::save(system);
+            if saved.is_ok() && system.role == crate::ipl::system::Role::Storage {
+                let data = wm::joblog::data(&[(&name, 10), (&before, 80), (&now, 80)]);
+                let who = crate::stgsvc::msgs::sender(system, system.current_job);
+                crate::stgsvc::hist::system_message(system, "CPF1806", &data, "04", who);
             }
-            let journal = crate::stgsvc::security::audit_journal_exists(system);
-            if let Err(e) = sec::sysval::validate(&name, &rest.join(" "), journal) {
-                return format!("{e}\n");
-            }
-            let Some(vals) = system.sysvals.as_mut() else {
-                return "System values not loaded\n".to_string();
+            let when = match effect {
+                sysval::Effect::Immediate => "",
+                sysval::Effect::NextIpl => " (takes effect at the next IPL)",
             };
-            let before = vals.get(&name).map(|v| v.text()).unwrap_or_default();
-            match vals.set_text(&name, &rest.join(" ")) {
-                Ok(effect) => {
-                    let now = vals.get(&name).map(|v| v.text()).unwrap_or_default();
-                    sec::audit::record(
-                        sec::audit::Event::new(sec::audit::Kind::Sv)
-                            .set("ETYP", "A")
-                            .set("SYSV", name.as_str())
-                            .set("NVAL", now.as_str())
-                            .set("OVAL", before.as_str()),
-                    );
-                    let saved = crate::ipl::sysvals::save(system);
-                    if saved.is_ok() && system.role == crate::ipl::system::Role::Storage {
-                        let data = wm::joblog::data(&[(&name, 10), (&before, 80), (&now, 80)]);
-                        let who = crate::stgsvc::msgs::sender(system, system.current_job);
-                        crate::stgsvc::hist::system_message(system, "CPF1806", &data, "04", who);
-                    }
-                    let when = match effect {
-                        sysval::Effect::Immediate => "",
-                        sysval::Effect::NextIpl => " (takes effect at the next IPL)",
-                    };
-                    match saved {
-                        Ok(()) => format!("{name} set to {now}{when}\n"),
-                        Err(e) => format!("{name} set to {now}{when}, but not saved: {e}\n"),
-                    }
-                }
-                Err(e) => format!("{e}\n"),
+            match saved {
+                Ok(()) => format!("{name} set to {now}{when}\n"),
+                Err(e) => format!("{name} set to {now}{when}, but not saved: {e}\n"),
             }
         }
+        Err(e) => format!("{e}\n"),
     }
 }
 
