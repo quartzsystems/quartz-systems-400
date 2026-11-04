@@ -322,11 +322,12 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     ))
 }
 
-/// Deletes for DLTLICPGM in the store; IFS paths are left to the IFS
-/// commands (`MIGRATE(phase11)`: remove product directories).
+/// Deletes for DLTLICPGM in the store; the product's IFS paths are
+/// kept to be removed once the store is no longer lent to the plan.
 struct StoreRemover<'c, 's> {
     cell: &'c Cell<'s>,
     qsys: ObjectId,
+    paths: Vec<String>,
 }
 
 impl StoreRemover<'_, '_> {
@@ -385,7 +386,8 @@ impl Remover for StoreRemover<'_, '_> {
         })
     }
 
-    fn delete_path(&mut self, _path: &str) -> Result<(), String> {
+    fn delete_path(&mut self, path: &str) -> Result<(), String> {
+        self.paths.push(path.to_string());
         Ok(())
     }
 }
@@ -400,12 +402,24 @@ fn dltlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         release: release_of(&parms.text("RLS"))?,
         lng: lng_of(&parms.text("LNG"))?,
     };
-    let n = lp::with(system, |p, cell, qsys| {
+    let (n, paths) = lp::with(system, |p, cell, qsys| {
         let plan = plan_delete(p, &req).map_err(|e| format!("{NOT_DELETED} {e}"))?;
-        let mut rm = StoreRemover { cell, qsys };
+        let mut rm = StoreRemover { cell, qsys, paths: Vec::new() };
         execute_delete(&plan, p, &mut rm, &mut NoExits).map_err(|e| format!("{NOT_DELETED} {e}"))?;
-        Ok(plan.loads.len())
+        Ok((plan.loads.len(), rm.paths))
     })?;
+    // The product's directories and stream files go with it; one already
+    // gone is no error.
+    for path in &paths {
+        let gone = crate::stgsvc::ifs::with_job_ifs(system, |fs, cx| match fs.remove_tree(cx, path) {
+            Ok(()) => Ok(()),
+            Err(ifs::Errno::ENOENT) => Ok(()),
+            Err(e) => Err(format!("{NOT_DELETED} {path}: {e}")),
+        });
+        if let Some(Err(e)) = gone {
+            return Err(e);
+        }
+    }
     Ok(done(
         format!("{DELETED} {n} product load(s) of {pid} deleted\n"),
         DELETED,
