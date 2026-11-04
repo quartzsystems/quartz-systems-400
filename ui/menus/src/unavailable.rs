@@ -88,7 +88,6 @@ pub const COMMANDS: &[&str] = &[
     "WRKCNNL",
     "WRKCOSD",
     "WRKCTLD",
-    "WRKDDMF",
     "WRKDIRE",
     "WRKDOC",
     "WRKDOCLIB",

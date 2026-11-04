@@ -548,6 +548,13 @@ text = "The value &1 is too short for a complete timestamp."
 vars = ["*CHAR 50"]
 
 [[msg]]
+id = "RNF0236"
+sev = 30
+text = "The %DATA options are not valid here: &1."
+help = "An option given in the %DATA options string is not one DATA-INTO takes, or its value is not valid for it. Correct the option and compile again."
+vars = ["*CHAR 50"]
+
+[[msg]]
 id = "RNF0231"
 sev = 20
 text = "The length given for &1 is above the largest allowed; the largest is used."
