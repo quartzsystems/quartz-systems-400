@@ -158,7 +158,7 @@ fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Ve
         }
         "dump-copy" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
-            Err("Copying a dump to media is not available in this release".into())
+            dumps::copy(system, arg(args, 0), arg(args, 1)).map(|m| vec![m])
         }
         "trace-start" => {
             super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;

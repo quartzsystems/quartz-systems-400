@@ -586,10 +586,11 @@ pub trait DstEnv {
         let _ = name;
         Err(NOT_HERE.into())
     }
-    /// Copy a system dump to media.
-    fn copy_dump(&mut self, name: &str) -> Result<(), String> {
-        let _ = name;
-        Err("Copying a dump to media is not available in this release".into())
+    /// Copy a system dump to media: a tape or optical device, or a
+    /// save file `lib/name`. The completion message.
+    fn copy_dump(&mut self, name: &str, device: &str) -> Result<String, String> {
+        let _ = (name, device);
+        Err(NOT_HERE.into())
     }
     /// The traces.
     fn traces(&mut self) -> Result<Vec<TraceRow>, String> {
@@ -1007,6 +1008,10 @@ impl DstEnv for MemEnv {
         self.actions.push(format!("delete dump {name}"));
         self.dumps.retain(|d| d.0.name != name);
         Ok(())
+    }
+    fn copy_dump(&mut self, name: &str, device: &str) -> Result<String, String> {
+        self.actions.push(format!("copy dump {name} {device}"));
+        Ok(format!("System dump {name} copied to {device}."))
     }
     fn traces(&mut self) -> Result<Vec<TraceRow>, String> {
         Ok(self.traces.iter().map(|t| t.0.clone()).collect())

@@ -264,8 +264,15 @@ fn dumps_traces_alter_and_the_lic_log() {
     r.enter(&f(&["5"]), &mut e);
     assert!(r.screen(&mut e).dump().contains("System dump QSD0000001"));
     r.function(12, &mut e);
+    // 6 asks where the copy goes, then copies.
     r.enter(&f(&["6"]), &mut e);
-    assert!(r.screen(&mut e).dump().contains("not available"));
+    check("msd-copy", &r.screen(&mut e).dump());
+    r.enter(&f(&["", ""]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("Type a device or a save file"));
+    r.enter(&f(&["TAP01", ""]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("copied to TAP01"));
+    assert!(e.actions.iter().any(|a| a == "copy dump QSD0000001 TAP01"));
+    let mut r = walk(&mut e, &["7", "6", "2"], "msd-list-one");
     r.enter(&f(&["4"]), &mut e);
     assert!(e.dumps.is_empty());
     // Start a trace from F6, stop it.

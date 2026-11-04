@@ -122,8 +122,8 @@ the system, time, requesting job, reason and release; the disk units
 with their use; the job table; the IPL history; the LIC log; the traces.
 It is kept as user space `QSYS/QSDnnnnnnn` (seven digits, from 1) whose
 text is the reason, and logs a problem `DUMP/QSDnnnnnnn`. Work with main
-storage dumps lists them with 4=Delete, 5=Display, 6=Copy to media (not
-available until media is wired: `MIGRATE(media)`).
+storage dumps lists them with 4=Delete, 5=Display, 6=Copy to media (a
+tape or optical device, or a save file: `SAVOBJ` of the user space).
 
 A formatted object dump shows the header's fields, the header page and up
 to eight payload pages in hex with the EBCDIC text.
@@ -193,7 +193,7 @@ option 2 shows the IPL history; `svc.liclog [MAJOR]` prints the entries.
    F10; the service also requires `*SERVICE` and writes a LIC log entry)
 5. Licensed Internal Code log: 1 select entries, 2 IPL history
 6. Main storage dump manager: 1 take a dump (F10), 2 work with dumps,
-   3 copy to media (not available)
+   3 copy to media (the dump list, where 6 copies)
 7. Hardware service manager: 1 packaging, 2 logical (1 all, 2 `*CMN`,
    3 `*STG`, 4 `*TAP`), 3 locate by resource name (a trailing `*` is
    generic), 4 failed and non-reporting, 6 to 8 not available, F6 print

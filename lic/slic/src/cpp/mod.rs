@@ -59,6 +59,7 @@ use crate::ipl::system::System;
 
 pub use prbcmd::{detail_data as problem_detail, rows as problem_rows};
 pub use savcmd::savf_listing;
+pub(crate) use opacmd::run_cl;
 pub(crate) use savcmd::trusted_keys;
 
 /// Run command `name` with `parms`; the text, messages and escape.

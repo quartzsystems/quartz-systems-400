@@ -1,0 +1,24 @@
+                        Copy Main Storage Dump to Media                         
+                                                                 System:  QS400 
+                                                                                
+ Device (TAPnn, OPTnn) . . . :                                                  
+ Or save file (library/file) :                                                  
+                                                                                
+ The dump is saved as user space QSYS/QSDnnnnnnn: RSTOBJ                        
+ restores it on this or another system.                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

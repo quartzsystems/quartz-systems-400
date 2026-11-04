@@ -399,6 +399,33 @@ impl Panel for DisplayAlterDump {
     }
 }
 
+/// Option 6 of the dump list: where the copy goes.
+fn copy_dump_form(name: String) -> Form {
+    Form::new(
+        "dst-msd-copy",
+        "Copy Main Storage Dump to Media",
+        vec![
+            FormLine::new("Device (TAPnn, OPTnn)", 10, ""),
+            FormLine::new("Or save file (library/file)", 21, ""),
+        ],
+        vec![
+            "The dump is saved as user space QSYS/QSDnnnnnnn: RSTOBJ",
+            "restores it on this or another system.",
+        ],
+        Box::new(move |fields, env| {
+            let (dev, savf) = (field(fields, 0), field(fields, 1));
+            let to = if savf.is_empty() { dev } else { savf };
+            if to.is_empty() {
+                return Flow::Error("Type a device or a save file".into());
+            }
+            match env.copy_dump(&name, &to) {
+                Ok(m) => Flow::Message(m),
+                Err(e) => Flow::Error(e),
+            }
+        }),
+    )
+}
+
 fn dump_to_printer() -> Form {
     Form::new(
         "dst-dad-print",
@@ -509,7 +536,11 @@ pub fn dump_manager() -> Submenu {
                 "Work with main storage dumps",
                 Some(Box::new(|env| Flow::Push(Box::new(work_with_dumps(env))))),
             ),
-            (3, "Copy to media", None),
+            (
+                3,
+                "Copy to media",
+                Some(Box::new(|env| Flow::Push(Box::new(work_with_dumps(env))))),
+            ),
         ],
     )
 }
@@ -542,7 +573,7 @@ pub fn work_with_dumps(env: &mut dyn DstEnv) -> Panel2 {
                 };
                 let r = match opt {
                     4 => env.delete_dump(name),
-                    6 => env.copy_dump(name),
+                    6 => return Flow::Push(Box::new(copy_dump_form(name.clone()))),
                     _ => match env.dump_lines(name) {
                         Ok(lines) => {
                             return Flow::Push(Box::new(Notice::new("dst-msd-display", "Display Main Storage Dump", lines)));

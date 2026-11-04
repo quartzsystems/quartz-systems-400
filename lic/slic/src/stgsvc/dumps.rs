@@ -180,6 +180,26 @@ fn contents(system: &mut System, name: &str, why: &str) -> Vec<String> {
     out
 }
 
+/// Copy a dump to media: `SAVOBJ` of its user space to a device, or to
+/// a save file for `lib/name`. The save's completion message.
+pub fn copy(system: &mut System, name: &str, to: &str) -> Result<String, String> {
+    let name = name.trim().to_ascii_uppercase();
+    if !name.starts_with("QSD") || list(system)?.iter().all(|d| d.name != name) {
+        return Err(format!("System dump {name} not found"));
+    }
+    let to = to.trim().to_ascii_uppercase();
+    let target = match to.split_once('/') {
+        Some((lib, file)) => format!("DEV(*SAVF) SAVF({lib}/{file})"),
+        None => format!("DEV({to})"),
+    };
+    let r = crate::cpp::run_cl(system, &format!("SAVOBJ OBJ({name}) LIB(QSYS) OBJTYPE(*USRSPC) {target}"));
+    let last = r.text.lines().map(str::trim).rfind(|l| !l.is_empty()).unwrap_or("").to_string();
+    match r.escape {
+        Some(e) => Err(if last.is_empty() { format!("{} the dump was not copied", e.msgid) } else { last }),
+        None => Ok(if last.is_empty() { format!("System dump {name} copied to {to}.") } else { last }),
+    }
+}
+
 /// A job's qualified name, `number/user/name`.
 pub fn job_name(system: &System, number: u32) -> String {
     if number == 0 {

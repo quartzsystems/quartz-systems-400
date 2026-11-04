@@ -415,8 +415,8 @@ impl DstEnv for SstEnv {
         self.op("dump-delete", &[name]).map(|_| ())
     }
 
-    fn copy_dump(&mut self, name: &str) -> Result<(), String> {
-        self.op("dump-copy", &[name]).map(|_| ())
+    fn copy_dump(&mut self, name: &str, device: &str) -> Result<String, String> {
+        Ok(self.op("dump-copy", &[name, device])?.join(" "))
     }
 
     fn traces(&mut self) -> Result<Vec<TraceRow>, String> {

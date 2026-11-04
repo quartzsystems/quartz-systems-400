@@ -141,7 +141,7 @@ fn save_defaults(system: &mut System) -> Result<Defaults, String> {
 
 /// Run a CL command string in the service: analyzed against its
 /// shipped definition, its processing program called. The reply.
-pub(super) fn run_cl(system: &mut System, text: &str) -> CmdReply {
+pub(crate) fn run_cl(system: &mut System, text: &str) -> CmdReply {
     let name = text
         .trim()
         .trim_start_matches('?')
