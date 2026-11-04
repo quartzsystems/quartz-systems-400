@@ -21,7 +21,7 @@ use crate::ipl::system::System;
 /// The commands `slic` answers itself while the console is idle.
 pub const LOCAL: &[&str] = &[
     "help", "release", "srcs", "hist", "hw", "lic", "mode", "screen", "key", "type", "pwrdwn",
-    "dbgkill", "tn5250",
+    "dbgkill", "tn5250", "procstat",
 ];
 
 /// The running job.

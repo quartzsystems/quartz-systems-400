@@ -356,6 +356,9 @@ work/         work management: jobs, spooling, process messages
                 qapm.rs the QAPM* model files (dds/, IBM's V7R1M0 layout) and their records,
                 adjust.rs QPFRADJ; the collector is lic/slic/src/stgsvc/perfcol.rs, the
                 commands lic/slic/src/cpp/pfrcmd.rs
+  acg/          job accounting (docs/WORKMGMT.md "Job accounting"): QACGLVL, the QACGJRN JB, DP
+                and SP entries in IBM's QAJBACG/QAPTACG layouts (dds/), DSPJRN's *TYPE1
+                outfile records; the service side is lic/slic/src/stgsvc/acg.rs
   print/        network printing: src/transform/ the host print transform (ascii, pcl and
                 page for the LaserJet models, custom for *WSCST), wscst.rs the customizing
                 object, pjl.rs, src/sink/ (raw 9100, ipp, lpr with control.rs, the IBM-to-IBM
@@ -553,6 +556,7 @@ cargo run -p build -- test --media iso --install   # automatic install, boot, in
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo run -p fmtcheck [-- update] # the format freeze; update only after a version bump
 cargo run -p build -- fuzz [--target NAME] [--secs N] [--jobs N]   # every fuzz target, instrumented (3 min each, 6 at once)
+cargo run -p build -- soak [--secs N]   # an hour of load under QEMU; leaks, new SRCs, orphaned jobs fail it
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
 QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test

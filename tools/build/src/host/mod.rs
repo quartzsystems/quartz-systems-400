@@ -10,4 +10,5 @@ pub mod doctor;
 pub mod fuzz;
 pub mod hash;
 pub mod paths;
+pub mod soak;
 pub mod testrun;

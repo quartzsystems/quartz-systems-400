@@ -44,6 +44,9 @@ struct Cli {
     /// TN5250 sessions.
     #[arg(long)]
     load: Option<usize>,
+    /// Instead of the suite: the soak, for this many seconds.
+    #[arg(long)]
+    soak: Option<u64>,
 }
 
 fn main() -> Result<ExitCode> {
@@ -61,6 +64,11 @@ fn main() -> Result<ExitCode> {
     suite.set_only(cli.only.clone());
     if cli.only.is_some() {
         suite.set_phase2(cli.bench, 0);
+    }
+    if let Some(secs) = cli.soak {
+        let r = suite.run_soak(std::time::Duration::from_secs(secs))?;
+        print!("{}", r.render());
+        return Ok(if r.failures.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE });
     }
     if let Some(n) = cli.load {
         let r = suite.run_load(n)?;

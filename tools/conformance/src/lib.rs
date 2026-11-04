@@ -42,6 +42,7 @@ mod load;
 mod leftovers;
 mod perfstep;
 mod secacg;
+pub mod soak;
 mod lpstep;
 pub mod media;
 mod netauto;

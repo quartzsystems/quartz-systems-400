@@ -82,6 +82,14 @@ enum Command {
         #[arg(long, default_value_t = 3)]
         pulls: u32,
     },
+    /// Boot under QEMU and keep the system under interactive, batch, SQL,
+    /// save/restore, journaling and network load, failing on leaks, new
+    /// SRCs or jobs left behind.
+    Soak {
+        /// Seconds of load (one hour by default).
+        #[arg(long, default_value_t = 3600)]
+        secs: u64,
+    },
     /// Check host prerequisites.
     Doctor,
     /// Run cargo-deny plus the C-linkage lockfile check.
@@ -154,6 +162,7 @@ fn main() -> Result<()> {
             bench,
             pulls,
         } => host::testrun::test(&ctx, media, install, bench, pulls)?,
+        Command::Soak { secs } => host::soak::soak(&ctx, secs)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
         Command::Fuzz { target, secs, jobs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?,
