@@ -133,17 +133,8 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         devs.push(Box::new(dev));
         paths.push(PathBuf::from(d));
     }
-    let (mut store, recovery) =
+    let (store, recovery) =
         store::Store::open(devs, storage::config()).map_err(|e| format!("open ASP 1: {e}"))?;
-    // The page cache is the *MACHINE pool.
-    if let Some(kb) = system
-        .sysvals
-        .as_ref()
-        .and_then(|v| v.get("QMCHPOOL").ok())
-        .and_then(|v| v.text().trim().parse::<usize>().ok())
-    {
-        store.resize_cache(kb * 1024 / store::page::PAGE_SIZE);
-    }
     let sb = store.asp().superblock();
     let qsys = (!sb.qsys.is_none()).then_some(sb.qsys);
     let text = format!(
@@ -197,6 +188,17 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         vals.set_system_blob(&start.system)
             .map_err(|e| format!("system values: {e}"))?;
         system.sysvals = Some(vals);
+    }
+    // The page cache is the *MACHINE pool, sized once the system values
+    // are here (until then the store's default bound).
+    if let Some(kb) = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QMCHPOOL").ok())
+        .and_then(|v| v.text().trim().parse::<usize>().ok())
+        && let Some(s) = system.storage.as_mut()
+    {
+        s.store.resize_cache(kb * 1024 / store::page::PAGE_SIZE);
     }
     let text = match security::install(system) {
         Ok(d) if d.profiles > 0 => format!(
