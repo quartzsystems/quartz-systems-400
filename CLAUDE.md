@@ -235,7 +235,7 @@ media/        save media (docs/MEDIA.md)
                 WRKMLBSTS)
   instmedia/    install media (docs/INSTALL.md, RECOVERY.md): layout.rs payloads, sign.rs the
                 manifest signature, rsp.rs the response file, savsys.rs the layout on tape and
-                optical (written, recognised), osload.rs the OS install over a store. The
+                optical (written, recognised), osload.rs the OS install over a store, fetch/ the response file over HTTP(S), TFTP and PXE. The
                 installer is lic/slic/src/ipl/install.rs and instdev.rs, SAVSYS cpp/savsys.rs
 ptf/          PTFs (docs/PTF.md)
   ptf/          header.rs the PTF header, status.rs the states, package.rs build and open a
@@ -427,6 +427,8 @@ ifs/          the integrated file system
                 src/stmf/ CPYTOSTMF/CPYFRMSTMF and the IMPF stream files, msg.rs IBM's messages
 net/          TCP/IP: configuration, sockets, TLS, servers
   netlink/      the kernel's network layer: a netlink client, nftables, /proc/net and sysctl
+  dhcp/         the DHCPv4 client of *IP4DHCP interfaces: messages, the lease state machine
+                (renew, rebind, release); the service runs one per link (stgsvc/tcp/leases.rs)
   cmncfg/       communications objects: *LIND, controller and device names, line status
   tcpcfg/       TCP/IP configuration without the store or kernel: interfaces, routes, host
                 table, CHGTCPA, the QUSRSYS files, apply.rs to the kernel, the CFGTCP panels
