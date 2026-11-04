@@ -158,6 +158,7 @@ fn refusals(a: &mut Conn, ipl: &IplStatus) -> Result<String, String> {
     if after.ipl_time != ipl.ipl_time {
         return Err(format!("the IPL changed: {after:?}"));
     }
+    // BLOCKED(phase12): under QEMU (run 3) QAPTEST's ListPtfs answers Ok: `cmd_lookup("DSPPTF")` does not refuse though DSPPTF is shipped *PUBLIC *EXCLUDE; the QSECOFR half after it never ran.
     let ptfs = refused(a, "ListPtfs", Op::ListPtfs, &all_ptfs())?;
     Ok(format!("{power}, {strsbs}, {chg}, {ptfs}"))
 }
