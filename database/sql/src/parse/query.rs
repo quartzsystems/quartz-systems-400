@@ -15,6 +15,10 @@ use crate::lex::Tok;
 impl Parser {
     /// A full query with its clauses.
     pub(crate) fn query(&mut self) -> Result<Query> {
+        self.nested(Self::query_body)
+    }
+
+    fn query_body(&mut self) -> Result<Query> {
         if self.is_word("WITH") && !self.is_word_at(2, "AS") {
             // WITH NC and the like belong after the body; a common table
             // expression is WITH name AS (...).

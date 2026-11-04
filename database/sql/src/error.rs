@@ -183,6 +183,9 @@ pub enum SqlError {
     /// The statement was ended by a cancel from outside it.
     #[error("the statement was cancelled")]
     Cancelled,
+    /// Nested too deeply to run (`SQL0101`).
+    #[error("the statement is too long or too complex")]
+    TooComplex,
 
     /// Allowed only at the start of a unit of work: changes are not
     /// committed or rolled back.
@@ -227,6 +230,7 @@ impl SqlError {
             Self::ValueCount { .. } => -117,
             Self::NotAuthorized { .. } => -551,
             Self::Cancelled => -952,
+            Self::TooComplex => -101,
             Self::ResourceLimit { .. } => -904,
             Self::UnitOfWork { .. } => -428,
             Self::Database { .. } => -901,
@@ -257,6 +261,7 @@ impl SqlError {
             Self::ValueCount { .. } => "42802",
             Self::NotAuthorized { .. } => "42501",
             Self::Cancelled => "57014",
+            Self::TooComplex => "54001",
             Self::ResourceLimit { .. } => "57011",
             Self::UnitOfWork { .. } => "25001",
             Self::Database { .. } => "58004",

@@ -30,6 +30,12 @@ help = "The statement has no WHERE clause, so it applies to the whole table. Thi
 vars = ["*CHAR 10"]
 
 [[msg]]
+id = "SQL0101"
+sev = 30
+text = "The statement is too long or too complex."
+help = "Expressions or subqueries are nested more deeply than the database runs. Write the statement with fewer nested levels, for example with a common table expression."
+
+[[msg]]
 id = "SQL0104"
 sev = 30
 text = "Syntax error at line &1 column &2: &3."

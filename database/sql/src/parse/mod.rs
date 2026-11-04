@@ -71,12 +71,17 @@ pub(crate) const RESERVED: &[&str] = &[
     "WITH",
 ];
 
+/// How deeply expressions and subqueries may nest.
+pub const MAX_DEPTH: u16 = 64;
+
 /// The parser state.
 pub struct Parser {
     toks: Vec<Token>,
     at: usize,
     naming: Naming,
     params: usize,
+    /// Expressions and queries open around the current token.
+    depth: u16,
 }
 
 impl Parser {
@@ -87,6 +92,7 @@ impl Parser {
             at: 0,
             naming,
             params: 0,
+            depth: 0,
         })
     }
 
@@ -119,6 +125,18 @@ impl Parser {
             found: t.tok.describe(),
             expected: what.into(),
         }
+    }
+
+    /// Runs `f` one nesting level deeper; past [`MAX_DEPTH`] the statement
+    /// is too complex (`SQL0101`), before the recursion can exhaust the stack.
+    pub(crate) fn nested<T>(&mut self, f: impl FnOnce(&mut Self) -> Result<T>) -> Result<T> {
+        if self.depth >= MAX_DEPTH {
+            return Err(SqlError::TooComplex);
+        }
+        self.depth += 1;
+        let r = f(self);
+        self.depth -= 1;
+        r
     }
 
     fn unsupported(what: &str) -> SqlError {

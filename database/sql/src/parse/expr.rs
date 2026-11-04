@@ -15,6 +15,10 @@ use crate::lex::Tok;
 impl Parser {
     /// A search condition or value expression.
     pub(crate) fn expr(&mut self) -> Result<Expr> {
+        self.nested(Self::or_expr)
+    }
+
+    fn or_expr(&mut self) -> Result<Expr> {
         let mut left = self.and_expr()?;
         while self.eat_word("OR") {
             let right = self.and_expr()?;
@@ -34,7 +38,7 @@ impl Parser {
 
     fn not_expr(&mut self) -> Result<Expr> {
         if self.eat_word("NOT") {
-            return Ok(Expr::Not(Box::new(self.not_expr()?)));
+            return Ok(Expr::Not(Box::new(self.nested(Self::not_expr)?)));
         }
         self.predicate()
     }
@@ -173,10 +177,10 @@ impl Parser {
 
     fn factor(&mut self) -> Result<Expr> {
         if self.eat_sym("-") {
-            return Ok(Expr::Neg(Box::new(self.factor()?)));
+            return Ok(Expr::Neg(Box::new(self.nested(Self::factor)?)));
         }
         if self.eat_sym("+") {
-            return self.factor();
+            return self.nested(Self::factor);
         }
         let e = self.primary()?;
         // A labeled duration: `e DAYS`.
