@@ -27,8 +27,8 @@ relational operators (`*EQ` and `=`, `*NE` and `¬=`, `*GT` `>`,
 `%BIN`/`%BINARY`, `%CHAR`, `%DEC`, `%INT`/`%UINT`, `%LEN`, `%SIZE`,
 `%SCAN`, `%CHECK`/`%CHECKR`, `%TRIM`/`%TRIML`/`%TRIMR`, `%UPPER`,
 `%LOWER`, `%PARMS`, `%SWITCH`, `%ADDRESS`, `%OFFSET`. A `%SST`, `%BIN` or
-`%OFFSET` can be
-the target of `CHGVAR`; `%OFFSET` of a null pointer, read or set, is
+`%OFFSET` can be the target of `CHGVAR`; `%OFFSET` of a null pointer,
+read or set, is
 `MCH3601` as on the primary. Character results keep IBM's lengths: a
 variable its declared length with its blanks, a literal and a
 built-in's result their exact length, so `'a' *CAT %CHAR(&N)` has no
