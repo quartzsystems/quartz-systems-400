@@ -5,7 +5,9 @@
 .* WRKSYSSTS: the machine's CPU, storage and jobs and each storage
 .* pool's faults (or, with F11, its transitions) since the display's
 .* first look or F10. Size and activity level of a shared pool may be
-.* typed over. No golden: pub400 refuses the command (title and keys).
+.* typed over. Captured on the primary (tools/conformance/golden/
+.* phase12/perf/wrksyssts-i*.txt).
+.* BLOCKED(phase12): the primary's display is a display file on a hand grid this renderer does not make (as WRKACTJOB's); it needs a display file with a command line
 :PNLGRP.
 :CLASS NAME=NUMCL BASETYPE='CHAR 10'.
 :ECLASS.

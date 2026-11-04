@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The statistics displays: `WRKSYSSTS` (`QGWCSSTS`), `WRKDSKSTS`
-//! (`QGWCDSKS`), `WRKSYSACT` (`QGPYMON`), and `WRKSHRPOOL`
+//! (`QGWCDSKS`), `WRKSYSACT` (display file `QPYSYSAC`), and `WRKSHRPOOL`
 //! (`QGWCPOOL`). A shared pool's size and activity level typed over
 //! either pool list change the pool (`CHGSHRPOOL`) on Enter.
 

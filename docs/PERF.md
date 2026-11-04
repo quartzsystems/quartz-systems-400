@@ -149,6 +149,28 @@ least ten) gives a tenth back. `*MACHINE` is never changed. Changes go
 to the pool table, the pool's cgroup `memory.high` and `QWCSHRPOOL`, as
 `CHGSHRPOOL` does.
 
+## The displays
+
+`WRKSYSACT` is display file `QPYSYSAC` (`ui/dspf/sys/`), laid out by
+`work/perf/src/sysact.rs`: its four views (CPU and I/O totals,
+synchronous I/O, asynchronous I/O, storage and wait), its three key
+sets and the first display's copyright row are identical to the
+primary's (`work/perf/tests/wrksysact.rs` against
+`tools/conformance/golden/phase12/perf/wrksysact*.txt`). Option 5 works
+with the job; F10 and Enter look again, F11 steps the views, F24 the
+keys, F16 orders by I/O, F19 looks again every five seconds, F20 to F23
+show `WRKACTJOB`, `WRKSYSSTS`, `WRKSBS`, `WRKDSKSTS`. `WRKACTJOB`'s
+`Int` and `Rsp` columns show interactive jobs' transactions and average
+response time from the same counters.
+
+`WRKSYSSTS`, `WRKSHRPOOL` and `WRKDSKSTS` stay UIM panels: the
+primary's are display files on hand grids the UIM renderer does not
+make (as `WRKACTJOB`'s, `ui/uim/tests/wm_panels.rs`). Their captures
+are under `tools/conformance/golden/phase12/perf/`; each panel group
+carries a `BLOCKED(phase12)` marker. On the primary `WRKSYSSTS` at the
+basic assistance level is "Display System Status"; QS/400 shows the
+intermediate panel.
+
 ## Deviations
 
 - The collector's interval is the configured one; IBM keeps separate

@@ -3,7 +3,9 @@
 .* root directory of this project.
 .*
 .* WRKDSKSTS: each disk unit's size, use and I/O since the display's
-.* first look or the last F10.
+.* first look or the last F10. Captured on the primary
+.* (tools/conformance/golden/phase12/perf/wrkdsksts*.txt).
+.* BLOCKED(phase12): headings and decimal columns sit on a hand grid this renderer does not make (work2_panels::wrkdsksts); it needs a display file with a command line
 :PNLGRP.
 :CLASS NAME=TIMECL BASETYPE='CHAR 8'.
 :ECLASS.

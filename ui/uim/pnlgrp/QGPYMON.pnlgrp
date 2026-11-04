@@ -3,7 +3,9 @@
 .* root directory of this project.
 .*
 .* WRKSYSACT: the jobs that used the processor since the last look,
-.* most first. No golden: pub400 refuses the command (title and keys).
+.* most first. The job shows display file QPYSYSAC instead, identical
+.* to the primary's (work/perf/tests/wrksysact.rs); this group is kept
+.* for the panel's help.
 :PNLGRP.
 :CLASS NAME=OPTCL BASETYPE=ACTION.
 :ECLASS.

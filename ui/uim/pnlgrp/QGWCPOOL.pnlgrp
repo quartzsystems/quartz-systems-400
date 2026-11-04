@@ -3,8 +3,9 @@
 .* root directory of this project.
 .*
 .* WRKSHRPOOL: the shared storage pools; their size and activity level
-.* may be typed over and Enter changes them (CHGSHRPOOL). No golden:
-.* pub400 refuses the command (title and keys).
+.* may be typed over and Enter changes them (CHGSHRPOOL). Captured on
+.* the primary (tools/conformance/golden/phase12/perf/wrkshrpool*.txt).
+.* BLOCKED(phase12): the primary's display is a display file on a hand grid this renderer does not make; it needs a display file with a command line
 :PNLGRP.
 :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
 :ECLASS.
