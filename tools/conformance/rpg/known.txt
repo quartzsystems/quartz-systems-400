@@ -25,3 +25,4 @@ ERR362 a group child named like an operation code (RNF3556): IBM's follow-on dia
 ERR367 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
 ERR369 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
 ERR370 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
+USA001 a *USA time field's record buffer is hh:mm AM on IBM i and hh:mm:ss here (DB_OPEN_QUESTIONS.md, TIMFMT(*USA)); BLOCKED(phase12) in the database's buffer conversion

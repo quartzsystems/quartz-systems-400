@@ -1,0 +1,322 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   USA001
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   USA001
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: USATF                                                                                            000000     000200
+      3 //; sqlfile: USATF                                                                                        000000     000300
+      4 // What a program sees of a *USA time field: the record buffer of a                                       000000     000400
+      5 // program-described read, and the field of an externally described one.                                  000000     000500
+      6 ctl-opt dftactgrp(*no);                                                                                   000000     000600
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     7 dcl-f QSYSPRT printer(132);                                                                               000000     000700
+-     8 dcl-ds line len(132) end-ds;                                                                              000000     000800
+ ======>       aaaa
+ *RNF3530 00 a      000800  Data structure LINE has no valid subfields.
+-     9 dcl-f RAWF disk(20) usage(*input) extfile('USATF') usropn;                                                000000     000900
+-    10 dcl-ds buf len(20) end-ds;                                                                                000000     001000
+ ======>       aaa
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+ *RNF3530 00 a      001000  Data structure BUF has no valid subfields.
+-    11 dcl-f USATF usage(*input) block(*no);                                                                     000000     001100
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  USATF            {lib}/USATF                             *
+         * Record format(s) . . . . . :  USATR            USATR                                       *
+         *--------------------------------------------------------------------------------------------*
+-    12 dcl-ds r likerec(USATR);                                                                                  000000     001200
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     13 dcl-c HEX '0123456789ABCDEF';                                                                             000000     001300
+ *RNF2318 00      7 000700  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    14=IUSATR                                                                                                              1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  USATR                                                        *                     1
+         * External format  . . . . . :  USATR : {lib}/USATF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     15=I                             A    1    4  K1                                                                       1000002
+     16=I                        *USA:T    5   12  T1                                                                       1000003
+     17=I                        *ISO.T   13   20  T2                                                                       1000004
+-    18 open RAWF;                                                                                                000000     001400
+     19 read RAWF buf;                                                                                            000000     001500
+     20 dow not %eof(RAWF);                                                                                  B01  000000     001600
+     21   line = 'raw [' + buf + '] ' + hexof(buf);                                                           01  000000     001700
+     22   write QSYSPRT line;                                                                                 01  000000     001800
+     23   read RAWF buf;                                                                                      01  000000     001900
+     24 enddo;                                                                                               E01  000000     002000
+     25 close RAWF;                                                                                               000000     002100
+     26 read USATF r;                                                                                             000000     002200
+     27 dow not %eof(USATF);                                                                                 B01  000000     002300
+     28   line = 'ext ' + r.K1 + ' ' + %char(r.T1) + ' ' + %char(r.T2) + ' '                                  01  000000     002400
+     29     + %char(r.T1 : *ISO) + ' ' + %char(%subdt(r.T1 : *seconds));                                      01  000000     002500
+     30   write QSYSPRT line;                                                                                 01  000000     002600
+     31   read USATF r;                                                                                       01  000000     002700
+     32 enddo;                                                                                               E01  000000     002800
+     33 *inlr = *on;                                                                                              000000     002900
+     34                                                                                                           000000     003000
+-    35 dcl-proc hexof;                                                                                           000000     003100
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     36   dcl-pi *n varchar(60);                                                                                  000000     003200
+     37     s char(20) const;                                                                                     000000     003300
+     38   end-pi;                                                                                                 000000     003400
+     39   dcl-s o varchar(60);                                                                                    000000     003500
+     40   dcl-s k int(10);                                                                                        000000     003600
+     41   dcl-s b uns(3);                                                                                         000000     003700
+     42   dcl-ds c;                                                                                               000000     003800
+     43     ch char(1);                                                                                           000000     003900
+     44     n uns(3) pos(1);                                                                                      000000     004000
+     45   end-ds;                                                                                                 000000     004100
+-    46   for k = 1 to 20;                                                                                   B01  000000     004200
+     47     ch = %subst(s : k : 1);                                                                           01  000000     004300
+     48     b = n;                                                                                            01  000000     004400
+     49     o += %subst(HEX : %div(b : 16) + 1 : 1) + %subst(HEX : %rem(b : 16) + 1 : 1);                     01  000000     004500
+     50   endfor;                                                                                            E01  000000     004600
+     51   return o;                                                                                               000000     004700
+     52 end-proc;                                                                                                 000000     004800
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00     11 001100  Record-Format USATR not used for input or output.
+ *RNF7086 00      9 000900  RPG handles blocking for file RAWF. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 7D     22      30
+          RAWF              DISK                    9D     18      19      20
+                                                   23      25
+          USATF             DISK                   11D     26      27      31
+            USATR                                  11D     12      14
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   33M
+          BUF               DS(20)                 10D     19M     21      21
+                                                   23M
+          HEX               CONST                  13D     49      49
+          HEXOF             A(60)                  21      35
+                            VARYING(2)
+                            PROTOTYPE
+ *RNF7031 K1                A(4)                   15D
+          LINE              DS(132)                 8D     21M     22      28M
+                                                   30
+          R                 DS(20)                 12D     26M     28      28
+                                                   28      29      29      31M
+            K1              A(4)                   12D     28
+            T1              T(8*USA:)              12D     28      29      29
+            T2              T(8*ISO.)              12D     28
+ *RNF7031 T1                T(8*ISO.)              16D
+ *RNF7031 T2                T(8*ISO.)              17D
+       Field References for subprocedure HEXOF
+0         Field             Attributes         References (D=Defined M=Modified)
+          B                 U(3,0)                 41D     48M     49      49
+ *RNF7031 C                 DS(1)                  42D
+          CH                A(1)                   43D     47M
+          K                 I(10,0)                40D     46      47
+          N                 U(3,0)                 44D     48
+          O                 A(60)                  39D     49M     51
+                            VARYING(2)
+          S                 A(20)                  37D     47
+                            BASED(_QRNL_PST+)
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       33M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      2 Data structure has no valid subfields.
+ *RNF7031 00      4 The name or indicator is not referenced.
+ *RNF7066 00      1 Record-Format name of Externally-Described file is not used.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        9
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        9
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       52
+     Specifications  . . . . . . . . :       44
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        5
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program USA001 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

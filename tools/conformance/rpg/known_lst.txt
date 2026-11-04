@@ -103,3 +103,11 @@ ERR369 listing of a group child read as an operation (RNF3556): its marker and t
 ERR370 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
 FEX015 listing: the output buffer lines of a PREFIX file name the external field after the program's
 IO035 listing: IBM's cross-reference counts COMMIT(flag) as a definition of the flag; ours does not yet
+DTA003 listing: IBM marks a subfield only a DATA-INTO handler's array uses as not referenced (RNF7031); ours notes the reference
+LKF001 listing: the page break before the output specifications of a format a LIKEFILE parameter writes
+LKF002 listing: the file box of a TEMPLATE file lists its record formats; ours does not yet
+LKF004 listing: the file box of a TEMPLATE file lists its record formats; ours does not yet
+OA003 listing: IBM's cross-reference of a HANDLER printer's OFLIND indicator and the loop variable differ in order
+OA004 listing: the /COPY box shows the member's text; QS/400's QOAR members have texts of their own
+OA005 listing: the /COPY box shows the member's text; QS/400's QOAR members have texts of their own
+USA001 listing: the cross-reference shows a *USA time field's external format as *ISO

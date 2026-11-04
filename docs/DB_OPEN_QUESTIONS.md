@@ -273,10 +273,16 @@ export does here when such a path exists, else the primary's arrival.
 **`TIMFMT(*USA)` keeps its seconds.** Settled by the capture: a `*USA`
 time field exported with `TIMFMT(*ISO)` shows the seconds it was loaded
 with. Here the field stores `hh:mm:ss` and renders `hh:mm AM` on the
-way out of `CPYTOIMPF`, `DSPPFM` and SQL. Open: what an RPG program
-sees in the record buffer of a `*USA` field (here `hh:mm:ss`; the
-machine shows `hh:mm AM`, so its storage is not the buffer form). Test:
-an RPG program dumping the buffer of `EVENTS`, once there is a compiler.
+way out of `CPYTOIMPF`, `DSPPFM` and SQL. What an RPG program sees in
+the record buffer of a `*USA` field was settled on pub400 in Phase 12
+(`b21usa/USA001`): the buffer holds `hh:mm AM` (`01:45 PM` for
+`13:45:12`, `12:05 AM` for `00:05:59`, `12:00 PM` for `12:00:30`), so a
+program-described read drops the seconds, and an externally described
+field reads as that time with seconds 0 (`%CHAR(t : *ISO)` is
+`13.45.00`, `%SUBDT(t : *SECONDS)` 0). QS/400's buffer still carries
+`hh:mm:ss` (`known.txt` names `USA001`); BLOCKED(phase12): the database
+has to convert a `*USA` time field to `hh:mm AM` at the record buffer
+(read) and back with seconds 0 (write), not done in this item.
 
 **`DSPFFD` digits of a character field.** Settled: `WHFLDD` is 0 for a
 character, hexadecimal, graphic, date, time or timestamp field, the
