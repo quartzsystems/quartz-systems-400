@@ -578,6 +578,7 @@ impl ThreadHost for JobThread {
     }
 
     fn subsystems(&mut self, library: &str) -> Result<Vec<Subsystem>, Refusal> {
+        manage::may_use(&self.cx(), "WRKSBS")?;
         manage::subsystems(&self.cx(), library)
     }
 
@@ -590,6 +591,7 @@ impl ThreadHost for JobThread {
     }
 
     fn system_values(&mut self, names: &[String]) -> Result<SystemValues, Refusal> {
+        manage::may_use(&self.cx(), "DSPSYSVAL")?;
         manage::system_values(&self.cx(), names)
     }
 
@@ -598,16 +600,19 @@ impl ThreadHost for JobThread {
     }
 
     fn ptfs(&mut self, product: &str) -> Result<Vec<Ptf>, Refusal> {
+        manage::may_use(&self.cx(), "DSPPTF")?;
         let r = self.link().with(|l| l.qap_mgmt_ptfs(product.to_string()));
         r.map_err(|e| self.refusal(&e))
     }
 
     fn disk_units(&mut self) -> Result<DiskUnits, Refusal> {
+        manage::may_use(&self.cx(), "WRKDSKSTS")?;
         let r = self.link().with(Client::qap_mgmt_disks);
         r.map_err(|e| self.refusal(&e))
     }
 
     fn hardware_resources(&mut self, kind: ResourceType) -> Result<HardwareResources, Refusal> {
+        manage::may_use(&self.cx(), "WRKHDWRSC")?;
         manage::hardware_resources(&self.cx(), kind)
     }
 

@@ -109,6 +109,17 @@ fn analyze(cx: &Ctx<'_>, line: &str) -> Result<Resolved, Refusal> {
     })
 }
 
+/// The read operations need what their displays need: the command,
+/// found as a typed line finds it, with the authority to use it
+/// (`DSPPTF` is shipped `*PUBLIC *EXCLUDE`).
+pub(super) fn may_use(cx: &Ctx<'_>, command: &str) -> Result<(), Refusal> {
+    let r = cx.link().with(|l| l.cmd_lookup(command.to_string(), None));
+    match r {
+        Ok(_) => Ok(()),
+        Err(id) => Err(cx.refuse(Status::NotAuthorized, &id, &[command])),
+    }
+}
+
 /// Run a service-site command as `crate::command::service` does.
 fn service(cx: &Ctx<'_>, r: &Resolved) -> Result<CmdReply, Refusal> {
     let built = cmd::block::build(&r.def, &r.parms).map_err(|e| cx.refuse_text(&format!("{} {e}", e.msgid())))?;

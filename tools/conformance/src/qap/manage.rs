@@ -5,11 +5,12 @@
 //! Step 123: the `Manage` service (version 7) through the real
 //! connection jobs. As `QAPTEST` (no special authority): the subsystems
 //! with the connection's own `QUSRWRK` active, system values by name
-//! and `CPF1842` for one not there, the PTFs, the hardware resources
-//! (all, and the communications ones), the disk units, the IPL status;
-//! `PowerDown`, `StartSubsystem` and `SetSystemValue` refused
-//! `NotAuthorized` and nothing powered down. As `QSECOFR`: `QPRTTXT`
-//! set and read back, then set as it was.
+//! and `CPF1842` for one not there, the hardware resources (all, and
+//! the communications ones), the disk units, the IPL status;
+//! `PowerDown`, `StartSubsystem`, `SetSystemValue` and `ListPtfs`
+//! (`DSPPTF` is `*PUBLIC *EXCLUDE`) refused `NotAuthorized`, and nothing
+//! powered down. As `QSECOFR`: the PTFs, and `QPRTTXT` set and read
+//! back, then set as it was.
 
 use qap_proto::ops::manage::{
     DiskUnits, EndHow, GetSystemValues, HardwareResources, IplSource, IplStatus, ListHardwareResources, ListPtfs,
@@ -34,8 +35,16 @@ fn refused(c: &mut Conn, what: &str, op: Op, body: &impl ipc::Wire) -> Result<St
 pub fn run(a: &mut Conn, sec: &mut Conn) -> Result<String, String> {
     let (lists, ipl) = lists(a)?;
     let refusals = refusals(a, &ipl)?;
-    secofr(sec)?;
-    Ok(format!("{lists}; {refusals}; QPRTTXT set and restored"))
+    let ptfs = secofr(sec)?;
+    Ok(format!("{lists}; {refusals}; QSECOFR: {ptfs} PTFs, QPRTTXT set and restored"))
+}
+
+fn all_ptfs() -> ListPtfs {
+    ListPtfs {
+        product: "*ALL".into(),
+        start: 0,
+        max: 0,
+    }
 }
 
 /// The lists and the IPL status; the summary and the status.
@@ -79,14 +88,6 @@ fn lists(a: &mut Conn) -> Result<(String, IplStatus), String> {
     if unknown.status != Status::NotFound || msgid(&unknown) != "CPF1842" {
         return Err(format!("an unknown system value: {}", brief(&unknown)));
     }
-    let ptfs: Ptfs = a.ok(
-        Op::ListPtfs,
-        &ListPtfs {
-            product: "*ALL".into(),
-            start: 0,
-            max: 0,
-        },
-    )?;
     let all: HardwareResources = a.ok(Op::ListHardwareResources, &ListHardwareResources { kind: ResourceType::All })?;
     let cmn: HardwareResources = a.ok(
         Op::ListHardwareResources,
@@ -106,10 +107,9 @@ fn lists(a: &mut Conn) -> Result<(String, IplStatus), String> {
         return Err(format!("IplStatus: {ipl:?}"));
     }
     let summary = format!(
-        "{} subsystems ({active} active), {} values, {} PTFs, {} resources ({} *CMN), {} units, IPL slot {} SRC {}",
+        "{} subsystems ({active} active), {} values, {} resources ({} *CMN), {} units, IPL slot {} SRC {}",
         sbs.total,
         vals.values.len(),
-        ptfs.total,
         all.resources.len(),
         cmn.resources.len(),
         disks.units.len(),
@@ -158,11 +158,14 @@ fn refusals(a: &mut Conn, ipl: &IplStatus) -> Result<String, String> {
     if after.ipl_time != ipl.ipl_time {
         return Err(format!("the IPL changed: {after:?}"));
     }
-    Ok(format!("{power}, {strsbs}, {chg}"))
+    let ptfs = refused(a, "ListPtfs", Op::ListPtfs, &all_ptfs())?;
+    Ok(format!("{power}, {strsbs}, {chg}, {ptfs}"))
 }
 
-/// The security officer changes a value and puts it back.
-fn secofr(sec: &mut Conn) -> Result<(), String> {
+/// The security officer lists the PTFs (`DSPPTF` is `*PUBLIC
+/// *EXCLUDE`), changes a value and puts it back; the PTFs counted.
+fn secofr(sec: &mut Conn) -> Result<u32, String> {
+    let ptfs: Ptfs = sec.ok(Op::ListPtfs, &all_ptfs())?;
     let before: SystemValues = sec.ok(Op::GetSystemValues, &GetSystemValues { names: vec!["QPRTTXT".into()] })?;
     let was = before.values.first().map(|v| v.value.clone()).unwrap_or_default();
     let set: SystemValue = sec.ok(
@@ -182,5 +185,5 @@ fn secofr(sec: &mut Conn) -> Result<(), String> {
     if set.value != "Step 123" || back.value != was {
         return Err(format!("QPRTTXT: set {set:?}, back {back:?}"));
     }
-    Ok(())
+    Ok(ptfs.total)
 }

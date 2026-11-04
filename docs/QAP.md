@@ -1089,6 +1089,11 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
   the catalog's type, allowed values and range before the command
   (`TCP1A5F`), and answers the value read back; a value the command
   did not take is `TCP1A5F` too.
+- A read first finds its display's command with the authority to use
+  it (`cmd_lookup`): `WRKSBS`, `DSPSYSVAL`, `DSPPTF`, `WRKDSKSTS`,
+  `WRKHDWRSC`; `DSPPTF` is shipped `*PUBLIC *EXCLUDE`, so `ListPtfs`
+  is `NotAuthorized` for a user the security officer has not
+  authorized. `IplStatus` needs nothing.
 - The lists: `ListSubsystems` from `sbs_list` and the `*SBSD` objects
   of the library (`*ALL` every library, `*LIBL` the job's list; an
   unknown library is `NotFound` `CPF2110`), a monitor's job named as
