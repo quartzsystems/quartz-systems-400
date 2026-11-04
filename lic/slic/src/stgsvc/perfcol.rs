@@ -56,6 +56,10 @@ pub struct Collector {
     pub active: Option<Active>,
     adjust: Option<(Instant, Sample)>,
     ipl_adjusted: bool,
+    /// Each pool's defined size and level (`CHGSHRPOOL`, the IPL) and
+    /// what `QPFRADJ` last set.
+    defined: std::collections::BTreeMap<String, (u64, u32)>,
+    adjusted: std::collections::BTreeMap<String, (u64, u32)>,
 }
 
 /// Local time now: UTC moved by `QTIMZON`'s offset.
@@ -404,6 +408,14 @@ fn apply(system: &mut System, i: &Interval) {
     if main == 0 {
         return;
     }
+    // A pool changed since QPFRADJ last set it was defined anew.
+    for p in &i.pools {
+        let now = (p.size_kb, p.actlvl);
+        if system.stats.perf.adjusted.get(&p.name) != Some(&now) {
+            system.stats.perf.defined.insert(p.name.clone(), now);
+        }
+    }
+    let defined = system.stats.perf.defined.clone();
     #[allow(clippy::cast_precision_loss)] // counts far below 2^52
     let pools: Vec<perf::adjust::Pool> = i
         .pools
@@ -416,6 +428,7 @@ fn apply(system: &mut System, i: &Interval) {
                 name: p.name.clone(),
                 size_kb: p.size_kb,
                 actlvl: p.actlvl,
+                defined_actlvl: defined.get(&p.name).map_or(p.actlvl, |d| d.1),
                 faults: (p.db_faults + p.ndb_faults) as f64 / f64::from(i.secs.max(1)),
                 threads,
                 ineligible: p.wi + p.ai,
@@ -433,13 +446,13 @@ fn apply(system: &mut System, i: &Interval) {
     if changes.is_empty() {
         return;
     }
+    // The pools' current sizes and levels change; their defined ones
+    // (QWCSHRPOOL) stay as CHGSHRPOOL left them.
     for c in &changes {
         system.pools.define(&c.name, c.size_kb, c.actlvl);
+        system.stats.perf.adjusted.insert(c.name.clone(), (c.size_kb, c.actlvl));
         let dir = stats::pool_dir(&c.name);
         let _ = std::fs::write(format!("{dir}/memory.high"), (c.size_kb * 1024).to_string());
-    }
-    if let Err(e) = super::sbs::save_shared_pools(system) {
-        eprintln!("qsstg: QPFRADJ: {e}");
     }
 }
 

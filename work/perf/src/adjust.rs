@@ -9,7 +9,7 @@
 //! from the pool furthest under its own, within each pool's minimum
 //! and maximum size; `*BASE` gives first. A pool whose jobs waited for
 //! an activity level gets more levels; one with many idle levels gives
-//! some back. `*MACHINE` is not changed.
+//! some back, never below its defined level. `*MACHINE` is not changed.
 
 /// One pool as the adjuster sees it.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -20,6 +20,9 @@ pub struct Pool {
     pub size_kb: u64,
     /// Activity level.
     pub actlvl: u32,
+    /// The activity level the pool was defined with: levels given back
+    /// stop there.
+    pub defined_actlvl: u32,
     /// Faults per second in the last interval, database and other.
     pub faults: f64,
     /// Threads active in the pool.
@@ -134,10 +137,12 @@ pub fn adjust(pools: &[Pool], main_kb: u64) -> Vec<Change> {
         }
         if p.ineligible > 0 {
             next[i].1 = p.actlvl + (p.actlvl / 10).max(1);
-        } else if p.actlvl > 2 * p.active.max(5) {
+        } else if p.actlvl > 2 * p.active.max(5) && p.actlvl > p.defined_actlvl {
             // Idle levels cost nothing to keep but hide a pool's need;
             // give a tenth back, never below twice the active jobs.
-            next[i].1 = (p.actlvl - (p.actlvl / 10).max(1)).max(2 * p.active.max(5));
+            next[i].1 = (p.actlvl - (p.actlvl / 10).max(1))
+                .max(2 * p.active.max(5))
+                .max(p.defined_actlvl);
         }
     }
     pools
@@ -199,8 +204,11 @@ mod tests {
         p.ineligible = 0;
         p.active = 1;
         p.actlvl = 100;
+        p.defined_actlvl = 20;
         assert_eq!(adjust(&[p.clone()], 1_048_576)[0].actlvl, 90);
-        p.actlvl = 10;
-        assert!(adjust(&[p], 1_048_576).is_empty(), "within the slack");
+        p.actlvl = 21;
+        assert_eq!(adjust(&[p.clone()], 1_048_576)[0].actlvl, 20, "not below the defined level");
+        p.actlvl = 20;
+        assert!(adjust(&[p], 1_048_576).is_empty(), "at the defined level");
     }
 }

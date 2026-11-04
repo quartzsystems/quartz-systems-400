@@ -145,9 +145,11 @@ furthest under its own, `*BASE` first, a tenth of what that pool can
 spare above its minimum (at least 256 KB), never past the taker's
 maximum. A pool whose jobs went ineligible gets a tenth more activity
 levels (at least one); a pool with more than twice its active jobs (at
-least ten) gives a tenth back. `*MACHINE` is never changed. Changes go
-to the pool table, the pool's cgroup `memory.high` and `QWCSHRPOOL`, as
-`CHGSHRPOOL` does.
+least ten) gives a tenth back, never below the level it was defined
+with. `*MACHINE` is never changed. Changes go to the pool table and the
+pool's cgroup `memory.high`; the defined values (`QWCSHRPOOL`, what
+`CHGSHRPOOL` and the IPL set) stay, and a pool changed by anything but
+the adjuster is taken as defined anew.
 
 ## The displays
 
