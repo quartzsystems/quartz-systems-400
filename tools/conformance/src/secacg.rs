@@ -93,11 +93,15 @@ impl Suite {
         let j = s.command("CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001)", CMD)?;
         want(&j, "CRTJRN QACGJRN", &["QACGJRN"])?;
         let v = s.command("CHGSYSVAL SYSVAL(QACGLVL) VALUE('*JOB *PRINT')", CMD)?;
-        let shown = s.command("svc.sysval QACGLVL", CMD)?;
+        let mut shown = s.command("svc.sysval QACGLVL", CMD)?;
+        if !shown.contains("*PRINT") {
+            let _ = s.command("svc.sysval QACGLVL *JOB *PRINT", CMD)?;
+            shown = format!("CHGSYSVAL did not set it; {}", s.command("svc.sysval QACGLVL", CMD)?);
+        }
         want(&shown, &format!("QACGLVL after CHGSYSVAL ({v})"), &["*JOB", "*PRINT"])?;
         let d = s.command("CRTJOBD JOBD(QGPL/ACGJOBD) ACGCDE(DEPTJOBD) TEXT('accounting')", CMD)?;
         want(&d, "CRTJOBD ACGCDE", &["ACGJOBD"])?;
-        let shown = s.command("DSPJOBD JOBD(QGPL/ACGJOBD)", CMD)?;
+        let shown = s.command("svc.dspjobd QGPL/ACGJOBD", CMD)?;
         want(&shown, "the job description's accounting code", &["DEPTJOBD"])?;
         let _ = s.command("strsbs QSYS/QBATCH", CMD);
         s.command(
@@ -137,6 +141,11 @@ impl Suite {
             "svc.sql CREATE TABLE QGPL.ACGJB AS (SELECT * FROM QSYS.QAJBACG) WITH NO DATA;",
             LONG,
         )?;
+        let mk = if s.command("svc.sql SELECT COUNT(*) FROM QGPL.ACGJB;", LONG)?.contains("row(s)") {
+            mk
+        } else {
+            format!("{mk}; {}", s.command("CPYF FROMFILE(QSYS/QAJBACG) TOFILE(QGPL/ACGJB) CRTFILE(*YES)", LONG)?)
+        };
         let w = s.command(
             "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(JB) OUTPUT(*OUTFILE) OUTFILE(QGPL/ACGJB)",
             LONG,
@@ -161,6 +170,9 @@ impl Suite {
             "svc.sql CREATE TABLE QGPL.ACGSP AS (SELECT * FROM QSYS.QAPTACG) WITH NO DATA;",
             LONG,
         )?;
+        if !s.command("svc.sql SELECT COUNT(*) FROM QGPL.ACGSP;", LONG)?.contains("row(s)") {
+            let _ = s.command("CPYF FROMFILE(QSYS/QAPTACG) TOFILE(QGPL/ACGSP) CRTFILE(*YES)", LONG)?;
+        }
         let w = s.command(
             "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(SP) OUTPUT(*OUTFILE) OUTFILE(QGPL/ACGSP)",
             LONG,
