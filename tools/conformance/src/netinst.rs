@@ -83,6 +83,7 @@ impl Suite {
                 return Err(format!("the network answers were not applied: {name}"));
             }
             // TCP/IP starts the *IP4DHCP interface; QEMU leases it an address.
+            // BLOCKED(phase12): under QEMU (2026-11-04) the install and IPL pass but TCP/IP stays Inactive after QSTRUP (eth0 keeps the installer's 10.0.2.50); STRTCP's failure there is not yet seen.
             let end = Instant::now() + Duration::from_secs(120);
             let ifc = loop {
                 let ifc = s.command("svc.tcp ifc", CMD)?;
