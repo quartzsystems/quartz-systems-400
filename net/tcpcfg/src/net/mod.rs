@@ -121,6 +121,28 @@ pub trait NetOps {
     /// Set the kernel's host name.
     fn set_hostname(&mut self, name: &str) -> NetResult<()>;
 
+    /// Start keeping a DHCP lease on link `link` (`*IP4DHCP`).
+    fn dhcp_start(&mut self, link: &str, cfg: dhcp::Config) -> NetResult<()> {
+        let _ = (link, cfg);
+        Err(NetError::new("this kernel has no DHCP client"))
+    }
+
+    /// Stop the DHCP client on `link`; `release` gives the address back.
+    fn dhcp_stop(&mut self, link: &str, release: bool) {
+        let _ = (link, release);
+    }
+
+    /// What the DHCP client on `link` holds.
+    fn dhcp_status(&mut self, link: &str) -> Option<dhcp::run::Status> {
+        let _ = link;
+        None
+    }
+
+    /// A link's Ethernet address.
+    fn mac(&mut self, link: &str) -> NetResult<[u8; 6]> {
+        dhcp::sys::mac_of(link).map_err(|e| NetError::new(e.to_string()))
+    }
+
     /// A link by name.
     fn link(&mut self, name: &str) -> NetResult<Option<LinkInfo>> {
         Ok(self.links()?.into_iter().find(|l| l.name == name))

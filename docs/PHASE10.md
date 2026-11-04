@@ -129,14 +129,15 @@ Each item is marked `BLOCKED(phase10)` where it lives.
 | DDM files open the remote file | `work/qsjob/src/command/ddm.rs` | closed in Phase 12: `*FILE` objects of attribute `DDMF`, the requester in the job (`DDM.md`) |
 | `*DDM` server on 446 | `net/servers` registry | closed in Phase 12: `QRWTLSTN` and `QRWTSRVR` with the backends over the storage service (`DDM.md`) |
 | Host servers read a spooled file's data | `work/qsjob/src/work/hostsvr/job.rs` | closed in Phase 12: `splf_fetch`, the `splfdata` trace (`HOSTSVR.md`) |
-| Telnet `INIT0100` automatic sign-on | `work/qsjob/src/work/telnet.rs` | a storage request that signs on without a password |
+| Telnet `INIT0100` automatic sign-on | `work/qsjob/src/work/telnet.rs` | closed in Phase 12: `telnet_verify` and `telnet_exit_signon` (`TN5250.md`) |
 | `SNDTCPSPLF WSCST(name)` | `work/qsjob/src/command/netcmd.rs` | closed in Phase 12: read in the job, the tag language, the shipped `QSYS/QWP...` objects (`PRINT.md`) |
 | SMTP `AUTH` credentials | `net/servers/src/attrs/smtp.rs` | closed in Phase 12: `ADDSMTPLE TYPE(*HOSTAUTH)`, sealed, unsealed only for the router (`SERVERS.md`) |
 
 Cleared during the phase: the IPP printer TLS connector, the FTP server's
 and client's certificates, the SMTP relay check and TCP/IP line state
 (all through the `*SYSTEM` store request `cert_app` and `*LIND` objects).
-DHCP is not built (`*IP4DHCP` interfaces are refused).
+DHCP was not built (`*IP4DHCP` interfaces were refused); closed in Phase 12
+(`net/dhcp`, `TCPIP.md` "DHCP client").
 
 ## Deferred
 
@@ -148,7 +149,7 @@ DHCP is not built (`*IP4DHCP` interfaces are refused).
 | `TRCCNN`, `TRCTCPAPP`; NETSTAT sort, subset and multicast groups | later |
 | an interactive `FTP` client display (scripted and batch use work) | later |
 | user stored procedures (`CALL`) in SQL, so in JDBC | the SQL engine |
-| DHCP and IP filters | later |
+| DHCP (closed in Phase 12) and IP filters | later |
 
 ## Bench
 

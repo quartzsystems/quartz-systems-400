@@ -52,30 +52,62 @@ pub fn data(cfg: &Config, st: &State, what: &str, args: &[String]) -> Option<Dat
 
 /// Option 1's entries: the IPv4 interfaces and `*IP4DHCP`.
 pub fn ifcs(cfg: &Config, st: &State) -> Vec<Row> {
-    cfg.ifcs
-        .sorted()
-        .into_iter()
-        .filter(|i| !i.addr.is_v6())
-        .map(|i| {
-            let status = match (i.addr, st.ifc_status(&i.key())) {
-                (IfcAddr::Dhcp4, IfcStatus::Inactive) => String::new(),
-                (_, s) => s.name().to_string(),
-            };
-            row(&[
-                ("IFCADR", i.key()),
-                ("IFCMASK", i.mask.map_or_else(|| "*".into(), |m| m.to_string())),
+    let mut out = Vec::new();
+    for i in cfg.ifcs.sorted().into_iter().filter(|i| !i.addr.is_v6()) {
+        let status = match (i.addr, st.ifc_status(&i.key())) {
+            (IfcAddr::Dhcp4, IfcStatus::Inactive) => String::new(),
+            (_, s) => s.name().to_string(),
+        };
+        out.push(row(&[
+            ("IFCADR", i.key()),
+            ("IFCMASK", i.mask.map_or_else(|| "*".into(), |m| m.to_string())),
+            ("IFCLIND", i.line.name().to_string()),
+            ("IFCLTYPE", i.line_type().to_string()),
+            ("IFCSTS", status),
+            ("IFCALIAS", i.alias.clone().unwrap_or_else(|| "*NONE".into())),
+            ("IFCTEXT", i.text.clone()),
+        ]));
+        // The interface a lease made, after the `*IP4DHCP` entry.
+        if let Some(l) = st.ifcs.get(&i.key()).and_then(|r| r.lease.as_ref()) {
+            out.push(row(&[
+                ("IFCADR", l.addr.to_string()),
+                ("IFCMASK", l.mask.to_string()),
                 ("IFCLIND", i.line.name().to_string()),
                 ("IFCLTYPE", i.line_type().to_string()),
-                ("IFCSTS", status),
-                ("IFCALIAS", i.alias.clone().unwrap_or_else(|| "*NONE".into())),
-                ("IFCTEXT", i.text.clone()),
-            ])
-        })
-        .collect()
+                ("IFCSTS", IfcStatus::Active.name().to_string()),
+                ("IFCALIAS", "*NONE".into()),
+                ("IFCTEXT", String::new()),
+            ]));
+        }
+    }
+    out
+}
+
+/// The `*IP4DHCP` interface whose lease holds `addr`, with the lease.
+fn leased<'c>(cfg: &'c Config, st: &State, addr: &str) -> Option<(&'c crate::model::ifc::Interface, dhcp::Lease)> {
+    let i = cfg.ifcs.get(&IfcAddr::Dhcp4)?;
+    let l = st.ifcs.get(&i.key())?.lease.clone()?;
+    (l.addr.to_string() == addr.trim()).then_some((i, l))
 }
 
 /// Option 5 on an interface.
 pub fn ifc_detail(cfg: &Config, st: &State, key: &str) -> Option<Vec<(String, String)>> {
+    if let Some((i, l)) = leased(cfg, st, key) {
+        return Some(vars(&[
+            ("DADR", l.addr.to_string()),
+            ("DMASK", l.mask.to_string()),
+            ("DLIND", i.line.name().to_string()),
+            ("DALIAS", "*NONE".into()),
+            ("DCCSID", "*NONE".into()),
+            ("DLTYPE", i.line_type().to_string()),
+            ("DLCLIFC", "*NONE".into()),
+            ("DSTS", IfcStatus::Active.name().to_string()),
+            ("DTOS", i.tos.name().to_string()),
+            ("DMTU", i.mtu.map_or_else(|| "*LIND".into(), |m| m.to_string())),
+            ("DAUTO", yes(i.autostart).to_string()),
+            ("DTEXT", "*BLANK".into()),
+        ]));
+    }
     let i = cfg.ifcs.get(&IfcAddr::parse(key).ok()?)?;
     Some(vars(&[
         ("DADR", i.key()),

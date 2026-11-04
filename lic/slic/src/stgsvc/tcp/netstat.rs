@@ -145,6 +145,25 @@ fn interfaces(system: &System, cfg: &Config, st: &State) -> Vec<Ifc> {
             text: i.text.clone(),
             changed: run.map_or_else(String::new, |r| when(system, r.since)),
         });
+        // The interface a lease made: its own entry, DHCP created.
+        if let Some(l) = run.and_then(|r| r.lease.as_ref()) {
+            let a = IpAddr::V4(l.addr);
+            out.push(Ifc {
+                addr: Some(a),
+                prefix: l.prefix(),
+                line: i.line.name().to_string(),
+                line_type: i.line_type().to_string(),
+                status: tcpcfg::state::IfcStatus::Active.name().to_string(),
+                host: host(a),
+                mtu: i.mtu.unwrap_or(link_mtu),
+                autostart: i.autostart,
+                dhcp: true,
+                vlan: i.vlan,
+                tos: i.tos.name().to_string(),
+                changed: run.map_or_else(String::new, |r| when(system, r.since)),
+                ..Ifc::default()
+            });
+        }
     }
     // The addresses the kernel has that TCP/IP did not configure (the
     // IPL's own address, link-local IPv6 addresses).

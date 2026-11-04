@@ -491,6 +491,7 @@ dependencies = [
  "jrn",
  "licpgm",
  "lpd",
+ "mail",
  "mi",
  "ntp",
  "optical",
@@ -900,6 +901,14 @@ dependencies = [
  "qdecimal",
  "thiserror",
  "uim",
+]
+
+[[package]]
+name = "dhcp"
+version = "0.1.0"
+dependencies = [
+ "socket2",
+ "thiserror",
 ]
 
 [[package]]
@@ -3177,6 +3186,7 @@ dependencies = [
  "db",
  "ddm",
  "dds",
+ "dhcp",
  "diskimg",
  "dspf",
  "hostsvr",
@@ -3517,6 +3527,7 @@ name = "tcpcfg"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "dhcp",
  "ipc",
  "netlink",
  "thiserror",

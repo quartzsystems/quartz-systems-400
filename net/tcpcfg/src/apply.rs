@@ -109,7 +109,7 @@ pub fn end_tcp(c: &mut Ctx<'_>) -> Result<Vec<Note>> {
         .map(|(k, _)| k.clone())
         .collect();
     for key in started {
-        notes.extend(stop_ifc(c, &key));
+        notes.extend(stop_ifc(c, &key, false));
     }
     notes.extend(sync_routes(c));
     if !c.st.rules.is_empty() {
@@ -287,36 +287,73 @@ fn bring_up(c: &mut Ctx<'_>, i: &Interface) -> Result<Up> {
             None
         }
         IfcAddr::Dhcp4 => {
-            return Err(Error::new(
-                msg::IFC_FAILED,
-                "Addresses from DHCP are not available in this release.",
-            ));
+            // The client runs beside the engine; `refresh_dhcp` reads
+            // what it holds.
+            let Some(line_name) = &carrier_line else {
+                return Err(Error::new(msg::LINE_NOT_VALID, "*IP4DHCP needs a line description."));
+            };
+            let mut cfg = dhcp::Config::new(c.net.mac(&link.name).map_err(kerr)?);
+            cfg.client_id = client_id(i, cfg.mac);
+            let host = c.cfg.domain.host_name.to_ascii_lowercase();
+            cfg.host_name = (!host.is_empty()).then_some(host);
+            cfg.previous = c.st.kept.get(line_name).cloned();
+            cfg.dns_update = i.dhcp_dyndns;
+            c.net.dhcp_start(&link.name, cfg).map_err(kerr)?;
+            None
         }
     };
     let status = if carrier_line.is_some() && link.carrier == Some(false) {
         IfcStatus::RcyPnd
+    } else if i.addr == IfcAddr::Dhcp4 {
+        IfcStatus::Acquiring
     } else {
         IfcStatus::Active
     };
     Ok((status, link.name, made, installed))
 }
 
-/// `ENDTCPIFC`: end one interface.
+/// `DHCPCLTID`: `*ADPTADR` sends the hardware address (the client's
+/// default); `*DHCPUNQID` a node identifier (RFC 4361: type 255, an
+/// IAID and a DUID-LL).
+fn client_id(i: &Interface, mac: [u8; 6]) -> Option<Vec<u8>> {
+    if !i.dhcp_client_id.eq_ignore_ascii_case("*DHCPUNQID") {
+        return None;
+    }
+    let mut v = vec![0xff];
+    v.extend(&mac[2..]);
+    v.extend([0, 3, 0, 1]);
+    v.extend(mac);
+    Some(v)
+}
+
+/// `ENDTCPIFC`: end one interface; a `*IP4DHCP` one gives its address
+/// back to the server.
 pub fn end_ifc(c: &mut Ctx<'_>, key: &str) -> Result<Vec<Note>> {
     let key = find(c.cfg, key).map_or_else(|_| key.to_string(), Interface::key);
     if c.st.ifc_status(&key) == IfcStatus::Inactive {
         return Err(Error::new(msg::IFC_INACTIVE, format!("Interface {key} is not active.")));
     }
-    let mut notes = stop_ifc(c, &key);
+    let mut notes = stop_ifc(c, &key, true);
     if c.st.tcp == TcpStatus::Active {
         notes.extend(sync_routes(c));
     }
     Ok(notes)
 }
 
-fn stop_ifc(c: &mut Ctx<'_>, key: &str) -> Vec<Note> {
+/// End an interface; `release` gives a DHCP lease back, otherwise it is
+/// kept for the next start (`ENDTCP`, a line varied off).
+fn stop_ifc(c: &mut Ctx<'_>, key: &str, release: bool) -> Vec<Note> {
     let mut notes = Vec::new();
     let run = c.st.ifcs.get(key).cloned().unwrap_or_default();
+    if let (Some(link), Ok(i)) = (&run.link, find(c.cfg, key))
+        && i.addr == IfcAddr::Dhcp4
+    {
+        let line = i.line.name().to_string();
+        c.net.dhcp_stop(link, release);
+        if release {
+            c.st.kept.remove(&line);
+        }
+    }
     if let Some(a) = &run.installed
         && let Err(e) = c.net.del_address(a)
         && !e.not_found
@@ -341,6 +378,7 @@ fn stop_ifc(c: &mut Ctx<'_>, key: &str) -> Vec<Note> {
         r.link = None;
         r.made = None;
         r.installed = None;
+        r.lease = None;
     });
     notes.push(Note::info(msg::IFC_ENDED, format!("Interface {key} ended.")));
     notes
@@ -364,10 +402,15 @@ fn route_link(c: &mut Ctx<'_>, r: &Route) -> Option<(String, u32)> {
         })
         .collect();
     let hop = r.next_hop;
+    let st = &*c.st;
     let on = candidates.iter().find(|i| match i.addr {
         IfcAddr::Ip(ip) => contains(ip, i.prefix(), hop),
         IfcAddr::Slaac6 => hop.is_ipv6(),
-        IfcAddr::Dhcp4 => false,
+        IfcAddr::Dhcp4 => st
+            .ifcs
+            .get(&i.key())
+            .and_then(|r| r.lease.as_ref())
+            .is_some_and(|l| contains(IpAddr::V4(l.addr), l.prefix(), hop)),
     })?;
     let link = c.st.ifcs.get(&on.key())?.link.clone()?;
     let index = c.net.link(&link).ok().flatten()?.index;
@@ -540,7 +583,7 @@ pub fn refresh(c: &mut Ctx<'_>) -> Vec<Note> {
             continue;
         }
         if !c.lines.varied_on(line) {
-            notes.extend(stop_ifc(c, &key));
+            notes.extend(stop_ifc(c, &key, false));
             changed = true;
             continue;
         }
@@ -552,6 +595,7 @@ pub fn refresh(c: &mut Ctx<'_>) -> Vec<Note> {
         let next = match carrier {
             None => IfcStatus::Failed,
             Some(Some(false)) => IfcStatus::RcyPnd,
+            Some(_) if i.addr == IfcAddr::Dhcp4 && run.lease.is_none() => IfcStatus::Acquiring,
             Some(_) => IfcStatus::Active,
         };
         if next != run.status {
@@ -567,6 +611,52 @@ pub fn refresh(c: &mut Ctx<'_>) -> Vec<Note> {
         }
     }
     if changed {
+        notes.extend(sync_routes(c));
+    }
+    notes.extend(refresh_dhcp(c));
+    notes
+}
+
+/// What the DHCP clients hold into the state: a `*IP4DHCP` interface is
+/// `Acquiring` until it has a lease, then `Active` with it; each lease
+/// is kept by line (`State::kept`) for the next start.
+pub fn refresh_dhcp(c: &mut Ctx<'_>) -> Vec<Note> {
+    let mut notes = Vec::new();
+    let mut changed = false;
+    let ifcs: Vec<Interface> = c.cfg.ifcs.list.iter().filter(|i| i.addr == IfcAddr::Dhcp4).cloned().collect();
+    for i in ifcs {
+        let key = i.key();
+        let run = c.st.ifcs.get(&key).cloned().unwrap_or_default();
+        if !matches!(run.status, IfcStatus::Active | IfcStatus::Acquiring) {
+            continue;
+        }
+        let Some(link) = &run.link else {
+            continue;
+        };
+        let lease = c.net.dhcp_status(link).and_then(|s| s.lease);
+        let next = if lease.is_some() { IfcStatus::Active } else { IfcStatus::Acquiring };
+        if lease == run.lease && next == run.status {
+            continue;
+        }
+        if let (Some(l), LineRef::Line(line)) = (&lease, &i.line) {
+            c.st.kept.insert(line.clone(), l.clone());
+        }
+        if next != run.status {
+            notes.push(match &lease {
+                Some(l) => Note::info(
+                    msg::IFC_STARTED,
+                    format!("Interface {key} has address {} from DHCP server {}.", l.addr, l.server),
+                ),
+                None => Note::diag(msg::IFC_FAILED, format!("Interface {key} lost its DHCP lease.")),
+            });
+        }
+        set(c, &key, |r| {
+            r.status = next;
+            r.lease = lease;
+        });
+        changed = true;
+    }
+    if changed && c.st.tcp == TcpStatus::Active {
         notes.extend(sync_routes(c));
     }
     notes
@@ -592,6 +682,16 @@ pub fn report(cfg: &Config, st: &State, net: &mut dyn NetOps, what: &str) -> Vec
                 run.link.unwrap_or_default(),
                 if run.error.is_empty() { String::new() } else { format!(" ({})", run.error) }
             ));
+            if let Some(l) = &run.lease {
+                out.push(format!(
+                    "lease {} {}/{} from {} expires {}",
+                    i.key(),
+                    l.addr,
+                    l.prefix(),
+                    l.server,
+                    l.expires_at()
+                ));
+            }
         }
         for a in net.addresses().unwrap_or_default() {
             out.push(format!("kernel addr {} {}/{}", name(a.link), a.addr, a.prefix));

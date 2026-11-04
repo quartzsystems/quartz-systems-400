@@ -249,7 +249,7 @@ An interface starts on its line's kernel link (`lo` for `*LOOPBACK`,
 created and removed with the interface), which is brought up and given
 the MTU when one is set (the loopback keeps the kernel's MTU; IBM's 576
 is a figure). `*IP6SAC` turns on the link's `autoconf` and `accept_ra`;
-`*IP4DHCP` fails (no DHCP client yet). Routes go into the main table
+`*IP4DHCP` starts the DHCP client on the link (below). Routes go into the main table
 with protocol `RTPROT_QS400`, metric `11 - DUPRTEPTY` (IBM's 10 is the
 most preferred), the TOS bits of `TOS` (RFC 1349) and the MTU.
 
@@ -262,13 +262,76 @@ servers. `ENDTCPABN` is `ENDTCP OPTION(*IMMED)`.
 Statuses, as `NETSTAT *IFC` will show them: an interface is `Inactive`,
 `Starting`, `Active`, `Ending`, `Failed` (its last error is kept) or
 `RCYPND` (its line lost its carrier; it is `Active` again with the
-carrier). An interface whose line is varied off ends. A route is
+carrier). A `*IP4DHCP` interface is `Acquiring` (IBM's `QTOC_IP4_LI_ACQUIRING`)
+until it holds a lease. An interface whose line is varied off ends. A route is
 `Inactive`, `Active` or `Failed`. TCP/IP itself is `Inactive`,
 `Starting`, `Active` or `Ending`.
 
 `svc.tcp [ifc|rte|port|attr|host]` at the service console lists the
 configuration with its status beside what the kernel has (addresses,
 routes marked `qs400`, port rules, each mapped sysctl wanted and read).
+
+### DHCP client
+
+`ADDTCPIFC INTNETADR(*IP4DHCP) LIND(line)` (with `DHCPDYNDNS` and
+`DHCPCLTID`, the oracle's V7R5M0 definitions) is an interface whose
+address comes from a DHCP server; `STRTCPIFC INTNETADR(*IP4DHCP)` (or
+`STRTCP` for an autostart one, as at IPL) starts the client on the
+line's kernel link. The client is `net/dhcp`, pure Rust: the BOOTP/DHCP
+codec (RFC 2131, RFC 2132, option overload, RFC 3396 long options),
+the client's states as a machine fed the time and the messages
+(`DISCOVER`, `OFFER`, `REQUEST`, `ACK` with the broadcast flag set, so
+the kernel takes the answers on a link with no address; retransmission
+at 4, 8, 16, 32 and 64 seconds with a second of jitter; renewal at T1
+unicast to the server, rebinding at T2 broadcast, each retried at half
+the time left and at least a minute apart; expiry; `NAK` back to
+`INIT`), and an agent thread per link in the storage service over a UDP
+socket bound to port 68 on the link (`SO_BINDTODEVICE`, socket2). The
+agent puts the leased address on the link and a default route through
+the lease's router at metric 20 (after the configured ones), and takes
+off only what it put on.
+
+`DHCPCLTID(*ADPTADR)` sends option 61 as the hardware type and address;
+`*DHCPUNQID` an RFC 4361 node identifier (type 255, an IAID from the
+MAC, a DUID-LL). `DHCPDYNDNS(*YES)` sends option 81 with the S flag and
+the host name of `CHGTCPDMN` (option 12 always carries it). Option 55
+asks for the mask, router, name servers, host and domain names, the
+three times and the boot file.
+
+Leases are kept across IPLs (IBM documents no form for its client's;
+this follows RFC 2131 §3.2), in
+`/QIBM/UserData/OS400/TCPIP/DHCP/LEASES`, a `[LINE]` section each, and
+the next start asks for the same address first (`INIT-REBOOT`; three
+unanswered requests or a `NAK` fall back to `DISCOVER`, which still
+asks for it). `ENDTCPIFC INTNETADR(*IP4DHCP)` sends `RELEASE` and
+forgets the lease; `ENDTCP` and a line varied off stop the client and
+take the address off but keep the lease. The engine reads what each
+agent holds when `QTCPWRK` looks at the lines and before every display,
+so a lease shows as soon as it is granted. One `*IP4DHCP` interface
+exists at a time (the table is keyed by the address as typed; IBM allows
+one per line).
+
+The displays, as IBM's API and view describe them (`QtocLstNetIfc`'s
+"DHCP created", `NETSTAT_INTERFACE_INFO`'s `DHCP_CREATED`,
+`DHCP_LEASE_OBTAINED`, `DHCP_LEASE_EXPIRATION`, `DHCP_SERVER_ADDRESS`
+and status `ACQUIRING`; neither oracle has a leased interface to show):
+CFGTCP option 1 and `NETSTAT *IFC` keep the `*IP4DHCP` entry (status
+blank while inactive, as pub400 shows it, then `Acquiring` or `Active`)
+and list the leased address after it as an interface of its own, on the
+same line, `Active`, with `DHCP created . . . : *YES` on option 5. The
+row layouts are the captured ones (`tools/conformance/golden/phase10/`);
+only rows are added. `svc.tcp ifc` adds a `lease` line (address, server,
+expiry).
+
+The IPL has its own use of the client: `qs400.ip=dhcp` on the command
+line, a response file named by URL, or a D IPL the firmware booted over
+the network asks for an address before TCP/IP starts (no renewal; see
+`INSTALL.md`, "Network install").
+
+Tests: `cargo test -p dhcp` (codec, states, leases, the agent against a
+server in memory), `cargo test -p tcpcfg` (`dhcp_interface_acquires_releases_and_keeps`
+over the fake kernel); QEMU step 96 against QEMU's own DHCP server
+(`dhcpstart=10.0.2.50`), install step 15.
 
 ### CHGTCPA parameters
 

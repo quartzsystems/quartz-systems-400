@@ -278,3 +278,70 @@ fn virtual_ip_and_changes_while_active() {
     assert!(report.iter().any(|l| l.starts_with("ifc 10.0.2.20 /32 *VIRTUALIP Active")), "{report:#?}");
     assert!(report.iter().any(|l| l.contains("kernel route default/0 via 10.0.2.2 dev eth0 qs400")), "{report:#?}");
 }
+
+fn lease(addr: &str) -> dhcp::Lease {
+    dhcp::Lease {
+        addr: addr.parse().unwrap(),
+        mask: Ipv4Addr::new(255, 255, 255, 0),
+        router: Some(Ipv4Addr::new(10, 0, 4, 2)),
+        dns: Vec::new(),
+        domain: String::new(),
+        server: Ipv4Addr::new(10, 0, 4, 2),
+        boot: None,
+        obtained: 1000,
+        secs: 86_400,
+        t1: 43_200,
+        t2: 75_600,
+    }
+}
+
+#[test]
+fn dhcp_interface_acquires_releases_and_keeps() {
+    let mut w = World::new();
+    w.cfg.ifcs.list.clear();
+    w.cfg.ifcs.add(Interface::new(IfcAddr::Dhcp4, LineRef::Line("ETHLINE".into()))).unwrap();
+    w.cfg.rtes.list.clear();
+    w.cfg
+        .rtes
+        .add(Route::new(Dest::Ip("192.168.9.0".parse().unwrap()), 24, "10.0.4.1".parse().unwrap()))
+        .unwrap();
+    apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
+    assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Acquiring);
+    assert!(w.net.log.iter().any(|l| l == "dhcp_start eth0"), "{:?}", w.net.log);
+    let rows = tcpcfg::panel::ifcs(&w.cfg, &w.st);
+    assert_eq!(rows.len(), 1);
+    // The server answers: Active, the lease shown and kept, the route
+    // through the leased network added.
+    w.net.grant("eth0", lease("10.0.4.15"));
+    let notes = apply::refresh(&mut w.ctx());
+    assert!(notes.iter().any(|n| n.text.contains("10.0.4.15")), "{notes:?}");
+    assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Active);
+    assert_eq!(w.st.kept["ETHLINE"].addr, Ipv4Addr::new(10, 0, 4, 15));
+    let rk = w.cfg.rtes.list[0].key();
+    assert_eq!(w.st.rte_status(&rk), RteStatus::Active);
+    let rows = tcpcfg::panel::ifcs(&w.cfg, &w.st);
+    let addrs: Vec<&str> = rows.iter().map(|r| r[0].1.as_str()).collect();
+    assert_eq!(addrs, ["*IP4DHCP", "10.0.4.15"]);
+    let d = tcpcfg::panel::ifc_detail(&w.cfg, &w.st, "10.0.4.15").unwrap();
+    assert!(d.contains(&("DMASK".to_string(), "255.255.255.0".to_string())));
+    // ENDTCP keeps the lease for the next start, which asks for it again.
+    apply::end_tcp(&mut w.ctx()).unwrap();
+    assert!(w.net.log.iter().any(|l| l == "dhcp_stop eth0"));
+    assert!(w.st.kept.contains_key("ETHLINE"));
+    apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
+    assert!(w.net.log.iter().any(|l| l == "dhcp_start eth0 kept 10.0.4.15"), "{:?}", w.net.log);
+    // ENDTCPIFC gives it back.
+    apply::end_ifc(&mut w.ctx(), "*ip4dhcp").unwrap();
+    assert!(w.net.log.iter().any(|l| l == "dhcp_stop eth0 release"));
+    assert!(w.st.kept.is_empty());
+    assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Inactive);
+}
+
+#[test]
+fn dhcp_needs_a_line() {
+    let mut w = World::new();
+    w.cfg.ifcs.list.clear();
+    w.cfg.ifcs.add(Interface::new(IfcAddr::Dhcp4, LineRef::Line("NOLINE".into()))).unwrap();
+    apply::start_tcp(&mut w.ctx(), StartOpts::default()).unwrap();
+    assert_eq!(w.st.ifc_status("*IP4DHCP"), IfcStatus::Failed);
+}

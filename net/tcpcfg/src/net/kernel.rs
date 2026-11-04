@@ -7,6 +7,7 @@
 //! port rules. A thin adapter; the sockets open per call. Off Linux
 //! every call fails (`netlink` cannot open a socket there).
 
+use std::collections::BTreeMap;
 use std::net::IpAddr;
 
 use netlink::route::{Address, Rtnl};
@@ -20,6 +21,79 @@ use crate::model::Proto;
 #[derive(Debug, Default)]
 pub struct Kernel {
     sysctl: Sysctl,
+    /// The DHCP clients, by link.
+    agents: BTreeMap<String, dhcp::run::Agent>,
+}
+
+/// The metric of a default route a lease brings: after every configured
+/// one (theirs are 1 to 10).
+const DHCP_METRIC: u32 = 20;
+
+/// A lease's address and router on one link, through rtnetlink. What
+/// was there before the lease (a configured address, a route) is left
+/// when the lease goes.
+struct LeaseSink {
+    link: String,
+    /// The address and the route were added by the lease.
+    added: (bool, bool),
+}
+
+impl LeaseSink {
+    fn index(&self) -> Result<u32, String> {
+        let mut r = Rtnl::open().map_err(|e| e.to_string())?;
+        r.link_by_name(&self.link).map(|l| l.index).map_err(|e| format!("{}: {e}", self.link))
+    }
+
+    fn route(l: &dhcp::Lease, index: u32) -> Option<netlink::route::Route> {
+        let gw = l.router?;
+        let mut x = netlink::route::Route::new(Family::V4, None, 0);
+        x.gateway = Some(IpAddr::V4(gw));
+        x.oif = Some(index);
+        x.metric = Some(DHCP_METRIC);
+        Some(x)
+    }
+}
+
+impl dhcp::run::Sink for LeaseSink {
+    fn bind(&mut self, l: &dhcp::Lease) -> Result<(), String> {
+        let index = self.index()?;
+        let mut r = Rtnl::open().map_err(|e| e.to_string())?;
+        let mut a = Address::new(index, IpAddr::V4(l.addr), l.prefix());
+        if l.prefix() < 31 {
+            a.broadcast = Some(Address::default_broadcast(l.addr, l.prefix()));
+        }
+        match r.add_address(&a) {
+            Ok(()) => self.added.0 = true,
+            Err(e) if e.is_exists() => {}
+            Err(e) => return Err(format!("{}/{}: {e}", l.addr, l.prefix())),
+        }
+        if let Some(rt) = Self::route(l, index) {
+            match r.add_route(&rt) {
+                Ok(()) => self.added.1 = true,
+                Err(e) if e.is_exists() => {}
+                Err(e) => return Err(format!("default route via {:?}: {e}", l.router)),
+            }
+        }
+        Ok(())
+    }
+
+    fn unbind(&mut self, l: &dhcp::Lease) {
+        let Ok(index) = self.index() else {
+            return;
+        };
+        let Ok(mut r) = Rtnl::open() else {
+            return;
+        };
+        if self.added.1
+            && let Some(rt) = Self::route(l, index)
+        {
+            let _ = r.delete_route(&rt);
+        }
+        if self.added.0 {
+            let _ = r.delete_address(&Address::new(index, IpAddr::V4(l.addr), l.prefix()));
+        }
+        self.added = (false, false);
+    }
 }
 
 impl Kernel {
@@ -176,5 +250,28 @@ impl NetOps for Kernel {
     fn set_hostname(&mut self, name: &str) -> NetResult<()> {
         std::fs::write("/proc/sys/kernel/hostname", format!("{name}\n"))
             .map_err(|e| NetError::new(format!("host name: {e}")))
+    }
+
+    fn dhcp_start(&mut self, link: &str, cfg: dhcp::Config) -> NetResult<()> {
+        if let Some(old) = self.agents.remove(link) {
+            old.stop(false);
+        }
+        let sink = Box::new(LeaseSink {
+            link: link.to_string(),
+            added: (false, false),
+        });
+        let a = dhcp::run::Agent::spawn(link, cfg, sink).map_err(|e| NetError::new(format!("DHCP on {link}: {e}")))?;
+        self.agents.insert(link.to_string(), a);
+        Ok(())
+    }
+
+    fn dhcp_stop(&mut self, link: &str, release: bool) {
+        if let Some(a) = self.agents.remove(link) {
+            a.stop(release);
+        }
+    }
+
+    fn dhcp_status(&mut self, link: &str) -> Option<dhcp::run::Status> {
+        self.agents.get(link).map(dhcp::run::Agent::status)
     }
 }

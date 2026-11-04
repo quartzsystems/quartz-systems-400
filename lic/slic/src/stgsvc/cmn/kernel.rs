@@ -173,28 +173,6 @@ pub(super) fn bring_down(ifname: &str, bond: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// The 802.1Q sub-interface `vlan_id` of `parent`, made when missing
-/// (for TCP/IP interfaces that name a VLAN); its name.
-#[allow(dead_code)] // MIGRATE(phase10): called by TCP/IP configuration
-pub(crate) fn ensure_vlan(parent: &str, vlan_id: u16) -> Result<String, String> {
-    let name = cmncfg::link::vlan_name(parent, vlan_id);
-    let mut r = Rtnl::open().map_err(|e| nl(&e))?;
-    match r.link_by_name(&name) {
-        Ok(_) => {}
-        Err(e) if e.is_not_found() => {
-            let p = r
-                .link_by_name(parent)
-                .map_err(|e| format!("{parent}: {e}"))?;
-            let v = r
-                .create_vlan(&name, p.index, vlan_id)
-                .map_err(|e| format!("VLAN {vlan_id} on {parent}: {e}"))?;
-            r.set_up(v.index, true).map_err(|e| nl(&e))?;
-        }
-        Err(e) => return Err(nl(&e)),
-    }
-    Ok(name)
-}
-
 /// Remove the kernel's boot-time bond when nothing is enslaved to it:
 /// lines make their own bonds. `dummy0` stays; nothing uses it.
 pub(super) fn remove_boot_bond() {

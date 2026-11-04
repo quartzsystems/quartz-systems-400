@@ -30,6 +30,8 @@ pub struct FakeNet {
     pub log: Vec<String>,
     /// Operations that fail (`add_address`, `add_route`, ...).
     pub failing: BTreeSet<String>,
+    /// The DHCP clients by link: what each holds.
+    pub dhcp: BTreeMap<String, dhcp::run::Status>,
 }
 
 impl Default for FakeNet {
@@ -64,6 +66,7 @@ impl Default for FakeNet {
             hostname: String::new(),
             log: Vec::new(),
             failing: BTreeSet::new(),
+            dhcp: BTreeMap::new(),
         }
     }
 }
@@ -81,6 +84,22 @@ impl FakeNet {
             mtu: 1500,
         });
         self
+    }
+
+    /// The DHCP server's answer on `link`: the client is bound to `l`.
+    pub fn grant(&mut self, link: &str, l: dhcp::Lease) {
+        // The agent's sink puts the address on.
+        if let Some(index) = self.links.iter().find(|x| x.name == link).map(|x| x.index) {
+            self.addrs.push(KAddr {
+                link: index,
+                addr: std::net::IpAddr::V4(l.addr),
+                prefix: l.prefix(),
+            });
+        }
+        if let Some(s) = self.dhcp.get_mut(link) {
+            s.state = "BOUND".into();
+            s.lease = Some(l);
+        }
     }
 
     /// Set a link's carrier.
@@ -281,5 +300,32 @@ impl NetOps for FakeNet {
         self.op("hostname", name)?;
         self.hostname = name.into();
         Ok(())
+    }
+
+    fn dhcp_start(&mut self, link: &str, cfg: dhcp::Config) -> NetResult<()> {
+        let kept = cfg.previous.map_or_else(String::new, |l| format!(" kept {}", l.addr));
+        self.op("dhcp_start", &format!("{link}{kept}"))?;
+        self.dhcp.insert(
+            link.to_string(),
+            dhcp::run::Status {
+                state: "SELECTING".into(),
+                ..dhcp::run::Status::default()
+            },
+        );
+        Ok(())
+    }
+
+    fn dhcp_stop(&mut self, link: &str, release: bool) {
+        let _ = self.op("dhcp_stop", &format!("{link}{}", if release { " release" } else { "" }));
+        self.dhcp.remove(link);
+    }
+
+    fn dhcp_status(&mut self, link: &str) -> Option<dhcp::run::Status> {
+        self.dhcp.get(link).cloned()
+    }
+
+    fn mac(&mut self, link: &str) -> NetResult<[u8; 6]> {
+        let i = self.links.iter().find(|l| l.name == link).map_or(0, |l| l.index);
+        Ok([2, 0, 0, 0, 0, u8::try_from(i).unwrap_or(0)])
     }
 }

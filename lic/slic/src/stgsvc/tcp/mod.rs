@@ -9,6 +9,7 @@
 //! commands (`crate::cpp::tcpcmd`) change it through [`change`] and
 //! [`operate`].
 
+pub mod leases;
 pub mod netstat;
 pub mod store;
 
@@ -33,6 +34,8 @@ pub struct Runtime {
     pub st: State,
     /// The kernel.
     pub net: Kernel,
+    /// The DHCP leases as last written ([`leases`]).
+    saved: std::collections::BTreeMap<String, dhcp::Lease>,
 }
 
 thread_local! {
@@ -44,15 +47,25 @@ thread_local! {
 /// Run `f` with the runtime, loading the configuration on first use.
 pub fn with<T>(system: &mut System, f: impl FnOnce(&mut System, &mut Runtime) -> T) -> Result<T, String> {
     let taken = RT.with(|r| r.borrow_mut().take());
-    let mut rt = match taken {
-        Some(rt) => rt,
-        None => Runtime {
+    let mut rt = if let Some(rt) = taken {
+        rt
+    } else {
+        let saved = leases::load(system);
+        Runtime {
             cfg: store::load(system)?,
-            st: State::default(),
+            st: State {
+                kept: saved.clone(),
+                ..State::default()
+            },
             net: Kernel::new(),
-        },
+            saved,
+        }
     };
     let out = f(system, &mut rt);
+    if rt.st.kept != rt.saved {
+        leases::save(system, &rt.st.kept);
+        rt.saved.clone_from(&rt.st.kept);
+    }
     RT.with(|r| *r.borrow_mut() = Some(rt));
     Ok(out)
 }
@@ -155,6 +168,10 @@ pub fn request(system: &mut System, op: TcpOp) -> TcpReply {
 
 #[allow(clippy::too_many_lines)] // one arm per operation
 fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
+    // What the DHCP clients hold now, for the displays.
+    if matches!(op, TcpOp::Snapshot | TcpOp::Panel { .. } | TcpOp::Netstat { .. } | TcpOp::Report { .. }) {
+        let _ = operate(system, |c| Ok(apply::refresh_dhcp(c)));
+    }
     Ok(match op {
         TcpOp::Start { strsvr, strifc, strip6 } => {
             // STRTCP reads the files afresh: they may have been changed

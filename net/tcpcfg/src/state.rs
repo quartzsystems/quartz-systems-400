@@ -54,6 +54,9 @@ pub enum IfcStatus {
     Failed,
     /// Its line lost its carrier; it comes back with the line.
     RcyPnd,
+    /// A `*IP4DHCP` interface asking a DHCP server for an address
+    /// (`QTOC_IP4_LI_ACQUIRING`).
+    Acquiring,
 }
 
 impl IfcStatus {
@@ -66,12 +69,13 @@ impl IfcStatus {
             Self::Ending => "Ending",
             Self::Failed => "Failed",
             Self::RcyPnd => "RCYPND",
+            Self::Acquiring => "Acquiring",
         }
     }
 
-    /// Started (active or waiting for its line).
+    /// Started (active, waiting for its line, or for a lease).
     pub fn started(self) -> bool {
-        matches!(self, Self::Active | Self::RcyPnd)
+        matches!(self, Self::Active | Self::RcyPnd | Self::Acquiring)
     }
 }
 
@@ -114,6 +118,8 @@ pub struct IfcRun {
     pub since: u64,
     /// The last failure.
     pub error: String,
+    /// A `*IP4DHCP` interface's lease.
+    pub lease: Option<dhcp::Lease>,
 }
 
 /// One route at run time.
@@ -142,6 +148,9 @@ pub struct State {
     pub rules: Vec<(Proto, u16, u16)>,
     /// When TCP/IP last started.
     pub started: u64,
+    /// The DHCP leases kept for the next start, by line description;
+    /// the storage service keeps them across IPLs.
+    pub kept: BTreeMap<String, dhcp::Lease>,
 }
 
 impl State {

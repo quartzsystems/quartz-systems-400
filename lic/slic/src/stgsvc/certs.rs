@@ -49,7 +49,7 @@ fn system_principal() -> Principal {
 }
 
 /// Run `f` against the IFS as the system.
-fn as_system<T>(system: &mut System, f: impl FnOnce(&dyn IfsClient) -> T) -> T {
+pub(crate) fn as_system<T>(system: &mut System, f: impl FnOnce(&dyn IfsClient) -> T) -> T {
     let p = system_principal();
     service::with_client(system, 0, service::console_owner(0), &p, 37, f)
 }
@@ -59,7 +59,7 @@ fn errno_text(path: &str, e: Errno) -> String {
 }
 
 /// A file's bytes; `None` when it does not exist.
-fn read_file(c: &dyn IfsClient, path: &str) -> Result<Option<Vec<u8>>, String> {
+pub(crate) fn read_file(c: &dyn IfsClient, path: &str) -> Result<Option<Vec<u8>>, String> {
     let fd = match c.open(path, OpenArgs::new(O_RDONLY)) {
         Ok(fd) => fd,
         Err(Errno::ENOENT | Errno::ENOTDIR) => return Ok(None),
@@ -85,7 +85,7 @@ fn make_dirs(c: &dyn IfsClient, dir: &str) -> Result<(), String> {
 }
 
 /// Replace a file: written beside it, then renamed over it.
-fn write_file(c: &dyn IfsClient, path: &str, data: &[u8]) -> Result<(), String> {
+pub(crate) fn write_file(c: &dyn IfsClient, path: &str, data: &[u8]) -> Result<(), String> {
     if let Some(i) = path.rfind('/')
         && i > 0
     {

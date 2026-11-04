@@ -1,0 +1,17 @@
+[package]
+name = "dhcp"
+description = "QS/400 DHCPv4 client: the message codec, the RFC 2131 client states, leases, and the agent that keeps one on a link"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# SO_BINDTODEVICE and SO_BROADCAST on a UDP socket; pure Rust.
+socket2 = { version = "0.6.5", features = ["all"] }
+
+[lints]
+workspace = true

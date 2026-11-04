@@ -90,6 +90,7 @@ members = [
     "net/sshd",
 
     "net/tcpcfg",
+    "net/dhcp",
 
     "net/ddm",
     "net/servers",
