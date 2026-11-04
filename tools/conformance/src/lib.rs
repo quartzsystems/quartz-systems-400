@@ -38,6 +38,7 @@ mod ifs;
 mod install;
 mod load;
 mod leftovers;
+mod perfstep;
 mod lpstep;
 pub mod media;
 mod netauto;
