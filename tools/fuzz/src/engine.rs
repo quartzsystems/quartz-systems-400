@@ -122,6 +122,7 @@ pub fn minimise(t: &Target, data: &[u8], place: &str) -> Vec<u8> {
 }
 
 /// Fuzzes `t` for `o.time`.
+#[allow(clippy::too_many_lines)] // one loop with its watchdog
 pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
     fs::create_dir_all(&o.corpus)?;
     quiet_panics();
@@ -139,9 +140,11 @@ pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
 
     // The watchdog: an input still running after `hang` stops the process.
     let started = Arc::new(AtomicU64::new(0));
+    let running: Arc<std::sync::Mutex<Vec<u8>>> = Arc::default();
     let epoch = Instant::now();
     {
         let started = Arc::clone(&started);
+        let running = Arc::clone(&running);
         let hang = o.hang;
         let crashes = o.crashes.clone();
         let tname = t.name;
@@ -152,16 +155,22 @@ pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
                 if s != 0 {
                     let now = u64::try_from(epoch.elapsed().as_millis()).unwrap_or(u64::MAX);
                     if now.saturating_sub(s) > u64::try_from(hang.as_millis()).unwrap_or(u64::MAX) {
-                        eprintln!("fuzz {tname}: an input ran past {hang:?}; see {}", crashes.display());
+                        let input = running.lock().map(|r| r.clone()).unwrap_or_default();
+                        let _ = fs::create_dir_all(&crashes);
+                        let _ = fs::write(crashes.join(format!("hang-{}", name(&input))), &input);
+                        eprintln!("fuzz {tname}: an input ran past {hang:?}; saved in {}", crashes.display());
                         std::process::exit(3);
                     }
                 }
             }
         });
     }
+    // The input in flight, kept in memory for the watchdog.
     let current = |data: &[u8]| {
-        let _ = fs::create_dir_all(&o.crashes);
-        let _ = fs::write(o.crashes.join("running"), data);
+        if let Ok(mut r) = running.lock() {
+            r.clear();
+            r.extend_from_slice(data);
+        }
     };
 
     let mut corpus = load(&o.corpus);
@@ -220,7 +229,6 @@ pub fn fuzz(t: &Target, o: &Options) -> std::io::Result<Report> {
             }
         }
     }
-    let _ = fs::remove_file(o.crashes.join("running"));
     report.corpus = corpus.len();
     report.covered = map.covered();
     Ok(report)

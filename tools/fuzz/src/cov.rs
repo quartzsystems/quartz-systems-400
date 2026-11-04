@@ -91,7 +91,14 @@ impl Map {
             // and the fuzzer runs one input at a time on this thread, so
             // nothing else writes them while they are read and cleared.
             let counters = unsafe { std::slice::from_raw_parts_mut(start as *mut u8, len) };
-            for (i, c) in counters.iter_mut().enumerate() {
+            // Most counters stay zero: skip them eight at a time.
+            let mut i = 0;
+            while i < counters.len() {
+                if i + 8 <= counters.len() && counters[i..i + 8].iter().all(|&c| c == 0) {
+                    i += 8;
+                    continue;
+                }
+                let c = &mut counters[i];
                 if *c != 0 {
                     let b = bucket(*c);
                     let s = &mut self.seen[at + i];
@@ -101,6 +108,7 @@ impl Map {
                     }
                     *c = 0;
                 }
+                i += 1;
             }
             at += len;
         }

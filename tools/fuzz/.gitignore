@@ -1,2 +1,1 @@
-# The input running when a hang stopped the fuzzer.
-crashes/*/running
+# Nothing generated is ignored: corpora and crashes are committed.
