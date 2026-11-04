@@ -28,16 +28,19 @@ fn usage() -> String {
 
 /// Every process: PID, RSS kB, descriptors, command line and the job.
 fn list(system: &mut System) -> String {
-    let jobs: BTreeMap<u32, String> = system
+    // A process holding several jobs (a server's sessions) is named by
+    // its own, the one that started first.
+    let mut active = system
         .procs
         .stg
         .as_mut()
         .and_then(|c| stg::Client::active_jobs(c).ok())
-        .unwrap_or_default()
-        .into_iter()
-        .filter(|j| j.pid > 1)
-        .map(|j| (j.pid, j.qualified()))
-        .collect();
+        .unwrap_or_default();
+    active.sort_by_key(|j| (j.started, j.number));
+    let mut jobs: BTreeMap<u32, String> = BTreeMap::new();
+    for j in active.into_iter().filter(|j| j.pid > 1) {
+        jobs.entry(j.pid).or_insert_with(|| j.qualified());
+    }
     let mut out = String::from("  PID   RSS_KB    FDS  COMMAND\n");
     for pid in pids() {
         let base = format!("/proc/{pid}");

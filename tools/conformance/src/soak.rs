@@ -57,6 +57,9 @@ pub struct Sample {
     /// The closer look: the service's tables, its descriptors and
     /// memory, the descriptors of jobs that hold many.
     pub detail: String,
+    /// The storage service's page cache, held and its bound, kB: its
+    /// RSS above is less what the cache holds, which is bounded.
+    pub cache_kb: (u64, u64),
 }
 
 /// What the soak did and found.
@@ -108,6 +111,11 @@ impl SoakReport {
                 (i128::from(last.asp_used) - i128::from(first.asp_used)) * 4096 / (1 << 20),
                 first.jobs,
                 last.jobs
+            );
+            let _ = writeln!(
+                o,
+                "  storage service RSS is less its page cache: {} -> {} kB held (bound {} kB)",
+                first.cache_kb.0, last.cache_kb.0, last.cache_kb.1
             );
             let _ = writeln!(o, "  long-lived processes (RSS kB and descriptors, after warm-up -> end, peak):");
             for (pid, (cmd, rss, fds)) in &last.procs {
@@ -170,8 +178,25 @@ fn sample(s: &mut Session, at: u64) -> Sample {
     let jobs = active_jobs(s);
     out.jobs = jobs.len();
     out.detail = detail(s, &out);
+    out.cache_kb = page_cache(&out.detail);
+    for (cmd, rss, _) in out.procs.values_mut() {
+        if cmd.starts_with("/init qsstg") {
+            *rss = rss.saturating_sub(out.cache_kb.0);
+        }
+    }
     let _ = writeln!(out.detail, "active jobs: {}", jobs.into_iter().collect::<Vec<_>>().join(" "));
     out
+}
+
+/// `stgstat`'s "page cache H of C pages", in kB.
+fn page_cache(detail: &str) -> (u64, u64) {
+    let w: Vec<&str> = detail
+        .lines()
+        .find(|l| l.starts_with("page cache "))
+        .map(|l| l.split_whitespace().collect())
+        .unwrap_or_default();
+    let n = |i: usize| w.get(i).and_then(|v| v.parse::<u64>().ok()).unwrap_or(0) * 4;
+    (n(2), n(4))
 }
 
 /// Jobs past this many descriptors get their own look.
@@ -183,19 +208,27 @@ const FDS_LOOK: u64 = 12;
 fn detail(s: &mut Session, out: &Sample) -> String {
     let mut d = format!("== {}s\n", out.at);
     for c in ["svc.stgstat", "svc.txn stats"] {
-        d.push_str(&s.command(c, CMD).unwrap_or_default());
+        line(&mut d, s.command(c, CMD));
     }
     for (pid, (cmd, _, fds)) in &out.procs {
         let stg = cmd.starts_with("/init qsstg");
         if stg || (*fds >= FDS_LOOK && cmd.starts_with("/qsjob")) {
             let _ = writeln!(d, "-- {pid} {cmd}");
-            d.push_str(&s.command(&format!("procstat fds {pid}"), CMD).unwrap_or_default());
+            line(&mut d, s.command(&format!("procstat fds {pid}"), CMD));
         }
         if stg {
-            d.push_str(&s.command(&format!("procstat maps {pid}"), CMD).unwrap_or_default());
+            line(&mut d, s.command(&format!("procstat maps {pid}"), CMD));
         }
     }
     d
+}
+
+/// A command's output onto `d`, ending its last line.
+fn line(d: &mut String, out: Result<String, String>) {
+    d.push_str(&out.unwrap_or_default());
+    if !d.ends_with('\n') {
+        d.push('\n');
+    }
 }
 
 /// Every sample's closer look, to `soak-samples.log`; written as the
@@ -561,7 +594,13 @@ impl Suite {
 
 #[cfg(test)]
 mod tests {
-    use super::grew;
+    use super::{grew, page_cache};
+
+    #[test]
+    fn page_cache_line() {
+        assert_eq!(page_cache("x\npage cache 10 of 20 pages\n"), (40, 80));
+        assert_eq!(page_cache("nothing"), (0, 0));
+    }
 
     #[test]
     fn growth_that_stays() {
