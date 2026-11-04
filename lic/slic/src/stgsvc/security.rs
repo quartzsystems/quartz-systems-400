@@ -192,6 +192,10 @@ pub fn as_user(req: &Request) -> bool {
             | R::QapMsgReply { .. }
             | R::QapMsgRemove { .. }
             | R::QapMsgSend { .. }
+            | R::QapMgmtPtfs { .. }
+            | R::QapMgmtDisks { .. }
+            | R::QapMgmtIpl { .. }
+            | R::QapMgmtPower { .. }
     )
 }
 

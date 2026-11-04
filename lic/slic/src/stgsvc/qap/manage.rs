@@ -209,8 +209,10 @@ pub fn ipl(system: &mut System, ctx: &JobCtx) -> Result<IplStatus, QapRefused> {
 /// `slic`, as `PWRDWNSYS` from a job not at the console makes it.
 pub fn power(system: &mut System, ctx: &JobCtx, req: &PowerDown) -> Result<(), QapRefused> {
     connection_job(ctx)?;
-    super::super::security::require(sec::profile::SpecialAuth::JOBCTL, "power down the system")
-        .map_err(|e| failed(NOT_AUTHORIZED, &e))?;
+    // The job's own profile, whatever the request runs as.
+    let me = ctx.session.borrow().principal.clone();
+    me.require(sec::profile::SpecialAuth::JOBCTL, "power down the system")
+        .map_err(|e| failed(NOT_AUTHORIZED, &e.to_string()))?;
     if std::path::Path::new(crate::ipl::power::REQUEST_FILE).exists() {
         return Err(refused(ERROR, "CPF9898", "A power down of the system has already started.", &[]));
     }
