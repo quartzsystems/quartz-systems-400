@@ -1,0 +1,24 @@
+                        Add Library List Entry (ADDLIBLE)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library  . . . . . . . . . . . .                 Name                          
+ Library list  ................................................................ 
+   List positi :                    Add Library List Entry                    : 
+   Reference l :                                                              : 
+               :                                                      Bottom  : 
+               :  F2=Extended help   F3=Exit help          F10=Move to top    : 
+               :  F12=Cancel   F13=Information Assistant   F14=Print help     : 
+               :  Help information is not available.                          : 
+               :..............................................................: 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

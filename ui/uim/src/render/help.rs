@@ -60,14 +60,16 @@ impl<'a> HelpPart<'a> {
     }
 }
 
-/// Where a help window goes: its outer box, borders included.
+/// Where a help window goes: its top border's row and left border's
+/// column, and the most rows and the columns inside the borders; the
+/// window is as tall as its text needs (`render_view`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HelpWindow {
     /// The top border's row.
     pub top: usize,
     /// The left border's column.
     pub left: usize,
-    /// Rows inside the borders.
+    /// The most rows inside the borders.
     pub rows: usize,
     /// Columns inside the borders, the attribute columns included.
     pub cols: usize,
@@ -230,8 +232,12 @@ fn render_full(
     s
 }
 
-/// R23: a help window: the title centered on its first row, the text
-/// from its third, the indicator and two key rows at its foot.
+/// R23: a help window, as the 7.1 oracle draws one over a prompt: the
+/// title centered on its first row, a blank row, the text, the
+/// indicator, two key rows and the message row, each from the third
+/// column inside the border and ending two columns before the right
+/// one. The window is as tall as the text needs, up to `w.rows`; a
+/// window that would pass row `rows - 3` moves up.
 fn render_window(
     parts: &[HelpPart],
     view: &HelpView,
@@ -239,27 +245,47 @@ fn render_window(
     w: HelpWindow,
     under: &Screen,
 ) -> Screen {
-    let mut s = window::frame(under, w.top, w.left, w.rows, w.cols);
-    // Inside the borders: the attribute column, then text.
-    let first = w.left + 2;
-    let last = w.left + w.cols - 1;
+    let first = w.left + 3;
+    let last = w.left + w.cols - 2;
+    let body = body_rows(parts, opts, first, last, first);
+    let chrome = 6;
+    let rows = (chrome + body.len()).min(w.rows).max(chrome);
+    let lowest = under.rows.saturating_sub(3);
+    let top = if w.top + rows + 1 > lowest {
+        lowest.saturating_sub(rows + 1).max(1)
+    } else {
+        w.top
+    };
+    let mut s = window::frame(under, top, w.left, rows, w.cols);
+    // The column before the left border holds the window's attribute.
+    if w.left > 1 {
+        let attr_col = w.left - 1;
+        for t in &mut s.texts {
+            if (top..=top + rows + 1).contains(&t.row)
+                && t.col <= attr_col
+                && attr_col < t.col + t.text.chars().count()
+            {
+                t.text = t.text.chars().take(attr_col - t.col).collect();
+            }
+        }
+    }
     let title = view.title.trim();
-    let width = last + 1 - first;
     s.put(
-        w.top + 1,
-        first + width.saturating_sub(title.chars().count()) / 2,
+        top + 1,
+        w.left + 1 + w.cols.saturating_sub(title.chars().count()) / 2,
         Attr::HighIntensity,
         title,
     );
-    let text_top = w.top + 3;
-    let indicator_row = w.top + w.rows - 2;
+    let text_top = top + 3;
+    let indicator_row = top + rows - 3;
     let text_rows = indicator_row.saturating_sub(text_top).max(1);
-    let body = body_rows(parts, opts, first, last, first);
     let pages = body.len().div_ceil(text_rows).max(1);
     let page = view.page.min(pages - 1);
     let start = page * text_rows;
     let end = (start + text_rows).min(body.len());
-    doc::put_rows(&mut s, &body[start..end], text_top);
+    if indicator_row > text_top {
+        doc::put_rows(&mut s, &body[start..end], text_top);
+    }
     let text = if page + 1 == pages {
         "Bottom"
     } else {
@@ -273,7 +299,8 @@ fn render_window(
     });
     put_keys(&mut s, &view.keys, first, last, indicator_row + 1);
     if let Some((m, _)) = &opts.message {
-        s.put(s.rows, 2, Attr::HighIntensity, m);
+        let m: String = m.chars().take(last + 1 - first).collect();
+        s.put(top + rows, first, Attr::HighIntensity, &m);
     }
     s
 }
@@ -287,15 +314,49 @@ fn put_keys(s: &mut Screen, keys: &[String], start: usize, limit: usize, top: us
     if rows.len() == 2 {
         let stops: Vec<usize> = rows[0].iter().map(|&(_, c)| c).collect();
         let mut floor = start;
-        for item in &mut rows[1] {
+        let second: Vec<usize> = rows[1].iter().map(|&(k, _)| k).collect();
+        for (j, item) in rows[1].iter_mut().enumerate() {
             let col = item.1.max(floor);
             let snapped = stops.iter().copied().find(|&c| c >= col).unwrap_or(col);
-            if snapped + widths[item.0] <= limit + 1 {
+            // Snap only when the keys after it still fit on the row.
+            let rest_fit = second[j..]
+                .iter()
+                .try_fold(snapped, |c, &k| {
+                    (c + widths[k] <= limit + 1).then_some(c + widths[k] + layout::GAP)
+                })
+                .is_some();
+            if rest_fit {
                 item.1 = snapped;
             } else {
                 item.1 = col;
             }
             floor = item.1 + widths[item.0] + layout::GAP;
+        }
+        // Rows of as many keys line up a column where both still fit
+        // (the 7.1 oracle's help window: F10 over F14).
+        if rows[0].len() == rows[1].len() {
+            for i in 1..rows[0].len() {
+                let col = rows[0][i].1.max(rows[1][i].1);
+                let fits = |row: &[(usize, usize)]| {
+                    let mut c = col;
+                    for &(k, _) in &row[i..] {
+                        if c + widths[k] > limit + 1 {
+                            return false;
+                        }
+                        c += widths[k] + layout::GAP;
+                    }
+                    true
+                };
+                if fits(&rows[0]) && fits(&rows[1]) {
+                    for r in &mut rows {
+                        let mut c = col;
+                        for item in &mut r[i..] {
+                            item.1 = item.1.max(c);
+                            c = item.1 + widths[item.0] + layout::GAP;
+                        }
+                    }
+                }
+            }
         }
     }
     for (i, row) in rows.iter().take(2).enumerate() {

@@ -466,11 +466,14 @@ fn help_window_and_keys_help() {
         win.iter().any(|r| r.contains("Function Keys - Help")),
         "{win:?}"
     );
-    assert!(win.iter().any(|r| r.contains("F20=Enlarge")));
+    // The window has the full key set, as the 7.1 oracle's does.
+    assert!(win.iter().any(|r| r.contains("F14=Print help")));
+    assert!(!win.iter().any(|r| r.contains("F20=Enlarge")));
     assert!(win.iter().any(|r| r.contains("....")));
-    assert!(t.rows(2).iter().any(|r| r.contains("F14=Print help")));
-    // F20 makes it full screen.
-    assert!(t.rows(3)[0].contains("Function Keys - Help"));
+    // F24 and F20 are not help keys: the window stays, with the message.
+    let after = t.rows(2);
+    assert!(after.iter().any(|r| r.contains("Function Keys - Help")));
+    assert!(t.rows(3).iter().any(|r| r.contains("....")));
 }
 
 #[test]

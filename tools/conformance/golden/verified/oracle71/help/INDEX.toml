@@ -1,0 +1,160 @@
+[[golden]]
+name = "prompt-strschidx"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-strschidx-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-rmvschidxe"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-rmvschidxe-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-dsphlpdoc"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-dsphlpdoc-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-crtschidx"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-crtschidx-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-addschidxe"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "prompt-addlible"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-lib"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-lib-f24"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-ext"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-ext-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-after-f12"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-after-f3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-addlible-title"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "help-cmdentry-field"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "strschidx-qhss1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+
+[[golden]]
+name = "dsphlpdoc-default"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "help71"
+width = 80
+

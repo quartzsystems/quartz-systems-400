@@ -245,7 +245,7 @@ fn help_key_names_the_parameter_under_the_cursor() {
     assert!(h.extended.contains(&"QHLICMD/CRTLIB/TEXT".to_string()));
     let title = p.help(Some((1, 30))).expect("help");
     assert!(title.extended_first);
-    assert_eq!(title.title, "Create Library - Help");
+    assert_eq!(title.title, "Create Library (CRTLIB) - Help");
     let mut env = Env::new(&mut src);
     p.set_cursor(Some((lib.row, lib.col)));
     assert!(matches!(p.key(1, &[], &mut env), Step::Help(_)));

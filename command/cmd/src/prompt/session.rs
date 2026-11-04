@@ -227,7 +227,7 @@ impl Prompter {
         Some(HelpRequest {
             module,
             extended,
-            title: format!("{} - Help", self.def.prompt),
+            title: format!("{} ({}) - Help", self.def.prompt, self.name),
             extended_first: title_row || parm.is_none(),
         })
     }

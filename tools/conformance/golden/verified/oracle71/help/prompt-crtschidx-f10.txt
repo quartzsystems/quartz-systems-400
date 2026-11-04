@@ -1,0 +1,24 @@
+                         Create Search Index (CRTSCHIDX)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Search index . . . . . . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *CURLIB     Name, *CURLIB                 
+ Display title  . . . . . . . . .                                               
+                                                                                
+ Text 'description' . . . . . . .   *TITLE                                      
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Character identifier:                                                          
+   Graphic character set  . . . .   *SYSVAL       Number                        
+   Code page  . . . . . . . . . .                 Number                        
+ Authority  . . . . . . . . . . .   *LIBCRTAUT    Name, *LIBCRTAUT, *CHANGE...  
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

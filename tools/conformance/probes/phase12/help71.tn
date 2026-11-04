@@ -1,0 +1,109 @@
+# Section 4 on the 7.1 oracle: the prompts of the search index and help
+# document commands, and the help window over a command prompt (F1 on a
+# parameter, F2, F24, F12 and F3). Read-only: nothing is created.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type STRSCHIDX
+key f4
+settle 3000
+snap prompt-strschidx
+key f10
+settle 2000
+snap prompt-strschidx-f10
+key f12
+settle 1500
+type RMVSCHIDXE
+key f4
+settle 3000
+snap prompt-rmvschidxe
+key f10
+settle 2000
+snap prompt-rmvschidxe-f10
+key f12
+settle 1500
+type DSPHLPDOC
+key f4
+settle 3000
+snap prompt-dsphlpdoc
+key f10
+settle 2000
+snap prompt-dsphlpdoc-f10
+key f12
+settle 1500
+type CRTSCHIDX
+key f4
+settle 3000
+snap prompt-crtschidx
+key f10
+settle 2000
+snap prompt-crtschidx-f10
+key f12
+settle 1500
+type ADDSCHIDXE
+key f4
+settle 3000
+snap prompt-addschidxe
+key f12
+settle 1500
+type ADDLIBLE
+key f4
+settle 3000
+snap prompt-addlible
+cursor 5 37
+key f1
+settle 3000
+snap help-addlible-lib
+key f24
+settle 1500
+snap help-addlible-lib-f24
+key f24
+settle 1500
+key f2
+settle 3000
+snap help-addlible-ext
+key pgdn
+settle 1500
+snap help-addlible-ext-2
+key f12
+settle 1500
+snap help-addlible-after-f12
+key f3
+settle 1500
+snap help-addlible-after-f3
+cursor 1 30
+key f1
+settle 3000
+snap help-addlible-title
+key f3
+settle 1500
+key f12
+settle 1500
+cursor 4 3
+key f1
+settle 3000
+snap help-cmdentry-field
+key f3
+settle 1500
+type STRSCHIDX SCHIDX(QHSS1)
+key enter
+settle 4000
+snap strschidx-qhss1
+key f3
+settle 1500
+key f12
+settle 1500
+type DSPHLPDOC
+key enter
+settle 3000
+snap dsphlpdoc-default
+key f3
+settle 1500
+key f12
+settle 1500

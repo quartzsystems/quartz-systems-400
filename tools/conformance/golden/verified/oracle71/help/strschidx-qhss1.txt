@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > STRSCHIDX                                                                 
+      Command prompting ended when user pressed F12.                            
+    > RMVSCHIDXE                                                                
+      Command prompting ended when user pressed F12.                            
+    > DSPHLPDOC                                                                 
+      Command prompting ended when user pressed F12.                            
+    > CRTSCHIDX                                                                 
+      Command prompting ended when user pressed F12.                            
+    > ADDSCHIDXE                                                                
+      Command prompting ended when user pressed F12.                            
+    > ADDLIBLE                                                                  
+      Command prompting ended when user pressed F12.                            
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

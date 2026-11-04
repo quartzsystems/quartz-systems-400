@@ -138,12 +138,16 @@ impl Engine {
         if !extended {
             parts.truncate(1);
         }
+        let title = match (&self.extended_help, extended) {
+            (Some((t, _)), true) => t.clone(),
+            _ => help_title(&parts[0].title),
+        };
         let frame = Frame {
-            title: help_title(&parts[0].title),
+            title,
             parts,
             page: 0,
             extended,
-            window: !full_screen && !extended,
+            window: !full_screen,
         };
         let under = self.under.clone().unwrap_or_else(|| {
             if term.wide() {
@@ -200,7 +204,7 @@ impl Engine {
             title,
             page: 0,
             extended: true,
-            window: false,
+            window: !self.full_screen_help,
         };
         let under = self.under.clone().unwrap_or_else(|| Screen::new(24, 80));
         self.help_session(term, Some(panel), frame, &under)
@@ -244,7 +248,6 @@ impl Engine {
         under: &Screen,
     ) -> Option<()> {
         let mut stack = vec![first];
-        let mut more_keys = false;
         let mut message: Option<LineMsg> = None;
         while let Some(frame) = stack.last_mut() {
             let wide = term.wide();
@@ -252,9 +255,11 @@ impl Engine {
             let search = self.group.schidx.is_some();
             let view = HelpView {
                 title: frame.title.clone(),
-                keys: keys(frame, search, more_keys),
+                keys: keys(frame, search),
                 page: frame.page,
-                window: frame.window.then(|| help_window(rows, cols, self.cursor)),
+                window: frame
+                    .window
+                    .then(|| help_window(rows, cols, self.cursor, frame.extended)),
             };
             let parts: Vec<HelpPart> = frame
                 .parts
@@ -344,17 +349,17 @@ impl Engine {
                     if parts.is_empty() {
                         message = Some(LineMsg::error(NO_HELP, &[]));
                     } else {
+                        // Extended help from a help window stays in one.
+                        let window = frame.window;
                         stack.push(Frame {
                             parts,
                             title,
                             page: 0,
                             extended: true,
-                            window: false,
+                            window,
                         });
                     }
                 }
-                Key::F(20) if frame.window => frame.window = false,
-                Key::F(24) if frame.window => more_keys = !more_keys,
                 Key::F(11) if search => {
                     self.search(term)?;
                 }
@@ -496,51 +501,34 @@ fn split_qualified(name: &str) -> (String, String) {
 /// The keys of a help display (R22): field help adds `F2`, a window
 /// `F20` and `F24` with its second set, a group with a search index
 /// `F11`.
-fn keys(frame: &Frame, search: bool, more: bool) -> Vec<String> {
+fn keys(frame: &Frame, search: bool) -> Vec<String> {
+    // The same set in a window as full screen, as the 7.1 oracle shows
+    // over a prompt; F20 and F24 are not help keys there.
     let mut k: Vec<&str> = Vec::new();
-    if frame.window {
-        if more {
-            k.extend(["F3=Exit help", "F14=Print help", "F24=More keys"]);
-        } else {
-            if !frame.extended {
-                k.push("F2=Extended help");
-            }
-            k.push("F10=Move to top");
-            if search {
-                k.push("F11=Search index");
-            }
-            k.extend([
-                "F12=Cancel",
-                "F13=Information Assistant",
-                "F20=Enlarge",
-                "F24=More keys",
-            ]);
-        }
-    } else {
-        if !frame.extended {
-            k.push("F2=Extended help");
-        }
-        k.extend(["F3=Exit help", "F10=Move to top"]);
-        if search {
-            k.push("F11=Search index");
-        }
-        k.extend(["F12=Cancel", "F13=Information Assistant", "F14=Print help"]);
+    if !frame.extended {
+        k.push("F2=Extended help");
     }
+    k.extend(["F3=Exit help", "F10=Move to top"]);
+    if search {
+        k.push("F11=Search index");
+    }
+    k.extend(["F12=Cancel", "F13=Information Assistant", "F14=Print help"]);
     k.into_iter().map(str::to_string).collect()
 }
 
-/// R23: a help window: 72 columns wide inside its borders, 12 rows
-/// (fewer on a short screen), under the cursor's row when it fits.
-fn help_window(rows: usize, cols: usize, cursor: (usize, usize)) -> HelpWindow {
-    let inner_cols = 72.min(cols - 4);
-    let inner_rows = 12.min(rows - 4);
-    let (top, _) = crate::render::place(rows, cols, inner_rows, inner_cols, cursor);
-    let left = (cols - inner_cols - 2) / 2;
+/// R23: where a help window goes (the 7.1 oracle over a prompt): field
+/// help 62 columns inside its borders, its left border at column
+/// `cols - 64`, its top border on the row under the cursor; extended
+/// help 76 columns from column 2, its top border on row 2. Either is
+/// as tall as its text needs and ends by row `rows - 3`.
+fn help_window(rows: usize, cols: usize, cursor: (usize, usize), extended: bool) -> HelpWindow {
+    let (left, inner) = if extended { (2, cols - 4) } else { (cols - 64, 62) };
+    let top = if extended { 2 } else { (cursor.0 + 1).min(rows - 9) };
     HelpWindow {
         top,
-        left: left.max(1),
-        rows: inner_rows,
-        cols: inner_cols,
+        left,
+        rows: rows.saturating_sub(3 + top + 1).max(6),
+        cols: inner,
     }
 }
 

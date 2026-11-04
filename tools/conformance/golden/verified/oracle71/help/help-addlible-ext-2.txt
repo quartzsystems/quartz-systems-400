@@ -1,0 +1,24 @@
+                        Add Library List Entry (ADDLIBLE)                       
+ .............................................................................. 
+ :                           Add Library List Entry                           : 
+ :                                                                            : 
+ :                                                                    Bottom  : 
+ :  F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant   : 
+ :  F14=Print help                                                            : 
+ :  Already at bottom of area.                                                : 
+ :............................................................................: 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

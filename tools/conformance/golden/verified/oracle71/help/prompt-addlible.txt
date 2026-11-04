@@ -1,0 +1,24 @@
+                        Add Library List Entry (ADDLIBLE)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library  . . . . . . . . . . . .                 Name                          
+ Library list position:                                                         
+   List position  . . . . . . . .   *FIRST        *FIRST, *LAST, *AFTER...      
+   Reference library  . . . . . .                 Name                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                
