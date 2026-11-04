@@ -198,6 +198,7 @@ fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
     if rmtsys.trim().is_empty() {
         return Err(not_sent("no remote system"));
     }
+    let wscst = wscst_of(&host.link, &parms.qual("WSCST"), &parms.name("MFRTYPMDL"))?;
     let prtq = parms.text("PRTQ");
     let job_name = parms.get("JOB").map_or_else(|| "*".to_string(), text_of);
     let splnbr = match parms.int("SPLNBR") {
@@ -224,7 +225,7 @@ fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
         seppage: parms.name("SEPPAGE") != "*NO",
         transform: parms.name("TRANSFORM") != "*NO",
         mfrtypmdl: parms.name("MFRTYPMDL"),
-        wscst: wscst_of(&host.link, &parms.qual("WSCST"), &parms.name("MFRTYPMDL"))?,
+        wscst,
         local_host: local_host(&host.link),
     };
     let target = crate::printmap::target_of(&dest).ok_or_else(|| not_sent("no destination"))?;

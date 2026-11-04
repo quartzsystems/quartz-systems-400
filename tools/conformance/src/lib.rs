@@ -24,6 +24,7 @@ mod dspcmds;
 mod dspmsgs;
 #[cfg(unix)]
 mod hwrsrc;
+mod ddmstep;
 mod dst;
 mod fourdisk;
 mod error;

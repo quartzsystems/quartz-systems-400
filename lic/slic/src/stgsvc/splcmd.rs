@@ -432,7 +432,8 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
 /// SPLNBR` names, its authority checked and its reading audited as
 /// `DSPSPLF`'s, with its data.
 pub fn fetch(system: &mut System, me: u32, file: &str, job: &str, splnbr: &str) -> Result<(SplfAttrs, Vec<u8>), String> {
-    let p = Params::parse(&format!("{file} JOB({job}) SPLNBR({splnbr})"));
+    // `parse` skips a command word.
+    let p = Params::parse(&format!("fetch {file} JOB({job}) SPLNBR({splnbr})"));
     let id = target(system, me, &p)?;
     display(system, id)
 }

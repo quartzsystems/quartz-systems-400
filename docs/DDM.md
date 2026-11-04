@@ -324,8 +324,8 @@ Deviations:
 
 - Programs are compiled against a local file of the remote file's
   format and pointed at the DDM file with `OVRDBF ... TOFILE()`: the
-  compilers do not fetch a remote format (`CRTBNDCL` of a `DCLF` naming
-  a DDM file refuses it). `LVLCHK(*RMTFILE)` is kept, not checked.
+  compilers do not fetch a remote format (a `DCLF` naming a DDM file
+  finds no record format). `LVLCHK(*RMTFILE)` is kept, not checked.
 - `CHAIN` by relative record number, `READP`, `READE`, `SETLL`/`SETGT`
   by key and `FEOD` through a DDM file are not built (`CPF5149`, `FEOD`
   does nothing).

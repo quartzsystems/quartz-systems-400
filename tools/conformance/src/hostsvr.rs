@@ -25,7 +25,7 @@ pub fn forwards(taken: Option<u16>) -> Vec<(u16, u16)> {
     // Held open together so no two are the same, nor the telnet port.
     let mut held = Vec::new();
     let mut out = Vec::new();
-    for g in std::iter::once(449).chain(8470..=8476) {
+    for g in std::iter::once(449).chain(8470..=8476).chain(std::iter::once(446)) {
         while let Ok(l) = std::net::TcpListener::bind("127.0.0.1:0") {
             let p = l.local_addr().map_or(0, |a| a.port());
             held.push(l);
