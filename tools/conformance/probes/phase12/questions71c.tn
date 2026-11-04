@@ -1,0 +1,22 @@
+# CHKOBJITG's model outfile on the 7.1 oracle: found through the QSYS2
+# catalog with QSH's db2 (read-only), then its DSPFFD.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 40000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+# The job only (QSECOFR runs at CCSID 65535, which db2 cannot convert).
+type CHGJOB CCSID(37)
+key enter
+settle 2000
+key eraseinput
+type QSH CMD('db2 "SELECT TABLE_NAME, TABLE_TEXT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = ''QSYS'' AND (UPPER(TABLE_TEXT) LIKE ''%INTEGRITY%'' OR UPPER(TABLE_TEXT) LIKE ''%CHKOBJITG%'')"')
+key enter
+settle 20000
+snap chkobjitg-model
+key f3
+settle 2000

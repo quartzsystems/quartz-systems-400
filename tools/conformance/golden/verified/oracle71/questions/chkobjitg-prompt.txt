@@ -1,0 +1,24 @@
+                       Check Object Integrity (CHKOBJITG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ User profile, or . . . . . . . .                 Name, generic*, *ALL          
+ Object . . . . . . . . . . . . .                                               
+                                                                                
+ File to receive output . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Output member options:                                                         
+   Member to receive output . . .   *FIRST        Name, *FIRST                  
+   Replace or add records . . . .   *REPLACE      *REPLACE, *ADD                
+ Check domain . . . . . . . . . .   *YES          *YES, *NO                     
+ Check program and module . . . .   *YES          *YES, *NO                     
+ Check command  . . . . . . . . .   *YES          *YES, *NO                     
+ Check signature  . . . . . . . .   *SIGNED       *SIGNED, *ALL, *NONE          
+ Check library  . . . . . . . . .   *YES          *YES, *NO                     
+ Scan file systems  . . . . . . .   *STATUS       *STATUS, *YES, *NO            
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

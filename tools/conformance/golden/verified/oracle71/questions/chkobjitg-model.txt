@@ -1,0 +1,24 @@
+                                                                                
+   TABLE_NAME                                                                   
+                                                       TABLE_TEXT               
+                                                                                
+   -----------------------------------------------------------------------------
+   --------------------------------------------------- -------------------------
+   -------------------------                                                    
+   QASYCHKI                                                                     
+                                                       System supplied outfile f
+   or CHKOBJITG command.                                                        
+                                                                                
+     1 RECORD(S) SELECTED.                                                      
+                                                                                
+   Press ENTER to end terminal session.                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ ===>                                                                           
+                                                                                
+ F3=Exit F4=End of File F6=Print F9=Retrieve F17=Top                            
+ F18=Bottom  F19=Left   F20=Right F21=User Window                               
+                                                                                

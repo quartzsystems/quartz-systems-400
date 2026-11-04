@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/13          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Region id for path name      
+      Coded Character Set Identifier  . . . . . :     37                        
+    AILNID     CHAR            3       3        78        Both     LANGUAGE     
+                                                                   ID           
+      Field text  . . . . . . . . . . . . . . . :  Language id for path name    
+      Coded Character Set Identifier  . . . . . :     37                        
+    AIRES1     CHAR            3       3        81        Both     RESERVED     
+      Field text  . . . . . . . . . . . . . . . :  Not used                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    AIPBYT     PACKED       5  0       3        84        Both     PATH         
+                                                                   LENGTH       
+      Field text  . . . . . . . . . . . . . . . :  Length of path name in bytes 
+    AIFLID     CHAR           16      16        87        Both     FILE         
+                                                                   IDENTIFIER   
+      Field text  . . . . . . . . . . . . . . . :  File identifier              
+      Coded Character Set Identifier  . . . . . :  65535                        
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

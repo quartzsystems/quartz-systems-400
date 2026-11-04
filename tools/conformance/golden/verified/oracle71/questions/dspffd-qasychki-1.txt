@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/1           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                              Display File Field Description                    
+  Input parameters                                                              
+    File  . . . . . . . . . . . . . . . . . . . :  QASYCHKI                     
+      Library . . . . . . . . . . . . . . . . . :  QSYS                         
+  File Information                                                              
+    File  . . . . . . . . . . . . . . . . . . . :  QASYCHKI                     
+      Library . . . . . . . . . . . . . . . . . :  QSYS                         
+    File location . . . . . . . . . . . . . . . :  *LCL                         
+    Externally described  . . . . . . . . . . . :  Yes                          
+    Number of record formats  . . . . . . . . . :      1                        
+    Type of file  . . . . . . . . . . . . . . . :  Physical                     
+    File creation date  . . . . . . . . . . . . :  MM/DD/YY                     
+    Text 'description'. . . . . . . . . . . . . :  System supplied outfile for  
+  Record Format Information                                                     
+    Record format . . . . . . . . . . . . . . . :  QSYCHKIT                     
+    Format level identifier . . . . . . . . . . :  3E15B4D485337                
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

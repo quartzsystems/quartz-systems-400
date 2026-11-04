@@ -20,7 +20,7 @@ use store::obj::{JobHandle, types};
 use super::direct::{in_store, lib_or};
 use crate::ipl::system::{System, now_unix};
 
-/// A field: name, DDS type (`A`, `S` zoned, `P` packed, `V` varying
+/// A field: name, DDS type (`A`, `S` zoned, `P` packed, `B` binary, `V` varying
 /// character), length, decimals.
 pub(crate) type Fld = (&'static str, char, u16, u8);
 
@@ -103,9 +103,10 @@ fn dds(format: &str, fields: &[Fld]) -> String {
             'V' => ("A", "VARLEN"),
             'S' => ("S", ""),
             'P' => ("P", ""),
+            'B' => ("B", ""),
             _ => ("A", ""),
         };
-        let d = if matches!(ty, 'S' | 'P') {
+        let d = if matches!(ty, 'S' | 'P' | 'B') {
             dec.to_string()
         } else {
             String::new()

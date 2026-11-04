@@ -204,7 +204,19 @@ The V7R1M0 oracle settled 27 restore rules
     *JOBQ` and `QSCONSOLE *DEVD`). Damage is checked for every type. The
     completion `CPC39E0` and escape `CPF39E1` are Quartz's choices; IBM's
     `CHKOBJITG` writes an outfile instead and its messages were not
-    captured. Open: an `OUTFILE` in IBM's layout, once captured.
+    captured. The `OUTFILE` layout is settled (primary, V7R1M0,
+    2026-11-03): the model is `QSYS/QASYCHKI` (found through
+    `QSYS2.SYSTABLES`), format `QSYCHKIT`, 23 fields, 10151 bytes
+    (`golden/verified/oracle71/questions/dspffd-qasychki-*`). QS/400's
+    `CHKOBJITG` takes `OUTFILE` and `OUTMBR` and writes one record a
+    violation in that format, the file made from the model when missing
+    (`lic/slic/src/cpp/itgcmd.rs`). As on the primary, a check with no
+    violation writes no file (`CHKOBJITG OBJ('/QSYS.LIB/QSTEST.LIB/*')
+    OUTFILE(...)` completed and left none). The `AIVIOL` codes
+    (`*DAMAGED`, `*SIGNATURE`, `*UNSIGNED`, `*UNTRUSTED`) are Quartz's: no
+    violation could be made on the primary. IBM's `OBJ` is a path name and
+    the prompt has `CHKDMN`, `CHKPGMMOD`, `CHKCMD`, `CHKLIB` and `SCANFS`
+    (`chkobjitg-prompt`); ours keeps a qualified name, a known deviation.
 33. **What the recovery's `RST` leaves.** In the install suite's step 9
     the recovery's `RST OBJ(('/*') ('/QSYS.LIB' *OMIT))` restores 12
     links and leaves 7 (`CPF3838`), and `RSTLIB SAVLIB(*NONSYS)` ends

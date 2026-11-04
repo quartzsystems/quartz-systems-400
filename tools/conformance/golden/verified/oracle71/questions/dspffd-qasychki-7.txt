@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/51          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+                                                                   ASP          
+                                                                   NUMBER       
+      Field text  . . . . . . . . . . . . . . . :  Library ASP Number           
+      Coded Character Set Identifier  . . . . . :     37                        
+    AIOASP     CHAR           10      10     10137        Both     OBJECT       
+                                                                   ASP          
+                                                                   NAME         
+      Field text  . . . . . . . . . . . . . . . :  ASP name for object          
+      Coded Character Set Identifier  . . . . . :     37                        
+    AIOASN     CHAR            5       5     10147        Both     OBJECT       
+                                                                   ASP          
+                                                                   NUMBER       
+      Field text  . . . . . . . . . . . . . . . :  Object ASP Number            
+      Coded Character Set Identifier  . . . . . :     37                        
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

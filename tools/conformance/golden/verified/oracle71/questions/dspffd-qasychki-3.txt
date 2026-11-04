@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   1/44          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+      Field text  . . . . . . . . . . . . . . . :  Display time: hour/minute/se 
+      Coded Character Set Identifier  . . . . . :     37                        
+    AISYST     CHAR            8       8        14        Both     SYSTEM       
+      Field text  . . . . . . . . . . . . . . . :  System name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    AIOIND     CHAR            1       1        22        Both     NAME         
+                                                                   INDICATOR    
+      Field text  . . . . . . . . . . . . . . . :  Name indicator 0=object name 
+      Coded Character Set Identifier  . . . . . :     37                        
+    AINAME     CHAR           10      10        23        Both     OBJECT       
+      Field text  . . . . . . . . . . . . . . . :  Object name                  
+      Coded Character Set Identifier  . . . . . :     37                        
+    AILIB      CHAR           10      10        33        Both     LIBRARY      
+      Field text  . . . . . . . . . . . . . . . :  Library                      
+      Coded Character Set Identifier  . . . . . :     37                        
+    AITYPE     CHAR            8       8        43        Both     TYPE         
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

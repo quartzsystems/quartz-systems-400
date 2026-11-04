@@ -1,0 +1,56 @@
+# DSPFFD of CHKOBJITG's model outfile QSYS/QASYCHKI on the 7.1 oracle,
+# paged to the end. Read-only.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type DSPFFD FILE(QSYS/QASYCHKI)
+key enter
+settle 4000
+snap dspffd-qasychki-1
+key pgdn
+settle 1200
+snap dspffd-qasychki-2
+key pgdn
+settle 1200
+snap dspffd-qasychki-3
+key pgdn
+settle 1200
+snap dspffd-qasychki-4
+key pgdn
+settle 1200
+snap dspffd-qasychki-5
+key pgdn
+settle 1200
+snap dspffd-qasychki-6
+key pgdn
+settle 1200
+snap dspffd-qasychki-7
+key pgdn
+settle 1200
+snap dspffd-qasychki-8
+key pgdn
+settle 1200
+snap dspffd-qasychki-9
+key pgdn
+settle 1200
+snap dspffd-qasychki-10
+key pgdn
+settle 1200
+snap dspffd-qasychki-11
+key pgdn
+settle 1200
+snap dspffd-qasychki-12
+key pgdn
+settle 1200
+snap dspffd-qasychki-13
+key pgdn
+settle 1200
+snap dspffd-qasychki-14
+key f3
+settle 2000

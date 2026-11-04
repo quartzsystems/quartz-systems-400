@@ -14,6 +14,18 @@
              PARM       KWD(CHKSIG) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*SIGNED) VALUES(*SIGNED *ALL *NONE) +
                           PROMPT('Check signatures')
+             PARM       KWD(OUTFILE) TYPE(Q2) FILE(*OUT) +
+                          PROMPT('File to receive output')
+             PARM       KWD(OUTMBR) TYPE(E1) +
+                          PROMPT('Output member options')
  Q1:         QUAL       TYPE(*GENERIC) LEN(10) DFT(*ALL) SPCVAL((*ALL))
              QUAL       TYPE(*NAME) LEN(10) DFT(*ALL) SPCVAL((*ALL)) +
                           PROMPT('Library')
+ Q2:         QUAL       TYPE(*NAME) LEN(10)
+                        QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
+                          SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
+ E1:         ELEM       TYPE(*NAME) LEN(10) DFT(*FIRST) +
+                          SPCVAL((*FIRST)) PROMPT('Member to receive output')
+                        ELEM       TYPE(*CHAR) LEN(8) RSTD(*YES) +
+                          DFT(*REPLACE) VALUES(*REPLACE *ADD) +
+                          PROMPT('Replace or add records')

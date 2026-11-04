@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFFD                         Page/Line   2/32          
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    AIRES2     CHAR           20      20       103        Both     RESERVED     
+      Field text  . . . . . . . . . . . . . . . :  Not used                     
+      Coded Character Set Identifier  . . . . . :     37                        
+    AIPATH     CHAR         9997    9999       123        Both     PATH         
+                                                                   NAME         
+      Field text  . . . . . . . . . . . . . . . :  Path name                    
+      Variable length field -- Allocated length :  None                         
+      Coded Character Set Identifier  . . . . . :  65535                        
+               Data        Field  Buffer    Buffer        Field    Column       
+    Field      Type       Length  Length  Position        Usage    Heading      
+    AILASP     CHAR           10      10     10122        Both     LIBRARY      
+                                                                   ASP          
+                                                                   NAME         
+      Field text  . . . . . . . . . . . . . . . :  ASP name for library         
+      Coded Character Set Identifier  . . . . . :     37                        
+    AILASN     CHAR            5       5     10132        Both     LIBRARY      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                
