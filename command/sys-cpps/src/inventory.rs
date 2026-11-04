@@ -400,6 +400,12 @@ pub const DIRECT: &[&str] = &[
     // --- the update service (lic/slic/src/cpp/updcmd.rs)
     "QSCHGUPDA",
     "QSCHKUPD",
+    // --- Collection Services (lic/slic/src/cpp/pfrcmd.rs)
+    "STRPFRCOL",
+    "ENDPFRCOL",
+    "CFGPFRCOL",
+    "CHKPFRCOL",
+    "CRTPFRDTA",
     "SNDPTFORD",
     "SNDSRVRQS",
     // --- save and restore (lic/slic/src/cpp/savcmd.rs)

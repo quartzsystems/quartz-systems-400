@@ -12,7 +12,7 @@
 use std::collections::HashMap;
 
 use super::Path;
-use crate::def::{CmdDef, InlPmtLen, Parm, ParmType, PmtCtlRef, RelOp};
+use crate::def::{Choice, CmdDef, InlPmtLen, Parm, ParmType, PmtCtlRef, RelOp};
 use crate::token::Sel;
 
 /// Column of the first character of a prompt text.
@@ -435,6 +435,12 @@ pub fn field_width(p: &Parm) -> usize {
 /// values, as the right-hand column shows them.
 #[must_use]
 pub fn choices(p: &Parm) -> String {
+    // `CHOICE` text, or `CHOICE(*NONE)`, wins over the values.
+    match &p.choice {
+        Choice::Text { text } => return text.clone(),
+        Choice::None => return String::new(),
+        Choice::Values | Choice::Pgm => {}
+    }
     let mut parts: Vec<String> = Vec::new();
     match p.ty {
         ParmType::Name | ParmType::SName | ParmType::CName => parts.push("Name".into()),

@@ -19,6 +19,7 @@ thiserror.workspace = true
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+perf = { path = "../../work/perf", version = "0.1.0" }
 
 [lints]
 workspace = true
