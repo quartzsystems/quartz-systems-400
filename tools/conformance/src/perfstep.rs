@@ -96,17 +96,17 @@ impl Suite {
             run(&mut d, &mut ctx, "type DSPJOB\nkey enter\nsettle 1500\nkey f3\nsettle 1000\nkey eraseinput\n")?;
             std::thread::sleep(Duration::from_secs(5));
         }
-        want(&chk, "CHKPFRCOL while active", &["CPIB922", &name])?;
+        want(&chk, "CHKPFRCOL while active", &["is active", &name])?;
         run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
         d.disconnect();
         let ended = s.command("ENDPFRCOL", CMD)?;
-        want(&ended, "ENDPFRCOL", &["CPIB921", &name])?;
+        want(&ended, "ENDPFRCOL", &["ended collection", &name])?;
         let none = s.command("CHKPFRCOL", CMD)?;
         want(&none, "CHKPFRCOL after the end", &["CPFB994"])?;
         let obj = s.command("svc.obj ls QPFRDATA", CMD)?;
         want(&obj, "the management collection", &[&name, "*MGTCOL"])?;
         let made = s.command(&format!("CRTPFRDTA FROMMGTCOL(QPFRDATA/{name})"), Duration::from_secs(120))?;
-        want(&made, "CRTPFRDTA", &["CPIB924"])?;
+        want(&made, "CRTPFRDTA", &["records written"])?;
         // The figures.
         let lib = "QPFRDATA";
         let sys = select(s, &format!("SELECT COUNT(*), MIN(INTNUM), MAX(INTNUM), SUM(SYSPTU), SUM(SYSCTA), MIN(INTSEC) FROM {lib}/QAPMSYSTEM"))?;
