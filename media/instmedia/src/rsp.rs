@@ -83,7 +83,7 @@ pub struct Response {
     pub language: String,
     /// The system name (`SYSNAME`), `None` to keep the default.
     pub system_name: Option<String>,
-    /// The first link's IPv4 address and prefix.
+    /// The first link's IPv4 address and prefix, or `*IP4DHCP`.
     pub ip: Option<String>,
     /// The default route.
     pub gateway: Option<String>,
@@ -300,6 +300,7 @@ impl Response {
                     }
                     r.system_name = Some(up);
                 }
+                "ip" if v.eq_ignore_ascii_case("*IP4DHCP") => r.ip = Some("*IP4DHCP".into()),
                 "ip" => r.ip = Some(check_ip(n, v, true)?),
                 "gateway" => r.gateway = Some(check_ip(n, v, false)?),
                 "date" => r.date = if special(v) { None } else { Some(check_date(n, v)?) },
@@ -425,21 +426,26 @@ impl Response {
     }
 }
 
-/// Where `qs400.rsp=` points: a path on the media, or a URL fetched at
-/// IPL (`BLOCKED(phase11)`: PXE fetching waits for the network boot).
+/// Where `qs400.rsp=` points: a path on the media, a URL fetched at IPL
+/// over the network (`http`, `https`, `tftp`; [`crate::fetch`]), or
+/// `dhcp`: the file beside the boot file a DHCP server named.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Source {
     /// A path on the install media (or `file:` path).
     Media(String),
-    /// A URL, not fetched yet.
+    /// A URL.
     Url(String),
+    /// `dhcp`: beside the network boot's boot file.
+    Dhcp,
 }
 
 impl Source {
     /// From the command line value.
     #[must_use]
     pub fn of(v: &str) -> Self {
-        if let Some(p) = v.strip_prefix("file:") {
+        if v.eq_ignore_ascii_case("dhcp") {
+            Self::Dhcp
+        } else if let Some(p) = v.strip_prefix("file:") {
             Self::Media(p.trim_start_matches('/').to_string())
         } else if v.contains("://") {
             Self::Url(v.to_string())
@@ -541,6 +547,7 @@ special-environment = *S36
             }
         }
         assert_eq!(Response::parse("licpgm = *ALL").unwrap().licpgm, Licpgms::All);
+        assert_eq!(Response::parse("ip = *ip4dhcp").unwrap().ip.as_deref(), Some("*IP4DHCP"));
         assert_eq!(Response::parse("date = *CURRENT").unwrap().date, None);
         let r = Response::parse("lic-option = 1").unwrap();
         assert_eq!(r.lic_option, LicOption::Restore);
@@ -552,6 +559,7 @@ special-environment = *S36
         assert_eq!(Source::of("QS400/INSTALL.RSP"), Source::Media("QS400/INSTALL.RSP".into()));
         assert_eq!(Source::of("file:/QS400/X.RSP"), Source::Media("QS400/X.RSP".into()));
         assert!(matches!(Source::of("http://10.0.2.2/x.rsp"), Source::Url(_)));
+        assert_eq!(Source::of("DHCP"), Source::Dhcp);
         assert!(Response::names("dd001", "DD001", "/dev/vda"));
         assert!(Response::names("vda", "DD001", "/dev/vda"));
         assert!(Response::names("/dev/vda", "DD001", "/dev/vda"));

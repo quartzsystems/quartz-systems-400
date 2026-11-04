@@ -17,6 +17,7 @@ pub mod media;
 pub mod link;
 pub mod log;
 pub mod menu;
+pub mod netrsp;
 pub mod power;
 pub mod storage;
 pub mod system;
@@ -205,6 +206,23 @@ fn lic_phase(
         }
     }
 
+    enumerate_links(system);
+    // PING and TRACEROUTE use ICMP datagram sockets, which the kernel
+    // allows only to the groups in this range: every group may.
+    if cfg!(target_os = "linux")
+        && let Err(e) = std::fs::write("/proc/sys/net/ipv4/ping_group_range", "0 2147483647\n")
+    {
+        system.out.serial(&format!("slic: ping_group_range: {e}\n"));
+    }
+    system.emit(&src::NET_ENUMERATED);
+    net_address(system);
+    procs::device_dir();
+    Ok(())
+}
+
+/// The network links, the loopback up (again when a network install
+/// already asked).
+pub(crate) fn enumerate_links(system: &mut System) {
     match net::links() {
         Ok(links) => {
             if let Some(lo) = links.iter().find(|l| l.name == "lo")
@@ -220,17 +238,6 @@ fn lic_phase(
         }
         Err(e) => system.out.serial(&format!("slic: rtnetlink: {e}\n")),
     }
-    // PING and TRACEROUTE use ICMP datagram sockets, which the kernel
-    // allows only to the groups in this range: every group may.
-    if cfg!(target_os = "linux")
-        && let Err(e) = std::fs::write("/proc/sys/net/ipv4/ping_group_range", "0 2147483647\n")
-    {
-        system.out.serial(&format!("slic: ping_group_range: {e}\n"));
-    }
-    system.emit(&src::NET_ENUMERATED);
-    net_address(system);
-    procs::device_dir();
-    Ok(())
 }
 
 /// The first Ethernet link: its index and name.
@@ -255,17 +262,37 @@ pub(crate) fn first_ethernet(system: &mut System) -> Option<(i32, String)> {
 }
 
 /// `qs400.ip=A.B.C.D/N` on the command line puts that address on the
-/// first Ethernet link before TCP/IP starts. Without it the IPL adds
-/// none: a new system has the loopback only until an interface is
-/// configured (`ADDTCPIFC`), as on IBM i. `BLOCKED(phase10)`: DHCP (no
-/// client yet, `*IP4DHCP`).
-fn net_address(system: &mut System) {
-    let Some(spec) = system.boot.ip.clone() else {
+/// first Ethernet link before TCP/IP starts; `qs400.ip=dhcp` asks a
+/// DHCP server for one (the network install, PXE). Without it the IPL
+/// adds none: a new system has the loopback only until an interface is
+/// configured (`ADDTCPIFC`, `*IP4DHCP` for DHCP, which `STRTCP` starts),
+/// as on IBM i.
+pub(crate) fn net_address(system: &mut System) {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    // Once an IPL: a network install asks before the links' step.
+    static DONE: AtomicBool = AtomicBool::new(false);
+    if DONE.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    // A response file over the network needs an address, as does a D
+    // IPL the firmware booted over the network: DHCP unless given.
+    let net_rsp = system.boot.rsp.as_deref().is_some_and(|r| {
+        matches!(
+            instmedia::rsp::Source::of(r),
+            instmedia::rsp::Source::Url(_) | instmedia::rsp::Source::Dhcp
+        )
+    });
+    let pxe = system.boot.ipl_d && netrsp::network_boot();
+    let Some(spec) = system.boot.ip.clone().or_else(|| (net_rsp || pxe).then(|| "dhcp".to_string())) else {
         return;
     };
     let Some((index, name)) = first_ethernet(system) else {
         return;
     };
+    if tcpcfg::install::is_dhcp(&spec) {
+        dhcp_address(system, index, &name);
+        return;
+    }
     let Some((addr, prefix)) = spec.split_once('/') else {
         return;
     };
@@ -289,13 +316,68 @@ fn net_address(system: &mut System) {
     }
 }
 
+/// The IPL's own DHCP lease on link `name`: its address and default
+/// route, until TCP/IP configures the link (no renewal; a network
+/// install ends well inside a lease).
+fn dhcp_address(system: &mut System, index: i32, name: &str) {
+    let up = system.links.iter().any(|l| l.index == index && l.is_up());
+    if !up
+        && let Err(e) = net::set_up(index)
+    {
+        system.out.serial(&format!("slic: {name} up: {e}\n"));
+    }
+    let mac = match dhcp::sys::mac_of(name) {
+        Ok(m) => m,
+        Err(e) => {
+            system.out.serial(&format!("slic: {name} dhcp: {e}\n"));
+            return;
+        }
+    };
+    let lease = match dhcp::run::acquire(name, dhcp::Config::new(mac), std::time::Duration::from_secs(30)) {
+        Ok(l) => l,
+        Err(e) => {
+            system.out.serial(&format!("slic: {name} dhcp: {e}\n"));
+            return;
+        }
+    };
+    if let Err(e) = net::add_address(index, lease.addr.octets(), lease.prefix()) {
+        system.out.serial(&format!("slic: {name} {}/{}: {e}\n", lease.addr, lease.prefix()));
+        return;
+    }
+    if let Some(gw) = lease.router
+        && let Ok(mut r) = netlink::route::Rtnl::open()
+    {
+        let mut rt = netlink::route::Route::new(netlink::Family::V4, None, 0);
+        rt.gateway = Some(std::net::IpAddr::V4(gw));
+        rt.oif = u32::try_from(index).ok();
+        if let Err(e) = r.add_route(&rt) {
+            system.out.serial(&format!("slic: {name} default route via {gw}: {e}\n"));
+        }
+    }
+    system.out.serial(&format!(
+        "slic: {name} dhcp {}/{} from {}\n",
+        lease.addr,
+        lease.prefix(),
+        lease.server
+    ));
+    *IPL_LEASE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(lease);
+}
+
+/// The lease the IPL got, when it asked a DHCP server.
+static IPL_LEASE: std::sync::Mutex<Option<dhcp::Lease>> = std::sync::Mutex::new(None);
+
+/// The IPL's DHCP lease (its boot file names a network install's answers).
+pub(crate) fn ipl_lease() -> Option<dhcp::Lease> {
+    IPL_LEASE.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+}
+
 /// A D IPL with a response file installs without the menu: onto a
 /// system with no operating system yet, or over one when the answers
 /// ask for option 1 or 3 and the media's release is not the installed one
 /// (a slip install of the same release, or media left in the drive,
 /// shows the menu instead of installing again).
 fn automatic(system: &mut System) -> bool {
-    let Ok(Some((_, rsp))) = media::response(system.boot.rsp.as_deref()) else {
+    let Ok(Some((_, rsp))) = media::response(system) else {
         return false;
     };
     if !menu::os_installed() {

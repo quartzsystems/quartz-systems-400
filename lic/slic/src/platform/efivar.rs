@@ -122,3 +122,45 @@ impl ptf::slot::Firmware for EfiFirmware {
         self.write("BootOrder", &efi::numbers(&efi::order_with_front(&order, &front)))
     }
 }
+
+/// The device path of the `Boot####` entry the firmware booted this IPL
+/// from (`BootCurrent`); `None` off UEFI or when it cannot be read.
+pub fn current_boot_path() -> Option<Vec<u8>> {
+    if !Path::new("/sys/firmware/efi").is_dir() {
+        return None;
+    }
+    if !fs::read_dir(EFIVARS).is_ok_and(|mut d| d.next().is_some()) {
+        let _ = mount("efivarfs", EFIVARS, "efivarfs", MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV, None);
+    }
+    let dir = Path::new(EFIVARS);
+    let cur = fs::read(var(dir, "BootCurrent")).ok()?;
+    let n = u16::from_le_bytes([*cur.get(4)?, *cur.get(5)?]);
+    let opt = fs::read(var(dir, &efi::boot_name(n))).ok()?;
+    load_option_path(opt.get(4..)?)
+}
+
+/// The device path list of an `EFI_LOAD_OPTION`: after the attributes,
+/// the list's length and the description (UCS-2, ending in a null).
+pub fn load_option_path(o: &[u8]) -> Option<Vec<u8>> {
+    let len = usize::from(u16::from_le_bytes([*o.get(4)?, *o.get(5)?]));
+    let mut i = 6;
+    while o.get(i..i + 2)? != [0, 0] {
+        i += 2;
+    }
+    i += 2;
+    Some(o.get(i..i + len)?.to_vec())
+}
+
+#[cfg(test)]
+mod boot_path_tests {
+    #[test]
+    fn a_load_options_path() {
+        let mut o = vec![1, 0, 0, 0, 4, 0];
+        o.extend("PXE".encode_utf16().flat_map(u16::to_le_bytes));
+        o.extend([0, 0]);
+        o.extend([0x7f, 0xff, 4, 0]);
+        o.extend([9, 9]);
+        assert_eq!(super::load_option_path(&o), Some(vec![0x7f, 0xff, 4, 0]));
+        assert_eq!(super::load_option_path(&[1, 0, 0]), None);
+    }
+}

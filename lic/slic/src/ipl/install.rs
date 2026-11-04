@@ -86,7 +86,7 @@ pub fn run_lic(system: &mut System, rx: &Receiver<Event>) {
 /// The answers of an automatic install: the response file the media
 /// or the command line names, else the defaults.
 fn answers(system: &mut System) -> (String, instmedia::Response) {
-    match media::response(system.boot.rsp.as_deref()) {
+    match media::response(system) {
         Ok(Some((text, r))) => {
             system
                 .out

@@ -184,8 +184,10 @@ Option 4 on the IPL menu installs without prompts: the LIC onto the
 first disk, the re-IPL, the operating system from the first install
 device, the defaults everywhere. A response file answers every prompt
 instead. It is read from `QS400/INSTALL.RSP` on the media, or from the
-path `qs400.rsp=PATH` names on the command line (a path on the media;
-`qs400.rsp=http://...` is `BLOCKED(phase11)` until the network boot).
+path `qs400.rsp=PATH` names on the command line (a path on the media),
+or over the network: `qs400.rsp=http://...`, `https://...`, `tftp://...`,
+or `qs400.rsp=dhcp` for the file beside the network boot's boot file
+(below, "Network install").
 A D IPL that finds one installs at once, without the menu, when no
 disk holds an operating system, or when the file asks for option 1 or 3 and
 the media's release is not the installed one; otherwise the menu shows,
@@ -208,7 +210,7 @@ apply.
 | `device` | `*MEDIA`, `*OPT`, `*TAP`, `*VRT` | `*MEDIA` | `Install Device Type Selection`; `*MEDIA` takes a `SAVSYS` medium first, else the boot media |
 | `language` | four digits | `2924` | `Select a Language Group` |
 | `system-name` | 1 to 8 letters and digits | the default | `QSYSNAME` |
-| `ip` | `a.b.c.d/n` | none | the installed system's first interface: its first IPL adds it as `ADDTCPIFC INTNETADR('a.b.c.d') LIND(line) SUBNETMASK(...)` on the first Ethernet line (a line description, else the first port's link, `ETH0`), autostarted with TCP/IP |
+| `ip` | `a.b.c.d/n`, `*IP4DHCP` | none | the installed system's first interface: its first IPL adds it as `ADDTCPIFC INTNETADR('a.b.c.d') LIND(line) SUBNETMASK(...)` (or `INTNETADR(*IP4DHCP) LIND(line)`, an address from DHCP) on the first Ethernet line (a line description, else the first port's link, `ETH0`), autostarted with TCP/IP |
 | `gateway` | `a.b.c.d` | none | with `ip`, `ADDTCPRTE RTEDEST(*DFTROUTE) NEXTHOP('a.b.c.d')` at the same IPL |
 | `date`, `time` | `YYYY-MM-DD`, `HH:MM:SS`, `*CURRENT` | `*CURRENT` | `IPL Options` |
 | `qsecofr-password` | `*EXPIRED` or a password | `*EXPIRED` | QSECOFR's password: the shipped one expired, or this one, not expired |
@@ -229,6 +231,52 @@ system-name = QSINST
 qsecofr-password = Quartz1
 licpgm = *ALL
 ```
+
+### Network install
+
+IBM's installer has no network display (TCP/IP is configured once the
+system runs); QS/400's network answers are the response file's `ip`
+(an address, or `*IP4DHCP`) and `gateway`. What the network adds is
+where the answers come from:
+
+- `qs400.rsp=URL`: `http://` and `https://` (HTTP/1.1, up to three
+  redirects, 1 MiB at most) or `tftp://` (RFC 1350, octet mode).
+  `https` checks the server against the shipped roots (`certs::roots`)
+  and the PEM certificates in `QS400/TRUST.PEM` on the media, by name.
+- `qs400.rsp=dhcp`: `INSTALL.RSP` beside the boot file the DHCP server
+  named: the same directory of a URL boot file (UEFI HTTP boot), or of a
+  TFTP one on the next server (`siaddr`) for PXE.
+- A D IPL the firmware booted over the network (`BootCurrent`'s device
+  path has a MAC, IPv4, IPv6 or URI node) with no response file on the
+  media looks beside the boot file the same way; none there is no error.
+
+Either way the IPL first gives the first Ethernet link an address from
+DHCP (`net/dhcp`, `TCPIP.md` "DHCP client"; `qs400.ip=` overrides it),
+with the lease's router as the default route. The fetched text is used
+as a file on the media would be and kept in the LIC record the same way.
+
+The kernel command line is baked into each UKI
+(`CONFIG_CMDLINE_OVERRIDE`), so a boot loader cannot add `qs400.rsp=`:
+a PXE install serves the media UKI (`EFI/BOOT/BOOTX64.EFI` of the ISO)
+as the boot file and `INSTALL.RSP` beside it. With UEFI PXE the DHCP
+server's `filename` (option 67) is the UKI's TFTP path; with UEFI HTTP
+boot it is the UKI's URL; an iPXE chain loads the UKI with `chain
+http://server/qs400/BOOTX64.EFI` and must hand it the DHCP server's
+answer unchanged (iPXE's own DHCP lease is not seen by the kernel, so the
+IPL asks again). The boot file's directory then holds `INSTALL.RSP`.
+
+The payload (the LIC, the operating system, the licensed programs)
+still comes from install media the system can read: a CD, a stick, the
+image a BMC presents as virtual media. `BLOCKED(phase12)`: a diskless
+install with the payload over the network needs the ISO fetched into
+memory and attached as a block device (a loop device: an ioctl outside
+the `unsafe` sites) or a payload-carrying netboot UKI.
+
+QEMU's user network is a PXE setup on its own: `-netdev
+user,tftp=DIR,bootfile=qs400/BOOTX64.EFI` with the NIC first in the
+boot order (`bootindex=0`). Install step 15 boots that way with the ISO
+as a CD for the payload and `ip = *IP4DHCP` in the served answers; the
+installed system's first IPL then holds a lease from QEMU's DHCP server.
 
 ## 4. Upgrades and slip installs
 

@@ -9,6 +9,7 @@
 //!   `SAVSYS` volume the security data and the configuration.
 //! - [`sign`]: the manifest's signature with the build key.
 //! - [`rsp`]: the response file of an automatic install.
+//! - [`fetch`]: a response file over HTTP, HTTPS or TFTP.
 //! - [`savsys`]: the layout on a tape and on an optical volume, written
 //!   and recognised.
 //! - [`osload`]: the operating system install over a store: the
@@ -18,6 +19,7 @@
 #![deny(missing_docs)]
 
 pub mod error;
+pub mod fetch;
 pub mod layout;
 pub mod osload;
 pub mod rsp;

@@ -17,6 +17,8 @@ use std::sync::Mutex;
 use optical::manifest::{self, Manifest};
 use rustix::mount::{MountFlags, UnmountFlags, mount, unmount};
 
+use crate::ipl::system::System;
+
 /// Where a candidate is mounted while it is looked at.
 const MOUNT_AT: &str = "/run/qs400/media";
 const SYS_BLOCK: &str = "/sys/class/block";
@@ -168,30 +170,48 @@ pub fn with_media<T>(f: &Found, g: impl FnOnce(&Path) -> T) -> Result<T, String>
     with_mount(&f.device, f.fstype, g)
 }
 
-/// The response file of an automatic install: the file `qs400.rsp=`
-/// names on the media, else `QS400/INSTALL.RSP` when the media has one.
-/// `None` when there is none; an error for one that does not parse.
-pub fn response(cmdline: Option<&str>) -> Result<Option<(String, instmedia::Response)>, String> {
+/// The response file of an automatic install: the one `qs400.rsp=`
+/// names (a path on the media, a URL, or `dhcp`: beside the network
+/// boot's boot file; `super::netrsp`), else `QS400/INSTALL.RSP` when the
+/// media has one, else after a network boot the one beside the boot
+/// file. `None` when there is none; an error for one that does not
+/// parse or cannot be fetched.
+pub fn response(system: &mut System) -> Result<Option<(String, instmedia::Response)>, String> {
     use instmedia::rsp::Source;
-    let path = match cmdline.map(Source::of) {
-        Some(Source::Url(u)) => {
-            // BLOCKED(phase11): fetching a response file over the
-            // network waits for the PXE boot.
-            return Err(format!("qs400.rsp={u}: response files over the network are not available yet"));
+    let parse = |t: String| {
+        instmedia::Response::parse(&t)
+            .map(|r| Some((t, r)))
+            .map_err(|e| e.to_string())
+    };
+    let path = match system.boot.rsp.as_deref().map(Source::of) {
+        Some(src @ (Source::Url(_) | Source::Dhcp)) => {
+            let rsp = system.boot.rsp.clone().unwrap_or_default();
+            return super::netrsp::text(system, &src).map_err(|e| format!("qs400.rsp={rsp}: {e}")).and_then(parse);
         }
         Some(Source::Media(p)) => Some(p),
         None => None,
     };
-    let Ok(f) = locate() else {
-        return Ok(None);
+    let on_media = match locate() {
+        Ok(f) => {
+            let want = path.clone().unwrap_or_else(|| manifest::RESPONSE.to_string());
+            with_mount(&f.device, f.fstype, |at| fs::read_to_string(at.join(&want)).ok())?
+        }
+        Err(_) => None,
     };
-    let want = path.clone().unwrap_or_else(|| manifest::RESPONSE.to_string());
-    let text = with_mount(&f.device, f.fstype, |at| fs::read_to_string(at.join(&want)).ok())?;
-    match (text, path) {
-        (Some(t), _) => instmedia::Response::parse(&t)
-            .map(|r| Some((t, r)))
-            .map_err(|e| e.to_string()),
+    match (on_media, path) {
+        (Some(t), _) => parse(t),
         (None, Some(p)) => Err(format!("qs400.rsp={p}: not found on the media")),
+        // A network boot's answers sit beside its boot file, when the
+        // server has them.
+        (None, None) if system.boot.ipl_d && super::netrsp::network_boot() => {
+            match super::netrsp::text(system, &Source::Dhcp) {
+                Ok(t) => parse(t),
+                Err(e) => {
+                    system.out.serial(&format!("slic: install: no response file beside the boot file: {e}\n"));
+                    Ok(None)
+                }
+            }
+        }
         (None, None) => Ok(None),
     }
 }

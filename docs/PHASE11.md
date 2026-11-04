@@ -163,7 +163,7 @@ storage service (the IPL now finishes it first).
 | Item | Where | Waits for |
 |---|---|---|
 | The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | closed in Phase 12: the console's job survives, the options run there and from `QSVCJOB` |
-| `qs400.rsp=` naming a URL | `lic/slic/src/ipl/media.rs` | the network boot (PXE) |
+| `qs400.rsp=` naming a URL | `lic/slic/src/ipl/media.rs` | closed in Phase 12: HTTP, HTTPS, TFTP and beside a PXE boot file (`INSTALL.md` "Network install"); a diskless payload stays `BLOCKED(phase12)` |
 
 ## Bench
 
