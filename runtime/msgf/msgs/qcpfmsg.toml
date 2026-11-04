@@ -7910,3 +7910,16 @@ sev = 40
 text = "Operation &1 is not supported for remote file &2."
 help = "A DDM file reads, writes, updates and deletes records; position it with SETLL *START, or read it by key."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF1344"
+sev = 40
+text = "Not authorized to look at the locks of another job."
+help = "Looking at the byte-range locks another job holds needs *JOBCTL special authority, or the request must come from the same user profile. Ask the security officer for the authority, or run the request as that user."
+
+[[msg]]
+id = "CPF3785"
+sev = 40
+text = "The system is not in the restricted state; &1 is still active."
+help = "A system save runs only when every subsystem has ended. End them with ENDSBS SBS(*ALL), wait until they have ended, and run the save again from the console."
+vars = ["*CHAR 10"]

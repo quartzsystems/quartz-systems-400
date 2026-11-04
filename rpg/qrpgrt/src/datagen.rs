@@ -16,6 +16,7 @@
 #![allow(clippy::match_same_arms, clippy::similar_names, clippy::too_many_lines)]
 
 use std::cell::RefCell;
+use std::fmt::Write as _;
 
 use codegen::abi::Env;
 
@@ -586,7 +587,9 @@ fn json_string(s: &str) -> String {
             '\n' => o.push_str("\\n"),
             '\r' => o.push_str("\\r"),
             '\t' => o.push_str("\\t"),
-            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
+            c if (c as u32) < 0x20 => {
+                let _ = write!(o, "\\u{:04x}", c as u32);
+            }
             c => o.push(c),
         }
     }
@@ -639,7 +642,7 @@ pub fn shipped_generator(j: &mut mi::Job, args: &[u64], style: Style) {
                 g.push((false, false));
             }
             (5, Style::Xml) => {
-                out.push_str(&format!("<{name}>"));
+                let _ = write!(out, "<{name}>");
                 g.push((false, false));
             }
             (6, Style::Json) => {
@@ -648,7 +651,7 @@ pub fn shipped_generator(j: &mut mi::Job, args: &[u64], style: Style) {
             }
             (6, Style::Xml) => {
                 g.pop();
-                out.push_str(&format!("</{name}>"));
+                let _ = write!(out, "</{name}>");
             }
             (7 | 9, Style::Json) => {
                 lead(&mut g, &mut out);
@@ -670,7 +673,7 @@ pub fn shipped_generator(j: &mut mi::Job, args: &[u64], style: Style) {
             }
             (11, Style::Xml) => {
                 let (_, text) = value();
-                out.push_str(&format!("<{name}>{}</{name}>", xml_text(&text)));
+                let _ = write!(out, "<{name}>{}</{name}>", xml_text(&text));
             }
             _ => {}
         }
