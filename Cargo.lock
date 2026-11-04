@@ -3271,6 +3271,7 @@ dependencies = [
  "qsyslib",
  "regfac",
  "release",
+ "rpg3",
  "rpgc",
  "rpgfront",
  "rustix",

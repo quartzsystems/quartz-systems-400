@@ -11,7 +11,12 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDRPG'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CRTBNDRPG PNLGRP=QHPGCMD.
+:IMPORT NAME=CRTRPGMOD PNLGRP=QHPGCMD.
+:IMPORT NAME=CRTRPGPGM PNLGRP=QHPGCMD.
+:IMPORT NAME=CRTSQLRPGI PNLGRP=QHPGCMD.
+:IMPORT NAME=CVTRPGSRC PNLGRP=QHPGCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +29,14 @@
 :PANEL NAME=CMDRPG HELP=HLPCMDRPG KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.RPG Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?CRTBNDRPG'.Create Bound RPG Program  CRTBNDRPG
-:MENUI OPTION=2 ACTION='CMD ?CRTRPGMOD'.Create RPG Module  CRTRPGMOD
-:MENUI OPTION=3 ACTION='CMD ?CRTRPGPGM'.Create RPG/400 Program  CRTRPGPGM
+:MENUI OPTION=1 ACTION='CMD ?CRTBNDRPG' HELP=CRTBNDRPG.Create Bound RPG Program  CRTBNDRPG
+:MENUI OPTION=2 ACTION='CMD ?CRTRPGMOD' HELP=CRTRPGMOD.Create RPG Module  CRTRPGMOD
+:MENUI OPTION=3 ACTION='CMD ?CRTRPGPGM' HELP=CRTRPGPGM.Create RPG/400 Program  CRTRPGPGM
 :MENUI OPTION=4 ACTION='CMD ?CRTSQLRPG'.
-:MENUI OPTION=5 ACTION='CMD ?CRTSQLRPGI'.Create SQL ILE RPG Object  CRTSQLRPGI
+:MENUI OPTION=5 ACTION='CMD ?CRTSQLRPGI' HELP=CRTSQLRPGI.Create SQL ILE RPG Object  CRTSQLRPGI
 :MENUI OPTION=6 ACTION='CMD ?CRTS36RPG'.
 :MENUI OPTION=7 ACTION='CMD ?CRTS36RPGR'.
-:MENUI OPTION=8 ACTION='CMD ?CVTRPGSRC'.Convert RPG Source  CVTRPGSRC
+:MENUI OPTION=8 ACTION='CMD ?CVTRPGSRC' HELP=CVTRPGSRC.Convert RPG Source  CVTRPGSRC
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -39,5 +44,21 @@
 :HELP NAME=HLPCMDRPG.RPG Commands - Help
 :P.RPG Commands: every command whose name carries RPG after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

@@ -35,6 +35,10 @@ fn every_listing_matches_the_oracle() {
     let mut known_hit = Vec::new();
     let mut missing = 0;
     for (batch, case) in &cases {
+        // RPG III listings are RPG/400's; `rpg3_cvt` and the kit check those members.
+        if case.rpg3 {
+            continue;
+        }
         if !only.is_empty() && !only.split(',').any(|n| n == case.name) {
             continue;
         }

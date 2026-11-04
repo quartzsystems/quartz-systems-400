@@ -11,42 +11,50 @@ text = "RPG/400 compiler messages"
 id = "QRG0003"
 sev = 0
 text = "Program &1 created in library &2. Highest severity: &3."
+help = "The program is in the library named and can be called. The listing shows any diagnostics below the GENLVL value."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2"]
 
 [[msg]]
 id = "QRG2001"
 sev = 30
 text = "The file continuation option is not valid."
+help = "A file continuation line names an option the RPG/400 compiler does not take, or gives it a value that is not valid. Correct the continuation and compile again."
 
 [[msg]]
 id = "QRG3001"
 sev = 30
 text = "The data format is not supported."
+help = "The data format given for the field or file is not one the RPG/400 compiler supports. Use a supported format."
 
 [[msg]]
 id = "QRG5014"
 sev = 30
 text = "The operation code is not valid."
+help = "The operation code in columns 28 to 32 is not an RPG/400 operation. Correct the spelling or use a supported operation."
 
 [[msg]]
 id = "QRG7030"
 sev = 30
 text = "Name or indicator is not defined."
+help = "A name or indicator is used but no specification defines it. Define it, or correct the name."
 
 [[msg]]
 id = "QRG7031"
 sev = 0
 text = "Name or indicator is never used."
+help = "A name or indicator is defined but nothing uses it. Remove it if it is not needed; the program is created anyway."
 
 [[msg]]
 id = "QRG7064"
 sev = 40
 text = "The file is not used for output."
+help = "The file is defined for output but no output specification or operation writes to it. Check the file's usage."
 
 [[msg]]
 id = "QRG7086"
 sev = 0
 text = "Records of the file are read in blocks."
+help = "The file is read sequentially without updates, so its records are read in blocks. Records other jobs change may not show until the next block is read."
 
 [[msg]]
 id = "QRG9001"
@@ -59,40 +67,48 @@ vars = ["*CHAR 10", "*CHAR 10"]
 id = "RNM0506"
 sev = 30
 text = "FREE has no ILE RPG form; the operation is copied as it is."
+help = "ILE RPG has no FREE operation. The line is kept unchanged in the converted member; replace it before compiling."
 
 [[msg]]
 id = "RNM0511"
 sev = 0
 text = "A CALL operation: the called program may need converting too."
+help = "The converted member calls another program. If that program is RPG III, convert it too, or check that the parameters still match."
 
 [[msg]]
 id = "RNM0517"
 sev = 30
 text = "DEBUG has no ILE RPG form; the operation is copied as it is."
+help = "ILE RPG has no DEBUG operation. The line is kept unchanged in the converted member; use the debugger instead."
 
 [[msg]]
 id = "RNM0590"
 sev = 30
 text = "The specification type is not known; the record is copied."
+help = "The record has a specification type the conversion does not know. It is copied unchanged; check it before compiling."
 
 [[msg]]
 id = "RNM0591"
 sev = 30
 text = "A data format of this kind has no ILE RPG equivalent."
+help = "The data format has no form in ILE RPG. The definition is copied unchanged; change it to a supported type."
 
 [[msg]]
 id = "RNM0592"
 sev = 30
 text = "The file continuation option is not converted."
+help = "The file continuation option has no ILE RPG keyword the conversion can write. Add the matching keyword by hand."
 
 [[msg]]
 id = "RNM9001"
 sev = 0
 text = "Member &1 converted into &2/&3 member &4."
+help = "The member was converted. The conversion report lists any lines that need attention."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "RNM9002"
 sev = 40
 text = "Member &1 was not converted: &2."
+help = "The conversion stopped before writing the member. The reason is shown; correct it and convert again."
 vars = ["*CHAR 10", "*CHAR 80"]

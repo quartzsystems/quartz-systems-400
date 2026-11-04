@@ -90,13 +90,13 @@ fn seed_save_delete_restore() {
     );
     let cell = RefCell::new(&mut store);
     let mut p = Products::new(&cell, qsys, stamp(NOW));
-    assert_eq!(p.definitions().len(), 9);
+    assert_eq!(p.definitions().len(), 10);
     let installed = p
         .loads()
         .iter()
         .filter(|(_, l)| l.state == LoadState::Installed)
         .count();
-    assert_eq!(installed, 2 * (6 + 4 + 1 + 1 + 1 + 1 + 1));
+    assert_eq!(installed, 2 * (6 + 4 + 1 + 1 + 1 + 1 + 1 + 1));
     assert!(!p.licenses().info.is_empty());
 
     // SAVLICPGM QS00WDS into a stream.
@@ -133,6 +133,20 @@ fn seed_save_delete_restore() {
         "SAVLICPGM LICPGM(QS00WDS)",
     )
     .unwrap();
+
+    // DLTLICPGM QS00RPG first: it requires QS00WDS option 31.
+    let rpg: ProductId = "QS00RPG".parse().unwrap();
+    let d = plan_delete(
+        &p,
+        &DltLicPgm {
+            product: rpg.clone(),
+            option: None,
+            release: None,
+            lng: None,
+        },
+    )
+    .unwrap();
+    execute_delete(&d, &mut p, &mut NoRemove, &mut NoExits).unwrap();
 
     // DLTLICPGM QS00WDS.
     let d = plan_delete(

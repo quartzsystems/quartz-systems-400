@@ -88,6 +88,18 @@ impl Suite {
         if saved.contains("CPF") {
             return Err(format!("SAVLICPGM: {saved}"));
         }
+        // QS00RPG requires QS00WDS option 31: saved and deleted first.
+        s.command("crtsavf FILE(QGPL/S80RPG)", CMD)?;
+        let saved = s.command("savlicpgm LICPGM(QS00RPG) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S80RPG)", CMD)?;
+        if saved.contains("CPF") {
+            return Err(format!("SAVLICPGM QS00RPG: {saved}"));
+        }
+        let refused = s.command("dltlicpgm LICPGM(QS00WDS)", CMD)?;
+        if !refused.contains("CPF") {
+            return Err(format!("DLTLICPGM QS00WDS with QS00RPG installed was not refused:\n{refused}"));
+        }
+        let del = s.command("dltlicpgm LICPGM(QS00RPG)", CMD)?;
+        want(&del, "DLTLICPGM QS00RPG", &["CPC3D82"])?;
         let del = s.command("dltlicpgm LICPGM(QS00WDS)", CMD)?;
         want(&del, "DLTLICPGM QS00WDS", &["CPC3D82"])?;
         let rpg = "crtbndrpg PGM(QGPL/S80PGM) SRCFILE(QGPL/QRPGLESRC) SRCMBR(S80PGM)";
@@ -107,6 +119,8 @@ impl Suite {
             return Err(format!("CRTBNDRPG after RSTLICPGM: {again}"));
         }
         want(&s.command("dspsfwrsc", CMD)?, "DSPSFWRSC after RSTLICPGM", &["QS00WDS"])?;
+        let rst = s.command("rstlicpgm LICPGM(QS00RPG) DEV(*SAVF) SAVF(QGPL/S80RPG)", CMD)?;
+        want(&rst, "RSTLICPGM QS00RPG", &["CPC3D81"])?;
 
         // A vendor product.
         s.command("crtlib LIB(QS80PRD)", CMD)?;
