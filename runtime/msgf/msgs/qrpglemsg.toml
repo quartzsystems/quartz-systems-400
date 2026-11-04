@@ -84,6 +84,7 @@ help = "Numbers in fixed-form entries end in the last column of the entry. The e
 id = "RNF0267"
 sev = 20
 text = "A character literal has no closing apostrophe; one is assumed."
+help = "A character literal starts with an apostrophe and ends with one; the end was not found, so the compiler ends the literal at the end of the line. Add the closing apostrophe."
 
 [[msg]]
 id = "RNF0280"
@@ -114,28 +115,33 @@ help = "Constants, literals, built-in function results and read-only parameters 
 id = "RNF2120"
 sev = 40
 text = "No external description was found for file &1; the file is ignored."
+help = "The compiler could not retrieve the file's description at compile time, so the file and its fields are not available. Check that the file exists in the library list."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF2318"
 sev = 0
 text = "No overflow indicator given for the printer file; *INOA is used, with a skip to line 6 on overflow."
+help = "A printer file without OFLIND uses *INOA; on overflow the cycle skips to line 6. Give OFLIND to control overflow yourself."
 
 [[msg]]
 id = "RNF3304"
 sev = 20
 text = "The definition type is not valid; S is used."
+help = "The definition type in columns 24-25 must be blank, C, DS, PI, PR or S. A stand-alone field is assumed."
 
 [[msg]]
 id = "RNF3313"
 sev = 20
 text = "The value of keyword &1 is not valid."
+help = "The keyword's value is not one it takes. Correct the value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3349"
 sev = 20
 text = "&1 is not a data structure."
+help = "The name is used where a data structure is needed, but it does not name one."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -148,6 +154,7 @@ help = "The value of the INZ keyword is longer than the field, or has more digit
 id = "RNF3530"
 sev = 0
 text = "The data structure has no subfields."
+help = "A data structure was declared without subfields; it has no fields of its own."
 
 [[msg]]
 id = "RNF5005"
@@ -166,6 +173,7 @@ vars = ["*CHAR 50"]
 id = "RNF5013"
 sev = 30
 text = "The TAG name &1 is defined already or is a reserved word; the specification is ignored."
+help = "A TAG name must be unique and not a reserved word. Choose another name."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -178,39 +186,46 @@ help = "Each DCL-DS, DCL-PR, DCL-PI and DCL-PROC needs its END-xx, and an END-xx
 id = "RNF5346"
 sev = 30
 text = "Operation &1 is not allowed in free form."
+help = "The operation code is fixed-form only and has no free-form version. Use the free-form operation or built-in function that replaces it."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5347"
 sev = 30
 text = "An assignment operator is expected."
+help = "An assignment needs = (or +=, -=, *=, /=, **=) after the target."
 
 [[msg]]
 id = "RNF5358"
 sev = 30
 text = "&1 is not expected here."
+help = "The token shown does not fit the statement where it appears. Check the statement's syntax."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5377"
 sev = 20
 text = "The expression should end here."
+help = "The expression ends where the compiler did not expect more; check the parentheses and operators after this point."
 
 [[msg]]
 id = "RNF5410"
 sev = 30
 text = "No prototype is defined for the call to &1."
+help = "A call by name (CALLP or an expression) needs a prototype for the procedure or program. Add a DCL-PR, or a /COPY member that has one."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5501"
 sev = 20
 text = "Free-form specifications do not take a comment area."
+help = "Free-form statements end with a semicolon; the old comment area (columns 81-100) is part of the statement. Write comments with //."
 
 [[msg]]
 id = "RNF5507"
 sev = 30
 text = "The free-form statement has no ending semicolon."
+help = "Every free-form statement ends with a semicolon. Add it."
 
 [[msg]]
 id = "RNF5508"
@@ -222,12 +237,14 @@ help = "Only a comment may follow the semicolon that ends a statement on the sam
 id = "RNF7014"
 sev = 30
 text = "The arguments of &1 are not valid."
+help = "The arguments do not match what the built-in function or procedure takes: the number, the types or the order."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7021"
 sev = 30
 text = "Factor 1 and factor 2 differ in type or length; the specification is ignored."
+help = "For this operation factor 1 and factor 2 must have the same type and length."
 
 [[msg]]
 id = "RNF7023"
@@ -239,43 +256,51 @@ help = "A cycle-main program needs *INLR or RETURN, or a primary file whose end 
 id = "RNF7030"
 sev = 30
 text = "&1 is not defined."
+help = "The name is not declared in the program. Declare it, or correct the spelling."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7031"
 sev = 0
 text = "No reference is made to &1."
+help = "The name is declared but never used. It can be removed."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7057"
 sev = 0
 text = "Half adjust has no effect: the result has no more decimals than the target."
+help = "The result has no more decimal positions than the target, so rounding never changes it. The (H) extender can be removed."
 
 [[msg]]
 id = "RNF7404"
 sev = 20
 text = "An index or position is out of range."
+help = "A constant index or position is outside the array or string. Correct the value."
 
 [[msg]]
 id = "RNF7419"
 sev = 20
 text = "An expression of this type is not allowed here."
+help = "The expression's type is not one this place accepts, for example a numeric expression where a character value is needed."
 
 [[msg]]
 id = "RNF7421"
 sev = 30
 text = "The types of the operands do not match."
+help = "The operator needs operands of compatible types, such as two numeric or two character values. Convert one of them."
 
 [[msg]]
 id = "RNF7503"
 sev = 30
 text = "An operand of the expression is not defined."
+help = "A name used in the expression is not declared."
 
 [[msg]]
 id = "RNF7504"
 sev = 30
 text = "A constant divisor is zero."
+help = "Dividing by a constant zero would always fail at run time. Correct the divisor."
 
 [[msg]]
 id = "RNF7534"
@@ -287,12 +312,14 @@ help = "Close the file with CLOSE before the activation group ends, or declare i
 id = "RNF7535"
 sev = 30
 text = "The number of parameters for &1 does not match its prototype."
+help = "The call passes more or fewer parameters than the prototype declares, and the extra ones are not OPTIONS(*NOPASS)."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7536"
 sev = 30
 text = "A parameter does not match its prototype."
+help = "A parameter passed differs in type, length or passing method from the prototype."
 
 [[msg]]
 id = "RNF7551"
@@ -304,138 +331,163 @@ help = "Decimal positions past those the intermediate result keeps are lost befo
 id = "RNF2029"
 sev = 30
 text = "SLN needs a record format of the display file with SLNO(*VAR)."
+help = "SLN sets the starting line of a record format, which needs SLNO(*VAR) in the display file's DDS."
 
 [[msg]]
 id = "RNF3704"
 sev = 20
 text = "PACKEVEN is allowed only on a packed subfield given by positions; it is dropped."
+help = "PACKEVEN says a packed subfield given by from and to positions has an even number of digits; it means nothing on other subfields."
 
 [[msg]]
 id = "RNF1524"
 sev = 0
 text = "A procedure's PGMINFO keyword has no effect when a program is created."
+help = "PGMINFO controls the procedure interface information of a module; a program created from one source does not use it here."
 
 [[msg]]
 id = "RNF0565"
 sev = 30
 text = "&1 cannot be used while the CCSID of graphic data is ignored (CCSID(*GRAPH:*IGNORE))."
+help = "With CCSID(*GRAPH:*IGNORE) the compiler does not know the CCSID of graphic data, so this conversion or function cannot be used."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0587"
 sev = 20
 text = "The character literal given to &1 has no shift-out and shift-in around it."
+help = "A literal of double-byte characters is written between shift-out and shift-in characters."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0556"
 sev = 20
 text = "The value given to &1 is not character data; the function is dropped."
+help = "The built-in function takes character data; the value given is not."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0380"
 sev = 30
 text = "%THIS is allowed only in a method of a Java class."
+help = "%THIS returns the object of a Java method and has a meaning only inside such a method."
 
 [[msg]]
 id = "RNF0369"
 sev = 20
 text = "The operand of %PARMNUM must be a parameter of the procedure."
+help = "%PARMNUM gives the number of a parameter of the current procedure; the name is not one."
 
 [[msg]]
 id = "RNF0342"
 sev = 20
 text = "&1 needs a field that can be null."
+help = "The operation sets or tests the null indicator of a field, so the field must be null-capable (ALWNULL)."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0337"
 sev = 30
 text = "&1 needs a numeric value."
+help = "The built-in function or operation needs a numeric value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0507"
 sev = 20
 text = "A table searched this way must be in ascending or descending order."
+help = "A binary search (%LOOKUP and friends with ASCEND or DESCEND) needs an array in sequence."
 
 [[msg]]
 id = "RNF0574"
 sev = 20
 text = "&1 needs a numeric value."
+help = "The built-in function needs a numeric value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5324"
 sev = 30
 text = "The operation needs a high resulting indicator; none is given, so the operation is dropped."
+help = "The operation sets an indicator for the high comparison result, and nothing else would use its result. Give the indicator, or use another operation."
 
 [[msg]]
 id = "RNF0224"
 sev = 30
 text = "The %XML options are not valid here: &1."
+help = "The option string of %XML holds an option or value XML-INTO does not take."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5352"
 sev = 30
 text = "The %HANDLER procedure does not have the interface this operation calls."
+help = "The procedure named by %HANDLER must have the parameters the operation passes to it."
 
 [[msg]]
 id = "RNF7099"
 sev = 0
 text = "The program commits or rolls back, but no file of it is opened under commitment control."
+help = "COMMIT and ROLBK work on files opened with COMMIT; the program has none."
 
 [[msg]]
 id = "RNF5152"
 sev = 0
 text = "DUMP is not done: neither the (A) extender nor DEBUG(*YES) is given."
+help = "DUMP writes a formatted dump only with the (A) extender or with DEBUG(*YES) on the control specification."
 
 [[msg]]
 id = "RNF7062"
 sev = 30
 text = "File &1 is opened by the program (USROPN), but no OPEN operation names it."
+help = "A USROPN file is opened only by an OPEN operation in the program; none names this file."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF1520"
 sev = 20
 text = "Procedures are not allowed with DFTACTGRP(*YES)."
+help = "Subprocedures need an ILE activation group: create the program with DFTACTGRP(*NO)."
 
 [[msg]]
 id = "RNF5378"
 sev = 30
 text = "CALLB is not allowed in a program created for the default activation group (DFTACTGRP(*YES))."
+help = "CALLB calls a bound procedure, which a program in the default activation group cannot do. Use DFTACTGRP(*NO)."
 
 [[msg]]
 id = "RNF2407"
 sev = 20
 text = "&1 is not allowed for an externally described file; it is ignored."
+help = "The keyword applies to program-described files only."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF2109"
 sev = 40
 text = "Every record format of file &1 is ignored or in error; the file is dropped."
+help = "None of the file's record formats can be used, so the file is left out of the program."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7150"
 sev = 0
 text = "Record format &1 has fields that can be null."
+help = "Some fields of the record format are null-capable; the program sees their null indicators with ALWNULL."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3803"
 sev = 30
 text = "Field &1 is not in the external description; the subfield is ignored."
+help = "An externally described data structure can rename or initialize only fields of the external description."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3450"
 sev = 20
 text = "The value given to &1 is not valid here; the keyword is ignored."
+help = "The keyword's value is not valid in this context, so the keyword has no effect."
 vars = ["*CHAR 50"]
 
 # Completion of the commands.
@@ -444,12 +496,14 @@ vars = ["*CHAR 50"]
 id = "RNS9304"
 sev = 0
 text = "Program &1 created in library &2. Highest severity: &3."
+help = "The program was created. The highest severity of the compile messages is shown."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2", "*CHAR 8", "*CHAR 8"]
 
 [[msg]]
 id = "RNS9305"
 sev = 0
 text = "Module &1 created in library &2. Highest severity: &3."
+help = "The module was created. The highest severity of the compile messages is shown."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2", "*CHAR 8", "*CHAR 8"]
 
 [[msg]]
@@ -484,67 +538,79 @@ vars = ["*CHAR 2"]
 id = "RNF6011"
 sev = 0
 text = "The record has no space or skip entries and no PRTCTL; it spaces one line after."
+help = "A printed record without space or skip entries prints and then spaces one line."
 
 [[msg]]
 id = "RNF7066"
 sev = 0
 text = "Record format &1 is not named by any input or output operation."
+help = "The record format is declared but no operation reads or writes it."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "RNF7078"
 sev = 30
 text = "The search argument's length or type differs from the file's first key field."
+help = "For a keyed file, the search argument should have the type and length of the key field it is compared with."
 
 [[msg]]
 id = "RNF7086"
 sev = 0
 text = "Records of the file are read in blocks; its INFDS changes only when a block moves."
+help = "The file is read in blocks for speed; the feedback in its INFDS reflects the block, not each record."
 
 [[msg]]
 id = "RNF7089"
 sev = 0
 text = "File &1 keeps its indicators in a separate area, which the program passes on each operation."
+help = "INDARA puts the file's indicators in a separate area; the program passes it with each I/O operation."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "RNF7341"
 sev = 0
 text = "The subfield is only in the target structure of the EVAL-CORR."
+help = "EVAL-CORR copies subfields by name; this subfield has no namesake in the source and keeps its value."
 
 [[msg]]
 id = "RNF7342"
 sev = 0
 text = "The subfield is only in the source structure of the EVAL-CORR."
+help = "EVAL-CORR copies subfields by name; this subfield has no namesake in the target and is not copied."
 
 [[msg]]
 id = "RNF7350"
 sev = 0
 text = "&1 leaves out subfields that have no namesake in the other structure."
+help = "EVAL-CORR or a correspondence assignment copies only subfields with the same name in both structures."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0334"
 sev = 30
 text = "%DECPOS needs a decimal or integer value; &1 is not one."
+help = "%DECPOS gives the decimal positions of a numeric value; the argument is not numeric."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0599"
 sev = 20
 text = "The format &1 is not valid for this built-in function."
+help = "The format given to the built-in function is not one it takes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7510"
 sev = 30
 text = "The value &1 is too short for a complete date in its format."
+help = "The date literal or value does not have all the digits its format needs."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7519"
 sev = 30
 text = "The value &1 is too short for a complete timestamp."
+help = "A timestamp literal needs a date, a time and the fraction of seconds."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -558,372 +624,439 @@ vars = ["*CHAR 50"]
 id = "RNF0231"
 sev = 20
 text = "The length given for &1 is above the largest allowed; the largest is used."
+help = "The length is larger than the type allows; the largest allowed length is used instead."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0256"
 sev = 30
 text = "A main-procedure statement after a procedure is ignored."
+help = "Main procedure calculations must come before the first subprocedure."
 
 [[msg]]
 id = "RNF0305"
 sev = 20
 text = "&1 is not a valid date in the date format in effect."
+help = "The literal is not a valid date in the date format the program uses (DATFMT)."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0306"
 sev = 20
 text = "&1 is not a valid time in the time format in effect."
+help = "The literal is not a valid time in the time format the program uses (TIMFMT)."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0307"
 sev = 20
 text = "&1 is not a valid timestamp."
+help = "The literal is not a valid timestamp: yyyy-mm-dd-hh.mm.ss.ffffff."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0312"
 sev = 20
 text = "A right parenthesis is missing."
+help = "A left parenthesis has no matching right parenthesis."
 
 [[msg]]
 id = "RNF0316"
 sev = 20
 text = "&1 needs more arguments; the built-in function is ignored."
+help = "The built-in function was given fewer arguments than it needs."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0317"
 sev = 20
 text = "&1 has more arguments than it takes."
+help = "The built-in function was given more arguments than it takes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0331"
 sev = 20
 text = "The argument of &1 has no elements; the built-in function is ignored."
+help = "The built-in function works on the elements of an array, but the argument has none."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0362"
 sev = 20
 text = "The start position of &1 must be numeric; the built-in function is ignored."
+help = "The start position must be a numeric value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0503"
 sev = 20
 text = "&1 allows at most 63 digits; 63 is used."
+help = "A decimal value can have at most 63 digits."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0504"
 sev = 20
 text = "&1 allows at most 9 digits; 9 is used."
+help = "The built-in function allows at most 9 digits for this value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0512"
 sev = 20
 text = "&1 has more decimal positions than digits; none are used."
+help = "A decimal value cannot have more decimal positions than digits."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0533"
 sev = 20
 text = "&1 takes 3, 5, 10 or 20 digits; 10 is used."
+help = "Integer and unsigned values have 3, 5, 10 or 20 digits."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0604"
 sev = 20
 text = "The built-in function &1 is not known; it is ignored."
+help = "The name after % is not a built-in function of the compiler."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0607"
 sev = 0
 text = "The rest of the entry is skipped after the error."
+help = "After an error in an entry, the compiler does not check the rest of it."
 
 [[msg]]
 id = "RNF0612"
 sev = 20
 text = "The date format is not valid; *ISO is used."
+help = "The date format given is not one the compiler knows; *ISO is used."
 
 [[msg]]
 id = "RNF0637"
 sev = 30
 text = "An operand is missing; the statement is ignored."
+help = "The operation needs an operand that was not given."
 
 [[msg]]
 id = "RNF1301"
 sev = 20
 text = "Control keyword &1 is not known; it is ignored."
+help = "The keyword is not one the control specification takes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF1302"
 sev = 20
 text = "Control keyword &1 is given more than once; it is ignored."
+help = "Each control keyword can be given once."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF1324"
 sev = 20
 text = "Control keyword &1 is not allowed when a module is created; it is ignored."
+help = "The keyword controls program creation, which CRTRPGMOD does not do."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF1502"
 sev = 20
 text = "The procedure has no end; one is assumed."
+help = "A procedure begun with DCL-PROC or P B needs END-PROC or P E."
 
 [[msg]]
 id = "RNF1509"
 sev = 30
 text = "END-PROC has no procedure to end."
+help = "END-PROC ends a procedure; no procedure is open."
 
 [[msg]]
 id = "RNF2026"
 sev = 30
 text = "File &1 is declared more than once; the declaration is ignored."
+help = "Each file is declared once. Remove the second declaration or rename the file."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF2372"
 sev = 20
 text = "The USAGE value is not allowed for the file's device."
+help = "The device does not support the usage given, for example *DELETE on a printer."
 
 [[msg]]
 id = "RNF3308"
 sev = 20
 text = "&1 is not a definition keyword; it is ignored."
+help = "The keyword is not a definition keyword."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3312"
 sev = 20
 text = "Keyword &1 is given more than once; it is ignored."
+help = "Each keyword can be given once on a definition."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3316"
 sev = 30
 text = "&1 is defined more than once."
+help = "The name is already declared. Each name can be defined once in its scope."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3327"
 sev = 20
 text = "The keyword cannot be combined with &1; it is ignored."
+help = "The two keywords cannot be used together on one definition."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3358"
 sev = 30
 text = "&1 takes a length of 4 or 8 bytes; 8 is used."
+help = "The type takes a length of 4 or 8 bytes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3401"
 sev = 20
 text = "The name is not valid; blanks are used."
+help = "The name is not a valid RPG name: it must start with a letter or @ # $ _ and hold only those and digits."
 
 [[msg]]
 id = "RNF3430"
 sev = 20
 text = "The initial value is not of the field's type; it is ignored."
+help = "The initial value cannot be assigned to a field of this type."
 
 [[msg]]
 id = "RNF3438"
 sev = 30
 text = "&1 has no data type and no LIKE; the definition is ignored."
+help = "Every definition needs a data type, or LIKE or LIKEDS to take one."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3452"
 sev = 20
 text = "The DIM value must be from 1 to 16773104."
+help = "An array or multiple-occurrence structure has from 1 to 16773104 elements."
 
 [[msg]]
 id = "RNF3467"
 sev = 20
 text = "The OVERLAY name is not a subfield of the structure; the keyword is ignored."
+help = "OVERLAY names the subfield the new subfield overlays; it must be in the same data structure."
 
 [[msg]]
 id = "RNF3545"
 sev = 20
 text = "DIM on a data structure needs QUALIFIED; the keyword is ignored."
+help = "An array data structure must be QUALIFIED so its subfields are named through the structure."
 
 [[msg]]
 id = "RNF3551"
 sev = 20
 text = "&1 has no group to end."
+help = "The END- keyword closes a group that was not opened."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3556"
 sev = 20
 text = "The group has no &1; one is assumed."
+help = "The group was not closed; the compiler assumes its end here."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3557"
 sev = 20
 text = "The length given for &1 must be at least 1; 1 is used."
+help = "A length must be at least 1."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3571"
 sev = 20
 text = "The LIKE adjustment must start with + or -; it is ignored."
+help = "A LIKE length adjustment starts with + or -."
 
 [[msg]]
 id = "RNF3576"
 sev = 20
 text = "The POS value must be a number from 1 to 16773104."
+help = "POS gives a subfield's starting position, from 1 to 16773104."
 
 [[msg]]
 id = "RNF3596"
 sev = 20
 text = "&1 needs at least one digit; 1 is used."
+help = "A numeric definition needs at least one digit."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3599"
 sev = 20
 text = "A free-form subfield gives its place in its own structure with POS, not OVERLAY."
+help = "Free-form subfields give their start with POS; OVERLAY overlays another subfield."
 
 [[msg]]
 id = "RNF3764"
 sev = 30
 text = "Parameter &1 of the interface differs from the prototype's."
+help = "A procedure interface must have the same parameters as its prototype."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3768"
 sev = 30
 text = "The procedure already has an interface; this one is ignored."
+help = "A procedure has one interface; the second one is ignored."
 
 [[msg]]
 id = "RNF3901"
 sev = 20
 text = "A named constant takes no keywords; the keyword is ignored."
+help = "A named constant takes only CONST or its value; other keywords have no meaning."
 
 [[msg]]
 id = "RNF3905"
 sev = 30
 text = "Constant &1 has no value; the definition is ignored."
+help = "A named constant needs a value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5016"
 sev = 30
 text = "ENDSR has no subroutine to end."
+help = "ENDSR ends a subroutine begun with BEGSR; none is open."
 
 [[msg]]
 id = "RNF5054"
 sev = 20
 text = "Subroutine &1 is defined more than once."
+help = "Each subroutine name can be used once."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5141"
 sev = 30
 text = "The ending operation has no group to end."
+help = "An END operation closes an open IF, DO, SELECT, FOR, MONITOR or CASxx group; none is open."
 
 [[msg]]
 id = "RNF5177"
 sev = 30
 text = "The group begun here has no ending operation; one is assumed at the end."
+help = "A group (IF, DO, SELECT and so on) needs its END operation."
 
 [[msg]]
 id = "RNF5178"
 sev = 30
 text = "The subroutine has no ENDSR before the next BEGSR; one is assumed."
+help = "Each subroutine ends with ENDSR before the next BEGSR."
 
 [[msg]]
 id = "RNF5179"
 sev = 30
 text = "A parameter cannot be an indicator, the indicator array or a table; the PARM is ignored."
+help = "PARM parameters must be fields, data structures or arrays."
 
 [[msg]]
 id = "RNF5232"
 sev = 30
 text = "LEAVE and ITER are allowed only inside a loop; the statement is ignored."
+help = "LEAVE and ITER work inside DO, DOU, DOW and FOR loops."
 
 [[msg]]
 id = "RNF5249"
 sev = 20
 text = "WHEN or OTHER is not inside an open SELECT group."
+help = "WHEN and OTHER belong to a SELECT group."
 
 [[msg]]
 id = "RNF5276"
 sev = 30
 text = "File &1 is not valid for this operation; the statement is ignored."
+help = "The file's type or device does not support the operation."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5295"
 sev = 30
 text = "ON-ERROR is allowed only inside a MONITOR group."
+help = "ON-ERROR handles errors of a MONITOR group and must be inside one."
 
 [[msg]]
 id = "RNF5412"
 sev = 20
 text = "The procedure returns no value; the RETURN value is ignored."
+help = "The procedure's prototype has no return value, so RETURN cannot return one."
 
 [[msg]]
 id = "RNF5413"
 sev = 30
 text = "The procedure returns a value; RETURN needs one."
+help = "The procedure is declared to return a value; RETURN must give it."
 
 [[msg]]
 id = "RNF5415"
 sev = 30
 text = "Procedure &1 returns a value but has no RETURN with one."
+help = "A procedure that returns a value must reach a RETURN with one."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7018"
 sev = 30
 text = "&1 is not a subroutine of this procedure."
+help = "EXSR names a subroutine of the same procedure; none has this name."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7301"
 sev = 30
 text = "Subfield &1 ends past the length of its data structure."
+help = "The subfield's end position is past the end of the data structure's declared length."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7416"
 sev = 30
 text = "The value's type does not match the target of the assignment."
+help = "The value cannot be assigned to the target: their types differ."
 
 [[msg]]
 id = "RNF7423"
 sev = 30
 text = "A condition must be a comparison, a logical expression or an indicator."
+help = "IF, DOW, DOU and WHEN need a logical condition."
 
 [[msg]]
 id = "RNF7591"
 sev = 30
 text = "&1 is not a qualified data structure; it cannot qualify a name."
+help = "Only a qualified data structure can qualify a name with a period."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5318"
 sev = 30
 text = "The subroutine's name is already the name of something else; the subroutine is ignored."
+help = "A subroutine name cannot be the name of a field, file or other item."
 
 
 [[msg]]
 id = "RNF5428"
 sev = 30
 text = "&1 is allowed only inside a subroutine."
+help = "The operation (for example LEAVESR) works only inside a subroutine."
 vars = ["*CHAR 10"]
 
 
@@ -931,767 +1064,916 @@ vars = ["*CHAR 10"]
 id = "RNF7260"
 sev = 30
 text = "&1 cannot be the factor 2 of this operation."
+help = "The item given cannot be factor 2 of this operation."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0328"
 sev = 30
 text = "The digits given for &1 are not valid."
+help = "The number of digits must be a positive whole number the type allows."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0329"
 sev = 30
 text = "The decimal positions given for &1 are not valid."
+help = "The number of decimal positions must be from 0 to the number of digits."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0336"
 sev = 30
 text = "The argument of &1 is not valid."
+help = "The argument is not one the built-in function takes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0341"
 sev = 20
 text = "The argument of %ADDR has no storage; the built-in function is ignored."
+help = "%ADDR needs a variable with storage; a constant or a based field without basing has none."
 
 [[msg]]
 id = "RNF0345"
 sev = 20
 text = "The first argument of &1 must be character data."
+help = "The first argument of the built-in function must be a character value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0365"
 sev = 20
 text = "The length given for &1 reaches past the end of the string."
+help = "The start position and length reach past the end of the string."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0371"
 sev = 20
 text = "The argument of &1 must be character data; the built-in function is ignored."
+help = "The built-in function takes a character argument."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0381"
 sev = 20
 text = "The first argument of &1 is not valid."
+help = "The first argument does not have a type the built-in function takes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0528"
 sev = 20
 text = "&1 is not an array; the index is ignored."
+help = "Only an array can be indexed."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0530"
 sev = 20
 text = "Index &1 is outside the array; the index is ignored."
+help = "A constant index is less than 1 or more than the number of elements."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0571"
 sev = 20
 text = "The second argument of &1 must be an array."
+help = "The built-in function needs an array as its second argument."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0580"
 sev = 20
 text = "The first argument of &1 must be a date, time or timestamp."
+help = "The first argument must be a date, time or timestamp value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0581"
 sev = 20
 text = "The second argument of &1 must be a date, time or timestamp."
+help = "The second argument must be a date, time or timestamp value."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0603"
 sev = 20
 text = "Keyword &1 needs a parameter."
+help = "The keyword needs a value in parentheses."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0614"
 sev = 20
 text = "The time format is not valid; *ISO is used."
+help = "The time format given is not one the compiler knows; *ISO is used."
 
 [[msg]]
 id = "RNF0623"
 sev = 20
 text = "The qualified name is not written as a structure and one of its subfields."
+help = "A qualified name is written structure.subfield."
 
 [[msg]]
 id = "RNF0633"
 sev = 20
 text = "A right parenthesis closes nothing; it is ignored."
+help = "A right parenthesis has no left parenthesis to match."
 
 [[msg]]
 id = "RNF0655"
 sev = 30
 text = "&1 is a template and has no storage to use here."
+help = "A TEMPLATE definition only describes a layout; it has no storage to read or change."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF1008"
 sev = 20
 text = "The DATEDIT value is not valid."
+help = "DATEDIT gives the date format and separator of UDATE and *DATE: *DMY, *MDY or *YMD with a separator."
 
 [[msg]]
 id = "RNF1303"
 sev = 20
 text = "The DECEDIT value is not valid; the keyword is ignored."
+help = "DECEDIT gives the decimal point character and leading zero: '.', ',', '0.' or '0,'."
 
 [[msg]]
 id = "RNF1304"
 sev = 20
 text = "NOMAIN is not allowed when a program is created; it is ignored."
+help = "NOMAIN means the module has no main procedure; a program needs one."
 
 [[msg]]
 id = "RNF1306"
 sev = 20
 text = "The COPYRIGHT value must be a character literal."
+help = "COPYRIGHT takes a character literal of up to 256 characters."
 
 [[msg]]
 id = "RNF1311"
 sev = 20
 text = "The EXPROPTS value is not valid."
+help = "EXPROPTS is *MAXDIGITS, *RESDECPOS or *ALWBLANKNUM."
 
 [[msg]]
 id = "RNF1317"
 sev = 20
 text = "The ACTGRP value is not valid; the keyword is ignored."
+help = "ACTGRP is *NEW, *CALLER, *STGMDL or an activation group name."
 
 [[msg]]
 id = "RNF1331"
 sev = 20
 text = "The OPTION value is not valid; it is ignored."
+help = "The value is not one of the OPTION keyword's values."
 
 [[msg]]
 id = "RNF1504"
 sev = 30
 text = "Procedure &1 is defined more than once."
+help = "Each procedure name can be defined once in the module."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF2007"
 sev = 20
 text = "The record length is not valid."
+help = "The record length must be a number from 1 to 32766."
 
 [[msg]]
 id = "RNF2370"
 sev = 20
 text = "The USAGE value must be *INPUT, *OUTPUT, *UPDATE or *DELETE."
+help = "USAGE is *INPUT, *OUTPUT, *UPDATE or *DELETE, alone or together."
 
 [[msg]]
 id = "RNF2403"
 sev = 20
 text = "A printer file does not take keyword &1; it is ignored."
+help = "The keyword does not apply to printer files."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF2416"
 sev = 20
 text = "File keyword &1 is given more than once; it is ignored."
+help = "Each file keyword can be given once."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3315"
 sev = 20
 text = "Subfield &1 is already in this data structure; the definition is ignored."
+help = "A subfield name can be used once in its data structure."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3322"
 sev = 20
 text = "The keyword cannot follow &1; it is ignored."
+help = "The keyword cannot appear after the one named on the same definition."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3323"
 sev = 20
 text = "The keyword cannot be combined with BASED; it is ignored."
+help = "A BASED field has no storage of its own, so the keyword cannot be used with it."
 
 [[msg]]
 id = "RNF3333"
 sev = 20
 text = "The keyword cannot be combined with OCCURS; it is ignored."
+help = "The keyword cannot be used on a multiple-occurrence data structure."
 
 [[msg]]
 id = "RNF3402"
 sev = 20
 text = "The length entry is not a number; it is taken as blank."
+help = "The length must be a number."
 
 [[msg]]
 id = "RNF3415"
 sev = 20
 text = "Fractional seconds must be from 0 to 12."
+help = "A timestamp has from 0 to 12 digits of fractional seconds."
 
 [[msg]]
 id = "RNF3422"
 sev = 20
 text = "CTDATA needs an array or table; the keyword is ignored."
+help = "CTDATA loads compile-time data into an array or table."
 
 [[msg]]
 id = "RNF3459"
 sev = 20
 text = "LIKE cannot name the definition itself."
+help = "LIKE copies another definition's type; a definition cannot be like itself."
 
 [[msg]]
 id = "RNF3504"
 sev = 20
 text = "INZ(*LIKEDS) needs LIKEDS on the same data structure."
+help = "INZ(*LIKEDS) initializes from the structure LIKEDS names, so LIKEDS must be given."
 
 [[msg]]
 id = "RNF3511"
 sev = 40
 text = "A program status structure is already defined; this one is an ordinary structure."
+help = "Only one program status data structure is allowed; the second is treated as an ordinary data structure."
 
 [[msg]]
 id = "RNF3520"
 sev = 20
 text = "The OCCURS value must be at least 1; the keyword is ignored."
+help = "OCCURS gives the number of occurrences of a multiple-occurrence data structure; it must be 1 or more."
 
 [[msg]]
 id = "RNF3523"
 sev = 40
 text = "No external description &1 was found for the data structure."
+help = "EXTNAME names a file or format that could not be found at compile time."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3558"
 sev = 20
 text = "Keyword &1 is for fixed-form definitions only; it is ignored."
+help = "The keyword is used on fixed-form definition specifications only."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3559"
 sev = 20
 text = "The length given for &1 must be at least 1; 1 is used."
+help = "A length must be at least 1."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3561"
 sev = 20
 text = "The prefix size of &1 must be 2 or 4."
+help = "The prefix of a varying-length field is 2 or 4 bytes."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3564"
 sev = 20
 text = "The length given for &1 must be at least 1; 1 is used."
+help = "A length must be at least 1."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3568"
 sev = 20
 text = "The POINTER value must be *PROC."
+help = "POINTER(*PROC) declares a procedure pointer; no other value is allowed."
 
 [[msg]]
 id = "RNF3575"
 sev = 20
 text = "The keyword cannot be combined with POS; it is ignored."
+help = "The keyword cannot be used with POS on a subfield."
 
 [[msg]]
 id = "RNF3588"
 sev = 20
 text = "EXTPGM and EXTPROC cannot both be given; the second is ignored."
+help = "A prototype calls a program (EXTPGM) or a procedure (EXTPROC), not both."
 
 [[msg]]
 id = "RNF3601"
 sev = 20
 text = "A standalone field does not take keyword &1; it is ignored."
+help = "The keyword is for data structures or subfields, not stand-alone fields."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3716"
 sev = 20
 text = "The to-position is before the from-position."
+help = "In from and to positions, the to-position must not be before the from-position."
 
 [[msg]]
 id = "RNF3740"
 sev = 20
 text = "The keyword cannot be combined with VALUE; it is ignored."
+help = "A parameter passed by VALUE cannot also take this keyword."
 
 [[msg]]
 id = "RNF3744"
 sev = 20
 text = "The OPTIONS value is not valid; the rest is skipped."
+help = "An OPTIONS value is not one of *NOPASS, *OMIT, *VARSIZE, *STRING, *TRIM, *RIGHTADJ, *NULLIND or *EXACT."
 
 [[msg]]
 id = "RNF3753"
 sev = 20
 text = "A VALUE parameter cannot take this OPTIONS value."
+help = "The OPTIONS value is not allowed for a parameter passed by value."
 
 [[msg]]
 id = "RNF3756"
 sev = 20
 text = "Parameter &1 follows an optional one, so it needs OPTIONS(*NOPASS) too."
+help = "Once a parameter is optional (*NOPASS), every parameter after it must be too."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3757"
 sev = 20
 text = "Keyword &1 is not allowed for definitions in a procedure; it is ignored."
+help = "The keyword applies to global definitions only."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3760"
 sev = 20
 text = "Keyword &1 is not allowed for global definitions; it is ignored."
+help = "The keyword applies to definitions inside a procedure only."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3813"
 sev = 20
 text = "The parameter of &1 must be a character literal or *DCLCASE."
+help = "The keyword takes a character literal or *DCLCASE."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5014"
 sev = 30
 text = "Operation code &1 is not valid; the specification is ignored."
+help = "The operation code is not one RPG knows."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5023"
 sev = 30
 text = "The operation needs a factor 2."
+help = "The operation needs factor 2."
 
 [[msg]]
 id = "RNF5030"
 sev = 30
 text = "The operation needs a result field."
+help = "The operation needs a result field."
 
 [[msg]]
 id = "RNF5044"
 sev = 20
 text = "The decimal positions entry must be blank or 0 to 63; it is taken as 0."
+help = "Decimal positions are from 0 to 63."
 
 [[msg]]
 id = "RNF5048"
 sev = 20
 text = "The operation extender is not valid; it is ignored."
+help = "The extender in parentheses after the operation code is not valid."
 
 [[msg]]
 id = "RNF5051"
 sev = 20
 text = "The resulting indicator is not valid; it is taken as blank."
+help = "Resulting indicators are 01-99, H1-H9, L1-L9, LR, OA-OG, OV, U1-U8 or KA-KY."
 
 [[msg]]
 id = "RNF5053"
 sev = 30
 text = "The operation needs a resulting indicator."
+help = "The operation needs at least one resulting indicator."
 
 [[msg]]
 id = "RNF5056"
 sev = 30
 text = "TEST of a date, time or timestamp needs (E) or an error indicator."
+help = "TEST reports a bad date, time or timestamp through %ERROR or an indicator; give (E) or the indicator."
 
 [[msg]]
 id = "RNF5116"
 sev = 20
 text = "The ENDSR return point is not valid."
+help = "The return point of ENDSR must be one of the special values or a field."
 
 [[msg]]
 id = "RNF5159"
 sev = 30
 text = "&1 is not an array."
+help = "The operation needs an array."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5191"
 sev = 30
 text = "Writing program-described file &1 needs a data structure."
+help = "Writing a program-described file needs a data structure as the result field."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5202"
 sev = 30
 text = "The operation is not allowed for file &1."
+help = "The operation cannot be used with the file's type or device."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5250"
 sev = 20
 text = "OTHER is not inside a SELECT group, or follows another OTHER."
+help = "OTHER is the last part of a SELECT group and appears once."
 
 [[msg]]
 id = "RNF5294"
 sev = 20
 text = "The ON-ERROR status code is not valid."
+help = "ON-ERROR takes status codes from 00100 to 09999, *PROGRAM, *FILE or *ALL."
 
 [[msg]]
 id = "RNF5296"
 sev = 20
 text = "The MONITOR group has no ON-ERROR."
+help = "A MONITOR group needs at least one ON-ERROR."
 
 [[msg]]
 id = "RNF5343"
 sev = 30
 text = "An array is used where one element is needed."
+help = "An array name without an index stands for every element; here one element is needed."
 
 [[msg]]
 id = "RNF5344"
 sev = 30
 text = "The operation needs an expression."
+help = "The operation needs an expression in its extended factor 2."
 
 [[msg]]
 id = "RNF5403"
 sev = 30
 text = "&1 returns no value, so it cannot be called in an expression."
+help = "A procedure without a return value cannot be called in an expression; call it with CALLP."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5418"
 sev = 30
 text = "A module with MAIN or NOMAIN has no main-procedure calculations; the statement is ignored."
+help = "A module with MAIN or NOMAIN has no main-procedure calculations; put the code in a procedure."
 
 [[msg]]
 id = "RNF6029"
 sev = 20
 text = "The edit word is not valid."
+help = "An edit word must be a character literal that edits the field's digits."
 
 [[msg]]
 id = "RNF7261"
 sev = 30
 text = "The result field is not valid for the operation."
+help = "The result field does not have the type or size the operation needs."
 
 [[msg]]
 id = "RNF7451"
 sev = 30
 text = "The name &1 refers to is not defined; the built-in function is ignored."
+help = "The built-in function refers to a name that is not declared."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7567"
 sev = 20
 text = "The FOR start value is not valid."
+help = "The FOR start value must be numeric."
 
 [[msg]]
 id = "RNF0272"
 sev = 30
 text = "The /COPY or /INCLUDE directive names no member; it is ignored."
+help = "/COPY and /INCLUDE need the member to copy, optionally with its file and library."
 
 [[msg]]
 id = "RNF0289"
 sev = 20
 text = "Part of the entry is not valid and is dropped; the rest is used."
+help = "Part of the entry could not be read; the compiler uses the rest."
 
 [[msg]]
 id = "RNF0301"
 sev = 20
 text = "A hexadecimal literal has no closing apostrophe; one is assumed."
+help = "A hexadecimal literal X'...' has no closing apostrophe."
 
 [[msg]]
 id = "RNF0364"
 sev = 20
 text = "The start position given to &1 lies past the end of the string; the built-in function is ignored."
+help = "The start position is past the end of the string."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0386"
 sev = 30
 text = "The first argument of &1 cannot be converted to characters."
+help = "The first argument cannot be converted to character."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0510"
 sev = 20
 text = "The length given for &1 here differs from its definition; the definition is used."
+help = "The length given does not match the item's definition."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0579"
 sev = 20
 text = "The argument of &1 must be a number of units."
+help = "The argument must be a duration such as %DAYS(n) or %MONTHS(n)."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0592"
 sev = 20
 text = "&1 needs an array declared with ASCEND or DESCEND."
+help = "The built-in function searches an array in sequence, so the array needs ASCEND or DESCEND."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF0609"
 sev = 20
 text = "The keyword is cut off at the end of the entry; it is ignored."
+help = "The keyword reaches the end of the entry without its closing parenthesis."
 
 [[msg]]
 id = "RNF0701"
 sev = 30
 text = "The condition of the directive is not valid."
+help = "The condition of /IF or /ELSEIF must be DEFINED(name) or NOT DEFINED(name)."
 
 [[msg]]
 id = "RNF0702"
 sev = 30
 text = "/DEFINE and /UNDEFINE need a condition name."
+help = "/DEFINE and /UNDEFINE name the condition they set or clear."
 
 [[msg]]
 id = "RNF0724"
 sev = 30
 text = "A declaration follows the calculations of the main procedure; it is ignored."
+help = "Declarations come before the main procedure's calculations."
 
 [[msg]]
 id = "RNF0725"
 sev = 30
 text = "A declaration follows the calculations of the procedure; it is ignored."
+help = "Declarations come before the procedure's calculations."
 
 [[msg]]
 id = "RNF0752"
 sev = 20
 text = "&1 is a table: it takes no index, and the index is ignored."
+help = "A table is searched with LOOKUP or %TLOOKUP; it is not indexed."
 
 [[msg]]
 id = "RNF1506"
 sev = 20
 text = "Keyword &1 is given more than once for the procedure; the repeat is ignored."
+help = "Each keyword can be given once on a procedure."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF1519"
 sev = 20
 text = "SERIALIZE needs THREAD(*CONCURRENT) on the control specification; it is ignored."
+help = "SERIALIZE needs THREAD(*CONCURRENT)."
 
 [[msg]]
 id = "RNF2003"
 sev = 20
 text = "The file type must be I, O, U or C; O is used when the designation is blank, I otherwise."
+help = "The file type must be I (input), O (output), U (update) or C (combined)."
 
 [[msg]]
 id = "RNF2006"
 sev = 20
 text = "The file format must be F or E; F is used."
+help = "The file format is F (program-described) or E (externally described)."
 
 [[msg]]
 id = "RNF2013"
 sev = 20
 text = "The device is not one the compiler knows; DISK is used."
+help = "The device must be DISK, PRINTER, WORKSTN, SEQ or SPECIAL."
 
 [[msg]]
 id = "RNF2016"
 sev = 20
 text = "Column 43 of a file specification must be blank."
+help = "Column 43 of a fixed-form file specification is not used and must be blank."
 
 [[msg]]
 id = "RNF2023"
 sev = 30
 text = "File keyword &1 is not recognized; it is ignored."
+help = "The keyword is not a file keyword."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF2079"
 sev = 20
 text = "The file designation is not valid; blank is used."
+help = "The file designation is P, S, R, T, F or blank."
 
 [[msg]]
 id = "RNF3302"
 sev = 20
 text = "The data type entry is not valid; it is taken as blank."
+help = "The data type is A, B, C, D, F, G, I, N, O, P, S, T, U, Z, * or blank."
 
 [[msg]]
 id = "RNF3481"
 sev = 10
 text = "The initial value has more decimal places than the field; the extra digits are dropped."
+help = "The initial value has more decimal places than the field holds; the extra digits are dropped."
 
 [[msg]]
 id = "RNF3703"
 sev = 20
 text = "A subfield or parameter appears outside any structure, prototype or interface."
+help = "Subfields belong to a data structure, and parameters to a prototype or interface."
 
 [[msg]]
 id = "RNF3713"
 sev = 20
 text = "The to-position lies past the end of the data structure; the from-position is used."
+help = "The to-position is past the end of the data structure."
 
 [[msg]]
 id = "RNF3746"
 sev = 20
 text = "The procedure name given to EXTPROC is not valid; the keyword is ignored."
+help = "EXTPROC takes a procedure name, a literal, a procedure pointer or *JAVA."
 
 [[msg]]
 id = "RNF3747"
 sev = 20
 text = "The program name given to EXTPGM is not valid; it is ignored."
+help = "EXTPGM takes a program name as a literal or a field."
 
 [[msg]]
 id = "RNF3767"
 sev = 20
 text = "The interface's name &1 is not the name of its procedure."
+help = "A procedure interface has the name of its procedure, or *N."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3776"
 sev = 10
 text = "The main procedure's interface names program &1, not the program being created."
+help = "The main procedure's interface names a program other than the one being created."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF3788"
 sev = 30
 text = "Prototype &1 has no EXTPGM, so it needs DFTACTGRP(*NO)."
+help = "A prototype without EXTPGM calls a bound procedure, which needs an ILE activation group (DFTACTGRP(*NO))."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF4036"
 sev = 30
 text = "The input field ends past the file's record length; it is ignored."
+help = "The input field's end position is past the end of the record."
 
 [[msg]]
 id = "RNF5002"
 sev = 20
 text = "A calculation without a control level follows total calculations; the previous level is used."
+help = "Calculations without a control level must come before total-time calculations."
 
 [[msg]]
 id = "RNF5006"
 sev = 20
 text = "Column 9 holds neither N nor a blank; a blank is assumed."
+help = "Column 9 is N, for a negated indicator, or blank."
 
 [[msg]]
 id = "RNF5007"
 sev = 20
 text = "The conditioning indicator entry is not valid; it is taken as blank."
+help = "The conditioning indicator is not one RPG knows."
 
 [[msg]]
 id = "RNF5009"
 sev = 30
 text = "The operation needs a factor 1."
+help = "The operation needs factor 1."
 
 [[msg]]
 id = "RNF5010"
 sev = 20
 text = "The operation does not take a factor 1; it is ignored."
+help = "The operation does not use factor 1."
 
 [[msg]]
 id = "RNF5039"
 sev = 30
 text = "DIV cannot have a factor 2 of zero; the specification is ignored."
+help = "DIV by a zero factor 2 always fails."
 
 [[msg]]
 id = "RNF5049"
 sev = 20
 text = "The extender is not one this operation takes; it is ignored."
+help = "The operation does not take the extender given."
 
 [[msg]]
 id = "RNF5094"
 sev = 20
 text = "The CASxx group has no ENDCS; one is assumed after it."
+help = "A CASxx group ends with ENDCS."
 
 [[msg]]
 id = "RNF5123"
 sev = 30
 text = "LOOKUP's factor 2 &1 is not an array or table; the specification is ignored."
+help = "LOOKUP searches an array or table named in factor 2."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF5184"
 sev = 30
 text = "An indicator result takes only '0' or '1' from factor 2."
+help = "An indicator holds '0' or '1'."
 
 [[msg]]
 id = "RNF5215"
 sev = 30
 text = "SUBST's length reaches past the end of factor 2; the specification is ignored."
+help = "The length given to SUBST reaches past the end of factor 2."
 
 [[msg]]
 id = "RNF5216"
 sev = 30
 text = "SUBST's start position lies past the end of factor 2; the specification is ignored."
+help = "The start position given to SUBST is past the end of factor 2."
 
 [[msg]]
 id = "RNF5248"
 sev = 20
 text = "The ENDyy does not match the open group; an END is assumed."
+help = "The END operation does not match the kind of group that is open."
 
 [[msg]]
 id = "RNF5270"
 sev = 20
 text = "This indicator cannot be set as a resulting indicator; it is ignored."
+help = "The indicator cannot be set by an operation, for example L0 or 1P."
 
 [[msg]]
 id = "RNF5425"
 sev = 30
 text = "*INZSR belongs to the main procedure, not a subprocedure."
+help = "*INZSR is the main procedure's initialization subroutine; a subprocedure cannot have one."
 
 [[msg]]
 id = "RNF6003"
 sev = 20
 text = "The output indicator entry is not valid; it is taken as blank."
+help = "The output indicator is not one RPG knows."
 
 [[msg]]
 id = "RNF6005"
 sev = 20
 text = "The output record type must be H, D, T or E; D is used."
+help = "An output record type is H (heading), D (detail), T (total) or E (exception)."
 
 [[msg]]
 id = "RNF6028"
 sev = 20
 text = "The output data format is not valid; it is taken as blank."
+help = "The data format of an output field is B, P, L, R or blank."
 
 [[msg]]
 id = "RNF6030"
 sev = 30
 text = "The output constant is not valid; the field is ignored."
+help = "The output constant must be a literal or edit word."
 
 [[msg]]
 id = "RNF7017"
 sev = 30
 text = "A structure and its own subfield overlap, which the operation does not allow; the specification is ignored."
+help = "The operation cannot move a data structure into one of its own subfields."
 
 [[msg]]
 id = "RNF7027"
 sev = 30
 text = "&1 named by CASxx is not a subroutine."
+help = "CASxx calls a subroutine; the name is not one."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7043"
 sev = 30
 text = "&1 is not a label, so GOTO or CABxx cannot branch to it; the specification is ignored."
+help = "GOTO and CABxx branch to a TAG; the name is not one."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7044"
 sev = 30
 text = "The result field &1 must be numeric; the specification is ignored."
+help = "The operation needs a numeric result field."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7056"
 sev = 30
 text = "The result field of TIME is not one it can set."
+help = "TIME sets a numeric field of 6, 12 or 14 digits, or a date, time or timestamp."
 
 [[msg]]
 id = "RNF7262"
 sev = 30
 text = "The arrays MOVEA moves between differ in type or length; the specification is ignored."
+help = "MOVEA moves between arrays of compatible type and length."
 
 [[msg]]
 id = "RNF7542"
 sev = 30
 text = "The argument for parameter &1 is passed by reference and must be a variable."
+help = "A parameter passed by reference must be a variable, not an expression or literal. Pass a variable, or make it CONST or VALUE."
 
 [[msg]]
 id = "RNF7565"
 sev = 30
 text = "EVALR needs a fixed-length character or graphic target; &1 is varying."
+help = "EVALR right-adjusts into a fixed-length target."
 vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7585"
 sev = 20
 text = "Years, months or days cannot be added to or taken from a time."
+help = "A time has hours, minutes and seconds only."
 
 [[msg]]
 id = "RNF7602"
 sev = 0
 text = "No EXCEPT operation names the output name &1."
+help = "The output name is declared but no EXCEPT writes it."
 vars = ["*CHAR 50"]
 
 
+[[msg]]
+id = "RNF0236"
+sev = 30
+text = "The %DATA options are not valid here: &1."
+help = "The option string of %DATA holds an option or value DATA-INTO does not take."
+vars = ["*CHAR 50"]

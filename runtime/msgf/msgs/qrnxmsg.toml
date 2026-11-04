@@ -20,6 +20,7 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 id = "RNX0101"
 sev = 50
 text = "The square root of a negative number was asked for."
+help = "The program asked for the square root of a negative value; the result is not a real number. Check the value before the operation."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -51,16 +52,19 @@ help = "%DEC, %INT, %UNS, %FLOAT and similar functions found characters that are
 id = "RNX0112"
 sev = 50
 text = "A date, time or timestamp value is not valid."
+help = "A date, time or timestamp field or literal holds a value that is not valid in its format, for example 31 April. Correct the data or test it with TEST first."
 
 [[msg]]
 id = "RNX0113"
 sev = 50
 text = "A date operation went past the dates the format holds."
+help = "The result of a date operation is outside the range of dates the format holds; two-digit year formats hold 1940 to 2039 only."
 
 [[msg]]
 id = "RNX0114"
 sev = 99
 text = "A date or time could not be mapped to the format asked for."
+help = "The value could not be converted to the date or time format asked for. Check the format and the value."
 
 [[msg]]
 id = "RNX0115"
@@ -73,6 +77,7 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 id = "RNX0120"
 sev = 99
 text = "A table or array is not in its declared sequence."
+help = "A table or array declared with ASCEND or DESCEND was loaded with entries out of that order."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
 
 [[msg]]
@@ -86,94 +91,110 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
 id = "RNX0122"
 sev = 50
 text = "The OCCUR value is outside the data structure's occurrences."
+help = "The value set by OCCUR or %OCCUR is less than 1 or more than the data structure's number of occurrences."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "RNX0123"
 sev = 50
 text = "RESET was used while the program was still initializing."
+help = "RESET cannot be used before the program has finished its initialization."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "RNX0299"
 sev = 50
 text = "The RPG formatted dump could not be made."
+help = "The formatted dump that DUMP asked for could not be produced. See the messages before this one."
 
 [[msg]]
 id = "RNX0333"
 sev = 50
 text = "The DSPLY operation failed."
+help = "The DSPLY operation could not show its message or read the reply. In a batch job, DSPLY goes to the QSYSOPR message queue."
 
 [[msg]]
 id = "RNX0351"
 sev = 50
 text = "The XML document is not well formed: parser code &1 at offset &2."
+help = "XML-INTO or XML-SAX found the document is not well formed. The parser code and the offset in the document show where."
 vars = ["*BIN 4", "*CHAR *VARY 2", "*BIN 4"]
 
 [[msg]]
 id = "RNX0352"
 sev = 50
 text = "An option given to %XML is not valid."
+help = "An option string given to %XML holds an option or value XML-INTO does not take."
 vars = ["*CHAR *VARY 2", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "RNX0353"
 sev = 50
 text = "The XML document does not fit the target of XML-INTO."
+help = "The document's elements do not match the subfields of the target variable; check the names and the counts, or the allowmissing and allowextra options."
 vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "RNX0356"
 sev = 50
 text = "The document does not fit the target of DATA-INTO (reason &1)."
+help = "The document does not match the target variable of DATA-INTO; the reason code says how."
 vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "RNX0357"
 sev = 50
 text = "The DATA-INTO parser reported error &1."
+help = "The parser program of DATA-INTO reported an error with the code shown."
 vars = ["*BIN 4", "*CHAR *VARY 2", "*BIN 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "RNX0358"
 sev = 50
 text = "The DATA-INTO parser called its procedures out of order (reason &1)."
+help = "The parser program of DATA-INTO called the procedures it is given in an order the protocol does not allow."
 vars = ["*BIN 4", "*CHAR *VARY 2", "*BIN 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "RNX0361"
 sev = 50
 text = "A value could not be prepared for the DATA-GEN generator (reason &1)."
+help = "A value of the variable given to DATA-GEN could not be passed to the generator; the reason code says why."
 vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR 7"]
 
 [[msg]]
 id = "RNX0362"
 sev = 50
 text = "The DATA-GEN generator called its procedures wrongly (reason &1)."
+help = "The generator program of DATA-GEN called the procedures it is given wrongly."
 vars = ["*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "RNX0363"
 sev = 50
 text = "The DATA-GEN generator reported error &1."
+help = "The generator program of DATA-GEN reported an error with the code shown."
 vars = ["*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "RNX0355"
 sev = 50
 text = "The parser or generator program of DATA-INTO or DATA-GEN could not be called."
+help = "The program named by %PARSER or %GEN could not be found or called."
 vars = ["*CHAR 15", "*BIN 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "RNX0412"
 sev = 50
 text = "Data area &1 in &2 must be locked by IN *LOCK before OUT."
+help = "OUT writes a data area that IN *LOCK read and locked first; it was not locked."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "RNX0425"
 sev = 50
 text = "The heap cannot give storage of the length asked for."
+help = "%ALLOC or %REALLOC asked for more storage than the heap can give, or for a length that is not valid."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -194,6 +215,7 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 id = "RNX1011"
 sev = 99
 text = "A record of a type the program does not describe was read."
+help = "A record format was read that the program has no record identification for."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 
 [[msg]]
@@ -207,24 +229,28 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*C
 id = "RNX1215"
 sev = 99
 text = "An OPEN was tried on a file that is open already."
+help = "The file is already open; it cannot be opened again until it is closed."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10"]
 
 [[msg]]
 id = "RNX1211"
 sev = 99
 text = "An operation was tried on a file that is not open."
+help = "The file must be open for this operation. Open it with OPEN, or let the cycle open it."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
 
 [[msg]]
 id = "RNX1216"
 sev = 99
 text = "A file could not be opened or closed by the cycle."
+help = "The program cycle could not open or close the file. See the messages before this one for the reason."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
 
 [[msg]]
 id = "RNX1217"
 sev = 99
 text = "A file could not be opened or closed by the OPEN or CLOSE operation."
+help = "The OPEN or CLOSE operation failed. See the messages before this one for the reason."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
 
 [[msg]]
@@ -238,12 +264,14 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*C
 id = "RNX1221"
 sev = 99
 text = "An update or delete was tried without a record read first."
+help = "UPDATE and DELETE work on the record last read for update; no record was read."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 
 [[msg]]
 id = "RNX1222"
 sev = 99
 text = "The record cannot be allocated: a constraint refused it."
+help = "The database refused to lock the record because a constraint or trigger did not allow it."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 
 [[msg]]
@@ -275,6 +303,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ0101"
 sev = 99
 text = "The square root of a negative number was asked for."
+help = "The program asked for the square root of a negative value. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -314,6 +343,7 @@ reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
 id = "RNQ0112"
 sev = 99
 text = "A date, time or timestamp value is not valid."
+help = "A date, time or timestamp value is not valid in its format. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
 
@@ -321,6 +351,7 @@ reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
 id = "RNQ0113"
 sev = 99
 text = "A date operation went past the dates the format holds."
+help = "A date operation produced a date outside the format's range. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
 
@@ -328,6 +359,7 @@ reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
 id = "RNQ0114"
 sev = 99
 text = "A date or time could not be mapped to the format asked for."
+help = "A date or time value could not be converted to the format asked for. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
 
@@ -343,6 +375,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ0120"
 sev = 99
 text = "A table or array is not in its declared sequence."
+help = "A table or array is not in its declared order. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "C", "F"] }
 
@@ -358,6 +391,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ0122"
 sev = 99
 text = "The OCCUR value is outside the data structure's occurrences."
+help = "The occurrence set for a multiple-occurrence data structure is out of range. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -365,6 +399,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ0123"
 sev = 99
 text = "RESET was used while the program was still initializing."
+help = "RESET was used before initialization ended. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "C", "F"] }
 
@@ -396,6 +431,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ0231"
 sev = 99
 text = "A called program returned with a halt indicator on."
+help = "The program called returned with an H1 to H9 halt indicator on. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 256"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -403,12 +439,14 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ0299"
 sev = 99
 text = "The RPG formatted dump could not be made."
+help = "The formatted dump could not be produced. Reply C to cancel or G to go on."
 reply = { default = "C", valid = ["C", "S"] }
 
 [[msg]]
 id = "RNQ0333"
 sev = 99
 text = "The DSPLY operation failed."
+help = "DSPLY could not show its message or read the reply. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -424,6 +462,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ1011"
 sev = 99
 text = "A record of a type the program does not describe was read."
+help = "A record of a format the program does not describe was read. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -431,6 +470,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ1021"
 sev = 99
 text = "A record with the same key is already in the file."
+help = "A write tried to add a record whose key is in the file already, and the file allows no duplicates. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -438,6 +478,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ1215"
 sev = 99
 text = "An OPEN was tried on a file that is open already."
+help = "An OPEN was tried on a file that is open. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -445,6 +486,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ1211"
 sev = 99
 text = "An operation was tried on a file that is not open."
+help = "An operation was tried on a file that is not open. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -452,6 +494,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ1216"
 sev = 99
 text = "A file could not be opened or closed by the cycle."
+help = "The cycle could not open or close a file. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "F", "C"] }
 
@@ -459,6 +502,7 @@ reply = { default = "C", valid = ["D", "S", "F", "C"] }
 id = "RNQ1217"
 sev = 99
 text = "A file could not be opened or closed by the OPEN or CLOSE operation."
+help = "OPEN or CLOSE failed. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -474,6 +518,7 @@ reply = { default = "C", valid = ["R", "D", "S", "G", "C", "F"] }
 id = "RNQ1221"
 sev = 99
 text = "An update or delete was tried without a record read first."
+help = "UPDATE or DELETE came without a record read for update. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
@@ -481,6 +526,7 @@ reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 id = "RNQ1222"
 sev = 99
 text = "The record cannot be allocated: a constraint refused it."
+help = "A constraint or trigger refused the record lock. Reply C to cancel, G to go on, D or F to dump and cancel."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 reply = { default = "C", valid = ["R", "D", "S", "G", "C", "F"] }
 

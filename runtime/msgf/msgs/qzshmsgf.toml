@@ -69,13 +69,16 @@ vars = ["*BIN 4"]
 id = "QSH2001"
 sev = 0
 text = "QSH Command Entry"
+help = "The title of the Qshell Command Entry display."
 
 [[msg]]
 id = "QSH2002"
 sev = 0
 text = "F3=Exit   F6=Print F9=Retrieve F12=Disconnect"
+help = "The first row of keys of the Qshell Command Entry display."
 
 [[msg]]
 id = "QSH2003"
 sev = 0
 text = "F13=Clear F17=Top  F18=Bottom  F21=CL command entry"
+help = "The second row of keys of the Qshell Command Entry display."

@@ -505,12 +505,14 @@ vars = ["*CHAR 10", "*CHAR 10"]
 id = "CPD0211"
 sev = 30
 text = "A PARM statement needs KWD."
+help = "Every PARM statement of a command definition must name its keyword with KWD. Add KWD to the statement and create the command again."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0212"
 sev = 30
 text = "More than 99 parameters are defined."
+help = "A command can have at most 99 parameters. Combine related parameters into element lists, or split the command."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -524,246 +526,287 @@ vars = ["*CHAR 10"]
 id = "CPD0214"
 sev = 30
 text = "Keyword &1 is defined more than once."
+help = "Two PARM statements use the same keyword. Give each parameter its own keyword."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0215"
 sev = 30
 text = "MAXPOS(&1) is more than the parameters defined."
+help = "MAXPOS counts the parameters that may be given by position; it cannot exceed the number of parameters the command defines. Lower MAXPOS or remove it."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0216"
 sev = 30
 text = "TYPE(&1) is not a type or a label."
+help = "TYPE must be one of the parameter types (*CHAR, *NAME, *DEC and the rest) or the label of an ELEM or QUAL statement in the same source."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0217"
 sev = 30
 text = "TYPE(&1) names no ELEM or QUAL statement."
+help = "A label used as a type must label ELEM or QUAL statements. Add the statements or correct the label."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0218"
 sev = 30
 text = "Label &1 is used more than once."
+help = "Each label in a command definition source may label one group of statements only. Rename one of them."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0219"
 sev = 30
 text = "Lists nest more than three levels deep at &1."
+help = "Element lists can hold lists of their own only three levels deep. Flatten the definition."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0220"
 sev = 30
 text = "A qualified name has at most five parts; &1 has more."
+help = "A qualified name is made of at most five QUAL statements. Remove the extra ones."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0221"
 sev = 30
 text = "A list has at most 300 elements; &1 has more."
+help = "An element list can have at most 300 elements. Remove some, or split them over parameters."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0222"
 sev = 30
 text = "LEN is not valid for TYPE(&1)."
+help = "The type given takes its length from the system; LEN cannot be given for it. Remove LEN."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0223"
 sev = 30
 text = "LEN(&1): the decimal positions or the digits are out of range."
+help = "The length or the number of decimal positions is outside what the type allows: for *DEC up to 24 digits, with no more decimal positions than digits."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0224"
 sev = 30
 text = "RTNVAL(*YES) on &1 needs TYPE *CHAR, *DEC or *LGL."
+help = "A return value parameter passes a CL variable to receive a value, so it must be a character, decimal or logical type."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0225"
 sev = 30
 text = "RTNVAL(*YES) on &1 allows no default, minimum, values or ranges."
+help = "A return value parameter receives a value; a default, a minimum, a list of values or a range has no meaning for it. Remove them."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0226"
 sev = 30
 text = "TYPE(*CMDSTR) on &1 allows no list, restriction or values."
+help = "A command string parameter is passed as typed; it cannot be a list, be restricted or take a list of values."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0227"
 sev = 30
 text = "TYPE(*CMD) on &1 cannot be a list."
+help = "A command parameter takes one command; MAX must be 1."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0228"
 sev = 30
 text = "MIN and MAX on &1 are not valid together."
+help = "MIN cannot be greater than MAX, and MAX must be at least 1."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0229"
 sev = 30
 text = "&1 is required and has a default."
+help = "A required parameter (MIN greater than zero) always has a value given, so a default is never used. Remove DFT or make the parameter optional."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0230"
 sev = 30
 text = "RSTD(*YES) on &1 needs VALUES, SPCVAL or SNGVAL."
+help = "RSTD(*YES) limits a parameter to the values the definition lists, so at least one of VALUES, SPCVAL or SNGVAL must be given."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0231"
 sev = 30
 text = "&1 has both REL and RANGE."
+help = "A parameter can be checked by a relation (REL) or by a range (RANGE), not by both. Keep one."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0232"
 sev = 30
 text = "RANGE on &1: the lower value is above the upper one."
+help = "The first value of RANGE is the lowest accepted and the second the highest. Exchange them."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0233"
 sev = 30
 text = "SNGVAL on &1 needs a list or a group type."
+help = "SNGVAL values stand in for a whole list or a whole qualified name, so SNGVAL is valid only on a parameter with MAX above 1 or a type naming ELEM or QUAL statements."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0234"
 sev = 30
 text = "PMTCTL(&1) names no PMTCTL statement."
+help = "The PMTCTL keyword of the parameter names a label that no PMTCTL statement has. Add the statement or correct the label."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0235"
 sev = 30
 text = "PMTCTL CTL(&1) names no parameter."
+help = "The CTL keyword of a PMTCTL statement must name a parameter of the command."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0236"
 sev = 30
 text = "DEP names parameter &1, which is not defined."
+help = "Every parameter a DEP statement names must be defined by a PARM statement of the command."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0237"
 sev = 30
 text = "The source needs exactly one CMD statement."
+help = "A command definition source has one CMD statement, before every other statement."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0238"
 sev = 30
 text = "KEYPARM(*YES) parameters must come before the others; &1 does not."
+help = "Key parameters are the ones the prompter shows first; their PARM statements must come before those of the other parameters."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0239"
 sev = 30
 text = "CONSTANT on &1 allows no default, minimum, restriction or return value."
+help = "A constant parameter always passes the same value and is never prompted, so it takes no default, minimum, restriction or return value."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0240"
 sev = 30
 text = "VARY on &1 needs TYPE *CHAR or *PNAME."
+help = "A varying-length value is passed with its length; only character and path name types can vary."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0241"
 sev = 30
 text = "PROMPT text on &1 is over 30 characters."
+help = "The prompt text of a parameter, element or qualifier is shown beside its field and can be at most 30 characters long."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0242"
 sev = 30
 text = "Keyword &1 is not valid on this statement."
+help = "The keyword shown belongs to another statement of a command definition. Remove it or move it to the right statement."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0243"
 sev = 30
 text = "Statement &1 is not one of CMD, PARM, ELEM, QUAL, DEP or PMTCTL."
+help = "A command definition source contains only CMD, PARM, ELEM, QUAL, DEP and PMTCTL statements, with comments."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0244"
 sev = 30
 text = "The value of &1 is not valid on this statement."
+help = "The value given is not one the keyword accepts on this statement."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0245"
 sev = 30
 text = "An ELEM or QUAL statement has no KWD."
+help = "ELEM and QUAL statements describe the parts of a parameter and have no keyword of their own; remove KWD."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0246"
 sev = 30
 text = "NBRTRUE(&1) is more than the PARM entries of the DEP."
+help = "NBRTRUE compares the number of true conditions of a DEP statement with a count; the count cannot be more than the conditions listed."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0247"
 sev = 30
 text = "&1 has a default but its type takes none."
+help = "The parameter's type has no value of its own (for example *NULL or *ZEROELEM), so it cannot have a default."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0248"
 sev = 30
 text = "TYPE(&1) names a PMTCTL label; a type needs an ELEM or QUAL label."
+help = "The type names the label of PMTCTL statements. A type label must label ELEM or QUAL statements."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0249"
 sev = 30
 text = "The qualifiers of &1 must be name or character types."
+help = "Every part of a qualified name must be a name or character type."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0250"
 sev = 30
 text = "The CMD statement must come before any other."
+help = "The CMD statement describes the whole command and must be the first statement of the source."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0251"
 sev = 30
 text = "MAXPOS(&1) must be *NONE or 0 to 99."
+help = "MAXPOS is the number of parameters that can be given by position: *NONE, or a number from 0 to 99."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0252"
 sev = 30
 text = "LGLREL on the first PMTCTL statement of label &1."
+help = "LGLREL joins a PMTCTL statement to the one before it with the same label; the first statement of a label has nothing to join."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0253"
 sev = 30
 text = "An unlabelled &1 statement follows no labelled one."
+help = "ELEM, QUAL and PMTCTL statements without a label continue the labelled group before them; there is none here."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD0254"
 sev = 30
 text = "A value on &1 is longer than its LEN and has no replacement value."
+help = "A value in VALUES, SPCVAL or SNGVAL is longer than the parameter's LEN. Give a shorter value, or a replacement value that fits."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -850,42 +893,49 @@ vars = ["*CHAR 10", "*CHAR 10"]
 id = "CPF9810"
 sev = 40
 text = "Library &1 was not found."
+help = "The library named does not exist on the system, or you are not authorized to it. Check the name with WRKLIB, or create the library with CRTLIB."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPF2111"
 sev = 40
 text = "Object &1 already exists in library &2."
+help = "An object with the same name and type is already in the library. Choose another name, delete or rename the existing object, or use REPLACE(*YES) where the command offers it."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF2105"
 sev = 40
 text = "Object &1 in &2 of type &3 was not found."
+help = "No object of that name and type is in the library, or you are not authorized to see it. Check the name, the library and the type with WRKOBJ."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF2110"
 sev = 40
 text = "Library &1 was not found."
+help = "The library named does not exist on the system. Check the name with WRKLIB."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2102"
 sev = 0
 text = "Library &1 created."
+help = "The library was created and is empty. Objects can now be created in it or moved to it."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2194"
 sev = 0
 text = "Library &1 deleted."
+help = "The library and every object in it were deleted."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2191"
 sev = 0
 text = "Object &1 in &2 of type &3 deleted."
+help = "The object was deleted from the library."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 # The CL compiler (CPD07xx) and the CL commands.
@@ -987,12 +1037,14 @@ help = "CALLSUBR names a subroutine declared with SUBR; RTNSUBR and ENDSUBR lie 
 id = "CPC5D07"
 sev = 0
 text = "Program &1 created in library &2."
+help = "The program was created from its modules and is ready to call."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPC5D0B"
 sev = 0
 text = "Module &1 created in library &2."
+help = "The module was created. Bind it into a program or service program with CRTPGM or CRTSRVPGM."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -1006,6 +1058,7 @@ vars = ["*CHAR 10", "*CHAR 10"]
 id = "CPC0570"
 sev = 0
 text = "Source of program &1 retrieved."
+help = "The CL source of the program was written to the source member named."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -1019,6 +1072,7 @@ vars = ["*CHAR 10"]
 id = "CPC0901"
 sev = 0
 text = "Data area &1 changed."
+help = "The new value is in the data area."
 vars = ["*CHAR 10"]
 
 # UIM APIs (QUIOPNDA, QUIDSPP, the list and help APIs). Data: the
@@ -1057,48 +1111,56 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 id = "CPF6A28"
 sev = 40
 text = "The option for updating list &4 is not SAME or HNDL."
+help = "The option parameter of QUIUPDLE must be SAME, to update the current entry, or HNDL, to update the entry whose handle is given."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A29"
 sev = 40
 text = "The receiver is shorter than eight bytes."
+help = "The receiver variable must be at least eight bytes long, for the bytes returned and available."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A2A"
 sev = 40
 text = "The application scope must be -1 or -2."
+help = "The application scope parameter of QUIOPNDA or QUIOPNPA is -1 (the call stack entry) or -2 (the job)."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A2B"
 sev = 40
 text = "The option for adding to list &4 is not FRST, LAST, NEXT or PREV."
+help = "The option of QUIADDLE says where the entry goes: FRST, LAST, NEXT or PREV."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A2C"
 sev = 40
 text = "The positioning option for list &4 is not FRST, LAST, NEXT, PREV, SAME or HNDL."
+help = "The positioning option of QUIGETLE says which entry to read: FRST, LAST, NEXT, PREV, SAME or HNDL."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A2D"
 sev = 40
 text = "The selection criteria for list &4 are not ALL or ACTION."
+help = "The selection criteria of QUIGETLE are ALL, for every entry, or ACTION, for entries with an option typed."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A2E"
 sev = 40
 text = "The exit program parameter interface must be 0, 1 or 2."
+help = "The exit program interface parameter is 0, 1 or 2, and says how exit programs of the application are called."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A2F"
 sev = 40
 text = "Full-screen help must be Y or N."
+help = "The full-screen help parameter is Y, to show help full screen, or N, to show it in a window."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -1112,18 +1174,21 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 id = "CPF6A36"
 sev = 40
 text = "Variable &5 of record &4 holds bytes that are not a value of its type."
+help = "A variable in the buffer holds bytes that cannot be read as a value of the variable's class, for example letters in a packed decimal field. Correct the buffer."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A37"
 sev = 40
 text = "The value of variable &5 does not fit its type in record &4."
+help = "The value is too long or too large for the class of the variable."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A38"
 sev = 40
 text = "Panel group &1 in &2 has no variable record &4."
+help = "The panel group does not define a variable record of that name with :VARRCD. Check the name in the panel group source."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -1137,36 +1202,42 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 id = "CPF6A3E"
 sev = 40
 text = "The application was opened for printing and shows no panels."
+help = "An application opened with QUIOPNPA prints panels; it cannot display them. Open a display application with QUIOPNDA."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A3F"
 sev = 40
 text = "Panel group &1 in &2 has no panel &4."
+help = "The panel group does not define a panel of that name. Check the name in the panel group source."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A4B"
 sev = 40
 text = "The redisplay option must be Y or N."
+help = "The redisplay parameter of QUIDSPP is Y, to show the panel again as it was, or N."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A4C"
 sev = 40
 text = "A parameter value is not one the API takes."
+help = "A parameter of the API holds a value outside the ones it takes. Check the API's parameter list."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A50"
 sev = 40
 text = "The display went away while panel &4 was shown."
+help = "The display device was ended or disconnected while the panel was shown."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A90"
 sev = 40
 text = "The list contents for list &4 are not ALL, MORE or SAME."
+help = "The list contents parameter of QUISETLA is ALL, MORE or SAME."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -1180,58 +1251,68 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 id = "CPF6A93"
 sev = 40
 text = "List &4 has no current entry."
+help = "The list has no current entry: none was added, read or positioned to yet."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A98"
 sev = 40
 text = "No entry of list &4 matches the request."
+help = "No list entry meets the positioning option and the selection criteria given."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A99"
 sev = 40
 text = "Panel group &1 in &2 declares no variable &5."
+help = "The variable is not declared with :VAR in the panel group."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A9C"
 sev = 40
 text = "No entry of list &4 has the handle given."
+help = "The entry handle given does not belong to an entry of the list."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6A9E"
 sev = 40
 text = "The trim option must be Y or N."
+help = "The trim parameter is Y, to drop the entries before the display position, or N."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6E0A"
 sev = 40
 text = "The number of help identifiers or the help type is not valid."
+help = "The count of help identifiers must be at least 1, and the help type must be 0 for field help or 1 for extended help."
 
 [[msg]]
 id = "CPF6E3B"
 sev = 40
 text = "No help could be found for the identifiers given."
+help = "None of the help identifiers names a help module that exists in its panel group."
 
 [[msg]]
 id = "CPF6E11"
 sev = 40
 text = "Search index &1 was not created in library &2."
+help = "The search index could not be created; the messages before this one give the reason."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6E12"
 sev = 40
 text = "Panel group &1 in &2 was not added to search index &3."
+help = "The panel group's index entries could not be added to the search index; the messages before this one give the reason."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF6E62"
 sev = 40
 text = "Panel group &1 in &2 is in search index &3 already."
+help = "The panel group's topics were added to the search index before. Remove them with RMVSCHIDXE to add them again."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 # The registration facility (QUSRGPT, QUSADDEP, QUSRTVEI, ADDEXITPGM,
@@ -1242,36 +1323,42 @@ vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 id = "CPF3CD1"
 sev = 40
 text = "Exit point &1 is registered with format &2 already."
+help = "The exit point and format are registered already. Use the existing registration, or deregister it first."
 vars = ["*CHAR 20", "*CHAR 8"]
 
 [[msg]]
 id = "CPF3CD2"
 sev = 40
 text = "&1 cannot name an exit point."
+help = "An exit point name is up to 20 characters: letters, digits and the characters _ . # @ $."
 vars = ["*CHAR 20"]
 
 [[msg]]
 id = "CPF3CD3"
 sev = 40
 text = "&1 cannot name an exit point format."
+help = "An exit point format name is up to 8 characters: letters, digits and the characters _ # @ $."
 vars = ["*CHAR 8"]
 
 [[msg]]
 id = "CPF3CD4"
 sev = 40
 text = "Exit point &1 format &2 takes no more exit programs."
+help = "The exit point takes no more exit programs than its registration allows. Remove an exit program, or change the exit point's maximum."
 vars = ["*CHAR 20", "*CHAR 8"]
 
 [[msg]]
 id = "CPF3CD6"
 sev = 40
 text = "&1 bytes of exit program data is not a length the facility keeps."
+help = "Exit program data is kept up to the length the registration facility allows. Give less data."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPF3CD8"
 sev = 40
 text = "Exit point &1 format &2 was not registered."
+help = "The exit point and format could not be registered; the messages before this one give the reason."
 vars = ["*CHAR 20", "*CHAR 8"]
 
 [[msg]]
@@ -1284,78 +1371,92 @@ help = "QUSRSYS/QUSEXRGOBJ is missing or damaged. The next IPL makes it again wi
 id = "CPF3CDB"
 sev = 40
 text = "There is no exit point &1 with format &2."
+help = "The exit point is not registered with that format. Check the names with WRKREGINF."
 vars = ["*CHAR 20", "*CHAR 8"]
 
 [[msg]]
 id = "CPF3CDC"
 sev = 40
 text = "&1 exit points were deregistered and &2 were kept."
+help = "Some exit points could not be deregistered, for example because exit programs are still added to them."
 vars = ["*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPF3CDD"
 sev = 40
 text = "There is no exit program number &1."
+help = "The exit point has no exit program with that number. WRKREGINF option 8 shows its exit programs."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPF3CDE"
 sev = 40
 text = "Program &1 in library &2 cannot be an exit program."
+help = "The program does not exist, or is not a program that can be called as an exit program."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPF3CDF"
 sev = 40
 text = "Exit program number &1 is taken on exit point &2 format &3."
+help = "Each exit program of an exit point has its own number. Choose another number, or *LOW or *HIGH."
 vars = ["*BIN 4", "*CHAR 20", "*CHAR 8"]
 
 [[msg]]
 id = "CPF3CE1"
 sev = 40
 text = "&1 is not an exit program number."
+help = "An exit program number is from 1 to 2147483647, or *LOW or *HIGH."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPF3CE2"
 sev = 40
 text = "The continuation handle did not come from this API."
+help = "The continuation handle must be the one the previous call of the same API returned."
 
 [[msg]]
 id = "CPF3CE4"
 sev = 40
 text = "Comparison operator &1 cannot select exit programs."
+help = "The comparison operator of a selection criterion must be one the API documents."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPF3CE6"
 sev = 40
 text = "The selection compares past the end of the exit program data."
+help = "The start position and length of a selection criterion reach past the end of the exit program's data."
 
 [[msg]]
 id = "CPF3CE7"
 sev = 40
 text = "The number of selection criteria is not valid."
+help = "The number of selection criteria must be zero or more, and agree with the criteria given."
 
 [[msg]]
 id = "CPF3CE8"
 sev = 40
 text = "A selection criterion starts at a position that is not valid."
+help = "A selection criterion's start position must be 1 or more."
 
 [[msg]]
 id = "CPF3CE9"
 sev = 40
 text = "A selection criterion compares a length that is not valid."
+help = "A selection criterion's comparison length must be from 1 to the length of the comparison data."
 
 [[msg]]
 id = "CPF3CEC"
 sev = 40
 text = "No exit point matches."
+help = "No registered exit point matches the names given."
 
 [[msg]]
 id = "CPF3CED"
 sev = 40
 text = "No exit program matches."
+help = "No exit program of the exit point matches the selection given."
 
 # Communications objects: lines, network controllers and devices
 # (net/cmncfg). The CPA58xx/CPI59xx layout is the 40-variable one the
@@ -1365,96 +1466,112 @@ text = "No exit program matches."
 id = "CPC2601"
 sev = 0
 text = "Ethernet line &1 is described."
+help = "The Ethernet line description was created. Vary it on with VRYCFG to use it."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2602"
 sev = 0
 text = "Device description &1 is gone."
+help = "The device description was deleted."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2603"
 sev = 0
 text = "Controller description &1 is gone."
+help = "The controller description was deleted."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2604"
 sev = 0
 text = "Line description &1 is gone."
+help = "The line description was deleted."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2605"
 sev = 0
 text = "Device &1 is varied on."
+help = "The device is varied on and can be used."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2606"
 sev = 0
 text = "Device &1 is varied off."
+help = "The device is varied off and cannot be used until it is varied on again."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2607"
 sev = 0
 text = "Line &1 is varied on."
+help = "The line is varied on."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2608"
 sev = 0
 text = "Line &1 is varied off."
+help = "The line is varied off."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2609"
 sev = 0
 text = "Controller &1 is varied on."
+help = "The controller is varied on."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2610"
 sev = 0
 text = "Controller &1 is varied off."
+help = "The controller is varied off."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2615"
 sev = 0
 text = "Line description &1 now has the new values."
+help = "The line description was changed. Some values take effect the next time the line is varied on."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2629"
 sev = 0
 text = "Network controller &1 was made for the line by automatic configuration."
+help = "Automatic configuration created a network controller description for the line when the line was varied on."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2630"
 sev = 0
 text = "Network device &1 was made for the line by automatic configuration."
+help = "Automatic configuration created a network device description for the line when the line was varied on."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2631"
 sev = 0
 text = "Network controller &1, made by automatic configuration, is gone with its line."
+help = "The network controller that automatic configuration created was deleted with its line description."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2632"
 sev = 0
 text = "Network device &1, made by automatic configuration, is gone with its line."
+help = "The network device that automatic configuration created was deleted with its line description."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD2640"
 sev = 40
 text = "Device &1 is varied off already."
+help = "The device was not varied on, so it cannot be varied off."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -1468,12 +1585,14 @@ vars = ["*CHAR 10"]
 id = "CPD2646"
 sev = 40
 text = "Line &1 is varied off already."
+help = "The line was not varied on, so it cannot be varied off."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPD2650"
 sev = 40
 text = "Controller &1 is varied off already."
+help = "The controller was not varied on, so it cannot be varied off."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -1494,24 +1613,28 @@ vars = ["*CHAR 10"]
 id = "CPF2601"
 sev = 40
 text = "There is no line description &1."
+help = "There is no line description of that name. WRKLIND lists the line descriptions."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPF2602"
 sev = 40
 text = "There is no controller &1."
+help = "There is no controller description of that name. WRKCTLD lists the controller descriptions."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPF2603"
 sev = 40
 text = "There is no device description &1."
+help = "There is no device description of that name. WRKDEVD lists the device descriptions."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPF2606"
 sev = 40
 text = "A line description called &1 exists already."
+help = "A line description of that name exists. Choose another name, or delete the existing one first."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -1545,18 +1668,21 @@ help = "The messages before this one say why."
 id = "CPF5908"
 sev = 0
 text = "Line &2 is up: network controller &1 is in contact."
+help = "The line is active and the network controller attached to it is communicating."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 5"]
 
 [[msg]]
 id = "CPF5928"
 sev = 40
 text = "Controller &1 is not varied on."
+help = "The controller must be varied on first. Vary it on with VRYCFG."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPF5933"
 sev = 40
 text = "Line &1 is not varied on."
+help = "The line must be varied on first. Vary it on with VRYCFG."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -1593,384 +1719,451 @@ help = "Every name the line's TCP/IP device could take is in use. Delete unused 
 id = "CPCA083"
 sev = 0
 text = "Directory &1 made."
+help = "The directory was created."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA084"
 sev = 0
 text = "&1 renamed to &2."
+help = "The object now has its new name."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA085"
 sev = 0
 text = "Directory &1 removed."
+help = "The directory was removed."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA086"
 sev = 0
 text = "&1 moved to &2."
+help = "The object is now in its new directory."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA087"
 sev = 0
 text = "&1 copied to &2."
+help = "The object was copied."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA088"
 sev = 0
 text = "Link &2 now names &1."
+help = "The link was created; it names the object shown."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA089"
 sev = 0
 text = "Link &1 removed."
+help = "The link was removed. The object is deleted with its last link when it is not in use."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA08A"
 sev = 0
 text = "&1 is checked in."
+help = "The object is checked in: other users can change it again."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA08B"
 sev = 0
 text = "The current directory is now &1."
+help = "Relative path names now start from this directory."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA08F"
 sev = 0
 text = "&1 is checked out to you."
+help = "The object is checked out to you: only you can change it until it is checked in."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA1B0"
 sev = 0
 text = "&1 is mounted over &2."
+help = "The file system is mounted; the directory now shows its contents."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA1B1"
 sev = 0
 text = "&1 is no longer mounted."
+help = "The file system was unmounted; the directory shows its own contents again."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA1C0"
 sev = 0
 text = "User-defined file system &1 made."
+help = "The user-defined file system was created. Mount it with MOUNT to use it."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA1C1"
 sev = 0
 text = "User-defined file system &1 deleted."
+help = "The user-defined file system and the objects in it were deleted."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA089"
 sev = 30
 text = "&1 may not hold a pattern here."
+help = "A pattern (a name with * or ?) is not allowed in this part of the path."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA08C"
 sev = 30
 text = "Only the last name of &1 may hold a pattern."
+help = "Patterns are allowed only in the last part of a path name."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA091"
 sev = 30
 text = "&1 is not a user profile name: patterns are not taken."
+help = "A user profile must be named exactly; patterns are not accepted."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA093"
 sev = 30
 text = "Nothing matches &1."
+help = "No object name matches the pattern given."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA094"
 sev = 30
 text = "A path name is needed."
+help = "The command needs a path name; give one."
 
 [[msg]]
 id = "CPFA09C"
 sev = 40
 text = "Not enough authority for &1."
+help = "You do not have the authority the operation needs to the object, or to a directory in its path. Ask its owner or your security officer for authority."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA09E"
 sev = 40
 text = "&1 is being used or is checked out."
+help = "Another job is using the object, or it is checked out to another user. Try again later."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA09F"
 sev = 40
 text = "&1 is damaged."
+help = "The object is damaged and cannot be used. Restore it from a save, or delete it and create it again."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0A0"
 sev = 40
 text = "&1 exists already."
+help = "An object of that name exists in the directory. Choose another name, or remove the existing one first."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0A1"
 sev = 40
 text = "The file system had an input or output error."
+help = "An input or output error occurred in the file system. See the messages before this one, and the problem log."
 
 [[msg]]
 id = "CPFA0A2"
 sev = 40
 text = "A value given to the file system is not valid."
+help = "A value given to the file system is outside what it accepts."
 
 [[msg]]
 id = "CPFA0A3"
 sev = 40
 text = "Too many symbolic links were followed resolving &1."
+help = "Resolving the path name followed more symbolic links than the system allows; the links may point at each other."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0A4"
 sev = 40
 text = "The job has as many files open as it may."
+help = "The job has opened as many files as it can. Close files it no longer needs."
 
 [[msg]]
 id = "CPFA0A5"
 sev = 40
 text = "The system has as many files open as it may."
+help = "The system has as many files open as it can. Try again later."
 
 [[msg]]
 id = "CPFA0A6"
 sev = 40
 text = "The object has as many links as it may."
+help = "The object cannot get another hard link."
 
 [[msg]]
 id = "CPFA0A7"
 sev = 40
 text = "&1 or one of its names is too long."
+help = "A path name is up to 16 megabytes and each name in it up to 255 characters, less in some file systems."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0A9"
 sev = 40
 text = "&1 was not found."
+help = "No object has the path name given. Check the name with WRKLNK."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0AA"
 sev = 40
 text = "The file system has no room left."
+help = "The file system has no free space for the operation. Delete objects or add storage."
 
 [[msg]]
 id = "CPFA0AB"
 sev = 40
 text = "The operation did not complete for &1; the diagnostics say why."
+help = "The operation stopped before it was done for the object. The diagnostic messages before this one say why."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0AC"
 sev = 40
 text = "Directory &1 is not empty."
+help = "A directory must be empty before it is removed, unless the command removes its contents too."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0AD"
 sev = 40
 text = "The file system of &1 does not do this."
+help = "The file system that holds the object does not support this operation."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0AF"
 sev = 30
 text = "The object was made, but not every attribute asked for could be set."
+help = "The object exists, but some attributes asked for were not set. The messages before this one say which."
 
 [[msg]]
 id = "CPFA0B0"
 sev = 40
 text = "This cannot go from one file system to another."
+help = "The operation works within one file system only. Copy the object instead."
 
 [[msg]]
 id = "CPFA0B1"
 sev = 40
 text = "The object or its file system is read-only."
+help = "The object, or the file system it is in, cannot be changed."
 
 [[msg]]
 id = "CPFA0B2"
 sev = 40
 text = "No object matches &1."
+help = "No object matches the name given."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0B3"
 sev = 30
 text = "Give TODIR or TOOBJ, not both."
+help = "TODIR names the directory the objects go to and TOOBJ the new path of one object; give one of them."
 
 [[msg]]
 id = "CPFA0B4"
 sev = 30
 text = "The new name &1 may not start with a slash."
+help = "The new name is a name in the same directory, not a path; it cannot start with a slash."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0B5"
 sev = 30
 text = "The new name &1 is a name, not a path."
+help = "The new name may not hold a slash: it is the new last name of the object."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0B6"
 sev = 30
 text = "TOOBJ cannot be used when OBJ &1 names several objects."
+help = "TOOBJ names one object; when OBJ selects several objects, use TODIR."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0B8"
 sev = 40
 text = "&3 objects moved, &4 not moved."
+help = "Some objects were not moved; the messages before this one say why."
 vars = ["*BIN 2", "*BIN 2", "*BIN 8", "*BIN 8"]
 
 [[msg]]
 id = "CPFA0B9"
 sev = 30
 text = "*INDIR stands alone in DTAAUT and OBJAUT."
+help = "*INDIR takes the authority from the directory, so no other value can be given with it."
 
 [[msg]]
 id = "CPFA0BB"
 sev = 40
 text = "&1 objects copied, &2 not copied."
+help = "Some objects were not copied; the messages before this one say why."
 vars = ["*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPFA0BD"
 sev = 40
 text = "&1 links removed, &2 not removed."
+help = "Some links were not removed; the messages before this one say why."
 vars = ["*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPFA0BE"
 sev = 40
 text = "&3 objects checked in, &4 not checked in."
+help = "Some objects were not checked in; the messages before this one say why."
 vars = ["*BIN 2", "*BIN 2", "*BIN 8", "*BIN 8"]
 
 [[msg]]
 id = "CPFA0BF"
 sev = 40
 text = "&3 objects checked out, &4 not checked out."
+help = "Some objects were not checked out; the messages before this one say why."
 vars = ["*BIN 2", "*BIN 2", "*BIN 8", "*BIN 8"]
 
 [[msg]]
 id = "CPFA0C1"
 sev = 30
 text = "CCSID &1 cannot be used here."
+help = "The CCSID cannot be used for this object or operation."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPFA0C3"
 sev = 40
 text = "*SAME stands alone in OBJAUT."
+help = "*SAME keeps the object authorities as they are, so no other value can be given with it."
 
 [[msg]]
 id = "CPFA0CB"
 sev = 40
 text = "&1 is not an auditing value."
+help = "The auditing value must be one the command lists: *NONE, *USRPRF, *CHANGE, *ALL and so on."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPFA0D0"
 sev = 20
 text = "Data could not be converted between CCSIDs."
+help = "Some characters had no match in the target CCSID and were replaced, or the data was left unconverted."
 vars = ["*BIN 4", "*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPFA0D4"
 sev = 40
 text = "The file system answered errno &1."
+help = "The file system reported the errno value shown. The messages before this one may say more."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPFA0DA"
 sev = 40
 text = "&1 is a directory."
+help = "The operation needs an object that is not a directory."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0DB"
 sev = 40
 text = "&1 does not name an object in /QSYS.LIB."
+help = "The path does not name a library, object or member in /QSYS.LIB."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0DD"
 sev = 40
 text = "The operation was interrupted."
+help = "The operation was interrupted before it finished. Run it again."
 
 [[msg]]
 id = "CPFA0E0"
 sev = 40
 text = "No object has the file identifier of &1."
+help = "No object on the system has that file identifier; the object may have been deleted."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0E8"
 sev = 40
 text = "&1 did not pass its scan."
+help = "An exit program of the scan exit points found a problem with the object, so it cannot be used."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPFA0ED"
 sev = 40
 text = "Option &1 is not available here."
+help = "The option cannot be used on this display or for this object."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPFA0F1"
 sev = 40
 text = "&1 of &2 links looked at; &3 of &4 problems put right."
+help = "RCLLNK looked at the links shown and reports how many problems it found and how many it corrected."
 vars = ["*BIN 8", "*BIN 8", "*BIN 8", "*BIN 8"]
 
 [[msg]]
 id = "CPDA03C"
 sev = 50
 text = "Attribute number &1 cannot be changed."
+help = "The attribute named cannot be changed with this command."
 vars = ["*BIN 2"]
 
 [[msg]]
 id = "CPDA03D"
 sev = 50
 text = "That value does not go with that attribute."
+help = "The value given is not valid for the attribute named."
 
 [[msg]]
 id = "CPDA091"
 sev = 10
 text = "A value given is not one this command takes."
+help = "One of the values given is not accepted by the command. F4 shows the values each parameter takes."
 
 [[msg]]
 id = "CPDA0B8"
 sev = 30
 text = "Give SUBTREE or RMVLNK, not both."
+help = "SUBTREE and RMVLNK cannot both be given; choose one."
 
 [[msg]]
 id = "CPDA0C1"
 sev = 30
 text = "TEXT is used with ATR(*TEXT) only; leave it *BLANK."
+help = "TEXT is used only when ATR(*TEXT) is given; leave it *BLANK for other attributes."
 
 [[msg]]
 id = "CPDA0C2"
 sev = 30
 text = "ATR(*TEXT) takes VALUE(*NONE); the text goes in TEXT."
+help = "For ATR(*TEXT) the text is given in TEXT, and VALUE must be *NONE."
 
 # --- IFS: stream file copies (CPYTOSTMF, CPYFRMSTMF, the IMPF stream files)
 
@@ -1978,12 +2171,14 @@ text = "ATR(*TEXT) takes VALUE(*NONE); the text goes in TEXT."
 id = "CPCA081"
 sev = 0
 text = "Stream file &1 was copied to member &2: &3 records."
+help = "The stream file's data was copied into the database member; the count is the number of records written."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
 
 [[msg]]
 id = "CPCA082"
 sev = 0
 text = "Member &1 was copied to stream file &2: &3 records."
+help = "The database member's records were copied into the stream file; the count is the number of records read."
 vars = ["*CHAR *VARY 4", "*CHAR *VARY 4", "*BIN 4"]
 
 [[msg]]
@@ -2024,6 +2219,7 @@ vars = ["*CHAR *VARY 4"]
 id = "CPDA086"
 sev = 30
 text = "CVTDTA(*TBL) needs a conversion table in TBL."
+help = "CVTDTA(*TBL) converts with a conversion table, so TBL must name one."
 
 [[msg]]
 id = "CPDA089"
@@ -2050,6 +2246,7 @@ vars = ["*BIN 4", "*BIN 4"]
 id = "CPDA08C"
 sev = 40
 text = "The file of &1 is tagged 65535: give DBFCCSID to convert its data."
+help = "A file tagged with CCSID 65535 holds data in no particular code page. Give DBFCCSID to say which CCSID its data is in."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
@@ -2063,12 +2260,14 @@ vars = ["*CHAR *VARY 4", "*CHAR *VARY 4"]
 id = "CPDA097"
 sev = 30
 text = "Data cannot be converted from CCSID &1 to CCSID &2."
+help = "The system has no conversion between the two CCSIDs. Choose CCSIDs it can convert, or copy without conversion."
 vars = ["*BIN 4", "*BIN 4"]
 
 [[msg]]
 id = "CPDA098"
 sev = 30
 text = "TBL is used only with CVTDTA(*TBL)."
+help = "TBL is used only when CVTDTA(*TBL) is given."
 
 [[msg]]
 id = "CPDA09B"
@@ -2080,6 +2279,7 @@ help = "Use CVTDTA(*AUTO) with the CCSIDs of the data instead."
 id = "CPDA0B9"
 sev = 30
 text = "Give STMFCCSID or STMFCODPAG, not both."
+help = "STMFCCSID and STMFCODPAG both give the stream file's data encoding; give only one."
 
 # --- IFS: EDTF and DSPF
 
@@ -2087,128 +2287,152 @@ text = "Give STMFCCSID or STMFCODPAG, not both."
 id = "CPDB603"
 sev = 10
 text = "Type a record number or a column in the field first."
+help = "The command needs a position: type a record number, or put the cursor in the field, first."
 
 [[msg]]
 id = "CPDB605"
 sev = 10
 text = "The position typed is not a number."
+help = "The position must be a number."
 
 [[msg]]
 id = "CPDB607"
 sev = 20
 text = "CCSID &1 cannot be converted here."
+help = "The editor cannot convert data in that CCSID to and from the job's."
 vars = ["*CHAR 5"]
 
 [[msg]]
 id = "CPDB608"
 sev = 20
 text = "That line command is not one the editor knows."
+help = "Line commands are typed in the sequence area: I, D, C, M, A, B, R and others. The one typed is not among them."
 
 [[msg]]
 id = "CPDB612"
 sev = 10
 text = "The file mixes line ends; the first one found is used on save."
+help = "The file has more than one kind of line end; the editor writes every line with the first kind it found."
 
 [[msg]]
 id = "CPDB613"
 sev = 20
 text = "&1 changes were not saved."
+help = "The changes were not written to the file."
 vars = ["*BIN 4"]
 
 [[msg]]
 id = "CPDB617"
 sev = 20
 text = "There is no change to repeat: use CHANGE on the control line first."
+help = "The repeat key repeats the last CHANGE command; none was run yet."
 
 [[msg]]
 id = "CPDB624"
 sev = 30
 text = "That line end is not one of *CRLF, *LF, *CR, *LFCR, *NL."
+help = "The line end must be one of *CRLF, *LF, *CR, *LFCR or *NL."
 
 [[msg]]
 id = "CPDB627"
 sev = 30
 text = "Name a stream file or a database file, not both."
+help = "The command edits either a stream file or a database file member; give one of them."
 
 [[msg]]
 id = "CPDB628"
 sev = 30
 text = "Name a stream file or a database file."
+help = "The command needs a stream file or a database file to edit."
 
 [[msg]]
 id = "CPDB629"
 sev = 30
 text = "A member goes with a database file, not with a stream file."
+help = "A member is part of a database file; it cannot be given with a stream file."
 
 [[msg]]
 id = "CPFB602"
 sev = 30
 text = "File &1 could not be opened."
+help = "The file could not be opened; the messages before this one say why."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "CPFB610"
 sev = 30
 text = "The control line command is not one the editor knows."
+help = "The command typed on the control line is not one the editor knows. F1 lists its commands."
 
 [[msg]]
 id = "CPFB612"
 sev = 30
 text = "Give the text to find (and the new text, to change)."
+help = "FIND needs the text to find, and CHANGE also the text to put in its place."
 
 [[msg]]
 id = "CPFB615"
 sev = 30
 text = "Mark where the lines go with A (after) or B (before)."
+help = "Copy and move line commands need a target: type A (after) or B (before) on the record where the lines go."
 
 [[msg]]
 id = "CPFB618"
 sev = 40
 text = "Text in CCSID &1 cannot be shown in the job's CCSID."
+help = "Characters of the file's CCSID have no match in the job's CCSID, so the file cannot be shown."
 vars = ["*CHAR 5"]
 
 [[msg]]
 id = "CPFB619"
 sev = 40
 text = "The file holds no data."
+help = "The file is empty."
 
 [[msg]]
 id = "CPFB621"
 sev = 40
 text = "The editor and the browser need a display: run the command from an interactive job."
+help = "EDTF and DSPF use a display; run them from an interactive job, not from a batch job."
 
 [[msg]]
 id = "CPIB605"
 sev = 0
 text = "The file was changed. Press F12 again to leave without saving, F3 to save and leave."
+help = "You changed the file. F12 again leaves without saving the changes; F3 saves them and leaves."
 
 [[msg]]
 id = "CPIB606"
 sev = 10
 text = "The browser does not change the file."
+help = "DSPF shows the file without changing it; use EDTF to change it."
 
 [[msg]]
 id = "CPIB607"
 sev = 0
 text = "&1 occurrences of &2 found."
+help = "The count of occurrences of the text that FIND found."
 vars = ["*BIN 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPIB608"
 sev = 0
 text = "&1 occurrences changed."
+help = "The count of occurrences that CHANGE changed."
 vars = ["*BIN 4", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPIB611"
 sev = 0
 text = "The file will be tagged with CCSID &1 when it is saved."
+help = "When the file is saved its CCSID tag will be the one shown."
 vars = ["*CHAR 5"]
 
 [[msg]]
 id = "CPIB612"
 sev = 0
 text = "The file's CCSID was changed from &1 to &2."
+help = "The CCSID tag of the file was changed."
 vars = ["*CHAR 5", "*CHAR 5"]
 
 # The communications trace (STRCMNTRC, ENDCMNTRC, DLTCMNTRC, CHKCMNTRC,
@@ -2343,29 +2567,34 @@ vars = ["*CHAR 10", "*CHAR 4"]
 id = "CPCA980"
 sev = 0
 text = "Added the environment variable."
+help = "The environment variable was added to the job's or the system's list."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA981"
 sev = 0
 text = "Changed the environment variable."
+help = "The environment variable has its new value."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA982"
 sev = 0
 text = "Printed the list of environment variables."
+help = "The list of environment variables was printed to a spooled file."
 
 [[msg]]
 id = "CPCA983"
 sev = 0
 text = "Printed the environment variable."
+help = "The environment variable was printed to a spooled file."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
 id = "CPCA988"
 sev = 0
 text = "Removed the environment variable."
+help = "The environment variable was removed."
 vars = ["*CHAR *VARY 4"]
 
 [[msg]]
@@ -2520,12 +2749,14 @@ vars = ["*CHAR 7"]
 id = "CPC9E26"
 sev = 0
 text = "License key information for product &1 removed."
+help = "The license key information of the product was removed from the license repository."
 vars = ["*CHAR 7"]
 
 [[msg]]
 id = "CPC9E27"
 sev = 0
 text = "License information for product &1 changed."
+help = "The license information of the product was changed."
 vars = ["*CHAR 7"]
 
 [[msg]]
@@ -3396,12 +3627,14 @@ vars = ["*CHAR 10"]
 id = "CPC2618"
 sev = 0
 text = "Device description &1 is made."
+help = "The device description was created. Vary the device on with VRYCFG to use it."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPC2619"
 sev = 0
 text = "Device description &1 now has the new values."
+help = "The device description was changed. Some values take effect the next time the device is varied on."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -3534,54 +3767,63 @@ reply = { default = "C", valid = ["C", "G"] }
 id = "CPC6773"
 sev = 0
 text = "Volume &1 is initialized on device &2."
+help = "The volume was initialized and has the new volume identifier."
 vars = ["*CHAR 6", "*CHAR 10"]
 
 [[msg]]
 id = "CPC6774"
 sev = 0
 text = "Volume &1 on device &2 is checked."
+help = "The volume was read and its labels checked."
 vars = ["*CHAR 6", "*CHAR 10"]
 
 [[msg]]
 id = "CPC6775"
 sev = 0
 text = "The files are copied from device &1 to device &2."
+help = "The files were copied from one device's volume to the other's."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPC6776"
 sev = 0
 text = "Cartridge &1 is now in category &2 of &3."
+help = "The cartridge's category in the media library was changed."
 vars = ["*CHAR 6", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPC6777"
 sev = 0
 text = "Cartridge &1 is ejected from &2."
+help = "The cartridge was moved out of the media library."
 vars = ["*CHAR 6", "*CHAR 10"]
 
 [[msg]]
 id = "CPC6778"
 sev = 0
 text = "&1 records went to tape file &2 on device &3."
+help = "The records were written to the tape file."
 vars = ["*CHAR 10", "*CHAR 17", "*CHAR 10"]
 
 [[msg]]
 id = "CPC6779"
 sev = 0
 text = "&1 records came from tape file &2 into &3."
+help = "The records were read from the tape file into the file named."
 vars = ["*CHAR 10", "*CHAR 17", "*CHAR 10"]
 
 [[msg]]
 id = "CPC7301"
 sev = 0
 text = "Tape file &1 in &2 is made."
+help = "The tape file was created."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPC7302"
 sev = 0
 text = "Tape file &1 in &2 is changed."
+help = "The tape file was changed."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
@@ -3671,66 +3913,77 @@ vars = ["*CHAR 10"]
 id = "CPCBC01"
 sev = 0
 text = "Image catalog &1 is made."
+help = "The image catalog was created. Add image files to it with ADDIMGCLGE."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPCBC02"
 sev = 0
 text = "Image catalog &1 is gone."
+help = "The image catalog was deleted."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPCBC03"
 sev = 0
 text = "Image catalog &1 has a new entry, &2."
+help = "The image file was added to the image catalog."
 vars = ["*CHAR 10", "*CHAR 3"]
 
 [[msg]]
 id = "CPCBC04"
 sev = 0
 text = "Entry &2 is out of image catalog &1."
+help = "The entry was removed from the image catalog."
 vars = ["*CHAR 10", "*CHAR 3"]
 
 [[msg]]
 id = "CPCBC05"
 sev = 0
 text = "Entry &2 of image catalog &1 now has the new values."
+help = "The image catalog entry was changed."
 vars = ["*CHAR 10", "*CHAR 3"]
 
 [[msg]]
 id = "CPCBC06"
 sev = 0
 text = "Image catalog &1 is ready on device &2."
+help = "The image catalog is loaded on the virtual device; its mounted image is the device's volume."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "CPCBC07"
 sev = 0
 text = "Image catalog &1 is no longer on a device."
+help = "The image catalog was unloaded from its virtual device."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPCBC08"
 sev = 0
 text = "Image catalog &1 checked out."
+help = "The image catalog's directory and image files were checked."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPCBC09"
 sev = 0
 text = "Entry &2 of image catalog &1 has its new status."
+help = "The status of the image catalog entry was changed."
 vars = ["*CHAR 10", "*CHAR 3"]
 
 [[msg]]
 id = "CPFBC01"
 sev = 40
 text = "There is no image catalog &1."
+help = "No image catalog of that name exists. WRKIMGCLG lists the image catalogs."
 vars = ["*CHAR 10"]
 
 [[msg]]
 id = "CPFBC02"
 sev = 40
 text = "There is already an image catalog &1."
+help = "An image catalog of that name exists. Choose another name."
 vars = ["*CHAR 10"]
 
 [[msg]]
@@ -3791,6 +4044,7 @@ help = "A catalog loads on a virtual device of its type, and a device holds one 
 id = "CPFBC0C"
 sev = 40
 text = "That volume is already in the image catalog."
+help = "The image catalog has an entry for that volume already."
 
 [[msg]]
 id = "CPFBC0D"
@@ -3802,11 +4056,13 @@ help = "The lines before this one list each problem."
 id = "CPFBC0E"
 sev = 40
 text = "That image can only be read."
+help = "The image file is write-protected and can only be read."
 
 [[msg]]
 id = "CPFBC0F"
 sev = 40
 text = "A parameter value cannot be used with this image catalog."
+help = "A parameter value cannot be used with this type of image catalog."
 
 [[msg]]
 id = "CPFBC10"

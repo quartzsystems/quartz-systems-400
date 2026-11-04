@@ -17,8 +17,9 @@
 //!   naming a module that resolves;
 //! - a command: `HLPPNLGRP` and `HLPID`, module `HLPID` and module
 //!   `HLPID/KWD` for each parameter;
-//! - a message: second-level text. Every message counts: the oracle
-//!   gives second-level text to the messages we ship.
+//! - a message: second-level text. Every message counts (the oracle
+//!   gives second-level text to the messages we ship) except one whose
+//!   whole text is the sender's (`&1`: CPF9897, CPF9898).
 
 pub mod commands;
 pub mod dspfs;

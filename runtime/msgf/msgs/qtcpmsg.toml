@@ -610,6 +610,7 @@ vars = ["*CHAR 100"]
 id = "TCP1C0B"
 sev = 0
 text = "Application &1 removed."
+help = "The application was removed from the TCP/IP application table."
 vars = ["*CHAR 100"]
 
 [[msg]]
@@ -672,6 +673,7 @@ vars = ["*CHAR 100"]
 id = "TCP1C16"
 sev = 40
 text = "Application &1 is already registered."
+help = "The application is in the table already; change it, or remove it first."
 vars = ["*CHAR 100"]
 
 [[msg]]
