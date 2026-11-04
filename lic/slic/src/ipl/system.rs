@@ -116,6 +116,12 @@ pub struct System {
     /// Jobs that read their own end requests (server jobs no monitor
     /// started): a monitor leaves those requests to them.
     pub self_ending: std::collections::BTreeSet<u32>,
+    /// Subsystems that ended and were not started again: their jobs no
+    /// monitor started (servers, sessions' jobs) end too.
+    pub ended_sbs: std::collections::BTreeSet<String>,
+    /// The job that ran `ENDSBS *ALL` from the controlling subsystem
+    /// interactively: it stays, as the console's job does.
+    pub rstd_keep: Option<u32>,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
     /// Every spooled file (storage service).
@@ -191,6 +197,8 @@ impl System {
             jobq_attach: std::collections::BTreeMap::new(),
             end_requests: std::collections::BTreeMap::new(),
             self_ending: std::collections::BTreeSet::new(),
+            ended_sbs: std::collections::BTreeSet::new(),
+            rstd_keep: None,
             sbs: std::collections::BTreeMap::new(),
             pools: wm::pools::PoolTable::default(),
             break_alloc: std::collections::HashMap::new(),

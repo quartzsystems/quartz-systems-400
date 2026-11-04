@@ -1422,6 +1422,26 @@ fn type_entry_matches(entry: &str, device: &str) -> bool {
 }
 
 fn subsystem_for(link: &mut Link, device: &str) -> Option<(String, Sbsd)> {
+    let found = active_subsystem_for(link, device);
+    if found.is_some() || device != crate::display::CONSOLE_DEVICE {
+        return found;
+    }
+    // The restricted state: the console signs on to the controlling
+    // subsystem, which is not active.
+    let ctl = link
+        .sysval("QCTLSBSD".into())
+        .ok()
+        .flatten()
+        .map(|v| ccsid::from_ebcdic(&v.data))
+        .unwrap_or_default();
+    let mut parts = ctl.split_whitespace();
+    let name = parts.next().unwrap_or("QCTL").to_string();
+    let lib = parts.next().unwrap_or("QSYS").to_string();
+    let b = link.wm_object(format!("{lib}/{name}"), "*SBSD".into()).ok()?.ok()?;
+    Sbsd::decode(&b).ok().map(|d| (name, d))
+}
+
+fn active_subsystem_for(link: &mut Link, device: &str) -> Option<(String, Sbsd)> {
     let active = link.sbs_list().ok()?;
     let mut by_type = None;
     for s in active {
@@ -1605,15 +1625,32 @@ fn run_job(
         .filter(|m| *m > 0)
         .map(|m| Duration::from_secs(m * 60));
     let mut last_input = Instant::now();
+    let mut last_inactive_check = Instant::now();
+    let mut last_end_check = Instant::now();
     let mut queue: VecDeque<Ev> = VecDeque::new();
     let outcome = loop {
+        // ENDJOB and ENDSBS reach the session's jobs here, each second: no
+        // monitor holds them.
+        if last_end_check.elapsed() >= Duration::from_secs(1) {
+            last_end_check = Instant::now();
+            let numbers: Vec<u32> = jobs.held.iter().map(Held::number).collect();
+            for (n, immediate) in link.ws_end_requests(numbers).unwrap_or_default() {
+                if let Some(i) = jobs.index(n) {
+                    let _ = jobs.held[i].job.chan.send(&ToJob::End { immediate });
+                }
+            }
+        }
         let ev = if let Some(e) = queue.pop_front() {
             e
         } else {
-            match ev_rx.recv_timeout(Duration::from_secs(30)) {
+            match ev_rx.recv_timeout(Duration::from_secs(1)) {
                 Ok(ev) => ev,
                 Err(mpsc::RecvTimeoutError::Disconnected) => break Outcome::ConnectionGone,
                 Err(mpsc::RecvTimeoutError::Timeout) => {
+                    if last_inactive_check.elapsed() < Duration::from_secs(30) {
+                        continue;
+                    }
+                    last_inactive_check = Instant::now();
                     if inactive_after.is_some_and(|d| last_input.elapsed() >= d) {
                         let action = link.sysval("QINACTMSGQ".into()).ok().flatten().map_or_else(
                             || "*ENDJOB".into(),

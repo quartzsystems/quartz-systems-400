@@ -811,6 +811,9 @@ ipc::rpc! {
     /// The job user's server authentication entry for `server`: the
     /// remote user ID and password (empty when none is kept).
     1464 => fn svraute_get / SvrAutEGet (server: String) -> Option<(String, String)>;
+    /// The jobs of a display session that are to end, of those named:
+    /// `ENDJOB`'s and their subsystem's end, and whether `*IMMED`.
+    1440 => fn ws_end_requests / WsEndRequests (jobs: Vec<u32>) -> Vec<(u32, bool)>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

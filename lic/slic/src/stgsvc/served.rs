@@ -201,6 +201,7 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
         Request::Ping {}
             | Request::SetStatus { .. }
             | Request::SbsState {}
+            | Request::WsEndRequests { .. }
             | Request::Breaks {}
             | Request::JoblogPut { .. }
             | Request::WtrNext { .. }
@@ -1047,8 +1048,26 @@ impl Service for Served<'_> {
             if let Some(i) = self.system.end_requests.remove(&me) {
                 s.end_jobs.push((me, i));
             }
+            // Its subsystem ending (or ended) ends it too.
+            if s.ending.is_none()
+                && let Some(i) = super::sbs::ends_with_subsystem(self.system, me)
+            {
+                s.ending = Some((i, 0));
+            }
         }
         s
+    }
+
+    fn ws_end_requests(&mut self, jobs: Vec<u32>) -> Vec<(u32, bool)> {
+        jobs.into_iter()
+            .filter_map(|n| {
+                self.system
+                    .end_requests
+                    .remove(&n)
+                    .or_else(|| super::sbs::ends_with_subsystem(self.system, n))
+                    .map(|i| (n, i))
+            })
+            .collect()
     }
 
     fn sbmjob(&mut self, req: wm::obj::jobq::SbmJob) -> Result<(u32, String), String> {
@@ -1306,6 +1325,7 @@ impl Service for Served<'_> {
     }
 
     fn sbs_end(&mut self, name: String, immediate: bool, delay: u32) -> Result<(), String> {
+        self.system.current_job = self.ctx.job.number;
         super::sbs::end(self.system, &name, immediate, delay).map(|_| ())
     }
 

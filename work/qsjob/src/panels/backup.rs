@@ -79,9 +79,12 @@ fn dspbckup(job: &mut Job, host: &Host, surface: &mut Surface, which: &str) -> R
     }
 }
 
-/// The job runs inside a subsystem: `ENDSBS *ALL` would end it.
+/// `ENDSBS *ALL` would end the job: one in a subsystem that is neither
+/// the console's job (which outlives it, as IBM i's does) nor one of
+/// the system's own (`QSVCJOB`).
 fn in_subsystem(host: &Host) -> Result<(), Fail> {
-    if host.start.subsystem.is_empty() {
+    let s = &host.start;
+    if s.subsystem.is_empty() || s.kind == 'S' || (s.kind == 'I' && s.name == crate::display::CONSOLE_DEVICE) {
         return Ok(());
     }
     Err(Fail::new(

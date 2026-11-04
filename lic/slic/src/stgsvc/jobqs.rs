@@ -404,7 +404,8 @@ pub fn take_end_requests(system: &mut System, monitor: u32) -> Vec<(u32, bool)> 
         .end_requests
         .iter()
         .filter(|(n, _)| !system.self_ending.contains(*n))
-        .filter(|(n, _)| system.jobs.get(**n).is_some_and(|j| j.subsystem == sbs))
+        // A display session holds its interactive jobs, not the monitor.
+        .filter(|(n, _)| system.jobs.get(**n).is_some_and(|j| j.subsystem == sbs && j.kind != 'I'))
         .map(|(n, i)| (*n, *i))
         .collect();
     for (n, _) in &mine {

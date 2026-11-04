@@ -220,6 +220,10 @@ pub fn register(
         },
     );
     super::jobqs::attach(system, name, &queues);
+    system.ended_sbs.remove(name);
+    if name == controlling(system) {
+        system.rstd_keep = None;
+    }
     let who = crate::stgsvc::msgs::sender(system, monitor);
     let data = wm::joblog::data(&[(name, 10), (lib, 10)]);
     super::hist::system_message(system, "CPF0902", &data, "04", who);
@@ -235,6 +239,7 @@ pub fn monitor_ended(system: &mut System, monitor: u32) {
         .map(|(n, _)| n.clone())
         .collect();
     for name in ended {
+        system.ended_sbs.insert(name.clone());
         if let Some(a) = system.sbs.remove(&name) {
             super::jobqs::detach(system, &name);
             for (_, p) in &a.pools {
@@ -264,12 +269,45 @@ pub fn state(system: &System, monitor: u32) -> SbsState {
     }
 }
 
+/// The console display's name: its interactive job outlives every
+/// `ENDSBS`, as the console's does on IBM i.
+pub const CONSOLE_DEVICE: &str = "QSCONSOLE";
+
+/// How job `n` is to end because its subsystem ends (`*IMMED`), for the
+/// jobs no monitor started: servers, and the jobs a display session
+/// holds. `None` while its subsystem is active, and always for the
+/// system's own jobs, the console's job and the job kept for the
+/// restricted state.
+pub fn ends_with_subsystem(system: &System, n: u32) -> Option<bool> {
+    let j = system.jobs.get(n)?;
+    if j.subsystem.is_empty() || matches!(j.kind, 'S' | 'X' | 'M') || system.rstd_keep == Some(n) {
+        return None;
+    }
+    if j.kind == 'I' && j.name == CONSOLE_DEVICE {
+        return None;
+    }
+    match system.sbs.get(&j.subsystem) {
+        Some(a) => a.ending.map(|(immediate, _)| immediate),
+        None => system.ended_sbs.contains(&j.subsystem).then_some(true),
+    }
+}
+
 /// `ENDSBS`: `*ALL` ends every subsystem but the controlling one,
 /// which needs `*ALL` to end the last.
 pub fn end(system: &mut System, name: &str, immediate: bool, delay: u32) -> Result<String, String> {
     super::security::require(sec::profile::SpecialAuth::JOBCTL, "end a subsystem")?;
     let name = name.to_ascii_uppercase();
     let ctl = controlling(system);
+    // An interactive job in the controlling subsystem that ends it stays
+    // for the restricted state; any other job of it ends with it.
+    if name == "*ALL" || name == ctl {
+        let me = system.current_job;
+        system.rstd_keep = system
+            .jobs
+            .get(me)
+            .is_some_and(|j| j.kind == 'I' && j.subsystem == ctl)
+            .then_some(me);
+    }
     if name == "*ALL" {
         let n = system.sbs.len();
         for a in system.sbs.values_mut() {
