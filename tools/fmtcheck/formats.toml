@@ -251,6 +251,8 @@ files = [
     "work/wm/src/obj/rpyl.rs",
     "work/wm/src/obj/sbsd.rs",
 ]
+# The shipped subsystems are content, not format.
+exclude = ["work/wm/src/obj/sbsd.rs::fn shipped"]
 
 # --- Security ---
 
@@ -336,7 +338,7 @@ version = [
     "net/cmncfg/src/lind/codec.rs::VERSION",
     "net/regfac/src/payload.rs::VERSION",
     "net/certs/src/store/format.rs::FORMAT_VERSION",
-    "work/print/src/wscst.rs::VERSION",
+    "work/print/src/wscst/mod.rs::VERSION",
 ]
 files = [
     "net/cmncfg/src/lind/codec.rs",

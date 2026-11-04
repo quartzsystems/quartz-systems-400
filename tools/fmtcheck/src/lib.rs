@@ -74,6 +74,10 @@ pub struct Format {
     /// `static`, `fn`, `type`, `impl`, `mod`).
     #[serde(default)]
     pub items: Vec<String>,
+    /// Items inside `files` that are not part of the format (shipped
+    /// data such as `fn shipped`): `file::kind Name`.
+    #[serde(default)]
+    pub exclude: Vec<String>,
 }
 
 /// `formats.lock`.
@@ -249,11 +253,18 @@ fn tokens(item: &syn::Item) -> String {
 }
 
 /// The canonical text of a whole file: every non-test item's tokens.
-fn file_text(root: &Path, rel: &str) -> Result<String, Error> {
+fn file_text(root: &Path, rel: &str, exclude: &[String]) -> Result<String, Error> {
     let f = parse(root, rel)?;
+    let skip: Vec<(&str, &str)> = exclude
+        .iter()
+        .filter_map(|r| {
+            let (file, what) = split_ref(r);
+            (file == rel).then(|| what.split_once(' ').unwrap_or(("", what)))
+        })
+        .collect();
     let mut s = String::new();
     for item in &f.items {
-        if is_cfg_test(attrs_of(item)) {
+        if is_cfg_test(attrs_of(item)) || skip.iter().any(|(k, n)| matches(item, k, n)) {
             continue;
         }
         s.push_str(&tokens(item));
@@ -301,7 +312,7 @@ pub fn current(root: &Path, f: &Format) -> Result<Locked, Error> {
     let mut text = String::new();
     for file in &f.files {
         let _ = writeln!(text, "== {file}");
-        text.push_str(&file_text(root, file)?);
+        text.push_str(&file_text(root, file, &f.exclude)?);
     }
     for r in &f.items {
         let _ = writeln!(text, "== {r}");
