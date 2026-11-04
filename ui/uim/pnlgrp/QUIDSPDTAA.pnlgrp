@@ -37,8 +37,8 @@
 :DATAC.Text  . . . . . . . . . :   &DTATEXT.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=VALUES SCROLL=YES.
-:LISTCOL HELP='FLD/OFFSET' VAR=OFFSET USAGE=OUTPUT.Offset
-:LISTCOL HELP='FLD/VALUE' VAR=VALUE USAGE=OUTPUT ATCOL=13.Value  *...+....1....+....2....+....3....+....4....+....5
+:LISTCOL VAR=OFFSET USAGE=OUTPUT HELP='FLD/OFFSET'.Offset
+:LISTCOL VAR=VALUE USAGE=OUTPUT ATCOL=13 HELP='FLD/VALUE'.Value  *...+....1....+....2....+....3....+....4....+....5
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.

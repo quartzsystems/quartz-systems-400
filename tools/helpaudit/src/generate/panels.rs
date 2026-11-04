@@ -396,7 +396,8 @@ fn plan_is_option(col: &uim::model::ListColumn, l: &uim::model::ListArea) -> boo
         .is_some_and(|c| c.var == col.var)
 }
 
-/// Put `HELP=name` on the tag at `line` (0-based, or the line after).
+/// Put `HELP=name` on the tag at `line` (0-based, or a line next to it),
+/// after its other attributes.
 fn tag_line(lines: &mut [String], line: usize, name: &str) -> bool {
     for i in [line, line.saturating_sub(1), line + 1] {
         let Some(l) = lines.get_mut(i) else {
@@ -413,7 +414,17 @@ fn tag_line(lines: &mut [String], line: usize, name: &str) -> bool {
         ) {
             continue;
         }
-        l.insert_str(end, &format!(" HELP={}", name_attr(name)));
+        // At the end of the attributes, so `:TAG NAME=...` stays as written.
+        let mut quoted = false;
+        let Some(dot) = l.char_indices().skip(end).find_map(|(i, c)| {
+            if c == '\'' {
+                quoted = !quoted;
+            }
+            (c == '.' && !quoted).then_some(i)
+        }) else {
+            continue;
+        };
+        l.insert_str(dot, &format!(" HELP={}", name_attr(name)));
         return true;
     }
     false
