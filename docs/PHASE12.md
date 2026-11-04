@@ -71,62 +71,62 @@ updated as rows close.
 
 | Where | What | Closes / stays | State |
 |---|---|---|---|
-| `rpg/compiler/src/files.rs:499` | `LIKEFILE` parameters (a file passed to a procedure) | §1 RPG: `LIKEFILE` | open |
-| `rpg/compiler/src/codegen/xml.rs:303` | `DATA-INTO`/`DATA-GEN` call no parser or generator | §1 RPG: `DATA-INTO`/`DATA-GEN` | open |
-| `rpg/compiler/src/codegen/dbio.rs:153` | Open Access handlers are not called | §1 RPG: Open Access | open |
-| `rpg/qrpgrt/src/ctl.rs:41` | `DUMP(A)` writes no formatted dump | §1 RPG: `DUMP(A)` | open |
-| `command/cl/src/lower/expr.rs:500` | `%OFFSET` refused | §1 CL: `%OFFSET` | open |
-| `lic/slic/src/ipl/mod.rs:260`, `net/tcpcfg/src/apply.rs:292` | no DHCP; `*IP4DHCP` interfaces refused | §1 DHCP client | open |
-| `lic/slic/src/stgsvc/cmn/kernel.rs:178` | a kernel call kept for TCP/IP configuration (`dead_code`) | §1 DHCP client (its caller) | open |
-| `work/qsjob/src/command/netcmd.rs:202` | `SNDTCPSPLF WSCST(name)` not read | §1 WSCST | open |
-| `work/qsjob/src/command/ddm.rs:12` | DDM files do not open the remote file | §1 DDM | open |
-| `work/qsjob/src/work/hostsvr/job.rs:313` | host servers return no spooled-file bytes | §1 host-server spooled bytes | open |
-| `work/qsjob/src/work/telnet.rs:880` | telnet `INIT0100` automatic sign-on | §1 `INIT0100` | open |
-| `lic/slic/src/ipl/media.rs:178`, `media/instmedia/src/rsp.rs:429` | `qs400.rsp=` URL; PXE | §1 response file over HTTP(S), PXE | open |
-| `lic/slic/src/cpp/rpg/mod.rs:97`, `lic/slic/src/cpp/stmf.rs:40` | `INFOSTMF` PCML | §1 MIGRATE: PCML | open |
-| `runtime/sysapi/src/ifs/names.rs:72` | a link's own owner (`lchown`) | §1 MIGRATE: `lchown` | open |
-| `runtime/sysapi/src/ifs/refs.rs:135` | byte-range locks across jobs | §1 MIGRATE: byte-range locks | open |
-| `lic/slic/src/cpp/lpcmd.rs:326` | product directories not removed by `DLTLICPGM` | §1 MIGRATE: product directories | open |
-| `licpgm/lpstore/src/savfile.rs:156` | IFS directories in product streams | §1 MIGRATE: product stream directories | open |
-| `licpgm/licpgm/src/api/crtpl.rs:191` | the directory list `SDIR0100` | §1 MIGRATE: `SDIR0100` | open |
-| `work/qsjob/src/command/ftp.rs:12` | the `FTP` client's own session display | §1 MIGRATE: the FTP client display | open |
-| `lic/slic/src/stgsvc/prtf.rs:84` | the printer device's queue as a printer file's default | §1 MIGRATE (phase 10 leftover) | open |
-| `runtime/mi/src/job.rs:160` | a job's display (phase 8 leftover) | §1 MIGRATE: resolve or re-word | open |
-| `work/qsjob/src/console/jobcmd.rs:113` | job commands shown through the service (phase 8) | §1 MIGRATE | open |
-| `work/qsjob/src/display/surface.rs:7` | the console as a TN5250 client (phase 8) | §1 MIGRATE | open |
-| `work/qsjob/src/work/inter.rs:9` | `*MENU` objects in Command Entry (phase 8) | §1 MIGRATE | open |
-| `work/qsjob/src/work/sysjob.rs:14` | device arbitration, communications (phases 6, 10) | §1 MIGRATE | open |
-| `work/wm/src/ctl.rs:243`, `work/wm/src/panels.rs:8` | display files for the job control panels (phase 8) | §1 MIGRATE | open |
-| `runtime/sysapi/src/misc.rs:8` | commands through the analyzer (phase 7) | §1 MIGRATE | open |
-| `runtime/qir/src/module/mod.rs:192,194` | `*DSP`/`*PRT` file kinds (`TODO(phase8)`) | §1: resolve or re-word | open |
-| `work/qsjob/src/panels/system.rs:9` | `DSPSGNINF` (`TODO(phase8)`) | §1 | open |
-| `lic/release/src/ptf.rs:6` | DSPPTF, GO LICPGM, QSZRTVPR (`TODO(phase11)`, built in Phase 11) | §1: comment is stale | open |
+| `rpg/compiler/src/files.rs:499` | `LIKEFILE` parameters (a file passed to a procedure) | §1 RPG: `LIKEFILE` | closed |
+| `rpg/compiler/src/codegen/xml.rs:303` | `DATA-INTO`/`DATA-GEN` call no parser or generator | §1 RPG: `DATA-INTO`/`DATA-GEN` | closed |
+| `rpg/compiler/src/codegen/dbio.rs:153` | Open Access handlers are not called | §1 RPG: Open Access | closed |
+| `rpg/qrpgrt/src/ctl.rs:41` | `DUMP(A)` writes no formatted dump | §1 RPG: `DUMP(A)` | closed |
+| `command/cl/src/lower/expr.rs:500` | `%OFFSET` refused | §1 CL: `%OFFSET` | closed |
+| `lic/slic/src/ipl/mod.rs:260`, `net/tcpcfg/src/apply.rs:292` | no DHCP; `*IP4DHCP` interfaces refused | §1 DHCP client | closed |
+| `lic/slic/src/stgsvc/cmn/kernel.rs:178` | a kernel call kept for TCP/IP configuration (`dead_code`) | §1 DHCP client (its caller) | closed |
+| `work/qsjob/src/command/netcmd.rs:202` | `SNDTCPSPLF WSCST(name)` not read | §1 WSCST | closed |
+| `work/qsjob/src/command/ddm.rs:12` | DDM files do not open the remote file | §1 DDM | closed |
+| `work/qsjob/src/work/hostsvr/job.rs:313` | host servers return no spooled-file bytes | §1 host-server spooled bytes | closed |
+| `work/qsjob/src/work/telnet.rs:880` | telnet `INIT0100` automatic sign-on | §1 `INIT0100` | closed |
+| `lic/slic/src/ipl/media.rs:178`, `media/instmedia/src/rsp.rs:429` | `qs400.rsp=` URL; PXE | §1 response file over HTTP(S), PXE | closed |
+| `lic/slic/src/cpp/rpg/mod.rs:97`, `lic/slic/src/cpp/stmf.rs:40` | `INFOSTMF` PCML | §1 MIGRATE: PCML | closed |
+| `runtime/sysapi/src/ifs/names.rs:72` | a link's own owner (`lchown`) | §1 MIGRATE: `lchown` | closed |
+| `runtime/sysapi/src/ifs/refs.rs:135` | byte-range locks across jobs | §1 MIGRATE: byte-range locks | closed |
+| `lic/slic/src/cpp/lpcmd.rs:326` | product directories not removed by `DLTLICPGM` | §1 MIGRATE: product directories | closed |
+| `licpgm/lpstore/src/savfile.rs:156` | IFS directories in product streams | §1 MIGRATE: product stream directories | BLOCKED(phase12): SAVLICPGM writes no IFS records, RSTLICPGM restores none |
+| `licpgm/licpgm/src/api/crtpl.rs:191` | the directory list `SDIR0100` | §1 MIGRATE: `SDIR0100` | closed |
+| `work/qsjob/src/command/ftp.rs:12` | the `FTP` client's own session display | §1 MIGRATE: the FTP client display | closed |
+| `lic/slic/src/stgsvc/prtf.rs:84` | the printer device's queue as a printer file's default | §1 MIGRATE (phase 10 leftover) | closed |
+| `runtime/mi/src/job.rs:160` | a job's display (phase 8 leftover) | §1 MIGRATE: resolve or re-word | closed |
+| `work/qsjob/src/console/jobcmd.rs:113` | job commands shown through the service (phase 8) | §1 MIGRATE | closed (reworded); another job's call stack is BLOCKED(phase12) at jobcmd.rs:153 |
+| `work/qsjob/src/display/surface.rs:7` | the console as a TN5250 client (phase 8) | §1 MIGRATE | closed |
+| `work/qsjob/src/work/inter.rs:9` | `*MENU` objects in Command Entry (phase 8) | §1 MIGRATE | closed |
+| `work/qsjob/src/work/sysjob.rs:14` | device arbitration, communications (phases 6, 10) | §1 MIGRATE | closed |
+| `work/wm/src/ctl.rs:243`, `work/wm/src/panels.rs:8` | display files for the job control panels (phase 8) | §1 MIGRATE | closed |
+| `runtime/sysapi/src/misc.rs:8` | commands through the analyzer (phase 7) | §1 MIGRATE | closed |
+| `runtime/qir/src/module/mod.rs:192,194` | `*DSP`/`*PRT` file kinds (`TODO(phase8)`) | §1: resolve or re-word | closed |
+| `work/qsjob/src/panels/system.rs:9` | `DSPSGNINF` (`TODO(phase8)`) | §1 | closed |
+| `lic/release/src/ptf.rs:6` | DSPPTF, GO LICPGM, QSZRTVPR (`TODO(phase11)`, built in Phase 11) | §1: comment is stale | closed |
 
 ### "Not available in this release" sites
 
 | Where | What | Closes / stays | State |
 |---|---|---|---|
-| `lic/slic/src/cpp/cmncmd.rs:285` | `VRYCFG STATUS` other than `*ON`/`*OFF` | stays: IBM's other statuses (`*RESET`, `*FRCOFF`...) need devices QS/400 does not have; re-checked in §1 | open |
-| `lic/slic/src/cpp/direct.rs:198` | `GO` of a menu that does not exist | stays: IBM's own `CPD9D61` path | open |
-| `lic/slic/src/cpp/medcmd.rs:167` | optical media libraries | stays: deferred in Phase 11 (no hardware) | open |
-| `lic/slic/src/cpp/medcmd.rs:264` | `IMPORT(*YES)` on image catalogs | §1 triage | open |
-| `lic/slic/src/cpp/medcmd.rs:320` | images from an optical device | §1 triage | open |
-| `lic/slic/src/cpp/tcpcmd.rs:613,659` | `MRGTCPHT FROMOBJ`/`TOOBJ` stream files | §1 triage (stream files exist since Phase 10) | open |
-| `lic/slic/src/stgsvc/svcop.rs:161`, `lic/svctools/src/env.rs:592` | copying a dump to media | §1 triage (media exist since Phase 11) | open |
-| `lic/svctools/src/dst/mod.rs:22` | DST options not built (`DST.md`) | §1 triage per option | open |
-| `runtime/msgf/msgs/qcpfmsg.toml`, `ui/menus/src/unavailable.rs` | the messages themselves (`CPD9D60`, `CPD9D61`...) | stays: the mechanism | open |
+| `lic/slic/src/cpp/cmncmd.rs:285` | `VRYCFG STATUS` other than `*ON`/`*OFF` | stays: IBM's other statuses (`*RESET`, `*FRCOFF`...) need devices QS/400 does not have; re-checked in §1 | stays: IBM's other statuses need devices QS/400 does not have |
+| `lic/slic/src/cpp/direct.rs:198` | `GO` of a menu that does not exist | stays: IBM's own `CPD9D61` path | stays: IBM's own CPD9D61 path |
+| `lic/slic/src/cpp/medcmd.rs:167` | optical media libraries | stays: deferred in Phase 11 (no hardware) | stays: deferred in Phase 11 (no hardware) |
+| `lic/slic/src/cpp/medcmd.rs:264` | `IMPORT(*YES)` on image catalogs | §1 triage | closed |
+| `lic/slic/src/cpp/medcmd.rs:320` | images from an optical device | §1 triage | closed |
+| `lic/slic/src/cpp/tcpcmd.rs:613,659` | `MRGTCPHT FROMOBJ`/`TOOBJ` stream files | §1 triage (stream files exist since Phase 10) | closed |
+| `lic/slic/src/stgsvc/svcop.rs:161`, `lic/svctools/src/env.rs:592` | copying a dump to media | §1 triage (media exist since Phase 11) | closed |
+| `lic/svctools/src/dst/mod.rs:22` | DST options not built (`DST.md`) | §1 triage per option | stays, BLOCKED(phase12): the DST options DST.md lists (save/restore storage, disk unit data, remote service, LIC fixes, partitions, ASP moves); their reasons in DST.md name earlier phases and are not re-checked |
+| `runtime/msgf/msgs/qcpfmsg.toml`, `ui/menus/src/unavailable.rs` | the messages themselves (`CPD9D60`, `CPD9D61`...) | stays: the mechanism | stays: the mechanism |
 
 ### Markers in documents
 
 | Where | What | Closes / stays | State |
 |---|---|---|---|
-| `CLAUDE.md:42` | describes the markers | §0.2 | open |
-| `ARCHITECTURE.md:134` | `TODO(phase11)` for DSPSFWRSC etc. (built) | §0.2/§2.4 | open |
-| `DB_FORMAT.md:198` | `TODO(phase3)`: DSPFFD of kept attributes | §1 triage | open |
-| `DDM.md:264` | DDM deviations `BLOCKED(phase10)` | §1 DDM | open |
-| `INSTALL.md:188`, `LICPGM.md:492` | `qs400.rsp=` URL; `MIGRATE(phase11)` | §1 | open |
-| `PHASE5.md`, `PHASE6.md`, `PHASE8.md`, `WORKMGMT.md`, `TOOLS.md` | historical markers in phase records | §1: annotated "closed in Phase N" | open |
-| `PHASE9.md:199,218,260,268` | `DATA-INTO`; HTTPAPI over TLS (`QSOSSLSR`); pointer to a by-reference parameter; by-reference vs `* value` through a procedure pointer | §1 RPG; the last two are ABI changes, see below | open |
+| `CLAUDE.md:42` | describes the markers | §0.2 | closed (0f7d4df1) |
+| `ARCHITECTURE.md:134` | `TODO(phase11)` for DSPSFWRSC etc. (built) | §0.2/§2.4 | closed |
+| `DB_FORMAT.md:198` | `TODO(phase3)`: DSPFFD of kept attributes | §1 triage | closed |
+| `DDM.md:264` | DDM deviations `BLOCKED(phase10)` | §1 DDM | closed |
+| `INSTALL.md:188`, `LICPGM.md:492` | `qs400.rsp=` URL; `MIGRATE(phase11)` | §1 | closed |
+| `PHASE5.md`, `PHASE6.md`, `PHASE8.md`, `WORKMGMT.md`, `TOOLS.md` | historical markers in phase records | §1: annotated "closed in Phase N" | closed |
+| `PHASE9.md:199,218,260,268` | `DATA-INTO`; HTTPAPI over TLS (`QSOSSLSR`); pointer to a by-reference parameter; by-reference vs `* value` through a procedure pointer | §1 RPG; the last two are ABI changes, see below | closed: DATA-INTO in Phase 12; TLS, headers and the ABI items re-tagged BLOCKED(phase12) (b855a775) |
 
 The two ABI items from `PHASE9.md` (a pointer taken to a by-reference
 parameter dying with the entry; by-reference and `* value` not
@@ -143,32 +143,32 @@ ones pub400 refused can be captured there (V7R1M0).
 
 | Test | Why it had none | Closes | State |
 |---|---|---|---|
-| `object_panels::dspfd` | no capture | §1 goldens | open |
-| `object_panels::dspdtaara` | no capture | §1 goldens | open |
-| `system2_panels::dspusrprf_grpmbr` | the pub400 account is not a group profile | §1 goldens (primary) | open |
-| `system2_panels::edtautl` | no authorization list on pub400 | §1 goldens (primary) | open |
-| `system2_panels::dspmod`, `dspmod_2` | no module the account may display | §1 goldens (primary) | open |
-| `system2_panels::dspaudjrne` | needs `*AUDIT` | §1 goldens (primary) | open |
-| `system2_panels::chgsysval`, `chgsysval_list` | `WRKSYSVAL` refused on pub400 | §1 goldens (primary) | open |
-| `system_panels::wrksysval`, `wrkusrprf`, `wrkcfgsts`, `dspdevd`, `dspautl`, `wrkautl`, `dspsecaud` | no capture | §1 goldens | open |
-| `wm_panels::wrkoutq`, `wrkjobq`, `wrkwtr`, `wrkjobscde` | no capture | §1 goldens | open |
+| `object_panels::dspfd` | no capture | §1 goldens | closed |
+| `object_panels::dspdtaara` | no capture | §1 goldens | closed |
+| `system2_panels::dspusrprf_grpmbr` | the pub400 account is not a group profile | §1 goldens (primary) | closed |
+| `system2_panels::edtautl` | no authorization list on pub400 | §1 goldens (primary) | closed |
+| `system2_panels::dspmod`, `dspmod_2` | no module the account may display | §1 goldens (primary) | closed |
+| `system2_panels::dspaudjrne` | needs `*AUDIT` | §1 goldens (primary) | NEEDS-CODY: the primary has no QAUDJRN |
+| `system2_panels::chgsysval`, `chgsysval_list` | `WRKSYSVAL` refused on pub400 | §1 goldens (primary) | closed |
+| `system_panels::wrksysval`, `wrkusrprf`, `wrkcfgsts`, `dspdevd`, `dspautl`, `wrkautl`, `dspsecaud` | no capture | §1 goldens | closed |
+| `wm_panels::wrkoutq`, `wrkjobq`, `wrkwtr`, `wrkjobscde` | no capture | §1 goldens | closed |
 
 ### Open questions
 
 | Document | Question | Closes / stays | State |
 |---|---|---|---|
-| `DB_OPEN_QUESTIONS.md` (Utilities) | what an RPG program sees in a `*USA` time field's buffer | §1: an RPG program on pub400 | open |
-| `DB_OPEN_QUESTIONS.md` (Commitment control) | `ENDCMTCTL` with files open (the test on the machine) | §1: CL on the primary | open |
-| `NET_OPEN_QUESTIONS.md` (IFS 8) | a binary read after a binary write to a member; QSH writes to a data member | §1: the primary | open |
-| `NET_OPEN_QUESTIONS.md` (hwrsrc 1, 2) | `DSPHDWRSC` panels; the detail area below the location | §1: the primary as `QSECOFR` | open |
-| `SEC_OPEN_QUESTIONS.md` | per-command IDs for a missing special authority | §1: the primary | open |
-| `SVC_OPEN_QUESTIONS.md` 18 | what IBM mounts after `ENDOPT(*UNLOAD)` with no other entry loaded | stays: the oracles may not use tape | open |
-| `SVC_OPEN_QUESTIONS.md` 19, 20 | real drive types; a real library's changer | `NEEDS-CODY`: physical tape acceptance | open |
-| `SVC_OPEN_QUESTIONS.md` 21 | `OVRTAPF`; copy message IDs; `CPYFRMTAP OUTFMT` on the first page | §1 triage | open |
-| `SVC_OPEN_QUESTIONS.md` 28 | refusing `SAVSYS` outside restricted state | §1: after the `ENDSBS *ALL` fix | open |
-| `SVC_OPEN_QUESTIONS.md` 32 | `CHKOBJITG OUTFILE` in IBM's layout | §1: `DSPFFD` on the primary | open |
-| `SVC_OPEN_QUESTIONS.md` 33 | the recovery's `RST` leaving 7 links | §1 | open |
-| `UI_OPEN_QUESTIONS.md` 4, 6, 8, 12 | start-up response record; keys that carry data; the printer data stream; SST's audit code | §1: the primary's telnet | open |
+| `DB_OPEN_QUESTIONS.md` (Utilities) | what an RPG program sees in a `*USA` time field's buffer | §1: an RPG program on pub400 | settled on pub400; the buffer form BLOCKED(phase12) |
+| `DB_OPEN_QUESTIONS.md` (Commitment control) | `ENDCMTCTL` with files open (the test on the machine) | §1: CL on the primary | closed |
+| `NET_OPEN_QUESTIONS.md` (IFS 8) | a binary read after a binary write to a member; QSH writes to a data member | §1: the primary | QSH half closed; the binary read NEEDS-CODY (a JTOpen probe) |
+| `NET_OPEN_QUESTIONS.md` (hwrsrc 1, 2) | `DSPHDWRSC` panels; the detail area below the location | §1: the primary as `QSECOFR` | 1 closed (DSPHDWRSC panels); 2 stays open |
+| `SEC_OPEN_QUESTIONS.md` | per-command IDs for a missing special authority | §1: the primary | NEEDS-CODY: needs a test user profile on the primary |
+| `SVC_OPEN_QUESTIONS.md` 18 | what IBM mounts after `ENDOPT(*UNLOAD)` with no other entry loaded | stays: the oracles may not use tape | stays: the oracles may not use tape |
+| `SVC_OPEN_QUESTIONS.md` 19, 20 | real drive types; a real library's changer | `NEEDS-CODY`: physical tape acceptance | NEEDS-CODY: physical tape acceptance |
+| `SVC_OPEN_QUESTIONS.md` 21 | `OVRTAPF`; copy message IDs; `CPYFRMTAP OUTFMT` on the first page | §1 triage | stays open: not reached in Phase 12 |
+| `SVC_OPEN_QUESTIONS.md` 28 | refusing `SAVSYS` outside restricted state | §1: after the `ENDSBS *ALL` fix | closed: SAVSYS refuses outside the restricted state (CPF3785) |
+| `SVC_OPEN_QUESTIONS.md` 32 | `CHKOBJITG OUTFILE` in IBM's layout | §1: `DSPFFD` on the primary | closed: QASYCHKI layout, CHKOBJITG OUTFILE |
+| `SVC_OPEN_QUESTIONS.md` 33 | the recovery's `RST` leaving 7 links | §1 | stays open: not reached in Phase 12 |
+| `UI_OPEN_QUESTIONS.md` 4, 6, 8, 12 | start-up response record; keys that carry data; the printer data stream; SST's audit code | §1: the primary's telnet | 4 closed; 6 open (a display-file probe); 8 and 12 NEEDS-CODY |
 
 ## Inventory
 
