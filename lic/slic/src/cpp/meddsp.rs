@@ -19,10 +19,10 @@ use crate::ipl::system::System;
 use crate::stgsvc::media::drive::{self, TapeJob};
 use crate::stgsvc::media::{self, devices, stream};
 
-/// `MM/DD/YY` of a label date.
+/// A label date in the asking job's format.
 pub(crate) fn mdy(d: Date) -> String {
     let (y, m, day) = ymd(d);
-    format!("{m:02}/{day:02}/{:02}", y % 100)
+    crate::stgsvc::fmt::current().date(i64::from(y), u32::from(m), u32::from(day), false)
 }
 
 /// Year, month and day of a label date.

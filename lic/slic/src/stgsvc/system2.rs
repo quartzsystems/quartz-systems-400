@@ -58,28 +58,15 @@ fn yes(b: bool) -> String {
     if b { "*YES" } else { "*NO" }.to_string()
 }
 
-/// `MM/DD/YY` of Unix seconds, blank for 0.
+/// The date of Unix seconds in the asking job's format, blank for 0.
 fn mdy(t: u64) -> String {
-    if t == 0 {
-        return String::new();
-    }
-    let c = sec::cmd::civil(t);
-    format!("{}/{}/{}", &c[5..7], &c[8..10], &c[2..4])
+    super::fmt::date(t)
 }
 
-/// `MM/DD/YY  HH:MM:SS` of Unix seconds, blank for 0.
+/// The date and time of Unix seconds in the asking job's formats,
+/// blank for 0.
 fn mdy_hms(t: u64) -> String {
-    if t == 0 {
-        return String::new();
-    }
-    let s = t % 86_400;
-    format!(
-        "{}  {:02}:{:02}:{:02}",
-        mdy(t),
-        s / 3600,
-        s / 60 % 60,
-        s % 60
-    )
+    super::fmt::date_time(t)
 }
 
 /// Kilobytes, rounded up.

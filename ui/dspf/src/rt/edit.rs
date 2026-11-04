@@ -101,7 +101,7 @@ pub fn plain_digits(v: &Decimal, length: u32, decimals: u8) -> String {
 /// A numeric field's text for the display, right-adjusted in its
 /// screen length.
 #[must_use]
-pub fn display_number(f: &Field, v: &Decimal) -> String {
+pub fn display_number(f: &Field, v: &Decimal, fmts: &ccsid::nls::Formats) -> String {
     let digits = u8::try_from(f.length).unwrap_or(1).max(1);
     let shape = Shape::new(digits, f.decimals.min(digits)).unwrap_or(Shape {
         digits,
@@ -117,6 +117,10 @@ pub fn display_number(f: &Field, v: &Decimal) -> String {
                     }
                     _ => qdecimal::Fill::Blank,
                 },
+                // The job's date separator for `Y`; its decimal comma on
+                // output (an input field reads a point back).
+                date_sep: Some(fmts.datsep),
+                decimal_comma: fmts.point() == ',' && !f.usage.is_input(),
                 ..EditOpts::default()
             };
             edit_code(v, shape, *c, &opts).unwrap_or_else(|_| plain_digits(v, f.length, f.decimals))
@@ -198,8 +202,16 @@ mod tests {
         let mut f = zoned(7, 2);
         f.edit = Edit::Code('J', None);
         let v = Decimal::parse("-1234.5").unwrap();
-        let shown = display_number(&f, &v);
+        let shown = display_number(&f, &v, &ccsid::nls::Formats::default());
         assert!(shown.ends_with("1,234.50-"), "{shown:?}");
+        // The job's DECFMT(J) and DATSEP on an output field.
+        let de = ccsid::nls::Formats::parse("*DMY", ".", ":", "J");
+        f.usage = crate::model::Usage::Output;
+        assert!(display_number(&f, &v, &de).ends_with("1.234,50-"));
+        let mut y = zoned(6, 0);
+        y.edit = Edit::Code('Y', None);
+        y.usage = crate::model::Usage::Output;
+        assert_eq!(display_number(&y, &Decimal::parse("041126").unwrap(), &de).trim(), "4.11.26");
         let back = parse_typed(&f, " 1234.5-").unwrap();
         assert_eq!(back.char_text(2), "-1234.50");
         let bytes = encode_number(&f, &back).unwrap();

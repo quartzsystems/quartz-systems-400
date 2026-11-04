@@ -215,6 +215,8 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
     }
     let user = super::security::as_user(&req);
     let session = Rc::clone(&ctx.session);
+    // Dates and times in the asking job's formats.
+    let _formats = super::fmt::enter(system.attrs.get(&ctx.job.number).map(wm::job::JobAttrs::formats));
     super::security::freshen(system, &session);
     let mut served = Served { system, ctx };
     if user {

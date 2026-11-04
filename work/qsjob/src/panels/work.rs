@@ -94,7 +94,7 @@ fn render_fail(e: &UimError) -> Fail {
 pub(crate) fn stamp(host: &Host) -> String {
     let now = host.link.borrow_mut().with(Client::now);
     let a = host.attrs();
-    let (date, time) = date_time(now.unix, now.offset_min, &a.datfmt, &a.datsep);
+    let (date, time) = date_time(now.unix, now.offset_min, &a.formats());
     let zone: String = now
         .zone
         .trim()
@@ -106,48 +106,13 @@ pub(crate) fn stamp(host: &Host) -> String {
 }
 
 /// A Unix time as the job shows dates and times.
-fn date_time(unix: u64, offset_min: i32, datfmt: &str, datsep: &str) -> (String, String) {
-    let local = i64::try_from(unix).unwrap_or(0) + i64::from(offset_min) * 60;
-    let days = local.div_euclid(86_400);
-    let secs = local.rem_euclid(86_400);
-    let (y, m, d) = civil(days);
-    let sep = datsep.chars().next().filter(|c| *c != ' ').unwrap_or('/');
-    let yy = y % 100;
-    let date = match datfmt.trim() {
-        "*YMD" => format!("{yy:02}{sep}{m:02}{sep}{d:02}"),
-        "*DMY" => format!("{d:02}{sep}{m:02}{sep}{yy:02}"),
-        "*JUL" => format!("{yy:02}{sep}{:03}", day_of_year(y, m, d)),
-        _ => format!("{m:02}{sep}{d:02}{sep}{yy:02}"),
-    };
-    let time = format!("{:02}:{:02}:{:02}", secs / 3600, secs % 3600 / 60, secs % 60);
-    (date, time)
-}
-
-/// Days since 1970 as year, month, day.
-fn civil(days: i64) -> (i64, i64, i64) {
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = yoe + era * 400 + i64::from(m <= 2);
-    (y, m, d)
-}
-
-fn day_of_year(y: i64, m: i64, d: i64) -> i64 {
-    const CUM: [i64; 12] = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-    let leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
-    let idx = usize::try_from(m - 1).unwrap_or(0).min(11);
-    CUM[idx] + d + i64::from(leap && m > 2)
+fn date_time(unix: u64, offset_min: i32, f: &ccsid::nls::Formats) -> (String, String) {
+    f.stamp(i64::try_from(unix).unwrap_or(0), i64::from(offset_min) * 60)
 }
 
 /// Tenths as the job writes decimals: `12,3` or `12.3`.
 fn decimal(host: &Host, tenths: u64) -> String {
-    let comma = matches!(host.attrs().decfmt.trim(), "J" | "I");
-    let sep = if comma { ',' } else { '.' };
+    let sep = host.attrs().formats().point();
     format!("{}{sep}{}", tenths / 10, tenths % 10)
 }
 

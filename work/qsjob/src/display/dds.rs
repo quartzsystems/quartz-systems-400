@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use dspf::rt::{DateOrder, Env, Problem, Runtime};
+use dspf::rt::{Env, Problem, Runtime};
 use mi::io::IoFail;
 use mi::io::display::{DisplayInput, DisplayOpen, DisplaySource};
 use stg::Client;
@@ -63,7 +63,7 @@ fn civil(days: i64) -> (u16, u8, u8) {
 /// What the constants show: the clock, the date format, the user and
 /// the system name.
 #[must_use]
-pub fn env_from(now: &LocalNow, datfmt: &str, datsep: &str, user: &str, sysname: &str) -> Env {
+pub fn env_from(now: &LocalNow, formats: ccsid::nls::Formats, user: &str, sysname: &str) -> Env {
     let local = i64::try_from(now.unix).unwrap_or(0) + i64::from(now.offset_min) * 60;
     let days = local.div_euclid(86_400);
     let secs = local.rem_euclid(86_400);
@@ -76,8 +76,7 @@ pub fn env_from(now: &LocalNow, datfmt: &str, datsep: &str, user: &str, sysname:
             u8::try_from(secs % 3600 / 60).unwrap_or(0),
             u8::try_from(secs % 60).unwrap_or(0),
         ),
-        datfmt: DateOrder::parse(datfmt),
-        datsep: datsep.chars().next().unwrap_or('/'),
+        formats,
         user: user.to_string(),
         sysname: sysname.to_string(),
         messages: BTreeMap::new(),
@@ -88,7 +87,7 @@ pub fn env_from(now: &LocalNow, datfmt: &str, datsep: &str, user: &str, sysname:
 pub fn env_of(host: &Host, sysname: &str) -> Env {
     let now = host.link.borrow_mut().with(stg::Client::now);
     let a = host.attrs();
-    env_from(&now, &a.datfmt, &a.datsep, &host.start.user, sysname)
+    env_from(&now, a.formats(), &host.start.user, sysname)
 }
 
 /// The system name as `QSYSNAME` says.

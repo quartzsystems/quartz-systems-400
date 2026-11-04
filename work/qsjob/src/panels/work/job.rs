@@ -228,7 +228,7 @@ fn attributes(host: &Host, d: &mut UimDialog, detail: &JobDetail) {
     let a = &detail.attrs;
     let now = host.link.borrow_mut().with(Client::now);
     let mine = host.attrs();
-    let (date, time) = date_time(j.started, now.offset_min, &mine.datfmt, &mine.datsep);
+    let (date, time) = date_time(j.started, now.offset_min, &mine.formats());
     let pool = host
         .link
         .borrow_mut()

@@ -258,7 +258,7 @@ pub fn wrkjobscde(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolve
                 let (date, time) = if e.next == 0 {
                     (String::new(), String::new())
                 } else {
-                    date_time(e.next, now.offset_min, &a.datfmt, &a.datsep)
+                    date_time(e.next, now.offset_min, &a.formats())
                 };
                 let frq = match e.frequency {
                     Frequency::Once => "*ONCE",

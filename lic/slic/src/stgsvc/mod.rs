@@ -36,6 +36,7 @@ pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;
 pub(crate) mod licpgm;
+pub(crate) mod fmt;
 pub(crate) mod msgs;
 pub(crate) mod prtf;
 pub(crate) mod prtdev;

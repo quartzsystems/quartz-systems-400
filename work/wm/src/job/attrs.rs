@@ -422,6 +422,12 @@ impl JobAttrs {
         a
     }
 
+    /// How the job shows dates, times and decimals.
+    #[must_use]
+    pub fn formats(&self) -> ccsid::nls::Formats {
+        ccsid::nls::Formats::parse(&self.datfmt, &self.datsep, &self.timsep, &self.decfmt)
+    }
+
     /// `CHGJOB KEYWORD(value)` for one keyword. Keywords this does not
     /// know, or values out of range, are errors.
     #[allow(clippy::too_many_lines)] // one arm per keyword

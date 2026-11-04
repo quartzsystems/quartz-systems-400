@@ -430,13 +430,9 @@ fn history(host: &Host, r: &Resolved) -> Result<Vec<Hist>, Fail> {
         .collect())
 }
 
-/// `CYYMMDD` and `HHMMSS` as `MM/DD/YY` and `HH:MM:SS`.
-fn when(date: &str, time: &str) -> (String, String) {
-    let g = |s: &str, a: usize, b: usize| s.get(a..b).unwrap_or("").to_string();
-    (
-        format!("{}/{}/{}", g(date, 3, 5), g(date, 5, 7), g(date, 1, 3)),
-        format!("{}:{}:{}", g(time, 0, 2), g(time, 2, 4), g(time, 4, 6)),
-    )
+/// `CYYMMDD` and `HHMMSS` as the job shows a date and a time.
+fn when(f: &ccsid::nls::Formats, date: &str, time: &str) -> (String, String) {
+    (f.cyymmdd(date), f.hhmmss(time))
 }
 
 /// `DSPLOG`: the history log, oldest first; F10 adds when and who, F1
@@ -453,7 +449,7 @@ pub fn dsplog(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<String
             lines.push(e[8].clone());
             owner.push(i);
             if details {
-                let (date, time) = when(&e[0], &e[1]);
+                let (date, time) = when(&host.attrs().formats(), &e[0], &e[1]);
                 lines.push(format!(
                     "     {date}  {time}  {:<7}  {}/{}/{}",
                     e[2], e[7], e[6], e[5]
@@ -541,7 +537,7 @@ mod tests {
     fn history_times() {
         assert_eq!(micros_of("0700101", "000001"), 1_000_000);
         assert_eq!(
-            when("1261023", "101112"),
+            when(&ccsid::nls::Formats::default(), "1261023", "101112"),
             ("10/23/26".into(), "10:11:12".into())
         );
         let (date, time) = wm::joblog::stamp_of(micros_of("1261023", "101112"));

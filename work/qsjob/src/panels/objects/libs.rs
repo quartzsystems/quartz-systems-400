@@ -454,10 +454,11 @@ fn full(
             .map(|(_, v)| v.clone())
             .unwrap_or_default()
     };
-    let (cd, ct) = stamp(&o.created);
-    let (hd, ht) = stamp(&o.changed);
-    let (ud, _) = stamp(&get("LASTUSED"));
-    let (rd, _) = stamp(&get("RESET"));
+    let f = host.attrs().formats();
+    let (cd, ct) = stamp(&f, &o.created);
+    let (hd, ht) = stamp(&f, &o.changed);
+    let (ud, _) = stamp(&f, &get("LASTUSED"));
+    let (rd, _) = stamp(&f, &get("RESET"));
     d.set("LIBPOS", pos);
     d.set("OBJ", &o.name);
     d.set("OBJLIB", &o.lib);

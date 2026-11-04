@@ -43,7 +43,11 @@ pub fn show(host: &Host) -> Act {
     let (hour, minute, second) = env.time;
     d.set(
         "*DATETIME",
-        &format!("{month:02}/{day:02}/{:02}  {hour:02}:{minute:02}:{second:02}", year % 100),
+        &format!(
+            "{}  {}",
+            env.formats.date(i64::from(year), u32::from(month), u32::from(day), false),
+            env.formats.time(u32::from(hour), u32::from(minute), u32::from(second))
+        ),
     );
     let user = host.start.user.clone();
     d.set("USER", &user);

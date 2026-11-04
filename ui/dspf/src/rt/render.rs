@@ -16,31 +16,7 @@ use crate::cond::Cond;
 use crate::model::{Constant, Field, TypeClass, Usage};
 
 /// The order of the job date's parts.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum DateOrder {
-    /// `*MDY`.
-    #[default]
-    Mdy,
-    /// `*DMY`.
-    Dmy,
-    /// `*YMD`.
-    Ymd,
-    /// `*JUL`.
-    Jul,
-}
-
-impl DateOrder {
-    /// From `QDATFMT`.
-    #[must_use]
-    pub fn parse(s: &str) -> Self {
-        match s.trim_start_matches('*').to_ascii_uppercase().as_str() {
-            "DMY" => Self::Dmy,
-            "YMD" => Self::Ymd,
-            "JUL" => Self::Jul,
-            _ => Self::Mdy,
-        }
-    }
-}
+pub use ccsid::nls::DateFmt as DateOrder;
 
 /// What the constants `DATE`, `TIME`, `USER`, `SYSNAME` and `MSGCON`
 /// show.
@@ -52,10 +28,8 @@ pub struct Env {
     pub sys_date: (u16, u8, u8),
     /// The time of day: hours, minutes, seconds.
     pub time: (u8, u8, u8),
-    /// The job's date format.
-    pub datfmt: DateOrder,
-    /// The job's date separator.
-    pub datsep: char,
+    /// The job's date and time formats.
+    pub formats: ccsid::nls::Formats,
     /// The user profile.
     pub user: String,
     /// The system name.
@@ -67,39 +41,13 @@ pub struct Env {
 impl Env {
     /// A date's digits in the job's order, two- or four-digit year.
     fn date_digits(&self, d: (u16, u8, u8), year4: bool) -> String {
-        let (y, m, dd) = d;
-        let year = if year4 {
-            format!("{y:04}")
-        } else {
-            format!("{:02}", y % 100)
-        };
-        match self.datfmt {
-            DateOrder::Mdy => format!("{m:02}{dd:02}{year}"),
-            DateOrder::Dmy => format!("{dd:02}{m:02}{year}"),
-            DateOrder::Ymd => format!("{year}{m:02}{dd:02}"),
-            DateOrder::Jul => format!("{year}{:03}", day_of_year(y, m, dd)),
-        }
+        self.formats.date_digits(i64::from(d.0), u32::from(d.1), u32::from(d.2), year4)
     }
 
     /// The same with the job's separators, as `EDTCDE(Y)` shows it.
     fn date_edited(&self, d: (u16, u8, u8), year4: bool) -> String {
-        let s = self.date_digits(d, year4);
-        let sep = if self.datsep == '\0' { '/' } else { self.datsep };
-        let parts: Vec<&str> = match (self.datfmt, year4) {
-            (DateOrder::Jul, false) => vec![&s[..2], &s[2..]],
-            (DateOrder::Jul, true) => vec![&s[..4], &s[4..]],
-            (DateOrder::Ymd, true) => vec![&s[..4], &s[4..6], &s[6..]],
-            _ => vec![&s[..2], &s[2..4], &s[4..]],
-        };
-        parts.join(&sep.to_string())
+        self.formats.date(i64::from(d.0), u32::from(d.1), u32::from(d.2), year4)
     }
-}
-
-fn day_of_year(y: u16, m: u8, d: u8) -> u16 {
-    let leap = (y.is_multiple_of(4) && !y.is_multiple_of(100)) || y.is_multiple_of(400);
-    let days: [u16; 12] = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let before: u16 = days.iter().take(usize::from(m.saturating_sub(1))).sum();
-    before + u16::from(d)
 }
 
 /// Whether a condition holds: the display size matches when named,
@@ -267,7 +215,7 @@ pub fn constant_text(c: &Constant, f: &Field, env: &Env) -> String {
         }
         Constant::Time { .. } => {
             let (hh, mm, ss) = env.time;
-            format!("{hh:02}:{mm:02}:{ss:02}")
+            env.formats.time(u32::from(hh), u32::from(mm), u32::from(ss))
         }
         Constant::User => format!("{:<10}", env.user),
         Constant::SysName => format!("{:<8}", env.sysname),
@@ -286,14 +234,14 @@ pub fn constant_text(c: &Constant, f: &Field, env: &Env) -> String {
 /// edited, the rest decoded. `None` bytes (an input-only field) show
 /// blank, or the field's `DFT`.
 #[must_use]
-pub fn value_text(f: &Field, bytes: Option<&[u8]>) -> String {
+pub fn value_text(f: &Field, bytes: Option<&[u8]>, fmts: &ccsid::nls::Formats) -> String {
     let Some(b) = bytes else {
         return f.dft.clone().unwrap_or_default();
     };
     match f.ty.class {
         TypeClass::Zoned | TypeClass::Packed | TypeClass::Binary | TypeClass::Float => {
             let v = edit::decode_number(f, b).unwrap_or_else(qdecimal::Decimal::zero);
-            edit::display_number(f, &v)
+            edit::display_number(f, &v, fmts)
         }
         _ => ccsid::from_ebcdic(b),
     }
@@ -329,8 +277,7 @@ mod tests {
             date: (2026, 10, 23),
             sys_date: (2026, 10, 23),
             time: (9, 5, 7),
-            datfmt: DateOrder::Mdy,
-            datsep: '/',
+            formats: ccsid::nls::Formats::default(),
             user: "QSECOFR".into(),
             sysname: "QS400".into(),
             messages: BTreeMap::new(),
@@ -423,6 +370,8 @@ mod tests {
         );
         assert_eq!(constant_text(&Constant::Time { sys: false }, &f, &e), "09:05:07");
         assert_eq!(constant_text(&Constant::SysName, &f, &e), "QS400   ");
-        assert_eq!(day_of_year(2024, 3, 1), 61);
+        let mut dmy = e.clone();
+        dmy.formats = ccsid::nls::Formats::parse("*DMY", ".", ".", "");
+        assert_eq!(constant_text(&Constant::Time { sys: false }, &f, &dmy), "09.05.07");
     }
 }

@@ -78,6 +78,8 @@ struct List {
     cmdline: String,
     message: Option<String>,
     header: BTreeMap<String, String>,
+    /// The job's date format, for the date column.
+    formats: ccsid::nls::Formats,
 }
 
 impl List {
@@ -98,11 +100,13 @@ impl List {
             cmdline: String::new(),
             message: None,
             header: BTreeMap::new(),
+            formats: ccsid::nls::Formats::default(),
         }
     }
 
     /// Read the entries again.
     fn load(&mut self, host: &Host) {
+        self.formats = host.attrs().formats();
         self.dates.clear();
         self.sizes.clear();
         match &self.source {
@@ -173,12 +177,8 @@ impl List {
                     date: if d == 0 {
                         String::new()
                     } else {
-                        format!(
-                            "{:02}/{:02}/{:02}",
-                            d / 100 % 100,
-                            d % 100,
-                            d / 10_000 % 100
-                        )
+                        // YYMMDD (a CYYMMDD's last six digits).
+                        self.formats.cyymmdd(&format!("1{:06}", d % 1_000_000))
                     },
                     size: self.sizes.get(i).copied().unwrap_or(0),
                     text: it.text.clone(),

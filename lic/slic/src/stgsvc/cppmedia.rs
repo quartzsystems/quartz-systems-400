@@ -100,12 +100,10 @@ pub(super) fn tape(system: &mut System, args: &[String]) -> Result<Sys2Data, Str
     Ok((vars, vec![("FILES".into(), files), ("OBJS".into(), objs)]))
 }
 
-/// `MM/DD/YY  HH:MM:SS` of Unix seconds.
+/// The date and time of Unix seconds in the asking job's formats.
 fn stamp(t: u64) -> String {
-    let s = crate::cpp::savout::stamp(t);
-    // CYYMMDDHHMMSS
-    let p = |a: usize, b: usize| s.get(a..b).unwrap_or("");
-    format!("{}/{}/{}  {}:{}:{}", p(3, 5), p(5, 7), p(1, 3), p(7, 9), p(9, 11), p(11, 13))
+    let (d, tm) = super::fmt::current().cyymmddhhmmss(&crate::cpp::savout::stamp(t));
+    format!("{d}  {tm}")
 }
 
 /// A row of Display Saved Objects: the size in kilobytes right-aligned

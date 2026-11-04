@@ -496,7 +496,7 @@ impl Runtime {
                 constant_text(c, f, env)
             } else {
                 let bytes = out.and_then(|o| field_bytes(rec, i, o));
-                value_text(f, bytes.as_deref())
+                value_text(f, bytes.as_deref(), &env.formats)
             };
             let look = look_of(f, inds, &size, self.chginpdft_for(rec, f).as_deref());
             let width = f.screen_len.max(1) as usize;
@@ -1407,8 +1407,7 @@ mod tests {
             date: (2026, 10, 23),
             sys_date: (2026, 10, 23),
             time: (1, 2, 3),
-            datfmt: DateOrder::Mdy,
-            datsep: '/',
+            formats: ccsid::nls::Formats::default(),
             user: "QSECOFR".into(),
             sysname: "QS400".into(),
             messages: BTreeMap::new(),

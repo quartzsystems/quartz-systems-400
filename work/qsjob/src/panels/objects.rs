@@ -232,16 +232,9 @@ fn wrap(text: &str, width: usize) -> Vec<String> {
     rows
 }
 
-/// `CYYMMDDHHMMSS` as `MM/DD/YY` and `HH:MM:SS`; blanks when short.
-fn stamp(s: &str) -> (String, String) {
-    let b = s.as_bytes();
-    if b.len() < 13 || !b.iter().all(u8::is_ascii_digit) {
-        return (String::new(), String::new());
-    }
-    (
-        format!("{}/{}/{}", &s[3..5], &s[5..7], &s[1..3]),
-        format!("{}:{}:{}", &s[7..9], &s[9..11], &s[11..13]),
-    )
+/// `CYYMMDDHHMMSS` as the job shows a date and a time; blanks when short.
+fn stamp(f: &ccsid::nls::Formats, s: &str) -> (String, String) {
+    f.cyymmddhhmmss(s)
 }
 
 #[cfg(test)]
@@ -253,9 +246,9 @@ mod tests {
         assert_eq!(wrap("a bb ccc dddd", 6), ["a bb", "ccc", "dddd"]);
         assert_eq!(wrap("abcdefgh", 3), ["abc", "def", "gh"]);
         assert_eq!(
-            stamp("1261023101112"),
+            stamp(&ccsid::nls::Formats::default(), "1261023101112"),
             ("10/23/26".into(), "10:11:12".into())
         );
-        assert_eq!(stamp(""), (String::new(), String::new()));
+        assert_eq!(stamp(&ccsid::nls::Formats::default(), ""), (String::new(), String::new()));
     }
 }

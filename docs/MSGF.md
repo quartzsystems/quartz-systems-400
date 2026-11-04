@@ -70,7 +70,7 @@ and its dump list.
 | 0 | 8 | magic | `QS400MSG` |
 | 8 | 4 | version | 1 |
 | 12 | 4 | count | descriptions |
-| 16 | 2 | ccsid | of the texts' source, 37 |
+| 16 | 2 | ccsid | the file's CCSID: 37 for the system files, the language's for a `QSYS29xx` file, `CRTMSGF CCSID` (65535 for `*HEX`) for a user's; 0 in a file stored before V1R1M0 reads as 37 |
 | 18 | 14 | reserved | 0 |
 
 ### `MsgEntry` (32 bytes)
@@ -119,3 +119,92 @@ sources until a store supplies the objects. A message on a queue
 keeps its identifier, file and data; its first- and second-level text
 are substituted when it is sent, so a description changed afterwards
 does not change messages already sent (`ILE.md` §5).
+
+## 6. National language support
+
+### Text comes from message files and panel sources
+
+Every string a user reads at a display or in a printed report comes
+from a message file, a panel group or a display file source, so that a
+language library can carry it translated. `tools/textaudit` holds the
+code to that: `scope.toml` names the display paths (the job's panel
+drivers, display layer, developer tools and system displays; the
+service's command processing programs and display data; the console's
+screens; the hardware resource view; the database's and the IFS
+commands' display text), and in them every string literal outside
+tests, attributes, logging, assertions and `.expect(...)` that holds
+words is a site. A site is a *message* (text written beside a message
+identifier, which the message file already has), a *detail* (an error's
+detail, which a function check puts in the job log as `CPD9898`) or
+*display* text. `baseline.txt` lists the sites not yet moved; a literal
+not in it fails `cargo test -p textaudit` and `build test`.
+`cargo run -p textaudit` prints the counts per crate, `-- list [CRATE]`
+the sites, `-- baseline` rewrites the baseline after moving some.
+
+Display text that is not a message lives in `QSTXTMSG` ("Display
+text", identifiers `TXTnnnn`): a driver asks for an identifier with its
+values and gets the text of the first `QSTXTMSG` on the job's library
+list. The hardware resource displays (`WRKHDWRSC`, `DSPHDWRSC`) were
+the first moved there; `hwrsrc::view` takes a `Words` resolver and
+works in identifiers.
+
+### CCSIDs
+
+A message file keeps its CCSID in its header, a panel group in its
+(`Ccsid`, `docs/UIM.md` §6) and a display file in its (37 when the
+source names none, `docs/DSPF.md`). A job's `CCSID` is 65535 or a
+single-byte EBCDIC CCSID the conversion tables have (`QCCSID` and
+`CHGJOB CCSID` refuse others); its default CCSID is its CCSID, or with
+65535 its language's (`ccsid::nls`). `CHGJOB CCSID(*SYSVAL)`,
+`(*USRPRF)`, `LANGID(*SYSVAL|*USRPRF)` and `CNTRYID(...)` take the
+system value's or the profile's, and a job starts with its profile's
+`LANGID`, `CNTRYID` and `CCSID` when they are not `*SYSVAL`. CCSID 1141
+(273 with the euro) joined the tables.
+
+### Language libraries
+
+`QSYS2924` is the primary language's library (English), made at the
+first IPL; the English objects themselves are in `QSYS`. A secondary
+language is a library `QSYS29xx` holding the language's message files
+and its sign-on display files. `INSLNG LNG(29xx)` installs one from the
+text the system carries (`runtime/msgf/msgs/nls/29xx.toml`), as does
+`RSTLICPGM LICPGM(QS00SS1) RSTOBJ(*LNG) LNG(29xx)`. IBM i has no
+`INSLNG` command (the 7.1 oracle answers `CPD0030`,
+`tools/conformance/golden/phase12/inslng/`); IBM installs a secondary
+language with `RSTLICPGM RSTOBJ(*LNG)` or `GO LICPGM` option 21, and
+QS/400's `INSLNG` is a front end to the same install.
+
+The library is found as IBM finds it: ahead of `QSYS` in the system part
+of the library list. `CHGSYSLIBL` or the `QSYSLIBL` system value put it
+there; the sign-on display file is the first `QDSIGNON` (`QDSIGNON2`)
+on `QSYSLIBL`, so a language library at its front gives the sign-on in
+that language. As a QS/400 convenience, a job whose `LANGID` names an
+installed secondary language gets its library ahead of `QSYS` when it
+starts, and `CHGJOB LANGID` moves it (any other language library goes).
+
+**The Spanish library is a scaffold.** `QSYS2931` (Spanish, CCSID 284)
+proves the mechanism and is not a translation: its message files carry
+machine-translated first-level text for 90 of the 1,245 messages of
+`QCPFMSG` and `QSTXTMSG` (the sign-on's, the commonest object and
+library messages, and all of `QSTXTMSG`), the English
+first-level text for the rest, and no second-level text. The library's
+text description starts with `SCAFFOLD` and each file's ends with
+`(SCAFFOLD)`. Its sign-on display files have the Spanish constants.
+
+### Dates, times and decimal numbers
+
+One formatting path: `ccsid::nls::Formats` (from `DATFMT`, `DATSEP`,
+`TIMSEP`, `DECFMT`, or the system values `QDATFMT`, `QDATSEP`,
+`QTIMSEP`, `QDECFMT`). The job's display layer formats with the job's
+(`JobAttrs::formats`): the display file runtime's `DATE` and `TIME`
+constants and edited numbers (edit code `Y` with the job's date
+separator, `DECFMT(J|I)` a decimal comma on output fields; an input
+field still reads a point back), the panels' date and time columns
+(`WRKJOB`, `WRKJOBSCDE`, the object and message displays, `DSPLOG`),
+the `TOPSEP=DATETIME` stamp, `DSPWSUSR` and PDM's date column. The sign-on
+display uses the system values. The storage service formats the dates
+of its answers in the formats of the job that asked (`stgsvc/fmt.rs`
+holds them for the request); a request with no job (the service
+console) gets `*MDY`, `/` and `:`. PDM's subset date (an input field)
+and the service tools' ISO stamps (the LIC log, SST, dumps) stay as
+they are.

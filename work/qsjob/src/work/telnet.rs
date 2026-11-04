@@ -1501,9 +1501,8 @@ fn sign_on_env(link: &mut Link, host: &str) -> dspf::rt::Env {
             .map(|v| ccsid::from_ebcdic(&v.data).trim().to_string())
             .unwrap_or_default()
     };
-    let datfmt = sysval("QDATFMT");
-    let datsep = sysval("QDATSEP");
-    display::dds::env_from(&now, &datfmt, &datsep, "", host)
+    let formats = ccsid::nls::Formats::parse(&sysval("QDATFMT"), &sysval("QDATSEP"), &sysval("QTIMSEP"), &sysval("QDECFMT"));
+    display::dds::env_from(&now, formats, "", host)
 }
 
 /// What the sign-on display's fields may change, as `LMTCPB` allows.
