@@ -1,0 +1,73 @@
+**FREE
+// A test generator: one line of text per event, saying what the
+// parameter holds.
+ctl-opt dftactgrp(*no) actgrp(*caller) main(gen);
+/copy QOAR/QRPGLESRC,QRNDTAGEN
+dcl-proc gen;
+  dcl-pi *n;
+    parm likeds(QrnDgParm_T);
+  end-pi;
+  dcl-s t varchar(500);
+  dcl-s cv char(500) based(pv);
+  dcl-s uv ucs2(250) based(pv);
+  dcl-s up char(20) based(pu);
+  dcl-s n int(10);
+  pQrnDgEnv = parm.env;
+  t = 'e' + %char(parm.event) + ' [' + %char(parm.name) + '] '
+    + parm.userParmType + parm.outputIsToFile + parm.isPartOfSequence
+    + parm.doTerminateEvent + ' s' + %char(parm.userParmSize);
+  select;
+  when parm.event = QrnDgEvent_03_Start;
+    if parm.userParmType = QrnUserParmType_nullTerminatedString;
+      t += ' u=' + %str(parm.userParm);
+    elseif parm.userParmType = QrnUserParmType_char;
+      pu = parm.userParm;
+      t += ' u=' + %subst(up : 1 : parm.userParmSize);
+      if %subst(up : 1 : 1) = 'T';
+        parm.doTerminateEvent = *on;
+      endif;
+      if %subst(up : 1 : 1) = 'E';
+        QrnDgReportError(parm.handle : 9);
+        return;
+      endif;
+    endif;
+  when parm.event = QrnDgEvent_05_StartStruct
+    or parm.event = QrnDgEvent_06_EndStruct;
+    t += ' ds ' + %char(parm.ds.elem) + '/' + %char(parm.ds.totalElems)
+      + ' f' + %char(parm.ds.numSubfields) + ' #' + %char(parm.ds.subfieldNumber)
+      + ' ' + parm.ds.isExtDesc + ' ' + %trimr(parm.ds.extFile)
+      + ' ' + %trimr(parm.ds.extFormat);
+    if parm.event = QrnDgEvent_05_StartStruct and parm.ds.numSubfields > 0;
+      t += ' first=' + %char(QrnDgGetSubfieldName(parm.handle : 1));
+    endif;
+  when parm.event >= QrnDgEvent_07_StartScalarArray
+    and parm.event <= QrnDgEvent_10_EndStructArray;
+    t += ' arr ' + %char(parm.array.totalElems) + ' f' + %char(parm.array.numSubfields)
+      + ' #' + %char(parm.array.subfieldNumber);
+  when parm.event = QrnDgEvent_11_ScalarValue;
+    pv = parm.scalar.value;
+    t += ' v ' + %char(parm.scalar.elem) + '/' + %char(parm.scalar.totalElems)
+      + ' #' + %char(parm.scalar.subfieldNumber) + ' t' + %char(parm.scalar.dataType)
+      + ' f' + %char(parm.scalar.dtzFormat) + ' b' + %char(parm.scalar.valueLenBytes)
+      + ' c' + %char(parm.scalar.valueLenChars);
+    // CCSIDs other than UTF-16's are the job's, which differ by system.
+    if parm.scalar.valueCcsid = 1200 or parm.scalar.valueCcsid = 13488
+      or parm.scalar.valueCcsid = 0;
+      t += ' k' + %char(parm.scalar.valueCcsid);
+    else;
+      t += ' kjob';
+    endif;
+    if parm.scalar.separator = x'00';
+      t += ' p0';
+    else;
+      t += ' p' + parm.scalar.separator;
+    endif;
+    if parm.scalar.valueCcsid = 1200 or parm.scalar.valueCcsid = 13488;
+      t += ' u[' + %char(%subst(uv : 1 : parm.scalar.valueLenChars)) + ']';
+    else;
+      t += ' [' + %subst(cv : 1 : parm.scalar.valueLenBytes) + ']';
+    endif;
+  endsl;
+  QrnDgAddTextString(parm.handle : t);
+  QrnDgAddTextNewLine(parm.handle);
+end-proc;

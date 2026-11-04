@@ -1,0 +1,98 @@
+**FREE
+// A test parser: the document is a list of tokens separated by
+// blanks, in characters every CCSID shares. ( ) start and end a
+// structure, < > an array, =v reports the value v (_ for a blank, =?u
+// the user parameter string, =?n whether it is one), %n=v an
+// attribute, /rc an error, *t a trace line, anything else a name (a
+// trailing : dropped). After an error the parser writes 'R' into the
+// first byte of a user parameter that is no string.
+ctl-opt dftactgrp(*no) actgrp(*caller) main(prs);
+/copy QOAR/QRPGLESRC,QRNDTAINTO
+dcl-proc prs;
+  dcl-pi *n;
+    parm likeds(QrnDiParm_T);
+  end-pi;
+  dcl-s doc char(32000) based(pd);
+  dcl-s udoc ucs2(16000) based(pd);
+  dcl-s text varchar(32000);
+  dcl-s up char(1) based(pu);
+  dcl-s len int(10);
+  dcl-s i int(10);
+  dcl-s j int(10);
+  dcl-s k int(10);
+  dcl-s tok varchar(500);
+  dcl-s v varchar(500);
+  dcl-s n varchar(500);
+  dcl-s c char(1);
+  pQrnDiEnv = parm.env;
+  pd = parm.data;
+  // UCS-2 unless the options asked for the job's CCSID.
+  if parm.dataCcsid = 13488 or parm.dataCcsid = 1200;
+    text = %char(%subst(udoc : 1 : %div(parm.dataLen : 2)));
+  else;
+    text = %subst(doc : 1 : parm.dataLen);
+  endif;
+  len = %len(text);
+  QrnDiStart(parm.handle);
+  i = 1;
+  dow i <= len;
+    if %subst(text : i : 1) = ' ';
+      i += 1;
+      iter;
+    endif;
+    j = i;
+    dow j <= len;
+      if %subst(text : j : 1) = ' ';
+        leave;
+      endif;
+      j += 1;
+    enddo;
+    tok = %subst(text : i : j - i);
+    i = j;
+    c = %subst(tok : 1 : 1);
+    select;
+    when tok = '(';
+      QrnDiStartStruct(parm.handle);
+    when tok = ')';
+      QrnDiEndStruct(parm.handle);
+    when tok = '<';
+      QrnDiStartArray(parm.handle);
+    when tok = '>';
+      QrnDiEndArray(parm.handle);
+    when c = '=';
+      v = %xlate('_' : ' ' : %subst(tok : 2));
+      if v = '?u';
+        v = %str(parm.userParm);
+      elseif v = '?n';
+        v = parm.userParmIsNullTermString;
+      endif;
+      if %len(v) = 0;
+        QrnDiReportValueCcsid(parm.handle : %addr(tok) : 0 : 0);
+      else;
+        QrnDiReportValueCcsid(parm.handle : %addr(v : *data) : %len(v) : 0);
+      endif;
+    when c = '%';
+      k = %scan('=' : tok);
+      n = %subst(tok : 2 : k - 2);
+      v = %xlate('_' : ' ' : %subst(tok : k + 1));
+      QrnDiReportAttrCcsid(parm.handle : %addr(n : *data) : %len(n) : 0
+                           : %addr(v : *data) : %len(v) : 0);
+    when c = '/';
+      QrnDiReportError(parm.handle : %int(%subst(tok : 2)) : i);
+      if not parm.userParmIsNullTermString and parm.userParm <> *null;
+        pu = parm.userParm;
+        up = 'R';
+      endif;
+      return;
+    when c = '*';
+      QrnDiTrace(parm.handle : %subst(tok : 2) : *off);
+    other;
+      n = tok;
+      if %subst(n : %len(n) : 1) = ':';
+        %len(n) = %len(n) - 1;
+      endif;
+      QrnDiReportNameCcsid(parm.handle : %addr(n : *data) : %len(n) : 0);
+    endsl;
+  enddo;
+  QrnDiFinish(parm.handle);
+end-proc;

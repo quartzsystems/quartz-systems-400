@@ -1,0 +1,374 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DTA001
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DTA001
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; with: DTAP                                                                                            000000     000200
+      3 //; setup: CRTBNDRPG PGM({lib}/DTAP) SRCFILE({lib}/QRPGLESRC) SRCMBR(DTAP) DBGVIEW(*NONE)                 000000     000300
+      4 //; cleanup: DLTPGM PGM({lib}/DTAP)                                                                       000000     000400
+      5 ctl-opt dftactgrp(*no);                                                                                   000000     000500
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     6 dcl-f QSYSPRT printer(132);                                                                               000000     000600
+-     7 dcl-ds line len(132) end-ds;                                                                              000000     000700
+ ======>       aaaa
+ *RNF3530 00 a      000700  Data structure LINE has no valid subfields.
+      8 dcl-ds cust qualified;                                                                                    000000     000800
+      9   id packed(5);                                                                                           000000     000900
+     10   name varchar(20);                                                                                       000000     001000
+     11   city char(10);                                                                                          000000     001100
+     12   vip ind;                                                                                                000000     001200
+     13   n int(10);                                                                                              000000     001300
+     14 end-ds;                                                                                                   000000     001400
+     15 dcl-ds item qualified template;                                                                           000000     001500
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     16   sku char(4);                                                                                            000000     001600
+     17   qty int(10);                                                                                            000000     001700
+     18 end-ds;                                                                                                   000000     001800
+     19 dcl-ds ord qualified;                                                                                     000000     001900
+     20   num zoned(4);                                                                                           000000     002000
+     21   num_items int(10);                                                                                      000000     002100
+     22   items likeds(item) dim(5);                                                                              000000     002200
+     23   tags char(3) dim(4);                                                                                    000000     002300
+     24 end-ds;                                                                                                   000000     002400
+     25 dcl-ds sds psds;                                                                                          000000     002500
+     26   cnt int(20) pos(372);                                                                                   000000     002600
+     27 end-ds;                                                                                                   000000     002700
+     28 dcl-s doc varchar(1000);                                                                                  000000     002800
+     29 dcl-s i int(10);                                                                                          000000     002900
+ *RNF2318 00      6 000600  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    30 doc = '( id: =12 name: =Ann_Lee city: =Oslo vip: =1 n: =-7 )';                                            000000     003000
+     31 data-into cust %data(doc) %parser('DTAP');                                                                000000     003100
+     32 line = 'a ' + %char(cust.id) + ' [' + cust.name + '] [' + cust.city + '] ' + cust.vip                     000000     003200
+     33   + ' ' + %char(cust.n);                                                                                  000000     003300
+     34 write QSYSPRT line;                                                                                       000000     003400
+     35 line = 'a count ' + %char(cnt);                                                                           000000     003500
+     36 write QSYSPRT line;                                                                                       000000     003600
+     37 doc = '( ID: =13 Name: =Bo CITY: =Rio VIP: =0 N: =5 )';                                                   000000     003700
+     38 data-into cust %data(doc : 'case=any') %parser('DTAP');                                                   000000     003800
+     39 line = 'b ' + %char(cust.id) + ' ' + cust.name + ' ' + cust.city + ' ' + cust.vip + ' '                   000000     003900
+     40   + %char(cust.n);                                                                                        000000     004000
+     41 write QSYSPRT line;                                                                                       000000     004100
+     42 doc = '( num: =42 items: < ( sku: =A1 qty: =3 ) ( sku: =B2 qty: =4 ) > tags: < =x =y =z > )';             000000     004200
+     43 data-into ord %data(doc : 'case=any countprefix=num_ allowmissing=yes') %parser('DTAP');                  000000     004300
+     44 line = 'c ' + %char(ord.num) + ' ' + %char(ord.num_items);                                                000000     004400
+     45 for i = 1 to 3;                                                                                      B01  000000     004500
+     46   line = %trimr(line) + ' ' + ord.items(i).sku + '/' + %char(ord.items(i).qty) + ' ' + ord.tags(i);   01  000000     004600
+     47 endfor;                                                                                              E01  000000     004700
+     48 write QSYSPRT line;                                                                                       000000     004800
+     49 line = 'c count ' + %char(cnt);                                                                           000000     004900
+     50 write QSYSPRT line;                                                                                       000000     005000
+     51 doc = '( id: =14 name: =Cy extra: =1 city: =Bern vip: =0 n: =1 )';                                        000000     005100
+     52 data-into cust %data(doc : 'allowextra=yes') %parser('DTAP');                                             000000     005200
+     53 line = 'd ' + %char(cust.id) + ' ' + cust.name + ' ' + cust.city;                                         000000     005300
+     54 write QSYSPRT line;                                                                                       000000     005400
+     55 doc = '( id: =15 name: =Di )';                                                                            000000     005500
+     56 data-into cust %data(doc : 'allowmissing=yes') %parser('DTAP');                                           000000     005600
+     57 line = 'e ' + %char(cust.id) + ' ' + cust.name + ' ' + cust.city + ' ' + %char(cust.n);                   000000     005700
+     58 write QSYSPRT line;                                                                                       000000     005800
+     59 doc = '( top: ( inner: ( id: =16 name: =Ed city: =Graz vip: =1 n: =2 ) ) )';                              000000     005900
+     60 monitor;                                                                                             B01  000000     006000
+     61   data-into cust %data(doc : 'path=top/inner') %parser('DTAP');                                       01  000000     006100
+     62   line = 'f ' + %char(cust.id) + ' ' + cust.name + ' ' + cust.city;                                   01  000000     006200
+     63 on-error;                                                                                            X01  000000     006300
+     64   line = 'f ' + %char(%status);                                                                       01  000000     006400
+     65 endmon;                                                                                              E01  000000     006500
+     66 write QSYSPRT line;                                                                                       000000     006600
+     67 monitor;                                                                                             B01  000000     006700
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     68   data-into cust %data(doc : 'path=x/top/inner') %parser('DTAP');                                     01  000000     006800
+     69   line = 'f2 ' + %char(cust.id) + ' ' + cust.name + ' ' + cust.city;                                  01  000000     006900
+     70 on-error;                                                                                            X01  000000     007000
+     71   line = 'f2 ' + %char(%status);                                                                      01  000000     007100
+     72 endmon;                                                                                              E01  000000     007200
+     73 write QSYSPRT line;                                                                                       000000     007300
+     74 doc = '( id: =__17__ name: =__Fay__Ng__ city: =Ulm vip: =0 n: =3 )';                                      000000     007400
+     75 monitor;                                                                                             B01  000000     007500
+     76   data-into cust %data(doc : 'trim=none') %parser('DTAP');                                            01  000000     007600
+     77   line = 'g ' + %char(cust.id) + ' [' + cust.name + '] ' + cust.city;                                 01  000000     007700
+     78 on-error;                                                                                            X01  000000     007800
+     79   line = 'g ' + %char(%status);                                                                       01  000000     007900
+     80 endmon;                                                                                              E01  000000     008000
+     81 write QSYSPRT line;                                                                                       000000     008100
+     82 doc = '( id: =__18__ name: =__Gil___Ng__ city: =Ulm vip: =0 n: =3 )';                                     000000     008200
+     83 monitor;                                                                                             B01  000000     008300
+     84   data-into cust %data(doc) %parser('DTAP');                                                          01  000000     008400
+     85   line = 'h ' + %char(cust.id) + ' [' + cust.name + '] ' + cust.city;                                 01  000000     008500
+     86 on-error;                                                                                            X01  000000     008600
+     87   line = 'h ' + %char(%status);                                                                       01  000000     008700
+     88 endmon;                                                                                              E01  000000     008800
+     89 write QSYSPRT line;                                                                                       000000     008900
+     90 *inlr = *on;                                                                                              000000     009000
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 6D     34      36      41
+                                                   48      50      54      58
+                                                   66      73      81      89
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   90M
+          CNT               I(20,0)                26D     35      49
+          CUST              DS(40)                  8D     31M     32      32
+                                                   32      32      33      38M
+                                                   39      39      39      39
+                                                   40      52M     53      53
+                                                   53      56M     57      57
+                                                   57      57      61M     62
+                                                   62      62      68M     69
+                                                   69      69      76M     77
+                                                   77      77      84M     85
+                                                   85      85
+            CITY            A(10)                  11D     32      39      53
+                                                   57      62      69      77
+                                                   85
+            ID              P(5,0)                  9D     32      39      53
+                                                   57      62      69      77
+                                                   85
+            N               I(10,0)                13D     33      40      57
+            NAME            A(20)                  10D     32      39      53
+                            VARYING(2)             57      62      69      77
+                                                   85
+            VIP             N(1)                   12D     32      39
+          DOC               A(1000)                28D     30M     31      37M
+                            VARYING(2)             38      42M     43      51M
+                                                   52      55M     56      59M
+                                                   61      68      74M     76
+                                                   82M     84
+          I                 I(10,0)                29D     45      46      46
+                                                   46
+          ITEM              DS(8)                  15D     22
+                            TEMPLATE
+ *RNF7031   QTY             I(10,0)                17D
+ *RNF7031   SKU             A(4)                   16D
+          LINE              DS(132)                 7D     32M     34      35M
+                                                   36      39M     41      44M
+                                                   46M     46      48      49M
+                                                   50      53M     54      57M
+                                                   58      62M     64M     66
+                                                   69M     71M     73      77M
+                                                   79M     81      85M     87M
+                                                   89
+          ORD               DS(60)                 19D     43M     44      44
+                                                   46      46      46
+            ITEMS(5)        DS(8)                  22D     46      46
+1{heading} page 7
+0             QTY           I(10,0)                46
+              SKU           A(4)                   46
+            NUM             S(4,0)                 20D     44
+            NUM_ITEMS       I(10,0)                21D     44
+            TAGS(4)         A(3)                   23D     46
+ *RNF7031 SDS               DS(379)                25D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       90M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      3 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        5
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        5
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       90
+     Specifications  . . . . . . . . :       86
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        3
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DTA001 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

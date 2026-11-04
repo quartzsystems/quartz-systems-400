@@ -1,0 +1,18 @@
+# DTA001 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 6 seq 000600
+diag: RNF3530 00 line 7 seq 000700
+run: ok
+spool: QSYSPRT
+  |1/1   a 12 [Ann Lee] [Oslo      ] 1 -7
+  |1/2   a count 0
+  |1/3   b 13 Bo Rio        0 5
+  |1/4   c 42 2 A1  /3 x B2  /4 y     /1077952576 z
+  |1/5   c count 0
+  |1/6   d 14 Cy Bern
+  |1/7   e 15 Di Bern       1
+  |1/8   f 356
+  |1/9   f2 356
+  |1/10  g 17 [  Fay  Ng  ] Ulm
+  |1/11  h 18 [Gil Ng] Ulm

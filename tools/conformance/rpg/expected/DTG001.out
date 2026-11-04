@@ -1,0 +1,53 @@
+# DTG001 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 6 seq 000600
+diag: RNF3530 00 line 7 seq 000700
+run: ok
+spool: QSYSPRT
+  |1/1   ord 1149
+  |1/2    e3 [] 0000 s0
+  |1/3    e5 [ord] 0000 s0 ds 0/0 f8 #0 0   first=num
+  |1/4    e11 [num] 0000 s0 v 0/0 #1 t8 f0 b6 c3 k1200 p. u[4.5]
+  |1/5    e11 [name] 0000 s0 v 0/0 #2 t1 f0 b6 c3 k1200 p0 u[Bob]
+  |1/6    e11 [ok] 0000 s0 v 0/0 #3 t7 f0 b2 c1 k1200 p0 u[1]
+  |1/7    e11 [dt] 0000 s0 v 0/0 #4 t12 f1 b20 c10 k1200 p- u[2026-03-04]
+  |1/8    e9 [items] 0000 s0 arr 2 f2 #5
+  |1/9    e5 [items] 0000 s0 ds 1/2 f2 #5 0   first=sku
+  |1/10   e11 [sku] 0000 s0 v 0/0 #1 t1 f0 b4 c2 k1200 p0 u[A1]
+  |1/11   e11 [qty] 0000 s0 v 0/0 #2 t9 f0 b2 c1 k1200 p. u[3]
+  |1/12   e6 [items] 0000 s0 ds 1/2 f2 #5 0
+  |1/13   e5 [items] 0000 s0 ds 2/2 f2 #5 0   first=sku
+  |1/14   e11 [sku] 0000 s0 v 0/0 #1 t1 f0 b4 c2 k1200 p0 u[B2]
+  |1/15   e11 [qty] 0000 s0 v 0/0 #2 t9 f0 b2 c1 k1200 p. u[4]
+  |1/16   e6 [items] 0000 s0 ds 2/2 f2 #5 0
+  |1/17   e10 [items] 0000 s0 arr 2 f2 #5
+  |1/18   e7 [tags] 0000 s0 arr 3 f0 #6
+  |1/19   e11 [tags] 0000 s0 v 1/3 #6 t1 f0 b2 c1 k1200 p0 u[t]
+  |1/20   e11 [tags] 0000 s0 v 2/3 #6 t1 f0 b2 c1 k1200 p0 u[t]
+  |1/21   e11 [tags] 0000 s0 v 3/3 #6 t1 f0 b2 c1 k1200 p0 u[t]
+  |1/22   e8 [tags] 0000 s0 arr 3 f0 #6
+  |1/23   e11 [f] 0000 s0 v 0/0 #7 t11 f0 b46 c23 k1200 p. u[+1.250000000000000E+000]
+  |1/24   e11 [i] 0000 s0 v 0/0 #8 t9 f0 b4 c2 k1200 p. u[-3]
+  |1/25   e6 [ord] 0000 s0 ds 0/0 f8 #0 0
+  |1/26   e4 [] 0000 s0
+  |1/27  scalar 101
+  |1/28   e3 [] 1000 s9 u=parm text
+  |1/29   e11 [s] 1000 s9 v 0/0 #0 t1 f0 b14 c7 k1200 p0 u[just me]
+  |1/30   e4 [] 1000 s9
+  |1/31  array 491
+  |1/32   e3 [] 3000 s1 u=T
+  |1/33   e9 [things] 3001 s1 arr 2 f2 #0
+  |1/34   e5 [things] 3001 s1 ds 1/2 f2 #0 0   first=sku
+  |1/35   e11 [sku] 3001 s1 v 0/0 #1 t1 f0 b4 c2 k1200 p0 u[A1]
+  |1/36   e11 [qty] 3001 s1 v 0/0 #2 t9 f0 b2 c1 k1200 p. u[3]
+  |1/37   e6 [things] 3001 s1 ds 1/2 f2 #0 0
+  |1/38   e5 [things] 3001 s1 ds 2/2 f2 #0 0   first=sku
+  |1/39   e11 [sku] 3001 s1 v 0/0 #1 t1 f0 b4 c2 k1200 p0 u[B2]
+  |1/40   e11 [qty] 3001 s1 v 0/0 #2 t9 f0 b2 c1 k1200 p. u[4]
+  |1/41   e6 [things] 3001 s1 ds 2/2 f2 #0 0
+  |1/42   e10 [things] 3001 s1 arr 2 f2 #0
+  |1/43   e4 [] 3001 s1
+  |1/44  error 363
+  |1/45  badopt 352
+  |1/46  nogen 355

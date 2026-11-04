@@ -1,0 +1,287 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DTG002
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DTG002
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; with: DTGG                                                                                            000000     000200
+      3 //; setup: CRTBNDRPG PGM({lib}/DTGG) SRCFILE({lib}/QRPGLESRC) SRCMBR(DTGG) DBGVIEW(*NONE)                 000000     000300
+      4 //; cleanup: DLTPGM PGM({lib}/DTGG)                                                                       000000     000400
+      5 ctl-opt dftactgrp(*no);                                                                                   000000     000500
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     6 dcl-f QSYSPRT printer(132);                                                                               000000     000600
+-     7 dcl-ds line len(132) end-ds;                                                                              000000     000700
+ ======>       aaaa
+ *RNF3530 00 a      000700  Data structure LINE has no valid subfields.
+      8 dcl-ds MyRec qualified;                                                                                   000000     000800
+      9   FirstName char(5) inz('Al');                                                                            000000     000900
+     10   Amt packed(7:2) inz(0.5);                                                                               000000     001000
+     11   Neg packed(5:3) inz(-0.25);                                                                             000000     001100
+     12   Whole packed(5) inz(100);                                                                               000000     001200
+     13   Zero zoned(3:1) inz(0);                                                                                 000000     001300
+     14   TM time inz(t'tt.tt.tt');                                                                               000000     001400
+     15   US date(*usa) inz(d'2026-12-31');                                                                       000000     001500
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     16   Big uns(10) inz(4000000000);                                                                            000000     001600
+     17   num_Kids int(10) inz(1);                                                                                000000     001700
+     18   Kids char(1) dim(3) inz('k');                                                                           000000     001800
+     19 end-ds;                                                                                                   000000     001900
+     20 dcl-s out varchar(4000);                                                                                  000000     002000
+ *RNF2318 00      6 000600  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    21 data-gen MyRec %data(out) %gen('DTGG');                                                                   000000     002100
+     22 show('mixed');                                                                                            000000     002200
+     23 data-gen MyRec %data(out : 'countprefix=num_') %gen('DTGG');                                              000000     002300
+     24 show('count');                                                                                            000000     002400
+     25 data-gen MyRec.Kids %data(out) %gen('DTGG');                                                              000000     002500
+     26 show('subarr');                                                                                           000000     002600
+     27 *inlr = *on;                                                                                              000000     002700
+     28                                                                                                           000000     002800
+-    29 dcl-proc show;                                                                                            000000     002900
+-    30   dcl-pi *n;                                                                                              000000     003000
+     31     what varchar(10) const;                                                                               000000     003100
+     32   end-pi;                                                                                                 000000     003200
+     33   dcl-s at int(10);                                                                                       000000     003300
+     34   dcl-s from int(10) inz(1);                                                                              000000     003400
+-    35   line = what + ' ' + %char(%len(out));                                                                   000000     003500
+     36   write QSYSPRT line;                                                                                     000000     003600
+     37   at = %scan(x'25' : out);                                                                                000000     003700
+     38   dow at > 0;                                                                                        B01  000000     003800
+     39     line = ' ' + %subst(out : from : at - from);                                                      01  000000     003900
+     40     write QSYSPRT line;                                                                               01  000000     004000
+     41     from = at + 1;                                                                                    01  000000     004100
+     42     if from > %len(out);                                                                             B02  000000     004200
+     43       leave;                                                                                          02  000000     004300
+     44     endif;                                                                                           E02  000000     004400
+     45     at = %scan(x'25' : out : from);                                                                   01  000000     004500
+     46   enddo;                                                                                             E01  000000     004600
+     47   if from <= %len(out);                                                                              B01  000000     004700
+     48     line = ' rest ' + %subst(out : from);                                                             01  000000     004800
+     49     write QSYSPRT line;                                                                               01  000000     004900
+     50   endif;                                                                                             E01  000000     005000
+     51 end-proc;                                                                                                 000000     005100
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 6D     36      40      49
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   27M
+          LINE              DS(132)                 7D     35M     36      39M
+                                                   40      48M     49
+          MYREC             DS(47)                  8D     21      23      25
+ *RNF7031   AMT             P(7,2)                 10D
+ *RNF7031   BIG             U(10,0)                16D
+ *RNF7031   FIRSTNAME       A(5)                    9D
+            KIDS(3)         A(1)                   18D     25
+ *RNF7031   NEG             P(5,3)                 11D
+ *RNF7031   NUM_KIDS        I(10,0)                17D
+ *RNF7031   TM              T(8*ISO.)              14D
+ *RNF7031   US              D(10*USA/)             15D
+ *RNF7031   WHOLE           P(5,0)                 12D
+ *RNF7031   ZERO            S(3,1)                 13D
+          OUT               A(4000)                20D     21      23      25
+                            VARYING(2)             35      37      39      42
+                                                   45      47      48
+          SHOW              PROTOTYPE              22M     24M     26M     29
+       Field References for subprocedure SHOW
+0         Field             Attributes         References (D=Defined M=Modified)
+          AT                I(10,0)                33D     37M     38      39
+                                                   41      45M
+          FROM              I(10,0)                34D     39      39      41M
+                                                   42      45      47      48
+          WHAT              A(10)                  31D     35
+                            BASED(_QRNL_PST+)
+                            VARYING(2)
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       27M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      9 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       11
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       11
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       51
+     Specifications  . . . . . . . . :       44
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        4
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DTG002 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
