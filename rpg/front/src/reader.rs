@@ -515,7 +515,7 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
 
 /// Whether a record is the `**FREE` marker.
 fn is_free_marker(text: &str) -> bool {
-    text.len() >= 6 && text[..6].eq_ignore_ascii_case("**FREE") && text[6..].trim().is_empty()
+    text.get(..6).is_some_and(|h| h.eq_ignore_ascii_case("**FREE")) && text[6..].trim().is_empty()
 }
 
 /// Classify one record.
