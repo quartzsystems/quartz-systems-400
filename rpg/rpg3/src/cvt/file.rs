@@ -50,7 +50,9 @@ pub(super) fn control(r: &str) -> String {
         kws.push("FTRANS".into());
     }
     let mut h = Rec::new("H", r);
-    h.put("keywords", &kws.join(" "));
+    if !kws.is_empty() {
+        h.put("keywords", &format!(" {}", kws.join(" ")));
+    }
     h.text()
 }
 
@@ -136,7 +138,7 @@ impl Files {
                 "SAVEDS" => format!("SAVEDS({entry})"),
                 "SAVEIN" => "SAVEIND(99)".to_string(),
                 _ => {
-                    out.msg("RNM0507", 30, at + k);
+                    out.msg("RNM0592", 30, at + k);
                     continue;
                 }
             };

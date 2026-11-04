@@ -51,8 +51,8 @@ pub fn qrg(rnf: &str, severity: u8) -> Option<(String, u8, Place)> {
 #[must_use]
 pub fn conversion_qrg(rnm: &str) -> &'static str {
     match rnm {
-        "RNM0507" => "QRG2001",
-        "RNM0501" => "QRG3001",
+        "RNM0592" => "QRG2001",
+        "RNM0591" => "QRG3001",
         _ => "QRG5014",
     }
 }

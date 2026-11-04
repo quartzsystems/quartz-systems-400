@@ -1,0 +1,11 @@
+# R3026 CVTRPGSRC pub400.com
+      *; run: no
+      * DEBUG and FREE, which have no ILE RPG form; CALL and PARM.
+     H DEBUG
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   CALL      'QCMDEXC'
+     C                   PARM                    CMD              10
+     C                   PARM                    LEN              15 5
+     C                   FREE      'QCMDEXC'
+     C                   DEBUG     QSYSPRT
+     C                   SETON                                        LR

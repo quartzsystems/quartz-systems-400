@@ -41,6 +41,14 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
     if let Some(l) = &last {
         c.put("cond", l);
     }
+    // What the report notes: a CALL (00), and the operations ILE RPG
+    // does not have, kept as they are (30).
+    match op.as_str() {
+        "CALL" => out.msg("RNM0511", 0, at),
+        "FREE" => out.msg("RNM0506", 30, at),
+        "DEBUG" => out.msg("RNM0517", 30, at),
+        _ => {}
+    }
     let mut name = opcode(&op);
     if !ext.is_empty() && !op.is_empty() {
         name = format!("{name}({ext})");

@@ -1031,6 +1031,18 @@ member("R3025", [
     OF_("55", field="Z5"),
 ])
 
+# --- 26. The operations ILE RPG dropped: DEBUG and FREE (compile only).
+member("R3026", [
+    directive("run: no"),
+    star("DEBUG and FREE, which have no ILE RPG form; CALL and PARM."), H(c15="1"), PRT,
+    C("CALL", f2="'QCMDEXC'"),
+    C("PARM", res="CMD", ln="10"),
+    C("PARM", res="LEN", ln="15", dec="5"),
+    C("FREE", f2="'QCMDEXC'"),
+    C("DEBUG", f2="QSYSPRT"),
+    C("SETON", hi="LR"),
+])
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     for name, lines in MEMBERS.items():

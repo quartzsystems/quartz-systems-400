@@ -277,6 +277,7 @@ fn unused_indicators(main: &Member, diags: &mut Vec<Diag>) {
 fn no_output(main: &Member, diags: &mut Vec<Diag>) {
     let f = rpgspecs::rpg3_form("F");
     let o = rpgspecs::rpg3_form("O");
+    let c = rpgspecs::rpg3_form("C");
     let live = |t: &str, letter: char| {
         t.chars().nth(5).is_some_and(|c| c.eq_ignore_ascii_case(&letter)) && t.chars().nth(6) != Some('*')
     };
@@ -293,7 +294,12 @@ fn no_output(main: &Member, diags: &mut Vec<Diag>) {
             .records
             .iter()
             .take_while(|r| !r.text.starts_with("**"))
-            .any(|x| live(&x.text, 'O') && o.cut(&x.text.to_ascii_uppercase(), "name").trim() == name);
+            .any(|x| {
+                let u = x.text.to_ascii_uppercase();
+                // An output specification, or an operation naming it.
+                (live(&u, 'O') && o.cut(&u, "name").trim() == name)
+                    || (live(&u, 'C') && c.cut(&u, "factor2").trim() == name)
+            });
         if !named {
             diags.push(Diag {
                 stmt: stmt_of(&r.seq),
@@ -304,6 +310,32 @@ fn no_output(main: &Member, diags: &mut Vec<Diag>) {
             });
         }
     }
+}
+
+/// A converted record as the compile takes it: the overflow line one
+/// later (below); `FREE` and `DEBUG`,
+/// which ILE RPG does not have, do nothing (a comment keeps the
+/// numbering). `DEBUG` writes no debug records here.
+fn compiled_text(t: &str) -> String {
+    // RPG/400 spaces after a line when the next prints, so its overflow
+    // indicator goes on when a line prints on the overflow line; ILE
+    // RPG spaces at once and is on when the carriage reaches it. One
+    // line later is the same overflow.
+    if let Some(at) = t.find("FORMOFL(")
+        && let Some(end) = t[at + 8..].find(')')
+        && let Ok(n) = t[at + 8..at + 8 + end].trim().parse::<u32>()
+    {
+        return format!("{}FORMOFL({}){}", &t[..at], n + 1, &t[at + 9 + end..]);
+    }
+    let c = rpgspecs::form("C").expect("the C form");
+    let is_c = t.chars().nth(5).is_some_and(|ch| ch.eq_ignore_ascii_case(&'C')) && t.chars().nth(6) != Some('*');
+    if is_c && matches!(c.cut(t, "opcode").trim().to_ascii_uppercase().as_str(), "FREE" | "DEBUG") {
+        let mut s: String = t.chars().take(6).collect();
+        s.push('*');
+        s.extend(t.chars().skip(7));
+        return s;
+    }
+    t.to_string()
 }
 
 /// Compile an RPG III member.
@@ -319,7 +351,7 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
             Record {
                 seq: src.map_or_else(String::new, |r| r.seq.clone()),
                 date: src.map_or_else(|| "000000".to_string(), |r| r.date.clone()),
-                text: l.text.clone(),
+                text: compiled_text(&l.text),
             }
         })
         .collect();
@@ -345,7 +377,9 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
     };
     let inner = rpgc::compile(member, includes, ext, &ropts);
     let mut diags: Vec<Diag> = Vec::new();
-    for m in &conversion.messages {
+    // Only what the converter could not convert is the compile's error;
+    // its notes (CALL, FREE, DEBUG) are not.
+    for m in conversion.messages.iter().filter(|m| m.id.starts_with("RNM059")) {
         diags.push(Diag {
             stmt: main.records.get(m.at).map_or(0, |r| stmt_of(&r.seq)),
             msgid: msgs::conversion_qrg(m.id).to_string(),

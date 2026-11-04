@@ -213,6 +213,7 @@ pub fn cvtrpgsrc(system: &mut System, parms: &Parms) -> CmdReply {
                 user: user.clone(),
                 from: (from.0.clone(), from.1.clone(), m.clone()),
                 to: (to.0.clone(), to.1.clone(), to_mbr.clone()),
+                seqs: src.member.records.iter().map(|r| r.seq.clone()).collect(),
                 ..rpg3::report::Params::default()
             };
             let rpt = rpg3::report::report(&c, &p);

@@ -32,6 +32,9 @@ pub struct Params {
     pub insrtpl: bool,
     /// The heading's date and time.
     pub when: String,
+    /// The source records' sequence numbers (six digits); by default
+    /// 000100, 000200, ...
+    pub seqs: Vec<String>,
 }
 
 impl Default for Params {
@@ -46,6 +49,7 @@ impl Default for Params {
             seclvl: false,
             insrtpl: false,
             when: String::new(),
+            seqs: Vec::new(),
         }
     }
 }
@@ -54,9 +58,12 @@ impl Default for Params {
 #[must_use]
 pub fn text(id: &str) -> &'static str {
     match id {
-        "RNM0501" => "A data format of this kind has no ILE RPG equivalent.",
-        "RNM0507" => "The file continuation option is not converted.",
-        "RNM0511" => "The specification type is not known; the record is copied.",
+        "RNM0506" => "FREE has no ILE RPG form; the operation is copied as it is.",
+        "RNM0511" => "A CALL operation: the called program may need converting too.",
+        "RNM0517" => "DEBUG has no ILE RPG form; the operation is copied as it is.",
+        "RNM0590" => "The specification type is not known; the record is copied.",
+        "RNM0591" => "A data format of this kind has no ILE RPG equivalent.",
+        "RNM0592" => "The file continuation option is not converted.",
         _ => "Conversion message.",
     }
 }
@@ -68,6 +75,39 @@ fn yes(b: bool) -> &'static str {
 /// A page heading.
 fn heading(p: &Params, page: u32) -> String {
     format!("1QS00RPG  {}  CVTRPGSRC                                      {}   Page {page:>4}", release::RELEASE, p.when)
+}
+
+/// The records with messages, each followed by its messages, and the
+/// message summary on a page of its own.
+fn messages(out: &mut Vec<String>, c: &Conversion, p: &Params) {
+    out.push(format!("0Sequence <{}> Page", "----------------------- Source Specifications ---------------------------><-------------- Comments --------------"));
+    out.push(" Number   ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10....+...11....+...12 Line".to_string());
+    let mut ats: Vec<usize> = c.messages.iter().map(|m| m.at).collect();
+    ats.sort_unstable();
+    ats.dedup();
+    for (k, at) in ats.iter().enumerate() {
+        let seq = p.seqs.get(*at).cloned().unwrap_or_else(|| format!("{:06}", (at + 1) * 100));
+        let line = c.lines.iter().find(|l| l.from == *at).map_or(String::new(), |l| l.text.chars().skip(5).collect());
+        out.push(format!("{}  {seq} {line}", if k == 0 { ' ' } else { '0' }).trim_end().to_string());
+        for m in c.messages.iter().filter(|m| m.at == *at) {
+            out.push(format!(" *{} {:02} {}", m.id, m.severity, text(m.id)));
+        }
+    }
+    out.push("0       * * * * *   E N D   O F   S O U R C E   * * * * *".to_string());
+    out.push(heading(p, 3));
+    out.push("0                          M e s s a g e   S u m m a r y".to_string());
+    out.push("0 Msg id  Sv Number Message text".to_string());
+    let mut ids: Vec<(&str, u8, usize)> = Vec::new();
+    for m in &c.messages {
+        match ids.iter_mut().find(|(i, _, _)| *i == m.id) {
+            Some(e) => e.2 += 1,
+            None => ids.push((m.id, m.severity, 1)),
+        }
+    }
+    for (k, (id, sev, n)) in ids.iter().enumerate() {
+        out.push(format!("{}*{id} {sev:02} {n:>6} {}", if k == 0 { ' ' } else { '0' }, text(id)));
+    }
+    out.push("0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *".to_string());
 }
 
 /// The report's records for one member.
@@ -101,8 +141,8 @@ pub fn report(c: &Conversion, p: &Params) -> Vec<String> {
     out.push(format!("   To file. . . . . . . . . . . . . :   {}/{}({to_mbr})", p.to.0, p.to.1));
     out.push(format!("   Log file . . . . . . . . . . . . :   {}", p.log.0));
     out.push("-                       C o n v e r s i o n    R e p o r t".to_string());
-    for m in &c.messages {
-        out.push(format!("0  {:>6}  *{} {:02}  {}", m.at + 1, m.id, m.severity, text(m.id)));
+    if !c.messages.is_empty() {
+        messages(&mut out, c, p);
     }
     let count = |lo: u8, hi: u8| c.messages.iter().filter(|m| m.severity >= lo && m.severity <= hi).count();
     let (info, warn, severe) = (count(0, 9), count(10, 29), count(30, 99));

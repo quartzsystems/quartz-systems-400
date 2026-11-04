@@ -40,10 +40,17 @@ form, which the converter handles, and the reporting:
   diagnostics and the converter's `RNM` messages.
 
 RPG/400 checks the ILE compiler relaxes are not all made: a literal
-longer than its factor (`QRG5167`) or a search argument of another
-length than the array's elements (`QRG7021`) compile here. Those are
+longer than its factor (`QRG5167`), a search argument of another length
+than the array's elements (`QRG7021`) or the key's (`QRG7078`), an edit
+word whose replaceable positions do not fit the field (`QRG8004`), a
+`TESTB` of one bit with the mixed indicator (`QRG5117`), a numbered
+record sequence after an `NS` record (`QRG4101`) and `*LIKE DEFN`'s
+length adjustment without its blank (`QRG5081`) compile here. Those are
 compile errors on IBM i, not differences in what a program does; the
-corpus has none left.
+corpus has none left. The unreferenced-name checks follow RPG/400:
+names and indicators set and never used (`QRG7031`, the statement that
+first sets them; a field of an externally described file is
+statement 0), not files.
 
 ## Conversion rules
 
@@ -78,9 +85,21 @@ kept; the order becomes H, F, D, I, C, O, compile-time data.
 `tools/conformance/tests/rpg3_cvt.rs` compares each corpus member's
 conversion with the member pub400's `CVTRPGSRC` wrote, record for
 record, and the conversion report with pub400's (dates, the user and
-the library masked). The report is IBM's layout: the command's
-parameters, the files, each message with its record, the final summary
-of message and record totals.
+the library masked, each message's text its own). The report is IBM's
+layout: the command's parameters, the files, then (when there are
+messages) each record with a message as converted, under its sequence
+number, with its messages, and the message summary on a page of its
+own; the final summary of message and record totals.
+
+The converter's messages: `RNM0511` (00) a `CALL`, whose program may
+need converting too; `RNM0506` and `RNM0517` (30) `FREE` and `DEBUG`,
+which ILE RPG does not have and which are copied as they are (IBM's
+numbers and severities). QS/400's own, for what the corpus has not
+shown IBM's converter doing: `RNM0590` an unknown specification type,
+`RNM0591` a data format `L` or `R` on an extension specification,
+`RNM0592` a file continuation option it does not know. Only those three
+make `CRTRPGPGM` fail; `FREE` and `DEBUG` compile and do nothing
+(`DEBUG` writes no debug records), where RPG/400 runs them.
 
 ## Commands
 
@@ -104,3 +123,45 @@ compiles it, calls it, and converts it with `CVTRPGSRC` into
 member) and `NAME.rpt` (the report). `cargo test -p conformance --test
 rpg_kit` (`QS400_RPG_ONLY=R30`) compares the outcomes,
 `--test rpg3_cvt` the conversions and reports.
+
+### Results
+
+25 members (`R3001`-`R3025`): edit codes and words, arithmetic and half
+adjust, comparisons and the structured operations, moves, arrays and
+tables with compile-time data and alternating tables, strings, data
+structures with initial values, constants and occurrences, the program
+status structure and `*ENTRY` parameters, indicators with `AND`/`OR`
+conditioning, an HLINV-style report with `L2`/`L1` breaks and totals
+(`R3011`), matching records (`R3012`), externally described input,
+update, add and delete, subroutines and `*INZSR`, a line counter
+specification with overflow and headings again, record identification
+codes, `KLIST`, an externally described data structure with renames,
+bit operations, file continuation lines with an INFDS, an externally
+described primary file with a control level, `DEFN` with a data area,
+signs and zones, and one compile with errors. All 25 conversions and
+reports match pub400's; 24 outcomes match, one is known to differ
+(`known.txt`):
+
+- `R3021`: the INFDS's `*RECORD` names the file's own format (`CUSTR`)
+  where RPG/400 gives the `RENAME` name (`CREC`), and keeps it after a
+  `CHAIN` that finds nothing where RPG/400 blanks it. The IR's file
+  declaration carries no RPG names for formats.
+
+Fixes the corpus brought to the ILE RPG compiler and runtime, which
+ILE RPG programs share: an output field with an edit code and `*` or
+the currency symbol in the constant columns (asterisk fill, floating
+currency) printed nothing; a whole array named on an output
+specification printed one element (now every element, edited ones two
+blanks apart, the blanks printed too); the PSDS's `*PARMS` was 0 in a
+cycle program called with parameters; an externally described field
+line with a control level or matching field and no rename was not
+recognised.
+
+**Overflow.** RPG/400 spaces after a line when the next one prints, so
+its overflow indicator goes on when a line prints on the overflow line;
+ILE RPG spaces at once and the indicator goes on when the carriage
+reaches the line (`COV096` and `R3016` on pub400 show both). `CRTRPGPGM`
+compiles `FORMOFL(n)` (the line counter specification's overflow line)
+as `FORMOFL(n+1)`, which overflows at the same line. A program without
+a line counter specification keeps the printer file's overflow line and
+the ILE timing.

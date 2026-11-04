@@ -56,19 +56,34 @@ help = "The compile found errors above the GENLVL value, or a severe error. The 
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
-id = "RNM0501"
+id = "RNM0506"
+sev = 30
+text = "FREE has no ILE RPG form; the operation is copied as it is."
+
+[[msg]]
+id = "RNM0511"
+sev = 0
+text = "A CALL operation: the called program may need converting too."
+
+[[msg]]
+id = "RNM0517"
+sev = 30
+text = "DEBUG has no ILE RPG form; the operation is copied as it is."
+
+[[msg]]
+id = "RNM0590"
+sev = 30
+text = "The specification type is not known; the record is copied."
+
+[[msg]]
+id = "RNM0591"
 sev = 30
 text = "A data format of this kind has no ILE RPG equivalent."
 
 [[msg]]
-id = "RNM0507"
+id = "RNM0592"
 sev = 30
 text = "The file continuation option is not converted."
-
-[[msg]]
-id = "RNM0511"
-sev = 30
-text = "The specification type is not known; the record is copied."
 
 [[msg]]
 id = "RNM9001"

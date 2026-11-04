@@ -54,9 +54,20 @@ fn conversions_match_the_oracle() {
         };
         let ours = rpg_oracle::listing::mask(&rpg3::report::report(&conv, &params), &rpg_oracle::listing::Mask::default());
         fs::write(Kit::ours_dir().join(format!("{}.rpt", case.name)), ours.join("\n") + "\n").unwrap();
-        let keep = |l: &&str| l.len() > 1;
-        let a: Vec<&str> = ibm.lines().filter(keep).collect();
-        let b: Vec<&str> = ours.iter().map(String::as_str).filter(keep).collect();
+        // A message's text is each side's own: its identifier, severity
+        // and count compare.
+        let norm = |l: &str| -> String {
+            match l.find("*RNM") {
+                Some(at) => {
+                    let w: Vec<&str> = l[at..].split_whitespace().collect();
+                    let n = if w.get(2).is_some_and(|x| x.chars().all(|c| c.is_ascii_digit())) { 3 } else { 2 };
+                    format!("{}{}", &l[..at], w[..n.min(w.len())].join(" "))
+                }
+                None => l.to_string(),
+            }
+        };
+        let a: Vec<String> = ibm.lines().filter(|l| l.len() > 1).map(norm).collect();
+        let b: Vec<String> = ours.iter().filter(|l| l.len() > 1).map(|l| norm(l)).collect();
         if a != b {
             let i = (0..a.len().max(b.len())).find(|&i| a.get(i) != b.get(i)).unwrap_or(0);
             failures.push(format!("{} report line {}:\n  ibm:  {:?}\n  ours: {:?}", case.name, i + 1, a.get(i), b.get(i)));

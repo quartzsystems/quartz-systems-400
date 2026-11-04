@@ -1,0 +1,10 @@
+      *; run: no
+      * DEBUG and FREE, which have no ILE RPG form; CALL and PARM.
+     H        1
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     CALL 'QCMDEXC'
+     C                     PARM           CMD    10
+     C                     PARM           LEN    155
+     C                     FREE 'QCMDEXC'
+     C                     DEBUGQSYSPRT
+     C                     SETON                     LR

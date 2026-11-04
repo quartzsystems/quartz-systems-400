@@ -52,7 +52,7 @@ impl Defs {
         let to = cut3("E", r, "to");
         let fmt = cut3("E", r, "format");
         if fmt == "L" || fmt == "R" {
-            out.msg("RNM0501", 30, at);
+            out.msg("RNM0591", 30, at);
         }
         let mut kws = vec![format!("DIM({entries})")];
         if !from.is_empty() {

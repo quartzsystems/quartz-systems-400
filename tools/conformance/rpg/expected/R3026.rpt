@@ -1,0 +1,84 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CVTRPGSRC
+     Issued by  . . . . . . . . . . :     {user}
+0  From file  . . . . . . . . . . . :   QRPGSRC
+     Library  . . . . . . . . . . . :     {lib}
+   From member  . . . . . . . . . . :   R3026
+0  To file. . . . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+   To member  . . . . . . . . . . . :   *FROMMBR
+0  Log file . . . . . . . . . . . . :   *NONE
+     Library  . . . . . . . . . . . :
+   Log member . . . . . . . . . . . :   *FIRST
+0  Expand copy members. . . . . . . :   *NO
+   Print conversion report  . . . . :   *YES
+   Include second level text. . . . :   *NO
+   Insert specification template. . :   *NO
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0  From file  . . . . . . . . . . . :   {lib}/QRPGSRC(R3026)
+   To file. . . . . . . . . . . . . :   {lib}/QRPGLESRC(R3026)
+   Log file . . . . . . . . . . . . :   *NONE
+-                       C o n v e r s i o n    R e p o r t
+0Sequence <----------------------- Source Specifications ---------------------------><-------------- Comments --------------> Page
+ Number   ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10....+...11....+...12 Line
+   000500 C                   CALL      'QCMDEXC'
+ *RNM0511 00 CALL operation code found.
+0  000800 C                   FREE      'QCMDEXC'
+ *RNM0506 30 FREE operation code is not supported in RPG IV.
+0  000900 C                   DEBUG     QSYSPRT
+ *RNM0517 30 DEBUG operation code is not supported in RPG IV.
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNM0511 00      1 CALL operation code found.
+0*RNM0506 30      1 FREE operation code is not supported in RPG IV.
+0*RNM0517 30      1 DEBUG operation code is not supported in RPG IV.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        1
+     Warning      (10) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        2
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Original Records Read . . . . . . :       10
+     Converted Records Written . . . . :       10
+     Highest Severity Message Issued . :       30
+-         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+-          * * * * *   E N D   O F   C O N V E R S I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-

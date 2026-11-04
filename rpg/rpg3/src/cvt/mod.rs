@@ -200,7 +200,7 @@ pub fn convert(records: &[String]) -> Conversion {
             'C' => calc::convert(r, i, &mut out),
             'O' => output::convert(r, i, &mut out),
             _ => {
-                out.msg("RNM0511", 30, i);
+                out.msg("RNM0590", 30, i);
                 out.push(Sect::C, &r.clone(), i);
             }
         }
