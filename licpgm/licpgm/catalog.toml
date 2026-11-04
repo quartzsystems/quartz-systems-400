@@ -237,6 +237,34 @@ components = ["navigator (the NAVIGATOR instance)"]
 ibm = "IBM Navigator for i, part of the operating system there"
 
 # ---------------------------------------------------------------------
+# QS00PT1: Performance Tools. WRKSYSACT is its command; Collection
+# Services and the QAPM* files are the operating system's. No objects
+# of its own, so QSYS.
+[[package]]
+[package.product]
+id = "QS00PT1"
+ibm_alias = "5770PT1"
+text = "Quartz Systems/400 Performance Tools"
+library = "QSYS"
+first_copyright = 2026
+current_copyright = 2026
+status = "shipped"
+
+[[package.option]]
+option = "*BASE"
+text = "Quartz Systems/400 Performance Tools"
+msgid = "QSZ8000"
+feature = "5001"
+requires = ["QS00SS1:*BASE"]
+components = ["WRKSYSACT (work/qsjob/src/panels/work2/sys.rs)"]
+ibm = "5770PT1 *BASE"
+
+[[package.license]]
+feature = "5001"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"
+
+# ---------------------------------------------------------------------
 # Reserved: IDs registered, nothing shipped.
 [[package]]
 [package.product]

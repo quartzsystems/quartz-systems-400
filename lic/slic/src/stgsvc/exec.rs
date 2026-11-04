@@ -35,7 +35,13 @@ pub fn run(system: &mut System, line: &str) -> String {
         }
         "wrksyssts" => return super::stats::wrksyssts(system, reset),
         "wrkdsksts" => return super::stats::wrkdsksts(system, reset),
-        "wrksysact" => return super::stats::wrksysact(system),
+        "wrksysact" => {
+            return match super::stats::performance_tools(system) {
+                Ok(()) => super::stats::wrksysact(system),
+                Err(e) => format!("{e}
+"),
+            };
+        }
         "wmstats" => return system.stats.report(),
         "tcp" => return super::tcp::console(system, line),
         _ => {}

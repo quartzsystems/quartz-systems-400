@@ -112,7 +112,7 @@ pub fn data(
         "MLBSTS" => Ok(crate::cpp::medcmd::mlbsts_panel(system, arg(0))),
         "SYSSTS" => Ok(super::stats::syssts_panel(system, arg(0) == "*YES")),
         "DSKSTS" => Ok(super::stats::dsksts_panel(system, arg(0) == "*YES")),
-        "SYSACT" => Ok(super::stats::sysact_panel(system)),
+        "SYSACT" => super::stats::performance_tools(system).map(|()| super::stats::sysact_panel(system)),
         "OUTQD" => outqd(system, arg(0)),
         "SPLF" => {
             super::splcmd::panel_lines(system, me.number, arg(0), arg(1), arg(2), arg(3) == "*HEX")

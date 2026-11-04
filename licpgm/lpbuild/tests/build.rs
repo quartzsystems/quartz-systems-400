@@ -107,7 +107,7 @@ fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
 #[test]
 fn products_build_signed() {
     let key = SigningKey::from_bytes(&[42; 32]);
-    for id in ["QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV"] {
+    for id in ["QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1"] {
         let b = lpbuild::build(&manifest(id), &key, NOW).unwrap();
         assert_eq!(b.product, id);
         let n = check(id, &b.stream, &key);
