@@ -208,27 +208,219 @@ pub fn wrkdsksts(
     )
 }
 
-/// `WRKSYSACT`: F10 looks again.
-pub fn wrksysact(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<String, Fail> {
-    let mut d = dialog(host, "QGPYMON")?;
-    let mut reload = |host: &Host, d: &mut UimDialog| -> Result<(), Fail> {
-        load(d, "JOBS", fetch(host, "SYSACT", &[])?);
-        stamp(host, d);
-        Ok(())
-    };
-    let mut keys = |_: &mut Job, _: &Host, _: &mut Surface, d: &mut UimDialog, resp: Response| {
-        Ok(match resp {
-            Response::Return(10) => Step::Reload,
-            other => others(d, &other),
+/// `WRKSYSACT`'s display file: the object, else the shipped source.
+fn sysact_file(host: &Host) -> Option<dspf::DisplayFile> {
+    let opened = host
+        .link
+        .borrow_mut()
+        .with(|l| stg::Client::dsp_open(l, "QPYSYSAC".into(), "QSYS".into(), "*JOB".into()))
+        .ok()
+        .and_then(|(b, _): (Vec<u8>, String)| dspf::decode(&b).ok());
+    opened.or_else(|| {
+        let (src, _) = dspf::Source::from_text(dspf::sys::QPYSYSAC);
+        dspf::compile_dspf(&src, &dspf::NoRefs, &dspf::CompileOpts::default()).definition
+    })
+}
+
+/// `WRKSYSACT`'s header values and entries.
+type SysActData = (Vec<(String, String)>, Vec<perf::sysact::Entry>);
+
+/// The service's figures for `WRKSYSACT`: the header values and the
+/// entries.
+fn sysact_entries(host: &Host) -> Result<SysActData, Fail> {
+    let (vars, rows) = fetch(host, "SYSACT", &[])?;
+    let entries = rows
+        .iter()
+        .map(|r| {
+            let get = |k: &str| r.iter().find(|(v, _)| v == k).map(|(_, x)| x.clone()).unwrap_or_default();
+            let n = |k: &str| get(k).trim().parse::<u64>().unwrap_or(0);
+            perf::sysact::Entry {
+                name: get("JOB"),
+                user: get("USER"),
+                number: get("NUMBER"),
+                thread: get("THREAD"),
+                priority: u8::try_from(n("PTY")).unwrap_or(0),
+                cpu: u32::try_from(n("CPUT")).unwrap_or(0),
+                db_cpu: 0,
+                db_reads: n("DBR"),
+                db_writes: n("DBW"),
+                other_reads: n("NDBR"),
+                other_writes: 0,
+                async_io: 0,
+                allocated: n("ALLOC"),
+                deallocated: n("DEALLOC"),
+                wait: n("WAIT"),
+            }
         })
+        .collect();
+    Ok((vars, entries))
+}
+
+/// What `QPYSYSAC` shows: view, key set, first entry, order, and the
+/// figures.
+struct SysAct {
+    view: usize,
+    set: usize,
+    top: usize,
+    by_io: bool,
+    shown_once: bool,
+    vars: Vec<(String, String)>,
+    entries: Vec<perf::sysact::Entry>,
+}
+
+impl SysAct {
+    fn var(&self, k: &str) -> String {
+        self.vars.iter().find(|(v, _)| v == k).map(|(_, x)| x.clone()).unwrap_or_default()
+    }
+
+    /// The entries listed, the page kept within them.
+    fn shown(&mut self) -> Vec<perf::sysact::Entry> {
+        use perf::sysact::{PAGE, listed};
+        let shown = listed(&self.entries, 1, self.by_io);
+        self.top = self.top.min(shown.len().saturating_sub(1) / PAGE * PAGE);
+        shown
+    }
+
+    /// The format's output values.
+    fn values(&mut self, host: &Host, sysname: &str) -> Vec<(String, String)> {
+        use perf::sysact::{PAGE, headings, keys, legend, row};
+        let shown = self.shown();
+        let stamp = crate::panels::work::stamp(host);
+        let mut st = stamp.split_whitespace();
+        let (date, time) = (st.next().unwrap_or("").to_string(), st.next().unwrap_or("").to_string());
+        let heads = headings(self.view);
+        let (k1, k2) = keys(self.view, self.set);
+        let cpus: u64 = self.var("VPROCS").parse().unwrap_or(1);
+        let overall = self.var("OVERALL");
+        let overall = overall.strip_prefix("0.").map_or(overall.clone(), |f| format!(".{f}"));
+        let mut values: Vec<(String, String)> = vec![
+            ("SYSNAME".into(), sysname.to_string()),
+            ("DATE".into(), date),
+            ("TIME".into(), time),
+            ("REFRESH".into(), format!("{:>5}", 5)),
+            ("FILTER".into(), format!("{:>5}", ".10")),
+            ("ELAPSED".into(), self.var("ELAPSED")),
+            ("OVERALL".into(), format!("{overall:>6}")),
+            ("DBCPU".into(), format!("{:>7}", ".0")),
+            ("AVGRATE".into(), format!("{:>7}", "100.0")),
+            ("CAPACITY".into(), format!("{:>8}", format!("{cpus}.00"))),
+            ("LEGEND".into(), legend(self.view).into()),
+            ("HEAD1".into(), heads[0].into()),
+            ("HEAD2".into(), heads[1].into()),
+            ("HEAD3".into(), heads[2].into()),
+            (
+                "MORE".into(),
+                if self.top + PAGE < shown.len() { "More..." } else { "Bottom" }.into(),
+            ),
+            ("KEYS1".into(), k1),
+            ("KEYS2".into(), k2),
+            ("COPYR".into(), if self.shown_once { String::new() } else { perf::sysact::COPYRIGHT.into() }),
+        ];
+        self.shown_once = true;
+        for (i, e) in shown.iter().skip(self.top).take(PAGE).enumerate() {
+            values.push((format!("ROW{:02}", i + 1), row(self.view, e)));
+        }
+        values
+    }
+}
+
+/// `WRKSYSACT` (Performance Tools): display file `QPYSYSAC`. Enter and
+/// F10 look again, F11 steps the views, F24 the key sets, F16 orders by
+/// I/O, F19 looks again every five seconds until a key is pressed;
+/// option 5 works with a job, F20 to F23 run the other displays.
+pub fn wrksysact(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<String, Fail> {
+    use crate::display::surface::Waited;
+    use crate::display::uim::LineMsg;
+    use perf::sysact::{KEY_SETS, PAGE, VIEWS};
+    use std::time::{Duration, Instant};
+    use tn5250::ds::aid;
+    let Some(df) = sysact_file(host) else {
+        return Err(crate::panels::failed("CPF9801 display file QPYSYSAC in QSYS not found"));
     };
-    work(
-        job,
-        host,
-        surface,
-        &mut d,
-        "WRKSYSACT",
-        &mut reload,
-        &mut keys,
-    )
+    let mut rt = dspf::rt::Runtime::new(df, surface.wide());
+    let sysname = crate::display::dds::system_name(host);
+    let env = crate::display::dds::env_of(host, &sysname);
+    let Some(rec) = rt.file().record("WSA").cloned() else {
+        return Ok(String::new());
+    };
+    let (vars, entries) = sysact_entries(host)?;
+    let mut st = SysAct {
+        view: 0,
+        set: 0,
+        top: 0,
+        by_io: false,
+        shown_once: false,
+        vars,
+        entries,
+    };
+    let mut auto = false;
+    let mut message: Option<LineMsg> = None;
+    loop {
+        let values = st.values(host, &sysname);
+        let pairs: Vec<(&str, &str)> = values.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+        let out = crate::display::dds::out_buffer(&rec, &pairs);
+        let written = surface.with_model(|m| {
+            let r = rt.write(m, &env, "WSA", &out, &[]);
+            if let Some(msg) = message.take() {
+                m.error_line(&crate::display::msgline::text_of(host, &msg), tn5250::ds::attr::WHITE);
+            }
+            r
+        });
+        if written.is_err() {
+            return Ok(String::new());
+        }
+        surface.flush(tn5250::screen::Read::MdtFields);
+        let until = Instant::now() + Duration::from_secs(5);
+        let got = surface.wait_or(&mut || auto && Instant::now() >= until);
+        let Some(waited) = got else {
+            return Ok(String::new());
+        };
+        let Waited::Key(a, _) = waited else {
+            (st.vars, st.entries) = sysact_entries(host)?;
+            continue;
+        };
+        auto = false;
+        let opts: Vec<(usize, String)> = surface.with_model(|m| {
+            m.fields()
+                .iter()
+                .filter(|f| f.col == 3 && (15..15 + PAGE).contains(&f.row))
+                .map(|f| (f.row - 15, f.text().trim().to_string()))
+                .filter(|(_, t)| !t.is_empty())
+                .collect()
+        });
+        let shown = st.shown();
+        match aid::function_of(a) {
+            Some(3 | 12) => return Ok(String::new()),
+            Some(10) => (st.vars, st.entries) = sysact_entries(host)?,
+            Some(11) => st.view = (st.view + 1) % VIEWS,
+            Some(24) => st.set = (st.set + 1) % KEY_SETS,
+            Some(19) => auto = true,
+            Some(14 | 15) => message = Some(LineMsg::error("CPD9D60", &[])),
+            Some(16) => {
+                st.by_io = !st.by_io;
+                st.top = 0;
+            }
+            Some(20) => message = crate::panels::exec(job, host, "WRKACTJOB"),
+            Some(21) => message = crate::panels::exec(job, host, "WRKSYSSTS"),
+            Some(22) => message = crate::panels::exec(job, host, "WRKSBS"),
+            Some(23) => message = crate::panels::exec(job, host, "WRKDSKSTS"),
+            _ if a == aid::ROLL_UP => {
+                if st.top + PAGE < shown.len() {
+                    st.top += PAGE;
+                }
+            }
+            _ if a == aid::ROLL_DOWN => st.top = st.top.saturating_sub(PAGE),
+            _ => {
+                for (i, opt) in opts {
+                    let Some(e) = shown.get(st.top + i) else { continue };
+                    message = match opt.as_str() {
+                        "5" => crate::panels::exec(job, host, &format!("WRKJOB JOB({}/{}/{})", e.number, e.user, e.name)),
+                        "1" | "6" => Some(LineMsg::error("CPD9D60", &[])),
+                        _ => Some(LineMsg::error("CPD6A60", &[])),
+                    };
+                }
+                (st.vars, st.entries) = sysact_entries(host)?;
+            }
+        }
+    }
 }

@@ -290,8 +290,9 @@ fn fill(host: &Host, d: &mut UimDialog, data: &ActJobs, sel: &Select) {
                 ("POOL", a.pool.to_string()),
                 ("PTY", a.runpty.to_string()),
                 ("CPUSEC", decimal(host, a.cpu_secs)),
-                ("INT", String::new()),
-                ("RSP", String::new()),
+                // Transactions and response time: interactive jobs only.
+                ("INT", if j.kind == 'I' { a.txns.to_string() } else { String::new() }),
+                ("RSP", if j.kind == 'I' { decimal(host, a.rsp) } else { String::new() }),
                 ("AUXIO", a.aux_io.to_string()),
                 ("ECPU", decimal(host, u64::from(a.cpu))),
                 ("THREADS", a.threads.to_string()),

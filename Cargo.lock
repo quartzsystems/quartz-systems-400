@@ -2214,11 +2214,13 @@ dependencies = [
  "ccsid",
  "db",
  "dds",
+ "dspf",
  "ipc",
  "qdecimal",
  "qsname",
  "store",
  "thiserror",
+ "tn5250",
 ]
 
 [[package]]
@@ -2479,6 +2481,7 @@ dependencies = [
  "p256",
  "pase",
  "pdm",
+ "perf",
  "print",
  "qap-proto",
  "qapd",

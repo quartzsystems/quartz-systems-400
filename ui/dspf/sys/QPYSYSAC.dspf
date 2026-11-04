@@ -1,0 +1,82 @@
+     A*  QPYSYSAC: Work with System Activity (WRKSYSACT, Performance
+     A*  Tools). One format; the program fills the headings, the list
+     A*  rows (ROW01-ROW06 with their options) and the key rows of the
+     A*  view and key set shown, and the copyright (COPYR) on the first
+     A*  display only.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03)
+     A                                      CA10(10)
+     A                                      CA11(11)
+     A                                      CA12(12)
+     A                                      CA14(14)
+     A                                      CA15(15)
+     A                                      CA16(16)
+     A                                      CA19(19)
+     A                                      CA20(20)
+     A                                      CA21(21)
+     A                                      CA22(22)
+     A                                      CA23(23)
+     A                                      CA24(24)
+     A                                      ROLLUP(25)
+     A                                      ROLLDOWN(26)
+     A                                      HELP
+     A          R WSA
+     A                                  1 28'Work with System Activity'
+     A                                      DSPATR(HI)
+     A            SYSNAME        8A  O  1 72
+     A            DATE           8A  O  2 62
+     A            TIME           8A  O  2 72
+     A                                  3  2'Automatic refresh in seconds'
+     A                                  3 32'. . . . . . . . . . . . . . . .'
+     A                                  3 64'. . .'
+     A            REFRESH        5A  O  3 70
+     A                                  4  2'Job/Task CPU filter . . . . . .'
+     A                                  4 34'. . . . . . . . . . . . . . . .'
+     A                                  4 66'. .'
+     A            FILTER         5A  O  4 71
+     A                                  5  2'Elapsed time . . . . . . :'
+     A            ELAPSED        8A  O  5 31
+     A                                  5 43'Overall CPU util . . . . :'
+     A            OVERALL        6A  O  5 71
+     A                                  6  2'Overall DB CPU util'
+     A                                  6 23'. . . :'
+     A            DBCPU          7A  O  6 31
+     A                                  7  2'Average CPU rate . . . . . :'
+     A            AVGRATE        7A  O  7 31
+     A                                  8  2'Current processing capacity:'
+     A            CAPACITY       8A  O  8 31
+     A                                 10  2'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A            LEGEND        76A  O 11  4
+     A                                      COLOR(BLU)
+     A            HEAD1         79A  O 12  2
+     A                                      DSPATR(HI)
+     A            HEAD2         79A  O 13  2
+     A                                      DSPATR(HI)
+     A            HEAD3         79A  O 14  2
+     A                                      DSPATR(HI)
+     A            OPT01          1A  B 15  3
+     A                                      DSPATR(UL)
+     A            ROW01         74A  O 15  7
+     A            OPT02          1A  B 16  3
+     A                                      DSPATR(UL)
+     A            ROW02         74A  O 16  7
+     A            OPT03          1A  B 17  3
+     A                                      DSPATR(UL)
+     A            ROW03         74A  O 17  7
+     A            OPT04          1A  B 18  3
+     A                                      DSPATR(UL)
+     A            ROW04         74A  O 18  7
+     A            OPT05          1A  B 19  3
+     A                                      DSPATR(UL)
+     A            ROW05         74A  O 19  7
+     A            OPT06          1A  B 20  3
+     A                                      DSPATR(UL)
+     A            ROW06         74A  O 20  7
+     A            MORE           7A  O 21 74
+     A                                      DSPATR(HI)
+     A            KEYS1         79A  O 22  2
+     A                                      COLOR(BLU)
+     A            KEYS2         79A  O 23  2
+     A                                      COLOR(BLU)
+     A            COPYR         40A  O 24  2DSPATR(HI)

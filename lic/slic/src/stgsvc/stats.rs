@@ -336,6 +336,41 @@ impl Delta<'_> {
         now.saturating_sub(then)
     }
 
+    /// A job's requests by kind in the interval.
+    fn job_io(&self, n: u32) -> JobIo {
+        let now = self.now.io.get(&n).copied().unwrap_or_default();
+        let then = self.base.io.get(&n).copied().unwrap_or_default();
+        JobIo {
+            db_reads: now.db_reads.saturating_sub(then.db_reads),
+            db_writes: now.db_writes.saturating_sub(then.db_writes),
+            opens: now.opens.saturating_sub(then.opens),
+        }
+    }
+
+    /// A job's transactions in the interval and their average response
+    /// time, tenths of a second.
+    fn job_txns(&self, n: u32) -> (u64, u64) {
+        let now = self.now.txns.get(&n).copied().unwrap_or_default();
+        let then = self.base.txns.get(&n).copied().unwrap_or_default();
+        let count = now.count.saturating_sub(then.count);
+        let ms = now.ms.saturating_sub(then.ms);
+        (count, ms.checked_div(count).unwrap_or(0) / 100)
+    }
+
+    /// Tenths of a second a job did not run in the interval.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // a short interval in tenths
+    fn wait_tenths(&self, n: u32) -> u64 {
+        let all = (self.secs() * 10.0).round().max(0.0) as u64;
+        all.saturating_sub(self.job_ticks(n) / 10)
+    }
+
+    /// Pages a job's resident set grew and shrank by.
+    fn job_rss(&self, n: u32) -> (u64, u64) {
+        let now = self.now.procs.get(&n).map_or(0, |p| p.rss_pages);
+        let then = self.base.procs.get(&n).map_or(now, |p| p.rss_pages);
+        (now.saturating_sub(then), then.saturating_sub(now))
+    }
+
     fn job_aux(&self, n: u32) -> u64 {
         let now = self.now.aux.get(&n).copied().unwrap_or(0);
         now.saturating_sub(self.base.aux.get(&n).copied().unwrap_or(0))
@@ -529,6 +564,8 @@ pub fn actjob_data(system: &mut System, advance: bool) -> stg::proto::ActJobs {
                 aux_io: d.job_aux(j.number),
                 threads: p.threads.max(1),
                 tmp_mb: p.rss_pages * 4 / 1024,
+                txns: d.job_txns(j.number).0,
+                rsp: d.job_txns(j.number).1,
                 job: j,
             }
         })
@@ -1040,6 +1077,14 @@ pub fn sysact_panel(system: &mut System) -> stg::proto::PanelData {
                 pair("SYNCIO", 0),
                 pair("ASYNCIO", d.job_aux(j.number)),
                 pair("CPUDB", ".0"),
+                // QPYSYSAC's views.
+                pair("CPUT", tenths(percent(d.job_ticks(j.number), ticks))),
+                pair("DBR", d.job_io(j.number).db_reads),
+                pair("DBW", d.job_io(j.number).db_writes),
+                pair("NDBR", d.job_aux(j.number).saturating_sub(d.job_io(j.number).db_reads + d.job_io(j.number).db_writes)),
+                pair("ALLOC", d.job_rss(j.number).0),
+                pair("DEALLOC", d.job_rss(j.number).1),
+                pair("WAIT", d.wait_tenths(j.number)),
             ]
         })
         .collect();

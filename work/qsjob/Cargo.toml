@@ -16,6 +16,7 @@ sec = { path = "../../security/sec", version = "0.1.0" }
 ifs = { path = "../../ifs/ifs", version = "0.1.0" }
 ifscmd = { path = "../../ifs/ifscmd", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
+perf = { path = "../../work/perf", version = "0.1.0" }
 cmncfg = { path = "../../net/cmncfg", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }

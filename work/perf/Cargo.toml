@@ -18,6 +18,8 @@ thiserror.workspace = true
 
 [dev-dependencies]
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
 
 [lints]
 workspace = true

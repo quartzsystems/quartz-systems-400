@@ -36,6 +36,9 @@ pub const QSUSYS: &str = include_str!("../sys/QSUSYS.dspf");
 /// SEU's Select Prompt display.
 pub const QSUSEL: &str = include_str!("../sys/QSUSEL.dspf");
 
+/// `WRKSYSACT` (Performance Tools).
+pub const QPYSYSAC: &str = include_str!("../sys/QPYSYSAC.dspf");
+
 /// Every shipped display file: name and DDS.
 pub const FILES: &[(&str, &str)] = &[
     ("QDSIGNON", QDSIGNON),
@@ -49,6 +52,8 @@ pub const FILES: &[(&str, &str)] = &[
     ("QSUEXIT", QSUEXIT),
     ("QSUSYS", QSUSYS),
     ("QSUSEL", QSUSEL),
+    // --- Performance Tools
+    ("QPYSYSAC", QPYSYSAC),
 ];
 
 #[cfg(test)]

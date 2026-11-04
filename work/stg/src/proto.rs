@@ -1060,6 +1060,10 @@ pub struct ActJob {
     pub threads: u32,
     /// Temporary storage, megabytes.
     pub tmp_mb: u64,
+    /// Interactive transactions in the interval.
+    pub txns: u64,
+    /// Their average response time, tenths of a second.
+    pub rsp: u64,
 }
 
 wire_struct!(ActJob {
@@ -1071,7 +1075,9 @@ wire_struct!(ActJob {
     runpty,
     aux_io,
     threads,
-    tmp_mb
+    tmp_mb,
+    txns,
+    rsp
 });
 
 /// `WRKACTJOB`'s data.
