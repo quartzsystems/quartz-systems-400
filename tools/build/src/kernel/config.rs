@@ -18,7 +18,7 @@ const REQUIRED_Y: &[&str] = &[
     "CMDLINE_BOOL",
     "CMDLINE_OVERRIDE",
     "BLK_DEV_INITRD",
-    "RD_GZIP",
+    "RD_XZ",
     "DEVTMPFS",
     "DEVTMPFS_MOUNT",
     "PROC_FS",
@@ -214,8 +214,8 @@ pub fn verify(config: &Path, cmdline: &str, cpio: Option<&Path>) -> Result<()> {
                 get("INITRAMFS_SOURCE")
             ));
         }
-        if get("INITRAMFS_COMPRESSION_GZIP") != "y" {
-            problems.push("CONFIG_INITRAMFS_COMPRESSION_GZIP must be y".to_string());
+        if get("INITRAMFS_COMPRESSION_XZ") != "y" {
+            problems.push("CONFIG_INITRAMFS_COMPRESSION_XZ must be y".to_string());
         }
     }
 

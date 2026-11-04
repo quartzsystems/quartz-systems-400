@@ -160,6 +160,14 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
 
     let spec = fat::media_esp(uki_bytes.len() as u64);
+    // El Torito names the boot image's size in 512-byte sectors, 16 bits:
+    // a larger image boots only on firmware that ignores the field.
+    ensure!(
+        spec.bytes <= 65_535 * 512,
+        "the media UKI ({} bytes) needs a {} MiB boot image; El Torito holds at most 32 MiB",
+        uki_bytes.len(),
+        spec.bytes / (1024 * 1024)
+    );
     info!(
         "iso: building {} MiB FAT16 boot image",
         spec.bytes / (1024 * 1024)
