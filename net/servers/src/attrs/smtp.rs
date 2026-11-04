@@ -8,10 +8,12 @@
 //! forwarding mail hub (`FWDHUBSVR`) or, without one, the mail router
 //! (`MAILROUTER`). Either may name a port as `host:port`.
 //!
-//! Beside them the bag keeps three of ours that no command sets:
-//! `SMTPTLS` (`*NONE`, `*STARTTLS` to require it, `*IMPLICIT`; by
-//! default `STARTTLS` when offered, implicit TLS on port 465), and
-//! `AUTHUSER`/`AUTHPWD` for `AUTH`.
+//! Beside them the bag keeps `SMTPTLS`, ours, that no command sets
+//! (`*NONE`, `*STARTTLS` to require it, `*IMPLICIT`; by default
+//! `STARTTLS` when offered, implicit TLS on port 465), and one
+//! `HOSTAUTH` entry per `ADDSMTPLE TYPE(*HOSTAUTH)`: a host, the user
+//! and the password sealed with the LIC partition's key ([`HostAuth`]).
+//! Only the storage service unseals one, for the router `CHGSMTPA` names.
 
 use super::{get, is_same};
 
@@ -65,7 +67,65 @@ pub const KEYWORDS: &[&str] = &[
 ];
 
 /// Our keys beside the command's.
-pub const OURS: &[&str] = &["SMTPTLS", "AUTHUSER", "AUTHPWD"];
+pub const OURS: &[&str] = &["SMTPTLS"];
+
+/// The bag key of the `*HOSTAUTH` entries (one record each).
+pub const HOSTAUTH: &str = "HOSTAUTH";
+
+/// One `ADDSMTPLE TYPE(*HOSTAUTH)` entry as the bag keeps it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HostAuth {
+    /// `HOSTNAME`, as given.
+    pub host: String,
+    /// `USERNAME`.
+    pub user: String,
+    /// `PASSWORD`, sealed.
+    pub sealed: Vec<u8>,
+}
+
+impl HostAuth {
+    /// The bag value: host, user and the sealed password in hex,
+    /// tab-separated.
+    pub fn encode(&self) -> String {
+        use std::fmt::Write as _;
+        let mut out = format!("{}\t{}\t", self.host, self.user);
+        for b in &self.sealed {
+            let _ = write!(out, "{b:02X}");
+        }
+        out
+    }
+
+    /// A bag value back; `None` when it is not one.
+    pub fn decode(v: &str) -> Option<Self> {
+        let mut it = v.splitn(3, '\t');
+        let host = it.next()?.to_string();
+        let user = it.next()?.to_string();
+        let hex = it.next()?.trim();
+        if hex.len() % 2 != 0 {
+            return None;
+        }
+        let sealed = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(hex.get(i..i + 2)?, 16).ok())
+            .collect::<Option<Vec<u8>>>()?;
+        Some(Self { host, user, sealed })
+    }
+
+    /// Whether this entry is for `host` (names compare without case).
+    pub fn is_for(&self, host: &str) -> bool {
+        self.host.trim().eq_ignore_ascii_case(host.trim())
+    }
+
+    /// The authenticated data the password is sealed with.
+    pub fn aad(host: &str) -> Vec<u8> {
+        format!("QS400 SMTP HOSTAUTH {}", host.trim().to_ascii_lowercase()).into_bytes()
+    }
+}
+
+/// The bag without the `*HOSTAUTH` entries: what jobs are shown.
+pub fn public_bag(bag: &[(String, String)]) -> Vec<(String, String)> {
+    bag.iter().filter(|(k, _)| !k.eq_ignore_ascii_case(HOSTAUTH)).cloned().collect()
+}
 
 /// How the client uses TLS with the relay.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -185,11 +245,18 @@ impl SmtpAttrs {
         }
     }
 
-    /// `AUTH` credentials.
-    pub fn auth(&self) -> Option<(String, String)> {
-        let user = get(&self.bag, "AUTHUSER")?.trim();
-        let pwd = get(&self.bag, "AUTHPWD").unwrap_or("");
-        (!user.is_empty() && !user.starts_with('*')).then(|| (user.to_string(), pwd.to_string()))
+    /// The `*HOSTAUTH` entries.
+    pub fn host_auths(&self) -> Vec<HostAuth> {
+        self.bag
+            .iter()
+            .filter(|(k, _)| k.eq_ignore_ascii_case(HOSTAUTH))
+            .filter_map(|(_, v)| HostAuth::decode(v))
+            .collect()
+    }
+
+    /// The `*HOSTAUTH` entry for `host`.
+    pub fn host_auth(&self, host: &str) -> Option<HostAuth> {
+        self.host_auths().into_iter().find(|h| h.is_for(host))
     }
 
     /// `CCSID` (819 by default): the code page of text the mail
@@ -238,11 +305,21 @@ mod tests {
         a.set("SMTPTLS", "*STARTTLS").unwrap();
         assert_eq!(a.tls(), SmtpTls::Required);
         assert!(a.set("SMTPTLS", "*MAYBE").is_err());
-        assert_eq!(a.auth(), None);
-        a.set("AUTHUSER", "mailer").unwrap();
-        a.set("AUTHPWD", "s3cret").unwrap();
-        assert_eq!(a.auth(), Some(("mailer".into(), "s3cret".into())));
+        assert!(a.set("AUTHUSER", "mailer").is_err());
         assert_eq!(SmtpAttrs::from_bag(&a.to_bag()), a);
         assert_eq!(a.ccsid(), 819);
+    }
+
+    #[test]
+    fn host_auth_entries() {
+        let h = HostAuth { host: "Smtp.Example.com".into(), user: "mailer@example.com".into(), sealed: vec![0, 0xAB, 7] };
+        assert_eq!(h.encode(), "Smtp.Example.com\tmailer@example.com\t00AB07");
+        assert_eq!(HostAuth::decode(&h.encode()), Some(h.clone()));
+        assert_eq!(HostAuth::decode("x\ty\tABC"), None);
+        let bag = vec![("JOURNAL".to_string(), "*NO".to_string()), (HOSTAUTH.to_string(), h.encode())];
+        let a = SmtpAttrs::from_bag(&bag);
+        assert_eq!(a.host_auth("smtp.example.COM"), Some(h));
+        assert_eq!(a.host_auth("other"), None);
+        assert_eq!(public_bag(&bag), vec![("JOURNAL".to_string(), "*NO".to_string())]);
     }
 }

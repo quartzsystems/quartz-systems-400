@@ -57,6 +57,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "ADDSRVTBLE" | "RMVSRVTBLE" | "ADDPCLTBLE" | "RMVPCLTBLE" | "ADDNETTBLE" | "RMVNETTBLE" => {
             tables(system, name, parms)
         }
+        "ADDSMTPLE" => smtp_le(system, parms, true),
+        "RMVSMTPLE" => smtp_le(system, parms, false),
         _ => return None,
     };
     Some(match r {
@@ -1038,4 +1040,72 @@ fn tables(system: &mut System, name: &str, parms: &Parms) -> Result<CmdReply, Er
             })
         }
     }
+}
+
+// --- SMTP list entries
+
+/// `ADDSMTPLE`/`RMVSMTPLE`. Only `TYPE(*HOSTAUTH)` is kept: the other
+/// lists are the SMTP server's, and there is none in this release.
+fn smtp_le(system: &mut System, parms: &Parms, add: bool) -> Result<CmdReply, Error> {
+    use certs::stash::Sealer as _;
+    use servers::attrs::smtp::{HOSTAUTH, HostAuth, SmtpAttrs};
+    let what = "SMTP list";
+    let ty = parms.text("TYPE").trim().to_ascii_uppercase();
+    if ty != "*HOSTAUTH" {
+        return Err(Error::new(
+            msg::NOT_AVAILABLE,
+            format!("TYPE({ty}) lists belong to an SMTP server, which this release does not have."),
+        ));
+    }
+    let host = parms.text("HOSTNAME").trim().to_string();
+    if host.is_empty() {
+        return Err(Error::new(msg::BAD_VALUE, "HOSTNAME is required for TYPE(*HOSTAUTH)."));
+    }
+    let entry = if add {
+        let user = parms.text("USERNAME").trim().to_string();
+        if user.is_empty() {
+            return Err(Error::new(msg::BAD_VALUE, "USERNAME is required for TYPE(*HOSTAUTH)."));
+        }
+        let password = parms.text("PASSWORD").trim_end().to_string();
+        need_iosyscfg(what)?;
+        let key = crate::stgsvc::certs::sealer(system)
+            .ok_or_else(|| Error::new("CPF9898", "The LIC partition holds no key to keep the password with."))?;
+        let sealed = key
+            .seal(&HostAuth::aad(&host), password.as_bytes())
+            .map_err(|e| Error::new("CPF9898", format!("The password could not be sealed: {e}.")))?;
+        Some(HostAuth { host: host.clone(), user, sealed })
+    } else {
+        None
+    };
+    let msgid = if add { msg::ADDED } else { msg::REMOVED };
+    changed(system, Table::Servers, msgid, what, |cfg| {
+        let a = cfg.servers.get_mut("*SMTP");
+        let had = SmtpAttrs::from_bag(&a.bag).host_auth(&host).is_some();
+        if !add && !had {
+            return Err(Error::new(msg::NOT_FOUND, format!("No *HOSTAUTH entry for {host}.")));
+        }
+        a.bag
+            .retain(|(k, v)| !(k.eq_ignore_ascii_case(HOSTAUTH) && HostAuth::decode(v).is_some_and(|h| h.is_for(&host))));
+        if let Some(e) = &entry {
+            a.bag.push((HOSTAUTH.to_string(), e.encode()));
+        }
+        Ok(())
+    })
+}
+
+/// The `*HOSTAUTH` user and password for `host`, when `host` is the mail
+/// router `CHGSMTPA` names (`smtp_relay_auth`).
+pub fn relay_auth(system: &mut System, host: &str) -> Option<(String, String)> {
+    use certs::stash::Sealer as _;
+    use servers::attrs::smtp::{HostAuth, SmtpAttrs};
+    let cfg = tcp::config(system).ok()?;
+    let a = SmtpAttrs::from_bag(&cfg.servers.get("*SMTP")?.bag);
+    let router = a.smart_host()?;
+    if !router.host.eq_ignore_ascii_case(host.trim()) {
+        return None;
+    }
+    let e = a.host_auth(&router.host)?;
+    let key = crate::stgsvc::certs::sealer(system)?;
+    let plain = key.unseal(&HostAuth::aad(&e.host), &e.sealed).ok()?;
+    Some((e.user, String::from_utf8(plain).ok()?))
 }

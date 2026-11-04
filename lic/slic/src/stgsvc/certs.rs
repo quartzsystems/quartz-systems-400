@@ -171,7 +171,7 @@ fn commit(system: &mut System, s: &Staged) -> Result<(), String> {
 }
 
 /// The stash key from the LIC partition's record, read fresh.
-fn sealer(system: &mut System) -> Option<KeySealer> {
+pub(crate) fn sealer(system: &mut System) -> Option<KeySealer> {
     let (part, record) = system.lic.as_mut()?;
     part.refresh(record);
     KeySealer::from_record(record)

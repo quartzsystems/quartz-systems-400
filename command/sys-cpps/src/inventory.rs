@@ -328,6 +328,8 @@ pub const DIRECT: &[&str] = &[
     "RMVPCLTBLE",
     "ADDNETTBLE",
     "RMVNETTBLE",
+    "ADDSMTPLE",
+    "RMVSMTPLE",
     // --- the communications trace (lic/slic/src/cpp/cmntrc.rs)
     "STRCMNTRC",
     "ENDCMNTRC",

@@ -837,11 +837,12 @@ is from IBM's documentation and unverified.
     client checks with, and whether it checks opportunistic sessions, was
     not captured.
 17. **`AUTH` credentials.** The client speaks `AUTH PLAIN` and `AUTH
-    LOGIN`; the user and password come from the bag keys `AUTHUSER` and
-    `AUTHPWD`, which no command sets and which any job reading the server
-    table can see. IBM keeps SMTP client credentials elsewhere (an
-    `ADDSMTPLE` entry type, perhaps a validation list); a `*VLDL` would
-    be their home here.
+    LOGIN`. Resolved in Phase 12: the user and password are IBM's
+    `ADDSMTPLE TYPE(*HOSTAUTH)` entry, kept sealed with the LIC key and
+    unsealed only for the configured router (`SERVERS.md`, "Relay
+    credentials"). Where IBM stores the entry (a validation list or a
+    file) is not observable; which `AUTH` mechanism IBM prefers when the
+    relay offers both was not captured.
 18. **`QtmmSendMail`.** Bound procedure in service program `QTMMSNDM`
     (assumed: the export list was not captured). `ADDT0100`'s
     `Next_Addr_Structure_Offset` is taken from the start of the current

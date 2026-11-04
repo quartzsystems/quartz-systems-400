@@ -2135,6 +2135,10 @@ impl Service for Served<'_> {
         super::splcmd::fetch(self.system, me, &file, &job, &splnbr)
     }
 
+    fn smtp_relay_auth(&mut self, host: String) -> Option<(String, String)> {
+        crate::cpp::tcpcmd::relay_auth(self.system, &host)
+    }
+
     fn tcp(&mut self, op: stg::tcp::TcpOp) -> stg::tcp::TcpReply {
         super::tcp::request(self.system, op)
     }

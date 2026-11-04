@@ -46,7 +46,7 @@ pub(crate) mod stmf;
 mod stmfcmd;
 mod sysinfo;
 pub(crate) mod tapcpy;
-mod tcpcmd;
+pub(crate) mod tcpcmd;
 mod uicmd;
 pub(crate) mod updcmd;
 mod ifsgrow;

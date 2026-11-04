@@ -273,7 +273,7 @@ fn relay(link: &Shared) -> Result<(Relay, Box<dyn Connector>), String> {
         SmtpTls::Offered if h.port == smtp::TLS_PORT => TlsMode::Implicit,
         SmtpTls::Offered => TlsMode::Opportunistic,
     };
-    r.auth = a.auth();
+    r.auth = link.borrow_mut().with(|l| l.smtp_relay_auth(h.host.clone()));
     let auth = relay_auth(r.tls);
     let tls: Box<dyn Connector> = match crate::work::tls::client_config_with(&mut link.borrow_mut(), auth) {
         Ok(cfg) => Box::new(RustlsConnector(cfg)),

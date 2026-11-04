@@ -721,6 +721,10 @@ ipc::rpc! {
     /// `*LAST`, a number), read as `DSPSPLF` reads it: its attributes
     /// and data.
     1200 => fn splf_fetch / SplfFetch (file: String, job: String, splnbr: String) -> Result<(SplfAttrs, Vec<u8>), String>;
+    /// The user and password `ADDSMTPLE TYPE(*HOSTAUTH)` keeps for the
+    /// mail router `host` (`FWDHUBSVR`, else `MAILROUTER`): only for the
+    /// router `CHGSMTPA` names, unsealed with the LIC partition's key.
+    1201 => fn smtp_relay_auth / SmtpRelayAuth (host: String) -> Option<(String, String)>;
 
     // --- certificates (1240-1249; net/certs admin, stgsvc/certs.rs)
     /// An application ID's certificate and trust from the `*SYSTEM`

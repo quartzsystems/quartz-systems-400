@@ -245,7 +245,7 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                     .map(|a| ServerInfo {
                         server: a.server.clone(),
                         autostart: a.autostart,
-                        bag: a.bag.clone(),
+                        bag: servers::attrs::smtp::public_bag(&a.bag),
                     })
                     .collect()
             })?,
@@ -257,6 +257,9 @@ fn answer(system: &mut System, op: TcpOp) -> Result<TcpReply, String> {
                     a.autostart = on;
                 }
                 for (k, v) in &bag {
+                    if k.eq_ignore_ascii_case(servers::attrs::smtp::HOSTAUTH) {
+                        continue;
+                    }
                     a.set(k, v);
                 }
                 Ok(String::new())

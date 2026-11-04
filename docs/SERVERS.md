@@ -338,11 +338,35 @@ else `MAILROUTER`, either as `host[:port]` (25 by default). The SMTP
 client (RFC 5321) says `EHLO` (`HELO` when refused), starts TLS with
 `STARTTLS` when the relay offers it (implicit TLS on 465; the bag key
 `SMTPTLS` makes it `*NONE`, `*STARTTLS` required or `*IMPLICIT`),
-authenticates with `AUTH PLAIN` or `AUTH LOGIN` when the bag has
-`AUTHUSER` and `AUTHPWD`, sends one `RCPT TO` per recipient and the
+authenticates with `AUTH PLAIN` or `AUTH LOGIN` when the router has a
+`*HOSTAUTH` entry, sends one `RCPT TO` per recipient and the
 message dot-stuffed. Refused recipients are listed; the message goes
 when one is accepted (`TCP1A4B`), else `TCP1A4C` says why. There is no
 SMTP server; `CHGSMTPA` keeps its other attributes as given.
+
+### Relay credentials: `ADDSMTPLE TYPE(*HOSTAUTH)`
+
+IBM's `CHGSMTPA` has no user or password; the SMTP client's credentials
+for a relay are an SMTP list entry, `ADDSMTPLE TYPE(*HOSTAUTH)
+HOSTNAME(host) USERNAME(user) PASSWORD(pwd)`, removed with `RMVSMTPLE
+TYPE(*HOSTAUTH) HOSTNAME(host)` (the oracle's V7R5M0 definitions,
+`tools/conformance/oracle/net/pub400/command-definitions.txt`; IBM's
+SMTP documentation, "Authenticating e-mail for local and relay", and
+its technote on SMTP client authentication describe the entry). The
+definitions here are the oracle's keywords and types; the other list
+types belong to the SMTP server and are refused with `TCP2640`.
+
+Both commands run in the storage service and need `*IOSYSCFG`. The
+entry is one `HOSTAUTH` record in the `*SMTP` bag of `QATOCSVRA`: the
+host, the user and the password sealed (AES-GCM) with the LIC
+partition's stash key (`certs::stash`), the host bound in as
+authenticated data. The service drops `HOSTAUTH` from every server bag
+it shows a job (`TcpOp::Servers`) and ignores it in `TcpOp::SetServer`,
+so `CHGSMTPA` cannot see or overwrite it. The mail client asks for the
+credentials with `smtp_relay_auth(host)`, which unseals the entry only
+when `host` is the router `CHGSMTPA` names (`FWDHUBSVR`, else
+`MAILROUTER`): a password goes to no other host. A `RMVSMTPLE` of a host
+with no entry is `TCP1D07`.
 
 ## `*DDM`
 
