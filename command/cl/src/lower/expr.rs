@@ -497,7 +497,16 @@ impl Gen<'_, '_> {
                 let r = self.ptr(&Expr::Builtin(name.into(), args.to_vec()))?;
                 Val::Storage(r, Ty::Ptr)
             }
-            "OFFSET" => return Err("%OFFSET is not available in this release".into()),
+            "OFFSET" => {
+                let Some(Expr::Var(_)) = args.first() else {
+                    return Err("%OFFSET takes a pointer variable".into());
+                };
+                let p = self.ptr(&args[0])?;
+                let off = self.ptr_offset(&p);
+                let t = self.temp(&Ty::Dec(10, 0));
+                self.ins(&format!("dec.mov {t}, {off}"));
+                Val::Storage(t, Ty::Dec(10, 0))
+            }
             other => return Err(format!("%{other} is not a built-in function")),
         })
     }
@@ -523,6 +532,43 @@ impl Gen<'_, '_> {
                 self.ins(&format!("store {place}, {r}"));
             }
         }
+        Ok(())
+    }
+
+    /// A space pointer's offset from its space's start, an `i64`
+    /// register: the pointer less a copy of it with the offset zeroed.
+    fn ptr_offset(&mut self, p: &str) -> String {
+        let b = self.temp(&Ty::Ptr);
+        self.ins(&format!("store {b}, {p}"));
+        let a = self.reg("p");
+        self.ins(&format!("{a} = addr {b}"));
+        self.ins(&format!("mov [{a} +8]:bytes(8), x\"0000000000000000\""));
+        let base = self.reg("p");
+        self.ins(&format!("{base} = load {b}"));
+        let d = self.reg("i");
+        self.ins(&format!("{d} = ptrdiff {p}, {base}"));
+        d
+    }
+
+    /// `CHGVAR %OFFSET(&P) VALUE(...)`: the pointer moved within its
+    /// space to the new offset.
+    pub(super) fn assign_offset(&mut self, v: &Var, e: &Expr) -> Result<(), String> {
+        if v.ty != VarType::Ptr {
+            return Err(format!("&{} is not a pointer", v.name));
+        }
+        let val = self.num(e)?;
+        let t = self.temp(&Ty::Dec(15, 0));
+        self.ins(&format!("dec.mov {t}, {val}"));
+        let n = self.reg("i");
+        self.ins(&format!("{n} = cvt.i64 {t}"));
+        let p = self.reg("p");
+        self.ins(&format!("{p} = load {}", v.place()));
+        let off = self.ptr_offset(&p);
+        let delta = self.reg("i");
+        self.ins(&format!("{delta} = sub {n}, {off}"));
+        let q = self.reg("p");
+        self.ins(&format!("{q} = ptradd {p}, {delta}"));
+        self.ins(&format!("store {}, {q}", v.place()));
         Ok(())
     }
 

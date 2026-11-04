@@ -96,10 +96,15 @@ fn literal(t: &Tok) -> Result<Lit, String> {
     }
 }
 
-/// `&VAR`, `%SST(&VAR s l)` or `%BIN(&VAR s l)` as a target.
+/// `&VAR`, `%SST(&VAR s l)`, `%BIN(&VAR s l)` or `%OFFSET(&PTR)` as a
+/// target.
 fn target(toks: &[Tok]) -> Result<Target, String> {
     match toks {
         [Tok::Var(v)] => Ok(Target::Var(v.clone())),
+        [Tok::Builtin { name, args }] if name == "OFFSET" => match args.as_slice() {
+            [Tok::Var(v)] => Ok(Target::Offset(v.clone())),
+            _ => Err("%OFFSET takes a pointer variable".into()),
+        },
         [Tok::Builtin { name, args }]
             if matches!(name.as_str(), "SST" | "SUBSTRING" | "BIN" | "BINARY") =>
         {

@@ -166,6 +166,8 @@ pub enum Target {
     Sst(String, Box<Expr>, Box<Expr>),
     /// `%BIN(&VAR start len)`.
     Bin(String, Box<Expr>, Box<Expr>),
+    /// `%OFFSET(&PTR)`.
+    Offset(String),
 }
 
 impl Target {
@@ -173,7 +175,7 @@ impl Target {
     #[must_use]
     pub fn var(&self) -> &str {
         match self {
-            Self::Var(v) | Self::Sst(v, ..) | Self::Bin(v, ..) => v,
+            Self::Var(v) | Self::Sst(v, ..) | Self::Bin(v, ..) | Self::Offset(v) => v,
         }
     }
 }

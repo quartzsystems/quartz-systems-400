@@ -914,6 +914,7 @@ impl Gen<'_, '_> {
             Target::Var(_) => self.assign(&v, e),
             Target::Sst(_, start, len) => self.assign_sst(&v, start, len, e),
             Target::Bin(_, start, len) => self.assign_bin(&v, start, len, e),
+            Target::Offset(_) => self.assign_offset(&v, e),
         };
         if let Err(err) = r {
             self.err(line, ids::TYPE_MISMATCH, err);

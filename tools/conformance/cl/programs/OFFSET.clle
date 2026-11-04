@@ -1,0 +1,34 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* %OFFSET read and set: a based view moved along a buffer, as the     */
+/* primary oracle (V7R1M0) ran it on 2026-11-03.                        */
+             PGM
+             DCL        VAR(&BUF) TYPE(*CHAR) LEN(20) +
+                          VALUE('abcdefghijklmnopqrst')
+             DCL        VAR(&P) TYPE(*PTR)
+             DCL        VAR(&Q) TYPE(*PTR)
+             DCL        VAR(&VIEW) TYPE(*CHAR) LEN(3) STG(*BASED) BASPTR(&P)
+             DCL        VAR(&D) TYPE(*DEC) LEN(10 0)
+             DCL        VAR(&NUL) TYPE(*PTR)
+             DCL        VAR(&N) TYPE(*DEC) LEN(10 0) VALUE(2)
+             CHGVAR     VAR(&P) VALUE(%ADDRESS(&BUF))
+             CHGVAR     VAR(&Q) VALUE(&P)
+             CHGVAR     VAR(%OFFSET(&P)) VALUE(%OFFSET(&P) + 5)
+             SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+             CHGVAR     VAR(&D) VALUE(%OFFSET(&P) - %OFFSET(&Q))
+             SNDPGMMSG  MSG('moved ' *CAT %CHAR(&D)) TOPGMQ(*EXT)
+             CHGVAR     VAR(%OFFSET(&P)) VALUE(%OFFSET(&Q) + &N * 6)
+             SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+             CHGVAR     VAR(&VIEW) VALUE('XYZ')
+             CHGVAR     VAR(%OFFSET(&P)) VALUE(%OFFSET(&Q))
+             SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('buf ' *CAT &BUF) TOPGMQ(*EXT)
+             /* A null pointer has no offset to read or set (MCH3601). */
+             CHGVAR     VAR(&D) VALUE(%OFFSET(&NUL))
+             MONMSG     MSGID(MCH3601) EXEC(SNDPGMMSG MSG('null read MCH3601') +
+                          TOPGMQ(*EXT))
+             CHGVAR     VAR(%OFFSET(&NUL)) VALUE(7)
+             MONMSG     MSGID(MCH3601) EXEC(SNDPGMMSG MSG('null set MCH3601') +
+                          TOPGMQ(*EXT))
+             ENDPGM

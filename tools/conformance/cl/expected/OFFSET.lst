@@ -1,0 +1,61 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   OFFSET
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   OFFSET
+Text . . . . . . . . . . . . . . :   corpus OFFSET
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* %OFFSET read and set: a based view moved along a buffer, as the     */
+                    /* primary oracle (V7R1M0) ran it on 2026-11-03.                        */
+        1        0               PGM
+        2        0               DCL        VAR(&BUF) TYPE(*CHAR) LEN(20) +
+                                              VALUE('abcdefghijklmnopqrst')
+        3        0               DCL        VAR(&P) TYPE(*PTR)
+        4        0               DCL        VAR(&Q) TYPE(*PTR)
+        5        0               DCL        VAR(&VIEW) TYPE(*CHAR) LEN(3) STG(*BASED) BASPTR(&P)
+        6        0               DCL        VAR(&D) TYPE(*DEC) LEN(10 0)
+        7        0               DCL        VAR(&NUL) TYPE(*PTR)
+        8        0               DCL        VAR(&N) TYPE(*DEC) LEN(10 0) VALUE(2)
+        9        0               CHGVAR     VAR(&P) VALUE(%ADDRESS(&BUF))
+       10        0               CHGVAR     VAR(&Q) VALUE(&P)
+       11        0               CHGVAR     VAR(%OFFSET(&P)) VALUE(%OFFSET(&P) + 5)
+       12        0               SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+       13        0               CHGVAR     VAR(&D) VALUE(%OFFSET(&P) - %OFFSET(&Q))
+       14        0               SNDPGMMSG  MSG('moved ' *CAT %CHAR(&D)) TOPGMQ(*EXT)
+       15        0               CHGVAR     VAR(%OFFSET(&P)) VALUE(%OFFSET(&Q) + &N * 6)
+       16        0               SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+       17        0               CHGVAR     VAR(&VIEW) VALUE('XYZ')
+       18        0               CHGVAR     VAR(%OFFSET(&P)) VALUE(%OFFSET(&Q))
+       19        0               SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+       20        0               SNDPGMMSG  MSG('buf ' *CAT &BUF) TOPGMQ(*EXT)
+                                 /* A null pointer has no offset to read or set (MCH3601). */
+       21        0               CHGVAR     VAR(&D) VALUE(%OFFSET(&NUL))
+       22        0               MONMSG     MSGID(MCH3601) EXEC(SNDPGMMSG MSG('null read MCH3601') +
+                                              TOPGMQ(*EXT))
+       23        0               CHGVAR     VAR(%OFFSET(&NUL)) VALUE(7)
+       24        0               MONMSG     MSGID(MCH3601) EXEC(SNDPGMMSG MSG('null set MCH3601') +
+                                              TOPGMQ(*EXT))
+       25        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&BUF        *CHAR   20             7  9 20
+&D          *DEC    10 0          12  13 14 21
+&N          *DEC    10 0          14  7 15 21 23
+&NUL        *PTR    16            13  21 23
+&P          *PTR    16             9  5 9 10 11 13 15 18
+&Q          *PTR    16            10  10 13 15 18
+&VIEW       *CHAR   3             11  12 16 17 19
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program OFFSET created.
+End of compilation.
