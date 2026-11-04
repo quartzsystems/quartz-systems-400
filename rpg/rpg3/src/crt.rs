@@ -112,6 +112,35 @@ fn stmt_of(seq: &str) -> u32 {
     seq.trim().parse().unwrap_or(0)
 }
 
+/// The names the ILE compiler's cross-reference marks unreferenced,
+/// on the RPG III statement that defines them (`QRG7031`).
+fn unreferenced(inner: &rpgc::Compiled, diags: &mut Vec<Diag>) {
+    for l in &inner.listing {
+        let t = l.get(1..).unwrap_or("").trim_start();
+        let Some(rest) = t.strip_prefix("*RNF7031") else { continue };
+        let w: Vec<&str> = rest.split_whitespace().collect();
+        let Some(name) = w.first() else { continue };
+        if name.chars().all(|c| c.is_ascii_digit()) {
+            continue;
+        }
+        let Some(defined) = w.iter().find_map(|x| x.strip_suffix('D').and_then(|n| n.parse::<u32>().ok())) else {
+            continue;
+        };
+        let Some(line) = inner.read.lines.iter().find(|r| inner.listing_line(r.no) == defined) else { continue };
+        let stmt = stmt_of(&line.seq);
+        let name = name.strip_prefix("*IN").filter(|n| n.len() == 2).unwrap_or(name).to_string();
+        if !diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&name)) {
+            diags.push(Diag {
+                stmt,
+                msgid: "QRG7031".into(),
+                severity: 0,
+                place: Place::Xref,
+                args: vec![name],
+            });
+        }
+    }
+}
+
 /// An overflow indicator nothing conditions or sets is not referenced
 /// (`QRG7031` on the file's statement), which the ILE compiler does not
 /// report.
@@ -144,7 +173,7 @@ fn unused_overflow(main: &Member, diags: &mut Vec<Diag>) {
             }
         });
         let stmt = stmt_of(&r.seq);
-        if !used && !diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == stmt) {
+        if !used && !diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&ind)) {
             diags.push(Diag {
                 stmt,
                 msgid: "QRG7031".into(),
@@ -252,6 +281,7 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
             diags.push(diag);
         }
     }
+    unreferenced(&inner, &mut diags);
     unused_overflow(main, &mut diags);
     no_output(main, &mut diags);
     diags.sort();

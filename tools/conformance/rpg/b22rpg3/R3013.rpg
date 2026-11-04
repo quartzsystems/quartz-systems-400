@@ -12,18 +12,21 @@
      C                     Z-ADD104       KEY     50
      C           KEY       CHAINCUSTF                91
      C  N91                EXCPTLINE
-     C           999       CHAINCUSTF                92
+     C                     Z-ADD999       K2      50
+     C           K2        CHAINCUSTF                92
      C   92                EXCPTNF
-     C           106       SETLLCUSTF                    93
+     C                     Z-ADD106       K3      50
+     C           K3        SETLLCUSTF                    93
      C                     READ CUSTF                    94
      C  N94                EXCPTLINE
      C                     READPCUSTF                    95
      C                     READPCUSTF                    95
      C  N95                EXCPTLINE
-     C           102       SETLLCUSTF                    96
-     C           102       READECUSTF                    97
+     C                     Z-ADD102       K4      50
+     C           K4        SETLLCUSTF                    96
+     C           K4        READECUSTF                    97
      C  N97                EXCPTLINE
-     C           102       READECUSTF                    97
+     C           K4        READECUSTF                    97
      C   97                EXCPTNF
      C                     SETON                     LR
      OQSYSPRT E  1             LINE

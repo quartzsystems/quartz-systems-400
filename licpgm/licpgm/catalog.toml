@@ -264,6 +264,34 @@ feature = "5001"
 compliance = "*WARNING"
 usage_limit = "*NOMAX"
 
+# ----------------------------------------------------------------------
+# QS00RPG: the RPG III (RPG/400) compiler, CRTRPGPGM, and CVTRPGSRC. Its
+# message file is lic/osobjects' products.rs (docs/RPG3.md).
+[[package]]
+[package.product]
+id = "QS00RPG"
+text = "Quartz Systems/400 RPG/400"
+library = "QRPG"
+first_copyright = 2026
+current_copyright = 2026
+status = "shipped"
+
+[[package.option]]
+option = "*BASE"
+text = "RPG/400 compiler and source conversion"
+msgid = "QSZ7000"
+feature = "5001"
+requires = ["QS00SS1:*BASE", "QS00WDS:31"]
+libraries = [{ name = "QRPG" }]
+objects = [{ lib = "QRPG", name = "QRPGMSG", type = "*MSGF" }]
+components = ["rpg/rpg3 (CRTRPGPGM, CVTRPGSRC)"]
+ibm = "5770WDS option 32, Compiler - RPG/400, with CVTRPGSRC of option 31"
+
+[[package.license]]
+feature = "5001"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"
+
 # ---------------------------------------------------------------------
 # Reserved: IDs registered, nothing shipped.
 [[package]]

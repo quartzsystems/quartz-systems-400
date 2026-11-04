@@ -8,7 +8,8 @@
      I              NAME                            CNAME
      ICUSTDS    E DSCUSTF
      I              CITY                            DSCITY
-     C           101       CHAINCUSTF                91
+     C                     Z-ADD101       K       50
+     C           K         CHAINCUSTF                91
      C                     MOVELCNAME     SAVNAM 20
      C                     MOVEL'Lima'    DSCITY    P
      C                     Z-ADD5         CUSNO

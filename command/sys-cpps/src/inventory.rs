@@ -235,6 +235,8 @@ pub const DIRECT: &[&str] = &[
     "CRTBNDRPG",
     "CRTRPGMOD",
     "CRTSQLRPGI",
+    "CRTRPGPGM",
+    "CVTRPGSRC",
     "CRTCMD",
     "CRTDTAARA",
     "CRTDTAQ",

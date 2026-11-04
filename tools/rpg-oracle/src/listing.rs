@@ -130,7 +130,8 @@ pub fn diags_rpg3(lines: &[String]) -> Vec<Diag> {
                 if let Some(r) = t.strip_prefix('*') {
                     let w: Vec<&str> = r.split_whitespace().collect();
                     if w.first().is_some_and(|x| x.len() == 4 && x.chars().all(|c| c.is_ascii_digit())) {
-                        let at = w[1..]
+                        // The name, its attributes, then the references.
+                        let at = w[2..]
                             .iter()
                             .find_map(|x| x.trim_end_matches(['D', 'M']).parse::<u32>().ok().filter(|_| x.chars().next().is_some_and(|c| c.is_ascii_digit())))
                             .unwrap_or(0);

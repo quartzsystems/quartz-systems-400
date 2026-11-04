@@ -11,9 +11,11 @@
      I                                     *STATUS  FSTS
      I                                     *OPCODE  FOPC
      I                                     *RECORD  FREC
-     C           107       CHAINCREC                 91
+     C                     Z-ADD107       K       50
+     C           K         CHAINCREC                 91
      C                     EXCPTLINE
-     C           999       CHAINCUSTF                91
+     C                     Z-ADD999       K
+     C           K         CHAINCUSTF                91
      C                     EXCPTLINE
      C                     SETON                     LR
      OQSYSPRT E  1             LINE

@@ -1,0 +1,37 @@
+# Section 8: CRTRPGPGM's and CVTRPGSRC's prompts, every page with F10's
+# parameters, left with F12. Neither command is run.
+wait "Main Menu"
+continue
+timeout 30000
+type crtrpgpgm
+key f4
+wait "Create RPG Program"
+snap prompt-crtrpgpgm
+key f10
+settle 1500
+snap prompt-crtrpgpgm-f10
+key pgdn
+settle 1500
+snap prompt-crtrpgpgm-f10-2
+key pgdn
+settle 1500
+snap prompt-crtrpgpgm-f10-3
+key pgdn
+settle 1500
+snap prompt-crtrpgpgm-f10-4
+key f12
+settle 1500
+wait "Main Menu"
+type cvtrpgsrc
+key f4
+wait "Convert RPG Source"
+snap prompt-cvtrpgsrc
+key f10
+settle 1500
+snap prompt-cvtrpgsrc-f10
+key pgdn
+settle 1500
+snap prompt-cvtrpgsrc-f10-2
+key f12
+settle 1500
+wait "Main Menu"

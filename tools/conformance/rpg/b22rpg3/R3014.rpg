@@ -4,7 +4,8 @@
      H
      FCUSTF   UF  E           K        DISK                      A
      FQSYSPRT O   F     132     OF     PRINTER
-     C           102       CHAINCUSTF                91
+     C                     Z-ADD102       K       50
+     C           K         CHAINCUSTF                91
      C  N91                ADD  100       BAL
      C  N91                UPDATCUSTR
      C                     Z-ADD109       CUSNO
@@ -13,9 +14,11 @@
      C                     Z-ADD7.77      BAL
      C                     WRITECUSTR                  93
      C                     WRITECUSTR                  94
-     C           103       CHAINCUSTF                91
+     C                     Z-ADD103       K
+     C           K         CHAINCUSTF                91
      C  N91                DELETCUSTR
-     C           105       CHAINCUSTF                91
+     C                     Z-ADD105       K
+     C           K         CHAINCUSTF                91
      C           *LOVAL    SETLLCUSTF
      C                     READ CUSTR                    90
      C           *IN90     DOWEQ'0'

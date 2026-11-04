@@ -12,7 +12,7 @@ use store::txn::Txn;
 use crate::{Error, piece};
 
 /// Products with objects of their own, and their libraries.
-pub const PRODUCTS: &[(&str, &[&str])] = &[("QS00DG1", &["QHTTPSVR"])];
+pub const PRODUCTS: &[(&str, &[&str])] = &[("QS00DG1", &["QHTTPSVR"]), ("QS00RPG", &["QRPG"])];
 
 /// The libraries a product's objects live in (none for a product
 /// without objects of its own).

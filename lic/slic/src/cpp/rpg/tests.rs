@@ -551,3 +551,53 @@ fn a_cl_program_from_a_stream_file() {
     let st = c.stat("/home/QSTEST/hello.clle", true).unwrap();
     assert_eq!(st.ccsid, 1208, "write_text tags 1208");
 }
+
+#[test]
+fn an_rpg3_member_becomes_a_program() {
+    let src = Source {
+        member: member_of(
+            "QGPL",
+            "QRPGSRC",
+            "OLD",
+            &[
+                (100, 0, "     H".into()),
+                (200, 0, "     C                     Z-ADD5         N       30".into()),
+                (300, 0, "     C                     SETON                     LR".into()),
+            ],
+        ),
+        text: String::new(),
+    };
+    let o = rpg3::Options {
+        pgm: ("OLD".into(), "QGPL".into()),
+        src: ("QGPL".into(), "QRPGSRC".into(), "OLD".into()),
+        ..rpg3::Options::default()
+    };
+    let c = rpg3::compile(&src.member, &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &o);
+    assert!(c.created, "{:?}", c.diags);
+    // N is set and never used: RPG/400's unreferenced name.
+    assert!(c.diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == 200), "{:?}", c.diags);
+    let (mut store, qsys, lib) = open_new();
+    let ctx = Ctx {
+        qsys,
+        names: NameContext {
+            curlib: Some(lib),
+            libl: vec![qsys, lib],
+        },
+        now: NOW,
+        owner: "QSECOFR".into(),
+        system: "QS400".into(),
+    };
+    let made = Made {
+        shape: Shape::Program,
+        name: "OLD".into(),
+        text: String::new(),
+        replace: true,
+        usrprf_owner: false,
+        bnddir: Vec::new(),
+        source: None,
+    };
+    let mut txn = store.begin().unwrap();
+    make(&mut txn, &ctx, lib, &made, &c.inner.qir, CreateData::default(), NOW).unwrap();
+    let qgpl = Library::load(&mut txn, lib).unwrap();
+    assert!(qgpl.lookup(&mut txn, types::PGM, Name::parse("OLD").unwrap()).unwrap().is_some());
+}

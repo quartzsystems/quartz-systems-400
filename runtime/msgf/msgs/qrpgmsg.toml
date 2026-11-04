@@ -1,0 +1,83 @@
+# QRPGMSG: the RPG/400 compiler's (CRTRPGPGM) and the source
+# converter's (CVTRPGSRC) messages, in library QRPG of licensed program
+# QS00RPG. QRG messages are the compile diagnostics and the command's
+# end; RNM messages are the converter's. Every text is Quartz-written;
+# the identifiers and severities are the compatibility interface. The
+# diagnostic texts the listing prints are rpg/rpg3/src/crt/msgs.rs.
+name = "QRPGMSG"
+text = "RPG/400 compiler messages"
+
+[[msg]]
+id = "QRG0003"
+sev = 0
+text = "Program &1 created in library &2. Highest severity: &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2"]
+
+[[msg]]
+id = "QRG2001"
+sev = 30
+text = "The file continuation option is not valid."
+
+[[msg]]
+id = "QRG3001"
+sev = 30
+text = "The data format is not supported."
+
+[[msg]]
+id = "QRG5014"
+sev = 30
+text = "The operation code is not valid."
+
+[[msg]]
+id = "QRG7030"
+sev = 30
+text = "Name or indicator is not defined."
+
+[[msg]]
+id = "QRG7031"
+sev = 0
+text = "Name or indicator is never used."
+
+[[msg]]
+id = "QRG7064"
+sev = 40
+text = "The file is not used for output."
+
+[[msg]]
+id = "QRG7086"
+sev = 0
+text = "Records of the file are read in blocks."
+
+[[msg]]
+id = "QRG9001"
+sev = 40
+text = "Program &1 was not created in library &2."
+help = "The compile found errors above the GENLVL value, or a severe error. The listing shows each diagnostic."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNM0501"
+sev = 30
+text = "A data format of this kind has no ILE RPG equivalent."
+
+[[msg]]
+id = "RNM0507"
+sev = 30
+text = "The file continuation option is not converted."
+
+[[msg]]
+id = "RNM0511"
+sev = 30
+text = "The specification type is not known; the record is copied."
+
+[[msg]]
+id = "RNM9001"
+sev = 0
+text = "Member &1 converted into &2/&3 member &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNM9002"
+sev = 40
+text = "Member &1 was not converted: &2."
+vars = ["*CHAR 10", "*CHAR 80"]

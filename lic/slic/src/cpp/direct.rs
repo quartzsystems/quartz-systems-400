@@ -42,6 +42,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         "CRTBNDCL" | "CRTCLMOD" | "CRTCLPGM" | "RTVCLSRC" => super::clpgm::run(system, name, parms),
         "CRTBNDRPG" | "CRTRPGMOD" | "CRTSQLRPGI" => super::rpg::run(system, name, parms),
+        "CRTRPGPGM" => super::rpg::rpg3::crtrpgpgm(system, parms),
+        "CVTRPGSRC" => super::rpg::rpg3::cvtrpgsrc(system, parms),
         "CRTPNLGRP" | "CRTMNU" => super::uicmd::run(system, name, parms),
         "CLRLIB" => clrlib(system, &parms.name("LIB")),
         "DLTPGM" | "DLTMOD" | "DLTSRVPGM" | "DLTMSGF" | "DLTBNDDIR" | "DLTAUTL" | "DLTMNU"

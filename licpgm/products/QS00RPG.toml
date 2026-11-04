@@ -1,0 +1,28 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00RPG from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal. The objects are what
+# lic/osobjects' products.rs makes.
+
+[product]
+id = "QS00RPG"
+text = "Quartz Systems/400 RPG/400"
+library = "QRPG"
+first_copyright = 2026
+current_copyright = 2026
+
+[[option]]
+option = "*BASE"
+text = "RPG/400 compiler and source conversion"
+msgid = "QSZ7000"
+feature = "5001"
+requires = ["QS00SS1:*BASE", "QS00WDS:31"]
+libraries = [{ name = "QRPG" }]
+objects = [{ lib = "QRPG", name = "QRPGMSG", type = "*MSGF" }]
+
+[[license]]
+feature = "5001"
+compliance = "*WARNING"
+usage_limit = "*NOMAX"

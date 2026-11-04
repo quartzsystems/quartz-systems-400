@@ -64,6 +64,7 @@ sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 cl = { path = "../../command/cl", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
+rpg3 = { path = "../../rpg/rpg3", version = "0.1.0" }
 cmncfg = { path = "../../net/cmncfg", version = "0.1.0" }
 netlink = { path = "../../net/netlink", version = "0.1.0" }
 hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }

@@ -30,9 +30,14 @@ pub const QEDTMSG: &str = include_str!("../msgs/qedtmsg.toml");
 /// from `net/httpadmin/src/msgs.rs`.
 pub const QZHBMSG: &str = include_str!("../msgs/qzhbmsg.toml");
 
+/// The source of `QRPGMSG`, the RPG/400 compiler's and converter's
+/// messages (`QS00RPG`).
+pub const QRPGMSG: &str = include_str!("../msgs/qrpgmsg.toml");
+
 /// Message files of product libraries: the library, its text, the
 /// file's source.
-pub const PRODUCT_FILES: &[(&str, &str, &str)] = &[("QHTTPSVR", "HTTP server", QZHBMSG)];
+pub const PRODUCT_FILES: &[(&str, &str, &str)] =
+    &[("QHTTPSVR", "HTTP server", QZHBMSG), ("QRPG", "RPG/400", QRPGMSG)];
 
 /// A message file: its name, text and descriptions.
 #[derive(Clone, Debug, PartialEq, Eq)]

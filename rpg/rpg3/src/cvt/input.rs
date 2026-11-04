@@ -168,6 +168,8 @@ fn subfield(r: &str, ext: bool) -> String {
     }
     let kw = cut3("IX", r, "keyword");
     if kw.starts_with('*') {
+        // The program's name is the procedure's in ILE RPG.
+        let kw = if kw == "*PROGRAM" { "*PROC".to_string() } else { kw };
         d.put("from", &kw);
     } else {
         d.right("from", &cut3("IX", r, "from")).right("to", &cut3("IX", r, "to"));

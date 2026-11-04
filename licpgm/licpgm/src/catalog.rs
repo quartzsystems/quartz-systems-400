@@ -24,6 +24,7 @@ pub const AGREEMENTS: &[(&str, &str)] = &[
     ("QS00DG1", include_str!("../agreements/QS00DG1.txt")),
     ("QS00NAV", include_str!("../agreements/QS00NAV.txt")),
     ("QS00PT1", include_str!("../agreements/QS00PT1.txt")),
+    ("QS00RPG", include_str!("../agreements/QS00RPG.txt")),
     ("QS00AFW", include_str!("../agreements/QS00AFW.txt")),
     ("QS00PSE", include_str!("../agreements/QS00PSE.txt")),
 ];
@@ -181,7 +182,7 @@ mod tests {
         assert_eq!(
             ids,
             [
-                "QS00SS1", "QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1",
+                "QS00SS1", "QS00WDS", "QS00TC1", "QS00ST1", "QS00DG1", "QS00NAV", "QS00PT1", "QS00RPG",
                 "QS00AFW", "QS00PSE"
             ]
         );

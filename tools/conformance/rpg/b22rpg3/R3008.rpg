@@ -17,7 +17,7 @@
      I                                        5   80MOB
      I              'A CONSTANT'          C         CON1
      I              1234.5                C         CON2
-     C                     MOVEL'FIRSTSECOWHOLE
+     C                     MOVEL'FIRSTSEC'WHOLE
      C                     Z-ADD-12.34    NUM
      C                     Z-ADD789       PNUM
      C                     Z-ADD-5        BNUM

@@ -10,6 +10,7 @@
 
 mod object;
 mod opts;
+pub mod rpg3;
 mod source;
 #[cfg(test)]
 mod tests;

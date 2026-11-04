@@ -16,6 +16,7 @@ deferred.
 | `qrpgrt` | `rpg/qrpgrt` | The runtime library: bound procedures `_QRNX_...` generated code calls |
 | `rpgsqlpre` | `rpg/sqlpre` | The SQL precompiler of `CRTSQLRPGI`: embedded statements, host variables, the precompile listing |
 | `rpg-oracle` | `tools/rpg-oracle` | The differential oracle (`PHASE9.md`) |
+| `rpg3` | `rpg/rpg3` | RPG III: `CVTRPGSRC`'s conversion and `CRTRPGPGM` over this compiler (`RPG3.md`) |
 
 The conformance kit is `tools/conformance/src/rpg/` with the test
 `tools/conformance/tests/rpg_kit.rs`.
