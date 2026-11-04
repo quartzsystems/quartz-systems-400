@@ -252,7 +252,12 @@ files = [
     "work/wm/src/obj/sbsd.rs",
 ]
 # The shipped subsystems are content, not format.
-exclude = ["work/wm/src/obj/sbsd.rs::fn shipped"]
+exclude = [
+    "work/wm/src/obj/sbsd.rs::fn shipped",
+    # Where a spooled file goes: logic, not layout.
+    "work/wm/src/obj/prtf.rs::fn pick_outq",
+    "work/wm/src/obj/prtf.rs::fn device_of",
+]
 
 # --- Security ---
 
