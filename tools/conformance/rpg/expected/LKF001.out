@@ -1,0 +1,20 @@
+# LKF001 V7R5M0 pub400.com
+# captured 2026-11-03 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 5 seq 000500
+diag: RNF3530 00 line 6 seq 000600
+diag: RNF7066 00 line 7 seq 000700
+diag: RNF7066 00 line 66 seq 005600
+run: ok
+spool: QSYSPRT
+  |1/1   bumped 104
+  |1/2   no 199 0
+  |1/3   dropped 101 1
+  |1/4   102 Bob Brown -75.25
+  |1/5   103 Carol Clark .00
+  |1/6   104 Dan Davis 310.50
+  |1/7   105 Eve Evans 99.99
+  |1/8   106 Frank Fox 5000.00
+  |1/9   107 Grace Green 12.34
+  |1/10  108 Hank Hill 450.00
+  |1/11  120 Ivy Irwin 1.00

@@ -1,0 +1,222 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTRPGMOD
+     Issued by  . . . . . . . . . . :     {user}
+0  Module . . . . . . . . . . . . . :   LKF004
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   LKF004
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace module . . . . . . . . . :   *YES
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Storage model . . .  . . . . . . :   *INHERIT
+   Binding directory  . . . . . . . :   *NONE
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; cmd: CRTRPGMOD MODULE({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name})                           000000     000200
+      3 //; cmd+: DBGVIEW(*NONE) OUTPUT(*PRINT)                                                                   000000     000300
+      4 //; run: no                                                                                               000000     000400
+      5 //; dds: CUSTF                                                                                            000000     000500
+      6 ctl-opt nomain;                                                                                           000000     000600
+-     7 dcl-f CUSTF keyed usage(*input) block(*no) template;                                                      000000     000700
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  CUSTF            {lib}/CUSTF                             *
+         * Record format(s) . . . . . :  CUSTR            CUSTR                                       *
+         *--------------------------------------------------------------------------------------------*
+-     8 dcl-proc total export;                                                                                    000000     000800
+-     9   dcl-pi *n packed(11:2);                                                                                 000000     000900
+     10     f likefile(CUSTF);                                                                                    000000     001000
+     11     city char(12) const;                                                                                  000000     001100
+     12   end-pi;                                                                                                 000000     001200
+     13   dcl-ds x likerec(f.CUSTR:*ALL);                                                                         000000     001300
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     14   dcl-s t packed(11:2);                                                                                   000000     001400
+-    15   setll *start f;                                                                                         000000     001500
+     16   read f x;                                                                                               000000     001600
+     17   dow not %eof(f);                                                                                   B01  000000     001700
+     18     if x.CITY = city;                                                                                B02  000000     001800
+     19       t += x.BAL;                                                                                     02  000000     001900
+     20     endif;                                                                                           E02  000000     002000
+     21     read f x;                                                                                         01  000000     002100
+     22   enddo;                                                                                             E01  000000     002200
+     23   return t;                                                                                               000000     002300
+     24 end-proc;                                                                                                 000000     002400
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00     10 001000  Record-Format CUSTR not used for input or output.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          CUSTF             DISK                    7D     10
+                            TEMPLATE
+            CUSTR                                   7D     10
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          TOTAL             P(11,2)                 8
+                            PROTOTYPE
+       Field References for subprocedure TOTAL
+0         File              Device             References (D=Defined)
+            Record
+          F                 DISK                   10D     13      15      16
+                                                   17      21
+            CUSTR                                  10D     13
+0         Field             Attributes         References (D=Defined M=Modified)
+          CITY              A(12)                  11D     18
+                            BASED(_QRNL_PST+)
+          T                 P(11,2)                14D     19M     23
+          X                 DS(40)                 13D     16M     18      19
+                                                   21M
+            BAL             P(9,2)                 13D     19
+            CITY            A(12)                  13D     18
+ *RNF7031   CUSNO           P(5,0)                 13D
+ *RNF7031   NAME            A(20)                  13D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF7031 00      2 The name or indicator is not referenced.
+ *RNF7066 00      1 Record-Format name of Externally-Described file is not used.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        3
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       24
+     Specifications  . . . . . . . . :       17
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        4
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Module LKF004 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
