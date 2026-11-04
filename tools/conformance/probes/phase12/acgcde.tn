@@ -1,0 +1,22 @@
+# Job accounting on the 7.1 oracle: the CHGACGCDE prompt and its F11
+# keyword view. Read-only (the prompt is left with F3).
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type CHGACGCDE
+key f4
+settle 3000
+snap prompt-chgacgcde
+key f11
+settle 1500
+snap prompt-chgacgcde-f11
+key f3
+settle 1500
+key f3
+settle 1500

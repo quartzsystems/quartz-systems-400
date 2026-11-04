@@ -1,0 +1,16 @@
+[[golden]]
+name = "prompt-chgacgcde"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "acgcde"
+width = 80
+
+[[golden]]
+name = "prompt-chgacgcde-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "acgcde"
+width = 80
+

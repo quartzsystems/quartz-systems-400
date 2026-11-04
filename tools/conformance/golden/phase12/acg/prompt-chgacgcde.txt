@@ -1,0 +1,24 @@
+                       Change Accounting Code (CHGACGCDE)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Job name . . . . . . . . . . . .   *             Name, *                       
+   User . . . . . . . . . . . . .                 Name                          
+   Number . . . . . . . . . . . .                 000000-999999                 
+ Accounting code  . . . . . . . .   *SAME                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                
