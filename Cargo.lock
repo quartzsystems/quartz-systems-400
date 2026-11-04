@@ -246,6 +246,7 @@ dependencies = [
  "ed25519-dalek",
  "fmtcheck",
  "getrandom 0.4.3",
+ "helpaudit",
  "hex",
  "instmedia",
  "lpbuild",

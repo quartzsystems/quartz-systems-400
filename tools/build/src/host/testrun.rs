@@ -25,6 +25,26 @@ fn freeze(ctx: &Ctx) -> Result<()> {
     Ok(())
 }
 
+/// Help everywhere (`tools/helpaudit`): a panel, display file, command,
+/// parameter or message without help fails the run before anything boots.
+fn help(ctx: &Ctx) -> Result<()> {
+    let report = helpaudit::audit(&ctx.paths.repo)?;
+    if report.fails() {
+        anyhow::bail!("help is missing (cargo run -p helpaudit):\n{}", report.summary());
+    }
+    let stale = helpaudit::generate::stale(&ctx.paths.repo)?;
+    if !stale.is_empty() {
+        anyhow::bail!(
+            "command help is out of date (cargo run -p helpaudit -- gen): {}",
+            stale.join(" ")
+        );
+    }
+    for line in report.summary().lines() {
+        info!("helpaudit: {line}");
+    }
+    Ok(())
+}
+
 /// Run the Phase 1 suite for `media`.
 pub fn test(
     ctx: &Ctx,
@@ -34,6 +54,7 @@ pub fn test(
     pulls: u32,
 ) -> Result<()> {
     freeze(ctx)?;
+    help(ctx)?;
     let image = paths::read_pointer(&ctx.paths.disk_pointer())
         .context("no disk image; run `disk` first")?;
     let iso = paths::read_pointer(&ctx.paths.iso_pointer()).ok();
