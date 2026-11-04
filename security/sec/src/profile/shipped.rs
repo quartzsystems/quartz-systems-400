@@ -471,7 +471,12 @@ pub fn narrow_system_objects(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize>
         let name = h.name.to_string();
         let want = public_for(id.type_code, &name);
         let public = h.public_authority.0;
-        if !system_kept(id.type_code, &name) || text_of(&h.owner) != "QSYS" || public & Authority::FROM_AUTL != 0 || public & !want.0 == 0 {
+        let theirs = id.type_code == types::DTAARA && text_of(&h.owner) != "QSYS";
+        if !system_kept(id.type_code, &name)
+            || theirs
+            || public & Authority::FROM_AUTL != 0
+            || public & !want.0 == 0
+        {
             continue;
         }
         h.public_authority = want;

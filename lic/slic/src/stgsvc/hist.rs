@@ -119,6 +119,7 @@ fn create(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, now: u64) -> Result<Obj
         now,
         size: Size::NOMAX,
         text: "History log".into(),
+        owner: "QSYS".into(),
         ..CreateFileOpts::default()
     };
     file::create_pf(
