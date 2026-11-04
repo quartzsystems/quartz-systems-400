@@ -33,14 +33,14 @@
 :VAR NAME=POSHINT CLASS=LTEXTCL VALUE='Starting characters of system value'.
 :VAR NAME=SUBHINT CLASS=LTEXTCL VALUE='F4 for list'.
 :LISTDEF NAME=SYSVALS VARS='OPT SVNAME SVGROUP SVDESC'.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -55,15 +55,15 @@
 :EKEYL.
 :PANEL NAME=DSPSYSVAL HELP=HLPDSP KEYL=DSPKEYS.Display System Value
 :DATA DEPTH='*'.
-:DATAI VAR=SVNAME USAGE=OUTPUT.System value
-:DATAI VAR=SVTEXT USAGE=OUTPUT.Description
-:DATAI VAR=SVTEXT2 USAGE=OUTPUT.
+:DATAI HELP='FLD/SVNAME' VAR=SVNAME USAGE=OUTPUT.System value
+:DATAI HELP='FLD/SVTEXT' VAR=SVTEXT USAGE=OUTPUT.Description
+:DATAI HELP='FLD/SVTEXT2' VAR=SVTEXT2 USAGE=OUTPUT.
 :DATAC.
 :DATAC.
-:DATAI VAR=SVVAL1 USAGE=OUTPUT.&SVLABEL.
-:DATAI VAR=SVVAL2 USAGE=OUTPUT.
-:DATAI VAR=SVVAL3 USAGE=OUTPUT.
-:DATAI VAR=SVVAL4 USAGE=OUTPUT.
+:DATAI HELP='FLD/SVVAL1' VAR=SVVAL1 USAGE=OUTPUT.&SVLABEL.
+:DATAI HELP='FLD/SVVAL2' VAR=SVVAL2 USAGE=OUTPUT.
+:DATAI HELP='FLD/SVVAL3' VAR=SVVAL3 USAGE=OUTPUT.
+:DATAI HELP='FLD/SVVAL4' VAR=SVVAL4 USAGE=OUTPUT.
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -71,19 +71,19 @@
 :DATA DEPTH=3.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=78.
-:DATAI VAR=POSTO USAGE=INPUT.Position to
+:DATAI HELP='FLD/POSTO' VAR=POSTO USAGE=INPUT.Position to
 :DATAIX VAR=POSHINT USAGE=OUTPUT.
-:DATAI VAR=SUBSET USAGE=INPUT.Subset by Type
+:DATAI HELP='FLD/SUBSET' VAR=SUBSET USAGE=INPUT.Subset by Type
 :DATAIX VAR=SUBHINT USAGE=OUTPUT.
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=SYSVALS SCROLL=YES.
-:LISTACT OPTION=2 ENTER='CMD ?CHGSYSVAL SYSVAL(&SVNAME.)'.2=Change
-:LISTACT OPTION=5 ENTER='CMD DSPSYSVAL SYSVAL(&SVNAME.)'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Option
-:LISTCOL VAR=SVNAME USAGE=OUTPUT.System Value
-:LISTCOL VAR=SVGROUP USAGE=OUTPUT.Type
-:LISTCOL VAR=SVDESC USAGE=OUTPUT.Description
+:LISTACT HELP='WRKSYSVAL/OPTIONS' OPTION=2 ENTER='CMD ?CHGSYSVAL SYSVAL(&SVNAME.)'.2=Change
+:LISTACT HELP='WRKSYSVAL/OPTIONS' OPTION=5 ENTER='CMD DSPSYSVAL SYSVAL(&SVNAME.)'.5=Display
+:LISTCOL HELP='WRKSYSVAL/OPT' VAR=OPT USAGE=INPUT.Option
+:LISTCOL HELP='FLD/SVNAME' VAR=SVNAME USAGE=OUTPUT.System Value
+:LISTCOL HELP='FLD/SVGROUP' VAR=SVGROUP USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/SVDESC' VAR=SVDESC USAGE=OUTPUT.Description
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
@@ -98,5 +98,82 @@ CHGSYSVAL command or option 2 of WRKSYSVAL.
 belongs to and a line about it.
 :P.Type 2 next to a value to change it, or 5 to look at it, and press
 Enter. F5 reads the values again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SVNAME'.System value
+:P.The system value.
+:EHELP.
+:HELP NAME='FLD/SVTEXT'.Description
+:P.The description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SVTEXT2'.SVTEXT2
+:P.The SVTEXT2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SVVAL1'.&amp.SVLABEL
+:P.The &amp.SVLABEL shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SVVAL2'.SVVAL2
+:P.The SVVAL2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SVVAL3'.SVVAL3
+:P.The SVVAL3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SVVAL4'.SVVAL4
+:P.The SVVAL4 shown for what the display is about.
+:EHELP.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display names only
+:PD.Shows the list with the names alone, so more fit on a page.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/POSTO'.Position to
+:P.Type the position to.
+:EHELP.
+:HELP NAME='FLD/SUBSET'.Subset by Type
+:P.Type the subset by Type.
+:EHELP.
+:HELP NAME='WRKSYSVAL/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/SVGROUP'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SVDESC'.Description
+:P.The description of each entry in the list.
+:EHELP.
+:HELP NAME='WRKSYSVAL/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+System Value (CHGSYSVAL) command is prompted for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+System Value (DSPSYSVAL) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

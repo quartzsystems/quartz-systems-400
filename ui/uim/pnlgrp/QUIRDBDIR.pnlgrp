@@ -36,19 +36,19 @@
 :DATA DEPTH=2.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=78.
-:DATAI VAR=POSTO USAGE=INOUT.Position to
+:DATAI HELP='FLD/POSTO' VAR=POSTO USAGE=INOUT.Position to
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RDBS SCROLL=YES MAXHEAD=2.(No entries)
-:LISTACT OPTION=1 ENTER='CMD ?ADDRDBDIRE'.1=Add
-:LISTACT OPTION=2 ENTER='CMD ?CHGRDBDIRE RDB(&RDB.)'.2=Change
-:LISTACT OPTION=4 ENTER='CMD RMVRDBDIRE RDB(&RDB.)'.4=Remove
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display details
-:LISTACT OPTION=6 ENTER='RETURN 106'.6=Print details
-:LISTCOL VAR=OPT USAGE=INPUT.Option
-:LISTCOL VAR=RDB USAGE=OUTPUT.Entry
-:LISTCOL VAR=RMTLOC USAGE=OUTPUT.Remote Location
-:LISTCOL VAR=RDBTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKRDBDIRE/OPTIONS' OPTION=1 ENTER='CMD ?ADDRDBDIRE'.1=Add
+:LISTACT HELP='WRKRDBDIRE/OPTIONS' OPTION=2 ENTER='CMD ?CHGRDBDIRE RDB(&RDB.)'.2=Change
+:LISTACT HELP='WRKRDBDIRE/OPTIONS' OPTION=4 ENTER='CMD RMVRDBDIRE RDB(&RDB.)'.4=Remove
+:LISTACT HELP='WRKRDBDIRE/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display details
+:LISTACT HELP='WRKRDBDIRE/OPTIONS' OPTION=6 ENTER='RETURN 106'.6=Print details
+:LISTCOL HELP='WRKRDBDIRE/OPT' VAR=OPT USAGE=INPUT.Option
+:LISTCOL HELP='FLD/RDB' VAR=RDB USAGE=OUTPUT.Entry
+:LISTCOL HELP='FLD/RMTLOC' VAR=RMTLOC USAGE=OUTPUT.Remote Location
+:LISTCOL HELP='FLD/RDBTEXT' VAR=RDBTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :HELP NAME=WRKRDBH.Work with Relational Database Directory Entries - Help
@@ -57,5 +57,43 @@ remote ones DRDA and DDM reach, each with where it is.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave, F5 reads the directory again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/POSTO'.Position to
+:P.Type the position to.
+:EHELP.
+:HELP NAME='WRKRDBDIRE/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RDB'.Entry
+:P.The entry of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RMTLOC'.Remote Location
+:P.The remote location name of the system at the other end of the
+connection.
+:EHELP.
+:HELP NAME='FLD/RDBTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKRDBDIRE/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add
+:PD.Type 1 next to an entry and press Enter to add it. The Add RDB
+Directory Entry (ADDRDBDIRE) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change RDB
+Directory Entry (CHGRDBDIRE) command is prompted for the entry.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it. The Remove RDB
+Directory Entry (RMVRDBDIRE) command runs for the entry.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to display details it.
+:PT.6=Print details
+:PD.Type 6 next to an entry and press Enter to print details it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

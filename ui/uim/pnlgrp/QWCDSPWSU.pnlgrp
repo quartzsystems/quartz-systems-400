@@ -24,7 +24,7 @@
 :VAR NAME=CURJOB CLASS=NUMCL.
 :VAR NAME=JOBA CLASS=JOBCL.
 :VAR NAME=JOBB CLASS=JOBCL.
-:KEYL NAME=KEYS.
+:KEYL HELP='KEYS/KEYS' NAME=KEYS.
 :KEYI KEY=ENTER ACTION=EXIT.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -35,22 +35,22 @@
 :DATA DEPTH='*'.
 :DATACOL WIDTH=44.
 :DATACOL WIDTH=78.
-:DATAI VAR=USER USAGE=OUTPUT.User
+:DATAI HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=USRTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/USRTEXT' VAR=USRTEXT USAGE=OUTPUT.Text
 :EDATAGRP.
 :DATAC.
-:DATAI VAR=WSNAME USAGE=OUTPUT.Work station
+:DATAI HELP='FLD/WSNAME' VAR=WSNAME USAGE=OUTPUT.Work station
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=WSTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/WSTEXT' VAR=WSTEXT USAGE=OUTPUT.Text
 :EDATAGRP.
 :DATAC.
 :DATAC.
-:DATAI VAR=NBRJOBS USAGE=OUTPUT.Number of interactive jobs in session
-:DATAI VAR=CURJOB USAGE=OUTPUT.Interactive job currently active
+:DATAI HELP='FLD/NBRJOBS' VAR=NBRJOBS USAGE=OUTPUT.Number of interactive jobs in session
+:DATAI HELP='FLD/CURJOB' VAR=CURJOB USAGE=OUTPUT.Interactive job currently active
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=JOBA USAGE=OUTPUT.Interactive job A
-:DATAI VAR=JOBB USAGE=OUTPUT.Interactive job B
+:DATAI HELP='FLD/JOBA' VAR=JOBA USAGE=OUTPUT.Interactive job A
+:DATAI HELP='FLD/JOBB' VAR=JOBB USAGE=OUTPUT.Interactive job B
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -60,5 +60,40 @@
 running at it. Job A is the first job signed on; job B is the
 secondary job System Request option 1 started, *NONE while there is
 none. The active job is the one the display shows now.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/KEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/WSNAME'.Work station
+:P.The work station shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/WSTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NBRJOBS'.Number of interactive jobs in session
+:P.The number of interactive jobs in session shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/CURJOB'.Interactive job currently active
+:P.The interactive job currently active shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/JOBA'.Interactive job A
+:P.The interactive job A shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBB'.Interactive job B
+:P.The interactive job B shown for what the display is about.
 :EHELP.
 :EPNLGRP.

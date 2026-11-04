@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='OPTICAL'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKDEVD PNLGRP=QHCFCMD.
+:IMPORT NAME=WRKMLBSTS PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKOPTVOL PNLGRP=QHOPCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -22,13 +25,13 @@
 :EKEYL.
 :PANEL NAME=OPTICAL HELP=HLPOPTICAL KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Optical Support Utilities
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKOPTVOL'.Work with optical volumes
-:MENUI OPTION=2 ACTION='CMD ?WRKOPTDIR'.Work with optical directories
-:MENUI OPTION=3 ACTION='CMD ?WRKOPTF'.Work with optical files
-:MENUI OPTION=4 ACTION='CMD WRKMLBSTS'.Work with optical libraries
-:MENUI OPTION=5 ACTION='CMD WRKDEVD DEVD(*OPT)'.Work with optical devices
-:MENUI OPTION=6 ACTION='MENU RECOVERY'.Optical backup/recovery menu
-:MENUI OPTION=7 ACTION='MENU OPTSERVER'.Optical server menu
+:MENUI HELP=WRKOPTVOL OPTION=1 ACTION='CMD WRKOPTVOL'.Work with optical volumes
+:MENUI HELP='OPTICAL/OPT2' OPTION=2 ACTION='CMD ?WRKOPTDIR'.Work with optical directories
+:MENUI HELP='OPTICAL/OPT3' OPTION=3 ACTION='CMD ?WRKOPTF'.Work with optical files
+:MENUI HELP=WRKMLBSTS OPTION=4 ACTION='CMD WRKMLBSTS'.Work with optical libraries
+:MENUI HELP=WRKDEVD OPTION=5 ACTION='CMD WRKDEVD DEVD(*OPT)'.Work with optical devices
+:MENUI HELP='OPTICAL/OPT6' OPTION=6 ACTION='MENU RECOVERY'.Optical backup/recovery menu
+:MENUI HELP='OPTICAL/OPT7' OPTION=7 ACTION='MENU OPTSERVER'.Optical server menu
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -38,5 +41,33 @@ real.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='OPTICAL/OPT2'.Work with optical directories
+:P.Option 2. Runs the WRKOPTDIR command&colon. Work with optical
+directories.
+:EHELP.
+:HELP NAME='OPTICAL/OPT3'.Work with optical files
+:P.Option 3. Runs the WRKOPTF command&colon. Work with optical files.
+:EHELP.
+:HELP NAME='OPTICAL/OPT6'.Optical backup/recovery menu
+:P.Option 6. Shows menu RECOVERY&colon. Optical backup/recovery menu.
+:EHELP.
+:HELP NAME='OPTICAL/OPT7'.Optical server menu
+:P.Option 7. Shows menu OPTSERVER&colon. Optical server menu.
 :EHELP.
 :EPNLGRP.

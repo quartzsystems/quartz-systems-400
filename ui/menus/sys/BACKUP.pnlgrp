@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='BACKUP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPBCKSTS PNLGRP=QHWMCMD.
+:IMPORT NAME=INZTAP PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,11 +23,11 @@
 :EKEYL.
 :PANEL NAME=BACKUP HELP=HLPBACKUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Backup Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='MENU RUNBCKUP'.Run backup
-:MENUI OPTION=2 ACTION='CMD DSPBCKSTS'.Display backup status
-:MENUI OPTION=10 ACTION='MENU SETUPBCKUP'.Set up backup
-:MENUI OPTION=20 ACTION='CMD ?INZTAP'.Initialize a tape
-:MENUI OPTION=21 ACTION='CMD ?INZTAP'.Initialize a tape set
+:MENUI HELP='BACKUP/OPT1' OPTION=1 ACTION='MENU RUNBCKUP'.Run backup
+:MENUI HELP=DSPBCKSTS OPTION=2 ACTION='CMD DSPBCKSTS'.Display backup status
+:MENUI HELP='BACKUP/OPT10' OPTION=10 ACTION='MENU SETUPBCKUP'.Set up backup
+:MENUI HELP=INZTAP OPTION=20 ACTION='CMD ?INZTAP'.Initialize a tape
+:MENUI HELP=INZTAP OPTION=21 ACTION='CMD ?INZTAP'.Initialize a tape set
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -34,5 +36,24 @@
 went, change what is saved, and prepare the tapes.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='BACKUP/OPT1'.Run backup
+:P.Option 1. Shows menu RUNBCKUP&colon. Run backup.
+:EHELP.
+:HELP NAME='BACKUP/OPT10'.Set up backup
+:P.Option 10. Shows menu SETUPBCKUP&colon. Set up backup.
 :EHELP.
 :EPNLGRP.

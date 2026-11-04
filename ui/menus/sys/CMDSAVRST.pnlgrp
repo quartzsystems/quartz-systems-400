@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDSAVRST'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -32,11 +32,11 @@
 :MENUI OPTION=6 ACTION='CMD ?SAVRSTOBJ'.
 :EMENUGRP.
 :MENUGRP.Related Command Menus
-:MENUI OPTION=7 ACTION='MENU CMDOBJMGT'.Object Management Commands  CMDOBJMGT
-:MENUI OPTION=8 ACTION='MENU CMDOPC'.OptiConnect Commands  CMDOPC
-:MENUI OPTION=9 ACTION='MENU CMDRST'.Restore Commands  CMDRST
-:MENUI OPTION=10 ACTION='MENU CMDSAV'.Save Commands  CMDSAV
-:MENUI OPTION=11 ACTION='MENU CMDTAP'.Tape Commands  CMDTAP
+:MENUI HELP='CMDSAVRST/OPT7' OPTION=7 ACTION='MENU CMDOBJMGT'.Object Management Commands  CMDOBJMGT
+:MENUI HELP='CMDSAVRST/OPT8' OPTION=8 ACTION='MENU CMDOPC'.OptiConnect Commands  CMDOPC
+:MENUI HELP='CMDSAVRST/OPT9' OPTION=9 ACTION='MENU CMDRST'.Restore Commands  CMDRST
+:MENUI HELP='CMDSAVRST/OPT10' OPTION=10 ACTION='MENU CMDSAV'.Save Commands  CMDSAV
+:MENUI HELP='CMDSAVRST/OPT11' OPTION=11 ACTION='MENU CMDTAP'.Tape Commands  CMDTAP
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -50,5 +50,38 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDSAVRST/OPT7'.Object Management Commands  CMDOBJMGT
+:P.Option 7. Shows menu CMDOBJMGT&colon. Object Management Commands
+CMDOBJMGT.
+:EHELP.
+:HELP NAME='CMDSAVRST/OPT8'.OptiConnect Commands  CMDOPC
+:P.Option 8. Shows menu CMDOPC&colon. OptiConnect Commands CMDOPC.
+:EHELP.
+:HELP NAME='CMDSAVRST/OPT9'.Restore Commands  CMDRST
+:P.Option 9. Shows menu CMDRST&colon. Restore Commands CMDRST.
+:EHELP.
+:HELP NAME='CMDSAVRST/OPT10'.Save Commands  CMDSAV
+:P.Option 10. Shows menu CMDSAV&colon. Save Commands CMDSAV.
+:EHELP.
+:HELP NAME='CMDSAVRST/OPT11'.Tape Commands  CMDTAP
+:P.Option 11. Shows menu CMDTAP&colon. Tape Commands CMDTAP.
 :EHELP.
 :EPNLGRP.

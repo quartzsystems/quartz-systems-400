@@ -36,7 +36,7 @@
 :VAR NAME=WRITEK CLASS=PCTCL.
 :VAR NAME=BUSY CLASS=BUSYCL.
 :LISTDEF NAME=UNITS VARS='UNIT TYPE SIZE USED IORQS RQSSIZE READRQS WRITERQS READK WRITEK BUSY'.
-:KEYL NAME=DSKEYS.
+:KEYL HELP='KEYS/DSKEYS' NAME=DSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -51,20 +51,20 @@
 :EKEYL.
 :PANEL NAME=WRKDSKSTS KEYL=DSKEYS HELP=WRKDSKSTS ENTER='RETURN 1' TOPSEP=DATETIME.Work with Disk Status
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=ELAPSED USAGE=OUTPUT.Elapsed time
+:DATAI HELP='FLD/ELAPSED' VAR=ELAPSED USAGE=OUTPUT.Elapsed time
 :EDATA.
 :LIST DEPTH='*' LISTDEF=UNITS MAXHEAD=2.
-:LISTCOL VAR=UNIT USAGE=OUTPUT.Unit
-:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=SIZE USAGE=OUTPUT.Size (G)
-:LISTCOL VAR=USED USAGE=OUTPUT.% Used
-:LISTCOL VAR=IORQS USAGE=OUTPUT.I/O Rqs
-:LISTCOL VAR=RQSSIZE USAGE=OUTPUT.Request Size (K)
-:LISTCOL VAR=READRQS USAGE=OUTPUT.Read Rqs
-:LISTCOL VAR=WRITERQS USAGE=OUTPUT.Write Rqs
-:LISTCOL VAR=READK USAGE=OUTPUT.Read (K)
-:LISTCOL VAR=WRITEK USAGE=OUTPUT.Write (K)
-:LISTCOL VAR=BUSY USAGE=OUTPUT.% Busy
+:LISTCOL HELP='FLD/UNIT' VAR=UNIT USAGE=OUTPUT.Unit
+:LISTCOL HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/SIZE' VAR=SIZE USAGE=OUTPUT.Size (G)
+:LISTCOL HELP='FLD/USED' VAR=USED USAGE=OUTPUT.% Used
+:LISTCOL HELP='FLD/IORQS' VAR=IORQS USAGE=OUTPUT.I/O Rqs
+:LISTCOL HELP='FLD/RQSSIZE' VAR=RQSSIZE USAGE=OUTPUT.Request Size (K)
+:LISTCOL HELP='FLD/READRQS' VAR=READRQS USAGE=OUTPUT.Read Rqs
+:LISTCOL HELP='FLD/WRITERQS' VAR=WRITERQS USAGE=OUTPUT.Write Rqs
+:LISTCOL HELP='FLD/READK' VAR=READK USAGE=OUTPUT.Read (K)
+:LISTCOL HELP='FLD/WRITEK' VAR=WRITEK USAGE=OUTPUT.Write (K)
+:LISTCOL HELP='FLD/BUSY' VAR=BUSY USAGE=OUTPUT.% Busy
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
@@ -72,5 +72,62 @@
 :P.Every disk unit of the system ASP: its size, how full it is and the
 requests it served each second since the display first looked or F10
 started the measurement over. F5 looks again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/DSKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F10=Restart statistics
+:PD.Starts the statistics over from now.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/ELAPSED'.Elapsed time
+:P.The elapsed time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UNIT'.Unit
+:P.The unit of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SIZE'.Size (G)
+:P.The size (G) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/USED'.% Used
+:P.The % Used of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IORQS'.I/O Rqs
+:P.The i/O Rqs of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RQSSIZE'.Request Size (K)
+:P.The request Size (K) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/READRQS'.Read Rqs
+:P.The read Rqs of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WRITERQS'.Write Rqs
+:P.The write Rqs of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/READK'.Read (K)
+:P.The read (K) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WRITEK'.Write (K)
+:P.The write (K) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/BUSY'.% Busy
+:P.The % Busy of each entry in the list.
 :EHELP.
 :EPNLGRP.

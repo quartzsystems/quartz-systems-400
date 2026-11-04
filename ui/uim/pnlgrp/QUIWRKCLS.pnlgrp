@@ -26,7 +26,7 @@
 :VAR NAME=MAXTHD CLASS=VALCL.
 :VAR NAME=PADVAR CLASS=VALCL.
 :LISTDEF NAME=CLASSES VARS='OPT CLS LIB TEXT'.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -40,7 +40,7 @@
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Repeat position to
 :KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
 :EKEYL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -51,31 +51,31 @@
 :PANEL NAME=WRKCLS KEYL=WRKKEYS HELP=WRKCLS ENTER='RETURN 1'.Work with Classes
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=CLASSES ACTLEN=1 EXTACT=YES.
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTCLS CLS(&LIB./&CLS.)'.1=Create
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGCLS CLS(&LIB./&CLS.)'.2=Change
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD DLTCLS CLS(&LIB./&CLS.)'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPCLS CLS(&LIB./&CLS.)'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=CLS USAGE=OUTPUT EXTACT=YES.Class
-:LISTCOL VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
-:LISTCOL VAR=TEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKCLS/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTCLS CLS(&LIB./&CLS.)'.1=Create
+:LISTACT HELP='WRKCLS/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGCLS CLS(&LIB./&CLS.)'.2=Change
+:LISTACT HELP='WRKCLS/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD DLTCLS CLS(&LIB./&CLS.)'.4=Delete
+:LISTACT HELP='WRKCLS/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPCLS CLS(&LIB./&CLS.)'.5=Display
+:LISTCOL HELP='WRKCLS/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/CLS' VAR=CLS USAGE=OUTPUT EXTACT=YES.Class
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters for options 1, 2 and 5 or command
 :EPANEL.
 :PANEL NAME=DSPCLS KEYL=DSPKEYS HELP=DSPCLS ENTER='RETURN 1' TOPSEP=SYSNAM.Display Class Information
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=CLS USAGE=OUTPUT.Class
+:DATAI HELP='FLD/CLS' VAR=CLS USAGE=OUTPUT.Class
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=LIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=RUNPTY USAGE=OUTPUT.Run priority
-:DATAI VAR=TIMESLICE USAGE=OUTPUT.Time slice in milliseconds
-:DATAI VAR=PURGE USAGE=OUTPUT.Eligible for purge
-:DATAI VAR=DFTWAIT USAGE=OUTPUT.Default wait time in seconds
-:DATAI VAR=CPUTIME USAGE=OUTPUT.Maximum CPU time in milliseconds
-:DATAI VAR=MAXTMP USAGE=OUTPUT.Maximum temporary storage in megabytes
-:DATAI VAR=MAXTHD USAGE=OUTPUT.Maximum threads
-:DATAI VAR=TEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/RUNPTY' VAR=RUNPTY USAGE=OUTPUT.Run priority
+:DATAI HELP='FLD/TIMESLICE' VAR=TIMESLICE USAGE=OUTPUT.Time slice in milliseconds
+:DATAI HELP='FLD/PURGE' VAR=PURGE USAGE=OUTPUT.Eligible for purge
+:DATAI HELP='FLD/DFTWAIT' VAR=DFTWAIT USAGE=OUTPUT.Default wait time in seconds
+:DATAI HELP='FLD/CPUTIME' VAR=CPUTIME USAGE=OUTPUT.Maximum CPU time in milliseconds
+:DATAI HELP='FLD/MAXTMP' VAR=MAXTMP USAGE=OUTPUT.Maximum temporary storage in megabytes
+:DATAI HELP='FLD/MAXTHD' VAR=MAXTHD USAGE=OUTPUT.Maximum threads
+:DATAI HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text
 .* Not shown: it sets the colon column.
 :DATAI VAR=PADVAR USAGE=OUTPUT DISPLAY=NO.Maximum processing unit time per thread
 :EDATA.
@@ -87,5 +87,93 @@ or on the first line with a new name to create one.
 :EHELP.
 :HELP NAME=DSPCLS.Display Class Information - Help
 :P.The run attributes a class gives the routing steps that use it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display names only
+:PD.Shows the list with the names alone, so more fit on a page.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Repeat position to
+:PD.Repeat position to.
+:PT.F17=Position to
+:PD.Positions the list at the name typed on the command line.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKCLS/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/CLS'.Class
+:P.The class, which holds the run attributes (priority, time slice,
+purge) a routing step uses.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKCLS/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it. The Create
+Class (CRTCLS) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Class (CHGCLS) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Class (DLTCLS) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Class (DSPCLS) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/RUNPTY'.Run priority
+:P.The run priority of the job, from 1 (highest) to 99 (lowest).
+:EHELP.
+:HELP NAME='FLD/TIMESLICE'.Time slice in milliseconds
+:P.The time slice in milliseconds shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PURGE'.Eligible for purge
+:P.Whether the job may be moved out of main storage when it waits for a
+long time.
+:EHELP.
+:HELP NAME='FLD/DFTWAIT'.Default wait time in seconds
+:P.The default wait time in seconds shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CPUTIME'.Maximum CPU time in milliseconds
+:P.The maximum CPU time in milliseconds shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/MAXTMP'.Maximum temporary storage in megabytes
+:P.The maximum temporary storage in megabytes shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/MAXTHD'.Maximum threads
+:P.The maximum threads shown for what the display is about.
 :EHELP.
 :EPNLGRP.

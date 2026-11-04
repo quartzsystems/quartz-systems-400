@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CFGCMN'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CFGTCP PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKDEVD PNLGRP=QHCFCMD.
+:IMPORT NAME=WRKLIND PNLGRP=QHDCLIN.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,23 +27,23 @@
 :EKEYL.
 :PANEL NAME=CFGCMN HELP=HLPCFGCMN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configure Communications and Remote Hardware
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKLIND'.Work with lines
-:MENUI OPTION=2 ACTION='CMD ?WRKCTLD'.Work with communications controllers
-:MENUI OPTION=3 ACTION='CMD ?WRKCTLD'.Work with work station controllers
-:MENUI OPTION=4 ACTION='CMD WRKDEVD DEVD(*CMN)'.Work with communications devices
-:MENUI OPTION=5 ACTION='CMD WRKDEVD DEVD(*PRT)'.Work with printers
-:MENUI OPTION=6 ACTION='CMD WRKDEVD DEVD(*DSP)'.Work with display stations
-:MENUI OPTION=7 ACTION='CMD ?WRKMODD'.Work with modes
-:MENUI OPTION=8 ACTION='CMD ?WRKCOSD'.Work with classes-of-service
-:MENUI OPTION=9 ACTION='CMD ?WRKCFGL'.Work with configuration lists
-:MENUI OPTION=10 ACTION='CMD ?WRKNWID'.Work with network interfaces
-:MENUI OPTION=11 ACTION='CMD ?WRKCNNL'.Work with connection lists
-:MENUI OPTION=12 ACTION='CMD ?WRKNWSD'.Work with network servers
-:MENUI OPTION=13 ACTION='CMD ?WRKNTBD'.Work with NetBIOS descriptions
-:MENUI OPTION=20 ACTION='CMD CFGTCP'.Configure TCP/IP
-:MENUI OPTION=30 ACTION='MENU CFGPCS'.Configure personal computer connections
-:MENUI OPTION=40 ACTION='CMD ?WRKNWSCFG'.Configure network server
-:MENUI OPTION=41 ACTION='MENU NWSADM'.Network server administration
+:MENUI HELP=WRKLIND OPTION=1 ACTION='CMD WRKLIND'.Work with lines
+:MENUI HELP='CFGCMN/OPT2' OPTION=2 ACTION='CMD ?WRKCTLD'.Work with communications controllers
+:MENUI HELP='CFGCMN/OPT3' OPTION=3 ACTION='CMD ?WRKCTLD'.Work with work station controllers
+:MENUI HELP=WRKDEVD OPTION=4 ACTION='CMD WRKDEVD DEVD(*CMN)'.Work with communications devices
+:MENUI HELP=WRKDEVD OPTION=5 ACTION='CMD WRKDEVD DEVD(*PRT)'.Work with printers
+:MENUI HELP=WRKDEVD OPTION=6 ACTION='CMD WRKDEVD DEVD(*DSP)'.Work with display stations
+:MENUI HELP='CFGCMN/OPT7' OPTION=7 ACTION='CMD ?WRKMODD'.Work with modes
+:MENUI HELP='CFGCMN/OPT8' OPTION=8 ACTION='CMD ?WRKCOSD'.Work with classes-of-service
+:MENUI HELP='CFGCMN/OPT9' OPTION=9 ACTION='CMD ?WRKCFGL'.Work with configuration lists
+:MENUI HELP='CFGCMN/OPT10' OPTION=10 ACTION='CMD ?WRKNWID'.Work with network interfaces
+:MENUI HELP='CFGCMN/OPT11' OPTION=11 ACTION='CMD ?WRKCNNL'.Work with connection lists
+:MENUI HELP='CFGCMN/OPT12' OPTION=12 ACTION='CMD ?WRKNWSD'.Work with network servers
+:MENUI HELP='CFGCMN/OPT13' OPTION=13 ACTION='CMD ?WRKNTBD'.Work with NetBIOS descriptions
+:MENUI HELP=CFGTCP OPTION=20 ACTION='CMD CFGTCP'.Configure TCP/IP
+:MENUI HELP='CFGCMN/OPT30' OPTION=30 ACTION='MENU CFGPCS'.Configure personal computer connections
+:MENUI HELP='CFGCMN/OPT40' OPTION=40 ACTION='CMD ?WRKNWSCFG'.Configure network server
+:MENUI HELP='CFGCMN/OPT41' OPTION=41 ACTION='MENU NWSADM'.Network server administration
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -50,5 +53,69 @@ and TCP/IP. Options for functions this release does not have say so.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGCMN/OPT2'.Work with communications controllers
+:P.Option 2. Runs the WRKCTLD command&colon. Work with communications
+controllers.
+:EHELP.
+:HELP NAME='CFGCMN/OPT3'.Work with work station controllers
+:P.Option 3. Runs the WRKCTLD command&colon. Work with work station
+controllers.
+:EHELP.
+:HELP NAME='CFGCMN/OPT7'.Work with modes
+:P.Option 7. Runs the WRKMODD command&colon. Work with modes.
+:EHELP.
+:HELP NAME='CFGCMN/OPT8'.Work with classes-of-service
+:P.Option 8. Runs the WRKCOSD command&colon. Work with
+classes-of-service.
+:EHELP.
+:HELP NAME='CFGCMN/OPT9'.Work with configuration lists
+:P.Option 9. Runs the WRKCFGL command&colon. Work with configuration
+lists.
+:EHELP.
+:HELP NAME='CFGCMN/OPT10'.Work with network interfaces
+:P.Option 10. Runs the WRKNWID command&colon. Work with network
+interfaces.
+:EHELP.
+:HELP NAME='CFGCMN/OPT11'.Work with connection lists
+:P.Option 11. Runs the WRKCNNL command&colon. Work with connection
+lists.
+:EHELP.
+:HELP NAME='CFGCMN/OPT12'.Work with network servers
+:P.Option 12. Runs the WRKNWSD command&colon. Work with network servers.
+:EHELP.
+:HELP NAME='CFGCMN/OPT13'.Work with NetBIOS descriptions
+:P.Option 13. Runs the WRKNTBD command&colon. Work with NetBIOS
+descriptions.
+:EHELP.
+:HELP NAME='CFGCMN/OPT30'.Configure personal computer connections
+:P.Option 30. Shows menu CFGPCS&colon. Configure personal computer
+connections.
+:EHELP.
+:HELP NAME='CFGCMN/OPT40'.Configure network server
+:P.Option 40. Runs the WRKNWSCFG command&colon. Configure network
+server.
+:EHELP.
+:HELP NAME='CFGCMN/OPT41'.Network server administration
+:P.Option 41. Shows menu NWSADM&colon. Network server administration.
 :EHELP.
 :EPNLGRP.

@@ -85,7 +85,7 @@
 :LISTDEF NAME=RTGES VARS='OPT RTSEQ PGM PGMLIB CMPVAL STARTPOS'.
 :LISTDEF NAME=CMNES VARS='DEV MODE CMNJOBD MAXACT'.
 :LISTDEF NAME=PJES VARS='PJEPGM PJELIB PJEUSER PJEJOB'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -95,7 +95,7 @@
 :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -103,7 +103,7 @@
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=DTLKEYS.
+:KEYL HELP='KEYS/DTLKEYS' NAME=DTLKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -114,175 +114,175 @@
 :EKEYL.
 :PANEL NAME=DSPSBSD KEYL=MENUKEYS HELP=DSPSBSD ENTER='RETURN 0' TOPSEP=SYSNAM.Display Subsystem Description
 :DATA DEPTH=3 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=SBSLIB USAGE=OUTPUT.
 :DATAIXT.Library
-:DATAI VAR=STATUS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
 :EDATA.
 :MENU DEPTH='*' SCROLL=YES.Select one of the following:
-:MENUI OPTION=1 ACTION='RETURN 101'.Operational attributes
-:MENUI OPTION=2 ACTION='RETURN 102'.Pool definitions
-:MENUI OPTION=3 ACTION='RETURN 103'.Autostart job entries
-:MENUI OPTION=4 ACTION='RETURN 104'.Work station name entries
-:MENUI OPTION=5 ACTION='RETURN 105'.Work station type entries
-:MENUI OPTION=6 ACTION='RETURN 106'.Job queue entries
-:MENUI OPTION=7 ACTION='RETURN 107'.Routing entries
-:MENUI OPTION=8 ACTION='RETURN 108'.Communications entries
-:MENUI OPTION=9 ACTION='RETURN 109'.Remote location name entries
-:MENUI OPTION=10 ACTION='RETURN 110'.Prestart job entries
-:MENUI OPTION=20 ACTION='RETURN 120'.Every entry, one display after another
-:MENUI OPTION=21 ACTION='RETURN 121'.Work with the subsystem's jobs
+:MENUI HELP='DSPSBSD/OPT1' OPTION=1 ACTION='RETURN 101'.Operational attributes
+:MENUI HELP='DSPSBSD/OPT2' OPTION=2 ACTION='RETURN 102'.Pool definitions
+:MENUI HELP='DSPSBSD/OPT3' OPTION=3 ACTION='RETURN 103'.Autostart job entries
+:MENUI HELP='DSPSBSD/OPT4' OPTION=4 ACTION='RETURN 104'.Work station name entries
+:MENUI HELP='DSPSBSD/OPT5' OPTION=5 ACTION='RETURN 105'.Work station type entries
+:MENUI HELP='DSPSBSD/OPT6' OPTION=6 ACTION='RETURN 106'.Job queue entries
+:MENUI HELP='DSPSBSD/OPT7' OPTION=7 ACTION='RETURN 107'.Routing entries
+:MENUI HELP='DSPSBSD/OPT8' OPTION=8 ACTION='RETURN 108'.Communications entries
+:MENUI HELP='DSPSBSD/OPT9' OPTION=9 ACTION='RETURN 109'.Remote location name entries
+:MENUI HELP='DSPSBSD/OPT10' OPTION=10 ACTION='RETURN 110'.Prestart job entries
+:MENUI HELP='DSPSBSD/OPT20' OPTION=20 ACTION='RETURN 120'.Every entry, one display after another
+:MENUI HELP='DSPSBSD/OPT21' OPTION=21 ACTION='RETURN 121'.Work with the subsystem's jobs
 :EMENU.
 :CMDLINE SIZE=LONG.
 :EPANEL.
 .* The heading every entry display shares.
 :PANEL NAME=OPRATR KEYL=DSPKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Operational Attributes
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=SBSLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/SBSLIB' VAR=SBSLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=MAXJOBS USAGE=OUTPUT.Maximum jobs in subsystem
-:DATAI VAR=SGNDSPF USAGE=OUTPUT.Sign-on display file
+:DATAI HELP='FLD/MAXJOBS' VAR=MAXJOBS USAGE=OUTPUT.Maximum jobs in subsystem
+:DATAI HELP='FLD/SGNDSPF' VAR=SGNDSPF USAGE=OUTPUT.Sign-on display file
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=SGNLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/SGNLIB' VAR=SGNLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=SYSLIBLE USAGE=OUTPUT.System library list entry
-:DATAI VAR=ASPGRP USAGE=OUTPUT.Auxiliary storage pool group
-:DATAI VAR=WLGRP USAGE=OUTPUT.Workload group
+:DATAI HELP='FLD/SYSLIBLE' VAR=SYSLIBLE USAGE=OUTPUT.System library list entry
+:DATAI HELP='FLD/ASPGRP' VAR=ASPGRP USAGE=OUTPUT.Auxiliary storage pool group
+:DATAI HELP='FLD/WLGRP' VAR=WLGRP USAGE=OUTPUT.Workload group
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=POOLS KEYL=DSPKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Pool Definitions
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :LIST DEPTH='*' LISTDEF=POOLS.(No pool definitions)
-:LISTCOL VAR=POOLID USAGE=OUTPUT.Pool ID
-:LISTCOL VAR=POOLSIZE USAGE=OUTPUT.Storage Size (M)
-:LISTCOL VAR=ACTLVL USAGE=OUTPUT.Activity Level
+:LISTCOL HELP='FLD/POOLID' VAR=POOLID USAGE=OUTPUT.Pool ID
+:LISTCOL HELP='FLD/POOLSIZE' VAR=POOLSIZE USAGE=OUTPUT.Storage Size (M)
+:LISTCOL HELP='FLD/ACTLVL' VAR=ACTLVL USAGE=OUTPUT.Activity Level
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=AJES KEYL=DSPKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Autostart Job Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :LIST DEPTH='*' LISTDEF=AJES.(No autostart job entries)
-:LISTCOL VAR=AJEJOB USAGE=OUTPUT.Job
-:LISTCOL VAR=AJEJOBD USAGE=OUTPUT.Job Description
-:LISTCOL VAR=AJELIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/AJEJOB' VAR=AJEJOB USAGE=OUTPUT.Job
+:LISTCOL HELP='FLD/AJEJOBD' VAR=AJEJOBD USAGE=OUTPUT.Job Description
+:LISTCOL HELP='FLD/AJELIB' VAR=AJELIB USAGE=OUTPUT.Library
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=WSNES KEYL=DTLKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM BOTSEP=NONE.Display Work Station Name Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=WSES.(No work station name entries)
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display work station name details
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=WSNAME USAGE=OUTPUT.Name
-:LISTCOL VAR=WSJOBD USAGE=OUTPUT.Job Description
-:LISTCOL VAR=WSJOBDL USAGE=OUTPUT.Library
-:LISTCOL VAR=WSMAX USAGE=OUTPUT.Max Active
+:LISTACT HELP='WSNES/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display work station name details
+:LISTCOL HELP='WSNES/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/WSNAME' VAR=WSNAME USAGE=OUTPUT.Name
+:LISTCOL HELP='FLD/WSJOBD' VAR=WSJOBD USAGE=OUTPUT.Job Description
+:LISTCOL HELP='FLD/WSJOBDL' VAR=WSJOBDL USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/WSMAX' VAR=WSMAX USAGE=OUTPUT.Max Active
 :ELIST.
 :EPANEL.
 :PANEL NAME=WSTES KEYL=DTLKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM BOTSEP=NONE.Display Work Station Type Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=WSES.(No work station type entries)
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display work station type details
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=WSNAME USAGE=OUTPUT.Type
-:LISTCOL VAR=WSJOBD USAGE=OUTPUT.Job Description
-:LISTCOL VAR=WSJOBDL USAGE=OUTPUT.Library
-:LISTCOL VAR=WSMAX USAGE=OUTPUT.Max Active
+:LISTACT HELP='WSTES/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display work station type details
+:LISTCOL HELP='WSTES/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/WSNAME' VAR=WSNAME USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/WSJOBD' VAR=WSJOBD USAGE=OUTPUT.Job Description
+:LISTCOL HELP='FLD/WSJOBDL' VAR=WSJOBDL USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/WSMAX' VAR=WSMAX USAGE=OUTPUT.Max Active
 :ELIST.
 :EPANEL.
 :PANEL NAME=JOBQES KEYL=DSPKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Job Queue Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :LIST DEPTH='*' LISTDEF=JOBQES.(No job queue entries)
-:LISTCOL VAR=SEQ USAGE=OUTPUT.Seq Nbr
-:LISTCOL VAR=JOBQ USAGE=OUTPUT.Job Queue
-:LISTCOL VAR=JOBQLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=MAXACT USAGE=OUTPUT.Max Active
+:LISTCOL HELP='FLD/SEQ' VAR=SEQ USAGE=OUTPUT.Seq Nbr
+:LISTCOL HELP='FLD/JOBQ' VAR=JOBQ USAGE=OUTPUT.Job Queue
+:LISTCOL HELP='FLD/JOBQLIB' VAR=JOBQLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/MAXACT' VAR=MAXACT USAGE=OUTPUT.Max Active
 :LISTGRP.---------Max by Priority----------
-:LISTCOL VAR=M1 USAGE=OUTPUT.1
-:LISTCOL VAR=M2 USAGE=OUTPUT.2
-:LISTCOL VAR=M3 USAGE=OUTPUT.3
-:LISTCOL VAR=M4 USAGE=OUTPUT.4
-:LISTCOL VAR=M5 USAGE=OUTPUT.5
-:LISTCOL VAR=M6 USAGE=OUTPUT.6
-:LISTCOL VAR=M7 USAGE=OUTPUT.7
-:LISTCOL VAR=M8 USAGE=OUTPUT.8
-:LISTCOL VAR=M9 USAGE=OUTPUT.9
+:LISTCOL HELP='FLD/M1' VAR=M1 USAGE=OUTPUT.1
+:LISTCOL HELP='FLD/M2' VAR=M2 USAGE=OUTPUT.2
+:LISTCOL HELP='FLD/M3' VAR=M3 USAGE=OUTPUT.3
+:LISTCOL HELP='FLD/M4' VAR=M4 USAGE=OUTPUT.4
+:LISTCOL HELP='FLD/M5' VAR=M5 USAGE=OUTPUT.5
+:LISTCOL HELP='FLD/M6' VAR=M6 USAGE=OUTPUT.6
+:LISTCOL HELP='FLD/M7' VAR=M7 USAGE=OUTPUT.7
+:LISTCOL HELP='FLD/M8' VAR=M8 USAGE=OUTPUT.8
+:LISTCOL HELP='FLD/M9' VAR=M9 USAGE=OUTPUT.9
 :ELISTGRP.
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=RTGES KEYL=DTLKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM BOTSEP=NONE.Display Routing Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RTGES.(No routing entries)
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display details
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RTSEQ USAGE=OUTPUT.Seq Nbr
-:LISTCOL VAR=PGM USAGE=OUTPUT.Program
-:LISTCOL VAR=PGMLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=CMPVAL USAGE=OUTPUT.Compare Value
-:LISTCOL VAR=STARTPOS USAGE=OUTPUT.Start Pos
+:LISTACT HELP='RTGES/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display details
+:LISTCOL HELP='RTGES/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RTSEQ' VAR=RTSEQ USAGE=OUTPUT.Seq Nbr
+:LISTCOL HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:LISTCOL HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/CMPVAL' VAR=CMPVAL USAGE=OUTPUT.Compare Value
+:LISTCOL HELP='FLD/STARTPOS' VAR=STARTPOS USAGE=OUTPUT.Start Pos
 :ELIST.
 :EPANEL.
 :PANEL NAME=CMNES KEYL=DSPKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Communications Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :LIST DEPTH='*' LISTDEF=CMNES.(No communications entries)
-:LISTCOL VAR=DEV USAGE=OUTPUT.Device
-:LISTCOL VAR=MODE USAGE=OUTPUT.Mode
-:LISTCOL VAR=CMNJOBD USAGE=OUTPUT.Job Description
-:LISTCOL VAR=MAXACT USAGE=OUTPUT.Max Active
+:LISTCOL HELP='FLD/DEV' VAR=DEV USAGE=OUTPUT.Device
+:LISTCOL HELP='FLD/MODE' VAR=MODE USAGE=OUTPUT.Mode
+:LISTCOL HELP='FLD/CMNJOBD' VAR=CMNJOBD USAGE=OUTPUT.Job Description
+:LISTCOL HELP='FLD/MAXACT' VAR=MAXACT USAGE=OUTPUT.Max Active
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=PJES KEYL=DSPKEYS HELP=DSPSBSD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Prestart Job Entries
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem description
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem description
 :DATAIX VAR=STATUS USAGE=OUTPUT.
 :DATAIXT.Status
 :EDATA.
 :LIST DEPTH='*' LISTDEF=PJES.(No prestart job entries)
-:LISTCOL VAR=PJEPGM USAGE=OUTPUT.Program
-:LISTCOL VAR=PJELIB USAGE=OUTPUT.Library
-:LISTCOL VAR=PJEUSER USAGE=OUTPUT.User Profile
-:LISTCOL VAR=PJEJOB USAGE=OUTPUT.Job
+:LISTCOL HELP='FLD/PJEPGM' VAR=PJEPGM USAGE=OUTPUT.Program
+:LISTCOL HELP='FLD/PJELIB' VAR=PJELIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/PJEUSER' VAR=PJEUSER USAGE=OUTPUT.User Profile
+:LISTCOL HELP='FLD/PJEJOB' VAR=PJEJOB USAGE=OUTPUT.Job
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -290,5 +290,252 @@
 :P.What a subsystem description holds: its attributes, its storage
 pools and the entries that decide which jobs it starts and how it
 routes them. Type an option number and press Enter.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SBS'.Subsystem description
+:P.The subsystem description, by name and library.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status shown for what the display is about.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT1'.Operational attributes
+:P.Option 1. Operational attributes.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT2'.Pool definitions
+:P.Option 2. Pool definitions.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT3'.Autostart job entries
+:P.Option 3. Autostart job entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT4'.Work station name entries
+:P.Option 4. Work station name entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT5'.Work station type entries
+:P.Option 5. Work station type entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT6'.Job queue entries
+:P.Option 6. Job queue entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT7'.Routing entries
+:P.Option 7. Routing entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT8'.Communications entries
+:P.Option 8. Communications entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT9'.Remote location name entries
+:P.Option 9. Remote location name entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT10'.Prestart job entries
+:P.Option 10. Prestart job entries.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT20'.Every entry, one display after another
+:P.Option 20. Every entry, one display after another.
+:EHELP.
+:HELP NAME='DSPSBSD/OPT21'.Work with the subsystem's jobs
+:P.Option 21. Work with the subsystem's jobs.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SBSLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXJOBS'.Maximum jobs in subsystem
+:P.The maximum jobs in subsystem shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SGNDSPF'.Sign-on display file
+:P.The sign-on display file shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SGNLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SYSLIBLE'.System library list entry
+:P.The system library list entry shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ASPGRP'.Auxiliary storage pool group
+:P.The auxiliary storage pool group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/WLGRP'.Workload group
+:P.The workload group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/POOLID'.Pool ID
+:P.The pool ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/POOLSIZE'.Storage Size (M)
+:P.The storage Size (M) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ACTLVL'.Activity Level
+:P.The activity Level of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AJEJOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/AJEJOBD'.Job Description
+:P.The job description that supplies the job's attributes, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/AJELIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/DTLKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Display all detailed descriptions
+:PD.Display all detailed descriptions.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WSNES/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/WSNAME'.Name
+:P.The name of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WSJOBD'.Job Description
+:P.The job description that supplies the job's attributes, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/WSJOBDL'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WSMAX'.Max Active
+:P.The max Active of each entry in the list.
+:EHELP.
+:HELP NAME='WSNES/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display work station name details
+:PD.Type 5 next to an entry and press Enter to display work station name
+details it.
+:EPARML.
+:EHELP.
+:HELP NAME='WSTES/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WSTES/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display work station type details
+:PD.Type 5 next to an entry and press Enter to display work station type
+details it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SEQ'.Seq Nbr
+:P.The seq Nbr of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/JOBQ'.Job Queue
+:P.The job queue, by name and library.
+:EHELP.
+:HELP NAME='FLD/JOBQLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MAXACT'.Max Active
+:P.The max Active of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M1'.---------Max by Priority---------- 1
+:P.The ---------Max by Priority---------- 1 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M2'.---------Max by Priority---------- 2
+:P.The ---------Max by Priority---------- 2 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M3'.---------Max by Priority---------- 3
+:P.The ---------Max by Priority---------- 3 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M4'.---------Max by Priority---------- 4
+:P.The ---------Max by Priority---------- 4 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M5'.---------Max by Priority---------- 5
+:P.The ---------Max by Priority---------- 5 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M6'.---------Max by Priority---------- 6
+:P.The ---------Max by Priority---------- 6 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M7'.---------Max by Priority---------- 7
+:P.The ---------Max by Priority---------- 7 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M8'.---------Max by Priority---------- 8
+:P.The ---------Max by Priority---------- 8 of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/M9'.---------Max by Priority---------- 9
+:P.The ---------Max by Priority---------- 9 of each entry in the list.
+:EHELP.
+:HELP NAME='RTGES/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RTSEQ'.Seq Nbr
+:P.The seq Nbr of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PGM'.Program
+:P.The program of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PGMLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CMPVAL'.Compare Value
+:P.The compare Value of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STARTPOS'.Start Pos
+:P.The start Pos of each entry in the list.
+:EHELP.
+:HELP NAME='RTGES/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to display details it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/DEV'.Device
+:P.The device the data goes to.
+:EHELP.
+:HELP NAME='FLD/MODE'.Mode
+:P.The mode of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CMNJOBD'.Job Description
+:P.The job description that supplies the job's attributes, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/PJEPGM'.Program
+:P.The program of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PJELIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PJEUSER'.User Profile
+:P.The user Profile of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PJEJOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
 :EHELP.
 :EPNLGRP.

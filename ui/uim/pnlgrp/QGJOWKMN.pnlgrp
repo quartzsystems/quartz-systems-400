@@ -16,7 +16,7 @@
 :VAR NAME=ASPDEV CLASS=NAMECL.
 :VAR NAME=JRNTEXT CLASS=TEXTCL.
 :LISTDEF NAME=JRNS VARS='OPT JRN JRNLIB ASPDEV JRNTEXT'.
-:KEYL NAME=WJKEYS.
+:KEYL HELP='KEYS/WJKEYS' NAME=WJKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -30,20 +30,20 @@
 :PANEL NAME=WRKJRN KEYL=WJKEYS HELP=WRKJRN ENTER='RETURN 1' TOPSEP=SPACE.Work with Journals
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JRNS.(No journals match specified name)
-:LISTACT OPTION=2 ENTER='CMD ?APYJRNCHG JRN(&JRNLIB./&JRN.)'.2=Forward recovery
-:LISTACT OPTION=3 ENTER='CMD ?RMVJRNCHG JRN(&JRNLIB./&JRN.)'.3=Backout recovery
-:LISTACT OPTION=5 ENTER='CMD WRKJRNA JRN(&JRNLIB./&JRN.)'.5=Display journal status
-:LISTACT OPTION=6 ENTER='RETURN 6'.6=Recover damaged journal
-:LISTACT OPTION=7 ENTER='RETURN 7'.7=Recover damaged journal receivers
-:LISTACT OPTION=8 ENTER='CMD WRKJRNA JRN(&JRNLIB./&JRN.)'.8=Work with journal attributes
-:LISTACT OPTION=9 ENTER='RETURN 9'.9=Associate receivers with journal
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JRN USAGE=OUTPUT.Journal
-:LISTCOL VAR=JRNLIB USAGE=OUTPUT.Library
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=2 ENTER='CMD ?APYJRNCHG JRN(&JRNLIB./&JRN.)'.2=Forward recovery
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=3 ENTER='CMD ?RMVJRNCHG JRN(&JRNLIB./&JRN.)'.3=Backout recovery
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=5 ENTER='CMD WRKJRNA JRN(&JRNLIB./&JRN.)'.5=Display journal status
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=6 ENTER='RETURN 6'.6=Recover damaged journal
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=7 ENTER='RETURN 7'.7=Recover damaged journal receivers
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=8 ENTER='CMD WRKJRNA JRN(&JRNLIB./&JRN.)'.8=Work with journal attributes
+:LISTACT HELP='WRKJRN/OPTIONS' OPTION=9 ENTER='RETURN 9'.9=Associate receivers with journal
+:LISTCOL HELP='WRKJRN/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JRN' VAR=JRN USAGE=OUTPUT.Journal
+:LISTCOL HELP='FLD/JRNLIB' VAR=JRNLIB USAGE=OUTPUT.Library
 :LISTGRP COL=ASPGRP.ASP
-:LISTCOL VAR=ASPDEV USAGE=OUTPUT.Device
+:LISTCOL HELP='FLD/ASPDEV' VAR=ASPDEV USAGE=OUTPUT.Device
 :ELISTGRP.
-:LISTCOL VAR=JRNTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='FLD/JRNTEXT' VAR=JRNTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
@@ -51,5 +51,68 @@
 :P.The journals the name selects. Option 2 applies journaled changes
 to the files, option 3 takes them back out; options 5 and 8 show the
 journal's receivers and the objects it covers.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WJKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKJRN/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JRN'.Journal
+:P.The journal, by name and library.
+:EHELP.
+:HELP NAME='FLD/JRNLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ASPDEV'.ASP device
+:P.The ASP device of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/JRNTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKJRN/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Forward recovery
+:PD.Type 2 next to an entry and press Enter to forward recovery it. The
+Apply Journaled Changes (APYJRNCHG) command is prompted for the entry.
+:PT.3=Backout recovery
+:PD.Type 3 next to an entry and press Enter to backout recovery it. The
+Remove Journaled Changes (RMVJRNCHG) command is prompted for the entry.
+:PT.5=Display journal status
+:PD.Type 5 next to an entry and press Enter to display journal status
+it. The Work with Journal Attributes (WRKJRNA) command runs for the
+entry.
+:PT.6=Recover damaged journal
+:PD.Type 6 next to an entry and press Enter to recover damaged journal
+it.
+:PT.7=Recover damaged journal receivers
+:PD.Type 7 next to an entry and press Enter to recover damaged journal
+receivers it.
+:PT.8=Work with journal attributes
+:PD.Type 8 next to an entry and press Enter to work with journal
+attributes it. The Work with Journal Attributes (WRKJRNA) command runs
+for the entry.
+:PT.9=Associate receivers with journal
+:PD.Type 9 next to an entry and press Enter to associate receivers with
+journal it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

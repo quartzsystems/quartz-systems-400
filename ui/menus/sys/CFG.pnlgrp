@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CFG'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,10 +24,10 @@
 :EKEYL.
 :PANEL NAME=CFG HELP=HLPCFG KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configuration
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU CFGDEVCMN'.Configure devices and communications
-:MENUI OPTION=2 ACTION='MENU NETCFG'.Network configuration
-:MENUI OPTION=3 ACTION='MENU HARDWARE'.Hardware resources
-:MENUI OPTION=4 ACTION='MENU NETWORK'.Network management
+:MENUI HELP='CFG/OPT1' OPTION=1 ACTION='MENU CFGDEVCMN'.Configure devices and communications
+:MENUI HELP='CFG/OPT2' OPTION=2 ACTION='MENU NETCFG'.Network configuration
+:MENUI HELP='CFG/OPT3' OPTION=3 ACTION='MENU HARDWARE'.Hardware resources
+:MENUI HELP='CFG/OPT4' OPTION=4 ACTION='MENU NETWORK'.Network management
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -37,5 +37,37 @@ hardware they run on.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='CFG/OPT1'.Configure devices and communications
+:P.Option 1. Shows menu CFGDEVCMN&colon. Configure devices and
+communications.
+:EHELP.
+:HELP NAME='CFG/OPT2'.Network configuration
+:P.Option 2. Shows menu NETCFG&colon. Network configuration.
+:EHELP.
+:HELP NAME='CFG/OPT3'.Hardware resources
+:P.Option 3. Shows menu HARDWARE&colon. Hardware resources.
+:EHELP.
+:HELP NAME='CFG/OPT4'.Network management
+:P.Option 4. Shows menu NETWORK&colon. Network management.
 :EHELP.
 :EPNLGRP.

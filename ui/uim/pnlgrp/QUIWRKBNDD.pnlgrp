@@ -31,15 +31,15 @@
 :PANEL NAME=WRKBNDDIR KEYL=KEYS HELP=WRKBNDDH ENTER='RETURN 0' TOPSEP=SPACE.Work with Binding Directories
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=DIRS VIEWS=2 SCROLL=YES EXTACT=YES.
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1'.1=Create
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='RETURN 4'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPBNDDIR BNDDIR(&BNDLIB./&BNDDIR.)'.5=Display
-:LISTACT OPTION=9 ACTFOR=LISTE ENTER='CMD DSPBNDDIR BNDDIR(&BNDLIB./&BNDDIR.)'.9=Work with binding directory entries
-:LISTACT OPTION=13 ACTFOR=LISTE ENTER='CMD ?CHGOBJD OBJ(&BNDLIB./&BNDDIR.) OBJTYPE(*BNDDIR)'.13=Change description
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=BNDDIR USAGE=OUTPUT EXTACT=YES.Binding Directory
-:LISTCOL VAR=BNDLIB USAGE=OUTPUT EXTACT=YES.Library
-:LISTCOL VAR=BNDTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKBNDDIR/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1'.1=Create
+:LISTACT HELP='WRKBNDDIR/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='RETURN 4'.4=Delete
+:LISTACT HELP='WRKBNDDIR/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPBNDDIR BNDDIR(&BNDLIB./&BNDDIR.)'.5=Display
+:LISTACT HELP='WRKBNDDIR/OPTIONS' OPTION=9 ACTFOR=LISTE ENTER='CMD DSPBNDDIR BNDDIR(&BNDLIB./&BNDDIR.)'.9=Work with binding directory entries
+:LISTACT HELP='WRKBNDDIR/OPTIONS' OPTION=13 ACTFOR=LISTE ENTER='CMD ?CHGOBJD OBJ(&BNDLIB./&BNDDIR.) OBJTYPE(*BNDDIR)'.13=Change description
+:LISTCOL HELP='WRKBNDDIR/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/BNDDIR' VAR=BNDDIR USAGE=OUTPUT EXTACT=YES.Binding Directory
+:LISTCOL HELP='FLD/BNDLIB' VAR=BNDLIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL HELP='FLD/BNDTEXT' VAR=BNDTEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT BNDDIR BNDLIB BNDTEXT'.
 :LISTVIEW COLS='OPT BNDDIR BNDLIB'.
 :ELIST.
@@ -53,5 +53,42 @@ first line to create one, 4 to delete one, 5 or 9 to see its entries,
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display, F5 reads the
 directories again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='WRKBNDDIR/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/BNDDIR'.Binding Directory
+:P.The binding directories the binder searches for modules and service
+programs to resolve imports.
+:EHELP.
+:HELP NAME='FLD/BNDLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/BNDTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKBNDDIR/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Binding Directory (DSPBNDDIR) command runs for the entry.
+:PT.9=Work with binding directory entries
+:PD.Type 9 next to an entry and press Enter to work with binding
+directory entries it. The Display Binding Directory (DSPBNDDIR) command
+runs for the entry.
+:PT.13=Change description
+:PD.Type 13 next to an entry and press Enter to change description it.
+The Change Object Description (CHGOBJD) command is prompted for the
+entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

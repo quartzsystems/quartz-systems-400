@@ -49,7 +49,7 @@
 :COND NAME=VIEW1 EXPR='&VIEW. EQ "1"'.
 :COND NAME=VIEW2 EXPR='&VIEW. EQ "2"'.
 :COND NAME=VIEW3 EXPR='&VIEW. EQ "3"'.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -65,7 +65,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -77,20 +77,20 @@
 :PANEL NAME=WRKIFC HELP=HLPIFC KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Interfaces
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=IFCS SCROLL=YES VIEWS=3 EXTACT=YES.(No interfaces)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?ADDTCPIFC INTNETADR(''&IFCADR.'')'.1=Add
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGTCPIFC INTNETADR(''&IFCADR.'')'.2=Change
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD RMVTCPIFC INTNETADR(''&IFCADR.'')'.4=Remove
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
-:LISTACT OPTION=9 ACTFOR=LISTE ENTER='CMD STRTCPIFC INTNETADR(''&IFCADR.'')'.9=Start
-:LISTACT OPTION=10 ACTFOR=LISTE ENTER='CMD ENDTCPIFC INTNETADR(''&IFCADR.'')'.10=End
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=IFCADR USAGE=OUTPUT EXTACT=YES.Internet Address
-:LISTCOL VAR=IFCMASK USAGE=OUTPUT.Subnet          Mask
-:LISTCOL VAR=IFCLIND USAGE=OUTPUT.Line Description
-:LISTCOL VAR=IFCLTYPE USAGE=OUTPUT.Line           Type
-:LISTCOL VAR=IFCSTS USAGE=OUTPUT.Interface Status
-:LISTCOL VAR=IFCALIAS USAGE=OUTPUT.Alias                         Name
-:LISTCOL VAR=IFCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKIFC/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?ADDTCPIFC INTNETADR(''&IFCADR.'')'.1=Add
+:LISTACT HELP='WRKIFC/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGTCPIFC INTNETADR(''&IFCADR.'')'.2=Change
+:LISTACT HELP='WRKIFC/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD RMVTCPIFC INTNETADR(''&IFCADR.'')'.4=Remove
+:LISTACT HELP='WRKIFC/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
+:LISTACT HELP='WRKIFC/OPTIONS' OPTION=9 ACTFOR=LISTE ENTER='CMD STRTCPIFC INTNETADR(''&IFCADR.'')'.9=Start
+:LISTACT HELP='WRKIFC/OPTIONS' OPTION=10 ACTFOR=LISTE ENTER='CMD ENDTCPIFC INTNETADR(''&IFCADR.'')'.10=End
+:LISTCOL HELP='WRKIFC/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/IFCADR' VAR=IFCADR USAGE=OUTPUT EXTACT=YES.Internet Address
+:LISTCOL HELP='FLD/IFCMASK' VAR=IFCMASK USAGE=OUTPUT.Subnet          Mask
+:LISTCOL HELP='FLD/IFCLIND' VAR=IFCLIND USAGE=OUTPUT.Line Description
+:LISTCOL HELP='FLD/IFCLTYPE' VAR=IFCLTYPE USAGE=OUTPUT.Line           Type
+:LISTCOL HELP='FLD/IFCSTS' VAR=IFCSTS USAGE=OUTPUT.Interface Status
+:LISTCOL HELP='FLD/IFCALIAS' VAR=IFCALIAS USAGE=OUTPUT.Alias                         Name
+:LISTCOL HELP='FLD/IFCTEXT' VAR=IFCTEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT IFCADR IFCMASK IFCLIND IFCLTYPE'.
 :LISTVIEW COLS='OPT IFCADR IFCMASK IFCSTS IFCALIAS'.
 :LISTVIEW COLS='OPT IFCADR IFCMASK IFCTEXT'.
@@ -99,15 +99,15 @@
 :PANEL NAME=WRKIFCD HELP=HLPIFC KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Interfaces
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=IFCS SCROLL=YES VIEWS=3 EXTACT=YES.(No interfaces)
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=IFCADR USAGE=OUTPUT EXTACT=YES.Internet Address
-:LISTCOL VAR=IFCMASK USAGE=OUTPUT.Subnet          Mask
-:LISTCOL VAR=IFCLIND USAGE=OUTPUT.Line Description
-:LISTCOL VAR=IFCLTYPE USAGE=OUTPUT.Line           Type
-:LISTCOL VAR=IFCSTS USAGE=OUTPUT.Interface Status
-:LISTCOL VAR=IFCALIAS USAGE=OUTPUT.Alias                         Name
-:LISTCOL VAR=IFCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKIFCD/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
+:LISTCOL HELP='WRKIFCD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/IFCADR' VAR=IFCADR USAGE=OUTPUT EXTACT=YES.Internet Address
+:LISTCOL HELP='FLD/IFCMASK' VAR=IFCMASK USAGE=OUTPUT.Subnet          Mask
+:LISTCOL HELP='FLD/IFCLIND' VAR=IFCLIND USAGE=OUTPUT.Line Description
+:LISTCOL HELP='FLD/IFCLTYPE' VAR=IFCLTYPE USAGE=OUTPUT.Line           Type
+:LISTCOL HELP='FLD/IFCSTS' VAR=IFCSTS USAGE=OUTPUT.Interface Status
+:LISTCOL HELP='FLD/IFCALIAS' VAR=IFCALIAS USAGE=OUTPUT.Alias                         Name
+:LISTCOL HELP='FLD/IFCTEXT' VAR=IFCTEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT IFCADR IFCMASK IFCLIND IFCLTYPE'.
 :LISTVIEW COLS='OPT IFCADR IFCMASK IFCSTS IFCALIAS'.
 :LISTVIEW COLS='OPT IFCADR IFCMASK IFCTEXT'.
@@ -117,18 +117,18 @@
 :DATA DEPTH='*' SCROLL=IND.
 :DATACOL WIDTH=48.
 :DATACOL WIDTH=78.
-:DATAI VAR=DADR USAGE=OUTPUT.Internet address
-:DATAI VAR=DMASK USAGE=OUTPUT.Subnet mask
-:DATAI VAR=DLIND USAGE=OUTPUT.Line description
-:DATAI VAR=DALIAS USAGE=OUTPUT.Alias name
-:DATAI VAR=DCCSID USAGE=OUTPUT.Alias name CCSID
-:DATAI VAR=DLTYPE USAGE=OUTPUT.Line type
-:DATAI VAR=DLCLIFC USAGE=OUTPUT.Associated local interface
-:DATAI VAR=DSTS USAGE=OUTPUT.Interface status
-:DATAI VAR=DTOS USAGE=OUTPUT.Type of service
-:DATAI VAR=DMTU USAGE=OUTPUT.Maximum transmission unit
-:DATAI VAR=DAUTO USAGE=OUTPUT.Automatic start
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/DADR' VAR=DADR USAGE=OUTPUT.Internet address
+:DATAI HELP='FLD/DMASK' VAR=DMASK USAGE=OUTPUT.Subnet mask
+:DATAI HELP='FLD/DLIND' VAR=DLIND USAGE=OUTPUT.Line description
+:DATAI HELP='FLD/DALIAS' VAR=DALIAS USAGE=OUTPUT.Alias name
+:DATAI HELP='FLD/DCCSID' VAR=DCCSID USAGE=OUTPUT.Alias name CCSID
+:DATAI HELP='FLD/DLTYPE' VAR=DLTYPE USAGE=OUTPUT.Line type
+:DATAI HELP='FLD/DLCLIFC' VAR=DLCLIFC USAGE=OUTPUT.Associated local interface
+:DATAI HELP='FLD/DSTS' VAR=DSTS USAGE=OUTPUT.Interface status
+:DATAI HELP='FLD/DTOS' VAR=DTOS USAGE=OUTPUT.Type of service
+:DATAI HELP='FLD/DMTU' VAR=DMTU USAGE=OUTPUT.Maximum transmission unit
+:DATAI HELP='FLD/DAUTO' VAR=DAUTO USAGE=OUTPUT.Automatic start
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text description
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -140,5 +140,137 @@ end it; option 1 adds one.
 :EHELP.
 :HELP NAME=HLPDSP.Display TCP/IP Interface - Help
 :P.One interface's configuration and its status now.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F6=Print list
+:PD.Print list.
+:PT.F11=Display interface status
+:PD.Display interface status.
+:PT.F11=Display text description
+:PD.Display text description.
+:PT.F11=Display line information
+:PD.Display line information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKIFC/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/IFCADR'.Internet Address
+:P.An internet address in dotted decimal form (IPv4) or in colon form
+(IPv6).
+:EHELP.
+:HELP NAME='FLD/IFCMASK'.Subnet          Mask
+:P.The subnet Mask of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IFCLIND'.Line Description
+:P.The line description.
+:EHELP.
+:HELP NAME='FLD/IFCLTYPE'.Line           Type
+:P.The line Type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IFCSTS'.Interface Status
+:P.The interface Status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IFCALIAS'.Alias                         Name
+:P.The alias Name of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IFCTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKIFC/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add
+:PD.Type 1 next to an entry and press Enter to add it. The Add TCP/IP
+Interface (ADDTCPIFC) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+TCP/IP Interface (CHGTCPIFC) command is prompted for the entry.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it. The Remove
+TCP/IP Interface (RMVTCPIFC) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.9=Start
+:PD.Type 9 next to an entry and press Enter to start it. The Start
+TCP/IP Interface (STRTCPIFC) command runs for the entry.
+:PT.10=End
+:PD.Type 10 next to an entry and press Enter to end it. The End TCP/IP
+Interface (ENDTCPIFC) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKIFCD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKIFCD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/DADR'.Internet address
+:P.An internet address in dotted decimal form (IPv4) or in colon form
+(IPv6).
+:EHELP.
+:HELP NAME='FLD/DMASK'.Subnet mask
+:P.The subnet mask that tells the network part of the address from the
+host part.
+:EHELP.
+:HELP NAME='FLD/DLIND'.Line description
+:P.The line description.
+:EHELP.
+:HELP NAME='FLD/DALIAS'.Alias name
+:P.The alias name shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DCCSID'.Alias name CCSID
+:P.The alias name CCSID shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DLTYPE'.Line type
+:P.The line type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DLCLIFC'.Associated local interface
+:P.The associated local interface shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DSTS'.Interface status
+:P.The interface status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTOS'.Type of service
+:P.The type of service shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMTU'.Maximum transmission unit
+:P.The maximum transmission unit shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DAUTO'.Automatic start
+:P.The automatic start shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTEXT'.Text description
+:P.The text description shown for what the display is about.
 :EHELP.
 :EPNLGRP.

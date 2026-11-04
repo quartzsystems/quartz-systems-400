@@ -104,7 +104,7 @@
 :LISTDEF NAME=CMDS VARS='CMDLINE'.
 :LISTDEF NAME=HIST VARS='OPT HDATE HOPT HSET HCHG'.
 :LISTDEF NAME=STEPS VARS='HSTEP'.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -115,7 +115,7 @@
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Display library backup list
 :KEYI KEY=F17 ACTION='RETURN 17'.F17=Display folder backup list
 :EKEYL.
-:KEYL NAME=PRMKEYS.
+:KEYL HELP='KEYS/PRMKEYS' NAME=PRMKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -124,7 +124,7 @@
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=HSTKEYS.
+:KEYL HELP='KEYS/HSTKEYS' NAME=HSTKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -133,7 +133,7 @@
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=STSKEYS.
+:KEYL HELP='KEYS/STSKEYS' NAME=STSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -162,36 +162,36 @@
 :DATACOL WIDTH=42.
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.User libraries
-:DATAI VAR=ULALLD USAGE=OUTPUT.All
+:DATAI HELP='FLD/ULALLD' VAR=ULALLD USAGE=OUTPUT.All
 :DATAIX VAR=ULALLT USAGE=OUTPUT.
-:DATAI VAR=ULALLCD USAGE=OUTPUT.All (changes only)
+:DATAI HELP='FLD/ULALLCD' VAR=ULALLCD USAGE=OUTPUT.All (changes only)
 :DATAIX VAR=ULALLCT USAGE=OUTPUT.
-:DATAI VAR=ULLISTD USAGE=OUTPUT.From list
+:DATAI HELP='FLD/ULLISTD' VAR=ULLISTD USAGE=OUTPUT.From list
 :DATAIX VAR=ULLISTT USAGE=OUTPUT.
-:DATAI VAR=ULLISTCD USAGE=OUTPUT.From list (changes only)
+:DATAI HELP='FLD/ULLISTCD' VAR=ULLISTCD USAGE=OUTPUT.From list (changes only)
 :DATAIX VAR=ULLISTCT USAGE=OUTPUT.
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Folders
-:DATAI VAR=FLALLD USAGE=OUTPUT.All
+:DATAI HELP='FLD/FLALLD' VAR=FLALLD USAGE=OUTPUT.All
 :DATAIX VAR=FLALLT USAGE=OUTPUT.
-:DATAI VAR=FLALLCD USAGE=OUTPUT.All (changes only)
+:DATAI HELP='FLD/FLALLCD' VAR=FLALLCD USAGE=OUTPUT.All (changes only)
 :DATAIX VAR=FLALLCT USAGE=OUTPUT.
-:DATAI VAR=FLLISTD USAGE=OUTPUT.From list
+:DATAI HELP='FLD/FLLISTD' VAR=FLLISTD USAGE=OUTPUT.From list
 :DATAIX VAR=FLLISTT USAGE=OUTPUT.
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.User directories
-:DATAI VAR=UDALLD USAGE=OUTPUT.All
+:DATAI HELP='FLD/UDALLD' VAR=UDALLD USAGE=OUTPUT.All
 :DATAIX VAR=UDALLT USAGE=OUTPUT.
-:DATAI VAR=UDALLCD USAGE=OUTPUT.All (changes only)
+:DATAI HELP='FLD/UDALLCD' VAR=UDALLCD USAGE=OUTPUT.All (changes only)
 :DATAIX VAR=UDALLCT USAGE=OUTPUT.
 :EDATAGRP.
-:DATAI VAR=SECDTAD USAGE=OUTPUT.Security data
+:DATAI HELP='FLD/SECDTAD' VAR=SECDTAD USAGE=OUTPUT.Security data
 :DATAIX VAR=SECDTAT USAGE=OUTPUT.
-:DATAI VAR=CFGDTAD USAGE=OUTPUT.Configuration
+:DATAI HELP='FLD/CFGDTAD' VAR=CFGDTAD USAGE=OUTPUT.Configuration
 :DATAIX VAR=CFGDTAT USAGE=OUTPUT.
-:DATAI VAR=OVCALD USAGE=OUTPUT.OfficeVision calendars
+:DATAI HELP='FLD/OVCALD' VAR=OVCALD USAGE=OUTPUT.OfficeVision calendars
 :DATAIX VAR=OVCALT USAGE=OUTPUT.
-:DATAI VAR=OVMAILD USAGE=OUTPUT.OfficeVision mail
+:DATAI HELP='FLD/OVMAILD' VAR=OVMAILD USAGE=OUTPUT.OfficeVision mail
 :DATAIX VAR=OVMAILT USAGE=OUTPUT.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -199,117 +199,117 @@
 :PANEL NAME=DSPBCKHST HELP=HLPHST KEYL=HSTKEYS ENTER='RETURN 0' TOPSEP=DATETIME BOTSEP=NONE.Display Backup History
 :TOPINST.Type options below, then press Enter.
 :LIST DEPTH='*' LISTDEF=HIST SCROLL=YES.(No backup has run.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display backup details
-:LISTCOL VAR=OPT USAGE=INPUT.Option
-:LISTCOL VAR=HDATE USAGE=OUTPUT ATCOL=13.Backup Date
-:LISTCOL VAR=HOPT USAGE=OUTPUT ATCOL=26.Backup Options
-:LISTCOL VAR=HSET USAGE=OUTPUT ATCOL=47.Tape Set
-:LISTCOL VAR=HCHG USAGE=OUTPUT ATCOL=56.Changes Only
+:LISTACT HELP='DSPBCKHST/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display backup details
+:LISTCOL HELP='DSPBCKHST/OPT' VAR=OPT USAGE=INPUT.Option
+:LISTCOL HELP='FLD/HDATE' VAR=HDATE USAGE=OUTPUT ATCOL=13.Backup Date
+:LISTCOL HELP='FLD/HOPT' VAR=HOPT USAGE=OUTPUT ATCOL=26.Backup Options
+:LISTCOL HELP='FLD/HSET' VAR=HSET USAGE=OUTPUT ATCOL=47.Tape Set
+:LISTCOL HELP='FLD/HCHG' VAR=HCHG USAGE=OUTPUT ATCOL=56.Changes Only
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPBCKDTL HELP=HLPHST KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=DATETIME.Display Backup Details
 :DATA DEPTH=7.
-:DATAI VAR=HDATE USAGE=OUTPUT.Backup date
-:DATAI VAR=HTIME USAGE=OUTPUT.Backup time
-:DATAI VAR=HOPT USAGE=OUTPUT.Backup option
-:DATAI VAR=HDEV USAGE=OUTPUT.Device
-:DATAI VAR=HSET USAGE=OUTPUT.Tape set
-:DATAI VAR=HSTS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/HDATE' VAR=HDATE USAGE=OUTPUT.Backup date
+:DATAI HELP='FLD/HTIME' VAR=HTIME USAGE=OUTPUT.Backup time
+:DATAI HELP='FLD/HOPT' VAR=HOPT USAGE=OUTPUT.Backup option
+:DATAI HELP='FLD/HDEV' VAR=HDEV USAGE=OUTPUT.Device
+:DATAI HELP='FLD/HSET' VAR=HSET USAGE=OUTPUT.Tape set
+:DATAI HELP='FLD/HSTS' VAR=HSTS USAGE=OUTPUT.Status
 :EDATA.
 :LIST DEPTH='*' LISTDEF=STEPS SCROLL=YES.
-:LISTCOL VAR=HSTEP USAGE=OUTPUT.Saves
+:LISTCOL HELP='FLD/HSTEP' VAR=HSTEP USAGE=OUTPUT.Saves
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=DSPBCKD HELP=HLPDSP KEYL=DSPKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Daily Backup Options
 :DATA DEPTH='*'.
-:DATAI VAR=LASTDATE USAGE=OUTPUT.Last backup date
-:DATAI VAR=LASTTAP USAGE=OUTPUT.Last tape set used
+:DATAI HELP='FLD/LASTDATE' VAR=LASTDATE USAGE=OUTPUT.Last backup date
+:DATAI HELP='FLD/LASTTAP' VAR=LASTTAP USAGE=OUTPUT.Last tape set used
 :DATAGRP GRPSEP=SPACE.Where to back up
-:DATAI VAR=BCKDEV USAGE=OUTPUT.Backup device
-:DATAI VAR=TAPSET1 USAGE=OUTPUT.Tape sets to rotate
-:DATAI VAR=TAPSET2 USAGE=OUTPUT.
-:DATAI VAR=TAPSET3 USAGE=OUTPUT.
-:DATAI VAR=TAPSET4 USAGE=OUTPUT.
-:DATAI VAR=TAPSET5 USAGE=OUTPUT.
-:DATAI VAR=TAPSET6 USAGE=OUTPUT.
-:DATAI VAR=TAPSET7 USAGE=OUTPUT.
-:DATAI VAR=CLRTAP USAGE=OUTPUT.Erase tape before backup
+:DATAI HELP='FLD/BCKDEV' VAR=BCKDEV USAGE=OUTPUT.Backup device
+:DATAI HELP='FLD/TAPSET1' VAR=TAPSET1 USAGE=OUTPUT.Tape sets to rotate
+:DATAI HELP='FLD/TAPSET2' VAR=TAPSET2 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET3' VAR=TAPSET3 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET4' VAR=TAPSET4 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET5' VAR=TAPSET5 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET6' VAR=TAPSET6 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET7' VAR=TAPSET7 USAGE=OUTPUT.
+:DATAI HELP='FLD/CLRTAP' VAR=CLRTAP USAGE=OUTPUT.Erase tape before backup
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.What to back up
-:DATAI VAR=USRLIB USAGE=OUTPUT.User libraries
-:DATAI VAR=USRFLR USAGE=OUTPUT.Folders
-:DATAI VAR=USRDIR USAGE=OUTPUT.User directories
-:DATAI VAR=SECDTA USAGE=OUTPUT.Security data
-:DATAI VAR=CFGDTA USAGE=OUTPUT.Configuration
+:DATAI HELP='FLD/USRLIB' VAR=USRLIB USAGE=OUTPUT.User libraries
+:DATAI HELP='FLD/USRFLR' VAR=USRFLR USAGE=OUTPUT.Folders
+:DATAI HELP='FLD/USRDIR' VAR=USRDIR USAGE=OUTPUT.User directories
+:DATAI HELP='FLD/SECDTA' VAR=SECDTA USAGE=OUTPUT.Security data
+:DATAI HELP='FLD/CFGDTA' VAR=CFGDTA USAGE=OUTPUT.Configuration
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.How to back up
-:DATAI VAR=SBMJOB USAGE=OUTPUT.Submit backup as a batch job
-:DATAI VAR=CHGONLY USAGE=OUTPUT.Save changed objects only
-:DATAI VAR=PRTRPT USAGE=OUTPUT.Print detailed report
-:DATAI VAR=EXITPGM USAGE=OUTPUT.User exit program
+:DATAI HELP='FLD/SBMJOB' VAR=SBMJOB USAGE=OUTPUT.Submit backup as a batch job
+:DATAI HELP='FLD/CHGONLY' VAR=CHGONLY USAGE=OUTPUT.Save changed objects only
+:DATAI HELP='FLD/PRTRPT' VAR=PRTRPT USAGE=OUTPUT.Print detailed report
+:DATAI HELP='FLD/EXITPGM' VAR=EXITPGM USAGE=OUTPUT.User exit program
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue
 :EPANEL.
 :PANEL NAME=DSPBCKW HELP=HLPDSP KEYL=DSPKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Weekly Backup Options
 :DATA DEPTH='*'.
-:DATAI VAR=LASTDATE USAGE=OUTPUT.Last backup date
-:DATAI VAR=LASTTAP USAGE=OUTPUT.Last tape set used
+:DATAI HELP='FLD/LASTDATE' VAR=LASTDATE USAGE=OUTPUT.Last backup date
+:DATAI HELP='FLD/LASTTAP' VAR=LASTTAP USAGE=OUTPUT.Last tape set used
 :DATAGRP GRPSEP=SPACE.Where to back up
-:DATAI VAR=BCKDEV USAGE=OUTPUT.Backup device
-:DATAI VAR=TAPSET1 USAGE=OUTPUT.Tape sets to rotate
-:DATAI VAR=TAPSET2 USAGE=OUTPUT.
-:DATAI VAR=TAPSET3 USAGE=OUTPUT.
-:DATAI VAR=TAPSET4 USAGE=OUTPUT.
-:DATAI VAR=TAPSET5 USAGE=OUTPUT.
-:DATAI VAR=TAPSET6 USAGE=OUTPUT.
-:DATAI VAR=TAPSET7 USAGE=OUTPUT.
-:DATAI VAR=CLRTAP USAGE=OUTPUT.Erase tape before backup
+:DATAI HELP='FLD/BCKDEV' VAR=BCKDEV USAGE=OUTPUT.Backup device
+:DATAI HELP='FLD/TAPSET1' VAR=TAPSET1 USAGE=OUTPUT.Tape sets to rotate
+:DATAI HELP='FLD/TAPSET2' VAR=TAPSET2 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET3' VAR=TAPSET3 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET4' VAR=TAPSET4 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET5' VAR=TAPSET5 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET6' VAR=TAPSET6 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET7' VAR=TAPSET7 USAGE=OUTPUT.
+:DATAI HELP='FLD/CLRTAP' VAR=CLRTAP USAGE=OUTPUT.Erase tape before backup
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.What to back up
-:DATAI VAR=USRLIB USAGE=OUTPUT.User libraries
-:DATAI VAR=USRFLR USAGE=OUTPUT.Folders
-:DATAI VAR=USRDIR USAGE=OUTPUT.User directories
-:DATAI VAR=SECDTA USAGE=OUTPUT.Security data
-:DATAI VAR=CFGDTA USAGE=OUTPUT.Configuration
+:DATAI HELP='FLD/USRLIB' VAR=USRLIB USAGE=OUTPUT.User libraries
+:DATAI HELP='FLD/USRFLR' VAR=USRFLR USAGE=OUTPUT.Folders
+:DATAI HELP='FLD/USRDIR' VAR=USRDIR USAGE=OUTPUT.User directories
+:DATAI HELP='FLD/SECDTA' VAR=SECDTA USAGE=OUTPUT.Security data
+:DATAI HELP='FLD/CFGDTA' VAR=CFGDTA USAGE=OUTPUT.Configuration
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.How to back up
-:DATAI VAR=SBMJOB USAGE=OUTPUT.Submit backup as a batch job
-:DATAI VAR=CHGONLY USAGE=OUTPUT.Save changed objects only
-:DATAI VAR=PRTRPT USAGE=OUTPUT.Print detailed report
-:DATAI VAR=EXITPGM USAGE=OUTPUT.User exit program
+:DATAI HELP='FLD/SBMJOB' VAR=SBMJOB USAGE=OUTPUT.Submit backup as a batch job
+:DATAI HELP='FLD/CHGONLY' VAR=CHGONLY USAGE=OUTPUT.Save changed objects only
+:DATAI HELP='FLD/PRTRPT' VAR=PRTRPT USAGE=OUTPUT.Print detailed report
+:DATAI HELP='FLD/EXITPGM' VAR=EXITPGM USAGE=OUTPUT.User exit program
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue
 :EPANEL.
 :PANEL NAME=DSPBCKM HELP=HLPDSP KEYL=DSPKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Monthly Backup Options
 :DATA DEPTH='*'.
-:DATAI VAR=LASTDATE USAGE=OUTPUT.Last backup date
-:DATAI VAR=LASTTAP USAGE=OUTPUT.Last tape set used
+:DATAI HELP='FLD/LASTDATE' VAR=LASTDATE USAGE=OUTPUT.Last backup date
+:DATAI HELP='FLD/LASTTAP' VAR=LASTTAP USAGE=OUTPUT.Last tape set used
 :DATAGRP GRPSEP=SPACE.Where to back up
-:DATAI VAR=BCKDEV USAGE=OUTPUT.Backup device
-:DATAI VAR=TAPSET1 USAGE=OUTPUT.Tape sets to rotate
-:DATAI VAR=TAPSET2 USAGE=OUTPUT.
-:DATAI VAR=TAPSET3 USAGE=OUTPUT.
-:DATAI VAR=TAPSET4 USAGE=OUTPUT.
-:DATAI VAR=TAPSET5 USAGE=OUTPUT.
-:DATAI VAR=TAPSET6 USAGE=OUTPUT.
-:DATAI VAR=TAPSET7 USAGE=OUTPUT.
-:DATAI VAR=CLRTAP USAGE=OUTPUT.Erase tape before backup
+:DATAI HELP='FLD/BCKDEV' VAR=BCKDEV USAGE=OUTPUT.Backup device
+:DATAI HELP='FLD/TAPSET1' VAR=TAPSET1 USAGE=OUTPUT.Tape sets to rotate
+:DATAI HELP='FLD/TAPSET2' VAR=TAPSET2 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET3' VAR=TAPSET3 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET4' VAR=TAPSET4 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET5' VAR=TAPSET5 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET6' VAR=TAPSET6 USAGE=OUTPUT.
+:DATAI HELP='FLD/TAPSET7' VAR=TAPSET7 USAGE=OUTPUT.
+:DATAI HELP='FLD/CLRTAP' VAR=CLRTAP USAGE=OUTPUT.Erase tape before backup
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.What to back up
-:DATAI VAR=USRLIB USAGE=OUTPUT.User libraries
-:DATAI VAR=USRFLR USAGE=OUTPUT.Folders
-:DATAI VAR=USRDIR USAGE=OUTPUT.User directories
-:DATAI VAR=SECDTA USAGE=OUTPUT.Security data
-:DATAI VAR=CFGDTA USAGE=OUTPUT.Configuration
+:DATAI HELP='FLD/USRLIB' VAR=USRLIB USAGE=OUTPUT.User libraries
+:DATAI HELP='FLD/USRFLR' VAR=USRFLR USAGE=OUTPUT.Folders
+:DATAI HELP='FLD/USRDIR' VAR=USRDIR USAGE=OUTPUT.User directories
+:DATAI HELP='FLD/SECDTA' VAR=SECDTA USAGE=OUTPUT.Security data
+:DATAI HELP='FLD/CFGDTA' VAR=CFGDTA USAGE=OUTPUT.Configuration
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.How to back up
-:DATAI VAR=SBMJOB USAGE=OUTPUT.Submit backup as a batch job
-:DATAI VAR=CHGONLY USAGE=OUTPUT.Save changed objects only
-:DATAI VAR=PRTRPT USAGE=OUTPUT.Print detailed report
-:DATAI VAR=EXITPGM USAGE=OUTPUT.User exit program
+:DATAI HELP='FLD/SBMJOB' VAR=SBMJOB USAGE=OUTPUT.Submit backup as a batch job
+:DATAI HELP='FLD/CHGONLY' VAR=CHGONLY USAGE=OUTPUT.Save changed objects only
+:DATAI HELP='FLD/PRTRPT' VAR=PRTRPT USAGE=OUTPUT.Print detailed report
+:DATAI HELP='FLD/EXITPGM' VAR=EXITPGM USAGE=OUTPUT.User exit program
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue
@@ -317,26 +317,26 @@
 :PANEL NAME=SAVDFT HELP=HLPDFT KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Specify Command Defaults
 :TOPINST.Type choices, press Enter.
 :DATA DEPTH='*'.
-:DATAI VAR=DEV1 USAGE=INOUT.Devices
-:DATAI VAR=DEV2 USAGE=INOUT.
-:DATAI VAR=DEV3 USAGE=INOUT.
-:DATAI VAR=DEV4 USAGE=INOUT.
-:DATAI VAR=PMTCMD USAGE=INOUT.Prompt for commands
-:DATAI VAR=CHKACT USAGE=INOUT.Check for active files
-:DATAI VAR=MSGDLV USAGE=INOUT.Message queue delivery
-:DATAI VAR=STRTIM USAGE=INOUT.Start time
-:DATAI VAR=VRYOFF USAGE=INOUT.Vary off network servers
-:DATAI VAR=UNMNT USAGE=INOUT.Unmount file systems
-:DATAI VAR=PRTINF USAGE=INOUT.Print system information
-:DATAI VAR=RPYL USAGE=INOUT.Use system reply list
-:DATAI VAR=SPLDTA USAGE=INOUT.Spooled file data
+:DATAI HELP='FLD/DEV1' VAR=DEV1 USAGE=INOUT.Devices
+:DATAI HELP='FLD/DEV2' VAR=DEV2 USAGE=INOUT.
+:DATAI HELP='FLD/DEV3' VAR=DEV3 USAGE=INOUT.
+:DATAI HELP='FLD/DEV4' VAR=DEV4 USAGE=INOUT.
+:DATAI HELP='FLD/PMTCMD' VAR=PMTCMD USAGE=INOUT.Prompt for commands
+:DATAI HELP='FLD/CHKACT' VAR=CHKACT USAGE=INOUT.Check for active files
+:DATAI HELP='FLD/MSGDLV' VAR=MSGDLV USAGE=INOUT.Message queue delivery
+:DATAI HELP='FLD/STRTIM' VAR=STRTIM USAGE=INOUT.Start time
+:DATAI HELP='FLD/VRYOFF' VAR=VRYOFF USAGE=INOUT.Vary off network servers
+:DATAI HELP='FLD/UNMNT' VAR=UNMNT USAGE=INOUT.Unmount file systems
+:DATAI HELP='FLD/PRTINF' VAR=PRTINF USAGE=INOUT.Print system information
+:DATAI HELP='FLD/RPYL' VAR=RPYL USAGE=INOUT.Use system reply list
+:DATAI HELP='FLD/SPLDTA' VAR=SPLDTA USAGE=INOUT.Spooled file data
 :EDATA.
 :BOTINST.Y=Yes, N=No; delivery *BREAK or *NOTIFY; start time *CURRENT or HHMM
 :EPANEL.
 :PANEL NAME=SAVCMDS HELP=HLPCMDS KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Commands to Run
 :TOPINST.These commands run in order. Press Enter to start them, F12 to return.
 :LIST DEPTH='*' LISTDEF=CMDS SCROLL=YES.
-:LISTCOL VAR=CMDLINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/CMDLINE' VAR=CMDLINE USAGE=OUTPUT.
 :ELIST.
 :EPANEL.
 :HELP NAME=HLPDSP.Display Backup Options - Help
@@ -365,5 +365,232 @@ the first save.
 :HELP NAME=HLPCMDS.Commands to Run - Help
 :P.Ending the subsystems ends every job but this one. The last command
 starts the controlling subsystem again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/STSKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F22=Display backup history
+:PD.Display backup history.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/ULALLD'.All
+:P.The all shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ULALLCD'.All (changes only)
+:P.The all (changes only) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ULLISTD'.From list
+:P.The from list shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ULLISTCD'.From list (changes only)
+:P.The from list (changes only) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/FLALLD'.All
+:P.The all shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/FLALLCD'.All (changes only)
+:P.The all (changes only) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/FLLISTD'.From list
+:P.The from list shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UDALLD'.All
+:P.The all shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UDALLCD'.All (changes only)
+:P.The all (changes only) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SECDTAD'.Security data
+:P.The security data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CFGDTAD'.Configuration
+:P.The configuration shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OVCALD'.OfficeVision calendars
+:P.The officeVision calendars shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OVMAILD'.OfficeVision mail
+:P.The officeVision mail shown for what the display is about.
+:EHELP.
+:HELP NAME='KEYS/HSTKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='DSPBCKHST/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/HDATE'.Backup Date
+:P.The backup Date of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/HOPT'.Backup Options
+:P.The backup options of the operational assistant&colon. daily, weekly
+or monthly.
+:EHELP.
+:HELP NAME='FLD/HSET'.Tape Set
+:P.The tape Set of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/HCHG'.Changes Only
+:P.The changes Only of each entry in the list.
+:EHELP.
+:HELP NAME='DSPBCKHST/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display backup details
+:PD.Type 5 next to an entry and press Enter to display backup details
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/PRMKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/HTIME'.Backup time
+:P.The backup time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HDEV'.Device
+:P.The device the data goes to.
+:EHELP.
+:HELP NAME='FLD/HSTS'.Status
+:P.The status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HSTEP'.Saves
+:P.The saves of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Display library backup list
+:PD.Display library backup list.
+:PT.F17=Display folder backup list
+:PD.Display folder backup list.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/LASTDATE'.Last backup date
+:P.The last backup date shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LASTTAP'.Last tape set used
+:P.The last tape set used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/BCKDEV'.Backup device
+:P.The backup device shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET1'.Tape sets to rotate
+:P.The tape sets to rotate shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET2'.TAPSET2
+:P.The TAPSET2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET3'.TAPSET3
+:P.The TAPSET3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET4'.TAPSET4
+:P.The TAPSET4 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET5'.TAPSET5
+:P.The TAPSET5 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET6'.TAPSET6
+:P.The TAPSET6 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TAPSET7'.TAPSET7
+:P.The TAPSET7 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CLRTAP'.Erase tape before backup
+:P.The erase tape before backup shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRLIB'.User libraries
+:P.The user libraries shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRFLR'.Folders
+:P.The folders shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRDIR'.User directories
+:P.The user directories shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SECDTA'.Security data
+:P.The security data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CFGDTA'.Configuration
+:P.The configuration shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SBMJOB'.Submit backup as a batch job
+:P.The submit backup as a batch job shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CHGONLY'.Save changed objects only
+:P.The save changed objects only shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRTRPT'.Print detailed report
+:P.The print detailed report shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EXITPGM'.User exit program
+:P.The user exit program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DEV1'.Devices
+:P.Type the devices.
+:EHELP.
+:HELP NAME='FLD/DEV2'.DEV2
+:P.Type the DEV2.
+:EHELP.
+:HELP NAME='FLD/DEV3'.DEV3
+:P.Type the DEV3.
+:EHELP.
+:HELP NAME='FLD/DEV4'.DEV4
+:P.Type the DEV4.
+:EHELP.
+:HELP NAME='FLD/PMTCMD'.Prompt for commands
+:P.Type the prompt for commands.
+:EHELP.
+:HELP NAME='FLD/CHKACT'.Check for active files
+:P.Type the check for active files.
+:EHELP.
+:HELP NAME='FLD/MSGDLV'.Message queue delivery
+:P.Type the message queue delivery.
+:EHELP.
+:HELP NAME='FLD/STRTIM'.Start time
+:P.Type the start time.
+:EHELP.
+:HELP NAME='FLD/VRYOFF'.Vary off network servers
+:P.Type the vary off network servers.
+:EHELP.
+:HELP NAME='FLD/UNMNT'.Unmount file systems
+:P.Type the unmount file systems.
+:EHELP.
+:HELP NAME='FLD/PRTINF'.Print system information
+:P.Type the print system information.
+:EHELP.
+:HELP NAME='FLD/RPYL'.Use system reply list
+:P.Type the use system reply list.
+:EHELP.
+:HELP NAME='FLD/SPLDTA'.Spooled file data
+:P.Whether the data of spooled files is saved with the output queues.
+:EHELP.
+:HELP NAME='FLD/CMDLINE'.CMDLINE
+:P.The CMDLINE of each entry in the list.
 :EHELP.
 :EPNLGRP.

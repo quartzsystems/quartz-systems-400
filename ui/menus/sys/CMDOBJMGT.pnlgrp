@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDOBJMGT'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,13 +24,13 @@
 :PANEL NAME=CMDOBJMGT HELP=HLPCMDOBJMGT KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Object Management Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Related Command Menus
-:MENUI OPTION=1 ACTION='MENU CMDDMP'.Dump Commands  CMDDMP
-:MENUI OPTION=2 ACTION='MENU CMDLCK'.Lock Commands  CMDLCK
-:MENUI OPTION=3 ACTION='MENU CMDLIB'.Library Commands  CMDLIB
-:MENUI OPTION=4 ACTION='MENU CMDOBJ'.Object Commands  CMDOBJ
-:MENUI OPTION=5 ACTION='MENU CMDOBJTYPE'.Object Type Commands  CMDOBJTYPE
-:MENUI OPTION=6 ACTION='MENU CMDSAVRST'.Save and Restore Commands  CMDSAVRST
-:MENUI OPTION=7 ACTION='MENU CMDSEC'.Security Commands  CMDSEC
+:MENUI HELP='CMDOBJMGT/OPT1' OPTION=1 ACTION='MENU CMDDMP'.Dump Commands  CMDDMP
+:MENUI HELP='CMDOBJMGT/OPT2' OPTION=2 ACTION='MENU CMDLCK'.Lock Commands  CMDLCK
+:MENUI HELP='CMDOBJMGT/OPT3' OPTION=3 ACTION='MENU CMDLIB'.Library Commands  CMDLIB
+:MENUI HELP='CMDOBJMGT/OPT4' OPTION=4 ACTION='MENU CMDOBJ'.Object Commands  CMDOBJ
+:MENUI HELP='CMDOBJMGT/OPT5' OPTION=5 ACTION='MENU CMDOBJTYPE'.Object Type Commands  CMDOBJTYPE
+:MENUI HELP='CMDOBJMGT/OPT6' OPTION=6 ACTION='MENU CMDSAVRST'.Save and Restore Commands  CMDSAVRST
+:MENUI HELP='CMDOBJMGT/OPT7' OPTION=7 ACTION='MENU CMDSEC'.Security Commands  CMDSEC
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -44,5 +44,45 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT1'.Dump Commands  CMDDMP
+:P.Option 1. Shows menu CMDDMP&colon. Dump Commands CMDDMP.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT2'.Lock Commands  CMDLCK
+:P.Option 2. Shows menu CMDLCK&colon. Lock Commands CMDLCK.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT3'.Library Commands  CMDLIB
+:P.Option 3. Shows menu CMDLIB&colon. Library Commands CMDLIB.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT4'.Object Commands  CMDOBJ
+:P.Option 4. Shows menu CMDOBJ&colon. Object Commands CMDOBJ.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT5'.Object Type Commands  CMDOBJTYPE
+:P.Option 5. Shows menu CMDOBJTYPE&colon. Object Type Commands
+CMDOBJTYPE.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT6'.Save and Restore Commands  CMDSAVRST
+:P.Option 6. Shows menu CMDSAVRST&colon. Save and Restore Commands
+CMDSAVRST.
+:EHELP.
+:HELP NAME='CMDOBJMGT/OPT7'.Security Commands  CMDSEC
+:P.Option 7. Shows menu CMDSEC&colon. Security Commands CMDSEC.
 :EHELP.
 :EPNLGRP.

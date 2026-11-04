@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SYSTEM'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPMSG PNLGRP=QHMHCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,17 +25,17 @@
 :EKEYL.
 :PANEL NAME=SYSTEM HELP=HLPSYSTEM KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.General System Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU JOB'.Jobs
-:MENUI OPTION=2 ACTION='MENU STATUS'.Status
-:MENUI OPTION=3 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display system operator messages
-:MENUI OPTION=4 ACTION='MENU MESSAGE'.Messages
-:MENUI OPTION=5 ACTION='MENU DATA'.Files, libraries, and folders
-:MENUI OPTION=6 ACTION='MENU SAVE'.Save
-:MENUI OPTION=7 ACTION='MENU RESTORE'.Restore
-:MENUI OPTION=8 ACTION='MENU DEVICE'.Device operations
-:MENUI OPTION=9 ACTION='MENU CMN'.Communications
-:MENUI OPTION=10 ACTION='MENU SECURITY'.Security
-:MENUI OPTION=60 ACTION='MENU SYSTEM2'.More system task options
+:MENUI HELP='SYSTEM/OPT1' OPTION=1 ACTION='MENU JOB'.Jobs
+:MENUI HELP='SYSTEM/OPT2' OPTION=2 ACTION='MENU STATUS'.Status
+:MENUI HELP=DSPMSG OPTION=3 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display system operator messages
+:MENUI HELP='SYSTEM/OPT4' OPTION=4 ACTION='MENU MESSAGE'.Messages
+:MENUI HELP='SYSTEM/OPT5' OPTION=5 ACTION='MENU DATA'.Files, libraries, and folders
+:MENUI HELP='SYSTEM/OPT6' OPTION=6 ACTION='MENU SAVE'.Save
+:MENUI HELP='SYSTEM/OPT7' OPTION=7 ACTION='MENU RESTORE'.Restore
+:MENUI HELP='SYSTEM/OPT8' OPTION=8 ACTION='MENU DEVICE'.Device operations
+:MENUI HELP='SYSTEM/OPT9' OPTION=9 ACTION='MENU CMN'.Communications
+:MENUI HELP='SYSTEM/OPT10' OPTION=10 ACTION='MENU SECURITY'.Security
+:MENUI HELP='SYSTEM/OPT60' OPTION=60 ACTION='MENU SYSTEM2'.More system task options
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -44,5 +45,54 @@ restoring, devices and security. Option 60 shows more.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='SYSTEM/OPT1'.Jobs
+:P.Option 1. Shows menu JOB&colon. Jobs.
+:EHELP.
+:HELP NAME='SYSTEM/OPT2'.Status
+:P.Option 2. Shows menu STATUS&colon. Status.
+:EHELP.
+:HELP NAME='SYSTEM/OPT4'.Messages
+:P.Option 4. Shows menu MESSAGE&colon. Messages.
+:EHELP.
+:HELP NAME='SYSTEM/OPT5'.Files, libraries, and folders
+:P.Option 5. Shows menu DATA&colon. Files, libraries, and folders.
+:EHELP.
+:HELP NAME='SYSTEM/OPT6'.Save
+:P.Option 6. Shows menu SAVE&colon. Save.
+:EHELP.
+:HELP NAME='SYSTEM/OPT7'.Restore
+:P.Option 7. Shows menu RESTORE&colon. Restore.
+:EHELP.
+:HELP NAME='SYSTEM/OPT8'.Device operations
+:P.Option 8. Shows menu DEVICE&colon. Device operations.
+:EHELP.
+:HELP NAME='SYSTEM/OPT9'.Communications
+:P.Option 9. Shows menu CMN&colon. Communications.
+:EHELP.
+:HELP NAME='SYSTEM/OPT10'.Security
+:P.Option 10. Shows menu SECURITY&colon. Security.
+:EHELP.
+:HELP NAME='SYSTEM/OPT60'.More system task options
+:P.Option 60. Shows menu SYSTEM2&colon. More system task options.
 :EHELP.
 :EPNLGRP.

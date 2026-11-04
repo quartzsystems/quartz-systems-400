@@ -92,13 +92,13 @@
 :PANEL NAME=WRKREGINF KEYL=WRKKEYS HELP=WRKREGH ENTER='RETURN 0'.Work with Registration Information
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=POINTS ACTLEN=1 SCROLL=YES.(No exit points found.)
-:LISTACT OPTION=5 ENTER='RETURN 55'.5=Display exit point
-:LISTACT OPTION=8 ENTER='RETURN 58'.8=Work with exit programs
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=EPNAME USAGE=OUTPUT.Exit                Point
-:LISTCOL VAR=EPFMT USAGE=OUTPUT.Exit Point Format
-:LISTCOL VAR=EPREGD USAGE=OUTPUT MAXWIDTH=7.Registered
-:LISTCOL VAR=EPTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKREGINF/OPTIONS' OPTION=5 ENTER='RETURN 55'.5=Display exit point
+:LISTACT HELP='WRKREGINF/OPTIONS' OPTION=8 ENTER='RETURN 58'.8=Work with exit programs
+:LISTCOL HELP='WRKREGINF/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/EPNAME' VAR=EPNAME USAGE=OUTPUT.Exit                Point
+:LISTCOL HELP='FLD/EPFMT' VAR=EPFMT USAGE=OUTPUT.Exit Point Format
+:LISTCOL HELP='FLD/EPREGD' VAR=EPREGD USAGE=OUTPUT MAXWIDTH=7.Registered
+:LISTCOL HELP='FLD/EPTEXT' VAR=EPTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
@@ -106,57 +106,57 @@
 :DATA DEPTH=3.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=EPNAME USAGE=OUTPUT.Exit point
-:DATAI VAR=EPFMT USAGE=OUTPUT.Exit point format
+:DATAI HELP='FLD/EPNAME' VAR=EPNAME USAGE=OUTPUT.Exit point
+:DATAI HELP='FLD/EPFMT' VAR=EPFMT USAGE=OUTPUT.Exit point format
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=EPREG USAGE=OUTPUT.Exit point registered
-:DATAI VAR=EPDEREG USAGE=OUTPUT.Allow deregister
-:DATAI VAR=EPMAX USAGE=OUTPUT.Maximum number of exit programs
-:DATAI VAR=EPCOUNT USAGE=OUTPUT.Current number of exit programs
-:DATAI VAR=EPADDP USAGE=OUTPUT.Preprocessing for add
+:DATAI HELP='FLD/EPREG' VAR=EPREG USAGE=OUTPUT.Exit point registered
+:DATAI HELP='FLD/EPDEREG' VAR=EPDEREG USAGE=OUTPUT.Allow deregister
+:DATAI HELP='FLD/EPMAX' VAR=EPMAX USAGE=OUTPUT.Maximum number of exit programs
+:DATAI HELP='FLD/EPCOUNT' VAR=EPCOUNT USAGE=OUTPUT.Current number of exit programs
+:DATAI HELP='FLD/EPADDP' VAR=EPADDP USAGE=OUTPUT.Preprocessing for add
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=EPADDL USAGE=OUTPUT.Library
-:DATAI VAR=EPADDF USAGE=OUTPUT.Format
+:DATAI HELP='FLD/EPADDL' VAR=EPADDL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/EPADDF' VAR=EPADDF USAGE=OUTPUT.Format
 :EDATAGRP.
-:DATAI VAR=EPRMVP USAGE=OUTPUT.Preprocessing for remove
+:DATAI HELP='FLD/EPRMVP' VAR=EPRMVP USAGE=OUTPUT.Preprocessing for remove
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=EPRMVL USAGE=OUTPUT.Library
-:DATAI VAR=EPRMVF USAGE=OUTPUT.Format
+:DATAI HELP='FLD/EPRMVL' VAR=EPRMVL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/EPRMVF' VAR=EPRMVF USAGE=OUTPUT.Format
 :EDATAGRP.
-:DATAI VAR=EPRTVP USAGE=OUTPUT.Preprocessing for retrieve
+:DATAI HELP='FLD/EPRTVP' VAR=EPRTVP USAGE=OUTPUT.Preprocessing for retrieve
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=EPRTVL USAGE=OUTPUT.Library
-:DATAI VAR=EPRTVF USAGE=OUTPUT.Format
+:DATAI HELP='FLD/EPRTVL' VAR=EPRTVL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/EPRTVF' VAR=EPRTVF USAGE=OUTPUT.Format
 :EDATAGRP.
-:DATAI VAR=EPCHG USAGE=OUTPUT.Allow change
-:DATAI VAR=EPMSGF USAGE=OUTPUT.Description message file
+:DATAI HELP='FLD/EPCHG' VAR=EPCHG USAGE=OUTPUT.Allow change
+:DATAI HELP='FLD/EPMSGF' VAR=EPMSGF USAGE=OUTPUT.Description message file
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=EPMSGL USAGE=OUTPUT.Library
-:DATAI VAR=EPMSGID USAGE=OUTPUT.Message ID
+:DATAI HELP='FLD/EPMSGL' VAR=EPMSGL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/EPMSGID' VAR=EPMSGID USAGE=OUTPUT.Message ID
 :EDATAGRP.
-:DATAI VAR=EPTEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/EPTEXT' VAR=EPTEXT USAGE=OUTPUT.Text description
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=WRKEXITPGM KEYL=PGMKEYS HELP=WRKPGMH ENTER='RETURN 0'.Work with Exit Programs
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=EPNAME USAGE=OUTPUT.Exit point
+:DATAI HELP='FLD/EPNAME' VAR=EPNAME USAGE=OUTPUT.Exit point
 :DATAIX VAR=EPFMT USAGE=OUTPUT.
 :DATAIXT.Format
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PGMS ACTLEN=2 SCROLL=YES EXTACT=YES.(No exit programs found.)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 61'.1=Add
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='RETURN 64'.4=Remove
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 65'.5=Display
-:LISTACT OPTION=10 ACTFOR=LISTE ENTER='RETURN 70'.10=Replace
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=PGMNBR USAGE=OUTPUT MINWIDTH=17.Exit        Program      Number
-:LISTCOL VAR=PGM USAGE=OUTPUT MINWIDTH=13 EXTACT=YES.Exit          Program
-:LISTCOL VAR=PGMLIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTACT HELP='WRKEXITPGM/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='RETURN 61'.1=Add
+:LISTACT HELP='WRKEXITPGM/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='RETURN 64'.4=Remove
+:LISTACT HELP='WRKEXITPGM/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 65'.5=Display
+:LISTACT HELP='WRKEXITPGM/OPTIONS' OPTION=10 ACTFOR=LISTE ENTER='RETURN 70'.10=Replace
+:LISTCOL HELP='WRKEXITPGM/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/PGMNBR' VAR=PGMNBR USAGE=OUTPUT MINWIDTH=17.Exit        Program      Number
+:LISTCOL HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT MINWIDTH=13 EXTACT=YES.Exit          Program
+:LISTCOL HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT EXTACT=YES.Library
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
@@ -164,23 +164,23 @@
 :DATA DEPTH=3.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=EPNAME USAGE=OUTPUT.Exit point
-:DATAI VAR=EPFMT USAGE=OUTPUT.Exit point format
+:DATAI HELP='FLD/EPNAME' VAR=EPNAME USAGE=OUTPUT.Exit point
+:DATAI HELP='FLD/EPFMT' VAR=EPFMT USAGE=OUTPUT.Exit point format
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGMNBR USAGE=OUTPUT.Exit program number
-:DATAI VAR=PGM USAGE=OUTPUT.Exit program
+:DATAI HELP='FLD/PGMNBR' VAR=PGMNBR USAGE=OUTPUT.Exit program number
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Exit program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=PGTHDS USAGE=OUTPUT.Threadsafe
-:DATAI VAR=PGMTA USAGE=OUTPUT.Multithreaded job action
-:DATAI VAR=PGCCSID USAGE=OUTPUT.Exit program data CCSID
-:DATAI VAR=PGDTALEN USAGE=OUTPUT.Length of exit program data
-:DATAI VAR=PGDATA USAGE=OUTPUT.Exit program data
-:DATAI VAR=PGTEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/PGTHDS' VAR=PGTHDS USAGE=OUTPUT.Threadsafe
+:DATAI HELP='FLD/PGMTA' VAR=PGMTA USAGE=OUTPUT.Multithreaded job action
+:DATAI HELP='FLD/PGCCSID' VAR=PGCCSID USAGE=OUTPUT.Exit program data CCSID
+:DATAI HELP='FLD/PGDTALEN' VAR=PGDTALEN USAGE=OUTPUT.Length of exit program data
+:DATAI HELP='FLD/PGDATA' VAR=PGDATA USAGE=OUTPUT.Exit program data
+:DATAI HELP='FLD/PGTEXT' VAR=PGTEXT USAGE=OUTPUT.Text description
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -207,5 +207,133 @@ threads treats it, and the data handed to whoever calls it.
 :P.F3 leaves the display, F12 goes back one display, F4 prompts the
 command typed, F5 reads the programs again and F9 brings back the
 last command.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='WRKREGINF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/EPNAME'.Exit                Point
+:P.The exit Point of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/EPFMT'.Exit Point Format
+:P.The exit Point Format of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/EPREGD'.Registered
+:P.The registered of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/EPTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKREGINF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display exit point
+:PD.Type 5 next to an entry and press Enter to display exit point it.
+:PT.8=Work with exit programs
+:PD.Type 8 next to an entry and press Enter to work with exit programs
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/EPREG'.Exit point registered
+:P.The exit point registered shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPDEREG'.Allow deregister
+:P.The allow deregister shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPMAX'.Maximum number of exit programs
+:P.The maximum number of exit programs shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/EPCOUNT'.Current number of exit programs
+:P.The current number of exit programs shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/EPADDP'.Preprocessing for add
+:P.The preprocessing for add shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPADDL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPADDF'.Format
+:P.The format shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPRMVP'.Preprocessing for remove
+:P.The preprocessing for remove shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPRMVL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPRMVF'.Format
+:P.The format shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPRTVP'.Preprocessing for retrieve
+:P.The preprocessing for retrieve shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPRTVL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPRTVF'.Format
+:P.The format shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPCHG'.Allow change
+:P.The allow change shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPMSGF'.Description message file
+:P.The description message file shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPMSGL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EPMSGID'.Message ID
+:P.The message ID shown for what the display is about.
+:EHELP.
+:HELP NAME='WRKEXITPGM/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/PGMNBR'.Exit        Program      Number
+:P.The exit Program Number of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PGM'.Exit          Program
+:P.The exit Program of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PGMLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='WRKEXITPGM/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add
+:PD.Type 1 next to an entry and press Enter to add it.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.10=Replace
+:PD.Type 10 next to an entry and press Enter to replace it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/PGTHDS'.Threadsafe
+:P.The threadsafe shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGMTA'.Multithreaded job action
+:P.The multithreaded job action shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGCCSID'.Exit program data CCSID
+:P.The exit program data CCSID shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGDTALEN'.Length of exit program data
+:P.The length of exit program data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGDATA'.Exit program data
+:P.The exit program data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGTEXT'.Text description
+:P.The text description shown for what the display is about.
 :EHELP.
 :EPNLGRP.

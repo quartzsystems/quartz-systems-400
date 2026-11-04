@@ -52,7 +52,7 @@
 :LISTDEF NAME=AGRTEXT VARS='AGRLINE'.
 :LISTDEF NAME=AGRS VARS='OPT LPID LPRLS AGRSTS LPTEXT'.
 :LISTDEF NAME=LICS VARS='OPT LPID LICTRM LICFTR LICCMP LICLMT LICCNT'.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -63,7 +63,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=RLSKEYS.
+:KEYL HELP='KEYS/RLSKEYS' NAME=RLSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -74,7 +74,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=SELKEYS.
+:KEYL HELP='KEYS/SELKEYS' NAME=SELKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -85,14 +85,14 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=PRMKEYS.
+:KEYL HELP='KEYS/PRMKEYS' NAME=PRMKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=AGRKEYS.
+:KEYL HELP='KEYS/AGRKEYS' NAME=AGRKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -103,7 +103,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -115,129 +115,129 @@
 :EKEYL.
 :PANEL NAME=LICPGM10 HELP=HLP10 KEYL=DSPKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Installed Licensed Programs
 :LIST DEPTH='*' LISTDEF=INSTALLED SCROLL=YES HEADSEP.(No licensed programs are installed)
-:LISTCOL VAR=LPID USAGE=OUTPUT.Licensed Program
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Installed Status
-:LISTCOL VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=44.Description
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed Program
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Installed Status
+:LISTCOL HELP='FLD/LPTEXT' VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=44.Description
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=LICPGM10R HELP=HLP10 KEYL=RLSKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Installed Licensed Programs
 :LIST DEPTH='*' LISTDEF=INSTALLED SCROLL=YES HEADSEP.(No licensed programs are installed)
-:LISTCOL VAR=LPID USAGE=OUTPUT.Licensed Program
-:LISTCOL VAR=LPRLS USAGE=OUTPUT.Installed Release
-:LISTCOL VAR=LPOPT USAGE=OUTPUT.Product Option
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed Program
+:LISTCOL HELP='FLD/LPRLS' VAR=LPRLS USAGE=OUTPUT.Installed Release
+:LISTCOL HELP='FLD/LPOPT' VAR=LPOPT USAGE=OUTPUT.Product Option
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=LICPGM11 HELP=HLP11 KEYL=SELKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Install Licensed Programs
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PROGRAMS SCROLL=YES HEADSEP.(No licensed programs to install)
-:LISTACT OPTION=1 ENTER='RETURN 101'.1=Install
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LPID USAGE=OUTPUT.Licensed Program
-:LISTCOL VAR=LPOPT USAGE=OUTPUT.Product Option
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Installed Status
-:LISTCOL VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=36.Description
+:LISTACT HELP='LICPGM11/OPTIONS' OPTION=1 ENTER='RETURN 101'.1=Install
+:LISTCOL HELP='LICPGM11/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed Program
+:LISTCOL HELP='FLD/LPOPT' VAR=LPOPT USAGE=OUTPUT.Product Option
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Installed Status
+:LISTCOL HELP='FLD/LPTEXT' VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=36.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=LICINSOPT HELP=HLPINS KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Install Options
 :TOPINST.Type choices, press Enter.
 :DATA DEPTH='*'.
-:DATAI VAR=INSDEV USAGE=INOUT.Installation device (save file)
-:DATAI VAR=INSOBJ USAGE=INOUT.Objects to install
-:DATAI VAR=INSIPL USAGE=INOUT.Automatic IPL
+:DATAI HELP='FLD/INSDEV' VAR=INSDEV USAGE=INOUT.Installation device (save file)
+:DATAI HELP='FLD/INSOBJ' VAR=INSOBJ USAGE=INOUT.Objects to install
+:DATAI HELP='FLD/INSIPL' VAR=INSIPL USAGE=INOUT.Automatic IPL
 :EDATA.
 :BOTINST.Objects: 1=Programs and language objects, 2=Programs, 3=Language objects
 :EPANEL.
 :PANEL NAME=LICAGREE HELP=HLPAGR KEYL=AGRKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Software Agreement
 :DATA DEPTH=3.
-:DATAI VAR=LPID USAGE=OUTPUT.Licensed program
-:DATAI VAR=LPRLS USAGE=OUTPUT.Release
-:DATAI VAR=LPTEXT USAGE=OUTPUT.Description
+:DATAI HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed program
+:DATAI HELP='FLD/LPRLS' VAR=LPRLS USAGE=OUTPUT.Release
+:DATAI HELP='FLD/LPTEXT' VAR=LPTEXT USAGE=OUTPUT.Description
 :EDATA.
 :LIST DEPTH='*' LISTDEF=AGRTEXT SCROLL=YES.
-:LISTCOL VAR=AGRLINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/AGRLINE' VAR=AGRLINE USAGE=OUTPUT.
 :ELIST.
 :BOTINST.F14 accepts the agreement; F15 declines it and the program is not installed.
 :EPANEL.
 :PANEL NAME=LICPGM12 HELP=HLP12 KEYL=SELKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Delete Licensed Programs
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PROGRAMS SCROLL=YES HEADSEP.(No licensed programs are installed)
-:LISTACT OPTION=4 ENTER='CMD DLTLICPGM LICPGM(&LPID.) OPTION(&LPOPT.)'.4=Delete
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LPID USAGE=OUTPUT.Licensed Program
-:LISTCOL VAR=LPOPT USAGE=OUTPUT.Product Option
-:LISTCOL VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=44.Description
+:LISTACT HELP='LICPGM12/OPTIONS' OPTION=4 ENTER='CMD DLTLICPGM LICPGM(&LPID.) OPTION(&LPOPT.)'.4=Delete
+:LISTCOL HELP='LICPGM12/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed Program
+:LISTCOL HELP='FLD/LPOPT' VAR=LPOPT USAGE=OUTPUT.Product Option
+:LISTCOL HELP='FLD/LPTEXT' VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=44.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=LICPGM13 HELP=HLP13 KEYL=SELKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Save Licensed Programs
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PROGRAMS SCROLL=YES HEADSEP.(No licensed programs are installed)
-:LISTACT OPTION=1 ENTER='CMD ?SAVLICPGM LICPGM(&LPID.) OPTION(&LPOPT.) DEV(*SAVF)'.1=Save
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LPID USAGE=OUTPUT.Licensed Program
-:LISTCOL VAR=LPOPT USAGE=OUTPUT.Product Option
-:LISTCOL VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=44.Description
+:LISTACT HELP='LICPGM13/OPTIONS' OPTION=1 ENTER='CMD ?SAVLICPGM LICPGM(&LPID.) OPTION(&LPOPT.) DEV(*SAVF)'.1=Save
+:LISTCOL HELP='LICPGM13/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed Program
+:LISTCOL HELP='FLD/LPOPT' VAR=LPOPT USAGE=OUTPUT.Product Option
+:LISTCOL HELP='FLD/LPTEXT' VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=44.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=LICLNG20 HELP=HLPLNG KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Secondary Languages
 :DATA DEPTH=2.
-:DATAI VAR=PRILNG USAGE=OUTPUT.Primary language
-:DATAI VAR=PRILNGT USAGE=OUTPUT.Description
+:DATAI HELP='FLD/PRILNG' VAR=PRILNG USAGE=OUTPUT.Primary language
+:DATAI HELP='FLD/PRILNGT' VAR=PRILNGT USAGE=OUTPUT.Description
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LANGS SCROLL=YES HEADSEP.(No secondary languages are installed)
-:LISTCOL VAR=LNGID USAGE=OUTPUT.Secondary Language
-:LISTCOL VAR=LNGTEXT USAGE=OUTPUT.Description
+:LISTCOL HELP='FLD/LNGID' VAR=LNGID USAGE=OUTPUT.Secondary Language
+:LISTCOL HELP='FLD/LNGTEXT' VAR=LNGTEXT USAGE=OUTPUT.Description
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=LICLNG21 HELP=HLPLNG KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Install Secondary Languages
 :DATA DEPTH=1.
-:DATAI VAR=PRILNG USAGE=OUTPUT.Primary language
+:DATAI HELP='FLD/PRILNG' VAR=PRILNG USAGE=OUTPUT.Primary language
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LANGS SCROLL=YES HEADSEP.(No other languages are on the media)
-:LISTACT OPTION=1 ENTER='RETURN 121'.1=Install
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LNGID USAGE=OUTPUT.Language Feature
-:LISTCOL VAR=LNGTEXT USAGE=OUTPUT.Description
+:LISTACT HELP='LICLNG21/OPTIONS' OPTION=1 ENTER='RETURN 121'.1=Install
+:LISTCOL HELP='LICLNG21/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LNGID' VAR=LNGID USAGE=OUTPUT.Language Feature
+:LISTCOL HELP='FLD/LNGTEXT' VAR=LNGTEXT USAGE=OUTPUT.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=LICLNG22 HELP=HLPLNG KEYL=PRMKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Delete Secondary Languages
 :DATA DEPTH=1.
-:DATAI VAR=PRILNG USAGE=OUTPUT.Primary language
+:DATAI HELP='FLD/PRILNG' VAR=PRILNG USAGE=OUTPUT.Primary language
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LANGS SCROLL=YES HEADSEP.(No secondary languages are installed)
-:LISTACT OPTION=4 ENTER='RETURN 122'.4=Delete
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LNGID USAGE=OUTPUT.Secondary Language
-:LISTCOL VAR=LNGTEXT USAGE=OUTPUT.Description
+:LISTACT HELP='LICLNG22/OPTIONS' OPTION=4 ENTER='RETURN 122'.4=Delete
+:LISTCOL HELP='LICLNG22/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LNGID' VAR=LNGID USAGE=OUTPUT.Secondary Language
+:LISTCOL HELP='FLD/LNGTEXT' VAR=LNGTEXT USAGE=OUTPUT.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=WRKSFWAGR HELP=HLPWAGR KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Work with Software Agreements
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=AGRS SCROLL=YES HEADSEP.(No software agreements)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LPID USAGE=OUTPUT.Licensed Program
-:LISTCOL VAR=LPRLS USAGE=OUTPUT.Release
-:LISTCOL VAR=AGRSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=38.Description
+:LISTACT HELP='WRKSFWAGR/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display
+:LISTCOL HELP='WRKSFWAGR/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Licensed Program
+:LISTCOL HELP='FLD/LPRLS' VAR=LPRLS USAGE=OUTPUT.Release
+:LISTCOL HELP='FLD/AGRSTS' VAR=AGRSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/LPTEXT' VAR=LPTEXT USAGE=OUTPUT MAXWIDTH=38.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=WRKLICINF HELP=HLPWLIC KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM.Work with License Information
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LICS SCROLL=YES HEADSEP.(No license information)
-:LISTACT OPTION=2 ENTER='CMD ?CHGLICINF PRDID(&LPID.) LICTRM(&LICTRM.) FEATURE(&LICFTR.)'.2=Change
-:LISTACT OPTION=5 ENTER='CMD DSPLICKEY PRDID(&LPID.) LICTRM(&LICTRM.) FEATURE(&LICFTR.)'.5=Display license key
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LPID USAGE=OUTPUT.Product ID
-:LISTCOL VAR=LICTRM USAGE=OUTPUT.Term
-:LISTCOL VAR=LICFTR USAGE=OUTPUT.Feature
-:LISTCOL VAR=LICCMP USAGE=OUTPUT.Compliance
-:LISTCOL VAR=LICLMT USAGE=OUTPUT.Usage Limit
-:LISTCOL VAR=LICCNT USAGE=OUTPUT.Usage Count
+:LISTACT HELP='WRKLICINF/OPTIONS' OPTION=2 ENTER='CMD ?CHGLICINF PRDID(&LPID.) LICTRM(&LICTRM.) FEATURE(&LICFTR.)'.2=Change
+:LISTACT HELP='WRKLICINF/OPTIONS' OPTION=5 ENTER='CMD DSPLICKEY PRDID(&LPID.) LICTRM(&LICTRM.) FEATURE(&LICFTR.)'.5=Display license key
+:LISTCOL HELP='WRKLICINF/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LPID' VAR=LPID USAGE=OUTPUT.Product ID
+:LISTCOL HELP='FLD/LICTRM' VAR=LICTRM USAGE=OUTPUT.Term
+:LISTCOL HELP='FLD/LICFTR' VAR=LICFTR USAGE=OUTPUT.Feature
+:LISTCOL HELP='FLD/LICCMP' VAR=LICCMP USAGE=OUTPUT.Compliance
+:LISTCOL HELP='FLD/LICLMT' VAR=LICLMT USAGE=OUTPUT.Usage Limit
+:LISTCOL HELP='FLD/LICCNT' VAR=LICCNT USAGE=OUTPUT.Usage Count
 :ELIST.
 :EPANEL.
 :HELP NAME=HLP10.Display Installed Licensed Programs - Help
@@ -278,5 +278,227 @@ accepted. Option 5 shows the agreement.
 :HELP NAME=HLPWLIC.Work with License Information - Help
 :P.The license terms of each product feature: how use past the usage
 limit is handled, the limit and the uses held now.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=Display release
+:PD.Display release.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F19=Display trademarks
+:PD.Display trademarks.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/LPID'.Licensed Program
+:P.The licensed Program of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Installed Status
+:P.The installed Status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LPTEXT'.Description
+:P.The description of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/RLSKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=Display status
+:PD.Display status.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F19=Display trademarks
+:PD.Display trademarks.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/LPRLS'.Installed Release
+:P.The installed Release of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LPOPT'.Product Option
+:P.The product Option of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/SELKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=Display release
+:PD.Display release.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F19=Display trademarks
+:PD.Display trademarks.
+:EPARML.
+:EHELP.
+:HELP NAME='LICPGM11/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='LICPGM11/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Install
+:PD.Type 1 next to an entry and press Enter to install it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/PRMKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/INSDEV'.Installation device (save file)
+:P.Type the installation device (save file).
+:EHELP.
+:HELP NAME='FLD/INSOBJ'.Objects to install
+:P.Type the objects to install.
+:EHELP.
+:HELP NAME='FLD/INSIPL'.Automatic IPL
+:P.Type the automatic IPL.
+:EHELP.
+:HELP NAME='KEYS/AGRKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F14=Accept
+:PD.Accept.
+:PT.F15=Decline
+:PD.Decline.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/AGRLINE'.AGRLINE
+:P.The AGRLINE of each entry in the list.
+:EHELP.
+:HELP NAME='LICPGM12/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='LICPGM12/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Licensed Program (DLTLICPGM) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='LICPGM13/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='LICPGM13/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Save
+:PD.Type 1 next to an entry and press Enter to save it. The Save
+Licensed Program (SAVLICPGM) command is prompted for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/PRILNG'.Primary language
+:P.The primary language shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRILNGT'.Description
+:P.The description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LNGID'.Secondary Language
+:P.The secondary Language of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LNGTEXT'.Description
+:P.The description of each entry in the list.
+:EHELP.
+:HELP NAME='LICLNG21/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='LICLNG21/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Install
+:PD.Type 1 next to an entry and press Enter to install it.
+:EPARML.
+:EHELP.
+:HELP NAME='LICLNG22/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='LICLNG22/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKSFWAGR/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/AGRSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='WRKSFWAGR/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKLICINF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LICTRM'.Term
+:P.The term of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LICFTR'.Feature
+:P.The feature code of the product.
+:EHELP.
+:HELP NAME='FLD/LICCMP'.Compliance
+:P.The compliance of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LICLMT'.Usage Limit
+:P.The usage Limit of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LICCNT'.Usage Count
+:P.The usage Count of each entry in the list.
+:EHELP.
+:HELP NAME='WRKLICINF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+License Information (CHGLICINF) command is prompted for the entry.
+:PT.5=Display license key
+:PD.Type 5 next to an entry and press Enter to display license key it.
+The Display License Key Information (DSPLICKEY) command runs for the
+entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

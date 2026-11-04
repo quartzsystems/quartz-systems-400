@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMN'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,16 +24,16 @@
 :EKEYL.
 :PANEL NAME=CMN HELP=HLPCMN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Communications
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU CMNSTS'.Communication status
-:MENUI OPTION=2 ACTION='MENU MESSAGE'.Messages
-:MENUI OPTION=3 ACTION='CMD ?STRPASTHR'.Access a remote system
-:MENUI OPTION=4 ACTION='MENU CFGCMN'.Configure communications and remote hardware
-:MENUI OPTION=5 ACTION='MENU NETWORK'.Network management
-:MENUI OPTION=6 ACTION='MENU NETCFG'.Network configuration
-:MENUI OPTION=7 ACTION='CMD ?VFYCMN'.Verify communications
-:MENUI OPTION=8 ACTION='MENU FILETFR'.Send or receive files
-:MENUI OPTION=9 ACTION='MENU JOB'.Jobs
-:MENUI OPTION=70 ACTION='MENU CMDCMN'.Related commands
+:MENUI HELP='CMN/OPT1' OPTION=1 ACTION='MENU CMNSTS'.Communication status
+:MENUI HELP='CMN/OPT2' OPTION=2 ACTION='MENU MESSAGE'.Messages
+:MENUI HELP='CMN/OPT3' OPTION=3 ACTION='CMD ?STRPASTHR'.Access a remote system
+:MENUI HELP='CMN/OPT4' OPTION=4 ACTION='MENU CFGCMN'.Configure communications and remote hardware
+:MENUI HELP='CMN/OPT5' OPTION=5 ACTION='MENU NETWORK'.Network management
+:MENUI HELP='CMN/OPT6' OPTION=6 ACTION='MENU NETCFG'.Network configuration
+:MENUI HELP='CMN/OPT7' OPTION=7 ACTION='CMD ?VFYCMN'.Verify communications
+:MENUI HELP='CMN/OPT8' OPTION=8 ACTION='MENU FILETFR'.Send or receive files
+:MENUI HELP='CMN/OPT9' OPTION=9 ACTION='MENU JOB'.Jobs
+:MENUI HELP='CMN/OPT70' OPTION=70 ACTION='MENU CMDCMN'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -43,5 +43,55 @@ and the jobs and messages that go with them.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='CMN/OPT1'.Communication status
+:P.Option 1. Shows menu CMNSTS&colon. Communication status.
+:EHELP.
+:HELP NAME='CMN/OPT2'.Messages
+:P.Option 2. Shows menu MESSAGE&colon. Messages.
+:EHELP.
+:HELP NAME='CMN/OPT3'.Access a remote system
+:P.Option 3. Runs the STRPASTHR command&colon. Access a remote system.
+:EHELP.
+:HELP NAME='CMN/OPT4'.Configure communications and remote hardware
+:P.Option 4. Shows menu CFGCMN&colon. Configure communications and
+remote hardware.
+:EHELP.
+:HELP NAME='CMN/OPT5'.Network management
+:P.Option 5. Shows menu NETWORK&colon. Network management.
+:EHELP.
+:HELP NAME='CMN/OPT6'.Network configuration
+:P.Option 6. Shows menu NETCFG&colon. Network configuration.
+:EHELP.
+:HELP NAME='CMN/OPT7'.Verify communications
+:P.Option 7. Runs the VFYCMN command&colon. Verify communications.
+:EHELP.
+:HELP NAME='CMN/OPT8'.Send or receive files
+:P.Option 8. Shows menu FILETFR&colon. Send or receive files.
+:EHELP.
+:HELP NAME='CMN/OPT9'.Jobs
+:P.Option 9. Shows menu JOB&colon. Jobs.
+:EHELP.
+:HELP NAME='CMN/OPT70'.Related commands
+:P.Option 70. Shows menu CMDCMN&colon. Related commands.
 :EHELP.
 :EPNLGRP.

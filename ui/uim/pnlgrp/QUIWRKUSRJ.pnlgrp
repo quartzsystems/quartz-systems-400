@@ -27,7 +27,7 @@
 :VAR NAME=SBS CLASS=NAMECL.
 :VAR NAME=SBSLIB CLASS=NAMECL.
 :LISTDEF NAME=JOBS VARS='OPT JOB USER NUMBER TYPE STATUS FUNCTION'.
-:KEYL NAME=UJKEYS.
+:KEYL HELP='KEYS/UJKEYS' NAME=UJKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -42,7 +42,7 @@
 :KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
 :KEYI KEY=F21 ACTION='RETURN 21'.F21=Select assistance level
 :EKEYL.
-:KEYL NAME=SJKEYS.
+:KEYL HELP='KEYS/SJKEYS' NAME=SJKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -59,45 +59,45 @@
 :PANEL NAME=WRKUSRJOB KEYL=UJKEYS HELP=WRKUSRJOB ENTER='RETURN 1' TOPSEP=DATETIME.Work with User Jobs
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBS MAXHEAD=2.(No jobs to show)
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOB.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOB.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOB.)'.6=Release
-:LISTACT OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOB.)'.7=Display message
-:LISTACT OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.) OPTION(*SPLF)'.8=Work with spooled files
-:LISTACT OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOB.)'.13=Disconnect
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Job
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=STATUS USAGE=OUTPUT.-----Status-----
-:LISTCOL VAR=FUNCTION USAGE=OUTPUT.Function
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOB.)'.2=Change
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOB.)'.3=Hold
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOB.)'.6=Release
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOB.)'.7=Display message
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.) OPTION(*SPLF)'.8=Work with spooled files
+:LISTACT HELP='WRKUSRJOB/OPTIONS' OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOB.)'.13=Disconnect
+:LISTCOL HELP='WRKUSRJOB/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.-----Status-----
+:LISTCOL HELP='FLD/FUNCTION' VAR=FUNCTION USAGE=OUTPUT.Function
 :ELIST.
 :CMDLINE SIZE=SHORT.
 :EPANEL.
 :PANEL NAME=WRKSBSJOB KEYL=SJKEYS HELP=WRKSBSJOB ENTER='RETURN 1' TOPSEP=DATETIME.Work with Subsystem Jobs
 :DATA DEPTH=2.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem
 .* Not shown: it sets the colon column.
 :DATAI VAR=SBSLIB USAGE=OUTPUT DISPLAY=NO.Library of subsystem
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBS MAXHEAD=2.(No jobs to show)
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOB.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOB.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOB.)'.6=Release
-:LISTACT OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOB.)'.7=Display message
-:LISTACT OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.) OPTION(*SPLF)'.8=Work with spooled files
-:LISTACT OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOB.)'.13=Disconnect
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Job
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=STATUS USAGE=OUTPUT.-----Status-----
-:LISTCOL VAR=FUNCTION USAGE=OUTPUT.Function
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOB.)'.2=Change
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOB.)'.3=Hold
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOB.)'.6=Release
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOB.)'.7=Display message
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.) OPTION(*SPLF)'.8=Work with spooled files
+:LISTACT HELP='WRKSBSJOB/OPTIONS' OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOB.)'.13=Disconnect
+:LISTCOL HELP='WRKSBSJOB/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.-----Status-----
+:LISTCOL HELP='FLD/FUNCTION' VAR=FUNCTION USAGE=OUTPUT.Function
 :ELIST.
 :CMDLINE SIZE=SHORT.
 :EPANEL.
@@ -109,5 +109,141 @@ next to a job, or a command on the command line.
 :HELP NAME=WRKSBSJOB.Work with Subsystem Jobs - Help
 :P.The jobs running in a subsystem, or in every active subsystem.
 Type an option next to a job, or a command on the command line.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/UJKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display schedule data
+:PD.Display schedule data.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:PT.F21=Select assistance level
+:PD.Select assistance level.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKUSRJOB/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STATUS'.-----Status-----
+:P.The -----Status----- of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/FUNCTION'.Function
+:P.The function of each entry in the list.
+:EHELP.
+:HELP NAME='WRKUSRJOB/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+(CHGJOB) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+(HLDJOB) command runs for the entry.
+:PT.4=End
+:PD.Type 4 next to an entry and press Enter to end it. The End Job
+(ENDJOB) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Job (WRKJOB) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job (RLSJOB) command runs for the entry.
+:PT.7=Display message
+:PD.Type 7 next to an entry and press Enter to display message it. The
+Display Job Log (DSPJOBLOG) command runs for the entry.
+:PT.8=Work with spooled files
+:PD.Type 8 next to an entry and press Enter to work with spooled files
+it. The Work with Job (WRKJOB) command runs for the entry.
+:PT.13=Disconnect
+:PD.Type 13 next to an entry and press Enter to disconnect it. The
+Disconnect Job (DSCJOB) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/SJKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display schedule data
+:PD.Display schedule data.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SBS'.Subsystem
+:P.The subsystem shown for what the display is about.
+:EHELP.
+:HELP NAME='WRKSBSJOB/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKSBSJOB/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+(CHGJOB) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+(HLDJOB) command runs for the entry.
+:PT.4=End
+:PD.Type 4 next to an entry and press Enter to end it. The End Job
+(ENDJOB) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Job (WRKJOB) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job (RLSJOB) command runs for the entry.
+:PT.7=Display message
+:PD.Type 7 next to an entry and press Enter to display message it. The
+Display Job Log (DSPJOBLOG) command runs for the entry.
+:PT.8=Work with spooled files
+:PD.Type 8 next to an entry and press Enter to work with spooled files
+it. The Work with Job (WRKJOB) command runs for the entry.
+:PT.13=Disconnect
+:PD.Type 13 next to an entry and press Enter to disconnect it. The
+Disconnect Job (DSCJOB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

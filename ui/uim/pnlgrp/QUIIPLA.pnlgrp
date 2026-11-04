@@ -38,29 +38,29 @@
 :DATACOL WIDTH=51.
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.System Features
-:DATAI VAR=RESTART USAGE=OUTPUT.Restart type
-:DATAI VAR=KEYLCKPOS USAGE=OUTPUT.Keylock position
+:DATAI HELP='FLD/RESTART' VAR=RESTART USAGE=OUTPUT.Restart type
+:DATAI HELP='FLD/KEYLCKPOS' VAR=KEYLCKPOS USAGE=OUTPUT.Keylock position
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.Hardware Functions
-:DATAI VAR=HDWDIAG USAGE=OUTPUT.Hardware diagnostics
+:DATAI HELP='FLD/HDWDIAG' VAR=HDWDIAG USAGE=OUTPUT.Hardware diagnostics
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.Operating System Functions
-:DATAI VAR=CPRJOBTBL USAGE=OUTPUT.Compress job tables
-:DATAI VAR=CHKJOBTBL USAGE=OUTPUT.Check job tables
-:DATAI VAR=RBDPRDDIR USAGE=OUTPUT.Rebuild product directory
-:DATAI VAR=MSFRCY USAGE=OUTPUT.Mail Server Framework recovery
-:DATAI VAR=DSPSTS USAGE=OUTPUT.Display status
-:DATAI VAR=STRTCP USAGE=OUTPUT.Start TCP/IP
-:DATAI VAR=SPLFRCY USAGE=OUTPUT.Spooled file recovery
+:DATAI HELP='FLD/CPRJOBTBL' VAR=CPRJOBTBL USAGE=OUTPUT.Compress job tables
+:DATAI HELP='FLD/CHKJOBTBL' VAR=CHKJOBTBL USAGE=OUTPUT.Check job tables
+:DATAI HELP='FLD/RBDPRDDIR' VAR=RBDPRDDIR USAGE=OUTPUT.Rebuild product directory
+:DATAI HELP='FLD/MSFRCY' VAR=MSFRCY USAGE=OUTPUT.Mail Server Framework recovery
+:DATAI HELP='FLD/DSPSTS' VAR=DSPSTS USAGE=OUTPUT.Display status
+:DATAI HELP='FLD/STRTCP' VAR=STRTCP USAGE=OUTPUT.Start TCP/IP
+:DATAI HELP='FLD/SPLFRCY' VAR=SPLFRCY USAGE=OUTPUT.Spooled file recovery
 :EDATAGRP.
 :DATAC.
 :DATAC.
 :DATAGRP GRPSEP=SPACE.Operating System Options
-:DATAI VAR=CLRJOBQ USAGE=OUTPUT.Clear job queues
-:DATAI VAR=CLROUTQ USAGE=OUTPUT.Clear output queues
-:DATAI VAR=CLRINCJOB USAGE=OUTPUT.Clear incomplete joblogs
-:DATAI VAR=STRPRTWTR USAGE=OUTPUT.Start print writers
-:DATAI VAR=STRRSTD USAGE=OUTPUT.Start system to restricted state
+:DATAI HELP='FLD/CLRJOBQ' VAR=CLRJOBQ USAGE=OUTPUT.Clear job queues
+:DATAI HELP='FLD/CLROUTQ' VAR=CLROUTQ USAGE=OUTPUT.Clear output queues
+:DATAI HELP='FLD/CLRINCJOB' VAR=CLRINCJOB USAGE=OUTPUT.Clear incomplete joblogs
+:DATAI HELP='FLD/STRPRTWTR' VAR=STRPRTWTR USAGE=OUTPUT.Start print writers
+:DATAI HELP='FLD/STRRSTD' VAR=STRRSTD USAGE=OUTPUT.Start system to restricted state
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -72,5 +72,53 @@ changes them.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave, F5 reads the attributes again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/RESTART'.Restart type
+:P.The restart type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/KEYLCKPOS'.Keylock position
+:P.The keylock position shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HDWDIAG'.Hardware diagnostics
+:P.The hardware diagnostics shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CPRJOBTBL'.Compress job tables
+:P.The compress job tables shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CHKJOBTBL'.Check job tables
+:P.The check job tables shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RBDPRDDIR'.Rebuild product directory
+:P.The rebuild product directory shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MSFRCY'.Mail Server Framework recovery
+:P.The mail Server Framework recovery shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/DSPSTS'.Display status
+:P.The display status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STRTCP'.Start TCP/IP
+:P.The start TCP/IP shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SPLFRCY'.Spooled file recovery
+:P.The spooled file recovery shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CLRJOBQ'.Clear job queues
+:P.The clear job queues shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CLROUTQ'.Clear output queues
+:P.The clear output queues shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CLRINCJOB'.Clear incomplete joblogs
+:P.The clear incomplete joblogs shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STRPRTWTR'.Start print writers
+:P.The start print writers shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STRRSTD'.Start system to restricted state
+:P.The start system to restricted state shown for what the display is
+about.
 :EHELP.
 :EPNLGRP.

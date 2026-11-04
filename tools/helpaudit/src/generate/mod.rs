@@ -6,6 +6,7 @@
 
 pub mod cmdhelp;
 pub mod dict;
+pub mod panels;
 pub mod uimtext;
 
 use std::path::Path;

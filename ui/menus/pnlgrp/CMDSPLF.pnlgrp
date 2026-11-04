@@ -11,7 +11,17 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDSPLF'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGSPLFA PNLGRP=QHSPCMD.
+:IMPORT NAME=CPYSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=DLTSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=DSPSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=HLDSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=RLSSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=SNDNETSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=SNDTCPSPLF PNLGRP=QHTMCMD.
+:IMPORT NAME=WRKSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=WRKSPLFA PNLGRP=QHSPCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,16 +34,16 @@
 :PANEL NAME=CMDSPLF HELP=HLPCMDSPLF KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Spooled File Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?CHGSPLFA'.Change Spooled File Attr  CHGSPLFA
-:MENUI OPTION=2 ACTION='CMD ?CPYSPLF'.Copy Spooled File  CPYSPLF
-:MENUI OPTION=3 ACTION='CMD ?DLTSPLF'.Delete Spooled File  DLTSPLF
-:MENUI OPTION=4 ACTION='CMD ?DSPSPLF'.Display Spooled File  DSPSPLF
-:MENUI OPTION=5 ACTION='CMD ?HLDSPLF'.Hold Spooled File  HLDSPLF
-:MENUI OPTION=6 ACTION='CMD ?RLSSPLF'.Release Spooled File  RLSSPLF
-:MENUI OPTION=7 ACTION='CMD ?SNDNETSPLF'.Send Network Spooled File  SNDNETSPLF
-:MENUI OPTION=8 ACTION='CMD ?SNDTCPSPLF'.Send TCP/IP Spooled File  SNDTCPSPLF
-:MENUI OPTION=9 ACTION='CMD ?WRKSPLF'.Work with Spooled Files  WRKSPLF
-:MENUI OPTION=10 ACTION='CMD ?WRKSPLFA'.Work with Spooled File Attributes  WRKSPLFA
+:MENUI OPTION=1 ACTION='CMD ?CHGSPLFA' HELP=CHGSPLFA.Change Spooled File Attr  CHGSPLFA
+:MENUI OPTION=2 ACTION='CMD ?CPYSPLF' HELP=CPYSPLF.Copy Spooled File  CPYSPLF
+:MENUI OPTION=3 ACTION='CMD ?DLTSPLF' HELP=DLTSPLF.Delete Spooled File  DLTSPLF
+:MENUI OPTION=4 ACTION='CMD ?DSPSPLF' HELP=DSPSPLF.Display Spooled File  DSPSPLF
+:MENUI OPTION=5 ACTION='CMD ?HLDSPLF' HELP=HLDSPLF.Hold Spooled File  HLDSPLF
+:MENUI OPTION=6 ACTION='CMD ?RLSSPLF' HELP=RLSSPLF.Release Spooled File  RLSSPLF
+:MENUI OPTION=7 ACTION='CMD ?SNDNETSPLF' HELP=SNDNETSPLF.Send Network Spooled File  SNDNETSPLF
+:MENUI OPTION=8 ACTION='CMD ?SNDTCPSPLF' HELP=SNDTCPSPLF.Send TCP/IP Spooled File  SNDTCPSPLF
+:MENUI OPTION=9 ACTION='CMD ?WRKSPLF' HELP=WRKSPLF.Work with Spooled Files  WRKSPLF
+:MENUI OPTION=10 ACTION='CMD ?WRKSPLFA' HELP=WRKSPLFA.Work with Spooled File Attributes  WRKSPLFA
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -41,5 +51,21 @@
 :HELP NAME=HLPCMDSPLF.Spooled File Commands - Help
 :P.Spooled File Commands: every command whose name carries SPLF after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

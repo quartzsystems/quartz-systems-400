@@ -11,7 +11,11 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDEDT'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=EDTAUTL PNLGRP=QHSYCMD.
+:IMPORT NAME=EDTF PNLGRP=QHZRUCMD.
+:IMPORT NAME=EDTLIBL PNLGRP=QHWMCMD.
+:IMPORT NAME=EDTOBJAUT PNLGRP=QHSYCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,16 +28,16 @@
 :PANEL NAME=CMDEDT HELP=HLPCMDEDT KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Edit Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?EDTAUTL'.Edit Authorization List  EDTAUTL
+:MENUI OPTION=1 ACTION='CMD ?EDTAUTL' HELP=EDTAUTL.Edit Authorization List  EDTAUTL
 :MENUI OPTION=2 ACTION='CMD ?EDTBCKUPL'.
 :MENUI OPTION=3 ACTION='CMD ?EDTCPCST'.
 :MENUI OPTION=4 ACTION='CMD ?EDTDLFA'.
 :MENUI OPTION=5 ACTION='CMD ?EDTDLOAUT'.
 :MENUI OPTION=6 ACTION='CMD ?EDTDOC'.
-:MENUI OPTION=7 ACTION='CMD ?EDTF'.Edit File  EDTF
+:MENUI OPTION=7 ACTION='CMD ?EDTF' HELP=EDTF.Edit File  EDTF
 :MENUI OPTION=8 ACTION='CMD ?EDTIGCDCT'.
-:MENUI OPTION=9 ACTION='CMD ?EDTLIBL'.Edit Library List  EDTLIBL
-:MENUI OPTION=10 ACTION='CMD ?EDTOBJAUT'.Edit Object Authority  EDTOBJAUT
+:MENUI OPTION=9 ACTION='CMD ?EDTLIBL' HELP=EDTLIBL.Edit Library List  EDTLIBL
+:MENUI OPTION=10 ACTION='CMD ?EDTOBJAUT' HELP=EDTOBJAUT.Edit Object Authority  EDTOBJAUT
 :MENUI OPTION=11 ACTION='CMD ?EDTQST'.
 :MENUI OPTION=12 ACTION='CMD ?EDTRBDAP'.
 :MENUI OPTION=13 ACTION='CMD ?EDTRCYAP'.
@@ -48,5 +52,21 @@
 :HELP NAME=HLPCMDEDT.Edit Commands - Help
 :P.Edit Commands: every command whose name starts with EDT, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

@@ -40,7 +40,7 @@
 :VAR NAME=OVRFLW CLASS=VALCL.
 :VAR NAME=EXPDATE CLASS=VALCL.
 :VAR NAME=USRDFNDTA CLASS=TEXTCL.
-:KEYL NAME=SAKEYS.
+:KEYL HELP='KEYS/SAKEYS' NAME=SAKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -51,39 +51,39 @@
 :EKEYL.
 :PANEL NAME=WRKSPLFA KEYL=SAKEYS HELP=WRKSPLFA ENTER='RETURN 1' TOPSEP=SPACE.Work with Spooled File Attributes
 :DATA DEPTH=4 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
-:DATAI VAR=USER USAGE=OUTPUT.User
-:DATAI VAR=NUMBER USAGE=OUTPUT.Number
-:DATAI VAR=FILE USAGE=OUTPUT.File
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:DATAI HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT.Number
+:DATAI HELP='FLD/FILE' VAR=FILE USAGE=OUTPUT.File
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=SPLNBR USAGE=OUTPUT.Spooled file number
-:DATAI VAR=CRTDATE USAGE=OUTPUT.Date file opened
-:DATAI VAR=CRTTIME USAGE=OUTPUT.Time file opened
-:DATAI VAR=STATUS USAGE=OUTPUT.Status
-:DATAI VAR=OUTQ USAGE=OUTPUT.Output queue
+:DATAI HELP='FLD/SPLNBR' VAR=SPLNBR USAGE=OUTPUT.Spooled file number
+:DATAI HELP='FLD/CRTDATE' VAR=CRTDATE USAGE=OUTPUT.Date file opened
+:DATAI HELP='FLD/CRTTIME' VAR=CRTTIME USAGE=OUTPUT.Time file opened
+:DATAI HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/OUTQ' VAR=OUTQ USAGE=OUTPUT.Output queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=OUTQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/OUTQLIB' VAR=OUTQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=DEVICE USAGE=OUTPUT.Device or writer printing it
-:DATAI VAR=OUTPTY USAGE=OUTPUT.Output priority
-:DATAI VAR=PAGES USAGE=OUTPUT.Total pages
-:DATAI VAR=CURPAGE USAGE=OUTPUT.Current page
-:DATAI VAR=COPIES USAGE=OUTPUT.Copies
-:DATAI VAR=COPIESLEFT USAGE=OUTPUT.Copies left to print
-:DATAI VAR=FORMTYPE USAGE=OUTPUT.Form type
-:DATAI VAR=USRDTA USAGE=OUTPUT.User data
-:DATAI VAR=SAVE USAGE=OUTPUT.Save file
-:DATAI VAR=SCHEDULE USAGE=OUTPUT.Spooled output schedule
-:DATAI VAR=RECORDS USAGE=OUTPUT.Records
-:DATAI VAR=PRTF USAGE=OUTPUT.Printer file
-:DATAI VAR=DEVTYPE USAGE=OUTPUT.Printer device type
-:DATAI VAR=PAGESIZE USAGE=OUTPUT.Page size, lines by positions
-:DATAI VAR=LPI USAGE=OUTPUT.Lines per inch
-:DATAI VAR=CPI USAGE=OUTPUT.Characters per inch
-:DATAI VAR=OVRFLW USAGE=OUTPUT.Overflow line number
-:DATAI VAR=EXPDATE USAGE=OUTPUT.Expiration date
-:DATAI VAR=USRDFNDTA USAGE=OUTPUT.User defined data
+:DATAI HELP='FLD/DEVICE' VAR=DEVICE USAGE=OUTPUT.Device or writer printing it
+:DATAI HELP='FLD/OUTPTY' VAR=OUTPTY USAGE=OUTPUT.Output priority
+:DATAI HELP='FLD/PAGES' VAR=PAGES USAGE=OUTPUT.Total pages
+:DATAI HELP='FLD/CURPAGE' VAR=CURPAGE USAGE=OUTPUT.Current page
+:DATAI HELP='FLD/COPIES' VAR=COPIES USAGE=OUTPUT.Copies
+:DATAI HELP='FLD/COPIESLEFT' VAR=COPIESLEFT USAGE=OUTPUT.Copies left to print
+:DATAI HELP='FLD/FORMTYPE' VAR=FORMTYPE USAGE=OUTPUT.Form type
+:DATAI HELP='FLD/USRDTA' VAR=USRDTA USAGE=OUTPUT.User data
+:DATAI HELP='FLD/SAVE' VAR=SAVE USAGE=OUTPUT.Save file
+:DATAI HELP='FLD/SCHEDULE' VAR=SCHEDULE USAGE=OUTPUT.Spooled output schedule
+:DATAI HELP='FLD/RECORDS' VAR=RECORDS USAGE=OUTPUT.Records
+:DATAI HELP='FLD/PRTF' VAR=PRTF USAGE=OUTPUT.Printer file
+:DATAI HELP='FLD/DEVTYPE' VAR=DEVTYPE USAGE=OUTPUT.Printer device type
+:DATAI HELP='FLD/PAGESIZE' VAR=PAGESIZE USAGE=OUTPUT.Page size, lines by positions
+:DATAI HELP='FLD/LPI' VAR=LPI USAGE=OUTPUT.Lines per inch
+:DATAI HELP='FLD/CPI' VAR=CPI USAGE=OUTPUT.Characters per inch
+:DATAI HELP='FLD/OVRFLW' VAR=OVRFLW USAGE=OUTPUT.Overflow line number
+:DATAI HELP='FLD/EXPDATE' VAR=EXPDATE USAGE=OUTPUT.Expiration date
+:DATAI HELP='FLD/USRDFNDTA' VAR=USRDFNDTA USAGE=OUTPUT.User defined data
 :EDATA.
 :EPANEL.
 :HELP NAME=WRKSPLFA.Work with Spooled File Attributes - Help
@@ -91,5 +91,110 @@
 and when, where it waits and who prints it, its pages and copies, and
 how its pages are laid out. F5 reads them again; CHGSPLFA changes
 them.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SAKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NUMBER'.Number
+:P.The number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/FILE'.File
+:P.The file, by name and library.
+:EHELP.
+:HELP NAME='FLD/SPLNBR'.Spooled file number
+:P.The number of the spooled file among the job's spooled files of the
+same name.
+:EHELP.
+:HELP NAME='FLD/CRTDATE'.Date file opened
+:P.The date file opened shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CRTTIME'.Time file opened
+:P.The time file opened shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTQ'.Output queue
+:P.The output queue the spooled files go to.
+:EHELP.
+:HELP NAME='FLD/OUTQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DEVICE'.Device or writer printing it
+:P.The device or writer printing it shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTPTY'.Output priority
+:P.The priority of the job's spooled files on the output queue, from 1
+(highest) to 9 (lowest).
+:EHELP.
+:HELP NAME='FLD/PAGES'.Total pages
+:P.The total pages shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CURPAGE'.Current page
+:P.The current page shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/COPIES'.Copies
+:P.How many copies are printed.
+:EHELP.
+:HELP NAME='FLD/COPIESLEFT'.Copies left to print
+:P.The copies left to print shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/FORMTYPE'.Form type
+:P.The type of form the output is printed on. The writer stops for the
+form to be loaded when it changes.
+:EHELP.
+:HELP NAME='FLD/USRDTA'.User data
+:P.User data, up to 10 characters, kept with the object.
+:EHELP.
+:HELP NAME='FLD/SAVE'.Save file
+:P.The save file, by name and library.
+:EHELP.
+:HELP NAME='FLD/SCHEDULE'.Spooled output schedule
+:P.When the spooled file can begin to print&colon. as soon as it is
+created, when it is closed, or when the job ends.
+:EHELP.
+:HELP NAME='FLD/RECORDS'.Records
+:P.The records shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRTF'.Printer file
+:P.The printer file shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DEVTYPE'.Printer device type
+:P.The device type.
+:EHELP.
+:HELP NAME='FLD/PAGESIZE'.Page size, lines by positions
+:P.The page size, lines by positions shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/LPI'.Lines per inch
+:P.The lines per inch shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CPI'.Characters per inch
+:P.The characters per inch shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OVRFLW'.Overflow line number
+:P.The overflow line number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EXPDATE'.Expiration date
+:P.The date after which the object or file can be deleted or
+overwritten. *PERM means it never expires.
+:EHELP.
+:HELP NAME='FLD/USRDFNDTA'.User defined data
+:P.Data that a user-defined print program can use.
 :EHELP.
 :EPNLGRP.

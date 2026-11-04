@@ -34,12 +34,12 @@
 :DATAC.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LIBS SCROLL=YES.
-:LISTCOL VAR=SEQ1 USAGE=INOUT.Sequence Number
-:LISTCOL VAR=LIB1 USAGE=INOUT MAXWIDTH=15.Library
-:LISTCOL VAR=SEQ2 USAGE=INOUT.Sequence Number
-:LISTCOL VAR=LIB2 USAGE=INOUT MAXWIDTH=15.Library
-:LISTCOL VAR=SEQ3 USAGE=INOUT.Sequence Number
-:LISTCOL VAR=LIB3 USAGE=INOUT.Library
+:LISTCOL HELP='FLD/SEQ1' VAR=SEQ1 USAGE=INOUT.Sequence Number
+:LISTCOL HELP='FLD/LIB1' VAR=LIB1 USAGE=INOUT MAXWIDTH=15.Library
+:LISTCOL HELP='FLD/SEQ2' VAR=SEQ2 USAGE=INOUT.Sequence Number
+:LISTCOL HELP='FLD/LIB2' VAR=LIB2 USAGE=INOUT MAXWIDTH=15.Library
+:LISTCOL HELP='FLD/SEQ3' VAR=SEQ3 USAGE=INOUT.Sequence Number
+:LISTCOL HELP='FLD/LIB3' VAR=LIB3 USAGE=INOUT.Library
 :ELIST.
 :EPANEL.
 :HELP NAME=EDTLIBLH.Edit Library List - Help
@@ -51,5 +51,24 @@ list takes effect when you press Enter.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F5 shows the list as it is now, dropping what was typed; F3 and F12
 leave without changing it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/SEQ1'.Sequence Number
+:P.Type the sequence Number for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/LIB1'.Library
+:P.Type the library for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/SEQ2'.Sequence Number
+:P.Type the sequence Number for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/LIB2'.Library
+:P.Type the library for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/SEQ3'.Sequence Number
+:P.Type the sequence Number for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/LIB3'.Library
+:P.Type the library for the entry on the line.
 :EHELP.
 :EPNLGRP.

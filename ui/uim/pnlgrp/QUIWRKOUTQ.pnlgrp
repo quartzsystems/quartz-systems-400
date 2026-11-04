@@ -46,7 +46,7 @@
 :COND NAME=VIEW2 EXPR='&FVIEW. EQ "2"'.
 :LISTDEF NAME=QUEUES VARS='OPT QUEUE LIB FILES WRITER STATUS'.
 :LISTDEF NAME=FILES VARS='OPT FILE USER USRDTA STS PAGES COPIES FORMTYPE PTY JOB NUMBER SPLNBR'.
-:KEYL NAME=OQKEYS.
+:KEYL HELP='KEYS/OQKEYS' NAME=OQKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -58,7 +58,7 @@
 :KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
 :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
 :EKEYL.
-:KEYL NAME=FILEKEYS.
+:KEYL HELP='KEYS/FILEKEYS' NAME=FILEKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -77,26 +77,26 @@
 :PANEL NAME=QUEUES KEYL=OQKEYS HELP=WRKOUTQ ENTER='RETURN 1' TOPSEP=SPACE.Work with All Output Queues
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=QUEUES.(No output queues)
-:LISTACT OPTION=2 ENTER='CMD ?CHGOUTQ OUTQ(&LIB./&QUEUE.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDOUTQ OUTQ(&LIB./&QUEUE.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?DLTOUTQ OUTQ(&LIB./&QUEUE.)'.4=Delete
-:LISTACT OPTION=5 ENTER='CMD WRKOUTQ OUTQ(&LIB./&QUEUE.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSOUTQ OUTQ(&LIB./&QUEUE.)'.6=Release
-:LISTACT OPTION=8 ENTER='CMD WRKOUTQD OUTQ(&LIB./&QUEUE.)'.8=Description
-:LISTACT OPTION=9 ENTER='CMD WRKWTR'.9=Work with Writers
-:LISTACT OPTION=14 ENTER='CMD CLROUTQ OUTQ(&LIB./&QUEUE.)'.14=Clear
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=QUEUE USAGE=OUTPUT ATCOL=10.Queue
-:LISTCOL VAR=LIB USAGE=OUTPUT ATCOL=25.Library
-:LISTCOL VAR=FILES USAGE=OUTPUT ATCOL=43.Files
-:LISTCOL VAR=WRITER USAGE=OUTPUT ATCOL=54.Writer
-:LISTCOL VAR=STATUS USAGE=OUTPUT ATCOL=69.Status
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=2 ENTER='CMD ?CHGOUTQ OUTQ(&LIB./&QUEUE.)'.2=Change
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=3 ENTER='CMD HLDOUTQ OUTQ(&LIB./&QUEUE.)'.3=Hold
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=4 ENTER='CMD ?DLTOUTQ OUTQ(&LIB./&QUEUE.)'.4=Delete
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=5 ENTER='CMD WRKOUTQ OUTQ(&LIB./&QUEUE.)'.5=Work with
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=6 ENTER='CMD RLSOUTQ OUTQ(&LIB./&QUEUE.)'.6=Release
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=8 ENTER='CMD WRKOUTQD OUTQ(&LIB./&QUEUE.)'.8=Description
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=9 ENTER='CMD WRKWTR'.9=Work with Writers
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=14 ENTER='CMD CLROUTQ OUTQ(&LIB./&QUEUE.)'.14=Clear
+:LISTCOL HELP='QUEUES/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/QUEUE' VAR=QUEUE USAGE=OUTPUT ATCOL=10.Queue
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT ATCOL=25.Library
+:LISTCOL HELP='FLD/FILES' VAR=FILES USAGE=OUTPUT ATCOL=43.Files
+:LISTCOL HELP='FLD/WRITER' VAR=WRITER USAGE=OUTPUT ATCOL=54.Writer
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT ATCOL=69.Status
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
 :PANEL NAME=FILES KEYL=FILEKEYS HELP=WRKOUTQ ENTER='RETURN 1' TOPSEP=SPACE.Work with Output Queue
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=QUEUE USAGE=OUTPUT.Queue
+:DATAI HELP='FLD/QUEUE' VAR=QUEUE USAGE=OUTPUT.Queue
 :DATAIX VAR=LIB USAGE=OUTPUT.
 :DATAIXT.Library
 :DATAIX VAR=QSTS USAGE=OUTPUT.
@@ -104,26 +104,26 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=FILES VIEWS=2.(No spooled output files)
-:LISTACT OPTION=1 ENTER='CMD ?SNDNETSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.1=Send
-:LISTACT OPTION=2 ENTER='CMD ?CHGSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD DLTSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.4=Delete
-:LISTACT OPTION=5 ENTER='CMD DSPSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.5=Display
-:LISTACT OPTION=6 ENTER='CMD RLSSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.6=Release
-:LISTACT OPTION=7 ENTER='CMD DSPMSG'.7=Messages
-:LISTACT OPTION=8 ENTER='CMD WRKSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.8=Attributes
-:LISTACT OPTION=9 ENTER='CMD WRKWTR'.9=Work with printing status
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=FILE USAGE=OUTPUT.File
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=USRDTA USAGE=OUTPUT.User Data
-:LISTCOL VAR=STS USAGE=OUTPUT.Sts
-:LISTCOL VAR=PAGES USAGE=OUTPUT ATCOL=49.Pages
-:LISTCOL VAR=COPIES USAGE=OUTPUT ATCOL=57.Copies
-:LISTCOL VAR=FORMTYPE USAGE=OUTPUT ATCOL=65.Form Type
-:LISTCOL VAR=PTY USAGE=OUTPUT ATCOL=77.Pty
-:LISTCOL VAR=JOB USAGE=OUTPUT ATCOL=49.Job
-:LISTCOL VAR=NUMBER USAGE=OUTPUT ATCOL=61.Number
+:LISTACT HELP='FILES/OPTIONS' OPTION=1 ENTER='CMD ?SNDNETSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.1=Send
+:LISTACT HELP='FILES/OPTIONS' OPTION=2 ENTER='CMD ?CHGSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.2=Change
+:LISTACT HELP='FILES/OPTIONS' OPTION=3 ENTER='CMD HLDSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.3=Hold
+:LISTACT HELP='FILES/OPTIONS' OPTION=4 ENTER='CMD DLTSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.4=Delete
+:LISTACT HELP='FILES/OPTIONS' OPTION=5 ENTER='CMD DSPSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.5=Display
+:LISTACT HELP='FILES/OPTIONS' OPTION=6 ENTER='CMD RLSSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.6=Release
+:LISTACT HELP='FILES/OPTIONS' OPTION=7 ENTER='CMD DSPMSG'.7=Messages
+:LISTACT HELP='FILES/OPTIONS' OPTION=8 ENTER='CMD WRKSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.8=Attributes
+:LISTACT HELP='FILES/OPTIONS' OPTION=9 ENTER='CMD WRKWTR'.9=Work with printing status
+:LISTCOL HELP='FILES/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/FILE' VAR=FILE USAGE=OUTPUT.File
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/USRDTA' VAR=USRDTA USAGE=OUTPUT.User Data
+:LISTCOL HELP='FLD/STS' VAR=STS USAGE=OUTPUT.Sts
+:LISTCOL HELP='FLD/PAGES' VAR=PAGES USAGE=OUTPUT ATCOL=49.Pages
+:LISTCOL HELP='FLD/COPIES' VAR=COPIES USAGE=OUTPUT ATCOL=57.Copies
+:LISTCOL HELP='FLD/FORMTYPE' VAR=FORMTYPE USAGE=OUTPUT ATCOL=65.Form Type
+:LISTCOL HELP='FLD/PTY' VAR=PTY USAGE=OUTPUT ATCOL=77.Pty
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT ATCOL=49.Job
+:LISTCOL HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT ATCOL=61.Number
 :LISTVIEW COLS='OPT FILE USER USRDTA STS PAGES COPIES FORMTYPE PTY'.
 :LISTVIEW COLS='OPT FILE USER USRDTA STS JOB NUMBER'.
 :ELIST.
@@ -133,5 +133,171 @@
 :P.Output queues with the files waiting on them and the writer that
 prints them; option 5 shows a queue's files. F11 switches between the
 files' printing attributes and the jobs that made them.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/OQKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:EPARML.
+:EHELP.
+:HELP NAME='QUEUES/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/QUEUE'.Queue
+:P.The queue of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/FILES'.Files
+:P.The files of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WRITER'.Writer
+:P.The writer&colon. the job that prints the spooled files of an output
+queue.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='QUEUES/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Output Queue (CHGOUTQ) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Output
+Queue (HLDOUTQ) command runs for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Output Queue (DLTOUTQ) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Output Queue (WRKOUTQ) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Output Queue (RLSOUTQ) command runs for the entry.
+:PT.8=Description
+:PD.Type 8 next to an entry and press Enter to description it. The Work
+with Output Queue Desc (WRKOUTQD) command runs for the entry.
+:PT.9=Work with Writers
+:PD.Type 9 next to an entry and press Enter to work with Writers it. The
+Work with Writers (WRKWTR) command runs for the entry.
+:PT.14=Clear
+:PD.Type 14 next to an entry and press Enter to clear it. The Clear
+Output Queue (CLROUTQ) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/FILEKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=View 2
+:PD.View 2.
+:PT.F11=View 1
+:PD.View 1.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F20=Writers
+:PD.Runs WRKWTR.
+:PT.F22=Printers
+:PD.Runs WRKWTR.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:EPARML.
+:EHELP.
+:HELP NAME='FILES/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/FILE'.File
+:P.The file, by name and library.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/USRDTA'.User Data
+:P.User data, up to 10 characters, kept with the object.
+:EHELP.
+:HELP NAME='FLD/STS'.Sts
+:P.The sts of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PAGES'.Pages
+:P.The pages of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/COPIES'.Copies
+:P.How many copies are printed.
+:EHELP.
+:HELP NAME='FLD/FORMTYPE'.Form Type
+:P.The type of form the output is printed on. The writer stops for the
+form to be loaded when it changes.
+:EHELP.
+:HELP NAME='FLD/PTY'.Pty
+:P.The pty of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/NUMBER'.Number
+:P.The number of each entry in the list.
+:EHELP.
+:HELP NAME='FILES/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Send
+:PD.Type 1 next to an entry and press Enter to send it. The Send Network
+Spooled File (SNDNETSPLF) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Spooled File Attr (CHGSPLFA) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Spooled
+File (HLDSPLF) command runs for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Spooled File (DLTSPLF) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Spooled File (DSPSPLF) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Spooled File (RLSSPLF) command runs for the entry.
+:PT.7=Messages
+:PD.Type 7 next to an entry and press Enter to messages it. The Display
+Messages (DSPMSG) command runs for the entry.
+:PT.8=Attributes
+:PD.Type 8 next to an entry and press Enter to attributes it. The Work
+with Spooled File Attributes (WRKSPLFA) command runs for the entry.
+:PT.9=Work with printing status
+:PD.Type 9 next to an entry and press Enter to work with printing status
+it. The Work with Writers (WRKWTR) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

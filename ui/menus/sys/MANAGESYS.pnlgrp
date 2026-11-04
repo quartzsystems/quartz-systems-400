@@ -11,7 +11,11 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='MANAGESYS'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPMSG PNLGRP=QHMHCMD.
+:IMPORT NAME=WRKSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=WRKSYSSTS PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKUSRJOB PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,14 +25,14 @@
 :EKEYL.
 :PANEL NAME=MANAGESYS HELP=HLPMANAGESYS KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Manage Your System, Users, and Devices
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='CMD WRKSYSSTS'.Display system status
-:MENUI OPTION=2 ACTION='MENU RUNBCKUP'.Run a backup
-:MENUI OPTION=3 ACTION='CMD DSPMSG MSGQ(QSYSOPR)'.Work with system operator messages
-:MENUI OPTION=10 ACTION='CMD WRKSPLF'.Work with printer output
-:MENUI OPTION=11 ACTION='CMD WRKUSRJOB'.Work with jobs
-:MENUI OPTION=12 ACTION='CMD WRKUSRJOB USER(*ALL) STATUS(*ACTIVE) JOBTYPE(*INTERACT)'.Work with signed-on users
-:MENUI OPTION=20 ACTION='MENU DEVICESTS'.Device status tasks
-:MENUI OPTION=60 ACTION='MENU SETUP'.Customize your system, users, and devices
+:MENUI HELP=WRKSYSSTS OPTION=1 ACTION='CMD WRKSYSSTS'.Display system status
+:MENUI HELP='MANAGESYS/OPT2' OPTION=2 ACTION='MENU RUNBCKUP'.Run a backup
+:MENUI HELP=DSPMSG OPTION=3 ACTION='CMD DSPMSG MSGQ(QSYSOPR)'.Work with system operator messages
+:MENUI HELP=WRKSPLF OPTION=10 ACTION='CMD WRKSPLF'.Work with printer output
+:MENUI HELP=WRKUSRJOB OPTION=11 ACTION='CMD WRKUSRJOB'.Work with jobs
+:MENUI HELP=WRKUSRJOB OPTION=12 ACTION='CMD WRKUSRJOB USER(*ALL) STATUS(*ACTIVE) JOBTYPE(*INTERACT)'.Work with signed-on users
+:MENUI HELP='MANAGESYS/OPT20' OPTION=20 ACTION='MENU DEVICESTS'.Device status tasks
+:MENUI HELP='MANAGESYS/OPT60' OPTION=60 ACTION='MENU SETUP'.Customize your system, users, and devices
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -37,5 +41,28 @@
 backups, the operator's messages, printer output, jobs and devices.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='MANAGESYS/OPT2'.Run a backup
+:P.Option 2. Shows menu RUNBCKUP&colon. Run a backup.
+:EHELP.
+:HELP NAME='MANAGESYS/OPT20'.Device status tasks
+:P.Option 20. Shows menu DEVICESTS&colon. Device status tasks.
+:EHELP.
+:HELP NAME='MANAGESYS/OPT60'.Customize your system, users, and devices
+:P.Option 60. Shows menu SETUP&colon. Customize your system, users, and
+devices.
 :EHELP.
 :EPNLGRP.

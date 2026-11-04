@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDLPDA'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGLPDA PNLGRP=QHTMCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,7 +25,7 @@
 :PANEL NAME=CMDLPDA HELP=HLPCMDLPDA KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.LPDA Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?CHGLPDA'.Change LPD Attributes  CHGLPDA
+:MENUI OPTION=1 ACTION='CMD ?CHGLPDA' HELP=CHGLPDA.Change LPD Attributes  CHGLPDA
 :MENUI OPTION=2 ACTION='CMD ?RUNLPDA'.
 :MENUI OPTION=3 ACTION='CMD ?VFYLNKLPDA'.
 :EMENUGRP.
@@ -34,5 +35,21 @@
 :HELP NAME=HLPCMDLPDA.LPDA Commands - Help
 :P.LPDA Commands: every command whose name carries LPDA after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

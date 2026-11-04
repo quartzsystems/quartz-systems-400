@@ -24,6 +24,11 @@ fn main() -> Result<()> {
                 bail!("help is missing");
             }
         }
+        Some("gen-panels") => {
+            for f in helpaudit::generate::panels::write(&root)? {
+                println!("{f}");
+            }
+        }
         Some("gen") => {
             let n = helpaudit::generate::write(&root)?;
             println!("{n} command help groups written");

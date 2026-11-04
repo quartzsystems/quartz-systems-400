@@ -11,7 +11,14 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='JOB'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=SBMJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKACTJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKJOBQ PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSBS PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=WRKUSRJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKWTR PNLGRP=QHSPCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,16 +31,16 @@
 :EKEYL.
 :PANEL NAME=JOB HELP=HLPJOB KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Jobs
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKUSRJOB'.Work with jobs
-:MENUI OPTION=2 ACTION='CMD WRKACTJOB'.Work with all active job statistics
-:MENUI OPTION=3 ACTION='CMD WRKSPLF'.Work with spooled output files
-:MENUI OPTION=4 ACTION='CMD WRKWTR'.Work with printers
-:MENUI OPTION=5 ACTION='CMD WRKJOBQ'.Work with job queues
-:MENUI OPTION=6 ACTION='CMD WRKSBS'.Work with active subsystems
-:MENUI OPTION=7 ACTION='CMD ?SBMJOB'.Submit a job
-:MENUI OPTION=20 ACTION='MENU JOBENV'.Control job environment
-:MENUI OPTION=60 ACTION='MENU JOB2'.More job options
-:MENUI OPTION=70 ACTION='MENU CMDJOB'.Related commands
+:MENUI HELP=WRKUSRJOB OPTION=1 ACTION='CMD WRKUSRJOB'.Work with jobs
+:MENUI HELP=WRKACTJOB OPTION=2 ACTION='CMD WRKACTJOB'.Work with all active job statistics
+:MENUI HELP=WRKSPLF OPTION=3 ACTION='CMD WRKSPLF'.Work with spooled output files
+:MENUI HELP=WRKWTR OPTION=4 ACTION='CMD WRKWTR'.Work with printers
+:MENUI HELP=WRKJOBQ OPTION=5 ACTION='CMD WRKJOBQ'.Work with job queues
+:MENUI HELP=WRKSBS OPTION=6 ACTION='CMD WRKSBS'.Work with active subsystems
+:MENUI HELP=SBMJOB OPTION=7 ACTION='CMD ?SBMJOB'.Submit a job
+:MENUI HELP='JOB/OPT20' OPTION=20 ACTION='MENU JOBENV'.Control job environment
+:MENUI HELP='JOB/OPT60' OPTION=60 ACTION='MENU JOB2'.More job options
+:MENUI HELP='JOB/OPT70' OPTION=70 ACTION='MENU CMDJOB'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -43,5 +50,33 @@ they leave. Option 60 shows more.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='JOB/OPT20'.Control job environment
+:P.Option 20. Shows menu JOBENV&colon. Control job environment.
+:EHELP.
+:HELP NAME='JOB/OPT60'.More job options
+:P.Option 60. Shows menu JOB2&colon. More job options.
+:EHELP.
+:HELP NAME='JOB/OPT70'.Related commands
+:P.Option 70. Shows menu CMDJOB&colon. Related commands.
 :EHELP.
 :EPNLGRP.

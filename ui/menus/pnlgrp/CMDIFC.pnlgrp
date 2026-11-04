@@ -11,7 +11,12 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDIFC'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=ADDTCPIFC PNLGRP=QHTOCCMD.
+:IMPORT NAME=CHGTCPIFC PNLGRP=QHTOCCMD.
+:IMPORT NAME=ENDTCPIFC PNLGRP=QHTOCCMD.
+:IMPORT NAME=RMVTCPIFC PNLGRP=QHTOCCMD.
+:IMPORT NAME=STRTCPIFC PNLGRP=QHTOCCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -27,20 +32,20 @@
 :MENUI OPTION=1 ACTION='CMD ?ADDIPSIFC'.
 :MENUI OPTION=2 ACTION='CMD ?ADDOSPFIFC'.
 :MENUI OPTION=3 ACTION='CMD ?ADDRIPIFC'.
-:MENUI OPTION=4 ACTION='CMD ?ADDTCPIFC'.Add TCP/IP Interface  ADDTCPIFC
+:MENUI OPTION=4 ACTION='CMD ?ADDTCPIFC' HELP=ADDTCPIFC.Add TCP/IP Interface  ADDTCPIFC
 :MENUI OPTION=5 ACTION='CMD ?CHGIPSIFC'.
 :MENUI OPTION=6 ACTION='CMD ?CHGOSPFIFC'.
 :MENUI OPTION=7 ACTION='CMD ?CHGRIPIFC'.
-:MENUI OPTION=8 ACTION='CMD ?CHGTCPIFC'.Change TCP/IP Interface  CHGTCPIFC
+:MENUI OPTION=8 ACTION='CMD ?CHGTCPIFC' HELP=CHGTCPIFC.Change TCP/IP Interface  CHGTCPIFC
 :MENUI OPTION=9 ACTION='CMD ?CVTIPSIFC'.
 :MENUI OPTION=10 ACTION='CMD ?ENDIPSIFC'.
-:MENUI OPTION=11 ACTION='CMD ?ENDTCPIFC'.End TCP/IP Interface  ENDTCPIFC
+:MENUI OPTION=11 ACTION='CMD ?ENDTCPIFC' HELP=ENDTCPIFC.End TCP/IP Interface  ENDTCPIFC
 :MENUI OPTION=12 ACTION='CMD ?RMVIPSIFC'.
 :MENUI OPTION=13 ACTION='CMD ?RMVOSPFIFC'.
 :MENUI OPTION=14 ACTION='CMD ?RMVRIPIFC'.
-:MENUI OPTION=15 ACTION='CMD ?RMVTCPIFC'.Remove TCP/IP Interface  RMVTCPIFC
+:MENUI OPTION=15 ACTION='CMD ?RMVTCPIFC' HELP=RMVTCPIFC.Remove TCP/IP Interface  RMVTCPIFC
 :MENUI OPTION=16 ACTION='CMD ?STRIPSIFC'.
-:MENUI OPTION=17 ACTION='CMD ?STRTCPIFC'.Start TCP/IP Interface  STRTCPIFC
+:MENUI OPTION=17 ACTION='CMD ?STRTCPIFC' HELP=STRTCPIFC.Start TCP/IP Interface  STRTCPIFC
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -48,5 +53,21 @@
 :HELP NAME=HLPCMDIFC.Interface Commands - Help
 :P.Interface Commands: every command whose name carries IFC after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

@@ -42,8 +42,8 @@
 :DATACOL WIDTH=17.
 :DATACOL WIDTH=53.
 :DATAC.File  . . . . . :   &RPTFILE.
-:DATAI VAR=CONTROL USAGE=INPUT CSRLOC.Control
-:DATAI VAR=FIND USAGE=INPUT.Find
+:DATAI HELP='FLD/CONTROL' VAR=CONTROL USAGE=INPUT CSRLOC.Control
+:DATAI HELP='FLD/FIND' VAR=FIND USAGE=INPUT.Find
 :DATACOL WIDTH=26.
 :DATAC.Page/Line   &PAGELINE.
 :DATAC.Columns     &RPTCOLS.
@@ -52,7 +52,7 @@
 :DATAC.&RULER.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LINES SCROLL=YES COMPACT.(The report has no lines.)
-:LISTCOL VAR=LINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/LINE' VAR=LINE USAGE=OUTPUT.
 :ELIST.
 :EPANEL.
 :HELP NAME=RPTVIEWH.Report - Help
@@ -62,5 +62,15 @@ down to read them; F19 and F20 move the columns shown left and right.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave, F17 and F18 go to the first and the last line,
 F19 and F20 shift the lines left and right.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/CONTROL'.Control
+:P.Type the control.
+:EHELP.
+:HELP NAME='FLD/FIND'.Find
+:P.Type the find.
+:EHELP.
+:HELP NAME='FLD/LINE'.LINE
+:P.The line description.
 :EHELP.
 :EPNLGRP.

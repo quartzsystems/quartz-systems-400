@@ -12,7 +12,13 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SERVICE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=ANZPRB PNLGRP=QHSXCMD.
+:IMPORT NAME=DSPSRVSTS PNLGRP=QHSXCMD.
+:IMPORT NAME=STRSST PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKCNTINF PNLGRP=QHSXCMD.
+:IMPORT NAME=WRKPRB PNLGRP=QHSXCMD.
+:IMPORT NAME=WRKSRVPVD PNLGRP=QHSXCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -25,16 +31,16 @@
 :EKEYL.
 :PANEL NAME=SERVICE HELP=HLPSERVICE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Service
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKPRB'.Work with problems
-:MENUI OPTION=2 ACTION='CMD ANZPRB'.Analyze a new problem
-:MENUI OPTION=3 ACTION='CMD DSPSRVSTS'.Display service status
-:MENUI OPTION=4 ACTION='CMD WRKCNTINF'.Work with support contact information
-:MENUI OPTION=5 ACTION='CMD WRKSRVPVD'.Work with service providers
-:MENUI OPTION=6 ACTION='CMD STRSST'.Start system service tools
-:MENUI OPTION=7 ACTION='MENU PTF'.Program temporary fixes
-:MENUI OPTION=8 ACTION='MENU CMDDMP'.Dump commands
-:MENUI OPTION=9 ACTION='MENU CMDTRC'.Trace commands
-:MENUI OPTION=70 ACTION='MENU CMDSRV'.Related commands
+:MENUI HELP=WRKPRB OPTION=1 ACTION='CMD WRKPRB'.Work with problems
+:MENUI HELP=ANZPRB OPTION=2 ACTION='CMD ANZPRB'.Analyze a new problem
+:MENUI HELP=DSPSRVSTS OPTION=3 ACTION='CMD DSPSRVSTS'.Display service status
+:MENUI HELP=WRKCNTINF OPTION=4 ACTION='CMD WRKCNTINF'.Work with support contact information
+:MENUI HELP=WRKSRVPVD OPTION=5 ACTION='CMD WRKSRVPVD'.Work with service providers
+:MENUI HELP=STRSST OPTION=6 ACTION='CMD STRSST'.Start system service tools
+:MENUI HELP='SERVICE/OPT7' OPTION=7 ACTION='MENU PTF'.Program temporary fixes
+:MENUI HELP='SERVICE/OPT8' OPTION=8 ACTION='MENU CMDDMP'.Dump commands
+:MENUI HELP='SERVICE/OPT9' OPTION=9 ACTION='MENU CMDTRC'.Trace commands
+:MENUI HELP='SERVICE/OPT70' OPTION=70 ACTION='MENU CMDSRV'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -44,5 +50,36 @@ service tools.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='SERVICE/OPT7'.Program temporary fixes
+:P.Option 7. Shows menu PTF&colon. Program temporary fixes.
+:EHELP.
+:HELP NAME='SERVICE/OPT8'.Dump commands
+:P.Option 8. Shows menu CMDDMP&colon. Dump commands.
+:EHELP.
+:HELP NAME='SERVICE/OPT9'.Trace commands
+:P.Option 9. Shows menu CMDTRC&colon. Trace commands.
+:EHELP.
+:HELP NAME='SERVICE/OPT70'.Related commands
+:P.Option 70. Shows menu CMDSRV&colon. Related commands.
 :EHELP.
 :EPNLGRP.

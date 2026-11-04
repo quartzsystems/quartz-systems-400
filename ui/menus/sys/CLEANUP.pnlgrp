@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CLEANUP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGCLNUP PNLGRP=QHWMCMD.
+:IMPORT NAME=ENDCLNUP PNLGRP=QHWMCMD.
+:IMPORT NAME=STRCLNUP PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,9 +24,9 @@
 :EKEYL.
 :PANEL NAME=CLEANUP HELP=HLPCLEANUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Cleanup Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=2 ACTION='CMD ?CHGCLNUP'.Start cleanup at scheduled time
-:MENUI OPTION=3 ACTION='CMD STRCLNUP'.Start cleanup immediately
-:MENUI OPTION=4 ACTION='CMD ENDCLNUP'.End cleanup
+:MENUI HELP=CHGCLNUP OPTION=2 ACTION='CMD ?CHGCLNUP'.Start cleanup at scheduled time
+:MENUI HELP=STRCLNUP OPTION=3 ACTION='CMD STRCLNUP'.Start cleanup immediately
+:MENUI HELP=ENDCLNUP OPTION=4 ACTION='CMD ENDCLNUP'.End cleanup
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -32,5 +35,18 @@
 not fill the disk.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
 :EHELP.
 :EPNLGRP.

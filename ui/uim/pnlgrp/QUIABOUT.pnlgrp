@@ -20,7 +20,7 @@
 :VAR NAME=SYSNAME CLASS=NAMECL.
 :VAR NAME=SERIAL CLASS=NAMECL.
 :VAR NAME=MODEL CLASS=TEXTCL.
-:KEYL NAME=KEYS.
+:KEYL HELP='KEYS/KEYS' NAME=KEYS.
 :KEYI KEY=ENTER ACTION=EXIT.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -30,16 +30,16 @@
 :PANEL NAME=ABOUT KEYL=KEYS HELP=ABOUTH TOPSEP=SYSNAM.About QS/400
 :DATA DEPTH='*'.
 :DATAGRP.Operating system
-:DATAI VAR=PRDTEXT USAGE=OUTPUT.Product
-:DATAI VAR=PRODUCT USAGE=OUTPUT.Product identifier
-:DATAI VAR=RELEASE USAGE=OUTPUT.Release
-:DATAI VAR=BUILD USAGE=OUTPUT.Build
+:DATAI HELP='FLD/PRDTEXT' VAR=PRDTEXT USAGE=OUTPUT.Product
+:DATAI HELP='FLD/PRODUCT' VAR=PRODUCT USAGE=OUTPUT.Product identifier
+:DATAI HELP='FLD/RELEASE' VAR=RELEASE USAGE=OUTPUT.Release
+:DATAI HELP='FLD/BUILD' VAR=BUILD USAGE=OUTPUT.Build
 :EDATAGRP.
 :DATAC.
 :DATAGRP.This system
-:DATAI VAR=SYSNAME USAGE=OUTPUT.System name
-:DATAI VAR=SERIAL USAGE=OUTPUT.Serial number
-:DATAI VAR=MODEL USAGE=OUTPUT.Model
+:DATAI HELP='FLD/SYSNAME' VAR=SYSNAME USAGE=OUTPUT.System name
+:DATAI HELP='FLD/SERIAL' VAR=SERIAL USAGE=OUTPUT.Serial number
+:DATAI HELP='FLD/MODEL' VAR=MODEL USAGE=OUTPUT.Model
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -50,5 +50,36 @@ working: the same commands, displays and programs, on a machine of
 today. This display names the release this system runs and the build
 it came from, which Quartz Systems asks for with any report of a
 problem, and the serial number and model the system calls itself.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/KEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/PRDTEXT'.Product
+:P.A licensed program by its seven-character product identifier, 5770SS1
+for example.
+:EHELP.
+:HELP NAME='FLD/PRODUCT'.Product identifier
+:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:EHELP.
+:HELP NAME='FLD/RELEASE'.Release
+:P.A release, in the form VxRyMz.
+:EHELP.
+:HELP NAME='FLD/BUILD'.Build
+:P.The build shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SYSNAME'.System name
+:P.The system name shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SERIAL'.Serial number
+:P.The serial number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODEL'.Model
+:P.The model shown for what the display is about.
 :EHELP.
 :EPNLGRP.

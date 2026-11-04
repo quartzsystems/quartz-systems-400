@@ -41,18 +41,18 @@
 :DATA DEPTH=10.
 :DATACOL WIDTH=32.
 :DATACOL WIDTH=78.
-:DATAI VAR=UDFS USAGE=OUTPUT.User-defined file system
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=CASE USAGE=OUTPUT.Case sensitivity
-:DATAI VAR=DFTFMT USAGE=OUTPUT.Default file format
-:DATAI VAR=CRTAUD USAGE=OUTPUT.Create object auditing value
-:DATAI VAR=CRTDTS USAGE=OUTPUT.Creation date/time
-:DATAI VAR=TEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/UDFS' VAR=UDFS USAGE=OUTPUT.User-defined file system
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/CASE' VAR=CASE USAGE=OUTPUT.Case sensitivity
+:DATAI HELP='FLD/DFTFMT' VAR=DFTFMT USAGE=OUTPUT.Default file format
+:DATAI HELP='FLD/CRTAUD' VAR=CRTAUD USAGE=OUTPUT.Create object auditing value
+:DATAI HELP='FLD/CRTDTS' VAR=CRTDTS USAGE=OUTPUT.Creation date/time
+:DATAI HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text description
 :DATAC.
-:DATAI VAR=MOUNTED USAGE=OUTPUT.Mounted
+:DATAI HELP='FLD/MOUNTED' VAR=MOUNTED USAGE=OUTPUT.Mounted
 :EDATA.
 :LIST DEPTH='*' LISTDEF=MOUNTS SCROLL=YES.(Not mounted)
-:LISTCOL VAR=MNTDIR USAGE=OUTPUT.Mounted over
+:LISTCOL HELP='FLD/MNTDIR' VAR=MNTDIR USAGE=OUTPUT.Mounted over
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -63,5 +63,33 @@ and the directories it is mounted over now.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/UDFS'.User-defined file system
+:P.The user-defined file system shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OWNER'.Owner
+:P.The owner of the objects created.
+:EHELP.
+:HELP NAME='FLD/CASE'.Case sensitivity
+:P.The case sensitivity shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DFTFMT'.Default file format
+:P.The default file format shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CRTAUD'.Create object auditing value
+:P.The create object auditing value shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CRTDTS'.Creation date/time
+:P.The creation date/time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TEXT'.Text description
+:P.The text description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MOUNTED'.Mounted
+:P.The mounted shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MNTDIR'.Mounted over
+:P.The mounted over of each entry in the list.
 :EHELP.
 :EPNLGRP.

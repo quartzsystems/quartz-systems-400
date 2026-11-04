@@ -40,8 +40,8 @@
 :DATACOL WIDTH=17.
 :DATACOL WIDTH=53.
 :DATAC.File  . . . . . :   &SPLF.
-:DATAI VAR=CONTROL USAGE=INPUT CSRLOC.Control
-:DATAI VAR=FIND USAGE=INPUT.Find
+:DATAI HELP='FLD/CONTROL' VAR=CONTROL USAGE=INPUT CSRLOC.Control
+:DATAI HELP='FLD/FIND' VAR=FIND USAGE=INPUT.Find
 :DATACOL WIDTH=26.
 :DATAC.Page/Line   &PAGELINE.
 :DATAC.Columns     &COLUMNS.
@@ -50,7 +50,7 @@
 :DATAC.&RULER.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LINES COMPACT.
-:LISTCOL VAR=LINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/LINE' VAR=LINE USAGE=OUTPUT.
 :ELIST.
 :EPANEL.
 :HELP NAME=SPLFH.Display Spooled File - Help
@@ -60,5 +60,15 @@ Find to go to the next line that holds it, F16 to find it again.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/CONTROL'.Control
+:P.Type the control.
+:EHELP.
+:HELP NAME='FLD/FIND'.Find
+:P.Type the find.
+:EHELP.
+:HELP NAME='FLD/LINE'.LINE
+:P.The line description.
 :EHELP.
 :EPNLGRP.

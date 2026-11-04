@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='RUNBCKUP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=QSMNSAVE PNLGRP=QHWMCMD.
+:IMPORT NAME=RUNBCKUP PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,10 +23,10 @@
 :EKEYL.
 :PANEL NAME=RUNBCKUP HELP=HLPRUNBCKUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Run Backup
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='CMD RUNBCKUP BCKUPOPT(*DAILY)'.Run daily backup
-:MENUI OPTION=2 ACTION='CMD RUNBCKUP BCKUPOPT(*WEEKLY)'.Run weekly backup
-:MENUI OPTION=3 ACTION='CMD RUNBCKUP BCKUPOPT(*MONTHLY)'.Run monthly backup
-:MENUI OPTION=11 ACTION='CMD QSMNSAVE OPTION(21)'.Back up the entire system
+:MENUI HELP=RUNBCKUP OPTION=1 ACTION='CMD RUNBCKUP BCKUPOPT(*DAILY)'.Run daily backup
+:MENUI HELP=RUNBCKUP OPTION=2 ACTION='CMD RUNBCKUP BCKUPOPT(*WEEKLY)'.Run weekly backup
+:MENUI HELP=RUNBCKUP OPTION=3 ACTION='CMD RUNBCKUP BCKUPOPT(*MONTHLY)'.Run monthly backup
+:MENUI HELP=QSMNSAVE OPTION=11 ACTION='CMD QSMNSAVE OPTION(21)'.Back up the entire system
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -34,5 +36,18 @@ BACKUP option 10). Option 11 saves the whole system the way GO SAVE
 option 21 does.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
 :EHELP.
 :EPNLGRP.

@@ -83,25 +83,25 @@
 :DATA DEPTH=2.
 :DATACOL WIDTH=22.
 :DATACOL WIDTH=78.
-:DATAI VAR=POSTO USAGE=INPUT.Position to
+:DATAI HELP='FLD/POSTO' VAR=POSTO USAGE=INPUT.Position to
 :DATAIX VAR=POSHINT USAGE=OUTPUT.
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LINES VIEWS=2 MAXHEAD=2 SCROLL=YES.(No line descriptions)
-:LISTACT OPTION=2 ENTER='CMD ?CHGLINETH LIND(&LIND.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD ?CRTLINETH'.3=Copy
-:LISTACT OPTION=4 ENTER='CMD DLTLIND LIND(&LIND.)'.4=Delete
-:LISTACT OPTION=5 ENTER='CMD DSPLIND LIND(&LIND.)'.5=Display
-:LISTACT OPTION=6 ENTER='CMD DSPLIND LIND(&LIND.) OUTPUT(*PRINT)'.6=Print
-:LISTACT OPTION=7 ENTER='CMD ?RNMOBJ OBJ(QSYS/&LIND.) OBJTYPE(*LIND)'.7=Rename
-:LISTACT OPTION=8 ENTER='CMD WRKCFGSTS CFGTYPE(*LIN) CFGD(&LIND.)'.8=Work with status
-:LISTACT OPTION=9 ENTER='RETURN 109'.9=Retrieve source
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LIND USAGE=OUTPUT.Line
-:LISTCOL VAR=LINTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=LINTEXT USAGE=OUTPUT.Text
-:LISTCOL VAR=LINRSC USAGE=OUTPUT.Resource
-:LISTCOL VAR=LINSTS USAGE=OUTPUT.Status
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=2 ENTER='CMD ?CHGLINETH LIND(&LIND.)'.2=Change
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=3 ENTER='CMD ?CRTLINETH'.3=Copy
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=4 ENTER='CMD DLTLIND LIND(&LIND.)'.4=Delete
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=5 ENTER='CMD DSPLIND LIND(&LIND.)'.5=Display
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=6 ENTER='CMD DSPLIND LIND(&LIND.) OUTPUT(*PRINT)'.6=Print
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=7 ENTER='CMD ?RNMOBJ OBJ(QSYS/&LIND.) OBJTYPE(*LIND)'.7=Rename
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=8 ENTER='CMD WRKCFGSTS CFGTYPE(*LIN) CFGD(&LIND.)'.8=Work with status
+:LISTACT HELP='WRKLIND/OPTIONS' OPTION=9 ENTER='RETURN 109'.9=Retrieve source
+:LISTCOL HELP='WRKLIND/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LIND' VAR=LIND USAGE=OUTPUT.Line
+:LISTCOL HELP='FLD/LINTYPE' VAR=LINTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/LINTEXT' VAR=LINTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='FLD/LINRSC' VAR=LINRSC USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/LINSTS' VAR=LINSTS USAGE=OUTPUT.Status
 :LISTVIEW COLS='OPT LIND LINTYPE LINTEXT'.
 :LISTVIEW COLS='OPT LIND LINTYPE LINRSC LINSTS'.
 :ELIST.
@@ -111,36 +111,36 @@
 :DATA DEPTH=4.
 :DATACOL WIDTH=36.
 :DATACOL WIDTH=78.
-:DATAI VAR=DLIND USAGE=OUTPUT.Line description
-:DATAI VAR=DOPTION USAGE=OUTPUT.Option
-:DATAI VAR=DCAT USAGE=OUTPUT.Category of line
+:DATAI HELP='FLD/DLIND' VAR=DLIND USAGE=OUTPUT.Line description
+:DATAI HELP='FLD/DOPTION' VAR=DOPTION USAGE=OUTPUT.Option
+:DATAI HELP='FLD/DCAT' VAR=DCAT USAGE=OUTPUT.Category of line
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=36.
 :DATACOL WIDTH=78.
-:DATAI VAR=DRSRC USAGE=OUTPUT.Resource name
-:DATAI VAR=DBRIDGE USAGE=OUTPUT.Bridge identifier
-:DATAI VAR=DONLINE USAGE=OUTPUT.Online at IPL
-:DATAI VAR=DVRYWAIT USAGE=OUTPUT.Vary on wait
-:DATAI VAR=DNETCTL USAGE=OUTPUT.Network controller
-:DATAI VAR=DADPTADR USAGE=OUTPUT.Local adapter address
-:DATAI VAR=DEXCHID USAGE=OUTPUT.Exchange identifier
-:DATAI VAR=DETHSTD USAGE=OUTPUT.Ethernet standard
-:DATAI VAR=DSPEED USAGE=OUTPUT.Line speed
-:DATAI VAR=DCURSPD USAGE=OUTPUT.Current line speed
-:DATAI VAR=DDUPLEX USAGE=OUTPUT.Duplex
-:DATAI VAR=DCURDPX USAGE=OUTPUT.Current duplex
-:DATAI VAR=DSRVOPT USAGE=OUTPUT.Serviceability options
-:DATAI VAR=DMAXFRM USAGE=OUTPUT.Maximum frame size
-:DATAI VAR=DMAXCTL USAGE=OUTPUT.Maximum controllers
-:DATAI VAR=DTHRESH USAGE=OUTPUT.Error threshold level
-:DATAI VAR=DGENTST USAGE=OUTPUT.Generate test frame
-:DATAI VAR=DMSGQ USAGE=OUTPUT.Message queue
-:DATAI VAR=DCURMSGQ USAGE=OUTPUT.Current message queue
+:DATAI HELP='FLD/DRSRC' VAR=DRSRC USAGE=OUTPUT.Resource name
+:DATAI HELP='FLD/DBRIDGE' VAR=DBRIDGE USAGE=OUTPUT.Bridge identifier
+:DATAI HELP='FLD/DONLINE' VAR=DONLINE USAGE=OUTPUT.Online at IPL
+:DATAI HELP='FLD/DVRYWAIT' VAR=DVRYWAIT USAGE=OUTPUT.Vary on wait
+:DATAI HELP='FLD/DNETCTL' VAR=DNETCTL USAGE=OUTPUT.Network controller
+:DATAI HELP='FLD/DADPTADR' VAR=DADPTADR USAGE=OUTPUT.Local adapter address
+:DATAI HELP='FLD/DEXCHID' VAR=DEXCHID USAGE=OUTPUT.Exchange identifier
+:DATAI HELP='FLD/DETHSTD' VAR=DETHSTD USAGE=OUTPUT.Ethernet standard
+:DATAI HELP='FLD/DSPEED' VAR=DSPEED USAGE=OUTPUT.Line speed
+:DATAI HELP='FLD/DCURSPD' VAR=DCURSPD USAGE=OUTPUT.Current line speed
+:DATAI HELP='FLD/DDUPLEX' VAR=DDUPLEX USAGE=OUTPUT.Duplex
+:DATAI HELP='FLD/DCURDPX' VAR=DCURDPX USAGE=OUTPUT.Current duplex
+:DATAI HELP='FLD/DSRVOPT' VAR=DSRVOPT USAGE=OUTPUT.Serviceability options
+:DATAI HELP='FLD/DMAXFRM' VAR=DMAXFRM USAGE=OUTPUT.Maximum frame size
+:DATAI HELP='FLD/DMAXCTL' VAR=DMAXCTL USAGE=OUTPUT.Maximum controllers
+:DATAI HELP='FLD/DTHRESH' VAR=DTHRESH USAGE=OUTPUT.Error threshold level
+:DATAI HELP='FLD/DGENTST' VAR=DGENTST USAGE=OUTPUT.Generate test frame
+:DATAI HELP='FLD/DMSGQ' VAR=DMSGQ USAGE=OUTPUT.Message queue
+:DATAI HELP='FLD/DCURMSGQ' VAR=DCURMSGQ USAGE=OUTPUT.Current message queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=DCURMSGL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/DCURMSGL' VAR=DCURMSGL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -149,38 +149,38 @@
 :DATA DEPTH=4.
 :DATACOL WIDTH=36.
 :DATACOL WIDTH=78.
-:DATAI VAR=DLIND USAGE=OUTPUT.Line description
-:DATAI VAR=DOPTION USAGE=OUTPUT.Option
-:DATAI VAR=DCAT USAGE=OUTPUT.Category of line
+:DATAI HELP='FLD/DLIND' VAR=DLIND USAGE=OUTPUT.Line description
+:DATAI HELP='FLD/DOPTION' VAR=DOPTION USAGE=OUTPUT.Option
+:DATAI HELP='FLD/DCAT' VAR=DCAT USAGE=OUTPUT.Category of line
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=36.
 :DATACOL WIDTH=78.
-:DATAI VAR=DRSRC USAGE=OUTPUT.Resource name
-:DATAI VAR=DAGGPCY USAGE=OUTPUT.Aggregate policy
-:DATAI VAR=DAGGRSCL USAGE=OUTPUT.Aggregated resource list
-:DATAI VAR=DBRIDGE USAGE=OUTPUT.Bridge identifier
-:DATAI VAR=DONLINE USAGE=OUTPUT.Online at IPL
-:DATAI VAR=DVRYWAIT USAGE=OUTPUT.Vary on wait
-:DATAI VAR=DNETCTL USAGE=OUTPUT.Network controller
-:DATAI VAR=DADPTADR USAGE=OUTPUT.Local adapter address
-:DATAI VAR=DEXCHID USAGE=OUTPUT.Exchange identifier
-:DATAI VAR=DETHSTD USAGE=OUTPUT.Ethernet standard
-:DATAI VAR=DSPEED USAGE=OUTPUT.Line speed
-:DATAI VAR=DCURSPD USAGE=OUTPUT.Current line speed
-:DATAI VAR=DDUPLEX USAGE=OUTPUT.Duplex
-:DATAI VAR=DCURDPX USAGE=OUTPUT.Current duplex
-:DATAI VAR=DSRVOPT USAGE=OUTPUT.Serviceability options
-:DATAI VAR=DMAXFRM USAGE=OUTPUT.Maximum frame size
-:DATAI VAR=DMAXCTL USAGE=OUTPUT.Maximum controllers
-:DATAI VAR=DTHRESH USAGE=OUTPUT.Error threshold level
-:DATAI VAR=DGENTST USAGE=OUTPUT.Generate test frame
-:DATAI VAR=DMSGQ USAGE=OUTPUT.Message queue
-:DATAI VAR=DCURMSGQ USAGE=OUTPUT.Current message queue
+:DATAI HELP='FLD/DRSRC' VAR=DRSRC USAGE=OUTPUT.Resource name
+:DATAI HELP='FLD/DAGGPCY' VAR=DAGGPCY USAGE=OUTPUT.Aggregate policy
+:DATAI HELP='FLD/DAGGRSCL' VAR=DAGGRSCL USAGE=OUTPUT.Aggregated resource list
+:DATAI HELP='FLD/DBRIDGE' VAR=DBRIDGE USAGE=OUTPUT.Bridge identifier
+:DATAI HELP='FLD/DONLINE' VAR=DONLINE USAGE=OUTPUT.Online at IPL
+:DATAI HELP='FLD/DVRYWAIT' VAR=DVRYWAIT USAGE=OUTPUT.Vary on wait
+:DATAI HELP='FLD/DNETCTL' VAR=DNETCTL USAGE=OUTPUT.Network controller
+:DATAI HELP='FLD/DADPTADR' VAR=DADPTADR USAGE=OUTPUT.Local adapter address
+:DATAI HELP='FLD/DEXCHID' VAR=DEXCHID USAGE=OUTPUT.Exchange identifier
+:DATAI HELP='FLD/DETHSTD' VAR=DETHSTD USAGE=OUTPUT.Ethernet standard
+:DATAI HELP='FLD/DSPEED' VAR=DSPEED USAGE=OUTPUT.Line speed
+:DATAI HELP='FLD/DCURSPD' VAR=DCURSPD USAGE=OUTPUT.Current line speed
+:DATAI HELP='FLD/DDUPLEX' VAR=DDUPLEX USAGE=OUTPUT.Duplex
+:DATAI HELP='FLD/DCURDPX' VAR=DCURDPX USAGE=OUTPUT.Current duplex
+:DATAI HELP='FLD/DSRVOPT' VAR=DSRVOPT USAGE=OUTPUT.Serviceability options
+:DATAI HELP='FLD/DMAXFRM' VAR=DMAXFRM USAGE=OUTPUT.Maximum frame size
+:DATAI HELP='FLD/DMAXCTL' VAR=DMAXCTL USAGE=OUTPUT.Maximum controllers
+:DATAI HELP='FLD/DTHRESH' VAR=DTHRESH USAGE=OUTPUT.Error threshold level
+:DATAI HELP='FLD/DGENTST' VAR=DGENTST USAGE=OUTPUT.Generate test frame
+:DATAI HELP='FLD/DMSGQ' VAR=DMSGQ USAGE=OUTPUT.Message queue
+:DATAI HELP='FLD/DCURMSGQ' VAR=DCURMSGQ USAGE=OUTPUT.Current message queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=DCURMSGL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/DCURMSGL' VAR=DCURMSGL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -200,5 +200,136 @@ the port's own when the line is varied on. CHGLINETH changes the line.
 :P.F5 shows the list again, F6 creates an Ethernet line, F14 shows the
 status of every line, F9 brings back the last command, F3 and F12
 leave.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/POSTO'.Position to
+:P.Type the position to.
+:EHELP.
+:HELP NAME='WRKLIND/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LIND'.Line
+:P.The line description.
+:EHELP.
+:HELP NAME='FLD/LINTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LINTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LINRSC'.Resource
+:P.The resource of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LINSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='WRKLIND/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Line Desc (Ethernet) (CHGLINETH) command is prompted for the entry.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it. The Create Line
+Desc (Ethernet) (CRTLINETH) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Line Description (DLTLIND) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Line Description (DSPLIND) command runs for the entry.
+:PT.6=Print
+:PD.Type 6 next to an entry and press Enter to print it. The Display
+Line Description (DSPLIND) command runs for the entry.
+:PT.7=Rename
+:PD.Type 7 next to an entry and press Enter to rename it. The Rename
+Object (RNMOBJ) command is prompted for the entry.
+:PT.8=Work with status
+:PD.Type 8 next to an entry and press Enter to work with status it. The
+Work with Configuration Status (WRKCFGSTS) command runs for the entry.
+:PT.9=Retrieve source
+:PD.Type 9 next to an entry and press Enter to retrieve source it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/DLIND'.Line description
+:P.The line description.
+:EHELP.
+:HELP NAME='FLD/DOPTION'.Option
+:P.The option shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DCAT'.Category of line
+:P.The category of line shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DRSRC'.Resource name
+:P.The hardware resource name, as WRKHDWRSC shows it.
+:EHELP.
+:HELP NAME='FLD/DBRIDGE'.Bridge identifier
+:P.The bridge identifier shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DONLINE'.Online at IPL
+:P.Whether the device or line is varied on when the system starts (IPL).
+:EHELP.
+:HELP NAME='FLD/DVRYWAIT'.Vary on wait
+:P.The vary on wait shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DNETCTL'.Network controller
+:P.The network controller shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DADPTADR'.Local adapter address
+:P.The local adapter address shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DEXCHID'.Exchange identifier
+:P.The exchange identifier shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DETHSTD'.Ethernet standard
+:P.The ethernet standard shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DSPEED'.Line speed
+:P.The line speed shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DCURSPD'.Current line speed
+:P.The current line speed shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DDUPLEX'.Duplex
+:P.Whether the output prints on both sides of the paper.
+:EHELP.
+:HELP NAME='FLD/DCURDPX'.Current duplex
+:P.The current duplex shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DSRVOPT'.Serviceability options
+:P.The serviceability options shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMAXFRM'.Maximum frame size
+:P.The maximum frame size shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMAXCTL'.Maximum controllers
+:P.The maximum controllers shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTHRESH'.Error threshold level
+:P.The error threshold level shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DGENTST'.Generate test frame
+:P.The generate test frame shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMSGQ'.Message queue
+:P.The message queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DCURMSGQ'.Current message queue
+:P.The current message queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DCURMSGL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DAGGPCY'.Aggregate policy
+:P.The aggregate policy shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DAGGRSCL'.Aggregated resource list
+:P.The aggregated resource list shown for what the display is about.
 :EHELP.
 :EPNLGRP.

@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='HARDWARE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKHDWRSC PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,16 +25,16 @@
 :EKEYL.
 :PANEL NAME=HARDWARE HELP=HLPHARDWARE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Hardware Resources
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKHDWRSC TYPE(*CMN)'.Work with communication resources
-:MENUI OPTION=2 ACTION='CMD WRKHDWRSC TYPE(*LWS)'.Work with local workstation resources
-:MENUI OPTION=3 ACTION='CMD WRKHDWRSC TYPE(*STG)'.Work with storage resources
-:MENUI OPTION=4 ACTION='CMD WRKHDWRSC TYPE(*PRC)'.Work with processor resources
-:MENUI OPTION=5 ACTION='CMD WRKHDWRSC TYPE(*TRA)'.Work with token ring LAN adapter resources
-:MENUI OPTION=6 ACTION='CMD WRKHDWRSC TYPE(*DDI)'.Work with DDI LAN adapter resources
-:MENUI OPTION=7 ACTION='CMD WRKHDWRSC TYPE(*LAN)'.Work with all LAN adapter resources
-:MENUI OPTION=8 ACTION='CMD WRKHDWRSC TYPE(*CSA)'.Work with coupled system adapter
-:MENUI OPTION=9 ACTION='CMD WRKHDWRSC TYPE(*CRP)'.Work with cryptographic system resources
-:MENUI OPTION=70 ACTION='MENU CMDHDWRSC'.Related commands
+:MENUI HELP=WRKHDWRSC OPTION=1 ACTION='CMD WRKHDWRSC TYPE(*CMN)'.Work with communication resources
+:MENUI HELP=WRKHDWRSC OPTION=2 ACTION='CMD WRKHDWRSC TYPE(*LWS)'.Work with local workstation resources
+:MENUI HELP=WRKHDWRSC OPTION=3 ACTION='CMD WRKHDWRSC TYPE(*STG)'.Work with storage resources
+:MENUI HELP=WRKHDWRSC OPTION=4 ACTION='CMD WRKHDWRSC TYPE(*PRC)'.Work with processor resources
+:MENUI HELP=WRKHDWRSC OPTION=5 ACTION='CMD WRKHDWRSC TYPE(*TRA)'.Work with token ring LAN adapter resources
+:MENUI HELP=WRKHDWRSC OPTION=6 ACTION='CMD WRKHDWRSC TYPE(*DDI)'.Work with DDI LAN adapter resources
+:MENUI HELP=WRKHDWRSC OPTION=7 ACTION='CMD WRKHDWRSC TYPE(*LAN)'.Work with all LAN adapter resources
+:MENUI HELP=WRKHDWRSC OPTION=8 ACTION='CMD WRKHDWRSC TYPE(*CSA)'.Work with coupled system adapter
+:MENUI HELP=WRKHDWRSC OPTION=9 ACTION='CMD WRKHDWRSC TYPE(*CRP)'.Work with cryptographic system resources
+:MENUI HELP='HARDWARE/OPT70' OPTION=70 ACTION='MENU CMDHDWRSC'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -42,5 +43,27 @@
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='HARDWARE/OPT70'.Related commands
+:P.Option 70. Shows menu CMDHDWRSC&colon. Related commands.
 :EHELP.
 :EPNLGRP.

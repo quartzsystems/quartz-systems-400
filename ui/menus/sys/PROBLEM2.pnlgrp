@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='PROBLEM2'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=STRDBG PNLGRP=QHDBGCMD.
+:IMPORT NAME=WRKCNTINF PNLGRP=QHSXCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +26,14 @@
 :EKEYL.
 :PANEL NAME=PROBLEM2 HELP=HLPPROBLEM2 KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Problem Handling
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU PTF'.Program temporary fix
-:MENUI OPTION=2 ACTION='CMD WRKALR'.Work with alerts
-:MENUI OPTION=3 ACTION='MENU PERFORM'.Performance tools
-:MENUI OPTION=4 ACTION='CMD ?STRDBG'.Programming language debug
-:MENUI OPTION=5 ACTION='CMD WRKCNTINF'.Work with support contact information
-:MENUI OPTION=6 ACTION='CMD ?STRCPYSCN'.Copy screen image
-:MENUI OPTION=7 ACTION='CMD WRKALRD'.Work with alert descriptions
-:MENUI OPTION=70 ACTION='MENU CMDPRB'.Related commands
+:MENUI HELP='PROBLEM2/OPT1' OPTION=1 ACTION='MENU PTF'.Program temporary fix
+:MENUI HELP='PROBLEM2/OPT2' OPTION=2 ACTION='CMD WRKALR'.Work with alerts
+:MENUI HELP='PROBLEM2/OPT3' OPTION=3 ACTION='MENU PERFORM'.Performance tools
+:MENUI HELP=STRDBG OPTION=4 ACTION='CMD ?STRDBG'.Programming language debug
+:MENUI HELP=WRKCNTINF OPTION=5 ACTION='CMD WRKCNTINF'.Work with support contact information
+:MENUI HELP='PROBLEM2/OPT6' OPTION=6 ACTION='CMD ?STRCPYSCN'.Copy screen image
+:MENUI HELP='PROBLEM2/OPT7' OPTION=7 ACTION='CMD WRKALRD'.Work with alert descriptions
+:MENUI HELP='PROBLEM2/OPT70' OPTION=70 ACTION='MENU CMDPRB'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -41,5 +43,43 @@ debugging.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='PROBLEM2/OPT1'.Program temporary fix
+:P.Option 1. Shows menu PTF&colon. Program temporary fix.
+:EHELP.
+:HELP NAME='PROBLEM2/OPT2'.Work with alerts
+:P.Option 2. Runs the WRKALR command&colon. Work with alerts.
+:EHELP.
+:HELP NAME='PROBLEM2/OPT3'.Performance tools
+:P.Option 3. Shows menu PERFORM&colon. Performance tools.
+:EHELP.
+:HELP NAME='PROBLEM2/OPT6'.Copy screen image
+:P.Option 6. Runs the STRCPYSCN command&colon. Copy screen image.
+:EHELP.
+:HELP NAME='PROBLEM2/OPT7'.Work with alert descriptions
+:P.Option 7. Runs the WRKALRD command&colon. Work with alert
+descriptions.
+:EHELP.
+:HELP NAME='PROBLEM2/OPT70'.Related commands
+:P.Option 70. Shows menu CMDPRB&colon. Related commands.
 :EHELP.
 :EPNLGRP.

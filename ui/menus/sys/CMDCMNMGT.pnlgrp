@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDCMNMGT'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,33 +24,33 @@
 :PANEL NAME=CMDCMNMGT HELP=HLPCMDCMNMGT KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Communication Mgmt Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Related Command Menus
-:MENUI OPTION=1 ACTION='MENU CMDALR'.Alert Commands  CMDALR
-:MENUI OPTION=2 ACTION='MENU CMDAPPC'.APPC Commands  CMDAPPC
-:MENUI OPTION=3 ACTION='MENU CMDASC'.Async Commands  CMDASC
-:MENUI OPTION=4 ACTION='MENU CMDBSCF'.BSC File Commands  CMDBSCF
-:MENUI OPTION=5 ACTION='MENU CMDCFG'.Configuration Commands  CMDCFG
-:MENUI OPTION=6 ACTION='MENU CMDCFGL'.Configuration List Commands  CMDCFGL
-:MENUI OPTION=7 ACTION='MENU CMDCMN'.Communications Commands  CMDCMN
-:MENUI OPTION=8 ACTION='MENU CMDCOSD'.Class-of-Service Desc Commands  CMDCOSD
-:MENUI OPTION=9 ACTION='MENU CMDCSI'.Comm Side Information Commands  CMDCSI
-:MENUI OPTION=10 ACTION='MENU CMDCTL'.Control Commands  CMDCTL
-:MENUI OPTION=11 ACTION='MENU CMDDEVMGT'.Device Management Commands  CMDDEVMGT
-:MENUI OPTION=12 ACTION='MENU CMDETH'.Ethernet Commands  CMDETH
-:MENUI OPTION=13 ACTION='MENU CMDFILE'.File Commands  CMDFILE
-:MENUI OPTION=14 ACTION='MENU CMDHOST'.Host Commands  CMDHOST
-:MENUI OPTION=15 ACTION='MENU CMDINTR'.Intrasystem Commands  CMDINTR
-:MENUI OPTION=16 ACTION='MENU CMDLIN'.Line Commands  CMDLIN
-:MENUI OPTION=17 ACTION='MENU CMDLWS'.Local Work Station Commands  CMDLWS
-:MENUI OPTION=18 ACTION='MENU CMDMOD'.Mode and Module Commands  CMDMOD
-:MENUI OPTION=19 ACTION='MENU CMDNET'.Network Commands  CMDNET
-:MENUI OPTION=20 ACTION='MENU CMDPASTHR'.Pass-Through Commands  CMDPASTHR
-:MENUI OPTION=21 ACTION='MENU CMDRJE'.RJE Commands  CMDRJE
-:MENUI OPTION=22 ACTION='MENU CMDSNPT'.SNPT Commands  CMDSNPT
-:MENUI OPTION=23 ACTION='MENU CMDSNUF'.SNUF Commands  CMDSNUF
-:MENUI OPTION=24 ACTION='MENU CMDSOC'.Sphere of Control Commands  CMDSOC
-:MENUI OPTION=25 ACTION='MENU CMDSRV'.Service Commands  CMDSRV
-:MENUI OPTION=26 ACTION='MENU CMDTCP'.TCP/IP Commands  CMDTCP
-:MENUI OPTION=27 ACTION='MENU CMDVWS'.Virtual Work Station Commands  CMDVWS
+:MENUI HELP='CMDCMNMGT/OPT1' OPTION=1 ACTION='MENU CMDALR'.Alert Commands  CMDALR
+:MENUI HELP='CMDCMNMGT/OPT2' OPTION=2 ACTION='MENU CMDAPPC'.APPC Commands  CMDAPPC
+:MENUI HELP='CMDCMNMGT/OPT3' OPTION=3 ACTION='MENU CMDASC'.Async Commands  CMDASC
+:MENUI HELP='CMDCMNMGT/OPT4' OPTION=4 ACTION='MENU CMDBSCF'.BSC File Commands  CMDBSCF
+:MENUI HELP='CMDCMNMGT/OPT5' OPTION=5 ACTION='MENU CMDCFG'.Configuration Commands  CMDCFG
+:MENUI HELP='CMDCMNMGT/OPT6' OPTION=6 ACTION='MENU CMDCFGL'.Configuration List Commands  CMDCFGL
+:MENUI HELP='CMDCMNMGT/OPT7' OPTION=7 ACTION='MENU CMDCMN'.Communications Commands  CMDCMN
+:MENUI HELP='CMDCMNMGT/OPT8' OPTION=8 ACTION='MENU CMDCOSD'.Class-of-Service Desc Commands  CMDCOSD
+:MENUI HELP='CMDCMNMGT/OPT9' OPTION=9 ACTION='MENU CMDCSI'.Comm Side Information Commands  CMDCSI
+:MENUI HELP='CMDCMNMGT/OPT10' OPTION=10 ACTION='MENU CMDCTL'.Control Commands  CMDCTL
+:MENUI HELP='CMDCMNMGT/OPT11' OPTION=11 ACTION='MENU CMDDEVMGT'.Device Management Commands  CMDDEVMGT
+:MENUI HELP='CMDCMNMGT/OPT12' OPTION=12 ACTION='MENU CMDETH'.Ethernet Commands  CMDETH
+:MENUI HELP='CMDCMNMGT/OPT13' OPTION=13 ACTION='MENU CMDFILE'.File Commands  CMDFILE
+:MENUI HELP='CMDCMNMGT/OPT14' OPTION=14 ACTION='MENU CMDHOST'.Host Commands  CMDHOST
+:MENUI HELP='CMDCMNMGT/OPT15' OPTION=15 ACTION='MENU CMDINTR'.Intrasystem Commands  CMDINTR
+:MENUI HELP='CMDCMNMGT/OPT16' OPTION=16 ACTION='MENU CMDLIN'.Line Commands  CMDLIN
+:MENUI HELP='CMDCMNMGT/OPT17' OPTION=17 ACTION='MENU CMDLWS'.Local Work Station Commands  CMDLWS
+:MENUI HELP='CMDCMNMGT/OPT18' OPTION=18 ACTION='MENU CMDMOD'.Mode and Module Commands  CMDMOD
+:MENUI HELP='CMDCMNMGT/OPT19' OPTION=19 ACTION='MENU CMDNET'.Network Commands  CMDNET
+:MENUI HELP='CMDCMNMGT/OPT20' OPTION=20 ACTION='MENU CMDPASTHR'.Pass-Through Commands  CMDPASTHR
+:MENUI HELP='CMDCMNMGT/OPT21' OPTION=21 ACTION='MENU CMDRJE'.RJE Commands  CMDRJE
+:MENUI HELP='CMDCMNMGT/OPT22' OPTION=22 ACTION='MENU CMDSNPT'.SNPT Commands  CMDSNPT
+:MENUI HELP='CMDCMNMGT/OPT23' OPTION=23 ACTION='MENU CMDSNUF'.SNUF Commands  CMDSNUF
+:MENUI HELP='CMDCMNMGT/OPT24' OPTION=24 ACTION='MENU CMDSOC'.Sphere of Control Commands  CMDSOC
+:MENUI HELP='CMDCMNMGT/OPT25' OPTION=25 ACTION='MENU CMDSRV'.Service Commands  CMDSRV
+:MENUI HELP='CMDCMNMGT/OPT26' OPTION=26 ACTION='MENU CMDTCP'.TCP/IP Commands  CMDTCP
+:MENUI HELP='CMDCMNMGT/OPT27' OPTION=27 ACTION='MENU CMDVWS'.Virtual Work Station Commands  CMDVWS
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -64,5 +64,111 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT1'.Alert Commands  CMDALR
+:P.Option 1. Shows menu CMDALR&colon. Alert Commands CMDALR.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT2'.APPC Commands  CMDAPPC
+:P.Option 2. Shows menu CMDAPPC&colon. APPC Commands CMDAPPC.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT3'.Async Commands  CMDASC
+:P.Option 3. Shows menu CMDASC&colon. Async Commands CMDASC.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT4'.BSC File Commands  CMDBSCF
+:P.Option 4. Shows menu CMDBSCF&colon. BSC File Commands CMDBSCF.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT5'.Configuration Commands  CMDCFG
+:P.Option 5. Shows menu CMDCFG&colon. Configuration Commands CMDCFG.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT6'.Configuration List Commands  CMDCFGL
+:P.Option 6. Shows menu CMDCFGL&colon. Configuration List Commands
+CMDCFGL.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT7'.Communications Commands  CMDCMN
+:P.Option 7. Shows menu CMDCMN&colon. Communications Commands CMDCMN.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT8'.Class-of-Service Desc Commands  CMDCOSD
+:P.Option 8. Shows menu CMDCOSD&colon. Class-of-Service Desc Commands
+CMDCOSD.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT9'.Comm Side Information Commands  CMDCSI
+:P.Option 9. Shows menu CMDCSI&colon. Comm Side Information Commands
+CMDCSI.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT10'.Control Commands  CMDCTL
+:P.Option 10. Shows menu CMDCTL&colon. Control Commands CMDCTL.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT11'.Device Management Commands  CMDDEVMGT
+:P.Option 11. Shows menu CMDDEVMGT&colon. Device Management Commands
+CMDDEVMGT.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT12'.Ethernet Commands  CMDETH
+:P.Option 12. Shows menu CMDETH&colon. Ethernet Commands CMDETH.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT13'.File Commands  CMDFILE
+:P.Option 13. Shows menu CMDFILE&colon. File Commands CMDFILE.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT14'.Host Commands  CMDHOST
+:P.Option 14. Shows menu CMDHOST&colon. Host Commands CMDHOST.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT15'.Intrasystem Commands  CMDINTR
+:P.Option 15. Shows menu CMDINTR&colon. Intrasystem Commands CMDINTR.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT16'.Line Commands  CMDLIN
+:P.Option 16. Shows menu CMDLIN&colon. Line Commands CMDLIN.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT17'.Local Work Station Commands  CMDLWS
+:P.Option 17. Shows menu CMDLWS&colon. Local Work Station Commands
+CMDLWS.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT18'.Mode and Module Commands  CMDMOD
+:P.Option 18. Shows menu CMDMOD&colon. Mode and Module Commands CMDMOD.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT19'.Network Commands  CMDNET
+:P.Option 19. Shows menu CMDNET&colon. Network Commands CMDNET.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT20'.Pass-Through Commands  CMDPASTHR
+:P.Option 20. Shows menu CMDPASTHR&colon. Pass-Through Commands
+CMDPASTHR.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT21'.RJE Commands  CMDRJE
+:P.Option 21. Shows menu CMDRJE&colon. RJE Commands CMDRJE.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT22'.SNPT Commands  CMDSNPT
+:P.Option 22. Shows menu CMDSNPT&colon. SNPT Commands CMDSNPT.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT23'.SNUF Commands  CMDSNUF
+:P.Option 23. Shows menu CMDSNUF&colon. SNUF Commands CMDSNUF.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT24'.Sphere of Control Commands  CMDSOC
+:P.Option 24. Shows menu CMDSOC&colon. Sphere of Control Commands
+CMDSOC.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT25'.Service Commands  CMDSRV
+:P.Option 25. Shows menu CMDSRV&colon. Service Commands CMDSRV.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT26'.TCP/IP Commands  CMDTCP
+:P.Option 26. Shows menu CMDTCP&colon. TCP/IP Commands CMDTCP.
+:EHELP.
+:HELP NAME='CMDCMNMGT/OPT27'.Virtual Work Station Commands  CMDVWS
+:P.Option 27. Shows menu CMDVWS&colon. Virtual Work Station Commands
+CMDVWS.
 :EHELP.
 :EPNLGRP.

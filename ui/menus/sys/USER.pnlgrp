@@ -11,7 +11,16 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='USER'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGPWD PNLGRP=QHSYCMD.
+:IMPORT NAME=DSPMSG PNLGRP=QHMHCMD.
+:IMPORT NAME=EDTLIBL PNLGRP=QHWMCMD.
+:IMPORT NAME=SBMJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=SIGNOFF PNLGRP=QHWMCMD.
+:IMPORT NAME=SNDMSG PNLGRP=QHMHCMD.
+:IMPORT NAME=WRKJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSBMJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSPLF PNLGRP=QHSPCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,17 +33,17 @@
 :EKEYL.
 :PANEL NAME=USER HELP=HLPUSER KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.User Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKJOB'.Display or change your job
-:MENUI OPTION=2 ACTION='CMD DSPMSG'.Display messages
-:MENUI OPTION=3 ACTION='CMD ?SNDMSG'.Send a message
-:MENUI OPTION=4 ACTION='CMD ?SBMJOB'.Submit a job
-:MENUI OPTION=5 ACTION='CMD WRKSPLF'.Work with your spooled output files
-:MENUI OPTION=6 ACTION='CMD WRKSBMJOB'.Work with your batch jobs
-:MENUI OPTION=7 ACTION='CMD EDTLIBL'.Display or change your library list
-:MENUI OPTION=8 ACTION='CMD CHGPWD'.Change your password
-:MENUI OPTION=9 ACTION='CMD CHGPRF'.Change your user profile
-:MENUI OPTION=60 ACTION='MENU USER2'.More user task options
-:MENUI OPTION=90 ACTION='CMD SIGNOFF'.Sign off
+:MENUI HELP=WRKJOB OPTION=1 ACTION='CMD WRKJOB'.Display or change your job
+:MENUI HELP=DSPMSG OPTION=2 ACTION='CMD DSPMSG'.Display messages
+:MENUI HELP=SNDMSG OPTION=3 ACTION='CMD ?SNDMSG'.Send a message
+:MENUI HELP=SBMJOB OPTION=4 ACTION='CMD ?SBMJOB'.Submit a job
+:MENUI HELP=WRKSPLF OPTION=5 ACTION='CMD WRKSPLF'.Work with your spooled output files
+:MENUI HELP=WRKSBMJOB OPTION=6 ACTION='CMD WRKSBMJOB'.Work with your batch jobs
+:MENUI HELP=EDTLIBL OPTION=7 ACTION='CMD EDTLIBL'.Display or change your library list
+:MENUI HELP=CHGPWD OPTION=8 ACTION='CMD CHGPWD'.Change your password
+:MENUI HELP='USER/OPT9' OPTION=9 ACTION='CMD CHGPRF'.Change your user profile
+:MENUI HELP='USER/OPT60' OPTION=60 ACTION='MENU USER2'.More user task options
+:MENUI HELP=SIGNOFF OPTION=90 ACTION='CMD SIGNOFF'.Sign off
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -46,5 +55,30 @@ session.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='USER/OPT9'.Change your user profile
+:P.Option 9. Runs the CHGPRF command&colon. Change your user profile.
+:EHELP.
+:HELP NAME='USER/OPT60'.More user task options
+:P.Option 60. Shows menu USER2&colon. More user task options.
 :EHELP.
 :EPNLGRP.

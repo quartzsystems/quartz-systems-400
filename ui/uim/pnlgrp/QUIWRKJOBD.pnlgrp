@@ -51,7 +51,7 @@
 :VAR NAME=INLLIBL CLASS=TEXTCL.
 :VAR NAME=PADVAR CLASS=VALCL.
 :LISTDEF NAME=JOBDS VARS='OPT JOBD LIB TEXT'.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -65,7 +65,7 @@
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Repeat position to
 :KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
 :EKEYL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -76,70 +76,70 @@
 :PANEL NAME=WRKJOBD KEYL=WRKKEYS HELP=WRKJOBD ENTER='RETURN 1'.Work with Job Descriptions
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBDS ACTLEN=1 EXTACT=YES.
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTJOBD JOBD(&LIB./&JOBD.)'.1=Create
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGJOBD JOBD(&LIB./&JOBD.)'.2=Change
-:LISTACT OPTION=3 ACTFOR=LISTE ENTER='CMD ?CRTDUPOBJ OBJ(&JOBD.) FROMLIB(&LIB.) OBJTYPE(*JOBD)'.3=Copy
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD DLTJOBD JOBD(&LIB./&JOBD.)'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPJOBD JOBD(&LIB./&JOBD.)'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOBD USAGE=OUTPUT EXTACT=YES.Job Description
-:LISTCOL VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
-:LISTCOL VAR=TEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKJOBD/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTJOBD JOBD(&LIB./&JOBD.)'.1=Create
+:LISTACT HELP='WRKJOBD/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGJOBD JOBD(&LIB./&JOBD.)'.2=Change
+:LISTACT HELP='WRKJOBD/OPTIONS' OPTION=3 ACTFOR=LISTE ENTER='CMD ?CRTDUPOBJ OBJ(&JOBD.) FROMLIB(&LIB.) OBJTYPE(*JOBD)'.3=Copy
+:LISTACT HELP='WRKJOBD/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD DLTJOBD JOBD(&LIB./&JOBD.)'.4=Delete
+:LISTACT HELP='WRKJOBD/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPJOBD JOBD(&LIB./&JOBD.)'.5=Display
+:LISTCOL HELP='WRKJOBD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOBD' VAR=JOBD USAGE=OUTPUT EXTACT=YES.Job Description
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters for options 1, 2, 3 and 5 or command
 :EPANEL.
 :PANEL NAME=DSPJOBD KEYL=DSPKEYS HELP=DSPJOBD ENTER='RETURN 1' TOPSEP=SYSNAM.Display Job Description
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOBD USAGE=OUTPUT.Job description
+:DATAI HELP='FLD/JOBD' VAR=JOBD USAGE=OUTPUT.Job description
 :DATAIX VAR=LIB USAGE=OUTPUT.
 :DATAIXT.Library
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=USER USAGE=OUTPUT.User profile
-:DATAI VAR=SYNTAX USAGE=OUTPUT.CL syntax check
-:DATAI VAR=HOLD USAGE=OUTPUT.Hold on job queue
-:DATAI VAR=ENDSEV USAGE=OUTPUT.End severity
-:DATAI VAR=JOBDATE USAGE=OUTPUT.Job date
-:DATAI VAR=SWS USAGE=OUTPUT.Job switches
-:DATAI VAR=INQMSG USAGE=OUTPUT.Inquiry message reply
-:DATAI VAR=JOBPTY USAGE=OUTPUT.Job priority (on job queue)
-:DATAI VAR=JOBQ USAGE=OUTPUT.Job queue
+:DATAI HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User profile
+:DATAI HELP='FLD/SYNTAX' VAR=SYNTAX USAGE=OUTPUT.CL syntax check
+:DATAI HELP='FLD/HOLD' VAR=HOLD USAGE=OUTPUT.Hold on job queue
+:DATAI HELP='FLD/ENDSEV' VAR=ENDSEV USAGE=OUTPUT.End severity
+:DATAI HELP='FLD/JOBDATE' VAR=JOBDATE USAGE=OUTPUT.Job date
+:DATAI HELP='FLD/SWS' VAR=SWS USAGE=OUTPUT.Job switches
+:DATAI HELP='FLD/INQMSG' VAR=INQMSG USAGE=OUTPUT.Inquiry message reply
+:DATAI HELP='FLD/JOBPTY' VAR=JOBPTY USAGE=OUTPUT.Job priority (on job queue)
+:DATAI HELP='FLD/JOBQ' VAR=JOBQ USAGE=OUTPUT.Job queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=JOBQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/JOBQLIB' VAR=JOBQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OUTPTY USAGE=OUTPUT.Output priority (on output queue)
-:DATAI VAR=PRTDEV USAGE=OUTPUT.Printer device
-:DATAI VAR=OUTQ USAGE=OUTPUT.Output queue
+:DATAI HELP='FLD/OUTPTY' VAR=OUTPTY USAGE=OUTPUT.Output priority (on output queue)
+:DATAI HELP='FLD/PRTDEV' VAR=PRTDEV USAGE=OUTPUT.Printer device
+:DATAI HELP='FLD/OUTQ' VAR=OUTQ USAGE=OUTPUT.Output queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=OUTQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/OUTQLIB' VAR=OUTQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
 :DATAC.
 :DATAGRP GRPSEP=NONE.Message logging
-:DATAI VAR=LOGLVL USAGE=OUTPUT.Level
-:DATAI VAR=LOGSEV USAGE=OUTPUT.Severity
-:DATAI VAR=LOGTXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/LOGLVL' VAR=LOGLVL USAGE=OUTPUT.Level
+:DATAI HELP='FLD/LOGSEV' VAR=LOGSEV USAGE=OUTPUT.Severity
+:DATAI HELP='FLD/LOGTXT' VAR=LOGTXT USAGE=OUTPUT.Text
 :EDATAGRP.
-:DATAI VAR=LOGCLPGM USAGE=OUTPUT.Log CL program commands
-:DATAI VAR=LOGOUT USAGE=OUTPUT.Job log output
-:DATAI VAR=ACGCDE USAGE=OUTPUT.Accounting code
-:DATAI VAR=PRTTXT USAGE=OUTPUT.Print text
+:DATAI HELP='FLD/LOGCLPGM' VAR=LOGCLPGM USAGE=OUTPUT.Log CL program commands
+:DATAI HELP='FLD/LOGOUT' VAR=LOGOUT USAGE=OUTPUT.Job log output
+:DATAI HELP='FLD/ACGCDE' VAR=ACGCDE USAGE=OUTPUT.Accounting code
+:DATAI HELP='FLD/PRTTXT' VAR=PRTTXT USAGE=OUTPUT.Print text
 :DATAC.
-:DATAI VAR=RTGDTA USAGE=OUTPUT.Routing data
+:DATAI HELP='FLD/RTGDTA' VAR=RTGDTA USAGE=OUTPUT.Routing data
 :DATAC.
-:DATAI VAR=RQSDTA USAGE=OUTPUT.Request data
+:DATAI HELP='FLD/RQSDTA' VAR=RQSDTA USAGE=OUTPUT.Request data
 :DATAC.
 :DATAC.
 :DATAC.
-:DATAI VAR=DEVRCY USAGE=OUTPUT.Device recovery action
-:DATAI VAR=TSEPOOL USAGE=OUTPUT.Time slice end pool
-:DATAI VAR=MSGQMX USAGE=OUTPUT.Job message queue maximum size
-:DATAI VAR=MSGQFL USAGE=OUTPUT.Job message queue full action
-:DATAI VAR=ALWMLT USAGE=OUTPUT.Allow multiple threads
-:DATAI VAR=ASPGRP USAGE=OUTPUT.Initial ASP group
-:DATAI VAR=SPLFACN USAGE=OUTPUT.Spooled file action
-:DATAI VAR=DDMCNV USAGE=OUTPUT.DDM conversation
-:DATAI VAR=TEXT USAGE=OUTPUT.Text
-:DATAI VAR=INLLIBL USAGE=OUTPUT.Initial library list
+:DATAI HELP='FLD/DEVRCY' VAR=DEVRCY USAGE=OUTPUT.Device recovery action
+:DATAI HELP='FLD/TSEPOOL' VAR=TSEPOOL USAGE=OUTPUT.Time slice end pool
+:DATAI HELP='FLD/MSGQMX' VAR=MSGQMX USAGE=OUTPUT.Job message queue maximum size
+:DATAI HELP='FLD/MSGQFL' VAR=MSGQFL USAGE=OUTPUT.Job message queue full action
+:DATAI HELP='FLD/ALWMLT' VAR=ALWMLT USAGE=OUTPUT.Allow multiple threads
+:DATAI HELP='FLD/ASPGRP' VAR=ASPGRP USAGE=OUTPUT.Initial ASP group
+:DATAI HELP='FLD/SPLFACN' VAR=SPLFACN USAGE=OUTPUT.Spooled file action
+:DATAI HELP='FLD/DDMCNV' VAR=DDMCNV USAGE=OUTPUT.DDM conversation
+:DATAI HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/INLLIBL' VAR=INLLIBL USAGE=OUTPUT.Initial library list
 .* Not shown: it sets the colon column.
 :DATAI VAR=PADVAR USAGE=OUTPUT DISPLAY=NO.Maximum temporary storage in megabytes
 :EDATA.
@@ -152,5 +152,179 @@ next to one, or on the first line with a new name to create one.
 :HELP NAME=DSPJOBD.Display Job Description - Help
 :P.What a job description gives the jobs that start from it: who they
 run as, where they wait and print, how they log and route.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display names only
+:PD.Shows the list with the names alone, so more fit on a page.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Repeat position to
+:PD.Repeat position to.
+:PT.F17=Position to
+:PD.Positions the list at the name typed on the command line.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKJOBD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOBD'.Job Description
+:P.The job description that supplies the job's attributes, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKJOBD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it. The Create Job
+Description (CRTJOBD) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+Description (CHGJOBD) command is prompted for the entry.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete Job
+Description (DLTJOBD) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Job Description (DSPJOBD) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/USER'.User profile
+:P.The user profile shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SYNTAX'.CL syntax check
+:P.The CL syntax check shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HOLD'.Hold on job queue
+:P.Whether the job or the spooled file is held until someone releases
+it.
+:EHELP.
+:HELP NAME='FLD/ENDSEV'.End severity
+:P.The end severity shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBDATE'.Job date
+:P.The job date.
+:EHELP.
+:HELP NAME='FLD/SWS'.Job switches
+:P.The eight job switches&colon. 0 for off, 1 for on, X for unchanged.
+:EHELP.
+:HELP NAME='FLD/INQMSG'.Inquiry message reply
+:P.How inquiry messages sent to the job are answered&colon. by the
+operator, with their default replies, or from the system reply list.
+:EHELP.
+:HELP NAME='FLD/JOBPTY'.Job priority (on job queue)
+:P.The job priority (on job queue) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBQ'.Job queue
+:P.The job queue, by name and library.
+:EHELP.
+:HELP NAME='FLD/JOBQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTPTY'.Output priority (on output queue)
+:P.The output priority (on output queue) shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/PRTDEV'.Printer device
+:P.The printer device shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTQ'.Output queue
+:P.The output queue the spooled files go to.
+:EHELP.
+:HELP NAME='FLD/OUTQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGLVL'.Level
+:P.The level shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGSEV'.Severity
+:P.A message severity from 0 to 99. Higher numbers mean more serious
+conditions.
+:EHELP.
+:HELP NAME='FLD/LOGTXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGCLPGM'.Log CL program commands
+:P.The log CL program commands shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGOUT'.Job log output
+:P.The job log output shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ACGCDE'.Accounting code
+:P.The accounting code the job's resources are charged to.
+:EHELP.
+:HELP NAME='FLD/PRTTXT'.Print text
+:P.Up to 30 characters printed at the bottom of every page of the job's
+printed output.
+:EHELP.
+:HELP NAME='FLD/RTGDTA'.Routing data
+:P.The routing data the subsystem compares with its routing entries to
+choose the program the job runs.
+:EHELP.
+:HELP NAME='FLD/RQSDTA'.Request data
+:P.The request data placed on the job's message queue for the program to
+read.
+:EHELP.
+:HELP NAME='FLD/DEVRCY'.Device recovery action
+:P.What happens to the job when its display device has an error&colon. a
+message is sent, the request is ended, or the job is ended.
+:EHELP.
+:HELP NAME='FLD/TSEPOOL'.Time slice end pool
+:P.Whether the job moves to the base pool when its time slice ends.
+:EHELP.
+:HELP NAME='FLD/MSGQMX'.Job message queue maximum size
+:P.The job message queue maximum size shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/MSGQFL'.Job message queue full action
+:P.What happens when the job's message queue fills&colon. the job ends,
+the queue wraps, or messages are printed and then overwritten.
+:EHELP.
+:HELP NAME='FLD/ALWMLT'.Allow multiple threads
+:P.The allow multiple threads shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ASPGRP'.Initial ASP group
+:P.The initial ASP group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SPLFACN'.Spooled file action
+:P.What happens to the job's spooled files when the job ends&colon. they
+are kept with the job or detached from it.
+:EHELP.
+:HELP NAME='FLD/DDMCNV'.DDM conversation
+:P.Whether conversations to remote systems for DDM are kept or dropped
+when nothing is using them.
+:EHELP.
+:HELP NAME='FLD/INLLIBL'.Initial library list
+:P.The initial user part of the library list of the job.
 :EHELP.
 :EPNLGRP.

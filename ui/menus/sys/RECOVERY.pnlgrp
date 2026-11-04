@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='RECOVERY'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DUPOPT PNLGRP=QHOPCMD.
+:IMPORT NAME=WRKOPTVOL PNLGRP=QHOPCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -22,14 +24,14 @@
 :EKEYL.
 :PANEL NAME=RECOVERY HELP=HLPRECOVERY KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Optical Backup/Recovery
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKHLDOPTF'.Work with held optical files
-:MENUI OPTION=2 ACTION='CMD ?RCLOPT'.Reclaim optical index
-:MENUI OPTION=3 ACTION='CMD ?CPYOPT'.Copy to optical backup
-:MENUI OPTION=4 ACTION='CMD ?CPYOPT'.Copy from optical backup
-:MENUI OPTION=5 ACTION='CMD WRKOPTVOL'.Work with backup volumes
-:MENUI OPTION=6 ACTION='CMD ?CVTOPTBKU'.Convert optical backup volume
-:MENUI OPTION=7 ACTION='CMD ?DUPOPT'.Duplicate optical volume
-:MENUI OPTION=8 ACTION='CMD ?CHKOPTVOL'.Check optical volume
+:MENUI HELP='RECOVERY/OPT1' OPTION=1 ACTION='CMD WRKHLDOPTF'.Work with held optical files
+:MENUI HELP='RECOVERY/OPT2' OPTION=2 ACTION='CMD ?RCLOPT'.Reclaim optical index
+:MENUI HELP='RECOVERY/OPT3' OPTION=3 ACTION='CMD ?CPYOPT'.Copy to optical backup
+:MENUI HELP='RECOVERY/OPT4' OPTION=4 ACTION='CMD ?CPYOPT'.Copy from optical backup
+:MENUI HELP=WRKOPTVOL OPTION=5 ACTION='CMD WRKOPTVOL'.Work with backup volumes
+:MENUI HELP='RECOVERY/OPT6' OPTION=6 ACTION='CMD ?CVTOPTBKU'.Convert optical backup volume
+:MENUI HELP=DUPOPT OPTION=7 ACTION='CMD ?DUPOPT'.Duplicate optical volume
+:MENUI HELP='RECOVERY/OPT8' OPTION=8 ACTION='CMD ?CHKOPTVOL'.Check optical volume
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -38,5 +40,40 @@
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='RECOVERY/OPT1'.Work with held optical files
+:P.Option 1. Runs the WRKHLDOPTF command&colon. Work with held optical
+files.
+:EHELP.
+:HELP NAME='RECOVERY/OPT2'.Reclaim optical index
+:P.Option 2. Runs the RCLOPT command&colon. Reclaim optical index.
+:EHELP.
+:HELP NAME='RECOVERY/OPT3'.Copy to optical backup
+:P.Option 3. Runs the CPYOPT command&colon. Copy to optical backup.
+:EHELP.
+:HELP NAME='RECOVERY/OPT4'.Copy from optical backup
+:P.Option 4. Runs the CPYOPT command&colon. Copy from optical backup.
+:EHELP.
+:HELP NAME='RECOVERY/OPT6'.Convert optical backup volume
+:P.Option 6. Runs the CVTOPTBKU command&colon. Convert optical backup
+volume.
+:EHELP.
+:HELP NAME='RECOVERY/OPT8'.Check optical volume
+:P.Option 8. Runs the CHKOPTVOL command&colon. Check optical volume.
 :EHELP.
 :EPNLGRP.

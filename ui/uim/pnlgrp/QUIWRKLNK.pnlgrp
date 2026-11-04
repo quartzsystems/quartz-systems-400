@@ -123,23 +123,23 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LNKS ACTLEN=4 SCROLL=YES.
-:LISTACT OPTION=2 ENTER='RETURN 0'.2=Edit
-:LISTACT OPTION=3 ENTER='RETURN 0'.3=Copy
-:LISTACT OPTION=4 ENTER='RETURN 0'.4=Remove
-:LISTACT OPTION=5 ENTER='RETURN 0'.5=Display
-:LISTACT OPTION=7 ENTER='RETURN 0'.7=Rename
-:LISTACT OPTION=8 ENTER='RETURN 0'.8=Display attributes
-:LISTACT OPTION=11 ENTER='RETURN 0'.11=Change current directory ...
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=2 ENTER='RETURN 0'.2=Edit
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=3 ENTER='RETURN 0'.3=Copy
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=4 ENTER='RETURN 0'.4=Remove
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=5 ENTER='RETURN 0'.5=Display
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=7 ENTER='RETURN 0'.7=Rename
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=8 ENTER='RETURN 0'.8=Display attributes
+:LISTACT HELP='WRKLNK1/OPTIONS' OPTION=11 ENTER='RETURN 0'.11=Change current directory ...
 :LISTACT OPTION=9 ENTER='RETURN 0'.
 :LISTACT OPTION=10 ENTER='RETURN 0'.
 :LISTACT OPTION=12 ENTER='RETURN 0'.
 :LISTACT OPTION=13 ENTER='RETURN 0'.
 :LISTACT OPTION=14 ENTER='RETURN 0'.
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
-:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='WRKLNK1/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LNK' VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL HELP='FLD/LNKTYPE' VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/LNKATR' VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/LNKTEXT' VAR=LNKTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters or command
 :EPANEL.
@@ -168,11 +168,11 @@
 :LISTACT OPTION=11 ENTER='RETURN 0'.
 :LISTACT OPTION=12 ENTER='RETURN 0'.
 :LISTACT OPTION=14 ENTER='RETURN 0'.
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
-:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='WRKLNK2/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LNK' VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL HELP='FLD/LNKTYPE' VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/LNKATR' VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/LNKTEXT' VAR=LNKTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters or command
 :EPANEL.
@@ -201,11 +201,11 @@
 :LISTACT OPTION=10 ENTER='RETURN 0'.
 :LISTACT OPTION=11 ENTER='RETURN 0'.
 :LISTACT OPTION=13 ENTER='RETURN 0'.
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
-:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='WRKLNK3/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LNK' VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL HELP='FLD/LNKTYPE' VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/LNKATR' VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/LNKTEXT' VAR=LNKTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters or command
 :EPANEL.
@@ -217,14 +217,14 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LNKS ACTLEN=4 SCROLL=YES.
-:LISTACT OPTION=5 ENTER='RETURN 0'.5=Display
-:LISTACT OPTION=8 ENTER='RETURN 0'.8=Display attributes
-:LISTACT OPTION=9 ENTER='RETURN 0'.9=Display authority
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LNK USAGE=OUTPUT.Object link
-:LISTCOL VAR=LNKTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=LNKATR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=LNKTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='DSPLNK/OPTIONS' OPTION=5 ENTER='RETURN 0'.5=Display
+:LISTACT HELP='DSPLNK/OPTIONS' OPTION=8 ENTER='RETURN 0'.8=Display attributes
+:LISTACT HELP='DSPLNK/OPTIONS' OPTION=9 ENTER='RETURN 0'.9=Display authority
+:LISTCOL HELP='DSPLNK/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LNK' VAR=LNK USAGE=OUTPUT.Object link
+:LISTCOL HELP='FLD/LNKTYPE' VAR=LNKTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/LNKATR' VAR=LNKATR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/LNKTEXT' VAR=LNKTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPATRF KEYL=ATRKEYS HELP=DSPATRH ENTER=EXIT TOPSEP=SPACE.Display Attributes
@@ -374,5 +374,71 @@ owner, coded character set, PC flags, sizes and times.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display, F5 reads the
 directory again, F23 shows the other options.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='WRKLNK1/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LNK'.Object link
+:P.The object link of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LNKTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LNKATR'.Attribute
+:P.The attribute of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LNKTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKLNK1/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Edit
+:PD.Type 2 next to an entry and press Enter to edit it.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.7=Rename
+:PD.Type 7 next to an entry and press Enter to rename it.
+:PT.8=Display attributes
+:PD.Type 8 next to an entry and press Enter to display attributes it.
+:PT.11=Change current directory ...
+:PD.Type 11 next to an entry and press Enter to change current directory
+&period... it.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKLNK2/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKLNK3/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DSPLNK/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DSPLNK/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.8=Display attributes
+:PD.Type 8 next to an entry and press Enter to display attributes it.
+:PT.9=Display authority
+:PD.Type 9 next to an entry and press Enter to display authority it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

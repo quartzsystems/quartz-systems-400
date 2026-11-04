@@ -82,25 +82,25 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=AUTS VIEWS=2 SCROLL=YES ACTLEN=1 EXTACT=YES.
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 0'.1=Add user
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='RETURN 0'.2=Change user authority
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='RETURN 0'.4=Remove user
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=USER USAGE=OUTPUT EXTACT=YES.User
-:LISTCOL VAR=DTAAUT USAGE=OUTPUT EXTACT=YES.Data Authority
+:LISTACT HELP='WRKAUT/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='RETURN 0'.1=Add user
+:LISTACT HELP='WRKAUT/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='RETURN 0'.2=Change user authority
+:LISTACT HELP='WRKAUT/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='RETURN 0'.4=Remove user
+:LISTCOL HELP='WRKAUT/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT EXTACT=YES.User
+:LISTCOL HELP='FLD/DTAAUT' VAR=DTAAUT USAGE=OUTPUT EXTACT=YES.Data Authority
 :LISTGRP COL=OBJAUTS.--Object Authorities--
-:LISTCOL VAR=EXIST USAGE=OUTPUT.Exist
-:LISTCOL VAR=MGT USAGE=OUTPUT.Mgt
-:LISTCOL VAR=ALTER USAGE=OUTPUT.Alter
-:LISTCOL VAR=REF USAGE=OUTPUT.Ref
+:LISTCOL HELP='FLD/EXIST' VAR=EXIST USAGE=OUTPUT.Exist
+:LISTCOL HELP='FLD/MGT' VAR=MGT USAGE=OUTPUT.Mgt
+:LISTCOL HELP='FLD/ALTER' VAR=ALTER USAGE=OUTPUT.Alter
+:LISTCOL HELP='FLD/REF' VAR=REF USAGE=OUTPUT.Ref
 :ELISTGRP.
 :LISTGRP COL=DTAAUTS.--Data Authorities--
-:LISTCOL VAR=OPR USAGE=OUTPUT.Opr
-:LISTCOL VAR=READ USAGE=OUTPUT.Read
-:LISTCOL VAR=ADD USAGE=OUTPUT.Add
-:LISTCOL VAR=UPD USAGE=OUTPUT.Upd
-:LISTCOL VAR=DLT USAGE=OUTPUT.Dlt
-:LISTCOL VAR=EXE USAGE=OUTPUT.Exe
+:LISTCOL HELP='FLD/OPR' VAR=OPR USAGE=OUTPUT.Opr
+:LISTCOL HELP='FLD/READ' VAR=READ USAGE=OUTPUT.Read
+:LISTCOL HELP='FLD/ADD' VAR=ADD USAGE=OUTPUT.Add
+:LISTCOL HELP='FLD/UPD' VAR=UPD USAGE=OUTPUT.Upd
+:LISTCOL HELP='FLD/DLT' VAR=DLT USAGE=OUTPUT.Dlt
+:LISTCOL HELP='FLD/EXE' VAR=EXE USAGE=OUTPUT.Exe
 :ELISTGRP.
 :LISTVIEW COLS='OPT USER DTAAUT OBJAUTS'.
 :LISTVIEW COLS='OPT USER DTAAUT DTAAUTS'.
@@ -118,21 +118,21 @@
 :DATAC.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=AUTS VIEWS=2 SCROLL=YES.
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=DTAAUT USAGE=OUTPUT.Data Authority
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/DTAAUT' VAR=DTAAUT USAGE=OUTPUT.Data Authority
 :LISTGRP COL=OBJAUTS.--Object Authorities--
-:LISTCOL VAR=EXIST USAGE=OUTPUT.Exist
-:LISTCOL VAR=MGT USAGE=OUTPUT.Mgt
-:LISTCOL VAR=ALTER USAGE=OUTPUT.Alter
-:LISTCOL VAR=REF USAGE=OUTPUT.Ref
+:LISTCOL HELP='FLD/EXIST' VAR=EXIST USAGE=OUTPUT.Exist
+:LISTCOL HELP='FLD/MGT' VAR=MGT USAGE=OUTPUT.Mgt
+:LISTCOL HELP='FLD/ALTER' VAR=ALTER USAGE=OUTPUT.Alter
+:LISTCOL HELP='FLD/REF' VAR=REF USAGE=OUTPUT.Ref
 :ELISTGRP.
 :LISTGRP COL=DTAAUTS.--Data Authorities--
-:LISTCOL VAR=OPR USAGE=OUTPUT.Opr
-:LISTCOL VAR=READ USAGE=OUTPUT.Read
-:LISTCOL VAR=ADD USAGE=OUTPUT.Add
-:LISTCOL VAR=UPD USAGE=OUTPUT.Upd
-:LISTCOL VAR=DLT USAGE=OUTPUT.Dlt
-:LISTCOL VAR=EXE USAGE=OUTPUT.Exe
+:LISTCOL HELP='FLD/OPR' VAR=OPR USAGE=OUTPUT.Opr
+:LISTCOL HELP='FLD/READ' VAR=READ USAGE=OUTPUT.Read
+:LISTCOL HELP='FLD/ADD' VAR=ADD USAGE=OUTPUT.Add
+:LISTCOL HELP='FLD/UPD' VAR=UPD USAGE=OUTPUT.Upd
+:LISTCOL HELP='FLD/DLT' VAR=DLT USAGE=OUTPUT.Dlt
+:LISTCOL HELP='FLD/EXE' VAR=EXE USAGE=OUTPUT.Exe
 :ELISTGRP.
 :LISTVIEW COLS='USER DTAAUT OBJAUTS'.
 :LISTVIEW COLS='USER DTAAUT DTAAUTS'.
@@ -151,5 +151,59 @@ group and each user given a private authority.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display, F11 switches
 between the object and the data authorities.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='WRKAUT/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DTAAUT'.Data Authority
+:P.The data Authority of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/EXIST'.--Object Authorities-- exist
+:P.The --Object Authorities-- exist of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MGT'.--Object Authorities-- mgt
+:P.The --Object Authorities-- mgt of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ALTER'.--Object Authorities-- alter
+:P.The --Object Authorities-- alter of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/REF'.--Object Authorities-- ref
+:P.The --Object Authorities-- ref of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OPR'.--Data Authorities-- opr
+:P.The --Data Authorities-- opr of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/READ'.--Data Authorities-- read
+:P.The --Data Authorities-- read of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ADD'.--Data Authorities-- add
+:P.The --Data Authorities-- add of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/UPD'.--Data Authorities-- upd
+:P.The --Data Authorities-- upd of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DLT'.--Data Authorities-- dlt
+:P.The --Data Authorities-- dlt of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/EXE'.--Data Authorities-- exe
+:P.The --Data Authorities-- exe of each entry in the list.
+:EHELP.
+:HELP NAME='WRKAUT/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add user
+:PD.Type 1 next to an entry and press Enter to add user it.
+:PT.2=Change user authority
+:PD.Type 2 next to an entry and press Enter to change user authority it.
+:PT.4=Remove user
+:PD.Type 4 next to an entry and press Enter to remove user it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

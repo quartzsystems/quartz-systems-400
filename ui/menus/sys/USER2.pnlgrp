@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='USER2'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,9 +24,9 @@
 :EKEYL.
 :PANEL NAME=USER2 HELP=HLPUSER2 KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.User Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?STRPASTHR'.Access a remote system
-:MENUI OPTION=2 ACTION='CMD ASKQST'.Question and answer
-:MENUI OPTION=3 ACTION='MENU FILETFR'.Send or receive files
+:MENUI HELP='USER2/OPT1' OPTION=1 ACTION='CMD ?STRPASTHR'.Access a remote system
+:MENUI HELP='USER2/OPT2' OPTION=2 ACTION='CMD ASKQST'.Question and answer
+:MENUI HELP='USER2/OPT3' OPTION=3 ACTION='MENU FILETFR'.Send or receive files
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -36,5 +36,33 @@ answer database and moving files between systems.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='USER2/OPT1'.Access a remote system
+:P.Option 1. Runs the STRPASTHR command&colon. Access a remote system.
+:EHELP.
+:HELP NAME='USER2/OPT2'.Question and answer
+:P.Option 2. Runs the ASKQST command&colon. Question and answer.
+:EHELP.
+:HELP NAME='USER2/OPT3'.Send or receive files
+:P.Option 3. Shows menu FILETFR&colon. Send or receive files.
 :EHELP.
 :EPNLGRP.

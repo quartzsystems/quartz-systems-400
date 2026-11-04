@@ -11,7 +11,13 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='PRINTER'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=DSPSYSVAL PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKCFGSTS PNLGRP=QHDCCMD1.
+:IMPORT NAME=WRKOUTQ PNLGRP=QHSPCMD.
+:IMPORT NAME=WRKSPLF PNLGRP=QHSPCMD.
+:IMPORT NAME=WRKWTR PNLGRP=QHSPCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,13 +30,13 @@
 :EKEYL.
 :PANEL NAME=PRINTER HELP=HLPPRINTER KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Printer
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKSPLF'.Work with spooled output files
-:MENUI OPTION=2 ACTION='CMD WRKWTR'.Work with printers
-:MENUI OPTION=3 ACTION='CMD ?CHGJOB'.Change job printer
-:MENUI OPTION=4 ACTION='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(*PRT)'.Work with printer device status
-:MENUI OPTION=5 ACTION='CMD WRKOUTQ'.Work with output queues
-:MENUI OPTION=6 ACTION='CMD DSPSYSVAL SYSVAL(QPRTDEV)'.Display default system printer
-:MENUI OPTION=70 ACTION='MENU CMDPRT'.Related commands
+:MENUI HELP=WRKSPLF OPTION=1 ACTION='CMD WRKSPLF'.Work with spooled output files
+:MENUI HELP=WRKWTR OPTION=2 ACTION='CMD WRKWTR'.Work with printers
+:MENUI HELP=CHGJOB OPTION=3 ACTION='CMD ?CHGJOB'.Change job printer
+:MENUI HELP=WRKCFGSTS OPTION=4 ACTION='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(*PRT)'.Work with printer device status
+:MENUI HELP=WRKOUTQ OPTION=5 ACTION='CMD WRKOUTQ'.Work with output queues
+:MENUI HELP=DSPSYSVAL OPTION=6 ACTION='CMD DSPSYSVAL SYSVAL(QPRTDEV)'.Display default system printer
+:MENUI HELP='PRINTER/OPT70' OPTION=70 ACTION='MENU CMDPRT'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -39,5 +45,27 @@
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='PRINTER/OPT70'.Related commands
+:P.Option 70. Shows menu CMDPRT&colon. Related commands.
 :EHELP.
 :EPNLGRP.

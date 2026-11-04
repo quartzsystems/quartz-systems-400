@@ -34,7 +34,7 @@
 :COND NAME=VIEW1 EXPR='&WVIEW. EQ "1"'.
 :COND NAME=VIEW2 EXPR='&WVIEW. EQ "2"'.
 :LISTDEF NAME=WRITERS VARS='OPT WRITER DEVICE STATUS SEP FORMTYPE FILE USER USRDTA OUTQ LIB PRINTED'.
-:KEYL NAME=WTRKEYS.
+:KEYL HELP='KEYS/WTRKEYS' NAME=WTRKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -53,26 +53,26 @@
 :PANEL NAME=WRKWTR KEYL=WTRKEYS HELP=WRKWTR ENTER='RETURN 1' TOPSEP=SPACE.Work with All Printers
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=WRITERS VIEWS=2.(No printers)
-:LISTACT OPTION=1 ENTER='CMD ?STRPRTWTR DEV(&DEVICE.)'.1=Start
-:LISTACT OPTION=2 ENTER='CMD ?CHGWTR WTR(&WRITER.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDWTR WTR(&WRITER.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?ENDWTR WTR(&WRITER.)'.4=End
-:LISTACT OPTION=5 ENTER='CMD WRKWTR WTR(&WRITER.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSWTR WTR(&WRITER.)'.6=Release
-:LISTACT OPTION=7 ENTER='CMD DSPMSG'.7=Display messages
-:LISTACT OPTION=8 ENTER='CMD WRKOUTQ OUTQ(&LIB./&OUTQ.)'.8=Work with output queue
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=DEVICE USAGE=OUTPUT.Device
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Sts
-:LISTCOL VAR=SEP USAGE=OUTPUT.Sep
-:LISTCOL VAR=FORMTYPE USAGE=OUTPUT.Form Type
-:LISTCOL VAR=FILE USAGE=OUTPUT.File
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=USRDTA USAGE=OUTPUT.User Data
-:LISTCOL VAR=WRITER USAGE=OUTPUT.Writer
-:LISTCOL VAR=OUTQ USAGE=OUTPUT.Output Queue
-:LISTCOL VAR=LIB USAGE=OUTPUT.Library
-:LISTCOL VAR=PRINTED USAGE=OUTPUT.Printed
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=1 ENTER='CMD ?STRPRTWTR DEV(&DEVICE.)'.1=Start
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=2 ENTER='CMD ?CHGWTR WTR(&WRITER.)'.2=Change
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=3 ENTER='CMD HLDWTR WTR(&WRITER.)'.3=Hold
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=4 ENTER='CMD ?ENDWTR WTR(&WRITER.)'.4=End
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=5 ENTER='CMD WRKWTR WTR(&WRITER.)'.5=Work with
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=6 ENTER='CMD RLSWTR WTR(&WRITER.)'.6=Release
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=7 ENTER='CMD DSPMSG'.7=Display messages
+:LISTACT HELP='WRKWTR/OPTIONS' OPTION=8 ENTER='CMD WRKOUTQ OUTQ(&LIB./&OUTQ.)'.8=Work with output queue
+:LISTCOL HELP='WRKWTR/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/DEVICE' VAR=DEVICE USAGE=OUTPUT.Device
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Sts
+:LISTCOL HELP='FLD/SEP' VAR=SEP USAGE=OUTPUT.Sep
+:LISTCOL HELP='FLD/FORMTYPE' VAR=FORMTYPE USAGE=OUTPUT.Form Type
+:LISTCOL HELP='FLD/FILE' VAR=FILE USAGE=OUTPUT.File
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/USRDTA' VAR=USRDTA USAGE=OUTPUT.User Data
+:LISTCOL HELP='FLD/WRITER' VAR=WRITER USAGE=OUTPUT.Writer
+:LISTCOL HELP='FLD/OUTQ' VAR=OUTQ USAGE=OUTPUT.Output Queue
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/PRINTED' VAR=PRINTED USAGE=OUTPUT.Printed
 :LISTVIEW COLS='OPT DEVICE STATUS SEP FORMTYPE FILE USER USRDTA'.
 :LISTVIEW COLS='OPT DEVICE STATUS WRITER OUTQ LIB PRINTED'.
 :ELIST.
@@ -82,5 +82,102 @@
 :P.The printers with a writer started: what each is printing now, and
 with F11 the output queue it takes files from and how many it has
 printed.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WTRKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=View 2
+:PD.View 2.
+:PT.F11=View 1
+:PD.View 1.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKWTR/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/DEVICE'.Device
+:P.The device the data goes to.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Sts
+:P.The sts of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SEP'.Sep
+:P.The sep of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/FORMTYPE'.Form Type
+:P.The type of form the output is printed on. The writer stops for the
+form to be loaded when it changes.
+:EHELP.
+:HELP NAME='FLD/FILE'.File
+:P.The file, by name and library.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/USRDTA'.User Data
+:P.User data, up to 10 characters, kept with the object.
+:EHELP.
+:HELP NAME='FLD/WRITER'.Writer
+:P.The writer&colon. the job that prints the spooled files of an output
+queue.
+:EHELP.
+:HELP NAME='FLD/OUTQ'.Output Queue
+:P.The output queue the spooled files go to.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PRINTED'.Printed
+:P.The printed of each entry in the list.
+:EHELP.
+:HELP NAME='WRKWTR/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Start
+:PD.Type 1 next to an entry and press Enter to start it. The Start
+Printer Writer (STRPRTWTR) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Writer (CHGWTR) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Writer
+(HLDWTR) command runs for the entry.
+:PT.4=End
+:PD.Type 4 next to an entry and press Enter to end it. The End Writer
+(ENDWTR) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Writers (WRKWTR) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Writer (RLSWTR) command runs for the entry.
+:PT.7=Display messages
+:PD.Type 7 next to an entry and press Enter to display messages it. The
+Display Messages (DSPMSG) command runs for the entry.
+:PT.8=Work with output queue
+:PD.Type 8 next to an entry and press Enter to work with output queue
+it. The Work with Output Queue (WRKOUTQ) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

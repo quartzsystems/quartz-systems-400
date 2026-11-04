@@ -58,7 +58,7 @@
 :VAR NAME=MDMCNTRYID CLASS=VALCL.
 :VAR NAME=NETSRVID CLASS=NETIDCL.
 :VAR NAME=NETSRVCP CLASS=CPCL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -71,72 +71,72 @@
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=50.
 :DATACOL WIDTH=78.
-:DATAI VAR=SYSNAME USAGE=OUTPUT.Current system name
+:DATAI HELP='FLD/SYSNAME' VAR=SYSNAME USAGE=OUTPUT.Current system name
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PNDSYSNAME USAGE=OUTPUT.Pending system name
+:DATAI HELP='FLD/PNDSYSNAME' VAR=PNDSYSNAME USAGE=OUTPUT.Pending system name
 :EDATAGRP.
-:DATAI VAR=LCLNETID USAGE=OUTPUT.Local network ID
-:DATAI VAR=LCLCPNAME USAGE=OUTPUT.Local control point name
-:DATAI VAR=LCLLOCNAME USAGE=OUTPUT.Default local location
-:DATAI VAR=DFTMODE USAGE=OUTPUT.Default mode
-:DATAI VAR=NODETYPE USAGE=OUTPUT.APPN node type
-:DATAI VAR=DTACPR USAGE=OUTPUT.Data compression
-:DATAI VAR=DTACPRINM USAGE=OUTPUT.Intermediate data compression
-:DATAI VAR=MAXINTSSN USAGE=OUTPUT.Maximum number of intermediate sessions
-:DATAI VAR=RAR USAGE=OUTPUT.Route addition resistance
-:DATAI VAR=NETSRVID USAGE=OUTPUT.Server network ID/control point name
+:DATAI HELP='FLD/LCLNETID' VAR=LCLNETID USAGE=OUTPUT.Local network ID
+:DATAI HELP='FLD/LCLCPNAME' VAR=LCLCPNAME USAGE=OUTPUT.Local control point name
+:DATAI HELP='FLD/LCLLOCNAME' VAR=LCLLOCNAME USAGE=OUTPUT.Default local location
+:DATAI HELP='FLD/DFTMODE' VAR=DFTMODE USAGE=OUTPUT.Default mode
+:DATAI HELP='FLD/NODETYPE' VAR=NODETYPE USAGE=OUTPUT.APPN node type
+:DATAI HELP='FLD/DTACPR' VAR=DTACPR USAGE=OUTPUT.Data compression
+:DATAI HELP='FLD/DTACPRINM' VAR=DTACPRINM USAGE=OUTPUT.Intermediate data compression
+:DATAI HELP='FLD/MAXINTSSN' VAR=MAXINTSSN USAGE=OUTPUT.Maximum number of intermediate sessions
+:DATAI HELP='FLD/RAR' VAR=RAR USAGE=OUTPUT.Route addition resistance
+:DATAI HELP='FLD/NETSRVID' VAR=NETSRVID USAGE=OUTPUT.Server network ID/control point name
 :DATAIX VAR=NETSRVCP USAGE=OUTPUT.
 :DATAC.
 :DATAC.
 :DATAC.
 :DATAC.
 :DATAC.
-:DATAI VAR=ALRSTS USAGE=OUTPUT.Alert status
-:DATAI VAR=ALRLOGSTS USAGE=OUTPUT.Alert logging status
-:DATAI VAR=ALRPRIFP USAGE=OUTPUT.Alert primary focal point
-:DATAI VAR=ALRDFTFP USAGE=OUTPUT.Alert default focal point
-:DATAI VAR=ALRBCKFP USAGE=OUTPUT.Alert backup focal point
+:DATAI HELP='FLD/ALRSTS' VAR=ALRSTS USAGE=OUTPUT.Alert status
+:DATAI HELP='FLD/ALRLOGSTS' VAR=ALRLOGSTS USAGE=OUTPUT.Alert logging status
+:DATAI HELP='FLD/ALRPRIFP' VAR=ALRPRIFP USAGE=OUTPUT.Alert primary focal point
+:DATAI HELP='FLD/ALRDFTFP' VAR=ALRDFTFP USAGE=OUTPUT.Alert default focal point
+:DATAI HELP='FLD/ALRBCKFP' VAR=ALRBCKFP USAGE=OUTPUT.Alert backup focal point
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=ALRBCKNET USAGE=OUTPUT.Network ID
+:DATAI HELP='FLD/ALRBCKNET' VAR=ALRBCKNET USAGE=OUTPUT.Network ID
 :EDATAGRP.
-:DATAI VAR=ALRRQSFP USAGE=OUTPUT.Alert focal point to request
+:DATAI HELP='FLD/ALRRQSFP' VAR=ALRRQSFP USAGE=OUTPUT.Alert focal point to request
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=ALRRQSNET USAGE=OUTPUT.Network ID
+:DATAI HELP='FLD/ALRRQSNET' VAR=ALRRQSNET USAGE=OUTPUT.Network ID
 :EDATAGRP.
-:DATAI VAR=ALRCTLD USAGE=OUTPUT.Alert controller description
-:DATAI VAR=ALRHLDCNT USAGE=OUTPUT.Alert hold count
-:DATAI VAR=ALRFTR USAGE=OUTPUT.Alert filter
+:DATAI HELP='FLD/ALRCTLD' VAR=ALRCTLD USAGE=OUTPUT.Alert controller description
+:DATAI HELP='FLD/ALRHLDCNT' VAR=ALRHLDCNT USAGE=OUTPUT.Alert hold count
+:DATAI HELP='FLD/ALRFTR' VAR=ALRFTR USAGE=OUTPUT.Alert filter
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=ALRFTRLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/ALRFTRLIB' VAR=ALRFTRLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=MSGQ USAGE=OUTPUT.Message queue
+:DATAI HELP='FLD/MSGQ' VAR=MSGQ USAGE=OUTPUT.Message queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=MSGQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/MSGQLIB' VAR=MSGQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OUTQ USAGE=OUTPUT.Output queue
+:DATAI HELP='FLD/OUTQ' VAR=OUTQ USAGE=OUTPUT.Output queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=OUTQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/OUTQLIB' VAR=OUTQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=JOBACN USAGE=OUTPUT.Job action
-:DATAI VAR=MAXHOP USAGE=OUTPUT.Maximum hop count
-:DATAI VAR=DDMACC USAGE=OUTPUT.DDM request access
+:DATAI HELP='FLD/JOBACN' VAR=JOBACN USAGE=OUTPUT.Job action
+:DATAI HELP='FLD/MAXHOP' VAR=MAXHOP USAGE=OUTPUT.Maximum hop count
+:DATAI HELP='FLD/DDMACC' VAR=DDMACC USAGE=OUTPUT.DDM request access
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=DDMACCLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/DDMACCLIB' VAR=DDMACCLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=PCSACC USAGE=OUTPUT.Client request access
+:DATAI HELP='FLD/PCSACC' VAR=PCSACC USAGE=OUTPUT.Client request access
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PCSACCLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PCSACCLIB' VAR=PCSACCLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=DFTNETTYPE USAGE=OUTPUT.Default ISDN network type
-:DATAI VAR=DFTCNNLST USAGE=OUTPUT.Default ISDN connection list
-:DATAI VAR=ALWANYNET USAGE=OUTPUT.Allow AnyNet support
-:DATAI VAR=NWSDOMAIN USAGE=OUTPUT.Network server domain
-:DATAI VAR=ALWVRTIP USAGE=OUTPUT.Allow APPN virtual support
-:DATAI VAR=ALWHPRTWR USAGE=OUTPUT.Allow HPR transport tower support
-:DATAI VAR=VRTAUTODEV USAGE=OUTPUT.Autocreate APPC device limit
-:DATAI VAR=HPRPTHTMR USAGE=OUTPUT.HPR path switch timers
-:DATAI VAR=ALWADDCLU USAGE=OUTPUT.Allow add to cluster
-:DATAI VAR=MDMCNTRYID USAGE=OUTPUT.Modem country or region ID
+:DATAI HELP='FLD/DFTNETTYPE' VAR=DFTNETTYPE USAGE=OUTPUT.Default ISDN network type
+:DATAI HELP='FLD/DFTCNNLST' VAR=DFTCNNLST USAGE=OUTPUT.Default ISDN connection list
+:DATAI HELP='FLD/ALWANYNET' VAR=ALWANYNET USAGE=OUTPUT.Allow AnyNet support
+:DATAI HELP='FLD/NWSDOMAIN' VAR=NWSDOMAIN USAGE=OUTPUT.Network server domain
+:DATAI HELP='FLD/ALWVRTIP' VAR=ALWVRTIP USAGE=OUTPUT.Allow APPN virtual support
+:DATAI HELP='FLD/ALWHPRTWR' VAR=ALWHPRTWR USAGE=OUTPUT.Allow HPR transport tower support
+:DATAI HELP='FLD/VRTAUTODEV' VAR=VRTAUTODEV USAGE=OUTPUT.Autocreate APPC device limit
+:DATAI HELP='FLD/HPRPTHTMR' VAR=HPRPTHTMR USAGE=OUTPUT.HPR path switch timers
+:DATAI HELP='FLD/ALWADDCLU' VAR=ALWADDCLU USAGE=OUTPUT.Allow add to cluster
+:DATAI HELP='FLD/MDMCNTRYID' VAR=MDMCNTRYID USAGE=OUTPUT.Modem country or region ID
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -146,5 +146,150 @@ by on the network, how it takes part in APPN and alerts, where network
 messages and printed output go, and what remote requests may do.
 :P.Page down for the rest. CHGNETA changes them; a new system name takes
 effect at the next IPL.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SYSNAME'.Current system name
+:P.The current system name shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PNDSYSNAME'.Pending system name
+:P.The pending system name shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LCLNETID'.Local network ID
+:P.The local network ID shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LCLCPNAME'.Local control point name
+:P.The local control point name shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LCLLOCNAME'.Default local location
+:P.The local location name this system uses on the connection.
+:EHELP.
+:HELP NAME='FLD/DFTMODE'.Default mode
+:P.The default mode shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NODETYPE'.APPN node type
+:P.The APPN node type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTACPR'.Data compression
+:P.Whether the data is compressed as it is written.
+:EHELP.
+:HELP NAME='FLD/DTACPRINM'.Intermediate data compression
+:P.The intermediate data compression shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/MAXINTSSN'.Maximum number of intermediate sessions
+:P.The maximum number of intermediate sessions shown for what the
+display is about.
+:EHELP.
+:HELP NAME='FLD/RAR'.Route addition resistance
+:P.The route addition resistance shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NETSRVID'.Server network ID/control point name
+:P.The server network ID/control point name shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/ALRSTS'.Alert status
+:P.The alert status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRLOGSTS'.Alert logging status
+:P.The alert logging status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRPRIFP'.Alert primary focal point
+:P.The alert primary focal point shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRDFTFP'.Alert default focal point
+:P.The alert default focal point shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRBCKFP'.Alert backup focal point
+:P.The alert backup focal point shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRBCKNET'.Network ID
+:P.The network ID shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRRQSFP'.Alert focal point to request
+:P.The alert focal point to request shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRRQSNET'.Network ID
+:P.The network ID shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRCTLD'.Alert controller description
+:P.The alert controller description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRHLDCNT'.Alert hold count
+:P.The alert hold count shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRFTR'.Alert filter
+:P.The alert filter shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALRFTRLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MSGQ'.Message queue
+:P.The message queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MSGQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTQ'.Output queue
+:P.The output queue the spooled files go to.
+:EHELP.
+:HELP NAME='FLD/OUTQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBACN'.Job action
+:P.The job action shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXHOP'.Maximum hop count
+:P.The maximum hop count shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DDMACC'.DDM request access
+:P.The DDM request access shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DDMACCLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PCSACC'.Client request access
+:P.The client request access shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PCSACCLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DFTNETTYPE'.Default ISDN network type
+:P.The default ISDN network type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DFTCNNLST'.Default ISDN connection list
+:P.The default ISDN connection list shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALWANYNET'.Allow AnyNet support
+:P.The allow AnyNet support shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NWSDOMAIN'.Network server domain
+:P.The network server domain shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALWVRTIP'.Allow APPN virtual support
+:P.The allow APPN virtual support shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALWHPRTWR'.Allow HPR transport tower support
+:P.The allow HPR transport tower support shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/VRTAUTODEV'.Autocreate APPC device limit
+:P.The autocreate APPC device limit shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HPRPTHTMR'.HPR path switch timers
+:P.The HPR path switch timers shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALWADDCLU'.Allow add to cluster
+:P.The allow add to cluster shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MDMCNTRYID'.Modem country or region ID
+:P.The modem country or region ID shown for what the display is about.
 :EHELP.
 :EPNLGRP.

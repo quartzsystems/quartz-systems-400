@@ -11,7 +11,11 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='LIBRARY'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CRTLIB PNLGRP=QHLICMD.
+:IMPORT NAME=RSTLIB PNLGRP=QHSRCMD.
+:IMPORT NAME=SAVLIB PNLGRP=QHSRCMD.
+:IMPORT NAME=WRKLIB PNLGRP=QHLICMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,13 +28,13 @@
 :EKEYL.
 :PANEL NAME=LIBRARY HELP=HLPLIBRARY KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Libraries
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?WRKLIB'.Work with libraries
-:MENUI OPTION=2 ACTION='CMD ?CRTLIB'.Create a library
-:MENUI OPTION=3 ACTION='CMD ?SAVLIB'.Save a library
-:MENUI OPTION=4 ACTION='CMD ?RSTLIB'.Restore a library
-:MENUI OPTION=50 ACTION='CMD ?SAVS36LIBM'.Save library members in System/36 format
-:MENUI OPTION=51 ACTION='CMD ?RSTS36LIBM'.Restore library members from System/36 format
-:MENUI OPTION=70 ACTION='MENU CMDLIB'.Related commands
+:MENUI HELP=WRKLIB OPTION=1 ACTION='CMD ?WRKLIB'.Work with libraries
+:MENUI HELP=CRTLIB OPTION=2 ACTION='CMD ?CRTLIB'.Create a library
+:MENUI HELP=SAVLIB OPTION=3 ACTION='CMD ?SAVLIB'.Save a library
+:MENUI HELP=RSTLIB OPTION=4 ACTION='CMD ?RSTLIB'.Restore a library
+:MENUI HELP='LIBRARY/OPT50' OPTION=50 ACTION='CMD ?SAVS36LIBM'.Save library members in System/36 format
+:MENUI HELP='LIBRARY/OPT51' OPTION=51 ACTION='CMD ?RSTS36LIBM'.Restore library members from System/36 format
+:MENUI HELP='LIBRARY/OPT70' OPTION=70 ACTION='MENU CMDLIB'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -40,5 +44,35 @@ restore them.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='LIBRARY/OPT50'.Save library members in System/36 format
+:P.Option 50. Runs the SAVS36LIBM command&colon. Save library members in
+System/36 format.
+:EHELP.
+:HELP NAME='LIBRARY/OPT51'.Restore library members from System/36 format
+:P.Option 51. Runs the RSTS36LIBM command&colon. Restore library members
+from System/36 format.
+:EHELP.
+:HELP NAME='LIBRARY/OPT70'.Related commands
+:P.Option 70. Shows menu CMDLIB&colon. Related commands.
 :EHELP.
 :EPNLGRP.

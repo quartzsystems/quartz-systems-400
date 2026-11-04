@@ -11,7 +11,15 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDLIC'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=ADDLICKEY PNLGRP=QHLZCMD.
+:IMPORT NAME=CHGLICINF PNLGRP=QHLZCMD.
+:IMPORT NAME=DLTLICPGM PNLGRP=QHSZCMD.
+:IMPORT NAME=DSPLICKEY PNLGRP=QHLZCMD.
+:IMPORT NAME=RMVLICKEY PNLGRP=QHLZCMD.
+:IMPORT NAME=RSTLICPGM PNLGRP=QHSZCMD.
+:IMPORT NAME=SAVLICPGM PNLGRP=QHSZCMD.
+:IMPORT NAME=WRKLICINF PNLGRP=QHLZCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -25,18 +33,18 @@
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
 :MENUI OPTION=1 ACTION='CMD ?ADDLICCRQA'.
-:MENUI OPTION=2 ACTION='CMD ?ADDLICKEY'.Add License Key Information  ADDLICKEY
+:MENUI OPTION=2 ACTION='CMD ?ADDLICKEY' HELP=ADDLICKEY.Add License Key Information  ADDLICKEY
 :MENUI OPTION=3 ACTION='CMD ?ADDPRDLICI'.
 :MENUI OPTION=4 ACTION='CMD ?CHGLICCRQA'.
-:MENUI OPTION=5 ACTION='CMD ?CHGLICINF'.Change License Information  CHGLICINF
-:MENUI OPTION=6 ACTION='CMD ?DLTLICPGM'.Delete Licensed Program  DLTLICPGM
-:MENUI OPTION=7 ACTION='CMD ?DSPLICKEY'.Display License Key Information  DSPLICKEY
+:MENUI OPTION=5 ACTION='CMD ?CHGLICINF' HELP=CHGLICINF.Change License Information  CHGLICINF
+:MENUI OPTION=6 ACTION='CMD ?DLTLICPGM' HELP=DLTLICPGM.Delete Licensed Program  DLTLICPGM
+:MENUI OPTION=7 ACTION='CMD ?DSPLICKEY' HELP=DSPLICKEY.Display License Key Information  DSPLICKEY
 :MENUI OPTION=8 ACTION='CMD ?GENLICKEY'.
-:MENUI OPTION=9 ACTION='CMD ?RMVLICKEY'.Remove License Key Information  RMVLICKEY
-:MENUI OPTION=10 ACTION='CMD ?RSTLICPGM'.Restore Licensed Program  RSTLICPGM
-:MENUI OPTION=11 ACTION='CMD ?SAVLICPGM'.Save Licensed Program  SAVLICPGM
+:MENUI OPTION=9 ACTION='CMD ?RMVLICKEY' HELP=RMVLICKEY.Remove License Key Information  RMVLICKEY
+:MENUI OPTION=10 ACTION='CMD ?RSTLICPGM' HELP=RSTLICPGM.Restore Licensed Program  RSTLICPGM
+:MENUI OPTION=11 ACTION='CMD ?SAVLICPGM' HELP=SAVLICPGM.Save Licensed Program  SAVLICPGM
 :MENUI OPTION=12 ACTION='CMD ?SNDLIC'.
-:MENUI OPTION=13 ACTION='CMD ?WRKLICINF'.Work with License Information  WRKLICINF
+:MENUI OPTION=13 ACTION='CMD ?WRKLICINF' HELP=WRKLICINF.Work with License Information  WRKLICINF
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -44,5 +52,21 @@
 :HELP NAME=HLPCMDLIC.Licensed Commands - Help
 :P.Licensed Commands: every command whose name carries LIC after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

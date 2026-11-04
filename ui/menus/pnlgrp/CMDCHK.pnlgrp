@@ -11,7 +11,14 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDCHK'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHKCMNTRC PNLGRP=QHSSCMD.
+:IMPORT NAME=CHKIN PNLGRP=QHP0LCMD.
+:IMPORT NAME=CHKOBJ PNLGRP=QHLICMD.
+:IMPORT NAME=CHKOBJITG PNLGRP=QHSECMD.
+:IMPORT NAME=CHKOUT PNLGRP=QHP0LCMD.
+:IMPORT NAME=CHKPRDOPT PNLGRP=QHSZCMD.
+:IMPORT NAME=CHKTAP PNLGRP=QHSVCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -27,23 +34,23 @@
 :MENUI OPTION=1 ACTION='CMD ?CHKASPBAL'.
 :MENUI OPTION=2 ACTION='CMD ?CHKBLDJOB'.
 :MENUI OPTION=3 ACTION='CMD ?CHKBLDSVR'.
-:MENUI OPTION=4 ACTION='CMD ?CHKCMNTRC'.Check Communications Trace  CHKCMNTRC
+:MENUI OPTION=4 ACTION='CMD ?CHKCMNTRC' HELP=CHKCMNTRC.Check Communications Trace  CHKCMNTRC
 :MENUI OPTION=5 ACTION='CMD ?CHKDKT'.
 :MENUI OPTION=6 ACTION='CMD ?CHKDLO'.
 :MENUI OPTION=7 ACTION='CMD ?CHKDNSCFG'.
 :MENUI OPTION=8 ACTION='CMD ?CHKDNSZNE'.
 :MENUI OPTION=9 ACTION='CMD ?CHKIGCTBL'.
-:MENUI OPTION=10 ACTION='CMD ?CHKIN'.Check In Object  CHKIN
+:MENUI OPTION=10 ACTION='CMD ?CHKIN' HELP=CHKIN.Check In Object  CHKIN
 :MENUI OPTION=11 ACTION='CMD ?CHKMSTKVV'.
-:MENUI OPTION=12 ACTION='CMD ?CHKOBJ'.Check Object  CHKOBJ
-:MENUI OPTION=13 ACTION='CMD ?CHKOBJITG'.Check Object Integrity  CHKOBJITG
+:MENUI OPTION=12 ACTION='CMD ?CHKOBJ' HELP=CHKOBJ.Check Object  CHKOBJ
+:MENUI OPTION=13 ACTION='CMD ?CHKOBJITG' HELP=CHKOBJITG.Check Object Integrity  CHKOBJITG
 :MENUI OPTION=14 ACTION='CMD ?CHKOPTVOL'.
-:MENUI OPTION=15 ACTION='CMD ?CHKOUT'.Check Out Object  CHKOUT
-:MENUI OPTION=16 ACTION='CMD ?CHKPFRCOL'.Check Performance Collection  CHKPFRCOL
-:MENUI OPTION=17 ACTION='CMD ?CHKPRDOPT'.Check Product Option  CHKPRDOPT
+:MENUI OPTION=15 ACTION='CMD ?CHKOUT' HELP=CHKOUT.Check Out Object  CHKOUT
+:MENUI OPTION=16 ACTION='CMD ?CHKPFRCOL'.
+:MENUI OPTION=17 ACTION='CMD ?CHKPRDOPT' HELP=CHKPRDOPT.Check Product Option  CHKPRDOPT
 :MENUI OPTION=18 ACTION='CMD ?CHKPWD'.
 :MENUI OPTION=19 ACTION='CMD ?CHKRCDLCK'.
-:MENUI OPTION=20 ACTION='CMD ?CHKTAP'.Check Tape  CHKTAP
+:MENUI OPTION=20 ACTION='CMD ?CHKTAP' HELP=CHKTAP.Check Tape  CHKTAP
 :MENUI OPTION=21 ACTION='CMD ?CHKVFYLIST'.
 :EMENUGRP.
 :EMENU.
@@ -52,5 +59,21 @@
 :HELP NAME=HLPCMDCHK.Check Commands - Help
 :P.Check Commands: every command whose name starts with CHK, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

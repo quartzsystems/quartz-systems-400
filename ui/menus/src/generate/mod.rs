@@ -33,6 +33,8 @@ pub struct Inputs {
     pub commands: Vec<CmdEntry>,
     /// Our command titles, by name.
     pub titles: BTreeMap<String, String>,
+    /// Our commands' help panel groups and modules, by name.
+    pub help: BTreeMap<String, (String, String)>,
 }
 
 impl Inputs {
@@ -51,6 +53,7 @@ impl Inputs {
             menus: inventory::parse_menu_list(&menus),
             commands: inventory::parse_cmd_list(&commands),
             titles: titles::read_titles(&root.join(Self::CMD_DIR))?,
+            help: titles::read_help(&root.join(Self::CMD_DIR))?,
         })
     }
 }
@@ -221,6 +224,7 @@ fn command_menu(
     classifier: &Classifier,
     all: &[&CmdEntry],
     titles: &BTreeMap<String, String>,
+    help: &BTreeMap<String, (String, String)>,
 ) -> Menu {
     let code = &entry.name[3..];
     let kind = kind_of(code);
@@ -250,7 +254,16 @@ fn command_menu(
                     .as_deref()
                     .map(|t| emit::item_text(t, &i.name))
                     .unwrap_or_default();
-                (i.option, text, format!("CMD ?{}", i.name))
+                // An item's help is its command's, from the command's group.
+                let h = i
+                    .title
+                    .as_ref()
+                    .and_then(|_| help.get(&i.name))
+                    .map(|(g, id)| emit::ItemHelp::Import {
+                        module: id.clone(),
+                        group: g.clone(),
+                    });
+                (i.option, text, format!("CMD ?{}", i.name), h)
             })
             .collect(),
         help: help_for(&kind, title),
@@ -296,10 +309,20 @@ fn fixed_menu(
             .iter()
             .enumerate()
             .map(|(i, (text, n, action))| {
+                let what = match action.strip_prefix("MENU ") {
+                    Some(m) => format!(
+                        "Shows menu {m}, {text}: the commands of that group, each with its option number."
+                    ),
+                    None => format!("Runs {action}: {text}."),
+                };
                 (
                     u16::try_from(i + 1).expect("few groups"),
                     emit::item_text(text, n),
                     action.clone(),
+                    Some(emit::ItemHelp::Text {
+                        title: text.clone(),
+                        text: what,
+                    }),
                 )
             })
             .collect(),
@@ -352,7 +375,7 @@ pub fn generate_for(inputs: &Inputs, release: Option<u8>) -> Generated {
             report.hand_written.push(entry.name.clone());
             continue;
         }
-        let menu = command_menu(entry, &classifier, &all, &inputs.titles);
+        let menu = command_menu(entry, &classifier, &all, &inputs.titles, &inputs.help);
         if menu.items.is_empty() {
             report.empty.push(menu.name.clone());
         }

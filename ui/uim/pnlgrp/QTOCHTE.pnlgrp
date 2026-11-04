@@ -28,7 +28,7 @@
 :VAR NAME=DNAME CLASS=HOSTCL.
 :LISTDEF NAME=HOSTS VARS='OPT HTEADR HTENAME HTEKEY'.
 :LISTDEF NAME=NAMES VARS='DNAME'.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -42,7 +42,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -55,24 +55,24 @@
 :PANEL NAME=WRKHTE HELP=HLPHTE KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Host Table Entries
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=HOSTS SCROLL=YES ACTLEN=1 EXTACT=YES.(No host table entries)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?ADDTCPHTE INTNETADR(''&HTEADR.'')'.1=Add
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGTCPHTE INTNETADR(''&HTEKEY.'')'.2=Change
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD RMVTCPHTE INTNETADR(''&HTEKEY.'')'.4=Remove
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
-:LISTACT OPTION=7 ACTFOR=LISTE ENTER='CMD ?RNMTCPHTE INTNETADR(''&HTEKEY.'')'.7=Rename
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=HTEADR USAGE=OUTPUT EXTACT=YES.Internet                                  Address
-:LISTCOL VAR=HTENAME USAGE=OUTPUT MAXWIDTH=38.Host                                       Name
+:LISTACT HELP='WRKHTE/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?ADDTCPHTE INTNETADR(''&HTEADR.'')'.1=Add
+:LISTACT HELP='WRKHTE/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGTCPHTE INTNETADR(''&HTEKEY.'')'.2=Change
+:LISTACT HELP='WRKHTE/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD RMVTCPHTE INTNETADR(''&HTEKEY.'')'.4=Remove
+:LISTACT HELP='WRKHTE/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
+:LISTACT HELP='WRKHTE/OPTIONS' OPTION=7 ACTFOR=LISTE ENTER='CMD ?RNMTCPHTE INTNETADR(''&HTEKEY.'')'.7=Rename
+:LISTCOL HELP='WRKHTE/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/HTEADR' VAR=HTEADR USAGE=OUTPUT EXTACT=YES.Internet                                  Address
+:LISTCOL HELP='FLD/HTENAME' VAR=HTENAME USAGE=OUTPUT MAXWIDTH=38.Host                                       Name
 :LISTCOL VAR=HTEKEY USAGE=OUTPUT DISPLAY=NO.Key
 :ELIST.
 :EPANEL.
 :PANEL NAME=WRKHTED HELP=HLPHTE KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Host Table Entries
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=HOSTS SCROLL=YES ACTLEN=1 EXTACT=YES.(No host table entries)
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=HTEADR USAGE=OUTPUT EXTACT=YES.Internet                                  Address
-:LISTCOL VAR=HTENAME USAGE=OUTPUT MAXWIDTH=38.Host                                       Name
+:LISTACT HELP='WRKHTED/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
+:LISTCOL HELP='WRKHTED/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/HTEADR' VAR=HTEADR USAGE=OUTPUT EXTACT=YES.Internet                                  Address
+:LISTCOL HELP='FLD/HTENAME' VAR=HTENAME USAGE=OUTPUT MAXWIDTH=38.Host                                       Name
 :LISTCOL VAR=HTEKEY USAGE=OUTPUT DISPLAY=NO.Key
 :ELIST.
 :EPANEL.
@@ -80,12 +80,12 @@
 :DATA DEPTH=5.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=DADR USAGE=OUTPUT.Internet address
+:DATAI HELP='FLD/DADR' VAR=DADR USAGE=OUTPUT.Internet address
 :DATAC.
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text description
 :EDATA.
 :LIST DEPTH='*' LISTDEF=NAMES SCROLL=YES.
-:LISTCOL VAR=DNAME USAGE=OUTPUT MAXWIDTH=77.Host                                                                                 Name
+:LISTCOL HELP='FLD/DNAME' VAR=DNAME USAGE=OUTPUT MAXWIDTH=77.Host                                                                                 Name
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -97,5 +97,88 @@ one.
 :EHELP.
 :HELP NAME=HLPDSP.Display TCP/IP Host Table Entry - Help
 :P.One address's names and text.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F6=Print list
+:PD.Print list.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Sort by add sequence
+:PD.Sort by add sequence.
+:PT.F17=Position to
+:PD.Positions the list at the name typed on the command line.
+:PT.F22=Display entire field
+:PD.Display entire field.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKHTE/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/HTEADR'.Internet                                  Address
+:P.The internet Address of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/HTENAME'.Host                                       Name
+:P.The host Name of each entry in the list.
+:EHELP.
+:HELP NAME='WRKHTE/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add
+:PD.Type 1 next to an entry and press Enter to add it. The Add TCP/IP
+Host Table Entry (ADDTCPHTE) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+TCP/IP Host Table Entry (CHGTCPHTE) command is prompted for the entry.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it. The Remove
+TCP/IP Host Table Entry (RMVTCPHTE) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.7=Rename
+:PD.Type 7 next to an entry and press Enter to rename it. The Rename
+TCP/IP Host Table Entry (RNMTCPHTE) command is prompted for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKHTED/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKHTED/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F22=Display entire field
+:PD.Display entire field.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/DADR'.Internet address
+:P.An internet address in dotted decimal form (IPv4) or in colon form
+(IPv6).
+:EHELP.
+:HELP NAME='FLD/DTEXT'.Text description
+:P.The text description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DNAME'.Host                                                                                 Name
+:P.The host Name of each entry in the list.
 :EHELP.
 :EPNLGRP.

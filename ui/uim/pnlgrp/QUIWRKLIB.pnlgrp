@@ -17,7 +17,7 @@
 :VAR NAME=ASPDEV CLASS=NAMECL.
 :VAR NAME=LIBTEXT CLASS=TEXTCL.
 :LISTDEF NAME=LIBS VARS='OPT LIB LIBATR ASPDEV LIBTEXT'.
-:KEYL NAME=WLKEYS.
+:KEYL HELP='KEYS/WLKEYS' NAME=WLKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -34,25 +34,25 @@
 :PANEL NAME=WRKLIB KEYL=WLKEYS HELP=WRKLIB ENTER='RETURN 1' TOPSEP=SPACE.Work with Libraries
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LIBS VIEWS=2 EXTACT=YES.(No libraries selected)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1'.1=Create
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGLIB LIB(&LIB.)'.2=Change
-:LISTACT OPTION=3 ACTFOR=LISTE ENTER='CMD ?CPYLIB FROMLIB(&LIB.)'.3=Copy
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD ?DLTLIB LIB(&LIB.)'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPLIB LIB(&LIB.)'.5=Display
-:LISTACT OPTION=6 ACTFOR=LISTE ENTER='CMD DSPLIB LIB(&LIB.) OUTPUT(*PRINT)'.6=Print
-:LISTACT OPTION=8 ACTFOR=LISTE ENTER='CMD DSPOBJD OBJ(QSYS/&LIB.) OBJTYPE(*LIB)'.8=Display library description
-:LISTACT OPTION=9 ACTFOR=LISTE ENTER='CMD ?SAVLIB LIB(&LIB.)'.9=Save
-:LISTACT OPTION=10 ACTFOR=LISTE ENTER='CMD ?RSTLIB SAVLIB(&LIB.)'.10=Restore
-:LISTACT OPTION=11 ACTFOR=LISTE ENTER='CMD ?SAVCHGOBJ LIB(&LIB.)'.11=Save changed objects
-:LISTACT OPTION=12 ACTFOR=LISTE ENTER='CMD WRKOBJ OBJ(&LIB./*ALL)'.12=Work with objects
-:LISTACT OPTION=14 ACTFOR=LISTE ENTER='CMD ?CLRLIB LIB(&LIB.)'.14=Clear
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
-:LISTCOL VAR=LIBATR USAGE=OUTPUT.Attribute
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1'.1=Create
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGLIB LIB(&LIB.)'.2=Change
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=3 ACTFOR=LISTE ENTER='CMD ?CPYLIB FROMLIB(&LIB.)'.3=Copy
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD ?DLTLIB LIB(&LIB.)'.4=Delete
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPLIB LIB(&LIB.)'.5=Display
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=6 ACTFOR=LISTE ENTER='CMD DSPLIB LIB(&LIB.) OUTPUT(*PRINT)'.6=Print
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=8 ACTFOR=LISTE ENTER='CMD DSPOBJD OBJ(QSYS/&LIB.) OBJTYPE(*LIB)'.8=Display library description
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=9 ACTFOR=LISTE ENTER='CMD ?SAVLIB LIB(&LIB.)'.9=Save
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=10 ACTFOR=LISTE ENTER='CMD ?RSTLIB SAVLIB(&LIB.)'.10=Restore
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=11 ACTFOR=LISTE ENTER='CMD ?SAVCHGOBJ LIB(&LIB.)'.11=Save changed objects
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=12 ACTFOR=LISTE ENTER='CMD WRKOBJ OBJ(&LIB./*ALL)'.12=Work with objects
+:LISTACT HELP='WRKLIB/OPTIONS' OPTION=14 ACTFOR=LISTE ENTER='CMD ?CLRLIB LIB(&LIB.)'.14=Clear
+:LISTCOL HELP='WRKLIB/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL HELP='FLD/LIBATR' VAR=LIBATR USAGE=OUTPUT.Attribute
 :LISTGRP COL=ASPGRP.ASP
-:LISTCOL VAR=ASPDEV USAGE=OUTPUT.Device
+:LISTCOL HELP='FLD/ASPDEV' VAR=ASPDEV USAGE=OUTPUT.Device
 :ELISTGRP.
-:LISTCOL VAR=LIBTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='FLD/LIBTEXT' VAR=LIBTEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT LIB LIBATR ASPGRP LIBTEXT'.
 :LISTVIEW COLS='OPT LIB'.
 :ELIST.
@@ -63,5 +63,87 @@
 option 1 on the blank first line, with a name typed on the command
 line, creates one. F17 positions the list at the name on the command
 line; F11 shows the names alone.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WLKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display names only
+:PD.Shows the list with the names alone, so more fit on a page.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Repeat position to
+:PD.Repeat position to.
+:PT.F17=Position to
+:PD.Positions the list at the name typed on the command line.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKLIB/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIBATR'.Attribute
+:P.The attribute of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ASPDEV'.ASP device
+:P.The ASP device of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIBTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKLIB/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Library (CHGLIB) command is prompted for the entry.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it. The Copy Library
+(CPYLIB) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Library (DLTLIB) command is prompted for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Library (DSPLIB) command runs for the entry.
+:PT.6=Print
+:PD.Type 6 next to an entry and press Enter to print it. The Display
+Library (DSPLIB) command runs for the entry.
+:PT.8=Display library description
+:PD.Type 8 next to an entry and press Enter to display library
+description it. The Display Object Description (DSPOBJD) command runs
+for the entry.
+:PT.9=Save
+:PD.Type 9 next to an entry and press Enter to save it. The Save Library
+(SAVLIB) command is prompted for the entry.
+:PT.10=Restore
+:PD.Type 10 next to an entry and press Enter to restore it. The Restore
+Library (RSTLIB) command is prompted for the entry.
+:PT.11=Save changed objects
+:PD.Type 11 next to an entry and press Enter to save changed objects it.
+The Save Changed Objects (SAVCHGOBJ) command is prompted for the entry.
+:PT.12=Work with objects
+:PD.Type 12 next to an entry and press Enter to work with objects it.
+The Work with Objects (WRKOBJ) command runs for the entry.
+:PT.14=Clear
+:PD.Type 14 next to an entry and press Enter to clear it. The Clear
+Library (CLRLIB) command is prompted for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

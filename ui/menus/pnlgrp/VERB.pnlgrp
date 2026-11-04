@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='VERB'.
-:KEYL NAME=MENUKEYS.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -23,93 +23,355 @@
 :EKEYL.
 :PANEL NAME=VERB HELP=HLPVERB KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Verb Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU CMDADD'.Add Commands  CMDADD
-:MENUI OPTION=2 ACTION='MENU CMDALC'.Allocate Commands  CMDALC
-:MENUI OPTION=3 ACTION='MENU CMDANS'.Answer Commands  CMDANS
-:MENUI OPTION=4 ACTION='MENU CMDANZ'.Analyze Commands  CMDANZ
-:MENUI OPTION=5 ACTION='MENU CMDAPY'.Apply Commands  CMDAPY
-:MENUI OPTION=6 ACTION='MENU CMDASK'.Ask Commands  CMDASK
-:MENUI OPTION=7 ACTION='MENU CMDAUD'.Auditing Commands  CMDAUD
-:MENUI OPTION=8 ACTION='MENU CMDCALL'.Call Commands  CMDCALL
-:MENUI OPTION=9 ACTION='MENU CMDCFG'.Configuration Commands  CMDCFG
-:MENUI OPTION=10 ACTION='MENU CMDCHG'.Change Commands  CMDCHG
-:MENUI OPTION=11 ACTION='MENU CMDCHK'.Check Commands  CMDCHK
-:MENUI OPTION=12 ACTION='MENU CMDCLO'.Close Commands  CMDCLO
-:MENUI OPTION=13 ACTION='MENU CMDCLR'.Clear Commands  CMDCLR
-:MENUI OPTION=14 ACTION='MENU CMDCMP'.Compare Commands  CMDCMP
-:MENUI OPTION=15 ACTION='MENU CMDCNL'.Cancel Commands  CMDCNL
-:MENUI OPTION=16 ACTION='MENU CMDCNR'.Container Commands  CMDCNR
-:MENUI OPTION=17 ACTION='MENU CMDCPY'.Copy Commands  CMDCPY
-:MENUI OPTION=18 ACTION='MENU CMDCRT'.Create Commands  CMDCRT
-:MENUI OPTION=19 ACTION='MENU CMDCRTF'.Create File Commands  CMDCRTF
-:MENUI OPTION=20 ACTION='MENU CMDCRTPGM'.Create Program Commands  CMDCRTPGM
-:MENUI OPTION=21 ACTION='MENU CMDCVT'.Convert Commands  CMDCVT
-:MENUI OPTION=22 ACTION='MENU CMDDCL'.Declare Commands  CMDDCL
-:MENUI OPTION=23 ACTION='MENU CMDDLC'.Deallocate Commands  CMDDLC
-:MENUI OPTION=24 ACTION='MENU CMDDLT'.Delete Commands  CMDDLT
-:MENUI OPTION=25 ACTION='MENU CMDDLY'.Delay Commands  CMDDLY
-:MENUI OPTION=26 ACTION='MENU CMDDMP'.Dump Commands  CMDDMP
-:MENUI OPTION=27 ACTION='MENU CMDDO'.Do Commands  CMDDO
-:MENUI OPTION=28 ACTION='MENU CMDDSC'.Disconnect Commands  CMDDSC
-:MENUI OPTION=29 ACTION='MENU CMDDSP'.Display Commands  CMDDSP
-:MENUI OPTION=30 ACTION='MENU CMDDUP'.Duplicate Commands  CMDDUP
-:MENUI OPTION=31 ACTION='MENU CMDEDT'.Edit Commands  CMDEDT
-:MENUI OPTION=32 ACTION='MENU CMDEJT'.Eject Commands  CMDEJT
-:MENUI OPTION=33 ACTION='MENU CMDEML'.Emulation Commands  CMDEML
-:MENUI OPTION=34 ACTION='MENU CMDEND'.End Commands  CMDEND
-:MENUI OPTION=35 ACTION='MENU CMDEXT'.Extract Commands  CMDEXT
-:MENUI OPTION=36 ACTION='MENU CMDFMT'.Format Commands  CMDFMT
-:MENUI OPTION=37 ACTION='MENU CMDFND'.Find Commands  CMDFND
-:MENUI OPTION=38 ACTION='MENU CMDGEN'.Generate Commands  CMDGEN
-:MENUI OPTION=39 ACTION='MENU CMDGO'.Go Commands  CMDGO
-:MENUI OPTION=40 ACTION='MENU CMDGRT'.Grant Commands  CMDGRT
-:MENUI OPTION=41 ACTION='MENU CMDHLD'.Hold Commands  CMDHLD
-:MENUI OPTION=42 ACTION='MENU CMDINS'.Install Commands  CMDINS
-:MENUI OPTION=43 ACTION='MENU CMDINZ'.Initialize Commands  CMDINZ
-:MENUI OPTION=44 ACTION='MENU CMDLOD'.Load Commands  CMDLOD
-:MENUI OPTION=45 ACTION='MENU CMDMGR'.Manager and Migration Commands  CMDMGR
-:MENUI OPTION=46 ACTION='MENU CMDMON'.Monitor Commands  CMDMON
-:MENUI OPTION=47 ACTION='MENU CMDMOV'.Move Commands  CMDMOV
-:MENUI OPTION=48 ACTION='MENU CMDMRG'.Merge Commands  CMDMRG
-:MENUI OPTION=49 ACTION='MENU CMDOPN'.Open Commands  CMDOPN
-:MENUI OPTION=50 ACTION='MENU CMDOVR'.Override Commands  CMDOVR
-:MENUI OPTION=51 ACTION='MENU CMDPOS'.Position Commands  CMDPOS
-:MENUI OPTION=52 ACTION='MENU CMDPRT'.Print Commands  CMDPRT
-:MENUI OPTION=53 ACTION='MENU CMDPWR'.Power Commands  CMDPWR
-:MENUI OPTION=54 ACTION='MENU CMDRCL'.Reclaim Commands  CMDRCL
-:MENUI OPTION=55 ACTION='MENU CMDRCV'.Receive Commands  CMDRCV
-:MENUI OPTION=56 ACTION='MENU CMDRGZ'.Reorganize Commands  CMDRGZ
-:MENUI OPTION=57 ACTION='MENU CMDRLS'.Release Commands  CMDRLS
-:MENUI OPTION=58 ACTION='MENU CMDRMV'.Remove Commands  CMDRMV
-:MENUI OPTION=59 ACTION='MENU CMDRNM'.Rename Commands  CMDRNM
-:MENUI OPTION=60 ACTION='MENU CMDRPL'.Replace Commands  CMDRPL
-:MENUI OPTION=61 ACTION='MENU CMDRQS'.Request Commands  CMDRQS
-:MENUI OPTION=62 ACTION='MENU CMDRRT'.Reroute Commands  CMDRRT
-:MENUI OPTION=63 ACTION='MENU CMDRSM'.Resume Commands  CMDRSM
-:MENUI OPTION=64 ACTION='MENU CMDRST'.Restore Commands  CMDRST
-:MENUI OPTION=65 ACTION='MENU CMDRTN'.Return Commands  CMDRTN
-:MENUI OPTION=66 ACTION='MENU CMDRTV'.Retrieve Commands  CMDRTV
-:MENUI OPTION=67 ACTION='MENU CMDRUN'.Run Commands  CMDRUN
-:MENUI OPTION=68 ACTION='MENU CMDRVK'.Revoke Commands  CMDRVK
-:MENUI OPTION=69 ACTION='MENU CMDSAV'.Save Commands  CMDSAV
-:MENUI OPTION=70 ACTION='MENU CMDSBM'.Submit Commands  CMDSBM
-:MENUI OPTION=71 ACTION='MENU CMDSET'.Set Commands  CMDSET
-:MENUI OPTION=72 ACTION='MENU CMDSIGN'.Sign Commands  CMDSIGN
-:MENUI OPTION=73 ACTION='MENU CMDSLT'.Select Commands  CMDSLT
-:MENUI OPTION=74 ACTION='MENU CMDSND'.Send Commands  CMDSND
-:MENUI OPTION=75 ACTION='MENU CMDSTR'.Start Commands  CMDSTR
-:MENUI OPTION=76 ACTION='MENU CMDTFR'.Transfer Commands  CMDTFR
-:MENUI OPTION=77 ACTION='MENU CMDTRC'.Trace Commands  CMDTRC
-:MENUI OPTION=78 ACTION='MENU CMDUPD'.Update Commands  CMDUPD
-:MENUI OPTION=79 ACTION='MENU CMDVFY'.Verify Commands  CMDVFY
-:MENUI OPTION=80 ACTION='MENU CMDVRY'.Vary Commands  CMDVRY
-:MENUI OPTION=81 ACTION='MENU CMDWAIT'.Wait Commands  CMDWAIT
-:MENUI OPTION=82 ACTION='MENU CMDWRK'.Work Commands  CMDWRK
+:MENUI OPTION=1 ACTION='MENU CMDADD' HELP=HLPOPT1.Add Commands  CMDADD
+:MENUI OPTION=2 ACTION='MENU CMDALC' HELP=HLPOPT2.Allocate Commands  CMDALC
+:MENUI OPTION=3 ACTION='MENU CMDANS' HELP=HLPOPT3.Answer Commands  CMDANS
+:MENUI OPTION=4 ACTION='MENU CMDANZ' HELP=HLPOPT4.Analyze Commands  CMDANZ
+:MENUI OPTION=5 ACTION='MENU CMDAPY' HELP=HLPOPT5.Apply Commands  CMDAPY
+:MENUI OPTION=6 ACTION='MENU CMDASK' HELP=HLPOPT6.Ask Commands  CMDASK
+:MENUI OPTION=7 ACTION='MENU CMDAUD' HELP=HLPOPT7.Auditing Commands  CMDAUD
+:MENUI OPTION=8 ACTION='MENU CMDCALL' HELP=HLPOPT8.Call Commands  CMDCALL
+:MENUI OPTION=9 ACTION='MENU CMDCFG' HELP=HLPOPT9.Configuration Commands  CMDCFG
+:MENUI OPTION=10 ACTION='MENU CMDCHG' HELP=HLPOPT10.Change Commands  CMDCHG
+:MENUI OPTION=11 ACTION='MENU CMDCHK' HELP=HLPOPT11.Check Commands  CMDCHK
+:MENUI OPTION=12 ACTION='MENU CMDCLO' HELP=HLPOPT12.Close Commands  CMDCLO
+:MENUI OPTION=13 ACTION='MENU CMDCLR' HELP=HLPOPT13.Clear Commands  CMDCLR
+:MENUI OPTION=14 ACTION='MENU CMDCMP' HELP=HLPOPT14.Compare Commands  CMDCMP
+:MENUI OPTION=15 ACTION='MENU CMDCNL' HELP=HLPOPT15.Cancel Commands  CMDCNL
+:MENUI OPTION=16 ACTION='MENU CMDCNR' HELP=HLPOPT16.Container Commands  CMDCNR
+:MENUI OPTION=17 ACTION='MENU CMDCPY' HELP=HLPOPT17.Copy Commands  CMDCPY
+:MENUI OPTION=18 ACTION='MENU CMDCRT' HELP=HLPOPT18.Create Commands  CMDCRT
+:MENUI OPTION=19 ACTION='MENU CMDCRTF' HELP=HLPOPT19.Create File Commands  CMDCRTF
+:MENUI OPTION=20 ACTION='MENU CMDCRTPGM' HELP=HLPOPT20.Create Program Commands  CMDCRTPGM
+:MENUI OPTION=21 ACTION='MENU CMDCVT' HELP=HLPOPT21.Convert Commands  CMDCVT
+:MENUI OPTION=22 ACTION='MENU CMDDCL' HELP=HLPOPT22.Declare Commands  CMDDCL
+:MENUI OPTION=23 ACTION='MENU CMDDLC' HELP=HLPOPT23.Deallocate Commands  CMDDLC
+:MENUI OPTION=24 ACTION='MENU CMDDLT' HELP=HLPOPT24.Delete Commands  CMDDLT
+:MENUI OPTION=25 ACTION='MENU CMDDLY' HELP=HLPOPT25.Delay Commands  CMDDLY
+:MENUI OPTION=26 ACTION='MENU CMDDMP' HELP=HLPOPT26.Dump Commands  CMDDMP
+:MENUI OPTION=27 ACTION='MENU CMDDO' HELP=HLPOPT27.Do Commands  CMDDO
+:MENUI OPTION=28 ACTION='MENU CMDDSC' HELP=HLPOPT28.Disconnect Commands  CMDDSC
+:MENUI OPTION=29 ACTION='MENU CMDDSP' HELP=HLPOPT29.Display Commands  CMDDSP
+:MENUI OPTION=30 ACTION='MENU CMDDUP' HELP=HLPOPT30.Duplicate Commands  CMDDUP
+:MENUI OPTION=31 ACTION='MENU CMDEDT' HELP=HLPOPT31.Edit Commands  CMDEDT
+:MENUI OPTION=32 ACTION='MENU CMDEJT' HELP=HLPOPT32.Eject Commands  CMDEJT
+:MENUI OPTION=33 ACTION='MENU CMDEML' HELP=HLPOPT33.Emulation Commands  CMDEML
+:MENUI OPTION=34 ACTION='MENU CMDEND' HELP=HLPOPT34.End Commands  CMDEND
+:MENUI OPTION=35 ACTION='MENU CMDEXT' HELP=HLPOPT35.Extract Commands  CMDEXT
+:MENUI OPTION=36 ACTION='MENU CMDFMT' HELP=HLPOPT36.Format Commands  CMDFMT
+:MENUI OPTION=37 ACTION='MENU CMDFND' HELP=HLPOPT37.Find Commands  CMDFND
+:MENUI OPTION=38 ACTION='MENU CMDGEN' HELP=HLPOPT38.Generate Commands  CMDGEN
+:MENUI OPTION=39 ACTION='MENU CMDGO' HELP=HLPOPT39.Go Commands  CMDGO
+:MENUI OPTION=40 ACTION='MENU CMDGRT' HELP=HLPOPT40.Grant Commands  CMDGRT
+:MENUI OPTION=41 ACTION='MENU CMDHLD' HELP=HLPOPT41.Hold Commands  CMDHLD
+:MENUI OPTION=42 ACTION='MENU CMDINS' HELP=HLPOPT42.Install Commands  CMDINS
+:MENUI OPTION=43 ACTION='MENU CMDINZ' HELP=HLPOPT43.Initialize Commands  CMDINZ
+:MENUI OPTION=44 ACTION='MENU CMDLOD' HELP=HLPOPT44.Load Commands  CMDLOD
+:MENUI OPTION=45 ACTION='MENU CMDMGR' HELP=HLPOPT45.Manager and Migration Commands  CMDMGR
+:MENUI OPTION=46 ACTION='MENU CMDMON' HELP=HLPOPT46.Monitor Commands  CMDMON
+:MENUI OPTION=47 ACTION='MENU CMDMOV' HELP=HLPOPT47.Move Commands  CMDMOV
+:MENUI OPTION=48 ACTION='MENU CMDMRG' HELP=HLPOPT48.Merge Commands  CMDMRG
+:MENUI OPTION=49 ACTION='MENU CMDOPN' HELP=HLPOPT49.Open Commands  CMDOPN
+:MENUI OPTION=50 ACTION='MENU CMDOVR' HELP=HLPOPT50.Override Commands  CMDOVR
+:MENUI OPTION=51 ACTION='MENU CMDPOS' HELP=HLPOPT51.Position Commands  CMDPOS
+:MENUI OPTION=52 ACTION='MENU CMDPRT' HELP=HLPOPT52.Print Commands  CMDPRT
+:MENUI OPTION=53 ACTION='MENU CMDPWR' HELP=HLPOPT53.Power Commands  CMDPWR
+:MENUI OPTION=54 ACTION='MENU CMDRCL' HELP=HLPOPT54.Reclaim Commands  CMDRCL
+:MENUI OPTION=55 ACTION='MENU CMDRCV' HELP=HLPOPT55.Receive Commands  CMDRCV
+:MENUI OPTION=56 ACTION='MENU CMDRGZ' HELP=HLPOPT56.Reorganize Commands  CMDRGZ
+:MENUI OPTION=57 ACTION='MENU CMDRLS' HELP=HLPOPT57.Release Commands  CMDRLS
+:MENUI OPTION=58 ACTION='MENU CMDRMV' HELP=HLPOPT58.Remove Commands  CMDRMV
+:MENUI OPTION=59 ACTION='MENU CMDRNM' HELP=HLPOPT59.Rename Commands  CMDRNM
+:MENUI OPTION=60 ACTION='MENU CMDRPL' HELP=HLPOPT60.Replace Commands  CMDRPL
+:MENUI OPTION=61 ACTION='MENU CMDRQS' HELP=HLPOPT61.Request Commands  CMDRQS
+:MENUI OPTION=62 ACTION='MENU CMDRRT' HELP=HLPOPT62.Reroute Commands  CMDRRT
+:MENUI OPTION=63 ACTION='MENU CMDRSM' HELP=HLPOPT63.Resume Commands  CMDRSM
+:MENUI OPTION=64 ACTION='MENU CMDRST' HELP=HLPOPT64.Restore Commands  CMDRST
+:MENUI OPTION=65 ACTION='MENU CMDRTN' HELP=HLPOPT65.Return Commands  CMDRTN
+:MENUI OPTION=66 ACTION='MENU CMDRTV' HELP=HLPOPT66.Retrieve Commands  CMDRTV
+:MENUI OPTION=67 ACTION='MENU CMDRUN' HELP=HLPOPT67.Run Commands  CMDRUN
+:MENUI OPTION=68 ACTION='MENU CMDRVK' HELP=HLPOPT68.Revoke Commands  CMDRVK
+:MENUI OPTION=69 ACTION='MENU CMDSAV' HELP=HLPOPT69.Save Commands  CMDSAV
+:MENUI OPTION=70 ACTION='MENU CMDSBM' HELP=HLPOPT70.Submit Commands  CMDSBM
+:MENUI OPTION=71 ACTION='MENU CMDSET' HELP=HLPOPT71.Set Commands  CMDSET
+:MENUI OPTION=72 ACTION='MENU CMDSIGN' HELP=HLPOPT72.Sign Commands  CMDSIGN
+:MENUI OPTION=73 ACTION='MENU CMDSLT' HELP=HLPOPT73.Select Commands  CMDSLT
+:MENUI OPTION=74 ACTION='MENU CMDSND' HELP=HLPOPT74.Send Commands  CMDSND
+:MENUI OPTION=75 ACTION='MENU CMDSTR' HELP=HLPOPT75.Start Commands  CMDSTR
+:MENUI OPTION=76 ACTION='MENU CMDTFR' HELP=HLPOPT76.Transfer Commands  CMDTFR
+:MENUI OPTION=77 ACTION='MENU CMDTRC' HELP=HLPOPT77.Trace Commands  CMDTRC
+:MENUI OPTION=78 ACTION='MENU CMDUPD' HELP=HLPOPT78.Update Commands  CMDUPD
+:MENUI OPTION=79 ACTION='MENU CMDVFY' HELP=HLPOPT79.Verify Commands  CMDVFY
+:MENUI OPTION=80 ACTION='MENU CMDVRY' HELP=HLPOPT80.Vary Commands  CMDVRY
+:MENUI OPTION=81 ACTION='MENU CMDWAIT' HELP=HLPOPT81.Wait Commands  CMDWAIT
+:MENUI OPTION=82 ACTION='MENU CMDWRK' HELP=HLPOPT82.Work Commands  CMDWRK
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :HELP NAME=HLPVERB.Verb Commands - Help
 :P.The command menus by verb, one per leading word of a command name, in name order.
 :P.Type an option number and press Enter to show that menu, or type a command on the command line. F12 returns to the previous menu and F3 to the menu where you started.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
+:EHELP.
+:HELP NAME=HLPOPT1.Add Commands
+:P.Shows menu CMDADD, Add Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT2.Allocate Commands
+:P.Shows menu CMDALC, Allocate Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT3.Answer Commands
+:P.Shows menu CMDANS, Answer Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT4.Analyze Commands
+:P.Shows menu CMDANZ, Analyze Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT5.Apply Commands
+:P.Shows menu CMDAPY, Apply Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT6.Ask Commands
+:P.Shows menu CMDASK, Ask Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT7.Auditing Commands
+:P.Shows menu CMDAUD, Auditing Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT8.Call Commands
+:P.Shows menu CMDCALL, Call Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT9.Configuration Commands
+:P.Shows menu CMDCFG, Configuration Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT10.Change Commands
+:P.Shows menu CMDCHG, Change Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT11.Check Commands
+:P.Shows menu CMDCHK, Check Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT12.Close Commands
+:P.Shows menu CMDCLO, Close Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT13.Clear Commands
+:P.Shows menu CMDCLR, Clear Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT14.Compare Commands
+:P.Shows menu CMDCMP, Compare Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT15.Cancel Commands
+:P.Shows menu CMDCNL, Cancel Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT16.Container Commands
+:P.Shows menu CMDCNR, Container Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT17.Copy Commands
+:P.Shows menu CMDCPY, Copy Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT18.Create Commands
+:P.Shows menu CMDCRT, Create Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT19.Create File Commands
+:P.Shows menu CMDCRTF, Create File Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT20.Create Program Commands
+:P.Shows menu CMDCRTPGM, Create Program Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT21.Convert Commands
+:P.Shows menu CMDCVT, Convert Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT22.Declare Commands
+:P.Shows menu CMDDCL, Declare Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT23.Deallocate Commands
+:P.Shows menu CMDDLC, Deallocate Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT24.Delete Commands
+:P.Shows menu CMDDLT, Delete Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT25.Delay Commands
+:P.Shows menu CMDDLY, Delay Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT26.Dump Commands
+:P.Shows menu CMDDMP, Dump Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT27.Do Commands
+:P.Shows menu CMDDO, Do Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT28.Disconnect Commands
+:P.Shows menu CMDDSC, Disconnect Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT29.Display Commands
+:P.Shows menu CMDDSP, Display Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT30.Duplicate Commands
+:P.Shows menu CMDDUP, Duplicate Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT31.Edit Commands
+:P.Shows menu CMDEDT, Edit Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT32.Eject Commands
+:P.Shows menu CMDEJT, Eject Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT33.Emulation Commands
+:P.Shows menu CMDEML, Emulation Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT34.End Commands
+:P.Shows menu CMDEND, End Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT35.Extract Commands
+:P.Shows menu CMDEXT, Extract Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT36.Format Commands
+:P.Shows menu CMDFMT, Format Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT37.Find Commands
+:P.Shows menu CMDFND, Find Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT38.Generate Commands
+:P.Shows menu CMDGEN, Generate Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT39.Go Commands
+:P.Shows menu CMDGO, Go Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT40.Grant Commands
+:P.Shows menu CMDGRT, Grant Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT41.Hold Commands
+:P.Shows menu CMDHLD, Hold Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT42.Install Commands
+:P.Shows menu CMDINS, Install Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT43.Initialize Commands
+:P.Shows menu CMDINZ, Initialize Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT44.Load Commands
+:P.Shows menu CMDLOD, Load Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT45.Manager and Migration Commands
+:P.Shows menu CMDMGR, Manager and Migration Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT46.Monitor Commands
+:P.Shows menu CMDMON, Monitor Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT47.Move Commands
+:P.Shows menu CMDMOV, Move Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT48.Merge Commands
+:P.Shows menu CMDMRG, Merge Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT49.Open Commands
+:P.Shows menu CMDOPN, Open Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT50.Override Commands
+:P.Shows menu CMDOVR, Override Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT51.Position Commands
+:P.Shows menu CMDPOS, Position Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT52.Print Commands
+:P.Shows menu CMDPRT, Print Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT53.Power Commands
+:P.Shows menu CMDPWR, Power Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT54.Reclaim Commands
+:P.Shows menu CMDRCL, Reclaim Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT55.Receive Commands
+:P.Shows menu CMDRCV, Receive Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT56.Reorganize Commands
+:P.Shows menu CMDRGZ, Reorganize Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT57.Release Commands
+:P.Shows menu CMDRLS, Release Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT58.Remove Commands
+:P.Shows menu CMDRMV, Remove Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT59.Rename Commands
+:P.Shows menu CMDRNM, Rename Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT60.Replace Commands
+:P.Shows menu CMDRPL, Replace Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT61.Request Commands
+:P.Shows menu CMDRQS, Request Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT62.Reroute Commands
+:P.Shows menu CMDRRT, Reroute Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT63.Resume Commands
+:P.Shows menu CMDRSM, Resume Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT64.Restore Commands
+:P.Shows menu CMDRST, Restore Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT65.Return Commands
+:P.Shows menu CMDRTN, Return Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT66.Retrieve Commands
+:P.Shows menu CMDRTV, Retrieve Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT67.Run Commands
+:P.Shows menu CMDRUN, Run Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT68.Revoke Commands
+:P.Shows menu CMDRVK, Revoke Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT69.Save Commands
+:P.Shows menu CMDSAV, Save Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT70.Submit Commands
+:P.Shows menu CMDSBM, Submit Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT71.Set Commands
+:P.Shows menu CMDSET, Set Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT72.Sign Commands
+:P.Shows menu CMDSIGN, Sign Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT73.Select Commands
+:P.Shows menu CMDSLT, Select Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT74.Send Commands
+:P.Shows menu CMDSND, Send Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT75.Start Commands
+:P.Shows menu CMDSTR, Start Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT76.Transfer Commands
+:P.Shows menu CMDTFR, Transfer Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT77.Trace Commands
+:P.Shows menu CMDTRC, Trace Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT78.Update Commands
+:P.Shows menu CMDUPD, Update Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT79.Verify Commands
+:P.Shows menu CMDVFY, Verify Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT80.Vary Commands
+:P.Shows menu CMDVRY, Vary Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT81.Wait Commands
+:P.Shows menu CMDWAIT, Wait Commands: the commands of that group, each with its option number.
+:EHELP.
+:HELP NAME=HLPOPT82.Work Commands
+:P.Shows menu CMDWRK, Work Commands: the commands of that group, each with its option number.
 :EHELP.
 :EPNLGRP.

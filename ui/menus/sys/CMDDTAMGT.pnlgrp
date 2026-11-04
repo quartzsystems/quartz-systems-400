@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDDTAMGT'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPOVR PNLGRP=QHDBCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,18 +25,18 @@
 :PANEL NAME=CMDDTAMGT HELP=HLPCMDDTAMGT KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Data Management Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?DSPOVR'.Display Override  DSPOVR
+:MENUI HELP=DSPOVR OPTION=1 ACTION='CMD ?DSPOVR'.Display Override  DSPOVR
 :EMENUGRP.
 :MENUGRP.Related Command Menus
-:MENUI OPTION=2 ACTION='MENU CMDDBF'.Database File Commands  CMDDBF
-:MENUI OPTION=4 ACTION='MENU CMDDTA'.Data Commands  CMDDTA
-:MENUI OPTION=5 ACTION='MENU CMDDTAARA'.Data Area Commands  CMDDTAARA
-:MENUI OPTION=6 ACTION='MENU CMDFILE'.File Commands  CMDFILE
-:MENUI OPTION=7 ACTION='MENU CMDOVR'.Override Commands  CMDOVR
-:MENUI OPTION=8 ACTION='MENU CMDPRT'.Print Commands  CMDPRT
-:MENUI OPTION=9 ACTION='MENU CMDQRY'.Query Commands  CMDQRY
-:MENUI OPTION=10 ACTION='MENU CMDSAVRST'.Save and Restore Commands  CMDSAVRST
-:MENUI OPTION=11 ACTION='MENU CMDTAP'.Tape Commands  CMDTAP
+:MENUI HELP='CMDDTAMGT/OPT2' OPTION=2 ACTION='MENU CMDDBF'.Database File Commands  CMDDBF
+:MENUI HELP='CMDDTAMGT/OPT4' OPTION=4 ACTION='MENU CMDDTA'.Data Commands  CMDDTA
+:MENUI HELP='CMDDTAMGT/OPT5' OPTION=5 ACTION='MENU CMDDTAARA'.Data Area Commands  CMDDTAARA
+:MENUI HELP='CMDDTAMGT/OPT6' OPTION=6 ACTION='MENU CMDFILE'.File Commands  CMDFILE
+:MENUI HELP='CMDDTAMGT/OPT7' OPTION=7 ACTION='MENU CMDOVR'.Override Commands  CMDOVR
+:MENUI HELP='CMDDTAMGT/OPT8' OPTION=8 ACTION='MENU CMDPRT'.Print Commands  CMDPRT
+:MENUI HELP='CMDDTAMGT/OPT9' OPTION=9 ACTION='MENU CMDQRY'.Query Commands  CMDQRY
+:MENUI HELP='CMDDTAMGT/OPT10' OPTION=10 ACTION='MENU CMDSAVRST'.Save and Restore Commands  CMDSAVRST
+:MENUI HELP='CMDDTAMGT/OPT11' OPTION=11 ACTION='MENU CMDTAP'.Tape Commands  CMDTAP
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -49,5 +50,50 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT2'.Database File Commands  CMDDBF
+:P.Option 2. Shows menu CMDDBF&colon. Database File Commands CMDDBF.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT4'.Data Commands  CMDDTA
+:P.Option 4. Shows menu CMDDTA&colon. Data Commands CMDDTA.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT5'.Data Area Commands  CMDDTAARA
+:P.Option 5. Shows menu CMDDTAARA&colon. Data Area Commands CMDDTAARA.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT6'.File Commands  CMDFILE
+:P.Option 6. Shows menu CMDFILE&colon. File Commands CMDFILE.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT7'.Override Commands  CMDOVR
+:P.Option 7. Shows menu CMDOVR&colon. Override Commands CMDOVR.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT8'.Print Commands  CMDPRT
+:P.Option 8. Shows menu CMDPRT&colon. Print Commands CMDPRT.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT9'.Query Commands  CMDQRY
+:P.Option 9. Shows menu CMDQRY&colon. Query Commands CMDQRY.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT10'.Save and Restore Commands  CMDSAVRST
+:P.Option 10. Shows menu CMDSAVRST&colon. Save and Restore Commands
+CMDSAVRST.
+:EHELP.
+:HELP NAME='CMDDTAMGT/OPT11'.Tape Commands  CMDTAP
+:P.Option 11. Shows menu CMDTAP&colon. Tape Commands CMDTAP.
 :EHELP.
 :EPNLGRP.

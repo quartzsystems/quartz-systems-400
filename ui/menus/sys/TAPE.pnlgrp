@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='TAPE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPTAP PNLGRP=QHSVCMD.
+:IMPORT NAME=INZTAP PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKCFGSTS PNLGRP=QHDCCMD1.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +27,14 @@
 :EKEYL.
 :PANEL NAME=TAPE HELP=HLPTAPE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Tape
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?DSPTAP'.Display tape information
-:MENUI OPTION=2 ACTION='CMD ?INZTAP'.Initialize a tape
-:MENUI OPTION=3 ACTION='CMD ?DSPTAP OUTPUT(*PRINT)'.Print contents of a tape
-:MENUI OPTION=4 ACTION='MENU SAVE'.Save
-:MENUI OPTION=5 ACTION='MENU RESTORE'.Restore
-:MENUI OPTION=6 ACTION='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(*TAP)'.Work with tape device status
-:MENUI OPTION=7 ACTION='CMD ?VFYTAP'.Verify tape
-:MENUI OPTION=70 ACTION='MENU CMDTAP'.Related commands
+:MENUI HELP=DSPTAP OPTION=1 ACTION='CMD ?DSPTAP'.Display tape information
+:MENUI HELP=INZTAP OPTION=2 ACTION='CMD ?INZTAP'.Initialize a tape
+:MENUI HELP=DSPTAP OPTION=3 ACTION='CMD ?DSPTAP OUTPUT(*PRINT)'.Print contents of a tape
+:MENUI HELP='TAPE/OPT4' OPTION=4 ACTION='MENU SAVE'.Save
+:MENUI HELP='TAPE/OPT5' OPTION=5 ACTION='MENU RESTORE'.Restore
+:MENUI HELP=WRKCFGSTS OPTION=6 ACTION='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(*TAP)'.Work with tape device status
+:MENUI HELP='TAPE/OPT7' OPTION=7 ACTION='CMD ?VFYTAP'.Verify tape
+:MENUI HELP='TAPE/OPT70' OPTION=70 ACTION='MENU CMDTAP'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -41,5 +44,36 @@ the save and restore menus, and the drives' status.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='TAPE/OPT4'.Save
+:P.Option 4. Shows menu SAVE&colon. Save.
+:EHELP.
+:HELP NAME='TAPE/OPT5'.Restore
+:P.Option 5. Shows menu RESTORE&colon. Restore.
+:EHELP.
+:HELP NAME='TAPE/OPT7'.Verify tape
+:P.Option 7. Runs the VFYTAP command&colon. Verify tape.
+:EHELP.
+:HELP NAME='TAPE/OPT70'.Related commands
+:P.Option 70. Shows menu CMDTAP&colon. Related commands.
 :EHELP.
 :EPNLGRP.

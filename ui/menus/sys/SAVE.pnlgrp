@@ -11,7 +11,15 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SAVE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=QSMNSAVE PNLGRP=QHWMCMD.
+:IMPORT NAME=SAV PNLGRP=QHSRCMD.
+:IMPORT NAME=SAVCFG PNLGRP=QHSRCMD.
+:IMPORT NAME=SAVCHGOBJ PNLGRP=QHSRCMD.
+:IMPORT NAME=SAVLIB PNLGRP=QHSRCMD.
+:IMPORT NAME=SAVLICPGM PNLGRP=QHSZCMD.
+:IMPORT NAME=SAVOBJ PNLGRP=QHSRCMD.
+:IMPORT NAME=SAVSECDTA PNLGRP=QHSRCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -25,41 +33,41 @@
 :PANEL NAME=SAVE HELP=HLPSAVE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Save
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Save Data
-:MENUI OPTION=1 ACTION='CMD ?SAVOBJ OBJTYPE(*FILE)'.Files
-:MENUI OPTION=2 ACTION='CMD ?SAVLIB'.Libraries
-:MENUI OPTION=3 ACTION='CMD ?SAVDLO'.Documents and folders
-:MENUI OPTION=4 ACTION='CMD ?SAVOBJ OBJTYPE(*PGM)'.Programs
-:MENUI OPTION=5 ACTION='CMD ?SAVOBJ'.Other objects
-:MENUI OPTION=6 ACTION='CMD ?SAVCHGOBJ'.Changed objects only
-:MENUI OPTION=7 ACTION='CMD ?SAVLICPGM'.Licensed programs
-:MENUI OPTION=8 ACTION='CMD ?SAVSECDTA'.Security data
-:MENUI OPTION=10 ACTION='CMD ?SAVCFG'.Configuration
-:MENUI OPTION=11 ACTION='CMD ?SAV'.Objects in directories
+:MENUI HELP=SAVOBJ OPTION=1 ACTION='CMD ?SAVOBJ OBJTYPE(*FILE)'.Files
+:MENUI HELP=SAVLIB OPTION=2 ACTION='CMD ?SAVLIB'.Libraries
+:MENUI HELP='SAVE/OPT3' OPTION=3 ACTION='CMD ?SAVDLO'.Documents and folders
+:MENUI HELP=SAVOBJ OPTION=4 ACTION='CMD ?SAVOBJ OBJTYPE(*PGM)'.Programs
+:MENUI HELP=SAVOBJ OPTION=5 ACTION='CMD ?SAVOBJ'.Other objects
+:MENUI HELP=SAVCHGOBJ OPTION=6 ACTION='CMD ?SAVCHGOBJ'.Changed objects only
+:MENUI HELP=SAVLICPGM OPTION=7 ACTION='CMD ?SAVLICPGM'.Licensed programs
+:MENUI HELP=SAVSECDTA OPTION=8 ACTION='CMD ?SAVSECDTA'.Security data
+:MENUI HELP=SAVCFG OPTION=10 ACTION='CMD ?SAVCFG'.Configuration
+:MENUI HELP=SAV OPTION=11 ACTION='CMD ?SAV'.Objects in directories
 :EMENUGRP.
 :MENUGRP.Save System and User Data
-:MENUI OPTION=20 ACTION='CMD QSMNSAVE OPTION(20)'.Define save system and user data defaults
-:MENUI OPTION=21 ACTION='CMD QSMNSAVE OPTION(21)'.Entire system
-:MENUI OPTION=22 ACTION='CMD QSMNSAVE OPTION(22)'.System data only
-:MENUI OPTION=23 ACTION='CMD QSMNSAVE OPTION(23)'.All user data
+:MENUI HELP=QSMNSAVE OPTION=20 ACTION='CMD QSMNSAVE OPTION(20)'.Define save system and user data defaults
+:MENUI HELP=QSMNSAVE OPTION=21 ACTION='CMD QSMNSAVE OPTION(21)'.Entire system
+:MENUI HELP=QSMNSAVE OPTION=22 ACTION='CMD QSMNSAVE OPTION(22)'.System data only
+:MENUI HELP=QSMNSAVE OPTION=23 ACTION='CMD QSMNSAVE OPTION(23)'.All user data
 :EMENUGRP.
 :MENUGRP.Save Document Library Objects
-:MENUI OPTION=30 ACTION='CMD ?SAVDLO DLO(*ALL)'.All documents, folders, and mail
-:MENUI OPTION=31 ACTION='CMD ?SAVDLO DLO(*CHG)'.New and changed documents, new folders, all mail
-:MENUI OPTION=32 ACTION='CMD ?SAVDLO'.Documents and folders
-:MENUI OPTION=33 ACTION='CMD ?SAVDLO DLO(*MAIL)'.Mail only
+:MENUI HELP='SAVE/OPT30' OPTION=30 ACTION='CMD ?SAVDLO DLO(*ALL)'.All documents, folders, and mail
+:MENUI HELP='SAVE/OPT31' OPTION=31 ACTION='CMD ?SAVDLO DLO(*CHG)'.New and changed documents, new folders, all mail
+:MENUI HELP='SAVE/OPT32' OPTION=32 ACTION='CMD ?SAVDLO'.Documents and folders
+:MENUI HELP='SAVE/OPT33' OPTION=33 ACTION='CMD ?SAVDLO DLO(*MAIL)'.Mail only
 :MENUI OPTION=34 ACTION='CMD ?SAVDLO'.
 :EMENUGRP.
 :MENUGRP.Save Libraries
-:MENUI OPTION=40 ACTION='CMD ?SAVLIB LIB(*NONSYS)'.All libraries other than system library
-:MENUI OPTION=41 ACTION='CMD ?SAVLIB LIB(*IBM)'.All IBM libraries other than system library
-:MENUI OPTION=42 ACTION='CMD ?SAVLIB LIB(*ALLUSR)'.All user libraries
-:MENUI OPTION=43 ACTION='CMD ?SAVCHGOBJ OBJ(*ALL) LIB(*ALLUSR)'.All changed objects in user libraries
+:MENUI HELP=SAVLIB OPTION=40 ACTION='CMD ?SAVLIB LIB(*NONSYS)'.All libraries other than system library
+:MENUI HELP=SAVLIB OPTION=41 ACTION='CMD ?SAVLIB LIB(*IBM)'.All IBM libraries other than system library
+:MENUI HELP=SAVLIB OPTION=42 ACTION='CMD ?SAVLIB LIB(*ALLUSR)'.All user libraries
+:MENUI HELP=SAVCHGOBJ OPTION=43 ACTION='CMD ?SAVCHGOBJ OBJ(*ALL) LIB(*ALLUSR)'.All changed objects in user libraries
 :EMENUGRP.
 :MENUGRP.Save for Different Systems
-:MENUI OPTION=50 ACTION='MENU SAVS36FMT'.Save in System/36 format
+:MENUI HELP='SAVE/OPT50' OPTION=50 ACTION='MENU SAVS36FMT'.Save in System/36 format
 :EMENUGRP.
 :MENUGRP.Related Commands
-:MENUI OPTION=70 ACTION='MENU CMDSAV'.Related commands
+:MENUI HELP='SAVE/OPT70' OPTION=70 ACTION='MENU CMDSAV'.Related commands
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -71,5 +79,47 @@ before it starts.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVE/OPT3'.Documents and folders
+:P.Option 3. Runs the SAVDLO command&colon. Documents and folders.
+:EHELP.
+:HELP NAME='SAVE/OPT30'.All documents, folders, and mail
+:P.Option 30. Runs SAVDLO DLO(*ALL)&colon. All documents, folders, and
+mail.
+:EHELP.
+:HELP NAME='SAVE/OPT31'.New and changed documents, new folders, all mail
+:P.Option 31. Runs SAVDLO DLO(*CHG)&colon. New and changed documents,
+new folders, all mail.
+:EHELP.
+:HELP NAME='SAVE/OPT32'.Documents and folders
+:P.Option 32. Runs the SAVDLO command&colon. Documents and folders.
+:EHELP.
+:HELP NAME='SAVE/OPT33'.Mail only
+:P.Option 33. Runs SAVDLO DLO(*MAIL)&colon. Mail only.
+:EHELP.
+:HELP NAME='SAVE/OPT50'.Save in System/36 format
+:P.Option 50. Shows menu SAVS36FMT&colon. Save in System/36 format.
+:EHELP.
+:HELP NAME='SAVE/OPT70'.Related commands
+:P.Option 70. Shows menu CMDSAV&colon. Related commands.
 :EHELP.
 :EPNLGRP.

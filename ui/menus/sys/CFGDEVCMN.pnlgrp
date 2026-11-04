@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CFGDEVCMN'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKCFGSTS PNLGRP=QHDCCMD1.
+:IMPORT NAME=WRKDEVD PNLGRP=QHCFCMD.
+:IMPORT NAME=WRKHDWRSC PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,11 +27,11 @@
 :EKEYL.
 :PANEL NAME=CFGDEVCMN HELP=HLPCFGDEVCMN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configure Devices and Communications
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKHDWRSC TYPE(*LWS)'.Configure local hardware
-:MENUI OPTION=2 ACTION='MENU CFGCMN'.Configure communications and remote hardware
-:MENUI OPTION=3 ACTION='CMD WRKDEVD DEVD(*DSP)'.Configure virtual controllers and devices
-:MENUI OPTION=4 ACTION='CMD WRKCFGSTS'.Work with configuration status
-:MENUI OPTION=5 ACTION='CMD ?RTVCFGSRC'.Retrieve configuration source
+:MENUI HELP=WRKHDWRSC OPTION=1 ACTION='CMD WRKHDWRSC TYPE(*LWS)'.Configure local hardware
+:MENUI HELP='CFGDEVCMN/OPT2' OPTION=2 ACTION='MENU CFGCMN'.Configure communications and remote hardware
+:MENUI HELP=WRKDEVD OPTION=3 ACTION='CMD WRKDEVD DEVD(*DSP)'.Configure virtual controllers and devices
+:MENUI HELP=WRKCFGSTS OPTION=4 ACTION='CMD WRKCFGSTS'.Work with configuration status
+:MENUI HELP='CFGDEVCMN/OPT5' OPTION=5 ACTION='CMD ?RTVCFGSRC'.Retrieve configuration source
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -38,5 +41,32 @@ TN5250 sessions and the state of the configuration.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGDEVCMN/OPT2'.Configure communications and remote hardware
+:P.Option 2. Shows menu CFGCMN&colon. Configure communications and
+remote hardware.
+:EHELP.
+:HELP NAME='CFGDEVCMN/OPT5'.Retrieve configuration source
+:P.Option 5. Runs the RTVCFGSRC command&colon. Retrieve configuration
+source.
 :EHELP.
 :EPNLGRP.

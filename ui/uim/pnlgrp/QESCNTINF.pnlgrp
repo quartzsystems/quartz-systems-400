@@ -40,13 +40,15 @@
 :VAR NAME=SRV03 CLASS=LONGCL.
 :VAR NAME=SRV04 CLASS=LONGCL.
 :LISTDEF NAME=PVDS VARS='OPT CPNAME NETID CNNTYPE PVDTEXT'.
-:KEYL NAME=MNKEYS.
+:IMPORT NAME=CHGCNTINF PNLGRP=QHSXCMD.
+:IMPORT NAME=WRKPRB PNLGRP=QHSXCMD.
+:KEYL HELP='KEYS/MNKEYS' NAME=MNKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=LSKEYS.
+:KEYL HELP='KEYS/LSKEYS' NAME=LSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -57,47 +59,47 @@
 :EKEYL.
 :PANEL NAME=WRKCNTINF KEYL=MNKEYS HELP=WRKCNTINF ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Support Contact Information
 :MENU DEPTH='*' OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?CHGCNTINF'.Change service contact information
-:MENUI OPTION=2 ACTION='RETURN 102'.Display service contact information
-:MENUI OPTION=3 ACTION='CMD WRKSRVPVD'.Work with service providers
-:MENUI OPTION=4 ACTION='CMD WRKPRB'.Work with problems
+:MENUI HELP=CHGCNTINF OPTION=1 ACTION='CMD ?CHGCNTINF'.Change service contact information
+:MENUI HELP='WRKCNTINF/OPT2' OPTION=2 ACTION='RETURN 102'.Display service contact information
+:MENUI HELP='WRKCNTINF/OPT3' OPTION=3 ACTION='CMD WRKSRVPVD'.Work with service providers
+:MENUI HELP=WRKPRB OPTION=4 ACTION='CMD WRKPRB'.Work with problems
 :EMENU.
 :EPANEL.
 :PANEL NAME=DSPCNTINF KEYL=MNKEYS HELP=DSPCNTINF ENTER='RETURN 0' TOPSEP=SYSNAM.Display Service Contact Information
 :DATA DEPTH='*'.
-:DATAI VAR=CNT01 USAGE=OUTPUT.Company
-:DATAI VAR=CNT02 USAGE=OUTPUT.Contact
-:DATAI VAR=CNT03 USAGE=OUTPUT.Primary telephone
-:DATAI VAR=CNT04 USAGE=OUTPUT.Alternative telephone
-:DATAI VAR=CNT05 USAGE=OUTPUT.Primary fax
-:DATAI VAR=CNT06 USAGE=OUTPUT.Alternative fax
-:DATAI VAR=CNT07 USAGE=OUTPUT.Street address
-:DATAI VAR=CNT08 USAGE=OUTPUT.City/State
-:DATAI VAR=CNT09 USAGE=OUTPUT.Country or region
-:DATAI VAR=CNT10 USAGE=OUTPUT.Postal code
-:DATAI VAR=CNT11 USAGE=OUTPUT.National language version
-:DATAI VAR=CNT12 USAGE=OUTPUT.Media for mailing fixes
-:DATAI VAR=CNT13 USAGE=OUTPUT.E-mail address
+:DATAI HELP='FLD/CNT01' VAR=CNT01 USAGE=OUTPUT.Company
+:DATAI HELP='FLD/CNT02' VAR=CNT02 USAGE=OUTPUT.Contact
+:DATAI HELP='FLD/CNT03' VAR=CNT03 USAGE=OUTPUT.Primary telephone
+:DATAI HELP='FLD/CNT04' VAR=CNT04 USAGE=OUTPUT.Alternative telephone
+:DATAI HELP='FLD/CNT05' VAR=CNT05 USAGE=OUTPUT.Primary fax
+:DATAI HELP='FLD/CNT06' VAR=CNT06 USAGE=OUTPUT.Alternative fax
+:DATAI HELP='FLD/CNT07' VAR=CNT07 USAGE=OUTPUT.Street address
+:DATAI HELP='FLD/CNT08' VAR=CNT08 USAGE=OUTPUT.City/State
+:DATAI HELP='FLD/CNT09' VAR=CNT09 USAGE=OUTPUT.Country or region
+:DATAI HELP='FLD/CNT10' VAR=CNT10 USAGE=OUTPUT.Postal code
+:DATAI HELP='FLD/CNT11' VAR=CNT11 USAGE=OUTPUT.National language version
+:DATAI HELP='FLD/CNT12' VAR=CNT12 USAGE=OUTPUT.Media for mailing fixes
+:DATAI HELP='FLD/CNT13' VAR=CNT13 USAGE=OUTPUT.E-mail address
 :EDATA.
 :EPANEL.
 :PANEL NAME=WRKSRVPVD KEYL=LSKEYS HELP=WRKSRVPVD ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Service Providers
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PVDS.(No service providers)
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display
-:LISTACT OPTION=9 ENTER='RETURN 9'.9=Send test request
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=CPNAME USAGE=OUTPUT.Control Point
-:LISTCOL VAR=NETID USAGE=OUTPUT.Network ID
-:LISTCOL VAR=CNNTYPE USAGE=OUTPUT.Connection
-:LISTCOL VAR=PVDTEXT USAGE=OUTPUT.Description
+:LISTACT HELP='WRKSRVPVD/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display
+:LISTACT HELP='WRKSRVPVD/OPTIONS' OPTION=9 ENTER='RETURN 9'.9=Send test request
+:LISTCOL HELP='WRKSRVPVD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/CPNAME' VAR=CPNAME USAGE=OUTPUT.Control Point
+:LISTCOL HELP='FLD/NETID' VAR=NETID USAGE=OUTPUT.Network ID
+:LISTCOL HELP='FLD/CNNTYPE' VAR=CNNTYPE USAGE=OUTPUT.Connection
+:LISTCOL HELP='FLD/PVDTEXT' VAR=PVDTEXT USAGE=OUTPUT.Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPSRVSTS KEYL=MNKEYS HELP=DSPSRVSTS ENTER='RETURN 0' TOPSEP=SYSNAM.Display Service Status
 :DATA DEPTH='*'.
-:DATAI VAR=SRV01 USAGE=OUTPUT.Job
-:DATAI VAR=SRV02 USAGE=OUTPUT.Serviced by job
-:DATAI VAR=SRV03 USAGE=OUTPUT.Trace active
-:DATAI VAR=SRV04 USAGE=OUTPUT.Trace sessions
+:DATAI HELP='FLD/SRV01' VAR=SRV01 USAGE=OUTPUT.Job
+:DATAI HELP='FLD/SRV02' VAR=SRV02 USAGE=OUTPUT.Serviced by job
+:DATAI HELP='FLD/SRV03' VAR=SRV03 USAGE=OUTPUT.Trace active
+:DATAI HELP='FLD/SRV04' VAR=SRV04 USAGE=OUTPUT.Trace sessions
 :EDATA.
 :EPANEL.
 :HELP NAME=WRKCNTINF.Work with Support Contact Information - Help
@@ -114,5 +116,110 @@ is configured: reports are prepared and kept.
 :HELP NAME=DSPSRVSTS.Display Service Status - Help
 :P.Whether a job is being serviced from another job and which traces
 collect its events.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MNKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKCNTINF/OPT2'.Display service contact information
+:P.Option 2. Display service contact information.
+:EHELP.
+:HELP NAME='WRKCNTINF/OPT3'.Work with service providers
+:P.Option 3. Runs the WRKSRVPVD command&colon. Work with service
+providers.
+:EHELP.
+:HELP NAME='FLD/CNT01'.Company
+:P.The company shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT02'.Contact
+:P.The contact shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT03'.Primary telephone
+:P.The primary telephone shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT04'.Alternative telephone
+:P.The alternative telephone shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT05'.Primary fax
+:P.The primary fax shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT06'.Alternative fax
+:P.The alternative fax shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT07'.Street address
+:P.The street address shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT08'.City/State
+:P.The city/State shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT09'.Country or region
+:P.The country or region shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT10'.Postal code
+:P.The postal code shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT11'.National language version
+:P.The national language version shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT12'.Media for mailing fixes
+:P.The media for mailing fixes shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNT13'.E-mail address
+:P.The e-mail address shown for what the display is about.
+:EHELP.
+:HELP NAME='KEYS/LSKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKSRVPVD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/CPNAME'.Control Point
+:P.The control Point of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NETID'.Network ID
+:P.The network ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CNNTYPE'.Connection
+:P.The connection of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PVDTEXT'.Description
+:P.The description of each entry in the list.
+:EHELP.
+:HELP NAME='WRKSRVPVD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.9=Send test request
+:PD.Type 9 next to an entry and press Enter to send test request it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SRV01'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/SRV02'.Serviced by job
+:P.The serviced by job shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRV03'.Trace active
+:P.The trace active shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRV04'.Trace sessions
+:P.The trace sessions shown for what the display is about.
 :EHELP.
 :EPNLGRP.

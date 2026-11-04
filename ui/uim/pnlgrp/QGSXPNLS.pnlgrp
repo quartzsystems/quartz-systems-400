@@ -49,7 +49,7 @@
 :VAR NAME=ANZTEXT CLASS=TEXTCL.
 :LISTDEF NAME=PRBS VARS='OPT PRBID PRBSTS PRBTEXT'.
 :LISTDEF NAME=NOTES VARS='NOTE'.
-:KEYL NAME=PBKEYS.
+:KEYL HELP='KEYS/PBKEYS' NAME=PBKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -59,7 +59,7 @@
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Report prepared problems
 :EKEYL.
-:KEYL NAME=DSKEYS.
+:KEYL HELP='KEYS/DSKEYS' NAME=DSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -67,7 +67,7 @@
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=MNKEYS.
+:KEYL HELP='KEYS/MNKEYS' NAME=MNKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
@@ -76,88 +76,88 @@
 :PANEL NAME=WRKPRB KEYL=PBKEYS HELP=WRKPRB ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Problems
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PRBS.(No problems logged)
-:LISTACT OPTION=2 ENTER='RETURN 2'.2=Change
-:LISTACT OPTION=4 ENTER='RETURN 4'.4=Delete
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display details
-:LISTACT OPTION=6 ENTER='RETURN 6'.6=Print details
-:LISTACT OPTION=8 ENTER='RETURN 8'.8=Work with problem
-:LISTACT OPTION=9 ENTER='RETURN 9'.9=Work with alerts
-:LISTACT OPTION=12 ENTER='RETURN 12'.12=Enter text
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=PRBID USAGE=OUTPUT.Problem ID
-:LISTCOL VAR=PRBSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=PRBTEXT USAGE=OUTPUT.Problem Description
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=2 ENTER='RETURN 2'.2=Change
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=4 ENTER='RETURN 4'.4=Delete
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display details
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=6 ENTER='RETURN 6'.6=Print details
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=8 ENTER='RETURN 8'.8=Work with problem
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=9 ENTER='RETURN 9'.9=Work with alerts
+:LISTACT HELP='WRKPRB/OPTIONS' OPTION=12 ENTER='RETURN 12'.12=Enter text
+:LISTCOL HELP='WRKPRB/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/PRBID' VAR=PRBID USAGE=OUTPUT.Problem ID
+:LISTCOL HELP='FLD/PRBSTS' VAR=PRBSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/PRBTEXT' VAR=PRBTEXT USAGE=OUTPUT.Problem Description
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPPRB KEYL=DSKEYS HELP=DSPPRB ENTER='RETURN 0' TOPSEP=SYSNAM.Display Problem Details
 :DATA DEPTH=15.
-:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
-:DATAI VAR=PRBSTS USAGE=OUTPUT.Status
-:DATAI VAR=PRBTYPE USAGE=OUTPUT.Problem type
-:DATAI VAR=PRBSEV USAGE=OUTPUT.Severity
-:DATAI VAR=PRBTEXT USAGE=OUTPUT.Description
-:DATAI VAR=PRBREF USAGE=OUTPUT.Reference code
-:DATAI VAR=PRBRSRC USAGE=OUTPUT.Resource name
-:DATAI VAR=PRBSYS USAGE=OUTPUT.Origin system
-:DATAI VAR=PRBODATE USAGE=OUTPUT.Date opened
-:DATAI VAR=PRBOTIME USAGE=OUTPUT.Time opened
-:DATAI VAR=PRBCDATE USAGE=OUTPUT.Date last changed
-:DATAI VAR=PRBCTIME USAGE=OUTPUT.Time last changed
-:DATAI VAR=PRBASGN USAGE=OUTPUT.Assigned to
-:DATAI VAR=PRBRPT USAGE=OUTPUT.Report prepared
-:DATAI VAR=PRBSYMP USAGE=OUTPUT.Symptom string
+:DATAI HELP='FLD/PRBID' VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI HELP='FLD/PRBSTS' VAR=PRBSTS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/PRBTYPE' VAR=PRBTYPE USAGE=OUTPUT.Problem type
+:DATAI HELP='FLD/PRBSEV' VAR=PRBSEV USAGE=OUTPUT.Severity
+:DATAI HELP='FLD/PRBTEXT' VAR=PRBTEXT USAGE=OUTPUT.Description
+:DATAI HELP='FLD/PRBREF' VAR=PRBREF USAGE=OUTPUT.Reference code
+:DATAI HELP='FLD/PRBRSRC' VAR=PRBRSRC USAGE=OUTPUT.Resource name
+:DATAI HELP='FLD/PRBSYS' VAR=PRBSYS USAGE=OUTPUT.Origin system
+:DATAI HELP='FLD/PRBODATE' VAR=PRBODATE USAGE=OUTPUT.Date opened
+:DATAI HELP='FLD/PRBOTIME' VAR=PRBOTIME USAGE=OUTPUT.Time opened
+:DATAI HELP='FLD/PRBCDATE' VAR=PRBCDATE USAGE=OUTPUT.Date last changed
+:DATAI HELP='FLD/PRBCTIME' VAR=PRBCTIME USAGE=OUTPUT.Time last changed
+:DATAI HELP='FLD/PRBASGN' VAR=PRBASGN USAGE=OUTPUT.Assigned to
+:DATAI HELP='FLD/PRBRPT' VAR=PRBRPT USAGE=OUTPUT.Report prepared
+:DATAI HELP='FLD/PRBSYMP' VAR=PRBSYMP USAGE=OUTPUT.Symptom string
 :EDATA.
 :LIST DEPTH='*' LISTDEF=NOTES.(No notes)
-:LISTCOL VAR=NOTE USAGE=OUTPUT.Notes
+:LISTCOL HELP='FLD/NOTE' VAR=NOTE USAGE=OUTPUT.Notes
 :ELIST.
 :EPANEL.
 :PANEL NAME=WRKPRBW KEYL=MNKEYS HELP=WRKPRBW ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Problem
 :DATA DEPTH=3.
-:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
-:DATAI VAR=PRBSTS USAGE=OUTPUT.Status
-:DATAI VAR=PRBTEXT USAGE=OUTPUT.Problem
+:DATAI HELP='FLD/PRBID' VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI HELP='FLD/PRBSTS' VAR=PRBSTS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/PRBTEXT' VAR=PRBTEXT USAGE=OUTPUT.Problem
 :EDATA.
 :MENU DEPTH='*' OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='RETURN 101'.Analyze problem
-:MENUI OPTION=2 ACTION='RETURN 102'.Report problem
-:MENUI OPTION=3 ACTION='RETURN 103'.Display problem details
-:MENUI OPTION=4 ACTION='RETURN 104'.Enter text about the problem
-:MENUI OPTION=5 ACTION='RETURN 105'.Close problem
+:MENUI HELP='WRKPRBW/OPT1' OPTION=1 ACTION='RETURN 101'.Analyze problem
+:MENUI HELP='WRKPRBW/OPT2' OPTION=2 ACTION='RETURN 102'.Report problem
+:MENUI HELP='WRKPRBW/OPT3' OPTION=3 ACTION='RETURN 103'.Display problem details
+:MENUI HELP='WRKPRBW/OPT4' OPTION=4 ACTION='RETURN 104'.Enter text about the problem
+:MENUI HELP='WRKPRBW/OPT5' OPTION=5 ACTION='RETURN 105'.Close problem
 :EMENU.
 :EPANEL.
 :PANEL NAME=PRBNOTE KEYL=MNKEYS HELP=PRBNOTE ENTER='RETURN 0' TOPSEP=SYSNAM.Enter Text About the Problem
 :DATA DEPTH=2.
-:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
-:DATAI VAR=PRBTEXT USAGE=OUTPUT.Problem
+:DATAI HELP='FLD/PRBID' VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI HELP='FLD/PRBTEXT' VAR=PRBTEXT USAGE=OUTPUT.Problem
 :EDATA.
 :TOPINST.Type text, press Enter.
 :DATA DEPTH='*'.
-:DATAI VAR=NEWNOTE USAGE=INOUT CSRLOC.Text
+:DATAI HELP='FLD/NEWNOTE' VAR=NEWNOTE USAGE=INOUT CSRLOC.Text
 :EDATA.
 :EPANEL.
 :PANEL NAME=ANZPRB1 KEYL=MNKEYS HELP=ANZPRB1 ENTER='RETURN 1' TOPSEP=SYSNAM.Analyze a New Problem
 :MENU DEPTH='*' OPTIONS=OPTION.Select the area the problem is in:
-:MENUI OPTION=1 ACTION='RETURN 201'.A job or program ended, looped or waited
-:MENUI OPTION=2 ACTION='RETURN 202'.A message was shown
-:MENUI OPTION=3 ACTION='RETURN 203'.A display, printer, tape, optical or disk device
-:MENUI OPTION=4 ACTION='RETURN 204'.Communications or a remote system
-:MENUI OPTION=5 ACTION='RETURN 205'.Performance
+:MENUI HELP='ANZPRB1/OPT1' OPTION=1 ACTION='RETURN 201'.A job or program ended, looped or waited
+:MENUI HELP='ANZPRB1/OPT2' OPTION=2 ACTION='RETURN 202'.A message was shown
+:MENUI HELP='ANZPRB1/OPT3' OPTION=3 ACTION='RETURN 203'.A display, printer, tape, optical or disk device
+:MENUI HELP='ANZPRB1/OPT4' OPTION=4 ACTION='RETURN 204'.Communications or a remote system
+:MENUI HELP='ANZPRB1/OPT5' OPTION=5 ACTION='RETURN 205'.Performance
 :EMENU.
 :EPANEL.
 :PANEL NAME=ANZPRB2 KEYL=MNKEYS HELP=ANZPRB2 ENTER='RETURN 0' TOPSEP=SYSNAM.Describe the Problem
 :TOPINST.Type choices, press Enter.
 :DATA DEPTH='*'.
-:DATAI VAR=ANZMSGID USAGE=INOUT CSRLOC.Message identifier
-:DATAI VAR=ANZOBJ USAGE=INOUT.Job, program, device or line
-:DATAI VAR=ANZSTOP USAGE=INOUT.Stops your work (Y, N)
-:DATAI VAR=ANZTEXT USAGE=INOUT.Description
+:DATAI HELP='FLD/ANZMSGID' VAR=ANZMSGID USAGE=INOUT CSRLOC.Message identifier
+:DATAI HELP='FLD/ANZOBJ' VAR=ANZOBJ USAGE=INOUT.Job, program, device or line
+:DATAI HELP='FLD/ANZSTOP' VAR=ANZSTOP USAGE=INOUT.Stops your work (Y, N)
+:DATAI HELP='FLD/ANZTEXT' VAR=ANZTEXT USAGE=INOUT.Description
 :EDATA.
 :EPANEL.
 :PANEL NAME=ANZPRB3 KEYL=MNKEYS HELP=ANZPRB3 ENTER='RETURN 0' TOPSEP=SYSNAM.Problem Analysis Complete
 :DATA DEPTH=3.
-:DATAI VAR=PRBID USAGE=OUTPUT.Problem ID
-:DATAI VAR=PRBSTS USAGE=OUTPUT.Status
-:DATAI VAR=PRBSYMP USAGE=OUTPUT.Symptom string
+:DATAI HELP='FLD/PRBID' VAR=PRBID USAGE=OUTPUT.Problem ID
+:DATAI HELP='FLD/PRBSTS' VAR=PRBSTS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/PRBSYMP' VAR=PRBSYMP USAGE=OUTPUT.Symptom string
 :EDATA.
 :TOPINST.Press Enter to continue.
 :EPANEL.
@@ -188,5 +188,154 @@ program, device or line involved. The description is the problem's text.
 :EHELP.
 :HELP NAME=ANZPRB3.Problem Analysis Complete - Help
 :P.The problem is in the problem log, ready to report. WRKPRB shows it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/PBKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Report prepared problems
+:PD.Report prepared problems.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKPRB/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/PRBID'.Problem ID
+:P.The problem ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PRBSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PRBTEXT'.Problem Description
+:P.The problem Description of each entry in the list.
+:EHELP.
+:HELP NAME='WRKPRB/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to display details it.
+:PT.6=Print details
+:PD.Type 6 next to an entry and press Enter to print details it.
+:PT.8=Work with problem
+:PD.Type 8 next to an entry and press Enter to work with problem it.
+:PT.9=Work with alerts
+:PD.Type 9 next to an entry and press Enter to work with alerts it.
+:PT.12=Enter text
+:PD.Type 12 next to an entry and press Enter to enter text it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/DSKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/PRBTYPE'.Problem type
+:P.The problem type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBSEV'.Severity
+:P.A message severity from 0 to 99. Higher numbers mean more serious
+conditions.
+:EHELP.
+:HELP NAME='FLD/PRBREF'.Reference code
+:P.The reference code shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBRSRC'.Resource name
+:P.The hardware resource name, as WRKHDWRSC shows it.
+:EHELP.
+:HELP NAME='FLD/PRBSYS'.Origin system
+:P.The origin system shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBODATE'.Date opened
+:P.The date opened shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBOTIME'.Time opened
+:P.The time opened shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBCDATE'.Date last changed
+:P.The date last changed shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBCTIME'.Time last changed
+:P.The time last changed shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBASGN'.Assigned to
+:P.The assigned to shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBRPT'.Report prepared
+:P.The report prepared shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRBSYMP'.Symptom string
+:P.The symptom string shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NOTE'.Notes
+:P.The notes of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/MNKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKPRBW/OPT1'.Analyze problem
+:P.Option 1. Analyze problem.
+:EHELP.
+:HELP NAME='WRKPRBW/OPT2'.Report problem
+:P.Option 2. Report problem.
+:EHELP.
+:HELP NAME='WRKPRBW/OPT3'.Display problem details
+:P.Option 3. Display problem details.
+:EHELP.
+:HELP NAME='WRKPRBW/OPT4'.Enter text about the problem
+:P.Option 4. Enter text about the problem.
+:EHELP.
+:HELP NAME='WRKPRBW/OPT5'.Close problem
+:P.Option 5. Close problem.
+:EHELP.
+:HELP NAME='FLD/NEWNOTE'.Text
+:P.Type the text.
+:EHELP.
+:HELP NAME='ANZPRB1/OPT1'.A job or program ended, looped or waited
+:P.Option 1. A job or program ended, looped or waited.
+:EHELP.
+:HELP NAME='ANZPRB1/OPT2'.A message was shown
+:P.Option 2. A message was shown.
+:EHELP.
+:HELP NAME='ANZPRB1/OPT3'.A display, printer, tape, optical or disk device
+:P.Option 3. A display, printer, tape, optical or disk device.
+:EHELP.
+:HELP NAME='ANZPRB1/OPT4'.Communications or a remote system
+:P.Option 4. Communications or a remote system.
+:EHELP.
+:HELP NAME='ANZPRB1/OPT5'.Performance
+:P.Option 5. Performance.
+:EHELP.
+:HELP NAME='FLD/ANZMSGID'.Message identifier
+:P.A message identifier&colon. three letters and four hexadecimal
+digits, CPF1234 for example.
+:EHELP.
+:HELP NAME='FLD/ANZOBJ'.Job, program, device or line
+:P.Type the job, program, device or line.
+:EHELP.
+:HELP NAME='FLD/ANZSTOP'.Stops your work (Y, N)
+:P.Type the stops your work (Y, N).
+:EHELP.
+:HELP NAME='FLD/ANZTEXT'.Description
+:P.Type the description.
 :EHELP.
 :EPNLGRP.

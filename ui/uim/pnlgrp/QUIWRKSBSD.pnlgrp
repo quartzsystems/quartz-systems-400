@@ -16,7 +16,7 @@
 :VAR NAME=SBSDLIB CLASS=NAMECL.
 :VAR NAME=SBSDTEXT CLASS=TEXTCL.
 :LISTDEF NAME=SBSDS VARS='OPT SBSD SBSDLIB SBSDTEXT'.
-:KEYL NAME=SDKEYS.
+:KEYL HELP='KEYS/SDKEYS' NAME=SDKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -33,17 +33,17 @@
 :PANEL NAME=WRKSBSD KEYL=SDKEYS HELP=WRKSBSD ENTER='RETURN 1' TOPSEP=SPACE.Work with Subsystem Descriptions
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=SBSDS VIEWS=2 EXTACT=YES.(No subsystem descriptions selected)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1'.1=Create
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGSBSD SBSD(&SBSDLIB./&SBSD.)'.2=Change
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD ?DLTSBSD SBSD(&SBSDLIB./&SBSD.)'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPSBSD SBSD(&SBSDLIB./&SBSD.)'.5=Display
-:LISTACT OPTION=8 ACTFOR=LISTE ENTER='CMD WRKSBSJOB SBS(&SBSD.)'.8=Work with subsystem jobs
-:LISTACT OPTION=9 ACTFOR=LISTE ENTER='CMD STRSBS SBSD(&SBSDLIB./&SBSD.)'.9=Start subsystem
-:LISTACT OPTION=10 ACTFOR=LISTE ENTER='CMD ?ENDSBS SBS(&SBSD.)'.10=End subsystem
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=SBSD USAGE=OUTPUT EXTACT=YES.Subsystem
-:LISTCOL VAR=SBSDLIB USAGE=OUTPUT EXTACT=YES.Library
-:LISTCOL VAR=SBSDTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1'.1=Create
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGSBSD SBSD(&SBSDLIB./&SBSD.)'.2=Change
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD ?DLTSBSD SBSD(&SBSDLIB./&SBSD.)'.4=Delete
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPSBSD SBSD(&SBSDLIB./&SBSD.)'.5=Display
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=8 ACTFOR=LISTE ENTER='CMD WRKSBSJOB SBS(&SBSD.)'.8=Work with subsystem jobs
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=9 ACTFOR=LISTE ENTER='CMD STRSBS SBSD(&SBSDLIB./&SBSD.)'.9=Start subsystem
+:LISTACT HELP='WRKSBSD/OPTIONS' OPTION=10 ACTFOR=LISTE ENTER='CMD ?ENDSBS SBS(&SBSD.)'.10=End subsystem
+:LISTCOL HELP='WRKSBSD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/SBSD' VAR=SBSD USAGE=OUTPUT EXTACT=YES.Subsystem
+:LISTCOL HELP='FLD/SBSDLIB' VAR=SBSDLIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL HELP='FLD/SBSDTEXT' VAR=SBSDTEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT SBSD SBSDLIB SBSDTEXT'.
 :LISTVIEW COLS='OPT SBSD SBSDLIB'.
 :ELIST.
@@ -53,5 +53,68 @@
 :P.The subsystem descriptions the name selects. Type an option next to
 one to change, display, start or end it; option 1 on the blank first
 line creates one with the name typed on the command line.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SDKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display names only
+:PD.Shows the list with the names alone, so more fit on a page.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Repeat position to
+:PD.Repeat position to.
+:PT.F17=Position to
+:PD.Positions the list at the name typed on the command line.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKSBSD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/SBSD'.Subsystem
+:P.The subsystem of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SBSDLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SBSDTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKSBSD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Subsystem Description (CHGSBSD) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Subsystem Description (DLTSBSD) command is prompted for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Subsystem Description (DSPSBSD) command runs for the entry.
+:PT.8=Work with subsystem jobs
+:PD.Type 8 next to an entry and press Enter to work with subsystem jobs
+it. The Work with Subsystem Jobs (WRKSBSJOB) command runs for the entry.
+:PT.9=Start subsystem
+:PD.Type 9 next to an entry and press Enter to start subsystem it. The
+Start Subsystem (STRSBS) command runs for the entry.
+:PT.10=End subsystem
+:PD.Type 10 next to an entry and press Enter to end subsystem it. The
+End Subsystem (ENDSBS) command is prompted for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

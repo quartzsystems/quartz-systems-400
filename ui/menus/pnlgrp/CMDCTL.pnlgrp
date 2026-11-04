@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDCTL'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=ENDCMTCTL PNLGRP=QHDBCMD.
+:IMPORT NAME=STRCMTCTL PNLGRP=QHDBCMD.
+:IMPORT NAME=TFRCTL PNLGRP=QHCLCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -46,12 +49,12 @@
 :MENUI OPTION=20 ACTION='CMD ?CRTCTLRWS'.
 :MENUI OPTION=21 ACTION='CMD ?CRTCTLTAP'.
 :MENUI OPTION=22 ACTION='CMD ?CRTCTLVWS'.
-:MENUI OPTION=23 ACTION='CMD ?ENDCMTCTL'.End Commitment Control  ENDCMTCTL
+:MENUI OPTION=23 ACTION='CMD ?ENDCMTCTL' HELP=ENDCMTCTL.End Commitment Control  ENDCMTCTL
 :MENUI OPTION=24 ACTION='CMD ?ENDCTLRCY'.
 :MENUI OPTION=25 ACTION='CMD ?PMTCTL'.
 :MENUI OPTION=26 ACTION='CMD ?RSMCTLRCY'.
-:MENUI OPTION=27 ACTION='CMD ?STRCMTCTL'.Start Commitment Control  STRCMTCTL
-:MENUI OPTION=28 ACTION='CMD ?TFRCTL'.Transfer Control  TFRCTL
+:MENUI OPTION=27 ACTION='CMD ?STRCMTCTL' HELP=STRCMTCTL.Start Commitment Control  STRCMTCTL
+:MENUI OPTION=28 ACTION='CMD ?TFRCTL' HELP=TFRCTL.Transfer Control  TFRCTL
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -59,5 +62,21 @@
 :HELP NAME=HLPCMDCTL.Control Commands - Help
 :P.Control Commands: every command whose name carries CTL after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

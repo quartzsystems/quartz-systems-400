@@ -19,7 +19,7 @@
 :EKEYL.
 :PANEL NAME=DSPLOG KEYL=KEYS HELP=DSPLOGH ENTER='RETURN 0' TOPSEP=SPACE.Display History Log Contents
 :LIST DEPTH='*' LISTDEF=LOG SCROLL=YES.
-:LISTCOL VAR=LINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/LINE' VAR=LINE USAGE=OUTPUT.
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -30,5 +30,9 @@ Place the cursor on a message and press F1 to see all of it.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/LINE'.LINE
+:P.The line description.
 :EHELP.
 :EPNLGRP.

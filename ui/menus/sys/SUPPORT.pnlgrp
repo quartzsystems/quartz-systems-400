@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SUPPORT'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -23,14 +23,14 @@
 :EKEYL.
 :PANEL NAME=SUPPORT HELP=HLPSUPPORT KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.User Support and Education
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='HELP HLPUSEHELP'.How to use help
-:MENUI OPTION=2 ACTION='CMD STRSCHIDX'.Search system help index
-:MENUI OPTION=3 ACTION='MENU MAJOR'.How to use commands
-:MENUI OPTION=4 ACTION='CMD ASKQST'.Question and answer
-:MENUI OPTION=5 ACTION='MENU INFO'.QS/400 publications
-:MENUI OPTION=7 ACTION='MENU USERHELP'.How to handle system problems
-:MENUI OPTION=8 ACTION='MENU PROBLEM'.Problem handling
-:MENUI OPTION=9 ACTION='CMD STREDU'.Online education
+:MENUI HELP='SUPPORT/OPT1' OPTION=1 ACTION='HELP HLPUSEHELP'.How to use help
+:MENUI HELP='SUPPORT/OPT2' OPTION=2 ACTION='CMD STRSCHIDX'.Search system help index
+:MENUI HELP='SUPPORT/OPT3' OPTION=3 ACTION='MENU MAJOR'.How to use commands
+:MENUI HELP='SUPPORT/OPT4' OPTION=4 ACTION='CMD ASKQST'.Question and answer
+:MENUI HELP='SUPPORT/OPT5' OPTION=5 ACTION='MENU INFO'.QS/400 publications
+:MENUI HELP='SUPPORT/OPT7' OPTION=7 ACTION='MENU USERHELP'.How to handle system problems
+:MENUI HELP='SUPPORT/OPT8' OPTION=8 ACTION='MENU PROBLEM'.Problem handling
+:MENUI HELP='SUPPORT/OPT9' OPTION=9 ACTION='CMD STREDU'.Online education
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -48,5 +48,46 @@ line. With the cursor elsewhere, the help is about the whole display.
 :P.In a help window, F2 shows the help for the whole display, Page Down and
 Page Up move through a long text, F12 closes the window and F3 leaves
 help altogether.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='SUPPORT/OPT1'.How to use help
+:P.Option 1. Shows help&colon. How to use help.
+:EHELP.
+:HELP NAME='SUPPORT/OPT2'.Search system help index
+:P.Option 2. Runs the STRSCHIDX command&colon. Search system help index.
+:EHELP.
+:HELP NAME='SUPPORT/OPT3'.How to use commands
+:P.Option 3. Shows menu MAJOR&colon. How to use commands.
+:EHELP.
+:HELP NAME='SUPPORT/OPT4'.Question and answer
+:P.Option 4. Runs the ASKQST command&colon. Question and answer.
+:EHELP.
+:HELP NAME='SUPPORT/OPT5'.QS/400 publications
+:P.Option 5. Shows menu INFO&colon. QS/400 publications.
+:EHELP.
+:HELP NAME='SUPPORT/OPT7'.How to handle system problems
+:P.Option 7. Shows menu USERHELP&colon. How to handle system problems.
+:EHELP.
+:HELP NAME='SUPPORT/OPT8'.Problem handling
+:P.Option 8. Shows menu PROBLEM&colon. Problem handling.
+:EHELP.
+:HELP NAME='SUPPORT/OPT9'.Online education
+:P.Option 9. Runs the STREDU command&colon. Online education.
 :EHELP.
 :EPNLGRP.

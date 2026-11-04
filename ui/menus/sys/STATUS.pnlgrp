@@ -11,7 +11,16 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='STATUS'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKACTJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKCFGSTS PNLGRP=QHDCCMD1.
+:IMPORT NAME=WRKDSKSTS PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSBMJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSBS PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSHRPOOL PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSYSSTS PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKUSRJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKWTR PNLGRP=QHSPCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,16 +33,16 @@
 :EKEYL.
 :PANEL NAME=STATUS HELP=HLPSTATUS KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Status
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKWTR'.Work with printers
-:MENUI OPTION=2 ACTION='CMD WRKUSRJOB'.Work with jobs
-:MENUI OPTION=3 ACTION='CMD WRKSBMJOB'.Work with submitted jobs
-:MENUI OPTION=4 ACTION='CMD WRKACTJOB'.Work with all active job statistics
-:MENUI OPTION=5 ACTION='CMD WRKSBS'.Work with active subsystems
-:MENUI OPTION=6 ACTION='CMD WRKSYSSTS'.Display system status
-:MENUI OPTION=7 ACTION='CMD ?WRKCFGSTS'.Work with configuration status
-:MENUI OPTION=8 ACTION='CMD WRKDSKSTS'.Work with disk status
-:MENUI OPTION=9 ACTION='MENU CMNSTS'.Communications status
-:MENUI OPTION=10 ACTION='CMD WRKSHRPOOL'.Work with shared pools
+:MENUI HELP=WRKWTR OPTION=1 ACTION='CMD WRKWTR'.Work with printers
+:MENUI HELP=WRKUSRJOB OPTION=2 ACTION='CMD WRKUSRJOB'.Work with jobs
+:MENUI HELP=WRKSBMJOB OPTION=3 ACTION='CMD WRKSBMJOB'.Work with submitted jobs
+:MENUI HELP=WRKACTJOB OPTION=4 ACTION='CMD WRKACTJOB'.Work with all active job statistics
+:MENUI HELP=WRKSBS OPTION=5 ACTION='CMD WRKSBS'.Work with active subsystems
+:MENUI HELP=WRKSYSSTS OPTION=6 ACTION='CMD WRKSYSSTS'.Display system status
+:MENUI HELP=WRKCFGSTS OPTION=7 ACTION='CMD ?WRKCFGSTS'.Work with configuration status
+:MENUI HELP=WRKDSKSTS OPTION=8 ACTION='CMD WRKDSKSTS'.Work with disk status
+:MENUI HELP='STATUS/OPT9' OPTION=9 ACTION='MENU CMNSTS'.Communications status
+:MENUI HELP=WRKSHRPOOL OPTION=10 ACTION='CMD WRKSHRPOOL'.Work with shared pools
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -43,5 +52,27 @@ disks and devices.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='STATUS/OPT9'.Communications status
+:P.Option 9. Shows menu CMNSTS&colon. Communications status.
 :EHELP.
 :EPNLGRP.

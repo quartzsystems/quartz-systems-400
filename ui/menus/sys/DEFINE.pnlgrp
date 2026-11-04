@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='DEFINE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKCNTINF PNLGRP=QHSXCMD.
+:IMPORT NAME=WRKSYSVAL PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +26,14 @@
 :EKEYL.
 :PANEL NAME=DEFINE HELP=HLPDEFINE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Define or Change the System
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU CFG'.Configuration
-:MENUI OPTION=2 ACTION='MENU LICPGM'.Work with licensed programs
-:MENUI OPTION=3 ACTION='MENU SECURITY'.Security
-:MENUI OPTION=4 ACTION='CMD WRKCNTINF'.Work with support contact information
-:MENUI OPTION=5 ACTION='MENU RESOURCE'.System resources
-:MENUI OPTION=6 ACTION='MENU PTF'.Program temporary fix
-:MENUI OPTION=8 ACTION='CMD WRKSYSVAL'.Work with system values
-:MENUI OPTION=9 ACTION='MENU CRQADM'.Change request administration
+:MENUI HELP='DEFINE/OPT1' OPTION=1 ACTION='MENU CFG'.Configuration
+:MENUI HELP='DEFINE/OPT2' OPTION=2 ACTION='MENU LICPGM'.Work with licensed programs
+:MENUI HELP='DEFINE/OPT3' OPTION=3 ACTION='MENU SECURITY'.Security
+:MENUI HELP=WRKCNTINF OPTION=4 ACTION='CMD WRKCNTINF'.Work with support contact information
+:MENUI HELP='DEFINE/OPT5' OPTION=5 ACTION='MENU RESOURCE'.System resources
+:MENUI HELP='DEFINE/OPT6' OPTION=6 ACTION='MENU PTF'.Program temporary fix
+:MENUI HELP=WRKSYSVAL OPTION=8 ACTION='CMD WRKSYSVAL'.Work with system values
+:MENUI HELP='DEFINE/OPT9' OPTION=9 ACTION='MENU CRQADM'.Change request administration
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -41,5 +43,42 @@ system values that shape everything else.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='DEFINE/OPT1'.Configuration
+:P.Option 1. Shows menu CFG&colon. Configuration.
+:EHELP.
+:HELP NAME='DEFINE/OPT2'.Work with licensed programs
+:P.Option 2. Shows menu LICPGM&colon. Work with licensed programs.
+:EHELP.
+:HELP NAME='DEFINE/OPT3'.Security
+:P.Option 3. Shows menu SECURITY&colon. Security.
+:EHELP.
+:HELP NAME='DEFINE/OPT5'.System resources
+:P.Option 5. Shows menu RESOURCE&colon. System resources.
+:EHELP.
+:HELP NAME='DEFINE/OPT6'.Program temporary fix
+:P.Option 6. Shows menu PTF&colon. Program temporary fix.
+:EHELP.
+:HELP NAME='DEFINE/OPT9'.Change request administration
+:P.Option 9. Shows menu CRQADM&colon. Change request administration.
 :EHELP.
 :EPNLGRP.

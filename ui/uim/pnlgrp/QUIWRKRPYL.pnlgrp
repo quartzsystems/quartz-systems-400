@@ -46,16 +46,16 @@
 :PANEL NAME=WRKRPYLE KEYL=KEYS HELP=WRKRPYLH ENTER='RETURN 0' TOPSEP=SYSNAM.Work with System Reply List Entries
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RPYS VIEWS=2 SCROLL=YES.
-:LISTACT OPTION=2 ENTER='CMD ?CHGRPYLE SEQNBR(&SEQ.)'.2=Change
-:LISTACT OPTION=4 ENTER='CMD ?RMVRPYLE SEQNBR(&SEQ.)'.4=Delete
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=SEQ USAGE=OUTPUT.Sequence Number
-:LISTCOL VAR=MSGID USAGE=OUTPUT.Message ID
-:LISTCOL VAR=RPY USAGE=OUTPUT.Reply
-:LISTCOL VAR=CMPDTA USAGE=OUTPUT.Compare Value
-:LISTCOL VAR=START USAGE=OUTPUT.Compare Start
-:LISTCOL VAR=RPYLONG USAGE=OUTPUT.Reply
-:LISTCOL VAR=DUMP USAGE=OUTPUT.Dump
+:LISTACT HELP='WRKRPYLE/OPTIONS' OPTION=2 ENTER='CMD ?CHGRPYLE SEQNBR(&SEQ.)'.2=Change
+:LISTACT HELP='WRKRPYLE/OPTIONS' OPTION=4 ENTER='CMD ?RMVRPYLE SEQNBR(&SEQ.)'.4=Delete
+:LISTCOL HELP='WRKRPYLE/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/SEQ' VAR=SEQ USAGE=OUTPUT.Sequence Number
+:LISTCOL HELP='FLD/MSGID' VAR=MSGID USAGE=OUTPUT.Message ID
+:LISTCOL HELP='FLD/RPY' VAR=RPY USAGE=OUTPUT.Reply
+:LISTCOL HELP='FLD/CMPDTA' VAR=CMPDTA USAGE=OUTPUT.Compare Value
+:LISTCOL HELP='FLD/START' VAR=START USAGE=OUTPUT.Compare Start
+:LISTCOL HELP='FLD/RPYLONG' VAR=RPYLONG USAGE=OUTPUT.Reply
+:LISTCOL HELP='FLD/DUMP' VAR=DUMP USAGE=OUTPUT.Dump
 :LISTVIEW COLS='OPT SEQ MSGID RPY CMPDTA START'.
 :LISTVIEW COLS='OPT SEQ MSGID RPYLONG DUMP'.
 :ELIST.
@@ -69,5 +69,44 @@ match answers it. F6 adds an entry, 2 changes one, 4 removes one.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display, F5 reads the
 list again, F11 shows each reply whole with the dump setting.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='WRKRPYLE/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/SEQ'.Sequence Number
+:P.The sequence Number of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MSGID'.Message ID
+:P.The message ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RPY'.Reply
+:P.The reply of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CMPDTA'.Compare Value
+:P.The compare Value of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/START'.Compare Start
+:P.The compare Start of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RPYLONG'.Reply
+:P.The reply of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DUMP'.Dump
+:P.The dump of each entry in the list.
+:EHELP.
+:HELP NAME='WRKRPYLE/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Reply List Entry (CHGRPYLE) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Remove
+Reply List Entry (RMVRPYLE) command is prompted for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

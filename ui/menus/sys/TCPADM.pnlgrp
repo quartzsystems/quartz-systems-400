@@ -11,7 +11,14 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='TCPADM'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CFGTCP PNLGRP=QHTOCCMD.
+:IMPORT NAME=CFGTCPAPP PNLGRP=QHTOCCMD.
+:IMPORT NAME=NETSTAT PNLGRP=QHTONCMD.
+:IMPORT NAME=PING PNLGRP=QHTONCMD.
+:IMPORT NAME=SNDTCPSPLF PNLGRP=QHTMCMD.
+:IMPORT NAME=STRTCPFTP PNLGRP=QHTMCMD.
+:IMPORT NAME=WRKACTJOB PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -22,14 +29,14 @@
 :EKEYL.
 :PANEL NAME=TCPADM HELP=HLPTCPADM KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.TCP/IP Administration
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD CFGTCP'.Configure TCP/IP
-:MENUI OPTION=2 ACTION='CMD CFGTCPAPP'.Configure TCP/IP applications
-:MENUI OPTION=7 ACTION='CMD NETSTAT'.Work with TCP/IP network status
-:MENUI OPTION=8 ACTION='CMD ?PING'.Verify TCP/IP connection
-:MENUI OPTION=9 ACTION='CMD ?STRTCPFTP'.Start TCP/IP FTP session
-:MENUI OPTION=10 ACTION='CMD ?STRTCPTELN'.Start TCP/IP TELNET session
-:MENUI OPTION=11 ACTION='CMD ?SNDTCPSPLF'.Send TCP/IP spooled file
-:MENUI OPTION=20 ACTION='CMD WRKACTJOB SBS(QSYSWRK)'.Work with TCP/IP jobs in QSYSWRK subsystem
+:MENUI HELP=CFGTCP OPTION=1 ACTION='CMD CFGTCP'.Configure TCP/IP
+:MENUI HELP=CFGTCPAPP OPTION=2 ACTION='CMD CFGTCPAPP'.Configure TCP/IP applications
+:MENUI HELP=NETSTAT OPTION=7 ACTION='CMD NETSTAT'.Work with TCP/IP network status
+:MENUI HELP=PING OPTION=8 ACTION='CMD ?PING'.Verify TCP/IP connection
+:MENUI HELP=STRTCPFTP OPTION=9 ACTION='CMD ?STRTCPFTP'.Start TCP/IP FTP session
+:MENUI HELP='TCPADM/OPT10' OPTION=10 ACTION='CMD ?STRTCPTELN'.Start TCP/IP TELNET session
+:MENUI HELP=SNDTCPSPLF OPTION=11 ACTION='CMD ?SNDTCPSPLF'.Send TCP/IP spooled file
+:MENUI HELP=WRKACTJOB OPTION=20 ACTION='CMD WRKACTJOB SBS(QSYSWRK)'.Work with TCP/IP jobs in QSYSWRK subsystem
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -39,5 +46,24 @@ the clients that use them.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='TCPADM/OPT10'.Start TCP/IP TELNET session
+:P.Option 10. Runs the STRTCPTELN command&colon. Start TCP/IP TELNET
+session.
 :EHELP.
 :EPNLGRP.

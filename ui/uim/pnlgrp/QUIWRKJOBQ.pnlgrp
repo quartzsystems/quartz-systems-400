@@ -33,7 +33,7 @@
 :VAR NAME=JSTS CLASS=STSCL.
 :LISTDEF NAME=QUEUES VARS='OPT QUEUE LIB JOBS SBS STATUS'.
 :LISTDEF NAME=JOBS VARS='OPT JOB USER NUMBER PTY JSTS'.
-:KEYL NAME=JQKEYS.
+:KEYL HELP='KEYS/JQKEYS' NAME=JQKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -45,7 +45,7 @@
 :KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
 :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
 :EKEYL.
-:KEYL NAME=JOBKEYS.
+:KEYL HELP='KEYS/JOBKEYS' NAME=JOBKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -63,26 +63,26 @@
 :PANEL NAME=QUEUES KEYL=JQKEYS HELP=WRKJOBQ ENTER='RETURN 1' TOPSEP=SPACE.Work with All Job Queues
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=QUEUES.(No job queues)
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOBQ JOBQ(&LIB./&QUEUE.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOBQ JOBQ(&LIB./&QUEUE.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?DLTJOBQ JOBQ(&LIB./&QUEUE.)'.4=Delete
-:LISTACT OPTION=5 ENTER='CMD WRKJOBQ JOBQ(&LIB./&QUEUE.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSJOBQ JOBQ(&LIB./&QUEUE.)'.6=Release
-:LISTACT OPTION=8 ENTER='CMD WRKJOBSCDE'.8=Work with job schedule entries
-:LISTACT OPTION=9 ENTER='CMD WRKJOBQD JOBQ(&LIB./&QUEUE.)'.9=Description
-:LISTACT OPTION=14 ENTER='CMD CLRJOBQ JOBQ(&LIB./&QUEUE.)'.14=Clear
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=QUEUE USAGE=OUTPUT ATCOL=10.Queue
-:LISTCOL VAR=LIB USAGE=OUTPUT ATCOL=25.Library
-:LISTCOL VAR=JOBS USAGE=OUTPUT ATCOL=43.Jobs
-:LISTCOL VAR=SBS USAGE=OUTPUT ATCOL=53.Subsystem
-:LISTCOL VAR=STATUS USAGE=OUTPUT ATCOL=68.Status
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOBQ JOBQ(&LIB./&QUEUE.)'.2=Change
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=3 ENTER='CMD HLDJOBQ JOBQ(&LIB./&QUEUE.)'.3=Hold
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=4 ENTER='CMD ?DLTJOBQ JOBQ(&LIB./&QUEUE.)'.4=Delete
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=5 ENTER='CMD WRKJOBQ JOBQ(&LIB./&QUEUE.)'.5=Work with
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=6 ENTER='CMD RLSJOBQ JOBQ(&LIB./&QUEUE.)'.6=Release
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=8 ENTER='CMD WRKJOBSCDE'.8=Work with job schedule entries
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=9 ENTER='CMD WRKJOBQD JOBQ(&LIB./&QUEUE.)'.9=Description
+:LISTACT HELP='QUEUES/OPTIONS' OPTION=14 ENTER='CMD CLRJOBQ JOBQ(&LIB./&QUEUE.)'.14=Clear
+:LISTCOL HELP='QUEUES/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/QUEUE' VAR=QUEUE USAGE=OUTPUT ATCOL=10.Queue
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT ATCOL=25.Library
+:LISTCOL HELP='FLD/JOBS' VAR=JOBS USAGE=OUTPUT ATCOL=43.Jobs
+:LISTCOL HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT ATCOL=53.Subsystem
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT ATCOL=68.Status
 :ELIST.
 :CMDLINE SIZE=SHORT.Command
 :EPANEL.
 :PANEL NAME=JOBS KEYL=JOBKEYS HELP=WRKJOBQ ENTER='RETURN 1' TOPSEP=SPACE.Work with Job Queue
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=QUEUE USAGE=OUTPUT.Queue
+:DATAI HELP='FLD/QUEUE' VAR=QUEUE USAGE=OUTPUT.Queue
 :DATAIX VAR=LIB USAGE=OUTPUT.
 :DATAIXT.Library
 :DATAIX VAR=QSTS USAGE=OUTPUT.
@@ -90,22 +90,158 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBS.(No jobs in job queue)
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOB.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOB.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOB.)'.6=Release
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT ATCOL=10.Job
-:LISTCOL VAR=USER USAGE=OUTPUT ATCOL=25.User
-:LISTCOL VAR=NUMBER USAGE=OUTPUT ATCOL=40.Number
-:LISTCOL VAR=PTY USAGE=OUTPUT ATCOL=51.Priority
-:LISTCOL VAR=JSTS USAGE=OUTPUT ATCOL=64.Status
+:LISTACT HELP='JOBS/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOB.)'.2=Change
+:LISTACT HELP='JOBS/OPTIONS' OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOB.)'.3=Hold
+:LISTACT HELP='JOBS/OPTIONS' OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End
+:LISTACT HELP='JOBS/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with
+:LISTACT HELP='JOBS/OPTIONS' OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOB.)'.6=Release
+:LISTCOL HELP='JOBS/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT ATCOL=10.Job
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT ATCOL=25.User
+:LISTCOL HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT ATCOL=40.Number
+:LISTCOL HELP='FLD/PTY' VAR=PTY USAGE=OUTPUT ATCOL=51.Priority
+:LISTCOL HELP='FLD/JSTS' VAR=JSTS USAGE=OUTPUT ATCOL=64.Status
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters for options 2, 3 or command
 :EPANEL.
 :HELP NAME=WRKJOBQ.Work with Job Queues - Help
 :P.Job queues with the jobs waiting on them and the subsystem that
 takes them; option 5 shows a queue's jobs.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/JQKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:EPARML.
+:EHELP.
+:HELP NAME='QUEUES/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/QUEUE'.Queue
+:P.The queue of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/JOBS'.Jobs
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/SBS'.Subsystem
+:P.The subsystem of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='QUEUES/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+Queue (CHGJOBQ) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+Queue (HLDJOBQ) command runs for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete Job
+Queue (DLTJOBQ) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Job Queue (WRKJOBQ) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job Queue (RLSJOBQ) command runs for the entry.
+:PT.8=Work with job schedule entries
+:PD.Type 8 next to an entry and press Enter to work with job schedule
+entries it. The Work with Job Schedule Entries (WRKJOBSCDE) command runs
+for the entry.
+:PT.9=Description
+:PD.Type 9 next to an entry and press Enter to description it.
+:PT.14=Clear
+:PD.Type 14 next to an entry and press Enter to clear it. The Clear Job
+Queue (CLRJOBQ) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/JOBKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F6=Submit job
+:PD.Runs SBMJOB.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F21=Subsystem
+:PD.Runs WRKSBS.
+:PT.F22=Work with job schedule entries
+:PD.Runs WRKJOBSCDE.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:EPARML.
+:EHELP.
+:HELP NAME='JOBS/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NUMBER'.Number
+:P.The number of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PTY'.Priority
+:P.The priority of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/JSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='JOBS/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+(CHGJOB) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+(HLDJOB) command runs for the entry.
+:PT.4=End
+:PD.Type 4 next to an entry and press Enter to end it. The End Job
+(ENDJOB) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Job (WRKJOB) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job (RLSJOB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

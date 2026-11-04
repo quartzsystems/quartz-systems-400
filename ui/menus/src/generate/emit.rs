@@ -20,10 +20,50 @@ pub struct Panel<'a> {
     pub f16: (&'a str, &'a str),
     /// A `:MENUGRP.` heading over the items.
     pub group: Option<&'a str>,
-    /// `(option, text, action)`; an empty text is a blank row.
-    pub items: Vec<(u16, String, String)>,
+    /// `(option, text, action, help)`; an empty text is a blank row.
+    pub items: Vec<(u16, String, String, Option<ItemHelp>)>,
     /// The help module's paragraphs.
     pub help: Vec<String>,
+}
+
+/// The help of one menu item.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ItemHelp {
+    /// A module of another group: a command's help.
+    Import {
+        /// The module.
+        module: String,
+        /// Its panel group.
+        group: String,
+    },
+    /// A module of this group, written from the item.
+    Text {
+        /// Its title.
+        title: String,
+        /// Its text.
+        text: String,
+    },
+}
+
+/// The help of the menus' function keys.
+fn keys_help(p: &Panel<'_>) -> String {
+    let mut s = String::from(":HELP NAME=HLPKEYS.Function keys\n:PARML.\n");
+    let mut keys = vec![
+        ("F1=Help", "Shows help for the item the cursor is on; on the title, help for the whole menu."),
+        ("F3=Exit", "Leaves the menu and the menus it was reached from."),
+        ("F4=Prompt", "Prompts the command on the command line, or the command of the option typed."),
+        ("F9=Retrieve", "Puts the last command run back on the command line; press it again for the one before."),
+        ("F12=Cancel", "Returns to the previous menu."),
+    ];
+    if p.info_key {
+        keys.push(("F13=Information Assistant", "Shows the Information Assistant menu."));
+    }
+    keys.push((p.f16.1, "Shows that menu."));
+    for (k, t) in keys {
+        let _ = writeln!(s, ":PT.{}\n:PD.{}", escape(k), escape(t));
+    }
+    s.push_str(":EPARML.\n:EHELP.\n");
+    s
 }
 
 /// Text as UIM reads it: a colon before a letter would start a tag,
@@ -70,7 +110,15 @@ pub fn source(p: &Panel<'_>) -> String {
     s.push_str(":CLASS NAME=NAMECL BASETYPE='CHAR 10'.\n:ECLASS.\n");
     s.push_str(":VAR NAME=OPTION CLASS=OPTCL.\n");
     let _ = writeln!(s, ":VAR NAME=PANELID CLASS=NAMECL VALUE='{}'.", p.name);
-    s.push_str(":KEYL NAME=MENUKEYS.\n");
+    let mut imported = std::collections::BTreeSet::new();
+    for (_, text, _, h) in &p.items {
+        if let (false, Some(ItemHelp::Import { module, group })) = (text.is_empty(), h)
+            && imported.insert(module.clone())
+        {
+            let _ = writeln!(s, ":IMPORT NAME={module} PNLGRP={group}.");
+        }
+    }
+    s.push_str(":KEYL NAME=MENUKEYS HELP=HLPKEYS.\n");
     s.push_str(":KEYI KEY=ENTER ACTION=ENTER.\n");
     s.push_str(":KEYI KEY=HELP ACTION=HELP.\n");
     s.push_str(":KEYI KEY=F1 ACTION=HELP.\n");
@@ -94,8 +142,13 @@ pub fn source(p: &Panel<'_>) -> String {
     if let Some(g) = p.group {
         let _ = writeln!(s, ":MENUGRP.{}", escape(g));
     }
-    for (option, text, action) in &p.items {
-        let _ = writeln!(s, ":MENUI OPTION={option} ACTION='{action}'.{text}");
+    for (option, text, action, h) in &p.items {
+        let help = match (text.is_empty(), h) {
+            (false, Some(ItemHelp::Import { module, .. })) => format!(" HELP={module}"),
+            (false, Some(ItemHelp::Text { .. })) => format!(" HELP=HLPOPT{option}"),
+            _ => String::new(),
+        };
+        let _ = writeln!(s, ":MENUI OPTION={option} ACTION='{action}'{help}.{text}");
     }
     if p.group.is_some() {
         s.push_str(":EMENUGRP.\n");
@@ -107,7 +160,19 @@ pub fn source(p: &Panel<'_>) -> String {
     for para in &p.help {
         let _ = writeln!(s, ":P.{}", escape(para));
     }
-    s.push_str(":EHELP.\n:EPNLGRP.\n");
+    s.push_str(":EHELP.\n");
+    s.push_str(&keys_help(p));
+    for (option, text, _, h) in &p.items {
+        if let (false, Some(ItemHelp::Text { title, text: t })) = (text.is_empty(), h) {
+            let _ = writeln!(
+                s,
+                ":HELP NAME=HLPOPT{option}.{}\n:P.{}\n:EHELP.",
+                escape(title),
+                escape(t)
+            );
+        }
+    }
+    s.push_str(":EPNLGRP.\n");
     s
 }
 
@@ -134,8 +199,16 @@ mod tests {
             f16: ("MENU MAIN", "F16=System main menu"),
             group: Some("Commands"),
             items: vec![
-                (1, "A  CMDA".into(), "CMD ?CMDA".into()),
-                (2, String::new(), "CMD ?B".into()),
+                (
+                    1,
+                    "A  CMDA".into(),
+                    "CMD ?CMDA".into(),
+                    Some(ItemHelp::Import {
+                        module: "CMDA".into(),
+                        group: "QHX".into(),
+                    }),
+                ),
+                (2, String::new(), "CMD ?B".into(), None),
             ],
             help: vec!["Help.".into()],
         };
@@ -144,5 +217,8 @@ mod tests {
         assert!(s.contains(":MENUI OPTION=2 ACTION='CMD ?B'.\n"));
         assert!(s.contains("F13=Information Assistant"));
         assert!(s.ends_with(":EHELP.\n:EPNLGRP.\n"));
+        assert!(s.contains(":IMPORT NAME=CMDA PNLGRP=QHX.\n"));
+        assert!(s.contains(":MENUI OPTION=1 ACTION='CMD ?CMDA' HELP=CMDA.A  CMDA\n"));
+        assert!(s.contains(":KEYL NAME=MENUKEYS HELP=HLPKEYS.\n"));
     }
 }

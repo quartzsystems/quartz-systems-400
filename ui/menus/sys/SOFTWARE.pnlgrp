@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SOFTWARE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPSFWRSC PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,8 +25,8 @@
 :EKEYL.
 :PANEL NAME=SOFTWARE HELP=HLPSOFTWARE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Software Resources
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU LICPGM'.Work with licensed programs
-:MENUI OPTION=2 ACTION='CMD DSPSFWRSC'.Display software resources
+:MENUI HELP='SOFTWARE/OPT1' OPTION=1 ACTION='MENU LICPGM'.Work with licensed programs
+:MENUI HELP=DSPSFWRSC OPTION=2 ACTION='CMD DSPSFWRSC'.Display software resources
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -34,5 +35,27 @@
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='SOFTWARE/OPT1'.Work with licensed programs
+:P.Option 1. Shows menu LICPGM&colon. Work with licensed programs.
 :EHELP.
 :EPNLGRP.

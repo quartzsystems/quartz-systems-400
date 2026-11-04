@@ -11,7 +11,16 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='PTF'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=APYPTF PNLGRP=QHSVCMD.
+:IMPORT NAME=CPYPTF PNLGRP=QHSVCMD.
+:IMPORT NAME=DSPPTF PNLGRP=QHSVCMD.
+:IMPORT NAME=DSPPTFCVR PNLGRP=QHSVCMD.
+:IMPORT NAME=INSPTF PNLGRP=QHSVCMD.
+:IMPORT NAME=LODPTF PNLGRP=QHSVCMD.
+:IMPORT NAME=RMVPTF PNLGRP=QHSVCMD.
+:IMPORT NAME=SNDPTFORD PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKPTFGRP PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,20 +33,20 @@
 :EKEYL.
 :PANEL NAME=PTF HELP=HLPPTF KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Program Temporary Fix
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?LODPTF'.Load a program temporary fix
-:MENUI OPTION=2 ACTION='CMD ?APYPTF'.Apply a program temporary fix
-:MENUI OPTION=3 ACTION='CMD ?CPYPTF'.Copy a program temporary fix
-:MENUI OPTION=4 ACTION='CMD ?RMVPTF'.Remove a program temporary fix
-:MENUI OPTION=5 ACTION='CMD ?DSPPTF'.Display a program temporary fix
-:MENUI OPTION=6 ACTION='CMD ?SNDPTFORD'.Order a program temporary fix
-:MENUI OPTION=7 ACTION='CMD ?INSPTF'.Install a program temporary fix from a list
-:MENUI OPTION=8 ACTION='CMD ?INSPTF LICPGM(*ALL)'.Install program temporary fix package
-:MENUI OPTION=9 ACTION='CMD ?CPYPTFCVR'.Copy PTF Cover Letter
-:MENUI OPTION=10 ACTION='CMD ?DSPPTFCVR'.Display PTF Cover Letter
-:MENUI OPTION=11 ACTION='CMD ?DLTPTF'.Delete a program temporary fix
-:MENUI OPTION=12 ACTION='CMD WRKPTFGRP'.Work with PTF groups
-:MENUI OPTION=13 ACTION='CMD ?CPYPTFGRP'.Copy PTF group
-:MENUI OPTION=70 ACTION='MENU CMDPTF'.Related commands
+:MENUI HELP=LODPTF OPTION=1 ACTION='CMD ?LODPTF'.Load a program temporary fix
+:MENUI HELP=APYPTF OPTION=2 ACTION='CMD ?APYPTF'.Apply a program temporary fix
+:MENUI HELP=CPYPTF OPTION=3 ACTION='CMD ?CPYPTF'.Copy a program temporary fix
+:MENUI HELP=RMVPTF OPTION=4 ACTION='CMD ?RMVPTF'.Remove a program temporary fix
+:MENUI HELP=DSPPTF OPTION=5 ACTION='CMD ?DSPPTF'.Display a program temporary fix
+:MENUI HELP=SNDPTFORD OPTION=6 ACTION='CMD ?SNDPTFORD'.Order a program temporary fix
+:MENUI HELP=INSPTF OPTION=7 ACTION='CMD ?INSPTF'.Install a program temporary fix from a list
+:MENUI HELP=INSPTF OPTION=8 ACTION='CMD ?INSPTF LICPGM(*ALL)'.Install program temporary fix package
+:MENUI HELP='PTF/OPT9' OPTION=9 ACTION='CMD ?CPYPTFCVR'.Copy PTF Cover Letter
+:MENUI HELP=DSPPTFCVR OPTION=10 ACTION='CMD ?DSPPTFCVR'.Display PTF Cover Letter
+:MENUI HELP='PTF/OPT11' OPTION=11 ACTION='CMD ?DLTPTF'.Delete a program temporary fix
+:MENUI HELP=WRKPTFGRP OPTION=12 ACTION='CMD WRKPTFGRP'.Work with PTF groups
+:MENUI HELP='PTF/OPT13' OPTION=13 ACTION='CMD ?CPYPTFGRP'.Copy PTF group
+:MENUI HELP='PTF/OPT70' OPTION=70 ACTION='MENU CMDPTF'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -47,5 +56,37 @@ and see which are in place.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='PTF/OPT9'.Copy PTF Cover Letter
+:P.Option 9. Runs the CPYPTFCVR command&colon. Copy PTF Cover Letter.
+:EHELP.
+:HELP NAME='PTF/OPT11'.Delete a program temporary fix
+:P.Option 11. Runs the DLTPTF command&colon. Delete a program temporary
+fix.
+:EHELP.
+:HELP NAME='PTF/OPT13'.Copy PTF group
+:P.Option 13. Runs the CPYPTFGRP command&colon. Copy PTF group.
+:EHELP.
+:HELP NAME='PTF/OPT70'.Related commands
+:P.Option 70. Shows menu CMDPTF&colon. Related commands.
 :EHELP.
 :EPNLGRP.

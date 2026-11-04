@@ -112,7 +112,7 @@
 :VAR NAME=WUPCLS CLASS=CLSCL.
 :VAR NAME=WUPTEXT CLASS=TEXTCL.
 :LISTDEF NAME=USERS VARS='OPT WUPNAME WUPCLS WUPTEXT'.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -121,7 +121,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -139,129 +139,129 @@
 :EKEYL.
 :PANEL NAME=DSPUSRPRF HELP=HLPDSP KEYL=DSPKEYS.Display User Profile - Basic
 :DATA DEPTH=2.
-:DATAI VAR=UPNAME USAGE=OUTPUT.User profile
+:DATAI HELP='FLD/UPNAME' VAR=UPNAME USAGE=OUTPUT.User profile
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=UPPRVSGN USAGE=OUTPUT.Previous sign-on
-:DATAI VAR=UPSGNINV USAGE=OUTPUT.Password verifications not valid
-:DATAI VAR=UPSTATUS USAGE=OUTPUT.Status
-:DATAI VAR=UPPWDCHG USAGE=OUTPUT.Date password last changed
-:DATAI VAR=UPPWDNONE USAGE=OUTPUT.Password is *NONE
-:DATAI VAR=UPPWDITV USAGE=OUTPUT.Password expiration interval
+:DATAI HELP='FLD/UPPRVSGN' VAR=UPPRVSGN USAGE=OUTPUT.Previous sign-on
+:DATAI HELP='FLD/UPSGNINV' VAR=UPSGNINV USAGE=OUTPUT.Password verifications not valid
+:DATAI HELP='FLD/UPSTATUS' VAR=UPSTATUS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/UPPWDCHG' VAR=UPPWDCHG USAGE=OUTPUT.Date password last changed
+:DATAI HELP='FLD/UPPWDNONE' VAR=UPPWDNONE USAGE=OUTPUT.Password is *NONE
+:DATAI HELP='FLD/UPPWDITV' VAR=UPPWDITV USAGE=OUTPUT.Password expiration interval
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPPWDEXPD USAGE=OUTPUT.Date password expires
+:DATAI HELP='FLD/UPPWDEXPD' VAR=UPPWDEXPD USAGE=OUTPUT.Date password expires
 :EDATAGRP.
-:DATAI VAR=UPPWDEXP USAGE=OUTPUT.Password set expired by command
-:DATAI VAR=UPPWDBLK USAGE=OUTPUT.Block password change
-:DATAI VAR=UPLCLPWD USAGE=OUTPUT.Local password management
-:DATAI VAR=UPMAXSGN USAGE=OUTPUT.Maximum sign-on attempts
-:DATAI VAR=UPUSRCLS USAGE=OUTPUT.User class
-:DATAI VAR=UPCRTDT USAGE=OUTPUT.Creation date/time
-:DATAI VAR=UPCRTBY USAGE=OUTPUT.Created by user
-:DATAI VAR=UPCHGDT USAGE=OUTPUT.Change date/time
-:DATAI VAR=UPLASTUSE USAGE=OUTPUT.Last used date
-:DATAI VAR=UPRSTDT USAGE=OUTPUT.Restore date/time
-:DATAI VAR=UPEXPDT USAGE=OUTPUT.User expiration date
-:DATAI VAR=UPEXPITV USAGE=OUTPUT.User expiration interval
-:DATAI VAR=UPEXPACN USAGE=OUTPUT.User expiration action
-:DATAI VAR=UPSPCAUT USAGE=OUTPUT.Special authority
-:DATAI VAR=UPSPC2 USAGE=OUTPUT.
-:DATAI VAR=UPSPC3 USAGE=OUTPUT.
-:DATAI VAR=UPSPC4 USAGE=OUTPUT.
-:DATAI VAR=UPSPC5 USAGE=OUTPUT.
-:DATAI VAR=UPSPC6 USAGE=OUTPUT.
-:DATAI VAR=UPSPC7 USAGE=OUTPUT.
-:DATAI VAR=UPSPC8 USAGE=OUTPUT.
-:DATAI VAR=UPGRPPRF USAGE=OUTPUT.Group profile
-:DATAI VAR=UPOWNER USAGE=OUTPUT.Owner
-:DATAI VAR=UPGRPAUT USAGE=OUTPUT.Group authority
-:DATAI VAR=UPGRPTYP USAGE=OUTPUT.Group authority type
-:DATAI VAR=UPSUPGRP USAGE=OUTPUT.Supplemental groups
-:DATAI VAR=UPSUP2 USAGE=OUTPUT.
-:DATAI VAR=UPSUP3 USAGE=OUTPUT.
-:DATAI VAR=UPSUP4 USAGE=OUTPUT.
-:DATAI VAR=UPSUP5 USAGE=OUTPUT.
-:DATAI VAR=UPSUP6 USAGE=OUTPUT.
-:DATAI VAR=UPSUP7 USAGE=OUTPUT.
-:DATAI VAR=UPSUP8 USAGE=OUTPUT.
-:DATAI VAR=UPSUP9 USAGE=OUTPUT.
-:DATAI VAR=UPSUP10 USAGE=OUTPUT.
-:DATAI VAR=UPSUP11 USAGE=OUTPUT.
-:DATAI VAR=UPSUP12 USAGE=OUTPUT.
-:DATAI VAR=UPSUP13 USAGE=OUTPUT.
-:DATAI VAR=UPSUP14 USAGE=OUTPUT.
-:DATAI VAR=UPSUP15 USAGE=OUTPUT.
-:DATAI VAR=UPASTLVL USAGE=OUTPUT.Assistance level
-:DATAI VAR=UPCURLIB USAGE=OUTPUT.Current library
-:DATAI VAR=UPINLPGM USAGE=OUTPUT.Initial program
+:DATAI HELP='FLD/UPPWDEXP' VAR=UPPWDEXP USAGE=OUTPUT.Password set expired by command
+:DATAI HELP='FLD/UPPWDBLK' VAR=UPPWDBLK USAGE=OUTPUT.Block password change
+:DATAI HELP='FLD/UPLCLPWD' VAR=UPLCLPWD USAGE=OUTPUT.Local password management
+:DATAI HELP='FLD/UPMAXSGN' VAR=UPMAXSGN USAGE=OUTPUT.Maximum sign-on attempts
+:DATAI HELP='FLD/UPUSRCLS' VAR=UPUSRCLS USAGE=OUTPUT.User class
+:DATAI HELP='FLD/UPCRTDT' VAR=UPCRTDT USAGE=OUTPUT.Creation date/time
+:DATAI HELP='FLD/UPCRTBY' VAR=UPCRTBY USAGE=OUTPUT.Created by user
+:DATAI HELP='FLD/UPCHGDT' VAR=UPCHGDT USAGE=OUTPUT.Change date/time
+:DATAI HELP='FLD/UPLASTUSE' VAR=UPLASTUSE USAGE=OUTPUT.Last used date
+:DATAI HELP='FLD/UPRSTDT' VAR=UPRSTDT USAGE=OUTPUT.Restore date/time
+:DATAI HELP='FLD/UPEXPDT' VAR=UPEXPDT USAGE=OUTPUT.User expiration date
+:DATAI HELP='FLD/UPEXPITV' VAR=UPEXPITV USAGE=OUTPUT.User expiration interval
+:DATAI HELP='FLD/UPEXPACN' VAR=UPEXPACN USAGE=OUTPUT.User expiration action
+:DATAI HELP='FLD/UPSPCAUT' VAR=UPSPCAUT USAGE=OUTPUT.Special authority
+:DATAI HELP='FLD/UPSPC2' VAR=UPSPC2 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPC3' VAR=UPSPC3 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPC4' VAR=UPSPC4 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPC5' VAR=UPSPC5 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPC6' VAR=UPSPC6 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPC7' VAR=UPSPC7 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPC8' VAR=UPSPC8 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPGRPPRF' VAR=UPGRPPRF USAGE=OUTPUT.Group profile
+:DATAI HELP='FLD/UPOWNER' VAR=UPOWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/UPGRPAUT' VAR=UPGRPAUT USAGE=OUTPUT.Group authority
+:DATAI HELP='FLD/UPGRPTYP' VAR=UPGRPTYP USAGE=OUTPUT.Group authority type
+:DATAI HELP='FLD/UPSUPGRP' VAR=UPSUPGRP USAGE=OUTPUT.Supplemental groups
+:DATAI HELP='FLD/UPSUP2' VAR=UPSUP2 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP3' VAR=UPSUP3 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP4' VAR=UPSUP4 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP5' VAR=UPSUP5 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP6' VAR=UPSUP6 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP7' VAR=UPSUP7 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP8' VAR=UPSUP8 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP9' VAR=UPSUP9 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP10' VAR=UPSUP10 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP11' VAR=UPSUP11 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP12' VAR=UPSUP12 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP13' VAR=UPSUP13 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP14' VAR=UPSUP14 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSUP15' VAR=UPSUP15 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPASTLVL' VAR=UPASTLVL USAGE=OUTPUT.Assistance level
+:DATAI HELP='FLD/UPCURLIB' VAR=UPCURLIB USAGE=OUTPUT.Current library
+:DATAI HELP='FLD/UPINLPGM' VAR=UPINLPGM USAGE=OUTPUT.Initial program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPINLPGML USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPINLPGML' VAR=UPINLPGML USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPINLMNU USAGE=OUTPUT.Initial menu
+:DATAI HELP='FLD/UPINLMNU' VAR=UPINLMNU USAGE=OUTPUT.Initial menu
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPINLMNUL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPINLMNUL' VAR=UPINLMNUL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPLMTCPB USAGE=OUTPUT.Limit capabilities
-:DATAI VAR=UPTEXT USAGE=OUTPUT.Text
-:DATAI VAR=UPTEXT2 USAGE=OUTPUT.
-:DATAI VAR=UPSPCENV USAGE=OUTPUT.Special environment
-:DATAI VAR=UPDSPSGN USAGE=OUTPUT.Display sign-on information
-:DATAI VAR=UPLMTDEV USAGE=OUTPUT.Limit device sessions
-:DATAI VAR=UPKBDBUF USAGE=OUTPUT.Keyboard buffering
-:DATAI VAR=UPMAXSTG USAGE=OUTPUT.Maximum allowed storage
-:DATAI VAR=UPSTGUSD USAGE=OUTPUT.Storage used
-:DATAI VAR=UPPTYLMT USAGE=OUTPUT.Highest scheduling priority
-:DATAI VAR=UPJOBD USAGE=OUTPUT.Job description
+:DATAI HELP='FLD/UPLMTCPB' VAR=UPLMTCPB USAGE=OUTPUT.Limit capabilities
+:DATAI HELP='FLD/UPTEXT' VAR=UPTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/UPTEXT2' VAR=UPTEXT2 USAGE=OUTPUT.
+:DATAI HELP='FLD/UPSPCENV' VAR=UPSPCENV USAGE=OUTPUT.Special environment
+:DATAI HELP='FLD/UPDSPSGN' VAR=UPDSPSGN USAGE=OUTPUT.Display sign-on information
+:DATAI HELP='FLD/UPLMTDEV' VAR=UPLMTDEV USAGE=OUTPUT.Limit device sessions
+:DATAI HELP='FLD/UPKBDBUF' VAR=UPKBDBUF USAGE=OUTPUT.Keyboard buffering
+:DATAI HELP='FLD/UPMAXSTG' VAR=UPMAXSTG USAGE=OUTPUT.Maximum allowed storage
+:DATAI HELP='FLD/UPSTGUSD' VAR=UPSTGUSD USAGE=OUTPUT.Storage used
+:DATAI HELP='FLD/UPPTYLMT' VAR=UPPTYLMT USAGE=OUTPUT.Highest scheduling priority
+:DATAI HELP='FLD/UPJOBD' VAR=UPJOBD USAGE=OUTPUT.Job description
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPJOBDL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPJOBDL' VAR=UPJOBDL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPACGCDE USAGE=OUTPUT.Accounting code
-:DATAI VAR=UPMSGQ USAGE=OUTPUT.Message queue
+:DATAI HELP='FLD/UPACGCDE' VAR=UPACGCDE USAGE=OUTPUT.Accounting code
+:DATAI HELP='FLD/UPMSGQ' VAR=UPMSGQ USAGE=OUTPUT.Message queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPMSGQL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPMSGQL' VAR=UPMSGQL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPDLVRY USAGE=OUTPUT.Message queue delivery
-:DATAI VAR=UPSEV USAGE=OUTPUT.Message queue severity
-:DATAI VAR=UPOUTQ USAGE=OUTPUT.Output queue
+:DATAI HELP='FLD/UPDLVRY' VAR=UPDLVRY USAGE=OUTPUT.Message queue delivery
+:DATAI HELP='FLD/UPSEV' VAR=UPSEV USAGE=OUTPUT.Message queue severity
+:DATAI HELP='FLD/UPOUTQ' VAR=UPOUTQ USAGE=OUTPUT.Output queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPOUTQL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPOUTQL' VAR=UPOUTQL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPPRTDEV USAGE=OUTPUT.Printer device
-:DATAI VAR=UPATNPGM USAGE=OUTPUT.Attention program
+:DATAI HELP='FLD/UPPRTDEV' VAR=UPPRTDEV USAGE=OUTPUT.Printer device
+:DATAI HELP='FLD/UPATNPGM' VAR=UPATNPGM USAGE=OUTPUT.Attention program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPATNPGML USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPATNPGML' VAR=UPATNPGML USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPSRTSEQ USAGE=OUTPUT.Sort sequence
+:DATAI HELP='FLD/UPSRTSEQ' VAR=UPSRTSEQ USAGE=OUTPUT.Sort sequence
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=UPSRTSEQL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/UPSRTSEQL' VAR=UPSRTSEQL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=UPLANGID USAGE=OUTPUT.Language identifier
-:DATAI VAR=UPCNTRY USAGE=OUTPUT.Country or region identifier
-:DATAI VAR=UPCCSID USAGE=OUTPUT.Coded character set ID
-:DATAI VAR=UPCHRID USAGE=OUTPUT.Character identifier control
-:DATAI VAR=UPJOBATR USAGE=OUTPUT.Job attributes
-:DATAI VAR=UPLOCALE USAGE=OUTPUT.Locale
-:DATAI VAR=UPUSROPT USAGE=OUTPUT.User options
-:DATAI VAR=UPUID USAGE=OUTPUT.User ID number
-:DATAI VAR=UPGID USAGE=OUTPUT.Group ID number
-:DATAI VAR=UPHOMDIR USAGE=OUTPUT.Home directory
-:DATAI VAR=UPOBJAUD USAGE=OUTPUT.Object auditing value
-:DATAI VAR=UPAUDLVL USAGE=OUTPUT.Action auditing values
+:DATAI HELP='FLD/UPLANGID' VAR=UPLANGID USAGE=OUTPUT.Language identifier
+:DATAI HELP='FLD/UPCNTRY' VAR=UPCNTRY USAGE=OUTPUT.Country or region identifier
+:DATAI HELP='FLD/UPCCSID' VAR=UPCCSID USAGE=OUTPUT.Coded character set ID
+:DATAI HELP='FLD/UPCHRID' VAR=UPCHRID USAGE=OUTPUT.Character identifier control
+:DATAI HELP='FLD/UPJOBATR' VAR=UPJOBATR USAGE=OUTPUT.Job attributes
+:DATAI HELP='FLD/UPLOCALE' VAR=UPLOCALE USAGE=OUTPUT.Locale
+:DATAI HELP='FLD/UPUSROPT' VAR=UPUSROPT USAGE=OUTPUT.User options
+:DATAI HELP='FLD/UPUID' VAR=UPUID USAGE=OUTPUT.User ID number
+:DATAI HELP='FLD/UPGID' VAR=UPGID USAGE=OUTPUT.Group ID number
+:DATAI HELP='FLD/UPHOMDIR' VAR=UPHOMDIR USAGE=OUTPUT.Home directory
+:DATAI HELP='FLD/UPOBJAUD' VAR=UPOBJAUD USAGE=OUTPUT.Object auditing value
+:DATAI HELP='FLD/UPAUDLVL' VAR=UPAUDLVL USAGE=OUTPUT.Action auditing values
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=WRKUSRPRF HELP=HLPWRK KEYL=WRKKEYS TOPSEP=SPACE.Work with User Profiles
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=USERS SCROLL=YES EXTACT=YES.
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTUSRPRF USRPRF(&WUPNAME.)'.1=Create
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGUSRPRF USRPRF(&WUPNAME.)'.2=Change
-:LISTACT OPTION=3 ACTFOR=LISTE ENTER='CMD ?CRTUSRPRF USRPRF(&WUPNAME.)'.3=Copy
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD DLTUSRPRF USRPRF(&WUPNAME.)'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPUSRPRF USRPRF(&WUPNAME.)'.5=Display
-:LISTACT OPTION=12 ACTFOR=LISTE ENTER='CMD WRKOBJOWN USRPRF(&WUPNAME.)'.12=Work with objects by owner
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=WUPNAME USAGE=OUTPUT EXTACT=YES.User Profile
-:LISTCOL VAR=WUPTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKUSRPRF/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTUSRPRF USRPRF(&WUPNAME.)'.1=Create
+:LISTACT HELP='WRKUSRPRF/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='CMD ?CHGUSRPRF USRPRF(&WUPNAME.)'.2=Change
+:LISTACT HELP='WRKUSRPRF/OPTIONS' OPTION=3 ACTFOR=LISTE ENTER='CMD ?CRTUSRPRF USRPRF(&WUPNAME.)'.3=Copy
+:LISTACT HELP='WRKUSRPRF/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD DLTUSRPRF USRPRF(&WUPNAME.)'.4=Delete
+:LISTACT HELP='WRKUSRPRF/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPUSRPRF USRPRF(&WUPNAME.)'.5=Display
+:LISTACT HELP='WRKUSRPRF/OPTIONS' OPTION=12 ACTFOR=LISTE ENTER='CMD WRKOBJOWN USRPRF(&WUPNAME.)'.12=Work with objects by owner
+:LISTCOL HELP='WRKUSRPRF/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/WUPNAME' VAR=WUPNAME USAGE=OUTPUT EXTACT=YES.User Profile
+:LISTCOL HELP='FLD/WUPTEXT' VAR=WUPTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters for options 1, 2, 3, 4 and 5 or command
 :EPANEL.
@@ -278,5 +278,355 @@ and text.
 :P.Type an option next to a profile and press Enter: 2 changes it, 4
 deletes it, 5 shows it and 12 lists the objects it owns. F6 creates a
 new profile.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/UPNAME'.User profile
+:P.The user profile shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPRVSGN'.Previous sign-on
+:P.The previous sign-on shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSGNINV'.Password verifications not valid
+:P.The password verifications not valid shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/UPSTATUS'.Status
+:P.The status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPWDCHG'.Date password last changed
+:P.The date password last changed shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPWDNONE'.Password is *NONE
+:P.The password is *NONE shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPWDITV'.Password expiration interval
+:P.The password expiration interval shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPWDEXPD'.Date password expires
+:P.The date password expires shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPWDEXP'.Password set expired by command
+:P.The password set expired by command shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/UPPWDBLK'.Block password change
+:P.The block password change shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPLCLPWD'.Local password management
+:P.The local password management shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPMAXSGN'.Maximum sign-on attempts
+:P.The maximum sign-on attempts shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPUSRCLS'.User class
+:P.The user class&colon. security officer, security administrator,
+programmer, system operator or user.
+:EHELP.
+:HELP NAME='FLD/UPCRTDT'.Creation date/time
+:P.The creation date/time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPCRTBY'.Created by user
+:P.The created by user shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPCHGDT'.Change date/time
+:P.The change date/time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPLASTUSE'.Last used date
+:P.The last used date shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPRSTDT'.Restore date/time
+:P.The restore date/time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPEXPDT'.User expiration date
+:P.The user expiration date shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPEXPITV'.User expiration interval
+:P.The user expiration interval shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPEXPACN'.User expiration action
+:P.The user expiration action shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPCAUT'.Special authority
+:P.The special authorities the user profile has.
+:EHELP.
+:HELP NAME='FLD/UPSPC2'.UPSPC2
+:P.The UPSPC2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPC3'.UPSPC3
+:P.The UPSPC3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPC4'.UPSPC4
+:P.The UPSPC4 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPC5'.UPSPC5
+:P.The UPSPC5 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPC6'.UPSPC6
+:P.The UPSPC6 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPC7'.UPSPC7
+:P.The UPSPC7 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPC8'.UPSPC8
+:P.The UPSPC8 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPGRPPRF'.Group profile
+:P.The group profile shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPOWNER'.Owner
+:P.The owner of the objects created.
+:EHELP.
+:HELP NAME='FLD/UPGRPAUT'.Group authority
+:P.The group authority shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPGRPTYP'.Group authority type
+:P.The group authority type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUPGRP'.Supplemental groups
+:P.The supplemental groups shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP2'.UPSUP2
+:P.The UPSUP2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP3'.UPSUP3
+:P.The UPSUP3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP4'.UPSUP4
+:P.The UPSUP4 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP5'.UPSUP5
+:P.The UPSUP5 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP6'.UPSUP6
+:P.The UPSUP6 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP7'.UPSUP7
+:P.The UPSUP7 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP8'.UPSUP8
+:P.The UPSUP8 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP9'.UPSUP9
+:P.The UPSUP9 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP10'.UPSUP10
+:P.The UPSUP10 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP11'.UPSUP11
+:P.The UPSUP11 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP12'.UPSUP12
+:P.The UPSUP12 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP13'.UPSUP13
+:P.The UPSUP13 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP14'.UPSUP14
+:P.The UPSUP14 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSUP15'.UPSUP15
+:P.The UPSUP15 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPASTLVL'.Assistance level
+:P.The assistance level the user's displays show&colon. basic
+(Operational Assistant), intermediate (the system displays) or advanced.
+:EHELP.
+:HELP NAME='FLD/UPCURLIB'.Current library
+:P.The current library of the job&colon. the library searched first by
+name (after the system part of the library list) and where *CURLIB puts
+new objects.
+:EHELP.
+:HELP NAME='FLD/UPINLPGM'.Initial program
+:P.The initial program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPINLPGML'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPINLMNU'.Initial menu
+:P.The initial menu shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPINLMNUL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPLMTCPB'.Limit capabilities
+:P.The limit capabilities shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPTEXT2'.UPTEXT2
+:P.The UPTEXT2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSPCENV'.Special environment
+:P.The special environment shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPDSPSGN'.Display sign-on information
+:P.The display sign-on information shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPLMTDEV'.Limit device sessions
+:P.The limit device sessions shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPKBDBUF'.Keyboard buffering
+:P.The keyboard buffering shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPMAXSTG'.Maximum allowed storage
+:P.The maximum allowed storage shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSTGUSD'.Storage used
+:P.The storage used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPTYLMT'.Highest scheduling priority
+:P.The highest scheduling priority shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPJOBD'.Job description
+:P.The job description that supplies the job's attributes, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/UPJOBDL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPACGCDE'.Accounting code
+:P.The accounting code the job's resources are charged to.
+:EHELP.
+:HELP NAME='FLD/UPMSGQ'.Message queue
+:P.The message queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPMSGQL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPDLVRY'.Message queue delivery
+:P.The message queue delivery shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSEV'.Message queue severity
+:P.The message queue severity shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPOUTQ'.Output queue
+:P.The output queue the spooled files go to.
+:EHELP.
+:HELP NAME='FLD/UPOUTQL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPPRTDEV'.Printer device
+:P.The printer device shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPATNPGM'.Attention program
+:P.The attention program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPATNPGML'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPSRTSEQ'.Sort sequence
+:P.The sort sequence table that orders and compares character
+data&colon. the hexadecimal values, the job's, a language's (shared or
+unique weights), or a table by name.
+:EHELP.
+:HELP NAME='FLD/UPSRTSEQL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPLANGID'.Language identifier
+:P.The language identifier&colon. three letters naming the language
+whose sort sequence is used.
+:EHELP.
+:HELP NAME='FLD/UPCNTRY'.Country or region identifier
+:P.The country or region identifier shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPCCSID'.Coded character set ID
+:P.The coded character set identifier&colon. the code page and character
+set the data is in, or is to be converted to.
+:EHELP.
+:HELP NAME='FLD/UPCHRID'.Character identifier control
+:P.How the character identifier of display and printer files is
+handled&colon. the device's or the job's CCSID.
+:EHELP.
+:HELP NAME='FLD/UPJOBATR'.Job attributes
+:P.The job attributes shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPLOCALE'.Locale
+:P.The locale shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPUSROPT'.User options
+:P.The user options shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPUID'.User ID number
+:P.The user ID number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPGID'.Group ID number
+:P.The group ID number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPHOMDIR'.Home directory
+:P.The home directory shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPOBJAUD'.Object auditing value
+:P.The object auditing value shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/UPAUDLVL'.Action auditing values
+:P.The action auditing values shown for what the display is about.
+:EHELP.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Repeat position to
+:PD.Repeat position to.
+:PT.F17=Position to
+:PD.Positions the list at the name typed on the command line.
+:PT.F21=Select assistance level
+:PD.Select assistance level.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F6=Create
+:PD.Runs CRTUSRPRF.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKUSRPRF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/WUPNAME'.User Profile
+:P.The user Profile of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WUPTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKUSRPRF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it. The Create
+User Profile (CRTUSRPRF) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+User Profile (CHGUSRPRF) command is prompted for the entry.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it. The Create User
+Profile (CRTUSRPRF) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+User Profile (DLTUSRPRF) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+User Profile (DSPUSRPRF) command runs for the entry.
+:PT.12=Work with objects by owner
+:PD.Type 12 next to an entry and press Enter to work with objects by
+owner it. The Work with Objects by Owner (WRKOBJOWN) command runs for
+the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

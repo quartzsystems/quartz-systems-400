@@ -44,7 +44,7 @@
 :COND NAME=VIEW1 EXPR='&VIEW. EQ "1"'.
 :COND NAME=VIEW2 EXPR='&VIEW. EQ "2"'.
 :COND NAME=VIEW3 EXPR='&VIEW. EQ "3"'.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -60,7 +60,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -72,18 +72,18 @@
 :PANEL NAME=WRKRTE HELP=HLPRTE KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Routes
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RTES SCROLL=YES VIEWS=3 ACTLEN=1 EXTACT=YES.(No routes)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?ADDTCPRTE RTEDEST(''&RTEDEST.'')'.1=Add
-:LISTACT OPTION=2 ACTFOR=LISTE ENTER='RETURN 102'.2=Change
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='RETURN 104'.4=Remove
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RTEDEST USAGE=OUTPUT EXTACT=YES.Route Destination
-:LISTCOL VAR=RTEMASK USAGE=OUTPUT.Subnet          Mask
-:LISTCOL VAR=RTEHOP USAGE=OUTPUT.Next            Hop
-:LISTCOL VAR=RTEIFC USAGE=OUTPUT.Preferred Interface
-:LISTCOL VAR=RTETOS USAGE=OUTPUT.Type of Service
-:LISTCOL VAR=RTESTS USAGE=OUTPUT.Route           Status
-:LISTCOL VAR=RTETEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKRTE/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?ADDTCPRTE RTEDEST(''&RTEDEST.'')'.1=Add
+:LISTACT HELP='WRKRTE/OPTIONS' OPTION=2 ACTFOR=LISTE ENTER='RETURN 102'.2=Change
+:LISTACT HELP='WRKRTE/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='RETURN 104'.4=Remove
+:LISTACT HELP='WRKRTE/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
+:LISTCOL HELP='WRKRTE/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RTEDEST' VAR=RTEDEST USAGE=OUTPUT EXTACT=YES.Route Destination
+:LISTCOL HELP='FLD/RTEMASK' VAR=RTEMASK USAGE=OUTPUT.Subnet          Mask
+:LISTCOL HELP='FLD/RTEHOP' VAR=RTEHOP USAGE=OUTPUT.Next            Hop
+:LISTCOL HELP='FLD/RTEIFC' VAR=RTEIFC USAGE=OUTPUT.Preferred Interface
+:LISTCOL HELP='FLD/RTETOS' VAR=RTETOS USAGE=OUTPUT.Type of Service
+:LISTCOL HELP='FLD/RTESTS' VAR=RTESTS USAGE=OUTPUT.Route           Status
+:LISTCOL HELP='FLD/RTETEXT' VAR=RTETEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT RTEDEST RTEMASK RTEHOP RTEIFC'.
 :LISTVIEW COLS='OPT RTEDEST RTEMASK RTEHOP RTETOS'.
 :LISTVIEW COLS='OPT RTEDEST RTEMASK RTETEXT'.
@@ -92,15 +92,15 @@
 :PANEL NAME=WRKRTED HELP=HLPRTE KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Routes
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RTES SCROLL=YES VIEWS=3 ACTLEN=1 EXTACT=YES.(No routes)
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RTEDEST USAGE=OUTPUT EXTACT=YES.Route Destination
-:LISTCOL VAR=RTEMASK USAGE=OUTPUT.Subnet          Mask
-:LISTCOL VAR=RTEHOP USAGE=OUTPUT.Next            Hop
-:LISTCOL VAR=RTEIFC USAGE=OUTPUT.Preferred Interface
-:LISTCOL VAR=RTETOS USAGE=OUTPUT.Type of Service
-:LISTCOL VAR=RTESTS USAGE=OUTPUT.Route           Status
-:LISTCOL VAR=RTETEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKRTED/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='RETURN 105'.5=Display
+:LISTCOL HELP='WRKRTED/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RTEDEST' VAR=RTEDEST USAGE=OUTPUT EXTACT=YES.Route Destination
+:LISTCOL HELP='FLD/RTEMASK' VAR=RTEMASK USAGE=OUTPUT.Subnet          Mask
+:LISTCOL HELP='FLD/RTEHOP' VAR=RTEHOP USAGE=OUTPUT.Next            Hop
+:LISTCOL HELP='FLD/RTEIFC' VAR=RTEIFC USAGE=OUTPUT.Preferred Interface
+:LISTCOL HELP='FLD/RTETOS' VAR=RTETOS USAGE=OUTPUT.Type of Service
+:LISTCOL HELP='FLD/RTESTS' VAR=RTESTS USAGE=OUTPUT.Route           Status
+:LISTCOL HELP='FLD/RTETEXT' VAR=RTETEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT RTEDEST RTEMASK RTEHOP RTEIFC'.
 :LISTVIEW COLS='OPT RTEDEST RTEMASK RTEHOP RTETOS'.
 :LISTVIEW COLS='OPT RTEDEST RTEMASK RTETEXT'.
@@ -110,16 +110,16 @@
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=DDEST USAGE=OUTPUT.Route destination
-:DATAI VAR=DMASK USAGE=OUTPUT.Subnet mask
-:DATAI VAR=DTOS USAGE=OUTPUT.Type of service
-:DATAI VAR=DHOP USAGE=OUTPUT.Next hop
-:DATAI VAR=DIFC USAGE=OUTPUT.Preferred binding interface
-:DATAI VAR=DMTU USAGE=OUTPUT.Maximum transmission unit
-:DATAI VAR=DDUP USAGE=OUTPUT.Duplicate route priority
-:DATAI VAR=DMETRIC USAGE=OUTPUT.Route metric
-:DATAI VAR=DREDST USAGE=OUTPUT.Route redistribution
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/DDEST' VAR=DDEST USAGE=OUTPUT.Route destination
+:DATAI HELP='FLD/DMASK' VAR=DMASK USAGE=OUTPUT.Subnet mask
+:DATAI HELP='FLD/DTOS' VAR=DTOS USAGE=OUTPUT.Type of service
+:DATAI HELP='FLD/DHOP' VAR=DHOP USAGE=OUTPUT.Next hop
+:DATAI HELP='FLD/DIFC' VAR=DIFC USAGE=OUTPUT.Preferred binding interface
+:DATAI HELP='FLD/DMTU' VAR=DMTU USAGE=OUTPUT.Maximum transmission unit
+:DATAI HELP='FLD/DDUP' VAR=DDUP USAGE=OUTPUT.Duplicate route priority
+:DATAI HELP='FLD/DMETRIC' VAR=DMETRIC USAGE=OUTPUT.Route metric
+:DATAI HELP='FLD/DREDST' VAR=DREDST USAGE=OUTPUT.Route redistribution
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text description
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -131,5 +131,121 @@ one.
 :EHELP.
 :HELP NAME=HLPDSP.Display TCP/IP Route - Help
 :P.One route's configuration.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F6=Print list
+:PD.Print list.
+:PT.F11=Display type of service
+:PD.Display type of service.
+:PT.F11=Display text description
+:PD.Display text description.
+:PT.F11=Display next hop
+:PD.Display next hop.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKRTE/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RTEDEST'.Route Destination
+:P.The route Destination of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RTEMASK'.Subnet          Mask
+:P.The subnet Mask of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RTEHOP'.Next            Hop
+:P.The next Hop of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RTEIFC'.Preferred Interface
+:P.The preferred Interface of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RTETOS'.Type of Service
+:P.The type of Service of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RTESTS'.Route           Status
+:P.The route Status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RTETEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKRTE/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add
+:PD.Type 1 next to an entry and press Enter to add it. The Add TCP/IP
+Route (ADDTCPRTE) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKRTED/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKRTED/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/DDEST'.Route destination
+:P.The route destination shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMASK'.Subnet mask
+:P.The subnet mask that tells the network part of the address from the
+host part.
+:EHELP.
+:HELP NAME='FLD/DTOS'.Type of service
+:P.The type of service shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DHOP'.Next hop
+:P.The next hop shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DIFC'.Preferred binding interface
+:P.The preferred binding interface shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMTU'.Maximum transmission unit
+:P.The maximum transmission unit shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DDUP'.Duplicate route priority
+:P.The duplicate route priority shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DMETRIC'.Route metric
+:P.The route metric shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DREDST'.Route redistribution
+:P.The route redistribution shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTEXT'.Text description
+:P.The text description shown for what the display is about.
 :EHELP.
 :EPNLGRP.

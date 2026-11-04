@@ -30,7 +30,7 @@
 :VAR NAME=P9 CLASS=POOLCL.
 :VAR NAME=P10 CLASS=POOLCL.
 :LISTDEF NAME=SBS VARS='OPT SBS SBSLIB STORAGE P1 P2 P3 P4 P5 P6 P7 P8 P9 P10'.
-:KEYL NAME=SBSKEYS.
+:KEYL HELP='KEYS/SBSKEYS' NAME=SBSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -44,23 +44,23 @@
 :PANEL NAME=WRKSBS KEYL=SBSKEYS HELP=WRKSBS ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Subsystems
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=SBS.(No subsystems are active)
-:LISTACT OPTION=4 ENTER='CMD ?ENDSBS SBS(&SBS.)'.4=End subsystem
-:LISTACT OPTION=5 ENTER='CMD DSPSBSD SBSD(&SBSLIB./&SBS.)'.5=Display subsystem description
-:LISTACT OPTION=8 ENTER='CMD WRKSBSJOB SBS(&SBS.)'.8=Work with subsystem jobs
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=SBS USAGE=OUTPUT.Subsystem
-:LISTCOL VAR=STORAGE USAGE=OUTPUT.Total Storage (M)
+:LISTACT HELP='WRKSBS/OPTIONS' OPTION=4 ENTER='CMD ?ENDSBS SBS(&SBS.)'.4=End subsystem
+:LISTACT HELP='WRKSBS/OPTIONS' OPTION=5 ENTER='CMD DSPSBSD SBSD(&SBSLIB./&SBS.)'.5=Display subsystem description
+:LISTACT HELP='WRKSBS/OPTIONS' OPTION=8 ENTER='CMD WRKSBSJOB SBS(&SBS.)'.8=Work with subsystem jobs
+:LISTCOL HELP='WRKSBS/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem
+:LISTCOL HELP='FLD/STORAGE' VAR=STORAGE USAGE=OUTPUT.Total Storage (M)
 :LISTGRP.-----------Subsystem Pools------------
-:LISTCOL VAR=P1 USAGE=OUTPUT.1
-:LISTCOL VAR=P2 USAGE=OUTPUT.2
-:LISTCOL VAR=P3 USAGE=OUTPUT.3
-:LISTCOL VAR=P4 USAGE=OUTPUT.4
-:LISTCOL VAR=P5 USAGE=OUTPUT.5
-:LISTCOL VAR=P6 USAGE=OUTPUT.6
-:LISTCOL VAR=P7 USAGE=OUTPUT.7
-:LISTCOL VAR=P8 USAGE=OUTPUT.8
-:LISTCOL VAR=P9 USAGE=OUTPUT.9
-:LISTCOL VAR=P10 USAGE=OUTPUT.10
+:LISTCOL HELP='FLD/P1' VAR=P1 USAGE=OUTPUT.1
+:LISTCOL HELP='FLD/P2' VAR=P2 USAGE=OUTPUT.2
+:LISTCOL HELP='FLD/P3' VAR=P3 USAGE=OUTPUT.3
+:LISTCOL HELP='FLD/P4' VAR=P4 USAGE=OUTPUT.4
+:LISTCOL HELP='FLD/P5' VAR=P5 USAGE=OUTPUT.5
+:LISTCOL HELP='FLD/P6' VAR=P6 USAGE=OUTPUT.6
+:LISTCOL HELP='FLD/P7' VAR=P7 USAGE=OUTPUT.7
+:LISTCOL HELP='FLD/P8' VAR=P8 USAGE=OUTPUT.8
+:LISTCOL HELP='FLD/P9' VAR=P9 USAGE=OUTPUT.9
+:LISTCOL HELP='FLD/P10' VAR=P10 USAGE=OUTPUT.10
 :ELISTGRP.
 :ELIST.
 :CMDLINE SIZE=SHORT.
@@ -69,5 +69,87 @@
 :P.Every active subsystem with the main storage its pools hold and,
 under each subsystem pool number, the system pool it is. Type an
 option next to a subsystem, or a command on the command line.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SBSKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F11=Display system data
+:PD.Display system data.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F14=Work with system status
+:PD.Runs WRKSYSSTS.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKSBS/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/SBS'.Subsystem
+:P.The subsystem of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STORAGE'.Total Storage (M)
+:P.The total Storage (M) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/P1'.-----------Subsystem Pools------------ 1
+:P.The -----------Subsystem Pools------------ 1 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P2'.-----------Subsystem Pools------------ 2
+:P.The -----------Subsystem Pools------------ 2 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P3'.-----------Subsystem Pools------------ 3
+:P.The -----------Subsystem Pools------------ 3 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P4'.-----------Subsystem Pools------------ 4
+:P.The -----------Subsystem Pools------------ 4 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P5'.-----------Subsystem Pools------------ 5
+:P.The -----------Subsystem Pools------------ 5 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P6'.-----------Subsystem Pools------------ 6
+:P.The -----------Subsystem Pools------------ 6 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P7'.-----------Subsystem Pools------------ 7
+:P.The -----------Subsystem Pools------------ 7 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P8'.-----------Subsystem Pools------------ 8
+:P.The -----------Subsystem Pools------------ 8 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P9'.-----------Subsystem Pools------------ 9
+:P.The -----------Subsystem Pools------------ 9 of each entry in the
+list.
+:EHELP.
+:HELP NAME='FLD/P10'.-----------Subsystem Pools------------ 10
+:P.The -----------Subsystem Pools------------ 10 of each entry in the
+list.
+:EHELP.
+:HELP NAME='WRKSBS/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.4=End subsystem
+:PD.Type 4 next to an entry and press Enter to end subsystem it. The End
+Subsystem (ENDSBS) command is prompted for the entry.
+:PT.5=Display subsystem description
+:PD.Type 5 next to an entry and press Enter to display subsystem
+description it. The Display Subsystem Description (DSPSBSD) command runs
+for the entry.
+:PT.8=Work with subsystem jobs
+:PD.Type 8 next to an entry and press Enter to work with subsystem jobs
+it. The Work with Subsystem Jobs (WRKSBSJOB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

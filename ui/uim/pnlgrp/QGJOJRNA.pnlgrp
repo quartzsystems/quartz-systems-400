@@ -40,7 +40,7 @@
 :VAR NAME=OMTJRNE CLASS=NAMECL.
 :LISTDEF NAME=RCVS VARS='OPT RCV RCVLIB RCVSTS RCVATT'.
 :LISTDEF NAME=OBJS VARS='OBJ OBJLIB OBJTYPE IMAGES OMTJRNE'.
-:KEYL NAME=JAKEYS.
+:KEYL HELP='KEYS/JAKEYS' NAME=JAKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -51,7 +51,7 @@
 :KEYI KEY=F14 ACTION='RETURN 14'.F14=Display journaled objects
 :KEYI KEY=F15 ACTION='RETURN 15'.F15=Work with receiver directory
 :EKEYL.
-:KEYL NAME=SUBKEYS.
+:KEYL HELP='KEYS/SUBKEYS' NAME=SUBKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -63,53 +63,53 @@
 :PANEL NAME=WRKJRNA KEYL=JAKEYS HELP=WRKJRNA ENTER='RETURN 1' TOPSEP=SPACE.Work with Journal Attributes
 :DATA DEPTH='*'.
 :DATACOL WIDTH=40.
-:DATAI VAR=JRN USAGE=OUTPUT.Journal
-:DATAI VAR=ATTRCV USAGE=OUTPUT.Attached receiver
-:DATAI VAR=JRNTEXT USAGE=OUTPUT.Text
-:DATAI VAR=ASP USAGE=OUTPUT.ASP
-:DATAI VAR=MSGQ USAGE=OUTPUT.Message queue
+:DATAI HELP='FLD/JRN' VAR=JRN USAGE=OUTPUT.Journal
+:DATAI HELP='FLD/ATTRCV' VAR=ATTRCV USAGE=OUTPUT.Attached receiver
+:DATAI HELP='FLD/JRNTEXT' VAR=JRNTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/ASP' VAR=ASP USAGE=OUTPUT.ASP
+:DATAI HELP='FLD/MSGQ' VAR=MSGQ USAGE=OUTPUT.Message queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=MSGQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/MSGQLIB' VAR=MSGQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OBJCOUNT USAGE=OUTPUT.Journaled objects
+:DATAI HELP='FLD/OBJCOUNT' VAR=OBJCOUNT USAGE=OUTPUT.Journaled objects
 :DATACOL WIDTH=38.
-:DATAI VAR=JRNLIB USAGE=OUTPUT.Library
-:DATAI VAR=ATTRCVLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/JRNLIB' VAR=JRNLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/ATTRCVLIB' VAR=ATTRCVLIB USAGE=OUTPUT.Library
 :DATAC.
-:DATAI VAR=JRNSTATE USAGE=OUTPUT.Journal state
-:DATAI VAR=MNGRCV USAGE=OUTPUT.Manage receivers
-:DATAI VAR=DLTRCV USAGE=OUTPUT.Delete receivers
+:DATAI HELP='FLD/JRNSTATE' VAR=JRNSTATE USAGE=OUTPUT.Journal state
+:DATAI HELP='FLD/MNGRCV' VAR=MNGRCV USAGE=OUTPUT.Manage receivers
+:DATAI HELP='FLD/DLTRCV' VAR=DLTRCV USAGE=OUTPUT.Delete receivers
 :EDATA.
 :EPANEL.
 :PANEL NAME=WRKJRNRD KEYL=SUBKEYS HELP=WRKJRNRD ENTER='RETURN 1' TOPSEP=SPACE.Work with Receiver Directory
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JRN USAGE=OUTPUT.Journal
+:DATAI HELP='FLD/JRN' VAR=JRN USAGE=OUTPUT.Journal
 :DATAIX VAR=JRNLIB USAGE=OUTPUT.
 :DATAIXT.Library
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RCVS.(No receivers)
-:LISTACT OPTION=4 ENTER='CMD ?DLTJRNRCV JRNRCV(&RCVLIB./&RCV.)'.4=Delete
-:LISTACT OPTION=8 ENTER='CMD DSPJRNRCVA JRNRCV(&RCVLIB./&RCV.)'.8=Display attributes
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RCV USAGE=OUTPUT.Receiver
-:LISTCOL VAR=RCVLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=RCVSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RCVATT USAGE=OUTPUT.Attached
+:LISTACT HELP='WRKJRNRD/OPTIONS' OPTION=4 ENTER='CMD ?DLTJRNRCV JRNRCV(&RCVLIB./&RCV.)'.4=Delete
+:LISTACT HELP='WRKJRNRD/OPTIONS' OPTION=8 ENTER='CMD DSPJRNRCVA JRNRCV(&RCVLIB./&RCV.)'.8=Display attributes
+:LISTCOL HELP='WRKJRNRD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RCV' VAR=RCV USAGE=OUTPUT.Receiver
+:LISTCOL HELP='FLD/RCVLIB' VAR=RCVLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/RCVSTS' VAR=RCVSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RCVATT' VAR=RCVATT USAGE=OUTPUT.Attached
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPJRNOBJ KEYL=SUBKEYS HELP=DSPJRNOBJ ENTER='RETURN 1' TOPSEP=SPACE.Display Journaled Objects
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JRN USAGE=OUTPUT.Journal
+:DATAI HELP='FLD/JRN' VAR=JRN USAGE=OUTPUT.Journal
 :DATAIX VAR=JRNLIB USAGE=OUTPUT.
 :DATAIXT.Library
 :EDATA.
 :LIST DEPTH='*' LISTDEF=OBJS.(No objects are journaled)
-:LISTCOL VAR=OBJ USAGE=OUTPUT.Object
-:LISTCOL VAR=OBJLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=OBJTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=IMAGES USAGE=OUTPUT.Images
-:LISTCOL VAR=OMTJRNE USAGE=OUTPUT.Omit
+:LISTCOL HELP='FLD/OBJ' VAR=OBJ USAGE=OUTPUT.Object
+:LISTCOL HELP='FLD/OBJLIB' VAR=OBJLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/OBJTYPE' VAR=OBJTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/IMAGES' VAR=IMAGES USAGE=OUTPUT.Images
+:LISTCOL HELP='FLD/OMTJRNE' VAR=OMTJRNE USAGE=OUTPUT.Omit
 :ELIST.
 :EPANEL.
 :HELP NAME=WRKJRNA.Work with Journal Attributes - Help
@@ -124,5 +124,111 @@ it was attached. Option 8 shows a receiver's attributes.
 :HELP NAME=DSPJRNOBJ.Display Journaled Objects - Help
 :P.The objects whose changes the journal records, with the images it
 keeps and the entries it leaves out.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/JAKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F14=Display journaled objects
+:PD.Display journaled objects.
+:PT.F15=Work with receiver directory
+:PD.Work with receiver directory.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/JRN'.Journal
+:P.The journal, by name and library.
+:EHELP.
+:HELP NAME='FLD/ATTRCV'.Attached receiver
+:P.The attached receiver shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JRNTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ASP'.ASP
+:P.The ASP shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MSGQ'.Message queue
+:P.The message queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MSGQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OBJCOUNT'.Journaled objects
+:P.The journaled objects shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JRNLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ATTRCVLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JRNSTATE'.Journal state
+:P.The journal state shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MNGRCV'.Manage receivers
+:P.The manage receivers shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DLTRCV'.Delete receivers
+:P.The delete receivers shown for what the display is about.
+:EHELP.
+:HELP NAME='KEYS/SUBKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKJRNRD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RCV'.Receiver
+:P.The receiver of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RCVLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RCVSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RCVATT'.Attached
+:P.The attached of each entry in the list.
+:EHELP.
+:HELP NAME='WRKJRNRD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Journal Receiver (DLTJRNRCV) command is prompted for the entry.
+:PT.8=Display attributes
+:PD.Type 8 next to an entry and press Enter to display attributes it.
+The Display Journal Receiver Attr (DSPJRNRCVA) command runs for the
+entry.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/OBJ'.Object
+:P.The object of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OBJLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OBJTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IMAGES'.Images
+:P.The images of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OMTJRNE'.Omit
+:P.The omit of each entry in the list.
 :EHELP.
 :EPNLGRP.

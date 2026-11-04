@@ -38,24 +38,24 @@
 :DATA DEPTH='*' SCROLL=IND.
 :DATACOL WIDTH=29.
 :DATACOL WIDTH=78.
-:DATAI VAR=PRDID USAGE=OUTPUT.Product identifier
-:DATAI VAR=LICTRM USAGE=OUTPUT.License term
-:DATAI VAR=FEATURE USAGE=OUTPUT.Feature
-:DATAI VAR=PRDTEXT USAGE=OUTPUT.Description
+:DATAI HELP='FLD/PRDID' VAR=PRDID USAGE=OUTPUT.Product identifier
+:DATAI HELP='FLD/LICTRM' VAR=LICTRM USAGE=OUTPUT.License term
+:DATAI HELP='FLD/FEATURE' VAR=FEATURE USAGE=OUTPUT.Feature
+:DATAI HELP='FLD/PRDTEXT' VAR=PRDTEXT USAGE=OUTPUT.Description
 :DATAC.
-:DATAI VAR=SERIAL USAGE=OUTPUT.System serial number
+:DATAI HELP='FLD/SERIAL' VAR=SERIAL USAGE=OUTPUT.System serial number
 :DATAC.
-:DATAI VAR=PRCGRP USAGE=OUTPUT.Processor group
+:DATAI HELP='FLD/PRCGRP' VAR=PRCGRP USAGE=OUTPUT.Processor group
 :DATAC.
-:DATAI VAR=LICKEY USAGE=OUTPUT.License Key
-:DATAI VAR=LICKEY2 USAGE=OUTPUT.
-:DATAI VAR=LICKEY3 USAGE=OUTPUT.
+:DATAI HELP='FLD/LICKEY' VAR=LICKEY USAGE=OUTPUT.License Key
+:DATAI HELP='FLD/LICKEY2' VAR=LICKEY2 USAGE=OUTPUT.
+:DATAI HELP='FLD/LICKEY3' VAR=LICKEY3 USAGE=OUTPUT.
 :DATAC.
-:DATAI VAR=USGLMT USAGE=OUTPUT.Usage limit
+:DATAI HELP='FLD/USGLMT' VAR=USGLMT USAGE=OUTPUT.Usage limit
 :DATAC.
-:DATAI VAR=EXPDATE USAGE=OUTPUT.Expiration date
+:DATAI HELP='FLD/EXPDATE' VAR=EXPDATE USAGE=OUTPUT.Expiration date
 :DATAC.
-:DATAI VAR=VNDDTA USAGE=OUTPUT.Vendor data
+:DATAI HELP='FLD/VNDDTA' VAR=VNDDTA USAGE=OUTPUT.Vendor data
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -66,5 +66,43 @@ allows and until when. Enter shows the next key that matched.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/PRDID'.Product identifier
+:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:EHELP.
+:HELP NAME='FLD/LICTRM'.License term
+:P.The license term of the product, for example V7 or V7R1.
+:EHELP.
+:HELP NAME='FLD/FEATURE'.Feature
+:P.The feature code of the product.
+:EHELP.
+:HELP NAME='FLD/PRDTEXT'.Description
+:P.The description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SERIAL'.System serial number
+:P.The system serial number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRCGRP'.Processor group
+:P.The processor group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LICKEY'.License Key
+:P.The license Key shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LICKEY2'.LICKEY2
+:P.The LICKEY2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LICKEY3'.LICKEY3
+:P.The LICKEY3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USGLMT'.Usage limit
+:P.The usage limit shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EXPDATE'.Expiration date
+:P.The date after which the object or file can be deleted or
+overwritten. *PERM means it never expires.
+:EHELP.
+:HELP NAME='FLD/VNDDTA'.Vendor data
+:P.The vendor data shown for what the display is about.
 :EHELP.
 :EPNLGRP.

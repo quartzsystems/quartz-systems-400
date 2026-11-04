@@ -110,7 +110,7 @@
 :KEYI KEY=F19 ACTION='RETURN 19'.F19=Start automatic refresh
 :KEYI KEY=F21 ACTION='RETURN 21'.F21=Nondisplay instructions/keys
 :EKEYL.
-:KEYL NAME=SELKEYS.
+:KEYL HELP='KEYS/SELKEYS' NAME=SELKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
@@ -119,7 +119,7 @@
 :EKEYL.
 :PANEL NAME=WRKACTJ1 KEYL=AJKEYS HELP=WRKACTJ ENTER='RETURN 1' TOPSEP=DATETIME.Work with Active Jobs
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SYSCPU USAGE=OUTPUT.CPU %
+:DATAI HELP='FLD/SYSCPU' VAR=SYSCPU USAGE=OUTPUT.CPU %
 :DATAIX VAR=ELAPSED USAGE=OUTPUT.
 :DATAIXT.Elapsed time
 :DATAIX VAR=ACTJOBS USAGE=OUTPUT.
@@ -127,39 +127,39 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBS VIEWS=3 COMPACT.
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOBNM.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOBNM.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOBNM.)'.4=End
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOBNM.)'.6=Release
-:LISTACT OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOBNM.)'.7=Display message
-:LISTACT OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*SPLF)'.8=Work with spooled files
-:LISTACT OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOBNM.)'.13=Disconnect ...
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOBNM.)'.2=Change
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOBNM.)'.3=Hold
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOBNM.)'.4=End
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.)'.5=Work with
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOBNM.)'.6=Release
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOBNM.)'.7=Display message
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*SPLF)'.8=Work with spooled files
+:LISTACT HELP='WRKACTJ1/OPTIONS' OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOBNM.)'.13=Disconnect ...
 :LISTACT OPTION=9 ENTER='RETURN 9'.
 :LISTACT OPTION=10 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*PGMSTK)'.
 :LISTACT OPTION=11 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*JOBLCK)'.
 :LISTACT OPTION=12 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*THREAD)'.
 :LISTACT OPTION=14 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*MUTEX)'.
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Subsystem/Job
-:LISTCOL VAR=CURUSER USAGE=OUTPUT.Current User
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=NUMBER USAGE=OUTPUT.Number
-:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=CPU USAGE=OUTPUT.CPU %
-:LISTCOL VAR=FUNCTION USAGE=OUTPUT.Function
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Status
-:LISTCOL VAR=POOL USAGE=OUTPUT.Pool
-:LISTCOL VAR=PTY USAGE=OUTPUT.Pty
-:LISTCOL VAR=CPUSEC USAGE=OUTPUT.CPU
+:LISTCOL HELP='WRKACTJ1/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Subsystem/Job
+:LISTCOL HELP='FLD/CURUSER' VAR=CURUSER USAGE=OUTPUT.Current User
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT.Number
+:LISTCOL HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/CPU' VAR=CPU USAGE=OUTPUT.CPU %
+:LISTCOL HELP='FLD/FUNCTION' VAR=FUNCTION USAGE=OUTPUT.Function
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/POOL' VAR=POOL USAGE=OUTPUT.Pool
+:LISTCOL HELP='FLD/PTY' VAR=PTY USAGE=OUTPUT.Pty
+:LISTCOL HELP='FLD/CPUSEC' VAR=CPUSEC USAGE=OUTPUT.CPU
 :LISTGRP COL=ELAPSED.--------Elapsed---------
-:LISTCOL VAR=INT USAGE=OUTPUT.Int
-:LISTCOL VAR=RSP USAGE=OUTPUT.Rsp
-:LISTCOL VAR=AUXIO USAGE=OUTPUT.AuxIO
-:LISTCOL VAR=ECPU USAGE=OUTPUT.CPU %
+:LISTCOL HELP='FLD/INT' VAR=INT USAGE=OUTPUT.Int
+:LISTCOL HELP='FLD/RSP' VAR=RSP USAGE=OUTPUT.Rsp
+:LISTCOL HELP='FLD/AUXIO' VAR=AUXIO USAGE=OUTPUT.AuxIO
+:LISTCOL HELP='FLD/ECPU' VAR=ECPU USAGE=OUTPUT.CPU %
 :ELISTGRP.
-:LISTCOL VAR=THREADS USAGE=OUTPUT.Threads
-:LISTCOL VAR=TMPSTG USAGE=OUTPUT.Temporary Storage
+:LISTCOL HELP='FLD/THREADS' VAR=THREADS USAGE=OUTPUT.Threads
+:LISTCOL HELP='FLD/TMPSTG' VAR=TMPSTG USAGE=OUTPUT.Temporary Storage
 :LISTVIEW COLS='OPT JOB CURUSER TYPE CPU FUNCTION STATUS'.
 :LISTVIEW COLS='OPT JOB TYPE POOL PTY CPUSEC ELAPSED'.
 :LISTVIEW COLS='OPT JOB USER NUMBER TYPE CPU THREADS TMPSTG'.
@@ -168,7 +168,7 @@
 :EPANEL.
 :PANEL NAME=WRKACTJ2 KEYL=AJKEYS HELP=WRKACTJ ENTER='RETURN 1' TOPSEP=DATETIME.Work with Active Jobs
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SYSCPU USAGE=OUTPUT.CPU %
+:DATAI HELP='FLD/SYSCPU' VAR=SYSCPU USAGE=OUTPUT.CPU %
 :DATAIX VAR=ELAPSED USAGE=OUTPUT.
 :DATAIXT.Elapsed time
 :DATAIX VAR=ACTJOBS USAGE=OUTPUT.
@@ -183,32 +183,32 @@
 :LISTACT OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOBNM.)'.
 :LISTACT OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOBNM.)'.
 :LISTACT OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*SPLF)'.
-:LISTACT OPTION=9 ENTER='RETURN 9'.9=Exclude
-:LISTACT OPTION=10 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*PGMSTK)'.10=Display call stack
-:LISTACT OPTION=11 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*JOBLCK)'.11=Work with locks
-:LISTACT OPTION=12 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*THREAD)'.12=Work with threads
-:LISTACT OPTION=14 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*MUTEX)'.14=Work with mutexes ...
+:LISTACT HELP='WRKACTJ2/OPTIONS' OPTION=9 ENTER='RETURN 9'.9=Exclude
+:LISTACT HELP='WRKACTJ2/OPTIONS' OPTION=10 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*PGMSTK)'.10=Display call stack
+:LISTACT HELP='WRKACTJ2/OPTIONS' OPTION=11 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*JOBLCK)'.11=Work with locks
+:LISTACT HELP='WRKACTJ2/OPTIONS' OPTION=12 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*THREAD)'.12=Work with threads
+:LISTACT HELP='WRKACTJ2/OPTIONS' OPTION=14 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*MUTEX)'.14=Work with mutexes ...
 :LISTACT OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOBNM.)'.
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Subsystem/Job
-:LISTCOL VAR=CURUSER USAGE=OUTPUT.Current User
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=NUMBER USAGE=OUTPUT.Number
-:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=CPU USAGE=OUTPUT.CPU %
-:LISTCOL VAR=FUNCTION USAGE=OUTPUT.Function
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Status
-:LISTCOL VAR=POOL USAGE=OUTPUT.Pool
-:LISTCOL VAR=PTY USAGE=OUTPUT.Pty
-:LISTCOL VAR=CPUSEC USAGE=OUTPUT.CPU
+:LISTCOL HELP='WRKACTJ2/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Subsystem/Job
+:LISTCOL HELP='FLD/CURUSER' VAR=CURUSER USAGE=OUTPUT.Current User
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT.Number
+:LISTCOL HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/CPU' VAR=CPU USAGE=OUTPUT.CPU %
+:LISTCOL HELP='FLD/FUNCTION' VAR=FUNCTION USAGE=OUTPUT.Function
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/POOL' VAR=POOL USAGE=OUTPUT.Pool
+:LISTCOL HELP='FLD/PTY' VAR=PTY USAGE=OUTPUT.Pty
+:LISTCOL HELP='FLD/CPUSEC' VAR=CPUSEC USAGE=OUTPUT.CPU
 :LISTGRP COL=ELAPSED.--------Elapsed---------
-:LISTCOL VAR=INT USAGE=OUTPUT.Int
-:LISTCOL VAR=RSP USAGE=OUTPUT.Rsp
-:LISTCOL VAR=AUXIO USAGE=OUTPUT.AuxIO
-:LISTCOL VAR=ECPU USAGE=OUTPUT.CPU %
+:LISTCOL HELP='FLD/INT' VAR=INT USAGE=OUTPUT.Int
+:LISTCOL HELP='FLD/RSP' VAR=RSP USAGE=OUTPUT.Rsp
+:LISTCOL HELP='FLD/AUXIO' VAR=AUXIO USAGE=OUTPUT.AuxIO
+:LISTCOL HELP='FLD/ECPU' VAR=ECPU USAGE=OUTPUT.CPU %
 :ELISTGRP.
-:LISTCOL VAR=THREADS USAGE=OUTPUT.Threads
-:LISTCOL VAR=TMPSTG USAGE=OUTPUT.Temporary Storage
+:LISTCOL HELP='FLD/THREADS' VAR=THREADS USAGE=OUTPUT.Threads
+:LISTCOL HELP='FLD/TMPSTG' VAR=TMPSTG USAGE=OUTPUT.Temporary Storage
 :LISTVIEW COLS='OPT JOB CURUSER TYPE CPU FUNCTION STATUS'.
 :LISTVIEW COLS='OPT JOB TYPE POOL PTY CPUSEC ELAPSED'.
 :LISTVIEW COLS='OPT JOB USER NUMBER TYPE CPU THREADS TMPSTG'.
@@ -217,7 +217,7 @@
 :EPANEL.
 :PANEL NAME=WRKACTJW KEYL=AJKEYS HELP=WRKACTJ ENTER='RETURN 1' TOPSEP=DATETIME DEPTH=27 WIDTH=132.Work with Active Jobs
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=SYSCPU USAGE=OUTPUT.CPU %
+:DATAI HELP='FLD/SYSCPU' VAR=SYSCPU USAGE=OUTPUT.CPU %
 :DATAIX VAR=ELAPSED USAGE=OUTPUT.
 :DATAIXT.Elapsed time
 :DATAIX VAR=ACTJOBS USAGE=OUTPUT.
@@ -225,34 +225,34 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBS COMPACT.
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOBNM.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOBNM.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOBNM.)'.4=End
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.)'.5=Work with
-:LISTACT OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOBNM.)'.6=Release
-:LISTACT OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOBNM.)'.7=Display message
-:LISTACT OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*SPLF)'.8=Work with spooled files
-:LISTACT OPTION=9 ENTER='RETURN 9'.9=Exclude
-:LISTACT OPTION=10 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*PGMSTK)'.10=Display call stack
-:LISTACT OPTION=11 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*JOBLCK)'.11=Work with locks
-:LISTACT OPTION=12 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*THREAD)'.12=Work with threads
-:LISTACT OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOBNM.)'.13=Disconnect
-:LISTACT OPTION=14 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*MUTEX)'.14=Work with mutexes
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Subsystem/Job
-:LISTCOL VAR=CURUSER USAGE=OUTPUT.Current User
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=NUMBER USAGE=OUTPUT.Number
-:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=CPU USAGE=OUTPUT.CPU %
-:LISTCOL VAR=FUNCTION USAGE=OUTPUT.Function
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Status
-:LISTCOL VAR=POOL USAGE=OUTPUT.Pool
-:LISTCOL VAR=PTY USAGE=OUTPUT.Pty
-:LISTCOL VAR=CPUSEC USAGE=OUTPUT.CPU
-:LISTCOL VAR=AUXIO USAGE=OUTPUT.AuxIO
-:LISTCOL VAR=THREADS USAGE=OUTPUT.Threads
-:LISTCOL VAR=TMPSTG USAGE=OUTPUT.Temporary Storage
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOB JOB(&NUMBER./&USER./&JOBNM.)'.2=Change
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=3 ENTER='CMD HLDJOB JOB(&NUMBER./&USER./&JOBNM.)'.3=Hold
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOBNM.)'.4=End
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.)'.5=Work with
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=6 ENTER='CMD RLSJOB JOB(&NUMBER./&USER./&JOBNM.)'.6=Release
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=7 ENTER='CMD DSPJOBLOG JOB(&NUMBER./&USER./&JOBNM.)'.7=Display message
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*SPLF)'.8=Work with spooled files
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=9 ENTER='RETURN 9'.9=Exclude
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=10 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*PGMSTK)'.10=Display call stack
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=11 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*JOBLCK)'.11=Work with locks
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=12 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*THREAD)'.12=Work with threads
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=13 ENTER='CMD DSCJOB JOB(&NUMBER./&USER./&JOBNM.)'.13=Disconnect
+:LISTACT HELP='WRKACTJW/OPTIONS' OPTION=14 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOBNM.) OPTION(*MUTEX)'.14=Work with mutexes
+:LISTCOL HELP='WRKACTJW/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Subsystem/Job
+:LISTCOL HELP='FLD/CURUSER' VAR=CURUSER USAGE=OUTPUT.Current User
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT.Number
+:LISTCOL HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/CPU' VAR=CPU USAGE=OUTPUT.CPU %
+:LISTCOL HELP='FLD/FUNCTION' VAR=FUNCTION USAGE=OUTPUT.Function
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/POOL' VAR=POOL USAGE=OUTPUT.Pool
+:LISTCOL HELP='FLD/PTY' VAR=PTY USAGE=OUTPUT.Pty
+:LISTCOL HELP='FLD/CPUSEC' VAR=CPUSEC USAGE=OUTPUT.CPU
+:LISTCOL HELP='FLD/AUXIO' VAR=AUXIO USAGE=OUTPUT.AuxIO
+:LISTCOL HELP='FLD/THREADS' VAR=THREADS USAGE=OUTPUT.Threads
+:LISTCOL HELP='FLD/TMPSTG' VAR=TMPSTG USAGE=OUTPUT.Temporary Storage
 :LISTVIEW COLS='OPT JOB CURUSER NUMBER TYPE CPU FUNCTION STATUS POOL PTY CPUSEC AUXIO THREADS TMPSTG'.
 :ELIST.
 :CMDLINE SIZE=SHORT.
@@ -260,21 +260,21 @@
 :PANEL NAME=WRKACTJI KEYL=SELKEYS HELP=WRKACTJI ENTER='RETURN 1' TOPSEP=SYSNAM.Include
 :TOPINST.Type choices, press Enter.
 :DATA DEPTH='*'.
-:DATAI VAR=SELSBS USAGE=INOUT.Subsystem
-:DATAI VAR=SELJOB USAGE=INOUT.Job name
-:DATAI VAR=SELUSER USAGE=INOUT.Current user
-:DATAI VAR=SELTYPE USAGE=INOUT.Job type
-:DATAI VAR=SELSTS USAGE=INOUT.Status
+:DATAI HELP='FLD/SELSBS' VAR=SELSBS USAGE=INOUT.Subsystem
+:DATAI HELP='FLD/SELJOB' VAR=SELJOB USAGE=INOUT.Job name
+:DATAI HELP='FLD/SELUSER' VAR=SELUSER USAGE=INOUT.Current user
+:DATAI HELP='FLD/SELTYPE' VAR=SELTYPE USAGE=INOUT.Job type
+:DATAI HELP='FLD/SELSTS' VAR=SELSTS USAGE=INOUT.Status
 :EDATA.
 :EPANEL.
 :PANEL NAME=WRKACTJS KEYL=SELKEYS HELP=WRKACTJI ENTER='RETURN 1' TOPSEP=SYSNAM.Subset
 :TOPINST.Type choices, press Enter.
 :DATA DEPTH='*'.
-:DATAI VAR=SELSBS USAGE=INOUT.Subsystem
-:DATAI VAR=SELJOB USAGE=INOUT.Job name
-:DATAI VAR=SELUSER USAGE=INOUT.Current user
-:DATAI VAR=SELTYPE USAGE=INOUT.Job type
-:DATAI VAR=SELSTS USAGE=INOUT.Status
+:DATAI HELP='FLD/SELSBS' VAR=SELSBS USAGE=INOUT.Subsystem
+:DATAI HELP='FLD/SELJOB' VAR=SELJOB USAGE=INOUT.Job name
+:DATAI HELP='FLD/SELUSER' VAR=SELUSER USAGE=INOUT.Current user
+:DATAI HELP='FLD/SELTYPE' VAR=SELTYPE USAGE=INOUT.Job type
+:DATAI HELP='FLD/SELSTS' VAR=SELSTS USAGE=INOUT.Status
 :EDATA.
 :EPANEL.
 :HELP NAME=WRKACTJ.Work with Active Jobs - Help
@@ -293,5 +293,195 @@ back the jobs option 9 left out.
 :HELP NAME=AJKEYS.Function keys
 :P.F3 leaves the display, F5 refreshes it, F11 shows the next view and
 F23 the other options. F24 shows the remaining keys.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/SYSCPU'.CPU %
+:P.The CPU % shown for what the display is about.
+:EHELP.
+:HELP NAME='WRKACTJ1/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOB'.Subsystem/Job
+:P.The subsystem/Job of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CURUSER'.Current User
+:P.The current User of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NUMBER'.Number
+:P.The number of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CPU'.CPU %
+:P.The CPU % of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/FUNCTION'.Function
+:P.The function of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/POOL'.Pool
+:P.The pool of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PTY'.Pty
+:P.The pty of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CPUSEC'.CPU
+:P.The CPU of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/INT'.--------Elapsed--------- int
+:P.The --------Elapsed--------- int of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSP'.--------Elapsed--------- rsp
+:P.The --------Elapsed--------- rsp of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUXIO'.--------Elapsed--------- auxIO
+:P.The --------Elapsed--------- auxIO of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ECPU'.--------Elapsed--------- CPU %
+:P.The --------Elapsed--------- CPU % of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/THREADS'.Threads
+:P.The threads of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TMPSTG'.Temporary Storage
+:P.The temporary Storage of each entry in the list.
+:EHELP.
+:HELP NAME='WRKACTJ1/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+(CHGJOB) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+(HLDJOB) command runs for the entry.
+:PT.4=End
+:PD.Type 4 next to an entry and press Enter to end it. The End Job
+(ENDJOB) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Job (WRKJOB) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job (RLSJOB) command runs for the entry.
+:PT.7=Display message
+:PD.Type 7 next to an entry and press Enter to display message it. The
+Display Job Log (DSPJOBLOG) command runs for the entry.
+:PT.8=Work with spooled files
+:PD.Type 8 next to an entry and press Enter to work with spooled files
+it. The Work with Job (WRKJOB) command runs for the entry.
+:PT.13=Disconnect ...
+:PD.Type 13 next to an entry and press Enter to disconnect &period...
+it. The Disconnect Job (DSCJOB) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKACTJ2/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKACTJ2/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.9=Exclude
+:PD.Type 9 next to an entry and press Enter to exclude it.
+:PT.10=Display call stack
+:PD.Type 10 next to an entry and press Enter to display call stack it.
+The Work with Job (WRKJOB) command runs for the entry.
+:PT.11=Work with locks
+:PD.Type 11 next to an entry and press Enter to work with locks it. The
+Work with Job (WRKJOB) command runs for the entry.
+:PT.12=Work with threads
+:PD.Type 12 next to an entry and press Enter to work with threads it.
+The Work with Job (WRKJOB) command runs for the entry.
+:PT.14=Work with mutexes ...
+:PD.Type 14 next to an entry and press Enter to work with mutexes
+&period... it. The Work with Job (WRKJOB) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKACTJW/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='WRKACTJW/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+(CHGJOB) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+(HLDJOB) command runs for the entry.
+:PT.4=End
+:PD.Type 4 next to an entry and press Enter to end it. The End Job
+(ENDJOB) command is prompted for the entry.
+:PT.5=Work with
+:PD.Type 5 next to an entry and press Enter to work with it. The Work
+with Job (WRKJOB) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job (RLSJOB) command runs for the entry.
+:PT.7=Display message
+:PD.Type 7 next to an entry and press Enter to display message it. The
+Display Job Log (DSPJOBLOG) command runs for the entry.
+:PT.8=Work with spooled files
+:PD.Type 8 next to an entry and press Enter to work with spooled files
+it. The Work with Job (WRKJOB) command runs for the entry.
+:PT.9=Exclude
+:PD.Type 9 next to an entry and press Enter to exclude it.
+:PT.10=Display call stack
+:PD.Type 10 next to an entry and press Enter to display call stack it.
+The Work with Job (WRKJOB) command runs for the entry.
+:PT.11=Work with locks
+:PD.Type 11 next to an entry and press Enter to work with locks it. The
+Work with Job (WRKJOB) command runs for the entry.
+:PT.12=Work with threads
+:PD.Type 12 next to an entry and press Enter to work with threads it.
+The Work with Job (WRKJOB) command runs for the entry.
+:PT.13=Disconnect
+:PD.Type 13 next to an entry and press Enter to disconnect it. The
+Disconnect Job (DSCJOB) command runs for the entry.
+:PT.14=Work with mutexes
+:PD.Type 14 next to an entry and press Enter to work with mutexes it.
+The Work with Job (WRKJOB) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/SELKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SELSBS'.Subsystem
+:P.Type the subsystem.
+:EHELP.
+:HELP NAME='FLD/SELJOB'.Job name
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/SELUSER'.Current user
+:P.Type the current user.
+:EHELP.
+:HELP NAME='FLD/SELTYPE'.Job type
+:P.Type the job type.
+:EHELP.
+:HELP NAME='FLD/SELSTS'.Status
+:P.Type the status.
 :EHELP.
 :EPNLGRP.

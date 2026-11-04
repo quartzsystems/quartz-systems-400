@@ -11,7 +11,14 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='JOB2'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGGRPA PNLGRP=QHWCCMD.
+:IMPORT NAME=CHGJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=DSPJOBLOG PNLGRP=QHWMCMD.
+:IMPORT NAME=ENDGRPJOB PNLGRP=QHWCCMD.
+:IMPORT NAME=TFRGRPJOB PNLGRP=QHWCCMD.
+:IMPORT NAME=WRKJOBSCDE PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKSBMJOB PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,15 +31,15 @@
 :EKEYL.
 :PANEL NAME=JOB2 HELP=HLPJOB2 KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Jobs
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD DSPJOBLOG'.Display your job log
-:MENUI OPTION=2 ACTION='CMD ?CHGJOB'.Change your job
-:MENUI OPTION=3 ACTION='CMD ?SBMDBJOB'.Submit a job to batch from a source file
-:MENUI OPTION=4 ACTION='CMD WRKSBMJOB'.Work with your batch jobs
-:MENUI OPTION=5 ACTION='CMD ?CHGGRPA'.Change your group job attributes
-:MENUI OPTION=6 ACTION='CMD ?TFRGRPJOB'.Transfer to a group job
-:MENUI OPTION=7 ACTION='CMD ?ENDGRPJOB'.End a group job
-:MENUI OPTION=8 ACTION='CMD WRKJOBSCDE'.Work with job schedule entries
-:MENUI OPTION=70 ACTION='MENU CMDJOB'.Related commands
+:MENUI HELP=DSPJOBLOG OPTION=1 ACTION='CMD DSPJOBLOG'.Display your job log
+:MENUI HELP=CHGJOB OPTION=2 ACTION='CMD ?CHGJOB'.Change your job
+:MENUI HELP='JOB2/OPT3' OPTION=3 ACTION='CMD ?SBMDBJOB'.Submit a job to batch from a source file
+:MENUI HELP=WRKSBMJOB OPTION=4 ACTION='CMD WRKSBMJOB'.Work with your batch jobs
+:MENUI HELP=CHGGRPA OPTION=5 ACTION='CMD ?CHGGRPA'.Change your group job attributes
+:MENUI HELP=TFRGRPJOB OPTION=6 ACTION='CMD ?TFRGRPJOB'.Transfer to a group job
+:MENUI HELP=ENDGRPJOB OPTION=7 ACTION='CMD ?ENDGRPJOB'.End a group job
+:MENUI HELP=WRKJOBSCDE OPTION=8 ACTION='CMD WRKJOBSCDE'.Work with job schedule entries
+:MENUI HELP='JOB2/OPT70' OPTION=70 ACTION='MENU CMDJOB'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -42,5 +49,31 @@ schedule.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='JOB2/OPT3'.Submit a job to batch from a source file
+:P.Option 3. Runs the SBMDBJOB command&colon. Submit a job to batch from
+a source file.
+:EHELP.
+:HELP NAME='JOB2/OPT70'.Related commands
+:P.Option 70. Shows menu CMDJOB&colon. Related commands.
 :EHELP.
 :EPNLGRP.

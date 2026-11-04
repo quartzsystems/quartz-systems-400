@@ -25,7 +25,7 @@
 :VAR NAME=SIZE CLASS=VALCL.
 :VAR NAME=PRVRCV CLASS=NAMECL.
 :VAR NAME=NXTRCV CLASS=NAMECL.
-:KEYL NAME=RAKEYS.
+:KEYL HELP='KEYS/RAKEYS' NAME=RAKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -36,25 +36,25 @@
 :PANEL NAME=DSPJRNRCVA KEYL=RAKEYS HELP=DSPJRNRCVA ENTER='RETURN 1' TOPSEP=SPACE.Display Journal Receiver Attributes
 :DATA DEPTH=2.
 :DATACOL WIDTH=40.
-:DATAI VAR=RCV USAGE=OUTPUT.Receiver
+:DATAI HELP='FLD/RCV' VAR=RCV USAGE=OUTPUT.Receiver
 :DATACOL WIDTH=38.
-:DATAI VAR=RCVLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/RCVLIB' VAR=RCVLIB USAGE=OUTPUT.Library
 :EDATA.
 :DATA DEPTH='*'.
-:DATAI VAR=JRN USAGE=OUTPUT.Journal
+:DATAI HELP='FLD/JRN' VAR=JRN USAGE=OUTPUT.Journal
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=JRNLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/JRNLIB' VAR=JRNLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=RCVTEXT USAGE=OUTPUT.Text
-:DATAI VAR=STATUS USAGE=OUTPUT.Status
-:DATAI VAR=ATTACHED USAGE=OUTPUT.Attached date and time
-:DATAI VAR=DETACHED USAGE=OUTPUT.Detached date and time
-:DATAI VAR=FIRSTSEQ USAGE=OUTPUT.First sequence number
-:DATAI VAR=LASTSEQ USAGE=OUTPUT.Last sequence number
-:DATAI VAR=ENTRIES USAGE=OUTPUT.Number of entries
-:DATAI VAR=SIZE USAGE=OUTPUT.Size (bytes)
-:DATAI VAR=PRVRCV USAGE=OUTPUT.Previous receiver
-:DATAI VAR=NXTRCV USAGE=OUTPUT.Next receiver
+:DATAI HELP='FLD/RCVTEXT' VAR=RCVTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/ATTACHED' VAR=ATTACHED USAGE=OUTPUT.Attached date and time
+:DATAI HELP='FLD/DETACHED' VAR=DETACHED USAGE=OUTPUT.Detached date and time
+:DATAI HELP='FLD/FIRSTSEQ' VAR=FIRSTSEQ USAGE=OUTPUT.First sequence number
+:DATAI HELP='FLD/LASTSEQ' VAR=LASTSEQ USAGE=OUTPUT.Last sequence number
+:DATAI HELP='FLD/ENTRIES' VAR=ENTRIES USAGE=OUTPUT.Number of entries
+:DATAI HELP='FLD/SIZE' VAR=SIZE USAGE=OUTPUT.Size (bytes)
+:DATAI HELP='FLD/PRVRCV' VAR=PRVRCV USAGE=OUTPUT.Previous receiver
+:DATAI HELP='FLD/NXTRCV' VAR=NXTRCV USAGE=OUTPUT.Next receiver
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -62,5 +62,56 @@
 :P.A journal receiver: the journal it belongs to, when it was attached
 and detached, the sequence numbers of the entries it holds, and its
 neighbours in the receiver chain.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/RAKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/RCV'.Receiver
+:P.The receiver shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RCVLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JRN'.Journal
+:P.The journal, by name and library.
+:EHELP.
+:HELP NAME='FLD/JRNLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RCVTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ATTACHED'.Attached date and time
+:P.The attached date and time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DETACHED'.Detached date and time
+:P.The detached date and time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/FIRSTSEQ'.First sequence number
+:P.The first sequence number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LASTSEQ'.Last sequence number
+:P.The last sequence number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ENTRIES'.Number of entries
+:P.The number of entries shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SIZE'.Size (bytes)
+:P.The size (bytes) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRVRCV'.Previous receiver
+:P.The previous receiver shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NXTRCV'.Next receiver
+:P.The next receiver shown for what the display is about.
 :EHELP.
 :EPNLGRP.

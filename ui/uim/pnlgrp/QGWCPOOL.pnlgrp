@@ -30,7 +30,7 @@
 :VAR NAME=POOLTEXT CLASS=TEXTCL.
 :VAR NAME=WIDEST CLASS=NAMECL.
 :LISTDEF NAME=POOLS VARS='POOL SIZE ACTLVL ALLOC POOLID PAGDFN PAGCUR POOLTEXT'.
-:KEYL NAME=SPKEYS.
+:KEYL HELP='KEYS/SPKEYS' NAME=SPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -44,20 +44,20 @@
 :EKEYL.
 :PANEL NAME=WRKSHRPOOL KEYL=SPKEYS HELP=WRKSHRPOOL ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Shared Pools
 :DATA DEPTH=2.
-:DATAI VAR=MAINSTG USAGE=OUTPUT.Main storage size (M)
+:DATAI HELP='FLD/MAINSTG' VAR=MAINSTG USAGE=OUTPUT.Main storage size (M)
 :EDATA.
 :TOPINST.Type changes (if allowed), press Enter.
 :LIST DEPTH='*' LISTDEF=POOLS VIEWS=2 MAXHEAD=2.
-:LISTCOL VAR=POOL USAGE=OUTPUT.Pool
-:LISTCOL VAR=SIZE USAGE=INOUT.Defined Size (M)
-:LISTCOL VAR=ACTLVL USAGE=INOUT.Max Active
-:LISTCOL VAR=ALLOC USAGE=OUTPUT.Allocated Size (M)
-:LISTCOL VAR=POOLID USAGE=OUTPUT.Pool ID
+:LISTCOL HELP='FLD/POOL' VAR=POOL USAGE=OUTPUT.Pool
+:LISTCOL HELP='FLD/SIZE' VAR=SIZE USAGE=INOUT.Defined Size (M)
+:LISTCOL HELP='FLD/ACTLVL' VAR=ACTLVL USAGE=INOUT.Max Active
+:LISTCOL HELP='FLD/ALLOC' VAR=ALLOC USAGE=OUTPUT.Allocated Size (M)
+:LISTCOL HELP='FLD/POOLID' VAR=POOLID USAGE=OUTPUT.Pool ID
 :LISTGRP COL=PAGING.-Paging Option--
-:LISTCOL VAR=PAGDFN USAGE=OUTPUT.Defined
-:LISTCOL VAR=PAGCUR USAGE=OUTPUT.Current
+:LISTCOL HELP='FLD/PAGDFN' VAR=PAGDFN USAGE=OUTPUT.Defined
+:LISTCOL HELP='FLD/PAGCUR' VAR=PAGCUR USAGE=OUTPUT.Current
 :ELISTGRP.
-:LISTCOL VAR=POOLTEXT USAGE=OUTPUT.Description
+:LISTCOL HELP='FLD/POOLTEXT' VAR=POOLTEXT USAGE=OUTPUT.Description
 :LISTVIEW COLS='POOL SIZE ACTLVL ALLOC POOLID PAGING'.
 :LISTVIEW COLS='POOL POOLTEXT'.
 :ELIST.
@@ -68,5 +68,51 @@
 many jobs may be active in it at once and the system pool number it
 has while a subsystem uses it. Type a new size (in megabytes) or
 activity level over a pool's and press Enter to change the pool.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display text
+:PD.Display text.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/MAINSTG'.Main storage size (M)
+:P.The main storage size (M) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/POOL'.Pool
+:P.The pool of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SIZE'.Defined Size (M)
+:P.Type the defined Size (M) for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/ACTLVL'.Max Active
+:P.Type the max Active for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/ALLOC'.Allocated Size (M)
+:P.The allocated Size (M) of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/POOLID'.Pool ID
+:P.The pool ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PAGDFN'.-Paging Option-- defined
+:P.The -Paging Option-- defined of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PAGCUR'.-Paging Option-- current
+:P.The -Paging Option-- current of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/POOLTEXT'.Description
+:P.The description of each entry in the list.
 :EHELP.
 :EPNLGRP.

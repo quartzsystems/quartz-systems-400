@@ -32,12 +32,12 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LIBS SCROLL=YES.
-:LISTACT OPTION=5 ENTER='CMD DSPLIB LIB(&LIBNAME.)'.5=Display objects in library
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LIBNAME USAGE=OUTPUT.Library
-:LISTCOL VAR=LIBTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=ASPDEV USAGE=OUTPUT.ASP  Device
-:LISTCOL VAR=LIBTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='DSPLIBL/OPTIONS' OPTION=5 ENTER='CMD DSPLIB LIB(&LIBNAME.)'.5=Display objects in library
+:LISTCOL HELP='DSPLIBL/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LIBNAME' VAR=LIBNAME USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/LIBTYPE' VAR=LIBTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/ASPDEV' VAR=ASPDEV USAGE=OUTPUT.ASP  Device
+:LISTCOL HELP='FLD/LIBTEXT' VAR=LIBTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :HELP NAME=DSPLIBLH.Display Library List - Help
@@ -49,5 +49,32 @@ objects.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display, F17 and F18
 move to the top and the bottom of the list.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='DSPLIBL/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LIBNAME'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIBTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ASPDEV'.ASP  Device
+:P.The ASP Device of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIBTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='DSPLIBL/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display objects in library
+:PD.Type 5 next to an entry and press Enter to display objects in
+library it. The Display Library (DSPLIB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='MAIN'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=SIGNOFF PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,18 +25,18 @@
 :EKEYL.
 :PANEL NAME=MAIN HELP=HLPMAIN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.QS/400 Main Menu
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU USER'.User tasks
-:MENUI OPTION=2 ACTION='MENU OFCTSK'.Office tasks
-:MENUI OPTION=3 ACTION='MENU SYSTEM'.General system tasks
-:MENUI OPTION=4 ACTION='MENU DATA'.Files, libraries, and folders
-:MENUI OPTION=5 ACTION='MENU PROGRAM'.Programming
-:MENUI OPTION=6 ACTION='MENU CMN'.Communications
-:MENUI OPTION=7 ACTION='MENU DEFINE'.Define or change the system
-:MENUI OPTION=8 ACTION='MENU PROBLEM'.Problem handling
-:MENUI OPTION=9 ACTION='MENU MAJOR'.Display a menu
-:MENUI OPTION=10 ACTION='MENU INFO'.Information Assistant options
-:MENUI OPTION=11 ACTION='MENU ACCESS'.QS/400 Access tasks
-:MENUI OPTION=90 ACTION='CMD SIGNOFF'.Sign off
+:MENUI HELP='MAIN/OPT1' OPTION=1 ACTION='MENU USER'.User tasks
+:MENUI HELP='MAIN/OPT2' OPTION=2 ACTION='MENU OFCTSK'.Office tasks
+:MENUI HELP='MAIN/OPT3' OPTION=3 ACTION='MENU SYSTEM'.General system tasks
+:MENUI HELP='MAIN/OPT4' OPTION=4 ACTION='MENU DATA'.Files, libraries, and folders
+:MENUI HELP='MAIN/OPT5' OPTION=5 ACTION='MENU PROGRAM'.Programming
+:MENUI HELP='MAIN/OPT6' OPTION=6 ACTION='MENU CMN'.Communications
+:MENUI HELP='MAIN/OPT7' OPTION=7 ACTION='MENU DEFINE'.Define or change the system
+:MENUI HELP='MAIN/OPT8' OPTION=8 ACTION='MENU PROBLEM'.Problem handling
+:MENUI HELP='MAIN/OPT9' OPTION=9 ACTION='MENU MAJOR'.Display a menu
+:MENUI HELP='MAIN/OPT10' OPTION=10 ACTION='MENU INFO'.Information Assistant options
+:MENUI HELP='MAIN/OPT11' OPTION=11 ACTION='MENU ACCESS'.QS/400 Access tasks
+:MENUI HELP=SIGNOFF OPTION=90 ACTION='CMD SIGNOFF'.Sign off
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -61,5 +62,57 @@ sessions start with.
 :H2.Signing Off
 :P.Option 90 signs off. The SIGNOFF command does the same, and with
 LOG(*LIST) keeps the session's job log as a spooled file.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F23=Set initial menu
+:PD.Set initial menu.
+:EPARML.
+:EHELP.
+:HELP NAME='MAIN/OPT1'.User tasks
+:P.Option 1. Shows menu USER&colon. User tasks.
+:EHELP.
+:HELP NAME='MAIN/OPT2'.Office tasks
+:P.Option 2. Shows menu OFCTSK&colon. Office tasks.
+:EHELP.
+:HELP NAME='MAIN/OPT3'.General system tasks
+:P.Option 3. Shows menu SYSTEM&colon. General system tasks.
+:EHELP.
+:HELP NAME='MAIN/OPT4'.Files, libraries, and folders
+:P.Option 4. Shows menu DATA&colon. Files, libraries, and folders.
+:EHELP.
+:HELP NAME='MAIN/OPT5'.Programming
+:P.Option 5. Shows menu PROGRAM&colon. Programming.
+:EHELP.
+:HELP NAME='MAIN/OPT6'.Communications
+:P.Option 6. Shows menu CMN&colon. Communications.
+:EHELP.
+:HELP NAME='MAIN/OPT7'.Define or change the system
+:P.Option 7. Shows menu DEFINE&colon. Define or change the system.
+:EHELP.
+:HELP NAME='MAIN/OPT8'.Problem handling
+:P.Option 8. Shows menu PROBLEM&colon. Problem handling.
+:EHELP.
+:HELP NAME='MAIN/OPT9'.Display a menu
+:P.Option 9. Shows menu MAJOR&colon. Display a menu.
+:EHELP.
+:HELP NAME='MAIN/OPT10'.Information Assistant options
+:P.Option 10. Shows menu INFO&colon. Information Assistant options.
+:EHELP.
+:HELP NAME='MAIN/OPT11'.QS/400 Access tasks
+:P.Option 11. Shows menu ACCESS&colon. QS/400 Access tasks.
 :EHELP.
 :EPNLGRP.

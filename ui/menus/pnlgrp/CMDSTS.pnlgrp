@@ -11,7 +11,13 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDSTS'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPSRVSTS PNLGRP=QHSXCMD.
+:IMPORT NAME=RTVCFGSTS PNLGRP=QHCLCMD.
+:IMPORT NAME=WRKCFGSTS PNLGRP=QHDCCMD1.
+:IMPORT NAME=WRKDSKSTS PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKMLBSTS PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKSYSSTS PNLGRP=QHWMCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -33,20 +39,20 @@
 :MENUI OPTION=7 ACTION='CMD ?DSPLANSTS'.
 :MENUI OPTION=8 ACTION='CMD ?DSPMODSTS'.
 :MENUI OPTION=9 ACTION='CMD ?DSPSOCSTS'.
-:MENUI OPTION=10 ACTION='CMD ?DSPSRVSTS'.Display Service Status  DSPSRVSTS
+:MENUI OPTION=10 ACTION='CMD ?DSPSRVSTS' HELP=DSPSRVSTS.Display Service Status  DSPSRVSTS
 :MENUI OPTION=11 ACTION='CMD ?DSPSYSSTS'.
 :MENUI OPTION=12 ACTION='CMD ?DSPTAPSTS'.
 :MENUI OPTION=13 ACTION='CMD ?QRYPRBSTS'.
-:MENUI OPTION=14 ACTION='CMD ?RTVCFGSTS'.Retrieve Configuration Status  RTVCFGSTS
+:MENUI OPTION=14 ACTION='CMD ?RTVCFGSTS' HELP=RTVCFGSTS.Retrieve Configuration Status  RTVCFGSTS
 :MENUI OPTION=15 ACTION='CMD ?WRKAPPNSTS'.
-:MENUI OPTION=16 ACTION='CMD ?WRKCFGSTS'.Work with Configuration Status  WRKCFGSTS
+:MENUI OPTION=16 ACTION='CMD ?WRKCFGSTS' HELP=WRKCFGSTS.Work with Configuration Status  WRKCFGSTS
 :MENUI OPTION=17 ACTION='CMD ?WRKCICSSTS'.
-:MENUI OPTION=18 ACTION='CMD ?WRKDSKSTS'.Work with Disk Status  WRKDSKSTS
+:MENUI OPTION=18 ACTION='CMD ?WRKDSKSTS' HELP=WRKDSKSTS.Work with Disk Status  WRKDSKSTS
 :MENUI OPTION=19 ACTION='CMD ?WRKHYSSTS'.
-:MENUI OPTION=20 ACTION='CMD ?WRKMLBSTS'.Work with Media Library Status  WRKMLBSTS
+:MENUI OPTION=20 ACTION='CMD ?WRKMLBSTS' HELP=WRKMLBSTS.Work with Media Library Status  WRKMLBSTS
 :MENUI OPTION=21 ACTION='CMD ?WRKNWSSTS'.
 :MENUI OPTION=22 ACTION='CMD ?WRKPRTSTS'.
-:MENUI OPTION=23 ACTION='CMD ?WRKSYSSTS'.Work with System Status  WRKSYSSTS
+:MENUI OPTION=23 ACTION='CMD ?WRKSYSSTS' HELP=WRKSYSSTS.Work with System Status  WRKSYSSTS
 :MENUI OPTION=24 ACTION='CMD ?WRKTCPSTS'.
 :EMENUGRP.
 :EMENU.
@@ -55,5 +61,21 @@
 :HELP NAME=HLPCMDSTS.Status Commands - Help
 :P.Status Commands: every command whose name carries STS after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

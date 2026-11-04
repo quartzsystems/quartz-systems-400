@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='DEVICE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKCFGSTS PNLGRP=QHDCCMD1.
+:IMPORT NAME=WRKDEVD PNLGRP=QHCFCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +26,14 @@
 :EKEYL.
 :PANEL NAME=DEVICE HELP=HLPDEVICE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Device Operations
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKCFGSTS CFGTYPE(*DEV)'.Work with device status
-:MENUI OPTION=2 ACTION='CMD WRKDEVD DEVD(*DSP)'.Work with displays
-:MENUI OPTION=3 ACTION='MENU PRINTER'.Printer
-:MENUI OPTION=4 ACTION='MENU TAPE'.Tape
-:MENUI OPTION=5 ACTION='MENU DISKETTE'.Diskette
-:MENUI OPTION=6 ACTION='MENU CFGPCS'.Configure PC connections
-:MENUI OPTION=7 ACTION='MENU OPTICAL'.Optical
-:MENUI OPTION=70 ACTION='MENU CMDDEV'.Related commands
+:MENUI HELP=WRKCFGSTS OPTION=1 ACTION='CMD WRKCFGSTS CFGTYPE(*DEV)'.Work with device status
+:MENUI HELP=WRKDEVD OPTION=2 ACTION='CMD WRKDEVD DEVD(*DSP)'.Work with displays
+:MENUI HELP='DEVICE/OPT3' OPTION=3 ACTION='MENU PRINTER'.Printer
+:MENUI HELP='DEVICE/OPT4' OPTION=4 ACTION='MENU TAPE'.Tape
+:MENUI HELP='DEVICE/OPT5' OPTION=5 ACTION='MENU DISKETTE'.Diskette
+:MENUI HELP='DEVICE/OPT6' OPTION=6 ACTION='MENU CFGPCS'.Configure PC connections
+:MENUI HELP='DEVICE/OPT7' OPTION=7 ACTION='MENU OPTICAL'.Optical
+:MENUI HELP='DEVICE/OPT70' OPTION=70 ACTION='MENU CMDDEV'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -41,5 +43,42 @@ each kind of device.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='DEVICE/OPT3'.Printer
+:P.Option 3. Shows menu PRINTER&colon. Printer.
+:EHELP.
+:HELP NAME='DEVICE/OPT4'.Tape
+:P.Option 4. Shows menu TAPE&colon. Tape.
+:EHELP.
+:HELP NAME='DEVICE/OPT5'.Diskette
+:P.Option 5. Shows menu DISKETTE&colon. Diskette.
+:EHELP.
+:HELP NAME='DEVICE/OPT6'.Configure PC connections
+:P.Option 6. Shows menu CFGPCS&colon. Configure PC connections.
+:EHELP.
+:HELP NAME='DEVICE/OPT7'.Optical
+:P.Option 7. Shows menu OPTICAL&colon. Optical.
+:EHELP.
+:HELP NAME='DEVICE/OPT70'.Related commands
+:P.Option 70. Shows menu CMDDEV&colon. Related commands.
 :EHELP.
 :EPNLGRP.

@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='TECHHELP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPMSG PNLGRP=QHMHCMD.
+:IMPORT NAME=SIGNOFF PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKPRB PNLGRP=QHSXCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,14 +24,14 @@
 :EKEYL.
 :PANEL NAME=TECHHELP HELP=HLPTECHHELP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Technical Support Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display messages for the system operator
-:MENUI OPTION=10 ACTION='CMD WRKPRB'.Work with problems with the system
-:MENUI OPTION=11 ACTION='MENU PTF'.Work with PTF(s)
-:MENUI OPTION=12 ACTION='CMD ?STRCPYSCN'.Copy your screen on another display station
-:MENUI OPTION=13 ACTION='CMD ENDCPYSCN'.Stop copying your screen
-:MENUI OPTION=20 ACTION='CMD ?STRRMTSPT'.Connect to technical support
-:MENUI OPTION=21 ACTION='CMD ENDRMTSPT'.Disconnect from technical support
-:MENUI OPTION=80 ACTION='CMD SIGNOFF'.Temporary sign-off
+:MENUI HELP=DSPMSG OPTION=1 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display messages for the system operator
+:MENUI HELP=WRKPRB OPTION=10 ACTION='CMD WRKPRB'.Work with problems with the system
+:MENUI HELP='TECHHELP/OPT11' OPTION=11 ACTION='MENU PTF'.Work with PTF(s)
+:MENUI HELP='TECHHELP/OPT12' OPTION=12 ACTION='CMD ?STRCPYSCN'.Copy your screen on another display station
+:MENUI HELP='TECHHELP/OPT13' OPTION=13 ACTION='CMD ENDCPYSCN'.Stop copying your screen
+:MENUI HELP='TECHHELP/OPT20' OPTION=20 ACTION='CMD ?STRRMTSPT'.Connect to technical support
+:MENUI HELP='TECHHELP/OPT21' OPTION=21 ACTION='CMD ENDRMTSPT'.Disconnect from technical support
+:MENUI HELP=SIGNOFF OPTION=80 ACTION='CMD SIGNOFF'.Temporary sign-off
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -37,5 +40,37 @@
 sharing the screen.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='TECHHELP/OPT11'.Work with PTF(s)
+:P.Option 11. Shows menu PTF&colon. Work with PTF(s).
+:EHELP.
+:HELP NAME='TECHHELP/OPT12'.Copy your screen on another display station
+:P.Option 12. Runs the STRCPYSCN command&colon. Copy your screen on
+another display station.
+:EHELP.
+:HELP NAME='TECHHELP/OPT13'.Stop copying your screen
+:P.Option 13. Runs the ENDCPYSCN command&colon. Stop copying your
+screen.
+:EHELP.
+:HELP NAME='TECHHELP/OPT20'.Connect to technical support
+:P.Option 20. Runs the STRRMTSPT command&colon. Connect to technical
+support.
+:EHELP.
+:HELP NAME='TECHHELP/OPT21'.Disconnect from technical support
+:P.Option 21. Runs the ENDRMTSPT command&colon. Disconnect from
+technical support.
 :EHELP.
 :EPNLGRP.

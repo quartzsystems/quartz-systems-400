@@ -146,7 +146,7 @@
 :LISTDEF NAME=OPNF VARS='OFILE OLIB OMBR OSCOPE OACTGRP'.
 :COND NAME=CHANGE EXPR='&CANCHG. EQ "Y"'.
 .* Keys.
-:KEYL NAME=WJKEYS.
+:KEYL HELP='KEYS/WJKEYS' NAME=WJKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -156,7 +156,7 @@
 :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=DJKEYS.
+:KEYL HELP='KEYS/DJKEYS' NAME=DJKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -164,7 +164,7 @@
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :EKEYL.
-:KEYL NAME=ATTRKEYS.
+:KEYL HELP='KEYS/ATTRKEYS' NAME=ATTRKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -175,7 +175,7 @@
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Job menu
 :EKEYL.
-:KEYL NAME=SPLFKEYS.
+:KEYL HELP='KEYS/SPLFKEYS' NAME=SPLFKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -191,7 +191,7 @@
 :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
 :KEYI KEY=F16 ACTION='RETURN 16'.F16=Job menu
 :EKEYL.
-:KEYL NAME=LOGKEYS.
+:KEYL HELP='KEYS/LOGKEYS' NAME=LOGKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -207,7 +207,7 @@
 :KEYI KEY=F17 ACTION=TOP COND=CHANGE.F17=Top
 :KEYI KEY=F18 ACTION=BOTTOM COND=CHANGE.F18=Bottom
 :EKEYL.
-:KEYL NAME=ALLKEYS.
+:KEYL HELP='KEYS/ALLKEYS' NAME=ALLKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -219,7 +219,7 @@
 :KEYI KEY=F17 ACTION=TOP.F17=Top
 :KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
 :EKEYL.
-:KEYL NAME=STKKEYS.
+:KEYL HELP='KEYS/STKKEYS' NAME=STKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -233,7 +233,7 @@
 :KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
 :KEYI KEY=F22 ACTION='RETURN 22'.F22=Display entire field
 :EKEYL.
-:KEYL NAME=LIBLKEYS.
+:KEYL HELP='KEYS/LIBLKEYS' NAME=LIBLKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -244,7 +244,7 @@
 :KEYI KEY=F17 ACTION=TOP.F17=Top
 :KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
 :EKEYL.
-:KEYL NAME=OPNFKEYS.
+:KEYL HELP='KEYS/OPNFKEYS' NAME=OPNFKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -259,182 +259,182 @@
 .* The menus.
 :PANEL NAME=WRKJOB KEYL=WJKEYS HELP=WRKJOB ENTER='RETURN 0' TOPSEP=SYSNAM.Work with Job
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
 :DATAIXT.Number
 :EDATA.
 :MENU DEPTH='*' SCROLL=YES.Select one of the following:
-:MENUI OPTION=1 ACTION='RETURN 101'.Display job status attributes
-:MENUI OPTION=2 ACTION='RETURN 102'.Display job definition attributes
-:MENUI OPTION=3 ACTION='RETURN 103'.Display job run attributes, if active
-:MENUI OPTION=4 ACTION='RETURN 104'.Work with spooled files
-:MENUI OPTION=10 ACTION='RETURN 110'.Display job log, if active, on job queue, or pending
-:MENUI OPTION=11 ACTION='RETURN 111'.Display call stack, if active
-:MENUI OPTION=12 ACTION='RETURN 112'.Work with locks, if active
-:MENUI OPTION=13 ACTION='RETURN 113'.Display library list, if active
-:MENUI OPTION=14 ACTION='RETURN 114'.Display open files, if active
-:MENUI OPTION=15 ACTION='RETURN 115'.Display file overrides, if active
-:MENUI OPTION=16 ACTION='RETURN 116'.Display commitment control status, if active
-:MENUI OPTION=17 ACTION='RETURN 117'.Display communications status, if active
-:MENUI OPTION=18 ACTION='RETURN 118'.Display activation groups, if active
-:MENUI OPTION=19 ACTION='RETURN 119'.Display mutexes, if active
-:MENUI OPTION=20 ACTION='RETURN 120'.Work with threads, if active
+:MENUI HELP='WRKJOB/OPT1' OPTION=1 ACTION='RETURN 101'.Display job status attributes
+:MENUI HELP='WRKJOB/OPT2' OPTION=2 ACTION='RETURN 102'.Display job definition attributes
+:MENUI HELP='WRKJOB/OPT3' OPTION=3 ACTION='RETURN 103'.Display job run attributes, if active
+:MENUI HELP='WRKJOB/OPT4' OPTION=4 ACTION='RETURN 104'.Work with spooled files
+:MENUI HELP='WRKJOB/OPT10' OPTION=10 ACTION='RETURN 110'.Display job log, if active, on job queue, or pending
+:MENUI HELP='WRKJOB/OPT11' OPTION=11 ACTION='RETURN 111'.Display call stack, if active
+:MENUI HELP='WRKJOB/OPT12' OPTION=12 ACTION='RETURN 112'.Work with locks, if active
+:MENUI HELP='WRKJOB/OPT13' OPTION=13 ACTION='RETURN 113'.Display library list, if active
+:MENUI HELP='WRKJOB/OPT14' OPTION=14 ACTION='RETURN 114'.Display open files, if active
+:MENUI HELP='WRKJOB/OPT15' OPTION=15 ACTION='RETURN 115'.Display file overrides, if active
+:MENUI HELP='WRKJOB/OPT16' OPTION=16 ACTION='RETURN 116'.Display commitment control status, if active
+:MENUI HELP='WRKJOB/OPT17' OPTION=17 ACTION='RETURN 117'.Display communications status, if active
+:MENUI HELP='WRKJOB/OPT18' OPTION=18 ACTION='RETURN 118'.Display activation groups, if active
+:MENUI HELP='WRKJOB/OPT19' OPTION=19 ACTION='RETURN 119'.Display mutexes, if active
+:MENUI HELP='WRKJOB/OPT20' OPTION=20 ACTION='RETURN 120'.Work with threads, if active
 :EMENU.
 :CMDLINE SIZE=LONG.
 :EPANEL.
 :PANEL NAME=DSPJOB KEYL=DJKEYS HELP=WRKJOB ENTER='RETURN 0' TOPSEP=SYSNAM.Display Job
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
 :DATAIXT.Number
 :EDATA.
 :MENU DEPTH='*' SCROLL=YES.Select one of the following:
-:MENUI OPTION=1 ACTION='RETURN 101'.Display job status attributes
-:MENUI OPTION=2 ACTION='RETURN 102'.Display job definition attributes
-:MENUI OPTION=3 ACTION='RETURN 103'.Display job run attributes, if active
-:MENUI OPTION=4 ACTION='RETURN 104'.Display spooled files
-:MENUI OPTION=10 ACTION='RETURN 110'.Display job log, if active, on job queue, or pending
-:MENUI OPTION=11 ACTION='RETURN 111'.Display call stack, if active
-:MENUI OPTION=12 ACTION='RETURN 112'.Display locks, if active
-:MENUI OPTION=13 ACTION='RETURN 113'.Display library list, if active
-:MENUI OPTION=14 ACTION='RETURN 114'.Display open files, if active
-:MENUI OPTION=15 ACTION='RETURN 115'.Display file overrides, if active
-:MENUI OPTION=16 ACTION='RETURN 116'.Display commitment control status, if active
-:MENUI OPTION=17 ACTION='RETURN 117'.Display communications status, if active
-:MENUI OPTION=18 ACTION='RETURN 118'.Display activation groups, if active
-:MENUI OPTION=19 ACTION='RETURN 119'.Display mutexes, if active
-:MENUI OPTION=20 ACTION='RETURN 120'.Display threads, if active
+:MENUI HELP='DSPJOB/OPT1' OPTION=1 ACTION='RETURN 101'.Display job status attributes
+:MENUI HELP='DSPJOB/OPT2' OPTION=2 ACTION='RETURN 102'.Display job definition attributes
+:MENUI HELP='DSPJOB/OPT3' OPTION=3 ACTION='RETURN 103'.Display job run attributes, if active
+:MENUI HELP='DSPJOB/OPT4' OPTION=4 ACTION='RETURN 104'.Display spooled files
+:MENUI HELP='DSPJOB/OPT10' OPTION=10 ACTION='RETURN 110'.Display job log, if active, on job queue, or pending
+:MENUI HELP='DSPJOB/OPT11' OPTION=11 ACTION='RETURN 111'.Display call stack, if active
+:MENUI HELP='DSPJOB/OPT12' OPTION=12 ACTION='RETURN 112'.Display locks, if active
+:MENUI HELP='DSPJOB/OPT13' OPTION=13 ACTION='RETURN 113'.Display library list, if active
+:MENUI HELP='DSPJOB/OPT14' OPTION=14 ACTION='RETURN 114'.Display open files, if active
+:MENUI HELP='DSPJOB/OPT15' OPTION=15 ACTION='RETURN 115'.Display file overrides, if active
+:MENUI HELP='DSPJOB/OPT16' OPTION=16 ACTION='RETURN 116'.Display commitment control status, if active
+:MENUI HELP='DSPJOB/OPT17' OPTION=17 ACTION='RETURN 117'.Display communications status, if active
+:MENUI HELP='DSPJOB/OPT18' OPTION=18 ACTION='RETURN 118'.Display activation groups, if active
+:MENUI HELP='DSPJOB/OPT19' OPTION=19 ACTION='RETURN 119'.Display mutexes, if active
+:MENUI HELP='DSPJOB/OPT20' OPTION=20 ACTION='RETURN 120'.Display threads, if active
 :EMENU.
 :EPANEL.
 .* Option 1: status attributes.
 :PANEL NAME=STSA KEYL=ATTRKEYS HELP=WRKJOB ENTER='RETURN 1' TOPSEP=SYSNAM.Display Job Status Attributes
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
 :DATAIXT.Number
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=STATUS USAGE=OUTPUT.Status of job
-:DATAI VAR=CURUSER USAGE=OUTPUT.Current user profile
-:DATAI VAR=IDENTITY USAGE=OUTPUT.Job user identity
+:DATAI HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status of job
+:DATAI HELP='FLD/CURUSER' VAR=CURUSER USAGE=OUTPUT.Current user profile
+:DATAI HELP='FLD/IDENTITY' VAR=IDENTITY USAGE=OUTPUT.Job user identity
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=SETBY USAGE=OUTPUT.Set by
+:DATAI HELP='FLD/SETBY' VAR=SETBY USAGE=OUTPUT.Set by
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Entered system
-:DATAI VAR=ENTDATE USAGE=OUTPUT.Date
-:DATAI VAR=ENTTIME USAGE=OUTPUT.Time
+:DATAI HELP='FLD/ENTDATE' VAR=ENTDATE USAGE=OUTPUT.Date
+:DATAI HELP='FLD/ENTTIME' VAR=ENTTIME USAGE=OUTPUT.Time
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Started
-:DATAI VAR=STRDATE USAGE=OUTPUT.Date
-:DATAI VAR=STRTIME USAGE=OUTPUT.Time
+:DATAI HELP='FLD/STRDATE' VAR=STRDATE USAGE=OUTPUT.Date
+:DATAI HELP='FLD/STRTIME' VAR=STRTIME USAGE=OUTPUT.Time
 :EDATAGRP.
-:DATAI VAR=SBS USAGE=OUTPUT.Subsystem
+:DATAI HELP='FLD/SBS' VAR=SBS USAGE=OUTPUT.Subsystem
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=SBSPOOL USAGE=OUTPUT.Subsystem pool ID
+:DATAI HELP='FLD/SBSPOOL' VAR=SBSPOOL USAGE=OUTPUT.Subsystem pool ID
 :EDATAGRP.
-:DATAI VAR=TYPE USAGE=OUTPUT.Type of job
-:DATAI VAR=SPCENV USAGE=OUTPUT.Special environment
-:DATAI VAR=RTNCODE USAGE=OUTPUT.Program return code
-:DATAI VAR=CNTRLD USAGE=OUTPUT.Controlled end requested
-:DATAI VAR=SYSPOOL USAGE=OUTPUT.System pool identifier
-:DATAI VAR=CPUMS USAGE=OUTPUT.Processing unit time used, in ms
-:DATAI VAR=AUXIO USAGE=OUTPUT.Auxiliary I/O requests of the job
+:DATAI HELP='FLD/TYPE' VAR=TYPE USAGE=OUTPUT.Type of job
+:DATAI HELP='FLD/SPCENV' VAR=SPCENV USAGE=OUTPUT.Special environment
+:DATAI HELP='FLD/RTNCODE' VAR=RTNCODE USAGE=OUTPUT.Program return code
+:DATAI HELP='FLD/CNTRLD' VAR=CNTRLD USAGE=OUTPUT.Controlled end requested
+:DATAI HELP='FLD/SYSPOOL' VAR=SYSPOOL USAGE=OUTPUT.System pool identifier
+:DATAI HELP='FLD/CPUMS' VAR=CPUMS USAGE=OUTPUT.Processing unit time used, in ms
+:DATAI HELP='FLD/AUXIO' VAR=AUXIO USAGE=OUTPUT.Auxiliary I/O requests of the job
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 .* Option 2: definition attributes.
 :PANEL NAME=DFNA KEYL=ATTRKEYS HELP=WRKJOB ENTER='RETURN 1' TOPSEP=SYSNAM.Display Job Definition Attributes
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
 :DATAIXT.Number
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=JOBD USAGE=OUTPUT.Job description
+:DATAI HELP='FLD/JOBD' VAR=JOBD USAGE=OUTPUT.Job description
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=JOBDLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/JOBDLIB' VAR=JOBDLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=JOBQ USAGE=OUTPUT.Job queue
+:DATAI HELP='FLD/JOBQ' VAR=JOBQ USAGE=OUTPUT.Job queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=JOBQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/JOBQLIB' VAR=JOBQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=JOBPTY USAGE=OUTPUT.Job priority (on job queue)
-:DATAI VAR=OUTPTY USAGE=OUTPUT.Output priority (on output queue)
-:DATAI VAR=ENDSEV USAGE=OUTPUT.End severity
+:DATAI HELP='FLD/JOBPTY' VAR=JOBPTY USAGE=OUTPUT.Job priority (on job queue)
+:DATAI HELP='FLD/OUTPTY' VAR=OUTPTY USAGE=OUTPUT.Output priority (on output queue)
+:DATAI HELP='FLD/ENDSEV' VAR=ENDSEV USAGE=OUTPUT.End severity
 :DATAGRP GRPSEP=NONE.Message logging
-:DATAI VAR=LOGLVL USAGE=OUTPUT.Level
-:DATAI VAR=LOGSEV USAGE=OUTPUT.Severity
-:DATAI VAR=LOGTXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/LOGLVL' VAR=LOGLVL USAGE=OUTPUT.Level
+:DATAI HELP='FLD/LOGSEV' VAR=LOGSEV USAGE=OUTPUT.Severity
+:DATAI HELP='FLD/LOGTXT' VAR=LOGTXT USAGE=OUTPUT.Text
 :EDATAGRP.
-:DATAI VAR=LOGCLPGM USAGE=OUTPUT.Log CL program commands
-:DATAI VAR=LOGOUT USAGE=OUTPUT.Job log output
-:DATAI VAR=PRTDEV USAGE=OUTPUT.Printer device
-:DATAI VAR=OUTQ USAGE=OUTPUT.Default output queue
+:DATAI HELP='FLD/LOGCLPGM' VAR=LOGCLPGM USAGE=OUTPUT.Log CL program commands
+:DATAI HELP='FLD/LOGOUT' VAR=LOGOUT USAGE=OUTPUT.Job log output
+:DATAI HELP='FLD/PRTDEV' VAR=PRTDEV USAGE=OUTPUT.Printer device
+:DATAI HELP='FLD/OUTQ' VAR=OUTQ USAGE=OUTPUT.Default output queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=OUTQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/OUTQLIB' VAR=OUTQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=PRTTXT USAGE=OUTPUT.Printer text
-:DATAI VAR=DATFMT USAGE=OUTPUT.Date format
-:DATAI VAR=DATSEP USAGE=OUTPUT.Date separator
-:DATAI VAR=TIMSEP USAGE=OUTPUT.Time separator
-:DATAI VAR=DECFMT USAGE=OUTPUT.Decimal format
-:DATAI VAR=SWS USAGE=OUTPUT.Job switches
-:DATAI VAR=INQMSG USAGE=OUTPUT.Inquiry message reply
-:DATAI VAR=BRKMSG USAGE=OUTPUT.Break message handling
-:DATAI VAR=STSMSG USAGE=OUTPUT.Status message
-:DATAI VAR=DEVRCY USAGE=OUTPUT.Device recovery action
-:DATAI VAR=CCSID USAGE=OUTPUT.Coded character set identifier
-:DATAI VAR=DFTCCSID USAGE=OUTPUT.Default coded character set identifier
-:DATAI VAR=LANGID USAGE=OUTPUT.Language identifier
-:DATAI VAR=CNTRYID USAGE=OUTPUT.Country or region identifier
-:DATAI VAR=SRTSEQ USAGE=OUTPUT.Sort sequence
-:DATAI VAR=MSGQMX USAGE=OUTPUT.Job message queue maximum size
-:DATAI VAR=MSGQFL USAGE=OUTPUT.Job message queue full action
-:DATAI VAR=ALWMLT USAGE=OUTPUT.Allow multiple threads
-:DATAI VAR=SPLFACN USAGE=OUTPUT.Spooled file action
+:DATAI HELP='FLD/PRTTXT' VAR=PRTTXT USAGE=OUTPUT.Printer text
+:DATAI HELP='FLD/DATFMT' VAR=DATFMT USAGE=OUTPUT.Date format
+:DATAI HELP='FLD/DATSEP' VAR=DATSEP USAGE=OUTPUT.Date separator
+:DATAI HELP='FLD/TIMSEP' VAR=TIMSEP USAGE=OUTPUT.Time separator
+:DATAI HELP='FLD/DECFMT' VAR=DECFMT USAGE=OUTPUT.Decimal format
+:DATAI HELP='FLD/SWS' VAR=SWS USAGE=OUTPUT.Job switches
+:DATAI HELP='FLD/INQMSG' VAR=INQMSG USAGE=OUTPUT.Inquiry message reply
+:DATAI HELP='FLD/BRKMSG' VAR=BRKMSG USAGE=OUTPUT.Break message handling
+:DATAI HELP='FLD/STSMSG' VAR=STSMSG USAGE=OUTPUT.Status message
+:DATAI HELP='FLD/DEVRCY' VAR=DEVRCY USAGE=OUTPUT.Device recovery action
+:DATAI HELP='FLD/CCSID' VAR=CCSID USAGE=OUTPUT.Coded character set identifier
+:DATAI HELP='FLD/DFTCCSID' VAR=DFTCCSID USAGE=OUTPUT.Default coded character set identifier
+:DATAI HELP='FLD/LANGID' VAR=LANGID USAGE=OUTPUT.Language identifier
+:DATAI HELP='FLD/CNTRYID' VAR=CNTRYID USAGE=OUTPUT.Country or region identifier
+:DATAI HELP='FLD/SRTSEQ' VAR=SRTSEQ USAGE=OUTPUT.Sort sequence
+:DATAI HELP='FLD/MSGQMX' VAR=MSGQMX USAGE=OUTPUT.Job message queue maximum size
+:DATAI HELP='FLD/MSGQFL' VAR=MSGQFL USAGE=OUTPUT.Job message queue full action
+:DATAI HELP='FLD/ALWMLT' VAR=ALWMLT USAGE=OUTPUT.Allow multiple threads
+:DATAI HELP='FLD/SPLFACN' VAR=SPLFACN USAGE=OUTPUT.Spooled file action
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 .* Option 3: run attributes.
 :PANEL NAME=RUNA KEYL=ATTRKEYS HELP=WRKJOB ENTER='RETURN 1' TOPSEP=SYSNAM.Display Job Run Attributes
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
 :DATAIXT.Number
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
-:DATAI VAR=RUNPTY USAGE=OUTPUT.Run priority
-:DATAI VAR=TIMESLICE USAGE=OUTPUT.Time slice in milliseconds
-:DATAI VAR=PURGE USAGE=OUTPUT.Eligible for purge
-:DATAI VAR=DFTWAIT USAGE=OUTPUT.Default wait time in seconds
-:DATAI VAR=CPUTIME USAGE=OUTPUT.Maximum CPU time in milliseconds
+:DATAI HELP='FLD/RUNPTY' VAR=RUNPTY USAGE=OUTPUT.Run priority
+:DATAI HELP='FLD/TIMESLICE' VAR=TIMESLICE USAGE=OUTPUT.Time slice in milliseconds
+:DATAI HELP='FLD/PURGE' VAR=PURGE USAGE=OUTPUT.Eligible for purge
+:DATAI HELP='FLD/DFTWAIT' VAR=DFTWAIT USAGE=OUTPUT.Default wait time in seconds
+:DATAI HELP='FLD/CPUTIME' VAR=CPUTIME USAGE=OUTPUT.Maximum CPU time in milliseconds
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=CPUUSED USAGE=OUTPUT.CPU time used
+:DATAI HELP='FLD/CPUUSED' VAR=CPUUSED USAGE=OUTPUT.CPU time used
 :EDATAGRP.
-:DATAI VAR=MAXTMP USAGE=OUTPUT.Maximum temporary storage in megabytes
+:DATAI HELP='FLD/MAXTMP' VAR=MAXTMP USAGE=OUTPUT.Maximum temporary storage in megabytes
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=TMPUSED USAGE=OUTPUT.Temporary storage used
-:DATAI VAR=TMPPEAK USAGE=OUTPUT.Peak temporary storage used
+:DATAI HELP='FLD/TMPUSED' VAR=TMPUSED USAGE=OUTPUT.Temporary storage used
+:DATAI HELP='FLD/TMPPEAK' VAR=TMPPEAK USAGE=OUTPUT.Peak temporary storage used
 :EDATAGRP.
-:DATAI VAR=MAXTHD USAGE=OUTPUT.Maximum threads
+:DATAI HELP='FLD/MAXTHD' VAR=MAXTHD USAGE=OUTPUT.Maximum threads
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=THREADS USAGE=OUTPUT.Threads
+:DATAI HELP='FLD/THREADS' VAR=THREADS USAGE=OUTPUT.Threads
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Thread resources affinity
-:DATAI VAR=AFFGRP USAGE=OUTPUT.Group
-:DATAI VAR=AFFLVL USAGE=OUTPUT.Level
+:DATAI HELP='FLD/AFFGRP' VAR=AFFGRP USAGE=OUTPUT.Group
+:DATAI HELP='FLD/AFFLVL' VAR=AFFLVL USAGE=OUTPUT.Level
 :EDATAGRP.
-:DATAI VAR=RSCAFF USAGE=OUTPUT.Resources affinity group
+:DATAI HELP='FLD/RSCAFF' VAR=RSCAFF USAGE=OUTPUT.Resources affinity group
 .* Not shown: it sets the colon column.
 :DATAI VAR=CPUTHD USAGE=OUTPUT DISPLAY=NO.Maximum processing unit time per thread
 :EDATA.
@@ -443,7 +443,7 @@
 .* Option 4: the job's spooled files.
 :PANEL NAME=SPLF KEYL=SPLFKEYS HELP=WRKJOB ENTER='RETURN 1'.Work with Job Spooled Files
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
@@ -451,23 +451,23 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=SPLF.(No spooled output files)
-:LISTACT OPTION=1 ENTER='CMD ?SNDNETSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.1=Send
-:LISTACT OPTION=2 ENTER='CMD ?CHGSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD DLTSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.4=Delete
-:LISTACT OPTION=5 ENTER='CMD DSPSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.5=Display
-:LISTACT OPTION=6 ENTER='CMD RLSSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.6=Release
-:LISTACT OPTION=7 ENTER='RETURN 7'.7=Messages
-:LISTACT OPTION=8 ENTER='CMD WRKSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.8=Attributes
-:LISTACT OPTION=9 ENTER='RETURN 9'.9=Work with printing status
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=FILE USAGE=OUTPUT.File
-:LISTCOL VAR=DEVQ USAGE=OUTPUT.Device or Queue
-:LISTCOL VAR=USRDTA USAGE=OUTPUT.User Data
-:LISTCOL VAR=SPLSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=PAGES USAGE=OUTPUT.Total Pages
-:LISTCOL VAR=CURPAGE USAGE=OUTPUT.Current Page
-:LISTCOL VAR=COPIES USAGE=OUTPUT.Copies
+:LISTACT HELP='SPLF/OPTIONS' OPTION=1 ENTER='CMD ?SNDNETSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.1=Send
+:LISTACT HELP='SPLF/OPTIONS' OPTION=2 ENTER='CMD ?CHGSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.2=Change
+:LISTACT HELP='SPLF/OPTIONS' OPTION=3 ENTER='CMD HLDSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.3=Hold
+:LISTACT HELP='SPLF/OPTIONS' OPTION=4 ENTER='CMD DLTSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.4=Delete
+:LISTACT HELP='SPLF/OPTIONS' OPTION=5 ENTER='CMD DSPSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.5=Display
+:LISTACT HELP='SPLF/OPTIONS' OPTION=6 ENTER='CMD RLSSPLF FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.6=Release
+:LISTACT HELP='SPLF/OPTIONS' OPTION=7 ENTER='RETURN 7'.7=Messages
+:LISTACT HELP='SPLF/OPTIONS' OPTION=8 ENTER='CMD WRKSPLFA FILE(&FILE.) JOB(&NUMBER./&USER./&JOB.) SPLNBR(&SPLNBR.)'.8=Attributes
+:LISTACT HELP='SPLF/OPTIONS' OPTION=9 ENTER='RETURN 9'.9=Work with printing status
+:LISTCOL HELP='SPLF/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/FILE' VAR=FILE USAGE=OUTPUT.File
+:LISTCOL HELP='FLD/DEVQ' VAR=DEVQ USAGE=OUTPUT.Device or Queue
+:LISTCOL HELP='FLD/USRDTA' VAR=USRDTA USAGE=OUTPUT.User Data
+:LISTCOL HELP='FLD/SPLSTS' VAR=SPLSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/PAGES' VAR=PAGES USAGE=OUTPUT.Total Pages
+:LISTCOL HELP='FLD/CURPAGE' VAR=CURPAGE USAGE=OUTPUT.Current Page
+:LISTCOL HELP='FLD/COPIES' VAR=COPIES USAGE=OUTPUT.Copies
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters for options 1, 2, 3 or command
 :EPANEL.
@@ -477,7 +477,7 @@
 :DATAC.&JOBHDR.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=MSGS.
-:LISTCOL VAR=MSGLINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/MSGLINE' VAR=MSGLINE USAGE=OUTPUT.
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -486,32 +486,32 @@
 :DATAC.&JOBHDR.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=MSGS.
-:LISTCOL VAR=MSGLINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/MSGLINE' VAR=MSGLINE USAGE=OUTPUT.
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 .* Option 11: the call stack.
 :PANEL NAME=CALLSTK KEYL=STKKEYS HELP=WRKJOB ENTER='RETURN 1' TOPSEP=SYSNAM BOTSEP=NONE.Display Call Stack
 :DATA DEPTH=3 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
 :DATAIXT.Number
-:DATAI VAR=THREAD USAGE=OUTPUT.Thread
+:DATAI HELP='FLD/THREAD' VAR=THREAD USAGE=OUTPUT.Thread
 :EDATA.
 :LIST DEPTH='*' LISTDEF=STACK MAXHEAD=2.
-:LISTCOL VAR=RQSLVL USAGE=OUTPUT.Type
-:LISTCOL VAR=PGM USAGE=OUTPUT.Program
-:LISTCOL VAR=PGMLIB USAGE=OUTPUT.
-:LISTCOL VAR=STMT USAGE=OUTPUT.Statement
-:LISTCOL VAR=PROC USAGE=OUTPUT.Procedure
+:LISTCOL HELP='FLD/RQSLVL' VAR=RQSLVL USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:LISTCOL HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.
+:LISTCOL HELP='FLD/STMT' VAR=STMT USAGE=OUTPUT.Statement
+:LISTCOL HELP='FLD/PROC' VAR=PROC USAGE=OUTPUT.Procedure
 :ELIST.
 :EPANEL.
 .* Option 13: the library list.
 :PANEL NAME=LIBL KEYL=LIBLKEYS HELP=WRKJOB ENTER='RETURN 1' TOPSEP=SYSNAM BOTSEP=NONE.Display Library List
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=JOB USAGE=OUTPUT.Job
+:DATAI HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
 :DATAIX VAR=USER USAGE=OUTPUT.
 :DATAIXT.User
 :DATAIX VAR=NUMBER USAGE=OUTPUT.
@@ -519,28 +519,28 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LIBL.
-:LISTACT OPTION=5 ENTER='CMD DSPLIB LIB(&LIB.)'.5=Display objects in library
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=LIB USAGE=OUTPUT.Library
-:LISTCOL VAR=LIBTYPE USAGE=OUTPUT.Type
+:LISTACT HELP='LIBL/OPTIONS' OPTION=5 ENTER='CMD DSPLIB LIB(&LIB.)'.5=Display objects in library
+:LISTCOL HELP='LIBL/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/LIBTYPE' VAR=LIBTYPE USAGE=OUTPUT.Type
 :LISTGRP.ASP
-:LISTCOL VAR=ASPDEV USAGE=OUTPUT.Device
+:LISTCOL HELP='FLD/ASPDEV' VAR=ASPDEV USAGE=OUTPUT.Device
 :ELISTGRP.
-:LISTCOL VAR=LIBTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='FLD/LIBTEXT' VAR=LIBTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* Option 14: the open files.
 :PANEL NAME=OPNF KEYL=OPNFKEYS HELP=WRKJOB ENTER='RETURN 1'.Display Open Files
 :DATA DEPTH=4.
 :DATAC.&JOBHDR.
-:DATAI VAR=ODPS USAGE=OUTPUT.Number of open data paths
+:DATAI HELP='FLD/ODPS' VAR=ODPS USAGE=OUTPUT.Number of open data paths
 :EDATA.
 :LIST DEPTH='*' LISTDEF=OPNF.
-:LISTCOL VAR=OFILE USAGE=OUTPUT.File
-:LISTCOL VAR=OLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=OMBR USAGE=OUTPUT.Member/ Device
-:LISTCOL VAR=OSCOPE USAGE=OUTPUT.Scope
-:LISTCOL VAR=OACTGRP USAGE=OUTPUT.Activation Group
+:LISTCOL HELP='FLD/OFILE' VAR=OFILE USAGE=OUTPUT.File
+:LISTCOL HELP='FLD/OLIB' VAR=OLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/OMBR' VAR=OMBR USAGE=OUTPUT.Member/ Device
+:LISTCOL HELP='FLD/OSCOPE' VAR=OSCOPE USAGE=OUTPUT.Scope
+:LISTCOL HELP='FLD/OACTGRP' VAR=OACTGRP USAGE=OUTPUT.Activation Group
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -553,5 +553,589 @@ files it has open. Type an option number and press Enter.
 :P.The messages the job has logged, oldest first. A request typed at
 a command line shows with the marks before it. F10 shows every
 message, the detailed ones included.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WJKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='WRKJOB/OPT1'.Display job status attributes
+:P.Option 1. Display job status attributes.
+:EHELP.
+:HELP NAME='WRKJOB/OPT2'.Display job definition attributes
+:P.Option 2. Display job definition attributes.
+:EHELP.
+:HELP NAME='WRKJOB/OPT3'.Display job run attributes, if active
+:P.Option 3. Display job run attributes, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT4'.Work with spooled files
+:P.Option 4. Work with spooled files.
+:EHELP.
+:HELP NAME='WRKJOB/OPT10'.Display job log, if active, on job queue, or pending
+:P.Option 10. Display job log, if active, on job queue, or pending.
+:EHELP.
+:HELP NAME='WRKJOB/OPT11'.Display call stack, if active
+:P.Option 11. Display call stack, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT12'.Work with locks, if active
+:P.Option 12. Work with locks, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT13'.Display library list, if active
+:P.Option 13. Display library list, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT14'.Display open files, if active
+:P.Option 14. Display open files, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT15'.Display file overrides, if active
+:P.Option 15. Display file overrides, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT16'.Display commitment control status, if active
+:P.Option 16. Display commitment control status, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT17'.Display communications status, if active
+:P.Option 17. Display communications status, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT18'.Display activation groups, if active
+:P.Option 18. Display activation groups, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT19'.Display mutexes, if active
+:P.Option 19. Display mutexes, if active.
+:EHELP.
+:HELP NAME='WRKJOB/OPT20'.Work with threads, if active
+:P.Option 20. Work with threads, if active.
+:EHELP.
+:HELP NAME='KEYS/DJKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='DSPJOB/OPT1'.Display job status attributes
+:P.Option 1. Display job status attributes.
+:EHELP.
+:HELP NAME='DSPJOB/OPT2'.Display job definition attributes
+:P.Option 2. Display job definition attributes.
+:EHELP.
+:HELP NAME='DSPJOB/OPT3'.Display job run attributes, if active
+:P.Option 3. Display job run attributes, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT4'.Display spooled files
+:P.Option 4. Display spooled files.
+:EHELP.
+:HELP NAME='DSPJOB/OPT10'.Display job log, if active, on job queue, or pending
+:P.Option 10. Display job log, if active, on job queue, or pending.
+:EHELP.
+:HELP NAME='DSPJOB/OPT11'.Display call stack, if active
+:P.Option 11. Display call stack, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT12'.Display locks, if active
+:P.Option 12. Display locks, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT13'.Display library list, if active
+:P.Option 13. Display library list, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT14'.Display open files, if active
+:P.Option 14. Display open files, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT15'.Display file overrides, if active
+:P.Option 15. Display file overrides, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT16'.Display commitment control status, if active
+:P.Option 16. Display commitment control status, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT17'.Display communications status, if active
+:P.Option 17. Display communications status, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT18'.Display activation groups, if active
+:P.Option 18. Display activation groups, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT19'.Display mutexes, if active
+:P.Option 19. Display mutexes, if active.
+:EHELP.
+:HELP NAME='DSPJOB/OPT20'.Display threads, if active
+:P.Option 20. Display threads, if active.
+:EHELP.
+:HELP NAME='KEYS/ATTRKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Change job
+:PD.Change job.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Job menu
+:PD.Job menu.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status of job
+:P.The status of job shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CURUSER'.Current user profile
+:P.The current user profile shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/IDENTITY'.Job user identity
+:P.The job user identity shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SETBY'.Set by
+:P.The set by shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ENTDATE'.Date
+:P.The date shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ENTTIME'.Time
+:P.The time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STRDATE'.Date
+:P.The date shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STRTIME'.Time
+:P.The time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SBS'.Subsystem
+:P.The subsystem shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SBSPOOL'.Subsystem pool ID
+:P.The subsystem pool ID shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TYPE'.Type of job
+:P.The type of job shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SPCENV'.Special environment
+:P.The special environment shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RTNCODE'.Program return code
+:P.The program return code shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CNTRLD'.Controlled end requested
+:P.The controlled end requested shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SYSPOOL'.System pool identifier
+:P.The system pool identifier shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CPUMS'.Processing unit time used, in ms
+:P.The processing unit time used, in ms shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/AUXIO'.Auxiliary I/O requests of the job
+:P.The auxiliary I/O requests of the job shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/JOBD'.Job description
+:P.The job description that supplies the job's attributes, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/JOBDLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBQ'.Job queue
+:P.The job queue, by name and library.
+:EHELP.
+:HELP NAME='FLD/JOBQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBPTY'.Job priority (on job queue)
+:P.The job priority (on job queue) shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTPTY'.Output priority (on output queue)
+:P.The output priority (on output queue) shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/ENDSEV'.End severity
+:P.The end severity shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGLVL'.Level
+:P.The level shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGSEV'.Severity
+:P.A message severity from 0 to 99. Higher numbers mean more serious
+conditions.
+:EHELP.
+:HELP NAME='FLD/LOGTXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGCLPGM'.Log CL program commands
+:P.The log CL program commands shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LOGOUT'.Job log output
+:P.The job log output shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRTDEV'.Printer device
+:P.The printer device shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTQ'.Default output queue
+:P.The default output queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OUTQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PRTTXT'.Printer text
+:P.The printer text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DATFMT'.Date format
+:P.The format of dates&colon. the order of year, month and day.
+:EHELP.
+:HELP NAME='FLD/DATSEP'.Date separator
+:P.The character between the parts of a date.
+:EHELP.
+:HELP NAME='FLD/TIMSEP'.Time separator
+:P.The character between the parts of a time.
+:EHELP.
+:HELP NAME='FLD/DECFMT'.Decimal format
+:P.The decimal format&colon. the character used for the decimal point
+and how zeros print before it.
+:EHELP.
+:HELP NAME='FLD/SWS'.Job switches
+:P.The eight job switches&colon. 0 for off, 1 for on, X for unchanged.
+:EHELP.
+:HELP NAME='FLD/INQMSG'.Inquiry message reply
+:P.How inquiry messages sent to the job are answered&colon. by the
+operator, with their default replies, or from the system reply list.
+:EHELP.
+:HELP NAME='FLD/BRKMSG'.Break message handling
+:P.The break message handling shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STSMSG'.Status message
+:P.The status message shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DEVRCY'.Device recovery action
+:P.What happens to the job when its display device has an error&colon. a
+message is sent, the request is ended, or the job is ended.
+:EHELP.
+:HELP NAME='FLD/CCSID'.Coded character set identifier
+:P.The coded character set identifier&colon. the code page and character
+set the data is in, or is to be converted to.
+:EHELP.
+:HELP NAME='FLD/DFTCCSID'.Default coded character set identifier
+:P.The default coded character set identifier shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/LANGID'.Language identifier
+:P.The language identifier&colon. three letters naming the language
+whose sort sequence is used.
+:EHELP.
+:HELP NAME='FLD/CNTRYID'.Country or region identifier
+:P.The country or region identifier shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRTSEQ'.Sort sequence
+:P.The sort sequence table that orders and compares character
+data&colon. the hexadecimal values, the job's, a language's (shared or
+unique weights), or a table by name.
+:EHELP.
+:HELP NAME='FLD/MSGQMX'.Job message queue maximum size
+:P.The job message queue maximum size shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/MSGQFL'.Job message queue full action
+:P.What happens when the job's message queue fills&colon. the job ends,
+the queue wraps, or messages are printed and then overwritten.
+:EHELP.
+:HELP NAME='FLD/ALWMLT'.Allow multiple threads
+:P.The allow multiple threads shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SPLFACN'.Spooled file action
+:P.What happens to the job's spooled files when the job ends&colon. they
+are kept with the job or detached from it.
+:EHELP.
+:HELP NAME='FLD/RUNPTY'.Run priority
+:P.The run priority of the job, from 1 (highest) to 99 (lowest).
+:EHELP.
+:HELP NAME='FLD/TIMESLICE'.Time slice in milliseconds
+:P.The time slice in milliseconds shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PURGE'.Eligible for purge
+:P.Whether the job may be moved out of main storage when it waits for a
+long time.
+:EHELP.
+:HELP NAME='FLD/DFTWAIT'.Default wait time in seconds
+:P.The default wait time in seconds shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CPUTIME'.Maximum CPU time in milliseconds
+:P.The maximum CPU time in milliseconds shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/CPUUSED'.CPU time used
+:P.The CPU time used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXTMP'.Maximum temporary storage in megabytes
+:P.The maximum temporary storage in megabytes shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/TMPUSED'.Temporary storage used
+:P.The temporary storage used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TMPPEAK'.Peak temporary storage used
+:P.The peak temporary storage used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXTHD'.Maximum threads
+:P.The maximum threads shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/THREADS'.Threads
+:P.The threads shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/AFFGRP'.Group
+:P.The group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/AFFLVL'.Level
+:P.The level shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RSCAFF'.Resources affinity group
+:P.Whether the job's threads are kept together on the same processor
+group.
+:EHELP.
+:HELP NAME='KEYS/SPLFKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F10=View 3
+:PD.View 3.
+:PT.F11=View 2
+:PD.View 2.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F22=Printers
+:PD.Runs WRKWTR.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F16=Job menu
+:PD.Job menu.
+:EPARML.
+:EHELP.
+:HELP NAME='SPLF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/FILE'.File
+:P.The file, by name and library.
+:EHELP.
+:HELP NAME='FLD/DEVQ'.Device or Queue
+:P.The device or Queue of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/USRDTA'.User Data
+:P.User data, up to 10 characters, kept with the object.
+:EHELP.
+:HELP NAME='FLD/SPLSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PAGES'.Total Pages
+:P.The total Pages of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CURPAGE'.Current Page
+:P.The current Page of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/COPIES'.Copies
+:P.How many copies are printed.
+:EHELP.
+:HELP NAME='SPLF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Send
+:PD.Type 1 next to an entry and press Enter to send it. The Send Network
+Spooled File (SNDNETSPLF) command is prompted for the entry.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Spooled File Attr (CHGSPLFA) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Spooled
+File (HLDSPLF) command runs for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Spooled File (DLTSPLF) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Spooled File (DSPSPLF) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Spooled File (RLSSPLF) command runs for the entry.
+:PT.7=Messages
+:PD.Type 7 next to an entry and press Enter to messages it.
+:PT.8=Attributes
+:PD.Type 8 next to an entry and press Enter to attributes it. The Work
+with Spooled File Attributes (WRKSPLFA) command runs for the entry.
+:PT.9=Work with printing status
+:PD.Type 9 next to an entry and press Enter to work with printing status
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/LOGKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F10=Display detailed messages
+:PD.Display detailed messages.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Job menu
+:PD.Job menu.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/MSGLINE'.MSGLINE
+:P.The MSGLINE of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/ALLKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Job menu
+:PD.Job menu.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/STKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F11=Display activation group
+:PD.Display activation group.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Job menu
+:PD.Job menu.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:PT.F22=Display entire field
+:PD.Display entire field.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/THREAD'.Thread
+:P.The thread shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RQSLVL'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PGM'.Program
+:P.The program of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PGMLIB'.PGMLIB
+:P.The PGMLIB of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STMT'.Statement
+:P.The statement of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PROC'.Procedure
+:P.The procedure of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/LIBLKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Job menu
+:PD.Job menu.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='LIBL/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIBTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ASPDEV'.ASP device
+:P.The ASP device of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LIBTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='LIBL/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display objects in library
+:PD.Type 5 next to an entry and press Enter to display objects in
+library it. The Display Library (DSPLIB) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/OPNFKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F11=Display I/O details
+:PD.Display I/O details.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Job menu
+:PD.Job menu.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/ODPS'.Number of open data paths
+:P.The number of open data paths shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OFILE'.File
+:P.The file, by name and library.
+:EHELP.
+:HELP NAME='FLD/OLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OMBR'.Member/ Device
+:P.The member/ Device of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OSCOPE'.Scope
+:P.The scope of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OACTGRP'.Activation Group
+:P.The activation group the program runs in&colon. a named one, a new
+one each call, or the caller's.
 :EHELP.
 :EPNLGRP.

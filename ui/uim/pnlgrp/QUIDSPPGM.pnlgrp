@@ -194,46 +194,46 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=41.
-:DATAI VAR=PGM USAGE=OUTPUT.Program
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=37.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=50.
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.Program creation information
-:DATAI VAR=CRTDT USAGE=OUTPUT.Program creation date/time
-:DATAI VAR=PGMTYPE USAGE=OUTPUT.Type of program
-:DATAI VAR=PEPMOD USAGE=OUTPUT.Program entry procedure module
+:DATAI HELP='FLD/CRTDT' VAR=CRTDT USAGE=OUTPUT.Program creation date/time
+:DATAI HELP='FLD/PGMTYPE' VAR=PGMTYPE USAGE=OUTPUT.Type of program
+:DATAI HELP='FLD/PEPMOD' VAR=PEPMOD USAGE=OUTPUT.Program entry procedure module
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PEPMODL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PEPMODL' VAR=PEPMODL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=ACTGRP USAGE=OUTPUT.Activation group attribute
-:DATAI VAR=SHRACTGRP USAGE=OUTPUT.Shared activation group
-:DATAI VAR=USRPRF USAGE=OUTPUT.User profile
-:DATAI VAR=USEADPAUT USAGE=OUTPUT.Use adopted authority
-:DATAI VAR=CCSID USAGE=OUTPUT.Coded character set identifier
-:DATAI VAR=NBRMOD USAGE=OUTPUT.Number of modules
-:DATAI VAR=NBRSRV USAGE=OUTPUT.Number of service programs
-:DATAI VAR=NBRUNRES USAGE=OUTPUT.Number of unresolved references
-:DATAI VAR=NBRCPYR USAGE=OUTPUT.Number of copyrights
-:DATAI VAR=ALLCRTDTA USAGE=OUTPUT.All creation data
-:DATAI VAR=OBSCMPR USAGE=OUTPUT.Observable information compressed
-:DATAI VAR=RUNCMPR USAGE=OUTPUT.Run time information compressed
-:DATAI VAR=ALWUPD USAGE=OUTPUT.Allow update
-:DATAI VAR=ALWLIBUPD USAGE=OUTPUT.Allow bound *SRVPGM library name update
-:DATAI VAR=PRFDTA USAGE=OUTPUT.Profiling data
-:DATAI VAR=TSPEP USAGE=OUTPUT.Teraspace storage enabled PEP
-:DATAI VAR=TSMOD USAGE=OUTPUT.Teraspace storage enabled modules
-:DATAI VAR=STGMDL USAGE=OUTPUT.Storage model
-:DATAI VAR=PGMSTATE USAGE=OUTPUT.Program state
-:DATAI VAR=PGMDOMAIN USAGE=OUTPUT.Program domain
-:DATAI VAR=OBSERV USAGE=OUTPUT.Observable information
-:DATAI VAR=TGTRLS USAGE=OUTPUT.Earliest release program can run
+:DATAI HELP='FLD/ACTGRP' VAR=ACTGRP USAGE=OUTPUT.Activation group attribute
+:DATAI HELP='FLD/SHRACTGRP' VAR=SHRACTGRP USAGE=OUTPUT.Shared activation group
+:DATAI HELP='FLD/USRPRF' VAR=USRPRF USAGE=OUTPUT.User profile
+:DATAI HELP='FLD/USEADPAUT' VAR=USEADPAUT USAGE=OUTPUT.Use adopted authority
+:DATAI HELP='FLD/CCSID' VAR=CCSID USAGE=OUTPUT.Coded character set identifier
+:DATAI HELP='FLD/NBRMOD' VAR=NBRMOD USAGE=OUTPUT.Number of modules
+:DATAI HELP='FLD/NBRSRV' VAR=NBRSRV USAGE=OUTPUT.Number of service programs
+:DATAI HELP='FLD/NBRUNRES' VAR=NBRUNRES USAGE=OUTPUT.Number of unresolved references
+:DATAI HELP='FLD/NBRCPYR' VAR=NBRCPYR USAGE=OUTPUT.Number of copyrights
+:DATAI HELP='FLD/ALLCRTDTA' VAR=ALLCRTDTA USAGE=OUTPUT.All creation data
+:DATAI HELP='FLD/OBSCMPR' VAR=OBSCMPR USAGE=OUTPUT.Observable information compressed
+:DATAI HELP='FLD/RUNCMPR' VAR=RUNCMPR USAGE=OUTPUT.Run time information compressed
+:DATAI HELP='FLD/ALWUPD' VAR=ALWUPD USAGE=OUTPUT.Allow update
+:DATAI HELP='FLD/ALWLIBUPD' VAR=ALWLIBUPD USAGE=OUTPUT.Allow bound *SRVPGM library name update
+:DATAI HELP='FLD/PRFDTA' VAR=PRFDTA USAGE=OUTPUT.Profiling data
+:DATAI HELP='FLD/TSPEP' VAR=TSPEP USAGE=OUTPUT.Teraspace storage enabled PEP
+:DATAI HELP='FLD/TSMOD' VAR=TSMOD USAGE=OUTPUT.Teraspace storage enabled modules
+:DATAI HELP='FLD/STGMDL' VAR=STGMDL USAGE=OUTPUT.Storage model
+:DATAI HELP='FLD/PGMSTATE' VAR=PGMSTATE USAGE=OUTPUT.Program state
+:DATAI HELP='FLD/PGMDOMAIN' VAR=PGMDOMAIN USAGE=OUTPUT.Program domain
+:DATAI HELP='FLD/OBSERV' VAR=OBSERV USAGE=OUTPUT.Observable information
+:DATAI HELP='FLD/TGTRLS' VAR=TGTRLS USAGE=OUTPUT.Earliest release program can run
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -248,33 +248,33 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=41.
-:DATAI VAR=PGM USAGE=OUTPUT.Program
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=37.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=50.
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.Program size (decompressed) and limit information
 :DATAGRP GRPSEP=NONE.Total program size (KB)
-:DATAI VAR=SIZECUR USAGE=OUTPUT.Current
-:DATAI VAR=SIZEMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/SIZECUR' VAR=SIZECUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/SIZEMAX' VAR=SIZEMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Number of modules
-:DATAI VAR=MODCUR USAGE=OUTPUT.Current
-:DATAI VAR=MODMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/MODCUR' VAR=MODCUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/MODMAX' VAR=MODMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Number of service programs
-:DATAI VAR=SRVCUR USAGE=OUTPUT.Current
-:DATAI VAR=SRVMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/SRVCUR' VAR=SRVCUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/SRVMAX' VAR=SRVMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.Static storage (KB)
-:DATAI VAR=STCCUR USAGE=OUTPUT.Current
-:DATAI VAR=STCMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/STCCUR' VAR=STCCUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/STCMAX' VAR=STCMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :EDATAGRP.
 :EDATA.
@@ -290,25 +290,25 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=41.
-:DATAI VAR=PGM USAGE=OUTPUT.Program
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=37.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=MODS SCROLL=YES.
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display description
-:LISTACT OPTION=6 ENTER='RETURN 6'.6=Print description
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=MODNAME USAGE=OUTPUT.Module
-:LISTCOL VAR=MODLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=MODATTR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=MODDATE USAGE=OUTPUT.Creation Date
-:LISTCOL VAR=MODOPT USAGE=OUTPUT.Optimization Level
-:LISTCOL VAR=MODDBG USAGE=OUTPUT.Debug Data
+:LISTACT HELP='PGMMOD/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display description
+:LISTACT HELP='PGMMOD/OPTIONS' OPTION=6 ENTER='RETURN 6'.6=Print description
+:LISTCOL HELP='PGMMOD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/MODNAME' VAR=MODNAME USAGE=OUTPUT.Module
+:LISTCOL HELP='FLD/MODLIB' VAR=MODLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/MODATTR' VAR=MODATTR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/MODDATE' VAR=MODDATE USAGE=OUTPUT.Creation Date
+:LISTCOL HELP='FLD/MODOPT' VAR=MODOPT USAGE=OUTPUT.Optimization Level
+:LISTCOL HELP='FLD/MODDBG' VAR=MODDBG USAGE=OUTPUT.Debug Data
 :ELIST.
 :EPANEL.
 :PANEL NAME=PGMSRV BOTSEP=NONE KEYL=SRVKEYS HELP=DSPPGMH ENTER='RETURN 0' TOPSEP=NONE.Display Program Information
@@ -321,22 +321,22 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=41.
-:DATAI VAR=PGM USAGE=OUTPUT.Program
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=37.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=SRVS SCROLL=YES.
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=SRVNAME USAGE=OUTPUT.Service Program
-:LISTCOL VAR=SRVLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=SRVACT USAGE=OUTPUT.Activation
-:LISTCOL VAR=SRVSIG USAGE=OUTPUT.Signature
+:LISTACT HELP='PGMSRV/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display
+:LISTCOL HELP='PGMSRV/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/SRVNAME' VAR=SRVNAME USAGE=OUTPUT.Service Program
+:LISTCOL HELP='FLD/SRVLIB' VAR=SRVLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/SRVACT' VAR=SRVACT USAGE=OUTPUT.Activation
+:LISTCOL HELP='FLD/SRVSIG' VAR=SRVSIG USAGE=OUTPUT.Signature
 :ELIST.
 :EPANEL.
 :PANEL NAME=PGMEXP BOTSEP=NONE KEYL=LISTKEYS HELP=DSPPGMH ENTER='RETURN 0' TOPSEP=NONE.Display Program Information
@@ -349,22 +349,22 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=41.
-:DATAI VAR=PGM USAGE=OUTPUT.Program
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=37.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATA.
 :DATA DEPTH=2.
 :DATAC.&EXPHEAD.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=EXPS VIEWS=2 SCROLL=YES.&EXPEMPTY.
-:LISTCOL VAR=PROCNAME USAGE=OUTPUT.Procedure Name
-:LISTCOL VAR=ARGOPT USAGE=OUTPUT.ARGOPT
-:LISTCOL VAR=DATANAME USAGE=OUTPUT.Data Item
-:LISTCOL VAR=DATASIZE USAGE=OUTPUT.Size
+:LISTCOL HELP='FLD/PROCNAME' VAR=PROCNAME USAGE=OUTPUT.Procedure Name
+:LISTCOL HELP='FLD/ARGOPT' VAR=ARGOPT USAGE=OUTPUT.ARGOPT
+:LISTCOL HELP='FLD/DATANAME' VAR=DATANAME USAGE=OUTPUT.Data Item
+:LISTCOL HELP='FLD/DATASIZE' VAR=DATASIZE USAGE=OUTPUT.Size
 :LISTVIEW COLS='PROCNAME ARGOPT'.
 :LISTVIEW COLS='DATANAME DATASIZE'.
 :ELIST.
@@ -380,47 +380,47 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=42.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Service program
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Service program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Service program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Service program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=1.
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=52.
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.Service program creation information
-:DATAI VAR=CRTDT USAGE=OUTPUT.Service program creation date/time
-:DATAI VAR=EXPSRCF USAGE=OUTPUT.Export source file
+:DATAI HELP='FLD/CRTDT' VAR=CRTDT USAGE=OUTPUT.Service program creation date/time
+:DATAI HELP='FLD/EXPSRCF' VAR=EXPSRCF USAGE=OUTPUT.Export source file
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=EXPSRCFL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/EXPSRCFL' VAR=EXPSRCFL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=EXPMBR USAGE=OUTPUT.Export member
-:DATAI VAR=EXPSTMF USAGE=OUTPUT.Export source stream file
-:DATAI VAR=ACTGRP USAGE=OUTPUT.Activation group attribute
-:DATAI VAR=SHRACTGRP USAGE=OUTPUT.Shared activation group
-:DATAI VAR=CURSIG USAGE=OUTPUT.Current export signature
-:DATAI VAR=USRPRF USAGE=OUTPUT.User profile
-:DATAI VAR=USEADPAUT USAGE=OUTPUT.Use adopted authority
-:DATAI VAR=CCSID USAGE=OUTPUT.Coded character set identifier
-:DATAI VAR=NBRMOD USAGE=OUTPUT.Number of modules
-:DATAI VAR=NBRSRV USAGE=OUTPUT.Number of service programs
-:DATAI VAR=NBRUNRES USAGE=OUTPUT.Number of unresolved references
-:DATAI VAR=NBRCPYR USAGE=OUTPUT.Number of copyrights
-:DATAI VAR=ALLCRTDTA USAGE=OUTPUT.All creation data
-:DATAI VAR=OBSCMPR USAGE=OUTPUT.Observable information compressed
-:DATAI VAR=RUNCMPR USAGE=OUTPUT.Run time information compressed
-:DATAI VAR=ALWUPD USAGE=OUTPUT.Allow update
-:DATAI VAR=ALWLIBUPD USAGE=OUTPUT.Allow bound *SRVPGM library name update
-:DATAI VAR=LVLCHK USAGE=OUTPUT.Signature level check
-:DATAI VAR=STGMDL USAGE=OUTPUT.Storage model
-:DATAI VAR=PGMSTATE USAGE=OUTPUT.Program state
-:DATAI VAR=PGMDOMAIN USAGE=OUTPUT.Program domain
-:DATAI VAR=OBSERV USAGE=OUTPUT.Observable information
-:DATAI VAR=TGTRLS USAGE=OUTPUT.Earliest release program can run
+:DATAI HELP='FLD/EXPMBR' VAR=EXPMBR USAGE=OUTPUT.Export member
+:DATAI HELP='FLD/EXPSTMF' VAR=EXPSTMF USAGE=OUTPUT.Export source stream file
+:DATAI HELP='FLD/ACTGRP' VAR=ACTGRP USAGE=OUTPUT.Activation group attribute
+:DATAI HELP='FLD/SHRACTGRP' VAR=SHRACTGRP USAGE=OUTPUT.Shared activation group
+:DATAI HELP='FLD/CURSIG' VAR=CURSIG USAGE=OUTPUT.Current export signature
+:DATAI HELP='FLD/USRPRF' VAR=USRPRF USAGE=OUTPUT.User profile
+:DATAI HELP='FLD/USEADPAUT' VAR=USEADPAUT USAGE=OUTPUT.Use adopted authority
+:DATAI HELP='FLD/CCSID' VAR=CCSID USAGE=OUTPUT.Coded character set identifier
+:DATAI HELP='FLD/NBRMOD' VAR=NBRMOD USAGE=OUTPUT.Number of modules
+:DATAI HELP='FLD/NBRSRV' VAR=NBRSRV USAGE=OUTPUT.Number of service programs
+:DATAI HELP='FLD/NBRUNRES' VAR=NBRUNRES USAGE=OUTPUT.Number of unresolved references
+:DATAI HELP='FLD/NBRCPYR' VAR=NBRCPYR USAGE=OUTPUT.Number of copyrights
+:DATAI HELP='FLD/ALLCRTDTA' VAR=ALLCRTDTA USAGE=OUTPUT.All creation data
+:DATAI HELP='FLD/OBSCMPR' VAR=OBSCMPR USAGE=OUTPUT.Observable information compressed
+:DATAI HELP='FLD/RUNCMPR' VAR=RUNCMPR USAGE=OUTPUT.Run time information compressed
+:DATAI HELP='FLD/ALWUPD' VAR=ALWUPD USAGE=OUTPUT.Allow update
+:DATAI HELP='FLD/ALWLIBUPD' VAR=ALWLIBUPD USAGE=OUTPUT.Allow bound *SRVPGM library name update
+:DATAI HELP='FLD/LVLCHK' VAR=LVLCHK USAGE=OUTPUT.Signature level check
+:DATAI HELP='FLD/STGMDL' VAR=STGMDL USAGE=OUTPUT.Storage model
+:DATAI HELP='FLD/PGMSTATE' VAR=PGMSTATE USAGE=OUTPUT.Program state
+:DATAI HELP='FLD/PGMDOMAIN' VAR=PGMDOMAIN USAGE=OUTPUT.Program domain
+:DATAI HELP='FLD/OBSERV' VAR=OBSERV USAGE=OUTPUT.Observable information
+:DATAI HELP='FLD/TGTRLS' VAR=TGTRLS USAGE=OUTPUT.Earliest release program can run
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -435,13 +435,13 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=42.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Service program
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Service program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Service program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Service program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=1.
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
@@ -449,20 +449,20 @@
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.Service program size (decompressed) and limit information
 :DATAGRP GRPSEP=NONE.Total service program size (KB)
-:DATAI VAR=SIZECUR USAGE=OUTPUT.Current
-:DATAI VAR=SIZEMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/SIZECUR' VAR=SIZECUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/SIZEMAX' VAR=SIZEMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Number of modules
-:DATAI VAR=MODCUR USAGE=OUTPUT.Current
-:DATAI VAR=MODMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/MODCUR' VAR=MODCUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/MODMAX' VAR=MODMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Number of service programs
-:DATAI VAR=SRVCUR USAGE=OUTPUT.Current
-:DATAI VAR=SRVMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/SRVCUR' VAR=SRVCUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/SRVMAX' VAR=SRVMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :DATAGRP GRPSEP=SPACE.Static storage (KB)
-:DATAI VAR=STCCUR USAGE=OUTPUT.Current
-:DATAI VAR=STCMAX USAGE=OUTPUT.Maximum
+:DATAI HELP='FLD/STCCUR' VAR=STCCUR USAGE=OUTPUT.Current
+:DATAI HELP='FLD/STCMAX' VAR=STCMAX USAGE=OUTPUT.Maximum
 :EDATAGRP.
 :EDATAGRP.
 :EDATA.
@@ -478,26 +478,26 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=42.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Service program
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Service program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Service program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Service program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=1.
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=MODS SCROLL=YES.
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display description
-:LISTACT OPTION=6 ENTER='RETURN 6'.6=Print description
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=MODNAME USAGE=OUTPUT.Module
-:LISTCOL VAR=MODLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=MODATTR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=MODDATE USAGE=OUTPUT.Creation Date
-:LISTCOL VAR=MODOPT USAGE=OUTPUT.Optimization Level
-:LISTCOL VAR=MODDBG USAGE=OUTPUT.Debug Data
+:LISTACT HELP='SRVMOD/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display description
+:LISTACT HELP='SRVMOD/OPTIONS' OPTION=6 ENTER='RETURN 6'.6=Print description
+:LISTCOL HELP='SRVMOD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/MODNAME' VAR=MODNAME USAGE=OUTPUT.Module
+:LISTCOL HELP='FLD/MODLIB' VAR=MODLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/MODATTR' VAR=MODATTR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/MODDATE' VAR=MODDATE USAGE=OUTPUT.Creation Date
+:LISTCOL HELP='FLD/MODOPT' VAR=MODOPT USAGE=OUTPUT.Optimization Level
+:LISTCOL HELP='FLD/MODDBG' VAR=MODDBG USAGE=OUTPUT.Debug Data
 :ELIST.
 :EPANEL.
 :PANEL NAME=SRVSRV BOTSEP=NONE KEYL=SRVKEYS HELP=DSPSRVH ENTER='RETURN 0' TOPSEP=NONE.Display Service Program Information
@@ -510,23 +510,23 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=42.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Service program
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Service program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Service program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Service program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=1.
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=SRVS SCROLL=YES.
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=SRVNAME USAGE=OUTPUT.Service Program
-:LISTCOL VAR=SRVLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=SRVACT USAGE=OUTPUT.Activation
-:LISTCOL VAR=SRVSIG USAGE=OUTPUT.Signature
+:LISTACT HELP='SRVSRV/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display
+:LISTCOL HELP='SRVSRV/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/SRVNAME' VAR=SRVNAME USAGE=OUTPUT.Service Program
+:LISTCOL HELP='FLD/SRVLIB' VAR=SRVLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/SRVACT' VAR=SRVACT USAGE=OUTPUT.Activation
+:LISTCOL HELP='FLD/SRVSIG' VAR=SRVSIG USAGE=OUTPUT.Signature
 :ELIST.
 :EPANEL.
 :PANEL NAME=SRVEXP BOTSEP=NONE KEYL=LISTKEYS HELP=DSPSRVH ENTER='RETURN 0' TOPSEP=NONE.Display Service Program Information
@@ -539,23 +539,23 @@
 :DATA DEPTH=6.
 :DATACOL WIDTH=42.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Service program
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Service program
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Service program attribute
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Service program attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
 :DATACOL WIDTH=1.
 :EDATA.
 :DATA DEPTH=2.
 :DATAC.&EXPHEAD.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=EXPS VIEWS=2 SCROLL=YES.&EXPEMPTY.
-:LISTCOL VAR=PROCNAME USAGE=OUTPUT.Procedure Name
-:LISTCOL VAR=ARGOPT USAGE=OUTPUT.ARGOPT
-:LISTCOL VAR=DATANAME USAGE=OUTPUT.Data Item
-:LISTCOL VAR=DATASIZE USAGE=OUTPUT.Size
+:LISTCOL HELP='FLD/PROCNAME' VAR=PROCNAME USAGE=OUTPUT.Procedure Name
+:LISTCOL HELP='FLD/ARGOPT' VAR=ARGOPT USAGE=OUTPUT.ARGOPT
+:LISTCOL HELP='FLD/DATANAME' VAR=DATANAME USAGE=OUTPUT.Data Item
+:LISTCOL HELP='FLD/DATASIZE' VAR=DATASIZE USAGE=OUTPUT.Size
 :LISTVIEW COLS='PROCNAME ARGOPT'.
 :LISTVIEW COLS='DATANAME DATASIZE'.
 :ELIST.
@@ -571,40 +571,40 @@
 :DATA DEPTH=5.
 :DATACOL WIDTH=32.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Module
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Module
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Module attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Module attribute
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=57.
 :DATACOL WIDTH=78.
 :DATAGRP GRPSEP=NONE.Module information
-:DATAI VAR=CRTDT USAGE=OUTPUT.Module creation date/time
-:DATAI VAR=SRCF USAGE=OUTPUT.Source file
+:DATAI HELP='FLD/CRTDT' VAR=CRTDT USAGE=OUTPUT.Module creation date/time
+:DATAI HELP='FLD/SRCF' VAR=SRCF USAGE=OUTPUT.Source file
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=SRCFLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/SRCFLIB' VAR=SRCFLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=SRCMBR USAGE=OUTPUT.Source member
-:DATAI VAR=SRCCHG USAGE=OUTPUT.Source file change date/time
-:DATAI VAR=OWNER USAGE=OUTPUT.Owner
-:DATAI VAR=CCSID USAGE=OUTPUT.Coded character set identifier
-:DATAI VAR=MODTEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/SRCMBR' VAR=SRCMBR USAGE=OUTPUT.Source member
+:DATAI HELP='FLD/SRCCHG' VAR=SRCCHG USAGE=OUTPUT.Source file change date/time
+:DATAI HELP='FLD/OWNER' VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI HELP='FLD/CCSID' VAR=CCSID USAGE=OUTPUT.Coded character set identifier
+:DATAI HELP='FLD/MODTEXT' VAR=MODTEXT USAGE=OUTPUT.Text description
 :DATAC.
-:DATAI VAR=CRTDTA USAGE=OUTPUT.Creation data
-:DATAI VAR=ILDATA USAGE=OUTPUT.Intermediate language data
-:DATAI VAR=COMPILER USAGE=OUTPUT.Compiler
-:DATAI VAR=OPTIONS USAGE=OUTPUT.Creation options
-:DATAI VAR=DBGVIEW USAGE=OUTPUT.Debug view
-:DATAI VAR=DBGDATA USAGE=OUTPUT.Debug data
-:DATAI VAR=MODACTGRP USAGE=OUTPUT.Activation group
-:DATAI VAR=PEP USAGE=OUTPUT.Program entry procedure
-:DATAI VAR=NBRPROC USAGE=OUTPUT.Number of procedures
-:DATAI VAR=STCSIZE USAGE=OUTPUT.Static storage size
-:DATAI VAR=CODESIZE USAGE=OUTPUT.Code size
-:DATAI VAR=CODEGEN USAGE=OUTPUT.Code generator version
+:DATAI HELP='FLD/CRTDTA' VAR=CRTDTA USAGE=OUTPUT.Creation data
+:DATAI HELP='FLD/ILDATA' VAR=ILDATA USAGE=OUTPUT.Intermediate language data
+:DATAI HELP='FLD/COMPILER' VAR=COMPILER USAGE=OUTPUT.Compiler
+:DATAI HELP='FLD/OPTIONS' VAR=OPTIONS USAGE=OUTPUT.Creation options
+:DATAI HELP='FLD/DBGVIEW' VAR=DBGVIEW USAGE=OUTPUT.Debug view
+:DATAI HELP='FLD/DBGDATA' VAR=DBGDATA USAGE=OUTPUT.Debug data
+:DATAI HELP='FLD/MODACTGRP' VAR=MODACTGRP USAGE=OUTPUT.Activation group
+:DATAI HELP='FLD/PEP' VAR=PEP USAGE=OUTPUT.Program entry procedure
+:DATAI HELP='FLD/NBRPROC' VAR=NBRPROC USAGE=OUTPUT.Number of procedures
+:DATAI HELP='FLD/STCSIZE' VAR=STCSIZE USAGE=OUTPUT.Static storage size
+:DATAI HELP='FLD/CODESIZE' VAR=CODESIZE USAGE=OUTPUT.Code size
+:DATAI HELP='FLD/CODEGEN' VAR=CODEGEN USAGE=OUTPUT.Code generator version
 :EDATAGRP.
 :EDATA.
 :BOTINST.Press Enter to continue.
@@ -619,20 +619,20 @@
 :DATA DEPTH=5.
 :DATACOL WIDTH=32.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Module
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Module
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=DETAIL USAGE=OUTPUT.Detail
-:DATAI VAR=PGMATTR USAGE=OUTPUT.Module attribute
+:DATAI HELP='FLD/DETAIL' VAR=DETAIL USAGE=OUTPUT.Detail
+:DATAI HELP='FLD/PGMATTR' VAR=PGMATTR USAGE=OUTPUT.Module attribute
 :EDATA.
 :DATA DEPTH=2.
 :DATAC.&PROCHEAD.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=PROCS SCROLL=YES.(The module has no procedures.)
-:LISTCOL VAR=PROCNAME USAGE=OUTPUT MAXWIDTH=46.Procedure Name
-:LISTCOL VAR=PROCTYPE USAGE=OUTPUT.Procedure Type
-:LISTCOL VAR=ARGOPT USAGE=OUTPUT.ARGOPT
+:LISTCOL HELP='FLD/PROCNAME' VAR=PROCNAME USAGE=OUTPUT MAXWIDTH=46.Procedure Name
+:LISTCOL HELP='FLD/PROCTYPE' VAR=PROCTYPE USAGE=OUTPUT.Procedure Type
+:LISTCOL HELP='FLD/ARGOPT' VAR=ARGOPT USAGE=OUTPUT.ARGOPT
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -656,5 +656,311 @@ Press Enter for the next display.
 :P.F3 leaves the displays; F12 goes back one display. F17 and F18
 move to the top and the bottom of a list. F11 shows a signature as
 characters instead of hexadecimal.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/PGM'.Program
+:P.The program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OWNER'.Owner
+:P.The owner of the objects created.
+:EHELP.
+:HELP NAME='FLD/PGMATTR'.Program attribute
+:P.The program attribute shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DETAIL'.Detail
+:P.The detail shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGMLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CRTDT'.Program creation date/time
+:P.The program creation date/time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGMTYPE'.Type of program
+:P.The type of program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PEPMOD'.Program entry procedure module
+:P.The program entry procedure module shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/PEPMODL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ACTGRP'.Activation group attribute
+:P.The activation group attribute shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SHRACTGRP'.Shared activation group
+:P.The shared activation group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRPRF'.User profile
+:P.The user profile shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USEADPAUT'.Use adopted authority
+:P.The use adopted authority shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CCSID'.Coded character set identifier
+:P.The coded character set identifier&colon. the code page and character
+set the data is in, or is to be converted to.
+:EHELP.
+:HELP NAME='FLD/NBRMOD'.Number of modules
+:P.The number of modules shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NBRSRV'.Number of service programs
+:P.The number of service programs shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NBRUNRES'.Number of unresolved references
+:P.The number of unresolved references shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/NBRCPYR'.Number of copyrights
+:P.The number of copyrights shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALLCRTDTA'.All creation data
+:P.The all creation data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OBSCMPR'.Observable information compressed
+:P.The observable information compressed shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/RUNCMPR'.Run time information compressed
+:P.The run time information compressed shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/ALWUPD'.Allow update
+:P.Whether records can be updated through this file.
+:EHELP.
+:HELP NAME='FLD/ALWLIBUPD'.Allow bound *SRVPGM library name update
+:P.The allow bound *SRVPGM library name update shown for what the
+display is about.
+:EHELP.
+:HELP NAME='FLD/PRFDTA'.Profiling data
+:P.Whether the program collects profiling data that later optimization
+can use.
+:EHELP.
+:HELP NAME='FLD/TSPEP'.Teraspace storage enabled PEP
+:P.The teraspace storage enabled PEP shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/TSMOD'.Teraspace storage enabled modules
+:P.The teraspace storage enabled modules shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/STGMDL'.Storage model
+:P.The storage model of the program's automatic and static
+storage&colon. single-level, teraspace, or inherited from the activation
+group.
+:EHELP.
+:HELP NAME='FLD/PGMSTATE'.Program state
+:P.The program state shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGMDOMAIN'.Program domain
+:P.The program domain shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OBSERV'.Observable information
+:P.The observable information shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TGTRLS'.Earliest release program can run
+:P.The earliest release program can run shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/SIZECUR'.Current
+:P.The current shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SIZEMAX'.Maximum
+:P.The maximum shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODCUR'.Current
+:P.The current shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODMAX'.Maximum
+:P.The maximum shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRVCUR'.Current
+:P.The current shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRVMAX'.Maximum
+:P.The maximum shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STCCUR'.Current
+:P.The current shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STCMAX'.Maximum
+:P.The maximum shown for what the display is about.
+:EHELP.
+:HELP NAME='PGMMOD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/MODNAME'.Module
+:P.The modules bound into the program or service program.
+:EHELP.
+:HELP NAME='FLD/MODLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MODATTR'.Attribute
+:P.The attribute of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MODDATE'.Creation Date
+:P.The date and time the spooled file was created.
+:EHELP.
+:HELP NAME='FLD/MODOPT'.Optimization Level
+:P.The optimization Level of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MODDBG'.Debug Data
+:P.The debug Data of each entry in the list.
+:EHELP.
+:HELP NAME='PGMMOD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display description
+:PD.Type 5 next to an entry and press Enter to display description it.
+:PT.6=Print description
+:PD.Type 6 next to an entry and press Enter to print description it.
+:EPARML.
+:EHELP.
+:HELP NAME='PGMSRV/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/SRVNAME'.Service Program
+:P.The service program, by name and library.
+:EHELP.
+:HELP NAME='FLD/SRVLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SRVACT'.Activation
+:P.The activation of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SRVSIG'.Signature
+:P.The signature of each entry in the list.
+:EHELP.
+:HELP NAME='PGMSRV/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/PROCNAME'.Procedure Name
+:P.The procedure Name of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ARGOPT'.ARGOPT
+:P.The ARGOPT of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DATANAME'.Data Item
+:P.The data Item of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DATASIZE'.Size
+:P.The size of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/EXPSRCF'.Export source file
+:P.The source physical file that holds the source member, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/EXPSRCFL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EXPMBR'.Export member
+:P.The export member shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/EXPSTMF'.Export source stream file
+:P.The path of the stream file that holds the source. When it is given,
+SRCFILE and SRCMBR are not used.
+:EHELP.
+:HELP NAME='FLD/CURSIG'.Current export signature
+:P.The current export signature shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LVLCHK'.Signature level check
+:P.The signature level check shown for what the display is about.
+:EHELP.
+:HELP NAME='SRVMOD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='SRVMOD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display description
+:PD.Type 5 next to an entry and press Enter to display description it.
+:PT.6=Print description
+:PD.Type 6 next to an entry and press Enter to print description it.
+:EPARML.
+:EHELP.
+:HELP NAME='SRVSRV/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='SRVSRV/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SRCF'.Source file
+:P.The source physical file that holds the source member, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/SRCFLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRCMBR'.Source member
+:P.The member of the source file that holds the source. *PGM, *MODULE or
+*CMD and the like mean the member with the same name as the object being
+created.
+:EHELP.
+:HELP NAME='FLD/SRCCHG'.Source file change date/time
+:P.The source file change date/time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODTEXT'.Text description
+:P.The text description shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CRTDTA'.Creation data
+:P.The creation data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ILDATA'.Intermediate language data
+:P.The intermediate language data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/COMPILER'.Compiler
+:P.The compiler shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OPTIONS'.Creation options
+:P.The creation options shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DBGVIEW'.Debug view
+:P.The debug view shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DBGDATA'.Debug data
+:P.The debug data shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODACTGRP'.Activation group
+:P.The activation group the program runs in&colon. a named one, a new
+one each call, or the caller's.
+:EHELP.
+:HELP NAME='FLD/PEP'.Program entry procedure
+:P.The program entry procedure shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/NBRPROC'.Number of procedures
+:P.The number of procedures shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/STCSIZE'.Static storage size
+:P.The static storage size shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CODESIZE'.Code size
+:P.The code size shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CODEGEN'.Code generator version
+:P.The code generator version shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PROCTYPE'.Procedure Type
+:P.The procedure Type of each entry in the list.
 :EHELP.
 :EPNLGRP.

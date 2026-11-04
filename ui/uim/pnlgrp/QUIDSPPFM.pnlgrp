@@ -34,7 +34,7 @@
 :COND NAME=VERT EXPR='&MODE. EQ "V"'.
 :COND NAME=HEX EXPR='&MODE. NE "C"'.
 :COND NAME=NOTVERT EXPR='&MODE. NE "V"'.
-:KEYL NAME=PFKEYS.
+:KEYL HELP='KEYS/PFKEYS' NAME=PFKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -55,8 +55,8 @@
 :DATACOL WIDTH=41.
 :DATAC.File . . . . . . :   &FILE.
 :DATAC.Member . . . . . :   &MBR.
-:DATAI VAR=CTL USAGE=INPUT CSRLOC.Control
-:DATAI VAR=FIND USAGE=INPUT.Find
+:DATAI HELP='FLD/CTL' VAR=CTL USAGE=INPUT CSRLOC.Control
+:DATAI HELP='FLD/FIND' VAR=FIND USAGE=INPUT.Find
 :DATACOL WIDTH=38.
 :DATAC.Library  . . . . :   &LIB.
 :DATAC.Record . . . . . :   &RECORD.
@@ -66,7 +66,7 @@
 :DATAC.&RULER.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LINES COMPACT.
-:LISTCOL VAR=LINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/LINE' VAR=LINE USAGE=OUTPUT.
 :ELIST.
 :EPANEL.
 :HELP NAME=DSPPFM.Display Physical File Member - Help
@@ -76,5 +76,37 @@ the Control line, +n and -n move by records, a number goes to that
 record, Wn starts the window at column n, and T and B go to the top and
 the bottom. F10 shows the bytes in hexadecimal beside the characters,
 F11 under them. F16 finds the text typed on the Find line.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/PFKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F19=Left
+:PD.Left.
+:PT.F20=Right
+:PD.Right.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F10=Display hexadecimal
+:PD.Display hexadecimal.
+:PT.F10=Display character
+:PD.Display character.
+:PT.F11=Display vertical
+:PD.Display vertical.
+:PT.F11=Display side-by-side
+:PD.Display side-by-side.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/CTL'.Control
+:P.Type the control.
+:EHELP.
+:HELP NAME='FLD/FIND'.Find
+:P.Type the find.
+:EHELP.
+:HELP NAME='FLD/LINE'.LINE
+:P.The line description.
 :EHELP.
 :EPNLGRP.

@@ -114,54 +114,54 @@
 :DATA DEPTH=5.
 :DATACOL WIDTH=39.
 :DATACOL WIDTH=78.
-:DATAI VAR=PRODID USAGE=OUTPUT.Product ID
-:DATAI VAR=IPLSRC USAGE=OUTPUT.IPL source
-:DATAI VAR=RELEASE USAGE=OUTPUT.Release of base option
+:DATAI HELP='FLD/PRODID' VAR=PRODID USAGE=OUTPUT.Product ID
+:DATAI HELP='FLD/IPLSRC' VAR=IPLSRC USAGE=OUTPUT.IPL source
+:DATAI HELP='FLD/RELEASE' VAR=RELEASE USAGE=OUTPUT.Release of base option
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PTFS ACTLEN=1 SCROLL=YES.(No PTFs have been applied to this release.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display PTF details
-:LISTACT OPTION=6 ENTER='CMD DSPPTFCVR LICPGM(&PRODID.) SELECT(&PTFID.) OUTPUT(*PRINT)'.6=Print cover letter
-:LISTACT OPTION=8 ENTER='CMD DSPPTFCVR LICPGM(&PRODID.) SELECT(&PTFID.)'.8=Display cover letter
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=PTFID USAGE=OUTPUT.PTF     ID
-:LISTCOL VAR=PSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=PACT USAGE=OUTPUT.IPL Action
+:LISTACT HELP='DSPPTF/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display PTF details
+:LISTACT HELP='DSPPTF/OPTIONS' OPTION=6 ENTER='CMD DSPPTFCVR LICPGM(&PRODID.) SELECT(&PTFID.) OUTPUT(*PRINT)'.6=Print cover letter
+:LISTACT HELP='DSPPTF/OPTIONS' OPTION=8 ENTER='CMD DSPPTFCVR LICPGM(&PRODID.) SELECT(&PTFID.)'.8=Display cover letter
+:LISTCOL HELP='DSPPTF/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/PTFID' VAR=PTFID USAGE=OUTPUT.PTF     ID
+:LISTCOL HELP='FLD/PSTS' VAR=PSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/PACT' VAR=PACT USAGE=OUTPUT.IPL Action
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPPTFD KEYL=DKEYS HELP=DSPPTFDH ENTER='RETURN 0' TOPSEP=SYSNAM.Display PTF Details
 :DATA DEPTH='*'.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=PTFID USAGE=OUTPUT.PTF identifier
-:DATAI VAR=PRODID USAGE=OUTPUT.Product ID
-:DATAI VAR=PTFOPT USAGE=OUTPUT.Option
-:DATAI VAR=PTFRLS USAGE=OUTPUT.Release
-:DATAI VAR=PTFSTS USAGE=OUTPUT.Status
-:DATAI VAR=PTFACT USAGE=OUTPUT.IPL action
-:DATAI VAR=DELAYED USAGE=OUTPUT.Delayed until the next IPL
-:DATAI VAR=LICPTF USAGE=OUTPUT.Licensed Internal Code fix
-:DATAI VAR=SAVF USAGE=OUTPUT.Save file
-:DATAI VAR=SUPERSEDE USAGE=OUTPUT.Superseded by
-:DATAI VAR=PREREQ USAGE=OUTPUT.Prerequisite PTFs
-:DATAI VAR=COREQ USAGE=OUTPUT.Co-requisite PTFs
+:DATAI HELP='FLD/PTFID' VAR=PTFID USAGE=OUTPUT.PTF identifier
+:DATAI HELP='FLD/PRODID' VAR=PRODID USAGE=OUTPUT.Product ID
+:DATAI HELP='FLD/PTFOPT' VAR=PTFOPT USAGE=OUTPUT.Option
+:DATAI HELP='FLD/PTFRLS' VAR=PTFRLS USAGE=OUTPUT.Release
+:DATAI HELP='FLD/PTFSTS' VAR=PTFSTS USAGE=OUTPUT.Status
+:DATAI HELP='FLD/PTFACT' VAR=PTFACT USAGE=OUTPUT.IPL action
+:DATAI HELP='FLD/DELAYED' VAR=DELAYED USAGE=OUTPUT.Delayed until the next IPL
+:DATAI HELP='FLD/LICPTF' VAR=LICPTF USAGE=OUTPUT.Licensed Internal Code fix
+:DATAI HELP='FLD/SAVF' VAR=SAVF USAGE=OUTPUT.Save file
+:DATAI HELP='FLD/SUPERSEDE' VAR=SUPERSEDE USAGE=OUTPUT.Superseded by
+:DATAI HELP='FLD/PREREQ' VAR=PREREQ USAGE=OUTPUT.Prerequisite PTFs
+:DATAI HELP='FLD/COREQ' VAR=COREQ USAGE=OUTPUT.Co-requisite PTFs
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=WRKPTFGRP KEYL=GKEYS HELP=WRKPTFGRPH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with PTF Groups
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=GRPS VIEWS=2 SCROLL=YES.(No PTF groups found.)
-:LISTACT OPTION=1 ENTER='RETURN 101'.1=Order
-:LISTACT OPTION=4 ENTER='RETURN 104'.4=Delete
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display
-:LISTACT OPTION=6 ENTER='RETURN 106'.6=Print
-:LISTACT OPTION=8 ENTER='RETURN 108'.8=Display special handling PTFs
-:LISTACT OPTION=9 ENTER='RETURN 109'.9=Display related PTF groups
-:LISTCOL VAR=GOPT USAGE=INPUT.Opt
-:LISTCOL VAR=GRPNAME USAGE=OUTPUT.PTF Group
-:LISTCOL VAR=GRPLVL USAGE=OUTPUT.Level
-:LISTCOL VAR=GRPSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=GRPTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKPTFGRP/OPTIONS' OPTION=1 ENTER='RETURN 101'.1=Order
+:LISTACT HELP='WRKPTFGRP/OPTIONS' OPTION=4 ENTER='RETURN 104'.4=Delete
+:LISTACT HELP='WRKPTFGRP/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display
+:LISTACT HELP='WRKPTFGRP/OPTIONS' OPTION=6 ENTER='RETURN 106'.6=Print
+:LISTACT HELP='WRKPTFGRP/OPTIONS' OPTION=8 ENTER='RETURN 108'.8=Display special handling PTFs
+:LISTACT HELP='WRKPTFGRP/OPTIONS' OPTION=9 ENTER='RETURN 109'.9=Display related PTF groups
+:LISTCOL HELP='WRKPTFGRP/OPT' VAR=GOPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/GRPNAME' VAR=GRPNAME USAGE=OUTPUT.PTF Group
+:LISTCOL HELP='FLD/GRPLVL' VAR=GRPLVL USAGE=OUTPUT.Level
+:LISTCOL HELP='FLD/GRPSTS' VAR=GRPSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/GRPTEXT' VAR=GRPTEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='GOPT GRPNAME GRPLVL GRPSTS'.
 :LISTVIEW COLS='GOPT GRPNAME GRPTEXT'.
 :ELIST.
@@ -169,24 +169,24 @@
 :PANEL NAME=SELCVR KEYL=CKEYS HELP=SELCVRH ENTER='RETURN 0' TOPSEP=SYSNAM.Select Cover Letter
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=CVRS SCROLL=YES.(No cover letters)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display cover letter
-:LISTACT OPTION=6 ENTER='RETURN 106'.6=Print cover letter
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=PTFID USAGE=OUTPUT.PTF ID
-:LISTCOL VAR=PRODID USAGE=OUTPUT.Product
-:LISTCOL VAR=PTFRLS USAGE=OUTPUT.Release
-:LISTCOL VAR=PTFSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=CVRATR USAGE=OUTPUT.Attribute
+:LISTACT HELP='SELCVR/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display cover letter
+:LISTACT HELP='SELCVR/OPTIONS' OPTION=6 ENTER='RETURN 106'.6=Print cover letter
+:LISTCOL HELP='SELCVR/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/PTFID' VAR=PTFID USAGE=OUTPUT.PTF ID
+:LISTCOL HELP='FLD/PRODID' VAR=PRODID USAGE=OUTPUT.Product
+:LISTCOL HELP='FLD/PTFRLS' VAR=PTFRLS USAGE=OUTPUT.Release
+:LISTCOL HELP='FLD/PTFSTS' VAR=PTFSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/CVRATR' VAR=CVRATR USAGE=OUTPUT.Attribute
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSPCVR KEYL=CKEYS HELP=DSPCVRH ENTER='RETURN 0' TOPSEP=SYSNAM.Display PTF Cover Letter
 :DATA DEPTH=4.
-:DATAI VAR=PTFID USAGE=OUTPUT.PTF identifier
-:DATAI VAR=PRODID USAGE=OUTPUT.Product
-:DATAI VAR=PTFRLS USAGE=OUTPUT.Release
+:DATAI HELP='FLD/PTFID' VAR=PTFID USAGE=OUTPUT.PTF identifier
+:DATAI HELP='FLD/PRODID' VAR=PRODID USAGE=OUTPUT.Product
+:DATAI HELP='FLD/PTFRLS' VAR=PTFRLS USAGE=OUTPUT.Release
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LINES SCROLL=YES.
-:LISTCOL VAR=CVRLINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/CVRLINE' VAR=CVRLINE USAGE=OUTPUT.
 :ELIST.
 :EPANEL.
 :HELP NAME=SELCVRH.Select Cover Letter - Help
@@ -212,5 +212,131 @@ PTF database holds for one of them.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave, F11 shows the other view of a list.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/PRODID'.Product ID
+:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:EHELP.
+:HELP NAME='FLD/IPLSRC'.IPL source
+:P.The IPL source shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/RELEASE'.Release of base option
+:P.The release of base option shown for what the display is about.
+:EHELP.
+:HELP NAME='DSPPTF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/PTFID'.PTF     ID
+:P.The PTF ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PACT'.IPL Action
+:P.The IPL Action of each entry in the list.
+:EHELP.
+:HELP NAME='DSPPTF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display PTF details
+:PD.Type 5 next to an entry and press Enter to display PTF details it.
+:PT.6=Print cover letter
+:PD.Type 6 next to an entry and press Enter to print cover letter it.
+The Display PTF Cover Letter (DSPPTFCVR) command runs for the entry.
+:PT.8=Display cover letter
+:PD.Type 8 next to an entry and press Enter to display cover letter it.
+The Display PTF Cover Letter (DSPPTFCVR) command runs for the entry.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/PTFOPT'.Option
+:P.The option shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PTFRLS'.Release
+:P.A release, in the form VxRyMz.
+:EHELP.
+:HELP NAME='FLD/PTFSTS'.Status
+:P.The status shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PTFACT'.IPL action
+:P.The IPL action shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DELAYED'.Delayed until the next IPL
+:P.The delayed until the next IPL shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/LICPTF'.Licensed Internal Code fix
+:P.The licensed Internal Code fix shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SAVF'.Save file
+:P.The save file, by name and library.
+:EHELP.
+:HELP NAME='FLD/SUPERSEDE'.Superseded by
+:P.The superseded by shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PREREQ'.Prerequisite PTFs
+:P.The prerequisite PTFs shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/COREQ'.Co-requisite PTFs
+:P.The co-requisite PTFs shown for what the display is about.
+:EHELP.
+:HELP NAME='WRKPTFGRP/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/GRPNAME'.PTF Group
+:P.The PTF Group of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/GRPLVL'.Level
+:P.The level of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/GRPSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/GRPTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKPTFGRP/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Order
+:PD.Type 1 next to an entry and press Enter to order it.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it.
+:PT.6=Print
+:PD.Type 6 next to an entry and press Enter to print it.
+:PT.8=Display special handling PTFs
+:PD.Type 8 next to an entry and press Enter to display special handling
+PTFs it.
+:PT.9=Display related PTF groups
+:PD.Type 9 next to an entry and press Enter to display related PTF
+groups it.
+:EPARML.
+:EHELP.
+:HELP NAME='SELCVR/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/CVRATR'.Attribute
+:P.The attribute of each entry in the list.
+:EHELP.
+:HELP NAME='SELCVR/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display cover letter
+:PD.Type 5 next to an entry and press Enter to display cover letter it.
+:PT.6=Print cover letter
+:PD.Type 6 next to an entry and press Enter to print cover letter it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/CVRLINE'.CVRLINE
+:P.The CVRLINE of each entry in the list.
 :EHELP.
 :EPNLGRP.

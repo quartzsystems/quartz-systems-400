@@ -73,10 +73,10 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=IDS SCROLL=YES.
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display details
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=ID USAGE=OUTPUT.Message ID
-:LISTCOL VAR=IDTEXT USAGE=OUTPUT.Message Text
+:LISTACT HELP='LIST/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display details
+:LISTCOL HELP='LIST/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/ID' VAR=ID USAGE=OUTPUT.Message ID
+:LISTCOL HELP='FLD/IDTEXT' VAR=IDTEXT USAGE=OUTPUT.Message Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=WORK KEYL=WKEYS HELP=WORKH ENTER='RETURN 0' TOPSEP=SYSNAM.Work with Message Descriptions
@@ -85,17 +85,17 @@
 :DATACOL WIDTH=78.
 :DATAC.Message file:   &MSGF.        Library:   &MSGFLIB.
 :DATAC.
-:DATAI VAR=POSTO USAGE=INOUT.Position to
+:DATAI HELP='FLD/POSTO' VAR=POSTO USAGE=INOUT.Position to
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=WIDS SCROLL=YES.(No message descriptions)
-:LISTACT OPTION=2 ENTER='CMD ?CHGMSGD MSGID(&WID.) MSGF(&MSGFLIB./&MSGF.)'.2=Change
-:LISTACT OPTION=4 ENTER='CMD RMVMSGD MSGID(&WID.) MSGF(&MSGFLIB./&MSGF.)'.4=Remove
-:LISTACT OPTION=5 ENTER='CMD DSPMSGD RANGE(&WID.) MSGF(&MSGFLIB./&MSGF.)'.5=Display details
-:LISTACT OPTION=6 ENTER='RETURN 106'.6=Print
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=WID USAGE=OUTPUT.Message ID
-:LISTCOL VAR=IDTEXT USAGE=OUTPUT.Message Text
+:LISTACT HELP='WORK/OPTIONS' OPTION=2 ENTER='CMD ?CHGMSGD MSGID(&WID.) MSGF(&MSGFLIB./&MSGF.)'.2=Change
+:LISTACT HELP='WORK/OPTIONS' OPTION=4 ENTER='CMD RMVMSGD MSGID(&WID.) MSGF(&MSGFLIB./&MSGF.)'.4=Remove
+:LISTACT HELP='WORK/OPTIONS' OPTION=5 ENTER='CMD DSPMSGD RANGE(&WID.) MSGF(&MSGFLIB./&MSGF.)'.5=Display details
+:LISTACT HELP='WORK/OPTIONS' OPTION=6 ENTER='RETURN 106'.6=Print
+:LISTCOL HELP='WORK/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/WID' VAR=WID USAGE=OUTPUT.Message ID
+:LISTCOL HELP='FLD/IDTEXT' VAR=IDTEXT USAGE=OUTPUT.Message Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters or command
 :EPANEL.
@@ -110,10 +110,10 @@
 :DATAC.&TEXT2.
 :EDATA.
 :MENU DEPTH='*'.Select one of the following:
-:MENUI OPTION=1 ACTION='RETURN 1'.Display message text
-:MENUI OPTION=2 ACTION='RETURN 2'.Display field data
-:MENUI OPTION=5 ACTION='RETURN 5'.Display message attributes
-:MENUI OPTION=30 ACTION='RETURN 30'.All of the above
+:MENUI HELP='SELECT/OPT1' OPTION=1 ACTION='RETURN 1'.Display message text
+:MENUI HELP='SELECT/OPT2' OPTION=2 ACTION='RETURN 2'.Display field data
+:MENUI HELP='SELECT/OPT5' OPTION=5 ACTION='RETURN 5'.Display message attributes
+:MENUI HELP='SELECT/OPT30' OPTION=30 ACTION='RETURN 30'.All of the above
 :EMENU.
 :EPANEL.
 :PANEL NAME=TEXT KEYL=KEYS HELP=SELECTH ENTER='RETURN 0' TOPSEP=SYSNAM.Display Formatted Message Text
@@ -125,7 +125,7 @@
 :EDATAGRP.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LINES SCROLL=YES.
-:LISTCOL VAR=LINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/LINE' VAR=LINE USAGE=OUTPUT.
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -138,7 +138,7 @@
 :EDATAGRP.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=LINES SCROLL=YES.
-:LISTCOL VAR=LINE USAGE=OUTPUT.Field     Data Type          Length
+:LISTCOL HELP='FLD/LINE' VAR=LINE USAGE=OUTPUT.Field     Data Type          Length
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -188,5 +188,68 @@ list and replies; 30 shows each in turn.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='LIST/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/ID'.Message ID
+:P.The message ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/IDTEXT'.Message Text
+:P.The text of the message.
+:EHELP.
+:HELP NAME='LIST/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to display details it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/POSTO'.Position to
+:P.Type the position to.
+:EHELP.
+:HELP NAME='WORK/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/WID'.Message ID
+:P.The message ID of each entry in the list.
+:EHELP.
+:HELP NAME='WORK/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Message Description (CHGMSGD) command is prompted for the entry.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it. The Remove
+Message Description (RMVMSGD) command runs for the entry.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to display details it. The
+Display Message Description (DSPMSGD) command runs for the entry.
+:PT.6=Print
+:PD.Type 6 next to an entry and press Enter to print it.
+:EPARML.
+:EHELP.
+:HELP NAME='SELECT/OPT1'.Display message text
+:P.Option 1. Display message text.
+:EHELP.
+:HELP NAME='SELECT/OPT2'.Display field data
+:P.Option 2. Display field data.
+:EHELP.
+:HELP NAME='SELECT/OPT5'.Display message attributes
+:P.Option 5. Display message attributes.
+:EHELP.
+:HELP NAME='SELECT/OPT30'.All of the above
+:P.Option 30. All of the above.
+:EHELP.
+:HELP NAME='FLD/LINE'.LINE
+:P.The line description.
 :EHELP.
 :EPNLGRP.

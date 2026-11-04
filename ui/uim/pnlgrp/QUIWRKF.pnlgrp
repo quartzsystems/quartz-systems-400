@@ -34,19 +34,19 @@
 :PANEL NAME=WRKF KEYL=WRKKEYS HELP=WRKFH ENTER='RETURN 1'.Work with Files
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=FILES ACTLEN=2 EXTACT=YES VIEWS=2 SCROLL=YES.
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTPF FILE(&LIB./&FILE.)'.1=Create
-:LISTACT OPTION=3 ACTFOR=LISTE ENTER='CMD ?CPYF FROMFILE(&LIB./&FILE.)'.3=Copy
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD DLTF FILE(&LIB./&FILE.)'.4=Delete
-:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPPFM FILE(&LIB./&FILE.)'.5=Display physical file member
-:LISTACT OPTION=8 ACTFOR=LISTE ENTER='CMD DSPFD FILE(&LIB./&FILE.)'.8=Display file description
-:LISTACT OPTION=9 ACTFOR=LISTE ENTER='CMD ?SAVOBJ OBJ(&FILE.) LIB(&LIB.) OBJTYPE(*FILE)'.9=Save
-:LISTACT OPTION=10 ACTFOR=LISTE ENTER='CMD ?RSTOBJ OBJ(&FILE.) SAVLIB(&LIB.) OBJTYPE(*FILE)'.10=Restore
-:LISTACT OPTION=13 ACTFOR=LISTE ENTER='CMD ?CHGOBJD OBJ(&LIB./&FILE.) OBJTYPE(*FILE)'.13=Change description
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=FILE USAGE=OUTPUT EXTACT=YES.File
-:LISTCOL VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
-:LISTCOL VAR=ATTR USAGE=OUTPUT.Attribute
-:LISTCOL VAR=TEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKF/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='CMD ?CRTPF FILE(&LIB./&FILE.)'.1=Create
+:LISTACT HELP='WRKF/OPTIONS' OPTION=3 ACTFOR=LISTE ENTER='CMD ?CPYF FROMFILE(&LIB./&FILE.)'.3=Copy
+:LISTACT HELP='WRKF/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='CMD DLTF FILE(&LIB./&FILE.)'.4=Delete
+:LISTACT HELP='WRKF/OPTIONS' OPTION=5 ACTFOR=LISTE ENTER='CMD DSPPFM FILE(&LIB./&FILE.)'.5=Display physical file member
+:LISTACT HELP='WRKF/OPTIONS' OPTION=8 ACTFOR=LISTE ENTER='CMD DSPFD FILE(&LIB./&FILE.)'.8=Display file description
+:LISTACT HELP='WRKF/OPTIONS' OPTION=9 ACTFOR=LISTE ENTER='CMD ?SAVOBJ OBJ(&FILE.) LIB(&LIB.) OBJTYPE(*FILE)'.9=Save
+:LISTACT HELP='WRKF/OPTIONS' OPTION=10 ACTFOR=LISTE ENTER='CMD ?RSTOBJ OBJ(&FILE.) SAVLIB(&LIB.) OBJTYPE(*FILE)'.10=Restore
+:LISTACT HELP='WRKF/OPTIONS' OPTION=13 ACTFOR=LISTE ENTER='CMD ?CHGOBJD OBJ(&LIB./&FILE.) OBJTYPE(*FILE)'.13=Change description
+:LISTCOL HELP='WRKF/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/FILE' VAR=FILE USAGE=OUTPUT EXTACT=YES.File
+:LISTCOL HELP='FLD/LIB' VAR=LIB USAGE=OUTPUT EXTACT=YES.Library
+:LISTCOL HELP='FLD/ATTR' VAR=ATTR USAGE=OUTPUT.Attribute
+:LISTCOL HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text
 :LISTVIEW COLS='OPT FILE LIB ATTR TEXT'.
 :LISTVIEW COLS='OPT FILE LIB'.
 :ELIST.
@@ -62,5 +62,55 @@ does it again, F11 shows the names alone and F5 lists the files again.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave the list. F4 prompts the command on the command
 line, F9 brings the previous one back.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='WRKF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/FILE'.File
+:P.The file, by name and library.
+:EHELP.
+:HELP NAME='FLD/LIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ATTR'.Attribute
+:P.The attribute of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/TEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it. The Create
+Physical File (CRTPF) command is prompted for the entry.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it. The Copy File
+(CPYF) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+File (DLTF) command runs for the entry.
+:PT.5=Display physical file member
+:PD.Type 5 next to an entry and press Enter to display physical file
+member it. The Display Physical File Member (DSPPFM) command runs for
+the entry.
+:PT.8=Display file description
+:PD.Type 8 next to an entry and press Enter to display file description
+it. The Display File Description (DSPFD) command runs for the entry.
+:PT.9=Save
+:PD.Type 9 next to an entry and press Enter to save it. The Save Object
+(SAVOBJ) command is prompted for the entry.
+:PT.10=Restore
+:PD.Type 10 next to an entry and press Enter to restore it. The Restore
+Object (RSTOBJ) command is prompted for the entry.
+:PT.13=Change description
+:PD.Type 13 next to an entry and press Enter to change description it.
+The Change Object Description (CHGOBJD) command is prompted for the
+entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

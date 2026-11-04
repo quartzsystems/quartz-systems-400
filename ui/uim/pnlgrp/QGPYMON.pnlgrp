@@ -40,7 +40,7 @@
 :VAR NAME=ASYNCIO CLASS=IOCL.
 :VAR NAME=CPUDB CLASS=PCTCL.
 :LISTDEF NAME=JOBS VARS='OPT JOB USER NUMBER THREAD PTY CPU SYNCIO ASYNCIO CPUDB'.
-:KEYL NAME=SAKEYS.
+:KEYL HELP='KEYS/SAKEYS' NAME=SAKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -52,32 +52,102 @@
 :PANEL NAME=WRKSYSACT KEYL=SAKEYS HELP=WRKSYSACT ENTER='RETURN 1' TOPSEP=DATETIME.Work with System Activity
 :DATA DEPTH=4.
 :DATACOL WIDTH=40.
-:DATAI VAR=ELAPSED USAGE=OUTPUT.Elapsed time
-:DATAI VAR=VPROCS USAGE=OUTPUT.Virtual Processors
-:DATAI VAR=OVERALL USAGE=OUTPUT.Overall CPU util
+:DATAI HELP='FLD/ELAPSED' VAR=ELAPSED USAGE=OUTPUT.Elapsed time
+:DATAI HELP='FLD/VPROCS' VAR=VPROCS USAGE=OUTPUT.Virtual Processors
+:DATAI HELP='FLD/OVERALL' VAR=OVERALL USAGE=OUTPUT.Overall CPU util
 :DATACOL WIDTH=38.
-:DATAI VAR=AVGCPU USAGE=OUTPUT.Average CPU util
-:DATAI VAR=MAXCPU USAGE=OUTPUT.Maximum CPU util
-:DATAI VAR=MINCPU USAGE=OUTPUT.Minimum CPU util
+:DATAI HELP='FLD/AVGCPU' VAR=AVGCPU USAGE=OUTPUT.Average CPU util
+:DATAI HELP='FLD/MAXCPU' VAR=MAXCPU USAGE=OUTPUT.Maximum CPU util
+:DATAI HELP='FLD/MINCPU' VAR=MINCPU USAGE=OUTPUT.Minimum CPU util
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=JOBS MAXHEAD=2.(No jobs used the processor)
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with job
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Job or Task
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=NUMBER USAGE=OUTPUT.Number
-:LISTCOL VAR=THREAD USAGE=OUTPUT.Thread
-:LISTCOL VAR=PTY USAGE=OUTPUT.Pty
-:LISTCOL VAR=CPU USAGE=OUTPUT.CPU Util
-:LISTCOL VAR=SYNCIO USAGE=OUTPUT.Sync I/O
-:LISTCOL VAR=ASYNCIO USAGE=OUTPUT.Async I/O
-:LISTCOL VAR=CPUDB USAGE=OUTPUT.DB CPU
+:LISTACT HELP='WRKSYSACT/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with job
+:LISTCOL HELP='WRKSYSACT/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job or Task
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/NUMBER' VAR=NUMBER USAGE=OUTPUT.Number
+:LISTCOL HELP='FLD/THREAD' VAR=THREAD USAGE=OUTPUT.Thread
+:LISTCOL HELP='FLD/PTY' VAR=PTY USAGE=OUTPUT.Pty
+:LISTCOL HELP='FLD/CPU' VAR=CPU USAGE=OUTPUT.CPU Util
+:LISTCOL HELP='FLD/SYNCIO' VAR=SYNCIO USAGE=OUTPUT.Sync I/O
+:LISTCOL HELP='FLD/ASYNCIO' VAR=ASYNCIO USAGE=OUTPUT.Async I/O
+:LISTCOL HELP='FLD/CPUDB' VAR=CPUDB USAGE=OUTPUT.DB CPU
 :ELIST.
 :EPANEL.
 :HELP NAME=WRKSYSACT.Work with System Activity - Help
 :P.The jobs and tasks that used the processor since the display last
 looked, the busiest first, with their share of the processor and the
 storage requests they made. F10 looks again.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SAKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F10=Update list
+:PD.Update list.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/ELAPSED'.Elapsed time
+:P.The elapsed time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/VPROCS'.Virtual Processors
+:P.The virtual Processors shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OVERALL'.Overall CPU util
+:P.The overall CPU util shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/AVGCPU'.Average CPU util
+:P.The average CPU util shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXCPU'.Maximum CPU util
+:P.The maximum CPU util shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MINCPU'.Minimum CPU util
+:P.The minimum CPU util shown for what the display is about.
+:EHELP.
+:HELP NAME='WRKSYSACT/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job or Task
+:P.The job or Task of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NUMBER'.Number
+:P.The number of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/THREAD'.Thread
+:P.The thread of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PTY'.Pty
+:P.The pty of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CPU'.CPU Util
+:P.The CPU Util of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SYNCIO'.Sync I/O
+:P.The sync I/O of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/ASYNCIO'.Async I/O
+:P.The async I/O of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CPUDB'.DB CPU
+:P.The DB CPU of each entry in the list.
+:EHELP.
+:HELP NAME='WRKSYSACT/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Work with job
+:PD.Type 5 next to an entry and press Enter to work with job it. The
+Work with Job (WRKJOB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

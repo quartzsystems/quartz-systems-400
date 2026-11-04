@@ -37,7 +37,7 @@
 :COND NAME=VIEW1 EXPR='&AUVIEW. EQ "1"'.
 :COND NAME=VIEW2 EXPR='&AUVIEW. EQ "2"'.
 :LISTDEF NAME=USERS VARS='AUUSER AUGROUP AUPWDCHG AUNOPWD AUTEXT AULVL01 AULVL23 AUNETSVR AULCLPWD'.
-:KEYL NAME=AUTKEYS.
+:KEYL HELP='KEYS/AUTKEYS' NAME=AUTKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -52,18 +52,18 @@
 :EKEYL.
 :PANEL NAME=DSPAUTUSR HELP=HLPAUT KEYL=AUTKEYS.Display Authorized Users
 :LIST DEPTH='*' LISTDEF=USERS SCROLL=YES VIEWS=2.
-:LISTCOL VAR=AUUSER USAGE=OUTPUT.User Profile
-:LISTCOL VAR=AUGROUP USAGE=OUTPUT.Group Profile
+:LISTCOL HELP='FLD/AUUSER' VAR=AUUSER USAGE=OUTPUT.User Profile
+:LISTCOL HELP='FLD/AUGROUP' VAR=AUGROUP USAGE=OUTPUT.Group Profile
 :LISTGRP COL=PWD.Password
-:LISTCOL VAR=AUPWDCHG USAGE=OUTPUT.Last Changed
-:LISTCOL VAR=AUNOPWD USAGE=OUTPUT.No Password
+:LISTCOL HELP='FLD/AUPWDCHG' VAR=AUPWDCHG USAGE=OUTPUT.Last Changed
+:LISTCOL HELP='FLD/AUNOPWD' VAR=AUNOPWD USAGE=OUTPUT.No Password
 :ELISTGRP.
-:LISTCOL VAR=AUTEXT USAGE=OUTPUT.Text
-:LISTCOL NAME=PWDCHG VAR=AUPWDCHG USAGE=OUTPUT.Password Last Changed
-:LISTCOL VAR=AULVL01 USAGE=OUTPUT.Level 0 or 1 Password
-:LISTCOL VAR=AULVL23 USAGE=OUTPUT.Level 2 or 3 Password
-:LISTCOL VAR=AUNETSVR USAGE=OUTPUT.Netserver Password
-:LISTCOL VAR=AULCLPWD USAGE=OUTPUT.Local Pwd Mgt
+:LISTCOL HELP='FLD/AUTEXT' VAR=AUTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='FLD/AUPWDCHG' NAME=PWDCHG VAR=AUPWDCHG USAGE=OUTPUT.Password Last Changed
+:LISTCOL HELP='FLD/AULVL01' VAR=AULVL01 USAGE=OUTPUT.Level 0 or 1 Password
+:LISTCOL HELP='FLD/AULVL23' VAR=AULVL23 USAGE=OUTPUT.Level 2 or 3 Password
+:LISTCOL HELP='FLD/AUNETSVR' VAR=AUNETSVR USAGE=OUTPUT.Netserver Password
+:LISTCOL HELP='FLD/AULCLPWD' VAR=AULCLPWD USAGE=OUTPUT.Local Pwd Mgt
 :LISTVIEW COLS='AUUSER AUGROUP PWD AUTEXT'.
 :LISTVIEW COLS='AUUSER AUGROUP PWDCHG AULVL01 AULVL23 AUNETSVR AULCLPWD'.
 :ELIST.
@@ -76,5 +76,49 @@ Password marks a profile that has no password and so cannot sign on.
 F11 shows instead which password levels each profile has a password
 for and whether its password is managed here.
 :P.SEQ(*GRPPRF) on the command lists the profiles by group.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/AUTKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=Password Level Information
+:PD.Password Level Information.
+:PT.F11=Text Information
+:PD.Text Information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/AUUSER'.User Profile
+:P.The user Profile of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUGROUP'.Group Profile
+:P.The group Profile of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUPWDCHG'.Password last Changed
+:P.The password last Changed of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUNOPWD'.Password no Password
+:P.The password no Password of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AULVL01'.Level 0 or 1 Password
+:P.The level 0 or 1 Password of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AULVL23'.Level 2 or 3 Password
+:P.The level 2 or 3 Password of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUNETSVR'.Netserver Password
+:P.The netserver Password of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AULCLPWD'.Local Pwd Mgt
+:P.The local Pwd Mgt of each entry in the list.
 :EHELP.
 :EPNLGRP.

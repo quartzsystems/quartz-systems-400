@@ -11,7 +11,11 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='PROBLEM'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPLOG PNLGRP=QHMHCMD.
+:IMPORT NAME=DSPMSG PNLGRP=QHMHCMD.
+:IMPORT NAME=STRSST PNLGRP=QHSVCMD.
+:IMPORT NAME=WRKPRB PNLGRP=QHSXCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +28,14 @@
 :EKEYL.
 :PANEL NAME=PROBLEM HELP=HLPPROBLEM KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Problem Handling
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ASKQST'.Question and answer
-:MENUI OPTION=2 ACTION='CMD WRKPRB'.Work with problems
-:MENUI OPTION=3 ACTION='MENU NETPRB'.Network problem handling
-:MENUI OPTION=4 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display system operator messages
-:MENUI OPTION=5 ACTION='CMD DSPLOG'.Display the history log
-:MENUI OPTION=6 ACTION='CMD STRSST'.System service tools
-:MENUI OPTION=60 ACTION='MENU PROBLEM2'.More problem handling options
-:MENUI OPTION=70 ACTION='MENU CMDPRB'.Related commands
+:MENUI HELP='PROBLEM/OPT1' OPTION=1 ACTION='CMD ASKQST'.Question and answer
+:MENUI HELP=WRKPRB OPTION=2 ACTION='CMD WRKPRB'.Work with problems
+:MENUI HELP='PROBLEM/OPT3' OPTION=3 ACTION='MENU NETPRB'.Network problem handling
+:MENUI HELP=DSPMSG OPTION=4 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display system operator messages
+:MENUI HELP=DSPLOG OPTION=5 ACTION='CMD DSPLOG'.Display the history log
+:MENUI HELP=STRSST OPTION=6 ACTION='CMD STRSST'.System service tools
+:MENUI HELP='PROBLEM/OPT60' OPTION=60 ACTION='MENU PROBLEM2'.More problem handling options
+:MENUI HELP='PROBLEM/OPT70' OPTION=70 ACTION='MENU CMDPRB'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -41,5 +45,36 @@ tell what happened; the service tools look deeper.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='PROBLEM/OPT1'.Question and answer
+:P.Option 1. Runs the ASKQST command&colon. Question and answer.
+:EHELP.
+:HELP NAME='PROBLEM/OPT3'.Network problem handling
+:P.Option 3. Shows menu NETPRB&colon. Network problem handling.
+:EHELP.
+:HELP NAME='PROBLEM/OPT60'.More problem handling options
+:P.Option 60. Shows menu PROBLEM2&colon. More problem handling options.
+:EHELP.
+:HELP NAME='PROBLEM/OPT70'.Related commands
+:P.Option 70. Shows menu CMDPRB&colon. Related commands.
 :EHELP.
 :EPNLGRP.

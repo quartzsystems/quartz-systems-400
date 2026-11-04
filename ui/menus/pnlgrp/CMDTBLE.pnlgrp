@@ -11,7 +11,16 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDTBLE'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=ADDNETTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=ADDPCLTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=ADDSRVTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=RMVNETTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=RMVPCLTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=RMVSRVTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKNETTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKPCLTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKSRVTBLE PNLGRP=QHTOCCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,15 +33,15 @@
 :PANEL NAME=CMDTBLE HELP=HLPCMDTBLE KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Table Entry Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?ADDNETTBLE'.Add Network Table Entry  ADDNETTBLE
-:MENUI OPTION=2 ACTION='CMD ?ADDPCLTBLE'.Add Protocol Table Entry  ADDPCLTBLE
-:MENUI OPTION=3 ACTION='CMD ?ADDSRVTBLE'.Add Service Table Entry  ADDSRVTBLE
-:MENUI OPTION=4 ACTION='CMD ?RMVNETTBLE'.Remove Network Table Entry  RMVNETTBLE
-:MENUI OPTION=5 ACTION='CMD ?RMVPCLTBLE'.Remove Protocol Table Entry  RMVPCLTBLE
-:MENUI OPTION=6 ACTION='CMD ?RMVSRVTBLE'.Remove Service Table Entry  RMVSRVTBLE
-:MENUI OPTION=7 ACTION='CMD ?WRKNETTBLE'.Work with Network Table Entries  WRKNETTBLE
-:MENUI OPTION=8 ACTION='CMD ?WRKPCLTBLE'.Work with Protocol Table Entries  WRKPCLTBLE
-:MENUI OPTION=9 ACTION='CMD ?WRKSRVTBLE'.Work with Service Table Entries  WRKSRVTBLE
+:MENUI OPTION=1 ACTION='CMD ?ADDNETTBLE' HELP=ADDNETTBLE.Add Network Table Entry  ADDNETTBLE
+:MENUI OPTION=2 ACTION='CMD ?ADDPCLTBLE' HELP=ADDPCLTBLE.Add Protocol Table Entry  ADDPCLTBLE
+:MENUI OPTION=3 ACTION='CMD ?ADDSRVTBLE' HELP=ADDSRVTBLE.Add Service Table Entry  ADDSRVTBLE
+:MENUI OPTION=4 ACTION='CMD ?RMVNETTBLE' HELP=RMVNETTBLE.Remove Network Table Entry  RMVNETTBLE
+:MENUI OPTION=5 ACTION='CMD ?RMVPCLTBLE' HELP=RMVPCLTBLE.Remove Protocol Table Entry  RMVPCLTBLE
+:MENUI OPTION=6 ACTION='CMD ?RMVSRVTBLE' HELP=RMVSRVTBLE.Remove Service Table Entry  RMVSRVTBLE
+:MENUI OPTION=7 ACTION='CMD ?WRKNETTBLE' HELP=WRKNETTBLE.Work with Network Table Entries  WRKNETTBLE
+:MENUI OPTION=8 ACTION='CMD ?WRKPCLTBLE' HELP=WRKPCLTBLE.Work with Protocol Table Entries  WRKPCLTBLE
+:MENUI OPTION=9 ACTION='CMD ?WRKSRVTBLE' HELP=WRKSRVTBLE.Work with Service Table Entries  WRKSRVTBLE
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -40,5 +49,21 @@
 :HELP NAME=HLPCMDTBLE.Table Entry Commands - Help
 :P.Table Entry Commands: every command whose name carries TBLE after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

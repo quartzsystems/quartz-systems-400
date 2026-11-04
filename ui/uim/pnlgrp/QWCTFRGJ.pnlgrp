@@ -31,15 +31,15 @@
 :EKEYL.
 :PANEL NAME=TFRGRPJOB KEYL=KEYS HELP=TFRGRPH ENTER='RETURN 0' TOPSEP=SYSNAM.Transfer to Group Job
 :DATA DEPTH=2.
-:DATAI VAR=CURGRP USAGE=OUTPUT.Current group job
+:DATAI HELP='FLD/CURGRP' VAR=CURGRP USAGE=OUTPUT.Current group job
 :EDATA.
 :TOPINST.Type option, press Enter.
 :LIST DEPTH='*' LISTDEF=GRPJOBS SCROLL=YES.
-:LISTACT OPTION=1.1=Select
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=GRPJOB USAGE=OUTPUT.Group Job
-:LISTCOL VAR=JOBNBR USAGE=OUTPUT.Number
-:LISTCOL VAR=GRPTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='TFRGRPJOB/OPTIONS' OPTION=1.1=Select
+:LISTCOL HELP='TFRGRPJOB/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/GRPJOB' VAR=GRPJOB USAGE=OUTPUT.Group Job
+:LISTCOL HELP='FLD/JOBNBR' VAR=JOBNBR USAGE=OUTPUT.Number
+:LISTCOL HELP='FLD/GRPTEXT' VAR=GRPTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :HELP NAME=TFRGRPH.Transfer to Group Job - Help
@@ -49,5 +49,31 @@ the display back.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave the list and return to this job.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/CURGRP'.Current group job
+:P.The current group job shown for what the display is about.
+:EHELP.
+:HELP NAME='TFRGRPJOB/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/GRPJOB'.Group Job
+:P.The group job.
+:EHELP.
+:HELP NAME='FLD/JOBNBR'.Number
+:P.The number of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/GRPTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='TFRGRPJOB/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Select
+:PD.Type 1 next to an entry and press Enter to select it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

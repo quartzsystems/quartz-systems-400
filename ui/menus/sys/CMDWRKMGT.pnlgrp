@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDWRKMGT'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,12 +24,12 @@
 :PANEL NAME=CMDWRKMGT HELP=HLPCMDWRKMGT KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Work Management Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Related Command Menus
-:MENUI OPTION=1 ACTION='MENU CMDCLS'.Class Commands  CMDCLS
-:MENUI OPTION=2 ACTION='MENU CMDJOB'.Job Commands  CMDJOB
-:MENUI OPTION=3 ACTION='MENU CMDJOBD'.Job Description Commands  CMDJOBD
-:MENUI OPTION=4 ACTION='MENU CMDRTGE'.Routing Entry Commands  CMDRTGE
-:MENUI OPTION=5 ACTION='MENU CMDSBSD'.Subsystem Description Commands  CMDSBSD
-:MENUI OPTION=6 ACTION='MENU CMDSCDE'.Schedule Entry Commands  CMDSCDE
+:MENUI HELP='CMDWRKMGT/OPT1' OPTION=1 ACTION='MENU CMDCLS'.Class Commands  CMDCLS
+:MENUI HELP='CMDWRKMGT/OPT2' OPTION=2 ACTION='MENU CMDJOB'.Job Commands  CMDJOB
+:MENUI HELP='CMDWRKMGT/OPT3' OPTION=3 ACTION='MENU CMDJOBD'.Job Description Commands  CMDJOBD
+:MENUI HELP='CMDWRKMGT/OPT4' OPTION=4 ACTION='MENU CMDRTGE'.Routing Entry Commands  CMDRTGE
+:MENUI HELP='CMDWRKMGT/OPT5' OPTION=5 ACTION='MENU CMDSBSD'.Subsystem Description Commands  CMDSBSD
+:MENUI HELP='CMDWRKMGT/OPT6' OPTION=6 ACTION='MENU CMDSCDE'.Schedule Entry Commands  CMDSCDE
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -43,5 +43,41 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDWRKMGT/OPT1'.Class Commands  CMDCLS
+:P.Option 1. Shows menu CMDCLS&colon. Class Commands CMDCLS.
+:EHELP.
+:HELP NAME='CMDWRKMGT/OPT2'.Job Commands  CMDJOB
+:P.Option 2. Shows menu CMDJOB&colon. Job Commands CMDJOB.
+:EHELP.
+:HELP NAME='CMDWRKMGT/OPT3'.Job Description Commands  CMDJOBD
+:P.Option 3. Shows menu CMDJOBD&colon. Job Description Commands CMDJOBD.
+:EHELP.
+:HELP NAME='CMDWRKMGT/OPT4'.Routing Entry Commands  CMDRTGE
+:P.Option 4. Shows menu CMDRTGE&colon. Routing Entry Commands CMDRTGE.
+:EHELP.
+:HELP NAME='CMDWRKMGT/OPT5'.Subsystem Description Commands  CMDSBSD
+:P.Option 5. Shows menu CMDSBSD&colon. Subsystem Description Commands
+CMDSBSD.
+:EHELP.
+:HELP NAME='CMDWRKMGT/OPT6'.Schedule Entry Commands  CMDSCDE
+:P.Option 6. Shows menu CMDSCDE&colon. Schedule Entry Commands CMDSCDE.
 :EHELP.
 :EPNLGRP.

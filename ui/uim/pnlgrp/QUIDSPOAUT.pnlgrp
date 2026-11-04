@@ -48,10 +48,10 @@
 :DATAC.Object secured by authorization list  . . . . . . . . . . . . :   &AUTL.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=AUTS VIEWS=2 SCROLL=YES.
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=GROUP USAGE=OUTPUT.Group
-:LISTCOL VAR=AUT USAGE=OUTPUT.Object Authority
-:LISTCOL VAR=BITS USAGE=OUTPUT.Opr Mgt Exist Alter Ref  Read Add Upd Dlt Exe
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/GROUP' VAR=GROUP USAGE=OUTPUT.Group
+:LISTCOL HELP='FLD/AUT' VAR=AUT USAGE=OUTPUT.Object Authority
+:LISTCOL HELP='FLD/BITS' VAR=BITS USAGE=OUTPUT.Opr Mgt Exist Alter Ref  Read Add Upd Dlt Exe
 :LISTVIEW COLS='USER GROUP AUT'.
 :LISTVIEW COLS='USER BITS'.
 :ELIST.
@@ -64,5 +64,19 @@ each authority one by one, an X where the user has it.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/GROUP'.Group
+:P.The group of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AUT'.Object Authority
+:P.The object Authority of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/BITS'.Opr Mgt Exist Alter Ref  Read Add Upd Dlt Exe
+:P.The opr Mgt Exist Alter Ref Read Add Upd Dlt Exe of each entry in the
+list.
 :EHELP.
 :EPNLGRP.

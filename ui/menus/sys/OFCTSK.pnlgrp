@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='OFCTSK'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,12 +24,12 @@
 :EKEYL.
 :PANEL NAME=OFCTSK HELP=HLPOFCTSK KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Office Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=2 ACTION='MENU ACCESS'.QS/400 Access tasks
-:MENUI OPTION=3 ACTION='MENU DECISION'.Decision support
-:MENUI OPTION=4 ACTION='MENU OFCSEC'.Office security
-:MENUI OPTION=5 ACTION='CMD WRKDIRE'.Work with directory entries
-:MENUI OPTION=6 ACTION='MENU DOCUMENT'.Documents
-:MENUI OPTION=7 ACTION='MENU FOLDER'.Folders
+:MENUI HELP='OFCTSK/OPT2' OPTION=2 ACTION='MENU ACCESS'.QS/400 Access tasks
+:MENUI HELP='OFCTSK/OPT3' OPTION=3 ACTION='MENU DECISION'.Decision support
+:MENUI HELP='OFCTSK/OPT4' OPTION=4 ACTION='MENU OFCSEC'.Office security
+:MENUI HELP='OFCTSK/OPT5' OPTION=5 ACTION='CMD WRKDIRE'.Work with directory entries
+:MENUI HELP='OFCTSK/OPT6' OPTION=6 ACTION='MENU DOCUMENT'.Documents
+:MENUI HELP='OFCTSK/OPT7' OPTION=7 ACTION='MENU FOLDER'.Folders
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -39,5 +39,43 @@ them.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='OFCTSK/OPT2'.QS/400 Access tasks
+:P.Option 2. Shows menu ACCESS&colon. QS/400 Access tasks.
+:EHELP.
+:HELP NAME='OFCTSK/OPT3'.Decision support
+:P.Option 3. Shows menu DECISION&colon. Decision support.
+:EHELP.
+:HELP NAME='OFCTSK/OPT4'.Office security
+:P.Option 4. Shows menu OFCSEC&colon. Office security.
+:EHELP.
+:HELP NAME='OFCTSK/OPT5'.Work with directory entries
+:P.Option 5. Runs the WRKDIRE command&colon. Work with directory
+entries.
+:EHELP.
+:HELP NAME='OFCTSK/OPT6'.Documents
+:P.Option 6. Shows menu DOCUMENT&colon. Documents.
+:EHELP.
+:HELP NAME='OFCTSK/OPT7'.Folders
+:P.Option 7. Shows menu FOLDER&colon. Folders.
 :EHELP.
 :EPNLGRP.

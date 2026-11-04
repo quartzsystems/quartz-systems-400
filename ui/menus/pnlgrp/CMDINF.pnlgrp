@@ -11,7 +11,13 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDINF'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGCNTINF PNLGRP=QHSXCMD.
+:IMPORT NAME=CHGLICINF PNLGRP=QHLZCMD.
+:IMPORT NAME=PRTSYSINF PNLGRP=QHWMCMD.
+:IMPORT NAME=WRKCNTINF PNLGRP=QHSXCMD.
+:IMPORT NAME=WRKLICINF PNLGRP=QHLZCMD.
+:IMPORT NAME=WRKREGINF PNLGRP=QHUSCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,8 +30,8 @@
 :PANEL NAME=CMDINF HELP=HLPCMDINF KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Information Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?CHGCNTINF'.Change Contact Information  CHGCNTINF
-:MENUI OPTION=2 ACTION='CMD ?CHGLICINF'.Change License Information  CHGLICINF
+:MENUI OPTION=1 ACTION='CMD ?CHGCNTINF' HELP=CHGCNTINF.Change Contact Information  CHGCNTINF
+:MENUI OPTION=2 ACTION='CMD ?CHGLICINF' HELP=CHGLICINF.Change License Information  CHGLICINF
 :MENUI OPTION=3 ACTION='CMD ?DSPAPPNINF'.
 :MENUI OPTION=4 ACTION='CMD ?DSPASPINF'.
 :MENUI OPTION=5 ACTION='CMD ?DSPCLUINF'.
@@ -35,7 +41,7 @@
 :MENUI OPTION=9 ACTION='CMD ?PRTDIRINF'.
 :MENUI OPTION=10 ACTION='CMD ?PRTDSKINF'.
 :MENUI OPTION=11 ACTION='CMD ?PRTSQLINF'.
-:MENUI OPTION=12 ACTION='CMD ?PRTSYSINF'.Print System Information  PRTSYSINF
+:MENUI OPTION=12 ACTION='CMD ?PRTSYSINF' HELP=PRTSYSINF.Print System Information  PRTSYSINF
 :MENUI OPTION=13 ACTION='CMD ?RSTSYSINF'.
 :MENUI OPTION=14 ACTION='CMD ?RTVDIRINF'.
 :MENUI OPTION=15 ACTION='CMD ?RTVDSKINF'.
@@ -44,10 +50,10 @@
 :MENUI OPTION=18 ACTION='CMD ?SETPGMINF'.
 :MENUI OPTION=19 ACTION='CMD ?UPDPTFINF'.
 :MENUI OPTION=20 ACTION='CMD ?UPDSYSINF'.
-:MENUI OPTION=21 ACTION='CMD ?WRKCNTINF'.Work with Contact Information  WRKCNTINF
-:MENUI OPTION=22 ACTION='CMD ?WRKLICINF'.Work with License Information  WRKLICINF
+:MENUI OPTION=21 ACTION='CMD ?WRKCNTINF' HELP=WRKCNTINF.Work with Contact Information  WRKCNTINF
+:MENUI OPTION=22 ACTION='CMD ?WRKLICINF' HELP=WRKLICINF.Work with License Information  WRKLICINF
 :MENUI OPTION=23 ACTION='CMD ?WRKPRDINF'.
-:MENUI OPTION=24 ACTION='CMD ?WRKREGINF'.Work with Registration Info  WRKREGINF
+:MENUI OPTION=24 ACTION='CMD ?WRKREGINF' HELP=WRKREGINF.Work with Registration Info  WRKREGINF
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -55,5 +61,21 @@
 :HELP NAME=HLPCMDINF.Information Commands - Help
 :P.Information Commands: every command whose name carries INF after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

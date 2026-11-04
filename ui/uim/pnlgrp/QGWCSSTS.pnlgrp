@@ -49,7 +49,7 @@
 :LISTDEF NAME=POOLS VARS='POOL POOLNAME SIZE RESV MAXACT DBF DBP NDBF NDBP AW WI AI'.
 :COND NAME=VIEW1 EXPR='&VIEW. EQ "1"'.
 :COND NAME=VIEW2 EXPR='&VIEW. EQ "2"'.
-:KEYL NAME=SSKEYS.
+:KEYL HELP='KEYS/SSKEYS' NAME=SSKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -69,38 +69,38 @@
 :PANEL NAME=WRKSYSSTS KEYL=SSKEYS HELP=WRKSYSSTS ENTER='RETURN 1' TOPSEP=DATETIME.Work with System Status
 :DATA DEPTH=6.
 :DATACOL WIDTH=42.
-:DATAI VAR=CPUPCT USAGE=OUTPUT.% CPU used
-:DATAI VAR=DBCAP USAGE=OUTPUT.% DB capability
-:DATAI VAR=ELAPSED USAGE=OUTPUT.Elapsed time
-:DATAI VAR=JOBS USAGE=OUTPUT.Jobs in system
-:DATAI VAR=PERMADR USAGE=OUTPUT.% perm addresses
-:DATAI VAR=TEMPADR USAGE=OUTPUT.% temp addresses
+:DATAI HELP='FLD/CPUPCT' VAR=CPUPCT USAGE=OUTPUT.% CPU used
+:DATAI HELP='FLD/DBCAP' VAR=DBCAP USAGE=OUTPUT.% DB capability
+:DATAI HELP='FLD/ELAPSED' VAR=ELAPSED USAGE=OUTPUT.Elapsed time
+:DATAI HELP='FLD/JOBS' VAR=JOBS USAGE=OUTPUT.Jobs in system
+:DATAI HELP='FLD/PERMADR' VAR=PERMADR USAGE=OUTPUT.% perm addresses
+:DATAI HELP='FLD/TEMPADR' VAR=TEMPADR USAGE=OUTPUT.% temp addresses
 :DATACOL WIDTH=36.
 :DATAGRP GRPSEP=NONE.Auxiliary storage
-:DATAI VAR=SYSASP USAGE=OUTPUT.System ASP
-:DATAI VAR=ASPPCT USAGE=OUTPUT.% system ASP used
-:DATAI VAR=TOTAUX USAGE=OUTPUT.Total
-:DATAI VAR=CURUNP USAGE=OUTPUT.Current unprotect used
-:DATAI VAR=MAXUNP USAGE=OUTPUT.Maximum unprotect
+:DATAI HELP='FLD/SYSASP' VAR=SYSASP USAGE=OUTPUT.System ASP
+:DATAI HELP='FLD/ASPPCT' VAR=ASPPCT USAGE=OUTPUT.% system ASP used
+:DATAI HELP='FLD/TOTAUX' VAR=TOTAUX USAGE=OUTPUT.Total
+:DATAI HELP='FLD/CURUNP' VAR=CURUNP USAGE=OUTPUT.Current unprotect used
+:DATAI HELP='FLD/MAXUNP' VAR=MAXUNP USAGE=OUTPUT.Maximum unprotect
 :EDATAGRP.
 :EDATA.
 :TOPINST.Type changes (if allowed), press Enter.
 :LIST DEPTH='*' LISTDEF=POOLS VIEWS=2 MAXHEAD=2.
-:LISTCOL VAR=POOL USAGE=OUTPUT.System Pool
-:LISTCOL VAR=SIZE USAGE=INOUT.Pool Size M
-:LISTCOL VAR=RESV USAGE=OUTPUT.Reserved Size M
-:LISTCOL VAR=MAXACT USAGE=INOUT.Max Active
+:LISTCOL HELP='FLD/POOL' VAR=POOL USAGE=OUTPUT.System Pool
+:LISTCOL HELP='FLD/SIZE' VAR=SIZE USAGE=INOUT.Pool Size M
+:LISTCOL HELP='FLD/RESV' VAR=RESV USAGE=OUTPUT.Reserved Size M
+:LISTCOL HELP='FLD/MAXACT' VAR=MAXACT USAGE=INOUT.Max Active
 :LISTGRP COL=DB.-----DB-----
-:LISTCOL VAR=DBF USAGE=OUTPUT.Fault
-:LISTCOL VAR=DBP USAGE=OUTPUT.Pages
+:LISTCOL HELP='FLD/DBF' VAR=DBF USAGE=OUTPUT.Fault
+:LISTCOL HELP='FLD/DBP' VAR=DBP USAGE=OUTPUT.Pages
 :ELISTGRP.
 :LISTGRP COL=NDB.---Non-DB---
-:LISTCOL VAR=NDBF USAGE=OUTPUT.Fault
-:LISTCOL VAR=NDBP USAGE=OUTPUT.Pages
+:LISTCOL HELP='FLD/NDBF' VAR=NDBF USAGE=OUTPUT.Fault
+:LISTCOL HELP='FLD/NDBP' VAR=NDBP USAGE=OUTPUT.Pages
 :ELISTGRP.
-:LISTCOL VAR=AW USAGE=OUTPUT.Act- Wait
-:LISTCOL VAR=WI USAGE=OUTPUT.Wait- Inel
-:LISTCOL VAR=AI USAGE=OUTPUT.Act- Inel
+:LISTCOL HELP='FLD/AW' VAR=AW USAGE=OUTPUT.Act- Wait
+:LISTCOL HELP='FLD/WI' VAR=WI USAGE=OUTPUT.Wait- Inel
+:LISTCOL HELP='FLD/AI' VAR=AI USAGE=OUTPUT.Act- Inel
 :LISTVIEW COLS='POOL SIZE RESV MAXACT DB NDB'.
 :LISTVIEW COLS='POOL SIZE RESV MAXACT AW WI AI'.
 :ELIST.
@@ -113,5 +113,100 @@ looked or F10 restarted the measurement. F11 shows how often jobs
 moved between active, waiting and ineligible instead. The size and the
 activity level of a shared pool may be typed over; Enter changes the
 pool.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SSKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F10=Restart
+:PD.Restart.
+:PT.F11=Transition data
+:PD.Transition data.
+:PT.F11=Page fault data
+:PD.Page fault data.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:PT.F14=Work with active jobs
+:PD.Runs WRKACTJOB.
+:PT.F15=Work with shared pools
+:PD.Runs WRKSHRPOOL.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/CPUPCT'.% CPU used
+:P.The % CPU used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DBCAP'.% DB capability
+:P.The % DB capability shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ELAPSED'.Elapsed time
+:P.The elapsed time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBS'.Jobs in system
+:P.The jobs in system shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PERMADR'.% perm addresses
+:P.The % perm addresses shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TEMPADR'.% temp addresses
+:P.The % temp addresses shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SYSASP'.System ASP
+:P.The system ASP shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ASPPCT'.% system ASP used
+:P.The % system ASP used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TOTAUX'.Total
+:P.The total shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CURUNP'.Current unprotect used
+:P.The current unprotect used shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXUNP'.Maximum unprotect
+:P.The maximum unprotect shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/POOL'.System Pool
+:P.The system Pool of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SIZE'.Pool Size M
+:P.Type the pool Size M for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/RESV'.Reserved Size M
+:P.The reserved Size M of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/MAXACT'.Max Active
+:P.Type the max Active for the entry on the line.
+:EHELP.
+:HELP NAME='FLD/DBF'.-----DB----- fault
+:P.The -----DB----- fault of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DBP'.-----DB----- pages
+:P.The -----DB----- pages of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NDBF'.---Non-DB--- fault
+:P.The ---Non-DB--- fault of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NDBP'.---Non-DB--- pages
+:P.The ---Non-DB--- pages of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AW'.Act- Wait
+:P.The act- Wait of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/WI'.Wait- Inel
+:P.The wait- Inel of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/AI'.Act- Inel
+:P.The act- Inel of each entry in the list.
 :EHELP.
 :EPNLGRP.

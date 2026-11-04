@@ -80,91 +80,91 @@
 :PANEL NAME=HWCMN KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No communication resources were found.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='HWCMN/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
+:LISTACT HELP='HWCMN/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='HWCMN/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* *CRP: as *CMN.
 :PANEL NAME=HWCRP KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No cryptographic adapters were found on this system.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='HWCRP/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
+:LISTACT HELP='HWCRP/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='HWCRP/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* *LWS: controller descriptions instead.
 :PANEL NAME=HWLWS KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No work station resources were found.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with controller descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='HWLWS/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Work with controller descriptions
+:LISTACT HELP='HWLWS/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='HWLWS/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* *STG: type and model, option 9 works with the resource.
 :PANEL NAME=HWSTG KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(No storage resources were found.)
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTACT OPTION=9 ENTER='RETURN 109'.9=Work with resource
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:LISTACT HELP='HWSTG/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTACT HELP='HWSTG/OPTIONS' OPTION=9 ENTER='RETURN 109'.9=Work with resource
+:LISTCOL HELP='HWSTG/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTM' VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTXT22' VAR=RSCTXT22 USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* *PRC: as *STG, option 9 shows the attributes.
 :PANEL NAME=HWPRC KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(No processor resources were found.)
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTACT OPTION=9 ENTER='RETURN 109'.9=Work with resource attributes
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:LISTACT HELP='HWPRC/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTACT HELP='HWPRC/OPTIONS' OPTION=9 ENTER='RETURN 109'.9=Work with resource attributes
+:LISTCOL HELP='HWPRC/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTM' VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTXT22' VAR=RSCTXT22 USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* *CSA: the coupled system's name besides.
 :PANEL NAME=HWCSA KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCCSA SCROLL=YES.(No coupled system adapters were found on this system.)
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAM12 USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCSYS USAGE=OUTPUT.System
-:LISTCOL VAR=RSCTXT14 USAGE=OUTPUT.Text
+:LISTACT HELP='HWCSA/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='HWCSA/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAM12' VAR=RSCNAM12 USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTM' VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCSYS' VAR=RSCSYS USAGE=OUTPUT.System
+:LISTCOL HELP='FLD/RSCTXT14' VAR=RSCTXT14 USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* Option 9 of *STG: the resource and those it drives (RSCKIND is its text).
 :PANEL NAME=HWSUB KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(The resource is no longer there.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT.Text
+:LISTACT HELP='HWSUB/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
+:LISTACT HELP='HWSUB/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='HWSUB/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTM' VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTXT22' VAR=RSCTXT22 USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* DSPHDWRSC: the lists with the display options, as the V7R1M0 oracle
@@ -173,72 +173,72 @@
 :PANEL NAME=DCMN KEYL=WRKKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No communication resources were found.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display configuration descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='DCMN/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display configuration descriptions
+:LISTACT HELP='DCMN/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='DCMN/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=DCRP KEYL=WRKKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No cryptographic adapters were found on this system.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display configuration descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='DCRP/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display configuration descriptions
+:LISTACT HELP='DCRP/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='DCRP/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=DLWS KEYL=WRKKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No work station resources were found.)
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Display controller descriptions
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='DLWS/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Display controller descriptions
+:LISTACT HELP='DLWS/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='DLWS/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=DSTG KEYL=WRKKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No storage resources were found.)
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTACT OPTION=9 ENTER='RETURN 109'.9=Display associated resources
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='DSTG/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTACT HELP='DSTG/OPTIONS' OPTION=9 ENTER='RETURN 109'.9=Display associated resources
+:LISTCOL HELP='DSTG/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTEXT' VAR=RSCTEXT USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=DPRC KEYL=WRKKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCTMS SCROLL=YES.(No processor resources were found.)
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCTXT22 USAGE=OUTPUT MAXWIDTH=23.Text
+:LISTACT HELP='DPRC/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='DPRC/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAME' VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTM' VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCTXT22' VAR=RSCTXT22 USAGE=OUTPUT MAXWIDTH=23.Text
 :ELIST.
 :EPANEL.
 :PANEL NAME=DCSA KEYL=WRKKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=RSCCSA SCROLL=YES.(No coupled system adapters were found on this system.)
-:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=RSCNAM12 USAGE=OUTPUT.Resource
-:LISTCOL VAR=RSCTM USAGE=OUTPUT.Type-model
-:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
-:LISTCOL VAR=RSCSYS USAGE=OUTPUT.System
-:LISTCOL VAR=RSCTXT14 USAGE=OUTPUT.Text
+:LISTACT HELP='DCSA/OPTIONS' OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL HELP='DCSA/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/RSCNAM12' VAR=RSCNAM12 USAGE=OUTPUT.Resource
+:LISTCOL HELP='FLD/RSCTM' VAR=RSCTM USAGE=OUTPUT.Type-model
+:LISTCOL HELP='FLD/RSCSTS' VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/RSCSYS' VAR=RSCSYS USAGE=OUTPUT.System
+:LISTCOL HELP='FLD/RSCTXT14' VAR=RSCTXT14 USAGE=OUTPUT.Text
 :ELIST.
 :EPANEL.
 .* Option 7: the resource, its location, then its addresses and what
@@ -247,19 +247,19 @@
 :DATA DEPTH=10.
 :DATACOL WIDTH=30.
 :DATACOL WIDTH=78.
-:DATAI VAR=DRSC USAGE=OUTPUT.Resource name
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text
-:DATAI VAR=DTM USAGE=OUTPUT.Type-model
-:DATAI VAR=DSERIAL USAGE=OUTPUT.Serial number
-:DATAI VAR=DPART USAGE=OUTPUT.Part number
+:DATAI HELP='FLD/DRSC' VAR=DRSC USAGE=OUTPUT.Resource name
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/DTM' VAR=DTM USAGE=OUTPUT.Type-model
+:DATAI HELP='FLD/DSERIAL' VAR=DSERIAL USAGE=OUTPUT.Serial number
+:DATAI HELP='FLD/DPART' VAR=DPART USAGE=OUTPUT.Part number
 :EDATA.
 :DATA DEPTH=2.
 :DATACOL WIDTH=10.
 :DATACOL WIDTH=78.
-:DATAI VAR=DLOC USAGE=OUTPUT.Location
+:DATAI HELP='FLD/DLOC' VAR=DLOC USAGE=OUTPUT.Location
 :EDATA.
 :LIST DEPTH='*' LISTDEF=DLINES SCROLL=YES.
-:LISTCOL VAR=DLINE USAGE=OUTPUT.
+:LISTCOL HELP='FLD/DLINE' VAR=DLINE USAGE=OUTPUT.
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -268,17 +268,17 @@
 :DATA DEPTH=3.
 :DATACOL WIDTH=30.
 :DATACOL WIDTH=78.
-:DATAI VAR=DRSC USAGE=OUTPUT.Resource name
-:DATAI VAR=DTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/DRSC' VAR=DRSC USAGE=OUTPUT.Resource name
+:DATAI HELP='FLD/DTEXT' VAR=DTEXT USAGE=OUTPUT.Text
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=CFGDS SCROLL=YES.(No configuration descriptions)
-:LISTACT OPTION=1 ENTER='RETURN 101'.1=Create
-:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with description
-:LISTACT OPTION=8 ENTER='RETURN 108'.8=Work with configuration status
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=CFGPAD USAGE=OUTPUT.
-:LISTCOL VAR=CFGD USAGE=OUTPUT.Description
+:LISTACT HELP='CFGD/OPTIONS' OPTION=1 ENTER='RETURN 101'.1=Create
+:LISTACT HELP='CFGD/OPTIONS' OPTION=5 ENTER='RETURN 105'.5=Work with description
+:LISTACT HELP='CFGD/OPTIONS' OPTION=8 ENTER='RETURN 108'.8=Work with configuration status
+:LISTCOL HELP='CFGD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/CFGPAD' VAR=CFGPAD USAGE=OUTPUT.
+:LISTCOL HELP='FLD/CFGD' VAR=CFGD USAGE=OUTPUT.Description
 :ELIST.
 :EPANEL.
 :HELP NAME=WRKHDWH.Work with Hardware Resources - Help
@@ -303,5 +303,289 @@ work with one, 8 for its status, or 1 on the first row to create one.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F5 looks at the hardware again, F6 prints the list, F3 and F12
 leave.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='HWCMN/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RSCNAME'.Resource
+:P.The resource of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCSTS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='HWCMN/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Work with configuration descriptions
+:PD.Type 5 next to an entry and press Enter to work with configuration
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='HWCRP/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='HWCRP/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Work with configuration descriptions
+:PD.Type 5 next to an entry and press Enter to work with configuration
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='HWLWS/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='HWLWS/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Work with controller descriptions
+:PD.Type 5 next to an entry and press Enter to work with controller
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='HWSTG/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RSCTM'.Type-model
+:P.The type-model of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCTXT22'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='HWSTG/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:PT.9=Work with resource
+:PD.Type 9 next to an entry and press Enter to work with resource it.
+:EPARML.
+:EHELP.
+:HELP NAME='HWPRC/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='HWPRC/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:PT.9=Work with resource attributes
+:PD.Type 9 next to an entry and press Enter to work with resource
+attributes it.
+:EPARML.
+:EHELP.
+:HELP NAME='HWCSA/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/RSCNAM12'.Resource
+:P.The resource of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCSYS'.System
+:P.The system of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCTXT14'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='HWCSA/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='HWSUB/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='HWSUB/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Work with configuration descriptions
+:PD.Type 5 next to an entry and press Enter to work with configuration
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='DCMN/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DCMN/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display configuration descriptions
+:PD.Type 5 next to an entry and press Enter to display configuration
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='DCRP/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DCRP/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display configuration descriptions
+:PD.Type 5 next to an entry and press Enter to display configuration
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='DLWS/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DLWS/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display controller descriptions
+:PD.Type 5 next to an entry and press Enter to display controller
+descriptions it.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='DSTG/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DSTG/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:PT.9=Display associated resources
+:PD.Type 9 next to an entry and press Enter to display associated
+resources it.
+:EPARML.
+:EHELP.
+:HELP NAME='DPRC/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DPRC/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='DCSA/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='DCSA/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.7=Display resource detail
+:PD.Type 7 next to an entry and press Enter to display resource detail
+it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/DRSC'.Resource name
+:P.The hardware resource name, as WRKHDWRSC shows it.
+:EHELP.
+:HELP NAME='FLD/DTEXT'.Text
+:P.The text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTM'.Type-model
+:P.The type-model shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DSERIAL'.Serial number
+:P.The serial number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DPART'.Part number
+:P.The part number shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DLOC'.Location
+:P.The location shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DLINE'.DLINE
+:P.The DLINE of each entry in the list.
+:EHELP.
+:HELP NAME='CFGD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/CFGPAD'.CFGPAD
+:P.The CFGPAD of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/CFGD'.Description
+:P.The description of each entry in the list.
+:EHELP.
+:HELP NAME='CFGD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create
+:PD.Type 1 next to an entry and press Enter to create it.
+:PT.5=Work with description
+:PD.Type 5 next to an entry and press Enter to work with description it.
+:PT.8=Work with configuration status
+:PD.Type 8 next to an entry and press Enter to work with configuration
+status it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

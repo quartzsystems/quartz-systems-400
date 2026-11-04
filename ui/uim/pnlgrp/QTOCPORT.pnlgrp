@@ -22,7 +22,7 @@
 :VAR NAME=PPROTO CLASS=PCLCL.
 :VAR NAME=PUSER CLASS=NAMECL.
 :LISTDEF NAME=PORTS VARS='OPT PLOWER PUPPER PPROTO PUSER'.
-:KEYL NAME=WRKKEYS.
+:KEYL HELP='KEYS/WRKKEYS' NAME=WRKKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -38,32 +38,79 @@
 :PANEL NAME=WRKPORT HELP=HLPPORT KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Port Restrictions
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PORTS SCROLL=YES ACTLEN=1 EXTACT=YES.(No port restrictions)
-:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 101'.1=Add
-:LISTACT OPTION=4 ACTFOR=LISTE ENTER='RETURN 104'.4=Remove
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTACT HELP='WRKPORT/OPTIONS' OPTION=1 ACTFOR=EXTACT ENTER='RETURN 101'.1=Add
+:LISTACT HELP='WRKPORT/OPTIONS' OPTION=4 ACTFOR=LISTE ENTER='RETURN 104'.4=Remove
+:LISTCOL HELP='WRKPORT/OPT' VAR=OPT USAGE=INPUT.Opt
 :LISTGRP COL=RANGE.--Port Range---
-:LISTCOL VAR=PLOWER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8 ATCOL=10.Lower
-:LISTCOL VAR=PUPPER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8.Upper
+:LISTCOL HELP='FLD/PLOWER' VAR=PLOWER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8 ATCOL=10.Lower
+:LISTCOL HELP='FLD/PUPPER' VAR=PUPPER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8.Upper
 :ELISTGRP.
-:LISTCOL VAR=PPROTO USAGE=OUTPUT EXTACT=YES.Protocol
-:LISTCOL VAR=PUSER USAGE=OUTPUT EXTACT=YES ATCOL=43.User       Profile
+:LISTCOL HELP='FLD/PPROTO' VAR=PPROTO USAGE=OUTPUT EXTACT=YES.Protocol
+:LISTCOL HELP='FLD/PUSER' VAR=PUSER USAGE=OUTPUT EXTACT=YES ATCOL=43.User       Profile
 :ELIST.
 :EPANEL.
 :PANEL NAME=WRKPORTD HELP=HLPPORT KEYL=WRKKEYS ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with TCP/IP Port Restrictions
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=PORTS SCROLL=YES ACTLEN=1 EXTACT=YES.(No port restrictions)
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/OPT' VAR=OPT USAGE=INPUT.Opt
 :LISTGRP COL=RANGE.--Port Range---
-:LISTCOL VAR=PLOWER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8 ATCOL=10.Lower
-:LISTCOL VAR=PUPPER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8.Upper
+:LISTCOL HELP='FLD/PLOWER' VAR=PLOWER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8 ATCOL=10.Lower
+:LISTCOL HELP='FLD/PUPPER' VAR=PUPPER USAGE=OUTPUT EXTACT=YES MAXWIDTH=8.Upper
 :ELISTGRP.
-:LISTCOL VAR=PPROTO USAGE=OUTPUT EXTACT=YES.Protocol
-:LISTCOL VAR=PUSER USAGE=OUTPUT EXTACT=YES ATCOL=43.User       Profile
+:LISTCOL HELP='FLD/PPROTO' VAR=PPROTO USAGE=OUTPUT EXTACT=YES.Protocol
+:LISTCOL HELP='FLD/PUSER' VAR=PUSER USAGE=OUTPUT EXTACT=YES ATCOL=43.User       Profile
 :ELIST.
 :EPANEL.
 :HELP NAME=HLPPORT.Work with TCP/IP Port Restrictions - Help
 :P.Ports kept for chosen user profiles: a port or range of a protocol
 with an entry can be used only by the profiles its entries name. Type 4
 next to an entry to remove it; option 1 adds one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WRKKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F6=Print list
+:PD.Print list.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKPORT/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/PLOWER'.--Port Range--- lower
+:P.The --Port Range--- lower of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PUPPER'.--Port Range--- upper
+:P.The --Port Range--- upper of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PPROTO'.Protocol
+:P.The protocol of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/PUSER'.User       Profile
+:P.The user Profile of each entry in the list.
+:EHELP.
+:HELP NAME='WRKPORT/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Add
+:PD.Type 1 next to an entry and press Enter to add it.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/OPT'.Option
+:P.Type the opt for the entry on the line.
 :EHELP.
 :EPNLGRP.

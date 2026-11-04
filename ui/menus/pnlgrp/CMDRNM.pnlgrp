@@ -11,7 +11,11 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDRNM'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=RNM PNLGRP=QHP0LCMD.
+:IMPORT NAME=RNMM PNLGRP=QHDBCMD.
+:IMPORT NAME=RNMOBJ PNLGRP=QHLICMD.
+:IMPORT NAME=RNMTCPHTE PNLGRP=QHTOCCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,17 +28,17 @@
 :PANEL NAME=CMDRNM HELP=HLPCMDRNM KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Rename Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?RNM'.Rename Object  RNM
+:MENUI OPTION=1 ACTION='CMD ?RNM' HELP=RNM.Rename Object  RNM
 :MENUI OPTION=2 ACTION='CMD ?RNMDIRE'.
 :MENUI OPTION=3 ACTION='CMD ?RNMDKT'.
 :MENUI OPTION=4 ACTION='CMD ?RNMDLO'.
 :MENUI OPTION=5 ACTION='CMD ?RNMDSTL'.
 :MENUI OPTION=6 ACTION='CMD ?RNMLANADPI'.
-:MENUI OPTION=7 ACTION='CMD ?RNMM'.Rename Member  RNMM
+:MENUI OPTION=7 ACTION='CMD ?RNMM' HELP=RNMM.Rename Member  RNMM
 :MENUI OPTION=8 ACTION='CMD ?RNMNCK'.
-:MENUI OPTION=9 ACTION='CMD ?RNMOBJ'.Rename Object  RNMOBJ
+:MENUI OPTION=9 ACTION='CMD ?RNMOBJ' HELP=RNMOBJ.Rename Object  RNMOBJ
 :MENUI OPTION=10 ACTION='CMD ?RNMSDSTL'.
-:MENUI OPTION=11 ACTION='CMD ?RNMTCPHTE'.Rename TCP/IP Host Table Entry  RNMTCPHTE
+:MENUI OPTION=11 ACTION='CMD ?RNMTCPHTE' HELP=RNMTCPHTE.Rename TCP/IP Host Table Entry  RNMTCPHTE
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -42,5 +46,21 @@
 :HELP NAME=HLPCMDRNM.Rename Commands - Help
 :P.Rename Commands: every command whose name starts with RNM, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

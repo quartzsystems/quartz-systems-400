@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='POWER'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,7 +21,7 @@
 :EKEYL.
 :PANEL NAME=POWER HELP=HLPPOWER KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Power On and Off Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='CMD DSPPWRSCD'.Display power on and off schedule
+:MENUI HELP='POWER/OPT1' OPTION=1 ACTION='CMD DSPPWRSCD'.Display power on and off schedule
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -29,5 +29,22 @@
 :P.When the system powers itself on and off.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='POWER/OPT1'.Display power on and off schedule
+:P.Option 1. Runs the DSPPWRSCD command&colon. Display power on and off
+schedule.
 :EHELP.
 :EPNLGRP.

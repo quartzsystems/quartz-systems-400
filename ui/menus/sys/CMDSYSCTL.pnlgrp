@@ -11,7 +11,11 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDSYSCTL'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPLOG PNLGRP=QHMHCMD.
+:IMPORT NAME=RCLSTG PNLGRP=QHLICMD.
+:IMPORT NAME=RCLTMPSTG PNLGRP=QHLICMD.
+:IMPORT NAME=WRKACTJOB PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -25,19 +29,19 @@
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
 :MENUI OPTION=1 ACTION='CMD ?CHGRCYAP'.
-:MENUI OPTION=2 ACTION='CMD ?DSPLOG'.Display Log  DSPLOG
+:MENUI HELP=DSPLOG OPTION=2 ACTION='CMD ?DSPLOG'.Display Log  DSPLOG
 :MENUI OPTION=3 ACTION='CMD ?DSPRCYAP'.
 :MENUI OPTION=4 ACTION='CMD ?EDTRCYAP'.
-:MENUI OPTION=5 ACTION='CMD ?RCLSTG'.Reclaim Storage  RCLSTG
-:MENUI OPTION=6 ACTION='CMD ?RCLTMPSTG'.Reclaim Temporary Storage  RCLTMPSTG
+:MENUI HELP=RCLSTG OPTION=5 ACTION='CMD ?RCLSTG'.Reclaim Storage  RCLSTG
+:MENUI HELP=RCLTMPSTG OPTION=6 ACTION='CMD ?RCLTMPSTG'.Reclaim Temporary Storage  RCLTMPSTG
 :MENUI OPTION=7 ACTION='CMD ?RGZDLO'.
-:MENUI OPTION=8 ACTION='CMD ?WRKACTJOB'.Work with Active Jobs  WRKACTJOB
+:MENUI HELP=WRKACTJOB OPTION=8 ACTION='CMD ?WRKACTJOB'.Work with Active Jobs  WRKACTJOB
 :EMENUGRP.
 :MENUGRP.Related Command Menus
-:MENUI OPTION=9 ACTION='MENU CMDJOB'.Job Commands  CMDJOB
-:MENUI OPTION=10 ACTION='MENU CMDSTS'.Status Commands  CMDSTS
-:MENUI OPTION=11 ACTION='MENU CMDSYS'.System Commands  CMDSYS
-:MENUI OPTION=12 ACTION='MENU CMDSYSVAL'.System Value Commands  CMDSYSVAL
+:MENUI HELP='CMDSYSCTL/OPT9' OPTION=9 ACTION='MENU CMDJOB'.Job Commands  CMDJOB
+:MENUI HELP='CMDSYSCTL/OPT10' OPTION=10 ACTION='MENU CMDSTS'.Status Commands  CMDSTS
+:MENUI HELP='CMDSYSCTL/OPT11' OPTION=11 ACTION='MENU CMDSYS'.System Commands  CMDSYS
+:MENUI HELP='CMDSYSCTL/OPT12' OPTION=12 ACTION='MENU CMDSYSVAL'.System Value Commands  CMDSYSVAL
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -51,5 +55,35 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDSYSCTL/OPT9'.Job Commands  CMDJOB
+:P.Option 9. Shows menu CMDJOB&colon. Job Commands CMDJOB.
+:EHELP.
+:HELP NAME='CMDSYSCTL/OPT10'.Status Commands  CMDSTS
+:P.Option 10. Shows menu CMDSTS&colon. Status Commands CMDSTS.
+:EHELP.
+:HELP NAME='CMDSYSCTL/OPT11'.System Commands  CMDSYS
+:P.Option 11. Shows menu CMDSYS&colon. System Commands CMDSYS.
+:EHELP.
+:HELP NAME='CMDSYSCTL/OPT12'.System Value Commands  CMDSYSVAL
+:P.Option 12. Shows menu CMDSYSVAL&colon. System Value Commands
+CMDSYSVAL.
 :EHELP.
 :EPNLGRP.

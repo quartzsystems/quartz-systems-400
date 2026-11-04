@@ -38,23 +38,23 @@
 :DATA DEPTH=2.
 :DATACOL WIDTH=22.
 :DATACOL WIDTH=78.
-:DATAI VAR=POSTO USAGE=INPUT.Position to
+:DATAI HELP='FLD/POSTO' VAR=POSTO USAGE=INPUT.Position to
 :DATAIX VAR=POSHINT USAGE=OUTPUT.
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=DEVS SCROLL=YES.(No device descriptions)
-:LISTACT OPTION=2 ENTER='CMD ?CHGDEVD DEVD(&DEVD.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD ?CRTDEVDSP'.3=Copy
-:LISTACT OPTION=4 ENTER='CMD DLTDEVD DEVD(&DEVD.)'.4=Delete
-:LISTACT OPTION=5 ENTER='CMD DSPDEVD DEVD(&DEVD.)'.5=Display
-:LISTACT OPTION=6 ENTER='CMD DSPDEVD DEVD(&DEVD.) OUTPUT(*PRINT)'.6=Print
-:LISTACT OPTION=7 ENTER='CMD ?RNMOBJ OBJ(QSYS/&DEVD.) OBJTYPE(*DEVD)'.7=Rename
-:LISTACT OPTION=8 ENTER='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(&DEVD.)'.8=Work with status
-:LISTACT OPTION=9 ENTER='RETURN 109'.9=Retrieve source
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=DEVD USAGE=OUTPUT.Device
-:LISTCOL VAR=DEVTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=DEVTEXT USAGE=OUTPUT.Text
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=2 ENTER='CMD ?CHGDEVD DEVD(&DEVD.)'.2=Change
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=3 ENTER='CMD ?CRTDEVDSP'.3=Copy
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=4 ENTER='CMD DLTDEVD DEVD(&DEVD.)'.4=Delete
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=5 ENTER='CMD DSPDEVD DEVD(&DEVD.)'.5=Display
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=6 ENTER='CMD DSPDEVD DEVD(&DEVD.) OUTPUT(*PRINT)'.6=Print
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=7 ENTER='CMD ?RNMOBJ OBJ(QSYS/&DEVD.) OBJTYPE(*DEVD)'.7=Rename
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=8 ENTER='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(&DEVD.)'.8=Work with status
+:LISTACT HELP='WRKDEVD/OPTIONS' OPTION=9 ENTER='RETURN 109'.9=Retrieve source
+:LISTCOL HELP='WRKDEVD/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/DEVD' VAR=DEVD USAGE=OUTPUT.Device
+:LISTCOL HELP='FLD/DEVTYPE' VAR=DEVTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/DEVTEXT' VAR=DEVTEXT USAGE=OUTPUT.Text
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters or command
 :EPANEL.
@@ -69,5 +69,52 @@ start the list there.
 :P.F5 shows the list again, F6 creates a description, F14 shows the
 status of every device, F9 brings back the last command, F3 and F12
 leave.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/POSTO'.Position to
+:P.Type the position to.
+:EHELP.
+:HELP NAME='WRKDEVD/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/DEVD'.Device
+:P.The device the data goes to.
+:EHELP.
+:HELP NAME='FLD/DEVTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/DEVTEXT'.Text
+:P.The text of each entry in the list.
+:EHELP.
+:HELP NAME='WRKDEVD/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+Device Description (CHGDEVD) command is prompted for the entry.
+:PT.3=Copy
+:PD.Type 3 next to an entry and press Enter to copy it. The Create
+Device Desc (Display) (CRTDEVDSP) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+Device Description (DLTDEVD) command runs for the entry.
+:PT.5=Display
+:PD.Type 5 next to an entry and press Enter to display it. The Display
+Device Description (DSPDEVD) command runs for the entry.
+:PT.6=Print
+:PD.Type 6 next to an entry and press Enter to print it. The Display
+Device Description (DSPDEVD) command runs for the entry.
+:PT.7=Rename
+:PD.Type 7 next to an entry and press Enter to rename it. The Rename
+Object (RNMOBJ) command is prompted for the entry.
+:PT.8=Work with status
+:PD.Type 8 next to an entry and press Enter to work with status it. The
+Work with Configuration Status (WRKCFGSTS) command runs for the entry.
+:PT.9=Retrieve source
+:PD.Type 9 next to an entry and press Enter to retrieve source it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

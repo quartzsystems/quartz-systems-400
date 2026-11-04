@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='FILE2'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKDDMF PNLGRP=QHDDCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,13 +25,13 @@
 :EKEYL.
 :PANEL NAME=FILE2 HELP=HLPFILE2 KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Files
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?WRKDDMF'.Work with Distributed Data Management (DDM) Files
-:MENUI OPTION=2 ACTION='MENU FILETFR'.Send or receive files
-:MENUI OPTION=3 ACTION='MENU CMDCRTF'.Create a file
-:MENUI OPTION=4 ACTION='CMD EDTRBDAP'.Edit rebuild of access paths
-:MENUI OPTION=50 ACTION='CMD ?SAVS36F'.Save a file in System/36 format
-:MENUI OPTION=51 ACTION='CMD ?RSTS36F'.Restore a file from System/36 format
-:MENUI OPTION=70 ACTION='MENU CMDFIL'.Related commands
+:MENUI HELP=WRKDDMF OPTION=1 ACTION='CMD ?WRKDDMF'.Work with Distributed Data Management (DDM) Files
+:MENUI HELP='FILE2/OPT2' OPTION=2 ACTION='MENU FILETFR'.Send or receive files
+:MENUI HELP='FILE2/OPT3' OPTION=3 ACTION='MENU CMDCRTF'.Create a file
+:MENUI HELP='FILE2/OPT4' OPTION=4 ACTION='CMD EDTRBDAP'.Edit rebuild of access paths
+:MENUI HELP='FILE2/OPT50' OPTION=50 ACTION='CMD ?SAVS36F'.Save a file in System/36 format
+:MENUI HELP='FILE2/OPT51' OPTION=51 ACTION='CMD ?RSTS36F'.Restore a file from System/36 format
+:MENUI HELP='FILE2/OPT70' OPTION=70 ACTION='MENU CMDFIL'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -40,5 +41,45 @@ and the access paths waiting to be rebuilt.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='FILE2/OPT2'.Send or receive files
+:P.Option 2. Shows menu FILETFR&colon. Send or receive files.
+:EHELP.
+:HELP NAME='FILE2/OPT3'.Create a file
+:P.Option 3. Shows menu CMDCRTF&colon. Create a file.
+:EHELP.
+:HELP NAME='FILE2/OPT4'.Edit rebuild of access paths
+:P.Option 4. Runs the EDTRBDAP command&colon. Edit rebuild of access
+paths.
+:EHELP.
+:HELP NAME='FILE2/OPT50'.Save a file in System/36 format
+:P.Option 50. Runs the SAVS36F command&colon. Save a file in System/36
+format.
+:EHELP.
+:HELP NAME='FILE2/OPT51'.Restore a file from System/36 format
+:P.Option 51. Runs the RSTS36F command&colon. Restore a file from
+System/36 format.
+:EHELP.
+:HELP NAME='FILE2/OPT70'.Related commands
+:P.Option 70. Shows menu CMDFIL&colon. Related commands.
 :EHELP.
 :EPNLGRP.

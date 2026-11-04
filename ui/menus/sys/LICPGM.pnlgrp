@@ -12,7 +12,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='LICPGM'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSPLOG PNLGRP=QHMHCMD.
+:IMPORT NAME=QSLICPGM PNLGRP=QHSZCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -26,27 +28,27 @@
 :PANEL NAME=LICPGM HELP=HLPLICPGM KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Work with Licensed Programs
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Manual Install
-:MENUI OPTION=1 ACTION='CMD QSLICPGM OPTION(1)'.Install all
+:MENUI HELP=QSLICPGM OPTION=1 ACTION='CMD QSLICPGM OPTION(1)'.Install all
 :EMENUGRP.
 :MENUGRP.Preparation
-:MENUI OPTION=5 ACTION='MENU LICPREP'.Prepare for install
+:MENUI HELP='LICPGM/OPT5' OPTION=5 ACTION='MENU LICPREP'.Prepare for install
 :EMENUGRP.
 :MENUGRP.Licensed Programs
-:MENUI OPTION=10 ACTION='CMD QSLICPGM OPTION(10)'.Display installed licensed programs
-:MENUI OPTION=11 ACTION='CMD QSLICPGM OPTION(11)'.Install licensed programs
-:MENUI OPTION=12 ACTION='CMD QSLICPGM OPTION(12)'.Delete licensed programs
-:MENUI OPTION=13 ACTION='CMD QSLICPGM OPTION(13)'.Save licensed programs
+:MENUI HELP=QSLICPGM OPTION=10 ACTION='CMD QSLICPGM OPTION(10)'.Display installed licensed programs
+:MENUI HELP=QSLICPGM OPTION=11 ACTION='CMD QSLICPGM OPTION(11)'.Install licensed programs
+:MENUI HELP=QSLICPGM OPTION=12 ACTION='CMD QSLICPGM OPTION(12)'.Delete licensed programs
+:MENUI HELP=QSLICPGM OPTION=13 ACTION='CMD QSLICPGM OPTION(13)'.Save licensed programs
 :EMENUGRP.
 :MENUGRP.Secondary Languages
-:MENUI OPTION=20 ACTION='CMD QSLICPGM OPTION(20)'.Display secondary languages
-:MENUI OPTION=21 ACTION='CMD QSLICPGM OPTION(21)'.Install secondary languages
-:MENUI OPTION=22 ACTION='CMD QSLICPGM OPTION(22)'.Delete secondary languages
+:MENUI HELP=QSLICPGM OPTION=20 ACTION='CMD QSLICPGM OPTION(20)'.Display secondary languages
+:MENUI HELP=QSLICPGM OPTION=21 ACTION='CMD QSLICPGM OPTION(21)'.Install secondary languages
+:MENUI HELP=QSLICPGM OPTION=22 ACTION='CMD QSLICPGM OPTION(22)'.Delete secondary languages
 :EMENUGRP.
 :MENUGRP.Completion Status
-:MENUI OPTION=50 ACTION='CMD DSPLOG'.Display log for messages
+:MENUI HELP=DSPLOG OPTION=50 ACTION='CMD DSPLOG'.Display log for messages
 :EMENUGRP.
 :MENUGRP.Related
-:MENUI OPTION=70 ACTION='MENU CMDLIC'.Licensed program commands
+:MENUI HELP='LICPGM/OPT70' OPTION=70 ACTION='MENU CMDLIC'.Licensed program commands
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -55,5 +57,30 @@
 :P.Install, display, delete and save the licensed programs, and their
 language features. An install shows each product's software agreement
 first; the product is installed once it is accepted.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='LICPGM/OPT5'.Prepare for install
+:P.Option 5. Shows menu LICPREP&colon. Prepare for install.
+:EHELP.
+:HELP NAME='LICPGM/OPT70'.Licensed program commands
+:P.Option 70. Shows menu CMDLIC&colon. Licensed program commands.
 :EHELP.
 :EPNLGRP.

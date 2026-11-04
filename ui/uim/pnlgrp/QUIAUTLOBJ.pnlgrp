@@ -39,11 +39,11 @@
 :DATAC.Primary group  . . . . . . . . . . :   &PGP.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=OBJS SCROLL=YES.(The authorization list secures no objects.)
-:LISTCOL VAR=OBJ USAGE=OUTPUT.Object
-:LISTCOL VAR=OBJLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=OBJTYPE USAGE=OUTPUT.Type
-:LISTCOL VAR=OBJOWNER USAGE=OUTPUT.Owner
-:LISTCOL VAR=OBJTEXT USAGE=OUTPUT.Text
+:LISTCOL HELP='FLD/OBJ' VAR=OBJ USAGE=OUTPUT.Object
+:LISTCOL HELP='FLD/OBJLIB' VAR=OBJLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/OBJTYPE' VAR=OBJTYPE USAGE=OUTPUT.Type
+:LISTCOL HELP='FLD/OBJOWNER' VAR=OBJOWNER USAGE=OUTPUT.Owner
+:LISTCOL HELP='FLD/OBJTEXT' VAR=OBJTEXT USAGE=OUTPUT.Text
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -53,5 +53,21 @@ list has the list's authority to each of them.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 and F12 leave.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/OBJ'.Object
+:P.The object of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OBJLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OBJTYPE'.Type
+:P.The type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/OBJOWNER'.Owner
+:P.The owner of the objects created.
+:EHELP.
+:HELP NAME='FLD/OBJTEXT'.Text
+:P.The text of each entry in the list.
 :EHELP.
 :EPNLGRP.

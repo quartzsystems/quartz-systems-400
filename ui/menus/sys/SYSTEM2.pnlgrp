@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SYSTEM2'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=PWRDWNSYS PNLGRP=QHWMCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,11 +25,11 @@
 :EKEYL.
 :PANEL NAME=SYSTEM2 HELP=HLPSYSTEM2 KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.General System Tasks
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='MENU PERFORM'.Performance tools
-:MENUI OPTION=2 ACTION='CMD ASKQST'.Question and answer
-:MENUI OPTION=3 ACTION='MENU PROBLEM'.Problem handling
-:MENUI OPTION=70 ACTION='MENU CMDSYS'.Related commands
-:MENUI OPTION=80 ACTION='CMD ?PWRDWNSYS'.Power off the system
+:MENUI HELP='SYSTEM2/OPT1' OPTION=1 ACTION='MENU PERFORM'.Performance tools
+:MENUI HELP='SYSTEM2/OPT2' OPTION=2 ACTION='CMD ASKQST'.Question and answer
+:MENUI HELP='SYSTEM2/OPT3' OPTION=3 ACTION='MENU PROBLEM'.Problem handling
+:MENUI HELP='SYSTEM2/OPT70' OPTION=70 ACTION='MENU CMDSYS'.Related commands
+:MENUI HELP=PWRDWNSYS OPTION=80 ACTION='CMD ?PWRDWNSYS'.Power off the system
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -38,5 +39,36 @@ the system, so the way it ends can be chosen first.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='SYSTEM2/OPT1'.Performance tools
+:P.Option 1. Shows menu PERFORM&colon. Performance tools.
+:EHELP.
+:HELP NAME='SYSTEM2/OPT2'.Question and answer
+:P.Option 2. Runs the ASKQST command&colon. Question and answer.
+:EHELP.
+:HELP NAME='SYSTEM2/OPT3'.Problem handling
+:P.Option 3. Shows menu PROBLEM&colon. Problem handling.
+:EHELP.
+:HELP NAME='SYSTEM2/OPT70'.Related commands
+:P.Option 70. Shows menu CMDSYS&colon. Related commands.
 :EHELP.
 :EPNLGRP.

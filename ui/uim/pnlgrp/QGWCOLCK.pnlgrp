@@ -31,7 +31,7 @@
 :VAR NAME=SCOPE CLASS=LOCKCL.
 :VAR NAME=THREAD CLASS=THDCL.
 :LISTDEF NAME=LOCKS VARS='OPT JOB USER NUMBER LOCK STATUS SCOPE THREAD'.
-:KEYL NAME=OLKEYS.
+:KEYL HELP='KEYS/OLKEYS' NAME=OLKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -53,21 +53,71 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=LOCKS ACTLEN=4.(No locks on the object)
-:LISTACT OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End job
-:LISTACT OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with job
-:LISTACT OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.) OPTION(*JOBLCK)'.8=Work with job locks
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Job
-:LISTCOL VAR=USER USAGE=OUTPUT.User
-:LISTCOL VAR=LOCK USAGE=OUTPUT.Lock
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Status
-:LISTCOL VAR=SCOPE USAGE=OUTPUT.Scope
-:LISTCOL VAR=THREAD USAGE=OUTPUT.Thread
+:LISTACT HELP='WRKOBJLCK/OPTIONS' OPTION=4 ENTER='CMD ?ENDJOB JOB(&NUMBER./&USER./&JOB.)'.4=End job
+:LISTACT HELP='WRKOBJLCK/OPTIONS' OPTION=5 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.)'.5=Work with job
+:LISTACT HELP='WRKOBJLCK/OPTIONS' OPTION=8 ENTER='CMD WRKJOB JOB(&NUMBER./&USER./&JOB.) OPTION(*JOBLCK)'.8=Work with job locks
+:LISTCOL HELP='WRKOBJLCK/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
+:LISTCOL HELP='FLD/USER' VAR=USER USAGE=OUTPUT.User
+:LISTCOL HELP='FLD/LOCK' VAR=LOCK USAGE=OUTPUT.Lock
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
+:LISTCOL HELP='FLD/SCOPE' VAR=SCOPE USAGE=OUTPUT.Scope
+:LISTCOL HELP='FLD/THREAD' VAR=THREAD USAGE=OUTPUT.Thread
 :ELIST.
 :EPANEL.
 :HELP NAME=WRKOBJLCK.Work with Object Locks - Help
 :P.Each job that holds a lock on the object, or waits for one, with
 the lock's state. Type an option next to a job to end it or look at
 it and its other locks.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/OLKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKOBJLCK/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.The user of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/LOCK'.Lock
+:P.The lock of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SCOPE'.Scope
+:P.The scope of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/THREAD'.Thread
+:P.The thread of each entry in the list.
+:EHELP.
+:HELP NAME='WRKOBJLCK/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.4=End job
+:PD.Type 4 next to an entry and press Enter to end job it. The End Job
+(ENDJOB) command is prompted for the entry.
+:PT.5=Work with job
+:PD.Type 5 next to an entry and press Enter to work with job it. The
+Work with Job (WRKJOB) command runs for the entry.
+:PT.8=Work with job locks
+:PD.Type 8 next to an entry and press Enter to work with job locks it.
+The Work with Job (WRKJOB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

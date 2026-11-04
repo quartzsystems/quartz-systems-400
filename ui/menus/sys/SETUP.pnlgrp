@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SETUP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGUSRPRF PNLGRP=QHSYCMD.
+:IMPORT NAME=WRKSYSVAL PNLGRP=QHSVCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,13 +23,13 @@
 :EKEYL.
 :PANEL NAME=SETUP HELP=HLPSETUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Customize Your System, Users, and Devices
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select an option, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='CMD WRKSYSVAL'.Change system options
-:MENUI OPTION=2 ACTION='MENU CLEANUP'.Cleanup tasks
-:MENUI OPTION=3 ACTION='MENU POWER'.Power on and off tasks
-:MENUI OPTION=4 ACTION='MENU DISKTASKS'.Disk space tasks
-:MENUI OPTION=5 ACTION='MENU BACKUP'.Backup tasks
-:MENUI OPTION=11 ACTION='CMD ?CHGUSRPRF USRPRF(QSECOFR)'.Change passwords for IBM-supplied users
-:MENUI OPTION=20 ACTION='MENU CMNCFG'.Communications configuration tasks
+:MENUI HELP=WRKSYSVAL OPTION=1 ACTION='CMD WRKSYSVAL'.Change system options
+:MENUI HELP='SETUP/OPT2' OPTION=2 ACTION='MENU CLEANUP'.Cleanup tasks
+:MENUI HELP='SETUP/OPT3' OPTION=3 ACTION='MENU POWER'.Power on and off tasks
+:MENUI HELP='SETUP/OPT4' OPTION=4 ACTION='MENU DISKTASKS'.Disk space tasks
+:MENUI HELP='SETUP/OPT5' OPTION=5 ACTION='MENU BACKUP'.Backup tasks
+:MENUI HELP=CHGUSRPRF OPTION=11 ACTION='CMD ?CHGUSRPRF USRPRF(QSECOFR)'.Change passwords for IBM-supplied users
+:MENUI HELP='SETUP/OPT20' OPTION=20 ACTION='MENU CMNCFG'.Communications configuration tasks
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -36,5 +38,34 @@
 power, backup and the passwords of the shipped profiles.
 :P.Type an option number and press Enter. F9 opens a command line, F3
 leaves the menu and F12 returns to the one before it.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='SETUP/OPT2'.Cleanup tasks
+:P.Option 2. Shows menu CLEANUP&colon. Cleanup tasks.
+:EHELP.
+:HELP NAME='SETUP/OPT3'.Power on and off tasks
+:P.Option 3. Shows menu POWER&colon. Power on and off tasks.
+:EHELP.
+:HELP NAME='SETUP/OPT4'.Disk space tasks
+:P.Option 4. Shows menu DISKTASKS&colon. Disk space tasks.
+:EHELP.
+:HELP NAME='SETUP/OPT5'.Backup tasks
+:P.Option 5. Shows menu BACKUP&colon. Backup tasks.
+:EHELP.
+:HELP NAME='SETUP/OPT20'.Communications configuration tasks
+:P.Option 20. Shows menu CMNCFG&colon. Communications configuration
+tasks.
 :EHELP.
 :EPNLGRP.

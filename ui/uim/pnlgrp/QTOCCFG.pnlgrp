@@ -14,7 +14,15 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CFGTCP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CFGTCPAPP PNLGRP=QHTOCCMD.
+:IMPORT NAME=CFGTCPPTP PNLGRP=QHTOCPPCMD.
+:IMPORT NAME=CHGTCPA PNLGRP=QHTOCCMD.
+:IMPORT NAME=CHGTCPDMN PNLGRP=QHTOCCMD.
+:IMPORT NAME=MRGTCPHT PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKNETTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKPCLTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=WRKSRVTBLE PNLGRP=QHTOCCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -25,37 +33,37 @@
 :EKEYL.
 :PANEL NAME=CFGTCP HELP=HLPCFG KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configure TCP/IP
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='RETURN 101'.Work with TCP/IP interfaces
-:MENUI OPTION=2 ACTION='RETURN 102'.Work with TCP/IP routes
-:MENUI OPTION=3 ACTION='CMD ?CHGTCPA'.Change TCP/IP attributes
-:MENUI OPTION=4 ACTION='RETURN 104'.Work with TCP/IP port restrictions
-:MENUI OPTION=10 ACTION='RETURN 110'.Work with TCP/IP host table entries
-:MENUI OPTION=11 ACTION='CMD ?MRGTCPHT'.Merge TCP/IP host table
-:MENUI OPTION=12 ACTION='CMD ?CHGTCPDMN'.Change TCP/IP domain information
-:MENUI OPTION=20 ACTION='CMD CFGTCPAPP'.Configure TCP/IP applications
-:MENUI OPTION=21 ACTION='RETURN 121'.Configure related tables
-:MENUI OPTION=22 ACTION='CMD CFGTCPPTP'.Configure point-to-point TCP/IP
-:MENUI OPTION=23 ACTION='RETURN 123'.Load/Unload IP Filter
+:MENUI HELP='CFGTCP/OPT1' OPTION=1 ACTION='RETURN 101'.Work with TCP/IP interfaces
+:MENUI HELP='CFGTCP/OPT2' OPTION=2 ACTION='RETURN 102'.Work with TCP/IP routes
+:MENUI HELP=CHGTCPA OPTION=3 ACTION='CMD ?CHGTCPA'.Change TCP/IP attributes
+:MENUI HELP='CFGTCP/OPT4' OPTION=4 ACTION='RETURN 104'.Work with TCP/IP port restrictions
+:MENUI HELP='CFGTCP/OPT10' OPTION=10 ACTION='RETURN 110'.Work with TCP/IP host table entries
+:MENUI HELP=MRGTCPHT OPTION=11 ACTION='CMD ?MRGTCPHT'.Merge TCP/IP host table
+:MENUI HELP=CHGTCPDMN OPTION=12 ACTION='CMD ?CHGTCPDMN'.Change TCP/IP domain information
+:MENUI HELP=CFGTCPAPP OPTION=20 ACTION='CMD CFGTCPAPP'.Configure TCP/IP applications
+:MENUI HELP='CFGTCP/OPT21' OPTION=21 ACTION='RETURN 121'.Configure related tables
+:MENUI HELP=CFGTCPPTP OPTION=22 ACTION='CMD CFGTCPPTP'.Configure point-to-point TCP/IP
+:MENUI HELP='CFGTCP/OPT23' OPTION=23 ACTION='RETURN 123'.Load/Unload IP Filter
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :PANEL NAME=CFGTBL HELP=HLPTBL KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure Related Tables
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKSRVTBLE'.Work with service table entries
-:MENUI OPTION=2 ACTION='CMD WRKPCLTBLE'.Work with protocol table entries
-:MENUI OPTION=3 ACTION='CMD WRKNETTBLE'.Work with network table entries
+:MENUI HELP=WRKSRVTBLE OPTION=1 ACTION='CMD WRKSRVTBLE'.Work with service table entries
+:MENUI HELP=WRKPCLTBLE OPTION=2 ACTION='CMD WRKPCLTBLE'.Work with protocol table entries
+:MENUI HELP=WRKNETTBLE OPTION=3 ACTION='CMD WRKNETTBLE'.Work with network table entries
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :PANEL NAME=CFGPTP HELP=HLPPTP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM.Configure Point-to-Point TCP/IP
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=2 ACTION='RETURN 202'.Work with active point-to-point jobs
+:MENUI HELP='CFGPTP/OPT2' OPTION=2 ACTION='RETURN 202'.Work with active point-to-point jobs
 :MENUGRP.Modem information options
-:MENUI OPTION=11 ACTION='RETURN 211'.Work with modem information
+:MENUI HELP='CFGPTP/OPT11' OPTION=11 ACTION='RETURN 211'.Work with modem information
 :EMENUGRP.
 :MENUGRP.Other related options:
-:MENUI OPTION=21 ACTION='RETURN 221'.Work with PPP line descriptions
-:MENUI OPTION=22 ACTION='RETURN 222'.Work with PPP line description status
+:MENUI HELP='CFGPTP/OPT21' OPTION=21 ACTION='RETURN 221'.Work with PPP line descriptions
+:MENUI HELP='CFGPTP/OPT22' OPTION=22 ACTION='RETURN 222'.Work with PPP line description status
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -76,5 +84,50 @@ names up in them.
 :HELP NAME=HLPPTP.Configure Point-to-Point TCP/IP - Help
 :P.Point-to-point profiles connect over modems and PPP lines, which this
 release does not have.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGTCP/OPT1'.Work with TCP/IP interfaces
+:P.Option 1. Work with TCP/IP interfaces.
+:EHELP.
+:HELP NAME='CFGTCP/OPT2'.Work with TCP/IP routes
+:P.Option 2. Work with TCP/IP routes.
+:EHELP.
+:HELP NAME='CFGTCP/OPT4'.Work with TCP/IP port restrictions
+:P.Option 4. Work with TCP/IP port restrictions.
+:EHELP.
+:HELP NAME='CFGTCP/OPT10'.Work with TCP/IP host table entries
+:P.Option 10. Work with TCP/IP host table entries.
+:EHELP.
+:HELP NAME='CFGTCP/OPT21'.Configure related tables
+:P.Option 21. Configure related tables.
+:EHELP.
+:HELP NAME='CFGTCP/OPT23'.Load/Unload IP Filter
+:P.Option 23. Load/Unload IP Filter.
+:EHELP.
+:HELP NAME='CFGPTP/OPT2'.Work with active point-to-point jobs
+:P.Option 2. Work with active point-to-point jobs.
+:EHELP.
+:HELP NAME='CFGPTP/OPT11'.Work with modem information
+:P.Option 11. Work with modem information.
+:EHELP.
+:HELP NAME='CFGPTP/OPT21'.Work with PPP line descriptions
+:P.Option 21. Work with PPP line descriptions.
+:EHELP.
+:HELP NAME='CFGPTP/OPT22'.Work with PPP line description status
+:P.Option 22. Work with PPP line description status.
 :EHELP.
 :EPNLGRP.

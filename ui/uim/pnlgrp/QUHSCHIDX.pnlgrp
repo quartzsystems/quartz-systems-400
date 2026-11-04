@@ -32,16 +32,16 @@
 :PANEL NAME=SEARCH KEYL=SCHKEYS HELP=SEARCH ENTER='RETURN 1' TOPSEP=SYSNAM.Search Help Index
 :TOPINST.Type the words to look for, press Enter.  Leave them blank for every topic.
 :DATA DEPTH='*'.
-:DATAI VAR=SCHIDX USAGE=OUTPUT.Search index
+:DATAI HELP='FLD/SCHIDX' VAR=SCHIDX USAGE=OUTPUT.Search index
 :DATAI VAR=WORDS USAGE=INPUT HELP=WORDS.Words to search for
 :EDATA.
 :EPANEL.
 :PANEL NAME=TOPICS KEYL=SCHKEYS HELP=TOPICS ENTER='RETURN 1' TOPSEP=SYSNAM.Search Help Index
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=TOPICS.No topic has these words.
-:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display topic
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=TOPIC USAGE=OUTPUT.Topic
+:LISTACT HELP='TOPICS/OPTIONS' OPTION=5 ENTER='RETURN 5'.5=Display topic
+:LISTCOL HELP='TOPICS/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/TOPIC' VAR=TOPIC USAGE=OUTPUT.Topic
 :ELIST.
 :EPANEL.
 :HELP NAME=SEARCH.Search Help Index
@@ -59,5 +59,25 @@ its help; F12 goes back to the words.
 :EHELP.
 :HELP NAME=SCHKEYS.Function keys
 :P.F3 leaves help, F12 goes back one display.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/SCHIDX'.Search index
+:P.The search index shown for what the display is about.
+:EHELP.
+:HELP NAME='TOPICS/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/TOPIC'.Topic
+:P.The topic of each entry in the list.
+:EHELP.
+:HELP NAME='TOPICS/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.5=Display topic
+:PD.Type 5 next to an entry and press Enter to display topic it.
+:EPARML.
 :EHELP.
 :EPNLGRP.

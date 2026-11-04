@@ -13,7 +13,7 @@
 :VAR NAME=SACTL CLASS=VALCL.
 :VAR NAME=SALVL CLASS=VALCL.
 :VAR NAME=SALVL2 CLASS=VALCL.
-:KEYL NAME=DSPKEYS.
+:KEYL HELP='KEYS/DSPKEYS' NAME=DSPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -27,18 +27,18 @@
 :DATACOL WIDTH=78.
 :DATAC.Security Auditing Journal Values
 :DATAC.
-:DATAI VAR=SAEXIST USAGE=OUTPUT.  Security journal QAUDJRN exists
+:DATAI HELP='FLD/SAEXIST' VAR=SAEXIST USAGE=OUTPUT.  Security journal QAUDJRN exists
 :DATAC.
-:DATAI VAR=SARCV USAGE=OUTPUT.  Journal receiver attached to QAUDJRN
-:DATAI VAR=SARCVLIB USAGE=OUTPUT.    Library
+:DATAI HELP='FLD/SARCV' VAR=SARCV USAGE=OUTPUT.  Journal receiver attached to QAUDJRN
+:DATAI HELP='FLD/SARCVLIB' VAR=SARCVLIB USAGE=OUTPUT.    Library
 :DATAC.
 :DATAC.Security Auditing System Values
 :DATAC.
-:DATAI VAR=SACTL USAGE=OUTPUT.  Current QAUDCTL system value
+:DATAI HELP='FLD/SACTL' VAR=SACTL USAGE=OUTPUT.  Current QAUDCTL system value
 :DATAC.
-:DATAI VAR=SALVL USAGE=OUTPUT.  Current QAUDLVL system value
+:DATAI HELP='FLD/SALVL' VAR=SALVL USAGE=OUTPUT.  Current QAUDLVL system value
 :DATAC.
-:DATAI VAR=SALVL2 USAGE=OUTPUT.  Current QAUDLVL2 system value
+:DATAI HELP='FLD/SALVL2' VAR=SALVL2 USAGE=OUTPUT.  Current QAUDLVL2 system value
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -46,5 +46,35 @@
 :P.This display shows whether security auditing is set up: whether the
 audit journal exists, the receiver attached to it now, and the system
 values that say what is audited. CHGSECAUD changes them.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SAEXIST'.Security journal QAUDJRN exists
+:P.The security journal QAUDJRN exists shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/SARCV'.Journal receiver attached to QAUDJRN
+:P.The journal receiver attached to QAUDJRN shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/SARCVLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SACTL'.Current QAUDCTL system value
+:P.The current QAUDCTL system value shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SALVL'.Current QAUDLVL system value
+:P.The current QAUDLVL system value shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SALVL2'.Current QAUDLVL2 system value
+:P.The current QAUDLVL2 system value shown for what the display is
+about.
 :EHELP.
 :EPNLGRP.

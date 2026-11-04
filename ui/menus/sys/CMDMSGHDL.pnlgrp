@@ -11,7 +11,7 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDMSGHDL'.
-:KEYL NAME=MENUKEYS.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,13 +24,13 @@
 :PANEL NAME=CMDMSGHDL HELP=HLPCMDMSGHDL KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Message Handling Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Related Command Menus
-:MENUI OPTION=1 ACTION='MENU CMDLOG'.Log Commands  CMDLOG
-:MENUI OPTION=2 ACTION='MENU CMDMSG'.Message Commands  CMDMSG
-:MENUI OPTION=3 ACTION='MENU CMDMSGD'.Message Description Commands  CMDMSGD
-:MENUI OPTION=4 ACTION='MENU CMDMSGF'.Message File Commands  CMDMSGF
-:MENUI OPTION=5 ACTION='MENU CMDMSGQ'.Message Queue Commands  CMDMSGQ
-:MENUI OPTION=6 ACTION='MENU CMDRPY'.Reply Commands  CMDRPY
-:MENUI OPTION=7 ACTION='MENU CMDRPYL'.Reply List Commands  CMDRPYL
+:MENUI HELP='CMDMSGHDL/OPT1' OPTION=1 ACTION='MENU CMDLOG'.Log Commands  CMDLOG
+:MENUI HELP='CMDMSGHDL/OPT2' OPTION=2 ACTION='MENU CMDMSG'.Message Commands  CMDMSG
+:MENUI HELP='CMDMSGHDL/OPT3' OPTION=3 ACTION='MENU CMDMSGD'.Message Description Commands  CMDMSGD
+:MENUI HELP='CMDMSGHDL/OPT4' OPTION=4 ACTION='MENU CMDMSGF'.Message File Commands  CMDMSGF
+:MENUI HELP='CMDMSGHDL/OPT5' OPTION=5 ACTION='MENU CMDMSGQ'.Message Queue Commands  CMDMSGQ
+:MENUI HELP='CMDMSGHDL/OPT6' OPTION=6 ACTION='MENU CMDRPY'.Reply Commands  CMDRPY
+:MENUI HELP='CMDMSGHDL/OPT7' OPTION=7 ACTION='MENU CMDRPYL'.Reply List Commands  CMDRPYL
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -44,5 +44,44 @@ provide.
 menu, or type a command on the command line. F12 returns to the previous
 menu, F3 to the menu where you started and F16 to the major command
 groups.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F16=Major menu
+:PD.Shows menu MAJOR.
+:EPARML.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT1'.Log Commands  CMDLOG
+:P.Option 1. Shows menu CMDLOG&colon. Log Commands CMDLOG.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT2'.Message Commands  CMDMSG
+:P.Option 2. Shows menu CMDMSG&colon. Message Commands CMDMSG.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT3'.Message Description Commands  CMDMSGD
+:P.Option 3. Shows menu CMDMSGD&colon. Message Description Commands
+CMDMSGD.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT4'.Message File Commands  CMDMSGF
+:P.Option 4. Shows menu CMDMSGF&colon. Message File Commands CMDMSGF.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT5'.Message Queue Commands  CMDMSGQ
+:P.Option 5. Shows menu CMDMSGQ&colon. Message Queue Commands CMDMSGQ.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT6'.Reply Commands  CMDRPY
+:P.Option 6. Shows menu CMDRPY&colon. Reply Commands CMDRPY.
+:EHELP.
+:HELP NAME='CMDMSGHDL/OPT7'.Reply List Commands  CMDRPYL
+:P.Option 7. Shows menu CMDRPYL&colon. Reply List Commands CMDRPYL.
 :EHELP.
 :EPNLGRP.

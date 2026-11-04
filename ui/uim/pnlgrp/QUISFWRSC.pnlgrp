@@ -26,7 +26,7 @@
 :VAR NAME=RSCLIB CLASS=NAMECL.
 :VAR NAME=RSCRLS CLASS=TYPECL.
 :LISTDEF NAME=RESOURCES VARS='RSCID RSCOPT RSCFTR RSCDESC RSCTYPE RSCLIB RSCRLS'.
-:KEYL NAME=SFWKEYS.
+:KEYL HELP='KEYS/SFWKEYS' NAME=SFWKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -37,7 +37,7 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:KEYL NAME=LIBKEYS.
+:KEYL HELP='KEYS/LIBKEYS' NAME=LIBKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -50,21 +50,21 @@
 :EKEYL.
 :PANEL NAME=DSPSFWRSC HELP=HLPSFW KEYL=SFWKEYS TOPSEP=SYSNAM.Display Software Resources
 :LIST DEPTH='*' LISTDEF=RESOURCES SCROLL=YES.
-:LISTCOL VAR=RSCID USAGE=OUTPUT.Resource ID
-:LISTCOL VAR=RSCOPT USAGE=OUTPUT.Option
-:LISTCOL VAR=RSCFTR USAGE=OUTPUT.Feature
-:LISTCOL VAR=RSCDESC USAGE=OUTPUT.Description
+:LISTCOL HELP='FLD/RSCID' VAR=RSCID USAGE=OUTPUT.Resource ID
+:LISTCOL HELP='FLD/RSCOPT' VAR=RSCOPT USAGE=OUTPUT.Option
+:LISTCOL HELP='FLD/RSCFTR' VAR=RSCFTR USAGE=OUTPUT.Feature
+:LISTCOL HELP='FLD/RSCDESC' VAR=RSCDESC USAGE=OUTPUT.Description
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :PANEL NAME=DSPSFWLIB HELP=HLPSFW KEYL=LIBKEYS TOPSEP=SYSNAM.Display Software Resources
 :LIST DEPTH='*' LISTDEF=RESOURCES SCROLL=YES.
-:LISTCOL VAR=RSCID USAGE=OUTPUT.Resource ID
-:LISTCOL VAR=RSCOPT USAGE=OUTPUT.Option
-:LISTCOL VAR=RSCFTR USAGE=OUTPUT.Feature
-:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Feature Type
-:LISTCOL VAR=RSCLIB USAGE=OUTPUT.Library
-:LISTCOL VAR=RSCRLS USAGE=OUTPUT.Release
+:LISTCOL HELP='FLD/RSCID' VAR=RSCID USAGE=OUTPUT.Resource ID
+:LISTCOL HELP='FLD/RSCOPT' VAR=RSCOPT USAGE=OUTPUT.Option
+:LISTCOL HELP='FLD/RSCFTR' VAR=RSCFTR USAGE=OUTPUT.Feature
+:LISTCOL HELP='FLD/RSCTYPE' VAR=RSCTYPE USAGE=OUTPUT.Feature Type
+:LISTCOL HELP='FLD/RSCLIB' VAR=RSCLIB USAGE=OUTPUT.Library
+:LISTCOL HELP='FLD/RSCRLS' VAR=RSCRLS USAGE=OUTPUT.Release
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -73,5 +73,51 @@
 product's identifier, its option and feature, and what it is.
 :P.F11 shows the library each feature is installed in and its release
 instead of the descriptions.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SFWKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=Display libraries/releases
+:PD.Display libraries/releases.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F19=Display trademarks
+:PD.Display trademarks.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/RSCID'.Resource ID
+:P.The resource ID of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCOPT'.Option
+:P.The option of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCFTR'.Feature
+:P.The feature code of the product.
+:EHELP.
+:HELP NAME='FLD/RSCDESC'.Description
+:P.The description of each entry in the list.
+:EHELP.
+:HELP NAME='KEYS/LIBKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F11=Display descriptions
+:PD.Display descriptions.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F19=Display trademarks
+:PD.Display trademarks.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/RSCTYPE'.Feature Type
+:P.The feature Type of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCLIB'.Library
+:P.The library of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RSCRLS'.Release
+:P.A release, in the form VxRyMz.
 :EHELP.
 :EPNLGRP.

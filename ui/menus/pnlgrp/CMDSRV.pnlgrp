@@ -11,7 +11,15 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='CMDSRV'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=ADDSRVTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=DSPSRVSTS PNLGRP=QHSXCMD.
+:IMPORT NAME=ENDSRVJOB PNLGRP=QHDBGCMD.
+:IMPORT NAME=RMVSRVTBLE PNLGRP=QHTOCCMD.
+:IMPORT NAME=SNDSRVRQS PNLGRP=QHSXCMD.
+:IMPORT NAME=STRSRVJOB PNLGRP=QHDBGCMD.
+:IMPORT NAME=WRKSRVPVD PNLGRP=QHSXCMD.
+:IMPORT NAME=WRKSRVTBLE PNLGRP=QHTOCCMD.
+:KEYL NAME=MENUKEYS HELP=HLPKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,7 +32,7 @@
 :PANEL NAME=CMDSRV HELP=HLPCMDSRV KEYL=MENUKEYS ENTER='RETURN 1' PANELID=PANELID.Service Commands
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
 :MENUGRP.Commands
-:MENUI OPTION=1 ACTION='CMD ?ADDSRVTBLE'.Add Service Table Entry  ADDSRVTBLE
+:MENUI OPTION=1 ACTION='CMD ?ADDSRVTBLE' HELP=ADDSRVTBLE.Add Service Table Entry  ADDSRVTBLE
 :MENUI OPTION=2 ACTION='CMD ?CFGDSTSRV'.
 :MENUI OPTION=3 ACTION='CMD ?CHGMGRSRVA'.
 :MENUI OPTION=4 ACTION='CMD ?CHGSRVA'.
@@ -35,19 +43,19 @@
 :MENUI OPTION=9 ACTION='CMD ?DSPDSTSRV'.
 :MENUI OPTION=10 ACTION='CMD ?DSPSRVA'.
 :MENUI OPTION=11 ACTION='CMD ?DSPSRVPVDA'.
-:MENUI OPTION=12 ACTION='CMD ?DSPSRVSTS'.Display Service Status  DSPSRVSTS
+:MENUI OPTION=12 ACTION='CMD ?DSPSRVSTS' HELP=DSPSRVSTS.Display Service Status  DSPSRVSTS
 :MENUI OPTION=13 ACTION='CMD ?ENDAGTSRV'.
 :MENUI OPTION=14 ACTION='CMD ?ENDMGRSRV'.
-:MENUI OPTION=15 ACTION='CMD ?ENDSRVJOB'.End Service Job  ENDSRVJOB
-:MENUI OPTION=16 ACTION='CMD ?RMVSRVTBLE'.Remove Service Table Entry  RMVSRVTBLE
-:MENUI OPTION=17 ACTION='CMD ?SNDSRVRQS'.Send Service Request  SNDSRVRQS
+:MENUI OPTION=15 ACTION='CMD ?ENDSRVJOB' HELP=ENDSRVJOB.End Service Job  ENDSRVJOB
+:MENUI OPTION=16 ACTION='CMD ?RMVSRVTBLE' HELP=RMVSRVTBLE.Remove Service Table Entry  RMVSRVTBLE
+:MENUI OPTION=17 ACTION='CMD ?SNDSRVRQS' HELP=SNDSRVRQS.Send Service Request  SNDSRVRQS
 :MENUI OPTION=18 ACTION='CMD ?STRAGTSRV'.
 :MENUI OPTION=19 ACTION='CMD ?STRMGRSRV'.
-:MENUI OPTION=20 ACTION='CMD ?STRSRVJOB'.Start Service Job  STRSRVJOB
+:MENUI OPTION=20 ACTION='CMD ?STRSRVJOB' HELP=STRSRVJOB.Start Service Job  STRSRVJOB
 :MENUI OPTION=21 ACTION='CMD ?VFYSRVCFG'.
-:MENUI OPTION=22 ACTION='CMD ?WRKSRVPVD'.Work with Service Providers  WRKSRVPVD
+:MENUI OPTION=22 ACTION='CMD ?WRKSRVPVD' HELP=WRKSRVPVD.Work with Service Providers  WRKSRVPVD
 :MENUI OPTION=23 ACTION='CMD ?WRKSRVRQS'.
-:MENUI OPTION=24 ACTION='CMD ?WRKSRVTBLE'.Work with Service Table Entries  WRKSRVTBLE
+:MENUI OPTION=24 ACTION='CMD ?WRKSRVTBLE' HELP=WRKSRVTBLE.Work with Service Table Entries  WRKSRVTBLE
 :EMENUGRP.
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
@@ -55,5 +63,21 @@
 :HELP NAME=HLPCMDSRV.Service Commands - Help
 :P.Service Commands: every command whose name carries SRV after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
+:EHELP.
+:HELP NAME=HLPKEYS.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for the item the cursor is on; on the title, help for the whole menu.
+:PT.F3=Exit
+:PD.Leaves the menu and the menus it was reached from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous menu.
+:PT.F16=Major menu
+:PD.Shows that menu.
+:EPARML.
 :EHELP.
 :EPNLGRP.

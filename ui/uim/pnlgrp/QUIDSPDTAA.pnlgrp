@@ -37,8 +37,8 @@
 :DATAC.Text  . . . . . . . . . :   &DTATEXT.
 :EDATA.
 :LIST DEPTH='*' LISTDEF=VALUES SCROLL=YES.
-:LISTCOL VAR=OFFSET USAGE=OUTPUT.Offset
-:LISTCOL VAR=VALUE USAGE=OUTPUT ATCOL=13.Value  *...+....1....+....2....+....3....+....4....+....5
+:LISTCOL HELP='FLD/OFFSET' VAR=OFFSET USAGE=OUTPUT.Offset
+:LISTCOL HELP='FLD/VALUE' VAR=VALUE USAGE=OUTPUT ATCOL=13.Value  *...+....1....+....2....+....3....+....4....+....5
 :ELIST.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -49,5 +49,13 @@ data area.
 :EHELP.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/OFFSET'.Offset
+:P.The offset of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/VALUE'.Value  *...+....1....+....2....+....3....+....4....+....5
+:P.The value *...+....1....+....2....+....3....+....4....+....5 of each
+entry in the list.
 :EHELP.
 :EPNLGRP.

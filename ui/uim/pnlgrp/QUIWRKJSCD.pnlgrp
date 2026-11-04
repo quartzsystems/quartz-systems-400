@@ -32,7 +32,7 @@
 :VAR NAME=TEXT CLASS=TEXTCL.
 :VAR NAME=ENTRY CLASS=NBRCL.
 :LISTDEF NAME=ENTRIES VARS='OPT JOB STATUS SDATE STIME FRQ RCYACN NXTDATE TEXT ENTRY'.
-:KEYL NAME=SCDKEYS.
+:KEYL HELP='KEYS/SCDKEYS' NAME=SCDKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -53,23 +53,23 @@
 :EDATA.
 :TOPINST.Type options, press Enter.
 :LIST DEPTH='*' LISTDEF=ENTRIES.(No job schedule entries to display)
-:LISTACT OPTION=2 ENTER='CMD ?CHGJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.2=Change
-:LISTACT OPTION=3 ENTER='CMD HLDJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.3=Hold
-:LISTACT OPTION=4 ENTER='CMD RMVJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.4=Remove
-:LISTACT OPTION=5 ENTER='CMD WRKJOBSCDE JOB(&JOB.) OUTPUT(*PRINT)'.5=Display details
-:LISTACT OPTION=6 ENTER='CMD RLSJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.6=Release
-:LISTACT OPTION=8 ENTER='CMD WRKSBMJOB'.8=Work with last submission
-:LISTACT OPTION=10 ENTER='CMD SBMJOB CMD(CALL QCMD) JOB(&JOB.)'.10=Submit immediately
-:LISTCOL VAR=OPT USAGE=INPUT.Opt
-:LISTCOL VAR=JOB USAGE=OUTPUT.Job
-:LISTCOL VAR=STATUS USAGE=OUTPUT.Status
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=2 ENTER='CMD ?CHGJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.2=Change
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=3 ENTER='CMD HLDJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.3=Hold
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=4 ENTER='CMD RMVJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.4=Remove
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=5 ENTER='CMD WRKJOBSCDE JOB(&JOB.) OUTPUT(*PRINT)'.5=Display details
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=6 ENTER='CMD RLSJOBSCDE JOB(&JOB.) ENTRYNBR(&ENTRY.)'.6=Release
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=8 ENTER='CMD WRKSBMJOB'.8=Work with last submission
+:LISTACT HELP='WRKJOBSCDE/OPTIONS' OPTION=10 ENTER='CMD SBMJOB CMD(CALL QCMD) JOB(&JOB.)'.10=Submit immediately
+:LISTCOL HELP='WRKJOBSCDE/OPT' VAR=OPT USAGE=INPUT.Opt
+:LISTCOL HELP='FLD/JOB' VAR=JOB USAGE=OUTPUT.Job
+:LISTCOL HELP='FLD/STATUS' VAR=STATUS USAGE=OUTPUT.Status
 :LISTGRP COL=SCHED.-----Schedule------
-:LISTCOL VAR=SDATE USAGE=OUTPUT ATCOL=27.Date
-:LISTCOL VAR=STIME USAGE=OUTPUT ATCOL=38.Time
+:LISTCOL HELP='FLD/SDATE' VAR=SDATE USAGE=OUTPUT ATCOL=27.Date
+:LISTCOL HELP='FLD/STIME' VAR=STIME USAGE=OUTPUT ATCOL=38.Time
 :ELISTGRP.
-:LISTCOL VAR=FRQ USAGE=OUTPUT ATCOL=48.Frequency
-:LISTCOL VAR=RCYACN USAGE=OUTPUT ATCOL=59.Recovery Action
-:LISTCOL VAR=NXTDATE USAGE=OUTPUT ATCOL=69.Next Submit Date
+:LISTCOL HELP='FLD/FRQ' VAR=FRQ USAGE=OUTPUT ATCOL=48.Frequency
+:LISTCOL HELP='FLD/RCYACN' VAR=RCYACN USAGE=OUTPUT ATCOL=59.Recovery Action
+:LISTCOL HELP='FLD/NXTDATE' VAR=NXTDATE USAGE=OUTPUT ATCOL=69.Next Submit Date
 :LISTVIEW COLS='OPT JOB STATUS SCHED FRQ RCYACN NXTDATE'.
 :ELIST.
 :CMDLINE SIZE=SHORT.Parameters or command
@@ -77,5 +77,84 @@
 :HELP NAME=WRKJOBSCDE.Work with Job Schedule Entries - Help
 :P.The jobs the schedule submits, with when each runs next and how
 often. F6 adds an entry.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/SCDKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F6=Add
+:PD.Runs ADDJOBSCDE.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F11=Display job queue data
+:PD.Display job queue data.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F17=Top
+:PD.Moves to the top of the list.
+:PT.F18=Bottom
+:PD.Moves to the bottom of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKJOBSCDE/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/JOB'.Job
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:EHELP.
+:HELP NAME='FLD/STATUS'.Status
+:P.The status of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/SDATE'.-----Schedule------ date
+:P.The -----Schedule------ date of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/STIME'.-----Schedule------ time
+:P.The -----Schedule------ time of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/FRQ'.Frequency
+:P.The frequency of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/RCYACN'.Recovery Action
+:P.The recovery Action of each entry in the list.
+:EHELP.
+:HELP NAME='FLD/NXTDATE'.Next Submit Date
+:P.The next Submit Date of each entry in the list.
+:EHELP.
+:HELP NAME='WRKJOBSCDE/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.2=Change
+:PD.Type 2 next to an entry and press Enter to change it. The Change Job
+Schedule Entry (CHGJOBSCDE) command is prompted for the entry.
+:PT.3=Hold
+:PD.Type 3 next to an entry and press Enter to hold it. The Hold Job
+Schedule Entry (HLDJOBSCDE) command runs for the entry.
+:PT.4=Remove
+:PD.Type 4 next to an entry and press Enter to remove it. The Remove Job
+Schedule Entry (RMVJOBSCDE) command runs for the entry.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to display details it. The
+Work with Job Schedule Entries (WRKJOBSCDE) command runs for the entry.
+:PT.6=Release
+:PD.Type 6 next to an entry and press Enter to release it. The Release
+Job Schedule Entry (RLSJOBSCDE) command runs for the entry.
+:PT.8=Work with last submission
+:PD.Type 8 next to an entry and press Enter to work with last submission
+it. The Work with Submitted Jobs (WRKSBMJOB) command runs for the entry.
+:PT.10=Submit immediately
+:PD.Type 10 next to an entry and press Enter to submit immediately it.
+The Submit Job (SBMJOB) command runs for the entry.
+:EPARML.
 :EHELP.
 :EPNLGRP.

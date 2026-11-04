@@ -11,7 +11,9 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='USERHELP'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=DSCJOB PNLGRP=QHWMCMD.
+:IMPORT NAME=DSPWSUSR PNLGRP=QHWCCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.F1=Help
@@ -21,12 +23,12 @@
 :EKEYL.
 :PANEL NAME=USERHELP HELP=HLPUSERHELP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Information and Problem Handling
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
-:MENUI OPTION=1 ACTION='HELP HLPUSEHELP'.How to use help
-:MENUI OPTION=2 ACTION='MENU INFO'.Information Assistant options
-:MENUI OPTION=3 ACTION='CMD DSPWSUSR'.Display work station user
-:MENUI OPTION=10 ACTION='CMD ?SAVAPARDTA'.Save information to help resolve a problem
-:MENUI OPTION=11 ACTION='MENU TECHHELP'.Technical support tasks
-:MENUI OPTION=80 ACTION='CMD DSCJOB'.Temporary sign-off
+:MENUI HELP='USERHELP/OPT1' OPTION=1 ACTION='HELP HLPUSEHELP'.How to use help
+:MENUI HELP='USERHELP/OPT2' OPTION=2 ACTION='MENU INFO'.Information Assistant options
+:MENUI HELP=DSPWSUSR OPTION=3 ACTION='CMD DSPWSUSR'.Display work station user
+:MENUI HELP='USERHELP/OPT10' OPTION=10 ACTION='CMD ?SAVAPARDTA'.Save information to help resolve a problem
+:MENUI HELP='USERHELP/OPT11' OPTION=11 ACTION='MENU TECHHELP'.Technical support tasks
+:MENUI HELP=DSCJOB OPTION=80 ACTION='CMD DSCJOB'.Temporary sign-off
 :EMENU.
 :BOTINST.Type a menu option below
 :EPANEL.
@@ -43,5 +45,31 @@ line. With the cursor elsewhere, the help is about the whole display.
 :P.In a help window, F2 shows the help for the whole display, Page Down and
 Page Up move through a long text, F12 closes the window and F3 leaves
 help altogether.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F1=Help
+:PD.Shows help for where the cursor is.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F9=Command line
+:PD.Shows a command line to run a command from.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:EPARML.
+:EHELP.
+:HELP NAME='USERHELP/OPT1'.How to use help
+:P.Option 1. Shows help&colon. How to use help.
+:EHELP.
+:HELP NAME='USERHELP/OPT2'.Information Assistant options
+:P.Option 2. Shows menu INFO&colon. Information Assistant options.
+:EHELP.
+:HELP NAME='USERHELP/OPT10'.Save information to help resolve a problem
+:P.Option 10. Runs the SAVAPARDTA command&colon. Save information to
+help resolve a problem.
+:EHELP.
+:HELP NAME='USERHELP/OPT11'.Technical support tasks
+:P.Option 11. Shows menu TECHHELP&colon. Technical support tasks.
 :EHELP.
 :EPNLGRP.

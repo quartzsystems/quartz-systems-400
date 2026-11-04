@@ -35,7 +35,7 @@
 :VAR NAME=SPLFASP CLASS=VALCL.
 :VAR NAME=TEXT CLASS=TEXTCL.
 :VAR NAME=WIDEST CLASS=VALCL.
-:KEYL NAME=QDKEYS.
+:KEYL HELP='KEYS/QDKEYS' NAME=QDKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
@@ -47,45 +47,45 @@
 :EKEYL.
 :PANEL NAME=WRKOUTQD KEYL=QDKEYS HELP=WRKOUTQD ENTER='RETURN 1' TOPSEP=SPACE.Work with Output Queue Description
 :DATA DEPTH=2 COMPACT.
-:DATAI VAR=OUTQ USAGE=OUTPUT.Queue
+:DATAI HELP='FLD/OUTQ' VAR=OUTQ USAGE=OUTPUT.Queue
 :DATAIX VAR=OUTQLIB USAGE=OUTPUT.
 :DATAIXT.Library
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATAGRP GRPSEP=NONE.Status
-:DATAI VAR=WTRACT USAGE=OUTPUT.Writer active
-:DATAI VAR=WTRNAME USAGE=OUTPUT.Writer name(s) if active
-:DATAI VAR=HELD USAGE=OUTPUT.Output queue held
+:DATAI HELP='FLD/WTRACT' VAR=WTRACT USAGE=OUTPUT.Writer active
+:DATAI HELP='FLD/WTRNAME' VAR=WTRNAME USAGE=OUTPUT.Writer name(s) if active
+:DATAI HELP='FLD/HELD' VAR=HELD USAGE=OUTPUT.Output queue held
 :EDATAGRP.
 :DATAGRP GRPSEP=NONE.Maximum spooled file size
-:DATAI VAR=MAXPAGES USAGE=OUTPUT.Number of pages
-:DATAI VAR=MAXSTR USAGE=OUTPUT.Starting time
-:DATAI VAR=MAXEND USAGE=OUTPUT.Ending time
+:DATAI HELP='FLD/MAXPAGES' VAR=MAXPAGES USAGE=OUTPUT.Number of pages
+:DATAI HELP='FLD/MAXSTR' VAR=MAXSTR USAGE=OUTPUT.Starting time
+:DATAI HELP='FLD/MAXEND' VAR=MAXEND USAGE=OUTPUT.Ending time
 :EDATAGRP.
-:DATAI VAR=AUTOSTR USAGE=OUTPUT.Writers to autostart
-:DATAI VAR=DSPDTA USAGE=OUTPUT.Display any file
-:DATAI VAR=JOBSEP USAGE=OUTPUT.Job separators
-:DATAI VAR=OPRCTL USAGE=OUTPUT.Operator controlled
-:DATAI VAR=SEQ USAGE=OUTPUT.Order of files on queue
-:DATAI VAR=DTAQ USAGE=OUTPUT.Data queue
+:DATAI HELP='FLD/AUTOSTR' VAR=AUTOSTR USAGE=OUTPUT.Writers to autostart
+:DATAI HELP='FLD/DSPDTA' VAR=DSPDTA USAGE=OUTPUT.Display any file
+:DATAI HELP='FLD/JOBSEP' VAR=JOBSEP USAGE=OUTPUT.Job separators
+:DATAI HELP='FLD/OPRCTL' VAR=OPRCTL USAGE=OUTPUT.Operator controlled
+:DATAI HELP='FLD/SEQ' VAR=SEQ USAGE=OUTPUT.Order of files on queue
+:DATAI HELP='FLD/DTAQ' VAR=DTAQ USAGE=OUTPUT.Data queue
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=DTAQLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/DTAQLIB' VAR=DTAQLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=AUTCHK USAGE=OUTPUT.Authority to check
-:DATAI VAR=RMTSYS USAGE=OUTPUT.Remote system
+:DATAI HELP='FLD/AUTCHK' VAR=AUTCHK USAGE=OUTPUT.Authority to check
+:DATAI HELP='FLD/RMTSYS' VAR=RMTSYS USAGE=OUTPUT.Remote system
 :DATAC.
 :DATAC.
 :DATAC.
-:DATAI VAR=USRDFNOPT USAGE=OUTPUT.User defined option
+:DATAI HELP='FLD/USRDFNOPT' VAR=USRDFNOPT USAGE=OUTPUT.User defined option
 :DATAGRP GRPSEP=NONE.User defined object
-:DATAI VAR=USRDFNOBJ USAGE=OUTPUT.Object
+:DATAI HELP='FLD/USRDFNOBJ' VAR=USRDFNOBJ USAGE=OUTPUT.Object
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=USRDFNLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/USRDFNLIB' VAR=USRDFNLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=USRDFNTYP USAGE=OUTPUT.Object type
+:DATAI HELP='FLD/USRDFNTYP' VAR=USRDFNTYP USAGE=OUTPUT.Object type
 :EDATAGRP.
-:DATAI VAR=SPLFASP USAGE=OUTPUT.Spooled file ASP
-:DATAI VAR=TEXT USAGE=OUTPUT.Text description
+:DATAI HELP='FLD/SPLFASP' VAR=SPLFASP USAGE=OUTPUT.Spooled file ASP
+:DATAI HELP='FLD/TEXT' VAR=TEXT USAGE=OUTPUT.Text description
 .* Not shown: it sets the colon column.
 :DATAI VAR=WIDEST USAGE=OUTPUT DISPLAY=NO.Names of the active printers
 :EDATA.
@@ -95,5 +95,85 @@
 :P.How an output queue is set up: whether it is held, whether a writer
 prints from it, the order of its files and who may see them. F13
 prompts the change command for the queue.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/QDKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Change
+:PD.Change.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/OUTQ'.Queue
+:P.The queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/WTRACT'.Writer active
+:P.The writer active shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/WTRNAME'.Writer name(s) if active
+:P.The writer name(s) if active shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HELD'.Output queue held
+:P.The output queue held shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXPAGES'.Number of pages
+:P.The number of pages shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXSTR'.Starting time
+:P.The starting time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXEND'.Ending time
+:P.The ending time shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/AUTOSTR'.Writers to autostart
+:P.The writers to autostart shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DSPDTA'.Display any file
+:P.The display any file shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/JOBSEP'.Job separators
+:P.The job separators shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/OPRCTL'.Operator controlled
+:P.Whether users with job control special authority can control the
+queue.
+:EHELP.
+:HELP NAME='FLD/SEQ'.Order of files on queue
+:P.The order of files on queue shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/DTAQ'.Data queue
+:P.The data queue, by name and library.
+:EHELP.
+:HELP NAME='FLD/DTAQLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/AUTCHK'.Authority to check
+:P.Which authority is checked&colon. the owner's, or data authority.
+:EHELP.
+:HELP NAME='FLD/RMTSYS'.Remote system
+:P.The remote system, by host name or internet address.
+:EHELP.
+:HELP NAME='FLD/USRDFNOPT'.User defined option
+:P.Options that a user-defined print program can use.
+:EHELP.
+:HELP NAME='FLD/USRDFNOBJ'.Object
+:P.The object shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRDFNLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/USRDFNTYP'.Object type
+:P.The object type shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SPLFASP'.Spooled file ASP
+:P.The spooled file ASP shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/TEXT'.Text description
+:P.The text description shown for what the display is about.
 :EHELP.
 :EPNLGRP.

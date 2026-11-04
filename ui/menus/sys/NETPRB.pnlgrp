@@ -11,7 +11,8 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='NETPRB'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=WRKPRB PNLGRP=QHSXCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,14 +25,14 @@
 :EKEYL.
 :PANEL NAME=NETPRB HELP=HLPNETPRB KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Network Problem Handling
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD WRKPRB'.Work with problems
-:MENUI OPTION=2 ACTION='CMD ?WRKALR'.Work with alerts
-:MENUI OPTION=3 ACTION='CMD ?VFYCMN'.Verify communications
-:MENUI OPTION=4 ACTION='MENU NETWORK'.Network management
-:MENUI OPTION=5 ACTION='MENU FILETFR'.Send or receive files
-:MENUI OPTION=6 ACTION='CMD ?STRPASTHR'.Access a remote system
-:MENUI OPTION=7 ACTION='CMD ?WRKALRD'.Work with alert descriptions
-:MENUI OPTION=8 ACTION='CMD ?VFYAPPCCNN'.Verify APPC connection
+:MENUI HELP=WRKPRB OPTION=1 ACTION='CMD WRKPRB'.Work with problems
+:MENUI HELP='NETPRB/OPT2' OPTION=2 ACTION='CMD ?WRKALR'.Work with alerts
+:MENUI HELP='NETPRB/OPT3' OPTION=3 ACTION='CMD ?VFYCMN'.Verify communications
+:MENUI HELP='NETPRB/OPT4' OPTION=4 ACTION='MENU NETWORK'.Network management
+:MENUI HELP='NETPRB/OPT5' OPTION=5 ACTION='MENU FILETFR'.Send or receive files
+:MENUI HELP='NETPRB/OPT6' OPTION=6 ACTION='CMD ?STRPASTHR'.Access a remote system
+:MENUI HELP='NETPRB/OPT7' OPTION=7 ACTION='CMD ?WRKALRD'.Work with alert descriptions
+:MENUI HELP='NETPRB/OPT8' OPTION=8 ACTION='CMD ?VFYAPPCCNN'.Verify APPC connection
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -42,5 +43,46 @@ so.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='NETPRB/OPT2'.Work with alerts
+:P.Option 2. Runs the WRKALR command&colon. Work with alerts.
+:EHELP.
+:HELP NAME='NETPRB/OPT3'.Verify communications
+:P.Option 3. Runs the VFYCMN command&colon. Verify communications.
+:EHELP.
+:HELP NAME='NETPRB/OPT4'.Network management
+:P.Option 4. Shows menu NETWORK&colon. Network management.
+:EHELP.
+:HELP NAME='NETPRB/OPT5'.Send or receive files
+:P.Option 5. Shows menu FILETFR&colon. Send or receive files.
+:EHELP.
+:HELP NAME='NETPRB/OPT6'.Access a remote system
+:P.Option 6. Runs the STRPASTHR command&colon. Access a remote system.
+:EHELP.
+:HELP NAME='NETPRB/OPT7'.Work with alert descriptions
+:P.Option 7. Runs the WRKALRD command&colon. Work with alert
+descriptions.
+:EHELP.
+:HELP NAME='NETPRB/OPT8'.Verify APPC connection
+:P.Option 8. Runs the VFYAPPCCNN command&colon. Verify APPC connection.
 :EHELP.
 :EPNLGRP.

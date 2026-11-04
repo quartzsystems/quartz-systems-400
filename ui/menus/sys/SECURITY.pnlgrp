@@ -11,7 +11,10 @@
 :ECLASS.
 :VAR NAME=OPTION CLASS=OPTCL.
 :VAR NAME=PANELID CLASS=NAMECL VALUE='SECURITY'.
-:KEYL NAME=MENUKEYS.
+:IMPORT NAME=CHGPWD PNLGRP=QHSYCMD.
+:IMPORT NAME=EDTOBJAUT PNLGRP=QHSYCMD.
+:IMPORT NAME=WRKAUTL PNLGRP=QHSYCMD.
+:KEYL HELP='KEYS/MENUKEYS' NAME=MENUKEYS.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
 :KEYI KEY=F1 ACTION=HELP.
@@ -24,13 +27,13 @@
 :EKEYL.
 :PANEL NAME=SECURITY HELP=HLPSECURITY KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Security
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
-:MENUI OPTION=1 ACTION='CMD ?EDTOBJAUT'.Work with object authority
-:MENUI OPTION=2 ACTION='CMD WRKAUTL'.Work with authorization lists
-:MENUI OPTION=3 ACTION='MENU OFCSEC'.Office security
-:MENUI OPTION=4 ACTION='CMD CHGPWD'.Change your password
-:MENUI OPTION=5 ACTION='CMD CHGPRF'.Change your user profile
-:MENUI OPTION=8 ACTION='MENU SECTOOLS'.Security tools
-:MENUI OPTION=70 ACTION='MENU CMDSEC'.Related commands
+:MENUI HELP=EDTOBJAUT OPTION=1 ACTION='CMD ?EDTOBJAUT'.Work with object authority
+:MENUI HELP=WRKAUTL OPTION=2 ACTION='CMD WRKAUTL'.Work with authorization lists
+:MENUI HELP='SECURITY/OPT3' OPTION=3 ACTION='MENU OFCSEC'.Office security
+:MENUI HELP=CHGPWD OPTION=4 ACTION='CMD CHGPWD'.Change your password
+:MENUI HELP='SECURITY/OPT5' OPTION=5 ACTION='CMD CHGPRF'.Change your user profile
+:MENUI HELP='SECURITY/OPT8' OPTION=8 ACTION='MENU SECTOOLS'.Security tools
+:MENUI HELP='SECURITY/OPT70' OPTION=70 ACTION='MENU CMDSEC'.Related commands
 :EMENU.
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
@@ -40,5 +43,36 @@ the security reports.
 :P.Type an option number or a command and press Enter. F4 prompts the
 command, F9 brings the previous one back, F12 returns to the menu shown
 before this one.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/MENUKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Information Assistant
+:PD.Shows menu INFO.
+:PT.F16=System Main menu
+:PD.Shows menu MAIN.
+:EPARML.
+:EHELP.
+:HELP NAME='SECURITY/OPT3'.Office security
+:P.Option 3. Shows menu OFCSEC&colon. Office security.
+:EHELP.
+:HELP NAME='SECURITY/OPT5'.Change your user profile
+:P.Option 5. Runs the CHGPRF command&colon. Change your user profile.
+:EHELP.
+:HELP NAME='SECURITY/OPT8'.Security tools
+:P.Option 8. Shows menu SECTOOLS&colon. Security tools.
+:EHELP.
+:HELP NAME='SECURITY/OPT70'.Related commands
+:P.Option 70. Shows menu CMDSEC&colon. Related commands.
 :EHELP.
 :EPNLGRP.

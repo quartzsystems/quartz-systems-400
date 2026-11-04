@@ -60,59 +60,59 @@
 :DATA DEPTH=2.
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=41.
-:DATAI VAR=CMD USAGE=OUTPUT.Command
+:DATAI HELP='FLD/CMD' VAR=CMD USAGE=OUTPUT.Command
 :DATACOL WIDTH=24.
 :DATACOL WIDTH=37.
-:DATAI VAR=CMDLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/CMDLIB' VAR=CMDLIB USAGE=OUTPUT.Library
 :EDATA.
 :DATA DEPTH='*' SCROLL=YES.
 :DATACOL WIDTH=40.
 :DATACOL WIDTH=78.
-:DATAI VAR=PGM USAGE=OUTPUT.Program to process command
+:DATAI HELP='FLD/PGM' VAR=PGM USAGE=OUTPUT.Program to process command
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PGMLIB USAGE=OUTPUT.Library
-:DATAI VAR=PGMSTATE USAGE=OUTPUT.State used to call program
+:DATAI HELP='FLD/PGMLIB' VAR=PGMLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/PGMSTATE' VAR=PGMSTATE USAGE=OUTPUT.State used to call program
 :EDATAGRP.
-:DATAI VAR=SRCF USAGE=OUTPUT.Source file
+:DATAI HELP='FLD/SRCF' VAR=SRCF USAGE=OUTPUT.Source file
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=SRCFLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/SRCFLIB' VAR=SRCFLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=SRCMBR USAGE=OUTPUT.Source file member
-:DATAI VAR=VLDCKR USAGE=OUTPUT.Validity checking program
-:DATAI VAR=MODE1 USAGE=OUTPUT.Mode(s) in which valid
-:DATAI VAR=MODE2 USAGE=OUTPUT.
-:DATAI VAR=MODE3 USAGE=OUTPUT.
-:DATAI VAR=ALLOW1 USAGE=OUTPUT.Where allowed to run
-:DATAI VAR=ALLOW2 USAGE=OUTPUT.
-:DATAI VAR=ALLOW3 USAGE=OUTPUT.
-:DATAI VAR=ALWLMTUSR USAGE=OUTPUT.Allow limited user
-:DATAI VAR=MAXPOS USAGE=OUTPUT.Maximum positional parameters
-:DATAI VAR=PMTFILE USAGE=OUTPUT.Message file for prompt text
+:DATAI HELP='FLD/SRCMBR' VAR=SRCMBR USAGE=OUTPUT.Source file member
+:DATAI HELP='FLD/VLDCKR' VAR=VLDCKR USAGE=OUTPUT.Validity checking program
+:DATAI HELP='FLD/MODE1' VAR=MODE1 USAGE=OUTPUT.Mode(s) in which valid
+:DATAI HELP='FLD/MODE2' VAR=MODE2 USAGE=OUTPUT.
+:DATAI HELP='FLD/MODE3' VAR=MODE3 USAGE=OUTPUT.
+:DATAI HELP='FLD/ALLOW1' VAR=ALLOW1 USAGE=OUTPUT.Where allowed to run
+:DATAI HELP='FLD/ALLOW2' VAR=ALLOW2 USAGE=OUTPUT.
+:DATAI HELP='FLD/ALLOW3' VAR=ALLOW3 USAGE=OUTPUT.
+:DATAI HELP='FLD/ALWLMTUSR' VAR=ALWLMTUSR USAGE=OUTPUT.Allow limited user
+:DATAI HELP='FLD/MAXPOS' VAR=MAXPOS USAGE=OUTPUT.Maximum positional parameters
+:DATAI HELP='FLD/PMTFILE' VAR=PMTFILE USAGE=OUTPUT.Message file for prompt text
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=PMTFILEL USAGE=OUTPUT.Library
-:DATAI VAR=MSGTXT USAGE=OUTPUT.Message text
+:DATAI HELP='FLD/PMTFILEL' VAR=PMTFILEL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/MSGTXT' VAR=MSGTXT USAGE=OUTPUT.Message text
 :EDATAGRP.
-:DATAI VAR=MSGF USAGE=OUTPUT.Message file
+:DATAI HELP='FLD/MSGF' VAR=MSGF USAGE=OUTPUT.Message file
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=MSGFLIB USAGE=OUTPUT.Library
+:DATAI HELP='FLD/MSGFLIB' VAR=MSGFLIB USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=CURLIB USAGE=OUTPUT.Current library
-:DATAI VAR=PRDLIB USAGE=OUTPUT.Product library
-:DATAI VAR=HLPPNLGRP USAGE=OUTPUT.Help panel group
+:DATAI HELP='FLD/CURLIB' VAR=CURLIB USAGE=OUTPUT.Current library
+:DATAI HELP='FLD/PRDLIB' VAR=PRDLIB USAGE=OUTPUT.Product library
+:DATAI HELP='FLD/HLPPNLGRP' VAR=HLPPNLGRP USAGE=OUTPUT.Help panel group
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=HLPPNLGRPL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/HLPPNLGRPL' VAR=HLPPNLGRPL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=HLPID USAGE=OUTPUT.Help identifier
-:DATAI VAR=PMTOVRPGM USAGE=OUTPUT.Prompt override program
-:DATAI VAR=ENBGUI USAGE=OUTPUT.Enabled for graphical user interface
-:DATAI VAR=THDSAFE USAGE=OUTPUT.Threadsafe
-:DATAI VAR=MLTTHDACN USAGE=OUTPUT.Multithreaded job action
-:DATAI VAR=CCSID USAGE=OUTPUT.Coded character set ID
-:DATAI VAR=HLPSCHIDX USAGE=OUTPUT.Help search index
+:DATAI HELP='FLD/HLPID' VAR=HLPID USAGE=OUTPUT.Help identifier
+:DATAI HELP='FLD/PMTOVRPGM' VAR=PMTOVRPGM USAGE=OUTPUT.Prompt override program
+:DATAI HELP='FLD/ENBGUI' VAR=ENBGUI USAGE=OUTPUT.Enabled for graphical user interface
+:DATAI HELP='FLD/THDSAFE' VAR=THDSAFE USAGE=OUTPUT.Threadsafe
+:DATAI HELP='FLD/MLTTHDACN' VAR=MLTTHDACN USAGE=OUTPUT.Multithreaded job action
+:DATAI HELP='FLD/CCSID' VAR=CCSID USAGE=OUTPUT.Coded character set ID
+:DATAI HELP='FLD/HLPSCHIDX' VAR=HLPSCHIDX USAGE=OUTPUT.Help search index
 :DATAGRP GRPSEP=NONE.
-:DATAI VAR=HLPSCHIDXL USAGE=OUTPUT.Library
+:DATAI HELP='FLD/HLPSCHIDXL' VAR=HLPSCHIDXL USAGE=OUTPUT.Library
 :EDATAGRP.
-:DATAI VAR=CMDTEXT USAGE=OUTPUT.Text
+:DATAI HELP='FLD/CMDTEXT' VAR=CMDTEXT USAGE=OUTPUT.Text
 :EDATA.
 :BOTINST.Press Enter to continue.
 :EPANEL.
@@ -125,5 +125,118 @@ message files, libraries and help it uses. Page down for the rest.
 :HELP NAME=KEYSHLP.Function keys - Help
 :P.F3 leaves the display; F12 goes back to where the command was
 typed.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/CMD'.Command
+:P.The command shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CMDLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGM'.Program to process command
+:P.The program to process command shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGMLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PGMSTATE'.State used to call program
+:P.The state used to call program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRCF'.Source file
+:P.The source physical file that holds the source member, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/SRCFLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/SRCMBR'.Source file member
+:P.The source file member shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/VLDCKR'.Validity checking program
+:P.The validity checking program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODE1'.Mode(s) in which valid
+:P.The mode(s) in which valid shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODE2'.MODE2
+:P.The MODE2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MODE3'.MODE3
+:P.The MODE3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALLOW1'.Where allowed to run
+:P.The where allowed to run shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALLOW2'.ALLOW2
+:P.The ALLOW2 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALLOW3'.ALLOW3
+:P.The ALLOW3 shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ALWLMTUSR'.Allow limited user
+:P.The allow limited user shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MAXPOS'.Maximum positional parameters
+:P.The maximum positional parameters shown for what the display is
+about.
+:EHELP.
+:HELP NAME='FLD/PMTFILE'.Message file for prompt text
+:P.The message file for prompt text shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PMTFILEL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MSGTXT'.Message text
+:P.The text of the message.
+:EHELP.
+:HELP NAME='FLD/MSGF'.Message file
+:P.The message file that holds the message descriptions, by name and
+library.
+:EHELP.
+:HELP NAME='FLD/MSGFLIB'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CURLIB'.Current library
+:P.The current library of the job&colon. the library searched first by
+name (after the system part of the library list) and where *CURLIB puts
+new objects.
+:EHELP.
+:HELP NAME='FLD/PRDLIB'.Product library
+:P.The product library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HLPPNLGRP'.Help panel group
+:P.The help panel group shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HLPPNLGRPL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HLPID'.Help identifier
+:P.The help identifier shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/PMTOVRPGM'.Prompt override program
+:P.The prompt override program shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/ENBGUI'.Enabled for graphical user interface
+:P.The enabled for graphical user interface shown for what the display
+is about.
+:EHELP.
+:HELP NAME='FLD/THDSAFE'.Threadsafe
+:P.The threadsafe shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/MLTTHDACN'.Multithreaded job action
+:P.The multithreaded job action shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CCSID'.Coded character set ID
+:P.The coded character set identifier&colon. the code page and character
+set the data is in, or is to be converted to.
+:EHELP.
+:HELP NAME='FLD/HLPSCHIDX'.Help search index
+:P.The help search index shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/HLPSCHIDXL'.Library
+:P.The library shown for what the display is about.
+:EHELP.
+:HELP NAME='FLD/CMDTEXT'.Text
+:P.The text shown for what the display is about.
 :EHELP.
 :EPNLGRP.

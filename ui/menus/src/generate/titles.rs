@@ -82,6 +82,39 @@ pub fn title_of(source: &str) -> Option<String> {
         .and_then(|s| prompt_value(s))
 }
 
+/// The value of `KWD(` on the `CMD` statement, without its library.
+fn cmd_value(source: &str, kwd: &str) -> Option<String> {
+    let text = strip_comments(source);
+    let stmts = statements(&text);
+    let cmd = stmts.iter().find(|s| s.split_whitespace().next() == Some("CMD"))?;
+    let at = cmd.find(&format!("{kwd}("))?;
+    let rest = &cmd[at + kwd.len() + 1..];
+    let v = rest[..rest.find(')')?].trim();
+    Some(v.rsplit('/').next().unwrap_or(v).to_string())
+}
+
+/// Every `NAME.cmd` under `dir` with its help panel group and module
+/// (`HLPPNLGRP`, `HLPID`), for the menus' item help.
+pub fn read_help(dir: &Path) -> Result<BTreeMap<String, (String, String)>> {
+    let mut out = BTreeMap::new();
+    for entry in std::fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.extension().is_none_or(|x| x != "cmd") {
+            continue;
+        }
+        let name = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_ascii_uppercase())
+            .unwrap_or_default();
+        let text = std::fs::read_to_string(&path)?;
+        if let Some(g) = cmd_value(&text, "HLPPNLGRP") {
+            let id = cmd_value(&text, "HLPID").unwrap_or_else(|| name.clone());
+            out.insert(name, (g, id));
+        }
+    }
+    Ok(out)
+}
+
 /// Every `NAME.cmd` under `dir` with its title.
 pub fn read_titles(dir: &Path) -> Result<BTreeMap<String, String>> {
     let mut out = BTreeMap::new();
