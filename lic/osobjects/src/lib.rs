@@ -54,7 +54,8 @@ pub struct Report {
 
 /// Every operating system object missing from the store: message
 /// files, the work management objects, display files, panel groups
-/// and menus, the registration facility, the commands and `QSTRUP`.
+/// and menus, the Collection Services model files, the registration
+/// facility, the commands and `QSTRUP`.
 /// Objects that exist are left alone (a changed command definition is
 /// replaced, as at every IPL).
 pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Result<Report, Error> {
@@ -78,6 +79,10 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
     r.made += piece(
         "panel groups and menus",
         ui::install_shipped(txn, qsys, stamp),
+    )?;
+    r.made += piece(
+        "performance model files",
+        perf::qapm::install_models(txn, qsys, stamp.now),
     )?;
     r.made += piece(
         "registration facility",

@@ -2132,6 +2132,7 @@ dependencies = [
  "lpstore",
  "menus",
  "msgf",
+ "perf",
  "print",
  "qir",
  "qsname",
@@ -3226,6 +3227,7 @@ dependencies = [
  "nettools",
  "optical",
  "osobjects",
+ "perf",
  "prb",
  "print",
  "ptf",
@@ -3477,6 +3479,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "cmd",
+ "perf",
  "qsname",
  "serde",
  "store",

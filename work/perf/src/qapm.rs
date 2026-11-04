@@ -64,6 +64,28 @@ pub fn create(
     .map_err(|e| e.to_string())
 }
 
+/// The model files missing from `library` (`QSYS`), created; how many.
+pub fn install_models(
+    txn: &mut store::txn::Txn<'_>,
+    library: store::obj::ObjectId,
+    now: u64,
+) -> Result<usize, String> {
+    let lib = store::obj::library::Library::load(txn, library).map_err(|e| e.to_string())?;
+    let mut made = 0;
+    for (name, _) in FILES {
+        let n = qsname::Name::parse(name).map_err(|e| e.to_string())?;
+        if lib
+            .lookup(txn, store::obj::types::FILE, n)
+            .map_err(|e| e.to_string())?
+            .is_none()
+        {
+            create(txn, library, name, now)?;
+            made += 1;
+        }
+    }
+    Ok(made)
+}
+
 /// One record: field names and values (numbers as decimal text).
 pub type Row = Vec<(&'static str, String)>;
 

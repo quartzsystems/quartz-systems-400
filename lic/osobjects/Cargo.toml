@@ -21,6 +21,7 @@ dspf = { path = "../../ui/dspf", version = "0.1.0" }
 uim = { path = "../../ui/uim", version = "0.1.0" }
 menus = { path = "../../ui/menus", version = "0.1.0" }
 regfac = { path = "../../net/regfac", version = "0.1.0" }
+perf = { path = "../../work/perf", version = "0.1.0" }
 thiserror.workspace = true
 
 [dev-dependencies]
