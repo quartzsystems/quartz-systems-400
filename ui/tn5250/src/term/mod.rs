@@ -805,6 +805,36 @@ mod tests {
         assert!(t.text_rows()[20].starts_with("AAAAAA "));
     }
 
+    /// A command typed across the rows of a command line, sent with
+    /// Enter and taken back by the host's model: the whole text.
+    fn typed_back(row: usize, len: usize, text: &str) -> String {
+        let mut m = crate::screen::ScreenModel::new(false);
+        m.put(row, 2, "===>", attr::GREEN);
+        m.field(row, 7, len, attr::GREEN_UL, "", Ffw::default(), &[]);
+        let out = m.render(crate::screen::Read::MdtFields);
+        let mut t = term();
+        t.apply(&Record::new(out.opcode, out.data)).unwrap();
+        assert_eq!(t.type_str(text), KeyResult::Done);
+        assert_eq!(t.key(Key::Enter), KeyResult::Sent);
+        let sent = t.take_outbox().remove(0);
+        m.accept(&sent.data).unwrap();
+        m.values().remove(0)
+    }
+
+    #[test]
+    fn a_command_typed_across_the_rows_comes_back_whole() {
+        // MAIN's command line (153 over rows 20 and 21) with the
+        // CRTLINETH of the report, split in ONLINE at the row end.
+        let lineth = "CRTLINETH LIND(ETHLINE) RSRCNAME(CMN04) LINESPEED(*AUTO) \
+                      DUPLEX(*AUTO) ONLINE(*YES) TEXT('Primary Ethernet')";
+        assert_eq!(typed_back(20, 153, lineth), lineth);
+        let short = "CRTLINETH LIND(ETHLINE) RSRCNAME(CMN01) ONLINE(*YES) TEXT('Primary Ethernet')";
+        assert_eq!(typed_back(20, 153, short), short);
+        // Command Entry's (313 over rows 18 to 21), past three row ends.
+        let long = format!("CRTDTAARA DTAARA(QTEMP/WRAP) TYPE(*CHAR) LEN(300) VALUE('{}')", "x".repeat(230));
+        assert_eq!(typed_back(18, 313, &long), long);
+    }
+
     #[test]
     fn repeats_and_erases_to_an_address() {
         let mut t = term();

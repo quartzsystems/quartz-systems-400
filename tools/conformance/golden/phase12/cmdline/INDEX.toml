@@ -1,0 +1,40 @@
+[[golden]]
+name = "main-empty"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "cmdline"
+width = 80
+
+[[golden]]
+name = "main-long"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "cmdline"
+width = 80
+
+[[golden]]
+name = "qcmd-empty"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "cmdline"
+width = 80
+
+[[golden]]
+name = "qcmd-long"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "cmdline"
+width = 80
+
+[[golden]]
+name = "sbmjob-prompt"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "cmdline"
+width = 80
+

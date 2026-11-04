@@ -1,0 +1,31 @@
+# Phase 12: the multi-row command lines with a long command typed into
+# them, never entered: MAIN (153), Command Entry, and SBMJOB's CMD in
+# the prompter.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+continue
+timeout 60000
+snap main-empty
+type CRTLINETH LIND(ETHLINE) RSRCNAME(CMN04) LINESPEED(*AUTO) DUPLEX(*AUTO) ONLINE(*YES) TEXT('Primary Ethernet')
+settle 500
+snap main-long
+key erase-input
+type call qcmd
+key enter
+wait "Command Entry"
+settle 1000
+snap qcmd-empty
+type CRTDTAARA DTAARA(QTEMP/WRAP) TYPE(*CHAR) LEN(200) VALUE('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx') TEXT('three rows')
+settle 500
+snap qcmd-long
+key erase-input
+type ?SBMJOB
+key enter
+settle 2000
+snap sbmjob-prompt
+key f12
+settle 1000
+key f3
+settle 1000
