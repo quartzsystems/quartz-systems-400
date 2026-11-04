@@ -19,7 +19,7 @@ cargo run -p tn5250-driver -- run --target oracle \
 | `goldens71.tn` | `DSPFD` (spooled view), `DSPDTAARA`, `DSPUSRPRF *GRPMBR`, `DSPAUTL`, `EDTAUTL`, `WRKAUTL`, `WRKSYSVAL` and option 2 on `QDATFMT` and `QSYSLIBL`, `WRKUSRPRF`, `WRKCFGSTS`, `DSPDEVD`, `DSPSECAUD`, `WRKOUTQ`, `WRKJOBQ`, `WRKWTR`, `WRKJOBSCDE` |
 | `goldens71-dspmod.tn` | `DSPMOD` `*BASIC` and `*PROCLIST` over a CL module made in `QSTEST` (its four-line source sent by FTP first; module and member removed after) |
 | `goldens71-keys.tn` | `DSPDEVD` and `DSPAUTUSR` after F11, `DSPHDWRSC` of `*CMN`, `*STG`, `*PRC`, `*LWS`, `*CRP` and `*CSA` |
-| `questions71.tn`, `questions71b.tn` | `ENDCMTCTL` with a file open under commitment control, a QSH write to a data member, `CHKOBJITG`'s prompt and run (the first pass typed over refused commands; the second presses Erase Input first) |
+| `questions71.tn`, `questions71b.tn` | `ENDCMTCTL` with a file open under commitment control, a QSH write to a data member, `CHKOBJITG`'s prompt and run (the first pass typed over refused commands; the second presses Erase Input first; with no violation CHKOBJITG made no outfile, so its DSPFFD steps found none) |
 | `questions71c.tn`, `dspffd-qasychki.tn` | `CHKOBJITG`'s model outfile found through `QSYS2.SYSTABLES` (QSH `db2`, the job's CCSID set to 37 first), then its `DSPFFD` |
 
 Everything made for a capture lives in `QSTEST` and is deleted by the
