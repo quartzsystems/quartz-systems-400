@@ -126,6 +126,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
         storage::tick_with(&mut svc.system, slice);
         ifsvol::tick(&mut svc.system);
         cmn::tick(&mut svc.system);
+        super::perfcol::tick(&mut svc.system);
     }
     if accept {
         match svc.listener.accept() {

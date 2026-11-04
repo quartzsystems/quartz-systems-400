@@ -210,6 +210,7 @@ fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Ve
     );
     if !quiet {
         *system.stats.aux_io.entry(ctx.job.number).or_default() += 1;
+        system.stats.request(ctx.job.number, &req);
         super::trace::request(ctx.job.number, &req);
     }
     let user = super::security::as_user(&req);
@@ -377,7 +378,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     system.attrs.remove(&ctx.job.number);
     super::msgs::release(system, ctx.job.number);
     system.pools.remove(ctx.job.number);
-    system.stats.aux_io.remove(&ctx.job.number);
+    system.stats.ended(ctx.job.number);
     super::sbs::monitor_ended(system, ctx.job.number);
 }
 
@@ -953,6 +954,9 @@ impl Service for Served<'_> {
         let me = self.ctx.job.number;
         let runnable = wm::job::Status::from_byte(status).runnable();
         let granted = self.system.pools.status(&self.ctx.job.pool, me, runnable);
+        let dspw = wm::job::Status::Dspw.byte();
+        let was = self.system.jobs.get(me).is_some_and(|j| j.status == dspw);
+        self.system.stats.status(me, was, status == dspw, runnable, granted);
         if let Some(j) = self.system.jobs.get_mut(me) {
             j.status = if granted {
                 status

@@ -47,6 +47,7 @@ pub(crate) mod sbs;
 pub(crate) mod security;
 pub(crate) mod splcmd;
 pub(crate) mod spool;
+pub(crate) mod perfcol;
 pub(crate) mod stats;
 pub(crate) mod tcp;
 mod units;

@@ -7923,3 +7923,70 @@ sev = 40
 text = "The system is not in the restricted state; &1 is still active."
 help = "A system save runs only when every subsystem has ended. End them with ENDSBS SBS(*ALL), wait until they have ended, and run the save again from the console."
 vars = ["*CHAR 10"]
+
+# --- Collection Services (docs/PERF.md). CPFB94C and CPF8225 are IBM's;
+# the CPIB92x and CPFB99x identifiers are this release's own.
+[[msg]]
+id = "CPIB920"
+sev = 0
+text = "Collection Services started collection &1 in library &2."
+help = "The collector records an interval of data into the management collection at each interval until ENDPFRCOL."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPIB921"
+sev = 0
+text = "Collection Services ended collection &1."
+help = "The collection's last interval was recorded and the collection is complete. CRTPFRDTA makes its database files."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPIB922"
+sev = 0
+text = "Collection Services is active, collecting &1 in library &2."
+help = "A collection is in progress. ENDPFRCOL ends it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPIB923"
+sev = 0
+text = "Collection Services configuration changed."
+help = "The next collection started uses the new values; a collection in progress keeps its own."
+
+[[msg]]
+id = "CPIB924"
+sev = 0
+text = "Performance data created from collection &1 in library &2."
+help = "The database files of the collection's categories hold one member named after the collection, or the member TOMBR named."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPFB94C"
+sev = 30
+text = "Collection interval is not one of the allowed values."
+help = "Give the interval in minutes: .25, .50, 1.0, 5.0, 15.0, 30.0 or 60.0."
+
+[[msg]]
+id = "CPF8225"
+sev = 20
+text = "Management collection &1 cannot be read."
+help = "The collection's data is damaged or cut short. Delete it; the collector starts a new one with STRPFRCOL."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPFB993"
+sev = 40
+text = "Collection Services is already active."
+help = "Only one collection runs at a time. End it with ENDPFRCOL before starting another."
+
+[[msg]]
+id = "CPFB994"
+sev = 40
+text = "Collection Services is not active."
+help = "No collection is in progress. STRPFRCOL starts one."
+
+[[msg]]
+id = "CPFB995"
+sev = 40
+text = "Management collection not found."
+help = "The collection named is not in the library named. DSPOBJD OBJTYPE(*MGTCOL) lists the collections of a library."

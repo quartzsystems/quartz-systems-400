@@ -7,10 +7,14 @@
 //! that compare two samples. `WRKACTJOB` and `WRKSYSACT` measure from
 //! their previous use, `WRKSYSSTS` and `WRKDSKSTS` from their first use
 //! or the last `RESET(*YES)`. `QWCRSSTS` answers from the same figures.
+//! Collection Services (`perfcol.rs`) records intervals between the
+//! same samples: every display and the collector look through
+//! [`sample`], which shares a look taken in the last half second, so
+//! figures shown at once agree.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use wm::job::wrkactjob_type;
 use wm::stats::{self, CpuTimes, DiskStat, Faults, ProcStat, hms, percent};
@@ -28,6 +32,48 @@ pub struct Sample {
     counters: BTreeMap<String, (u64, u64, u64)>,
     disks: Vec<DiskStat>,
     aux: BTreeMap<u32, u64>,
+    io: BTreeMap<u32, JobIo>,
+    txns: BTreeMap<u32, Txns>,
+    lines: Vec<(String, NetStat)>,
+    main_kb: u64,
+}
+
+/// A job's storage requests by kind, since it started.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct JobIo {
+    /// Database reads (record reads, SQL).
+    pub db_reads: u64,
+    /// Database writes, updates and deletes.
+    pub db_writes: u64,
+    /// Full opens.
+    pub opens: u64,
+}
+
+/// A job's interactive transactions and waits, since it started: a
+/// transaction runs from the input a display sends to the job's next
+/// wait at the display.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Txns {
+    /// Transactions.
+    pub count: u64,
+    /// Their response time, milliseconds.
+    pub ms: u64,
+    /// Active to wait transitions.
+    pub waits: u64,
+    /// Times it found no activity level free.
+    pub inel: u64,
+}
+
+/// An interface's counters, from `/sys/class/net/<if>/statistics`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct NetStat {
+    rx_bytes: u64,
+    tx_bytes: u64,
+    rx_packets: u64,
+    tx_packets: u64,
+    rx_errors: u64,
+    tx_errors: u64,
+    speed_mbps: u64,
 }
 
 /// The bases the displays measure from, and what the service counts.
@@ -46,9 +92,64 @@ pub struct Stats {
     pub starts: (u64, u128, u128),
     /// Spooled file data written: requests and bytes.
     pub spooled: (u64, u64),
+    /// Each job's requests by kind.
+    pub io: BTreeMap<u32, JobIo>,
+    /// Each job's transactions.
+    pub txns: BTreeMap<u32, Txns>,
+    /// Jobs in a transaction: since when.
+    pub inflight: BTreeMap<u32, Instant>,
+    /// The last look, shared by whoever looks within half a second.
+    latest: Option<Sample>,
+    /// Collection Services.
+    pub perf: super::perfcol::Collector,
 }
 
 impl Stats {
+    /// Count request `req` of job `number` by kind.
+    pub fn request(&mut self, number: u32, req: &stg::Request) {
+        use mi::io::IoOp;
+        let io = self.io.entry(number).or_default();
+        match req {
+            stg::Request::Open { .. } => io.opens += 1,
+            stg::Request::Io { req, .. } => match req.op {
+                IoOp::Write | IoOp::Update | IoOp::Delete => io.db_writes += 1,
+                IoOp::Unlock | IoOp::Feod => {}
+                _ => io.db_reads += 1,
+            },
+            stg::Request::SqlRun { .. } => io.db_reads += 1,
+            _ => {}
+        }
+    }
+
+    /// Job `number` reports a status: at a display (`dspw`), runnable
+    /// or waiting, and whether it got an activity level. Input from the
+    /// display starts a transaction; the next wait there ends it.
+    #[allow(clippy::fn_params_excessive_bools)] // the states a status report carries
+    pub fn status(&mut self, number: u32, was_dspw: bool, dspw: bool, runnable: bool, granted: bool) {
+        let t = self.txns.entry(number).or_default();
+        if dspw {
+            if let Some(at) = self.inflight.remove(&number) {
+                t.count += 1;
+                t.ms += u64::try_from(at.elapsed().as_millis()).unwrap_or(u64::MAX);
+            }
+        } else if was_dspw && runnable {
+            self.inflight.insert(number, Instant::now());
+        }
+        if !runnable {
+            t.waits += 1;
+        } else if !granted {
+            t.inel += 1;
+        }
+    }
+
+    /// Job `number` ended: its counters go.
+    pub fn ended(&mut self, number: u32) {
+        self.aux_io.remove(&number);
+        self.io.remove(&number);
+        self.txns.remove(&number);
+        self.inflight.remove(&number);
+    }
+
     /// A queued job said hello: its start latency.
     pub fn started(&mut self, number: u32) {
         if let Some(t) = self.taken.remove(&number) {
@@ -84,7 +185,7 @@ fn read(path: &str) -> Option<String> {
 }
 
 /// A pool's cgroup directory.
-fn pool_dir(pool: &str) -> String {
+pub(crate) fn pool_dir(pool: &str) -> String {
     let mut d = String::from("/sys/fs/cgroup/qs400");
     for part in pool.trim_start_matches('*').split('/') {
         d.push('/');
@@ -113,8 +214,49 @@ fn disk_paths(system: &System) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// A look shared by the displays and the collector: the last one when
+/// it is less than half a second old.
+pub fn sample(system: &mut System) -> Sample {
+    if let Some(s) = system.stats.latest.as_ref().filter(|s| s.at.elapsed() < Duration::from_millis(500)) {
+        return s.clone();
+    }
+    let s = look(system);
+    system.stats.latest = Some(s.clone());
+    s
+}
+
+/// The Ethernet lines varied on, with their interfaces' counters.
+fn net_lines() -> Vec<(String, NetStat)> {
+    let names: Vec<(String, String)> = super::cmn::lock()
+        .state
+        .lines()
+        .filter(|l| !l.ifname.is_empty())
+        .map(|l| (l.name.clone(), l.ifname.clone()))
+        .collect();
+    names
+        .into_iter()
+        .map(|(line, ifname)| {
+            let n = |f: &str| {
+                read(&format!("/sys/class/net/{ifname}/{f}"))
+                    .and_then(|t| t.trim().parse::<i64>().ok())
+                    .map_or(0, |v| u64::try_from(v).unwrap_or(0))
+            };
+            let st = NetStat {
+                rx_bytes: n("statistics/rx_bytes"),
+                tx_bytes: n("statistics/tx_bytes"),
+                rx_packets: n("statistics/rx_packets"),
+                tx_packets: n("statistics/tx_packets"),
+                rx_errors: n("statistics/rx_errors"),
+                tx_errors: n("statistics/tx_errors"),
+                speed_mbps: n("speed"),
+            };
+            (line, st)
+        })
+        .collect()
+}
+
 /// Look now.
-pub fn sample(system: &System) -> Sample {
+fn look(system: &System) -> Sample {
     let mut procs = BTreeMap::new();
     for j in system.jobs.all() {
         if let Some(p) = read(&format!("/proc/{}/stat", j.pid)).and_then(|t| stats::proc_stat(&t)) {
@@ -147,6 +289,12 @@ pub fn sample(system: &System) -> Sample {
             })
             .collect(),
         aux: system.stats.aux_io.clone(),
+        io: system.stats.io.clone(),
+        txns: system.stats.txns.clone(),
+        lines: net_lines(),
+        main_kb: read("/proc/meminfo")
+            .and_then(|t| stats::mem_total_kb(&t))
+            .unwrap_or(0),
     }
 }
 
@@ -401,6 +549,19 @@ pub fn job_figures(system: &System, number: u32) -> (u64, u32, u64, u64) {
         .unwrap_or_default();
     let aux = system.stats.aux_io.get(&number).copied().unwrap_or(0);
     (p.cpu() * 10, p.threads.max(1), p.rss_pages * 4 / 1024, aux)
+}
+
+/// `WRKSYSACT` is Performance Tools' (`QS00PT1`): an error when the
+/// product is not installed.
+pub fn performance_tools(system: &mut System) -> Result<(), String> {
+    if super::licpgm::installed(system, "QS00PT1", licpgm::OptionNo::BASE) {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} product QS00PT1 option *BASE is not installed",
+            crate::cpp::lpcmd::NOT_INSTALLED
+        ))
+    }
 }
 
 /// `WRKSYSACT`: the jobs that used the most CPU since its last use.
@@ -883,4 +1044,164 @@ pub fn sysact_panel(system: &mut System) -> stg::proto::PanelData {
         })
         .collect();
     (vars, rows)
+}
+
+/// Seconds between two samples, at least one.
+#[must_use]
+pub fn secs_between(now: &Sample, base: &Sample) -> u32 {
+    u32::try_from(now.at.duration_since(base.at).as_secs().max(1)).unwrap_or(u32::MAX)
+}
+
+/// The interval from `base` to `now` as Collection Services records
+/// it: interval `number`, ending at local time `end`.
+#[allow(clippy::too_many_lines)] // one record per category, in order
+pub fn interval_data(system: &mut System, now: &Sample, base: &Sample, number: u32, end: u64) -> perf::sample::Interval {
+    use perf::sample::{DiskData, Interval, JobData, LineData, PoolData, SysData};
+    let d = Delta { now, base };
+    let ms = u64::try_from(now.at.duration_since(base.at).as_millis()).unwrap_or(u64::MAX).max(1);
+    // Clock ticks are hundredths of a second.
+    let tick_ms = |t: u64| t * 10;
+    let cpus = u64::from(now.cpu.cpus.max(1));
+    let busy = d.ticks().saturating_sub(now.cpu.idle.saturating_sub(base.cpu.idle));
+    let io = |s: &Sample, n: u32| s.io.get(&n).copied().unwrap_or_default();
+    let tx = |s: &Sample, n: u32| s.txns.get(&n).copied().unwrap_or_default();
+    let mut jobs = Vec::new();
+    for j in system.jobs.all() {
+        let n = j.number;
+        let (i1, i0) = (io(now, n), io(base, n));
+        let (t1, t0) = (tx(now, n), tx(base, n));
+        let p = now.procs.get(&n).copied().unwrap_or_default();
+        let db_reads = i1.db_reads.saturating_sub(i0.db_reads);
+        let db_writes = i1.db_writes.saturating_sub(i0.db_writes);
+        let opens = i1.opens.saturating_sub(i0.opens);
+        jobs.push(JobData {
+            kind: j.kind.to_string(),
+            sub_type: if j.subtype == ' ' || j.subtype == '\0' { String::new() } else { j.subtype.to_string() },
+            sbs_lib: if j.subsystem.is_empty() { String::new() } else { "QSYS".into() },
+            subsystem: j.subsystem.clone(),
+            pool: system.pools.get(&j.pool).map_or(2, |p| p.number),
+            priority: system.attrs.get(&n).map_or(0, |a| a.runpty),
+            cpu_ms: tick_ms(d.job_ticks(n)),
+            cpu_total_ms: tick_ms(p.cpu()),
+            threads: p.threads.max(1),
+            tmp_mb: p.rss_pages * 4 / 1024,
+            db_reads,
+            db_writes,
+            other_io: d.job_aux(n).saturating_sub(db_reads + db_writes + opens),
+            opens,
+            transactions: t1.count.saturating_sub(t0.count),
+            response_ms: t1.ms.saturating_sub(t0.ms),
+            aw: t1.waits.saturating_sub(t0.waits),
+            wi: t1.inel.saturating_sub(t0.inel),
+            ai: 0,
+            name: j.name,
+            user: j.user,
+            number: n,
+        });
+    }
+    let pools = system
+        .pools
+        .info()
+        .into_iter()
+        .map(|p| {
+            let f1 = now.pools.get(&p.name).copied().unwrap_or_default();
+            let f0 = base.pools.get(&p.name).copied().unwrap_or_default();
+            let (aw, wi, ai) = d.counters(&p.name);
+            let major = f1.major.saturating_sub(f0.major);
+            let minor = f1.minor.saturating_sub(f0.minor);
+            PoolData {
+                number: p.number,
+                db_faults: major,
+                db_pages: major,
+                ndb_faults: minor,
+                ndb_pages: minor,
+                aw,
+                wi,
+                ai,
+                size_kb: p.size_kb,
+                reserved_kb: p.reserved_kb,
+                actlvl: p.actlvl,
+                active: p.active,
+                ineligible: p.ineligible,
+                name: p.name,
+            }
+        })
+        .filter(|p| p.size_kb > 0)
+        .collect();
+    let disks = super::units::views(system)
+        .iter()
+        .enumerate()
+        .map(|(i, u)| {
+            let x = now
+                .disks
+                .get(i)
+                .copied()
+                .unwrap_or_default()
+                .since(&base.disks.get(i).copied().unwrap_or_default());
+            DiskData {
+                unit: u32::from(u.unit) + 1,
+                type_code: u.type_code.clone(),
+                model: u.model.clone(),
+                resource: format!("DD{:03}", u.unit + 1),
+                serial: u.serial.clone(),
+                asp: 1,
+                capacity: u.usable * 4096,
+                available: u.usable.saturating_sub(u.used) * 4096,
+                reads: x.reads,
+                writes: x.writes,
+                read_blocks: x.read_sectors,
+                write_blocks: x.write_sectors,
+                busy_ms: x.busy_ms,
+            }
+        })
+        .collect();
+    let lines = now
+        .lines
+        .iter()
+        .enumerate()
+        .map(|(i, (line, st))| {
+            let b = base.lines.iter().find(|(l, _)| l == line).map(|(_, s)| *s).unwrap_or_default();
+            LineData {
+                line: line.clone(),
+                resource: format!("CMN{:02}", i + 1),
+                speed: st.speed_mbps * 1_000_000,
+                rx_bytes: st.rx_bytes.saturating_sub(b.rx_bytes),
+                tx_bytes: st.tx_bytes.saturating_sub(b.tx_bytes),
+                rx_frames: st.rx_packets.saturating_sub(b.rx_packets),
+                tx_frames: st.tx_packets.saturating_sub(b.tx_packets),
+                rx_errors: st.rx_errors.saturating_sub(b.rx_errors),
+                tx_errors: st.tx_errors.saturating_sub(b.tx_errors),
+            }
+        })
+        .collect();
+    let (asp_mb, asp_pct, _) = asp_figures(system);
+    let asp_bytes = asp_mb << 20;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)] // a percentage of a size
+    let asp_used = (asp_bytes as f64 * asp_pct / 100.0) as u64;
+    let jobs_n = u32::try_from(jobs.len()).unwrap_or(u32::MAX);
+    let system_data = SysData {
+        cpu_used_ms: tick_ms(busy),
+        cpu_avail_ms: ms * cpus,
+        cpus: now.cpu.cpus.max(1),
+        main_kb: now.main_kb,
+        asp_bytes,
+        asp_free: asp_bytes.saturating_sub(asp_used),
+        jobs: jobs_n,
+        threads: now.procs.values().map(|p| p.threads).sum(),
+        opens: jobs.iter().map(|j: &JobData| j.opens).sum(),
+        db_reads: jobs.iter().map(|j| j.db_reads).sum(),
+        db_writes: jobs.iter().map(|j| j.db_writes).sum(),
+        transactions: jobs.iter().map(|j| j.transactions).sum(),
+        response_ms: jobs.iter().map(|j| j.response_ms).sum(),
+    };
+    Interval {
+        number,
+        end,
+        secs: secs_between(now, base),
+        system: system_data,
+        jobs,
+        pools,
+        disks,
+        lines,
+    }
 }
