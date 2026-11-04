@@ -12,7 +12,7 @@
      O                         AMT       20 ' ,   ,  0.  -'
      O                         AMT       40 ' ,   ,  0.  CR'
      O                         POS       60 ' ,   ,  0.  CR'
-     O                         POS       80 '*,   ,  0.  '
+     O                         POS       80 '* ,   ,  0.  '
      OQSYSPRT E  1             LINE
      O                         AMT       20 '$ ,   ,  0.  '
      O                         DAT       40 '  /  /  '

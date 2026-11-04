@@ -246,7 +246,7 @@ member("R3003", [
     OF_("20", field="AMT", const="' ,   ,  0.  -'"),
     OF_("40", field="AMT", const="' ,   ,  0.  CR'"),
     OF_("60", field="POS", const="' ,   ,  0.  CR'"),
-    OF_("80", field="POS", const="'*,   ,  0.  '"),
+    OF_("80", field="POS", const="'* ,   ,  0.  '"),
     OR_("QSYSPRT", "E", sa="1", excpt="LINE"),
     OF_("20", field="AMT", const="'$ ,   ,  0.  '"),
     OF_("40", field="DAT", const="'  /  /  '"),
