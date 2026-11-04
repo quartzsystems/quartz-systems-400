@@ -511,7 +511,7 @@ impl Suite {
             // Option 1 asks nothing more; the release rule refuses.
             s.send("1")?;
             s.expect("SRC A6004080", CMD)?;
-            s.expect("downgrade is not allow", CMD)?;
+            s.expect("cannot be installed over release", CMD)?;
             Ok(format!("{detail}; V1R0M0 over it refused"))
         })()
         .map_err(|e| (e, s.log.clone()));
