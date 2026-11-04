@@ -78,6 +78,8 @@ pub trait IfsClient {
     fn chmod(&self, path: &str, mode: u32) -> Result<()>;
     /// `chown()`.
     fn chown(&self, path: &str, uid: u32, gid: u32) -> Result<()>;
+    /// `lchown()`: a symbolic link's own owner and group.
+    fn lchown(&self, path: &str, uid: u32, gid: u32) -> Result<()>;
     /// `link()`.
     fn link(&self, existing: &str, new: &str) -> Result<()>;
     /// `unlink()`.
@@ -259,6 +261,9 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
     }
     fn chown(&self, path: &str, uid: u32, gid: u32) -> Result<()> {
         self.ifs.chown(self.cx, path, uid, gid)
+    }
+    fn lchown(&self, path: &str, uid: u32, gid: u32) -> Result<()> {
+        self.ifs.lchown(self.cx, path, uid, gid)
     }
     fn link(&self, existing: &str, new: &str) -> Result<()> {
         self.ifs.link(self.cx, existing, new)
@@ -513,6 +518,7 @@ macro_rules! every_method {
         fn access(path: &str, amode: i32) -> Result<()>;
         fn chmod(path: &str, mode: u32) -> Result<()>;
         fn chown(path: &str, uid: u32, gid: u32) -> Result<()>;
+        fn lchown(path: &str, uid: u32, gid: u32) -> Result<()>;
         fn link(existing: &str, new: &str) -> Result<()>;
         fn unlink(path: &str) -> Result<()>;
         fn rename(old: &str, new: &str, mode: RenameMode) -> Result<()>;

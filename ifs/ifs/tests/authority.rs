@@ -175,6 +175,20 @@ fn owner_only_changes() {
 }
 
 #[test]
+fn lchown_changes_the_link_not_its_target() {
+    let s = setup(RX, RWX);
+    let bob = user("BOB");
+    let bx = s.cx(&bob, 2);
+    s.ifs.symlink(&bx, "f", "/home/bob/l").unwrap();
+    s.ifs.lchown(&bx, "/home/bob/l", 101, u32::MAX).unwrap();
+    assert_eq!(s.ifs.lstat(&bx, "/home/bob/l").unwrap().uid, 101);
+    assert_eq!(s.ifs.stat(&bx, "/home/bob/f").unwrap().uid, 100);
+    // chown follows the link to the file.
+    s.ifs.chown(&bx, "/home/bob/f", 101, u32::MAX).unwrap();
+    assert_eq!(s.ifs.stat(&bx, "/home/bob/f").unwrap().uid, 101);
+}
+
+#[test]
 fn chgaut_limits_for_objmgt_users() {
     let s = setup(RX, R);
     let bob = user("BOB");

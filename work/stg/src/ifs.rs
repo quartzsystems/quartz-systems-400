@@ -43,6 +43,7 @@ pub enum IfsOp {
     Access { path: String, amode: i32 },
     Chmod { path: String, mode: u32 },
     Chown { path: String, uid: u32, gid: u32 },
+    Lchown { path: String, uid: u32, gid: u32 },
     Link { existing: String, new: String },
     Unlink { path: String },
     Rename { old: String, new: String, mode: RenameMode },
@@ -159,6 +160,7 @@ wire_enum!(IfsOp {
     61 => Rcllnk { check_only },
     62 => ObjectLocks { path },
     63 => OwnerLocks,
+    64 => Lchown { path, uid, gid },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -265,6 +267,9 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
         },
         IfsOp::Chown { path, uid, gid } => R::Unit {
             r: c.chown(&path, uid, gid),
+        },
+        IfsOp::Lchown { path, uid, gid } => R::Unit {
+            r: c.lchown(&path, uid, gid),
         },
         IfsOp::Link { existing, new } => R::Unit {
             r: c.link(&existing, &new),

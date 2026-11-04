@@ -145,10 +145,25 @@ impl<B: Backend> Ifs<B> {
         oper: &'static str,
         f: impl FnOnce(&mut Meta, &Ctx<'_>) -> Result<String>,
     ) -> Result<()> {
+        self.edit_at(cx, p, true, op, kind, oper, f)
+    }
+
+    /// [`Self::edit`] of the link itself when `follow` is false.
+    #[allow(clippy::too_many_arguments)]
+    fn edit_at(
+        &self,
+        cx: &Ctx<'_>,
+        p: &str,
+        follow: bool,
+        op: Op,
+        kind: AuditKind,
+        oper: &'static str,
+        f: impl FnOnce(&mut Meta, &Ctx<'_>) -> Result<String>,
+    ) -> Result<()> {
         let mut st = self.lock();
         let cwd = Self::cwd_of(&mut st, cx.owner);
         let (mut sys, _) = self.split(&mut st);
-        let r = sys.resolve(&cwd, p, true, Some(cx))?;
+        let r = sys.resolve(&cwd, p, follow, Some(cx))?;
         let (mut m, _) = sys.meta(&r.node, Some(cx))?;
         cx.require(&m, &r.node, &r.path(), op)?;
         if Self::read_only(&sys, r.node.fs()) {
@@ -264,11 +279,15 @@ impl<B: Backend> Ifs<B> {
     /// private one); with `revoke_old` the old owner keeps nothing,
     /// otherwise its authority becomes private.
     pub fn chgown(&self, cx: &Ctx<'_>, p: &str, new_owner: &str, revoke_old: bool) -> Result<()> {
+        self.chgown_at(cx, p, true, new_owner, revoke_old)
+    }
+
+    fn chgown_at(&self, cx: &Ctx<'_>, p: &str, follow: bool, new_owner: &str, revoke_old: bool) -> Result<()> {
         if !cx.env.profile_exists(new_owner) {
             return Err(Errno::EINVAL);
         }
         let new_owner = new_owner.to_string();
-        self.edit(cx, p, Op::Chown, AuditKind::Owner, "CHGOWN", move |m, _| {
+        self.edit_at(cx, p, follow, Op::Chown, AuditKind::Owner, "CHGOWN", move |m, _| {
             if m.owner == new_owner {
                 return Ok(new_owner);
             }
@@ -297,15 +316,27 @@ impl<B: Backend> Ifs<B> {
         new_group: Option<&str>,
         revoke_old: bool,
     ) -> Result<()> {
+        self.chgpgp_at(cx, p, true, new_group, revoke_old)
+    }
+
+    fn chgpgp_at(
+        &self,
+        cx: &Ctx<'_>,
+        p: &str,
+        follow: bool,
+        new_group: Option<&str>,
+        revoke_old: bool,
+    ) -> Result<()> {
         if let Some(g) = new_group
             && !cx.env.is_group(g)
         {
             return Err(Errno::EINVAL);
         }
         let new_group = new_group.map(str::to_string);
-        self.edit(
+        self.edit_at(
             cx,
             p,
+            follow,
             Op::Chgrp,
             AuditKind::Group,
             "CHGPGP",
@@ -341,9 +372,18 @@ impl<B: Backend> Ifs<B> {
     /// `chown()`: by UID and GID (`u32::MAX` leaves one alone). The old
     /// owner's and group's authorities are not kept (POSIX).
     pub fn chown(&self, cx: &Ctx<'_>, p: &str, uid: u32, gid: u32) -> Result<()> {
+        self.chown_at(cx, p, true, uid, gid)
+    }
+
+    /// `lchown()`: [`Self::chown`] of a symbolic link itself.
+    pub fn lchown(&self, cx: &Ctx<'_>, p: &str, uid: u32, gid: u32) -> Result<()> {
+        self.chown_at(cx, p, false, uid, gid)
+    }
+
+    fn chown_at(&self, cx: &Ctx<'_>, p: &str, follow: bool, uid: u32, gid: u32) -> Result<()> {
         if uid != u32::MAX {
             let owner = cx.env.profile_of_uid(uid).ok_or(Errno::EINVAL)?;
-            self.chgown(cx, p, &owner, true)?;
+            self.chgown_at(cx, p, follow, &owner, true)?;
         }
         if gid != u32::MAX {
             let group = if gid == 0 {
@@ -351,7 +391,7 @@ impl<B: Backend> Ifs<B> {
             } else {
                 Some(cx.env.profile_of_gid(gid).ok_or(Errno::EINVAL)?)
             };
-            self.chgpgp(cx, p, group.as_deref(), true)?;
+            self.chgpgp_at(cx, p, follow, group.as_deref(), true)?;
         }
         Ok(())
     }

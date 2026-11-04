@@ -147,6 +147,16 @@ impl IfsClient for RemoteIfs {
             Unit
         )
     }
+    fn lchown(&self, path: &str, uid: u32, gid: u32) -> Result<()> {
+        reply_as!(
+            self.call(IfsOp::Lchown {
+                path: path.into(),
+                uid,
+                gid
+            }),
+            Unit
+        )
+    }
     fn link(&self, existing: &str, new: &str) -> Result<()> {
         reply_as!(
             self.call(IfsOp::Link {

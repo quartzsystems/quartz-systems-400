@@ -68,10 +68,10 @@ fn chown(j: &mut Job, p: u128, uid: i64, gid: i64) -> i64 {
     unit(j, r)
 }
 
-/// `lchown()`: `chown()` of the path itself.
-// MIGRATE(phase11): a link's own owner once IfsClient has an lchown.
+/// `lchown()`: `chown()` of a symbolic link itself.
 fn lchown(j: &mut Job, p: u128, uid: i64, gid: i64) -> i64 {
-    chown(j, p, uid, gid)
+    let r = cpath(j, p).and_then(|path| client(j).lchown(&path, uint(uid), uint(gid)));
+    unit(j, r)
 }
 
 fn link(j: &mut Job, a: u128, b: u128) -> i64 {
