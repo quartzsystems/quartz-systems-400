@@ -8,6 +8,8 @@
 //! compiled into a `*WSCST`) and `RTVWSCST` (a model's source written
 //! to a member).
 
+use std::fmt::Write as _;
+
 use print::transform::Model;
 use print::wscst::Wscst;
 use store::obj::library::Library;
@@ -198,7 +200,8 @@ pub fn crtwscst(system: &mut System, me: u32, p: &Params) -> Result<String, Stri
             }
             ops::delete(txn, JobHandle(u64::from(me)), old).map_err(|e| e.to_string())?;
         }
-        wm::obj::create(txn, l, n, types::WSCST, &w.text, &stamp(user.clone()), &w.encode())
+        let class = if source.contains("DEVCLASS=CTXFORM") { "CTXFORM" } else { "TRANSFORM" };
+        wm::obj::create_attr(txn, l, (n, types::WSCST, class), &w.text, &stamp(user.clone()), &w.encode())
             .map(|_| ())
             .map_err(|e| err(&e))
     })?;
@@ -209,23 +212,61 @@ pub fn crtwscst(system: &mut System, me: u32, p: &Params) -> Result<String, Stri
 /// the model's source into a member.
 pub fn rtvwscst(system: &mut System, p: &Params) -> Result<String, String> {
     let devtype = p.upper("DEVTYPE").unwrap_or_else(|| "*TRANSFORM".into());
-    if devtype != "*TRANSFORM" {
-        return Err(format!(
-            "CPD0084 DEVTYPE({devtype}): only *TRANSFORM sources are kept here"
-        ));
-    }
     let m = p.upper("MFRTYPMDL").unwrap_or_default();
-    let model = Model::parse(&m)
-        .ok_or_else(|| format!("CPD0084 MFRTYPMDL({m}): not a model the transform knows"))?;
+    // A LaserJet-class model: the PCL transform's commands; another
+    // model or *CTXFORM: its shipped object's source.
+    let (source, what) = match devtype.as_str() {
+        "*TRANSFORM" => {
+            if let Some(model) = Model::parse(&m) {
+                (Wscst::source_for(model), model.name().to_string())
+            } else {
+                let n = print::wscst::shipped::for_mfrtypmdl(&m)
+                    .ok_or_else(|| format!("CPD0084 MFRTYPMDL({m}): not a model the transform knows"))?;
+                (print::wscst::shipped::source(n), m.clone())
+            }
+        }
+        "*CTXFORM" => (print::wscst::shipped::source("QCTXPDF"), devtype.clone()),
+        other => return Err(format!("CPD0084 DEVTYPE({other}): display station sources are not kept here")),
+    };
     let mbr = p
         .upper("SRCMBR")
         .ok_or_else(|| "CPD0071 SRCMBR is needed".to_string())?;
     let (slib, sfile) = qualified(p.kw("SRCFILE").unwrap_or("QTXTSRC"), "*LIBL");
     let slib = if slib == "*LIBL" { "QGPL".to_string() } else { slib };
-    let lines: Vec<String> = Wscst::source_for(model).lines().map(str::to_string).collect();
+    let lines: Vec<String> = source.lines().map(str::to_string).collect();
     super::pdm::write(system, &slib, &sfile, &mbr, &lines, "WSCST")?;
-    Ok(format!(
-        "Customizing source for {} written to member {mbr} of {slib}/{sfile}.\n",
-        model.name()
-    ))
+    Ok(format!("Customizing source for {what} written to member {mbr} of {slib}/{sfile}.\n"))
+}
+
+/// `DLTWSCST WSCST(lib/name)`: the objects a name or generic name
+/// gives, each deleted as `DLTOBJ` deletes (`*OBJEXIST` checked).
+pub fn dltwscst(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
+    let (lib, name) = qualified(&p.pos_or(0, "WSCST")?, "*LIBL");
+    let lib = if lib == "*LIBL" { "QGPL".to_string() } else { lib };
+    let prefix = name.strip_suffix('*').map(str::to_string);
+    let deleted = with_store(system, |txn, qsys| {
+        let l = wm::obj::library(txn, qsys, &lib).map_err(|e| err(&e))?;
+        let lo = Library::load(txn, l).map_err(|e| e.to_string())?;
+        let ids: Vec<(String, ObjectId)> = lo
+            .list(txn, Some(types::WSCST))
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|(k, id)| (k.name.to_string().trim().to_string(), id))
+            .filter(|(n, _)| match &prefix {
+                Some(pre) => pre.is_empty() || n.starts_with(pre.as_str()),
+                None => name == "*ALL" || *n == name,
+            })
+            .collect();
+        if ids.is_empty() {
+            return Err(format!("CPF2105 Object {name} in {lib} type *WSCST not found."));
+        }
+        for (_, id) in &ids {
+            ops::delete(txn, JobHandle(u64::from(me)), *id).map_err(|e| format!("CPF2117 {e}"))?;
+        }
+        Ok(ids.into_iter().map(|(n, _)| n).collect::<Vec<_>>())
+    })?;
+    Ok(deleted.iter().fold(String::new(), |mut s, n| {
+        let _ = writeln!(s, "Object {n} in {lib} type *WSCST deleted.");
+        s
+    }))
 }

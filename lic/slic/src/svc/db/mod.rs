@@ -8,6 +8,7 @@
 //! `xfer` area: named line buffers pushed and pulled over the serial line.
 
 mod bench;
+pub(crate) mod ddmf;
 pub(crate) mod dspf;
 pub mod files;
 mod journal;
@@ -211,6 +212,7 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "dltf" => {
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
             prtf::dltf(system, &qual)
+                .or_else(|| ddmf::dltf(system, &qual))
                 .or_else(|| dspf::dltf(system, &qual))
                 .or_else(|| crate::cpp::tapcpy::dltf(system, &qual))
                 .unwrap_or_else(|| files::dltf(system, &p))
@@ -234,6 +236,7 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "dspfd" => {
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
             prtf::dspfd(system, &qual)
+                .or_else(|| ddmf::dspfd(system, &qual))
                 .or_else(|| dspf::dspfd(system, &qual))
                 .or_else(|| crate::cpp::tapcpy::dspfd(system, &qual))
                 .unwrap_or_else(|| files::dspfd(system, &p))

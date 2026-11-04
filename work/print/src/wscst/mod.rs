@@ -4,9 +4,11 @@
 
 //! The workstation customizing object (`*WSCST`): the command strings
 //! a printer wants for the things the transform does. `CRTWSCST`
-//! compiles a source member in this crate's own format and keeps the
-//! source with the object; `RTVWSCST` gives it back. The source is
-//! lines of `KEY = value`, `*` in column 1 a comment; strings are double
+//! compiles a source member and keeps the source with the object;
+//! `RTVWSCST` writes a model's source. The source is IBM's tag
+//! language ([`tags`]), which `RTVWSCST` writes and the shipped
+//! objects (`QSYS/QWP...`, [`shipped`]) hold, or the key form of
+//! earlier releases, still read: lines of `KEY = value`, `*` in column 1 a comment; strings are double
 //! quoted with `\e` (escape), `\r`, `\n`, `\f`, `\\`, `\"` and `\xHH`
 //! escapes, and `&n` in `COPIES` stands for the count. The keys:
 //!
@@ -28,6 +30,9 @@
 //! The object's payload: `QSWMWSCS`, a version (1), the text (50
 //! bytes), the source length (`u32` little-endian) and the source as
 //! UTF-8 (`docs/PRINT.md`).
+
+pub mod shipped;
+pub mod tags;
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -146,8 +151,16 @@ fn word(s: &str) -> (&str, &str) {
 }
 
 impl Wscst {
-    /// Compile `source`.
+    /// Compile `source`: the tag language, or the key form.
     pub fn parse(source: &str) -> Result<Self, WscstError> {
+        if tags::is_tags(source) {
+            return tags::compile(source);
+        }
+        Self::parse_keys(source)
+    }
+
+    /// Compile key-form `source`.
+    pub fn parse_keys(source: &str) -> Result<Self, WscstError> {
         let mut w = Self {
             source: source.to_string(),
             newline: b"\r\n".to_vec(),
@@ -284,10 +297,16 @@ impl Wscst {
     }
 
     /// The source `RTVWSCST DEVTYPE(*TRANSFORM) MFRTYPMDL()` writes for
-    /// a LaserJet-class model: the PCL transform's commands as keys, so
-    /// a changed copy compiles with `CRTWSCST`.
+    /// a LaserJet-class model: the PCL transform's commands in the tag
+    /// language, so a changed copy compiles with `CRTWSCST`.
     #[must_use]
     pub fn source_for(model: crate::transform::Model) -> String {
+        let w = Self::parse_keys(&Self::key_source_for(model)).unwrap_or_default();
+        tags::write_pcl(&w, &format!("Workstation customizing source for {}, from the host print transform.", model.name()))
+    }
+
+    /// [`Self::source_for`] in the key form.
+    fn key_source_for(model: crate::transform::Model) -> String {
         let caps = model.capabilities();
         let mut s = format!(
             "* Workstation customizing source for {}, from the host print transform.\nNAME      = \"{} printer\"\n",

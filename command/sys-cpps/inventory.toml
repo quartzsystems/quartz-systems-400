@@ -549,7 +549,7 @@ note = "the FTP client under its long name"
 # --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
 [cmd.ADDRDBDIRE]
 site = "job"
-note = "the directory is kept in the data area QUSRSYS/QRWRDBDIR"
+note = "the directory is kept in the user space QUSRSYS/QRWRDBDIR"
 
 [cmd.CHGRDBDIRE]
 site = "job"
@@ -562,14 +562,28 @@ site = "job"
 
 [cmd.CRTDDMF]
 site = "job"
-note = "a DDM file is kept in the data area QRWDDMF of its library"
+note = "a *FILE of attribute DDMF; opening one opens the remote file (work/qsjob/src/work/ddm/requester.rs)"
 
 [cmd.CHGDDMF]
 site = "job"
 
 [cmd.CHGDDMTCPA]
 site = "job"
-note = "kept in the data area QUSRSYS/QRWDDMTCPA"
+note = "kept in the server table's *DDM entry"
+
+[cmd.WRKDDMF]
+site = "job"
+note = "the list as text"
+
+[cmd.ADDSVRAUTE]
+site = "job"
+note = "the entries are the service's (QSYS/QSYSVRAUT, *PUBLIC *EXCLUDE); a password is kept only when QRETSVRSEC is 1"
+
+[cmd.CHGSVRAUTE]
+site = "job"
+
+[cmd.RMVSVRAUTE]
+site = "job"
 
 [cmd.DLYJOB]
 site = "job"

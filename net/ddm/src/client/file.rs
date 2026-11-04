@@ -84,12 +84,16 @@ impl<S: Read + Write> Connection<S> {
                 match o.cp {
                     param::S38OPNFB => fb = Some(OpenFeedback::decode(o.bytes())?),
                     param::S38IOFB => {}
+                    // An informational message (V7R1's CPF4028, the open
+                    // made SEQONLY(*NO)) comes with a good open.
                     rm::S38MSGRM => {
                         let m = file::message_of(o);
-                        return Err(Error::Reply {
-                            name: format!("{} {}", m.id, m.text),
-                            svrcod: m.severity,
-                        });
+                        if m.severity >= 8 {
+                            return Err(Error::Reply {
+                                name: format!("{} {}", m.id, m.text),
+                                svrcod: m.severity,
+                            });
+                        }
                     }
                     _ => return Err(reply_error(o)),
                 }
@@ -114,8 +118,11 @@ impl<S: Read + Write> Connection<S> {
 
     /// Read by key.
     pub fn get_key(&mut self, f: &RemoteFile, key: &[u8], key_fields: u32, lock: bool) -> Result<FileReply, Error> {
+        // As IBM i and JTOpen send it: the format, `0x0F` with two zero
+        // bytes (V7R1 misreads the key fields without it), the count, the key.
         let ctll = [
             Ctl::Format(f.format.clone()),
+            Ctl::Other(0x0F, vec![0, 0]),
             Ctl::KeyFields(key_fields),
             Ctl::Key(key.to_vec()),
         ];

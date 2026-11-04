@@ -194,7 +194,13 @@ impl Transform {
         if up == "*PDF" {
             return Self::Pdf;
         }
-        Model::parse(&up).map_or(Self::Ascii, Self::Pcl)
+        match (Model::parse(&up), wscst) {
+            (Some(m), _) => Self::Pcl(m),
+            // Another model prints through its shipped object
+            // (`wscst::shipped::for_mfrtypmdl`), when the writer read it.
+            (None, Some(w)) => Self::Custom(Box::new(w)),
+            (None, None) => Self::Ascii,
+        }
     }
 
     /// Apply to `scs`, the spooled file's data.
@@ -252,5 +258,13 @@ mod tests {
         assert_eq!(Transform::select(true, "*WSCST", None), Transform::Ascii);
         assert_eq!(Transform::select(true, "*PDF", None), Transform::Pdf);
         assert_eq!(Format::Pcl.mime(), "application/vnd.hp-PCL");
+        // A model with a shipped object prints through it.
+        let name = crate::wscst::shipped::for_mfrtypmdl("*IBM4019").unwrap();
+        assert_eq!(name, "QWPIBM4019");
+        let w = Wscst::parse(&crate::wscst::shipped::source(name)).unwrap();
+        assert!(matches!(Transform::select(true, "*IBM4019", Some(w.clone())), Transform::Custom(_)));
+        assert_eq!(Transform::select(true, "*HP4", Some(w)), Transform::Pcl(Model::Hp4));
+        assert_eq!(crate::wscst::shipped::for_mfrtypmdl("*HPLJ4"), Some("QWPHPLSR4"));
+        assert_eq!(crate::wscst::shipped::for_mfrtypmdl("*NONE"), None);
     }
 }

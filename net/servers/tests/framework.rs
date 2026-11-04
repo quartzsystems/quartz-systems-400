@@ -117,8 +117,8 @@ fn servers_not_in_this_release() {
     let e = fw.start(&mut env, &Request::new("*SNMP")).unwrap_err();
     assert_eq!(e.msgid, "TCP1A04");
     assert!(e.text.contains("*SNMP"), "{}", e.text);
-    let e = fw.start(&mut env, &Request::new("*DDM")).unwrap_err();
-    assert!(e.text.contains("backends"), "{}", e.text);
+    let e = fw.start(&mut env, &Request::new("*SSHD")).unwrap_err();
+    assert!(e.text.contains("net/sshd"), "{}", e.text);
     assert_eq!(fw.end(&mut env, &Request::new("*SMTP"), false).unwrap(), "TCP1A09 SMTP server not active.");
     assert_eq!(fw.start(&mut env, &Request::new("*NOSUCH")).unwrap_err().msgid, "TCP1A04");
 }
@@ -131,6 +131,11 @@ fn a_server_registered_later() {
     assert_eq!(fw.start(&mut env, &Request::new("*NTP")).unwrap(), "TCP1A07 NTP server starting.");
     assert_eq!(env.running[0].user, "QNTP");
     assert_eq!(fw.registered(), ["*TELNET", "*HTTP", "*NTP"]);
+    // The DDM listener, QRWTLSTN in QSYSWRK as QUSER.
+    fw.register(Box::new(Standard::of("*DDM").unwrap()));
+    let mut ddm = Fake::default();
+    assert_eq!(fw.start(&mut ddm, &Request::new("*DDM")).unwrap(), "TCP1A07 DDM server starting.");
+    assert_eq!((ddm.running[0].name.as_str(), ddm.running[0].user.as_str(), ddm.running[0].role.as_str()), ("QRWTLSTN", "QUSER", "DDM"));
     // A job that cannot start.
     let mut env = Fake::default();
     env.cfg.get_mut("*NTP").set("FAIL", "1");

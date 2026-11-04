@@ -324,7 +324,7 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     job.ident.user.clone_from(&host.start.user);
     job.ident.number = format!("{:06}", host.start.number);
     job.data = Some(Box::new(s.data));
-    job.io = Some(Box::new(s.io));
+    job.io = Some(Box::new(crate::work::ddm::requester::DdmIo::new(s.io, link.clone())));
     job.sql = Some(Box::new(stg::remote::RemoteSql::new(link.clone())));
     // Programs run on this process's main thread; its guard page
     // (`platform::stack`) catches a runaway recursion, so the runtime's

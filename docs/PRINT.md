@@ -163,8 +163,10 @@ documented and was not traced.
 
 `Transform::select(TRANSFORM, MFRTYPMDL, wscst)`: `TRANSFORM(*NO)` is
 the SCS as it is; `*WSCST` the customizing object; a LaserJet-class
-model PCL; `*PDF` (ours) the capture device's PDF emitter; anything
-else plain text. An IBM i destination always gets the SCS.
+model PCL; `*PDF` (ours) the capture device's PDF emitter; another
+model its shipped `QSYS/QWP...` object when the writer read one
+(`*WSCST` below); anything else plain text. An IBM i destination always
+gets the SCS.
 
 **Text**: every line from 1 to the last printed, trailing blanks off,
 CR LF, a form feed per page. Characters outside ASCII take the code page
@@ -207,27 +209,65 @@ has no remote output queue pointing at a harness LPD, so no
 
 ### `*WSCST`
 
-`CRTWSCST` compiles a source member (default `QTXTSRC`, member
-`*WSCST` = the object's name) in our own format; `RTVWSCST
-DEVTYPE(*TRANSFORM) MFRTYPMDL()` writes a model's source to a member.
-The format (`print::wscst`): lines `KEY = value`, `*` or `#` comments,
-strings in double quotes with `\e \r \n \f \\ \" \xHH`.
+The source is IBM's tag language (`print::wscst::tags`), as `RTVWSCST`
+writes it on IBM i: `:WSCST DEVCLASS=TRANSFORM.` first, `:EWSCST.`
+last, between them tags `:NAME` with `KEY=value` attributes, each tag
+ending at a period; values are numbers, words or quoted strings, `'..'X`
+hexadecimal, several strings in a row one value, `/* */` comments.
+`CRTWSCST` compiles a member (default `QTXTSRC`, member `*WSCST` = the
+object's name); the key form earlier releases wrote (`KEY = value`
+lines) still compiles. Tags the transform has no use for are read and
+left out. The ones it uses:
 
-| Key | Value |
-|---|---|
-| `NAME` | the text when `TEXT(*SRCMBRTXT)` |
-| `INIT`, `EXIT` | sent first, last |
-| `NEWLINE`, `FORMFEED` | line and page ends (CR LF, FF by default) |
-| `PAPER` | name, width, height (hundredths of an inch), command |
-| `PORTRAIT`, `LANDSCAPE` | orientation |
-| `CPI`, `LPI`, `DRAWER` | number, command |
-| `DUPLEX` | `*NO`/`*YES`/`*TUMBLE`, command |
-| `COPIES` | command, `&n` the count |
+| Tag | Attributes | Used for |
+|---|---|---|
+| `INITPRT`, `RESETPRT` | `DATA` | sent first, last |
+| `CARRTN`, `LINEFEED`, `FORMFEED` | `DATA` | line and page ends |
+| `PAGSIZE` | `PAGWTH`, `PAGLEN` (1440ths of an inch), `DATA` | a paper |
+| `PRTORIENT` | `ORIENT=PORTRAIT\|LANDSCAPE`, `DATA` | orientation |
+| `DWRSLT` | `DRAWER=DRAWERn`, `DATA` | input tray |
+| `SMPXPRT`, `DUPXPRT`, `TUMDUPXPRT` | `DATA` | sides |
+| `VARLSPC` | `VAROFFSET`, `VARLEN`, `VARTYPE=CHRDEC`, `CNVNUM`, `CNVDEN`, `DATA` | line density: the spacing in `CNVNUM/CNVDEN` inch put into `DATA` |
+| `CPI` | `CPI=n`, `DATA` | pitch (ours) |
+| `COPIES` | as `VARLSPC`, the count put in | copies (ours) |
+
+The tag names and attributes of the first eight rows are the ones the
+primary's `RTVWSCST DEVTYPE(*TRANSFORM) MFRTYPMDL(*HP4)` writes
+(captured 2026-11-03, not kept in the tree); `CPI` and `COPIES` are
+QS/400's own, since IBM's sources choose fonts by font tables QS/400
+does not read. `RTVWSCST DEVTYPE(*TRANSFORM)` writes a LaserJet-class
+model's PCL commands, another model's shipped object's source, and
+`DEVTYPE(*CTXFORM)` an empty content transform source; the display
+station device types are refused.
+
+**Shipped objects.** `QSYS` holds the 153 `*WSCST` objects the
+primary's `DSPOBJD QSYS/*ALL *WSCST` lists
+(`tools/conformance/golden/phase12/oracle/wscst-qsys.txt`), made at
+the first IPL (`lic/osobjects/src/wscst.rs`), attribute `TRANSFORM`
+(`CTXFORM` for the three `QCTX...`), with Quartz content
+(`print::wscst::shipped`): the LaserJet objects (`QWPHPLSR2`, `2D`, `3`,
+`3D`, `4`, `5`, `QWPHP5SI`) the PCL transform's commands for their
+model, the other PCL printers' (`QWPHP...`, `QWPLEX...`, `QWPEPLPCL4`,
+`5`, `QWPCPQPM20`, `QWPPANLBP4`, `5`) the `*HP4` ones, every other
+printer plain lines. Which object IBM's transform takes for a
+LaserJet model is inferred from the names (`*HPII`, `*HPIIP`,
+`*HPPLUS` `QWPHPLSR2`; `*HPIID` `QWPHPLSR2D`; `*HPIII`, `*HPIIIP`
+`QWPHPLSR3`; `*HPIIID`, `*HPIIISI` `QWPHPLSR3D`; `*HP4` `QWPHPLSR4`;
+`*HP5` `QWPHPLSR5`; `*HP5SI` `QWPHP5SI`); another `MFRTYPMDL` names
+`QWP` and its value (`*IBM4019` is `QWPIBM4019`).
+
+**The transform.** `MFRTYPMDL(*WSCST)` prints through the object
+`WSCST()` names (device, remote output queue, `SNDTCPSPLF`); a missing
+one ends `SNDTCPSPLF` with `CPF9801`. A LaserJet-class model keeps the
+PCL transform (its own fit of the page, which the shipped object holds
+the commands of); any other model that has a shipped object prints
+through it (the writer reads `QSYS/QWP...`), and one without prints
+plain text. `DLTWSCST` deletes objects by name or generic name as
+`DLTOBJ` does (`*OBJEXIST`).
 
 The `*WSCST` object (type 0x0028) holds `QSWMWSCS`, version 1 (`u16`),
 the text (50 bytes), the source length (`u32` LE) and the source; it is
-compiled again when read. IBM's `*WSCST` source is the `:WSCST.` tag
-language; ours is not compatible with it.
+compiled again when read.
 
 ## Payloads
 

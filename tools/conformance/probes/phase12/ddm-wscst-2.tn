@@ -1,0 +1,147 @@
+# Phase 12: the rest of QSYS's *WSCST list, QRWTSRVR's prestart job entry,
+# and the source RTVWSCST writes for *HP4 (into QSTEST/QSWSCSRC, deleted
+# at the end). Nothing else is changed.
+wait "Sign On"
+signon
+wait "Main Menu"
+timeout 20000
+continue
+key eraseinput
+type dspobjd obj(qsys/*all) objtype(*wscst)
+key enter
+settle 3000
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key f3
+settle 1500
+key eraseinput
+type dspsbsd qusrwrk
+key enter
+settle 3000
+type 10
+key enter
+settle 2000
+pick "QRWTSRVR" 5
+key enter
+settle 2000
+show
+key pgdn
+settle 1000
+show
+key f3
+settle 1500
+key f3
+settle 1500
+key f3
+settle 1500
+key eraseinput
+type crtsrcpf file(qstest/qswscsrc) rcdlen(112)
+key enter
+settle 3000
+show
+key eraseinput
+type rtvwscst devtype(*transform) mfrtypmdl(*hp4) srcmbr(hp4) srcfile(qstest/qswscsrc)
+key enter
+settle 4000
+show
+key eraseinput
+type dsppfm file(qstest/qswscsrc) mbr(hp4)
+key enter
+settle 3000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key f3
+settle 1500
+key eraseinput
+type dltf file(qstest/qswscsrc)
+key enter
+settle 3000
+show

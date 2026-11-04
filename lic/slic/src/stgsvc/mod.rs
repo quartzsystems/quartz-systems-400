@@ -14,6 +14,7 @@
 pub(crate) mod certs;
 pub(crate) mod cmn;
 pub(crate) mod cmntrc;
+pub(crate) mod ddm;
 mod dbg;
 pub(crate) mod devices;
 pub(crate) mod exec;

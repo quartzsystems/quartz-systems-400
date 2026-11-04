@@ -2147,6 +2147,27 @@ impl Service for Served<'_> {
         super::system2::cfg_descriptions(self.system, &name)
     }
 
+    fn ddm_signon(&mut self, user: String, password: String, swap: bool) -> Result<stg::HostSignedOn, stg::HostRefused> {
+        super::ddm::signon(self.system, self.ctx, &user, &password, swap)
+    }
+
+    fn ddmf_put(&mut self, lib: String, name: String, payload: String, text: String, create: bool, replace: bool) -> Result<String, String> {
+        let me = self.ctx.job.number;
+        super::ddm::put(self.system, me, &lib, &name, &payload, &text, create, replace)
+    }
+
+    fn ddmf_get(&mut self, lib: String, name: String) -> Result<(String, String), String> {
+        super::ddm::get(self.system, &lib, &name)
+    }
+
+    fn svraute(&mut self, op: String, user: String, server: String, usrid: Option<String>, password: Option<String>) -> Result<String, String> {
+        super::ddm::svraute(self.system, self.ctx, &op, &user, &server, usrid, password)
+    }
+
+    fn svraute_get(&mut self, server: String) -> Option<(String, String)> {
+        super::ddm::svraute_get(self.system, self.ctx, &server)
+    }
+
     fn machine(&mut self) -> stg::proto::MachineInfo {
         let dmi = machine_dmi();
         stg::proto::MachineInfo {

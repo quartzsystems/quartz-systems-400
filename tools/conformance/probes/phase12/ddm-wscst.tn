@@ -1,0 +1,266 @@
+# Phase 12: DDM and *WSCST facts on the primary (V7R1M0). Prompts are
+# left with F12; the only object made is the DDM file QSTEST/QSDDMT,
+# deleted at the end. Nothing else is changed.
+wait "Sign On"
+signon
+wait "Main Menu"
+timeout 20000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type addsvraute
+key f4
+settle 1500
+snap prompt-addsvraute
+show
+key f10
+settle 1200
+snap prompt-addsvraute-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-addsvraute-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type chgsvraute
+key f4
+settle 1500
+snap prompt-chgsvraute
+show
+key f10
+settle 1200
+snap prompt-chgsvraute-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-chgsvraute-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type rmvsvraute
+key f4
+settle 1500
+snap prompt-rmvsvraute
+show
+key f10
+settle 1200
+snap prompt-rmvsvraute-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-rmvsvraute-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type rtvwscst
+key f4
+settle 1500
+snap prompt-rtvwscst
+show
+key f10
+settle 1200
+snap prompt-rtvwscst-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-rtvwscst-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type dltwscst
+key f4
+settle 1500
+snap prompt-dltwscst
+show
+key f10
+settle 1200
+snap prompt-dltwscst-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-dltwscst-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type wrkddmf
+key f4
+settle 1500
+snap prompt-wrkddmf
+show
+key f10
+settle 1200
+snap prompt-wrkddmf-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-wrkddmf-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type dspsvraute
+key f4
+settle 1500
+snap prompt-dspsvraute
+show
+key f10
+settle 1200
+snap prompt-dspsvraute-f10
+show
+key reset
+key pgdn
+settle 1000
+snap prompt-dspsvraute-f10-2
+show
+key reset
+key f12
+settle 1000
+wait "Command Entry"
+key eraseinput
+type dspobjd obj(qsys/*all) objtype(*wscst)
+key enter
+settle 3000
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type dspobjd obj(qsys/qwp*) objtype(*all)
+key enter
+settle 3000
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type dspsbsd qusrwrk
+key enter
+settle 3000
+show
+type 10
+key enter
+settle 2000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key f3
+settle 1500
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type wrkrdbdire
+key enter
+settle 3000
+show
+key pgdn
+settle 1200
+show
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type crtddmf file(qstest/qsddmt) rmtfile(qstest/qsddmr) rmtlocname('127.0.0.1' *ip) text('probe')
+key enter
+settle 3000
+show
+key reset
+settle 1500
+key eraseinput
+type dspfd qstest/qsddmt
+key enter
+settle 3000
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type wrkddmf qstest/*all
+key enter
+settle 3000
+show
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type dspobjd qstest/qsddmt *file
+key enter
+settle 3000
+show
+key f3
+settle 1500
+wait "Command Entry"
+key eraseinput
+type dltf qstest/qsddmt
+key enter
+settle 3000
+show
+key reset
+settle 1500
+key eraseinput
+type dspobjd qstest/qsddmt *file
+key enter
+settle 3000
+show
+key f3
+settle 1500
+wait "Command Entry"
+key f3
+settle 1000

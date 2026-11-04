@@ -16,6 +16,7 @@ pub mod display;
 pub mod products;
 pub mod qstrup;
 pub mod ui;
+pub mod wscst;
 
 use store::obj::ObjectId;
 use store::txn::Txn;
@@ -73,6 +74,7 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
         wm::obj::shipped::install(txn, qsys, stamp),
     )?;
     r.made += piece("display files", display::install_shipped(txn, qsys, stamp))?;
+    r.made += piece("workstation customizing objects", wscst::install_shipped(txn, qsys, stamp))?;
     r.made += piece(
         "panel groups and menus",
         ui::install_shipped(txn, qsys, stamp),

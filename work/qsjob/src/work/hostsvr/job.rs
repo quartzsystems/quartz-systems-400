@@ -34,6 +34,11 @@ fn kind_of(k: &str) -> u8 {
     }
 }
 
+/// [`run`] for the other servers (DDM's `S38CMD`).
+pub fn run_command(job: &Job, command: &str) -> (bool, Vec<JobMessage>) {
+    run(job, command)
+}
+
 /// Run a command as the job: whether it ended without an escape, and
 /// the messages it left in the job log.
 fn run(job: &Job, command: &str) -> (bool, Vec<JobMessage>) {

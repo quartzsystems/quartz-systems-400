@@ -4,98 +4,97 @@
 
 //! The DDM and DRDA commands in the job: the relational database
 //! directory (`ADDRDBDIRE`, `CHGRDBDIRE`, `RMVRDBDIRE`, `WRKRDBDIRE`),
-//! DDM files (`CRTDDMF`, `CHGDDMF`) and the server's attributes
-//! (`CHGDDMTCPA`). The payloads are `ddm::objects`'; they are kept as
-//! `KEYWORD(value)` text in data areas: the directory in
-//! `QUSRSYS/QRWRDBDIR`, the attributes in `QUSRSYS/QRWDDMTCPA`, a
-//! library's DDM files in its `QRWDDMF`.
-// BLOCKED(phase10): DDM files belong in *FILE objects of attribute DDM
-// and the directory in its own object; data areas stand in until the
-// database's file kinds take a DDM file.
+//! DDM files (`CRTDDMF`, `CHGDDMF`, `WRKDDMF`), server authentication
+//! entries (`ADDSVRAUTE`, `CHGSVRAUTE`, `RMVSVRAUTE`) and the server's
+//! attributes (`CHGDDMTCPA`). The payloads are `ddm::objects`'. The
+//! directory is the user space `QUSRSYS/QRWRDBDIR`; a DDM file is a
+//! `*FILE` of attribute `DDMF` the service keeps; the attributes are
+//! the server table's `*DDM` entry; authentication entries are the
+//! service's alone.
+
+use std::fmt::Write as _;
 
 use mi::Job;
-use stg::Client;
+use stg::tcp::{TcpOp, TcpReply};
+use stg::{Client, Shared};
 
 use cmd::{Resolved, Value};
 use ddm::objects::panel;
 use ddm::objects::{DdmFile, DdmTcpAttrs, RdbDirectory, RdbEntry};
 
 use super::Fail;
-use super::jobsite::leading_msgid;
 use crate::console::host::Host;
 
-/// The directory's data area.
+/// The directory's user space.
 const RDBDIR: (&str, &str) = ("QUSRSYS", "QRWRDBDIR");
-/// The attributes' data area.
-const TCPA: (&str, &str) = ("QUSRSYS", "QRWDDMTCPA");
-/// A library's DDM files.
-const DDMF: &str = "QRWDDMF";
-/// The data areas' length.
-const LEN: usize = 2000;
+/// The data area an older release kept the directory in.
+const OLD_RDBDIR: &str = "QRWRDBDIR";
+/// The user space's size.
+const SPACE: u64 = 65_536;
 
 /// Run one of the commands; `None` for a name that is not one.
 pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Option<Result<String, Fail>> {
+    let _ = job;
     Some(match r.name.as_str() {
-        "ADDRDBDIRE" => addrdbdire(job, host, r),
-        "CHGRDBDIRE" => chgrdbdire(job, host, r),
-        "RMVRDBDIRE" => rmvrdbdire(job, host, r),
+        "ADDRDBDIRE" => addrdbdire(host, r),
+        "CHGRDBDIRE" => chgrdbdire(host, r),
+        "RMVRDBDIRE" => rmvrdbdire(host, r),
         "WRKRDBDIRE" => Ok(wrkrdbdire(host, r)),
-        "CRTDDMF" => crtddmf(job, host, r),
-        "CHGDDMF" => chgddmf(job, host, r),
-        "CHGDDMTCPA" => chgddmtcpa(job, host, r),
+        "CRTDDMF" => crtddmf(host, r),
+        "CHGDDMF" => chgddmf(host, r),
+        "WRKDDMF" => Ok(wrkddmf(host, r)),
+        "CHGDDMTCPA" => chgddmtcpa(host, r),
+        "ADDSVRAUTE" => svraute(host, r, "ADD"),
+        "CHGSVRAUTE" => svraute(host, r, "CHG"),
+        "RMVSVRAUTE" => svraute(host, r, "RMV"),
         _ => return None,
     })
 }
 
-fn read(host: &Host, lib: &str, name: &str) -> String {
-    host.link
-        .borrow_mut()
-        .with(|l| l.da_read(name.into(), lib.into()))
-        .ok()
-        .map(|v| ccsid::from_ebcdic(&v.value).trim_end().to_string())
-        .unwrap_or_default()
+fn system_name(link: &Shared) -> String {
+    crate::work::ddm::system_name(link)
 }
 
-fn write(job: &mut Job, host: &Host, lib: &str, name: &str, text: &str, what: &str) -> Result<(), Fail> {
-    if text.len() > LEN {
-        return Err(Fail::new(
-            "CPF1088",
-            format!("{lib}/{name} holds {LEN} characters; this change needs {}.", text.len()),
-        ));
-    }
-    let change = format!(
-        "CHGDTAARA DTAARA({lib}/{name}) VALUE('{}')",
-        text.replace('\'', "''")
-    );
-    let out = crate::command::run(job, host, &change).text;
-    if leading_msgid(out.trim()).is_some_and(|id| id.starts_with("CPF")) {
-        let made = crate::command::run(
-            job,
-            host,
-            &format!("CRTDTAARA DTAARA({lib}/{name}) TYPE(*CHAR) LEN({LEN}) TEXT('{what}')"),
-        )
-        .text;
-        if let Some(id) = leading_msgid(made.trim()) {
-            return Err(Fail::new(id, made.trim().to_string()));
+/// The directory: the user space's text (a length, then the text), or
+/// the data area an older release kept.
+pub fn directory_of(link: &Shared) -> RdbDirectory {
+    let space = link.borrow_mut().with(|l| l.us_load(RDBDIR.1.into(), RDBDIR.0.into()));
+    let text = match space {
+        Some(b) if b.len() >= 4 => {
+            let n = u32::from_be_bytes([b[0], b[1], b[2], b[3]]) as usize;
+            String::from_utf8_lossy(b.get(4..4 + n).unwrap_or_default()).into_owned()
         }
-        let again = crate::command::run(job, host, &change).text;
-        if let Some(id) = leading_msgid(again.trim()) {
-            return Err(Fail::new(id, again.trim().to_string()));
-        }
-    }
-    Ok(())
-}
-
-fn system_name(host: &Host) -> String {
-    crate::display::dds::system_name(host)
+        _ => link
+            .borrow_mut()
+            .with(|l| l.da_read(OLD_RDBDIR.into(), RDBDIR.0.into()))
+            .ok()
+            .map(|v| ccsid::from_ebcdic(&v.value).trim_end().to_string())
+            .unwrap_or_default(),
+    };
+    RdbDirectory::decode(&text, &system_name(link))
 }
 
 pub(crate) fn directory(host: &Host) -> RdbDirectory {
-    RdbDirectory::decode(&read(host, RDBDIR.0, RDBDIR.1), &system_name(host))
+    directory_of(&host.link)
 }
 
-fn save_directory(job: &mut Job, host: &Host, d: &RdbDirectory) -> Result<(), Fail> {
-    write(job, host, RDBDIR.0, RDBDIR.1, &d.encode(), "Relational database directory")
+fn save_directory(host: &Host, d: &RdbDirectory) -> Result<(), Fail> {
+    let text = d.encode();
+    let mut bytes = u32::try_from(text.len()).unwrap_or(0).to_be_bytes().to_vec();
+    bytes.extend(text.as_bytes());
+    if bytes.len() as u64 > SPACE {
+        return Err(Fail::check("ADDRDBDIRE", "the relational database directory is full"));
+    }
+    let link = &host.link;
+    if link.borrow_mut().with(|l| l.us_load(RDBDIR.1.into(), RDBDIR.0.into())).is_none() {
+        link.borrow_mut()
+            .with(|l| l.us_create(RDBDIR.1.into(), RDBDIR.0.into(), SPACE, 0, "Relational database directory".into()))
+            .map_err(|e| Fail::new("CPF9870", e))?;
+    }
+    if !link.borrow_mut().with(|l| l.us_store(RDBDIR.1.into(), RDBDIR.0.into(), bytes)) {
+        return Err(Fail::new("CPF9870", "The relational database directory could not be written."));
+    }
+    Ok(())
 }
 
 fn value<'a>(r: &'a Resolved, kw: &str) -> Option<&'a Value> {
@@ -181,29 +180,29 @@ fn refused(e: &ddm::objects::Refused) -> Fail {
     Fail::new(e.id, e.text.clone())
 }
 
-fn addrdbdire(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
+fn addrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let name = elem(r, "RDB", 0).unwrap_or_default().to_ascii_uppercase();
     let mut e = RdbEntry::new(&name, "", "*SNA");
     apply_entry(&mut e, r);
     let mut d = directory(host);
     d.add(e).map_err(|e| refused(&e))?;
-    save_directory(job, host, &d)?;
+    save_directory(host, &d)?;
     Ok(format!("Entry {name} added to the relational database directory.\n"))
 }
 
-fn chgrdbdire(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
+fn chgrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let name = elem(r, "RDB", 0).unwrap_or_default().to_ascii_uppercase();
     let mut d = directory(host);
     d.change(&name, |e| apply_entry(e, r)).map_err(|e| refused(&e))?;
-    save_directory(job, host, &d)?;
+    save_directory(host, &d)?;
     Ok(format!("Entry {name} changed.\n"))
 }
 
-fn rmvrdbdire(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
+fn rmvrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let name = plain(r, "RDB").unwrap_or_default().to_ascii_uppercase();
     let mut d = directory(host);
     let n = d.remove(&name).map_err(|e| refused(&e))?;
-    save_directory(job, host, &d)?;
+    save_directory(host, &d)?;
     Ok(format!("{n} relational database directory entries removed.\n"))
 }
 
@@ -280,51 +279,117 @@ fn apply_ddmf(f: &mut DdmFile, r: &Resolved) {
     }
 }
 
-fn load_files(host: &Host, lib: &str) -> Vec<DdmFile> {
-    DdmFile::decode_all(&read(host, lib, DDMF))
+/// A service refusal as the command's escape: its leading message ID.
+fn service_fail(e: &str) -> Fail {
+    let id = super::jobsite::leading_msgid(e.trim()).unwrap_or("CPF9898");
+    Fail::new(id, e.trim().to_string())
 }
 
-fn crtddmf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let (lib, file) = file_name(r, "QGPL");
-    let lib = if lib == "*CURLIB" { "QGPL".to_string() } else { lib };
+fn crtddmf(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let (lib, file) = file_name(r, "*CURLIB");
     let mut f = DdmFile::new(&lib, &file, "", "", "*SNA");
     apply_ddmf(&mut f, r);
-    let mut files = load_files(host, &lib);
     let replace = plain(r, "REPLACE").is_none_or(|v| v == "Y" || v == "*YES");
-    if files.iter().any(|x| x.file == file) {
-        if !replace {
-            return Err(Fail::new("CPF7302", format!("{lib}/{file} exists already.")));
-        }
-        files.retain(|x| x.file != file);
-    }
-    files.push(f);
-    write(job, host, &lib, DDMF, &DdmFile::encode_all(&files), "DDM files")?;
+    let payload = f.encode();
+    let text = f.text.clone();
+    let lib = host
+        .link
+        .borrow_mut()
+        .with(|l| l.ddmf_put(lib.clone(), file.clone(), payload, text, true, replace))
+        .map_err(|e| service_fail(&e))?;
     Ok(format!("DDM file {file} created in library {lib}.\n"))
 }
 
-fn chgddmf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let (lib, file) = file_name(r, "QGPL");
-    let lib = if lib == "*LIBL" || lib == "*CURLIB" { "QGPL".to_string() } else { lib };
-    let mut files = load_files(host, &lib);
-    let Some(f) = files.iter_mut().find(|x| x.file == file) else {
-        return Err(Fail::new("CPF9812", format!("No DDM file {file} in library {lib}.")));
-    };
-    apply_ddmf(f, r);
-    write(job, host, &lib, DDMF, &DdmFile::encode_all(&files), "DDM files")?;
-    Ok(format!("DDM file {file} in library {lib} changed.\n"))
+fn chgddmf(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let (lib, file) = file_name(r, "*LIBL");
+    let (found, text) = host
+        .link
+        .borrow_mut()
+        .with(|l| l.ddmf_get(lib.clone(), file.clone()))
+        .map_err(|e| service_fail(&e))?;
+    let mut f = DdmFile::decode(&text).ok_or_else(|| Fail::new("CPF3204", format!("DDM file {found}/{file} is damaged.")))?;
+    apply_ddmf(&mut f, r);
+    let payload = f.encode();
+    let t = f.text.clone();
+    host.link
+        .borrow_mut()
+        .with(|l| l.ddmf_put(found.clone(), file.clone(), payload, t, false, false))
+        .map_err(|e| service_fail(&e))?;
+    Ok(format!("DDM file {file} in library {found} changed.\n"))
 }
 
-fn chgddmtcpa(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
-    let mut a = DdmTcpAttrs::decode(&read(host, TCPA.0, TCPA.1));
-    if let Some(v) = plain(r, "AUTOSTART").filter(|v| v != "*SAME") {
-        a.autostart = v == "*YES";
+/// The DDM files a `FILE(lib/name)` names (`*ALL` and generic names).
+pub fn ddm_files(link: &Shared, lib: &str, name: &str) -> Vec<(String, DdmFile)> {
+    let pattern = if name.is_empty() || name == "*ALL" { "*ALL".to_string() } else { name.to_string() };
+    let objs = link.borrow_mut().with(|l| l.list_objects(lib.into(), pattern, "*FILE".into()));
+    let mut out = Vec::new();
+    for o in objs.into_iter().filter(|o| o.attr.trim() == mi::io::DDM_ATTRIBUTE) {
+        if let Ok((l, text)) = link.borrow_mut().with(|c| c.ddmf_get(o.lib.clone(), o.name.clone()))
+            && let Some(f) = DdmFile::decode(&text)
+        {
+            out.push((l, f));
+        }
     }
+    out
+}
+
+fn wrkddmf(host: &Host, r: &Resolved) -> String {
+    let (lib, file) = file_name(r, "*LIBL");
+    let files = ddm_files(&host.link, &lib, &file);
+    let mut out = String::from("                              Work with DDM Files\n\n");
+    out.push_str("                                                              Remote\n");
+    out.push_str(" Opt  Local File            Remote File                       Location\n");
+    for (l, f) in &files {
+        let local = format!("{l}/{}", f.file);
+        let location = if f.rmtloc == "*RDB" { f.rdb.clone() } else { f.rmtloc.clone() };
+        let _ = writeln!(out, "      {local:<21} {:<33} {}", f.rmtfile, location.trim_matches('\''));
+    }
+    if files.is_empty() {
+        let _ = writeln!(out, "  (No DDM files)");
+    }
+    out
+}
+
+fn chgddmtcpa(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let current = crate::work::ddm::server::attrs(&host.link);
+    let mut a = current;
     if let Some(v) = plain(r, "PWDRQD").filter(|v| v != "*SAME") {
         a.pwdrqd = DdmTcpAttrs::normal_pwdrqd(&v);
     }
     if let Some(v) = plain(r, "ENCALG").filter(|v| v != "*SAME") {
         a.encalg = v;
     }
-    write(job, host, TCPA.0, TCPA.1, &a.encode(), "DDM TCP/IP attributes")?;
-    Ok("DDM TCP/IP attributes changed.\n".into())
+    let autostart = match plain(r, "AUTOSTART").as_deref() {
+        Some("*YES") => Some(true),
+        Some("*NO") => Some(false),
+        _ => None,
+    };
+    let op = TcpOp::SetServer {
+        server: "*DDM".into(),
+        autostart,
+        bag: a.to_bag(),
+    };
+    match host.link.borrow_mut().with(|l| l.tcp(op)) {
+        TcpReply::Done { .. } => Ok("DDM TCP/IP attributes changed.\n".into()),
+        TcpReply::Failed { note } => Err(Fail::new(&note.msgid, note.line())),
+        other => Err(Fail::check("CHGDDMTCPA", format!("unexpected answer {other:?}"))),
+    }
+}
+
+fn svraute(host: &Host, r: &Resolved, op: &str) -> Result<String, Fail> {
+    let user = plain(r, "USRPRF").unwrap_or_else(|| "*CURRENT".into());
+    let server = plain(r, "SERVER").unwrap_or_default();
+    if server.is_empty() {
+        return Err(Fail::new("CPD0071", "SERVER is needed."));
+    }
+    let keep = |v: Option<String>| v.filter(|v| !v.eq_ignore_ascii_case("*SAME"));
+    let (usrid, password) = if op == "RMV" {
+        (None, None)
+    } else {
+        (keep(plain(r, "USRID")), keep(plain(r, "PASSWORD")))
+    };
+    host.link
+        .borrow_mut()
+        .with(|l| l.svraute(op.into(), user, server, usrid, password))
+        .map_err(|e| service_fail(&e))
 }

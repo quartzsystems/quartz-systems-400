@@ -1,0 +1,24 @@
+                        Retrieve WSCST source (RTVWSCST)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device type  . . . . . . . . . .                 *TRANSFORM, *CTXFORM, 3101... 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -161,6 +161,31 @@ fn local_host(link: &Shared) -> String {
         .map_or_else(|| "qs400".to_string(), |v| ccsid::from_ebcdic(&v.data).trim().to_ascii_lowercase())
 }
 
+/// The customizing object `SNDTCPSPLF` prints through: `WSCST(lib/name)`
+/// with `MFRTYPMDL(*WSCST)`, else the shipped object of a model that has
+/// one (`print::wscst::shipped`); empty for none. A named object that
+/// is not there is `CPF9801`.
+fn wscst_of(link: &Shared, (name, lib): &(String, String), mfrtypmdl: &str) -> Result<Vec<u8>, Fail> {
+    let name = name.trim().to_ascii_uppercase();
+    if mfrtypmdl.eq_ignore_ascii_case("*WSCST") {
+        if name.is_empty() || name == "*NONE" {
+            return Err(Fail::new("CPD0084", "MFRTYPMDL(*WSCST) needs WSCST(name)."));
+        }
+        let lib = if lib.trim().is_empty() { "*LIBL".to_string() } else { lib.trim().to_ascii_uppercase() };
+        let q = format!("{lib}/{name}");
+        return link
+            .borrow_mut()
+            .with(|l| l.wm_object(q.clone(), "*WSCST".into()))
+            .map_err(|e| Fail::new("CPF9801", format!("Object {q} type *WSCST not found: {e}")));
+    }
+    if print::transform::Model::parse(mfrtypmdl).is_some() {
+        return Ok(Vec::new());
+    }
+    Ok(print::wscst::shipped::for_mfrtypmdl(mfrtypmdl)
+        .and_then(|n| link.borrow_mut().with(|l| l.wm_object(format!("QSYS/{n}"), "*WSCST".into())).ok())
+        .unwrap_or_default())
+}
+
 /// `SNDTCPSPLF` and `LPR`.
 fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
     let parms = parms_of(r);
@@ -199,9 +224,7 @@ fn sndtcpsplf(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> 
         seppage: parms.name("SEPPAGE") != "*NO",
         transform: parms.name("TRANSFORM") != "*NO",
         mfrtypmdl: parms.name("MFRTYPMDL"),
-        // BLOCKED(phase10): WSCST(name) is not read here; *WSCST
-        // models print as plain text.
-        wscst: Vec::new(),
+        wscst: wscst_of(&host.link, &parms.qual("WSCST"), &parms.name("MFRTYPMDL"))?,
         local_host: local_host(&host.link),
     };
     let target = crate::printmap::target_of(&dest).ok_or_else(|| not_sent("no destination"))?;

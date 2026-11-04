@@ -7868,3 +7868,45 @@ sev = 40
 text = "File &1 in &2 cannot be changed while debugging with UPDPROD(*NO)."
 help = "The file is in a production library. Start debug with UPDPROD(*YES), or work on a copy in a test library."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF7304"
+sev = 40
+text = "File &1 in library &2 was left as it was."
+help = "The change could not be made; the message before this one says why."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2117"
+sev = 40
+text = "&1 objects of type *&3 were deleted; &2 were not."
+help = "The messages before this one name each object that was not deleted and why."
+vars = ["*BIN 4", "*BIN 4", "*CHAR 7"]
+
+[[msg]]
+id = "CPF5025"
+sev = 40
+text = "A read went past the start or the end of member &3 of file &1 in library &2."
+help = "Position the file again (SETLL or SETGT) before reading on."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9190"
+sev = 40
+text = "The remote system did not accept the DDM connection for &1."
+help = "Add a server authentication entry with ADDSVRAUTE for the relational database or for QDDMDRDASERVER, with a user and password the remote system accepts, and check its relational database directory entry."
+vars = ["*CHAR 18"]
+
+[[msg]]
+id = "CPF9162"
+sev = 40
+text = "No DDM connection could be made to &1."
+help = "Check that the remote system is reachable, that its DDM server is started (STRTCPSVR *DDM), and that the port is the one the DDM file or directory entry names."
+vars = ["*CHAR 254"]
+
+[[msg]]
+id = "CPF5149"
+sev = 40
+text = "Operation &1 is not supported for remote file &2."
+help = "A DDM file reads, writes, updates and deletes records; position it with SETLL *START, or read it by key."
+vars = ["*CHAR 10", "*CHAR 10"]

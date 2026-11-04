@@ -1,0 +1,56 @@
+[[golden]]
+name = "prompt-addsvraute"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+
+[[golden]]
+name = "prompt-chgsvraute"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+
+[[golden]]
+name = "prompt-rmvsvraute"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+
+[[golden]]
+name = "prompt-dspsvraute"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+
+[[golden]]
+name = "prompt-rtvwscst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+
+[[golden]]
+name = "prompt-dltwscst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+
+[[golden]]
+name = "prompt-wrkddmf"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-03"
+script = "ddm-wscst"
+width = 80
+

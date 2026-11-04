@@ -791,6 +791,26 @@ ipc::rpc! {
     /// The machine's identity: `QSRLNBR`, `QMODEL` and what the firmware
     /// reports (`hwrsrc::dmi`).
     1422 => fn machine / Machine () -> MachineInfo;
+    // --- DDM and DRDA (1460-1469; net/ddm, stgsvc/ddm.rs)
+    /// Prove `user` to the DDM server with the password itself (the
+    /// DRDA mechanisms that carry it): checked as a sign-on; with `swap`
+    /// the job then runs as the user.
+    1460 => fn ddm_signon / DdmSignon (user: String, password: String, swap: bool) -> Result<HostSignedOn, HostRefused>;
+    /// Store the DDM file `lib/name` (a `*FILE` of attribute `DDMF`)
+    /// with `payload`, `ddm::objects::DdmFile`'s text: `create` makes it
+    /// (`replace` deletes one there first), else it must exist. The
+    /// library it is in.
+    1461 => fn ddmf_put / DdmfPut (lib: String, name: String, payload: String, text: String, create: bool, replace: bool) -> Result<String, String>;
+    /// The DDM file `lib/name` (`*LIBL` searched): its library and
+    /// payload text.
+    1462 => fn ddmf_get / DdmfGet (lib: String, name: String) -> Result<(String, String), String>;
+    /// `ADDSVRAUTE`, `CHGSVRAUTE` (`op` `ADD`, `CHG`) of `user`'s entry
+    /// for `server`: the remote user ID and password (`None` keeps it);
+    /// `RMV` removes it. The completion text.
+    1463 => fn svraute / SvrAutE (op: String, user: String, server: String, usrid: Option<String>, password: Option<String>) -> Result<String, String>;
+    /// The job user's server authentication entry for `server`: the
+    /// remote user ID and password (empty when none is kept).
+    1464 => fn svraute_get / SvrAutEGet (server: String) -> Option<(String, String)>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

@@ -49,7 +49,7 @@ it runs as `QTMPLPD`, the profile LPD spooled files belong to).
 | `*HOSTSVR` | `QZSOSMAPD`, `QZSOSGND`, `QZSCSRVSD`, `QZDASRVSD` (`QSERVER`), `QZHQSRVD`, `QPWFSERVSD` (`QSERVER`), `QNPSERVD`, `QZRCSRVSD`; prestart `QZSOSIGN`, `QZSCSRVS`, `QZDASOINIT`, `QZHQSSRV`, `QPWFSERVSO`, `QNPSERVS`, `QZRCSRVS` (`QUSER`) | 449, 8470-8476, 9470-9476 TLS | | (the host servers' `QS400_*_SERVER` IDs) | | built (`servers::framework::HostSvr`) |
 | `*NTP` | `QTOTNTP` (`QNTP`, `QSYSWRK`) | udp 123 | `CHGNTPA` | | | built |
 | `*LPD` | `QTLPD00nnn` (`QTMPLPD`, `QSYSWRK`) | 515 | `CHGLPDA` | `QS400_LPD_SERVER` | | built |
-| `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QS400_DDM_DRDA_SERVER` | | blocked |
+| `*DDM` | `QRWTLSTN` (`QUSER`, `QSYSWRK`), prestart `QRWTSRVR` (`QUSER`, `QUSRWRK`) | 446, 447, 448 TLS | `CHGDDMTCPA` | `QS400_DDM_DRDA_SERVER` | | built (Phase 12; docs/DDM.md) |
 | `*SMTP`, `*SNMP`, `*ROUTED`, `*BOOTP`, `*TFTP`, `*REXEC`, `*DHCP`, `*DNS`, `*POP` | | | | | | not planned (docs/PHASE10.md) |
 
 `Readiness::Slot` means the server is being built elsewhere and starts
@@ -346,16 +346,16 @@ SMTP server; `CHGSMTPA` keeps its other attributes as given.
 
 ## `*DDM`
 
-`net/ddm`'s application server (`server::Session` over `SqlBackend`,
-`FileBackend` and `Authenticator`) is built; no implementation of those
-three traits over the storage service exists yet, and a listener with
-the null backends would refuse every request. `*DDM` stays
-`Readiness::Blocked` until they exist: `QRWTLSTN` then listens on 446
-(and 447, 448 with TLS) and hands each connection to a `QRWTSRVR` job
-reading chains with `ddm::wire::read_chain` and answering with
-`Session::handle`. `CHGDDMTCPA AUTOSTART` is kept in `QUSRSYS/QRWDDMTCPA`
-by `net/ddm`, not in the server table; the two meet when `*DDM` is
-built.
+`STRTCPSVR *DDM` starts `QRWTLSTN` (role `DDM`,
+`work/qsjob/src/work/ddm/listener.rs`) through `Standard`. It listens
+on 446, 447 and 448 (TLS) and hands each connection through the
+descriptor relay to a `QRWTSRVR` prestart job of `QUSRWRK`, which reads
+chains with `ddm::wire::read_chain` and answers them with
+`Session::handle` over the job's backends (sign-on, SQL, record
+access, commands; `docs/DDM.md`, "The server jobs"). `CHGDDMTCPA`
+writes the server table's `*DDM` entry: `AUTOSTART` the table's own,
+`PWDRQD` and `ENCALG` its bag; the server job reads them for each
+connection.
 
 ## Tests
 

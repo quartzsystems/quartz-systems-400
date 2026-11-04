@@ -204,10 +204,17 @@ pub fn status(system: &System, w: &Writer) -> &'static str {
     }
 }
 
-/// The `*WSCST` payload `lib/name` names; empty when blank or missing.
-fn wscst_payload(system: &mut System, q: &str) -> Vec<u8> {
+/// The `*WSCST` payload `lib/name` names; when none is named, the
+/// shipped object `QSYS/QWP...` of a model other than the HP lasers
+/// (`print::wscst::shipped`); empty when there is none.
+fn wscst_payload(system: &mut System, q: &str, mfrtypmdl: &str) -> Vec<u8> {
     if q.is_empty() {
-        return Vec::new();
+        if print::transform::Model::parse(mfrtypmdl).is_some() {
+            return Vec::new();
+        }
+        return print::wscst::shipped::for_mfrtypmdl(mfrtypmdl)
+            .and_then(|n| super::sbs::wm_object(system, &format!("QSYS/{n}"), "*WSCST").ok())
+            .unwrap_or_default();
     }
     super::sbs::wm_object(system, q, "*WSCST").unwrap_or_default()
 }
@@ -221,7 +228,7 @@ pub fn target(system: &mut System, name: &str) -> Result<WtrDest, String> {
         .ok_or_else(|| format!("CPF3313 writer {name} is not started"))?;
     if w.remote {
         let (_, oq, _) = spool::on_queue(system, &w.outq)?;
-        let wscst = wscst_payload(system, &oq.remote.wscst);
+        let wscst = wscst_payload(system, &oq.remote.wscst, &oq.remote.mfrtypmdl);
         return Ok(WtrDest::Remote {
             host: oq.remote_host(),
             queue: oq.rmtprtq.clone(),
@@ -241,7 +248,7 @@ pub fn target(system: &mut System, name: &str) -> Result<WtrDest, String> {
     let Some(l) = d.printer.filter(lan_ip) else {
         return Ok(WtrDest::Capture);
     };
-    let wscst = wscst_payload(system, &l.wscst);
+    let wscst = wscst_payload(system, &l.wscst, &l.mfrtypmdl);
     Ok(WtrDest::Lan {
         host: l.rmtlocname.clone(),
         port: u16::try_from(l.port).unwrap_or(0),

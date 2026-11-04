@@ -132,6 +132,9 @@ fn serve(h: &mut dyn Handler, stream: TcpStream, tls: Option<Arc<rustls::ServerC
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let mut ctl = ctl;
     let program = start.program.rsplit('/').next().unwrap_or("").to_string();
+    if program == crate::work::ddm::listener::SERVER_PROGRAM {
+        crate::work::ddm::server::run(ctl, link, start);
+    }
     let Some(server) = hostserver::jobs::server_of_prestart(&program) else {
         crate::start::end(&mut ctl, &format!("{program} serves no host server"));
     };

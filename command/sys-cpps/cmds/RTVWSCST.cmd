@@ -7,7 +7,8 @@
              CMD        PROMPT('Retrieve WSCST') MAXPOS(3) ALLOW(*ALL) +
                           HLPPNLGRP(QHUCCMD) HLPID(RTVWSCST)
              PARM       KWD(DEVTYPE) TYPE(*CHAR) LEN(10) RSTD(*YES) +
-                          MIN(1) VALUES(*TRANSFORM) +
+                          MIN(1) VALUES(*TRANSFORM *CTXFORM 3101 3151 3161 +
+                          3162 3163 3164) +
                           PROMPT('Device type')
              PARM       KWD(MFRTYPMDL) TYPE(*CHAR) LEN(15) +
                           PMTCTL(PT) PROMPT('Manufacturer type and model')

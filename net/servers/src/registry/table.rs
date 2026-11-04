@@ -116,7 +116,7 @@ pub static SPECS: &[ServerSpec] = &[
         special: "*DDM",
         name: "DDM",
         jobs: &[
-            job("QRWTLSTN", "QUSER", "QSYSWRK", JobKind::Listener, ""),
+            job("QRWTLSTN", "QUSER", "QSYSWRK", JobKind::Listener, "DDM"),
             job("QRWTSRVR", "QUSER", "QUSRWRK", JobKind::Prestart, ""),
         ],
         ports: &[tcp(446, false), tcp(447, false), tcp(448, true)],
@@ -125,9 +125,7 @@ pub static SPECS: &[ServerSpec] = &[
         exit_points: &[],
         start_subsystem: false,
         instances: &[],
-        readiness: Readiness::Blocked(
-            "the DDM server's SQL, file and password backends over the storage service",
-        ),
+        readiness: Readiness::Built,
     },
     ServerSpec {
         special: "*NTP",

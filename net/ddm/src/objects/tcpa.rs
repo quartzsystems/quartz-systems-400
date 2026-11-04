@@ -75,6 +75,23 @@ impl DdmTcpAttrs {
         .join(" ")
     }
 
+    /// From the server table's bag of `*DDM` (`PWDRQD`, `ENCALG`); the
+    /// table keeps `AUTOSTART` itself.
+    pub fn from_bag(bag: &[(String, String)]) -> Self {
+        let d = Self::default();
+        let get = |k: &str| bag.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str());
+        Self {
+            autostart: d.autostart,
+            pwdrqd: get("PWDRQD").map_or(d.pwdrqd, Self::normal_pwdrqd),
+            encalg: get("ENCALG").map_or(d.encalg, str::to_string),
+        }
+    }
+
+    /// The server table's bag of `*DDM`.
+    pub fn to_bag(&self) -> Vec<(String, String)> {
+        vec![("PWDRQD".into(), self.pwdrqd.clone()), ("ENCALG".into(), self.encalg.clone())]
+    }
+
     /// From the stored text (the defaults where it is silent).
     pub fn decode(text: &str) -> Self {
         let p = parse(text);

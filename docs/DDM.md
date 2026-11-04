@@ -252,27 +252,111 @@ continue to the end), `close`, `execute_immediate`, `execute`,
 
 ## Objects and commands
 
-The relational database directory, DDM files and the server's
-attributes are `ddm::objects` payloads encoded as `KEYWORD(value)`
-text. The commands run in the job (`work/qsjob/src/command/ddm.rs`):
+The commands run in the job (`work/qsjob/src/command/ddm.rs`):
 `ADDRDBDIRE`, `CHGRDBDIRE`, `RMVRDBDIRE` (a name, a generic name,
 `*ALL`, `*ALLRMT`), `WRKRDBDIRE` (the list display of
-`objects::panel`, option 5 its detail), `CRTDDMF`, `CHGDDMF` and
-`CHGDDMTCPA`. A directory never written holds the `*LOCAL` entry for
-the system name, which is how install creates it.
+`objects::panel`, option 5 its detail), `CRTDDMF`, `CHGDDMF`,
+`WRKDDMF`, `ADDSVRAUTE`, `CHGSVRAUTE`, `RMVSVRAUTE` and `CHGDDMTCPA`.
+The payloads are `ddm::objects`', encoded as `KEYWORD(value)` text.
 
-Deviations, each marked `BLOCKED(phase10)` where it lives:
+- **The directory** is the user space `QUSRSYS/QRWRDBDIR` (a four-byte
+  length, then the entries, one a line; 64 KiB). A directory never
+  written holds the `*LOCAL` entry for the system name, which is how
+  install creates it. The data area of the same name an earlier
+  release kept is still read when the user space is missing.
+- **A DDM file** is a `*FILE` of attribute `DDMF` (as `DSPOBJD` shows
+  IBM's) whose payload is `DdmFile`'s text; the service keeps it
+  (`ddmf_put`, `ddmf_get`, `lic/slic/src/stgsvc/ddm.rs`). `DSPFD` shows
+  the header and the DDM file attributes in the rows and keywords the
+  primary prints (`lic/slic/src/svc/db/ddmf.rs`,
+  `tools/conformance/golden/phase12/oracle/ddm-wscst-screens.txt`);
+  `DLTF` deletes one; `WRKDDMF` lists them as text.
+- **The server's attributes** are the server table's `*DDM` entry
+  (`AUTOSTART` the table's own, `PWDRQD` and `ENCALG` in its bag), so
+  `STRTCP` starts the server when `AUTOSTART(*YES)`.
+- **Server authentication entries** (`ADDSVRAUTE`) are the service's
+  alone: `QSYS/QSYSVRAUT`, `*PUBLIC *EXCLUDE`, read only through
+  `svraute_get`, which answers the job user's own entry. A password is
+  kept only when `QRETSVRSEC` is `1`, as on IBM i. Changing another
+  profile's entries needs `*SECADM`.
 
-- The directory is kept in the data area `QUSRSYS/QRWRDBDIR`, a
-  library's DDM files in its data area `QRWDDMF`, the attributes in
-  `QUSRSYS/QRWDDMTCPA`; 2,000 characters hold about a dozen entries.
-  DDM files belong in `*FILE` objects of attribute `DDM`, which the
-  database's file kinds do not have yet, so opening one does not yet
-  reach the remote file.
+## The server jobs
+
+`STRTCPSVR *DDM` starts `QRWTLSTN` in `QSYSWRK` as `QUSER`
+(`work/qsjob/src/work/ddm/listener.rs`). It listens on 446 and 447,
+and 448 with TLS (the certificate of application
+`QS400_DDM_DRDA_SERVER`), and hands each connection through the
+descriptor relay to a `QRWTSRVR` prestart job of `QUSRWRK` (the entry
+the primary shows: `QGPL/QDFTSVR`, `QSYS/QSYSCLS20`, one job, two more
+at a time, `MAXUSE(200)`). The server job (`server.rs`) answers the
+connection with `Session` over three backends (`backend.rs`):
+
+- `JobAuth`: `SECCHK` as a sign-on (`QMAXSIGN`, audit): a substitute
+  through `host_signon`, a password (the DES mechanisms) through
+  `ddm_signon`; the job then runs as the user until the connection
+  ends (`host_reset`).
+- `JobSql`: the job's embedded SQL session in the service, scope
+  `QRWTSRVR:`, each section's statement `S<collection>_<package>_<n>`
+  and its cursor `C...`; `DESCRIBE` rows become the wire's columns.
+- `JobFiles`: the job's open data paths (`RemoteIo`); the field count
+  and the records come from the file's description. `S38CMD` runs the
+  command through the analyzer as the job.
+
+## The requester behind DDM files
+
+An open the service resolves to a DDM file (through an override's
+`TOFILE` too) is not opened there: `StoreIo` answers
+`mi::io::DdmRedirect` (message ID `*DDMF`), with the DDM file's
+description and the record format of the file the program declared.
+The job's `DdmIo` (`work/qsjob/src/work/ddm/requester.rs`, around the
+service's files) then finds the system (`RMTLOCNAME(name *IP)` and
+`PORT`, or `RMTLOCNAME(*RDB)` through the directory; `*LOCAL` is
+127.0.0.1), takes the user and password from the job user's server
+authentication entry for the RDB, then `QDDMDRDASERVER`, then
+`QDDMSERVER`, connects without `ACCRDB` and opens the remote member
+with `S38OPEN`. `READ` is `S38GET` (first, then next), `CHAIN` by key
+`S38GETK` with the local format's key fields, `WRITE` `S38PUTM`,
+`UPDATE` `S38UPDAT`, `DELETE` `S38DEL`, `SETLL *START` starts over;
+other operations end with `CPF5149`. A missing entry or a refused
+sign-on is `CPF9190`, an unreachable system `CPF9162`.
+
+Deviations:
+
+- Programs are compiled against a local file of the remote file's
+  format and pointed at the DDM file with `OVRDBF ... TOFILE()`: the
+  compilers do not fetch a remote format (`CRTBNDCL` of a `DCLF` naming
+  a DDM file refuses it). `LVLCHK(*RMTFILE)` is kept, not checked.
+- `CHAIN` by relative record number, `READP`, `READE`, `SETLL`/`SETGT`
+  by key and `FEOD` through a DDM file are not built (`CPF5149`, `FEOD`
+  does nothing).
 - The directory's message IDs are generic (`CPF9801`, `CPF9870`); the
   IBM IDs for these refusals are an open question.
-- WRKRDBDIRE's options other than 5 and its print output are not
-  built; the command shows the list as text.
+- WRKRDBDIRE's options other than 5, `WRKDDMF`'s options and both
+  commands' print output are not built; the commands show the lists as
+  text. `DSPSVRAUTE` (V7R1 has it) is not shipped.
+
+## Against the primary
+
+The primary (V7R1M0) answers 446; its directory holds only its
+`*LOCAL` entry `S062B175`, and nothing on it was changed.
+`tools/conformance/tests/ddm_primary.rs` (ignored; it needs the
+oracle) runs QS/400's requester against it: SQL through a package it
+binds in `QSTEST`, then the record access a DDM file does, on a table
+and index it makes there, and removes them and the package at the end
+with `S38CMD`. What V7R1 showed that V7R5 had not:
+
+- `S38OPEN` may answer an informational `S38MSGRM` (`CPF4028`, the open
+  made `SEQONLY(*NO)`) with a good open; only severity 8 and up fails it.
+- `S38GETK` needs the control list entry `0x0F` (two zero bytes) after
+  the format, as JTOpen sends it; without it the key field count is
+  misread (`CPF5123`).
+- A statement prepared in a section the package does not hold ends the
+  server job's query with `-901` (`MCH3601` in `QSQROUTA`); bind enough
+  sections first (`--bind` of the driver).
+
+Pointing a QS/400 DDM file at the primary needs entries on the QS/400
+side only: `ADDRDBDIRE RDB(S062B175) RMTLOCNAME('host' *IP)`
+and `ADDSVRAUTE USRPRF(*CURRENT) SERVER(S062B175) USRID() PASSWORD()`.
 
 ## Tables
 

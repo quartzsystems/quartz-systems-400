@@ -965,6 +965,7 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                     host_pje("QZSOSIGN", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
                     host_pje("QZSCSRVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
                     host_pje("QNPSERVS", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
+                    host_pje("QRWTSRVR", q("QDFTSVR", "QGPL"), q("QSYSCLS20", "QSYS"), 200),
                     host_pje("QZHQSSRV", q("QZBSJOBD", "QSYS"), q("QCASERVR", "QGPL"), 200),
                     host_pje("QZDASOINIT", q("QDFTSVR", "QGPL"), q("QPWFSERVER", "QSYS"), 200),
                     host_pje("QZDASSINIT", q("QDFTSVR", "QGPL"), q("QPWFSERVER", "QSYS"), 200),

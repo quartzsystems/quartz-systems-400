@@ -1,0 +1,34 @@
+# Phase 12: the end of QSYS's *WSCST list (F18, then back a page at a time).
+# Nothing is changed.
+wait "Sign On"
+signon
+wait "Main Menu"
+timeout 20000
+continue
+key eraseinput
+type dspobjd obj(qsys/*all) objtype(*wscst)
+key enter
+settle 3000
+key f18
+settle 2000
+show
+key pgup
+settle 1200
+show
+key pgup
+settle 1200
+show
+key pgup
+settle 1200
+show
+key pgup
+settle 1200
+show
+key pgup
+settle 1200
+show
+key pgup
+settle 1200
+show
+key f3
+settle 1500

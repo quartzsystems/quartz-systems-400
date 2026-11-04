@@ -37,6 +37,7 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
         "crtdevprt" | "chgdevprt" => Some(prtdev::crt_chg(system, me, cmd, &p)),
         "crtwscst" => Some(prtdev::crtwscst(system, me, &p)),
         "rtvwscst" => Some(prtdev::rtvwscst(system, &p)),
+        "dltwscst" => Some(prtdev::dltwscst(system, me, &p)),
         _ => splcmd::command(system, me, cmd, line),
     };
     r.map(|r| match r {

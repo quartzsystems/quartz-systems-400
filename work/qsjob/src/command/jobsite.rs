@@ -114,7 +114,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "FTP" | "STRTCPFTP" => return super::ftp::run(job, host, r, out),
         // --- DDM and DRDA (command/ddm.rs)
         "ADDRDBDIRE" | "CHGRDBDIRE" | "RMVRDBDIRE" | "WRKRDBDIRE" | "CRTDDMF" | "CHGDDMF"
-        | "CHGDDMTCPA" => {
+        | "WRKDDMF" | "CHGDDMTCPA" | "ADDSVRAUTE" | "CHGSVRAUTE" | "RMVSVRAUTE" => {
             if let Some(res) = super::ddm::run(job, host, r) {
                 return res;
             }

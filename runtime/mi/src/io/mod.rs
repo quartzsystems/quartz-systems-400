@@ -73,6 +73,84 @@ impl IoFail {
     }
 }
 
+/// The extended attribute of a DDM file (`*FILE`, `DDMF`).
+pub const DDM_ATTRIBUTE: &str = "DDMF";
+
+/// The message ID of an open that reached a DDM file: the job opens
+/// the remote file itself ([`DdmRedirect`] in the data).
+pub const DDM_OPEN: &str = "*DDMF";
+
+/// A record format as the program declared it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DdmFormat {
+    /// The format's name.
+    pub name: String,
+    /// Its record length.
+    pub rec_len: u32,
+    /// Its fields.
+    pub fields: u32,
+    /// Its key fields.
+    pub keys: u32,
+}
+
+/// What an open of a DDM file answers instead of opening.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DdmRedirect {
+    /// The DDM file.
+    pub file: String,
+    /// Its library.
+    pub library: String,
+    /// Its description (`ddm::objects::DdmFile`'s text).
+    pub payload: String,
+    /// The format of the file the program declared, when that is a
+    /// database file (an override's `TOFILE` named the DDM file).
+    pub local: Option<DdmFormat>,
+}
+
+impl DdmRedirect {
+    /// As the failure an open returns.
+    #[must_use]
+    pub fn to_fail(&self) -> IoFail {
+        let local = self
+            .local
+            .as_ref()
+            .map_or_else(String::new, |f| format!("{} {} {} {}", f.name, f.rec_len, f.fields, f.keys));
+        IoFail {
+            status: 1299,
+            msgid: DDM_OPEN.into(),
+            data: format!("{}\n{}\n{}\n{}", self.file, self.library, local, self.payload).into_bytes(),
+        }
+    }
+
+    /// From such a failure.
+    #[must_use]
+    pub fn of(f: &IoFail) -> Option<Self> {
+        if f.msgid != DDM_OPEN {
+            return None;
+        }
+        let text = String::from_utf8_lossy(&f.data).into_owned();
+        let mut parts = text.splitn(4, '\n');
+        let file = parts.next()?.to_string();
+        let library = parts.next()?.to_string();
+        let mut words = parts.next()?.split(' ');
+        let local = match (words.next(), words.next(), words.next(), words.next()) {
+            (Some(name), Some(len), Some(fields), Some(keys)) if !name.is_empty() => Some(DdmFormat {
+                name: name.to_string(),
+                rec_len: len.parse().ok()?,
+                fields: fields.parse().ok()?,
+                keys: keys.parse().ok()?,
+            }),
+            _ => None,
+        };
+        Some(Self {
+            file,
+            library,
+            payload: parts.next().unwrap_or("").to_string(),
+            local,
+        })
+    }
+}
+
 /// A record operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IoOp {

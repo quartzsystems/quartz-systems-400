@@ -1,0 +1,470 @@
+Captured from the primary oracle (V7R1M0, system S062B175) on 2026-11-03 by
+tools/conformance/probes/phase12/ddm-wscst.tn: DSPOBJD QSYS/*ALL *WSCST,
+QUSRWRK's prestart job entries, WRKRDBDIRE, DSPFD and WRKDDMF of a DDM file
+(QSTEST/QSDDMT, deleted after). Blank screen rows are dropped.
+
+--- screen (cursor 5,37; unlocked) ---
+|                    Display Server Auth Entries (DSPSVRAUTE)                    |
+| Type choices, press Enter.                                                     |
+| User profile . . . . . . . . . .   *CURRENT      Name, *CURRENT                |
+| Output . . . . . . . . . . . . .   *             *, *PRINT                     |
+|                                                                         Bottom |
+| F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    |
+| F24=More keys                                                                  |
+| Already at bottom of area.                                                     |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QCTXPDF     *WSCST    CTXFORM                 8192                        |
+|      QCTXPDFMBD  *WSCST    CTXFORM                 8192                        |
+|      QCTXPDFWT   *WSCST    CTXFORM                12288                        |
+|      QWPCPQPM20  *WSCST    TRANSFORM               8192                        |
+|      QWPDEFAULT  *WSCST    TRANSFORM               8192                        |
+|      QWPEAP2250  *WSCST    TRANSFORM               8192                        |
+|      QWPEAP3250  *WSCST    TRANSFORM              12288                        |
+|      QWPEAP5500  *WSCST    TRANSFORM              12288                        |
+|      QWPEFX1170  *WSCST    TRANSFORM              12288                        |
+|      QWPEFX5000  *WSCST    TRANSFORM              12288                        |
+|      QWPEFX850   *WSCST    TRANSFORM               8192                        |
+|      QWPELQ1070  *WSCST    TRANSFORM              12288                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+| (C) COPYRIGHT IBM CORP. 1980, 2009.                                            |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPELQ1170  *WSCST    TRANSFORM              12288                        |
+|      QWPELQ2550  *WSCST    TRANSFORM              12288                        |
+|      QWPELQ510   *WSCST    TRANSFORM               8192                        |
+|      QWPELQ860   *WSCST    TRANSFORM              12288                        |
+|      QWPELX810   *WSCST    TRANSFORM               8192                        |
+|      QWPEPLPCL4  *WSCST    TRANSFORM               8192                        |
+|      QWPEPLPCL5  *WSCST    TRANSFORM               8192                        |
+|      QWPESCP     *WSCST    TRANSFORM               8192                        |
+|      QWPESQ1170  *WSCST    TRANSFORM              12288                        |
+|      QWPGIF      *WSCST    TRANSFORM               8192                        |
+|      QWPHPCOLOR  *WSCST    TRANSFORM              12288                        |
+|      QWPHPDBCS   *WSCST    TRANSFORM              12288                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPHPDSKJT  *WSCST    TRANSFORM               8192                        |
+|      QWPHPEURO   *WSCST    TRANSFORM              12288                        |
+|      QWPHPLSRE   *WSCST    TRANSFORM              12288                        |
+|      QWPHPLSR2   *WSCST    TRANSFORM               8192                        |
+|      QWPHPLSR2D  *WSCST    TRANSFORM               8192                        |
+|      QWPHPLSR3   *WSCST    TRANSFORM               8192                        |
+|      QWPHPLSR3D  *WSCST    TRANSFORM               8192                        |
+|      QWPHPLSR4   *WSCST    TRANSFORM              12288                        |
+|      QWPHPLSR5   *WSCST    TRANSFORM              12288                        |
+|      QWPHPLSR6   *WSCST    TRANSFORM              12288                        |
+|      QWPHPXL300  *WSCST    TRANSFORM               8192                        |
+|      QWPHP5SI    *WSCST    TRANSFORM              12288                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPHP550C   *WSCST    TRANSFORM              12288                        |
+|      QWPIBMESCP  *WSCST    TRANSFORM               8192                        |
+|      QWPIBMEURO  *WSCST    TRANSFORM              12288                        |
+|      QWPIBMIP2K  *WSCST    TRANSFORM              12288                        |
+|      QWPIBM2380  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM2390  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM241B  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM2412  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM2705  *WSCST    TRANSFORM              12288                        |
+|      QWPIBM2706  *WSCST    TRANSFORM              12288                        |
+|      QWPIBM2770  *WSCST    TRANSFORM              12288                        |
+|      QWPIBM3130  *WSCST    TRANSFORM              12288                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPIBM3812  *WSCST    TRANSFORM              16384                        |
+|      QWPIBM3816  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4019  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4029  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4070  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4072  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4202  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4208  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4212  *WSCST    TRANSFORM              12288                        |
+|      QWPIBM4226  *WSCST    TRANSFORM               8192                        |
+|      QWPIBM4232  *WSCST    TRANSFORM              12288                        |
+|      QWPIBM424D  *WSCST    TRANSFORM              12288                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPALLOC    *PGM                            405504                        |
+|      QWPAPTFL    *PGM                            589824                        |
+|      QWPAPUT     *PGM                            172032                        |
+|      QWPASPRT    *PGM                             53248                        |
+|      QWPCLOSE    *PGM                            106496                        |
+|      QWPERROR    *PGM                            159744                        |
+|      QWPEXPRT    *PGM                             40960                        |
+|      QWPFEOD     *PGM                             73728                        |
+|      QWPGRAPH    *PGM                             53248                        |
+|      QWPGRCLS    *PGM                             36864                        |
+|      QWPGREOP    *PGM                             69632                        |
+|      QWPICLSE    *PGM                             36864                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+| (C) COPYRIGHT IBM CORP. 1980, 2009.                                            |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPIFLDF    *PGM                             20480                        |
+|      QWPIFSPUT   *PGM      CPPLE                  61440                        |
+|      QWPIGRPH    *PGM                            102400                        |
+|      QWPINASP    *PGM                            425984                        |
+|      QWPIOPEN    *PGM                             69632                        |
+|      QWPIPDS     *PGM                             53248                        |
+|      QWPIPPDR    *PGM      CLE                   573440                        |
+|      QWPIPTFL    *PGM                            233472                        |
+|      QWPIPTRN    *PGM                             86016                        |
+|      QWPIPUT     *PGM                            131072                        |
+|      QWPIPUTF    *PGM                             73728                        |
+|      QWPLANDR    *PGM      CLE                   217088                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSYS           Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QWPLDPRT    *PGM                             86016                        |
+|      QWPLDTRN    *PGM                             49152                        |
+|      QWPLNPRT    *PGM                            135168                        |
+|      QWPLPTFL    *PGM                            196608                        |
+|      QWPLUDIN    *PGM                             36864                        |
+|      QWPMODCA    *PGM                             45056                        |
+|      QWPMOTRN    *PGM                             20480                        |
+|      QWPNSTDR    *PGM      CLE                   184320                        |
+|      QWPNWEVT    *PGM                             36864                        |
+|      QWPOERRS    *PGM                             94208                        |
+|      QWPOPEN     *PGM                            184320                        |
+|      QWPOPNCMD   *PGM      CLE                    86016                        |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+--- screen (cursor 21,7; unlocked) ---
+|                         Display Subsystem Description                          |
+|                                                             System:   S062B175 |
+| Subsystem description:   QUSRWRK        Library:   QSYS                        |
+| Status:   ACTIVE                                                               |
+| Select one of the following:                                                   |
+|      1. Operational attributes                                                 |
+|      2. Pool definitions                                                       |
+|      3. Autostart job entries                                                  |
+|      4. Work station name entries                                              |
+|      5. Work station type entries                                              |
+|      6. Job queue entries                                                      |
+|      7. Routing entries                                                        |
+|      8. Communications entries                                                 |
+|      9. Remote location name entries                                           |
+|     10. Prestart job entries                                                   |
+|                                                                        More... |
+| Selection or command                                                           |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 |
+--- screen (cursor 9,3; unlocked) ---
+|                          Display Prestart Job Entries                          |
+|                                                             System:   S062B175 |
+| Subsystem description:   QUSRWRK        Status:   ACTIVE                       |
+| Type options, press Enter.                                                     |
+|   5=Display details                                                            |
+| Opt     Program        Library        User Profile                             |
+|         QNPSERVS       QSYS            QUSER                                   |
+|         QRWTSRVR       QSYS            QUSER                                   |
+|         QSCWCHPS       QSYS            QUSER                                   |
+|         QZDASOINIT     QSYS            QUSER                                   |
+|         QZDASSINIT     QSYS            QUSER                                   |
+|         QZHQSSRV       QSYS            QUSER                                   |
+|         QZRCSRVS       QSYS            QUSER                                   |
+|         QZSCSRVS       QSYS            QUSER                                   |
+|         QZSOSIGN       QSYS            QUSER                                   |
+|                                                                         Bottom |
+| F3=Exit   F9=Display all detailed descriptions   F12=Cancel                    |
+--- screen (cursor 9,3; unlocked) ---
+|                          Display Prestart Job Entries                          |
+|                                                             System:   S062B175 |
+| Subsystem description:   QUSRWRK        Status:   ACTIVE                       |
+| Type options, press Enter.                                                     |
+|   5=Display details                                                            |
+| Opt     Program        Library        User Profile                             |
+|         QNPSERVS       QSYS            QUSER                                   |
+|         QRWTSRVR       QSYS            QUSER                                   |
+|         QSCWCHPS       QSYS            QUSER                                   |
+|         QZDASOINIT     QSYS            QUSER                                   |
+|         QZDASSINIT     QSYS            QUSER                                   |
+|         QZHQSSRV       QSYS            QUSER                                   |
+|         QZRCSRVS       QSYS            QUSER                                   |
+|         QZSCSRVS       QSYS            QUSER                                   |
+|         QZSOSIGN       QSYS            QUSER                                   |
+|                                                                         Bottom |
+| F3=Exit   F9=Display all detailed descriptions   F12=Cancel                    |
+| Already at bottom of area.                                                     |
+--- screen (cursor 9,3; unlocked) ---
+|                          Display Prestart Job Entries                          |
+|                                                             System:   S062B175 |
+| Subsystem description:   QUSRWRK        Status:   ACTIVE                       |
+| Type options, press Enter.                                                     |
+|   5=Display details                                                            |
+| Opt     Program        Library        User Profile                             |
+|         QNPSERVS       QSYS            QUSER                                   |
+|         QRWTSRVR       QSYS            QUSER                                   |
+|         QSCWCHPS       QSYS            QUSER                                   |
+|         QZDASOINIT     QSYS            QUSER                                   |
+|         QZDASSINIT     QSYS            QUSER                                   |
+|         QZHQSSRV       QSYS            QUSER                                   |
+|         QZRCSRVS       QSYS            QUSER                                   |
+|         QZSCSRVS       QSYS            QUSER                                   |
+|         QZSOSIGN       QSYS            QUSER                                   |
+|                                                                         Bottom |
+| F3=Exit   F9=Display all detailed descriptions   F12=Cancel                    |
+| Already at bottom of area.                                                     |
+--- screen (cursor 11,4; unlocked) ---
+|                Work with Relational Database Directory Entries                 |
+| Position to  . . . . . .                                                       |
+| Type options, press Enter.                                                     |
+|   1=Add   2=Change   4=Remove   5=Display details   6=Print details            |
+|                             Remote                                             |
+| Option  Entry               Location                  Text                     |
+|         S062B175            *LOCAL                    Entry added by system    |
+|                                                                         Bottom |
+| F3=Exit   F5=Refresh   F6=Print list   F12=Cancel   F22=Display entire field   |
+| (C) COPYRIGHT IBM CORP. 1980, 2009.                                            |
+--- screen (cursor 11,4; unlocked) ---
+|                Work with Relational Database Directory Entries                 |
+| Position to  . . . . . .                                                       |
+| Type options, press Enter.                                                     |
+|   1=Add   2=Change   4=Remove   5=Display details   6=Print details            |
+|                             Remote                                             |
+| Option  Entry               Location                  Text                     |
+|         S062B175            *LOCAL                    Entry added by system    |
+|                                                                         Bottom |
+| F3=Exit   F5=Refresh   F6=Print list   F12=Cancel   F22=Display entire field   |
+| Already at bottom of area.                                                     |
+--- screen (cursor 20,7; unlocked) ---
+| MAIN                           IBM i Main Menu                                 |
+|                                                             System:   S062B175 |
+| Select one of the following:                                                   |
+|      1. User tasks                                                             |
+|      2. Office tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files, libraries, and folders                                          |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|      7. Define or change the system                                            |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     11. IBM i Access tasks                                                     |
+|     90. Sign off                                                               |
+| Selection or command                                                           |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F23=Set initial menu          |
+| File QSDDMT created in library QSTEST.                                         |
+--- screen (cursor 3,22; unlocked) ---
+|                              Display Spooled File                              |
+| File  . . . . . :   QPDSPFD                          Page/Line   1/1           |
+| Control . . . . .                                    Columns     1 - 78        |
+| Find  . . . . . .                                                              |
+| *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... |
+|    11/03/26                Display File Description                            |
+|  DSPFD Command Input                                                           |
+|    File  . . . . . . . . . . . . . . . . . . . : FILE       QSDDMT             |
+|      Library . . . . . . . . . . . . . . . . . :            QSTEST             |
+|    Type of information . . . . . . . . . . . . : TYPE       *ALL               |
+|    File attributes . . . . . . . . . . . . . . : FILEATR    *ALL               |
+|    System  . . . . . . . . . . . . . . . . . . : SYSTEM     *LCL               |
+|  File Description Header                                                       |
+|    File  . . . . . . . . . . . . . . . . . . . : FILE       QSDDMT             |
+|    Library . . . . . . . . . . . . . . . . . . :            QSTEST             |
+|    Type of file  . . . . . . . . . . . . . . . :            Device             |
+|    Device type . . . . . . . . . . . . . . . . :            DDM                |
+|    Auxiliary storage pool ID . . . . . . . . . :            00001              |
+|  DDM File Attributes                                                           |
+|    File level identifier . . . . . . . . . . . :            1261103065516      |
+|    Creation date . . . . . . . . . . . . . . . :            11/03/26           |
+|                                                                        More... |
+| F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    |
+--- screen (cursor 3,22; unlocked) ---
+|                              Display Spooled File                              |
+| File  . . . . . :   QPDSPFD                          Page/Line   1/36          |
+| Control . . . . .                                    Columns     1 - 78        |
+| Find  . . . . . .                                                              |
+| *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... |
+|    Remote file . . . . . . . . . . . . . . . . : RMTFILE    'QSTEST/QSDDMR'    |
+|    Remote location                               RMTLOCNAME                    |
+|      Name or address . . . . . . . . . . . . . :            '::FFFF:127.0.0.1' |
+|      Type  . . . . . . . . . . . . . . . . . . :            *IP                |
+|    Text 'description'  . . . . . . . . . . . . : TEXT       probe              |
+|    TCP/IP port . . . . . . . . . . . . . . . . : PORT       00446              |
+|    Access method . . . . . . . . . . . . . . . : ACCMTH     *RMTFILE           |
+|    Share open data path  . . . . . . . . . . . : SHARE      *NO                |
+|    Protected conversation  . . . . . . . . . . : PTCCNV     *NO                |
+|    Record format level check . . . . . . . . . : LVLCHK     *RMTFILE           |
+|                                                                         Bottom |
+| F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    |
+--- screen (cursor 3,22; unlocked) ---
+|                              Display Spooled File                              |
+| File  . . . . . :   QPDSPFD                          Page/Line   1/36          |
+| Control . . . . .                                    Columns     1 - 78        |
+| Find  . . . . . .                                                              |
+| *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... |
+|    Remote file . . . . . . . . . . . . . . . . : RMTFILE    'QSTEST/QSDDMR'    |
+|    Remote location                               RMTLOCNAME                    |
+|      Name or address . . . . . . . . . . . . . :            '::FFFF:127.0.0.1' |
+|      Type  . . . . . . . . . . . . . . . . . . :            *IP                |
+|    Text 'description'  . . . . . . . . . . . . : TEXT       probe              |
+|    TCP/IP port . . . . . . . . . . . . . . . . : PORT       00446              |
+|    Access method . . . . . . . . . . . . . . . : ACCMTH     *RMTFILE           |
+|    Share open data path  . . . . . . . . . . . : SHARE      *NO                |
+|    Protected conversation  . . . . . . . . . . : PTCCNV     *NO                |
+|    Record format level check . . . . . . . . . : LVLCHK     *RMTFILE           |
+|                                                                         Bottom |
+| F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    |
+| Record requested after last record in file.                                    |
+--- screen (cursor 3,22; unlocked) ---
+|                              Display Spooled File                              |
+| File  . . . . . :   QPDSPFD                          Page/Line   1/36          |
+| Control . . . . .                                    Columns     1 - 78        |
+| Find  . . . . . .                                                              |
+| *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... |
+|    Remote file . . . . . . . . . . . . . . . . : RMTFILE    'QSTEST/QSDDMR'    |
+|    Remote location                               RMTLOCNAME                    |
+|      Name or address . . . . . . . . . . . . . :            '::FFFF:127.0.0.1' |
+|      Type  . . . . . . . . . . . . . . . . . . :            *IP                |
+|    Text 'description'  . . . . . . . . . . . . : TEXT       probe              |
+|    TCP/IP port . . . . . . . . . . . . . . . . : PORT       00446              |
+|    Access method . . . . . . . . . . . . . . . : ACCMTH     *RMTFILE           |
+|    Share open data path  . . . . . . . . . . . : SHARE      *NO                |
+|    Protected conversation  . . . . . . . . . . : PTCCNV     *NO                |
+|    Record format level check . . . . . . . . . : LVLCHK     *RMTFILE           |
+|                                                                         Bottom |
+| F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    |
+| Record requested after last record in file.                                    |
+--- screen (cursor 12,3; unlocked) ---
+|                              Work with DDM Files                               |
+| Position to  . . . . . .                                                       |
+| Type options, press Enter.                                                     |
+|   1=Create DDM file   2=Change DDM file   4=Delete   5=Display details         |
+|   6=Print details                                                              |
+|                                                              Remote            |
+| Opt  Local File            Remote File                       Location          |
+|      QSTEST/QSDDMT         QSTEST/QSDDMR                     127.0.0.1         |
+|                                                                         Bottom |
+| F3=Exit   F5=Refresh   F9=Print list   F12=Cancel   F22=Display entire field   |
+--- screen (cursor 10,3; unlocked) ---
+|                       Display Object Description - Basic                       |
+|                                                                 Library 1 of 1 |
+| Library . . . . . . . :   QSTEST         Library ASP device  . :   *SYSBAS     |
+|                                          Library ASP group . . :   *SYSBAS     |
+| Type options, press Enter.                                                     |
+|   5=Display full attributes   8=Display service attributes                     |
+| Opt  Object      Type      Attribute               Size  Text                  |
+|      QSDDMT      *FILE     DDMF                   32768  probe                 |
+|                                                                         Bottom |
+| F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    |
+| (C) COPYRIGHT IBM CORP. 1980, 2009.                                            |
+--- screen (cursor 20,7; unlocked) ---
+| MAIN                           IBM i Main Menu                                 |
+|                                                             System:   S062B175 |
+| Select one of the following:                                                   |
+|      1. User tasks                                                             |
+|      2. Office tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files, libraries, and folders                                          |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|      7. Define or change the system                                            |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     11. IBM i Access tasks                                                     |
+|     90. Sign off                                                               |
+| Selection or command                                                           |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F23=Set initial menu          |
+| Object QSDDMT in QSTEST type *FILE deleted.                                    |
+--- screen (cursor 20,7; unlocked) ---
+| MAIN                           IBM i Main Menu                                 |
+|                                                             System:   S062B175 |
+| Select one of the following:                                                   |
+|      1. User tasks                                                             |
+|      2. Office tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files, libraries, and folders                                          |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|      7. Define or change the system                                            |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     11. IBM i Access tasks                                                     |
+|     90. Sign off                                                               |
+| Selection or command                                                           |
+| ===> dspobjd qstest/qsddmt *file                                               |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F23=Set initial menu          |
+| Object QSDDMT in QSTEST type *FILE not found.                                  |
+--- screen ---
+| MAIN                           IBM i Main Menu                                 |
+|                                                             System:   S062B175 |
+| Select one of the following:                                                   |
+|      1. User tasks                                                             |
+|      2. Office tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files, libraries, and folders                                          |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|      7. Define or change the system                                            |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     11. IBM i Access tasks                                                     |
+|     90. Sign off                                                               |
+| Selection or command                                                           |
+| ===>                                                                           |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F23=Set initial menu          |
+| (C) COPYRIGHT IBM CORP. 1980, 2009.                                            |
+--------------

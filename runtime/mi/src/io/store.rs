@@ -71,6 +71,40 @@ impl StoreIo {
         }
     }
 
+    /// The failure that sends an open of DDM file `id` to its remote
+    /// system: its library and description, and the record format of
+    /// `original` (the file the program declared) when that is a
+    /// database file. `None` when `id` is not a DDM file.
+    fn ddm_redirect(&mut self, id: ObjectId, original: Option<ObjectId>) -> Option<IoFail> {
+        let mut store = self.store.store();
+        let mut txn = store.begin().ok()?;
+        let (_, h) = store::obj::ops::read_header(&mut txn, id).ok()?;
+        if h.id.type_code != store::obj::types::FILE || ccsid::decode_trimmed(&h.attribute) != super::DDM_ATTRIBUTE {
+            txn.abort();
+            return None;
+        }
+        let payload = wm::obj::read(&mut txn, id).unwrap_or_default();
+        let library = store::obj::ops::read_header(&mut txn, h.library)
+            .map(|(_, l)| l.name.to_string().trim().to_string())
+            .unwrap_or_default();
+        let local = original.filter(|o| *o != id).and_then(|o| db::file::describe(&mut txn, o).ok()).and_then(|d| {
+            d.formats.first().map(|f| super::DdmFormat {
+                name: f.format.name.to_string(),
+                rec_len: f.format.record_len,
+                fields: u32::try_from(f.format.fields.len()).unwrap_or(0),
+                keys: u32::try_from(f.format.keys.len()).unwrap_or(0),
+            })
+        });
+        txn.abort();
+        let r = super::DdmRedirect {
+            file: h.name.to_string().trim().to_string(),
+            library,
+            payload: String::from_utf8_lossy(&payload).into_owned(),
+            local,
+        };
+        Some(r.to_fail())
+    }
+
     /// The session, for overrides and commitment control.
     pub fn session(&mut self) -> &mut Session {
         &mut self.session
@@ -172,6 +206,7 @@ fn fail_of(e: &DbError) -> IoFail {
 }
 
 impl IoSource for StoreIo {
+    #[allow(clippy::too_many_lines)] // the open's steps in order
     fn open(&mut self, spec: &OpenSpec) -> Result<(u32, FileInfo), IoFail> {
         let file = Name::parse(&spec.file)
             .map_err(|_| IoFail::new(1299, "CPF4101", &[&spec.file, &spec.lib]))?;
@@ -220,6 +255,18 @@ impl IoSource for StoreIo {
         for w in wanted {
             let r = (self.resolve)(&w);
             known.push((w, Some(r)));
+        }
+        // The file the open reaches: the override's TOFILE when there is
+        // one, a DDM file going to the system it names.
+        let target = known
+            .iter()
+            .rev()
+            .find_map(|(_, r)| r.as_ref().and_then(|r| r.as_ref().ok()).copied());
+        let original = known.first().and_then(|(_, r)| r.as_ref().and_then(|r| r.as_ref().ok()).copied());
+        if let Some(id) = target
+            && let Some(d) = self.ddm_redirect(id, original)
+        {
+            return Err(d);
         }
         let mut lookup = |r: &dds::FileRef| -> db::Result<ObjectId> {
             known

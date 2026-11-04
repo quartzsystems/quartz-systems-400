@@ -66,6 +66,7 @@ rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 cmncfg = { path = "../../net/cmncfg", version = "0.1.0" }
 netlink = { path = "../../net/netlink", version = "0.1.0" }
 hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }
+ddm = { path = "../../net/ddm", version = "0.1.0" }
 sockets = { path = "../../net/sockets", version = "0.1.0" }
 nettools = { path = "../../net/nettools", version = "0.1.0" }
 
