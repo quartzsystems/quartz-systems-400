@@ -48,6 +48,8 @@ pub mod ids {
     pub const JOBSYSTEM: u16 = 0x00FB;
     pub const WRITER: u16 = 0x0076;
     pub const PRINTER: u16 = 0x005D;
+    pub const NUMBYTES: u16 = 0x007D;
+    pub const PRECOMPUTE_NUMBYTES: u16 = 0x00B8;
 }
 
 /// One attribute value.

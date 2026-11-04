@@ -27,6 +27,7 @@ QS/400, and its source was read only to understand the datastream.
 | `dtaq` | `DtaQ` | `DataQueue` and `KeyedDataQueue` in `QSTEST`, deleted after |
 | `ifs` | `Ifs` | `IFSFile` and streams under `/home/QSTEST` only, removed after |
 | `splf` | `Splf` | `SpooledFileList` of the user's spooled files (list only) |
+| `splfdata` | `SplfData` | `PrintObjectInputStream`: the bytes of the user's smallest spooled file (read only) |
 
 Each program prints one `ok NAME` or `fail NAME: ...` line per step,
 with indented result lines; the user's name is printed as `{user}`.

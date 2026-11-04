@@ -314,10 +314,15 @@ impl Spool for JobSpool {
         fail(&run(&self.job, &cmd)).map_err(|(id, t)| format!("{id} {t}"))
     }
 
-    fn data(&mut self, _s: &Splf) -> Result<Vec<u8>, String> {
-        // BLOCKED(phase10): no request reads a spooled file's bytes for
-        // a job that is not its writer.
-        Err("CPF3492 spooled file data is not served here.".into())
+    fn data(&mut self, s: &Splf) -> Result<Vec<u8>, String> {
+        // As DSPSPLF reads it: the user's authority checked, the read
+        // audited (`SF` `R`), the bytes as spooled (SCS for `*SCS`).
+        let job = format!("{}/{}/{}", s.job.2, s.job.1, s.job.0);
+        let (file, number) = (s.file.clone(), s.number.to_string());
+        self.link
+            .borrow_mut()
+            .with(|l| l.splf_fetch(file, job, number))
+            .map(|(_, data)| data)
     }
 
     fn outqs(&mut self) -> Vec<(String, String)> {

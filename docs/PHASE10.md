@@ -128,10 +128,10 @@ Each item is marked `BLOCKED(phase10)` where it lives.
 | RCLSTG migration of an IFS into a disk with no tail space | `lic/slic/src/ipl/ifs.rs` | shrinking ASP 1 |
 | DDM files open the remote file | `work/qsjob/src/command/ddm.rs` | closed in Phase 12: `*FILE` objects of attribute `DDMF`, the requester in the job (`DDM.md`) |
 | `*DDM` server on 446 | `net/servers` registry | closed in Phase 12: `QRWTLSTN` and `QRWTSRVR` with the backends over the storage service (`DDM.md`) |
-| Host servers read a spooled file's data | `work/qsjob/src/work/hostsvr/job.rs` | a storage request that returns spooled-file bytes |
+| Host servers read a spooled file's data | `work/qsjob/src/work/hostsvr/job.rs` | closed in Phase 12: `splf_fetch`, the `splfdata` trace (`HOSTSVR.md`) |
 | Telnet `INIT0100` automatic sign-on | `work/qsjob/src/work/telnet.rs` | a storage request that signs on without a password |
 | `SNDTCPSPLF WSCST(name)` | `work/qsjob/src/command/netcmd.rs` | closed in Phase 12: read in the job, the tag language, the shipped `QSYS/QWP...` objects (`PRINT.md`) |
-| SMTP `AUTH` credentials | `net/servers/src/attrs/smtp.rs` | a command that sets them and storage only the mail job reads |
+| SMTP `AUTH` credentials | `net/servers/src/attrs/smtp.rs` | closed in Phase 12: `ADDSMTPLE TYPE(*HOSTAUTH)`, sealed, unsealed only for the router (`SERVERS.md`) |
 
 Cleared during the phase: the IPP printer TLS connector, the FTP server's
 and client's certificates, the SMTP relay check and TCP/IP line state

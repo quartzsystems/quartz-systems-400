@@ -1,0 +1,4 @@
+ok   connect
+     file=QPTAPDMP pages=1
+     bytes>0=true first=34
+ok   read

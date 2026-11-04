@@ -47,7 +47,7 @@ fn code() -> Vec<Entry> {
             INVALID_HANDLE, INVALID_NAME, DIR_NOT_EMPTY, ACCESS_DENIED_TO_REQUEST, NO_MORE_FILES,
             REQUEST_NOT_SUPPORTED, UNKNOWN, SHARING_VIOLATION, LOCK_VIOLATION)),
         ("netprt::cp", "netprt/mod.rs", Some("cp"), consts!(netprt::cp;
-            ID, DATA, SELECTION, ATTR_IDS, ATTRS, TARGET_OUTQ)),
+            ID, TARGET_OUTQ, SELECTION, ATTR_IDS, ATTRS, DATA, HANDLE)),
         ("netprt::rc", "netprt/mod.rs", Some("rc"), consts!(netprt::rc;
             OK, NOT_AUTHORIZED, CPF_MESSAGE, READ_EOF, EMPTY_LIST, NOT_SUPPORTED, SPLF_NOT_FOUND,
             EXIT_DENIED)),
@@ -56,7 +56,8 @@ fn code() -> Vec<Entry> {
         ("netprt::attrs::ids", "netprt/attrs.rs", Some("ids"), consts!(netprt::attrs::ids;
             DATE, COPIES, JOBNAME, JOBNUMBER, JOBUSER, LPI, OUTPTY, OUTQUELIB, OUTQUE, PAGELEN,
             PAGEWIDTH, PRTDEVTYPE, PRTFLIB, PRTFILE, SPOOLFILE, SPLFNUM, SPLFSTATUS, TIME, PAGES,
-            USERDATA, FORMTYPE, NPSCCSID, NPSLEVEL, NLV_ID, JOBSYSTEM, WRITER, PRINTER)),
+            USERDATA, FORMTYPE, NPSCCSID, NPSLEVEL, NLV_ID, JOBSYSTEM, WRITER, PRINTER, NUMBYTES,
+            PRECOMPUTE_NUMBYTES)),
     ]
 }
 

@@ -27,20 +27,22 @@ pub const EXIT_ENTRY: &str = "QIBM_QNPS_ENTRY";
 /// Spooled files.
 pub const EXIT_SPLF: &str = "QIBM_QNPS_SPLF";
 
-/// Code points.
+/// Code points (`NPCodePoint` in `JTOpen`).
 pub mod cp {
     /// The object's ID (an attribute list).
     pub const ID: u16 = 0x0001;
-    /// Spooled file data.
-    pub const DATA: u16 = 0x0002;
+    /// An output queue's ID: the target of a move.
+    pub const TARGET_OUTQ: u16 = 0x0003;
     /// A list's selection.
     pub const SELECTION: u16 = 0x0006;
     /// Attributes to return.
     pub const ATTR_IDS: u16 = 0x0007;
     /// Attribute values.
     pub const ATTRS: u16 = 0x0008;
-    /// The target output queue of a move.
-    pub const TARGET_OUTQ: u16 = 0x000C;
+    /// Spooled file data.
+    pub const DATA: u16 = 0x0009;
+    /// An open spooled file's handle.
+    pub const HANDLE: u16 = 0x000C;
 }
 
 /// Return codes.
@@ -143,6 +145,7 @@ pub struct NetPrint<A, S, X> {
     /// The server job: name, user, number.
     pub job: (String, String, String),
     open: Option<(Vec<u8>, usize)>,
+    opened: u8,
 }
 
 fn template(act: u16, flags: u32, code: u16) -> Vec<u8> {
@@ -228,6 +231,7 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
             exits,
             job,
             open: None,
+            opened: 0,
         }
     }
 
@@ -344,7 +348,22 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                 match act {
                     action::RETRIEVE_ATTRIBUTES => {
                         let want = f.param(cp::ATTR_IDS).map(|p| attrs::ids_of(&p.data)).unwrap_or_default();
-                        let values: Vec<(u16, Value)> = want.iter().filter_map(|a| splf_attr(&s, *a).map(|v| (*a, v))).collect();
+                        let mut values: Vec<(u16, Value)> = Vec::new();
+                        for a in want {
+                            let v = if a == ids::NUMBYTES {
+                                // The data's length: the open file's, else read.
+                                let n = match &self.open {
+                                    Some((d, _)) => Some(d.len()),
+                                    None => self.spool.data(&s).ok().map(|d| d.len()),
+                                };
+                                n.map(|n| Value::Bin4(i32::try_from(n).unwrap_or(i32::MAX)))
+                            } else {
+                                splf_attr(&s, a)
+                            };
+                            if let Some(v) = v {
+                                values.push((a, v));
+                            }
+                        }
                         Outcome::one(Self::answer(f, rc::OK, vec![Param::new(cp::ATTRS, attrs::encode(&values))]))
                     }
                     action::HOLD => Outcome::one(Self::answer(f, done(self.spool.act(&s, SplfAction::Hold)), Vec::new())),
@@ -359,7 +378,10 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
                     action::OPEN => match self.spool.data(&s) {
                         Ok(d) => {
                             self.open = Some((d, 0));
-                            Outcome::one(Self::answer(f, rc::OK, Vec::new()))
+                            self.opened = self.opened.wrapping_add(1);
+                            // The oracle's handle: nine bytes, the count in the fifth.
+                            let handle = vec![0x02, 0, 0, 0, self.opened, 0, 0, 0, 0];
+                            Outcome::one(Self::answer(f, rc::OK, vec![Param::new(cp::HANDLE, handle)]))
                         }
                         Err(_) => Outcome::one(Self::answer(f, rc::CPF_MESSAGE, Vec::new())),
                     },
@@ -378,12 +400,25 @@ impl<A: Auth, S: Spool, X: Exits> NetPrint<A, S, X> {
         }
         match act {
             action::READ => {
+                // NUMBYTES in the attributes asks for that many bytes.
+                let want = f
+                    .param(cp::ATTRS)
+                    .and_then(|p| attrs::decode(&p.data).into_iter().find(|r| r.id == ids::NUMBYTES))
+                    .map_or(4096, |r| usize::try_from(r.bin4()).unwrap_or(4096))
+                    .clamp(1, 1 << 20);
                 let (d, at) = self.open.as_mut()?;
-                let n = 4096.min(d.len() - *at);
+                let n = want.min(d.len() - *at);
                 let chunk = d[*at..*at + n].to_vec();
                 *at += n;
-                let code = if n == 0 { rc::READ_EOF } else { rc::OK };
-                Some(Outcome::one(Self::answer(f, code, vec![Param::new(cp::DATA, chunk)])))
+                // The oracle flags its read replies 0x40000000; the end of
+                // the data is a return code with no data.
+                let tmpl = |code| template(action::READ, 0x4000_0000, code);
+                let r = if n == 0 {
+                    reply::frame(&f.header, Self::rid(f), tmpl(rc::READ_EOF), Vec::new())
+                } else {
+                    reply::frame(&f.header, Self::rid(f), tmpl(rc::OK), vec![Param::new(cp::DATA, chunk)])
+                };
+                Some(Outcome::one(r))
             }
             action::CLOSE => {
                 self.open = None;

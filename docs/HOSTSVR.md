@@ -853,6 +853,22 @@ attributes) on the network print server object (`0x0008`); a spooled
 file list is action `0x0016` on spooled files and answers one `0x8001`
 per file. Attribute lists are nested code points, kept as bytes.
 
+Reading a spooled file (JTOpen's `PrintObjectInputStream`, the
+`splfdata` trace of 2026-11-03 against the primary oracle): `OPEN`
+(`0x0002`) with the file's ID and a selection asking for
+`PRECOMPUTE_NUMBYTES`, answered with a nine-byte handle (code point
+`0x000C`, `02 00 00 00 n 00 00 00 00`, `n` counting the connection's
+opens); `RETRIEVE_ATTRIBUTES` of `NUMBYTES` (`0x007D`); then `READ`
+(`0x0003`) with no ID, the handle and `NUMBYTES` as the most bytes
+wanted (4096), each reply flagged `0x40000000` with the bytes in code
+point `0x0009`, the last one return code 19 (`READ_EOF`) with no data;
+`CLOSE` (`0x0005`) with the handle. The bytes are the file as spooled
+(SCS for `*SCS`), read through `splf_fetch`: `DSPSPLF`'s authority
+check and `SF` audit entry, as the signed-on user. The oracle's
+`NUMBYTES` (877) is less than the bytes it then sent (1010); ours is
+the length sent. The code point values are JTOpen's `NPCodePoint`;
+the move's target queue is `OUTPUT_QUEUE_ID` (3).
+
 <!-- consts: netprt::id -->
 
 | Value | Name |
@@ -926,6 +942,7 @@ results are in `tools/conformance/jtopen/expected/oracle/`.
 | `dtaq` | dtaq, central | Create, write, attributes, peek, read, clear, delete of `QSTEST/HSTRACEQ`, and a keyed queue |
 | `ifs` | file, central | List `/home/QSTEST`, create a directory, write, read, attributes, rename, delete |
 | `splf` | netprt | Exchange attributes and a list of the user's spooled files |
+| `splfdata` | netprt, central | The list, then open, `NUMBYTES`, two reads and close of one spooled file (recorded 2026-11-03) |
 
 Missing, and why:
 
@@ -1116,11 +1133,12 @@ nullable; the nullable type is one more):
 | Value | Name |
 |---|---|
 | `0x0001` | `ID` |
-| `0x0002` | `DATA` |
+| `0x0003` | `TARGET_OUTQ` |
 | `0x0006` | `SELECTION` |
 | `0x0007` | `ATTR_IDS` |
 | `0x0008` | `ATTRS` |
-| `0x000C` | `TARGET_OUTQ` |
+| `0x0009` | `DATA` |
+| `0x000C` | `HANDLE` |
 
 <!-- server-consts: netprt::rc -->
 
@@ -1170,9 +1188,11 @@ nullable; the nullable type is one more):
 | `0x006F` | `PAGES` |
 | `0x0072` | `USERDATA` |
 | `0x0076` | `WRITER` |
+| `0x007D` | `NUMBYTES` |
 | `0x008A` | `NPSCCSID` |
 | `0x008D` | `NPSLEVEL` |
 | `0x00B4` | `NLV_ID` |
+| `0x00B8` | `PRECOMPUTE_NUMBYTES` |
 | `0x00FB` | `JOBSYSTEM` |
 
 ### Database

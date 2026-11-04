@@ -20,7 +20,7 @@ fn files(t: &Trace) -> Vec<Splf> {
     for c in &t.connections {
         for ch in c.chunks().filter(|c| c.dir == Dir::Reply && c.framed) {
             let f = Frame::decode(&ch.bytes).unwrap();
-            if f.header.req_rep_id != 0x8001 {
+            if f.header.req_rep_id != 0x8001 || f.param(0x0001).is_none() {
                 continue;
             }
             let mut raws: Vec<Raw> = f.param(0x0001).map(|p| decode(&p.data)).unwrap_or_default();
@@ -66,4 +66,61 @@ fn splf() {
     let auth = TraceAuth::of(&t);
     let diffs = replay(&t, &masks, &mut || Box::new(NetPrint::new(auth.clone(), spool.clone(), NoExits, job.clone())) as Box<dyn Handler>);
     accept("netprt-svrmap", &diffs);
+}
+
+/// The spooled files of a list, one of them with the bytes the oracle sent.
+#[derive(Clone)]
+struct WithData(MemSpool, Vec<u8>);
+
+impl hostserver::netprt::Spool for WithData {
+    fn system(&mut self) -> String {
+        self.0.system()
+    }
+    fn list(&mut self, user: &str, outq: Option<(String, String)>) -> Vec<Splf> {
+        self.0.list(user, outq)
+    }
+    fn act(&mut self, s: &Splf, what: hostserver::netprt::SplfAction) -> Result<(), String> {
+        self.0.act(s, what)
+    }
+    fn data(&mut self, _s: &Splf) -> Result<Vec<u8>, String> {
+        Ok(self.1.clone())
+    }
+    fn outqs(&mut self) -> Vec<(String, String)> {
+        self.0.outqs()
+    }
+    fn writers(&mut self) -> Vec<(String, String, String)> {
+        self.0.writers()
+    }
+}
+
+/// The data the oracle's read replies carried (code point 9).
+fn data_of(t: &Trace) -> Vec<u8> {
+    let mut d = Vec::new();
+    for c in &t.connections {
+        for ch in c.chunks().filter(|c| c.dir == Dir::Reply && c.framed) {
+            let f = Frame::decode(&ch.bytes).unwrap();
+            if let Some(p) = f.param(0x0009) {
+                d.extend_from_slice(&p.data);
+            }
+        }
+    }
+    d
+}
+
+/// Open, the byte count, two reads (the second at the end) and close,
+/// as `PrintObjectInputStream` in `JTOpen` does them.
+#[test]
+fn splf_data() {
+    let t = trace("netprt", "splfdata");
+    let auth = TraceAuth::of(&t);
+    let data = data_of(&t);
+    assert!(!data.is_empty());
+    let spool = WithData(MemSpool(files(&t)), data);
+    let job = ("QNPSERVS".to_string(), "QUSER".to_string(), "008049".to_string());
+    let masks = Masks {
+        skip: vec![0x0008],
+        ..Masks::default()
+    };
+    let diffs = replay(&t, &masks, &mut || Box::new(NetPrint::new(auth.clone(), spool.clone(), NoExits, job.clone())) as Box<dyn Handler>);
+    accept("netprt-splfdata", &diffs);
 }

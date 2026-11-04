@@ -115,6 +115,7 @@ const SCENARIOS: &[(&str, &str)] = &[
     ("dtaq", "DtaQ"),
     ("ifs", "Ifs"),
     ("splf", "Splf"),
+    ("splfdata", "SplfData"),
 ];
 
 /// Compile the suite; the java to run it with and the class path.
