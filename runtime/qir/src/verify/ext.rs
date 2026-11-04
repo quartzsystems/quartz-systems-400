@@ -7,7 +7,7 @@
 use super::place::place_type;
 use super::typing::{operand_type, reg_type};
 use crate::inst::{
-    Callee, Const, CvtOpts, DecUn, DevOp, DtInst, DtUnit, DtaaraOp, DtaqInst, Inst, IoInst,
+    Callee, Const, CvtOpts, DbOp, DecUn, DevOp, DtInst, DtUnit, DtaaraOp, DtaqInst, Inst, IoInst,
     MsgInst, MsgQueue, Operand, PtrInst, StrInst,
 };
 use crate::module::{FileDev, Linkage, Module, Proc};
@@ -558,7 +558,8 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             if key.is_some() && rrn.is_some() {
                 return Err("key() and rrn() together".into());
             }
-            if (key.is_some() || rrn.is_some()) && !op.positions() {
+            // DELETE may name its record by key (an Open Access file's).
+            if (key.is_some() || rrn.is_some()) && !op.positions() && *op != DbOp::Delete {
                 return Err(format!("{} takes no key or rrn", op.name()));
             }
             if op.positions() && key.is_none() && rrn.is_none() {

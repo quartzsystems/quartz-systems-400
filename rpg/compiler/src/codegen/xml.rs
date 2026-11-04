@@ -104,11 +104,16 @@ impl Gen<'_> {
     }
 
     /// A character operand for the runtime: storage and descriptor.
-    fn xml_text(&mut self, e: Option<&Expr>) -> Option<(String, i64)> {
-        let v = match e {
+    pub(crate) fn xml_text(&mut self, e: Option<&Expr>) -> Option<(String, i64)> {
+        let mut v = match e {
             Some(e) => self.expr(e, Want::default())?,
             None => self.literal(&Lit::Char(String::new()))?,
         };
+        // A UCS-2 document goes to the runtime as the job's characters.
+        if let (Some(e), Ty::Ucs2(_) | Ty::VarUcs2(..)) = (e, &v.ty) {
+            let at = self.at;
+            v = self.expr(&Expr::Bif { name: "%CHAR".into(), args: vec![e.clone()], at }, Want::default())?;
+        }
         if !v.ty.is_string() && v.fig.is_none() {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, "%XML");
             return None;
@@ -262,10 +267,81 @@ impl Gen<'_> {
 }
 
 impl Gen<'_> {
-    /// `DATA-INTO target %DATA(doc:opts) %PARSER(pgm:opts)` and
-    /// `DATA-GEN var %DATA(out:opts) %GEN(pgm:opts)`: the operands are
-    /// checked and the runtime reports the parser or generator as not
-    /// callable (status 355).
+    /// `%DATA` options written as a literal are checked here: `RNF0236`.
+    fn data_options_ok(&mut self, e: Option<&Expr>, generate: bool) -> bool {
+        let Some(Expr::Lit(Lit::Char(t), _)) = e else { return true };
+        let bad = t.split_whitespace().find(|w| {
+            let Some((k, v)) = w.split_once('=') else { return true };
+            let v = v.to_ascii_lowercase();
+            let yes_no = matches!(v.as_str(), "yes" | "no");
+            match k.to_ascii_lowercase().as_str() {
+                "doc" => !matches!(v.as_str(), "string" | "file"),
+                "ccsid" if !generate => !matches!(v.as_str(), "job" | "ucs2"),
+                "case" if !generate => !matches!(v.as_str(), "lower" | "upper" | "any" | "convert"),
+                "allowmissing" | "allowextra" if !generate => !yes_no,
+                "trim" if !generate => !matches!(v.as_str(), "all" | "none"),
+                "path" | "countprefix" if !generate => false,
+                "countprefix" | "name" | "renameprefix" | "fileccsid" | "output" if generate => false,
+                _ => true,
+            }
+        });
+        match bad {
+            Some(w) => {
+                self.err(ids::DATA_OPTIONS, 30, w.to_string());
+                false
+            }
+            None => true,
+        }
+    }
+
+    /// The operands of `%PARSER` or `%GEN`: the name (characters) or a
+    /// procedure pointer, and the user parameter as the runtime takes it
+    /// (place, descriptor, kind: 0 none, 1 a string, 2 a variable, 3 a
+    /// data structure).
+    pub fn callee_operands(&mut self, args: &[Expr]) -> Option<(String, i64, String, String, i64, i32)> {
+        let first = args.first()?;
+        let v = self.expr(first, Want::default())?;
+        let mut ptr = self.b.temp("char(16)");
+        self.b.ins(format!("mov {ptr}, *LOVAL"));
+        let (name, nd) = if v.ty == Ty::ProcPtr {
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = load {}", v.op));
+            ptr = self.b.temp("procptr");
+            self.b.ins(format!("store {ptr}, {r}"));
+            let t = self.b.temp("char(1)");
+            (t, self.desc_of(&V::place(Ty::Char(1), String::new())))
+        } else {
+            if !v.ty.is_string() && v.fig.is_none() {
+                self.err(ids::BAD_EXPRESSION_TYPE, 30, "%PARSER");
+                return None;
+            }
+            let r = self.rt_of(&v, None);
+            (r.op, r.desc)
+        };
+        let (up, ud, uk) = match args.get(1) {
+            None => (self.b.temp("char(1)"), 0, 0),
+            Some(e) => {
+                let u = self.expr(e, Want::default())?;
+                if u.kind == Vk::Place && u.fig.is_none() {
+                    if let Some(s) = u.sym {
+                        self.t.refer(s, self.at.line, true);
+                    }
+                    let kind = if matches!(u.ty, Ty::Ds(_)) { 3 } else { 2 };
+                    let ty = if kind == 3 { Ty::Char(self.t.size(&u.ty)) } else { u.ty.clone() };
+                    let d = self.desc_of(&V::place(ty, String::new()));
+                    let op = if kind == 3 { format!("{}.all_", u.op) } else { u.op.clone() };
+                    (op, d, kind)
+                } else {
+                    let r = self.rt_of(&u, None);
+                    (r.op, r.desc, 1)
+                }
+            }
+        };
+        Some((name, nd, ptr, up, ud, uk))
+    }
+
+    /// `DATA-INTO target %DATA(doc:opts) %PARSER(parser:parm)` and
+    /// `DATA-GEN var %DATA(out:opts) %GEN(generator:parm)`.
     pub fn data_op(&mut self, op: &Op, generate: bool) {
         let items = match &op.xf2 {
             Some(Expr::List(v, _)) => v.clone(),
@@ -280,31 +356,72 @@ impl Gen<'_> {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
         }
-        match &items[0] {
-            Expr::Bif { name, args, .. } if name == "%HANDLER" && !generate => {
-                if self.handler(&args.clone()).is_none() {
+        let (Expr::Bif { args: dargs, .. }, Expr::Bif { args: pargs, .. }) = (&items[1], &items[2]) else { return };
+        let (dargs, pargs) = (dargs.clone(), pargs.clone());
+        if !self.data_options_ok(dargs.get(1), generate) {
+            return;
+        }
+        if generate {
+            self.data_gen(op, &items[0], &dargs, &pargs);
+            return;
+        }
+        let Some((doc, dd)) = self.xml_text(dargs.first()) else { return };
+        let Some((opts, od)) = self.xml_text(dargs.get(1)) else { return };
+        let Some((name, nd, ptr, up, ud, uk)) = self.callee_operands(&pargs) else { return };
+        let mut shape = String::new();
+        let (target, hproc, comm) = match &items[0] {
+            Expr::Bif { name, args, .. } if name == "%HANDLER" => {
+                let Some((h, comm, parms)) = self.handler(&args.clone()) else { return };
+                let fits = parms.len() == 3
+                    && parms[1].dim > 0
+                    && parms[1].konst
+                    && parms[2].value
+                    && matches!(parms[2].ty, Ty::Uns(10) | Ty::Int(10));
+                if !fits {
+                    let n = match args.first() {
+                        Some(Expr::Ref { name, .. }) => name.clone(),
+                        _ => String::new(),
+                    };
+                    self.err(ids::HANDLER_PROC, 30, n);
                     return;
                 }
+                let p = parms[1].clone();
+                self.xml_shape(&p.name, &p.ty, p.dim.max(1), 0, &mut shape);
+                (self.b.temp("char(1)"), h, comm)
             }
             e => {
                 let Some(v) = self.expr(e, Want::default()) else { return };
+                if v.kind != Vk::Place {
+                    self.err(ids::NOT_ASSIGNABLE, 30, op.code.clone());
+                    return;
+                }
+                let name = v.sym.map_or_else(String::new, |s| self.t.syms[s].name.clone());
                 if let Some(s) = v.sym {
-                    self.t.refer(s, self.at.line, !generate);
+                    self.t.refer(s, self.at.line, true);
                 }
+                self.xml_shape(&name, &v.ty, v.dim, 0, &mut shape);
+                let h = self.b.temp("char(16)");
+                self.b.ins(format!("mov {h}, *LOVAL"));
+                (v.op, h, self.b.temp("char(1)"))
             }
+        };
+        self.rt_proc(
+            "_QRNX_DATAINTO",
+            "($t: bytes(1) *VARSIZE, const $shape: varchar(32000), $doc: bytes(1) *VARSIZE, byval $dd: i64, \
+             $opts: bytes(1) *VARSIZE, byval $od: i64, $name: bytes(1) *VARSIZE, byval $nd: i64, \
+             $ptr: bytes(16) *VARSIZE, $up: bytes(1) *VARSIZE, byval $ud: i64, byval $uk: i32, \
+             $h: bytes(16) *VARSIZE, $comm: bytes(1) *VARSIZE) -> i64",
+        );
+        let n = self.b.reg();
+        self.b.ins(format!(
+            "{n} = callb _QRNX_DATAINTO({target}, {}, {doc}, {dd}, {opts}, {od}, {name}, {nd}, {ptr}, {up}, {ud}, {uk}, {hproc}, {comm})",
+            quote(&shape)
+        ));
+        let (p, len) = self.psds();
+        if len >= 379 {
+            let a = self.b.reg();
+            self.b.ins(format!("{a} = addr {p}"));
+            self.b.ins(format!("store [{a} +371]:i64, {n}"));
         }
-        for a in [&items[1], &items[2]] {
-            if let Expr::Bif { args, .. } = a {
-                for x in args.clone() {
-                    let _ = self.expr(&x, Want::default());
-                }
-            }
-        }
-        // BLOCKED(phase9): a parser or generator works through IBM's
-        // QOAR/QRPGLESRC interface (QRNDTAINTO, QRNDTAGEN), which
-        // QS/400 does not have; every one is status 355, as when the
-        // program cannot be called.
-        self.rt_proc("_QRNX_DATAPGM", "()");
-        self.b.ins("callb _QRNX_DATAPGM()");
     }
 }

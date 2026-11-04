@@ -426,8 +426,14 @@ fn spooled(spool: &MemSpool) -> Vec<Spooled> {
                     .map(|(p, l, t)| (p, l, t.chars().map(|c| if c.is_control() { ' ' } else { c }).collect::<String>()))
                     .filter(|(_, l, t)| !t.trim().is_empty() && (last == 66 || u32::from(last) != u32::from(*l)))
                     .map(|(p, l, t)| format!("{p}/{l:<3} {}", t.trim_end()))
-                    .collect(),
+                    .collect::<Vec<_>>(),
             }
+        })
+        .map(|mut s| {
+            if s.file == "QPPGMDMP" {
+                s.lines = rpg_oracle::outcome::mask_dump(s.lines);
+            }
+            s
         })
         .collect()
 }
@@ -481,9 +487,10 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         let post: Vec<String> = case.post.iter().map(|s| case.fill(s, "QGPL")).collect();
         d.post(&post).map_err(|e| format!("{}: {e}", case.name))?;
     }
-    // The setup's modules, service programs and directories.
+    // The setup's modules, service programs and directories (the post
+    // commands', made after the files).
     let mut objs = build::Objects::default();
-    for s in &case.setup {
+    for s in case.setup.iter().chain(&case.post) {
         let cmd = case.fill(s, "QGPL");
         objs.setup(&cmd, &|mbr, module, cmd| compile_member(case, db.as_ref(), mbr, module, cmd))?;
     }

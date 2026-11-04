@@ -490,6 +490,8 @@ pub mod ids {
     pub const WHEN_IS_TYPE: &str = "RNF0203";
     /// `%XML` options that are not valid.
     pub const XML_OPTIONS: &str = "RNF0224";
+    /// `%DATA` options in a literal that are not valid.
+    pub const DATA_OPTIONS: &str = "RNF0236";
     /// A `%HANDLER` procedure without the handler's interface.
     pub const HANDLER_PROC: &str = "RNF5352";
     /// `COMMIT` or `ROLBK` with no file under commitment control.

@@ -510,7 +510,7 @@ pub fn options(text: &str) -> Result<Options, String> {
 }
 
 /// Whether an XML name matches an RPG name (upper case) under `case=`.
-fn name_matches(xml: &str, rpg: &str, case: &str) -> bool {
+pub(crate) fn name_matches(xml: &str, rpg: &str, case: &str) -> bool {
     match case {
         "upper" => xml == rpg,
         "any" => xml.eq_ignore_ascii_case(rpg),
@@ -576,7 +576,7 @@ pub enum IntoError {
 
 /// Whitespace under `trim=all`: the ends dropped and each run inside
 /// made one blank.
-fn trim_all(s: &str) -> String {
+pub(crate) fn trim_all(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
@@ -590,7 +590,7 @@ fn store_chars(addr: u64, size: usize, text: &str) {
 }
 
 /// Write one scalar value at an address.
-fn store_scalar(addr: u64, d: &crate::value::Desc, text: &str) -> Result<(), IntoError> {
+pub(crate) fn store_scalar(addr: u64, d: &crate::value::Desc, text: &str) -> Result<(), IntoError> {
     use crate::value::Kind as K;
     match d.kind {
         K::VarChar => {
@@ -702,7 +702,7 @@ fn job(env: *mut codegen::abi::Env) -> &'static mut mi::Job {
 }
 
 /// A character operand's text: its descriptor says fixed or varying.
-fn text_of(addr: i64, desc: i64) -> String {
+pub(crate) fn text_of(addr: i64, desc: i64) -> String {
     let d = crate::value::Desc::of(desc);
     let raw = crate::value::bytes(addr.cast_unsigned(), d.size());
     match d.kind {
@@ -712,7 +712,7 @@ fn text_of(addr: i64, desc: i64) -> String {
 }
 
 /// A `const varchar` parameter's text.
-fn varchar_at(addr: i64) -> String {
+pub(crate) fn varchar_at(addr: i64) -> String {
     let len = crate::value::bytes(addr.cast_unsigned(), 2);
     let n = usize::from(u16::from_be_bytes([len[0], len[1]]));
     ccsid::from_ebcdic(&crate::value::bytes(addr.cast_unsigned(), 2 + n)[2..])
@@ -734,7 +734,7 @@ fn status(e: IntoError) -> u16 {
 }
 
 /// The code address a procedure pointer in storage holds, if any.
-fn proc_at(addr: i64) -> Option<usize> {
+pub(crate) fn proc_at(addr: i64) -> Option<usize> {
     let b: [u8; 16] = crate::value::bytes(addr.cast_unsigned(), 16).try_into().ok()?;
     let p = mi::FatPtr::from_bytes(&b);
     if p.kind() == Some(mi::PtrKind::Procedure) { usize::try_from(p.offset).ok() } else { None }
@@ -773,7 +773,7 @@ fn into_handler(j: &mut mi::Job, addr: usize, comm: i64, s: &Shape, doc: &str, o
 
 /// A handler ended in error: the operation fails with the error that
 /// ended it (its status, not the function check that followed).
-fn handler_failed(j: &mut mi::Job, mark: usize) {
+pub(crate) fn handler_failed(j: &mut mi::Job, mark: usize) {
     let Some(first) = j.raised.get(mark).cloned() else { return };
     j.clear();
     let _ = j.send_message(&first.msgid, &first.msgf, "*LIBL", first.data, qir::MsgType::Escape, mi::QueueRef::Same);

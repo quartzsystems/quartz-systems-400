@@ -222,6 +222,8 @@ pub struct File {
     pub sln_at: Option<rpgfront::ast::Pos>,
     /// `HANDLER`: an Open Access handler.
     pub handler: bool,
+    /// `HANDLER(handler:userArea)` as written.
+    pub handler_kw: Option<rpgfront::ast::Keyword>,
     /// `ALIAS`: the fields go by their alternative names.
     pub alias: bool,
     /// A program-described keyed file's key length (`KEYED(*CHAR:n)`,
@@ -443,6 +445,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     out.prtctl = kw(f, "PRTCTL").and_then(|k| word_arg(k, 0));
     out.sln_at = kw(f, "SLN").map(|k| k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at));
     out.handler = kw(f, "HANDLER").is_some();
+    out.handler_kw = kw(f, "HANDLER").cloned();
     out.alias = kw(f, "ALIAS").is_some();
     out.recno = kw(f, "RECNO").and_then(|k| word_arg(k, 0));
     out.pgmname = kw(f, "PGMNAME").and_then(|k| crate::decl::str_arg(k, 0).or_else(|| word_arg(k, 0)));
@@ -495,9 +498,8 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     {
         diags.push(Diag::new(ids::NOT_FOR_EXTERNAL, 20, k.at).arg(k.name.clone()));
     }
-    // LIKEFILE: the description is the parent's (`compile` copies it).
-    // BLOCKED(phase9): a LIKEFILE parameter (a file passed to a
-    // procedure) is not supported; the IR has no file handle to pass.
+    // LIKEFILE: the description is the parent's (`compile` copies it,
+    // for a file and for a parameter, which is the caller's handle).
     out.likefile = kw(f, "LIKEFILE").and_then(|k| word_arg(k, 0));
     if out.external && out.likefile.is_none() {
         let desc_name = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.name.clone());

@@ -960,9 +960,8 @@ impl Gen<'_> {
             }
             // A dump is taken only with DEBUG(*YES).
             ("DUMP", _) => {
-                if self.ctl.debug {
-                    self.rt_proc("_QRNX_DUMP", "()");
-                    self.b.ins("callb _QRNX_DUMP()");
+                if self.ctl.debug || op.ext.contains('A') {
+                    self.dump_op(op);
                 }
             }
             // No shutdown is requested: the indicator goes off.

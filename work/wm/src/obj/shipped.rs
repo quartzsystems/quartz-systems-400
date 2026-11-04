@@ -205,6 +205,7 @@ fn printer_files() -> Vec<(&'static str, Prtf)> {
         ("QPRINT", f("Program-described printer file", "*JOB")),
         ("QPJOBLOG", f("Job log", "QUSRSYS/QEZJOBLOG")),
         ("QPSRVDMP", f("Service dump", "QUSRSYS/QEZDEBUG")),
+        ("QPPGMDMP", f("RPG formatted dump", "*JOB")),
         ("QPDSPJOB", f("Job information", "*JOB")),
         ("QPDSPLOG", f("History log", "*JOB")),
         ("QPDSPSBS", f("Subsystem information", "*JOB")),

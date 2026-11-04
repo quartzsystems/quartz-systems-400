@@ -525,6 +525,17 @@ impl Gen<'_> {
                 }
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = addr {}", v.op));
+                // `%ADDR(v : *DATA)`: a varying field's data, past its prefix.
+                let data = matches!(args.get(1), Some(Expr::Special { word, .. }) if word == "*DATA");
+                let prefix = match v.ty {
+                    Ty::VarChar(_, p) | Ty::VarUcs2(_, p) | Ty::VarGraph(_, p) => i64::from(p),
+                    _ => 0,
+                };
+                if data && prefix > 0 {
+                    let d = self.b.reg();
+                    self.b.ins(format!("{d} = ptradd {r}, {prefix}"));
+                    return Some(V::reg(Ty::Ptr, d));
+                }
                 Some(V::reg(Ty::Ptr, r))
             }
             "%PADDR" => {

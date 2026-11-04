@@ -447,9 +447,11 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
             }
         }
         if eof {
-            // The rest of this member is not read.
+            // The rest of this member is not read; its open /IF groups
+            // end with it.
             let top = stack.last_mut().expect("a frame");
             top.next = r.members[top.member].records.len();
+            conds.truncate(top.conds.min(conds.len()));
             continue;
         }
         if let Some((lib, file, name, word)) = copy {

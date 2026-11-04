@@ -511,10 +511,7 @@ impl Session {
                     if e.name == c.name && listing.is_empty() {
                         listing = records;
                     } else if e.name != "QSQ" {
-                        o.spool.push(Spooled {
-                            file: e.name.clone(),
-                            lines: fcfc_rows(&records, &["https://pub400.com"]),
-                        });
+                        o.spool.push(spooled(&e.name, &records));
                     }
                 }
             } else {
@@ -562,10 +559,7 @@ impl Session {
         for e in self.spools()? {
             let records = self.take_spool(&e)?;
             if e.name != "QSQ" {
-                out.push(Spooled {
-                    file: e.name.clone(),
-                    lines: fcfc_rows(&records, &["https://pub400.com"]),
-                });
+                out.push(spooled(&e.name, &records));
             }
         }
         Ok(out)
@@ -620,6 +614,16 @@ impl Session {
         }
         self.ftp.quit();
     }
+}
+
+/// A spooled file's rows: the site's footer dropped, a dump's job,
+/// user, library and dates masked.
+fn spooled(name: &str, records: &[String]) -> Spooled {
+    let mut lines = fcfc_rows(records, &["https://pub400.com"]);
+    if name == "QPPGMDMP" {
+        lines = rpg_oracle::outcome::mask_dump(lines);
+    }
+    Spooled { file: name.to_string(), lines }
 }
 
 /// The folder every `rpg-oracle` process on this machine shares, so

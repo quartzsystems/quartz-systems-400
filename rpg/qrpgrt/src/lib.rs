@@ -12,12 +12,17 @@
 
 pub mod ctl;
 pub mod cvt;
+pub mod datagen;
+pub mod datainto;
 pub mod exc;
 pub mod arrays;
 pub mod dates;
 pub mod dtnat;
+pub mod dump;
 pub mod fmt;
 pub mod mov;
+pub mod oa;
+pub mod shipped;
 pub mod natives;
 pub mod ops;
 pub mod sql;
@@ -74,9 +79,10 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_SQLDA", sql::sql_da as *const () as usize),
         ("_QRNX_COMMIT", ctl::commit as *const () as usize),
         ("_QRNX_CMTOPEN", ctl::cmt_open as *const () as usize),
-        ("_QRNX_DUMP", ctl::dump as *const () as usize),
+        ("_QRNX_DUMP", dump::dump as *const () as usize),
         ("_QRNX_ALLOC", ctl::alloc as *const () as usize),
         ("_QRNX_NOHANDLER", ctl::no_handler as *const () as usize),
+        ("_QRNX_OAOPEN", oa::oa_open as *const () as usize),
         ("_QRNX_ALTSEQ", ctl::altseq as *const () as usize),
         ("_QRNX_FIXZONED", ctl::fix_zoned as *const () as usize),
         ("_QRNX_SPECIAL", ctl::special as *const () as usize),
@@ -85,13 +91,19 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_DTALCK", ctl::dta_locked as *const () as usize),
         ("_QRNX_REALLOC", ctl::realloc as *const () as usize),
         ("_QRNX_XMLINTO", xml::xml_into as *const () as usize),
+        ("_QRNX_DATAINTO", datainto::data_into as *const () as usize),
+        ("_QRNX_DATAGEN", datagen::data_gen as *const () as usize),
         ("_QRNX_XMLSAX", xml::xml_sax as *const () as usize),
     ]
 }
 
-/// Put the runtime library into a job.
+/// Put the runtime library into a job: the procedures, and the
+/// parsers and generators QS/400 ships for `DATA-INTO` and `DATA-GEN`.
 pub fn install(job: &mut mi::Job) {
     for (name, addr) in procedures() {
         job.act.system.insert(name.to_string(), addr);
+    }
+    for (name, f) in shipped::natives() {
+        job.natives.insert(name.to_string(), f);
     }
 }

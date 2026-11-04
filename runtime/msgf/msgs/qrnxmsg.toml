@@ -125,8 +125,38 @@ vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "
 [[msg]]
 id = "RNX0356"
 sev = 50
-text = "The XML handler procedure stopped the parse."
+text = "The document does not fit the target of DATA-INTO (reason &1)."
 vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "RNX0357"
+sev = 50
+text = "The DATA-INTO parser reported error &1."
+vars = ["*BIN 4", "*CHAR *VARY 2", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "RNX0358"
+sev = 50
+text = "The DATA-INTO parser called its procedures out of order (reason &1)."
+vars = ["*BIN 4", "*CHAR *VARY 2", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "RNX0361"
+sev = 50
+text = "A value could not be prepared for the DATA-GEN generator (reason &1)."
+vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR 7"]
+
+[[msg]]
+id = "RNX0362"
+sev = 50
+text = "The DATA-GEN generator called its procedures wrongly (reason &1)."
+vars = ["*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "RNX0363"
+sev = 50
+text = "The DATA-GEN generator reported error &1."
+vars = ["*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4"]
 
 [[msg]]
 id = "RNX0355"

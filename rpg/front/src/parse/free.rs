@@ -342,6 +342,23 @@ fn has_assignment(toks: &[Tok]) -> bool {
     false
 }
 
+/// Whether the parenthesis the tokens start with closes at their end,
+/// with more than one token inside (an argument list, not an extender).
+fn closes_at_end(toks: &[Tok]) -> bool {
+    let mut depth = 0;
+    for (i, t) in toks.iter().enumerate() {
+        if t.is("(") {
+            depth += 1;
+        } else if t.is(")") {
+            depth -= 1;
+            if depth == 0 {
+                return i + 1 == toks.len() && i > 2;
+            }
+        }
+    }
+    false
+}
+
 /// The source text from one position to another, for embedded SQL.
 fn source_between(b: &Builder<'_>, from: Pos, to: Pos) -> String {
     let mut out = String::new();
@@ -401,7 +418,10 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
         // `chain(e) k f` and `if (a) = b` are operations.
         let indexed_target =
             after.first().is_some_and(|t| t.is("(")) && extenders(after).is_none() && has_assignment(after);
-        !assigns_to_word && (takes_expr || !indexed_target)
+        // `add(f : 1)`: a fixed-form-only name called as a procedure,
+        // the whole statement one call.
+        let call = ops::fixed_only(word) && after.first().is_some_and(|t| t.is("(")) && closes_at_end(after);
+        !assigns_to_word && !call && (takes_expr || !indexed_target)
     };
     if !is_op {
         // An assignment is an implicit EVAL, anything else a CALLP.

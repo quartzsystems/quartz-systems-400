@@ -147,6 +147,11 @@ pub struct Job {
     /// The next file opened goes under commitment control (RPG's
     /// `COMMIT` keyword, set just before the open).
     pub commit_next: bool,
+    /// The handler the next file opened goes to (RPG's `HANDLER`, set
+    /// just before the open).
+    pub oa_next: Option<crate::io::oa::OaFile>,
+    /// The open handler files.
+    pub oa_files: HashMap<FileKey, crate::io::oa::OaFile>,
     /// Call-stack depth: procedures entered and not yet left.
     pub depth: u32,
     /// The deepest the call stack has been.
@@ -260,6 +265,8 @@ impl Job {
             raised: Vec::new(),
             cmtctl: false,
             commit_next: false,
+            oa_next: None,
+            oa_files: HashMap::new(),
             depth: 0,
             max_depth: 0,
             autos: Vec::new(),

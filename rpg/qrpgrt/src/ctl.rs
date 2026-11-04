@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Job-level operations: `COMMIT` and `ROLBK`, `DUMP`, and the heap
+//! Job-level operations: `COMMIT` and `ROLBK`, and the heap
 //! operations with RPG's statuses.
 
 use codegen::abi::Env;
@@ -36,11 +36,6 @@ pub extern "sysv64" fn commit(env: *mut Env, _argc: i64, _od: i64, kind: i32) {
 pub extern "sysv64" fn cmt_open(env: *mut Env, _argc: i64, _od: i64, on: i32) {
     job(env).commit_next = on != 0;
 }
-
-/// `_QRNX_DUMP()`: `DUMP` under `DEBUG(*YES)`.
-// BLOCKED(phase9): no formatted dump is written; pub400's holds the job
-// and the dates, so no corpus member can compare one.
-pub extern "sysv64" fn dump(_env: *mut Env, _argc: i64, _od: i64) {}
 
 /// Send the RPG runtime's escape for a status.
 fn signal(j: &mut mi::Job, status: u16) {

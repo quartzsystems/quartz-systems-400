@@ -210,10 +210,17 @@ pub fn check_module(m: &rpgfront::ast::Module, files: &[crate::files::File], ctl
             out.push(Diag::new(ids::SLN_NO_SLNO, 30, at));
         }
     }
-    for f in files.iter().filter(|f| f.usropn && !f.template) {
-        let opened = all.iter().any(|s| {
-            split_suffix(&s.op.code).0 == "OPEN" && s.op.f2.first().and_then(name_of).is_some_and(|n| n.eq_ignore_ascii_case(&f.name))
-        });
+    for f in files.iter().filter(|f| f.usropn && !f.template && !f.param) {
+        // An OPEN of a LIKEFILE parameter of the same parent counts.
+        let kin = |n: &str| {
+            n.eq_ignore_ascii_case(&f.name)
+                || files.iter().any(|p| {
+                    p.param
+                        && p.name.eq_ignore_ascii_case(n)
+                        && p.likefile.as_ref().is_some_and(|l| l.eq_ignore_ascii_case(&f.name) || f.likefile.as_ref().is_some_and(|g| g.eq_ignore_ascii_case(l)))
+                })
+        };
+        let opened = all.iter().any(|s| split_suffix(&s.op.code).0 == "OPEN" && s.op.f2.first().and_then(name_of).is_some_and(|n| kin(&n)));
         if !opened {
             out.push(Diag::new(ids::USROPN_NO_OPEN, 30, Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
         }

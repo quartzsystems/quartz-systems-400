@@ -242,6 +242,61 @@ fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
     }
 }
 
+/// Open a file through its Open Access handler.
+fn open_handler(j: &mut Job, key: FileKey, fr: &qir::FileRef, oa: crate::io::oa::OaFile, infds: u64, infds_len: usize) -> i32 {
+    let opened = oa.borrow_mut().open(j, fr);
+    match opened {
+        Ok(info) => {
+            write_infds(infds, infds_len, &info, &IoResult::default(), true, "OPEN", j.abi.cur_stmt);
+            j.files.insert(
+                key,
+                FileState {
+                    handle: 0,
+                    infds,
+                    infds_len,
+                    info,
+                    printer: None,
+                    display: false,
+                    fb: 0,
+                },
+            );
+            j.oa_files.insert(key, oa);
+            0
+        }
+        Err(f) => {
+            let info = FileInfo {
+                file: fr.file.clone(),
+                lib: fr.lib.clone(),
+                ..FileInfo::default()
+            };
+            let r = IoResult {
+                status: f.status,
+                msgid: Some(f.msgid.clone()),
+                ..IoResult::default()
+            };
+            write_infds(infds, infds_len, &info, &r, false, "OPEN", j.abi.cur_stmt);
+            i32::from(f.status)
+        }
+    }
+}
+
+/// A device operation of a handler file: its status (with the overflow
+/// as 1 for a printer), the record read copied back.
+fn handler_dev(j: &mut Job, oa: &crate::io::oa::OaFile, req: &crate::io::oa::DevRequest, rec: i64, rec_len: usize) -> i32 {
+    let r = oa.borrow_mut().dev(j, req);
+    if let Some(input) = &r.input
+        && rec != 0
+    {
+        let dst = bytes(rec, rec_len);
+        let n = input.len().min(rec_len);
+        dst[..n].copy_from_slice(&input[..n]);
+    }
+    if r.status != 0 {
+        return i32::from(r.status);
+    }
+    i32::from(r.overflow)
+}
+
 /// Open a display file through the job's display source.
 fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_len: usize, rpg: bool) -> i32 {
     let mut info = FileInfo {
@@ -299,6 +354,7 @@ fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
 }
 
 /// `db_open(env, file, infds, infds_desc) -> status`.
+#[allow(clippy::too_many_lines)]
 pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc: i64) -> i32 {
     let Some((key, fr)) = file_of(env, file) else {
         raise_on(job(env), Cond::Mch3601);
@@ -310,6 +366,9 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
     } else {
         usize::try_from(ty(infds_desc).size()).unwrap_or(0)
     };
+    if let Some(oa) = j.oa_next.take() {
+        return open_handler(j, key, &fr, oa, infds.cast_unsigned(), infds_len);
+    }
     if fr.dev == qir::FileDev::Printer {
         return open_printer(j, key, &fr, infds.cast_unsigned(), infds_len);
     }
@@ -414,7 +473,10 @@ pub extern "sysv64" fn db_close(env: *mut Env, file: i64) -> i32 {
     let Some(mut state) = j.files.remove(&key) else {
         return CLOSED;
     };
-    let r = if let Some(p) = state.printer.as_mut() {
+    let oa = j.oa_files.remove(&key);
+    let r = if let Some(oa) = oa {
+        oa.borrow_mut().close(j)
+    } else if let Some(p) = state.printer.as_mut() {
         let closed = j.spool.as_mut().map(|s| p.close(s.as_mut()));
         match closed {
             Some(Err(f)) => IoResult {
@@ -530,10 +592,14 @@ pub extern "sysv64" fn db_io(
         nolock: nolock != 0,
         nulls: null_map.as_deref(),
     };
-    let Some(io) = j.io.as_mut() else {
-        return CLOSED;
+    let r = if let Some(oa) = j.oa_files.get(&fkey).cloned() {
+        oa.borrow_mut().io(j, &req)
+    } else {
+        let Some(io) = j.io.as_mut() else {
+            return CLOSED;
+        };
+        io.io(handle, &req)
     };
-    let r = io.io(handle, &req);
     if let Some(data) = &r.record
         && rec != 0
     {
@@ -603,6 +669,15 @@ pub extern "sysv64" fn dev_io(
     } else {
         bytes(rec, rec_len).to_vec()
     };
+    if let Some(oa) = j.oa_files.get(&key).cloned() {
+        let req = crate::io::oa::DevRequest {
+            op: if fr.dev == qir::FileDev::Display { op } else { 0 },
+            format,
+            record,
+            control: None,
+        };
+        return handler_dev(j, &oa, &req, rec, rec_len);
+    }
     let Some(state) = j.files.get_mut(&key) else {
         return CLOSED;
     };
@@ -653,6 +728,15 @@ pub extern "sysv64" fn prt_ctl(
     };
     let word = ctl.cast_unsigned();
     let part = |shift: u32| u16::try_from((word >> shift) & 0xFFFF).unwrap_or(0);
+    if let Some(oa) = j.oa_files.get(&key).cloned() {
+        let req = crate::io::oa::DevRequest {
+            op: 0,
+            format: String::new(),
+            record,
+            control: Some([part(48), part(32), part(16), part(0)]),
+        };
+        return handler_dev(j, &oa, &req, 0, 0);
+    }
     let control = spool::printer::Control {
         space_before: part(48),
         space_after: part(32),
@@ -820,6 +904,17 @@ pub extern "sysv64" fn dsp_io(
     } else {
         bytes(inds, inds_len).to_vec()
     };
+    if let Some(oa) = j.oa_files.get(&key).cloned() {
+        // The display operations' codes, past 10 (`DevRequest::op`).
+        let req = crate::io::oa::DevRequest {
+            op: op + 10,
+            format,
+            record,
+            control: None,
+        };
+        let _ = area;
+        return handler_dev(j, &oa, &req, rec, rec_len);
+    }
     let Some(state) = j.files.get(&key) else {
         return CLOSED;
     };

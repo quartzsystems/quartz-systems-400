@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The status data structures in the code must match the tables in
-//! `docs/RPG.md` ("Status data structures").
+//! The status data structures and the Open Access parameter in the code
+//! must match the tables in `docs/RPG.md`.
 
 use std::path::Path;
 
@@ -77,4 +77,11 @@ fn psds_matches_the_spec() {
     assert_eq!(named(&rows), code, "qrpgrt::exc::PSDS against docs/RPG.md");
     let code: Vec<_> = rpgc::extfiles::PSDS_WORDS.iter().map(|(w, o, l, _)| ((*w).to_string(), *o, *l)).collect();
     assert_eq!(words(&rows), code, "PSDS_WORDS against docs/RPG.md");
+}
+
+#[test]
+fn open_access_parameter_matches_the_spec() {
+    let rows = table(&doc(), "QrnOpenAccess_T");
+    let code: Vec<_> = qrpgrt::oa::FIELDS.iter().map(|(n, (o, l))| ((*n).to_string(), *o, *l)).collect();
+    assert_eq!(named(&rows), code, "qrpgrt::oa::FIELDS against docs/RPG.md");
 }

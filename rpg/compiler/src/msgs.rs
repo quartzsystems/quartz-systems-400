@@ -153,6 +153,7 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF0574", "&1 needs a numeric value."),
     ("RNF5324", "The operation needs a high resulting indicator; none is given, so the operation is dropped."),
     ("RNF0224", "The %XML options are not valid here: &1."),
+    ("RNF0236", "The %DATA options are not valid here: &1."),
     ("RNF5352", "The %HANDLER procedure does not have the interface this operation calls."),
     ("RNF7099", "The program commits or rolls back, but no file of it is opened under commitment control."),
     ("RNF5152", "DUMP is not done: neither the (A) extender nor DEBUG(*YES) is given."),

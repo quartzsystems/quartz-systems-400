@@ -589,9 +589,14 @@ fn define(t: &mut Table, scope: usize, prefix: &str, s: &rpgfront::ast::Stmt) {
 #[must_use]
 pub fn written(m: &rpgfront::ast::Module, fmt: &str) -> bool {
     let calcs = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter()));
-    let by_op = calcs.filter(|s| matches!(s.op.code.as_str(), "WRITE" | "UPDATE")).any(|s| {
-        s.op.f2.first().or_else(|| s.op.f1.first()).and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(fmt))
-    });
+    // `file.format` (a qualified or LIKEFILE file) names it too.
+    let names = |e: &Expr| match e {
+        Expr::Ref { steps, .. } if matches!(steps.first(), Some(Step::Field(f)) if f.eq_ignore_ascii_case(fmt)) => true,
+        e => e.name().is_some_and(|n| n.eq_ignore_ascii_case(fmt)),
+    };
+    let by_op = calcs
+        .filter(|s| matches!(s.op.code.as_str(), "WRITE" | "UPDATE"))
+        .any(|s| s.op.f2.first().or_else(|| s.op.f1.first()).is_some_and(names));
     by_op || m.outputs.iter().any(|o| o.name.eq_ignore_ascii_case(fmt))
 }
 

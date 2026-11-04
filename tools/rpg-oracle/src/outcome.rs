@@ -69,6 +69,32 @@ pub fn fcfc_rows(records: &[String], drop: &[&str]) -> Vec<String> {
     out
 }
 
+/// The labels of a formatted dump (`QPPGMDMP`) whose values name the
+/// job, the user, the library or a date or time: masked on both sides.
+const DUMP_MASKED: &[&str] = &[
+    "Library",
+    "Job Name",
+    "User Name",
+    "Job Number",
+    "Date Entered System",
+    "Compile Date",
+    "Compile Time",
+];
+
+/// A formatted dump's rows with the values that differ by job and day
+/// replaced by `*`.
+#[must_use]
+pub fn mask_dump(rows: Vec<String>) -> Vec<String> {
+    rows.into_iter()
+        .map(|r| {
+            let Some(at) = r.find(" :   ") else { return r };
+            let label = r[..at].split_whitespace().skip(1).take_while(|w| *w != ".").collect::<Vec<_>>().join(" ");
+            let label = label.trim_end_matches('.').trim();
+            if DUMP_MASKED.contains(&label) { format!("{}*", &r[..at + 5]) } else { r }
+        })
+        .collect()
+}
+
 /// A job log message the call left.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Logged {

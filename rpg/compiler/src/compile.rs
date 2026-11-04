@@ -138,6 +138,7 @@ fn declare_scope(
                     fi.output = p.output;
                     fi.update = p.update;
                     fi.delete = p.delete;
+                    fi.noblock = p.noblock;
                     fi.qualified = true;
                 }
                 None => diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, f.at).arg(parent)),
@@ -187,7 +188,14 @@ fn declare_scope(
     for d in defs {
         let Some(p) = d.kw("BASED").and_then(|k| decl::word_arg(k, 0)).map(|p| p.to_ascii_uppercase()) else { continue };
         let Some(id) = cx.t.find(scope, &d.name.to_ascii_uppercase()) else { continue };
-        if p.contains('.') || p.starts_with('*') || cx.t.find(scope, &p).is_some() || matches!(cx.t.syms[id].storage, Storage::Based(_)) {
+        if p.contains('.') || p.starts_with('*') || matches!(cx.t.syms[id].storage, Storage::Based(_)) {
+            continue;
+        }
+        // A pointer an earlier BASED declared bases this one too.
+        if let Some(pid) = cx.t.find(scope, &p) {
+            if cx.t.syms[pid].implicit && cx.t.syms[pid].ty == crate::types::Ty::Ptr {
+                cx.t.syms[id].storage = Storage::Based(pid);
+            }
             continue;
         }
         let ptr = Sym {
@@ -274,7 +282,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         defines: predefined(opts).into_iter().chain(opts.define.iter().cloned()).collect(),
         ..ReadOptions::default()
     };
-    let (read, mut module, mut diags) = rpgfront::front(main, includes, &ropts);
+    let (read, mut module, mut diags) = rpgfront::front(main, &mut crate::qoar::WithQoar(includes), &ropts);
     // A free-form declaration after the main calculations is out of
     // sequence: ignored, and so is the rest of its line.
     if let Some(first) = module.calcs.first().map(|s| s.at.line) {
@@ -423,6 +431,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                         f.scope = scope;
                         f.param = true;
                         f.qualified = true;
+                        f.template = false;
+                        f.usropn = false;
                         f.infds = None;
                         f.likefile = Some(parent.clone());
                         f.def_line = at.line;
@@ -439,7 +449,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                             diags.push(Diag::new(crate::diag::ids::DUPLICATE, 30, at).arg(prm.name.clone()));
                         }
                         // Its own record formats, the parent's, qualified.
-                        let copies: Vec<_> = t
+                        let mut copies: Vec<_> = t
                             .recfmts
                             .iter()
                             .filter(|r| r.file_name == *parent)
@@ -450,6 +460,23 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                                 ..r.clone()
                             })
                             .collect();
+                        // A TEMPLATE parent declares no formats: its description's.
+                        if copies.is_empty() {
+                            copies = f
+                                .ext
+                                .iter()
+                                .flat_map(|e| e.formats.iter())
+                                .filter(|fm| crate::extfiles::kept(&f, &fm.name))
+                                .map(|fm| crate::extfiles::RecFmt {
+                                    file: files.len(),
+                                    file_name: prm.name.clone(),
+                                    name: f.renames.iter().find(|(e, _)| *e == fm.name).map_or_else(|| fm.name.clone(), |(_, n)| n.clone()),
+                                    fmt: fm.clone(),
+                                    qualified: true,
+                                    names: fm.fields.iter().map(|x| crate::extfiles::prefixed(&x.name, f.prefix.as_ref())).collect(),
+                                })
+                                .collect();
+                        }
                         t.recfmts.extend(copies);
                         files.push(f);
                     }
@@ -538,6 +565,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         diags.extend(crate::sql::diags(p));
     }
     let endmod = precompiled.as_ref().is_some_and(|p| p.options.closqlcsr == "*ENDMOD");
+    crate::codegen::datagen::spellings(&module, &read.lines, &mut t.spellings);
     let (qir, mut gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts, endmod);
     // A group the generator finds unbalanced follows from another
     // error (a group whose start was in error, or one IBM reports).

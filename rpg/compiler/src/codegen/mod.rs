@@ -21,11 +21,14 @@ pub mod heap;
 pub mod ucs2;
 pub mod dbio;
 pub mod dates;
+pub mod datagen;
 pub mod dspio;
 pub mod dtaara;
+pub mod dump;
 pub mod emit;
 pub mod exc;
 pub mod expr;
+pub mod oa;
 pub mod output;
 pub mod special;
 pub mod sql;
@@ -201,6 +204,8 @@ pub struct Gen<'a> {
     pub callbs: u32,
     /// Names of the module's own procedures.
     pub local_procs: BTreeSet<String>,
+    /// The subprocedures in order: scope `i + 1` is the `i`th.
+    pub proc_order: Vec<String>,
     /// Those of them that are exported.
     pub exported_procs: BTreeSet<String>,
     /// Page counters the output uses (`PAGE`, `PAGE1`...).
@@ -397,6 +402,7 @@ pub fn module(
         monitors: 0,
         callbs: 0,
         local_procs: m.procs.iter().map(|p| p.name.to_ascii_uppercase()).collect(),
+        proc_order: m.procs.iter().map(|p| p.name.to_ascii_uppercase()).collect(),
         exported_procs: m.procs.iter().filter(|p| p.kws.iter().any(|k| k.name == "EXPORT")).map(|p| p.name.to_ascii_uppercase()).collect(),
         pages: BTreeSet::new(),
         outputs: m.outputs.clone(),

@@ -101,11 +101,18 @@ impl Gen<'_> {
             }
         };
         if let Some(fmt) = fmt {
-            if let Some(i) = self.t.recfmts.iter().position(|r| r.file_name == name && r.name == fmt) {
+            // The file of this scope (parameter files of one name differ
+            // by procedure), else any of the name.
+            let fi = match self.t.find(self.scope, &name).map(|id| self.t.syms[id].kind.clone()) {
+                Some(Some(Kind::File(i))) => Some(i),
+                _ => self.files.iter().position(|f| f.name == name),
+            };
+            let at = self.t.recfmts.iter().position(|r| Some(r.file) == fi && r.name == fmt).or_else(|| self.t.recfmts.iter().position(|r| r.file_name == name && r.name == fmt));
+            if let Some(i) = at {
                 self.used_formats.insert(i);
             }
-            let r = self.t.recfmts.iter().find(|r| r.file_name == name && r.name == fmt).cloned();
-            let f = self.files.iter().find(|f| f.name == name).cloned();
+            let r = at.and_then(|i| self.t.recfmts.get(i).cloned());
+            let f = fi.and_then(|i| self.files.get(i).cloned());
             return match (f, r) {
                 (Some(f), Some(r)) => Some((f, Some(r))),
                 _ => {
@@ -118,7 +125,7 @@ impl Gen<'_> {
         match sym {
             Some(Some(Kind::File(i))) => {
                 let f = self.files.get(i).cloned()?;
-                let r = self.t.recfmts.iter().find(|r| r.file_name == f.name).cloned();
+                let r = self.t.recfmts.iter().find(|r| r.file == i).or_else(|| self.t.recfmts.iter().find(|r| r.file_name == f.name)).cloned();
                 Some((f, r))
             }
             Some(Some(Kind::Format(i))) => {
@@ -150,12 +157,10 @@ impl Gen<'_> {
         if f.dev == Dev::Special {
             return self.special_open(f);
         }
-        // BLOCKED(phase9): Open Access handlers are not called; opening a
-        // HANDLER file ends the program as a handler IBM i cannot find
-        // does (its error is no file error the operation can take).
+        // A HANDLER file: its handler takes the open and every
+        // operation after it (`codegen::oa`).
         if f.handler {
-            self.rt_proc("_QRNX_NOHANDLER", "()");
-            self.b.ins("callb _QRNX_NOHANDLER()");
+            self.oa_open(f);
         }
         // COMMIT: the runtime opens the next file under commitment
         // control; COMMIT(flag) when the flag is on at the open.
@@ -383,7 +388,11 @@ impl Gen<'_> {
             }
         }
         let status;
-        if base == "DELETE" && !matches!(key, KeyArg::None) {
+        // A handler file's DELETE takes its key itself.
+        if base == "DELETE" && !matches!(key, KeyArg::None) && f.handler {
+            status = self.dbio(&n, "DELETE", None, &key, false, None);
+            self.feedback(&n, "DELETE");
+        } else if base == "DELETE" && !matches!(key, KeyArg::None) {
             // DELETE by key: find the record, then delete it.
             status = self.dbio(&n, "CHAIN", Some("$rb_".to_string() + &n), &key, false, None);
             self.feedback(&n, "CHAIN");

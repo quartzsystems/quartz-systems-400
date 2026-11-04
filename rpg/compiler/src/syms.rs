@@ -264,6 +264,8 @@ pub struct Table {
     /// Files dropped because every format was ignored: their names are
     /// undefined without a message of their own.
     pub dropped_files: Vec<String>,
+    /// Names as the source spells them, by upper-case name (`DATA-GEN`).
+    pub spellings: HashMap<String, String>,
 }
 
 impl Table {

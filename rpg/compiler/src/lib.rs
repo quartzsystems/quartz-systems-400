@@ -41,6 +41,7 @@ pub mod codegen;
 pub mod listing;
 pub mod msgs;
 pub mod names;
+pub mod qoar;
 pub mod reader_class;
 pub mod sql;
 pub mod syms;
