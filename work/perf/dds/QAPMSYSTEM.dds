@@ -1,0 +1,135 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMSYSTEM: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMSYSM
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            DTECEN         1A
+     A            SYDPGF        11P 0
+     A            SYAPGF        11P 0
+     A            SYMPGF        11P 0
+     A            SYMCTR        11P 0
+     A            SYMCTW        11P 0
+     A            SYSASP        15P 0
+     A            SYPRMW        11P 0
+     A            SYSIZC        11P 0
+     A            SYDECD        11P 0
+     A            SYSEZC        11P 0
+     A            SYSZWT        11P 0
+     A            SYSYNL        11P 0
+     A            SYASYL        11P 0
+     A            SYVFYC        11P 0
+     A            SYAUTH        11P 0
+     A            SYEXPN        11P 0
+     A            SYLRT1         9P 0
+     A            SYLRT2         9P 0
+     A            SYLRT3         9P 0
+     A            SYLRT4         9P 0
+     A            SYLRT5         9P 0
+     A            SHCPU         11P 0
+     A            SMPLP         11P 0
+     A            SMUPL         11P 0
+     A            SUPLI          2A
+     A            SMXDU         11P 0
+     A            SMXDUI         4A
+     A            SMMMT         11P 0
+     A            SMME          11P 0
+     A            SYFOPN        11P 0
+     A            SYIXRB        11P 0
+     A            SYJOXR        11P 0
+     A            SYJOXP        11P 0
+     A            SYJOIR        11P 0
+     A            SYJOIP        11P 0
+     A            SYJOXD        11P 0
+     A            SYJOID        11P 0
+     A            SYJOJP        11P 0
+     A            SYJOBJ        11P 0
+     A            SYJOBD        11P 0
+     A            SYJOJY        11P 0
+     A            SYJOJN        11P 0
+     A            SYJOSE        11P 0
+     A            SYJORT        11P 0
+     A            SYJOND        11P 0
+     A            SYHEAO        11P 0
+     A            SYHFTS        11P 0
+     A            SYHFTH        11P 0
+     A            SYSDBC         9P 0
+     A            SYSSWC         9P 0
+     A            SYJOER        11P 0
+     A            SYJOES        11P 0
+     A            SYJOIB        11P 0
+     A            SYJOS1         2A
+     A            SYJOC1        15P 0
+     A            SYJOS2         2A
+     A            SYJOC2        15P 0
+     A            SYJOS3         2A
+     A            SYJOC3        15P 0
+     A            SYSDNFE       11P 0
+     A            SYSDNFO       11P 0
+     A            SYSDTET       15P 0
+     A            SYSDNST        5P 0
+     A            SYSDFAL       11P 0
+     A            SYSDFRL       11P 0
+     A            SYSDPFD       15P 0
+     A            SYSDPFF       15P 0
+     A            SYBTAC        11P 0
+     A            SYBTAP        11P 0
+     A            SYBTAPP       11P 0
+     A            SYBTAPC       11P 0
+     A            SYBTAPD       11P 0
+     A            SYLPTB        11P 0
+     A            SYNUAL        15P 0
+     A            SYIFUS         9P 0
+     A            SYIFTE         9P 0
+     A            SYIFTA        11P 0
+     A            SYSPTU        11P 0
+     A            SYSCTA        11P 0
+     A            SYSUTA        11P 0
+     A            SYSUTC        11P 0
+     A            SYSPLU        11P 0
+     A            SYSPLA        11P 0
+     A            SYVCPU        11P 0
+     A            SYDPCH        11P 0
+     A            SYSHRF         1A
+     A            SYSIUL         5P 0
+     A            SYSCIU         7P 0
+     A            SYJDUM         1P 0
+     A            SYJDDM         3A
+     A            SYJCA4         3A
+     A            SYJPAS         3A
+     A            SYJMRT         3A
+     A            SYJS6E         3A
+     A            SYJCME         3A
+     A            SYJAUT         3A
+     A            SYJBCH         3A
+     A            SYJINT         3A
+     A            SYJSPL         3A
+     A            SYVPID         4B 0
+     A            SYVPCAP        9B 0
+     A            SYPPLU        18B 0
+     A            SYPPLA        18B 0
+     A            SYPTHV        18B 0
+     A            SYPTINT       18B 0
+     A            SYPTWS        18B 0
+     A            SYPTDN        18B 0
+     A            SYSSPTU       18B 0
+     A            SYUCAPF        1A
+     A            SYDONF         1A
+     A            SYPTWAIT      18B 0
+     A            SYPTREADY     18B 0
+     A            SYPTLATEN     18B 0
+     A            SYPTACT       18B 0
+     A            SYPTIDLE      18B 0
+     A            SYPTINTR      18B 0
+     A            SYFRMCPU      18B 0
+     A            SYFRMSCPU     18B 0
+     A            SYPFOLDSW      1A
+     A            SYPFOLDST      1A
+     A            SYEMMAJCDE     1H
+     A            SYEMMINCDE     1H
+     A            SYEMMATTR      1H
+     A            SYEMPWRLMT     9B 1

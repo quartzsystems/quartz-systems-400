@@ -41,6 +41,7 @@ members = [
     "work/qap-proto",
     "work/stg",
     "work/print",
+    "work/perf",
     # Security: profiles, passwords, authority, auditing.
     "security/sec",
     "security/pwdsub",

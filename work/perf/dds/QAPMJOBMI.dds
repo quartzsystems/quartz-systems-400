@@ -1,0 +1,137 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMJOBMI: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMJOBM
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            DTECEN         1A
+     A            JBNAME        16A
+     A            JBUSER        10A
+     A            JBNBR          6A
+     A            JBTYPE         1A
+     A            JBSTYP         1A
+     A            JBSTSF         1P 0
+     A            JBTTYP         2A
+     A            JBTTYE         2A
+     A            JBPOOL         2A
+     A            JBPRTY         3A
+     A            JBCPU         15P 3
+     A            JBRSP         15P 3
+     A            JBSLC         11P 0
+     A            JBNTR         11P 0
+     A            JBDBR         11P 0
+     A            JBNDB         11P 0
+     A            JBWRT         11P 0
+     A            JBAW          11P 0
+     A            JBWI          11P 0
+     A            JBAI          11P 0
+     A            JBNDW         11P 0
+     A            JBDBW         11P 0
+     A            JBANDW        11P 0
+     A            JBADBW        11P 0
+     A            JBANDR        11P 0
+     A            JBADBR        11P 0
+     A            JBPW          11P 0
+     A            JBPAGF        11P 0
+     A            JBOBIN        11P 0
+     A            JBODEC        11P 0
+     A            JBOFLP        11P 0
+     A            JBIPF         11P 0
+     A            JBWIO         11P 0
+     A            JBSZWT        15P 3
+     A            JBSKSC        11P 0
+     A            JBSKBS        11P 0
+     A            JBSKRC        11P 0
+     A            JBSKBR        11P 0
+     A            JBXRFR        11P 0
+     A            JBXRFW        11P 0
+     A            JBTCPU        15P 3
+     A            JBTHDF         1P 0
+     A            JBTHID         8A
+     A            JBTHAC        11P 0
+     A            JBTHCT        11P 0
+     A            JBMTXT        15P 3
+     A            JBIBM1        11P 0
+     A            JBINSX        11P 0
+     A            JBSVIF         1A
+     A            JBTFLT        11P 0
+     A            JBTDE          8H
+     A            JBPTDE         8H
+     A            JBLDUM         1P 0
+     A            JBEDBC        15P 3
+     A            JBTDBC        15P 3
+     A            JBCOP         11P 0
+     A            JBCOS         11P 0
+     A            JBDOP         11P 0
+     A            JBDOS         11P 0
+     A            JBPJE         11P 0
+     A            JBNSJE        11P 0
+     A            JBUJD         11P 0
+     A            JBSJD         11P 0
+     A            JBBFW         15P 0
+     A            JBBFA         15P 0
+     A            JBBTW         15P 0
+     A            JBBTA         15P 0
+     A            JBTWT         11P 0
+     A            JBTNW         11P 0
+     A            JBXRRR        11P 0
+     A            JBXRRW        11P 0
+     A            JBXRFS        11P 0
+     A            JBXRBR        15P 0
+     A            JBXRBW        15P 0
+     A            JBFSH         11P 0
+     A            JBASH         11P 0
+     A            JBFSHA        11P 0
+     A            JBASHA        11P 0
+     A            JBPGA         11P 0
+     A            JBPGD         11P 0
+     A            JBCUSR        10A
+     A            JBACPU        15P 3
+     A            JBIPAF         1H
+     A            JBIPAD        16H
+     A            JBIPPT         5S 0
+     A            JBUAUF         1A
+     A            JBPGRQ         9B 0
+     A            JBPGRL         9B 0
+     A            JBMSLR         9B 0
+     A            JBMDYR         9B 0
+     A            JBMLCH         9B 0
+     A            JBMLCM         9B 0
+     A            JBMOPN         9B 0
+     A            JBMNDC         9B 0
+     A            JBMNDD         9B 0
+     A            JBSCPU        18B 0
+     A            JBSTCPU       18B 0
+     A            JBFLDR1       18B 0
+     A            JBFLDR2       18B 0
+     A            JBFLDR3        9B 0
+     A            JBFLDR4        9B 0
+     A            JBJVMF         1A
+     A            JBJVMT         1H
+     A            JBPASE         1A
+     A            JBJTHDT        1H
+     A            JBNFHN         2H
+     A            JBNFLVL        1H
+     A            JBNFGRP        4H
+     A            JBNFHNC       18B 0
+     A            JBNFFNC       18B 0
+     A            JBNFHNP        9B 0
+     A            JBNFFNP        9B 0
+     A            JBTNAME       16A
+     A            JBSLTCNT       9B 0
+     A            JBSACPU       18B 0
+     A            JBINDCPU      18B 0
+     A            JBSINDCPU     18B 0
+     A            JBCPUWC       18B 0
+     A            JBVPDLY       18B 0
+     A            JBSEIZECNT     9B 0
+     A            JBPSLCKCNT     9B 0
+     A            JBTSLCKCNT     9B 0
+     A            JBPSRCDLCK     9B 0
+     A            JBTSRCDLCK     9B 0
+     A            JBNFOGDT      18B 0
+     A            JBNFOGMA       9B 0

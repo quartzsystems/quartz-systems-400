@@ -1,0 +1,69 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMETH: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMETHR
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            IOPRN         10A
+     A            ETIOPI         1H
+     A            ETTYPE         4A
+     A            ETLLND        10A
+     A            ETLLSP        11P 0
+     A            ETLTFT        11P 0
+     A            ETLTFR        11P 0
+     A            ETLIFT        11P 0
+     A            ETLIFR        11P 0
+     A            ETLICT        11P 0
+     A            ETLICR        11P 0
+     A            ETPRCL         1A
+     A            ETLRFT         5P 0
+     A            ETLRFR         5P 0
+     A            ETLFFT         5P 0
+     A            ETLFFR         5P 0
+     A            ETLRJR         5P 0
+     A            ETLRJT         5P 0
+     A            ETLSFT         5P 0
+     A            ETLSFR         5P 0
+     A            ETLDFT         5P 0
+     A            ETLDFR         5P 0
+     A            ETLDMT         5P 0
+     A            ETLDMR         5P 0
+     A            ETLN2R         5P 0
+     A            ETLT1T         5P 0
+     A            ETLTIT         5P 0
+     A            ETLFRT        11P 0
+     A            ETLBRT        11P 0
+     A            ETLLBC         5P 0
+     A            ETMFTG        11P 0
+     A            ETMFRG        11P 0
+     A            ETMIFM         5P 0
+     A            ETMCRE         5P 0
+     A            ETMEXR        11P 0
+     A            ETMOWC         5P 0
+     A            ETMALE         5P 0
+     A            ETMCRL         5P 0
+     A            ETMTDR         5P 0
+     A            ETMRBE         5P 0
+     A            ETMSPI         5P 0
+     A            ETMDIF        11P 0
+     A            ETMROV         5P 0
+     A            ETMMEE         5P 0
+     A            ETMIOV         5P 0
+     A            ETMTUN         5P 0
+     A            ETMBBE         5P 0
+     A            ETMSQE         5P 0
+     A            ETMM1R        11P 0
+     A            ETM1R         11P 0
+     A            ETMDCN        11P 0
+     A            ETMBRV        15P 0
+     A            ETMBTR        15P 0
+     A            ETMFNT        11P 0
+     A            ETMMFD         5P 0
+     A            ETMTFD         5P 0
+     A            ETMDUP         1A
+     A            ETMUPF        11P 0
+     A            ETMPORT       10A

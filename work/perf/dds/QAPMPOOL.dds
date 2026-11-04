@@ -1,0 +1,36 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMPOOL: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMPOOR
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            PONBR          2A
+     A            POACTL         5P 0
+     A            POSIZ          9P 0
+     A            PORES          9P 0
+     A            PODBF         11P 0
+     A            PONDBF        11P 0
+     A            PODBPG        11P 0
+     A            PONDPG        11P 0
+     A            POAW          11P 0
+     A            POWI          11P 0
+     A            POAI          11P 0
+     A            PTTYPE         1A
+     A            PTPAGE         1A
+     A            PTNDBF         3P 0
+     A            PTDBF1         3P 0
+     A            PTDEX1         1A
+     A            PTDTS1         1A
+     A            PTDBF2         3P 0
+     A            PTDEX2         1A
+     A            PTDTS2         1A
+     A            PTDBF3         3P 0
+     A            PTDEX3         1A
+     A            PTDTS3         1A
+     A            PTDBF4         3P 0
+     A            PTDEX4         1A
+     A            PTDTS4         1A

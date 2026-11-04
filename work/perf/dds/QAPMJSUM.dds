@@ -1,0 +1,58 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMJSUM: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMJSUM
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            DTECEN         1A
+     A            JSCBKT         3A
+     A            JSCPU         11P 0
+     A            JSTRNT        15P 3
+     A            JSTRNS        11P 0
+     A            JSPRTL        11P 0
+     A            JSPRTP        11P 0
+     A            JSSPD         11P 0
+     A            JSRRT         11P 0
+     A            JSNEW         11P 0
+     A            JSTERM        11P 0
+     A            JSJBCT        11P 0
+     A            JSPDBR        11P 0
+     A            JSPNDB        11P 0
+     A            JSPWRT        11P 0
+     A            JSLDBR        11P 0
+     A            JSLDBW        11P 0
+     A            JSLDBU        11P 0
+     A            JSCMPT        11P 0
+     A            JSCMGT        11P 0
+     A            JSBRG         11P 0
+     A            JSPRG         11P 0
+     A            JSNDW         11P 0
+     A            JSDBW         11P 0
+     A            JSANDW        11P 0
+     A            JSADBW        11P 0
+     A            JSANDR        11P 0
+     A            JSADBR        11P 0
+     A            JSPW          11P 0
+     A            JSCS          11P 0
+     A            JSPAGF        11P 0
+     A            JSEAO         11P 0
+     A            JSOBIN        11P 0
+     A            JSODEC        11P 0
+     A            JSOFLP        11P 0
+     A            JSIPF         11P 0
+     A            JSWIO         11P 0
+     A            JSSKSC        11P 0
+     A            JSSKBS        11P 0
+     A            JSSKRC        11P 0
+     A            JSSKBR        11P 0
+     A            JSXRFR        11P 0
+     A            JSXRFW        11P 0
+     A            JSXSLR        11P 0
+     A            JSXDYR        11P 0
+     A            JSDLCH        11P 0
+     A            JSDLCM        11P 0
+     A            JSSZWT        11P 0

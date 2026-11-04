@@ -1,0 +1,109 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMDISK: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMDISR
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            IOPRN         10A
+     A            DIOPID         1H
+     A            DSARM          4A
+     A            DSTYPE         4A
+     A            DSDRN         10A
+     A            DSSCAN         5P 0
+     A            DSBLKR        11P 0
+     A            DSBLKW        11P 0
+     A            DSIDLC        11P 0
+     A            DSIDLT        11P 0
+     A            DSSK1         11P 0
+     A            DSSK2         11P 0
+     A            DSSK3         11P 0
+     A            DSSK4         11P 0
+     A            DSSK5         11P 0
+     A            DSSK6         11P 0
+     A            DSQUEL        11P 0
+     A            DSNBSY        11P 0
+     A            DSSMPL        11P 0
+     A            DSCAP         15P 0
+     A            DSAVL         15P 0
+     A            DSASP          5P 0
+     A            DSCSS          2A
+     A            DSPCAP        11P 0
+     A            DSPAVL        11P 0
+     A            DMFLAG         1A
+     A            DMSTS          1P 0
+     A            DMIRN         10A
+     A            DMDRN         10A
+     A            DSRDS         11P 0
+     A            DSWRTS        11P 0
+     A            DSBUFO        11P 0
+     A            DSBUFU        11P 0
+     A            DSMDLN         4A
+     A            DSDCRH        11P 0
+     A            DSDCPH        11P 0
+     A            DSDCWH        11P 0
+     A            DSDCFW        11P 0
+     A            DSDROP        11P 0
+     A            DSDWOP        11P 0
+     A            DSCCRH        11P 0
+     A            DSCCPH        11P 0
+     A            DSCCWH        11P 0
+     A            DSCCFW        11P 0
+     A            DSCOMP         1A
+     A            DSPBU         11P 0
+     A            DSPBA         11P 0
+     A            DSLBW         11P 0
+     A            DSLBA         11P 0
+     A            DSPBCO        11P 0
+     A            DSFGDR        11P 0
+     A            DSFGDW        11P 0
+     A            DSBGDR        11P 0
+     A            DSBGDW        11P 0
+     A            DSFGRE        11P 0
+     A            DSFGWE        11P 0
+     A            DSFGS         11P 0
+     A            DSBGS         11P 0
+     A            DSCERC        11P 0
+     A            DSASPN        10A
+     A            DSPS           1A
+     A            DSHAPS         1A
+     A            DSMU           1A
+     A            DSIP           1A
+     A            DSPC           1A
+     A            DSMC           1A
+     A            DSRDT          1A
+     A            DSIOPF         1A
+     A            DSCAT          1H
+     A            DSSRVT         9B 0
+     A            DSWT           9B 0
+     A            DSBKCT1        9B 0
+     A            DSBKRT1        9B 0
+     A            DSBKST1        9B 0
+     A            DSBKCT2        9B 0
+     A            DSBKRT2        9B 0
+     A            DSBKST2        9B 0
+     A            DSBKCT3        9B 0
+     A            DSBKRT3        9B 0
+     A            DSBKST3        9B 0
+     A            DSBKCT4        9B 0
+     A            DSBKRT4        9B 0
+     A            DSBKST4        9B 0
+     A            DSBKCT5        9B 0
+     A            DSBKRT5        9B 0
+     A            DSBKST5        9B 0
+     A            DSBKCT6        9B 0
+     A            DSBKRT6        9B 0
+     A            DSBKST6        9B 0
+     A            DSSECT         4B 0
+     A            DSIOARN       10A
+     A            DSSRLN        15A
+     A            DSVAL01       18B 0
+     A            DSVAL02       18B 0
+     A            DSVAL03       18B 0
+     A            DSVAL04       18B 0
+     A            DSPTROP       18B 0
+     A            DSPTWOP       18B 0
+     A            DSWWNN         8H

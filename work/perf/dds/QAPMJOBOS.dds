@@ -1,0 +1,103 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPMJOBOS: Collection Services model file (docs/PERF.md). The layout is
+     A* the V7R1M0 one, tools/conformance/oracle/perf/qapm-ffd.txt.
+     A          R QAPMJOBO
+     A            INTNUM         5P 0
+     A            DTETIM        12A
+     A            INTSEC         7P 0
+     A            DTECEN         1A
+     A            JBNAME        10A
+     A            JBUSER        10A
+     A            JBNBR          6A
+     A            JBTYPE         1A
+     A            JBSTYP         1A
+     A            JBSTSF         1P 0
+     A            JBSSYS        10A
+     A            JBSLIB        10A
+     A            JBROUT         5P 0
+     A            JBACCO        15A
+     A            JBRSP         15P 3
+     A            JBNTR         11P 0
+     A            JBAIQT        15P 1
+     A            JBNAIQ        11P 0
+     A            JBRUT         15P 3
+     A            JBNRU         11P 0
+     A            JBPLN         11P 0
+     A            JBPPG         11P 0
+     A            JBPFL         11P 0
+     A            JBLWT         11P 0
+     A            JBLRD         11P 0
+     A            JBDBU         11P 0
+     A            JBCPT         11P 0
+     A            JBCGT         11P 0
+     A            JBSPD         11P 0
+     A            JBRRT         11P 0
+     A            JBLND         10A
+     A            JBCUD         10A
+     A            JB2LND        10A
+     A            JB2CUD        10A
+     A            JBIRN         10A
+     A            JBDRN         10A
+     A            JBPORT         3P 0
+     A            JBSTN          3P 0
+     A            JBPTSF         1P 0
+     A            JBPTTF         1P 0
+     A            JBEAF          1P 0
+     A            JBPCSF         1P 0
+     A            JBDDMF         1P 0
+     A            JBMRTF         1P 0
+     A            JBS36E         1A
+     A            JBQT          11P 0
+     A            JBMMT         11P 0
+     A            JBNEQT        11P 0
+     A            JBPUTN        11P 0
+     A            JBPUTA        11P 0
+     A            JBGETN        11P 0
+     A            JBGETA        11P 0
+     A            JBPGIN        11P 0
+     A            JBPGIL        11P 0
+     A            JBGGIL        11P 0
+     A            JBRTI         11P 0
+     A            JBRRI         11P 0
+     A            JBXSLR        11P 0
+     A            JBXDYR        11P 0
+     A            JBDLCH        11P 0
+     A            JBDLCM        11P 0
+     A            JBSJNM        10A
+     A            JBSJUS        10A
+     A            JBSJNB         6A
+     A            JBSJFG         1A
+     A            JBRSYS        10A
+     A            JBDEVN        10A
+     A            JBRLNM         8A
+     A            JBLLNM         8A
+     A            JBMODE         8A
+     A            JBRMNT         8A
+     A            JBBUP         11P 0
+     A            JBBDL         11P 0
+     A            JBBFE         11P 0
+     A            JBBCO         11P 0
+     A            JBBRO         11P 0
+     A            JBLBO         11P 0
+     A            JBLBC         11P 0
+     A            JBLBI         11P 0
+     A            JBLBS         11P 0
+     A            JBDQS         11P 0
+     A            JBDQR         11P 0
+     A            JBNDA         11P 0
+     A            JBNUS         11P 0
+     A            JBSIT1        11P 0
+     A            JBSIT2        11P 0
+     A            JBSIT3        11P 0
+     A            JBGRUP         3A
+     A            JBTDE          8H
+     A            JBFLAG         2H
+     A            JBSVRT        30A
+     A            JBFSOPN       11P 0
+     A            JBFSDC        11P 0
+     A            JBFSNDC       11P 0
+     A            JBFSDD        11P 0
+     A            JBFSNDD       11P 0
